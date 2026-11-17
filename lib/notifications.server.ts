@@ -153,6 +153,8 @@ const PREF_FIELD: Record<
 const UNMUTABLE_ENTITY_TYPES: ReadonlySet<string> = new Set([
   // A user cannot opt out of moderation notices.
   'strike',
+  // Content removed or edited by site moderation, and feature timeouts.
+  'moderation',
   // New-device / new-location sign-in alerts (B11). The email goes out
   // regardless; this is what puts the matching row in the notification centre.
   'security',

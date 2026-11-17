@@ -32,6 +32,7 @@ import {
  Languages,
  TrendingUp,
  AlarmClock,
+ ShieldAlert,
 } from'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
@@ -68,6 +69,9 @@ const InsightsModal = lazy(() =>
 );
 const ShareModal = lazy(() => import('./ShareModal').then((m) => ({ default: m.ShareModal })));
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
+const ModerateContentDialog = lazy(() =>
+ import('@/components/moderation/ModerateContentDialog').then((m) => ({ default: m.ModerateContentDialog })),
+);
 
 export interface RMHarkTranslateControl {
  translating: boolean;
@@ -142,6 +146,7 @@ export function RMHarkOverflowPanel({
  const { data: session } = useSession();
  const actualId = item.actualId ?? item.id;
  const targetUserId = item.user?.id;
+ const isAdmin = !!(session?.user as { isAdmin?: boolean } | undefined)?.isAdmin;
 
  const setMenuOpen = (_open: false) => onClose();
  const [engagementModal, setEngagementModal] = useState<'likes'|'reposts'| null>(null);
@@ -151,6 +156,7 @@ export function RMHarkOverflowPanel({
  const [editOpen, setEditOpen] = useState(false);
  const [insightsOpen, setInsightsOpen] = useState(false);
  const [remindOpen, setRemindOpen] = useState(false);
+ const [moderateOpen, setModerateOpen] = useState(false);
  const [pinned, setPinned] = useState(!!item.pinned);
  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
  const { run: runBookmark } = useOptimisticAction();
@@ -159,7 +165,8 @@ export function RMHarkOverflowPanel({
  // Latch: mount a lazy modal the first time it opens, then keep it mounted so
  // its close animation still runs (a bare `open && <Modal/>`would unmount
  // mid-animation). The lazy import fires on first open, not at hydration.
- const mounted = useRef({ share: false, report: false, tip: false, edit: false, remind: false });
+ const mounted = useRef({ share: false, report: false, tip: false, edit: false, remind: false, moderate: false });
+ mounted.current.moderate ||= moderateOpen;
  mounted.current.remind ||= remindOpen;
  mounted.current.share ||= shareModalOpen;
  mounted.current.report ||= reportOpen;
@@ -447,6 +454,21 @@ export function RMHarkOverflowPanel({
  </MenuItem>
  </>
  )}
+ {!isAuthor && isAdmin && (
+ <>
+ <MenuSeparator />
+ <MenuItem
+ icon={ShieldAlert}
+ tone="danger"
+ onSelect={() => {
+ setMenuOpen(false);
+ setModerateOpen(true);
+ }}
+ >
+ {t('moderate-post', { defaultValue:'Moderate'})}
+ </MenuItem>
+ </>
+ )}
  </AnchoredMenu>
 
  {engagementModal && (
@@ -486,6 +508,17 @@ export function RMHarkOverflowPanel({
  }),
  url: `/u/${item.user?.handle || item.user?.id}/post/${actualId}`,
  }}
+ />
+ </Suspense>
+ )}
+ {isAdmin && mounted.current.moderate && (
+ <Suspense fallback={null}>
+ <ModerateContentDialog
+ open={moderateOpen}
+ onOpenChange={setModerateOpen}
+ entityType="rmhark"
+ entityId={actualId}
+ current={{ content: item.content }}
  />
  </Suspense>
  )}

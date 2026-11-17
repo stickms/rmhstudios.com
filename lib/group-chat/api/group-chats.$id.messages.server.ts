@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { pollGroupMessagesApi, sendGroupMessageApi } from '@/lib/group-chat/group-chat.contract';
@@ -65,6 +66,8 @@ export const route = apiRoute('/api/group-chats/$id/messages', {
 
     const ban = await getActiveBan(userId);
     if (ban) return Response.json({ error: 'Your account is suspended' }, { status: 403 });
+    const restricted = await restrictionResponse(userId, 'message');
+    if (restricted) return restricted;
 
     const ip = getClientIp(request);
     const { allowed } = rateLimit(ip, { limit: 40, windowMs: 60_000, prefix: 'group-msg' });

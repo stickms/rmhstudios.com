@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { publishScheduledApi } from '@/lib/scheduled/scheduled.contract';
@@ -16,6 +17,8 @@ export const route = apiRoute('/api/scheduled/$id/publish', {
         { status: 403 },
       );
     }
+    const restricted = await restrictionResponse(session.user.id, 'post');
+    if (restricted) return restricted;
 
     const ip = getClientIp(request);
     const { allowed } = rateLimit(ip, {

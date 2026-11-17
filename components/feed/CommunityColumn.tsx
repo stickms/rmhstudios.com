@@ -40,6 +40,7 @@ import {
  setCommunityMemberRoleApi,
 } from '@/lib/communities/communities.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { AdminModerateButton } from '@/components/moderation/AdminModerateButton';
 import { cn } from '@/lib/utils';
 
 interface Announcement {
@@ -244,6 +245,15 @@ export function CommunityColumn({
  : t('join', { defaultValue:'Join'})}
  </Button>
  )}
+ <AdminModerateButton
+ entityType="community"
+ entityId={community.id}
+ current={{ name: community.name, description: community.description }}
+ onDone={(action) => {
+ if (action ==='remove') window.location.assign('/communities');
+ else window.location.reload();
+ }}
+ />
  </div>
  </div>
  {community.description && (

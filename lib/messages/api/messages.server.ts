@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { listConversationsApi, sendMessageApi } from '@/lib/messages/messages.contract';
@@ -28,6 +29,8 @@ export const route = apiRoute('/api/messages', {
     sendMessageApi,
     { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'send-message' } },
     async ({ request, session }) => {
+      const restricted = await restrictionResponse(session.user.id, 'message');
+      if (restricted) return restricted;
       const body = await request.json();
       const parsed = sendMessageSchema.safeParse(body);
       if (!parsed.success) {

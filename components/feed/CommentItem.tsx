@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useSession } from '@/components/Providers';
 import { Link } from '@tanstack/react-router';
 import { useReconsider } from '@/components/safety/use-reconsider';
 import { PostMenuTrigger } from './PostMenuTrigger';
@@ -10,6 +11,7 @@ import {
   MessageCircle,
   BadgeCheck,
   ShieldCheck,
+  ShieldAlert,
   Languages,
   Image as ImageIcon,
 } from 'lucide-react';
@@ -48,6 +50,10 @@ import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { HideReplyMenuItem, HiddenRepliesGroup } from './HiddenReplies';
+
+const ModerateContentDialog = lazy(() =>
+  import('@/components/moderation/ModerateContentDialog').then((m) => ({ default: m.ModerateContentDialog })),
+);
 import {
   viewCommentApi,
   likeCommentApi,
@@ -194,6 +200,10 @@ export function CommentItem({
   const hasReplies = visibleReplies.length + hiddenReplies.length > 0;
 
   const isAuthor = sessionUser?.id === comment.userId;
+  const { data: session } = useSession();
+  const isSiteAdmin = !!(session?.user as { isAdmin?: boolean } | undefined)?.isAdmin;
+  const [moderateOpen, setModerateOpen] = useState(false);
+  const [moderateMounted, setModerateMounted] = useState(false);
 
   // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
   // close animation all live in AnchoredMenu now. This file used to carry its own
@@ -492,7 +502,34 @@ export function CommentItem({
                   {t('delete', { defaultValue: 'Delete' })}
                 </MenuItem>
               )}
+              {!isAuthor && isSiteAdmin && (
+                <MenuItem
+                  icon={ShieldAlert}
+                  tone="danger"
+                  onSelect={() => {
+                    setMenuOpen(false);
+                    setModerateMounted(true);
+                    setModerateOpen(true);
+                  }}
+                >
+                  {t('moderate-reply', { defaultValue: 'Moderate' })}
+                </MenuItem>
+              )}
             </AnchoredMenu>
+            {moderateMounted && (
+              <Suspense fallback={null}>
+                <ModerateContentDialog
+                  open={moderateOpen}
+                  onOpenChange={setModerateOpen}
+                  entityType="comment"
+                  entityId={comment.id}
+                  current={{ content: comment.content }}
+                  onDone={(action) => {
+                    if (action === 'remove') onCommentRemoved?.(comment.id);
+                  }}
+                />
+              </Suspense>
+            )}
           </div>
           {viewCount > 0 && (
             <span className="feed-actions__views t-meta">

@@ -1,3 +1,4 @@
+import { REMOVED_POST_TEXT } from '@/lib/moderation/removed-text';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
@@ -96,7 +97,7 @@ export const route = apiRoute('/api/rmharks/$id', {
 
     const isDeleted = !!rmhark.deletedAt;
     const deletedMessage = rmhark.deletedByAdmin
-      ? '[This RMHark was deleted by an admin]'
+      ? REMOVED_POST_TEXT
       : '[This RMHark was deleted by the user]';
 
     const locked = !isDeleted && isLocked(rmhark, userId);
@@ -169,7 +170,8 @@ export const route = apiRoute('/api/rmharks/$id', {
     await prisma.$transaction(async (tx) => {
       await tx.rMHark.update({
         where: { id },
-        data: { deletedAt, deletedByAdmin },
+        // An admin's delete is moderation: not restorable by the author from the bin.
+        data: { deletedAt, deletedByAdmin, ...(deletedByAdmin ? { deletedBy: 'moderator' } : {}) },
       });
       if (firstDelete) {
         // Drop the post's hashtag links (keeps trending counts accurate).
@@ -200,7 +202,7 @@ export const route = apiRoute('/api/rmharks/$id', {
 
     // Broadcast deletion via SSE
     const deletedMessage = deletedByAdmin
-      ? '[This RMHark was deleted by an admin]'
+      ? REMOVED_POST_TEXT
       : '[This RMHark was deleted by the user]';
     feedEventBus.publishPostEngagement(id, {
       type: 'rmhark.deleted',

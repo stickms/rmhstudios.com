@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
@@ -103,6 +104,8 @@ export const route = apiRoute('/api/personas', {
     async ({ request, session, body }) => {
       const userId = session.user.id;
 
+      const restricted = await restrictionResponse(userId, 'persona');
+      if (restricted) return restricted;
       const ip = getClientIp(request);
       const { allowed } = rateLimit(ip, {
         limit: 10,

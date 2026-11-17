@@ -16,6 +16,10 @@ const h = vi.hoisted(() => ({
   posts: {} as Record<string, Record<string, unknown>>,
 }));
 
+// No feature timeouts in these tests (lib/moderation/restrictions.server.ts).
+vi.mock('@/lib/moderation/restrictions.server', () => ({
+  restrictionResponse: async () => null,
+}));
 vi.mock(
   '@/lib/auth',
   () => ({

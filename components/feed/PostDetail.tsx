@@ -9,6 +9,7 @@ import { useResolvedUser, useSession } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { RelatedPosts } from './RelatedPosts';
+import { AdminModerateButton } from '@/components/moderation/AdminModerateButton';
 import { PostArticle } from './post-detail/PostArticle';
 import { ReplyComposer } from './post-detail/ReplyComposer';
 import { ReplyList } from './post-detail/ReplyList';
@@ -111,9 +112,18 @@ export function PostDetail({ postId }: PostDetailProps) {
           <SpineItem dot={false}>
             <p className="t-body text-site-text-muted">
               {post.deletedByAdmin
-                ? t('deleted-by-admin', { defaultValue: 'This RMHark was deleted by an admin.' })
+                ? t('removed-by-site-moderation', { defaultValue: 'This post was removed by site moderation.' })
                 : t('deleted-by-user', { defaultValue: 'This RMHark was deleted by the user.' })}
             </p>
+            {post.deletedByAdmin && (
+              <AdminModerateButton
+                entityType="rmhark"
+                entityId={postId}
+                removed
+                className="mt-3"
+                onDone={() => window.location.reload()}
+              />
+            )}
           </SpineItem>
         )}
 

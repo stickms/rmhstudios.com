@@ -21,6 +21,7 @@
  * Client-safe on purpose (no server imports), like `lib/og/post-visibility`.
  */
 
+import { REMOVED_POST_TEXT } from '@/lib/moderation/removed-text';
 import type { FeedItem } from '@/lib/feed-types';
 import {
   postCardShowsContent,
@@ -189,7 +190,7 @@ export function mapQuotedOriginal(
           )),
       content:
         o.deletedByAdmin
-          ? '[This RMHark was deleted by an admin]'
+          ? REMOVED_POST_TEXT
           : '[This RMHark was deleted by the user]',
       likeCount: 0,
       commentCount: 0,

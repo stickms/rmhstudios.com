@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1026 endpoints across 201 groups: 110 route files under `app/routes/api` and 916 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1030 endpoints across 201 groups: 110 route files under `app/routes/api` and 920 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-104 routes.
+108 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -116,6 +116,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/market` | `GET` | `lib/admin/api/admin.market.server.ts` |
 | `/api/admin/market/:id` | `POST` | `lib/admin/api/admin.market.$id.server.ts` |
 | `/api/admin/mod-macros` | `DELETE` `GET` `POST` | `lib/admin/api/admin.mod-macros.server.ts` |
+| `/api/admin/moderation/content` | `POST` | `lib/moderation/api/admin.moderation.content.server.ts` |
 | `/api/admin/oncall` | `GET` | `lib/admin/api/admin.oncall.server.ts` |
 | `/api/admin/oncall-rules` | `GET` `PATCH` | `lib/admin/api/admin.oncall-rules.server.ts` |
 | `/api/admin/oncall-series` | `GET` | `lib/admin/api/admin.oncall-series.server.ts` |
@@ -141,6 +142,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/release-notes/draft` | `POST` | `lib/devplatform/api/admin.release-notes.draft.server.ts` |
 | `/api/admin/reports` | `GET` | `lib/admin/api/admin.reports.server.ts` |
 | `/api/admin/reports/:id` | `POST` | `lib/admin/api/admin.reports.$id.server.ts` |
+| `/api/admin/restrictions/:id` | `DELETE` | `lib/moderation/api/admin.restrictions.$id.server.ts` |
 | `/api/admin/review-counts` | `GET` | `lib/admin/api/admin.review-counts.server.ts` |
 | `/api/admin/rideshare/applications` | `GET` `PATCH` | `lib/rideshare/api/admin.rideshare.applications.server.ts` |
 | `/api/admin/rideshare/rides` | `GET` | `lib/rideshare/api/admin.rideshare.rides.server.ts` |
@@ -149,6 +151,8 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/users` | `GET` `PATCH` | `lib/admin/api/admin.users.server.ts` |
 | `/api/admin/users/:id/ban` | `POST` | `lib/admin/api/admin.users.$id.ban.server.ts` |
 | `/api/admin/users/:id/grant-membership` | `POST` | `lib/admin/api/admin.users.$id.grant-membership.server.ts` |
+| `/api/admin/users/:id/moderation` | `GET` | `lib/moderation/api/admin.users.$id.moderation.server.ts` |
+| `/api/admin/users/:id/restrictions` | `POST` | `lib/moderation/api/admin.users.$id.restrictions.server.ts` |
 | `/api/admin/users/:id/set-coins` | `POST` | `lib/admin/api/admin.users.$id.set-coins.server.ts` |
 | `/api/admin/users/:id/strike` | `POST` | `lib/admin/api/admin.users.$id.strike.server.ts` |
 | `/api/admin/vibe/backfill-thumbs` | `POST` | `lib/rmhvibe/api/admin.vibe.backfill-thumbs.server.ts` |

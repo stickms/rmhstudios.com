@@ -59,6 +59,8 @@ import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/components/Providers';
 import { VibePostComposer } from '@/components/rmhvibe/VibePostComposer';
+import { AdminModerateButton } from '@/components/moderation/AdminModerateButton';
+import { VIBE_REMOVED_STATUS } from '@/lib/rmhvibe/vibe-status';
 
 // Background-build polling cadence + guards (see the generating-status effect).
 const MAX_COLLECTED_ERRORS = 3;
@@ -75,18 +77,23 @@ const fetchVibe = createServerFn({ method: 'GET' })
     if (!page) throw notFound();
     const { tweakSpec, tweakValues } = await getVibeTweaks(slug);
     const session = await auth.api.getSession({ headers: getRequest().headers });
+    // Removed by site moderation: none of the page is served, only the notice.
+    const removed = page.status === VIBE_REMOVED_STATUS;
     return {
+      id: page.id,
       canEdit: canEditVibe(page.ownerId, session?.user?.id ?? null),
       owner: page.owner ? { name: page.owner.name, handle: page.owner.handle } : null,
       parent: page.parent,
       slug: page.slug,
-      html: page.html,
-      title: page.title || page.prompt,
-      description: page.description || `A vibe page about "${page.prompt}".`,
+      html: removed ? '' : page.html,
+      title: removed ? 'Removed vibe' : page.title || page.prompt,
+      description: removed
+        ? 'This vibe was removed by site moderation.'
+        : page.description || `A vibe page about "${page.prompt}".`,
       // "generating" | "ready" | "error" — drives the still-building overlay below.
       status: page.status,
       kind: page.kind === 'widget' ? ('widget' as const) : ('page' as const),
-      thumbnailUrl: page.thumbnailUrl,
+      thumbnailUrl: removed ? null : page.thumbnailUrl,
       tweakSpec,
       tweakValues,
     };
@@ -148,7 +155,9 @@ export const Route = createFileRoute('/v/$slug')({
 function VibeViewer() {
   const { t } = useTranslation('pages');
   const {
+    id: pageId,
     slug,
+    description: initialDescription,
     html: initialHtml,
     status: initialStatus,
     kind,
@@ -639,6 +648,7 @@ function VibeViewer() {
   // Hooks above always run; these early returns only gate the rendered output.
   if (status === 'generating') return <VibeGenerating title={initialTitle} slow={buildSlow} />;
   if (status === 'error') return <VibeGenerationFailed />;
+  if (status === VIBE_REMOVED_STATUS) return <VibeRemoved pageId={pageId} />;
 
   const frameEl = (
     <VibeFrame
@@ -740,6 +750,12 @@ function VibeViewer() {
               ? t('customize', { defaultValue: 'Customize' })
               : t('remix', { defaultValue: 'Remix' })}
           </button>
+          <AdminModerateButton
+            entityType="vibe"
+            entityId={pageId}
+            current={{ title: initialTitle, description: initialDescription }}
+            onDone={() => window.location.reload()}
+          />
         </div>
 
         {postVibe && (
@@ -1035,6 +1051,31 @@ function VibeGenerationFailed() {
       <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta">
         {t('back-to-pages', { defaultValue: 'Back to pages' })}
       </Link>
+    </div>
+  );
+}
+
+function VibeRemoved({ pageId }: { pageId: string }) {
+  const { t } = useTranslation('pages');
+  return (
+    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <p className="vibe-rise text-2xl font-bold tracking-tight">
+        {t('vibe-removed-title', { defaultValue: 'This vibe was removed by site moderation' })}
+      </p>
+      <p className="vibe-rise-2 vibe-hint">
+        {t('vibe-removed-hint', {
+          defaultValue: 'It broke the site rules. If it is yours, the notice in your notifications says why.',
+        })}
+      </p>
+      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta">
+        {t('back-to-pages', { defaultValue: 'Back to pages' })}
+      </Link>
+      <AdminModerateButton
+        entityType="vibe"
+        entityId={pageId}
+        removed
+        onDone={() => window.location.reload()}
+      />
     </div>
   );
 }
