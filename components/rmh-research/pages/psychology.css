@@ -1,0 +1,61 @@
+/* RMH Research — psychology page sheet. Scoped under .rmhr-root; see ../rmh-research.css for the vocabulary. */
+
+.rmhr-root .psy-intro { max-width: 62ch; }
+.rmhr-root .psy-h2 { font-size: clamp(24px, 3vw, 34px); }
+.rmhr-root .psy-lede { margin-top: 16px; font-size: 16px; max-width: 34ch; }
+
+/* ── entries: portraits on the left, the finding and its place on the site beside them ── */
+.rmhr-root .psy-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; padding-block: 24px; }
+.rmhr-root .psy-pics { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.rmhr-root .psy-pic {
+  display: flex; align-items: flex-end; justify-content: center; overflow: hidden;
+  width: 64px; height: 77px; flex: none;
+  background: var(--wash); border: 1px solid var(--rule); border-radius: var(--r);
+}
+.rmhr-root .psy-pic img { height: 100%; width: auto; max-width: none; object-fit: contain; object-position: bottom; }
+.rmhr-root .psy-pic .meta { align-self: center; }
+.rmhr-root .psy-text { min-width: 0; display: grid; gap: 10px; }
+.rmhr-root .psy-body { color: var(--ink); }
+@media (min-width: 700px) {
+  .rmhr-root .psy-row { grid-template-columns: 80px minmax(0, 1fr); gap: 24px; }
+  .rmhr-root .psy-pic { width: 80px; height: 96px; }
+}
+
+/* ── image credits ── */
+.rmhr-root .psy-credits { border-top: 1px solid var(--rule); }
+.rmhr-root .psy-credit { display: grid; grid-template-columns: minmax(120px, 34%) minmax(0, 1fr); gap: 4px 16px; padding-block: 10px; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.rmhr-root .psy-credit .body { font-size: 14px; line-height: 1.45; }
+@media (max-width: 520px) { .rmhr-root .psy-credit { grid-template-columns: minmax(0, 1fr); } }
+
+.rmhr-root .psy-closing { display: grid; gap: 14px; justify-items: start; }
+.rmhr-root .psy-closing-body { max-width: 60ch; color: var(--mute); }
+
+/* ── scene: the four groups, one at a time ── */
+.rmhr-root .psy-pinwrap { display: grid; gap: 16px; }
+.rmhr-root .psy-stack { display: block; }
+.rmhr-root .psy-step { padding-block: 28px; border-top: 1px solid var(--rule); display: grid; gap: 24px; }
+.rmhr-root .psy-step-head { display: grid; gap: 12px; align-content: start; }
+.rmhr-root .psy-step-title { font-size: clamp(26px, 4vw, 44px); line-height: 1.08; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); text-wrap: balance; }
+.rmhr-root .psy-step .lede { font-size: clamp(15px, 1.5vw, 19px); }
+.rmhr-root .psy-index { border-top: 1px solid var(--rule); align-self: start; }
+.rmhr-root .psy-index li { border-bottom: 1px solid var(--rule); }
+.rmhr-root .psy-index-link { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 16px; padding-block: 10px; font-size: 15px; font-weight: 500; color: var(--ink); }
+.rmhr-root .psy-index-link:hover span:first-child { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+@media (pointer: coarse) { .rmhr-root .psy-index-link { min-height: 44px; } }
+@media (min-width: 900px) {
+  .rmhr-root .psy-step { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(32px, 6vw, 96px); }
+}
+
+/* ── motion gate: pinned layout only where the scene pins ── */
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    @supports (animation-timeline: view()) {
+      .rmhr-root .psy-pin { display: flex; flex-direction: column; justify-content: center; padding-block: calc(var(--nav-h) + 16px) 28px; }
+      .rmhr-root .psy-pinwrap { gap: 20px; }
+      .rmhr-root .psy-step { border-top: 0; padding-block: 0; align-content: center; }
+      .rmhr-root .psy-step-title { font-size: clamp(24px, 3.4vw, 40px); }
+      .rmhr-root .psy-index-link { padding-block: 8px; font-size: 14px; }
+      .rmhr-root .psy-dots { margin-top: 4px; }
+    }
+  }
+}

@@ -44,6 +44,7 @@ export const FEATURE_DIRS =
     'rmh-capital',
     'rmh-datacenter',
     'rmh-pmc',
+    'rmh-research',
     'rmhbox',
     'rmhcalculator',
     'rmhcode',

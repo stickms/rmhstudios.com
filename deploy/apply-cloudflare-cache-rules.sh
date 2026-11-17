@@ -117,7 +117,7 @@ read -r -d '' BODY <<'JSON' || true
     },
     {
       "description": "Cache anonymous default-locale public HTML",
-      "expression": "(http.request.method eq \"GET\" and (http.request.uri.path in {\"/\" \"/games\" \"/apps\" \"/news\" \"/library\" \"/optimization\" \"/security\" \"/privacy\" \"/terms\" \"/cookies\" \"/copyright\"} or starts_with(http.request.uri.path, \"/blog/\") or starts_with(http.request.uri.path, \"/news/\")) and not (http.cookie contains \"session_token\") and not (http.cookie contains \"rmh-lang=\"))",
+      "expression": "(http.request.method eq \"GET\" and (http.request.uri.path in {\"/\" \"/games\" \"/apps\" \"/news\" \"/library\" \"/rmh-research/reports/optimization\" \"/security\" \"/privacy\" \"/terms\" \"/cookies\" \"/copyright\"} or starts_with(http.request.uri.path, \"/blog/\") or starts_with(http.request.uri.path, \"/news/\")) and not (http.cookie contains \"session_token\") and not (http.cookie contains \"rmh-lang=\"))",
       "action": "set_cache_settings",
       "action_parameters": {
         "cache": true,

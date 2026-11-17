@@ -1,0 +1,431 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   RMH Research — foundation sheet. Scoped under `.rmhr-root`.
+
+   Steel, at microsite scale. The page is the site's own flat ground in one
+   typeface, divided by hairline rules, in the Day and Night editions, with no
+   accent colour. Every colour is a `--site-*` token read through the aliases
+   below; there is no gradient, blur, glow, shadow or translucency anywhere in
+   this directory (R1), no chrome (R2), content sits on rules and not in boxes
+   (R3), one ink primary per view (R4), and nothing moves at rest (R5).
+   `lib/rmh-research/__tests__/flat.test.ts` holds the sheet to that.
+
+   What is not the site tier: the scale (display type far above `t-title`) and
+   the PINNED SCROLL SCENES, which are why this is a full-screen microsite and
+   not a `_site` page. All motion is driven by scroll, i.e. by input: stop
+   scrolling and everything is still.
+
+   Loaded by URL from app/routes/rmh-research.tsx; page sheets are in ./pages.
+
+   ── VOCABULARY (use these before writing a page class) ────────────────────
+   Layout   .wrap                 centred column, max 1240px, fluid side padding
+            .sec                  a section: vertical padding   (.sec--tight smaller)
+            .sec--rule            + a hairline above it
+            .split                two columns: a sticky .split-aside heading + .split-main
+            .cols-2 .cols-3 .cols-4   equal responsive columns, divided by vertical rules
+            .stack-s/-m/-l        vertical rhythm between children (12 / 24 / 48px)
+   Type     .display              the one giant line of a view
+            .h1 .h2 .h3           headings (ink, 600)
+            .lede                 a muted introduction under a heading
+            .body                 running text; .prose for a readable measure
+            .label                13px 600 muted — names a group
+            .meta                 12px mono muted — dates, counts, codes
+            .num                  tabular mono figures (add to any size)
+            .ink / .mute          force ink or muted text
+            a.link                an underlined link inside running text
+   Rows     .rows > .row          a list on hairline rules (R3)
+            .paper-row            an archive entry (see <PaperRow> in shared.tsx)
+            .kv                   a definition list: mono key, ink value, on rules
+   Figures  .stats > .stat        big mono figure + label, divided by vertical rules
+            .bar-track > .bar-fill   a flat horizontal measure (set --v: 0…1)
+   Controls .btn                  the ink primary (ONE per view, R4)
+            .btn-quiet            the bordered secondary
+            .btn-text             a text button / arrow link
+            .chip                 a small bordered code or filter; [aria-pressed=true] / .is-on inverts
+            .field  .select       text input and select (36px, 44px on touch)
+   Chrome   .topbar .footer       written once in Layout/shared.tsx
+            .pagehead             the head of an interior page: crumbs, .h1, .lede
+            .crumbs               breadcrumb trail
+            .notice               a quiet bordered note (used for the fiction notice)
+   Reveal   .rv (.d1 .d2 .d3)     rise + fade as the element enters the viewport
+            .rv-rule              a hairline that draws across as it enters
+            .rv-ink               text that goes from muted to ink as it crosses the viewport
+   Scene    see "PINNED SCENES" below.
+
+   ── PINNED SCENES ────────────────────────────────────────────────────────
+   <Scene len steps> / <Step index count> / <SceneDots count>
+   (components/shared/scroll-scene.tsx, re-exported by ./shared.tsx).
+
+     <section class="scene" style="--len:4; --n:4">        scroll length, in viewports
+       <div class="scene-pin">                             sticks for the whole scene; runs --p 0→1
+         <div class="sc-stack">                            stacks its children in one cell
+           <div class="sc-step" style="--a:0;--b:25">…</div>   live between a% and b% of the pin
+         </div>
+         <div class="scene-dots">…</div>  <div class="scene-rail"/>   progress
+       </div>
+     </section>
+
+   Author FLOW MODE first: with no scroll timeline (Firefox today) or with motion
+   off, a scene is an ordinary stacked section and every step is simply visible,
+   one after another. The pin, the stacking and every hidden state live inside
+   the motion gate at the foot of this file, so nothing is ever hidden that a
+   scroll timeline cannot bring back.
+
+   Helpers inside a scene (each reads its own --a / --b window, percent of the pin):
+     .sc-step            fades in, holds, fades out   (.is-first / .is-last hold at the ends)
+     .sc-in  / .sc-out   fades in and stays  /  fades out and stays gone
+     .sc-live            dims to 0.38 outside its window (a list where one row is current)
+     .sc-dot             a progress dot
+     .sc-t               exposes --t (0→1 across the window) and --te (eased) for
+                         bespoke choreography: use them in transform, opacity, width, stroke-dashoffset.
+   var(--p) is available everywhere inside .scene-pin.
+
+   Page-specific choreography goes in the page sheet, inside the same gate:
+
+     @media screen and (prefers-reduced-motion: no-preference) {
+       html:where(:not([data-jelly-motion='still'])) {
+         @supports (animation-timeline: view()) { .rmhr-root .home-x { … } }
+       }
+     }
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
+
+.rmhr-root {
+  --paper: var(--site-bg);
+  --panel: var(--site-surface);
+  --wash: var(--site-bg-subtle);
+  --ink: var(--site-text);
+  --mute: var(--site-text-muted);
+  --rule: var(--site-border);
+  --on-ink: var(--site-accent-fg);
+  --danger: var(--site-danger);
+  --ok: var(--site-success);
+
+  --sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+  --maxw: 1240px;
+  --pad: clamp(20px, 4.2vw, 56px);
+  --gap: clamp(16px, 2vw, 28px);
+  --nav-h: 52px;
+  --navinset: clamp(10px, 2vw, 28px);
+  --r: var(--site-radius, 8px);
+  --r-sm: var(--site-radius-sm, 4px);
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Clip, not hidden, so the page never becomes a scroll root (sticky scenes depend on that). */
+  overflow-x: clip;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+.rmhr-root *, .rmhr-root *::before, .rmhr-root *::after { box-sizing: border-box; }
+/* Plain arcs, as on the site tier (S4): a full-screen route defaults every corner to the
+   app tier's squircle (app/globals/base-interaction.css), and this microsite is drawn in Steel. */
+@supports (corner-shape: round) {
+  .rmhr-root, .rmhr-root *, .rmhr-root *::before, .rmhr-root *::after { corner-shape: round; }
+}
+.rmhr-root :where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure, blockquote) { margin: 0; padding: 0; }
+.rmhr-root :where(ul, ol) { list-style: none; }
+.rmhr-root a { color: inherit; text-decoration: none; }
+.rmhr-root :where(button, input, select, textarea) { font: inherit; color: inherit; }
+.rmhr-root :where(img, svg) { display: block; max-width: 100%; }
+.rmhr-root :where(a, button, input, select, summary):focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.rmhr-root ::selection { background: var(--ink); color: var(--on-ink); }
+
+/* ════ LAYOUT ════ */
+.rmhr-root .wrap { width: 100%; max-width: calc(var(--maxw) + 2 * var(--pad)); margin-inline: auto; padding-inline: var(--pad); }
+.rmhr-root .sec { padding-block: clamp(64px, 10vw, 136px); }
+.rmhr-root .sec--tight { padding-block: clamp(40px, 6vw, 72px); }
+.rmhr-root .sec--rule { border-top: 1px solid var(--rule); }
+.rmhr-root .stack-s > * + * { margin-top: 12px; }
+.rmhr-root .stack-m > * + * { margin-top: 24px; }
+.rmhr-root .stack-l > * + * { margin-top: 48px; }
+
+.rmhr-root .split { display: grid; gap: clamp(28px, 5vw, 72px); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) {
+  .rmhr-root .split { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); }
+  /* The heading holds beside its content while the content scrolls past. */
+  .rmhr-root .split-aside { position: sticky; top: calc(var(--nav-h) + 40px); align-self: start; }
+}
+
+.rmhr-root :is(.cols-2, .cols-3, .cols-4) { display: grid; grid-template-columns: minmax(0, 1fr); }
+.rmhr-root :is(.cols-2, .cols-3, .cols-4) > * { padding-block: 24px; border-top: 1px solid var(--rule); min-width: 0; }
+@media (min-width: 720px) {
+  .rmhr-root .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rmhr-root .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rmhr-root .cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rmhr-root :is(.cols-2, .cols-3, .cols-4) > * { padding-inline: 28px; border-inline-start: 1px solid var(--rule); }
+  .rmhr-root .cols-2 > :nth-child(2n + 1), .rmhr-root .cols-3 > :nth-child(3n + 1), .rmhr-root .cols-4 > :nth-child(2n + 1) { padding-inline-start: 0; border-inline-start: 0; }
+}
+@media (min-width: 1040px) {
+  .rmhr-root .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .rmhr-root .cols-4 > :nth-child(2n + 1) { padding-inline-start: 28px; border-inline-start: 1px solid var(--rule); }
+  .rmhr-root .cols-4 > :nth-child(4n + 1) { padding-inline-start: 0; border-inline-start: 0; }
+}
+
+/* ════ TYPE ════ Weights 400 / 500 / 600 only; no letterspaced capitals. */
+.rmhr-root .display { font-size: clamp(48px, 10.5vw, 148px); line-height: 0.94; font-weight: 600; letter-spacing: -0.045em; color: var(--ink); text-wrap: balance; }
+.rmhr-root .h1 { font-size: clamp(38px, 6.4vw, 80px); line-height: 1; font-weight: 600; letter-spacing: -0.04em; color: var(--ink); text-wrap: balance; }
+.rmhr-root .h2 { font-size: clamp(28px, 4vw, 48px); line-height: 1.06; font-weight: 600; letter-spacing: -0.032em; color: var(--ink); text-wrap: balance; }
+.rmhr-root .h3 { font-size: clamp(18px, 1.6vw, 21px); line-height: 1.3; font-weight: 600; letter-spacing: -0.012em; color: var(--ink); }
+.rmhr-root .lede { font-size: clamp(17px, 1.7vw, 22px); line-height: 1.45; font-weight: 400; letter-spacing: -0.01em; color: var(--mute); text-wrap: pretty; max-width: 46ch; }
+.rmhr-root .body { font-size: 16px; line-height: 1.6; color: var(--ink); }
+.rmhr-root .prose { max-width: 68ch; text-wrap: pretty; }
+.rmhr-root .prose > * + * { margin-top: 1em; }
+.rmhr-root .label { font-size: 13px; line-height: 1.3; font-weight: 600; color: var(--mute); }
+.rmhr-root .meta { font-family: var(--mono); font-size: 12px; line-height: 1.3; font-weight: 400; color: var(--mute); }
+.rmhr-root .num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.rmhr-root .ink { color: var(--ink); }
+.rmhr-root .mute { color: var(--mute); }
+.rmhr-root a.link { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root a.link:hover { text-decoration-thickness: 2px; }
+
+/* ════ ROWS ════ A list is rows on rules. */
+.rmhr-root .rows { border-top: 1px solid var(--rule); }
+.rmhr-root .row { border-bottom: 1px solid var(--rule); padding-block: 18px; }
+.rmhr-root a.row, .rmhr-root .row--link { display: block; transition: background-color 90ms; }
+.rmhr-root a.row:hover, .rmhr-root .row--link:hover { background: var(--wash); }
+
+.rmhr-root .paper-row { display: grid; gap: 6px; border-bottom: 1px solid var(--rule); padding-block: 20px; }
+.rmhr-root .paper-row-title { font-size: clamp(17px, 1.5vw, 20px); line-height: 1.3; font-weight: 600; letter-spacing: -0.012em; color: var(--ink); text-wrap: pretty; }
+.rmhr-root .paper-row-title a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .paper-row-by { font-size: 14px; line-height: 1.45; color: var(--mute); }
+.rmhr-root .paper-row-by a { color: var(--ink); }
+.rmhr-root .paper-row-by a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.rmhr-root .paper-row-abs { font-size: 14px; line-height: 1.5; color: var(--mute); max-width: 82ch; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rmhr-root .paper-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 2px; }
+.rmhr-root .paper-row-meta a:hover { color: var(--ink); }
+.rmhr-root .paper-row-meta b { font-weight: 500; color: var(--ink); }
+
+.rmhr-root .kv { border-top: 1px solid var(--rule); }
+.rmhr-root .kv > div { display: grid; grid-template-columns: minmax(96px, 30%) minmax(0, 1fr); gap: 16px; padding-block: 12px; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.rmhr-root .kv dt { font-family: var(--mono); font-size: 12px; color: var(--mute); }
+.rmhr-root .kv dd { font-size: 14px; color: var(--ink); min-width: 0; }
+
+/* ════ FIGURES ════ */
+.rmhr-root .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--rule); }
+.rmhr-root .stat { padding: 20px 0; border-bottom: 1px solid var(--rule); min-width: 0; }
+.rmhr-root .stat:nth-child(2n) { padding-inline-start: 20px; border-inline-start: 1px solid var(--rule); }
+.rmhr-root .stat-v { display: block; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: clamp(30px, 4.6vw, 56px); line-height: 1; font-weight: 500; letter-spacing: -0.05em; color: var(--ink); }
+.rmhr-root .stat-k { display: block; margin-top: 10px; font-size: 13px; line-height: 1.3; font-weight: 600; color: var(--mute); }
+@media (min-width: 820px) {
+  .rmhr-root .stats { grid-template-columns: repeat(var(--stats, 4), minmax(0, 1fr)); }
+  .rmhr-root .stat { padding-inline-start: 24px; border-inline-start: 1px solid var(--rule); }
+  .rmhr-root .stat:first-child { padding-inline-start: 0; border-inline-start: 0; }
+}
+.rmhr-root .bar-track { height: 6px; background: var(--wash); border-radius: var(--r-sm); overflow: clip; }
+.rmhr-root .bar-fill { height: 100%; width: calc(var(--v, 0) * 100%); background: var(--ink); border-radius: var(--r-sm); }
+
+/* ════ CONTROLS ════ 8px radius, 1px border, 500, 14px, 36px high (44px on touch). */
+.rmhr-root :is(.btn, .btn-quiet) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 16px;
+  border: 1px solid var(--ink); border-radius: var(--r); font-size: 14px; font-weight: 500; line-height: 1; white-space: nowrap;
+  cursor: pointer; transition: background-color 90ms, color 90ms, border-color 90ms;
+}
+.rmhr-root .btn { background: var(--ink); color: var(--on-ink); }
+.rmhr-root .btn:hover { background: var(--mute); border-color: var(--mute); }
+.rmhr-root .btn-quiet { background: transparent; color: var(--ink); border-color: var(--rule); }
+.rmhr-root .btn-quiet:hover { background: var(--wash); }
+.rmhr-root .btn--lg { min-height: 44px; padding: 0 20px; font-size: 15px; }
+.rmhr-root .btn-text { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; font-size: 14px; font-weight: 500; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; }
+.rmhr-root .btn-text:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.rmhr-root .arw { width: 16px; height: 16px; flex: 0 0 auto; }
+[dir='rtl'] .rmhr-root .arw { scale: -1 1; }
+.rmhr-root .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+
+.rmhr-root .chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 8px; border: 1px solid var(--rule); border-radius: var(--r-sm);
+  font-family: var(--mono); font-size: 12px; line-height: 1; color: var(--mute); background: transparent; white-space: nowrap;
+}
+.rmhr-root :is(a, button).chip { min-height: 32px; padding: 0 10px; cursor: pointer; transition: background-color 90ms, color 90ms, border-color 90ms; }
+.rmhr-root :is(a, button).chip:hover { background: var(--wash); color: var(--ink); }
+.rmhr-root .chip:is([aria-pressed='true'], [aria-current='page'], .is-on) { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+.rmhr-root .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.rmhr-root :is(.field, .select) {
+  width: 100%; min-height: 36px; padding: 0 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r);
+  font-size: 14px; line-height: 1.2; color: var(--ink);
+}
+.rmhr-root .field::placeholder { color: var(--mute); }
+.rmhr-root .field--lg { min-height: 52px; padding: 0 16px; font-size: 17px; }
+.rmhr-root .select { appearance: none; padding-inline-end: 32px; cursor: pointer; }
+@media (pointer: coarse) {
+  .rmhr-root :is(.btn, .btn-quiet, .field, .select) { min-height: 44px; }
+  .rmhr-root :is(a, button).chip { min-height: 40px; }
+  .rmhr-root .btn-text { min-height: 44px; }
+}
+
+.rmhr-root .notice { border: 1px solid var(--rule); border-radius: var(--r); padding: 14px 16px; font-size: 13px; line-height: 1.5; color: var(--mute); }
+
+/* ════ TOP BAR ════ Nothing painted is pinned to an edge (iOS bars): the bar is
+   sticky 10px down, carries the safe area inside it, and takes no height of its
+   own. A flat bordered bar, not glass. */
+.rmhr-root .topbar {
+  position: sticky; top: 10px; z-index: 90; padding-top: env(safe-area-inset-top, 0px);
+  height: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+  margin-bottom: calc(-1 * (var(--nav-h) + env(safe-area-inset-top, 0px)));
+  pointer-events: none;
+}
+.rmhr-root .topbar-inner {
+  pointer-events: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: min(calc(100% - 2 * var(--navinset)), var(--maxw)); height: var(--nav-h); margin-inline: auto; padding-inline: 6px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r);
+}
+.rmhr-root .topbar-left { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; min-width: 0; }
+.rmhr-root .backlink { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding-inline: 10px; border-radius: var(--r-sm); font-size: 13px; color: var(--mute); transition: background-color 90ms, color 90ms; }
+.rmhr-root .backlink:hover { color: var(--ink); background: var(--wash); }
+[dir='rtl'] .rmhr-root .backlink > span[aria-hidden] { scale: -1 1; }
+.rmhr-root .brand { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding-inline: 8px; border-radius: var(--r-sm); color: var(--ink); }
+.rmhr-root .brand svg { width: 22px; height: 22px; flex: 0 0 auto; }
+.rmhr-root .brand-text { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; white-space: nowrap; }
+.rmhr-root .navlinks { display: flex; align-items: center; gap: 2px; }
+.rmhr-root .navlinks a { display: inline-flex; align-items: center; min-height: 40px; padding-inline: 12px; border-radius: var(--r-sm); font-size: 14px; font-weight: 500; color: var(--mute); transition: background-color 90ms, color 90ms; }
+.rmhr-root .navlinks a:hover { background: var(--wash); color: var(--ink); }
+.rmhr-root .navlinks a[aria-current='page'] { color: var(--ink); }
+.rmhr-root .nav-right { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.rmhr-root .nav-toggle { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; background: none; border: 0; border-radius: var(--r-sm); color: var(--ink); cursor: pointer; }
+.rmhr-root .nav-toggle svg { width: 22px; height: 22px; overflow: visible; }
+.rmhr-root .nav-toggle line { transition: transform 140ms var(--ease), opacity 90ms; transform-origin: 12px 12px; }
+.rmhr-root .nav-toggle[aria-expanded='true'] line:nth-child(1) { transform: translateY(4px) rotate(45deg); }
+.rmhr-root .nav-toggle[aria-expanded='true'] line:nth-child(2) { opacity: 0; }
+.rmhr-root .nav-toggle[aria-expanded='true'] line:nth-child(3) { transform: translateY(-4px) rotate(-45deg); }
+.rmhr-root .mobile-menu {
+  display: none; pointer-events: auto; position: absolute; inset-inline: var(--navinset);
+  inset-block-start: calc(env(safe-area-inset-top, 0px) + var(--nav-h) + 8px); padding: 4px 16px 16px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r);
+}
+.rmhr-root .mobile-menu a { display: flex; align-items: center; min-height: 52px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); border-bottom: 1px solid var(--rule); }
+.rmhr-root .mobile-menu a:last-child { border-bottom: 0; }
+.rmhr-root .mobile-menu a[aria-current='page'] { color: var(--mute); }
+.rmhr-root .mobile-menu.open { display: block; }
+@media (max-width: 900px) {
+  .rmhr-root .navlinks, .rmhr-root .nav-cta { display: none; }
+  .rmhr-root .nav-toggle { display: flex; }
+}
+@media (min-width: 901px) { .rmhr-root .mobile-menu { display: none !important; } }
+@media (max-width: 520px) { .rmhr-root .backlink-label { display: none; } }
+
+/* The page starts under the bar. A scene that opens a page clears it itself. */
+.rmhr-root main { display: block; }
+
+/* ════ PAGE HEAD ════ */
+.rmhr-root .pagehead { padding-block: calc(var(--nav-h) + clamp(72px, 11vw, 148px)) clamp(40px, 6vw, 72px); border-bottom: 1px solid var(--rule); }
+.rmhr-root .pagehead .h1 { margin-top: 20px; }
+.rmhr-root .pagehead .lede { margin-top: 24px; }
+.rmhr-root .pagehead .actions { margin-top: 32px; }
+.rmhr-root .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-family: var(--mono); font-size: 12px; line-height: 1.3; color: var(--mute); }
+.rmhr-root .crumbs a:hover { color: var(--ink); }
+.rmhr-root .crumbs [aria-current='page'] { color: var(--ink); }
+.rmhr-root .sechead { display: grid; gap: 16px; margin-bottom: clamp(28px, 4vw, 48px); }
+.rmhr-root .sechead-row { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 32px; }
+
+/* ════ FOOTER ════ */
+.rmhr-root .footer { border-top: 1px solid var(--rule); padding-block: clamp(48px, 7vw, 88px) calc(40px + env(safe-area-inset-bottom, 0px)); }
+.rmhr-root .footer-top { display: grid; gap: 40px 28px; grid-template-columns: minmax(0, 1fr); }
+.rmhr-root .footer-brand p { margin-top: 14px; max-width: 38ch; font-size: 14px; line-height: 1.5; color: var(--mute); }
+.rmhr-root .footer-col h4 { font-size: 13px; line-height: 1.3; font-weight: 600; color: var(--mute); margin-bottom: 10px; }
+.rmhr-root .footer-col a { display: flex; align-items: center; min-height: 32px; font-size: 14px; color: var(--ink); }
+.rmhr-root .footer-col a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--rule); }
+.rmhr-root .footer .notice { margin-top: 24px; }
+@media (min-width: 620px) { .rmhr-root .footer-top { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rmhr-root .footer-brand { grid-column: 1 / -1; } }
+@media (min-width: 980px) { .rmhr-root .footer-top { grid-template-columns: minmax(0, 5fr) repeat(3, minmax(0, 2fr)); } .rmhr-root .footer-brand { grid-column: auto; } }
+@media (pointer: coarse) { .rmhr-root .footer-col a { min-height: 44px; } }
+
+/* ════ SCENE (flow mode) ════ An ordinary section until the gate says otherwise. */
+.rmhr-root .scene { position: relative; }
+.rmhr-root .scene-pin { position: relative; }
+.rmhr-root .sc-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; corner-shape: round; background: var(--rule); }
+.rmhr-root .scene-dots { display: none; align-items: center; gap: 8px; }
+.rmhr-root .scene-rail { display: none; position: relative; height: 1px; background: var(--rule); }
+.rmhr-root .scene-rail::after { content: ''; position: absolute; inset-inline: 0; inset-block: -0.5px; height: 2px; background: var(--ink); transform-origin: left center; transform: scaleX(var(--p, 0)); }
+[dir='rtl'] .rmhr-root .scene-rail::after { transform-origin: right center; }
+.rmhr-root .sc-t {
+  --t: clamp(0, calc((var(--p) * 100 - var(--a, 0)) / (var(--b, 100) - var(--a, 0))), 1);
+  --te: calc(var(--t) * var(--t) * (3 - 2 * var(--t)));
+}
+/* Flow mode gives --p and --t their end state, so a figure drawn from them is complete. */
+.rmhr-root .scene-pin { --p: 1; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOTION — every animation here is driven by scroll.
+   ════════════════════════════════════════════════════════════════════════ */
+@keyframes rr-p { from { --p: 0; } to { --p: 1; } }
+@keyframes rr-rise { from { opacity: 0; translate: 0 24px; } to { opacity: 1; translate: 0 0; } }
+@keyframes rr-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes rr-ink { from { color: var(--rule); } to { color: var(--ink); } }
+@keyframes rr-in { from { opacity: 0; translate: 0 var(--sc-y, 24px); } to { opacity: 1; translate: 0 0; } }
+@keyframes rr-out {
+  0% { opacity: 1; translate: 0 0; pointer-events: auto; }
+  100% { opacity: 0; translate: 0 calc(var(--sc-y, 24px) * -1); pointer-events: none; }
+}
+/* A step is live for most of its window and hands over quickly at the edges, so
+   the gap where neither neighbour is readable is a sliver of scroll, not a beat. */
+@keyframes rr-step {
+  0%, 1% { opacity: 0; translate: 0 var(--sc-y, 24px); pointer-events: none; z-index: 0; }
+  13%, 87% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  99%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 24px) * -1); pointer-events: none; z-index: 0; }
+}
+@keyframes rr-step-first {
+  0%, 87% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  99%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 24px) * -1); pointer-events: none; z-index: 0; }
+}
+@keyframes rr-step-last {
+  0%, 1% { opacity: 0; translate: 0 var(--sc-y, 24px); pointer-events: none; z-index: 0; }
+  13%, 100% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+}
+@keyframes rr-dot { 0%, 10%, 90%, 100% { background: var(--rule); } 24%, 76% { background: var(--ink); } }
+@keyframes rr-dot-first { 0%, 76% { background: var(--ink); } 90%, 100% { background: var(--rule); } }
+@keyframes rr-dot-last { 0%, 10% { background: var(--rule); } 24%, 100% { background: var(--ink); } }
+@keyframes rr-live { 0%, 10%, 90%, 100% { opacity: 0.38; } 24%, 76% { opacity: 1; } }
+@keyframes rr-live-first { 0%, 76% { opacity: 1; } 90%, 100% { opacity: 0.38; } }
+@keyframes rr-live-last { 0%, 10% { opacity: 0.38; } 24%, 100% { opacity: 1; } }
+
+.rmhr-root .rv-rule { display: block; height: 1px; background: var(--rule); transform-origin: left center; }
+[dir='rtl'] .rmhr-root .rv-rule { transform-origin: right center; }
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    @supports (animation-timeline: view()) {
+      /* ── view: as an element crosses the viewport ── */
+      .rmhr-root .rv { animation: rr-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
+      .rmhr-root .rv.d1 { animation-range: entry 8% entry 48%; }
+      .rmhr-root .rv.d2 { animation-range: entry 16% entry 56%; }
+      .rmhr-root .rv.d3 { animation-range: entry 24% entry 64%; }
+      .rmhr-root .rv-rule { animation: rr-draw linear both; animation-timeline: view(); animation-range: entry 0% entry 90%; }
+      .rmhr-root .rv-ink { animation: rr-ink linear both; animation-timeline: view(); animation-range: entry 40% cover 46%; }
+
+      /* ── scene: the pinned scroll scene ── */
+      .rmhr-root .scene { height: calc(var(--len, 3) * 100svh); view-timeline: --scene block; view-timeline-inset: 0px; }
+      .rmhr-root .scene-pin {
+        position: sticky; top: 0; height: 100svh; overflow: clip;
+        animation: rr-p linear both; animation-timeline: --scene; animation-range: contain 0% contain 100%;
+      }
+      .rmhr-root .scene-dots { display: flex; }
+      .rmhr-root .scene-rail { display: block; }
+      .rmhr-root .sc-stack { display: grid; }
+      .rmhr-root .sc-stack > * { grid-area: 1 / 1; min-width: 0; }
+      .rmhr-root :is(.sc-in, .sc-out, .sc-step, .sc-dot, .sc-live) {
+        animation-timeline: --scene; animation-fill-mode: both; animation-timing-function: linear;
+        animation-range: contain calc(var(--a, 0) * 1%) contain calc(var(--b, 100) * 1%);
+      }
+      .rmhr-root .sc-in { animation-name: rr-in; }
+      .rmhr-root .sc-out { animation-name: rr-out; }
+      .rmhr-root .sc-step { animation-name: rr-step; }
+      .rmhr-root .sc-step.is-first { animation-name: rr-step-first; }
+      .rmhr-root .sc-step.is-last { animation-name: rr-step-last; }
+      .rmhr-root .sc-dot { animation-name: rr-dot; }
+      .rmhr-root .sc-dot.is-first { animation-name: rr-dot-first; }
+      .rmhr-root .sc-dot.is-last { animation-name: rr-dot-last; }
+      .rmhr-root .sc-live { animation-name: rr-live; }
+      .rmhr-root .sc-live.is-first { animation-name: rr-live-first; }
+      .rmhr-root .sc-live.is-last { animation-name: rr-live-last; }
+    }
+  }
+}

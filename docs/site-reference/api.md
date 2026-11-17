@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1015 endpoints across 201 groups: 110 route files under `app/routes/api` and 905 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1016 endpoints across 201 groups: 110 route files under `app/routes/api` and 906 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1298,7 +1298,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/og`
 
-18 routes.
+19 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1316,6 +1316,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/og/post/:id/story` | `GET` | `lib/og/api/og.post.$id.story.server.ts` |
 | `/api/og/profile/:id` | `GET` | `lib/og/api/og.profile.$id.server.ts` |
 | `/api/og/replay/:id` | `GET` | `lib/og/api/og.replay.$id.server.ts` |
+| `/api/og/research/:kind/:id` | `GET` | `lib/rmh-research/api/og.research.$kind.$id.server.ts` |
 | `/api/og/section/:file` | `GET` | `lib/og/api/og.section.$file.server.ts` |
 | `/api/og/sohumtracker` | `GET` | `lib/og/api/og.sohumtracker.server.ts` |
 | `/api/og/story/:slug` | `GET` | `lib/og/api/og.story.$slug.server.ts` |

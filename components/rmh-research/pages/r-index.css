@@ -1,0 +1,202 @@
+/* RMH Research — r-index page sheet (rix-). Scoped under .rmhr-root; see ../rmh-research.css for the vocabulary.
+   Flow mode first: both scenes are ordinary stacked sections, and every figure is drawn from
+   --p / --te, which flow mode sets to their end state, so the figures render complete. The pin
+   and the stacking live in the gate at the foot. */
+
+.rmhr-root .rix-head-stats { margin-top: 40px; }
+
+/* ── the two scenes (flow mode) ── */
+.rmhr-root .rix-pin { padding-block: clamp(64px, 10vw, 120px); }
+.rmhr-root :is(.rix-sift-grid, .rix-cut-grid) {
+  display: grid; gap: 28px clamp(28px, 5vw, 72px); grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'head' 'fig' 'steps';
+}
+.rmhr-root .rix-sift-head { grid-area: head; display: grid; gap: 12px; align-content: start; }
+.rmhr-root :is(.rix-sift-fig, .rix-cut-figs) { grid-area: fig; min-width: 0; }
+.rmhr-root .rix-sift-steps { grid-area: steps; min-width: 0; }
+@media (min-width: 900px) {
+  .rmhr-root :is(.rix-sift-grid, .rix-cut-grid) {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas: 'head fig' 'steps fig';
+    grid-template-rows: auto 1fr;
+  }
+  /* Flow mode: the figure holds beside the steps as they scroll past. */
+  .rmhr-root :is(.rix-sift-fig, .rix-cut-figs) { position: sticky; top: calc(var(--nav-h) + 40px); align-self: start; }
+  .rmhr-root .rix-cut-figs .rix-plot { height: clamp(160px, 22svh, 240px); }
+}
+.rmhr-root .rix-scene-h2 { font-size: clamp(26px, 3.2vw, 40px); }
+.rmhr-root .rix-paper { display: grid; gap: 6px; margin-top: 4px; }
+.rmhr-root .rix-paper-title { font-size: 17px; line-height: 1.3; font-weight: 600; letter-spacing: -0.012em; color: var(--ink); text-wrap: pretty; }
+.rmhr-root .rix-paper-title:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .rix-paper-meta { line-height: 1.5; }
+
+.rmhr-root .rix-step { padding-block: 24px; border-top: 1px solid var(--rule); }
+.rmhr-root .rix-step .h3 { margin-top: 4px; }
+.rmhr-root .rix-step .body { margin-top: 8px; max-width: 46ch; }
+.rmhr-root .rix-count {
+  display: block; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: clamp(56px, 8vw, 112px);
+  line-height: 0.92; font-weight: 500; letter-spacing: -0.05em; color: var(--ink); white-space: nowrap;
+}
+.rmhr-root .rix-count-k { font-size: 0.42em; letter-spacing: 0; color: var(--mute); margin-inline-end: 0.12em; }
+.rmhr-root .rix-count-k--gap { margin-inline-start: 0.5em; }
+.rmhr-root .rix-trail { display: flex; flex-wrap: wrap; gap: 4px 0; margin-block: 14px 12px; }
+.rmhr-root .rix-trail > li + li::before { content: '→'; margin-inline: 10px; color: var(--mute); }
+[dir='rtl'] .rmhr-root .rix-trail > li + li::before { content: '←'; }
+.rmhr-root .rix-trail > li.is-now { color: var(--ink); }
+.rmhr-root .rix-trail > li.is-later { display: none; }
+.rmhr-root .rix-scene-foot { display: none; }
+
+/* ── sifting: one tile per citing paper. --k1/--k2/--k3 run 0→1 as steps 1, 2 and 3 arrive
+   (the five step windows are 20% of the pin each); in flow mode --p is 1, so all three are 1. ── */
+.rmhr-root .rix-sift-fig {
+  --k1: clamp(0, calc((var(--p) * 100 - 21) / 6), 1);
+  --k2: clamp(0, calc((var(--p) * 100 - 41) / 6), 1);
+  --k3: clamp(0, calc((var(--p) * 100 - 61) / 6), 1);
+  display: grid; gap: 16px; align-content: center;
+}
+.rmhr-root .rix-cites { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
+@media (min-width: 900px) {
+  .rmhr-root .rix-cites:not([data-dense]) { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+  .rmhr-root .rix-cites:not([data-dense]) .rix-cite { height: 68px; padding-inline: 12px; font-size: 13px; gap: 4px; }
+  .rmhr-root .rix-cites:not([data-dense]) .rix-cite-ink { padding-inline: 12px; gap: 4px; }
+}
+.rmhr-root .rix-cite {
+  position: relative; display: flex; flex-direction: column; justify-content: center; gap: 2px; height: 48px; padding-inline: 8px;
+  border: 1px solid var(--rule); border-radius: var(--r-sm); overflow: clip;
+  font-family: var(--mono); font-size: 12px; line-height: 1.2; color: var(--ink); opacity: calc(1 - 0.7 * var(--x, 0));
+}
+.rmhr-root .rix-cite[data-k='self'] { --x: var(--k1); }
+.rmhr-root .rix-cite[data-k='dead'] { --x: var(--k2); }
+.rmhr-root .rix-cite-year { color: var(--mute); }
+/* a removed tile is struck through: level for "shares an author", slanted for "dead end" */
+.rmhr-root .rix-cite:is([data-k='self'], [data-k='dead'])::after {
+  content: ''; position: absolute; inset-inline: 4px; top: 50%; height: 1px; background: var(--ink);
+  transform-origin: left center; transform: scaleX(var(--x, 0));
+}
+.rmhr-root .rix-cite[data-k='dead']::after { inset-inline: -12px; transform-origin: center; transform: rotate(-28deg) scaleX(var(--x, 0)); }
+[dir='rtl'] .rmhr-root .rix-cite[data-k='self']::after { transform-origin: right center; }
+/* a carried tile fills with ink from the bottom and reads ×2 */
+.rmhr-root .rix-cite-ink {
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding-inline: 8px;
+  background: var(--ink); color: var(--on-ink); clip-path: inset(calc((1 - var(--k3)) * 100%) 0 0 0);
+}
+.rmhr-root .rix-cite-ink .rix-cite-year { color: var(--on-ink); }
+
+.rmhr-root .rix-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; line-height: 1.5; }
+.rmhr-root .rix-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.rmhr-root .rix-key { position: relative; display: inline-block; width: 14px; height: 10px; border: 1px solid var(--rule); border-radius: 2px; overflow: clip; }
+.rmhr-root .rix-key:is([data-k='self'], [data-k='dead'])::after { content: ''; position: absolute; inset-inline: 1px; top: 50%; height: 1px; background: var(--ink); }
+.rmhr-root .rix-key[data-k='dead']::after { inset-inline: -2px; transform: rotate(-30deg); }
+.rmhr-root .rix-key[data-k='carried'] { border-color: var(--ink); background: var(--ink); }
+
+/* ── the cut: bars sorted by value, the k×k square of the cut over them ── */
+.rmhr-root .rix-cut-figs { display: grid; gap: 48px; align-content: center; }
+.rmhr-root .rix-cut-fig { display: grid; gap: 10px; }
+.rmhr-root .rix-chart { display: grid; gap: 8px; }
+.rmhr-root .rix-chart-k { font-family: var(--mono); font-size: 22px; line-height: 1.1; font-weight: 500; letter-spacing: -0.03em; color: var(--ink); }
+.rmhr-root .rix-plot { position: relative; height: clamp(180px, 26vw, 300px); border-bottom: 1px solid var(--ink); }
+.rmhr-root .rix-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 3px; }
+.rmhr-root .rix-bar {
+  flex: 1 1 0; min-width: 0; height: calc(var(--v) * 100%); background: var(--mute); border-radius: var(--r-sm) var(--r-sm) 0 0;
+  transform-origin: center bottom; transform: scaleY(var(--te));
+}
+/* The k×k square: an ink block over the first k bars up to height k. In flow mode it is simply
+   there; on scroll it fills upward after the bars have grown. Above it, the core bars' excess
+   shows in mute, so the block reads as "k papers with at least k". */
+.rmhr-root .rix-sq {
+  position: absolute; left: 0; bottom: 0; z-index: 1; pointer-events: none; background: var(--ink); border-radius: var(--r-sm) var(--r-sm) 0 0;
+  width: calc((100% - (var(--n) - 1) * 3px) * var(--k) / var(--n) + (var(--k) - 1) * 3px);
+  height: calc(var(--k) / var(--max) * 100%);
+  clip-path: inset(calc((1 - var(--te)) * 100%) 0 0 0);
+}
+.rmhr-root .rix-vals { display: flex; gap: 3px; }
+.rmhr-root .rix-vals > li { flex: 1 1 0; min-width: 0; text-align: center; }
+
+/* ── definition ── */
+.rmhr-root .rix-formula {
+  margin: 0; padding-block: 20px; border-block: 1px solid var(--rule); overflow-x: auto;
+  font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--ink); white-space: pre; tab-size: 4;
+}
+
+@media (max-width: 520px) { .rmhr-root .rix-formula { font-size: 11.5px; } }
+
+/* ── across the archive ── */
+.rmhr-root .rix-arc-grid { display: grid; gap: 56px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .rmhr-root .rix-arc-grid { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 72px; align-items: start; } }
+.rmhr-root .rix-scatter { display: grid; gap: 16px; }
+.rmhr-root .rix-scatter-frame { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 8px; max-width: 560px; }
+.rmhr-root .rix-axis-y { writing-mode: vertical-rl; rotate: 180deg; }
+.rmhr-root .rix-axis-x { grid-column: 2; justify-self: center; margin-top: 22px; }
+.rmhr-root .rix-scatter-plot { position: relative; aspect-ratio: 1; margin-inline-start: 22px; }
+.rmhr-root .rix-scatter-plot svg { width: 100%; height: 100%; overflow: visible; }
+.rmhr-root .rix-grid { stroke: var(--rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.rmhr-root .rix-diag { stroke: var(--mute); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.rmhr-root .rix-dot { fill: var(--ink); }
+.rmhr-root .rix-ticks-x > span { position: absolute; top: 100%; left: calc(var(--x) * 1%); translate: -50% 6px; }
+.rmhr-root .rix-ticks-y > span { position: absolute; right: 100%; top: calc(var(--y) * 1%); translate: -8px -50%; }
+.rmhr-root .rix-zone { position: absolute; background: var(--paper); padding-inline: 4px; }
+.rmhr-root .rix-zone--above { left: 8%; top: 8%; }
+.rmhr-root .rix-zone--below { right: 8%; bottom: 10%; }
+.rmhr-root .rix-scatter-cap { max-width: 56ch; line-height: 1.5; }
+
+.rmhr-root a.rix-mover { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; min-height: 44px; }
+.rmhr-root .rix-mover-name { display: grid; gap: 2px; min-width: 0; font-size: 15px; font-weight: 500; }
+.rmhr-root .rix-mover-nums { display: flex; align-items: baseline; gap: 12px; flex: 0 0 auto; }
+.rmhr-root .rix-mover-nums b { font-weight: 500; min-width: 3ch; text-align: end; }
+.rmhr-root .rix-empty { padding-block: 16px; border-top: 1px solid var(--rule); }
+
+/* ── questions ── */
+.rmhr-root .rix-q { padding-block: 0; }
+.rmhr-root .rix-q-sum { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; padding-block: 14px; cursor: pointer; list-style: none; }
+.rmhr-root .rix-q-sum::-webkit-details-marker { display: none; }
+.rmhr-root .rix-q-sum:hover .h3 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.rmhr-root .rix-q-mark { position: relative; flex: 0 0 auto; width: 14px; height: 14px; }
+.rmhr-root .rix-q-mark::before, .rmhr-root .rix-q-mark::after { content: ''; position: absolute; left: 0; top: 50%; width: 100%; height: 1.5px; margin-top: -0.75px; background: var(--ink); transition: rotate 140ms var(--ease); }
+.rmhr-root .rix-q-mark::after { rotate: 90deg; }
+.rmhr-root .rix-q[open] .rix-q-mark::after { rotate: 0deg; }
+.rmhr-root .rix-q-a { padding-bottom: 20px; }
+
+.rmhr-root .rix-out { display: grid; gap: 24px; justify-items: start; }
+
+/* ════ MOTION — the pinned scenes. ════ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    @supports (animation-timeline: view()) {
+      .rmhr-root .rix-pin { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 16px; padding-block: calc(var(--nav-h) + 28px) 20px; }
+      .rmhr-root :is(.rix-sift-grid, .rix-cut-grid) { align-content: center; min-height: 0; }
+      .rmhr-root .rix-sift-steps { align-self: start; }
+      .rmhr-root .rix-step { padding-block: 0; border-top: 0; }
+      .rmhr-root .rix-scene-foot { display: flex; align-items: center; gap: 16px; }
+      .rmhr-root .rix-scene-foot .scene-rail { flex: 1 1 auto; }
+      .rmhr-root :is(.rix-sift-fig, .rix-cut-figs) { position: static; align-self: center; gap: 0; }
+      .rmhr-root .rix-sift-fig { gap: 16px; }
+      .rmhr-root :is(.rix-plot, .rix-cut-figs .rix-plot) { height: clamp(160px, 34svh, 340px); }
+
+      @media (min-width: 900px) {
+        .rmhr-root :is(.rix-sift-grid, .rix-cut-grid) { grid-template-rows: auto auto; }
+        .rmhr-root .rix-sift-steps { margin-top: 24px; }
+      }
+      /* Phones: one column inside 100svh; the paper's byline and the legend's extras step back. */
+      @media (max-width: 899px) {
+        .rmhr-root .rix-pin { padding-block: calc(var(--nav-h) + 22px) 14px; gap: 10px; }
+        .rmhr-root :is(.rix-sift-grid, .rix-cut-grid) { gap: 16px; align-content: center; }
+        .rmhr-root .rix-chart-head { display: none; }
+        .rmhr-root .rix-sift-head { gap: 6px; }
+        .rmhr-root .rix-scene-h2 { font-size: 24px; }
+        .rmhr-root .rix-paper-title { font-size: 15px; }
+        .rmhr-root .rix-paper-meta { display: none; }
+        .rmhr-root .rix-cites { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 4px; }
+        .rmhr-root .rix-cite { height: 40px; padding-inline: 6px; font-size: 11px; gap: 0; }
+        .rmhr-root .rix-cite-ink { padding-inline: 6px; gap: 0; }
+        .rmhr-root .rix-sift-fig { gap: 10px; }
+        .rmhr-root .rix-count { font-size: 60px; }
+        .rmhr-root .rix-count-k { font-size: 0.42em; letter-spacing: 0; color: var(--mute); margin-inline-end: 0.12em; }
+.rmhr-root .rix-count-k--gap { margin-inline-start: 0.5em; }
+.rmhr-root .rix-trail { margin-block: 8px 6px; }
+        .rmhr-root .rix-step .body { font-size: 14px; line-height: 1.5; margin-top: 4px; }
+        .rmhr-root :is(.rix-plot, .rix-cut-figs .rix-plot) { height: clamp(120px, 24svh, 220px); }
+        .rmhr-root .rix-cut-fig { gap: 6px; }
+      }
+    }
+  }
+}

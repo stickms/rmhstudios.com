@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 376 routes. 203 render inside the standard site shell (sidebar, nav, context rail); 173 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 387 routes. 203 render inside the standard site shell (sidebar, nav, context rail); 184 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -137,7 +137,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/pricing` | redirects to `/store?tab=membership` | public | `app/routes/_site/pricing.tsx` |
 | `/profile/:id` | redirects to `/u/$userid` | public | `app/routes/_site/profile/$id.tsx` |
 | `/progress` | Progress | public | `app/routes/_site/progress.tsx` |
-| `/psychology` | Psychology | public | `app/routes/_site/psychology.tsx` |
+| `/psychology` | redirects to `/rmh-research/psychology` | public | `app/routes/_site/psychology.tsx` |
 | `/qotd` | Question of the Day | public | `app/routes/_site/qotd.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
@@ -298,7 +298,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/news/rss.xml` | RMH Studios — News | public | `app/routes/news.rss[.]xml.ts` |
 | `/nightrail` | — | public | `app/routes/nightrail.tsx` |
 | `/offline` | Offline | public | `app/routes/offline.tsx` |
-| `/optimization` | Speed & Optimization | public | `app/routes/optimization.tsx` |
+| `/optimization` | — | public | `app/routes/optimization.tsx` |
 | `/pf2ecal` | PF2e Calendar | public | `app/routes/pf2ecal.tsx` |
 | `/portal` | — | public | `app/routes/portal.tsx` |
 | `/privacy` | Privacy Policy | public | `app/routes/privacy.tsx` |
@@ -319,6 +319,17 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmh-pmc/contact` | — | public | `app/routes/rmh-pmc/contact.tsx` |
 | `/rmh-pmc/intelligence` | — | public | `app/routes/rmh-pmc/intelligence.tsx` |
 | `/rmh-pmc/operators` | — | public | `app/routes/rmh-pmc/operators.tsx` |
+| `/rmh-research` | — | public | `app/routes/rmh-research/index.tsx` |
+| `/rmh-research/archive` | — | public | `app/routes/rmh-research/archive.tsx` |
+| `/rmh-research/authors` | — | public | `app/routes/rmh-research/authors/index.tsx` |
+| `/rmh-research/authors/:authorId` | Authors — RMH Research | public | `app/routes/rmh-research/authors/$authorId.tsx` |
+| `/rmh-research/fields` | — | public | `app/routes/rmh-research/fields/index.tsx` |
+| `/rmh-research/fields/:fieldId` | Fields — RMH Research | public | `app/routes/rmh-research/fields/$fieldId.tsx` |
+| `/rmh-research/paper/:paperId` | Archive — RMH Research | public | `app/routes/rmh-research/paper/$paperId.tsx` |
+| `/rmh-research/psychology` | Psychology — RMH Research | public | `app/routes/rmh-research/psychology.tsx` |
+| `/rmh-research/r-index` | — | public | `app/routes/rmh-research/r-index.tsx` |
+| `/rmh-research/reports/feature-leak` | — | public | `app/routes/rmh-research_.reports.feature-leak.tsx` |
+| `/rmh-research/reports/optimization` | Speed & Optimization — RMH Research | public | `app/routes/rmh-research_.reports.optimization.tsx` |
 | `/rmhbox` | — | sign-in | `app/routes/rmhbox/index.tsx` |
 | `/rmhbox/:lobbyId` | — | sign-in | `app/routes/rmhbox/$lobbyId.tsx` |
 | `/rmhbox/minigames` | RMHbox minigames | sign-in | `app/routes/rmhbox/minigames/index.tsx` |

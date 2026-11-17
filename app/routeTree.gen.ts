@@ -47,6 +47,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as RmhInternalAffairsRouteImport } from './routes/rmh-internal-affairs'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
+import { Route as RmhResearchRouteImport } from './routes/rmh-research'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhcalculatorRouteImport } from './routes/rmhcalculator'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
@@ -175,6 +176,10 @@ import { Route as RmhPmcCommandRouteImport } from './routes/rmh-pmc/command'
 import { Route as RmhPmcContactRouteImport } from './routes/rmh-pmc/contact'
 import { Route as RmhPmcIntelligenceRouteImport } from './routes/rmh-pmc/intelligence'
 import { Route as RmhPmcOperatorsRouteImport } from './routes/rmh-pmc/operators'
+import { Route as RmhResearchIndexRouteImport } from './routes/rmh-research/index'
+import { Route as RmhResearchArchiveRouteImport } from './routes/rmh-research/archive'
+import { Route as RmhResearchPsychologyRouteImport } from './routes/rmh-research/psychology'
+import { Route as RmhResearchRIndexRouteImport } from './routes/rmh-research/r-index'
 import { Route as RmhboxIndexRouteImport } from './routes/rmhbox/index'
 import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
@@ -418,6 +423,13 @@ import { Route as GamesMarketIndexRouteImport } from './routes/games/market.inde
 import { Route as GamesProfileIdRouteImport } from './routes/games/profile.$id'
 import { Route as GamesTradesIndexRouteImport } from './routes/games/trades.index'
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
+import { Route as RmhResearchAuthorsIndexRouteImport } from './routes/rmh-research/authors/index'
+import { Route as RmhResearchAuthorsAuthorIdRouteImport } from './routes/rmh-research/authors/$authorId'
+import { Route as RmhResearchFieldsIndexRouteImport } from './routes/rmh-research/fields/index'
+import { Route as RmhResearchFieldsFieldIdRouteImport } from './routes/rmh-research/fields/$fieldId'
+import { Route as RmhResearchPaperPaperIdRouteImport } from './routes/rmh-research/paper/$paperId'
+import { Route as RmhResearchReportsFeatureLeakRouteImport } from './routes/rmh-research_.reports.feature-leak'
+import { Route as RmhResearchReportsOptimizationRouteImport } from './routes/rmh-research_.reports.optimization'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as RmhmusicLessonLessonIdRouteImport } from './routes/rmhmusic/lesson.$lessonId'
 import { Route as RmhmusicSongsIndexRouteImport } from './routes/rmhmusic/songs.index'
@@ -715,6 +727,11 @@ const RmhInternalAffairsRoute = RmhInternalAffairsRouteImport.update({
 const RmhPmcRoute = RmhPmcRouteImport.update({
   id: '/rmh-pmc',
   path: '/rmh-pmc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RmhResearchRoute = RmhResearchRouteImport.update({
+  id: '/rmh-research',
+  path: '/rmh-research',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhboxRoute = RmhboxRouteImport.update({
@@ -1357,6 +1374,26 @@ const RmhPmcOperatorsRoute = RmhPmcOperatorsRouteImport.update({
   id: '/operators',
   path: '/operators',
   getParentRoute: () => RmhPmcRoute,
+} as any)
+const RmhResearchIndexRoute = RmhResearchIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RmhResearchRoute,
+} as any)
+const RmhResearchArchiveRoute = RmhResearchArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
+  getParentRoute: () => RmhResearchRoute,
+} as any)
+const RmhResearchPsychologyRoute = RmhResearchPsychologyRouteImport.update({
+  id: '/psychology',
+  path: '/psychology',
+  getParentRoute: () => RmhResearchRoute,
+} as any)
+const RmhResearchRIndexRoute = RmhResearchRIndexRouteImport.update({
+  id: '/r-index',
+  path: '/r-index',
+  getParentRoute: () => RmhResearchRoute,
 } as any)
 const RmhboxIndexRoute = RmhboxIndexRouteImport.update({
   id: '/',
@@ -2586,6 +2623,45 @@ const LibraryAlbumsAlbumIdRoute = LibraryAlbumsAlbumIdRouteImport.update({
   path: '/library/albums/$albumId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RmhResearchAuthorsIndexRoute = RmhResearchAuthorsIndexRouteImport.update({
+  id: '/authors/',
+  path: '/authors/',
+  getParentRoute: () => RmhResearchRoute,
+} as any)
+const RmhResearchAuthorsAuthorIdRoute =
+  RmhResearchAuthorsAuthorIdRouteImport.update({
+    id: '/authors/$authorId',
+    path: '/authors/$authorId',
+    getParentRoute: () => RmhResearchRoute,
+  } as any)
+const RmhResearchFieldsIndexRoute = RmhResearchFieldsIndexRouteImport.update({
+  id: '/fields/',
+  path: '/fields/',
+  getParentRoute: () => RmhResearchRoute,
+} as any)
+const RmhResearchFieldsFieldIdRoute =
+  RmhResearchFieldsFieldIdRouteImport.update({
+    id: '/fields/$fieldId',
+    path: '/fields/$fieldId',
+    getParentRoute: () => RmhResearchRoute,
+  } as any)
+const RmhResearchPaperPaperIdRoute = RmhResearchPaperPaperIdRouteImport.update({
+  id: '/paper/$paperId',
+  path: '/paper/$paperId',
+  getParentRoute: () => RmhResearchRoute,
+} as any)
+const RmhResearchReportsFeatureLeakRoute =
+  RmhResearchReportsFeatureLeakRouteImport.update({
+    id: '/rmh-research_/reports/feature-leak',
+    path: '/rmh-research/reports/feature-leak',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const RmhResearchReportsOptimizationRoute =
+  RmhResearchReportsOptimizationRouteImport.update({
+    id: '/rmh-research_/reports/optimization',
+    path: '/rmh-research/reports/optimization',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
   id: '/minigames/',
   path: '/minigames/',
@@ -3194,6 +3270,7 @@ export interface FileRoutesByFullPath {
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
+  '/rmh-research': typeof RmhResearchRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
   '/rmhcode': typeof RmhcodeRouteWithChildren
@@ -3314,6 +3391,9 @@ export interface FileRoutesByFullPath {
   '/rmh-pmc/contact': typeof RmhPmcContactRoute
   '/rmh-pmc/intelligence': typeof RmhPmcIntelligenceRoute
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
+  '/rmh-research/archive': typeof RmhResearchArchiveRoute
+  '/rmh-research/psychology': typeof RmhResearchPsychologyRoute
+  '/rmh-research/r-index': typeof RmhResearchRIndexRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
@@ -3347,6 +3427,7 @@ export interface FileRoutesByFullPath {
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
   '/rmh-pmc/': typeof RmhPmcIndexRoute
+  '/rmh-research/': typeof RmhResearchIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -3523,6 +3604,11 @@ export interface FileRoutesByFullPath {
   '/games/groups/$slug': typeof GamesGroupsSlugRoute
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/rmh-research/authors/$authorId': typeof RmhResearchAuthorsAuthorIdRoute
+  '/rmh-research/fields/$fieldId': typeof RmhResearchFieldsFieldIdRoute
+  '/rmh-research/paper/$paperId': typeof RmhResearchPaperPaperIdRoute
+  '/rmh-research/reports/feature-leak': typeof RmhResearchReportsFeatureLeakRoute
+  '/rmh-research/reports/optimization': typeof RmhResearchReportsOptimizationRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic/r/$token': typeof RmhmusicRTokenRoute
@@ -3583,6 +3669,8 @@ export interface FileRoutesByFullPath {
   '/games/': typeof GamesLibraryIndexRoute
   '/games/market/': typeof GamesMarketIndexRoute
   '/games/trades/': typeof GamesTradesIndexRoute
+  '/rmh-research/authors/': typeof RmhResearchAuthorsIndexRoute
+  '/rmh-research/fields/': typeof RmhResearchFieldsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -3807,6 +3895,9 @@ export interface FileRoutesByTo {
   '/rmh-pmc/contact': typeof RmhPmcContactRoute
   '/rmh-pmc/intelligence': typeof RmhPmcIntelligenceRoute
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
+  '/rmh-research/archive': typeof RmhResearchArchiveRoute
+  '/rmh-research/psychology': typeof RmhResearchPsychologyRoute
+  '/rmh-research/r-index': typeof RmhResearchRIndexRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
@@ -3840,6 +3931,7 @@ export interface FileRoutesByTo {
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
   '/rmh-capital': typeof RmhCapitalIndexRoute
   '/rmh-pmc': typeof RmhPmcIndexRoute
+  '/rmh-research': typeof RmhResearchIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
   '/rmhcode': typeof RmhcodeIndexRoute
   '/rmhmusic': typeof RmhmusicIndexRoute
@@ -4016,6 +4108,11 @@ export interface FileRoutesByTo {
   '/games/groups/$slug': typeof GamesGroupsSlugRoute
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/rmh-research/authors/$authorId': typeof RmhResearchAuthorsAuthorIdRoute
+  '/rmh-research/fields/$fieldId': typeof RmhResearchFieldsFieldIdRoute
+  '/rmh-research/paper/$paperId': typeof RmhResearchPaperPaperIdRoute
+  '/rmh-research/reports/feature-leak': typeof RmhResearchReportsFeatureLeakRoute
+  '/rmh-research/reports/optimization': typeof RmhResearchReportsOptimizationRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic/r/$token': typeof RmhmusicRTokenRoute
@@ -4075,6 +4172,8 @@ export interface FileRoutesByTo {
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/games/market': typeof GamesMarketIndexRoute
   '/games/trades': typeof GamesTradesIndexRoute
+  '/rmh-research/authors': typeof RmhResearchAuthorsIndexRoute
+  '/rmh-research/fields': typeof RmhResearchFieldsIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
@@ -4205,6 +4304,7 @@ export interface FileRoutesById {
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
+  '/rmh-research': typeof RmhResearchRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
   '/rmhcode': typeof RmhcodeRouteWithChildren
@@ -4326,6 +4426,9 @@ export interface FileRoutesById {
   '/rmh-pmc/contact': typeof RmhPmcContactRoute
   '/rmh-pmc/intelligence': typeof RmhPmcIntelligenceRoute
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
+  '/rmh-research/archive': typeof RmhResearchArchiveRoute
+  '/rmh-research/psychology': typeof RmhResearchPsychologyRoute
+  '/rmh-research/r-index': typeof RmhResearchRIndexRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
@@ -4360,6 +4463,7 @@ export interface FileRoutesById {
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
   '/rmh-pmc/': typeof RmhPmcIndexRoute
+  '/rmh-research/': typeof RmhResearchIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -4536,6 +4640,11 @@ export interface FileRoutesById {
   '/games/groups/$slug': typeof GamesGroupsSlugRoute
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/rmh-research/authors/$authorId': typeof RmhResearchAuthorsAuthorIdRoute
+  '/rmh-research/fields/$fieldId': typeof RmhResearchFieldsFieldIdRoute
+  '/rmh-research/paper/$paperId': typeof RmhResearchPaperPaperIdRoute
+  '/rmh-research_/reports/feature-leak': typeof RmhResearchReportsFeatureLeakRoute
+  '/rmh-research_/reports/optimization': typeof RmhResearchReportsOptimizationRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic_/r/$token': typeof RmhmusicRTokenRoute
@@ -4596,6 +4705,8 @@ export interface FileRoutesById {
   '/games/_library/': typeof GamesLibraryIndexRoute
   '/games/market/': typeof GamesMarketIndexRoute
   '/games/trades/': typeof GamesTradesIndexRoute
+  '/rmh-research/authors/': typeof RmhResearchAuthorsIndexRoute
+  '/rmh-research/fields/': typeof RmhResearchFieldsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -4727,6 +4838,7 @@ export interface FileRouteTypes {
     | '/rmh-capital'
     | '/rmh-internal-affairs'
     | '/rmh-pmc'
+    | '/rmh-research'
     | '/rmhbox'
     | '/rmhcalculator'
     | '/rmhcode'
@@ -4847,6 +4959,9 @@ export interface FileRouteTypes {
     | '/rmh-pmc/contact'
     | '/rmh-pmc/intelligence'
     | '/rmh-pmc/operators'
+    | '/rmh-research/archive'
+    | '/rmh-research/psychology'
+    | '/rmh-research/r-index'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
@@ -4880,6 +4995,7 @@ export interface FileRouteTypes {
     | '/kowloon-knockout/'
     | '/rmh-capital/'
     | '/rmh-pmc/'
+    | '/rmh-research/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -5056,6 +5172,11 @@ export interface FileRouteTypes {
     | '/games/groups/$slug'
     | '/games/profile/$id'
     | '/library/albums/$albumId'
+    | '/rmh-research/authors/$authorId'
+    | '/rmh-research/fields/$fieldId'
+    | '/rmh-research/paper/$paperId'
+    | '/rmh-research/reports/feature-leak'
+    | '/rmh-research/reports/optimization'
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic/r/$token'
@@ -5116,6 +5237,8 @@ export interface FileRouteTypes {
     | '/games/'
     | '/games/market/'
     | '/games/trades/'
+    | '/rmh-research/authors/'
+    | '/rmh-research/fields/'
     | '/rmhbox/minigames/'
     | '/rmhmusic/songs/'
     | '/secret/cursed-logic/'
@@ -5340,6 +5463,9 @@ export interface FileRouteTypes {
     | '/rmh-pmc/contact'
     | '/rmh-pmc/intelligence'
     | '/rmh-pmc/operators'
+    | '/rmh-research/archive'
+    | '/rmh-research/psychology'
+    | '/rmh-research/r-index'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
@@ -5373,6 +5499,7 @@ export interface FileRouteTypes {
     | '/kowloon-knockout'
     | '/rmh-capital'
     | '/rmh-pmc'
+    | '/rmh-research'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -5549,6 +5676,11 @@ export interface FileRouteTypes {
     | '/games/groups/$slug'
     | '/games/profile/$id'
     | '/library/albums/$albumId'
+    | '/rmh-research/authors/$authorId'
+    | '/rmh-research/fields/$fieldId'
+    | '/rmh-research/paper/$paperId'
+    | '/rmh-research/reports/feature-leak'
+    | '/rmh-research/reports/optimization'
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic/r/$token'
@@ -5608,6 +5740,8 @@ export interface FileRouteTypes {
     | '/altair/multiplayer'
     | '/games/market'
     | '/games/trades'
+    | '/rmh-research/authors'
+    | '/rmh-research/fields'
     | '/rmhbox/minigames'
     | '/rmhmusic/songs'
     | '/secret/cursed-logic'
@@ -5737,6 +5871,7 @@ export interface FileRouteTypes {
     | '/rmh-capital'
     | '/rmh-internal-affairs'
     | '/rmh-pmc'
+    | '/rmh-research'
     | '/rmhbox'
     | '/rmhcalculator'
     | '/rmhcode'
@@ -5858,6 +5993,9 @@ export interface FileRouteTypes {
     | '/rmh-pmc/contact'
     | '/rmh-pmc/intelligence'
     | '/rmh-pmc/operators'
+    | '/rmh-research/archive'
+    | '/rmh-research/psychology'
+    | '/rmh-research/r-index'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
@@ -5892,6 +6030,7 @@ export interface FileRouteTypes {
     | '/kowloon-knockout/'
     | '/rmh-capital/'
     | '/rmh-pmc/'
+    | '/rmh-research/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -6068,6 +6207,11 @@ export interface FileRouteTypes {
     | '/games/groups/$slug'
     | '/games/profile/$id'
     | '/library/albums/$albumId'
+    | '/rmh-research/authors/$authorId'
+    | '/rmh-research/fields/$fieldId'
+    | '/rmh-research/paper/$paperId'
+    | '/rmh-research_/reports/feature-leak'
+    | '/rmh-research_/reports/optimization'
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic_/r/$token'
@@ -6128,6 +6272,8 @@ export interface FileRouteTypes {
     | '/games/_library/'
     | '/games/market/'
     | '/games/trades/'
+    | '/rmh-research/authors/'
+    | '/rmh-research/fields/'
     | '/rmhbox/minigames/'
     | '/rmhmusic/songs/'
     | '/secret/cursed-logic/'
@@ -6258,6 +6404,7 @@ export interface RootRouteChildren {
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhInternalAffairsRoute: typeof RmhInternalAffairsRouteWithChildren
   RmhPmcRoute: typeof RmhPmcRouteWithChildren
+  RmhResearchRoute: typeof RmhResearchRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcalculatorRoute: typeof RmhcalculatorRoute
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
@@ -6354,6 +6501,8 @@ export interface RootRouteChildren {
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
+  RmhResearchReportsFeatureLeakRoute: typeof RmhResearchReportsFeatureLeakRoute
+  RmhResearchReportsOptimizationRoute: typeof RmhResearchReportsOptimizationRoute
   RmhmusicRTokenRoute: typeof RmhmusicRTokenRoute
   SohumtrackerMonthMonthRoute: typeof SohumtrackerMonthMonthRoute
   SohumtrackerWeekWeekRoute: typeof SohumtrackerWeekWeekRoute
@@ -6669,6 +6818,13 @@ declare module '@tanstack/react-router' {
       path: '/rmh-pmc'
       fullPath: '/rmh-pmc'
       preLoaderRoute: typeof RmhPmcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmh-research': {
+      id: '/rmh-research'
+      path: '/rmh-research'
+      fullPath: '/rmh-research'
+      preLoaderRoute: typeof RmhResearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmhbox': {
@@ -7566,6 +7722,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmh-pmc/operators'
       preLoaderRoute: typeof RmhPmcOperatorsRouteImport
       parentRoute: typeof RmhPmcRoute
+    }
+    '/rmh-research/': {
+      id: '/rmh-research/'
+      path: '/'
+      fullPath: '/rmh-research/'
+      preLoaderRoute: typeof RmhResearchIndexRouteImport
+      parentRoute: typeof RmhResearchRoute
+    }
+    '/rmh-research/archive': {
+      id: '/rmh-research/archive'
+      path: '/archive'
+      fullPath: '/rmh-research/archive'
+      preLoaderRoute: typeof RmhResearchArchiveRouteImport
+      parentRoute: typeof RmhResearchRoute
+    }
+    '/rmh-research/psychology': {
+      id: '/rmh-research/psychology'
+      path: '/psychology'
+      fullPath: '/rmh-research/psychology'
+      preLoaderRoute: typeof RmhResearchPsychologyRouteImport
+      parentRoute: typeof RmhResearchRoute
+    }
+    '/rmh-research/r-index': {
+      id: '/rmh-research/r-index'
+      path: '/r-index'
+      fullPath: '/rmh-research/r-index'
+      preLoaderRoute: typeof RmhResearchRIndexRouteImport
+      parentRoute: typeof RmhResearchRoute
     }
     '/rmhbox/': {
       id: '/rmhbox/'
@@ -9268,6 +9452,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryAlbumsAlbumIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rmh-research/authors/': {
+      id: '/rmh-research/authors/'
+      path: '/authors'
+      fullPath: '/rmh-research/authors/'
+      preLoaderRoute: typeof RmhResearchAuthorsIndexRouteImport
+      parentRoute: typeof RmhResearchRoute
+    }
+    '/rmh-research/authors/$authorId': {
+      id: '/rmh-research/authors/$authorId'
+      path: '/authors/$authorId'
+      fullPath: '/rmh-research/authors/$authorId'
+      preLoaderRoute: typeof RmhResearchAuthorsAuthorIdRouteImport
+      parentRoute: typeof RmhResearchRoute
+    }
+    '/rmh-research/fields/': {
+      id: '/rmh-research/fields/'
+      path: '/fields'
+      fullPath: '/rmh-research/fields/'
+      preLoaderRoute: typeof RmhResearchFieldsIndexRouteImport
+      parentRoute: typeof RmhResearchRoute
+    }
+    '/rmh-research/fields/$fieldId': {
+      id: '/rmh-research/fields/$fieldId'
+      path: '/fields/$fieldId'
+      fullPath: '/rmh-research/fields/$fieldId'
+      preLoaderRoute: typeof RmhResearchFieldsFieldIdRouteImport
+      parentRoute: typeof RmhResearchRoute
+    }
+    '/rmh-research/paper/$paperId': {
+      id: '/rmh-research/paper/$paperId'
+      path: '/paper/$paperId'
+      fullPath: '/rmh-research/paper/$paperId'
+      preLoaderRoute: typeof RmhResearchPaperPaperIdRouteImport
+      parentRoute: typeof RmhResearchRoute
+    }
+    '/rmh-research_/reports/feature-leak': {
+      id: '/rmh-research_/reports/feature-leak'
+      path: '/rmh-research/reports/feature-leak'
+      fullPath: '/rmh-research/reports/feature-leak'
+      preLoaderRoute: typeof RmhResearchReportsFeatureLeakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmh-research_/reports/optimization': {
+      id: '/rmh-research_/reports/optimization'
+      path: '/rmh-research/reports/optimization'
+      fullPath: '/rmh-research/reports/optimization'
+      preLoaderRoute: typeof RmhResearchReportsOptimizationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rmhbox/minigames/': {
       id: '/rmhbox/minigames/'
       path: '/minigames'
@@ -10708,6 +10941,34 @@ const RmhPmcRouteChildren: RmhPmcRouteChildren = {
 const RmhPmcRouteWithChildren =
   RmhPmcRoute._addFileChildren(RmhPmcRouteChildren)
 
+interface RmhResearchRouteChildren {
+  RmhResearchArchiveRoute: typeof RmhResearchArchiveRoute
+  RmhResearchPsychologyRoute: typeof RmhResearchPsychologyRoute
+  RmhResearchRIndexRoute: typeof RmhResearchRIndexRoute
+  RmhResearchIndexRoute: typeof RmhResearchIndexRoute
+  RmhResearchAuthorsAuthorIdRoute: typeof RmhResearchAuthorsAuthorIdRoute
+  RmhResearchFieldsFieldIdRoute: typeof RmhResearchFieldsFieldIdRoute
+  RmhResearchPaperPaperIdRoute: typeof RmhResearchPaperPaperIdRoute
+  RmhResearchAuthorsIndexRoute: typeof RmhResearchAuthorsIndexRoute
+  RmhResearchFieldsIndexRoute: typeof RmhResearchFieldsIndexRoute
+}
+
+const RmhResearchRouteChildren: RmhResearchRouteChildren = {
+  RmhResearchArchiveRoute: RmhResearchArchiveRoute,
+  RmhResearchPsychologyRoute: RmhResearchPsychologyRoute,
+  RmhResearchRIndexRoute: RmhResearchRIndexRoute,
+  RmhResearchIndexRoute: RmhResearchIndexRoute,
+  RmhResearchAuthorsAuthorIdRoute: RmhResearchAuthorsAuthorIdRoute,
+  RmhResearchFieldsFieldIdRoute: RmhResearchFieldsFieldIdRoute,
+  RmhResearchPaperPaperIdRoute: RmhResearchPaperPaperIdRoute,
+  RmhResearchAuthorsIndexRoute: RmhResearchAuthorsIndexRoute,
+  RmhResearchFieldsIndexRoute: RmhResearchFieldsIndexRoute,
+}
+
+const RmhResearchRouteWithChildren = RmhResearchRoute._addFileChildren(
+  RmhResearchRouteChildren,
+)
+
 interface RmhboxRouteChildren {
   RmhboxLobbyIdRoute: typeof RmhboxLobbyIdRoute
   RmhboxIndexRoute: typeof RmhboxIndexRoute
@@ -11122,6 +11383,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhInternalAffairsRoute: RmhInternalAffairsRouteWithChildren,
   RmhPmcRoute: RmhPmcRouteWithChildren,
+  RmhResearchRoute: RmhResearchRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcalculatorRoute: RmhcalculatorRoute,
   RmhcodeRoute: RmhcodeRouteWithChildren,
@@ -11219,6 +11481,8 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedPostIdRoute: EmbedPostIdRoute,
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
+  RmhResearchReportsFeatureLeakRoute: RmhResearchReportsFeatureLeakRoute,
+  RmhResearchReportsOptimizationRoute: RmhResearchReportsOptimizationRoute,
   RmhmusicRTokenRoute: RmhmusicRTokenRoute,
   SohumtrackerMonthMonthRoute: SohumtrackerMonthMonthRoute,
   SohumtrackerWeekWeekRoute: SohumtrackerWeekWeekRoute,

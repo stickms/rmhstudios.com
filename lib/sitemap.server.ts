@@ -15,6 +15,7 @@
  * crawlers and cached by third parties, so a leak here is permanent.
  */
 
+import { researchSitemapRoutes } from '@/lib/rmh-research/sitemap';
 import { prisma } from '@/lib/prisma.server';
 import { cachedSWR } from '@/lib/cached.server';
 import type { Prisma } from '@prisma/client';
@@ -163,9 +164,9 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
   /** Static routes plus everything derived from the game/app catalogs. */
   pages: {
     cap: 10_000,
-    count: () => Promise.resolve(STATIC_ROUTES.length + catalogRoutes().length),
+    count: () => Promise.resolve(STATIC_ROUTES.length + catalogRoutes().length + researchSitemapRoutes().length),
     page: (skip, take) =>
-      Promise.resolve([...STATIC_ROUTES, ...catalogRoutes()].slice(skip, skip + take)),
+      Promise.resolve([...STATIC_ROUTES, ...catalogRoutes(), ...researchSitemapRoutes()].slice(skip, skip + take)),
   },
 
   /** Long-form: blog, news, library documents and albums, game guides. */

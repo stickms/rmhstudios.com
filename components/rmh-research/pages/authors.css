@@ -1,0 +1,87 @@
+/* RMH Research — authors page sheet (aut-). Scoped under .rmhr-root; see ../rmh-research.css for the vocabulary.
+   Flow mode first; the pin lives in the gate at the foot. */
+
+.rmhr-root .aut-note { margin-top: 24px; font-size: 14px; }
+.rmhr-root .aut-controls { display: grid; gap: 20px; }
+.rmhr-root .aut-group { display: grid; gap: 10px; }
+.rmhr-root .aut-count { margin-top: 28px; margin-bottom: 12px; }
+.rmhr-root .aut-empty { padding-block: 32px; }
+
+/* the ranking: phone is rank, name, h, r */
+.rmhr-root .aut-head { display: none; }
+.rmhr-root .aut-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto auto; gap: 4px 16px; align-items: center; padding-block: 14px; }
+.rmhr-root .aut-rank { font-size: 14px; color: var(--mute); }
+.rmhr-root .aut-who { display: grid; gap: 4px; min-width: 0; }
+.rmhr-root .aut-name { font-size: 17px; }
+.rmhr-root .aut-name:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .aut-field, .rmhr-root .aut-cell.aut-opt { display: none; }
+.rmhr-root .aut-cell { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 15px; }
+.rmhr-root .aut-r { color: var(--ink); font-size: 17px; }
+@media (min-width: 760px) {
+  .rmhr-root .aut-head, .rmhr-root .aut-row { grid-template-columns: 44px minmax(0, 1fr) 80px 72px 96px 56px 64px; gap: 0 16px; }
+  .rmhr-root .aut-head { display: grid; padding-block: 10px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-bottom: -1px; }
+  .rmhr-root .aut-list { border-top: 0; }
+  .rmhr-root .aut-head > :nth-child(n + 4) { text-align: end; }
+  .rmhr-root .aut-field { display: block; }
+    .rmhr-root .aut-cell, .rmhr-root .aut-cell.aut-opt { display: block; text-align: end; }
+  .rmhr-root .aut-k { position: absolute; width: 1px; height: 1px; overflow: clip; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (max-width: 759px) {
+  .rmhr-root .aut-k { font-size: 11px; }
+}
+
+/* ── author page ── */
+.rmhr-root .aut-since { margin-top: 16px; }
+.rmhr-root .aut-stats { margin-top: 40px; }
+.rmhr-root .aut-stats .stat-v { font-size: clamp(26px, 3.6vw, 46px); }
+.rmhr-root .aut-aside .h2 { font-size: clamp(24px, 2.6vw, 34px); }
+.rmhr-root .aut-more { margin-top: 24px; }
+.rmhr-root a.aut-co-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 20px; align-items: center; }
+.rmhr-root .aut-co-who { display: grid; gap: 4px; min-width: 0; }
+.rmhr-root a.aut-co-row > .meta { grid-column: 1 / -1; }
+@media (min-width: 720px) {
+  .rmhr-root a.aut-co-row { grid-template-columns: minmax(0, 1fr) 80px 140px; }
+  .rmhr-root a.aut-co-row > .meta { grid-column: auto; text-align: end; }
+}
+
+/* the r-core scene: flow mode is the finished figure under all three captions */
+.rmhr-root .aut-in { display: grid; gap: clamp(24px, 3vw, 40px); padding-block: clamp(56px, 8vw, 104px); }
+.rmhr-root .aut-intro { display: grid; gap: 14px; max-width: 76ch; }
+.rmhr-root .aut-cap + .aut-cap { margin-top: 12px; }
+.rmhr-root .aut-figs { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+.rmhr-root .aut-fig { display: grid; gap: 8px; margin: 0; }
+.rmhr-root .aut-figcap { display: flex; justify-content: space-between; align-items: baseline; }
+.rmhr-root .aut-plot { position: relative; height: clamp(110px, 30svh, 300px); border-bottom: 1px solid var(--ink); border-inline-start: 1px solid var(--rule); }
+.rmhr-root .aut-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; }
+.rmhr-root .aut-bar { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; padding-inline: 1px; }
+.rmhr-root .aut-bf { position: relative; display: block; width: 100%; background: var(--mute); height: calc(var(--te) * var(--v) * 100%); }
+.rmhr-root .aut-cf { position: absolute; inset: 0; background: var(--ink); opacity: var(--te); }
+.rmhr-root .aut-sq { position: absolute; inset-inline-start: 0; bottom: 0; width: calc(var(--sw) * 100%); height: calc(var(--sh) * 100%); border: 1px solid var(--ink); opacity: var(--te); }
+.rmhr-root .aut-line { position: absolute; inset-inline: 0; bottom: calc(var(--sh) * 100%); border-top: 1px dashed var(--ink); opacity: var(--te); }
+.rmhr-root .aut-axis { display: flex; justify-content: space-between; gap: 12px; }
+.rmhr-root .aut-prog { display: none; }
+@media (min-width: 760px) {
+  .rmhr-root .aut-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(28px, 4vw, 64px); }
+}
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    @supports (animation-timeline: view()) {
+      .rmhr-root .aut-pin { display: grid; grid-template-rows: minmax(0, 1fr) auto; padding-top: calc(var(--nav-h) + 24px); padding-bottom: 28px; }
+      .rmhr-root .aut-in { align-content: center; padding-block: 0; gap: 20px; }
+      .rmhr-root .aut-caps { align-items: start; min-height: 6.5em; }
+      .rmhr-root .aut-cap + .aut-cap { margin-top: 0; }
+      .rmhr-root .aut-intro .h2 { font-size: clamp(24px, 3.2vw, 40px); }
+      .rmhr-root .aut-plot { height: clamp(96px, 28svh, 300px); }
+      .rmhr-root .aut-prog { display: grid; gap: 16px; }
+      .rmhr-root .aut-prog .scene-dots { justify-content: center; }
+      @media (max-width: 759px) {
+        .rmhr-root .aut-figs { gap: 14px; }
+        .rmhr-root .aut-plot { height: clamp(70px, 15svh, 140px); }
+        .rmhr-root .aut-axis { display: none; }
+        .rmhr-root .aut-intro { gap: 8px; }
+        .rmhr-root .aut-caps { min-height: 9em; }
+      }
+    }
+  }
+}
