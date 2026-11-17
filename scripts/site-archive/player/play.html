@@ -34,7 +34,8 @@
           msg.textContent = 'This version is not in the archive.';
           return;
         }
-        var source = new URL('versions/' + v + '.warc.gz', location.href).href;
+        // The recording format number matches RECORDINGS in scripts/site-archive/publish.ts.
+        var source = new URL('versions/v2/' + v + '.warc.gz', location.href).href;
         // A version listed on /site-history before CI has recorded it: say so rather than show the player's error.
         fetch(source, { method: 'HEAD' })
           .then(function (r) {

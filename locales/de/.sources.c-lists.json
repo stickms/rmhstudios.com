@@ -1,0 +1,11 @@
+{
+  "create": "Create",
+  "delete-list": "Delete list",
+  "error-add-to-list-sheet": "Couldn't update the list",
+  "load-more": "Load more",
+  "loading": "Loading…",
+  "name-placeholder": "List name",
+  "new-list": "New list",
+  "pin": "Pin",
+  "pinned": "Pinned"
+}

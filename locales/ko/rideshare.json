@@ -12,6 +12,7 @@
   "class-hint": "차량에 가장 잘 맞는 옵션을 선택하세요.",
   "community-rideshare": "커뮤니티 라이드셰어",
   "done-label": "완료",
+  "drive-page-title": "RMH와 함께 운전하기",
   "drive-with-rmh": "RMH와 함께 운전하기",
   "driver-application": "기사 신청",
   "driver-cta-body": "차량에 대해 알려주시고 빠른 검토를 위해 면허를 업로드하세요. 승인되는 즉시 면허를 삭제합니다 — 회원님의 문서는 절대 보관되지 않습니다.",
@@ -67,6 +68,7 @@
   "request-a-ride": "운행 요청",
   "request-ride-button": "{{rideClass}} 요청",
   "ride-accepted": "운행이 수락되었습니다 — 승차 위치로 이동하세요!",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "모든 이동을 위한 운행 — 일상부터 특별한 순간까지.",
   "ride-history-heading": "운행 내역",
   "schedule-for-later": "나중으로 예약",
@@ -92,7 +94,5 @@
   "vehicle-details": "차량 정보",
   "where-to-heading": "어디로 가시나요?",
   "which-class-drive": "어떤 등급으로 운전하시겠습니까?",
-  "your-active-trip": "진행 중인 이동",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "진행 중인 이동"
 }

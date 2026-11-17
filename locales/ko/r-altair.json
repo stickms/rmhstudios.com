@@ -20,9 +20,11 @@
   "join-by-code-hint": "6자리 방 코드를 입력하여 친구의 로비에 참가하세요.",
   "joining-lobby": "로비 {{lobbyId}}에 참가 중...",
   "kicked-from-lobby": "로비에서 추방되었습니다",
+  "loading": "불러오는 중…",
   "loading-game": "게임 로딩 중...",
   "lobby-disbanded": "로비가 해체되었습니다",
   "lobby-host": "호스트: {{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "메타 상점",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "멀티플레이어",
@@ -34,7 +36,5 @@
   "settings": "설정",
   "visibility-label": "공개 설정",
   "visibility-private": "비공개",
-  "visibility-public": "공개",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "공개"
 }

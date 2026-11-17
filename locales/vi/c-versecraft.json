@@ -37,6 +37,7 @@
   "poem-journal": "Nhật ký thơ",
   "poem-placeholder": "Bài thơ của bạn sẽ hiện ra ở đây...",
   "poems-written": "Số bài thơ đã viết",
+  "quit": "Quit",
   "relationships": "Mối quan hệ",
   "route-complete": "Hoàn thành tuyến",
   "save": "Lưu",
@@ -45,7 +46,7 @@
   "select-poem-prompt": "Chọn một bài thơ để xem chi tiết.",
   "select-words-prompt_other": "Chọn {{count}} từ để sáng tác bài thơ của bạn",
   "settings": "Cài đặt",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Đăng nhập để lưu truyện của bạn lên đám mây và phát lại ở bất cứ đâu.",
   "sign-in-to-save": "Đăng nhập để lưu tiến trình của bạn lên đám mây",
   "skip": "Bỏ qua",
   "slot-auto": "Tự động",
@@ -76,6 +77,5 @@
   "tutorial-step2-tip": "Điểm thưởng áp dụng cho điểm số của mọi nhân vật, vì vậy chúng luôn đáng để theo đuổi.",
   "tutorial-step2-title": "Kỹ Thuật Thưởng",
   "words-selected-count": "Đã chọn {{selected}}/{{total}}",
-  "your-journey": "Hành Trình Của Bạn",
-  "quit": "Quit"
+  "your-journey": "Hành Trình Của Bạn"
 }

@@ -20,9 +20,11 @@
   "join-by-code-hint": "Nhập mã phòng 6 ký tự để tham gia phòng của bạn bè.",
   "joining-lobby": "Đang tham gia phòng {{lobbyId}}...",
   "kicked-from-lobby": "Bạn đã bị đá khỏi phòng",
+  "loading": "Đang tải…",
   "loading-game": "ĐANG TẢI TRÒ CHƠI...",
   "lobby-disbanded": "Phòng đã bị giải tán",
   "lobby-host": "Chủ phòng: {{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "Cửa hàng Meta",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "Nhiều người chơi",
@@ -34,7 +36,5 @@
   "settings": "Cài đặt",
   "visibility-label": "Hiển thị",
   "visibility-private": "Riêng tư",
-  "visibility-public": "Công khai",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "Công khai"
 }

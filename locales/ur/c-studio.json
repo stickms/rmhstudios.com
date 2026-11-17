@@ -31,13 +31,14 @@
   "packs-tab": "پیکس",
   "pad-number": "پیڈ {{number}}",
   "pan": "پین",
-  "pattern": "Pattern",
+  "pattern": "پیٹرن",
   "play-pause": "چلائیں/روکیں",
   "press-a-key": "ایک کی دبائیں...",
   "record": "ریکارڈ",
   "record-arm": "ریکارڈ آرم",
   "reset-all": "سبھی ری سیٹ کریں",
   "sample-browser": "نمونہ براؤزر",
+  "sample-source": "Sample source",
   "samples-count_one": "{{count}} نمونہ",
   "samples-count_other": "{{count}} نمونے",
   "samples-heading": "نمونے",
@@ -66,6 +67,5 @@
   "view-arrangement": "ترتیب",
   "view-mixer": "مکسر",
   "view-pattern": "پیٹرن",
-  "view-piano-roll": "پیانو رول",
-  "sample-source": "Sample source"
+  "view-piano-roll": "پیانو رول"
 }

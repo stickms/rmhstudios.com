@@ -2,11 +2,11 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
-  "operators": "Operators",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Search saved",
-  "saved-searches": "Saved searches",
+  "operator-copied": "{{operator}} kopyalandı",
   "operator-copy": "{{operator}} kopyala",
-  "operator-copied": "{{operator}} kopyalandı"
+  "operators": "Operatörler",
+  "remove": "Kaldır",
+  "save": "Kaydet",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
 }

@@ -12,6 +12,7 @@
   "class-hint": "वह विकल्प चुनें जो आपके वाहन से सबसे अच्छा मेल खाता हो।",
   "community-rideshare": "समुदाय राइडशेयर",
   "done-label": "हो गया",
+  "drive-page-title": "RMH के साथ ड्राइव करें",
   "drive-with-rmh": "RMH के साथ ड्राइव करें",
   "driver-application": "ड्राइवर आवेदन",
   "driver-cta-body": "हमें अपने वाहन के बारे में बताएँ और त्वरित समीक्षा के लिए अपना लाइसेंस अपलोड करें। मंज़ूरी मिलते ही हम आपका लाइसेंस हटा देते हैं — आपके दस्तावेज़ कभी फ़ाइल में नहीं रखे जाते।",
@@ -67,6 +68,7 @@
   "request-a-ride": "राइड का अनुरोध करें",
   "request-ride-button": "{{rideClass}} का अनुरोध करें",
   "ride-accepted": "राइड स्वीकार की गई — पिकअप की ओर बढ़ें!",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "हर यात्रा के लिए एक राइड — रोज़मर्रा से लेकर खास तक।",
   "ride-history-heading": "राइड इतिहास",
   "schedule-for-later": "बाद के लिए शेड्यूल करें",
@@ -92,7 +94,5 @@
   "vehicle-details": "वाहन विवरण",
   "where-to-heading": "कहाँ जाना है?",
   "which-class-drive": "आप कौन सी क्लास ड्राइव करेंगे?",
-  "your-active-trip": "आपकी सक्रिय यात्रा",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "आपकी सक्रिय यात्रा"
 }

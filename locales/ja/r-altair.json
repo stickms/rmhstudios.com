@@ -20,9 +20,11 @@
   "join-by-code-hint": "6文字のルームコードを入力して、友達のロビーに参加します。",
   "joining-lobby": "ロビー {{lobbyId}} に参加中...",
   "kicked-from-lobby": "ロビーからキックされました",
+  "loading": "読み込み中…",
   "loading-game": "ゲーム読み込み中...",
   "lobby-disbanded": "ロビーは解散しました",
   "lobby-host": "ホスト: {{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "メタショップ",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "マルチプレイヤー",
@@ -34,7 +36,5 @@
   "settings": "設定",
   "visibility-label": "公開設定",
   "visibility-private": "非公開",
-  "visibility-public": "公開",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "公開"
 }

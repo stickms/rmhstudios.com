@@ -55,6 +55,8 @@
   "neural-lobby": "NEURAL LOBBY",
   "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "new-best-no": "No",
+  "new-best-yes": "Yes",
   "no-scores-yet": "No scores yet. Be the first!",
   "not-ranked": "You haven't placed yet. Play a round!",
   "numbers-placeholder": "e.g. 385",

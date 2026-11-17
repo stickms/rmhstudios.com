@@ -31,13 +31,14 @@
   "packs-tab": "पैक्स",
   "pad-number": "पैड {{number}}",
   "pan": "पैन",
-  "pattern": "Pattern",
+  "pattern": "पैटर्न",
   "play-pause": "प्ले/पॉज़",
   "press-a-key": "एक कुंजी दबाएं...",
   "record": "रिकॉर्ड",
   "record-arm": "रिकॉर्ड आर्म",
   "reset-all": "सभी रीसेट करें",
   "sample-browser": "सैंपल ब्राउज़र",
+  "sample-source": "Sample source",
   "samples-count_one": "{{count}} सैंपल",
   "samples-count_other": "{{count}} सैंपल",
   "samples-heading": "नमूने",
@@ -66,6 +67,5 @@
   "view-arrangement": "व्यवस्था",
   "view-mixer": "मिक्सर",
   "view-pattern": "पैटर्न",
-  "view-piano-roll": "पियानो रोल",
-  "sample-source": "Sample source"
+  "view-piano-roll": "पियानो रोल"
 }

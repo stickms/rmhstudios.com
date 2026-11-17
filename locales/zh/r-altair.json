@@ -20,9 +20,11 @@
   "join-by-code-hint": "输入6位房间代码加入好友的大厅。",
   "joining-lobby": "正在加入大厅 {{lobbyId}}...",
   "kicked-from-lobby": "你已被踢出大厅。",
+  "loading": "加载中…",
   "loading-game": "加载游戏...",
   "lobby-disbanded": "大厅已解散。",
   "lobby-host": "主持人：{{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "Meta 商店",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "多人游戏",
@@ -34,7 +36,5 @@
   "settings": "设置",
   "visibility-label": "可见性",
   "visibility-private": "私人",
-  "visibility-public": "公共的",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "公共的"
 }

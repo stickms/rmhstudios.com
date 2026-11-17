@@ -31,9 +31,10 @@
   "leaderboard": "Tabla de clasificación",
   "leaderboard-empty": "Nadie ha jugado aún hoy.",
   "lets-go": "Vamos",
+  "lights-out-title": "Lights Out",
   "loading": "Cargando...",
-  "moves-count_one": "{{count}} movimiento",
   "moves-count_many": "{{count}} moves",
+  "moves-count_one": "{{count}} movimiento",
   "moves-count_other": "{{count}} movimientos",
   "moves-label": "Movimientos",
   "new-puzzle-tomorrow": "Un nuevo puzzle se desbloquea mañana — el mismo para todos en el mundo.",
@@ -45,8 +46,8 @@
   "past-puzzles-btn": "Puzzles anteriores",
   "personal-best": "¡Marca personal!",
   "play-btn": "Jugar",
-  "players-in-activity_one": "{{count}} jugador en actividad",
   "players-in-activity_many": "{{count}} players in activity",
+  "players-in-activity_one": "{{count}} jugador en actividad",
   "players-in-activity_other": "{{count}} jugadores en actividad",
   "playing": "jugando...",
   "race-lobby": "Sala de carrera",
@@ -56,6 +57,7 @@
   "race-results-subtitle": "Ronda {{round}} · {{shape}} · {{mode}}{{optimal}}",
   "racers": "Corredores",
   "ranking": "Clasificación",
+  "rating-tiers": "Rating tiers",
   "ready": "Listo",
   "ready-up": "Prepárate",
   "restart-btn": "Reiniciar",
@@ -91,7 +93,5 @@
   "waiting-for-host": "Esperando a que el anfitrión inicie la siguiente ronda...",
   "waiting-for-players": "Esperando jugadores",
   "welcome-user": "¡Bienvenido, {{name}}!",
-  "your-moves": "Tus movimientos",
-  "lights-out-title": "Lights Out",
-  "rating-tiers": "Rating tiers"
+  "your-moves": "Tus movimientos"
 }

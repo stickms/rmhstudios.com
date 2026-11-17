@@ -55,9 +55,11 @@
   "music": "Musique",
   "neural-collapse": "EFFONDREMENT NEURONAL",
   "neural-lobby": "LOBBY NEURONAL",
-  "neural-operatives_one": "OPÉRATIFS NEURONAUX ({{count}}/{{max}})",
   "neural-operatives_many": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "neural-operatives_one": "OPÉRATIFS NEURONAUX ({{count}}/{{max}})",
   "neural-operatives_other": "OPÉRATIFS NEURONAUX ({{count}}/{{max}})",
+  "new-best-no": "Non",
+  "new-best-yes": "Oui",
   "no-scores-yet": "Pas encore de scores. Soyez le premier !",
   "not-ranked": "Vous n'avez pas encore de classement. Jouez une partie !",
   "numbers-placeholder": "ex. 385",
@@ -65,6 +67,7 @@
   "peak-intensity": "Intensité maximale",
   "play-again": "REJOUER",
   "preparing-sequence": "Préparation de la séquence...",
+  "quit": "Quit",
   "rank": "Classement",
   "ready": "PRÊT !",
   "ready-status": "PRÊT",
@@ -100,8 +103,5 @@
   "waiting-for-players": "EN ATTENTE DES JOUEURS{{notReady}}",
   "waiting-status": "EN ATTENTE",
   "you": "VOUS",
-  "you-badge": "VOUS",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "VOUS"
 }

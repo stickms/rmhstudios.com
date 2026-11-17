@@ -37,6 +37,7 @@
   "poem-journal": "Şiir Günlüğü",
   "poem-placeholder": "Şiiriniz burada görünecek...",
   "poems-written": "Yazılan Şiirler",
+  "quit": "Quit",
   "relationships": "İlişkiler",
   "route-complete": "Rota Tamamlandı",
   "save": "Kaydet",
@@ -46,7 +47,7 @@
   "select-words-prompt_one": "Şiirinizi oluşturmak için {{count}} kelime seçin",
   "select-words-prompt_other": "Şiirinizi oluşturmak için {{count}} kelime seçin",
   "settings": "Ayarlar",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Hikayelerinizi buluta kaydetmek ve her yerde yeniden oynatmak için giriş yapın.",
   "sign-in-to-save": "İlerlemenizi buluta kaydetmek için giriş yapın",
   "skip": "Atla",
   "slot-auto": "Otomatik",
@@ -77,6 +78,5 @@
   "tutorial-step2-tip": "Bonuslar her karakterin puanına uygulanır, bu yüzden her zaman peşinde koşmaya değerdir.",
   "tutorial-step2-title": "Bonus Teknikler",
   "words-selected-count": "{{selected}}/{{total}} seçildi",
-  "your-journey": "Yolculuğunuz",
-  "quit": "Quit"
+  "your-journey": "Yolculuğunuz"
 }

@@ -1,42 +1,68 @@
 /* eslint-disable no-console -- This CLI reports translation progress to the terminal. */
 /**
  * Generate non-English catalogs from the English source of truth using DeepSeek.
+ * Run by `.github/workflows/i18n-translate.yml` (see docs/translations.md).
  *
- * Idempotent: only (re)translates keys that are missing or whose English source
- * changed, recording the English it translated from in
- * locales/<lng>/.sources.<ns>.json so human edits survive. A brand-new locale
- * (no directory yet) gets every namespace created from scratch.
+ * Every string is paid for at most once:
+ *   - Idempotent: only keys that are missing, or whose English changed since
+ *     they were translated, are sent. locales/<lng>/.sources.<ns>.json records
+ *     the English each translation was made from, so human edits survive.
+ *   - Paid work is reused: I18N_REUSE_DIR names catalogs from earlier runs that
+ *     have not merged yet (the pending translation PR's branch). Any of their
+ *     translations made from today's English is adopted instead of re-sent.
+ *   - Identical English is sent once per locale: a string that already has a
+ *     current translation under any key is copied, and one that appears under
+ *     several untranslated keys is sent once and fanned out.
+ *   - Strings without words ("10", "—", "{{a}}/{{b}}") are copied, never sent.
  *
  * Deliberately alias-free (relative imports + its own DeepSeek client) so it
- * runs BOTH locally via tsx AND under plain `node` inside the deploy image
- * (which can't resolve the `@/` path alias). Translations are batched — one
- * request per ~40 keys — to keep a full-site run tractable.
+ * runs under plain tsx without the `@/` path alias. Translations are batched,
+ * one request per ~40 keys.
  *
  * Env:
- *   DEEPSEEK_API_KEY   required
+ *   DEEPSEEK_API_KEY   required unless I18N_DRY_RUN or I18N_REUSE_ONLY
  *   RMHARK_AI_MODEL    model id (default "deepseek-chat")
  *   I18N_BATCH         keys per request (default 40)
- *   I18N_LOCALES       comma-separated locales to run (default: all non-English)
- *   I18N_BASE_DIR      previous English/target catalogs; CI scopes work to merge changes
- *   I18N_REUSE_DIR     catalogs from the pending translation PR; avoids repeat charges
- *   I18N_DRY_RUN       "1" to report planned batches without API calls or writes
- *
- * Usage: pnpm run i18n:translate
+ *   I18N_CONCURRENCY   requests in flight (default 8)
+ *   I18N_LOCALES       comma-separated locales to run (default: every shipped
+ *                      non-English locale). Parked locales (PENDING_LOCALES)
+ *                      are accepted only with I18N_REUSE_ONLY.
+ *   I18N_REUSE_DIR     `locales/` directories holding paid, unmerged
+ *                      translations, separated by ":"; earlier ones win
+ *   I18N_REUSE_ONLY    "1" to adopt reusable translations and stop: no API calls
+ *   I18N_DRY_RUN       "1" to report planned work without API calls or writes
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import OpenAI from 'openai';
-import { LOCALES, NAMESPACES, TRANSLATE_TARGETS, type Locale } from '../lib/i18n/config.ts';
 import {
+  LOCALES,
+  NAMESPACES,
+  PENDING_LOCALES,
+  TRANSLATE_TARGETS,
+  type Locale,
+} from '../lib/i18n/config.ts';
+import {
+  adoptPaidTranslations,
+  applyTranslationMemory,
+  dedupeTodo,
+  localeSource,
   planCatalogTranslations,
+  pluralCategories,
+  settleCatalog,
+  translationMemory,
   validateTranslationBatch,
   type Catalog,
+  type CatalogPlan,
 } from '../lib/i18n/diff.ts';
 
 const ROOT = join(process.cwd(), 'locales');
-const BASE = process.env.I18N_BASE_DIR;
-const REUSE = process.env.I18N_REUSE_DIR;
+const REUSE = (process.env.I18N_REUSE_DIR ?? '')
+  .split(':')
+  .map((d) => d.trim())
+  .filter(Boolean);
 const DRY_RUN = process.env.I18N_DRY_RUN === '1';
+const REUSE_ONLY = process.env.I18N_REUSE_ONLY === '1';
 const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 const BATCH = Math.max(1, Number(process.env.I18N_BATCH || 40));
 // How many batch requests to keep in flight at once. DeepSeek tolerates several
@@ -75,7 +101,8 @@ function systemPrompt(target: string): string {
     `You are a professional UI localizer. Translate the VALUES of the given JSON object into ${target}. ` +
     `Return ONLY a JSON object with EXACTLY the same keys and the translated values — no markdown, no commentary. ` +
     `Preserve every {{placeholder}} verbatim (you may reposition it to fit grammar). ` +
-    `Keep i18next plural-suffixed keys (_one/_other/_zero/_few/_many/_two) unchanged. ` +
+    `Keys ending in _zero, _one, _two, _few, _many or _other are the CLDR plural forms of one message for ${target}; ` +
+    `their English values may be identical. Write each in the form ${target} uses for that plural category, and keep the keys unchanged. ` +
     `Leave brand/product names untranslated: anything starting with "RMH", plus Stripe, API, Discord, AI. ` +
     `Keep leading/trailing symbols, emojis and casing. If a value is already in ${target}, keep it.`
   );
@@ -99,29 +126,47 @@ async function translateBatch(entries: Catalog, target: string): Promise<Catalog
   return validateTranslationBatch(entries, JSON.parse(stripFences(raw)));
 }
 
-function localesToRun(): Locale[] {
-  const env = process.env.I18N_LOCALES?.split(',')
-    .map((s) => s.trim())
+function localesToRun(): string[] {
+  const requested = process.env.I18N_LOCALES?.split(',')
+    .map((l) => l.trim())
     .filter(Boolean);
-  const only = env && env.length ? new Set(env) : null;
-  return LOCALES.filter((l) => l !== 'en' && (!only || only.has(l)));
+  const shipped = LOCALES.filter((l) => l !== 'en') as string[];
+  if (!requested || requested.length === 0) return shipped;
+  const parked = PENDING_LOCALES as readonly string[];
+  for (const l of requested) {
+    if (shipped.includes(l)) continue;
+    if (parked.includes(l) && REUSE_ONLY) continue;
+    throw new Error(
+      parked.includes(l)
+        ? `${l} is parked (PENDING_LOCALES): it can only take reused translations (I18N_REUSE_ONLY=1).`
+        : `${l} is not a locale this site has.`,
+    );
+  }
+  return requested;
 }
 
-/** One (locale, namespace) catalog with work to do, plus its in-memory state. */
-interface Job {
-  locale: Locale;
+/** One (locale, namespace) catalog, planned, plus the bookkeeping to flush it. */
+interface Job extends CatalogPlan {
+  locale: string;
   ns: string;
   targetPath: string;
   sourcesPath: string;
-  source: Catalog;
-  target: Catalog;
-  sources: Catalog;
-  remaining: number; // batches not yet completed; the last one writes the files
+  dirty: boolean;
+  /** The English catalog itself (`source` is it re-shaped for this locale's plurals). */
+  english: Catalog;
+  categories: string[];
+  original: Catalog;
+  existed: boolean;
+  /** A model answer landed in this catalog during this run. */
+  paid: boolean;
+  /** Batches (its own, and owners its followers wait on) not yet finished. */
+  remaining: number;
 }
-/** One batch request belonging to a job. */
+/** One batch request: owner keys of one job, plus the keys copying them. */
 interface Task {
   job: Job;
   keys: string[];
+  followers: { job: Job; key: string; ownerKey: string }[];
 }
 
 /** Run `worker` over `items`, keeping at most `limit` in flight at once. */
@@ -139,86 +184,168 @@ async function pool<T>(
   await Promise.all(runners);
 }
 
+function flush(job: Job) {
+  if (DRY_RUN || !job.dirty) return;
+  if (!settleCatalog(job)) return;
+  write(job.targetPath, job.target);
+  write(job.sourcesPath, job.sources);
+  job.dirty = false;
+}
+
+/** Totals for the log and the GitHub job summary. */
+const totals = { adopted: 0, remembered: 0, deduped: 0, sent: 0, translated: 0, failed: 0 };
+
+function summary(locales: string[]) {
+  const lines = [
+    `| | keys |`,
+    `| --- | ---: |`,
+    `| Reused from unmerged runs | ${totals.adopted} |`,
+    `| Copied from an identical string already translated | ${totals.remembered} |`,
+    `| Copied from an identical string sent in this run | ${totals.deduped} |`,
+    `| Sent to the model | ${totals.sent} |`,
+    `| Translated | ${totals.translated} |`,
+    `| Failed (left for the next run) | ${totals.failed} |`,
+  ];
+  console.log(
+    `[i18n] reused=${totals.adopted} remembered=${totals.remembered} deduped=${totals.deduped} sent=${totals.sent} translated=${totals.translated} failed=${totals.failed}`,
+  );
+  const file = process.env.GITHUB_STEP_SUMMARY;
+  if (file) {
+    appendFileSync(
+      file,
+      `### Translation (${DRY_RUN ? 'dry run, ' : ''}${MODEL}; ${locales.join(', ')})\n\n${lines.join('\n')}\n\n`,
+    );
+  }
+}
+
 async function run() {
-  if (!DRY_RUN && !process.env.DEEPSEEK_API_KEY) {
+  if (!DRY_RUN && !REUSE_ONLY && !process.env.DEEPSEEK_API_KEY) {
     throw new Error('DEEPSEEK_API_KEY is not set — cannot translate.');
   }
-  for (const dir of [BASE, REUSE]) {
-    if (dir && !existsSync(dir)) throw new Error(`Catalog directory does not exist: ${dir}`);
+  for (const dir of REUSE) {
+    if (!existsSync(dir)) throw new Error(`Catalog directory does not exist: ${dir}`);
   }
   const targets = localesToRun();
   console.log(
-    `[i18n] model=${MODEL} batch=${BATCH} concurrency=${CONCURRENCY} locales=${targets.join(',')}`,
+    `[i18n] model=${MODEL} batch=${BATCH} concurrency=${CONCURRENCY} locales=${targets.join(',')}` +
+      (REUSE.length ? ` reuse=${REUSE.length} dir(s)` : '') +
+      (REUSE_ONLY ? ' (reuse only)' : '') +
+      (DRY_RUN ? ' (dry run)' : ''),
   );
 
-  // Plan every batch up front so we can report overall progress and run them
-  // through a fixed-size pool instead of strictly one-at-a-time.
-  const tasks: Task[] = [];
-  let totalKeys = 0;
+  const english = new Map<string, Catalog>();
   for (const ns of NAMESPACES) {
     const source = read(join(ROOT, 'en', `${ns}.json`));
-    if (Object.keys(source).length === 0) continue;
-    const previousSource = BASE ? read(join(BASE, 'en', `${ns}.json`)) : undefined;
+    if (Object.keys(source).length > 0) english.set(ns, source);
+  }
 
-    for (const locale of targets) {
+  // Plan every batch up front, locale by locale: a locale's memory and dedupe
+  // span all of its namespaces.
+  const tasks: Task[] = [];
+  const jobs: Job[] = [];
+  for (const locale of targets) {
+    const categories = pluralCategories(locale);
+    const plans: Job[] = [];
+    for (const [ns, en] of english) {
+      const source = localeSource(en, categories);
       const targetPath = join(ROOT, locale, `${ns}.json`);
       const sourcesPath = join(ROOT, locale, `.sources.${ns}.json`);
       const originalTarget = read(targetPath);
       const originalSources = read(sourcesPath);
-      const { target, sources, todo } = planCatalogTranslations({
-        source,
-        previousSource,
-        target: originalTarget,
-        sources: originalSources,
-        previousTarget: BASE ? read(join(BASE, locale, `${ns}.json`)) : undefined,
-        previousSources: BASE ? read(join(BASE, locale, `.sources.${ns}.json`)) : undefined,
-        pendingTarget: REUSE ? read(join(REUSE, locale, `${ns}.json`)) : undefined,
-        pendingSources: REUSE ? read(join(REUSE, locale, `.sources.${ns}.json`)) : undefined,
-      });
-      // Carry forward paid results even when no new model calls are needed.
-      if (
-        !DRY_RUN &&
-        (JSON.stringify(target) !== JSON.stringify(originalTarget) ||
-          JSON.stringify(sources) !== JSON.stringify(originalSources))
-      ) {
-        write(targetPath, target);
-        write(sourcesPath, sources);
+      const plan = planCatalogTranslations({ source, target: originalTarget, sources: originalSources });
+      for (const dir of REUSE) {
+        totals.adopted += adoptPaidTranslations({
+          source,
+          target: plan.target,
+          sources: plan.sources,
+          paidTarget: read(join(dir, locale, `${ns}.json`)),
+          paidSources: read(join(dir, locale, `.sources.${ns}.json`)),
+        });
       }
-      if (todo.length === 0) continue;
-
+      // Adoption can satisfy keys the plan listed as todo.
+      plan.todo = plan.todo.filter(
+        (key) => !(plan.sources[key] === source[key] && key in plan.target),
+      );
       const job: Job = {
+        ...plan,
+        source,
+        english: en,
+        categories,
+        original: originalTarget,
+        existed: existsSync(targetPath),
+        paid: false,
         locale,
         ns,
         targetPath,
         sourcesPath,
-        source,
-        target,
-        sources,
         remaining: 0,
+        dirty:
+          JSON.stringify(plan.target) !== JSON.stringify(originalTarget) ||
+          JSON.stringify(plan.sources) !== JSON.stringify(originalSources),
       };
-      for (let i = 0; i < todo.length; i += BATCH) {
+      plans.push(job);
+    }
+
+    const memory = translationMemory(plans);
+    const snapshot = (p: Job) => JSON.stringify([p.target, p.sources]);
+    const before = plans.map(snapshot);
+    totals.remembered += applyTranslationMemory(plans, memory);
+    plans.forEach((p, i) => {
+      if (snapshot(p) !== before[i]) p.dirty = true;
+    });
+    jobs.push(...plans);
+    // Free results are written now in a reuse-only run, and with the model's
+    // answers otherwise, so a plural group is settled only once it is whole.
+    if (REUSE_ONLY) {
+      for (const job of plans) flush(job);
+      continue;
+    }
+
+    const followers = dedupeTodo(plans);
+    totals.deduped += followers.length;
+    const waiting = new Map<string, Task['followers']>();
+    for (const f of followers) {
+      const id = `${f.ownerPlan.ns}\u0000${f.ownerKey}`;
+      const list = waiting.get(id) ?? [];
+      list.push({ job: f.plan, key: f.key, ownerKey: f.ownerKey });
+      waiting.set(id, list);
+    }
+    for (const job of plans) {
+      for (let i = 0; i < job.todo.length; i += BATCH) {
+        const keys = job.todo.slice(i, i + BATCH);
+        const task: Task = {
+          job,
+          keys,
+          followers: keys.flatMap((k) => waiting.get(`${job.ns}\u0000${k}`) ?? []),
+        };
         job.remaining++;
-        tasks.push({ job, keys: todo.slice(i, i + BATCH) });
-        totalKeys += Math.min(BATCH, todo.length - i);
+        for (const other of new Set(task.followers.map((f) => f.job))) {
+          if (other !== job) other.remaining++;
+        }
+        tasks.push(task);
+        totals.sent += keys.length;
       }
     }
   }
 
   const totalBatches = tasks.length;
   if (totalBatches === 0) {
-    console.log('[i18n] everything is already up to date — nothing to translate.');
+    console.log('[i18n] nothing to send to the model.');
+    for (const job of jobs) flush(job);
+    summary(targets);
     return;
   }
-  console.log(
-    `[i18n] ${totalBatches} batch(es) · ${totalKeys} key(s) across ${targets.length} locale(s)`,
-  );
-  if (DRY_RUN) return;
+  console.log(`[i18n] ${totalBatches} batch(es) · ${totals.sent} key(s) across ${targets.length} locale(s)`);
+  if (DRY_RUN) {
+    summary(targets);
+    return;
+  }
 
   let doneBatches = 0;
   let doneKeys = 0;
   const startedAt = Date.now();
 
-  await pool(tasks, CONCURRENCY, async ({ job, keys }) => {
+  await pool(tasks, CONCURRENCY, async ({ job, keys, followers }) => {
     const entries: Catalog = {};
     for (const k of keys) entries[k] = job.source[k];
     try {
@@ -230,7 +357,17 @@ async function run() {
         job.target[k] = translated[k];
         job.sources[k] = job.source[k];
       }
+      for (const f of followers) {
+        f.job.target[f.key] = translated[f.ownerKey];
+        f.job.sources[f.key] = f.job.source[f.key];
+        f.job.dirty = true;
+        f.job.paid = true;
+      }
+      job.dirty = true;
+      job.paid = true;
+      totals.translated += keys.length + followers.length;
     } catch (err) {
+      totals.failed += keys.length + followers.length;
       console.warn(`[i18n]   ${job.locale}/${job.ns} batch failed: ${(err as Error).message}`);
     }
 
@@ -241,15 +378,16 @@ async function run() {
     const eta =
       doneBatches > 0 ? Math.round((elapsed / doneBatches) * (totalBatches - doneBatches)) : 0;
     console.log(
-      `[i18n] ${pct}% · ${doneBatches}/${totalBatches} batches · ${doneKeys}/${totalKeys} keys · ETA ~${eta}s · ${job.locale}/${job.ns}`,
+      `[i18n] ${pct}% · ${doneBatches}/${totalBatches} batches · ${doneKeys}/${totals.sent} keys · ETA ~${eta}s · ${job.locale}/${job.ns}`,
     );
 
-    // Last batch for this catalog flushes it to disk.
-    if (--job.remaining === 0) {
-      write(job.targetPath, job.target);
-      write(job.sourcesPath, job.sources);
+    // A catalog is flushed once every batch it waits on has finished.
+    for (const j of new Set([job, ...followers.map((f) => f.job)])) {
+      if (--j.remaining === 0) flush(j);
     }
   });
+  for (const job of jobs) flush(job);
+  summary(targets);
 }
 
 run()

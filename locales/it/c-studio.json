@@ -26,8 +26,8 @@
   "new-pattern": "Nuovo Pattern",
   "no-patterns-yet": "Ancora nessun pattern",
   "no-tracks-yet": "Ancora nessuna traccia",
-  "note-count_one": "{{count}} nota",
   "note-count_many": "{{count}} notes",
+  "note-count_one": "{{count}} nota",
   "note-count_other": "{{count}} note",
   "packs-tab": "Pacchetti",
   "pad-number": "Pad {{number}}",
@@ -39,8 +39,9 @@
   "record-arm": "Armatura Registrazione",
   "reset-all": "Reimposta Tutto",
   "sample-browser": "Browser Campioni",
-  "samples-count_one": "{{count}} campione",
+  "sample-source": "Sample source",
   "samples-count_many": "{{count}} samples",
+  "samples-count_one": "{{count}} campione",
   "samples-count_other": "{{count}} campioni",
   "samples-heading": "Campioni",
   "save-project": "Salva Progetto (Ctrl+S)",
@@ -68,6 +69,5 @@
   "view-arrangement": "Arrangiamento",
   "view-mixer": "Mixer",
   "view-pattern": "Pattern",
-  "view-piano-roll": "Piano Roll",
-  "sample-source": "Sample source"
+  "view-piano-roll": "Piano Roll"
 }

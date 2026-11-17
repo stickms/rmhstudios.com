@@ -17,7 +17,7 @@ some older design docs say otherwise and are flagged as stale below.
 TypeScript strict, Tailwind CSS v4, framer-motion, Zustand + React Query,
 PostgreSQL + Prisma 7, Better Auth (Discord/Google/GitHub + passkeys +
 Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next
-(16 locales, RTL for `ar`/`ur`).
+(9 locales, RTL for `ar`).
 
 ## Start here
 

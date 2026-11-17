@@ -31,6 +31,7 @@
   "leaderboard": "Lider tablosu",
   "leaderboard-empty": "Bugün henüz kimse oynamadı.",
   "lets-go": "Hadi Başlayalım",
+  "lights-out-title": "Lights Out",
   "loading": "Yükleniyor...",
   "moves-count_one": "{{count}} hamle",
   "moves-count_other": "{{count}} hamle",
@@ -54,6 +55,7 @@
   "race-results-subtitle": "Tur {{round}} · {{shape}} · {{mode}}{{optimal}}",
   "racers": "Yarışçılar",
   "ranking": "Sıralama",
+  "rating-tiers": "Rating tiers",
   "ready": "Hazır",
   "ready-up": "Hazırlan",
   "restart-btn": "Yeniden Başlat",
@@ -89,7 +91,5 @@
   "waiting-for-host": "Bir sonraki turun başlaması için ev sahibi bekleniyor...",
   "waiting-for-players": "Oyuncular bekleniyor",
   "welcome-user": "Hoş geldin, {{name}}!",
-  "your-moves": "Hamlelerin",
-  "lights-out-title": "Lights Out",
-  "rating-tiers": "Rating tiers"
+  "your-moves": "Hamlelerin"
 }

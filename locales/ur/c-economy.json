@@ -18,7 +18,8 @@
   "tip-dialog-description": "تعریف ظاہر کرنے کے لیے {{recipient}} کو سکے بھیجیں۔",
   "tip-dialog-title": "ٹپ بھیجیں",
   "tip-error": "ٹپ نہیں بھیجی جا سکی",
+  "tip-invalid": "ٹپ کی یہ رقم قابلِ قبول نہیں ہے۔",
+  "tip-max-hint": "فی ٹپ زیادہ سے زیادہ: {{max}}",
   "tip-sign-in": "براہ کرم ٹپ دینے کے لیے سائن ان کریں۔",
-  "tip-success": "{{recipient}} کو {{amount}} سکے ٹپ کیے گئے!",
-  "tip-max-hint": "فی ٹپ زیادہ سے زیادہ: {{max}}"
+  "tip-success": "{{recipient}} کو {{amount}} سکے ٹپ کیے گئے!"
 }

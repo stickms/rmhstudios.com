@@ -12,6 +12,7 @@
   "class-hint": "请选择最符合您车辆的选项。",
   "community-rideshare": "社区拼车",
   "done-label": "完成",
+  "drive-page-title": "与RMH一起驾驶 🚗",
   "drive-with-rmh": "与RMH一起驾驶 🚗",
   "driver-application": "驾驶员申请",
   "driver-cta-body": "请告诉我们您的车辆信息并上传驾照以便快速审核。审核通过后我们会立即删除您的驾照信息——您的文件绝不会被存档。",
@@ -67,6 +68,7 @@
   "request-a-ride": "请求搭车",
   "request-ride-button": "请求{{rideClass}}",
   "ride-accepted": "已接单——前往上车点！",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "每一次出行，都有适合的座驾——从日常通勤到特别时刻。",
   "ride-history-heading": "骑行历史",
   "schedule-for-later": "稍后安排",
@@ -92,7 +94,5 @@
   "vehicle-details": "车辆详情",
   "where-to-heading": "去哪里？",
   "which-class-drive": "你将驾驶哪辆车？",
-  "your-active-trip": "您正在进行的行程",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "您正在进行的行程"
 }

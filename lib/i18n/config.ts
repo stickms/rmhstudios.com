@@ -1,29 +1,32 @@
 import type { InitOptions } from "i18next";
 
 export const LOCALES = [
-  // The most widely spoken languages, fully translated and maintained.
-  "en", "zh", "ar", "hi", "es", "fr", "pt", "ru",
-  "de", "ja", "ko", "it", "id", "vi", "tr", "ur",
+  // The languages we serve and keep translated (`.github/workflows/i18n-translate.yml`).
+  "en", "zh", "ar", "hi", "es", "fr", "pt", "ru", "ja",
 ] as const;
 export type Locale = (typeof LOCALES)[number];
 
 /**
  * Locale directories that exist under `locales/` but are NOT shipped.
  *
- * These carry real, machine-translated catalogs and cost real pipeline time on
- * every `pnpm i18n:translate`, but nothing serves them: a locale reaches users
- * only through `LOCALES` above. They are listed here rather than left implicit
+ * These carry real, machine-translated catalogs, but nothing serves them and the
+ * translate workflow skips them: a locale reaches users only through `LOCALES`
+ * above. Their catalogs stay on disk so promoting one later only pays for the
+ * keys added since it was parked. de, ko, it, id, tr, ur and vi were shipped
+ * until 2026-11-17 and were parked to cut translation spend. They are listed here rather than left implicit
  * so the catalog test can hold `locales/` to `LOCALES ∪ PENDING_LOCALES` and a
  * seventeenth orphan can't appear unnoticed.
  *
  * Promoting one is a product decision, not a mechanical one — it commits us to
  * maintaining its catalog and needs a `LOCALE_LABELS` / `TRANSLATE_TARGETS` /
- * `LOCALE_TO_LANGUAGE_NAME` entry (the types below enforce all three). Note
- * that `fa` is RTL and would also need adding to `RTL_LOCALES`.
+ * `LOCALE_TO_LANGUAGE_NAME` entry (the types below enforce all three), a
+ * `LOCALE_NAMESPACE_LOADERS` entry in `lib/i18n/resources.ts`, and
+ * `pnpm i18n:resources` to regenerate its `resources.<locale>.ts`. Note that
+ * `fa` and `ur` are RTL and would also need adding to `RTL_LOCALES`.
  */
 export const PENDING_LOCALES = [
-  "bn", "cs", "el", "fa", "fil", "mr", "ms", "nl",
-  "pa", "pl", "ro", "sv", "ta", "te", "th", "uk",
+  "bn", "cs", "de", "el", "fa", "fil", "id", "it", "ko", "mr", "ms", "nl",
+  "pa", "pl", "ro", "sv", "ta", "te", "th", "tr", "uk", "ur", "vi",
 ] as const;
 
 export const DEFAULT_LOCALE: Locale = "en";
@@ -33,7 +36,7 @@ export const DEFAULT_LOCALE: Locale = "en";
  * so add a locale here (instead of a hardcoded `=== "ar"`) to make the whole
  * app render it RTL.
  */
-export const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(["ar", "ur"]);
+export const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(["ar"]);
 
 /**
  * The namespace registry. A `locales/en/<ns>.json` file that is NOT listed here
@@ -130,14 +133,7 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   fr: "Français",
   pt: "Português",
   ru: "Русский",
-  de: "Deutsch",
   ja: "日本語",
-  ko: "한국어",
-  it: "Italiano",
-  id: "Bahasa Indonesia",
-  vi: "Tiếng Việt",
-  tr: "Türkçe",
-  ur: "اردو",
 };
 
 /** Human-readable target names passed to the AI translate helper. */
@@ -149,14 +145,7 @@ export const TRANSLATE_TARGETS: Record<Exclude<Locale, "en">, string> = {
   fr: "French",
   pt: "Portuguese (Brazilian)",
   ru: "Russian",
-  de: "German",
   ja: "Japanese",
-  ko: "Korean",
-  it: "Italian",
-  id: "Indonesian",
-  vi: "Vietnamese",
-  tr: "Turkish",
-  ur: "Urdu",
 };
 
 /**
@@ -174,14 +163,7 @@ export const LOCALE_TO_LANGUAGE_NAME: Record<Locale, string> = {
   fr: "French",
   pt: "Portuguese",
   ru: "Russian",
-  de: "German",
   ja: "Japanese",
-  ko: "Korean",
-  it: "Italian",
-  id: "Indonesian",
-  vi: "Vietnamese",
-  tr: "Turkish",
-  ur: "Urdu",
 };
 
 export function isLocale(value: unknown): value is Locale {

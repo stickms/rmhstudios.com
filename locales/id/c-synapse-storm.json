@@ -56,6 +56,8 @@
   "neural-collapse": "KERUNTUHAN NEURAL",
   "neural-lobby": "LOBI NEURAL",
   "neural-operatives_other": "OPERATIF NEURAL ({{count}}/{{max}})",
+  "new-best-no": "Tidak",
+  "new-best-yes": "Ya",
   "no-scores-yet": "Belum ada skor. Jadilah yang pertama!",
   "not-ranked": "Kamu belum ditempatkan. Mainkan satu ronde!",
   "numbers-placeholder": "mis. 385",
@@ -63,6 +65,7 @@
   "peak-intensity": "Intensitas Puncak",
   "play-again": "MAIN LAGI",
   "preparing-sequence": "Menyiapkan urutan...",
+  "quit": "Quit",
   "rank": "Peringkat",
   "ready": "SIAP!",
   "ready-status": "SIAP",
@@ -98,8 +101,5 @@
   "waiting-for-players": "MENUNGGU PEMAIN{{notReady}}",
   "waiting-status": "MENUNGGU",
   "you": "ANDA",
-  "you-badge": "ANDA",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "ANDA"
 }

@@ -1143,14 +1143,13 @@ plugin.
 
 ## i18n pipeline
 
-- 16
+- 9
   locales,
   67
   namespaces
   (`lib/i18n/config.ts`);
   RTL:
-  `ar`,
-  `ur`.
+  `ar`.
   `LOCALES`
   and
   `NAMESPACES`
@@ -1516,14 +1515,32 @@ plugin.
   into
   `locales/*/…json`)
   →
-  `pnpm i18n:translate`
-  (machine-translate)
+  commit
   →
-  `pnpm i18n:resources`
-  (regenerate
+  run
+  the
+  **i18n-translate**
+  workflow
+  from
+  the
+  Actions
+  tab
+  (machine-translates
+  only
+  missing
+  or
+  stale
+  keys,
+  regenerates
   the
   resource
-  modules)
+  modules
+  and
+  opens
+  a
+  pull
+  request;
+  `docs/translations.md`)
   →
   `pnpm i18n:coverage`
   (verify;

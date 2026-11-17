@@ -2,11 +2,11 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
-  "operators": "Operators",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Search saved",
-  "saved-searches": "Saved searches",
+  "operator-copied": "{{operator}} をコピーしました",
   "operator-copy": "{{operator}} をコピー",
-  "operator-copied": "{{operator}} をコピーしました"
+  "operators": "オペレーター",
+  "remove": "削除",
+  "save": "保存",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
 }

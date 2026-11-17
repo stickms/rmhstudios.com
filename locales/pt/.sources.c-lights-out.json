@@ -27,7 +27,7 @@
   "leaderboard-empty": "No one has played yet today.",
   "lets-go": "Let's Go",
   "loading": "Loading...",
-  "moves-count_one": "{{count}} moves",
+  "moves-count_one": "{{count}} move",
   "moves-count_other": "{{count}} moves",
   "moves-label": "Moves",
   "new-puzzle-tomorrow": "A new puzzle unlocks tomorrow — same for everyone worldwide.",

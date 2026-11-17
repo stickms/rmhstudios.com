@@ -22,13 +22,6 @@ describe('i18n config', () => {
     );
     expect(
       dirFor(
-        'ur',
-      ),
-    ).toBe(
-      'rtl',
-    );
-    expect(
-      dirFor(
         'en',
       ),
     ).toBe(

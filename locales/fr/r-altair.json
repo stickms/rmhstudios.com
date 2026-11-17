@@ -20,9 +20,11 @@
   "join-by-code-hint": "Entrez un code de salon à 6 caractères pour rejoindre le salon d'un ami.",
   "joining-lobby": "Connexion au salon {{lobbyId}}...",
   "kicked-from-lobby": "Vous avez été expulsé du salon",
+  "loading": "Chargement…",
   "loading-game": "CHARGEMENT DE LA PARTIE...",
   "lobby-disbanded": "Le salon a été dissous",
   "lobby-host": "Hôte : {{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "Meta Shop",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "Multijoueur",
@@ -34,7 +36,5 @@
   "settings": "Paramètres",
   "visibility-label": "Visibilité",
   "visibility-private": "Privé",
-  "visibility-public": "Public",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "Public"
 }

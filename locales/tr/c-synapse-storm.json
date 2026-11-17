@@ -57,6 +57,8 @@
   "neural-lobby": "NEURAL LOBİSİ",
   "neural-operatives_one": "NEURAL OPERATİFLERİ ({{count}}/{{max}})",
   "neural-operatives_other": "NEURAL OPERATİFLERİ ({{count}}/{{max}})",
+  "new-best-no": "Hayır",
+  "new-best-yes": "Evet",
   "no-scores-yet": "Henüz skor yok. İlk sen ol!",
   "not-ranked": "Henüz sıralamaya girmedi. Bir tur oyna!",
   "numbers-placeholder": "örn. 385",
@@ -64,6 +66,7 @@
   "peak-intensity": "Zirve Yoğunluğu",
   "play-again": "TEKRAR OYNA",
   "preparing-sequence": "Sıra hazırlanıyor...",
+  "quit": "Quit",
   "rank": "Sıralama",
   "ready": "HAZIR!",
   "ready-status": "HAZIR",
@@ -99,8 +102,5 @@
   "waiting-for-players": "OYUNCULAR BEKLENİYOR{{notReady}}",
   "waiting-status": "BEKLİYOR",
   "you": "SEN",
-  "you-badge": "SEN",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "SEN"
 }

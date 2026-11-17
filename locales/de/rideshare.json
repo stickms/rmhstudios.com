@@ -12,6 +12,7 @@
   "class-hint": "Wähle die Option, die am besten zu deinem Fahrzeug passt.",
   "community-rideshare": "Community-Fahrgemeinschaft",
   "done-label": "Fertig",
+  "drive-page-title": "Mit RMH fahren",
   "drive-with-rmh": "Mit RMH fahren",
   "driver-application": "Fahrerbewerbung",
   "driver-cta-body": "Erzähl uns von deinem Fahrzeug und lade deinen Führerschein für eine schnelle Prüfung hoch. Wir löschen deinen Führerschein, sobald er genehmigt ist – deine Dokumente werden nie gespeichert.",
@@ -67,6 +68,7 @@
   "request-a-ride": "Fahrt anfordern",
   "request-ride-button": "{{rideClass}} anfordern",
   "ride-accepted": "Fahrt angenommen – fahre zur Abholung!",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "Eine Fahrt für jeden Anlass – vom Alltag bis zum Besonderen.",
   "ride-history-heading": "Fahrtverlauf",
   "schedule-for-later": "Für später planen",
@@ -92,7 +94,5 @@
   "vehicle-details": "Fahrzeugdetails",
   "where-to-heading": "Wohin?",
   "which-class-drive": "Welche Klasse wirst du fahren?",
-  "your-active-trip": "Deine aktive Fahrt",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "Deine aktive Fahrt"
 }

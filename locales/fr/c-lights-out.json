@@ -31,9 +31,10 @@
   "leaderboard": "Classement",
   "leaderboard-empty": "Personne n'a encore joué aujourd'hui.",
   "lets-go": "C'est parti",
+  "lights-out-title": "Lights Out",
   "loading": "Chargement...",
-  "moves-count_one": "{{count}} coup",
   "moves-count_many": "{{count}} moves",
+  "moves-count_one": "{{count}} coup",
   "moves-count_other": "{{count}} coups",
   "moves-label": "Coups",
   "new-puzzle-tomorrow": "Un nouveau puzzle sera débloqué demain — identique pour tout le monde dans le monde.",
@@ -45,8 +46,8 @@
   "past-puzzles-btn": "Puzzles passés",
   "personal-best": "Record personnel !",
   "play-btn": "Jouer",
-  "players-in-activity_one": "{{count}} joueur dans l'activité",
   "players-in-activity_many": "{{count}} players in activity",
+  "players-in-activity_one": "{{count}} joueur dans l'activité",
   "players-in-activity_other": "{{count}} joueurs dans l'activité",
   "playing": "en cours...",
   "race-lobby": "Salon de course",
@@ -56,6 +57,7 @@
   "race-results-subtitle": "Tour {{round}} · {{shape}} · {{mode}}{{optimal}}",
   "racers": "Coureurs",
   "ranking": "Classement",
+  "rating-tiers": "Rating tiers",
   "ready": "Prêt",
   "ready-up": "Se préparer",
   "restart-btn": "Recommencer",
@@ -91,7 +93,5 @@
   "waiting-for-host": "En attente que l'hôte démarre le prochain tour...",
   "waiting-for-players": "En attente des joueurs",
   "welcome-user": "Bienvenue, {{name}} !",
-  "your-moves": "Vos coups",
-  "lights-out-title": "Lights Out",
-  "rating-tiers": "Rating tiers"
+  "your-moves": "Vos coups"
 }

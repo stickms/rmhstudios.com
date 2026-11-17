@@ -174,11 +174,11 @@ built
 with
 Bazel,
 i18next
-(16
+(9
 locales,
 RTL
 for
-`ar`/`ur`).
+`ar`).
 Node
 ≥24.18,
 pnpm
@@ -197,12 +197,12 @@ workspace.
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                                                                                                                                                                                                                                                                     | `lib/CLAUDE.md`                                  |
 | `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                                                                                                                                                                                                                                                                                          | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                                                                                                                                                                                                                                | `lib/CLAUDE.md`                                  |
-| `locales/`     | 16 shipped locales × the registered namespaces (count: `docs/_generated/facts.json`); `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                                                                                                                                                                                                                         | `lib/CLAUDE.md` §i18n                            |
+| `locales/`     | 9 shipped locales × the registered namespaces (count: `docs/_generated/facts.json`); `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                                                                                                                                                                                                                          | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                                                                                                                                                                                                                                                              | —                                                |
 | `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                                                                                                                                                                                                                                                               | —                                                |
 | `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                                                                                                                                                                                                                                                            | `docs/README.md`                                 |
 | `deploy/`      | Apache vhosts, blue/green hotswap, DB backups, Terraform (DNS), runbooks.                                                                                                                                                                                                                                                                                                                                          | [`docs/architecture.md`](docs/architecture.md)   |
-| `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 16 languages.                                                                                                                                                                                                                                                                                             | [`docs/README.md`](docs/README.md)               |
+| `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 9 languages.                                                                                                                                                                                                                                                                                              | [`docs/README.md`](docs/README.md)               |
 | `testing/`     | RMHBox phase tests (the mission-critical remainder) + the unwired browser smoke. Most other suites are colocated under `lib/`; discovery is a glob, nothing to register.                                                                                                                                                                                                                                           | [`docs/testing.md`](docs/testing.md)             |
 | `cli/`         | `rmhcode` CLI (wraps Claude Code; publishes User Builds).                                                                                                                                                                                                                                                                                                                                                          | —                                                |
 
@@ -3463,6 +3463,11 @@ smoke),
 (independent
 reusable-stage
 maintenance),
+`i18n-translate.yml`
+(manual
+machine
+translation;
+`docs/translations.md`),
 and
 the
 build/deploy

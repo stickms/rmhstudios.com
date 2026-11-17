@@ -128,7 +128,7 @@ exclude_patterns = [
 
 """Translations.
 
-The site ships in 16 locales (``lib/i18n/config.ts`` is the authoritative list);
+The site ships in 9 locales (``lib/i18n/config.ts`` is the authoritative list);
 the docs use the same set. Catalogs live in ``docs/locale/<lang>/LC_MESSAGES/``
 as one ``.po`` per document — ``gettext_compact = False`` — so a page can be
 translated without touching any other page, and an untranslated string simply

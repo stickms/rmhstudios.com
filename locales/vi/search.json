@@ -2,11 +2,11 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
-  "operators": "Operators",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Search saved",
-  "saved-searches": "Saved searches",
+  "operator-copied": "Đã sao chép {{operator}}",
   "operator-copy": "Sao chép {{operator}}",
-  "operator-copied": "Đã sao chép {{operator}}"
+  "operators": "Nhân viên tác chiến",
+  "remove": "Loại bỏ",
+  "save": "Lưu",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
 }

@@ -1,12 +1,12 @@
 {
   "amount": "Amount (coins)",
-  "approved": "Approved",
+  "approved": "승인됨",
   "balance": "Coin balance",
-  "cost": "Cost",
+  "cost": "비용",
   "earnings": "Creator earnings",
   "earnings-desc": "Coins you earned from tips, memberships and sales can be redeemed for subscription credit, merch, or a payout.",
   "fulfilled": "Fulfilled",
-  "history": "Requests",
+  "history": "요청",
   "lifetime": "Lifetime earned",
   "merch": "Merch",
   "merch-ph": "What you’d like + size",
@@ -16,14 +16,14 @@
   "payout": "Payout",
   "payout-note": "Payouts require a verified creator account and admin review (min {{n}} coins).",
   "payout-ph": "Payout account reference",
-  "pending": "Pending",
+  "pending": "대기 중",
   "redeem": "Redeem coins",
   "redeem-failed": "Could not submit request",
   "redeem-submitted": "Redemption requested — an admin will review it",
   "redeemable": "Redeemable",
-  "rejected": "Declined",
+  "rejected": "거절됨",
   "request": "Request redemption",
   "sub-credit": "Sub credit",
   "sub-summary": "{{months}}mo {{tier}}",
-  "tier": "Tier"
+  "tier": "등급"
 }

@@ -30,13 +30,14 @@
   "packs-tab": "パック",
   "pad-number": "パッド {{number}}",
   "pan": "パン",
-  "pattern": "Pattern",
+  "pattern": "パターン",
   "play-pause": "再生/一時停止",
   "press-a-key": "キーを押してください...",
   "record": "録音",
   "record-arm": "録音アーム",
   "reset-all": "すべてリセット",
   "sample-browser": "サンプルブラウザ",
+  "sample-source": "Sample source",
   "samples-count_other": "{{count}} サンプル",
   "samples-heading": "サンプル",
   "save-project": "プロジェクトを保存 (Ctrl+S)",
@@ -64,6 +65,5 @@
   "view-arrangement": "アレンジメント",
   "view-mixer": "ミキサー",
   "view-pattern": "パターン",
-  "view-piano-roll": "ピアノロール",
-  "sample-source": "Sample source"
+  "view-piano-roll": "ピアノロール"
 }
