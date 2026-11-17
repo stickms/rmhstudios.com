@@ -273,9 +273,18 @@ const BUDGETS = {
   // the first build's +146 KB down to this. Measured on a plain `vite build`: entry about 699,983 B on main ->
   // 707,866 B; critical path 930,099 B raw and 244,941 B brotli. Each line keeps the feature's bytes plus about
   // 1 KB of headroom (0.3 KB brotli), as the account-consolidation line did, not the ~2% re-anchor.
+  //
+  // Site history (2026-11-17): entry RAISED 708,900 -> 710,300 B and critical path RAISED 931,100 -> 932,500 B raw
+  // (OPT-01 line); brotli unchanged. The feature that bought the bytes is /site-history, the timeline of every homepage
+  // redesign and launch: its route record, its section card in lib/og/static-cards.ts (buildMeta runs in the entry),
+  // and its namespace name. The timeline, its 60 entries and its pictures stay off the critical path (their own route
+  // chunk; the screenshots are excluded from the image-variant manifest, which the entry carries, after the first
+  // deploy of the page put 117 manifest rows, about 11 KB, on every page and failed this gate). Measured on a plain
+  // `vite build`: entry 708,500 B on the parent commit -> 709,355 B; critical path about 931,530 B raw and 245,050 B
+  // brotli. Each raised line keeps the feature's bytes plus about 1 KB of headroom, as the two lines above did.
   siteCssBrotli: 32_600,
-  entryRaw: 708_900,
-  criticalPathRaw: 931_100,
+  entryRaw: 710_300,
+  criticalPathRaw: 932_500,
   criticalPathBrotli: 245_300,
 };
 
