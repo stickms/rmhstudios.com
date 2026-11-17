@@ -14,14 +14,14 @@ const SSQ = 'RMH Social Science Quarterly';
 
 export const HUMAN_AUTHORS: readonly Author[] = [
   { id: 'priya-venkataraghavan', name: 'Priya Venkataraghavan', field: 'psychology', role: 'Principal Investigator', lab: 'Decision Lab', since: 2009 },
-  { id: 'henrik-solvang', name: 'Henrik Solvang', field: 'psychology', role: 'Senior Scientist', lab: 'Habit and Attention Lab', since: 2012 },
+  { id: 'sven-lindqvist', name: 'Sven Lindqvist', field: 'psychology', role: 'Senior Scientist', lab: 'Habit and Attention Lab', since: 2012 },
   { id: 'yuna-hashimoto', name: 'Yuna Hashimoto', field: 'psychology', role: 'Postdoctoral Fellow', lab: 'Habit and Attention Lab', since: 2021 },
   { id: 'chidubem-abara', name: 'Chidubem Abara', field: 'psychology', role: 'Staff Scientist', lab: 'Social Cognition Group', since: 2015 },
   { id: 'leila-hadjiev', name: 'Leila Hadjiev', field: 'psychology', role: 'Research Fellow', lab: 'Social Cognition Group', since: 2019 },
   { id: 'tomasz-wierzbicki', name: 'Tomasz Wierzbicki', field: 'social-sciences', role: 'Principal Investigator', lab: 'Platform Economics Group', since: 2008 },
   { id: 'ximena-calderon', name: 'Ximena Calderon', field: 'social-sciences', role: 'Senior Scientist', lab: 'Platform Economics Group', since: 2013 },
-  { id: 'seun-adebayo', name: 'Seun Adebayo', field: 'social-sciences', role: 'Staff Scientist', lab: 'Market Design Lab', since: 2016 },
-  { id: 'dalia-rahmani', name: 'Dalia Rahmani', field: 'social-sciences', role: 'Research Fellow', lab: 'Market Design Lab', since: 2020 },
+  { id: 'sione-taufa', name: 'Sione Taufa', field: 'social-sciences', role: 'Staff Scientist', lab: 'Market Design Lab', since: 2016 },
+  { id: 'noa-ben-ami', name: 'Noa Ben-Ami', field: 'social-sciences', role: 'Research Fellow', lab: 'Market Design Lab', since: 2020 },
   { id: 'nadia-kowalczyk', name: 'Nadia Kowalczyk', field: 'social-sciences', role: 'Staff Scientist', lab: 'Labour and Welfare Group', since: 2018 },
 ];
 
@@ -30,7 +30,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'daily-streaks-and-habit-formation',
     title: 'Daily Streaks and the Formation of Habit: A Longitudinal Field Study',
-    authors: ['henrik-solvang', 'priya-venkataraghavan'],
+    authors: ['sven-lindqvist', 'priya-venkataraghavan'],
     year: 2012,
     field: 'psychology',
     venue: RCH,
@@ -66,7 +66,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'attention-residue-in-feed-scrolling',
     title: 'Attention Residue After Interrupted Feed Scrolling',
-    authors: ['henrik-solvang'],
+    authors: ['sven-lindqvist'],
     year: 2015,
     field: 'psychology',
     venue: RCH,
@@ -102,7 +102,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'streak-loss-and-abandonment',
     title: 'Streak Loss and Abandonment: Who Returns After a Reset',
-    authors: ['henrik-solvang', 'chidubem-abara'],
+    authors: ['sven-lindqvist', 'chidubem-abara'],
     year: 2018,
     field: 'psychology',
     venue: RCH,
@@ -126,7 +126,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'present-bias-in-subscription-renewal',
     title: 'Present Bias in Subscription Renewal Decisions',
-    authors: ['priya-venkataraghavan', 'henrik-solvang'],
+    authors: ['priya-venkataraghavan', 'sven-lindqvist'],
     year: 2020,
     field: 'psychology',
     venue: JBS,
@@ -144,7 +144,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'streak-freezes-as-commitment-devices',
     title: 'Streak Freezes as Commitment Devices',
-    authors: ['yuna-hashimoto', 'henrik-solvang'],
+    authors: ['yuna-hashimoto', 'sven-lindqvist'],
     year: 2021,
     field: 'psychology',
     venue: RCH,
@@ -168,7 +168,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'habit-decay-after-feature-removal',
     title: 'Habit Decay After the Removal of a Routine Cue',
-    authors: ['yuna-hashimoto', 'henrik-solvang'],
+    authors: ['yuna-hashimoto', 'sven-lindqvist'],
     year: 2023,
     field: 'psychology',
     venue: RCH,
@@ -267,7 +267,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'creator-payout-schedules-and-retention',
     title: 'Creator Payout Schedules and Retention',
-    authors: ['tomasz-wierzbicki', 'seun-adebayo'],
+    authors: ['tomasz-wierzbicki', 'sione-taufa'],
     year: 2016,
     field: 'social-sciences',
     venue: JMD,
@@ -279,7 +279,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'virtual-currency-inflation-and-sinks',
     title: 'Virtual Currency Inflation and the Role of Sinks',
-    authors: ['tomasz-wierzbicki', 'seun-adebayo'],
+    authors: ['tomasz-wierzbicki', 'sione-taufa'],
     year: 2017,
     field: 'social-sciences',
     venue: ROE,
@@ -315,7 +315,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'mechanism-design-for-creator-revenue-share',
     title: 'Mechanism Design for Creator Revenue Share',
-    authors: ['tomasz-wierzbicki', 'seun-adebayo'],
+    authors: ['tomasz-wierzbicki', 'sione-taufa'],
     year: 2019,
     field: 'social-sciences',
     venue: JMD,
@@ -339,7 +339,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'two-sided-matching-fees-and-liquidity',
     title: 'Two-Sided Matching Fees and Marketplace Liquidity',
-    authors: ['tomasz-wierzbicki', 'dalia-rahmani'],
+    authors: ['tomasz-wierzbicki', 'noa-ben-ami'],
     year: 2021,
     field: 'social-sciences',
     venue: JMD,
@@ -357,7 +357,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'platform-fee-pass-through-in-memberships',
     title: 'Platform Fee Pass-Through in Memberships',
-    authors: ['tomasz-wierzbicki', 'dalia-rahmani'],
+    authors: ['tomasz-wierzbicki', 'noa-ben-ami'],
     year: 2022,
     field: 'social-sciences',
     venue: ROE,
@@ -376,7 +376,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'wage-compression-in-creator-marketplaces',
     title: 'Wage Compression in Creator Marketplaces',
-    authors: ['ximena-calderon', 'dalia-rahmani', 'yuna-hashimoto'],
+    authors: ['ximena-calderon', 'noa-ben-ami', 'yuna-hashimoto'],
     year: 2023,
     field: 'social-sciences',
     venue: SSQ,
@@ -405,7 +405,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'coin-sink-design-and-price-stability',
     title: 'Coin Sink Design and Price Stability',
-    authors: ['tomasz-wierzbicki', 'dalia-rahmani', 'seun-adebayo'],
+    authors: ['tomasz-wierzbicki', 'noa-ben-ami', 'sione-taufa'],
     year: 2024,
     field: 'social-sciences',
     venue: JMD,
@@ -423,7 +423,7 @@ export const HUMAN_PAPERS: readonly Paper[] = [
   {
     id: 'gifting-networks-and-reciprocity-rings',
     title: 'Gifting Networks and Reciprocity Rings',
-    authors: ['tomasz-wierzbicki', 'seun-adebayo'],
+    authors: ['tomasz-wierzbicki', 'sione-taufa'],
     year: 2025,
     field: 'social-sciences',
     venue: ROE,

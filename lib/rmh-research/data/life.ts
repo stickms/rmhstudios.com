@@ -9,18 +9,18 @@ import type { Author, Paper } from '../types';
 export const LIFE_AUTHORS: readonly Author[] = [
   // Biology
   { id: 'ines-carvalho', name: 'Ines Carvalho', field: 'biology', role: 'Principal Investigator', lab: 'Evolutionary Dynamics Lab', since: 2010 },
-  { id: 'kofi-mensah-adu', name: 'Kofi Mensah-Adu', field: 'biology', role: 'Senior Scientist', lab: 'Evolutionary Dynamics Lab', since: 2014 },
-  { id: 'priya-venkataraman', name: 'Priya Venkataraman', field: 'biology', role: 'Staff Scientist', lab: 'Microbial Systems Lab', since: 2012 },
+  { id: 'rhys-llewellyn', name: 'Rhys Llewellyn', field: 'biology', role: 'Senior Scientist', lab: 'Evolutionary Dynamics Lab', since: 2014 },
+  { id: 'isolde-brandt', name: 'Isolde Brandt', field: 'biology', role: 'Staff Scientist', lab: 'Microbial Systems Lab', since: 2012 },
   { id: 'anselm-rydberg', name: 'Anselm Rydberg', field: 'biology', role: 'Research Fellow', lab: 'Microbial Systems Lab', since: 2019 },
   { id: 'wanjiru-kamau', name: 'Wanjiru Kamau', field: 'biology', role: 'Postdoctoral Fellow', lab: 'Microbial Systems Lab', since: 2022 },
   // Medicine
   { id: 'rafael-ortuno', name: 'Rafael Ortuño', field: 'medicine', role: 'Principal Investigator', lab: 'Cohort Epidemiology Lab', since: 2009 },
   { id: 'sunita-bhattacharya', name: 'Sunita Bhattacharya', field: 'medicine', role: 'Senior Scientist', lab: 'Cohort Epidemiology Lab', since: 2011 },
   { id: 'leif-haugen', name: 'Leif Haugen', field: 'medicine', role: 'Staff Scientist', lab: 'Translational Immunology Lab', since: 2015 },
-  { id: 'nadia-karimova', name: 'Nadia Karimova', field: 'medicine', role: 'Research Fellow', lab: 'Translational Immunology Lab', since: 2020 },
+  { id: 'marisol-quispe', name: 'Marisol Quispe', field: 'medicine', role: 'Research Fellow', lab: 'Translational Immunology Lab', since: 2020 },
   // Neuroscience
-  { id: 'tomasz-wisniewski', name: 'Tomasz Wisniewski', field: 'neuroscience', role: 'Principal Investigator', lab: 'Attention & Learning Lab', since: 2010 },
-  { id: 'amara-okonkwo-eze', name: 'Amara Okonkwo-Eze', field: 'neuroscience', role: 'Senior Scientist', lab: 'Attention & Learning Lab', since: 2013 },
+  { id: 'gideon-tshabalala', name: 'Gideon Tshabalala', field: 'neuroscience', role: 'Principal Investigator', lab: 'Attention & Learning Lab', since: 2010 },
+  { id: 'thandiwe-nkosi', name: 'Thandiwe Nkosi', field: 'neuroscience', role: 'Senior Scientist', lab: 'Attention & Learning Lab', since: 2013 },
   { id: 'sora-nakagawa', name: 'Sora Nakagawa', field: 'neuroscience', role: 'Staff Scientist', lab: 'Circuit Dynamics Lab', since: 2016 },
   { id: 'elif-demirtas', name: 'Elif Demirtas', field: 'neuroscience', role: 'Postdoctoral Fellow', lab: 'Circuit Dynamics Lab', since: 2023 },
 ];
@@ -49,7 +49,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'horizontal-gene-transfer-rates-in-biofilms',
     title: 'Horizontal Gene Transfer Rates in Surface-Attached Biofilms',
-    authors: ['priya-venkataraman'],
+    authors: ['isolde-brandt'],
     year: 2012,
     field: 'biology',
     venue: LS,
@@ -61,7 +61,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'mutation-supply-and-adaptation-rate',
     title: 'Mutation Supply and the Rate of Adaptation in Large Asexual Populations',
-    authors: ['ines-carvalho', 'kofi-mensah-adu'],
+    authors: ['ines-carvalho', 'rhys-llewellyn'],
     year: 2013,
     field: 'biology',
     venue: EE,
@@ -73,7 +73,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'quorum-sensing-cheater-invasion',
     title: 'Quorum-Sensing Cheaters Invade Only Below a Critical Cooperator Density',
-    authors: ['priya-venkataraman', 'kofi-mensah-adu'],
+    authors: ['isolde-brandt', 'rhys-llewellyn'],
     year: 2014,
     field: 'biology',
     venue: EE,
@@ -97,7 +97,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'phage-resistance-tradeoffs-in-chemostats',
     title: 'Phage Resistance Trade-offs Shape Coexistence in Continuous Culture',
-    authors: ['kofi-mensah-adu', 'priya-venkataraman'],
+    authors: ['rhys-llewellyn', 'isolde-brandt'],
     year: 2016,
     field: 'biology',
     venue: EE,
@@ -109,7 +109,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'priority-effects-in-gut-community-assembly',
     title: 'Priority Effects in the Assembly of a Defined Gut Microbial Community',
-    authors: ['priya-venkataraman'],
+    authors: ['isolde-brandt'],
     year: 2017,
     field: 'biology',
     venue: LS,
@@ -121,7 +121,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'plasmid-persistence-without-selection',
     title: 'Plasmid Persistence in the Absence of Positive Selection',
-    authors: ['kofi-mensah-adu'],
+    authors: ['rhys-llewellyn'],
     year: 2018,
     field: 'biology',
     venue: EE,
@@ -145,7 +145,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'persister-lineage-tracing-single-cell',
     title: 'Single-Cell Lineage Tracing of Antibiotic Persisters',
-    authors: ['anselm-rydberg', 'priya-venkataraman'],
+    authors: ['anselm-rydberg', 'isolde-brandt'],
     year: 2020,
     field: 'biology',
     venue: LS,
@@ -157,7 +157,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'cheater-dynamics-in-structured-biofilms',
     title: 'Cheater Dynamics in Spatially Structured Biofilms with Matrix Production',
-    authors: ['wanjiru-kamau', 'priya-venkataraman'],
+    authors: ['wanjiru-kamau', 'isolde-brandt'],
     year: 2022,
     field: 'biology',
     venue: EE,
@@ -169,7 +169,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'landscape-inference-deep-mutational-scanning',
     title: 'Inferring Fitness Landscapes from Deep Mutational Scanning with Latent-State Models',
-    authors: ['ines-carvalho', 'anselm-rydberg', 'kofi-mensah-adu'],
+    authors: ['ines-carvalho', 'anselm-rydberg', 'rhys-llewellyn'],
     year: 2023,
     field: 'biology',
     venue: LS,
@@ -181,7 +181,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'predicting-resistance-evolution-from-landscapes',
     title: 'Predicting the Course of Resistance Evolution from Measured Landscapes',
-    authors: ['kofi-mensah-adu', 'wanjiru-kamau'],
+    authors: ['rhys-llewellyn', 'wanjiru-kamau'],
     year: 2025,
     field: 'biology',
     venue: EE,
@@ -200,7 +200,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'microbiome-resilience-after-perturbation',
     title: 'Trajectory Geometry and Resilience of a Gut Community After Perturbation',
-    authors: ['priya-venkataraman', 'wanjiru-kamau'],
+    authors: ['isolde-brandt', 'wanjiru-kamau'],
     year: 2026,
     field: 'biology',
     venue: LS,
@@ -346,7 +346,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'single-cell-profiling-vaccine-responses',
     title: 'Single-Cell Profiling of B-Cell Responses to Repeated Vaccination',
-    authors: ['nadia-karimova', 'leif-haugen'],
+    authors: ['marisol-quispe', 'leif-haugen'],
     year: 2021,
     field: 'medicine',
     venue: IR,
@@ -378,7 +378,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'durable-immune-memory-after-infection',
     title: 'Durable Immune Memory After Infection: A Three-Year Follow-up of Antigen-Specific T Cells',
-    authors: ['nadia-karimova', 'leif-haugen', 'wanjiru-kamau'],
+    authors: ['marisol-quispe', 'leif-haugen', 'wanjiru-kamau'],
     year: 2024,
     field: 'medicine',
     venue: IR,
@@ -395,7 +395,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'evening-play-sessions-and-sleep-timing',
     title: 'Late-Evening Play Sessions and Sleep Timing in Adolescents: A Registry-Linked Cohort',
-    authors: ['rafael-ortuno', 'amara-okonkwo-eze'],
+    authors: ['rafael-ortuno', 'thandiwe-nkosi'],
     year: 2025,
     field: 'medicine',
     venue: CR,
@@ -418,7 +418,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'immune-sleep-coupling-vaccine-response',
     title: 'Sleep Architecture and Antibody Kinetics After Vaccination: A Prospective Mechanistic Study',
-    authors: ['nadia-karimova', 'leif-haugen'],
+    authors: ['marisol-quispe', 'leif-haugen'],
     year: 2026,
     field: 'medicine',
     venue: IR,
@@ -438,7 +438,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'gamma-synchrony-and-attentional-selection',
     title: 'Gamma-Band Synchrony and Attentional Selection in Visual Cortex',
-    authors: ['tomasz-wisniewski'],
+    authors: ['gideon-tshabalala'],
     year: 2011,
     field: 'neuroscience',
     venue: NS,
@@ -450,7 +450,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'pupil-linked-arousal-and-perceptual-thresholds',
     title: 'Pupil-Linked Arousal Shifts Perceptual Thresholds in a Detection Task',
-    authors: ['tomasz-wisniewski'],
+    authors: ['gideon-tshabalala'],
     year: 2012,
     field: 'neuroscience',
     venue: CN,
@@ -462,7 +462,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'reward-prediction-error-and-skill-acquisition',
     title: 'Reward Prediction Error Signals During Motor Skill Acquisition',
-    authors: ['amara-okonkwo-eze', 'tomasz-wisniewski'],
+    authors: ['thandiwe-nkosi', 'gideon-tshabalala'],
     year: 2013,
     field: 'neuroscience',
     venue: NS,
@@ -474,7 +474,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'prefrontal-oscillations-under-working-memory-load',
     title: 'Prefrontal Oscillations Under Increasing Working-Memory Load',
-    authors: ['tomasz-wisniewski', 'amara-okonkwo-eze'],
+    authors: ['gideon-tshabalala', 'thandiwe-nkosi'],
     year: 2014,
     field: 'neuroscience',
     venue: CN,
@@ -486,7 +486,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'sleep-consolidation-of-motor-sequences',
     title: 'Sleep-Dependent Consolidation of Motor Sequences: A Behavioural and EEG Study',
-    authors: ['amara-okonkwo-eze'],
+    authors: ['thandiwe-nkosi'],
     year: 2015,
     field: 'neuroscience',
     venue: NS,
@@ -510,7 +510,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'music-training-and-auditory-attention',
     title: 'Music Training and the Selection of Auditory Streams in Noise',
-    authors: ['amara-okonkwo-eze', 'tomasz-wisniewski'],
+    authors: ['thandiwe-nkosi', 'gideon-tshabalala'],
     year: 2017,
     field: 'neuroscience',
     venue: CN,
@@ -534,7 +534,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'attentional-capture-during-feed-scrolling-eeg',
     title: 'Attentional Capture and Disengagement During Feed Scrolling: An EEG Study',
-    authors: ['tomasz-wisniewski', 'amara-okonkwo-eze'],
+    authors: ['gideon-tshabalala', 'thandiwe-nkosi'],
     year: 2019,
     field: 'neuroscience',
     venue: CN,
@@ -575,7 +575,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'cross-modal-prediction-errors-rhythm-game-learning',
     title: 'Cross-Modal Prediction Errors During Learning of a Rhythm Game',
-    authors: ['elif-demirtas', 'amara-okonkwo-eze'],
+    authors: ['elif-demirtas', 'thandiwe-nkosi'],
     year: 2023,
     field: 'neuroscience',
     venue: CN,
@@ -587,7 +587,7 @@ export const LIFE_PAPERS: readonly Paper[] = [
   {
     id: 'sustained-attention-lapses-in-long-play',
     title: 'Sustained-Attention Lapses Across Long Play Sessions: Pupil and EEG Markers',
-    authors: ['elif-demirtas', 'tomasz-wisniewski'],
+    authors: ['elif-demirtas', 'gideon-tshabalala'],
     year: 2025,
     field: 'neuroscience',
     venue: NS,

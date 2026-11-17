@@ -3,7 +3,7 @@
  * engineering. Fictional authors, papers and venues (see ../types.ts).
  *
  * Shapes worth knowing, because the r-index is meant to separate them:
- *  - Tomasz Wieczorek publishes a long self-citing chain of systems papers:
+ *  - Bayar Tsogtbaatar publishes a long self-citing chain of systems papers:
  *    a high h-index, an r-index of 1.
  *  - Haruka Mizuno has three papers, each cited twice, both times from other
  *    fields: a modest h-index and a higher r-index.
@@ -19,7 +19,7 @@ export const FORMAL_AUTHORS: readonly Author[] = [
   { id: 'haruka-mizuno', name: 'Haruka Mizuno', field: 'mathematics', role: 'Research Fellow', lab: 'Analysis and Dynamics Group', since: 2018 },
   { id: 'pavel-zelenko', name: 'Pavel Zelenko', field: 'mathematics', role: 'Postdoctoral Fellow', lab: 'Analysis and Dynamics Group', since: 2020 },
   // Computer science
-  { id: 'tomasz-wieczorek', name: 'Tomasz Wieczorek', field: 'computer-science', role: 'Principal Investigator', lab: 'Distributed Systems Lab', since: 2009 },
+  { id: 'bayar-tsogtbaatar', name: 'Bayar Tsogtbaatar', field: 'computer-science', role: 'Principal Investigator', lab: 'Distributed Systems Lab', since: 2009 },
   { id: 'amara-nwosu', name: 'Amara Nwosu', field: 'computer-science', role: 'Senior Scientist', lab: 'Learning Systems Lab', since: 2015 },
   { id: 'rohan-deshpande', name: 'Rohan Deshpande', field: 'computer-science', role: 'Staff Scientist', lab: 'Distributed Systems Lab', since: 2016 },
   { id: 'lucia-fontaine', name: 'Lucia Fontaine', field: 'computer-science', role: 'Research Fellow', lab: 'Security and Privacy Lab', since: 2020 },
@@ -216,7 +216,7 @@ export const FORMAL_PAPERS: readonly Paper[] = [
   {
     id: 'consistent-hashing-bounded-load-sessions',
     title: 'Consistent Hashing with Bounded Load for Session Stores',
-    authors: ['tomasz-wieczorek'],
+    authors: ['bayar-tsogtbaatar'],
     year: 2011,
     field: 'computer-science',
     venue: PRS,
@@ -228,7 +228,7 @@ export const FORMAL_PAPERS: readonly Paper[] = [
   {
     id: 'quorum-reconfiguration-without-pauses',
     title: 'Quorum Reconfiguration without Stop-the-World Pauses',
-    authors: ['tomasz-wieczorek'],
+    authors: ['bayar-tsogtbaatar'],
     year: 2012,
     field: 'computer-science',
     venue: PRS,
@@ -240,7 +240,7 @@ export const FORMAL_PAPERS: readonly Paper[] = [
   {
     id: 'leaderless-replication-partial-synchrony',
     title: 'Leaderless Replication under Partial Synchrony',
-    authors: ['tomasz-wieczorek'],
+    authors: ['bayar-tsogtbaatar'],
     year: 2013,
     field: 'computer-science',
     venue: PRS,
@@ -252,7 +252,7 @@ export const FORMAL_PAPERS: readonly Paper[] = [
   {
     id: 'hybrid-logical-clocks-geo-ledgers',
     title: 'Hybrid Logical Clocks for Geo-Replicated Ledgers',
-    authors: ['tomasz-wieczorek'],
+    authors: ['bayar-tsogtbaatar'],
     year: 2014,
     field: 'computer-science',
     venue: PRS,
@@ -264,7 +264,7 @@ export const FORMAL_PAPERS: readonly Paper[] = [
   {
     id: 'tail-latency-request-hedging-bounds',
     title: 'Tail Latency Bounds for Replicated Request Hedging',
-    authors: ['tomasz-wieczorek'],
+    authors: ['bayar-tsogtbaatar'],
     year: 2015,
     field: 'computer-science',
     venue: PRS,
@@ -281,7 +281,7 @@ export const FORMAL_PAPERS: readonly Paper[] = [
   {
     id: 'lsm-trees-write-amplification-budgets',
     title: 'Log-Structured Merge Trees under Write Amplification Budgets',
-    authors: ['tomasz-wieczorek', 'rohan-deshpande'],
+    authors: ['bayar-tsogtbaatar', 'rohan-deshpande'],
     year: 2016,
     field: 'computer-science',
     venue: PRS,
@@ -299,7 +299,7 @@ export const FORMAL_PAPERS: readonly Paper[] = [
   {
     id: 'deterministic-scheduling-sharded-ledgers',
     title: 'Deterministic Transaction Scheduling for Sharded Ledgers',
-    authors: ['tomasz-wieczorek', 'rohan-deshpande'],
+    authors: ['bayar-tsogtbaatar', 'rohan-deshpande'],
     year: 2017,
     field: 'computer-science',
     venue: PRS,

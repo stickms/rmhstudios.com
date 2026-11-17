@@ -6,22 +6,22 @@ import type { Author, Paper } from '../types';
 
 export const PHYSICAL_AUTHORS: readonly Author[] = [
   // Physics
-  { id: 'aarav-venkataraman', name: 'Aarav Venkataraman', field: 'physics', role: 'Principal Investigator', lab: 'Condensed Matter Lab', since: 2009 },
+  { id: 'alasdair-munro', name: 'Alasdair Munro', field: 'physics', role: 'Principal Investigator', lab: 'Condensed Matter Lab', since: 2009 },
   { id: 'ingrid-solheim', name: 'Ingrid Solheim', field: 'physics', role: 'Senior Scientist', lab: 'Condensed Matter Lab', since: 2013 },
   { id: 'kofi-mensah-boateng', name: 'Kofi Mensah-Boateng', field: 'physics', role: 'Staff Scientist', lab: 'Thermal Systems Group', since: 2013 },
   { id: 'mei-ling-zhou', name: 'Mei-Ling Zhou', field: 'physics', role: 'Postdoctoral Fellow', lab: 'Thermal Systems Group', since: 2022 },
   // Chemistry
-  { id: 'oluwaseun-adeyemi', name: 'Oluwaseun Adeyemi', field: 'chemistry', role: 'Principal Investigator', lab: 'Catalysis Lab', since: 2010 },
+  { id: 'folasade-ogunleye', name: 'Folasade Ogunleye', field: 'chemistry', role: 'Principal Investigator', lab: 'Catalysis Lab', since: 2010 },
   { id: 'camila-restrepo', name: 'Camila Restrepo', field: 'chemistry', role: 'Senior Scientist', lab: 'Catalysis Lab', since: 2014 },
   { id: 'dmitri-volkonsky', name: 'Dmitri Volkonsky', field: 'chemistry', role: 'Research Fellow', lab: 'Materials Synthesis Group', since: 2018 },
   { id: 'anahita-farahmand', name: 'Anahita Farahmand', field: 'chemistry', role: 'Postdoctoral Fellow', lab: 'Materials Synthesis Group', since: 2023 },
   // Astronomy
-  { id: 'tomasz-wrobel', name: 'Tomasz Wrobel', field: 'astronomy', role: 'Principal Investigator', lab: 'Deep Field Survey', since: 2008 },
-  { id: 'priya-raghunathan', name: 'Priya Raghunathan', field: 'astronomy', role: 'Senior Scientist', lab: 'Deep Field Survey', since: 2012 },
+  { id: 'tendai-mutasa', name: 'Tendai Mutasa', field: 'astronomy', role: 'Principal Investigator', lab: 'Deep Field Survey', since: 2008 },
+  { id: 'zainab-qureshi', name: 'Zainab Qureshi', field: 'astronomy', role: 'Senior Scientist', lab: 'Deep Field Survey', since: 2012 },
   { id: 'halvard-eik', name: 'Halvard Eik', field: 'astronomy', role: 'Staff Scientist', lab: 'Stellar Dynamics Group', since: 2015 },
   { id: 'nalani-kekoa', name: 'Nalani Kekoa', field: 'astronomy', role: 'Postdoctoral Fellow', lab: 'Stellar Dynamics Group', since: 2024 },
   // Earth
-  { id: 'lucia-ferrante', name: 'Lucia Ferrante', field: 'earth', role: 'Principal Investigator', lab: 'Climate Systems Lab', since: 2011 },
+  { id: 'gianna-moretti', name: 'Gianna Moretti', field: 'earth', role: 'Principal Investigator', lab: 'Climate Systems Lab', since: 2011 },
   { id: 'baraka-mwangi', name: 'Baraka Mwangi', field: 'earth', role: 'Senior Scientist', lab: 'Climate Systems Lab', since: 2015 },
   { id: 'soo-jin-han', name: 'Soo-jin Han', field: 'earth', role: 'Research Fellow', lab: 'Solid Earth Group', since: 2019 },
   { id: 'emre-karadeniz', name: 'Emre Karadeniz', field: 'earth', role: 'Staff Scientist', lab: 'Solid Earth Group', since: 2017 },
@@ -41,7 +41,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'spin-glass-aging-kagome-films',
     title: 'Aging and Memory in Spin-Glass Films on a Kagome Substrate',
-    authors: ['aarav-venkataraman', 'ingrid-solheim'],
+    authors: ['alasdair-munro', 'ingrid-solheim'],
     year: 2011,
     field: 'physics',
     venue: PR,
@@ -53,7 +53,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'edge-mode-localization-disordered-chains',
     title: 'Edge-Mode Localization in Disordered Topological Chains',
-    authors: ['aarav-venkataraman'],
+    authors: ['alasdair-munro'],
     year: 2012,
     field: 'physics',
     venue: PR,
@@ -89,7 +89,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'many-body-localization-driven-lattice',
     title: 'Many-Body Localization Transition in a Driven Lattice',
-    authors: ['aarav-venkataraman', 'ingrid-solheim'],
+    authors: ['alasdair-munro', 'ingrid-solheim'],
     year: 2015,
     field: 'physics',
     venue: PR,
@@ -125,7 +125,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'floquet-prethermalization-lifetimes',
     title: 'Floquet Prethermalization Lifetimes Beyond Linear Response',
-    authors: ['aarav-venkataraman'],
+    authors: ['alasdair-munro'],
     year: 2020,
     field: 'physics',
     venue: PR,
@@ -161,7 +161,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'dissipative-time-crystal-cavity-arrays',
     title: 'Dissipative Time Crystals in Coupled Cavity Arrays',
-    authors: ['ingrid-solheim', 'aarav-venkataraman'],
+    authors: ['ingrid-solheim', 'alasdair-munro'],
     year: 2024,
     field: 'physics',
     venue: PR,
@@ -199,7 +199,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'single-atom-palladium-ceria-co-oxidation',
     title: 'Single-Atom Palladium Sites on Ceria for Low-Temperature CO Oxidation',
-    authors: ['oluwaseun-adeyemi'],
+    authors: ['folasade-ogunleye'],
     year: 2011,
     field: 'chemistry',
     venue: JC,
@@ -211,7 +211,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'ceria-oxygen-spillover-support-reducibility',
     title: 'Support Reducibility and Oxygen Spillover in Ceria Catalysts',
-    authors: ['oluwaseun-adeyemi'],
+    authors: ['folasade-ogunleye'],
     year: 2012,
     field: 'chemistry',
     venue: JC,
@@ -235,7 +235,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'alloy-adsorption-energy-descriptors',
     title: 'Machine-Learned Descriptors for Alloy Surface Adsorption Energies',
-    authors: ['oluwaseun-adeyemi', 'camila-restrepo'],
+    authors: ['folasade-ogunleye', 'camila-restrepo'],
     year: 2015,
     field: 'chemistry',
     venue: JC,
@@ -283,7 +283,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'hydrogen-spillover-doped-oxides',
     title: 'Hydrogen Spillover Kinetics on Platinum-Doped Oxides',
-    authors: ['oluwaseun-adeyemi', 'camila-restrepo'],
+    authors: ['folasade-ogunleye', 'camila-restrepo'],
     year: 2020,
     field: 'chemistry',
     venue: JC,
@@ -357,7 +357,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'deep-field-survey-photometric-catalogue',
     title: 'The Deep Field Survey: Design and First Photometric Catalogue',
-    authors: ['tomasz-wrobel'],
+    authors: ['tendai-mutasa'],
     year: 2012,
     field: 'astronomy',
     venue: SS,
@@ -369,7 +369,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'photometric-redshifts-faint-galaxies',
     title: 'Photometric Redshifts for Faint Galaxies in the Deep Field',
-    authors: ['tomasz-wrobel'],
+    authors: ['tendai-mutasa'],
     year: 2013,
     field: 'astronomy',
     venue: AJ,
@@ -381,7 +381,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'faint-end-luminosity-function-z2',
     title: 'The Faint-End Slope of the Galaxy Luminosity Function at z ~ 2',
-    authors: ['tomasz-wrobel', 'priya-raghunathan'],
+    authors: ['tendai-mutasa', 'zainab-qureshi'],
     year: 2014,
     field: 'astronomy',
     venue: AJ,
@@ -393,7 +393,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'morphological-evolution-star-forming-galaxies',
     title: 'Morphological Evolution of Star-Forming Galaxies Across Cosmic Time',
-    authors: ['tomasz-wrobel', 'priya-raghunathan'],
+    authors: ['tendai-mutasa', 'zainab-qureshi'],
     year: 2016,
     field: 'astronomy',
     venue: AJ,
@@ -417,7 +417,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'photometric-redshift-spectroscopic-priors',
     title: 'Photometric Redshift Calibration with Spectroscopic Priors',
-    authors: ['tomasz-wrobel'],
+    authors: ['tendai-mutasa'],
     year: 2017,
     field: 'astronomy',
     venue: AJ,
@@ -429,7 +429,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'dust-attenuation-cosmic-noon',
     title: 'Dust Attenuation Curves at Cosmic Noon',
-    authors: ['tomasz-wrobel', 'priya-raghunathan'],
+    authors: ['tendai-mutasa', 'zainab-qureshi'],
     year: 2018,
     field: 'astronomy',
     venue: AJ,
@@ -441,7 +441,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'deep-field-survey-second-release',
     title: 'Second Data Release of the Deep Field Survey',
-    authors: ['tomasz-wrobel'],
+    authors: ['tendai-mutasa'],
     year: 2019,
     field: 'astronomy',
     venue: SS,
@@ -465,7 +465,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'hierarchical-sed-fitting-priors',
     title: 'Spectral Energy Distribution Fitting with Hierarchical Priors',
-    authors: ['priya-raghunathan'],
+    authors: ['zainab-qureshi'],
     year: 2020,
     field: 'astronomy',
     venue: AJ,
@@ -477,7 +477,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'stellar-mass-function-evolution',
     title: 'Stellar Mass Function Evolution from the Second Release',
-    authors: ['tomasz-wrobel', 'priya-raghunathan'],
+    authors: ['tendai-mutasa', 'zainab-qureshi'],
     year: 2021,
     field: 'astronomy',
     venue: AJ,
@@ -489,7 +489,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'thermal-drift-infrared-detector-mosaics',
     title: 'Thermal Drift in Large-Format Infrared Detector Mosaics',
-    authors: ['priya-raghunathan'],
+    authors: ['zainab-qureshi'],
     year: 2022,
     field: 'astronomy',
     venue: SS,
@@ -515,7 +515,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'downscaling-convective-rainfall-terrain',
     title: 'Statistical Downscaling of Convective Rainfall over Complex Terrain',
-    authors: ['lucia-ferrante'],
+    authors: ['gianna-moretti'],
     year: 2011,
     field: 'earth',
     venue: JES,
@@ -527,7 +527,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'soil-moisture-memory-heatwave-persistence',
     title: 'Soil Moisture Memory and Heatwave Persistence',
-    authors: ['lucia-ferrante'],
+    authors: ['gianna-moretti'],
     year: 2013,
     field: 'earth',
     venue: JES,
@@ -551,7 +551,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'wet-bulb-extremes-subtropical-cities',
     title: 'Wet-Bulb Temperature Extremes in Humid Subtropical Cities',
-    authors: ['lucia-ferrante', 'baraka-mwangi'],
+    authors: ['gianna-moretti', 'baraka-mwangi'],
     year: 2016,
     field: 'earth',
     venue: JES,
@@ -611,7 +611,7 @@ export const PHYSICAL_PAPERS: readonly Paper[] = [
   {
     id: 'compound-heat-drought-reanalysis',
     title: 'Compound Heat and Drought Events in Reanalysis Ensembles',
-    authors: ['lucia-ferrante', 'soo-jin-han'],
+    authors: ['gianna-moretti', 'soo-jin-han'],
     year: 2021,
     field: 'earth',
     venue: JES,
