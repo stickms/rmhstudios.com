@@ -42,20 +42,20 @@ export function escapeHtml(value: string): string {
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]]/g;
 
 /** Escape a line, then turn bare URLs into links (matched on the raw text, so no double escape). */
-function linkify(line: string): string {
+export function linkify(line: string, color = '#111'): string {
   let out = '';
   let last = 0;
   for (const match of line.matchAll(URL_RE)) {
     const url = match[0];
     const at = match.index ?? 0;
     out += escapeHtml(line.slice(last, at));
-    out += `<a href="${escapeHtml(url)}" style="color:#111;text-decoration:underline">${escapeHtml(url)}</a>`;
+    out += `<a href="${escapeHtml(url)}" style="color:${color};text-decoration:underline">${escapeHtml(url)}</a>`;
     last = at + url.length;
   }
   return out + escapeHtml(line.slice(last));
 }
 
-function personalise(text: string, name: string): string {
+export function personalise(text: string, name: string): string {
   return text.replace(/\{\{\s*name\s*\}\}/g, name);
 }
 
@@ -70,7 +70,7 @@ export function renderCampaignEmail(input: RenderInput): RenderedEmail {
       (p) =>
         `<p style="margin:0 0 16px;line-height:1.6;font-size:15px">${p
           .split('\n')
-          .map(linkify)
+          .map((line) => linkify(line))
           .join('<br>')}</p>`,
     )
     .join('');

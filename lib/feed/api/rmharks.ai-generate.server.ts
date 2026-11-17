@@ -30,9 +30,19 @@ import {
   generateAnnouncementBody,
   isRmharkAIConfigured,
 } from '@/lib/rmhark-ai/generate.server';
+import { draftEmailBody, draftEmailSubject } from '@/lib/email/ai.server';
+import { campaignCategorySchema, MAX_BODY, MAX_SUBJECT } from '@/lib/email/campaign-schema';
 
 // Cap the draft we echo into the prompt (the model output is capped separately).
 const draftField = z.string().max(1000).optional();
+
+// The admin email composer: an email is longer than a post, so its draft
+// fields take the composer's own limits.
+const emailDraft = {
+  subject: z.string().max(MAX_SUBJECT).optional(),
+  body: z.string().max(MAX_BODY).optional(),
+  category: campaignCategorySchema,
+};
 
 const bodySchema = z.union([
   z.object({
@@ -55,6 +65,8 @@ const bodySchema = z.union([
     title: draftField,
     body: draftField,
   }),
+  z.object({ mode: z.literal('email-subject'), ...emailDraft }),
+  z.object({ mode: z.literal('email-body'), ...emailDraft }),
 ]);
 
 /**
@@ -103,6 +115,14 @@ export const route = apiRoute('/api/rmharks/ai-generate', {
     let content: string;
     if (data.mode === 'post') {
       content = await generatePost({ draft: data.draft });
+    } else if (data.mode === 'email-subject' || data.mode === 'email-body') {
+      // Admin email drafting (/admin/email) is admin-only, like announcements.
+      if (!(session.user as { isAdmin?: boolean }).isAdmin) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const input = { subject: data.subject, body: data.body, category: data.category };
+      content =
+        data.mode === 'email-subject' ? await draftEmailSubject(input) : await draftEmailBody(input);
     } else if (data.mode === 'announcement-title' || data.mode === 'announcement-body') {
       // Announcement drafting is an admin-only tool (announcements
       // themselves are admin-gated), so don't let non-admins spend calls.

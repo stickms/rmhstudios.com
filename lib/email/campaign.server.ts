@@ -54,7 +54,16 @@ import {
   resolveEmailPrefs,
   type CampaignCategory,
 } from '@/lib/email/preferences';
-import type { Audience, CreateCampaignBody, TestSendBody } from '@/lib/email/campaign-schema';
+import type {
+  Audience,
+  CreateCampaignBody,
+  EmailDesign,
+  RenderBody,
+  TestSendBody,
+} from '@/lib/email/campaign-schema';
+import { renderDesignedEmail } from '@/lib/email/design-render';
+import { sanitizeDesign } from '@/lib/email/design';
+import { BRAND } from '@/lib/email/brand';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { userChipSelect } from '@/lib/user-display';
 
@@ -124,14 +133,26 @@ export function campaignContentHash(
   subject: string,
   body: string,
   imageUrls: readonly string[] = [],
+  design: EmailDesign | null = null,
 ): string {
   const norm = (v: string) => v.replace(/\r\n?/g, '\n').trim();
-  // Pictures are part of the message; with none, the hash is what it was before
-  // pictures existed, so a resend of an older message still deduplicates.
+  // Pictures and the design are part of the message; with neither, the hash is
+  // what it was before they existed, so a resend of an older message still
+  // deduplicates.
   const pictures = imageUrls.length > 0 ? `\n${imageUrls.join('\n')}` : '';
+  const layout = design ? `\n${JSON.stringify(design)}` : '';
   return createHash('sha256')
-    .update(`${category}\n${norm(subject)}\n${norm(body)}${pictures}`)
+    .update(`${category}\n${norm(subject)}\n${norm(body)}${pictures}${layout}`)
     .digest('hex');
+}
+
+/** A design held to the link and picture rules for this message, or null. */
+function checkedDesign(
+  design: EmailDesign | null | undefined,
+  body: string,
+  imageUrls: readonly string[],
+): EmailDesign | null {
+  return design ? sanitizeDesign(design, { body, imageCount: imageUrls.length }) : null;
 }
 
 /** Site image URLs as an email client needs them: absolute. */
@@ -189,11 +210,18 @@ export async function previewAudience(
     subject?: string | undefined;
     body?: string | undefined;
     imageUrls?: readonly string[] | undefined;
+    design?: EmailDesign | null | undefined;
   },
 ): Promise<AudiencePreview> {
   const hash =
     draft?.subject?.trim() && draft.body?.trim()
-      ? campaignContentHash(category, draft.subject, draft.body, draft.imageUrls ?? [])
+      ? campaignContentHash(
+          category,
+          draft.subject,
+          draft.body,
+          draft.imageUrls ?? [],
+          checkedDesign(draft.design, draft.body, draft.imageUrls ?? []),
+        )
       : null;
   const f = await funnel(audience, category, hash, new Date());
   const [matched, afterPref, afterDup, eligible, sample] = await Promise.all([
@@ -239,19 +267,17 @@ function unsubscribeUrl(userId: string, category: CampaignCategory): string | nu
 }
 
 function messageFor(
-  campaign: { subject: string; body: string; category: CampaignCategory; imageUrls?: readonly string[] },
-  user: RecipientRow & { email: string },
+  campaign: {
+    subject: string;
+    body: string;
+    category: CampaignCategory;
+    imageUrls?: readonly string[];
+    design?: EmailDesign | null;
+  },
+  user: Pick<RecipientRow, 'id' | 'name' | 'handle' | 'profile'> & { email: string },
 ) {
   const unsub = unsubscribeUrl(user.id, campaign.category);
-  const rendered = renderCampaignEmail({
-    subject: campaign.subject,
-    body: campaign.body,
-    name: displayName(user),
-    reason: reasonFor(campaign.category),
-    unsubscribeUrl: unsub,
-    settingsUrl: SETTINGS_URL,
-    imageUrls: absoluteImages(campaign.imageUrls ?? []),
-  });
+  const rendered = renderFor(campaign, displayName(user), unsub);
   return {
     to: user.email,
     subject: rendered.subject,
@@ -266,6 +292,50 @@ function messageFor(
         }
       : {}),
   };
+}
+
+/** The subject, HTML and text of one message, in its plain or designed layout. */
+function renderFor(
+  campaign: {
+    subject: string;
+    body: string;
+    category: CampaignCategory;
+    imageUrls?: readonly string[];
+    design?: EmailDesign | null;
+  },
+  name: string | null,
+  unsubscribe: string | null,
+) {
+  const shared = {
+    subject: campaign.subject,
+    name,
+    reason: reasonFor(campaign.category),
+    unsubscribeUrl: unsubscribe,
+    settingsUrl: SETTINGS_URL,
+    imageUrls: absoluteImages(campaign.imageUrls ?? []),
+  };
+  return campaign.design
+    ? renderDesignedEmail({ ...shared, design: campaign.design, logoUrl: `${SITE_URL}${BRAND.logoPath}` })
+    : renderCampaignEmail({ ...shared, body: campaign.body });
+}
+
+/* ── Preview ──────────────────────────────────────────────────────────────── */
+
+/**
+ * The message exactly as a recipient gets it, addressed to the admin viewing
+ * it. The unsubscribe link is shown but inert (`#`), so clicking around the
+ * preview cannot unsubscribe the admin.
+ */
+export async function renderPreview(adminId: string, draft: RenderBody) {
+  const admin = await prisma.user.findUnique({ where: { id: adminId }, select: recipientSelect });
+  const imageUrls = draft.imageUrls ?? [];
+  const design = checkedDesign(draft.design, draft.body, imageUrls);
+  const rendered = renderFor(
+    { ...draft, imageUrls, design },
+    admin ? displayName(admin) : null,
+    campaignPreference(draft.category) && draft.category !== 'service' ? '#' : null,
+  );
+  return { subject: rendered.subject, html: rendered.html, design };
 }
 
 /* ── Test send ────────────────────────────────────────────────────────────── */
@@ -285,6 +355,7 @@ export async function sendTestEmail(
       body: draft.body,
       category: draft.category,
       imageUrls: draft.imageUrls ?? [],
+      design: checkedDesign(draft.design, draft.body, draft.imageUrls ?? []),
     },
     { ...admin, email: admin.email },
   );
@@ -300,7 +371,8 @@ export async function createCampaign(
   input: CreateCampaignBody,
 ): Promise<{ id: string; total: number; skipped: number; duplicate: boolean }> {
   const imageUrls = input.imageUrls ?? [];
-  const contentHash = campaignContentHash(input.category, input.subject, input.body, imageUrls);
+  const design = checkedDesign(input.design, input.body, imageUrls);
+  const contentHash = campaignContentHash(input.category, input.subject, input.body, imageUrls, design);
 
   // Double submit: the same message sent again moments later is the first send.
   const recent = await prisma.emailCampaign.findFirst({
@@ -327,6 +399,7 @@ export async function createCampaign(
       audience: input.audience,
       contentHash,
       imageUrls,
+      ...(design ? { design } : {}),
     },
     select: { id: true },
   });
@@ -483,6 +556,7 @@ export async function runCampaign(campaignId: string): Promise<void> {
       status: true,
       contentHash: true,
       imageUrls: true,
+      design: true,
     },
   });
   if (!campaign || campaign.status !== 'sending') return;
@@ -520,7 +594,11 @@ export async function runCampaign(campaignId: string): Promise<void> {
     const deliverable = wanting.filter((u) => claimed.has(u.id));
     const skippedIds = ids.filter((id) => !claimed.has(id));
 
-    const results = await sendEmailBatch(deliverable.map((u) => messageFor({ ...campaign, category }, u)));
+    // Stored already checked by `createCampaign`; Prisma reads the JSON column as an unknown value.
+    const design = (campaign.design ?? null) as EmailDesign | null;
+    const results = await sendEmailBatch(
+      deliverable.map((u) => messageFor({ ...campaign, category, design }, u)),
+    );
     const sentIds = deliverable.filter((_, i) => results[i]).map((u) => u.id);
     const failedIds = deliverable.filter((_, i) => !results[i]).map((u) => u.id);
     // A refused message was not received: drop its log row so it is not counted as sent.

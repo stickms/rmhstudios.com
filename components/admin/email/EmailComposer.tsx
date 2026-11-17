@@ -29,12 +29,17 @@ import {
   type FilterDraft,
 } from '@/components/admin/email/AudienceEditor';
 import { CampaignHistory } from '@/components/admin/email/CampaignHistory';
-import {
-  BodyAiMenu,
-  EmailImages,
-  SubjectAiButton,
-  type BodySelection,
-} from '@/components/admin/email/EmailAiTools';
+import { EmailImages, emailRewrite } from '@/components/admin/email/EmailAiTools';
+import { AIGenerateButton } from '@/components/feed/AIGenerateButton';
+import { ComposeAssist } from '@/components/feed/ComposeAssist';
+import { EmailDesigner, EmailPreview } from '@/components/admin/email/EmailDesigner';
+import type { EmailDesign } from '@/lib/email/campaign-schema';
+
+/** The highlighted range of the message field. */
+interface BodySelection {
+  start: number;
+  end: number;
+}
 import { categoryHelp, categoryName } from '@/components/admin/email/labels';
 
 /**
@@ -50,6 +55,8 @@ export function EmailComposer() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  // A designed layout from DeepSeek or Kimi; null is the plain layout.
+  const [design, setDesign] = useState<EmailDesign | null>(null);
   // The highlighted range of the body, kept as the admin selects so the AI menu
   // still knows it after the field loses focus to the menu.
   const [selection, setSelection] = useState<BodySelection | null>(null);
@@ -65,6 +72,35 @@ export function EmailComposer() {
   const [sending, setSending] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
 
+  // The compose box's rewrite chips act on the highlighted passage while one is
+  // highlighted (and still matches the text), otherwise the whole message.
+  const assistTarget = useMemo(() => {
+    if (selection && selection.end > selection.start && selection.end <= body.length) {
+      const text = body.slice(selection.start, selection.end);
+      if (text.trim().length > 0) return { text, range: selection };
+    }
+    return { text: body, range: null };
+  }, [body, selection]);
+  const rewrite = useMemo(() => emailRewrite(subject), [subject]);
+
+  function applyRewrite(next: string) {
+    const range = assistTarget.range;
+    if (!range) {
+      setBody(next);
+      return;
+    }
+    setBody((current) => current.slice(0, range.start) + next + current.slice(range.end));
+    const end = range.start + next.length;
+    setSelection({ start: range.start, end });
+    // Select the replacement once React has rendered it, so the admin sees what changed.
+    setTimeout(() => {
+      const el = bodyRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(range.start, end);
+    }, 0);
+  }
+
   const audience: Audience | null = useMemo(() => {
     if (mode === 'all') return { mode: 'all' };
     if (mode === 'filter') return { mode: 'filter', filters: toFilters(filters) };
@@ -73,7 +109,7 @@ export function EmailComposer() {
   const audienceKey = JSON.stringify(audience);
 
   // The draft goes into the preview too, so it can count who already had this exact message.
-  const draftKey = `${subject.trim()}\u0000${body.trim()}\u0000${images.join(' ')}`;
+  const draftKey = `${subject.trim()}\u0000${body.trim()}\u0000${images.join(' ')}\u0000${JSON.stringify(design)}`;
 
   // Re-count whenever the audience, the type or the draft changes, after a short pause in typing.
   useEffect(() => {
@@ -89,7 +125,7 @@ export function EmailComposer() {
           audience,
           category,
           ...(subject.trim() && body.trim()
-            ? { subject: subject.trim(), body: body.trim(), imageUrls: images }
+            ? { subject: subject.trim(), body: body.trim(), imageUrls: images, design }
             : {}),
         },
       })
@@ -119,7 +155,7 @@ export function EmailComposer() {
     setTesting(true);
     try {
       const r = await api(adminEmailTest, {
-        body: { subject: subject.trim(), body: body.trim(), category, imageUrls: images },
+        body: { subject: subject.trim(), body: body.trim(), category, imageUrls: images, design },
       });
       if (r.ok && r.to) {
         toast.success(t('email-test-sent', { to: r.to, defaultValue: 'Test sent to {{to}}' }));
@@ -155,7 +191,14 @@ export function EmailComposer() {
     setSending(true);
     try {
       const r = await api(adminEmailSend, {
-        body: { subject: subject.trim(), body: body.trim(), category, audience, imageUrls: images },
+        body: {
+          subject: subject.trim(),
+          body: body.trim(),
+          category,
+          audience,
+          imageUrls: images,
+          design,
+        },
       });
       if (r.duplicate) {
         toast.message(
@@ -175,6 +218,7 @@ export function EmailComposer() {
       setSubject('');
       setBody('');
       setImages([]);
+      setDesign(null);
       setSelection(null);
       setSelected([]);
       setHistoryKey((k) => k + 1);
@@ -201,9 +245,11 @@ export function EmailComposer() {
             onChange={(e) => setSubject(e.target.value)}
           />
           <div className="absolute end-2 top-1/2 -translate-y-1/2">
-            <SubjectAiButton
-              draft={{ subject, body, category }}
-              onSubject={setSubject}
+            <AIGenerateButton
+              size="sm"
+              request={{ mode: 'email-subject', subject, body, category }}
+              onGenerated={setSubject}
+              title={t('email-ai-subject', { defaultValue: 'Write the subject with AI' })}
             />
           </div>
         </div>
@@ -220,19 +266,33 @@ export function EmailComposer() {
             setSelection({ start: el.selectionStart, end: el.selectionEnd });
           }}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <BodyAiMenu
-            draft={{ subject, body, category }}
-            onBody={setBody}
-            selection={selection}
-            textareaRef={bodyRef}
-          />
-          <span className="t-meta">
-            {t('email-ai-hint', {
-              defaultValue: 'Highlight part of the message to rewrite only that part.',
-            })}
-          </span>
-        </div>
+        <ComposeAssist
+          value={assistTarget.text}
+          onChange={applyRewrite}
+          rewrite={rewrite}
+        />
+        <p className="t-meta">
+          {assistTarget.range
+            ? t('email-ai-selection', {
+                defaultValue: 'The rewrites apply to the highlighted text.',
+              })
+            : t('email-ai-hint', {
+                defaultValue: 'Highlight part of the message to rewrite only that part.',
+              })}
+        </p>
+        <EmailImages
+          subject={subject}
+          body={body}
+          images={images}
+          onImages={setImages}
+          leading={
+            <AIGenerateButton
+              request={{ mode: 'email-body', subject, body, category }}
+              onGenerated={setBody}
+              title={t('email-ai-body', { defaultValue: 'Write the message with AI' })}
+            />
+          }
+        />
         <p className="t-meta">
           {t('email-body-help', {
             defaultValue:
@@ -241,11 +301,6 @@ export function EmailComposer() {
             name: '{{name}}',
           })}
         </p>
-        <EmailImages
-          draft={{ subject, body, category }}
-          images={images}
-          onImages={setImages}
-        />
       </section>
 
       <section className="space-y-3">
@@ -258,6 +313,12 @@ export function EmailComposer() {
         />
         <p className="t-body text-site-text-muted">{categoryHelp(t, category)}</p>
       </section>
+
+      <EmailDesigner
+        draft={{ subject, body, category, images }}
+        design={design}
+        onDesign={setDesign}
+      />
 
       <section className="space-y-3">
         <h2 className="t-heading text-site-text">
@@ -272,6 +333,11 @@ export function EmailComposer() {
           onSelectedChange={setSelected}
         />
       </section>
+
+      <EmailPreview
+        draft={{ subject, body, category, images }}
+        design={design}
+      />
 
       <section
         className="space-y-3 border-t border-site-border pt-4"

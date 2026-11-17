@@ -22,13 +22,28 @@ interface AIImageButtonProps {
  */
  locked?: boolean;
  title?: string;
+ /** Defaults to the feed's image endpoint; see {@link AiImageGenerate}. */
+ generate?: AiImageGenerate;
 }
 
 /**
  * Ask the image model for a picture themed on the draft. `generate` hands the feed URL to `onGenerated`, and resolves
  * to the error message when the request fails (also kept in `error`), or to null. The server checks the tier.
  */
-export function useAiImage(draft: string, onGenerated: (url: string) => void) {
+/**
+ * Where an image is generated. Defaults to the feed's `/api/rmharks/ai-image`
+ * (tier-gated); the admin email composer passes its own.
+ */
+export type AiImageGenerate = (draft: string) => Promise<string>;
+
+const feedImage: AiImageGenerate = async (draft) =>
+ (await api(aiGenerateImageApi, { body: { draft }, timeoutMs: AI_IMAGE_TIMEOUT_MS })).url;
+
+export function useAiImage(
+ draft: string,
+ onGenerated: (url: string) => void,
+ generateImage: AiImageGenerate = feedImage,
+) {
  const { t } = useTranslation('feed');
  const [loading, setLoading] = useState(false);
  const [error, setError] = useState<string | null>(null);
@@ -38,9 +53,9 @@ export function useAiImage(draft: string, onGenerated: (url: string) => void) {
  setLoading(true);
  setError(null);
  try {
- const data = await api(aiGenerateImageApi, { body: { draft }, timeoutMs: AI_IMAGE_TIMEOUT_MS });
- if (typeof data?.url ==='string'&& data.url) {
- onGenerated(data.url);
+ const url = await generateImage(draft);
+ if (typeof url ==='string'&& url) {
+ onGenerated(url);
  }
  return null;
  } catch (e) {
@@ -67,12 +82,13 @@ export function AIImageButton({
  disabled = false,
  locked = false,
  title,
+ generate: generateImage,
 }: AIImageButtonProps) {
  const { t } = useTranslation('feed');
  const resolvedTitle = locked
  ? t('ai-image-locked-title', { defaultValue:'Generate images with AI — upgrade to unlock'})
  : title ?? t('ai-image-generate', { defaultValue:'Generate an image with AI'});
- const { loading, error, generate } = useAiImage(draft, onGenerated);
+ const { loading, error, generate } = useAiImage(draft, onGenerated, generateImage);
  const [showUpgrade, setShowUpgrade] = useState(false);
 
  const handleClick = () => {

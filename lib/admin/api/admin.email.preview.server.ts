@@ -14,6 +14,7 @@ export const route = apiRoute('/api/admin/email/preview', {
         subject: body.subject,
         body: body.body,
         imageUrls: body.imageUrls,
+        design: body.design,
       }),
   ),
 });
