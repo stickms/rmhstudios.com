@@ -111,6 +111,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   /** The CLUE / GUESS turn deadline. Cleared on every turn change. */
   private turnTimer: NodeJS.Timeout | null =
     null;
+  /**
+   * Whether CLUE / GUESS turns are timed. Starts from the `turnTimers` game
+   * setting; the host can switch it off and on at any point in the game
+   * (TOGGLE_TURN_TIMER). Off, a turn waits for its players like it used to.
+   */
+  private turnTimersEnabled = true;
   /** SETUP → first CLUE, and TURN_TRANSITION → next turn. */
   private transitionTimer: NodeJS.Timeout | null =
     null;
@@ -167,6 +173,11 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     this.isRunning = true;
     this.startedAt =
       Date.now();
+    this.turnTimersEnabled =
+      this.getSetting(
+        'turnTimers',
+        true,
+      );
     this.initializeState();
 
     logger.info(
@@ -305,6 +316,16 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         UA_SETUP_DURATION *
           1000,
       );
+  }
+
+  /** The turn length to announce to clients: 0 (no countdown) while turn timers are off. */
+  private announcedTimeout(
+    seconds: number,
+  ): number {
+    return this
+      .turnTimersEnabled
+      ? seconds
+      : 0;
   }
 
   private spymasterTimeout(): number {
@@ -459,7 +480,10 @@ export class UndercoverAgentMinigame extends BaseMinigame {
           this
             .state
             .turnNumber,
-        timeout,
+        timeout:
+          this.announcedTimeout(
+            timeout,
+          ),
       },
     );
 
@@ -875,9 +899,103 @@ export class UndercoverAgentMinigame extends BaseMinigame {
           userId,
         );
         break;
+      // ── Host ──
+      case 'TOGGLE_TURN_TIMER':
+        this.handleToggleTurnTimer(
+          userId,
+        );
+        break;
       default:
         break;
     }
+  }
+
+  // ─── Host: turn timers on / off ─────────────────────────────
+
+  /**
+   * The host switches turn timers off or on, before or during the game.
+   * Off: the running turn stops counting down and waits for its players.
+   * On: the current turn (CLUE or GUESS) gets a fresh full-length timer.
+   */
+  private handleToggleTurnTimer(
+    userId: string,
+  ): void {
+    if (
+      userId !==
+      this.context.getHostId()
+    ) {
+      this.context.sendToPlayer(
+        userId,
+        'rmhbox:game:action',
+        {
+          type: 'UA_ACTION_REJECTED',
+          reason:
+            'not_host',
+        },
+      );
+      return;
+    }
+
+    this.turnTimersEnabled =
+      !this
+        .turnTimersEnabled;
+    logger.info(
+      {
+        event:
+          'undercover_agent:turn_timers_toggled',
+        lobbyId:
+          this
+            .context
+            .lobbyId,
+        enabled:
+          this
+            .turnTimersEnabled,
+        phase:
+          this
+            .state
+            .phase,
+      },
+    );
+
+    let timeout = 0;
+    if (
+      this
+        .state
+        .phase ===
+      UndercoverAgentPhase.CLUE
+    )
+      timeout =
+        this.spymasterTimeout();
+    else if (
+      this
+        .state
+        .phase ===
+      UndercoverAgentPhase.GUESS
+    )
+      timeout =
+        this.operativeTimeout();
+    // Only a running turn changes now; otherwise the setting applies from the next turn.
+    if (
+      timeout >
+      0
+    )
+      this.startTurnTimer(
+        timeout,
+      );
+
+    this.broadcastGameAction(
+      {
+        type: 'UA_TURN_TIMERS_TOGGLED',
+        enabled:
+          this
+            .turnTimersEnabled,
+        timeRemaining:
+          this
+            .turnTimersEnabled
+            ? timeout
+            : 0,
+      },
+    );
   }
 
   // ─── Team Setup Actions ──────────────────────────────────────
@@ -1578,7 +1696,9 @@ export class UndercoverAgentMinigame extends BaseMinigame {
             .state
             .guessesRemaining,
         timeout:
-          guessTimeout,
+          this.announcedTimeout(
+            guessTimeout,
+          ),
       },
     );
 
@@ -2438,6 +2558,14 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     timeoutSeconds: number,
   ): void {
     this.clearTurnTimer();
+    if (
+      !this
+        .turnTimersEnabled
+    ) {
+      // Untimed turn: the header shows the infinite ring, nothing expires.
+      this.startInfinitePhaseTimer();
+      return;
+    }
     // Drive the header timer ring for this turn
     this.startPhaseTimer(
       timeoutSeconds,
@@ -2893,6 +3021,9 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         this.getHighlightCounts(),
       timeRemaining:
         this.turnTimeRemaining(),
+      turnTimersEnabled:
+        this
+          .turnTimersEnabled,
       actionLog:
         this.snapshotActionLog(),
     };
@@ -2989,6 +3120,9 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         this.getHighlightCounts(),
       timeRemaining:
         this.turnTimeRemaining(),
+      turnTimersEnabled:
+        this
+          .turnTimersEnabled,
       actionLog:
         this.snapshotActionLog(),
     };

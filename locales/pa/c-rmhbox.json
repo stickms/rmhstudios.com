@@ -445,6 +445,8 @@
   "ua-team-requirement": "Each team needs at least 1 spymaster + 1 operative (min 4 players)",
   "ua-team-wins": "{{team}} Team Wins!",
   "ua-turn-over": "Turn Over",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "Waiting for host to continue…",
   "ua-waiting-host-start": "Waiting for the host to start the game. Click your name to switch teams or roles.",
   "ua-your-role": "Your role:",

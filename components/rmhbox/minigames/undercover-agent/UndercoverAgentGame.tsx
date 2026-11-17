@@ -26,7 +26,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { Shield, Eye, Shuffle } from 'lucide-react';
+import { Shield, Eye, Shuffle, Timer, TimerOff } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { playSound } from '@/lib/rmhbox/audio';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
@@ -85,6 +85,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   const [guessesRemaining, setGuessesRemaining] = useState(0);
   const [turnNumber, setTurnNumber] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [turnTimersEnabled, setTurnTimersEnabled] = useState(true);
   const [winner, setWinner] = useState<Team | 'draw' | null>(null);
   const [winReason, setWinReason] = useState<string | null>(null);
   const [myRole, setMyRole] = useState<Role>('operative');
@@ -377,6 +378,11 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           setHighlightCounts(data.counts as Record<number, number>);
           break;
         }
+        case 'UA_TURN_TIMERS_TOGGLED': {
+          setTurnTimersEnabled(data.enabled as boolean);
+          setTimeRemaining((data.timeRemaining as number) ?? 0);
+          break;
+        }
         case 'UA_ACTION_REJECTED': {
           setErrorMsg(data.reason as string);
           // Auto-clear error after 3 seconds
@@ -434,6 +440,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       setMyRole(data.myRole as Role);
       setMyTeam(data.myTeam as Team | null);
       setTimeRemaining(data.timeRemaining as number ?? 0);
+      if (typeof data.turnTimersEnabled === 'boolean') setTurnTimersEnabled(data.turnTimersEnabled);
       if (typeof data.isTeamValid === 'boolean') setIsTeamValid(data.isTeamValid as boolean);
       setHighlightCounts(data.highlightCounts as Record<number, number> ?? {});
       // Sync game log from server's authoritative actionLog
@@ -495,6 +502,10 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
     emitGameInput('START_GAME', {});
   }, []);
 
+  const handleToggleTurnTimer = useCallback(() => {
+    emitGameInput('TOGGLE_TURN_TIMER', {});
+  }, []);
+
   const { t } = useTranslation("c-rmhbox");
 
   const isHost = playerId === storeHostId;
@@ -530,6 +541,30 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           winner={winner}
           winReason={winReason}
         />
+      )}
+
+      {/* Host: switch turn timers off / on at any point (the server restarts or stops the current turn's clock) */}
+      {isHost && phase !== 'GAME_OVER' && phase !== 'BOARD_REVEAL' && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={handleToggleTurnTimer}
+            aria-pressed={turnTimersEnabled}
+            className="surface-card rounded-app-sm px-4 py-2 text-sm font-medium text-app-text transition-colors hover:bg-app-accent/10"
+          >
+            {turnTimersEnabled ? (
+              <>
+                <TimerOff className="mr-1 inline-block h-4 w-4" aria-hidden="true" />
+                {t("ua-turn-timers-off", { defaultValue: "Turn off turn timers" })}
+              </>
+            ) : (
+              <>
+                <Timer className="mr-1 inline-block h-4 w-4" aria-hidden="true" />
+                {t("ua-turn-timers-on", { defaultValue: "Turn on turn timers" })}
+              </>
+            )}
+          </button>
+        </div>
       )}
 
       {/* Error toast */}

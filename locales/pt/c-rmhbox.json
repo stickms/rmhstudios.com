@@ -477,6 +477,8 @@
   "ua-team-requirement": "Cada time precisa de pelo menos 1 espião-mestre + 1 operativo (mín. 4 jogadores)",
   "ua-team-wins": "Time {{team}} Venceu!",
   "ua-turn-over": "Passar a Vez",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "Aguardando o anfitrião continuar…",
   "ua-waiting-host-start": "Aguardando o anfitrião iniciar o jogo. Clique no seu nome para trocar de time ou função.",
   "ua-your-role": "Sua função:",

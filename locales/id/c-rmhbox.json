@@ -419,6 +419,8 @@
   "ua-team-requirement": "Setiap tim membutuhkan setidaknya 1 spymaster + 1 operator (min 4 pemain)",
   "ua-team-wins": "Tim {{team}} Menang!",
   "ua-turn-over": "Giliran Selesai",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "Menunggu tuan rumah untuk melanjutkan…",
   "ua-waiting-host-start": "Menunggu tuan rumah untuk memulai permainan. Klik nama Anda untuk mengganti tim atau peran.",
   "ua-your-role": "Peran Anda:",

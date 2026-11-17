@@ -448,6 +448,8 @@
   "ua-team-requirement": "प्रत्येक टीम में कम से कम 1 स्पाइमास्टर + 1 ऑपरेटिव होना चाहिए (न्यूनतम 4 खिलाड़ी)",
   "ua-team-wins": "{{team}} टीम जीत गई!",
   "ua-turn-over": "टर्न खत्म",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "जारी रखने के लिए होस्ट का इंतजार…",
   "ua-waiting-host-start": "गेम शुरू करने के लिए होस्ट का इंतजार है। टीम या भूमिका बदलने के लिए अपना नाम क्लिक करें।",
   "ua-your-role": "आपकी भूमिका:",

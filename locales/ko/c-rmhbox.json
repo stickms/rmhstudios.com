@@ -419,6 +419,8 @@
   "ua-team-requirement": "각 팀에는 최소 1명의 스파이마스터와 1명의 요원이 필요합니다 (최소 4명)",
   "ua-team-wins": "{{team}} 팀 승리!",
   "ua-turn-over": "턴 종료",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "호스트가 계속하기를 기다리는 중…",
   "ua-waiting-host-start": "호스트가 게임을 시작하기를 기다리는 중입니다. 이름을 클릭하여 팀이나 역할을 변경하세요.",
   "ua-your-role": "당신의 역할:",

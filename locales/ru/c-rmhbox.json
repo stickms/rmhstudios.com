@@ -506,6 +506,8 @@
   "ua-team-requirement": "В каждой команде нужен минимум 1 шпион + 1 оперативник (минимум 4 игрока)",
   "ua-team-wins": "Команда {{team}} победила!",
   "ua-turn-over": "Передать ход",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "Ожидание, пока ведущий продолжит…",
   "ua-waiting-host-start": "Ожидание, пока ведущий начнёт игру. Нажмите на своё имя, чтобы сменить команду или роль.",
   "ua-your-role": "Ваша роль:",

@@ -142,6 +142,15 @@ export const UNDERCOVER_AGENT_SETTINGS: GameSettingsSchema =
         UA_ASSASSIN >
         0,
     },
+    {
+      key: 'turnTimers',
+      type: 'boolean',
+      label:
+        'Turn Timers',
+      description:
+        'Limit each clue and guessing turn. The host can switch this on or off during the game.',
+      default: true,
+    },
   ];
 
 export const CATEGORY_CRASH_SETTINGS: GameSettingsSchema =

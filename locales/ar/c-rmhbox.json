@@ -564,6 +564,8 @@
   "ua-team-requirement": "يحتاج كل فريق إلى ما لا يقل عن 1 جاسوس رئيسي + 1 عميل (4 لاعبين كحد أدنى)",
   "ua-team-wins": "فريق {{team}} يفوز!",
   "ua-turn-over": "اقلب",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "في انتظار المضيف للمتابعة...",
   "ua-waiting-host-start": "بانتظار بدء المضيف للعبة. انقر على اسمك لتغيير الفريق أو الدور.",
   "ua-your-role": "دورك:",

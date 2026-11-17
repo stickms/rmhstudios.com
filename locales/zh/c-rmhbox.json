@@ -419,6 +419,8 @@
   "ua-team-requirement": "每队至少需要1名间谍大师 + 1名特工（最少4名玩家）",
   "ua-team-wins": "{{team}} 队获胜！",
   "ua-turn-over": "翻转",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "等待主持人继续…",
   "ua-waiting-host-start": "等待房主开始游戏。点击你的名字切换队伍或角色。",
   "ua-your-role": "你的角色：",

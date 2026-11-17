@@ -419,6 +419,8 @@
   "ua-team-requirement": "各チームには少なくとも1人のスパイマスターと1人のオペレーティブが必要です（最低4人）",
   "ua-team-wins": "{{team}}チームの勝利！",
   "ua-turn-over": "ターン終了",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "ホストが続行するのを待っています…",
   "ua-waiting-host-start": "ホストがゲームを開始するのを待っています。自分の名前をクリックしてチームや役割を切り替えてください。",
   "ua-your-role": "あなたの役割：",

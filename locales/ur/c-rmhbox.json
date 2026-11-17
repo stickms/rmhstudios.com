@@ -448,6 +448,8 @@
   "ua-team-requirement": "ہر ٹیم کو کم از کم 1 اسپائی ماسٹر + 1 آپریٹو (کم از کم 4 کھلاڑی) درکار ہیں",
   "ua-team-wins": "{{team}} ٹیم جیت گئی!",
   "ua-turn-over": "باری ختم",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "میزبان کے جاری رکھنے کا انتظار…",
   "ua-waiting-host-start": "میزبان کے کھیل شروع کرنے کا انتظار۔ اپنا نام دبا کر ٹیم یا کردار تبدیل کریں۔",
   "ua-your-role": "آپ کا کردار:",

@@ -448,6 +448,8 @@
   "ua-team-requirement": "Jedes Team braucht mindestens 1 Spymaster + 1 Operativen (mind. 4 Spieler)",
   "ua-team-wins": "Team {{team}} gewinnt!",
   "ua-turn-over": "Zug beenden",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "Warte auf den Host, um fortzufahren…",
   "ua-waiting-host-start": "Warte auf den Host, um das Spiel zu starten. Klicke auf deinen Namen, um Team oder Rolle zu wechseln.",
   "ua-your-role": "Deine Rolle:",

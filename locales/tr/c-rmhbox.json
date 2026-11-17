@@ -448,6 +448,8 @@
   "ua-team-requirement": "Her takımın en az 1 casus ustası + 1 operatife ihtiyacı var (en az 4 oyuncu)",
   "ua-team-wins": "{{team}} Takımı Kazandı!",
   "ua-turn-over": "Sırayı Devret",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "Devam etmesi için ev sahibi bekleniyor…",
   "ua-waiting-host-start": "Oyunu başlatması için ev sahibi bekleniyor. Takım veya rol değiştirmek için adına tıkla.",
   "ua-your-role": "Rolün:",

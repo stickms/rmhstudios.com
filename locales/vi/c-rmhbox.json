@@ -419,6 +419,8 @@
   "ua-team-requirement": "Mỗi đội cần ít nhất 1 điệp viên trưởng + 1 đặc vụ (tối thiểu 4 người chơi)",
   "ua-team-wins": "Đội {{team}} chiến thắng!",
   "ua-turn-over": "Kết thúc lượt",
+  "ua-turn-timers-off": "Turn off turn timers",
+  "ua-turn-timers-on": "Turn on turn timers",
   "ua-waiting-host-continue": "Đang chờ chủ phòng tiếp tục…",
   "ua-waiting-host-start": "Đang chờ chủ phòng bắt đầu trò chơi. Nhấp vào tên của bạn để chuyển đội hoặc vai trò.",
   "ua-your-role": "Vai trò của bạn:",
