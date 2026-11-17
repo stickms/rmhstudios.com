@@ -19,6 +19,8 @@
  */
 
 import OpenAI from 'openai';
+import { userChipSelect } from '@/lib/user-display';
+import { planVibeWrite } from '@/lib/rmhvibe/ownership';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
 import type { VibeStreamEvent, VibeModel, VibeProvider } from '@/lib/rmhvibe/vibe-types';
@@ -339,8 +341,14 @@ async function uniqueSlug(suggested: string): Promise<string> {
  */
 const VIBE_GENERATING_STALE_MS = 20 * 60_000;
 
+/** Owner and remix-parent display data every page read carries. */
+const VIBE_PAGE_INCLUDE = {
+  owner: { select: userChipSelect },
+  parent: { select: { slug: true, title: true } },
+} as const;
+
 export async function getVibePage(slug: string) {
-  const page = await prisma.vibePage.findUnique({ where: { slug } });
+  const page = await prisma.vibePage.findUnique({ where: { slug }, include: VIBE_PAGE_INCLUDE });
   if (
     page &&
     page.status === 'generating' &&
@@ -359,7 +367,7 @@ export async function getVibePage(slug: string) {
       })
       .catch(() => ({ count: 0 }));
     if (count > 0) return { ...page, status: 'error' };
-    return prisma.vibePage.findUnique({ where: { slug } });
+    return prisma.vibePage.findUnique({ where: { slug }, include: VIBE_PAGE_INCLUDE });
   }
   return page;
 }
@@ -680,9 +688,11 @@ async function* streamModel(
 }
 
 /**
- * Stream generation of a vibe page. If `slug` is provided, this is a "customize"
- * follow-up against the existing page; otherwise a brand-new page is created.
- * Customization normally replays the page's latest history, but `fromVersionId`
+ * Stream generation of a vibe page. With no `slug` a brand-new page is created.
+ * With a `slug`, the page's owner customizes it in place; anyone else (signed out,
+ * another user, or an unowned legacy page) gets a remix — a new page owned by the
+ * caller that records its parent — and the source page is never touched (see
+ * planVibeWrite). Customization normally replays the page's latest history, but `fromVersionId`
  * branches off an earlier version instead (replaying that version's history), so
  * users can revisit and re-customize an earlier variant. Yields thinking/content
  * deltas, then a final `done` event after the page (and a new version snapshot)
@@ -699,6 +709,9 @@ export async function* generateVibeStream(opts: {
   slug?: string;
   fromVersionId?: string;
   model?: VibeModel;
+  /** The signed-in user, or null. Decides edit vs remix on an existing slug. */
+  userId: string | null;
+  kind?: 'page' | 'widget';
 }): AsyncGenerator<VibeStreamEvent> {
   const model = opts.model ?? DEFAULT_VIBE_MODEL;
   const provider = VIBE_MODEL_META[model].provider;
@@ -736,19 +749,31 @@ export async function* generateVibeStream(opts: {
   let existingSlug: string | undefined;
   let existingPageId: string | undefined;
 
-  if (opts.slug) {
-    const existing = await prisma.vibePage.findUnique({ where: { slug: opts.slug } });
-    if (!existing) {
-      yield { type: 'error', message: 'Vibe page not found' };
-      return;
-    }
-    existingSlug = existing.slug;
-    existingPageId = existing.id;
+  // Remix source (non-owner on an existing slug): the new page is reserved below.
+  let remixSource:
+    | { id: string; slug: string; kind: string; versionId: string | null }
+    | undefined;
 
-    if (opts.fromVersionId) {
-      // Branch off an earlier version: replay its history, not the page's latest.
+  const existing = opts.slug
+    ? await prisma.vibePage.findUnique({ where: { slug: opts.slug } })
+    : null;
+  if (opts.slug && !existing) {
+    yield { type: 'error', message: 'Vibe page not found' };
+    return;
+  }
+  const plan = planVibeWrite({
+    existing: existing ? { id: existing.id, ownerId: existing.ownerId } : null,
+    userId: opts.userId,
+    fromVersionId: opts.fromVersionId ?? null,
+  });
+
+  if (existing && plan.mode !== 'create') {
+    // Edit and remix both start from a version's history when one is named,
+    // otherwise from the page's latest.
+    const sourceVersionId = plan.mode === 'remix' ? plan.sourceVersionId : (opts.fromVersionId ?? null);
+    if (sourceVersionId) {
       const version = await prisma.vibePageVersion.findFirst({
-        where: { id: opts.fromVersionId, pageId: existing.id },
+        where: { id: sourceVersionId, pageId: existing.id },
         select: { conversationHistory: true },
       });
       if (!version) {
@@ -759,19 +784,31 @@ export async function* generateVibeStream(opts: {
     } else {
       history = (existing.conversationHistory as VibeMessage[]) ?? [];
     }
+    if (plan.mode === 'edit') {
+      existingSlug = existing.slug;
+      existingPageId = existing.id;
+    } else {
+      remixSource = {
+        id: existing.id,
+        slug: existing.slug,
+        kind: existing.kind,
+        versionId: sourceVersionId,
+      };
+    }
   }
 
-  // For a BRAND-NEW page, reserve the slug and persist a "generating" placeholder
-  // row up front. This is what makes generation survive a dropped streaming
-  // connection: the client gets the slug immediately (the `created` event) and can
-  // navigate straight to /v/<slug>, and because the row already exists the page is
-  // never lost even if the SSE stream is cut before `done`. The row flips to "ready"
-  // (or "error") below once the build resolves. `newPageId`/`reservedSlug` are set
-  // only on this path; the customize path updates the existing row instead.
+  // For a BRAND-NEW page (or a remix, which is a new page), reserve the slug and
+  // persist a "generating" placeholder row up front. This is what makes generation
+  // survive a dropped streaming connection: the client gets the slug immediately
+  // (the `created` event) and can navigate straight to /v/<slug>, and because the
+  // row already exists the page is never lost even if the SSE stream is cut before
+  // `done`. The row flips to "ready" (or "error") below once the build resolves.
+  // `newPageId`/`reservedSlug` are set only on this path; an owner's edit updates
+  // the existing row instead.
   let newPageId: string | undefined;
   let reservedSlug: string | undefined;
-  if (!opts.slug) {
-    reservedSlug = await uniqueSlug(opts.prompt);
+  if (!existingPageId) {
+    reservedSlug = await uniqueSlug(remixSource ? `${remixSource.slug}-remix` : opts.prompt);
     const created = await prisma.vibePage.create({
       data: {
         slug: reservedSlug,
@@ -781,6 +818,11 @@ export async function* generateVibeStream(opts: {
         html: '',
         status: 'generating',
         conversationHistory: [],
+        ownerId: opts.userId,
+        kind: remixSource ? remixSource.kind : (opts.kind ?? 'page'),
+        ...(remixSource
+          ? { parentPageId: remixSource.id, parentVersionId: remixSource.versionId }
+          : {}),
         // Don't screenshot a half-built page; the completion update re-flags it.
         thumbnailStale: false,
       },
@@ -925,6 +967,7 @@ export async function* generateVibeStream(opts: {
       yield { type: 'done', slug: existingSlug, versionId: version.id, html, title: cleanTitle, description: cleanDescription };
     } else if (newPageId && reservedSlug) {
       const conversationHistory: VibeMessage[] = [
+        ...history,
         { role: 'user', content: opts.prompt },
         assistantTurn,
       ];

@@ -84,6 +84,7 @@ export async function streamVibe(
     slug?: string;
     fromVersionId?: string;
     model?: VibeModel;
+    kind?: 'page' | 'widget';
   },
   onEvent: (
     event: VibeStreamEvent,

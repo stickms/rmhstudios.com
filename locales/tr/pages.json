@@ -236,5 +236,9 @@
   "notice-account-not-linked": "An RMH account already uses that email, but it was not connected automatically because the email is not confirmed on both sides. Sign in the way you did before, then connect it in Settings, Security.",
   "notice-cancelled": "Sign-in was cancelled.",
   "notice-link-expired": "That link has expired or was already used. Sign in to get a new one.",
-  "notice-sign-in-failed": "Sign-in did not finish. Try again."
+  "notice-sign-in-failed": "Sign-in did not finish. Try again.",
+  "remix": "Remix",
+  "remix-this-page": "Remix this page",
+  "by-owner": "by {{name}}",
+  "remixed-from": "Remixed from {{title}}"
 }
