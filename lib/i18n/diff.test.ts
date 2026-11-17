@@ -6,8 +6,10 @@ import {
 import {
   adoptPaidTranslations,
   applyTranslationMemory,
+  batchKeys,
   dedupeTodo,
   localeSource,
+  parseModelJson,
   planCatalogTranslations,
   pluralCategories,
   settleCatalog,
@@ -901,8 +903,6 @@ describe('plural forms per language', () => {
             {} as Catalog,
           sources:
             {} as Catalog,
-          original:
-            {} as Catalog,
           existed: true,
           paid: false,
           ...over,
@@ -950,10 +950,8 @@ describe('plural forms per language', () => {
     );
   });
 
-  it('keeps a partial group the model answered, so paid work is never thrown away', () => {
-    const {
-      target,
-    } =
+  it('drops a half-filled group even from paid output or an older catalog', () => {
+    expect(
       settle(
         {
           paid: true,
@@ -965,16 +963,54 @@ describe('plural forms per language', () => {
                 'b',
             },
         },
-      );
-    expect(
-      target,
+      )
+        .target,
     ).toEqual(
+      {},
+    );
+    const whole =
       {
         items_one:
           'a',
-        items_other:
+        items_few:
           'b',
-      },
+        items_many:
+          'c',
+        items_other:
+          'd',
+      };
+    expect(
+      settle(
+        {
+          paid: true,
+          target:
+            {
+              ...whole,
+            },
+        },
+      )
+        .target,
+    ).toEqual(
+      whole,
+    );
+  });
+
+  it('a paid run may start a new file even when part of it failed', () => {
+    expect(
+      settle(
+        {
+          paid: true,
+          existed: false,
+          target:
+            {
+              title:
+                'Заголовок',
+            },
+        },
+      )
+        .write,
+    ).toBe(
+      true,
     );
   });
 
@@ -1001,8 +1037,6 @@ describe('plural forms per language', () => {
         categories,
         target,
         sources:
-          {},
-        original:
           {},
         existed: true,
         paid: false,
@@ -1058,5 +1092,99 @@ describe('plural forms per language', () => {
     ).toBe(
       false,
     );
+  });
+});
+
+describe('talking to the model', () => {
+  it('never splits a plural group across batches', () => {
+    const todo =
+      [
+        'a',
+        'n_zero',
+        'n_one',
+        'n_two',
+        'n_few',
+        'n_many',
+        'n_other',
+        'b',
+        'c',
+      ];
+    const batches =
+      batchKeys(
+        todo,
+        4,
+      );
+    expect(
+      batches,
+    ).toEqual(
+      [
+        [
+          'a',
+        ],
+        [
+          'n_zero',
+          'n_one',
+          'n_two',
+          'n_few',
+          'n_many',
+          'n_other',
+        ],
+        [
+          'b',
+          'c',
+        ],
+      ],
+    );
+    expect(
+      batches
+        .flat()
+        .sort(),
+    ).toEqual(
+      [
+        ...todo,
+      ].sort(),
+    );
+  });
+
+  it('reads the first JSON object even with a fence or trailing text', () => {
+    expect(
+      parseModelJson(
+        '{"a":"x"}',
+      ),
+    ).toEqual(
+      {
+        a: 'x',
+      },
+    );
+    expect(
+      parseModelJson(
+        '{"a":"}{ \\"q\\" }"} {"b":"y"}',
+      ),
+    ).toEqual(
+      {
+        a: '}{ "q" }',
+      },
+    );
+    expect(
+      parseModelJson(
+        'Here you go:\n{"a":"x"}\nDone.',
+      ),
+    ).toEqual(
+      {
+        a: 'x',
+      },
+    );
+    expect(
+      () =>
+        parseModelJson(
+          'no json',
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        parseModelJson(
+          '{"a":"x"',
+        ),
+    ).toThrow();
   });
 });

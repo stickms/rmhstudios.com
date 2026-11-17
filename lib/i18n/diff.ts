@@ -213,13 +213,12 @@ export function localeSource(
 }
 
 /**
- * Make a catalog safe to write. Removes keys English no longer has and plural
- * forms the language does not use (dead keys i18next can never select), and removes any plural group or new
- * file that free work (reuse, memory) filled only partly: a half-filled group
- * makes the count fall back to English mid-sentence, and a locale with no file
- * has not started that namespace. `paid` keeps a run's model output even when
- * part of it failed, so it is never thrown away. Returns false when the file
- * should not be written at all.
+ * Make a catalog safe to write. Removes keys English no longer has, plural forms
+ * the language does not use (dead keys i18next can never select), and every
+ * plural group that is not whole. A new file that reuse alone could not
+ * complete is not written at all (a locale with no file has not started that
+ * namespace); `paid` lifts that last rule only, so model output is never thrown
+ * away for being partial. Returns false when the file should not be written.
  */
 export function settleCatalog(args: {
   english: Catalog;
@@ -227,7 +226,6 @@ export function settleCatalog(args: {
   categories: readonly string[];
   target: Catalog;
   sources: Catalog;
-  original: Catalog;
   existed: boolean;
   paid: boolean;
 }): boolean {
@@ -237,7 +235,6 @@ export function settleCatalog(args: {
     categories,
     target,
     sources,
-    original,
   } =
     args;
   // Keys English no longer has: nothing can ask for them. Pruned here because a
@@ -296,74 +293,67 @@ export function settleCatalog(args: {
       ];
     }
   }
-  if (
-    !args.paid
-  ) {
-    for (const base of bases) {
-      const keys =
-        categories
-          .map(
-            (
-              c,
-            ) =>
-              `${base}_${c}`,
-          )
-          .filter(
-            (
-              k,
-            ) =>
-              k in
-              source,
-          );
-      const present =
-        keys.filter(
+  // A plural group is written whole or not at all: with a form missing, the
+  // count falls back to English mid-sentence for some numbers. This holds for
+  // paid output too (a failed batch can leave a group half-filled), and for a
+  // group an older catalog already carried half-filled; the next run sends the
+  // whole group again.
+  for (const base of bases) {
+    const keys =
+      categories
+        .map(
           (
-            k,
+            c,
           ) =>
-            k in
-            target,
-        );
-      if (
-        present.length ===
-          0 ||
-        present.length ===
-          keys.length
-      )
-        continue;
-      if (
-        keys.some(
-          (
-            k,
-          ) =>
-            k in
-            original,
+            `${base}_${c}`,
         )
-      )
-        continue;
-      for (const k of present) {
-        delete target[
-          k
-        ];
-        delete sources[
-          k
-        ];
-      }
-    }
-    if (
-      !args.existed &&
-      Object.keys(
-        source,
-      ).some(
+        .filter(
+          (
+            k,
+          ) =>
+            k in
+            source,
+        );
+    const present =
+      keys.filter(
         (
           k,
         ) =>
-          !(
-            k in
-            target
-          ),
-      )
+          k in
+          target,
+      );
+    if (
+      present.length ===
+        0 ||
+      present.length ===
+        keys.length
     )
-      return false;
+      continue;
+    for (const k of present) {
+      delete target[
+        k
+      ];
+      delete sources[
+        k
+      ];
+    }
+  }
+  if (
+    !args.paid &&
+    !args.existed &&
+    Object.keys(
+      source,
+    ).some(
+      (
+        k,
+      ) =>
+        !(
+          k in
+          target
+        ),
+    )
+  ) {
+    return false;
   }
   return true;
 }
@@ -935,4 +925,152 @@ export function validateTranslationBatch(
       text;
   }
   return result;
+}
+
+/**
+ * Split a catalog's todo keys into request-sized batches without ever splitting
+ * a plural group (`x_one`, `x_few`, `x_other`, ...): a group is answered, or
+ * fails, as a unit, so a failed batch cannot leave one half-filled. A group
+ * larger than `size` gets a batch of its own.
+ */
+export function batchKeys(
+  todo: readonly string[],
+  size: number,
+): string[][] {
+  const groups =
+    new Map<
+      string,
+      string[]
+    >();
+  for (const key of todo) {
+    const id =
+      splitPlural(
+        key,
+      )
+        ?.base ??
+      `\u0000${key}`;
+    const group =
+      groups.get(
+        id,
+      ) ??
+      [];
+    group.push(
+      key,
+    );
+    groups.set(
+      id,
+      group,
+    );
+  }
+  const batches: string[][] =
+    [];
+  let current: string[] =
+    [];
+  for (const group of groups.values()) {
+    if (
+      current.length >
+        0 &&
+      current.length +
+        group.length >
+        size
+    ) {
+      batches.push(
+        current,
+      );
+      current =
+        [];
+    }
+    current.push(
+      ...group,
+    );
+  }
+  if (
+    current.length >
+    0
+  )
+    batches.push(
+      current,
+    );
+  return batches;
+}
+
+/**
+ * The first complete JSON object in a model reply. Models sometimes wrap it in
+ * a code fence or follow it with a second object or a sentence; JSON.parse on
+ * the whole reply then fails and a paid batch is thrown away.
+ */
+export function parseModelJson(
+  reply: string,
+): unknown {
+  const start =
+    reply.indexOf(
+      '{',
+    );
+  if (
+    start <
+    0
+  )
+    throw new Error(
+      'No JSON object in the reply',
+    );
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (
+    let i =
+      start;
+    i <
+    reply.length;
+    i++
+  ) {
+    const ch =
+      reply[
+        i
+      ];
+    if (
+      inString
+    ) {
+      if (
+        escaped
+      )
+        escaped = false;
+      else if (
+        ch ===
+        '\\'
+      )
+        escaped = true;
+      else if (
+        ch ===
+        '"'
+      )
+        inString = false;
+      continue;
+    }
+    if (
+      ch ===
+      '"'
+    )
+      inString = true;
+    else if (
+      ch ===
+      '{'
+    )
+      depth++;
+    else if (
+      ch ===
+        '}' &&
+      --depth ===
+        0
+    )
+      return JSON.parse(
+        reply.slice(
+          start,
+          i +
+            1,
+        ),
+      );
+  }
+  throw new Error(
+    'Unterminated JSON object in the reply',
+  );
 }

@@ -29,7 +29,7 @@
     "lib/i18n/resources.*.ts"
   ],
   "ignoreWorkspaces": [
-    "cli",
+    "rmhcode",
     "docs/**"
   ]
 }

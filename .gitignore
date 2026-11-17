@@ -81,8 +81,8 @@ package-lock.json
 content/news/staging/*.mdx
 
 # CLI build artifacts
-cli/dist/
-cli/node_modules/
+rmhcode/dist/
+rmhcode/node_modules/
 
 # RMHBot git worktrees
 .rmhbot-worktrees/

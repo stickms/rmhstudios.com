@@ -45,8 +45,10 @@ import {
 import {
   adoptPaidTranslations,
   applyTranslationMemory,
+  batchKeys,
   dedupeTodo,
   localeSource,
+  parseModelJson,
   planCatalogTranslations,
   pluralCategories,
   settleCatalog,
@@ -121,9 +123,43 @@ async function translateBatch(entries: Catalog, target: string): Promise<Catalog
     temperature: 0.2,
     max_tokens: 8000,
     stream: false,
+    // JSON mode: the reply is one JSON object. parseModelJson still takes only
+    // the first object, because a reply with trailing text cost a paid batch.
+    response_format: { type: 'json_object' },
   });
   const raw = res.choices[0]?.message?.content?.trim() ?? '{}';
-  return validateTranslationBatch(entries, JSON.parse(stripFences(raw)));
+  return validateTranslationBatch(entries, parseModelJson(stripFences(raw)));
+}
+
+/**
+ * Translate a batch; if it fails, retry it once as two halves (plural groups
+ * kept whole) so one bad reply costs a few keys, not forty. Returns what was
+ * translated and the keys that still failed.
+ */
+async function translateWithRetry(
+  entries: Catalog,
+  target: string,
+  where: string,
+): Promise<{ translated: Catalog; failed: string[] }> {
+  try {
+    return { translated: await translateBatch(entries, target), failed: [] };
+  } catch (err) {
+    const keys = Object.keys(entries);
+    console.warn(`[i18n]   ${where} batch failed, retrying in halves: ${(err as Error).message}`);
+    const translated: Catalog = {};
+    const failed: string[] = [];
+    for (const part of batchKeys(keys, Math.max(1, Math.ceil(keys.length / 2)))) {
+      const half: Catalog = {};
+      for (const k of part) half[k] = entries[k];
+      try {
+        Object.assign(translated, await translateBatch(half, target));
+      } catch (again) {
+        failed.push(...part);
+        console.warn(`[i18n]   ${where} ${part.length} key(s) failed again: ${(again as Error).message}`);
+      }
+    }
+    return { translated, failed };
+  }
 }
 
 function localesToRun(): string[] {
@@ -155,7 +191,6 @@ interface Job extends CatalogPlan {
   /** The English catalog itself (`source` is it re-shaped for this locale's plurals). */
   english: Catalog;
   categories: string[];
-  original: Catalog;
   existed: boolean;
   /** A model answer landed in this catalog during this run. */
   paid: boolean;
@@ -271,7 +306,6 @@ async function run() {
         source,
         english: en,
         categories,
-        original: originalTarget,
         existed: existsSync(targetPath),
         paid: false,
         locale,
@@ -311,8 +345,7 @@ async function run() {
       waiting.set(id, list);
     }
     for (const job of plans) {
-      for (let i = 0; i < job.todo.length; i += BATCH) {
-        const keys = job.todo.slice(i, i + BATCH);
+      for (const keys of batchKeys(job.todo, BATCH)) {
         const task: Task = {
           job,
           keys,
@@ -348,28 +381,29 @@ async function run() {
   await pool(tasks, CONCURRENCY, async ({ job, keys, followers }) => {
     const entries: Catalog = {};
     for (const k of keys) entries[k] = job.source[k];
-    try {
-      const translated = await translateBatch(
-        entries,
-        TRANSLATE_TARGETS[job.locale as Exclude<Locale, 'en'>],
-      );
-      for (const k of keys) {
-        job.target[k] = translated[k];
-        job.sources[k] = job.source[k];
-      }
-      for (const f of followers) {
-        f.job.target[f.key] = translated[f.ownerKey];
-        f.job.sources[f.key] = f.job.source[f.key];
-        f.job.dirty = true;
-        f.job.paid = true;
-      }
+    const { translated, failed } = await translateWithRetry(
+      entries,
+      TRANSLATE_TARGETS[job.locale as Exclude<Locale, 'en'>],
+      `${job.locale}/${job.ns}`,
+    );
+    for (const k of keys) {
+      if (!(k in translated)) continue;
+      job.target[k] = translated[k];
+      job.sources[k] = job.source[k];
       job.dirty = true;
       job.paid = true;
-      totals.translated += keys.length + followers.length;
-    } catch (err) {
-      totals.failed += keys.length + followers.length;
-      console.warn(`[i18n]   ${job.locale}/${job.ns} batch failed: ${(err as Error).message}`);
+      totals.translated++;
     }
+    for (const f of followers) {
+      if (!(f.ownerKey in translated)) continue;
+      f.job.target[f.key] = translated[f.ownerKey];
+      f.job.sources[f.key] = f.job.source[f.key];
+      f.job.dirty = true;
+      f.job.paid = true;
+      totals.translated++;
+    }
+    const lost = new Set(failed);
+    totals.failed += failed.length + followers.filter((f) => lost.has(f.ownerKey)).length;
 
     doneBatches++;
     doneKeys += keys.length;

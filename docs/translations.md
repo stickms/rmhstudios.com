@@ -689,13 +689,49 @@ once:
   the
   others,
   and
-  never
   writes
   a
   plural
   group
+  whole
   or
+  not
+  at
+  all:
   a
+  group
+  is
+  always
+  sent
+  in
+  one
+  batch,
+  a
+  failed
+  batch
+  is
+  retried
+  once
+  in
+  halves,
+  and
+  a
+  group
+  still
+  incomplete
+  after
+  that
+  is
+  left
+  out
+  so
+  it
+  falls
+  back
+  to
+  English
+  whole.
+  A
   new
   namespace
   file
@@ -704,7 +740,32 @@ once:
   alone
   filled
   only
-  partly.
+  partly
+  is
+  not
+  written.
+  Replies
+  are
+  read
+  in
+  JSON
+  mode,
+  taking
+  the
+  first
+  JSON
+  object,
+  so
+  trailing
+  text
+  from
+  the
+  model
+  no
+  longer
+  costs
+  a
+  batch.
 
 ### Fixing a translation by hand
 

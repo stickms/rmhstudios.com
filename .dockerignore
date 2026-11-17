@@ -59,8 +59,8 @@ docker-compose*.yml
 .dockerignore
 
 # ─── CLI sub-package ────────────────────────────────────────────────
-cli/dist
-cli/node_modules
+rmhcode/dist
+rmhcode/node_modules
 
 # ─── DB artifacts ───────────────────────────────────────────────────
 db/avatars
