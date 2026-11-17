@@ -6,7 +6,12 @@ import { join } from 'node:path';
 // GHSA-fc5q-39xc-vjpf: resolve the picomatch copy tinyglobby actually loads.
 const require = createRequire(import.meta.url);
 const tinyglobbyRequire = createRequire(require.resolve('tinyglobby'));
-const picomatch = tinyglobbyRequire('picomatch') as typeof import('picomatch');
+// picomatch is a transitive dependency without its own types here, so type the
+// two calls this test makes.
+const picomatch = tinyglobbyRequire('picomatch') as {
+  makeRe(glob: string): RegExp;
+  isMatch(input: string, glob: string): boolean;
+};
 
 describe('picomatch repeated extglob ReDoS (GHSA-fc5q-39xc-vjpf)', () => {
   it.each(['+(*)', '+(*a)', '*(?*)', '+(+(a))'])('%s does not backtrack exponentially', (glob) => {
