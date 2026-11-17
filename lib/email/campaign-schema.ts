@@ -4,11 +4,24 @@
  */
 import { z } from 'zod';
 import { CAMPAIGN_CATEGORIES } from '@/lib/email/preferences';
+import { isFeedImageUrl } from '@/lib/storage/keys';
 
-export const MAX_SUBJECT = 200;
-export const MAX_BODY = 20_000;
-/** Manual selection is for a handful of people, not a list import. */
-export const MAX_MANUAL_RECIPIENTS = 500;
+import {
+  EMAIL_REWRITE_ACTIONS,
+  MAX_BODY,
+  MAX_EMAIL_IMAGES,
+  MAX_MANUAL_RECIPIENTS,
+  MAX_SUBJECT,
+} from '@/lib/email/campaign-limits';
+
+export {
+  EMAIL_REWRITE_ACTIONS,
+  MAX_BODY,
+  MAX_EMAIL_IMAGES,
+  MAX_MANUAL_RECIPIENTS,
+  MAX_SUBJECT,
+} from '@/lib/email/campaign-limits';
+export type { EmailRewriteAction } from '@/lib/email/campaign-limits';
 
 const isoDate = z.iso.date();
 
@@ -62,12 +75,23 @@ export const previewBodySchema = z.object({
   /** With both, the preview also counts who already received this exact message. */
   subject: z.string().max(MAX_SUBJECT).optional(),
   body: z.string().max(MAX_BODY).optional(),
+  imageUrls: z.array(z.string().max(500)).max(MAX_EMAIL_IMAGES).optional(),
 });
+
+/**
+ * Pictures shown under the message. Only images stored by the site (an upload
+ * or an AI image) are accepted: a mailing must not hotlink an arbitrary host,
+ * which could track every open or change the picture after the send.
+ */
+export const emailImagesSchema = z
+  .array(z.string().max(500).refine(isFeedImageUrl, 'Not a site image'))
+  .max(MAX_EMAIL_IMAGES);
 
 const draftFields = {
   subject: z.string().trim().min(1).max(MAX_SUBJECT),
   body: z.string().trim().min(1).max(MAX_BODY),
   category: campaignCategorySchema,
+  imageUrls: emailImagesSchema.optional(),
 };
 
 export const testSendBodySchema = z.object(draftFields);
@@ -75,6 +99,30 @@ export const testSendBodySchema = z.object(draftFields);
 export const createCampaignBodySchema = z.object({
   ...draftFields,
   audience: audienceSchema,
+});
+
+/* ── AI writing help ─────────────────────────────────────────────────────── */
+
+
+/** Draft the subject or the body; whatever is already written is the starting point. */
+export const aiDraftBodySchema = z.object({
+  target: z.enum(['subject', 'body']),
+  category: campaignCategorySchema,
+  subject: z.string().max(MAX_SUBJECT).optional(),
+  body: z.string().max(MAX_BODY).optional(),
+});
+
+/** Rewrite a passage: the whole body, or the part the admin highlighted. */
+export const aiRewriteBodySchema = z.object({
+  text: z.string().min(1).max(MAX_BODY),
+  action: z.enum(EMAIL_REWRITE_ACTIONS),
+  subject: z.string().max(MAX_SUBJECT).optional(),
+});
+
+/** A picture themed on the draft. */
+export const aiImageBodySchema = z.object({
+  subject: z.string().max(MAX_SUBJECT).optional(),
+  body: z.string().max(MAX_BODY).optional(),
 });
 
 export const userSearchQuerySchema = z.object({
@@ -86,3 +134,6 @@ export type Audience = z.infer<typeof audienceSchema>;
 export type PreviewBody = z.infer<typeof previewBodySchema>;
 export type TestSendBody = z.infer<typeof testSendBodySchema>;
 export type CreateCampaignBody = z.infer<typeof createCampaignBodySchema>;
+export type AiDraftBody = z.infer<typeof aiDraftBodySchema>;
+export type AiRewriteBody = z.infer<typeof aiRewriteBodySchema>;
+export type AiImageBody = z.infer<typeof aiImageBodySchema>;

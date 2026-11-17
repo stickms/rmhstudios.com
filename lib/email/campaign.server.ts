@@ -119,11 +119,24 @@ async function whereFor(audience: Audience) {
 }
 
 /** The hash a message is deduplicated by: same type, subject and body = same message. */
-export function campaignContentHash(category: CampaignCategory, subject: string, body: string): string {
+export function campaignContentHash(
+  category: CampaignCategory,
+  subject: string,
+  body: string,
+  imageUrls: readonly string[] = [],
+): string {
   const norm = (v: string) => v.replace(/\r\n?/g, '\n').trim();
+  // Pictures are part of the message; with none, the hash is what it was before
+  // pictures existed, so a resend of an older message still deduplicates.
+  const pictures = imageUrls.length > 0 ? `\n${imageUrls.join('\n')}` : '';
   return createHash('sha256')
-    .update(`${category}\n${norm(subject)}\n${norm(body)}`)
+    .update(`${category}\n${norm(subject)}\n${norm(body)}${pictures}`)
     .digest('hex');
+}
+
+/** Site image URLs as an email client needs them: absolute. */
+function absoluteImages(urls: readonly string[]): string[] {
+  return urls.map((u) => (u.startsWith('/') ? `${SITE_URL}${u}` : u));
 }
 
 const dedupeKeyFor = (contentHash: string) => `campaign:${contentHash}`;
@@ -172,11 +185,15 @@ export interface AudiencePreview {
 export async function previewAudience(
   audience: Audience,
   category: CampaignCategory,
-  draft?: { subject?: string | undefined; body?: string | undefined },
+  draft?: {
+    subject?: string | undefined;
+    body?: string | undefined;
+    imageUrls?: readonly string[] | undefined;
+  },
 ): Promise<AudiencePreview> {
   const hash =
     draft?.subject?.trim() && draft.body?.trim()
-      ? campaignContentHash(category, draft.subject, draft.body)
+      ? campaignContentHash(category, draft.subject, draft.body, draft.imageUrls ?? [])
       : null;
   const f = await funnel(audience, category, hash, new Date());
   const [matched, afterPref, afterDup, eligible, sample] = await Promise.all([
@@ -222,7 +239,7 @@ function unsubscribeUrl(userId: string, category: CampaignCategory): string | nu
 }
 
 function messageFor(
-  campaign: { subject: string; body: string; category: CampaignCategory },
+  campaign: { subject: string; body: string; category: CampaignCategory; imageUrls?: readonly string[] },
   user: RecipientRow & { email: string },
 ) {
   const unsub = unsubscribeUrl(user.id, campaign.category);
@@ -233,6 +250,7 @@ function messageFor(
     reason: reasonFor(campaign.category),
     unsubscribeUrl: unsub,
     settingsUrl: SETTINGS_URL,
+    imageUrls: absoluteImages(campaign.imageUrls ?? []),
   });
   return {
     to: user.email,
@@ -262,7 +280,12 @@ export async function sendTestEmail(
   });
   if (!admin?.email) return { ok: false, to: null };
   const message = messageFor(
-    { subject: `[Test] ${draft.subject}`, body: draft.body, category: draft.category },
+    {
+      subject: `[Test] ${draft.subject}`,
+      body: draft.body,
+      category: draft.category,
+      imageUrls: draft.imageUrls ?? [],
+    },
     { ...admin, email: admin.email },
   );
   return { ok: await sendEmail(message), to: admin.email };
@@ -276,7 +299,8 @@ export async function createCampaign(
   adminId: string,
   input: CreateCampaignBody,
 ): Promise<{ id: string; total: number; skipped: number; duplicate: boolean }> {
-  const contentHash = campaignContentHash(input.category, input.subject, input.body);
+  const imageUrls = input.imageUrls ?? [];
+  const contentHash = campaignContentHash(input.category, input.subject, input.body, imageUrls);
 
   // Double submit: the same message sent again moments later is the first send.
   const recent = await prisma.emailCampaign.findFirst({
@@ -302,6 +326,7 @@ export async function createCampaign(
       category: input.category,
       audience: input.audience,
       contentHash,
+      imageUrls,
     },
     select: { id: true },
   });
@@ -450,7 +475,15 @@ async function claimForBatch(
 export async function runCampaign(campaignId: string): Promise<void> {
   const campaign = await prisma.emailCampaign.findUnique({
     where: { id: campaignId },
-    select: { id: true, subject: true, body: true, category: true, status: true, contentHash: true },
+    select: {
+      id: true,
+      subject: true,
+      body: true,
+      category: true,
+      status: true,
+      contentHash: true,
+      imageUrls: true,
+    },
   });
   if (!campaign || campaign.status !== 'sending') return;
   const category = campaign.category as CampaignCategory;

@@ -20,6 +20,8 @@ export interface RenderInput {
   unsubscribeUrl: string | null;
   /** Where "Email settings" in the footer goes. */
   settingsUrl: string;
+  /** Absolute URLs of pictures shown under the message (validated as site images upstream). */
+  imageUrls?: readonly string[];
 }
 
 export interface RenderedEmail {
@@ -73,6 +75,14 @@ export function renderCampaignEmail(input: RenderInput): RenderedEmail {
     )
     .join('');
 
+  const htmlImages = (input.imageUrls ?? [])
+    .filter((url) => /^https:\/\//.test(url))
+    .map(
+      (url) =>
+        `<p style="margin:0 0 16px"><img src="${escapeHtml(url)}" alt="" width="512" style="display:block;width:100%;max-width:512px;height:auto;border:0;border-radius:8px"></p>`,
+    )
+    .join('');
+
   const footerLinks = [
     `<a href="${escapeHtml(input.settingsUrl)}" style="color:#555">Email settings</a>`,
     ...(input.unsubscribeUrl
@@ -84,6 +94,7 @@ export function renderCampaignEmail(input: RenderInput): RenderedEmail {
     '<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111">',
     `<h1 style="font-size:20px;line-height:1.3;margin:0 0 16px;font-weight:600">${escapeHtml(subject)}</h1>`,
     htmlParagraphs,
+    htmlImages,
     '<hr style="border:0;border-top:1px solid #ddd;margin:24px 0 12px">',
     `<p style="margin:0 0 4px;font-size:12px;line-height:1.5;color:#555">${escapeHtml(input.reason)}</p>`,
     `<p style="margin:0;font-size:12px;line-height:1.5;color:#555">${footerLinks}</p>`,

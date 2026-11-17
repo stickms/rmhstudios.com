@@ -601,6 +601,71 @@ export const WIKI_WRITE: PromptSpec =
   };
 
 /** Everything registered. The injection and contract suites iterate this. */
+/* -------------------------------------------------------------------------- */
+/* Admin email (/admin/email)                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The house style every email prompt shares. The site's own copy rules: short
+ * and literal, no exclamation marks, no emoji, plain text (the renderer turns
+ * blank lines into paragraphs and bare URLs into links; it does not read
+ * Markdown).
+ */
+const EMAIL_STYLE = [
+  'Write in plain, direct English. Short sentences. No exclamation marks, no emoji, no hype.',
+  'Plain text only: no Markdown, no headings, no bullet characters, no HTML.',
+  'Separate paragraphs with one blank line.',
+  'Never invent facts, dates, numbers, prices, names or links that are not in the material you were given.',
+  'Output ONLY the requested text: no preamble, no quotes around it, no label, no sign-off line unless asked.',
+].join('\n');
+
+export const EMAIL_SUBJECT: PromptSpec =
+  {
+    id: 'email-subject',
+    version: 1,
+    task: 'compose-assist',
+    instructions: [
+      'You write the subject line of an email that RMH Studios, a games and apps website, sends to its members.',
+      'The subject says plainly what the email is about, in under 80 characters, in sentence case.',
+      'If a subject draft is given, keep its meaning and sharpen it. If only a body is given, summarise it.',
+      EMAIL_STYLE,
+    ].join('\n'),
+    maxChars: 200,
+    forbid: ['Subject:', '!'],
+  };
+
+export const EMAIL_BODY: PromptSpec =
+  {
+    id: 'email-body',
+    version: 1,
+    task: 'narrative',
+    instructions: [
+      'You write the body of an email that RMH Studios, a games and apps website, sends to its members.',
+      'Two to five short paragraphs. Lead with what changed or what the reader needs to know, then any detail, then what to do next if there is anything.',
+      'Address the reader as you. You may start with "Hi {{name}}," on its own line: {{name}} is replaced with each reader\'s name.',
+      'If a draft is given, keep everything it says and finish or tidy it; do not drop facts from it.',
+      'The type of email is given: an announcement is site news, product news describes new games, apps or features, and a required notice is about the reader\'s account or the service and must be calm and factual.',
+      EMAIL_STYLE,
+    ].join('\n'),
+    maxChars: 6_000,
+    forbid: ['Subject:', '#', '**', '!'],
+  };
+
+export const EMAIL_REWRITE: PromptSpec =
+  {
+    id: 'email-rewrite',
+    version: 1,
+    task: 'compose-assist',
+    instructions: [
+      'You edit a passage from an email that RMH Studios sends to its members. The passage may be the whole email or a part of it.',
+      'The edit to make is given. Keep the meaning, every fact and any {{name}} placeholder or link exactly as written.',
+      'Return only the edited passage, so it can replace the original in place: keep its paragraph breaks, and do not add a greeting or sign-off that it did not have.',
+      EMAIL_STYLE,
+    ].join('\n'),
+    maxChars: 12_000,
+    forbid: ['Here is', "Here's"],
+  };
+
 export const ALL_PROMPTS: readonly PromptSpec[] =
   [
     TOOL_SELECT,
@@ -621,4 +686,7 @@ export const ALL_PROMPTS: readonly PromptSpec[] =
     ELECTION_SUMMARY,
     ELECTION_ASK,
     WIKI_WRITE,
+    EMAIL_SUBJECT,
+    EMAIL_BODY,
+    EMAIL_REWRITE,
   ] as const;

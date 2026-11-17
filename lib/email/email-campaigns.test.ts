@@ -18,7 +18,12 @@ import {
 } from '@/lib/email/frequency';
 import { renderCampaignEmail } from '@/lib/email/campaign-render';
 import { EMAIL_DEFAULTS, resolveEmailPrefs } from '@/lib/email/preferences';
-import { audienceSchema } from '@/lib/email/campaign-schema';
+import {
+  aiRewriteBodySchema,
+  audienceSchema,
+  createCampaignBodySchema,
+  emailImagesSchema,
+} from '@/lib/email/campaign-schema';
 import { signUnsubToken, verifyUnsubToken } from '@/lib/email/unsubscribe';
 
 const NOW = new Date('2026-11-17T12:00:00Z');
@@ -218,5 +223,46 @@ describe('no repeats, no floods', () => {
     expect(isoWeekKey(new Date('2026-11-17T12:00:00Z'))).toBe('2026-W47');
     expect(isoWeekKey(new Date('2027-01-01T00:00:00Z'))).toBe('2026-W53');
     expect(isoWeekKey(new Date('2026-01-01T00:00:00Z'))).toBe('2026-W01');
+  });
+});
+
+describe('pictures in admin emails', () => {
+  it('accepts only images the site stores, at most four', () => {
+    expect(emailImagesSchema.safeParse(['/api/feed/image/u1-1-2.png']).success).toBe(true);
+    expect(emailImagesSchema.safeParse(['https://evil.example/pixel.gif']).success).toBe(false);
+    expect(emailImagesSchema.safeParse(['/api/feed/image/../../secret']).success).toBe(false);
+    expect(
+      emailImagesSchema.safeParse(Array.from({ length: 5 }, (_, i) => `/api/feed/image/u-${i}.png`)).success,
+    ).toBe(false);
+    const send = createCampaignBodySchema.safeParse({
+      subject: 'S',
+      body: 'B',
+      category: 'announcements',
+      audience: { mode: 'all' },
+      imageUrls: ['javascript:alert(1)'],
+    });
+    expect(send.success).toBe(false);
+  });
+
+  it('renders pictures under the message, escaped, and only over https', () => {
+    const out = renderCampaignEmail({
+      reason: 'r',
+      settingsUrl: 'https://rmhstudios.com/settings/notifications',
+      subject: 'S',
+      body: 'B',
+      unsubscribeUrl: null,
+      imageUrls: ['https://rmhstudios.com/api/feed/image/a.png?x="1"', 'http://insecure.example/b.png'],
+    });
+    expect(out.html).toContain('<img src="https://rmhstudios.com/api/feed/image/a.png?x=&quot;1&quot;"');
+    expect(out.html).not.toContain('insecure.example');
+    expect(out.html.indexOf('<img')).toBeGreaterThan(out.html.indexOf('B</p>'));
+  });
+});
+
+describe('AI rewrite requests', () => {
+  it('takes a passage up to the body limit and one of the six actions', () => {
+    expect(aiRewriteBodySchema.safeParse({ text: 'x'.repeat(5_000), action: 'shorten' }).success).toBe(true);
+    expect(aiRewriteBodySchema.safeParse({ text: 'hi', action: 'translate' }).success).toBe(false);
+    expect(aiRewriteBodySchema.safeParse({ text: '', action: 'fix' }).success).toBe(false);
   });
 });

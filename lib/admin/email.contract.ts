@@ -4,6 +4,9 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type {
+  AiDraftBody,
+  AiImageBody,
+  AiRewriteBody,
   Audience,
   CreateCampaignBody,
   PreviewBody,
@@ -74,3 +77,23 @@ export const adminEmailSend = endpoint<{
 export const adminEmailResume = endpoint<{
   res: { ok: true };
 }>()({ method: 'POST', path: '/api/admin/email/campaigns/$id/resume' });
+
+/* ── AI writing help (admin only; 503 when the model is not configured) ───── */
+
+/** Draft the subject or the body from whatever is already written. */
+export const adminEmailAiDraft = endpoint<{ body: AiDraftBody; res: { text: string } }>()({
+  method: 'POST',
+  path: '/api/admin/email/ai/draft',
+});
+
+/** Rewrite the whole body or the highlighted passage; the result replaces it in place. */
+export const adminEmailAiRewrite = endpoint<{ body: AiRewriteBody; res: { text: string } }>()({
+  method: 'POST',
+  path: '/api/admin/email/ai/rewrite',
+});
+
+/** A picture themed on the draft, stored as a site image. */
+export const adminEmailAiImage = endpoint<{ body: AiImageBody; res: { url: string } }>()({
+  method: 'POST',
+  path: '/api/admin/email/ai/image',
+});
