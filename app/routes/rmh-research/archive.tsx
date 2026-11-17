@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import ArchivePage from '@/components/rmh-research/ArchivePage';
-import { parseArchiveSearch, type ArchiveSearch } from '@/lib/rmh-research/search';
+import { parseArchiveSearch, type ArchiveSearch } from '@/lib/rmh-research/params';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 
 const PATH = '/rmh-research/archive';

@@ -7,6 +7,7 @@
 import { AUTHORS, PAPERS } from './data';
 import { FIELDS } from './fields';
 import { analyseCitations, measure, type BodyOfWork, type Resonance } from './r-index';
+import type { AuthorSort } from './params';
 import type { Author, FieldId, Paper } from './types';
 
 export { AUTHORS, PAPERS };
@@ -217,8 +218,7 @@ export function fieldExchange(field: FieldId): FieldExchange[] {
     .map(({ row }) => row);
 }
 
-export const AUTHOR_SORTS = ['r', 'h', 'citations', 'papers', 'name'] as const;
-export type AuthorSort = (typeof AUTHOR_SORTS)[number];
+export { AUTHOR_SORTS, type AuthorSort } from './params';
 
 /** The author ranking, optionally narrowed to a home field and re-sorted. `r` is the ranking itself. */
 export function sortAuthors(sort: AuthorSort = 'r', field?: FieldId): AuthorMetrics[] {
