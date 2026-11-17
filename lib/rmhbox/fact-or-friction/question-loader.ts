@@ -160,10 +160,101 @@ export type IndexedQuestion =
     poolIndex: number;
   };
 
+/** Difficulty filter accepted by the host's `difficulty` game setting. */
+export type FFDifficultySetting =
+  | 'easy'
+  | 'medium'
+  | 'hard'
+  | 'mixed';
+
+type Difficulty =
+  | 'easy'
+  | 'medium'
+  | 'hard';
+
 /**
- * Select questions for a single game round.
+ * Bucket order to draw from when the chosen difficulty runs short: the chosen
+ * one first, then the nearest neighbour, then the farthest.
+ */
+const DIFFICULTY_FALLBACK: Record<
+  Difficulty,
+  Difficulty[]
+> =
+  {
+    easy: [
+      'easy',
+      'medium',
+      'hard',
+    ],
+    medium:
+      [
+        'medium',
+        'easy',
+        'hard',
+      ],
+    hard: [
+      'hard',
+      'medium',
+      'easy',
+    ],
+  };
+
+/**
+ * Scale the default mix (FF_QUESTION_DISTRIBUTION, 3 easy / 3 medium / 2 hard
+ * for 8 questions) to `count` questions: a quarter hard, the rest split
+ * evenly between easy and medium (easy takes the odd one).
+ */
+export function mixedDistribution(
+  count: number,
+): Record<
+  Difficulty,
+  number
+> {
+  const base =
+    FF_QUESTION_DISTRIBUTION;
+  const baseTotal =
+    base.easy +
+    base.medium +
+    base.hard;
+  if (
+    count ===
+    baseTotal
+  )
+    return {
+      ...base,
+    };
+  const hard =
+    Math.round(
+      (count *
+        base.hard) /
+        baseTotal,
+    );
+  const easy =
+    Math.round(
+      (count -
+        hard) /
+        2,
+    );
+  return {
+    easy,
+    medium:
+      count -
+      hard -
+      easy,
+    hard,
+  };
+}
+
+/**
+ * Select questions for a single game.
  *
- * - Picks according to FF_QUESTION_DISTRIBUTION (default: 3 easy, 3 medium, 2 hard).
+ * - `count` questions (the host's `totalQuestions` setting; default 8).
+ * - `difficulty` 'mixed' picks the scaled default mix (see mixedDistribution);
+ *   'easy' / 'medium' / 'hard' picks only that difficulty, falling back to the
+ *   nearest difficulty when the pool runs short.
+ * - Any remaining shortfall is filled from whatever is left, and only then
+ *   from questions already played this session, so a game never ends up
+ *   shorter than `count` while the pool has enough questions.
  * - Excludes questions whose pool indices appear in `usedIndices` (prevents repeats within a lobby session).
  * - Avoids consecutive questions from the same category when possible.
  * - Shuffles within each difficulty bucket before selection.
@@ -173,35 +264,44 @@ export type IndexedQuestion =
 export function selectQuestionsForGame(
   pool: TriviaQuestion[],
   usedIndices: Set<number>,
+  count: number = FF_QUESTION_DISTRIBUTION.easy +
+    FF_QUESTION_DISTRIBUTION.medium +
+    FF_QUESTION_DISTRIBUTION.hard,
+  difficulty: FFDifficultySetting = 'mixed',
 ): IndexedQuestion[] {
-  const distribution =
-    FF_QUESTION_DISTRIBUTION;
+  const target =
+    Math.max(
+      0,
+      Math.floor(
+        count,
+      ),
+    );
 
-  // Tag each question with its original pool index, then filter out used ones
-  const available: IndexedQuestion[] =
-    pool
-      .map(
-        (
-          q,
+  // Tag each question with its original pool index, then split unused / used
+  const tagged: IndexedQuestion[] =
+    pool.map(
+      (
+        q,
+        index,
+      ) => ({
+        ...q,
+        poolIndex:
           index,
-        ) => ({
-          ...q,
-          poolIndex:
-            index,
-        }),
-      )
-      .filter(
-        (
-          q,
-        ) =>
-          !usedIndices.has(
-            q.poolIndex,
-          ),
-      );
+      }),
+    );
+  const available =
+    tagged.filter(
+      (
+        q,
+      ) =>
+        !usedIndices.has(
+          q.poolIndex,
+        ),
+    );
 
   // Group by difficulty
   const byDifficulty: Record<
-    string,
+    Difficulty,
     IndexedQuestion[]
   > =
     {
@@ -235,24 +335,95 @@ export function selectQuestionsForGame(
       ),
     };
 
-  // Pick from each bucket
   const selected: IndexedQuestion[] =
     [];
-  for (const [
-    diff,
-    count,
-  ] of Object.entries(
-    distribution,
-  )) {
-    const bucket =
-      byDifficulty[
-        diff
-      ] ??
-      [];
+  const take =
+    (
+      bucket: Difficulty,
+      n: number,
+    ) => {
+      if (
+        n <=
+        0
+      )
+        return;
+      selected.push(
+        ...byDifficulty[
+          bucket
+        ].splice(
+          0,
+          n,
+        ),
+      );
+    };
+
+  if (
+    difficulty ===
+    'mixed'
+  ) {
+    const mix =
+      mixedDistribution(
+        target,
+      );
+    for (const diff of [
+      'easy',
+      'medium',
+      'hard',
+    ] as const)
+      take(
+        diff,
+        mix[
+          diff
+        ],
+      );
+    // A short bucket is made up from the others (medium sits between both)
+    for (const fallback of DIFFICULTY_FALLBACK.medium)
+      take(
+        fallback,
+        target -
+          selected.length,
+      );
+  } else {
+    for (const fallback of DIFFICULTY_FALLBACK[
+      difficulty
+    ])
+      take(
+        fallback,
+        target -
+          selected.length,
+      );
+  }
+
+  // Last resort: the session has used up the pool — reuse played questions
+  if (
+    selected.length <
+    target
+  ) {
+    const chosen =
+      new Set(
+        selected.map(
+          (
+            q,
+          ) =>
+            q.poolIndex,
+        ),
+      );
+    const reusable =
+      shuffle(
+        tagged.filter(
+          (
+            q,
+          ) =>
+            !chosen.has(
+              q.poolIndex,
+            ),
+        ),
+      );
     selected.push(
-      ...bucket.slice(
+      ...reusable.slice(
         0,
-        count,
+        target -
+          selected.length,
       ),
     );
   }

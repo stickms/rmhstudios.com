@@ -37,24 +37,55 @@ interface ValidatedIdentity {
  * then resolves to a linked site account if one exists, otherwise
  * falls back to a transient Discord identity (userId = "discord:<id>").
  */
+/**
+ * A failure that says nothing about the credential (Discord rate-limited us or
+ * is down, the request timed out, the database is unreachable). It is reported
+ * as SERVICE_UNAVAILABLE, not AUTH_FAILED: the shared realtime client stops
+ * reconnecting for good on anything that looks like an auth error, so one
+ * Discord 429 used to leave an Activity player disconnected until they found
+ * the Retry button.
+ */
+class TransientAuthError extends Error {}
+
 async function validateDiscordToken(
   discordToken: string,
 ): Promise<ValidatedIdentity | null> {
-  const userRes =
-    await fetch(
-      'https://discord.com/api/v10/users/@me',
-      {
-        headers:
-          {
-            Authorization: `Bearer ${discordToken}`,
-          },
-      },
+  let userRes: Response;
+  try {
+    userRes =
+      await fetch(
+        'https://discord.com/api/v10/users/@me',
+        {
+          headers:
+            {
+              Authorization: `Bearer ${discordToken}`,
+            },
+          signal:
+            AbortSignal.timeout(
+              8_000,
+            ),
+        },
+      );
+  } catch (err) {
+    throw new TransientAuthError(
+      `discord_fetch_failed: ${String(err)}`,
     );
+  }
 
+  // Only Discord rejecting the token is an auth failure.
+  if (
+    userRes.status ===
+      401 ||
+    userRes.status ===
+      403
+  )
+    return null;
   if (
     !userRes.ok
   )
-    return null;
+    throw new TransientAuthError(
+      `discord_status_${userRes.status}`,
+    );
 
   const discordUser =
     await userRes.json();
@@ -80,16 +111,26 @@ async function validateDiscordToken(
       'DATABASE_URL is not configured',
     );
   const result =
-    await db.query(
-      `SELECT a."userId", u."name", u."image"
+    await db
+      .query(
+        `SELECT a."userId", u."name", u."image"
      FROM "account" a
      JOIN "user" u ON u."id" = a."userId"
      WHERE a."providerId" = 'discord' AND a."accountId" = $1
      LIMIT 1`,
-      [
-        discordId,
-      ],
-    );
+        [
+          discordId,
+        ],
+      )
+      .catch(
+        (
+          err: unknown,
+        ) => {
+          throw new TransientAuthError(
+            `account_lookup_failed: ${String(err)}`,
+          );
+        },
+      );
 
   if (
     result
@@ -275,7 +316,10 @@ export async function authMiddleware(
     );
     next(
       new Error(
-        'AUTH_FAILED',
+        err instanceof
+          TransientAuthError
+          ? 'SERVICE_UNAVAILABLE'
+          : 'AUTH_FAILED',
       ),
     );
   }

@@ -103,6 +103,10 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   // Key card data — only populated for spymasters
   const keyCardRef = useRef<GridTileClient[]>([]);
 
+  // Raw action log: a snapshot carries its tail, each broadcast the entries
+  // added since the previous one (`actionLogEntries`), appended here by seq.
+  const actionLogRef = useRef<Array<{ seq: number; type: string; payload: Record<string, unknown> }>>([]);
+
   const players = useRMHboxStore((s) => s.lobby?.players);
 
   // Ref-based player name lookup for use inside handleGameAction without creating dependency
@@ -220,6 +224,16 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           setMyTeam(team);
           break;
         }
+        case 'UA_ROLES_CHANGED': {
+          // A disconnected spymaster was replaced by an operative mid-game; the
+          // new spymaster also receives UA_KEY_CARD privately.
+          const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
+          setTeams(rawTeams);
+          const { role, team } = deriveRole(rawTeams);
+          setMyRole(role);
+          setMyTeam(team);
+          break;
+        }
         case 'UA_TEAMS_UPDATED': {
           const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
           setTeams(rawTeams);
@@ -290,12 +304,24 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
         case 'UA_TILE_REVEALED': {
           const pos = data.position as number;
           const tileType = data.tileType as TileType;
-          const revealedBy = data.teamId as string;
+          const revealedBy = data.revealedBy as string;
           setGrid((prev) =>
             prev.map((t) =>
               t.position === pos ? { ...t, type: tileType, state: 'REVEALED' as const, revealedBy } : t,
             ),
           );
+          // Authoritative totals for both teams on every reveal
+          const revealedCounts = data.agentsRevealed as { red: number; blue: number } | undefined;
+          if (revealedCounts) {
+            setTeams((prev) =>
+              prev
+                ? {
+                    red: { ...prev.red, agentsRevealed: revealedCounts.red },
+                    blue: { ...prev.blue, agentsRevealed: revealedCounts.blue },
+                  }
+                : prev,
+            );
+          }
           playSound(tileType === 'RED_AGENT' || tileType === 'BLUE_AGENT' ? 'scoreDing' : 'buzzer');
           break;
         }
@@ -375,8 +401,18 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       }
 
       // Sync the game log from the server's authoritative actionLog
-      if (Array.isArray(data.actionLog)) {
-        syncGameLog(data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>);
+      if (Array.isArray(data.actionLogEntries) && data.actionLogEntries.length > 0) {
+        const known = new Set(actionLogRef.current.map((e) => e.seq));
+        const added = (
+          data.actionLogEntries as Array<{ seq: number; type: string; payload: Record<string, unknown> }>
+        ).filter((e) => !known.has(e.seq));
+        if (added.length > 0) {
+          actionLogRef.current = [...actionLogRef.current, ...added].sort((a, b) => a.seq - b.seq);
+          syncGameLog(actionLogRef.current);
+        }
+      } else if (Array.isArray(data.actionLog)) {
+        actionLogRef.current = data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>;
+        syncGameLog(actionLogRef.current);
       }
     },
     [currentTeam, deriveRole, syncGameLog],
@@ -402,7 +438,8 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       setHighlightCounts(data.highlightCounts as Record<number, number> ?? {});
       // Sync game log from server's authoritative actionLog
       if (Array.isArray(data.actionLog)) {
-        syncGameLog(data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>);
+        actionLogRef.current = data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>;
+        syncGameLog(actionLogRef.current);
       }
       // Derive role from teams
       const { role, team } = deriveRole(rawTeams);
@@ -462,8 +499,17 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
 
   const isHost = playerId === storeHostId;
 
-  // Only the current team's operatives can click tiles
-  const canGuess = phase === 'GUESS' && myRole === 'operative' && myTeam === currentTeam;
+  // A team with no connected operative guesses through its spymaster (the
+  // server applies the same rule).
+  const spymasterGuesses =
+    !!teams &&
+    teams[currentTeam].operativeIds.every((id) => !players?.find((p) => p.userId === id)?.isConnected);
+
+  // Only the current team's operatives (or its lone spymaster) can click tiles
+  const canGuess =
+    phase === 'GUESS' &&
+    myTeam === currentTeam &&
+    (myRole === 'operative' || (myRole === 'spymaster' && spymasterGuesses));
   const isMyCluePhase = phase === 'CLUE' && myRole === 'spymaster' && myTeam === currentTeam;
 
   // Look up player names for display
@@ -672,7 +718,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                       teams ? getPlayerName(teams[currentTeam].spymasterId) : 'Spymaster'
                     }
                     teamId={currentTeam}
-                    onEndTurn={myRole === 'operative' && myTeam === currentTeam ? handleEndTurn : undefined}
+                    onEndTurn={canGuess ? handleEndTurn : undefined}
                   />
                 </motion.div>
               )}

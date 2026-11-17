@@ -10,17 +10,18 @@ import { useTranslation } from 'react-i18next';
 interface BidControlsProps {
   currentBid: number;
   currency: number;
+  /** Bid step (the host's `bidIncrement` setting, sent by the server). */
+  increment: number;
   onBid: (
     amount: number,
   ) => void;
   disabled?: boolean;
 }
 
-const INCREMENT = 50;
-
 export default function BidControls({
   currentBid,
   currency,
+  increment,
   onBid,
   disabled,
 }: BidControlsProps) {
@@ -30,14 +31,19 @@ export default function BidControls({
     useTranslation(
       'c-rmhbox',
     );
+  const step =
+    increment >
+    0
+      ? increment
+      : 50;
   const canIncrease =
     !disabled &&
     currency >=
-      INCREMENT;
+      step;
   const canDecrease =
     !disabled &&
     currentBid >=
-      INCREMENT;
+      step;
 
   return (
     <div className="flex items-center gap-2">
@@ -46,7 +52,7 @@ export default function BidControls({
         onClick={() =>
           onBid(
             currentBid -
-              INCREMENT,
+              step,
           )
         }
         disabled={
@@ -72,7 +78,7 @@ export default function BidControls({
         onClick={() =>
           onBid(
             currentBid +
-              INCREMENT,
+              step,
           )
         }
         disabled={

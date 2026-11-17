@@ -58,6 +58,7 @@ import {
   mergeGameSettings,
 } from '../../lib/rmhbox/game-settings';
 import type {
+  ClientTimerSnapshot,
   MinigameDefinition,
   RoundResultsPayload,
   SessionStanding,
@@ -145,7 +146,26 @@ interface LifecycleState {
   timerHandle: TimerHandle | null;
   /** Set of userIds who have sent ready_to_render during PRELOADING */
   readyPlayers: Set<string>;
+  /** GAME_SETTINGS_OPENED mode, re-sent to a member who reloads in GAME_SETTINGS. */
+  settingsMode?:
+    | 'direct'
+    | 'post-vote';
+  /** GAME_INSTRUCTIONS payload, re-sent to a member who reloads in INSTRUCTIONS. */
+  instructionsPayload?: unknown;
+  /** GAME_ROUND_RESULTS payload, re-sent to a member who reloads in ROUND_RESULTS. */
+  roundResults?: RoundResultsPayload;
 }
+
+/** States between "a game was chosen" and "its handler runs". */
+const PRE_GAME_STATES: ReadonlySet<string> =
+  new Set(
+    [
+      'GAME_SETTINGS',
+      'INSTRUCTIONS',
+      'PRELOADING',
+      'COUNTDOWN',
+    ],
+  );
 
 // ─── GameCoordinator ─────────────────────────────────────────────
 
@@ -219,7 +239,22 @@ export class GameCoordinator {
             lobbyId,
           );
         if (
-          !lobby ||
+          !lobby
+        )
+          return;
+        // Before the handler exists the roster still matters: a game must not
+        // start below its minimum, and preloading must not wait for a leaver.
+        if (
+          PRE_GAME_STATES.has(
+            lobby.state,
+          )
+        ) {
+          this.onPreGameRosterChange(
+            lobby,
+          );
+          return;
+        }
+        if (
           lobby.state !==
             'PLAYING' ||
           !lobby
@@ -258,6 +293,294 @@ export class GameCoordinator {
           lobbyId,
         ),
     );
+    // A member who reloads, remounts or reconnects gets this phase's payload again.
+    this.lobbyManager.onMemberResync(
+      (
+        lobby,
+        userId,
+        socket,
+      ) =>
+        this.resendPhasePayload(
+          lobby,
+          userId,
+          socket,
+        ),
+    );
+    this.lobbyManager.timerSnapshotProvider =
+      (
+        lobby,
+      ) =>
+        this.getTimerSnapshot(
+          lobby,
+        );
+  }
+
+  /** The running timer as the lobby snapshot reports it (see LobbyManager.timerSnapshotProvider). */
+  private getTimerSnapshot(
+    lobby: RMHboxLobby,
+  ): ClientTimerSnapshot | null {
+    if (
+      lobby.state ===
+      'PLAYING'
+    ) {
+      return (
+        lobby.currentGame?.handler?.getPhaseTimerSnapshot() ??
+        null
+      );
+    }
+    return (
+      this.lifecycles
+        .get(
+          lobby.id,
+        )
+        ?.timerHandle?.snapshot() ??
+      null
+    );
+  }
+
+  /**
+   * Re-send the current phase's one-shot payload to one member. These screens
+   * are built from events, not from the lobby snapshot, so a reload, a page
+   * remount or a reconnect used to leave them blank — and a host on a blank
+   * round-results screen had no "Next" button, so the lobby stayed there.
+   */
+  private resendPhasePayload(
+    lobby: RMHboxLobby,
+    userId: string,
+    socket: Socket,
+  ): void {
+    const lifecycle =
+      this.lifecycles.get(
+        lobby.id,
+      );
+    switch (
+      lobby.state
+    ) {
+      case 'GAME_SETTINGS': {
+        const minigameId =
+          lobby
+            .currentGame
+            ?.minigameId;
+        const def =
+          minigameId
+            ? MINIGAME_REGISTRY[
+                minigameId
+              ]
+            : undefined;
+        if (
+          !minigameId ||
+          !def?.settingsSchema
+        )
+          return;
+        socket.emit(
+          S2C.GAME_SETTINGS_OPENED,
+          {
+            minigameId,
+            displayName:
+              def.displayName,
+            schema:
+              def.settingsSchema,
+            currentValues:
+              lobby.pendingGameSettings ??
+              getDefaultSettings(
+                def.settingsSchema,
+              ),
+            mode:
+              lifecycle?.settingsMode ??
+              'post-vote',
+          },
+        );
+        return;
+      }
+      case 'INSTRUCTIONS':
+        if (
+          lifecycle?.instructionsPayload
+        )
+          socket.emit(
+            S2C.GAME_INSTRUCTIONS,
+            lifecycle.instructionsPayload,
+          );
+        return;
+      case 'PRELOADING':
+        if (
+          lifecycle
+        )
+          socket.emit(
+            S2C.GAME_PRELOAD_PROGRESS,
+            this.buildPreloadProgress(
+              lobby,
+              lifecycle,
+            ),
+          );
+        return;
+      case 'PLAYING': {
+        // The reconnect path sends this too; a same-lobby re-join (page
+        // remount, Discord iframe reload) did not.
+        const handler =
+          lobby
+            .currentGame
+            ?.handler;
+        if (
+          !handler
+        )
+          return;
+        const isSpectator =
+          !lobby.players.has(
+            userId,
+          );
+        const target =
+          isSpectator
+            ? this.getSpectatorTarget(
+                lobby.id,
+                userId,
+              )
+            : undefined;
+        socket.emit(
+          S2C.GAME_STATE_SNAPSHOT,
+          handler.buildReconnectionSnapshot(
+            userId,
+            isSpectator,
+            target,
+          ),
+        );
+        return;
+      }
+      case 'ROUND_RESULTS':
+        if (
+          lifecycle?.roundResults
+        )
+          socket.emit(
+            S2C.GAME_ROUND_RESULTS,
+            lifecycle.roundResults,
+          );
+        return;
+      default:
+        return;
+    }
+  }
+
+  /**
+   * A player left (for good) between game selection and PLAYING. Below the
+   * game's minimum the start is cancelled — it used to go ahead and the game
+   * sat in its first phase (e.g. Undercover Agent could never form teams).
+   * In PRELOADING the leaver may have been the last one not ready.
+   */
+  private onPreGameRosterChange(
+    lobby: RMHboxLobby,
+  ): void {
+    if (
+      !PRE_GAME_STATES.has(
+        lobby.state,
+      )
+    )
+      return;
+    const minigameId =
+      lobby
+        .currentGame
+        ?.minigameId;
+    const def =
+      minigameId
+        ? MINIGAME_REGISTRY[
+            minigameId
+          ]
+        : undefined;
+    if (
+      def &&
+      lobby
+        .players
+        .size <
+        def.minPlayers
+    ) {
+      this.cancelStartForPlayerCount(
+        lobby,
+        def.displayName,
+        def.minPlayers,
+      );
+      return;
+    }
+    if (
+      lobby.state ===
+      'PRELOADING'
+    )
+      this.maybeAdvancePreload(
+        lobby,
+      );
+  }
+
+  private cancelStartForPlayerCount(
+    lobby: RMHboxLobby,
+    displayName: string,
+    minPlayers: number,
+  ): void {
+    logger.info(
+      {
+        event:
+          'start_cancelled_insufficient_players',
+        lobbyId:
+          lobby.id,
+        state:
+          lobby.state,
+        playerCount:
+          lobby
+            .players
+            .size,
+        minPlayers,
+      },
+    );
+    this.clearLifecycleTimers(
+      lobby.id,
+    );
+    lobby.pendingGameSettings =
+      null;
+    this.lobbyManager.addSystemChat(
+      lobby.id,
+      `${displayName} needs at least ${minPlayers} players — the game was cancelled.`,
+    );
+    this.returnToWaiting(
+      lobby,
+    );
+  }
+
+  /** PRELOADING: broadcast progress and start the countdown once every connected player is ready. */
+  private maybeAdvancePreload(
+    lobby: RMHboxLobby,
+  ): void {
+    if (
+      lobby.state !==
+      'PRELOADING'
+    )
+      return;
+    const lifecycle =
+      this.lifecycles.get(
+        lobby.id,
+      );
+    if (
+      !lifecycle
+    )
+      return;
+    const progress =
+      this.buildPreloadProgress(
+        lobby,
+        lifecycle,
+      );
+    this.io
+      .to(
+        `lobby:${lobby.id}`,
+      )
+      .emit(
+        S2C.GAME_PRELOAD_PROGRESS,
+        progress,
+      );
+    if (
+      progress.allReady
+    ) {
+      this.clearLifecycleTimers(
+        lobby.id,
+      );
+      this.startCountdown(
+        lobby,
+      );
+    }
   }
 
   /**
@@ -408,6 +731,22 @@ export class GameCoordinator {
       ),
     );
     socket.on(
+      C2S.GAME_SYNC_REQUEST,
+      validated(
+        socket,
+        C2S.GAME_SYNC_REQUEST,
+        ReadyToRenderSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.onSyncRequest(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
       'rmhbox:game:input',
       validated(
         socket,
@@ -502,6 +841,22 @@ export class GameCoordinator {
       this.lobbyManager.getLobbyByUserId(
         userId,
       );
+    // A player who drops during PRELOADING no longer holds everyone else up
+    // (readiness counts connected players only).
+    if (
+      lobby?.state ===
+        'PRELOADING' &&
+      lobby.players.get(
+        userId,
+      )
+        ?.isConnected ===
+        false
+    ) {
+      this.maybeAdvancePreload(
+        lobby,
+      );
+      return;
+    }
     if (
       !lobby ||
       lobby.state !==
@@ -992,6 +1347,7 @@ export class GameCoordinator {
     socket: Socket,
     payload: {
       lobbyId: string;
+      fromState?: string;
     },
   ): void {
     const userId =
@@ -1034,6 +1390,15 @@ export class GameCoordinator {
       return;
     }
 
+    // The client says which state its Skip button belonged to; a double tap
+    // used to skip two phases (instructions, then preloading, then countdown).
+    if (
+      payload.fromState &&
+      payload.fromState !==
+        lobby.state
+    )
+      return;
+
     const lifecycle =
       this.lifecycles.get(
         lobby.id,
@@ -1048,7 +1413,7 @@ export class GameCoordinator {
         );
         break;
 
-      case 'GAME_SETTINGS':
+      case 'GAME_SETTINGS': {
         logger.info(
           {
             event:
@@ -1058,6 +1423,14 @@ export class GameCoordinator {
             userId,
           },
         );
+        const minigameId =
+          lobby
+            .currentGame
+            ?.minigameId;
+        if (
+          !minigameId
+        )
+          break;
         this.clearLifecycleTimers(
           lobby.id,
         );
@@ -1065,14 +1438,13 @@ export class GameCoordinator {
           lobby.id,
           'Host skipped game settings.',
         );
-        this.startGameFlow(
-          lobby.id,
-          lobby
-            .currentGame
-            ?.minigameId ??
-            '',
+        // Resolve the host's edits (it used to start with the previous game's settings).
+        this.resolveAndStartGame(
+          lobby,
+          minigameId,
         );
         break;
+      }
 
       case 'INSTRUCTIONS':
         logger.info(
@@ -1168,8 +1540,50 @@ export class GameCoordinator {
         );
         break;
 
+      case 'PLAYING': {
+        // The footer "Next" button of an infinite phase. It used to fall
+        // through to a no-op, so e.g. Undercover Editor's reveal never ended.
+        const handler =
+          lobby
+            .currentGame
+            ?.handler;
+        if (
+          !handler
+        )
+          break;
+        logger.info(
+          {
+            event:
+              'force_skip_playing',
+            lobbyId:
+              lobby.id,
+            userId,
+          },
+        );
+        try {
+          handler.handleHostSkip();
+        } catch (err) {
+          logger.error(
+            {
+              event:
+                'host_skip_error',
+              lobbyId:
+                lobby.id,
+              error:
+                String(
+                  err,
+                ),
+            },
+          );
+          this.handleGameError(
+            lobby.id,
+            err as Error,
+          );
+        }
+        break;
+      }
+
       default:
-        // No-op for PLAYING or other states — use force_end instead
         break;
     }
   }
@@ -1270,7 +1684,23 @@ export class GameCoordinator {
             .currentGame
             ?.handler
         ) {
-          lobby.currentGame.handler.cleanup();
+          // A throwing cleanup used to skip returnToWaiting and strand the lobby in PLAYING.
+          try {
+            lobby.currentGame.handler.cleanup();
+          } catch (err) {
+            logger.error(
+              {
+                event:
+                  'force_end_cleanup_error',
+                lobbyId:
+                  lobby.id,
+                error:
+                  String(
+                    err,
+                  ),
+              },
+            );
+          }
         }
         this.lobbyManager.addSystemChat(
           lobby.id,
@@ -1413,19 +1843,12 @@ export class GameCoordinator {
           !handler
         )
           return;
+        // Only the handler's clock: the lifecycle handle left over from the
+        // countdown is cleared when PLAYING starts.
         if (
           handler.isPhaseTimerPaused
         ) {
           handler.resumePhaseTimer();
-          // Also resume lifecycle timer if present (for games using both)
-          if (
-            lifecycle?.timerHandle &&
-            lifecycle
-              .timerHandle
-              .isPaused
-          ) {
-            lifecycle.timerHandle.resume();
-          }
           logger.info(
             {
               event:
@@ -1439,15 +1862,6 @@ export class GameCoordinator {
           );
         } else {
           handler.pausePhaseTimer();
-          // Also pause lifecycle timer if present
-          if (
-            lifecycle?.timerHandle &&
-            !lifecycle
-              .timerHandle
-              .isPaused
-          ) {
-            lifecycle.timerHandle.pause();
-          }
           logger.info(
             {
               event:
@@ -1511,21 +1925,6 @@ export class GameCoordinator {
       userId,
     );
 
-    // Broadcast preload progress
-    const progressPayload =
-      this.buildPreloadProgress(
-        lobby,
-        lifecycle,
-      );
-    this.io
-      .to(
-        `lobby:${lobby.id}`,
-      )
-      .emit(
-        S2C.GAME_PRELOAD_PROGRESS,
-        progressPayload,
-      );
-
     logger.info(
       {
         event:
@@ -1533,22 +1932,43 @@ export class GameCoordinator {
         lobbyId:
           lobby.id,
         userId,
-        allReady:
-          progressPayload.allReady,
       },
     );
 
-    // If all players ready, proceed to countdown
+    // Broadcast progress; proceed to countdown once every connected player is ready
+    this.maybeAdvancePreload(
+      lobby,
+    );
+  }
+
+  /** A minigame component mounted: re-send the current game snapshot (see C2S.GAME_SYNC_REQUEST). */
+  private onSyncRequest(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.lobbyManager.getLobbyByUserId(
+        userId,
+      );
     if (
-      progressPayload.allReady
-    ) {
-      this.clearLifecycleTimers(
-        lobby.id,
-      );
-      this.startCountdown(
-        lobby,
-      );
-    }
+      !lobby ||
+      lobby.id !==
+        payload.lobbyId ||
+      lobby.state !==
+        'PLAYING'
+    )
+      return;
+    this.resendPhasePayload(
+      lobby,
+      userId,
+      socket,
+    );
   }
 
   // ─── Game Input (§2.2 Step 4) ─────────────────────────────────
@@ -1579,7 +1999,18 @@ export class GameCoordinator {
     if (
       lobby.state !==
         'PLAYING' ||
-      !lobby.currentGame
+      !lobby
+        .currentGame
+        ?.handler
+    )
+      return;
+    // Paused means paused: an input used to end a phase and silently restart
+    // the clock while the rest of the game stayed suspended.
+    if (
+      lobby
+        .currentGame
+        .handler
+        .isPhaseTimerPaused
     )
       return;
 
@@ -2054,6 +2485,8 @@ export class GameCoordinator {
       lifecycle.timerHandle =
         timerHandle;
     }
+    lifecycle.settingsMode =
+      mode;
 
     logger.info(
       {
@@ -2505,6 +2938,10 @@ export class GameCoordinator {
             },
         },
       );
+      this.lobbyManager.addSystemChat(
+        lobbyId,
+        'That game is not available — pick another one.',
+      );
       this.abortGameFlow(
         lobby,
       );
@@ -2550,6 +2987,14 @@ export class GameCoordinator {
                   'Not enough players for this game.',
               },
           },
+        );
+        // The client ignores STATE_CHANGED's reason, so say it where people look.
+        this.lobbyManager.addSystemChat(
+          lobbyId,
+          playerCount <
+            def.minPlayers
+            ? `${def.displayName} needs at least ${def.minPlayers} players — the game was cancelled.`
+            : `${def.displayName} allows at most ${def.maxPlayers} players — the game was cancelled.`,
         );
         this.abortGameFlow(
           lobby,
@@ -2751,6 +3196,7 @@ export class GameCoordinator {
         timerHandle,
         readyPlayers:
           new Set(),
+        instructionsPayload,
       },
     );
 
@@ -3017,6 +3463,33 @@ export class GameCoordinator {
       !minigameId
     )
       return;
+
+    // The countdown's handle is finished but was still the lifecycle's: the
+    // host's in-game pause also "paused" it and clients showed 0.
+    this.clearLifecycleTimers(
+      lobby.id,
+    );
+
+    // Re-check the roster at the moment the handler is built: players can
+    // leave during instructions, preloading or the countdown.
+    const startDef =
+      MINIGAME_REGISTRY[
+        minigameId
+      ];
+    if (
+      startDef &&
+      lobby
+        .players
+        .size <
+        startDef.minPlayers
+    ) {
+      this.cancelStartForPlayerCount(
+        lobby,
+        startDef.displayName,
+        startDef.minPlayers,
+      );
+      return;
+    }
 
     lobby.state =
       'PLAYING';
@@ -3348,6 +3821,12 @@ export class GameCoordinator {
             Date.now(),
         };
       gameInstance.start();
+
+      // Players who are mid-disconnect (in their grace window) count against
+      // the floor exactly as they would a second later.
+      this.checkPlayerFloor(
+        lobby,
+      );
 
       // Send initial game state snapshot to every player via the base-class
       // helper. This ensures the client's Zustand store has the full game
@@ -3737,6 +4216,8 @@ export class GameCoordinator {
       lifecycle.timerHandle =
         timerHandle;
     }
+    lifecycle.roundResults =
+      roundResults;
 
     logger.info(
       {
@@ -3922,7 +4403,11 @@ export class GameCoordinator {
               spectator.isConnected,
             isReady: false,
             isAway: false,
-            score: 0,
+            score:
+              this.lobbyManager.takeDepartedScore(
+                lobby.id,
+                spectator.userId,
+              ),
             roundScore: 0,
             joinedAt:
               spectator.joinedAt,
@@ -4064,10 +4549,23 @@ export class GameCoordinator {
             lifecycle.readyPlayers.has(
               p.userId,
             ),
+          connected:
+            p.isConnected,
         }),
       );
+    // Only connected players hold the start: a dropped or backgrounded client
+    // used to make everyone wait out the 30 s preload timeout.
+    const waitingOn =
+      players.filter(
+        (
+          p,
+        ) =>
+          p.connected,
+      );
     const allReady =
-      players.every(
+      waitingOn.length >
+        0 &&
+      waitingOn.every(
         (
           p,
         ) =>

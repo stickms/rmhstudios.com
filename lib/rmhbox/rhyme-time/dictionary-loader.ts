@@ -13,8 +13,31 @@
 
 import fs from 'fs';
 import path from 'path';
-import rhymingPart from 'rhyming-part';
+import * as rhymingPartModule from 'rhyming-part';
 import { syllableCount as countSyllables } from 'syllable-count-english';
+
+type RhymingPartFn = (typeof rhymingPartModule)['default'];
+
+/**
+ * `rhyming-part` is ESM-only. The rmhbox hub is bundled by esbuild as CJS
+ * with `--packages=external`, so in production the package is `require()`d
+ * and esbuild's interop hands a default import the whole module namespace,
+ * not the function: `rhymingPart(...)` threw "is not a function" on every
+ * Rhyme Time submission (dev under tsx was fine). Resolve the function in
+ * either shape.
+ */
+function resolveRhymingPart(): RhymingPartFn {
+  let candidate: unknown = rhymingPartModule;
+  for (let depth = 0; depth < 3 && typeof candidate !== 'function'; depth++) {
+    candidate = (candidate as { default?: unknown } | null)?.default;
+  }
+  if (typeof candidate !== 'function') {
+    throw new Error('rhyming-part: default export is not a function');
+  }
+  return candidate as RhymingPartFn;
+}
+
+const rhymingPart = resolveRhymingPart();
 
 // ─── Types ───────────────────────────────────────────────────────
 

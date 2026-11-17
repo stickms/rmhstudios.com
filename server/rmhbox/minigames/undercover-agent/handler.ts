@@ -35,6 +35,9 @@ import {
   SwapPlayerSchema,
   SetRoleSchema,
   HighlightTileSchema,
+  UA_SPYMASTER_RECONNECT_GRACE_SECONDS,
+  UA_SNAPSHOT_LOG_LIMIT,
+  UA_DRAW_POINTS,
 } from '@/lib/rmhbox/undercover-agent/schemas';
 import {
   UA_GRID_SIZE,
@@ -43,6 +46,8 @@ import {
   UA_ASSASSIN,
   UA_BYSTANDER,
   UA_SETUP_DURATION,
+  UA_SPYMASTER_TIMEOUT,
+  UA_OPERATIVE_TIMEOUT,
   UA_TURN_TRANSITION,
   UA_MAX_UNLIMITED,
   UA_MAX_PASSES,
@@ -103,13 +108,20 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   private wordPool: string[];
   private state!: UndercoverAgentState;
   private startedAt: number = 0;
+  /** The CLUE / GUESS turn deadline. Cleared on every turn change. */
   private turnTimer: NodeJS.Timeout | null =
     null;
+  /** SETUP → first CLUE, and TURN_TRANSITION → next turn. */
+  private transitionTimer: NodeJS.Timeout | null =
+    null;
+  /** Pending spymaster hand-overs, keyed by the disconnected spymaster's userId. */
   private disconnectTimers: Map<
     string,
     NodeJS.Timeout
   > =
     new Map();
+  /** Highest action-log seq already broadcast (broadcasts carry only newer entries). */
+  private lastBroadcastSeq = 0;
 
   get spectatorMode(): 'shared-privileged' {
     return 'shared-privileged';
@@ -269,52 +281,198 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
     // Delay before transitioning to CLUE phase so players can see their
     // team assignment and role before the game begins.
-    this.setTimeout(
-      () => {
-        // Transition to CLUE phase (no turn timer — unlimited time by default)
-        this.state.phase =
-          UndercoverAgentPhase.CLUE;
-        this.state.turnNumber = 1;
-        this.logAction(
-          'turn_start',
-          {
-            turnNumber: 1,
-            team: this
+    this.clearTrackedTimeout(
+      this
+        .transitionTimer,
+    );
+    this.transitionTimer =
+      this.setTimeout(
+        () => {
+          this.transitionTimer =
+            null;
+          if (
+            !this
+              .isRunning ||
+            this
               .state
-              .currentTeam,
-          },
-        );
+              .phase !==
+              UndercoverAgentPhase.SETUP
+          )
+            return;
+          this.state.turnNumber = 1;
+          this.enterCluePhase();
+        },
+        UA_SETUP_DURATION *
+          1000,
+      );
+  }
 
-        this.broadcastGameAction(
-          {
-            type: 'UA_PHASE_CHANGE',
-            phase:
-              UndercoverAgentPhase.CLUE,
-            currentTeam:
-              this
-                .state
-                .currentTeam,
-            turnNumber:
-              this
-                .state
-                .turnNumber,
-            timeout: 0,
-          },
-        );
+  private spymasterTimeout(): number {
+    return this.getSetting(
+      'spymasterTimeout',
+      UA_SPYMASTER_TIMEOUT,
+    );
+  }
 
-        // Infinite timer during CLUE phase (spymaster has unlimited time)
-        this.startInfinitePhaseTimer();
+  private operativeTimeout(): number {
+    return this.getSetting(
+      'operativeTimeout',
+      UA_OPERATIVE_TIMEOUT,
+    );
+  }
 
-        // Update footer round counter with turn number
-        this.broadcastRound(
+  private isConnected(
+    userId: string,
+  ): boolean {
+    return (
+      this.context.players.get(
+        userId,
+      )
+        ?.isConnected ??
+      false
+    );
+  }
+
+  /** Operatives of a team who are still connected. */
+  private connectedOperatives(
+    teamId:
+      | 'red'
+      | 'blue',
+  ): string[] {
+    return this.state.teams[
+      teamId
+    ].operativeIds.filter(
+      (
+        id,
+      ) =>
+        id &&
+        this.isConnected(
+          id,
+        ),
+    );
+  }
+
+  /**
+   * A team whose operatives are all gone guesses through its spymaster (the
+   * same rule as a 2–3 player game, where a team may have no operative).
+   */
+  private spymasterMayGuess(
+    teamId:
+      | 'red'
+      | 'blue',
+  ): boolean {
+    return (
+      this.connectedOperatives(
+        teamId,
+      )
+        .length ===
+      0
+    );
+  }
+
+  /** Begin the current team's CLUE phase (turnNumber already set). */
+  private enterCluePhase(): void {
+    this.state.phase =
+      UndercoverAgentPhase.CLUE;
+
+    this.logAction(
+      'turn_start',
+      {
+        turnNumber:
           this
             .state
             .turnNumber,
-          0,
-        );
+        team: this
+          .state
+          .currentTeam,
       },
-      UA_SETUP_DURATION *
-        1000,
+    );
+
+    logger.info(
+      {
+        event:
+          'undercover_agent:turn_start',
+        lobbyId:
+          this
+            .context
+            .lobbyId,
+        teamId:
+          this
+            .state
+            .currentTeam,
+        turnNumber:
+          this
+            .state
+            .turnNumber,
+      },
+    );
+
+    // If the current team is fully disconnected, auto-skip their turn.
+    // The game-coordinator's grace timer handles the "all players disconnected" case.
+    if (
+      this.isTeamFullyDisconnected(
+        this
+          .state
+          .currentTeam,
+      )
+    ) {
+      this
+        .state
+        .consecutivePasses++;
+      this.endCurrentTurn(
+        'team_disconnected',
+      );
+      return;
+    }
+
+    // A spymaster who is not here cannot give the clue: start the hand-over.
+    const spymasterId =
+      this
+        .state
+        .teams[
+        this
+          .state
+          .currentTeam
+      ]
+        .spymasterId;
+    if (
+      !this.isConnected(
+        spymasterId,
+      )
+    )
+      this.scheduleSpymasterHandover(
+        spymasterId,
+      );
+
+    const timeout =
+      this.spymasterTimeout();
+    this.broadcastGameAction(
+      {
+        type: 'UA_PHASE_CHANGE',
+        phase:
+          UndercoverAgentPhase.CLUE,
+        currentTeam:
+          this
+            .state
+            .currentTeam,
+        turnNumber:
+          this
+            .state
+            .turnNumber,
+        timeout,
+      },
+    );
+
+    this.startTurnTimer(
+      timeout,
+    );
+
+    // Update footer round counter with turn number
+    this.broadcastRound(
+      this
+        .state
+        .turnNumber,
+      0,
     );
   }
 
@@ -505,28 +663,34 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   /** Check whether the current team composition is valid for starting the game. */
   private isTeamCompositionValid(): boolean {
-    const red =
-      this
-        .state
-        .teams
-        .red;
-    const blue =
-      this
-        .state
-        .teams
-        .blue;
-    // Each team needs exactly 1 spymaster and ≥1 operative
+    // Each team needs a connected spymaster and ≥1 connected operative
     return (
-      !!red.spymasterId &&
-      !!blue.spymasterId &&
-      red
-        .operativeIds
-        .length >=
-        1 &&
-      blue
-        .operativeIds
-        .length >=
-        1
+      [
+        'red',
+        'blue',
+      ] as const
+    ).every(
+      (
+        teamId,
+      ) => {
+        const team =
+          this
+            .state
+            .teams[
+            teamId
+          ];
+        return (
+          !!team.spymasterId &&
+          this.isConnected(
+            team.spymasterId,
+          ) &&
+          this.connectedOperatives(
+            teamId,
+          )
+            .length >=
+            1
+        );
+      },
     );
   }
 
@@ -1392,9 +1556,11 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       },
     );
 
-    // Transition to GUESS phase (no turn timer — unlimited time by default)
+    // Transition to GUESS phase
     this.state.phase =
       UndercoverAgentPhase.GUESS;
+    const guessTimeout =
+      this.operativeTimeout();
 
     this.broadcastGameAction(
       {
@@ -1411,12 +1577,15 @@ export class UndercoverAgentMinigame extends BaseMinigame {
           this
             .state
             .guessesRemaining,
-        timeout: 0,
+        timeout:
+          guessTimeout,
       },
     );
 
-    // Infinite timer during GUESS phase (operatives have unlimited time)
-    this.startInfinitePhaseTimer();
+    // Operatives get a bounded turn: on timeout the turn passes
+    this.startTurnTimer(
+      guessTimeout,
+    );
 
     // Update footer round counter (same turn number during guessing)
     this.broadcastRound(
@@ -1635,10 +1804,11 @@ export class UndercoverAgentMinigame extends BaseMinigame {
           .currentTeam
       ];
     const isSoloTeam =
-      currentTeam
-        .operativeIds
-        .length ===
-      0;
+      this.spymasterMayGuess(
+        this
+          .state
+          .currentTeam,
+      );
     const isOperative =
       currentTeam.operativeIds.includes(
         userId,
@@ -1801,23 +1971,6 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       },
     );
 
-    // Broadcast the reveal to all players
-    this.broadcastGameAction(
-      {
-        type: 'UA_TILE_REVEALED',
-        position,
-        word: tile.word,
-        tileType:
-          tile.type,
-        revealedBy:
-          userId,
-        teamId:
-          this
-            .state
-            .currentTeam,
-      },
-    );
-
     // Process the result
     const ownAgentType =
       this
@@ -1837,6 +1990,68 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       this.playerStats.get(
         userId,
       );
+    const opponentTeamId =
+      this
+        .state
+        .currentTeam ===
+      'red'
+        ? 'blue'
+        : 'red';
+
+    // Count the agent before broadcasting, so every reveal carries both
+    // teams' authoritative totals (clients no longer drift).
+    if (
+      tile.type ===
+      ownAgentType
+    )
+      this
+        .state
+        .teams[
+        this
+          .state
+          .currentTeam
+      ]
+        .agentsRevealed++;
+    else if (
+      tile.type ===
+      opponentAgentType
+    )
+      this
+        .state
+        .teams[
+        opponentTeamId
+      ]
+        .agentsRevealed++;
+
+    // Broadcast the reveal to all players
+    this.broadcastGameAction(
+      {
+        type: 'UA_TILE_REVEALED',
+        position,
+        word: tile.word,
+        tileType:
+          tile.type,
+        revealedBy:
+          userId,
+        teamId:
+          this
+            .state
+            .currentTeam,
+        agentsRevealed:
+          {
+            red: this
+              .state
+              .teams
+              .red
+              .agentsRevealed,
+            blue: this
+              .state
+              .teams
+              .blue
+              .agentsRevealed,
+          },
+      },
+    );
 
     if (
       tile.type ===
@@ -1867,7 +2082,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       tile.type ===
       ownAgentType
     ) {
-      // Correct guess — own agent found
+      // Correct guess — own agent found (counted above)
       const team =
         this
           .state
@@ -1876,7 +2091,6 @@ export class UndercoverAgentMinigame extends BaseMinigame {
             .state
             .currentTeam
         ];
-      team.agentsRevealed++;
       if (
         playerStatEntry
       ) {
@@ -1947,20 +2161,6 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       tile.type ===
       opponentAgentType
     ) {
-      const opponentTeamId =
-        this
-          .state
-          .currentTeam ===
-        'red'
-          ? 'blue'
-          : 'red';
-      this
-        .state
-        .teams[
-        opponentTeamId
-      ]
-        .agentsRevealed++;
-
       // Check if opponent now has all agents found → they win
       const oppTeam =
         this
@@ -2021,10 +2221,11 @@ export class UndercoverAgentMinigame extends BaseMinigame {
           .currentTeam
       ];
     const isSoloTeam =
-      currentTeam
-        .operativeIds
-        .length ===
-      0;
+      this.spymasterMayGuess(
+        this
+          .state
+          .currentTeam,
+      );
     const isOperative =
       currentTeam.operativeIds.includes(
         userId,
@@ -2102,6 +2303,18 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   private endCurrentTurn(
     reason: string,
   ): void {
+    // Only a live turn can end (a late timer or a second disconnect is a no-op)
+    if (
+      this
+        .state
+        .phase !==
+        UndercoverAgentPhase.CLUE &&
+      this
+        .state
+        .phase !==
+        UndercoverAgentPhase.GUESS
+    )
+      return;
     this.clearTurnTimer();
     this.clearHighlights();
 
@@ -2177,18 +2390,33 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       },
     );
 
-    this.setTimeout(
-      () =>
-        this.startNextTurn(),
-      UA_TURN_TRANSITION *
-        1000,
+    this.clearTrackedTimeout(
+      this
+        .transitionTimer,
     );
+    this.transitionTimer =
+      this.setTimeout(
+        () => {
+          this.transitionTimer =
+            null;
+          this.startNextTurn();
+        },
+        UA_TURN_TRANSITION *
+          1000,
+      );
   }
 
   private startNextTurn(): void {
     if (
       !this
         .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      UndercoverAgentPhase.TURN_TRANSITION
     )
       return;
 
@@ -2203,88 +2431,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     this
       .state
       .turnNumber++;
-    this.state.phase =
-      UndercoverAgentPhase.CLUE;
-
-    this.logAction(
-      'turn_start',
-      {
-        turnNumber:
-          this
-            .state
-            .turnNumber,
-        team: this
-          .state
-          .currentTeam,
-      },
-    );
-
-    logger.info(
-      {
-        event:
-          'undercover_agent:turn_start',
-        lobbyId:
-          this
-            .context
-            .lobbyId,
-        teamId:
-          this
-            .state
-            .currentTeam,
-        turnNumber:
-          this
-            .state
-            .turnNumber,
-      },
-    );
-
-    // If the current team is fully disconnected, auto-skip their turn.
-    // The game-coordinator's grace timer handles the "all players disconnected" case.
-    if (
-      this.isTeamFullyDisconnected(
-        this
-          .state
-          .currentTeam,
-      )
-    ) {
-      this
-        .state
-        .consecutivePasses++;
-      this.endCurrentTurn(
-        'team_disconnected',
-      );
-      return;
-    }
-
-    // No turn timer — unlimited time by default
-
-    this.broadcastGameAction(
-      {
-        type: 'UA_PHASE_CHANGE',
-        phase:
-          UndercoverAgentPhase.CLUE,
-        currentTeam:
-          this
-            .state
-            .currentTeam,
-        turnNumber:
-          this
-            .state
-            .turnNumber,
-        timeout: 0,
-      },
-    );
-
-    // Infinite timer during CLUE phase
-    this.startInfinitePhaseTimer();
-
-    // Update footer round counter with new turn number
-    this.broadcastRound(
-      this
-        .state
-        .turnNumber,
-      0,
-    );
+    this.enterCluePhase();
   }
 
   private startTurnTimer(
@@ -2298,6 +2445,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     this.turnTimer =
       this.setTimeout(
         () => {
+          this.turnTimer =
+            null;
           this.handleTurnTimeout();
         },
         timeoutSeconds *
@@ -2407,7 +2556,25 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       | 'draw',
     reason: string,
   ): void {
+    if (
+      this
+        .state
+        .phase ===
+        UndercoverAgentPhase.BOARD_REVEAL ||
+      this
+        .state
+        .phase ===
+        UndercoverAgentPhase.GAME_OVER
+    ) {
+      return;
+    }
     this.clearTurnTimer();
+    this.clearTrackedTimeout(
+      this
+        .transitionTimer,
+    );
+    this.transitionTimer =
+      null;
     this.state.phase =
       UndercoverAgentPhase.BOARD_REVEAL;
     this.state.winner =
@@ -2724,11 +2891,33 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         this.isTeamCompositionValid(),
       highlightCounts:
         this.getHighlightCounts(),
+      timeRemaining:
+        this.turnTimeRemaining(),
       actionLog:
-        this
-          .state
-          .actionLog,
+        this.snapshotActionLog(),
     };
+  }
+
+  /** Seconds left in the current CLUE / GUESS turn (0 when no turn is timed). */
+  private turnTimeRemaining(): number {
+    if (
+      !this
+        .turnTimer
+    )
+      return 0;
+    const snap =
+      this.getPhaseTimerSnapshot();
+    return snap &&
+      !snap.infinite
+      ? snap.remaining
+      : 0;
+  }
+
+  /** The tail of the action log a client needs to rebuild its game log. */
+  private snapshotActionLog(): UndercoverAgentState['actionLog'] {
+    return this.state.actionLog.slice(
+      -UA_SNAPSHOT_LOG_LIMIT,
+    );
   }
 
   getStateForSpectator(): unknown {
@@ -2798,10 +2987,10 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         this.isTeamCompositionValid(),
       highlightCounts:
         this.getHighlightCounts(),
+      timeRemaining:
+        this.turnTimeRemaining(),
       actionLog:
-        this
-          .state
-          .actionLog,
+        this.snapshotActionLog(),
     };
   }
 
@@ -2858,19 +3047,62 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       },
     );
 
-    // During TEAM_SETUP / SETUP phases, don't end the game for disconnects.
-    // The game-coordinator's grace timer handles insufficient-player scenarios,
-    // and team composition can change freely during setup.
+    if (
+      !this
+        .isRunning
+    )
+      return;
     if (
       this
         .state
         .phase ===
-        UndercoverAgentPhase.TEAM_SETUP ||
+        UndercoverAgentPhase.BOARD_REVEAL ||
       this
         .state
         .phase ===
-        UndercoverAgentPhase.SETUP
+        UndercoverAgentPhase.GAME_OVER
     ) {
+      return;
+    }
+
+    // During TEAM_SETUP the departed player leaves their team (they are put
+    // back on one if they reconnect), so the host can never start with a
+    // spymaster who is not there.
+    if (
+      this
+        .state
+        .phase ===
+      UndercoverAgentPhase.TEAM_SETUP
+    ) {
+      this.removePlayerFromTeam(
+        userId,
+        teamId,
+      );
+      if (
+        !team.spymasterId
+      ) {
+        const next =
+          this.connectedOperatives(
+            teamId,
+          )[0] ??
+          team
+            .operativeIds[0];
+        if (
+          next
+        ) {
+          team.operativeIds =
+            team.operativeIds.filter(
+              (
+                id,
+              ) =>
+                id !==
+                next,
+            );
+          team.spymasterId =
+            next;
+        }
+      }
+      this.broadcastTeamUpdate();
       return;
     }
 
@@ -2921,32 +3153,14 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       }
     }
 
-    // Spymaster disconnect during CLUE phase → auto-pass after timeout
+    // A spymaster who does not come back is replaced by a connected operative
+    // (SETUP included: the first CLUE turn must have someone to give it).
     if (
-      isSpymaster &&
-      this
-        .state
-        .phase ===
-        UndercoverAgentPhase.CLUE &&
-      this
-        .state
-        .currentTeam ===
-        teamId
-    ) {
-      // The existing turn timer will handle the timeout, no additional action needed
-      logger.info(
-        {
-          event:
-            'undercover_agent:spymaster_disconnect_auto_pass',
-          lobbyId:
-            this
-              .context
-              .lobbyId,
-          userId,
-          teamId,
-        },
+      isSpymaster
+    )
+      this.scheduleSpymasterHandover(
+        userId,
       );
-    }
   }
 
   handlePlayerReconnect(
@@ -2969,6 +3183,262 @@ export class UndercoverAgentMinigame extends BaseMinigame {
           this
             .state
             .turnNumber,
+      },
+    );
+
+    // Back in time: keep the spymaster role.
+    const pending =
+      this.disconnectTimers.get(
+        userId,
+      );
+    if (
+      pending
+    ) {
+      this.clearTrackedTimeout(
+        pending,
+      );
+      this.disconnectTimers.delete(
+        userId,
+      );
+    }
+
+    // Back during TEAM_SETUP: rejoin the smaller team.
+    if (
+      this
+        .state
+        .phase ===
+        UndercoverAgentPhase.TEAM_SETUP &&
+      !this.getPlayerTeam(
+        userId,
+      )
+    ) {
+      const size =
+        (
+          teamId:
+            | 'red'
+            | 'blue',
+        ) =>
+          (this
+            .state
+            .teams[
+            teamId
+          ]
+            .spymasterId
+            ? 1
+            : 0) +
+          this
+            .state
+            .teams[
+            teamId
+          ]
+            .operativeIds
+            .length;
+      const teamId =
+        size(
+          'red',
+        ) <=
+        size(
+          'blue',
+        )
+          ? 'red'
+          : 'blue';
+      const team =
+        this
+          .state
+          .teams[
+          teamId
+        ];
+      if (
+        !team.spymasterId
+      )
+        team.spymasterId =
+          userId;
+      else
+        team.operativeIds.push(
+          userId,
+        );
+      this.broadcastTeamUpdate();
+    } else if (
+      this
+        .state
+        .phase ===
+      UndercoverAgentPhase.TEAM_SETUP
+    ) {
+      this.broadcastTeamUpdate();
+    }
+  }
+
+  /**
+   * Give a disconnected spymaster a short window to return, then hand the
+   * role (and the key card) to a connected operative of the same team. With
+   * no connected operative the team is fully gone and its turns auto-pass.
+   */
+  private scheduleSpymasterHandover(
+    spymasterId: string,
+  ): void {
+    if (
+      !spymasterId ||
+      this.disconnectTimers.has(
+        spymasterId,
+      )
+    )
+      return;
+    const handle =
+      this.setTimeout(
+        () => {
+          this.disconnectTimers.delete(
+            spymasterId,
+          );
+          this.handOverSpymaster(
+            spymasterId,
+          );
+        },
+        UA_SPYMASTER_RECONNECT_GRACE_SECONDS *
+          1000,
+      );
+    this.disconnectTimers.set(
+      spymasterId,
+      handle,
+    );
+  }
+
+  private handOverSpymaster(
+    spymasterId: string,
+  ): void {
+    if (
+      !this
+        .isRunning
+    )
+      return;
+    const phase =
+      this
+        .state
+        .phase;
+    if (
+      phase ===
+        UndercoverAgentPhase.TEAM_SETUP ||
+      phase ===
+        UndercoverAgentPhase.BOARD_REVEAL ||
+      phase ===
+        UndercoverAgentPhase.GAME_OVER
+    ) {
+      return;
+    }
+    const teamId =
+      this.getPlayerTeam(
+        spymasterId,
+      );
+    if (
+      !teamId
+    )
+      return;
+    const team =
+      this
+        .state
+        .teams[
+        teamId
+      ];
+    if (
+      team.spymasterId !==
+        spymasterId ||
+      this.isConnected(
+        spymasterId,
+      )
+    )
+      return;
+
+    const successor =
+      this.connectedOperatives(
+        teamId,
+      )[0];
+    if (
+      !successor
+    ) {
+      // Nobody left to give clues: pass the team's clue turn.
+      if (
+        teamId ===
+          this
+            .state
+            .currentTeam &&
+        phase ===
+          UndercoverAgentPhase.CLUE
+      ) {
+        this
+          .state
+          .consecutivePasses++;
+        this.endCurrentTurn(
+          'team_disconnected',
+        );
+      }
+      return;
+    }
+
+    // Swap roles: the absent spymaster becomes an operative of the same team.
+    team.operativeIds =
+      [
+        ...team.operativeIds.filter(
+          (
+            id,
+          ) =>
+            id !==
+            successor,
+        ),
+        spymasterId,
+      ];
+    team.spymasterId =
+      successor;
+    for (const users of this.highlights.values())
+      users.delete(
+        successor,
+      );
+
+    this.logAction(
+      'spymaster_changed',
+      {
+        teamId,
+        previousSpymasterId:
+          spymasterId,
+        spymasterId:
+          successor,
+      },
+    );
+
+    logger.info(
+      {
+        event:
+          'undercover_agent:spymaster_handover',
+        lobbyId:
+          this
+            .context
+            .lobbyId,
+        teamId,
+        previousSpymasterId:
+          spymasterId,
+        spymasterId:
+          successor,
+      },
+    );
+
+    this.sendKeyCardToSpymaster(
+      teamId,
+    );
+    this.broadcastGameAction(
+      {
+        type: 'UA_ROLES_CHANGED',
+        teamId,
+        spymasterId:
+          successor,
+        previousSpymasterId:
+          spymasterId,
+        teams:
+          {
+            red: this.getPublicTeamState(
+              'red',
+            ),
+            blue: this.getPublicTeamState(
+              'blue',
+            ),
+          },
       },
     );
   }
@@ -3046,7 +3516,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         winner ===
         'draw'
       ) {
-        score = 300;
+        score =
+          UA_DRAW_POINTS;
       } else if (
         teamId &&
         teamId ===
@@ -3149,6 +3620,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       )
         deltas.lose =
           UA_LOSE;
+      if (
+        winner ===
+        'draw'
+      )
+        deltas.draw =
+          UA_DRAW_POINTS;
       if (
         stats?.correctGuesses
       )
@@ -3558,21 +4035,35 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   private actionSeq = 0;
 
-  /** Broadcast a game action to all players, always including the full actionLog */
+  /**
+   * Broadcast a game action to all players with the action-log entries added
+   * since the previous broadcast (clients append them by seq; a snapshot
+   * carries the log's tail). Sending the whole log on every action grew each
+   * message with the game.
+   */
   protected override broadcastGameAction(
     data: Record<
       string,
       unknown
     >,
   ): void {
+    const newEntries =
+      this.state.actionLog.filter(
+        (
+          e,
+        ) =>
+          e.seq >
+          this
+            .lastBroadcastSeq,
+      );
+    this.lastBroadcastSeq =
+      this.actionSeq;
     this.context.broadcastToLobby(
       'rmhbox:game:action',
       {
         ...data,
-        actionLog:
-          this
-            .state
-            .actionLog,
+        actionLogEntries:
+          newEntries,
       },
     );
   }
@@ -3765,12 +4256,14 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   cleanup(): void {
     // Clear disconnect timers
     for (const timer of this.disconnectTimers.values()) {
-      clearTimeout(
+      this.clearTrackedTimeout(
         timer,
       );
     }
     this.disconnectTimers.clear();
     this.turnTimer =
+      null;
+    this.transitionTimer =
       null;
     super.cleanup();
   }

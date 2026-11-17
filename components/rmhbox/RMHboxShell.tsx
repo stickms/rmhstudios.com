@@ -31,14 +31,6 @@ export default function RMHboxShell({
       ) =>
         s.connectionStatus,
     );
-  const peersWaiting =
-    useRMHboxStore(
-      (
-        s,
-      ) =>
-        s.peersWaiting,
-    );
-
   return (
     <AppShell
       appClassName="rmhbox-theme"
@@ -47,7 +39,13 @@ export default function RMHboxShell({
       }
       realtime={{
         status,
-        peersWaiting,
+        // RMHbox never pauses for a dropped player (games skip their turn,
+        // and the coordinator ends a game that falls below its minimum), so
+        // the shared "Game paused" takeover was false and blocked everyone's
+        // input for up to 15 s while timers ran on. The player list already
+        // shows who is offline.
+        peersWaiting:
+          null,
         onRetry:
           reconnectNow,
       }}

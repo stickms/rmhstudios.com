@@ -196,6 +196,12 @@ export function createRealtimeClient(
   /** Distinguishes a cold start from a recovery. */
   let hasConnected = false;
   let destroyed = false;
+  /** Pending re-dial after the server's middleware refused a handshake for a non-auth reason. */
+  let rejectionRetry: ReturnType<
+    typeof setTimeout
+  > | null =
+    null;
+  let rejectionCount = 0;
   let protocolOutdated: ProtocolOutdated | null =
     null;
   const outbox: {
@@ -356,6 +362,16 @@ export function createRealtimeClient(
         hasConnected;
       hasConnected = true;
       attempt = 0;
+      rejectionCount = 0;
+      if (
+        rejectionRetry
+      ) {
+        clearTimeout(
+          rejectionRetry,
+        );
+        rejectionRetry =
+          null;
+      }
       // An auth failure turned retries off; a later successful connect (a manual
       // retry after signing in again) must turn them back on, or the next blip
       // would strand the client with no retry at all.
@@ -491,6 +507,45 @@ export function createRealtimeClient(
           : 'connecting',
         message,
       );
+      // A handshake the server's middleware refused (e.g. SERVICE_UNAVAILABLE:
+      // the hub could not reach Discord or its database) leaves the socket
+      // inactive — socket.io does not retry those, so without this the client
+      // showed "Reconnecting…" until a focus or visibility change.
+      if (
+        !socket.active &&
+        !rejectionRetry
+      ) {
+        const delay =
+          Math.min(
+            15_000,
+            1_000 *
+              2 **
+                Math.min(
+                  rejectionCount,
+                  4,
+                ),
+          ) *
+          (0.75 +
+            Math.random() *
+              0.5);
+        rejectionCount++;
+        rejectionRetry =
+          setTimeout(
+            () => {
+              rejectionRetry =
+                null;
+              if (
+                !destroyed &&
+                !socket.connected &&
+                !protocolOutdated &&
+                status !==
+                  'error'
+              )
+                socket.connect();
+            },
+            delay,
+          );
+      }
     },
   );
 
@@ -641,6 +696,12 @@ export function createRealtimeClient(
       )
         return;
       destroyed = true;
+      if (
+        rejectionRetry
+      )
+        clearTimeout(
+          rejectionRetry,
+        );
       outbox.length = 0;
       if (
         typeof document !==

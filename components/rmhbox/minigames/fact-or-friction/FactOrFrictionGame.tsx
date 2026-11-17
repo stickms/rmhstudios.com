@@ -9,9 +9,12 @@
  *   PAUSE           → Brief transition
  *
  * Handles server actions:
- *   FF_QUESTION, FF_POT_TICK, FF_ANSWER_LOCKED, FF_PLAYER_ANSWERED,
- *   FF_ANSWER_REVEAL, FF_SCORE_UPDATE, TIMER_TICK, TIMER_START,
- *   MINIGAME_ROUND, FF_GAME_OVER
+ *   FF_QUESTION, FF_POT_TICK, FF_ANSWER_LOCKED, FF_ANSWER_REJECTED,
+ *   FF_PLAYER_ANSWERED, FF_ANSWER_REVEAL, FF_SCORE_UPDATE, TIMER_TICK,
+ *   TIMER_START, MINIGAME_ROUND, FF_GAME_OVER
+ *
+ * and re-hydrates from every GAME_STATE_SNAPSHOT (mount, reconnect), so the
+ * phase, question, own answer, reveal and countdown always match the server.
  *
  * Props:
  *   playerId: string — Current player's user ID
@@ -28,15 +31,11 @@ import {
   m as motion,
   AnimatePresence,
 } from 'framer-motion';
-import {
-  getSocket,
-  emit,
-} from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import {
-  S2C,
-  C2S,
-} from '@/lib/rmhbox/events';
+  emitGameInput,
+  useGameSocket,
+} from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
 import QuestionCard from './QuestionCard';
 import PointPotDisplay from './PointPotDisplay';
@@ -63,27 +62,23 @@ interface QuestionData {
   correctIndex?: number;
 }
 
-/** Helper: emit a game input action with the correct GameInputSchema shape */
-function emitGameInput(
-  action: string,
-  data: unknown = {},
-) {
-  const lobbyId =
-    useRMHboxStore.getState()
-      .lobby
-      ?.lobbyId;
-  if (
-    !lobbyId
-  )
-    return;
-  emit(
-    C2S.GAME_INPUT,
-    {
-      lobbyId,
-      action,
-      data,
-    },
-  );
+const PHASES: readonly Phase[] =
+  [
+    'QUESTION_REVEAL',
+    'ANSWER',
+    'ANSWER_REVEAL',
+    'PAUSE',
+    'GAME_OVER',
+  ];
+
+/** The server encodes a pass as `selectedIndex: null`; locally a pass is -1. */
+function toLocalAnswer(
+  selectedIndex: unknown,
+): number {
+  return typeof selectedIndex ===
+    'number'
+    ? selectedIndex
+    : -1;
 }
 
 interface FactOrFrictionGameProps {
@@ -357,6 +352,11 @@ export default function FactOrFrictionGame({
           }
           case 'FF_ANSWER_LOCKED': {
             // Confirmation that our answer was accepted
+            setMyAnswer(
+              toLocalAnswer(
+                data.selectedIndex,
+              ),
+            );
             const locked =
               data.potValueAtSubmission as
                 | number
@@ -371,6 +371,30 @@ export default function FactOrFrictionGame({
             playSound(
               'click',
             );
+            break;
+          }
+          case 'FF_ANSWER_REJECTED': {
+            // The server did not take the answer. If it arrived outside the
+            // answer window or malformed, unlock the options again (the next
+            // FF_ANSWER_REVEAL / snapshot moves the phase on if it is over).
+            // Already answered / not a participant: stay locked.
+            const reason =
+              data.reason as
+                | string
+                | undefined;
+            if (
+              reason ===
+                'wrong_phase' ||
+              reason ===
+                'invalid_input'
+            ) {
+              setMyAnswer(
+                null,
+              );
+              setLockedPotValue(
+                null,
+              );
+            }
             break;
           }
           case 'FF_PLAYER_ANSWERED': {
@@ -578,37 +602,269 @@ export default function FactOrFrictionGame({
       [],
     );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket =
-      getSocket();
-    if (
-      !socket
-    )
-      return;
+  // Hydrate from a full server snapshot (getStateForPlayer): on mount from the
+  // store, and on every GAME_STATE_SNAPSHOT (reconnect, late mount). The
+  // snapshot is authoritative for the phase, the question, our own answer and
+  // the reveal, so nothing from a previous question survives it.
+  const handleStateSnapshot =
+    useCallback(
+      (
+        snapshot: Record<
+          string,
+          unknown
+        >,
+      ) => {
+        const p =
+          snapshot.phase as
+            | Phase
+            | undefined;
+        if (
+          !p ||
+          !PHASES.includes(
+            p,
+          )
+        )
+          return;
+        setPhase(
+          p,
+        );
 
-    socket.on(
-      S2C.GAME_ACTION,
-      handleGameAction,
+        if (
+          typeof snapshot.potValue ===
+          'number'
+        ) {
+          setPotValue(
+            snapshot.potValue,
+          );
+          setPotMaxValue(
+            typeof snapshot.potStartValue ===
+              'number'
+              ? snapshot.potStartValue
+              : snapshot.potValue,
+          );
+        }
+
+        // Countdown: the server's pause-aware seconds, or less if this snapshot
+        // has been sitting in the store since phaseEndsAt was stamped.
+        const serverRemaining =
+          typeof snapshot.timeRemaining ===
+          'number'
+            ? snapshot.timeRemaining
+            : null;
+        const endsAt =
+          typeof snapshot.phaseEndsAt ===
+          'number'
+            ? snapshot.phaseEndsAt
+            : 0;
+        const fromDeadline =
+          endsAt >
+          0
+            ? Math.max(
+                0,
+                Math.ceil(
+                  (endsAt -
+                    Date.now()) /
+                    1000,
+                ),
+              )
+            : null;
+        if (
+          snapshot.paused ===
+            true ||
+          fromDeadline ===
+            null
+        ) {
+          if (
+            serverRemaining !==
+            null
+          )
+            setTimeRemaining(
+              serverRemaining,
+            );
+        } else {
+          setTimeRemaining(
+            serverRemaining !==
+              null
+              ? Math.min(
+                  serverRemaining,
+                  fromDeadline,
+                )
+              : fromDeadline,
+          );
+        }
+
+        // Server sends question as nested object with {question, options, category, difficulty, source, correctIndex?}
+        const qObj =
+          snapshot.question as
+            | Record<
+                string,
+                unknown
+              >
+            | undefined;
+        const options =
+          qObj &&
+          Array.isArray(
+            qObj.options,
+          )
+            ? (qObj.options as string[])
+            : [];
+        if (
+          qObj &&
+          qObj.question
+        ) {
+          setQuestionData(
+            {
+              question:
+                qObj.question as string,
+              category:
+                qObj.category as string,
+              difficulty:
+                qObj.difficulty as string,
+              options,
+              questionIndex:
+                (snapshot.currentQuestionIndex as number) ??
+                0,
+              totalQuestions:
+                (snapshot.totalQuestions as number) ??
+                8,
+              ...(typeof qObj.correctIndex ===
+              'number'
+                ? {
+                    correctIndex:
+                      qObj.correctIndex,
+                  }
+                : {}),
+            },
+          );
+        }
+
+        // Our own answer for this question (null = not answered yet)
+        const mine =
+          snapshot.myAnswer as {
+            selectedIndex:
+              | number
+              | null;
+            potValueAtSubmission?: number;
+          } | null;
+        if (
+          mine
+        ) {
+          setMyAnswer(
+            toLocalAnswer(
+              mine.selectedIndex,
+            ),
+          );
+          setLockedPotValue(
+            typeof mine.potValueAtSubmission ===
+              'number'
+              ? mine.potValueAtSubmission
+              : null,
+          );
+        } else {
+          setMyAnswer(
+            null,
+          );
+          setLockedPotValue(
+            null,
+          );
+        }
+
+        if (
+          Array.isArray(
+            snapshot.answeredPlayerIds,
+          )
+        ) {
+          setPlayersAnswered(
+            snapshot
+              .answeredPlayerIds
+              .length,
+          );
+        }
+
+        // Reveal (ANSWER_REVEAL / PAUSE)
+        const reveal =
+          snapshot.reveal as
+            | {
+                correctIndex: number;
+                playerResults: PlayerResult[];
+              }
+            | null
+            | undefined;
+        if (
+          reveal &&
+          typeof reveal.correctIndex ===
+            'number'
+        ) {
+          setRevealData(
+            {
+              correctIndex:
+                reveal.correctIndex,
+              correctAnswer:
+                options[
+                  reveal
+                    .correctIndex
+                ] ??
+                '',
+              options,
+              playerResults:
+                reveal.playerResults ??
+                [],
+            },
+          );
+        } else {
+          setRevealData(
+            null,
+          );
+        }
+
+        // Restore scores
+        if (
+          snapshot.scores
+        ) {
+          const sc =
+            snapshot.scores as Record<
+              string,
+              number
+            >;
+          if (
+            sc[
+              playerId
+            ] !=
+            null
+          ) {
+            setMyScore(
+              sc[
+                playerId
+              ],
+            );
+            // Sync live score to footer
+            useRMHboxStore.setState(
+              {
+                liveMinigameScore:
+                  sc[
+                    playerId
+                  ],
+              },
+            );
+          }
+        }
+      },
+      [
+        playerId,
+      ],
     );
-    socket.on(
-      S2C.GAME_ROUND_RESULTS,
-      handleRoundResults,
-    );
-    return () => {
-      socket.off(
-        S2C.GAME_ACTION,
+
+  // Subscribe to socket events (actions, snapshots, results) and hydrate on mount
+  useGameSocket(
+    {
+      onGameAction:
         handleGameAction,
-      );
-      socket.off(
-        S2C.GAME_ROUND_RESULTS,
+      onStateSnapshot:
+        handleStateSnapshot,
+      onRoundResults:
         handleRoundResults,
-      );
-    };
-  }, [
-    handleGameAction,
-    handleRoundResults,
-  ]);
+    },
+  );
 
   // Clear live score when the minigame unmounts (separate effect to avoid
   // clearing on every handler re-subscription).
@@ -622,123 +878,6 @@ export default function FactOrFrictionGame({
       );
     };
   }, []);
-
-  // Hydrate from Zustand gameState snapshot on mount.
-  // The server snapshot (getStateForPlayer) sends question data under `question`,
-  // scores under `scores`, and timing under `phaseStartedAt` / `phaseEndsAt`.
-  useEffect(() => {
-    const snapshot =
-      useRMHboxStore.getState()
-        .gameState;
-    if (
-      !snapshot ||
-      !snapshot.phase
-    )
-      return;
-
-    const p =
-      snapshot.phase as string;
-    if (
-      p ===
-        'QUESTION_REVEAL' ||
-      p ===
-        'ANSWER' ||
-      p ===
-        'ANSWER_REVEAL' ||
-      p ===
-        'PAUSE' ||
-      p ===
-        'GAME_OVER'
-    ) {
-      setPhase(
-        p,
-      );
-    }
-    if (
-      snapshot.potValue !=
-      null
-    ) {
-      setPotValue(
-        snapshot.potValue as number,
-      );
-      setPotMaxValue(
-        snapshot.potValue as number,
-      );
-    }
-    if (
-      snapshot.timeRemaining !=
-      null
-    )
-      setTimeRemaining(
-        snapshot.timeRemaining as number,
-      );
-
-    // Server sends question as nested object with {id, question, options, category, difficulty, source}
-    const qObj =
-      snapshot.question as
-        | Record<
-            string,
-            unknown
-          >
-        | undefined;
-    if (
-      qObj &&
-      qObj.question
-    ) {
-      setQuestionData(
-        {
-          question:
-            qObj.question as string,
-          category:
-            qObj.category as string,
-          difficulty:
-            qObj.difficulty as string,
-          options:
-            qObj.options as string[],
-          questionIndex:
-            (snapshot.currentQuestionIndex as number) ??
-            0,
-          totalQuestions:
-            (snapshot.totalQuestions as number) ??
-            8,
-        },
-      );
-    }
-
-    // Restore scores
-    if (
-      snapshot.scores
-    ) {
-      const sc =
-        snapshot.scores as Record<
-          string,
-          number
-        >;
-      if (
-        sc[
-          playerId
-        ] !=
-        null
-      ) {
-        setMyScore(
-          sc[
-            playerId
-          ],
-        );
-        // Sync live score to footer
-        useRMHboxStore.setState(
-          {
-            liveMinigameScore:
-              sc[
-                playerId
-              ],
-          },
-        );
-      }
-    }
-  }, [
-    playerId,
-  ]);
 
   // Submit an answer
   const handleAnswer =

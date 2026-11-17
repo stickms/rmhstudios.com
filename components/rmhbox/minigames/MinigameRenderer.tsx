@@ -32,6 +32,7 @@ import {
   type MinigameRoundInfo,
 } from '@/lib/rmhbox/store';
 import { ArrivalSuspense } from '@/components/ui/arrive';
+import { MINIGAME_LOADERS } from './minigame-loaders';
 
 // ─── Minigame ↔ Shell Interface ──────────────────────────────────
 
@@ -263,51 +264,21 @@ const MINIGAME_COMPONENTS: Record<
     ComponentType<MinigameProps>
   >
 > = {
-  'rhyme-time':
-    lazy(
-      () =>
-        import('./rhyme-time/RhymeTimeGame'),
+  ...Object.fromEntries(
+    Object.entries(
+      MINIGAME_LOADERS,
+    ).map(
+      ([
+        id,
+        load,
+      ]) => [
+        id,
+        lazy(
+          load,
+        ),
+      ],
     ),
-  'undercover-agent':
-    lazy(
-      () =>
-        import('./undercover-agent/UndercoverAgentGame'),
-    ),
-  'category-crash':
-    lazy(
-      () =>
-        import('./category-crash/CategoryCrashGame'),
-    ),
-  'wiki-race':
-    lazy(
-      () =>
-        import('./wiki-race/WikiRaceGame'),
-    ),
-  'wit-war':
-    lazy(
-      () =>
-        import('./wit-war/WitWarGame'),
-    ),
-  'fact-or-friction':
-    lazy(
-      () =>
-        import('./fact-or-friction/FactOrFrictionGame'),
-    ),
-  'undercover-editor':
-    lazy(
-      () =>
-        import('./undercover-editor/UndercoverEditorGame'),
-    ),
-  'minimalist-masterpiece':
-    lazy(
-      () =>
-        import('./minimalist-masterpiece/MinimalistMasterpieceGame'),
-    ),
-  'emoji-cinema':
-    lazy(
-      () =>
-        import('./emoji-cinema/EmojiCinemaGame'),
-    ),
+  ),
   'sequence-sam':
     lazy(
       () =>

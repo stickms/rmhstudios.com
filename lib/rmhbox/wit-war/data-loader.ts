@@ -7,7 +7,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { WW_PROMPTS_PER_PLAYER } from '../constants';
 
 let cachedPrompts:
   | string[]
@@ -118,9 +117,11 @@ export function selectRoundPrompts(
  * WW_PROMPTS_PER_PLAYER (2) prompts. Each prompt is assigned to
  * exactly 2 different players.
  *
- * Uses a round-robin pairing: player i is paired with player
- * (i + offset) mod N for each prompt slot, varying the offset
- * to avoid repeated pairings.
+ * Uses ring pairing on a shuffled order: matchup i puts player i
+ * against player (i + 1) mod N. Every player sits in exactly two
+ * matchups (once as A, once as B), and for N >= 3 no pair of players
+ * meets twice. With 2 players both matchups are the same pair, which
+ * still gives each player exactly two prompts.
  */
 export function assignPromptsToPlayers(
   prompts: Array<{
@@ -138,10 +139,10 @@ export function assignPromptsToPlayers(
     playerIds.length;
   if (
     n <
-    3
+    2
   )
     throw new Error(
-      'Wit-War requires at least 3 players',
+      'Wit-War requires at least 2 players',
     );
 
   const matchups: Array<{
@@ -189,7 +190,7 @@ export function assignPromptsToPlayers(
       ];
   }
 
-  // Each player gets exactly WW_PROMPTS_PER_PLAYER prompts.
+  // Each player gets exactly WW_PROMPTS_PER_PLAYER (2) prompts.
   // Total prompt slots = N * 2 = 2N, and each prompt fills 2 slots,
   // so we need exactly N prompts for N matchups.
   for (
@@ -198,17 +199,6 @@ export function assignPromptsToPlayers(
     n;
     i++
   ) {
-    const offset =
-      i <
-      Math.floor(
-        n /
-          2,
-      )
-        ? 1
-        : Math.floor(
-            n /
-              2,
-          );
     const playerA =
       shuffled[
         i
@@ -216,7 +206,7 @@ export function assignPromptsToPlayers(
     const playerB =
       shuffled[
         (i +
-          offset) %
+          1) %
           n
       ];
     const prompt =

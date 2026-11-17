@@ -158,6 +158,25 @@ export function useGameSocket(handlers: {
         >,
       );
     }
+    // The stored snapshot is the one sent when the game started; the game's
+    // own phase events since then are not in it. Ask for the current one —
+    // the subscription above is already live to receive it.
+    const lobbyId =
+      useRMHboxStore.getState()
+        .lobby
+        ?.lobbyId;
+    if (
+      lobbyId
+    )
+      emit(
+        C2S.GAME_SYNC_REQUEST,
+        {
+          lobbyId,
+        },
+        {
+          queue: true,
+        },
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

@@ -6,12 +6,20 @@ import { getPrismaClient } from './prisma-client';
 import { logger } from './logger';
 
 export async function loadPackPrompts(
-  code: string,
+  rawCode: string,
   game: string,
 ): Promise<
   | string[]
   | null
 > {
+  // Codes are issued in upper case; accept what a host types (case, stray spaces)
+  const code =
+    typeof rawCode ===
+    'string'
+      ? rawCode
+          .trim()
+          .toUpperCase()
+      : '';
   if (
     !/^[A-Z0-9]{6}$/.test(
       code,

@@ -22,6 +22,8 @@ interface AuctionDrawing {
 interface AuctionPanelProps {
   drawings: AuctionDrawing[];
   currency: number;
+  /** Bid step from the host's `bidIncrement` setting. */
+  bidIncrement: number;
   onBid: (
     drawingId: string,
     amount: number,
@@ -32,6 +34,7 @@ interface AuctionPanelProps {
 export default function AuctionPanel({
   drawings,
   currency,
+  bidIncrement,
   onBid,
   disabled,
 }: AuctionPanelProps) {
@@ -103,6 +106,9 @@ export default function AuctionPanel({
                 }
                 currency={
                   currency
+                }
+                increment={
+                  bidIncrement
                 }
                 onBid={(
                   amount,

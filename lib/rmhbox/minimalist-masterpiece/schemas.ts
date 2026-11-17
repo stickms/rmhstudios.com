@@ -12,9 +12,13 @@ import {
   MM_CANVAS_SIZE,
   MM_MIN_POINTS_PER_STROKE,
   MM_MAX_POINTS_PER_STROKE,
-  MM_MAX_STROKES,
-  MM_BID_INCREMENT,
 } from '../constants';
+
+/**
+ * Hard cap on strokes accepted by the schema: the top of the `maxStrokes`
+ * game setting's range (5-30). The handler enforces the host's actual setting.
+ */
+export const MM_MAX_STROKES_LIMIT = 30;
 
 // ─── Point Schema ────────────────────────────────────────────────
 
@@ -99,7 +103,7 @@ export const SubmitDrawingSchema =
             StrokeSchema,
           )
           .max(
-            MM_MAX_STROKES,
+            MM_MAX_STROKES_LIMIT,
           ),
       backgroundColor:
         z
@@ -132,12 +136,14 @@ export const PlaceBidSchema =
           .max(
             36,
           ),
+      // Non-negative whole amount; the handler checks it against the host's
+      // `bidIncrement` setting (not a fixed constant).
       amount:
         z
           .number()
           .int()
-          .multipleOf(
-            MM_BID_INCREMENT,
+          .min(
+            0,
           ),
     },
   );

@@ -385,6 +385,18 @@ export default function UndercoverEditorGame({
       if (Array.isArray(data.matchLockedIn)) setLockedInPlayers(data.matchLockedIn as string[]);
       if (typeof data.readingStoryIndex === 'number') setReadingStoryIndex(data.readingStoryIndex as number);
       if (typeof data.readingSentenceIndex === 'number') setReadingSentenceIndex(data.readingSentenceIndex as number);
+      // EDIT: whether this editor already edited this round (else the editor reappears)
+      if (typeof data.editDone === 'boolean') setEditDone(data.editDone);
+      // READING: the story list and the sentences revealed so far, which otherwise
+      // only arrive through UE_READING_START / UE_READING_SENTENCE
+      if (Array.isArray(data.readingStories)) setReadingStories(data.readingStories as ReadingStoryMeta[]);
+      if (Array.isArray(data.revealedSentences)) setRevealedSentences(data.revealedSentences as Sentence[]);
+      // REVEAL: the results, which otherwise only arrive through UE_REVEAL
+      if (Array.isArray(data.storyReveals) && p === 'REVEAL') setStoryReveals(data.storyReveals as StoryRevealInfo[]);
+      if (data.matchResults && typeof data.matchResults === 'object') {
+        setMatchResults(data.matchResults as Record<string, MatchResult[]>);
+      }
+      if (Array.isArray(data.scores)) setScores(data.scores as ScoreEntry[]);
     },
     [],
   );

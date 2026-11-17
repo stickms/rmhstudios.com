@@ -18,7 +18,10 @@ import { config } from './config';
 import { LobbyManager } from './lobby-manager';
 import { S2C } from '../../lib/rmhbox/events';
 import type { RMHboxLobby } from './types';
-import type { ClientLobbyState } from '../../lib/rmhbox/types';
+import type {
+  ClientLobbyState,
+  ClientTimerSnapshot,
+} from '../../lib/rmhbox/types';
 
 /** Handle returned by startTimerBroadcast for cancel / pause / resume control. */
 export interface TimerHandle {
@@ -26,6 +29,8 @@ export interface TimerHandle {
   pause: () => void;
   resume: () => void;
   readonly isPaused: boolean;
+  /** The timer as a joining/reconnecting client should see it; null once finished or cancelled. */
+  snapshot: () => ClientTimerSnapshot | null;
 }
 
 export class StateSyncService {
@@ -188,26 +193,6 @@ export class StateSyncService {
 
         remaining--;
 
-        if (
-          remaining <
-          0
-        ) {
-          if (
-            interval
-          )
-            clearInterval(
-              interval,
-            );
-          interval =
-            null;
-          if (
-            !cancelled
-          ) {
-            onComplete();
-          }
-          return;
-        }
-
         // Broadcast TIMER_TICK action (decrement first so remaining matches display)
         this.lobbyManager.broadcastAction(
           lobbyId,
@@ -216,10 +201,33 @@ export class StateSyncService {
             payload:
               {
                 timeRemaining:
-                  remaining,
+                  Math.max(
+                    0,
+                    remaining,
+                  ),
               },
           },
         );
+
+        // Complete on reaching 0 (it used to wait for -1: every phase ran one
+        // second long and sat on "0"). A finished handle counts as cancelled, so
+        // a later pause/resume through a stale reference broadcasts nothing —
+        // a leftover countdown handle used to push "paused at 0" into PLAYING.
+        if (
+          remaining <=
+          0
+        ) {
+          cancelled = true;
+          if (
+            interval
+          )
+            clearInterval(
+              interval,
+            );
+          interval =
+            null;
+          onComplete();
+        }
       };
 
     interval =
@@ -297,6 +305,22 @@ export class StateSyncService {
       get isPaused() {
         return paused;
       },
+      snapshot:
+        () =>
+          cancelled
+            ? null
+            : {
+                total:
+                  durationSeconds,
+                remaining:
+                  Math.max(
+                    0,
+                    remaining,
+                  ),
+                paused,
+                infinite: false,
+                showSkip: false,
+              },
     };
   }
 
@@ -381,6 +405,19 @@ export class StateSyncService {
       get isPaused() {
         return paused;
       },
+      snapshot:
+        () =>
+          cancelled
+            ? null
+            : {
+                total:
+                  -1,
+                remaining:
+                  -1,
+                paused,
+                infinite: true,
+                showSkip: true,
+              },
     };
   }
 

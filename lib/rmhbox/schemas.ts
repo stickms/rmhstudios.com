@@ -276,11 +276,21 @@ export const CastVoteSchema =
     },
   );
 
+// `fromState`: the lobby state the client's Skip button belonged to. The
+// server ignores a skip whose state has already moved on, so a double tap
+// can't skip two phases. Optional for older clients.
 export const ForceSkipSchema =
   z.object(
     {
       lobbyId:
         z.string(),
+      fromState:
+        z
+          .string()
+          .max(
+            32,
+          )
+          .optional(),
     },
   );
 

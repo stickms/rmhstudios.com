@@ -27,6 +27,7 @@ import type {
   GameAction,
   ChatMessage,
   ClientLobbyState,
+  ClientTimerSnapshot,
   ClientPlayerInfo,
   ClientSpectatorInfo,
   ClientGameInfo,
@@ -205,6 +206,132 @@ export class LobbyManager {
     lobbyId: string,
     userId: string,
   ) => void;
+
+  /**
+   * Phase timer for the lobby snapshot (the coordinator owns every timer).
+   * Without it a client that joins, reloads or reconnects mid-phase had no
+   * timer ring (and a host lost the "Next" button) until the next phase.
+   */
+  timerSnapshotProvider?: (
+    lobby: RMHboxLobby,
+  ) => ClientTimerSnapshot | null;
+
+  /**
+   * Resync listeners: called after a member's socket has been (re)attached to
+   * the lobby and sent a snapshot — reconnect, same-lobby re-join (a page
+   * remount or Discord iframe reload), a fresh join. Each owner of a one-shot
+   * phase payload (vote candidates, instructions, preload progress, round
+   * results, settings) re-sends it to that socket; before, those screens came
+   * back blank and a host on a blank results screen could never advance.
+   */
+  private readonly memberResyncListeners: Array<
+    (
+      lobby: RMHboxLobby,
+      userId: string,
+      socket: Socket,
+    ) => void
+  > =
+    [];
+  /**
+   * Session scores of players who were removed (grace expiry, leave) keyed by
+   * lobby then user. A Discord player whose app was backgrounded past the
+   * grace window came back — as a spectator, then promoted — with 0 points.
+   */
+  private readonly departedScores =
+    new Map<
+      string,
+      Map<
+        string,
+        number
+      >
+    >();
+
+  /** A returning player's earlier session score (0 if none); forgets it. */
+  takeDepartedScore(
+    lobbyId: string,
+    userId: string,
+  ): number {
+    const scores =
+      this.departedScores.get(
+        lobbyId,
+      );
+    const score =
+      scores?.get(
+        userId,
+      ) ??
+      0;
+    scores?.delete(
+      userId,
+    );
+    return score;
+  }
+
+  /** Last GAME_SESSION_RESULTS payload per lobby, for members who reload during SESSION_RESULTS. */
+  private readonly sessionResults =
+    new Map<
+      string,
+      unknown
+    >();
+
+  onMemberResync(
+    fn: (
+      lobby: RMHboxLobby,
+      userId: string,
+      socket: Socket,
+    ) => void,
+  ): void {
+    this.memberResyncListeners.push(
+      fn,
+    );
+  }
+
+  /** Re-send every phase payload the member's client keeps only from one-shot events. */
+  notifyMemberResync(
+    lobby: RMHboxLobby,
+    userId: string,
+    socket: Socket,
+  ): void {
+    if (
+      lobby.state ===
+      'SESSION_RESULTS'
+    ) {
+      const results =
+        this.sessionResults.get(
+          lobby.id,
+        );
+      if (
+        results
+      )
+        socket.emit(
+          S2C.GAME_SESSION_RESULTS,
+          results,
+        );
+    }
+    for (const fn of this
+      .memberResyncListeners) {
+      try {
+        fn(
+          lobby,
+          userId,
+          socket,
+        );
+      } catch (err) {
+        logger.error(
+          {
+            event:
+              'member_resync_error',
+            lobbyId:
+              lobby.id,
+            userId,
+            error:
+              String(
+                err,
+              ),
+          },
+        );
+      }
+    }
+  }
 
   /**
    * Teardown listeners: the game coordinator and vote manager stop their
@@ -1501,7 +1628,7 @@ export class LobbyManager {
         );
       if (
         lobby
-      )
+      ) {
         socket.emit(
           S2C.LOBBY_STATE_SNAPSHOT,
           this.buildClientState(
@@ -1509,6 +1636,12 @@ export class LobbyManager {
             userId,
           ),
         );
+        this.notifyMemberResync(
+          lobby,
+          userId,
+          socket,
+        );
+      }
       return;
     }
 
@@ -1752,6 +1885,11 @@ export class LobbyManager {
               userId,
             ),
           );
+          this.notifyMemberResync(
+            existingLobby,
+            userId,
+            socket,
+          );
           logger.info(
             {
               event:
@@ -1822,6 +1960,19 @@ export class LobbyManager {
           // No current game but state is PLAYING — default to spectator
           joinAsSpectator = true;
         }
+      }
+      // The game is already locked in (its roster is about to be handed to
+      // the handler, and its player limit was checked at selection): a joiner
+      // here watches this game and plays the next one.
+      if (
+        lobby.state ===
+          'INSTRUCTIONS' ||
+        lobby.state ===
+          'PRELOADING' ||
+        lobby.state ===
+          'COUNTDOWN'
+      ) {
+        joinAsSpectator = true;
       }
       // Force spectator if lobby is full
       if (
@@ -1918,6 +2069,11 @@ export class LobbyManager {
         lobby.id,
         `${userName} joined`,
       );
+      this.notifyMemberResync(
+        lobby,
+        userId,
+        socket,
+      );
 
       // Handle join_next_subround: add to pending list for game handler
       if (
@@ -2002,7 +2158,11 @@ export class LobbyManager {
           isConnected: true,
           isReady: false,
           isAway: false,
-          score: 0,
+          score:
+            this.takeDepartedScore(
+              lobby.id,
+              userId,
+            ),
           roundScore: 0,
           joinedAt:
             now,
@@ -2056,6 +2216,11 @@ export class LobbyManager {
       this.addSystemChat(
         lobby.id,
         `${userName} joined`,
+      );
+      this.notifyMemberResync(
+        lobby,
+        userId,
+        socket,
       );
 
       // Handle join_immediately: notify the active game handler
@@ -2243,6 +2408,29 @@ export class LobbyManager {
       lobby.hostUserId ===
       userId;
 
+    if (
+      player.score >
+      0
+    ) {
+      let scores =
+        this.departedScores.get(
+          lobby.id,
+        );
+      if (
+        !scores
+      ) {
+        scores =
+          new Map();
+        this.departedScores.set(
+          lobby.id,
+          scores,
+        );
+      }
+      scores.set(
+        userId,
+        player.score,
+      );
+    }
     lobby.players.delete(
       userId,
     );
@@ -2290,21 +2478,28 @@ export class LobbyManager {
           .size >
         0
       ) {
-        // Find the player who joined earliest
-        let earliestJoin =
-          Infinity;
+        // The earliest joiner who is here (connected and not away), else the
+        // earliest joiner: an offline host can't advance host-only phases.
         let newHostId =
           '';
+        let bestKey =
+          Infinity;
         for (const [
           pid,
           p,
         ] of lobby.players) {
+          const key =
+            p.joinedAt +
+            (p.isConnected &&
+            !p.isAway
+              ? 0
+              : 1e15);
           if (
-            p.joinedAt <
-            earliestJoin
+            key <
+            bestKey
           ) {
-            earliestJoin =
-              p.joinedAt;
+            bestKey =
+              key;
             newHostId =
               pid;
           }
@@ -3131,48 +3326,54 @@ export class LobbyManager {
         lobby,
       );
 
+    const sessionResults =
+      {
+        standings,
+        matchHistory:
+          lobby.matchHistory.map(
+            (
+              m,
+            ) => ({
+              matchId: `${m.minigameId}-${m.roundNumber}`,
+              minigameId:
+                m.minigameId,
+              minigameDisplayName:
+                MINIGAME_REGISTRY[
+                  m
+                    .minigameId
+                ]
+                  ?.displayName ??
+                m.minigameId,
+              playerCount:
+                m
+                  .standings
+                  .length,
+              winnerUserName:
+                m
+                  .standings[0]
+                  ?.userName ??
+                null,
+              rankings:
+                m.standings,
+              durationMs:
+                m.endedAt -
+                m.startedAt,
+              playedAt:
+                m.startedAt,
+            }),
+          ),
+      };
+    this.sessionResults.set(
+      lobby.id,
+      sessionResults,
+    );
     this.io
       .to(
         `lobby:${lobby.id}`,
       )
       .emit(
         S2C.GAME_SESSION_RESULTS,
-        {
-          standings,
-          matchHistory:
-            lobby.matchHistory.map(
-              (
-                m,
-              ) => ({
-                matchId: `${m.minigameId}-${m.roundNumber}`,
-                minigameId:
-                  m.minigameId,
-                minigameDisplayName:
-                  MINIGAME_REGISTRY[
-                    m
-                      .minigameId
-                  ]
-                    ?.displayName ??
-                  m.minigameId,
-                playerCount:
-                  m
-                    .standings
-                    .length,
-                winnerUserName:
-                  m
-                    .standings[0]
-                    ?.userName ??
-                  null,
-                rankings:
-                  m.standings,
-                durationMs:
-                  m.endedAt -
-                  m.startedAt,
-                playedAt:
-                  m.startedAt,
-              }),
-            ),
-        },
+        sessionResults,
       );
 
     // Schedule disband after delay
@@ -3775,7 +3976,11 @@ export class LobbyManager {
           spectator.isConnected,
         isReady: false,
         isAway: false,
-        score: 0,
+        score:
+          this.takeDepartedScore(
+            lobby.id,
+            spectator.userId,
+          ),
         roundScore: 0,
         joinedAt:
           spectator.joinedAt,
@@ -3949,7 +4154,11 @@ export class LobbyManager {
           spectator.isConnected,
         isReady: false,
         isAway: false,
-        score: 0,
+        score:
+          this.takeDepartedScore(
+            lobby.id,
+            spectator.userId,
+          ),
         roundScore: 0,
         joinedAt:
           spectator.joinedAt,
@@ -4307,6 +4516,11 @@ export class LobbyManager {
         };
     }
 
+    const timer =
+      this.readTimerSnapshot(
+        lobby,
+      );
+
     return {
       lobbyId:
         lobby.id,
@@ -4337,7 +4551,23 @@ export class LobbyManager {
       seq: shared.seq,
       matchHistory:
         shared.matchHistory,
+      timer,
     };
+  }
+
+  private readTimerSnapshot(
+    lobby: RMHboxLobby,
+  ): ClientTimerSnapshot | null {
+    try {
+      return (
+        this.timerSnapshotProvider?.(
+          lobby,
+        ) ??
+        null
+      );
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -4710,6 +4940,12 @@ export class LobbyManager {
       lobbyId,
     );
     this.lobbies.delete(
+      lobbyId,
+    );
+    this.sessionResults.delete(
+      lobbyId,
+    );
+    this.departedScores.delete(
       lobbyId,
     );
     this.seqCounters.delete(

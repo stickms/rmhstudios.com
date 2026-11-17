@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { playSound } from '@/lib/rmhbox/audio';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { toast } from '@/lib/shared/app-toast';
 import type { MinigameProps } from '../MinigameRenderer';
 import DrawingCanvas from './DrawingCanvas';
 import ColorPalette from './ColorPalette';
@@ -76,6 +77,9 @@ const DEFAULT_COLOR_PALETTE = ['#1a1a2e', '#e94560', '#0f3460', '#16213e', '#533
 // Background color preset options
 const BG_COLORS = ['#ffffff', '#f5f5dc', '#ffe4e1', '#e0f7fa', '#f0e68c', '#e8e8e8', '#1a1a2e'];
 
+// Bid step until the server says otherwise (MM_BID_INCREMENT default)
+const DEFAULT_BID_INCREMENT = 50;
+
 // Stroke width slider range (SVG viewBox is 300×300, so max ≈ half-canvas = 150)
 const MIN_WIDTH = 1;
 const MAX_WIDTH = 150;
@@ -105,6 +109,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [galleryDrawings, setGalleryDrawings] = useState<GalleryDrawing[]>([]);
   const [auctionDrawings, setAuctionDrawings] = useState<AuctionDrawing[]>([]);
   const [currency, setCurrency] = useState(1000);
+  const [bidIncrement, setBidIncrement] = useState(DEFAULT_BID_INCREMENT);
   const [rankings, setRankings] = useState<MMRanking[]>([]);
   const [scoreBreakdowns, setScoreBreakdowns] = useState<PlayerScoreBreakdown[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -184,6 +189,36 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           });
           break;
         }
+        case 'MM_DRAWING_REJECTED': {
+          const reason = data.reason as string;
+          if (reason === 'too_many_strokes') {
+            toast.error(
+              t('mm-drawing-rejected-strokes', {
+                defaultValue: 'Too many strokes. Undo some and submit again.',
+              }),
+            );
+          } else {
+            toast.error(
+              t('mm-drawing-rejected', {
+                defaultValue: 'Your drawing could not be submitted. Try again.',
+              }),
+            );
+          }
+          break;
+        }
+        case 'MM_BID_REJECTED': {
+          const reason = data.reason as string;
+          const message =
+            reason === 'insufficient_currency'
+              ? t('mm-bid-rejected-funds', { defaultValue: 'Not enough coins for that bid.' })
+              : reason === 'self_bid'
+                ? t('mm-bid-rejected-self', { defaultValue: 'You cannot bid on your own drawing.' })
+                : reason === 'invalid_increment'
+                  ? t('mm-bid-rejected-increment', { defaultValue: 'That bid is not a whole bid step.' })
+                  : t('mm-bid-rejected', { defaultValue: 'That bid was not accepted.' });
+          toast.error(message);
+          break;
+        }
         case 'MM_SUBMISSION_COUNT': {
           // Legacy broadcast — ignore
           break;
@@ -199,6 +234,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           setAuctionDrawings(data.drawings as AuctionDrawing[]);
           // Server sends 'currency', client previously expected 'startingCurrency'
           setCurrency((data.currency ?? data.startingCurrency) as number);
+          if (typeof data.bidIncrement === 'number' && data.bidIncrement > 0) setBidIncrement(data.bidIncrement);
           setBidSubmitted(false);
           setBidSubmitStatus(null);
           setPhase('AUCTION');
@@ -276,7 +312,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
         }
       }
     },
-    [resetDrawingState],
+    [resetDrawingState, t],
   );
 
   /** Handle full state snapshot (reconnection / spectator player switch) */
@@ -303,15 +339,36 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
         const d = data.myDrawing as { strokes?: MMStroke[]; backgroundColor?: string; submitted?: boolean };
         if (Array.isArray(d.strokes)) setStrokes(d.strokes);
         if (d.backgroundColor) setBackgroundColor(d.backgroundColor);
-        if (d.submitted) setDrawingSubmitted(true);
+        setDrawingSubmitted(Boolean(d.submitted));
       }
       if (data.drawingSubmitStatus) {
         setDrawingSubmitStatus(data.drawingSubmitStatus as { submitted: number; total: number });
       }
+      // The server snapshot carries the board as `drawings`: anonymous gallery
+      // cards in GALLERY, the same cards with bid state in AUCTION.
+      if (Array.isArray(data.drawings)) {
+        if (p === 'GALLERY') setGalleryDrawings(data.drawings as GalleryDrawing[]);
+        if (p === 'AUCTION') {
+          setAuctionDrawings(
+            (data.drawings as Array<Partial<AuctionDrawing> & GalleryDrawing>).map((d) => ({
+              ...d,
+              currentBidTotal: d.currentBidTotal ?? 0,
+              myBidAmount: d.myBidAmount ?? 0,
+              isMine: d.isMine ?? false,
+            })),
+          );
+        }
+      }
       if (Array.isArray(data.galleryDrawings)) setGalleryDrawings(data.galleryDrawings as GalleryDrawing[]);
       if (Array.isArray(data.auctionDrawings)) setAuctionDrawings(data.auctionDrawings as AuctionDrawing[]);
       if (typeof data.currency === 'number') setCurrency(data.currency as number);
+      if (typeof data.bidIncrement === 'number' && data.bidIncrement > 0) setBidIncrement(data.bidIncrement);
+      if (typeof data.bidsSubmitted === 'boolean') setBidSubmitted(data.bidsSubmitted);
+      if (data.bidSubmitStatus) {
+        setBidSubmitStatus(data.bidSubmitStatus as { submitted: number; total: number });
+      }
       if (Array.isArray(data.rankings)) setRankings(data.rankings as MMRanking[]);
+      if (Array.isArray(data.scoreBreakdowns)) setScoreBreakdowns(data.scoreBreakdowns as PlayerScoreBreakdown[]);
     },
     [],
   );
@@ -524,6 +581,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           <AuctionPanel
             drawings={auctionDrawings}
             currency={currency}
+            bidIncrement={bidIncrement}
             onBid={handlePlaceBid}
             disabled={bidSubmitted}
           />

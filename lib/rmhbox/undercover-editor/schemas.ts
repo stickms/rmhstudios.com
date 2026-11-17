@@ -179,3 +179,20 @@ export type StoryPrompt =
   z.infer<
     typeof StoryPromptSchema
   >;
+
+// ─── Phase Limits (game-local constants) ─────────────────────────
+
+/**
+ * Upper bound on the REVIEW (matching) phase. Players normally lock in well
+ * before it; when it runs out, everyone still matching is locked in with the
+ * guesses they have saved, so one idle or departed player cannot hold the
+ * whole lobby on the matching screen.
+ */
+export const UE_REVIEW_TIMEOUT_SECONDS = 120;
+
+/**
+ * While the host is disconnected during READING (a reload, a Discord Activity
+ * restart), the server reveals the next sentence or story every this many
+ * seconds so the table is never stuck waiting for a host who is not there.
+ */
+export const UE_READING_AUTO_ADVANCE_SECONDS = 6;
