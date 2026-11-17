@@ -719,7 +719,13 @@ function VibeViewer() {
           </button>
         </div>
 
-        {postVibe && <VibePostComposer vibe={postVibe} onClose={() => setPostVibe(null)} />}
+        {postVibe && (
+          <VibePostComposer
+            vibe={postVibe}
+            onClose={() => setPostVibe(null)}
+            onPosted={() => toast.success(t('vibe-posted', { defaultValue: 'Posted to the feed' }))}
+          />
+        )}
 
         {/* Credit — who made this page, and what it was remixed from */}
         {(owner?.name || parent) && (

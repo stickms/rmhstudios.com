@@ -52,9 +52,11 @@ interface ComposeModalProps {
  initialContent?: string;
  /** A vibe to attach, pinned to a version (the viewer's Post button). */
  initialVibe?: { slug: string; versionId: string; title: string };
+ /** Called once the post is published, before `onClose`. */
+ onPosted?: () => void;
 }
 
-export function ComposeModal({ open, onClose, quoteItem, initialContent ='', initialVibe}: ComposeModalProps) {
+export function ComposeModal({ open, onClose, quoteItem, initialContent ='', initialVibe, onPosted}: ComposeModalProps) {
  const { t } = useTranslation('feed');
  // Both `.glass-scrim` backdrops here are viewport-covering `backdrop-filter`
  // layers, and nothing may animate above one — Chromium re-blurs the whole
@@ -101,7 +103,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
 
  // Autosave plain drafts (not quotes/seeded shares — those would overwrite a
  // draft typed elsewhere). Restore is offered by the feed ComposeBox.
- useComposeDraftAutosave(content, gifUrl, open && !quoteItem && !initialContent);
+ useComposeDraftAutosave(content, gifUrl, open && !quoteItem && !initialContent && !initialVibe);
 
  useEffect(() => setMounted(true), []);
 
@@ -187,7 +189,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  if (!item) return;
  uploadEpochRef.current += 1;
  prependItem(item);
- if (!quoteItem && !initialContent) clearComposeDraft();
+ if (!quoteItem && !initialContent && !initialVibe) clearComposeDraft();
  setContent('');
  setAttachment(null);
  setPoll({ question:'', options: ['',''], multiSelect: false });
@@ -197,6 +199,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  setAltEditIndex(null);
  setImageError(null);
  setVibe(null);
+ onPosted?.();
  onClose();
  } catch (error) {
  console.error('Post error:', error);

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { canViewPost } from '@/lib/feed/audience.server';
+import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { parseTweakSpec, validateTweakValues } from '@/lib/rmhvibe/tweaks';
 
 type PostVibe = {
@@ -11,7 +12,11 @@ type PostVibe = {
   kind: 'page' | 'widget';
 };
 
-/** The vibe pinned to a post the viewer may see, or null (post, page or version gone; page not ready). */
+/**
+ * The vibe pinned to a post the viewer may see, or null (post, page or version gone, or a paid post the
+ * viewer has not unlocked). A pinned version finished when it was pinned, so it stays served if the page
+ * later rebuilds or fails.
+ */
 export async function getPostVibe(postId: string, viewerId: string | null): Promise<PostVibe | null> {
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
@@ -21,16 +26,20 @@ export async function getPostVibe(postId: string, viewerId: string | null): Prom
       audience: true,
       communityId: true,
       deletedAt: true,
+      unlockPrice: true,
+      ...(viewerId ? { unlocks: { where: { userId: viewerId }, select: { id: true } } } : {}),
       vibeEmbed: {
         select: {
           versionId: true,
-          page: { select: { id: true, slug: true, status: true, kind: true, thumbnailUrl: true } },
+          page: { select: { id: true, slug: true, kind: true, thumbnailUrl: true } },
         },
       },
     },
   });
   const pin = post?.vibeEmbed;
-  if (!post || post.deletedAt || !pin || pin.page.status !== 'ready') return null;
+  if (!post || post.deletedAt || !pin) return null;
+  // A paid post stays closed to anyone who has not unlocked it, the same rule the feed blanks it by.
+  if (isLocked(post, viewerId)) return null;
   if (!(await canViewPost(post, viewerId))) return null;
   const version = await prisma.vibePageVersion.findFirst({
     where: { id: pin.versionId, pageId: pin.page.id },
@@ -62,7 +71,8 @@ export async function getVibeRunnable(slug: string, versionId: string | undefine
       tweakValues: true,
     },
   });
-  if (!page || page.status !== 'ready') return null;
+  // A named version finished when it was written, so it outlives a later rebuild; the latest needs a ready page.
+  if (!page || (!versionId && page.status !== 'ready')) return null;
   const version = await prisma.vibePageVersion.findFirst({
     where: versionId ? { id: versionId, pageId: page.id } : { pageId: page.id },
     orderBy: { createdAt: 'desc' },

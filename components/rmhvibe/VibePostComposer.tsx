@@ -9,13 +9,15 @@ const ComposeModal = lazy(() =>
 export function VibePostComposer({
   vibe,
   onClose,
+  onPosted,
 }: {
   vibe: { slug: string; versionId: string; title: string };
   onClose: () => void;
+  onPosted?: () => void;
 }) {
   return (
     <Suspense fallback={null}>
-      <ComposeModal open initialVibe={vibe} onClose={onClose} />
+      <ComposeModal open initialVibe={vibe} onClose={onClose} onPosted={onPosted} />
     </Suspense>
   );
 }

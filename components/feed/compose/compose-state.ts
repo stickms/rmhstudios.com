@@ -82,8 +82,6 @@ export interface CanSubmitInput {
   hasGif: boolean;
   hasImages: boolean;
   hasCodeEmbed: boolean;
-  /** A vibe is attached (ComposeModal); optional because ComposeBox has no vibe picker. */
-  hasVibe?: boolean;
   remaining: number;
   submitting: boolean;
   uploadingCount: number;
@@ -98,8 +96,7 @@ export function computeCanSubmit(
       i.hasPoll ||
       i.hasGif ||
       i.hasImages ||
-      i.hasCodeEmbed ||
-      !!i.hasVibe) &&
+      i.hasCodeEmbed) &&
     i.remaining >=
       0 &&
     !i.submitting &&
