@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/vibe/stream')({
           body: vibeStreamBodySchema,
         },
         async ({ userId, body }) => {
-          const { prompt, slug, fromVersionId, kind } = body;
+          const { prompt, slug, fromVersionId, kind, selection } = body;
           const model = asVibeModel(body.model);
 
           const encoder = new TextEncoder();
@@ -51,6 +51,7 @@ export const Route = createFileRoute('/api/vibe/stream')({
                   model,
                   userId,
                   kind,
+                  selection,
                 })) {
                   send(event);
                 }

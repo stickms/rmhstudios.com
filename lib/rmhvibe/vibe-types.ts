@@ -117,6 +117,12 @@ export type VibeStreamEvent =
       text: string;
     } // answer (HTML) delta — used for progress
   | {
+      type: 'preview';
+      html: string;
+      done: string[];
+      pending: string[];
+    } // a bundled in-progress page; files still being written are stubbed
+  | {
       type: 'done';
       slug: string;
       versionId: string;

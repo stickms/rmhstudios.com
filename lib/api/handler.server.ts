@@ -380,6 +380,12 @@ export interface HandlerOptions<
   rateLimit?: RateLimitSpec;
   /** Zod schema for the JSON request body. Invalid/absent body → 400. */
   body?: B;
+  /**
+   * Refuse a body larger than this many bytes with a 413. A declared `content-length`
+   * over the cap is refused before the body is read at all; a chunked body (no length)
+   * is checked once read. Set it where the schema cannot bound the payload (`z.unknown()`).
+   */
+  maxBodyBytes?: number;
   /** Zod schema for `?query=params`, parsed from a flat string record. */
   query?: Q;
   /**
@@ -664,9 +670,18 @@ export function defineHandler<
       // read would throw, and re-serializing the parsed object would hash a
       // different string than the client sent (key order, number formatting).
       let rawBodyText: string | null = null;
+      if (
+        options.maxBodyBytes &&
+        Number(request.headers.get('content-length')) > options.maxBodyBytes
+      ) {
+        return apiError('Request body too large', 413);
+      }
       const needsBody = Boolean(options.body) || (options.idempotent && userId);
       if (needsBody) {
         rawBodyText = await request.text().catch(() => null);
+        if (options.maxBodyBytes && rawBodyText && rawBodyText.length > options.maxBodyBytes) {
+          return apiError('Request body too large', 413);
+        }
       }
 
       let body: unknown;

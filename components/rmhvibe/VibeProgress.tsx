@@ -21,11 +21,10 @@ import {
 } from 'lucide-react';
 import { useStickToBottom } from '@/hooks/useStickToBottom';
 import '@/components/rmhvibe/vibe.css';
-
-const FILES_MARKER =
-  '===FILES===';
-const FILE_HEADER_RE =
-  /^---\s*file:\s*(.+?)\s*---\s*$/gim;
+import {
+  FILES_MARKER,
+  parsePartialProject,
+} from '@/lib/rmhvibe/vibe-project';
 
 export type VibeProgressFile =
   {
@@ -48,61 +47,32 @@ export type VibeProgressState =
 export function parseVibeProgress(
   content: string,
 ): VibeProgressState {
-  const markerIdx =
-    content.indexOf(
-      FILES_MARKER,
-    );
-  const head =
-    markerIdx ===
-    -1
-      ? content
-      : content.slice(
-          0,
-          markerIdx,
-        );
-
-  const field =
-    (
-      name: string,
-    ) => {
-      const m =
-        head.match(
-          new RegExp(
-            `^${name}:\\s*(.+)$`,
-            'im',
-          ),
-        );
-      return m
-        ? m[1].trim()
-        : '';
-    };
-  const title =
-    field(
-      'TITLE',
+  const partial =
+    parsePartialProject(
+      content,
     );
   const deps =
-    field(
-      'DEPS',
-    )
-      .split(
-        ',',
-      )
-      .map(
-        (
-          d,
-        ) =>
-          d.trim(),
-      )
-      .filter(
-        Boolean,
-      );
-
+    Object.entries(
+      partial.deps,
+    ).map(
+      ([
+        name,
+        version,
+      ]) =>
+        version ===
+        'latest'
+          ? name
+          : `${name}@${version}`,
+    );
   if (
-    markerIdx ===
-    -1
+    !content.includes(
+      FILES_MARKER,
+    )
   ) {
     return {
-      title,
+      title:
+        partial.title ??
+        '',
       deps,
       phase:
         'planning',
@@ -110,83 +80,39 @@ export function parseVibeProgress(
         [],
     };
   }
-
-  const body =
-    content.slice(
-      markerIdx +
-        FILES_MARKER.length,
-    );
-  const headers: Array<{
-    name: string;
-    start: number;
-  }> =
-    [];
-  FILE_HEADER_RE.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while (
-    (m =
-      FILE_HEADER_RE.exec(
-        body,
-      )) !==
-    null
-  ) {
-    headers.push(
-      {
-        name: m[1]
-          .trim()
-          .replace(
-            /^\.?\//,
-            '',
-          ),
-        start:
-          m.index +
-          m[0]
-            .length,
-      },
-    );
-  }
-
-  const files: VibeProgressFile[] =
-    headers.map(
-      (
-        h,
-        i,
-      ) => {
-        const end =
-          i +
-            1 <
-          headers.length
-            ? headers[
-                i +
-                  1
-              ]
-                .start
-            : body.length;
-        return {
-          name: h.name,
-          bytes:
-            body
-              .slice(
-                h.start,
-                end,
-              )
-              .trim()
-              .length,
-          // Every file but the last is fully written; the last is still streaming.
-          done:
-            i <
-            headers.length -
-              1,
-        };
-      },
-    );
-
+  const names =
+    [
+      ...partial.done,
+      ...(partial.writing
+        ? [
+            partial.writing,
+          ]
+        : []),
+    ];
   return {
-    title,
+    title:
+      partial.title ??
+      '',
     deps,
     phase:
       'writing',
-    files,
+    files:
+      names.map(
+        (
+          name,
+        ) => ({
+          name,
+          bytes:
+            partial
+              .files[
+              name
+            ]
+              .length,
+          done:
+            name !==
+            partial.writing,
+        }),
+      ),
   };
 }
 
