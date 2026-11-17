@@ -1,0 +1,76 @@
+// Admin email campaigns (/admin/email). One row per message an admin sends;
+// the recipients are resolved once, when it is sent, and written as rows so the
+// send can be watched, and resumed if the web process restarts mid-batch.
+model EmailCampaign {
+  id          String    @id @default(cuid())
+  authorId    String
+  subject     String    @db.VarChar(200)
+  /// Plain text with blank-line paragraphs and bare URLs (rendered by lib/email/campaign-render.ts).
+  body        String    @db.Text
+  /// 'announcements' | 'product' | 'service' (service ignores opt-outs; see lib/email/preferences.ts).
+  category    String    @db.VarChar(16)
+  /// The audience as it was asked for: { mode, filters?, userIds? } (lib/email/audience.ts).
+  audience    Json
+  /// 'sending' | 'sent' | 'failed'. Recipient rows are 'pending' | 'claimed' (a sender holds them) | 'sent' | 'failed' | 'skipped'.
+  status      String    @default("sending") @db.VarChar(12)
+  total       Int       @default(0)
+  sent        Int       @default(0)
+  failed      Int       @default(0)
+  /// Every recipient left out: opted out, already had this message, or emailed too recently.
+  skipped     Int       @default(0)
+  /// Of `skipped`: people who already received this exact message (same category, subject and body).
+  duplicates  Int       @default(0)
+  /// Of `skipped`: people held back by the frequency cap (lib/email/frequency.ts).
+  throttled   Int       @default(0)
+  /// sha256 of category + subject + body. The per-user dedupe key and the double-submit guard.
+  contentHash String    @db.VarChar(64)
+  createdAt   DateTime  @default(now())
+  /// When the sender last finished a batch; a send with no progress for a while can be resumed.
+  lastBatchAt DateTime?
+  finishedAt  DateTime?
+
+  author     User                     @relation("EmailCampaignAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  recipients EmailCampaignRecipient[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([contentHash, createdAt(sort: Desc)])
+  @@map("email_campaign")
+}
+
+model EmailCampaignRecipient {
+  campaignId String
+  userId     String
+  /// 'pending' | 'claimed' | 'sent' | 'failed' | 'skipped'.
+  status     String    @default("pending") @db.VarChar(8)
+  sentAt     DateTime?
+
+  campaign EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, userId])
+  @@index([campaignId, status])
+  @@index([userId])
+  @@map("email_campaign_recipient")
+}
+
+// Every non-transactional email a user was sent, one row per message. It is
+// the per-user record that keeps mail from repeating: the row is claimed
+// BEFORE the send, and (userId, dedupeKey) is unique, so the same message can
+// never reach the same person twice, whichever process or retry sends it. It
+// also feeds the frequency cap. A failed send deletes its row.
+model EmailDelivery {
+  id         BigInt   @id @default(autoincrement())
+  userId     String
+  /// 'campaign' (optional bulk mail, counted by the frequency cap) | 'service' | 'security' | 'digest'.
+  kind       String   @db.VarChar(16)
+  /// e.g. `campaign:<contentHash>`, `security:new-device:<sessionId>`, `digest:2026-W47`.
+  dedupeKey  String   @db.VarChar(200)
+  campaignId String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, kind, createdAt(sort: Desc)])
+  @@map("email_delivery")
+}

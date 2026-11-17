@@ -10,6 +10,8 @@ import type { layoutPrefsSchema } from '@/lib/home-widgets-schema';
 import type { notifPrefsSchema } from '@/lib/notify/categories-schema';
 import type { PresenceVisibility } from '@/lib/presence-types';
 import type { presencePrivacySchema } from '@/lib/presence-types-schema';
+import type { EmailPrefs } from '@/lib/email/preferences';
+import type { EmailPrefsInput } from '@/lib/email/preferences-schema';
 
 /* ── Appearance ───────────────────────────────────────────────────────────── */
 
@@ -337,3 +339,17 @@ export const markNotificationsReadApi =
       path: '/api/notifications/read',
     },
   );
+
+/* ── Email ────────────────────────────────────────────────────────────────── */
+
+/** GET — the caller's effective email preferences (defaults filled in). */
+export const getEmailPrefsApi = endpoint<{ res: EmailPrefs }>()({
+  method: 'GET',
+  path: '/api/preferences/email',
+});
+
+/** PUT — partial update; a category left out is unchanged. */
+export const setEmailPrefsApi = endpoint<{
+  body: EmailPrefsInput;
+  res: EmailPrefs;
+}>()({ method: 'PUT', path: '/api/preferences/email' });

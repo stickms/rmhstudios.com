@@ -90,6 +90,15 @@ function AdminDashboardPage() {
           />
 
           <AdminHubCard
+            to="/admin/email"
+            title={t('email-title', { defaultValue: 'Email' })}
+            description={t('email-card-description', {
+              defaultValue:
+                'Email everyone, a filtered group or people you choose. Preview who it reaches, send yourself a test, and follow the send.',
+            })}
+          />
+
+          <AdminHubCard
             to="/admin/economy"
             title={t('economy-title', { defaultValue: 'Coin Economy' })}
             description={t('economy-card-description', {

@@ -13,6 +13,7 @@ import {
   listCallMutesApi,
 } from '@/lib/call/calls.contract';
 import {
+  getEmailPrefsApi,
   getNotificationMatrixApi,
   getNotificationTogglesApi,
   getPresencePrefsApi,
@@ -189,3 +190,6 @@ export const discoveryMemoriesQuery =
         staleTime: 30_000,
       },
     );
+
+export const emailPrefsQuery = () =>
+  contractQuery(['settings', 'email-prefs'], getEmailPrefsApi, undefined, { staleTime: 30_000 });
