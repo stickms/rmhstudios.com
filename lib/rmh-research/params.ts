@@ -68,5 +68,10 @@ export function parseArchiveSearch(search: Record<string, unknown>): ArchiveSear
   return out;
 }
 
+/** Whether a value is one of the twelve field ids. Uses the bare id list, not the field table, so a route can call it. */
+export function isFieldId(value: unknown): value is FieldId {
+  return typeof value === 'string' && (FIELD_IDS as readonly string[]).includes(value);
+}
+
 export const AUTHOR_SORTS = ['r', 'h', 'citations', 'papers', 'name'] as const;
 export type AuthorSort = (typeof AUTHOR_SORTS)[number];

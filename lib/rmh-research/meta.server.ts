@@ -1,7 +1,7 @@
 /**
- * The `head()` data of the paper and author pages, computed on the server.
+ * The `head()` data of the paper, author and field pages, computed on the server.
  *
- * A route module's `loader` and `head` stay in the client entry, so a route
+ * The field page's too. A route module's `loader` and `head` stay in the client entry, so a route
  * that imported the catalogue to write its own title put the whole archive on
  * every page's critical path. These run inside each route's server function
  * instead (`*.server.ts` is stubbed out of the client bundle), and the route
@@ -9,7 +9,7 @@
  */
 import { authorMetrics, authorsOf, getAuthor, getPaper } from './catalog';
 import { authorLine } from './cite';
-import { getField } from './fields';
+import { getField, isFieldId } from './fields';
 
 export interface ResearchPageMeta {
   title: string;
@@ -27,6 +27,16 @@ export function paperMeta(id: string): ResearchPageMeta | null {
     description: `${authorLine(paper, authorsOf(paper))} (${paper.year}). ${paper.abstract}`.slice(0, 300),
     year: paper.year,
     section: getField(paper.field).name,
+  };
+}
+
+export function fieldMeta(id: string): ResearchPageMeta | null {
+  if (!isFieldId(id)) return null;
+  const name = getField(id).name;
+  return {
+    title: name,
+    description: `${name} at RMH Research: the papers, the people and the field's most resonant work.`,
+    section: name,
   };
 }
 

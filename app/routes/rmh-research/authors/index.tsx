@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AuthorsPage from '@/components/rmh-research/AuthorsPage';
 import { AUTHOR_SORTS, type AuthorSort } from '@/lib/rmh-research/params';
-import { isFieldId } from '@/lib/rmh-research/fields';
+import { isFieldId } from '@/lib/rmh-research/params';
 import type { FieldId } from '@/lib/rmh-research/types';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 

@@ -25,9 +25,7 @@ export const FIELDS: readonly Field[] = [
 
 const BY_ID = new Map<string, Field>(FIELDS.map((f) => [f.id, f]));
 
-export function isFieldId(value: unknown): value is FieldId {
-  return typeof value === 'string' && BY_ID.has(value);
-}
+export { isFieldId } from './params';
 
 export function getField(id: FieldId): Field {
   const field = BY_ID.get(id);
