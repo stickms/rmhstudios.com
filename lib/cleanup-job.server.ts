@@ -15,6 +15,8 @@ import { runCleanup, cleanupOptionsFromEnv } from '@/lib/cleanup.server';
 
 export const CLEANUP_QUEUE = 'ops.data-cleanup';
 export const DEFAULT_CLEANUP_CRON = '0 4 * * *';
+/** `DiscordVibeLaunch` rows only bridge a /vibe Play click to the Activity that opens right after. */
+export const VIBE_LAUNCH_RETENTION_MS = 30 * 60 * 1000;
 
 /** One sweep. Never throws: a failed sweep is logged and the next tick tries again. */
 export async function runCleanupTick(): Promise<void> {
@@ -28,6 +30,13 @@ export async function runCleanupTick(): Promise<void> {
     );
   } catch (error) {
     console.error('[cleanup] run failed:', error);
+  }
+  try {
+    await prisma.discordVibeLaunch.deleteMany({
+      where: { createdAt: { lt: new Date(Date.now() - VIBE_LAUNCH_RETENTION_MS) } },
+    });
+  } catch (error) {
+    console.error('[cleanup] vibe launch prune failed:', error);
   }
 }
 
