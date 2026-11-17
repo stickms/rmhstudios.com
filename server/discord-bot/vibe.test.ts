@@ -70,6 +70,7 @@ import {
   handleVibeEditButton,
   handleVibeEditModal,
   handleVibePlay,
+  escapeMarkdown,
   type VibeDeps,
 } from './vibe';
 
@@ -848,5 +849,80 @@ describe('/vibe', () => {
     ).toBe(
       'vibe_edit_modal:ab_c-1',
     );
+  });
+});
+
+describe('/vibe safeguards', () => {
+  const lastEmbed = (port: ReturnType<typeof fakePort>) =>
+    (
+      port.calls.filter(([n]) => n === 'editOriginal').at(-1)![1][1] as {
+        embeds: Array<{ title: string; description: string }>;
+      }
+    ).embeds[0]!;
+
+  it('builds without previews', async () => {
+    const d = deps([done]);
+    await handleVibeCommand(fakePort(), cmd('u-prev'), d);
+    expect(d.generate).toHaveBeenCalledWith(expect.objectContaining({ previews: false }));
+  });
+
+  it('caps concurrent builds at 2 and refuses the third without using its rate limit', async () => {
+    const release: Array<() => void> = [];
+    const slow = deps([], {
+      generate: vi.fn(async function* () {
+        await new Promise<void>((r) => release.push(r));
+        yield done;
+      }) as unknown as VibeDeps['generate'],
+    });
+    const a = handleVibeCommand(fakePort(), cmd('u-cap-a'), slow);
+    const b = handleVibeCommand(fakePort(), cmd('u-cap-b'), slow);
+    await vi.waitFor(() => expect(release).toHaveLength(2));
+
+    const port = fakePort();
+    await handleVibeCommand(port, cmd('u-cap-c'), slow);
+    const r = port.calls[0]![1][1] as { data: { content: string; flags: number } };
+    expect(r.data.content).toBe('RMH Vibes is busy. Try again in a minute.');
+    expect(r.data.flags).toBe(64);
+    expect(slow.generate).toHaveBeenCalledTimes(2);
+
+    release.forEach((r2) => r2());
+    await Promise.all([a, b]);
+    // The refused user kept all 3 builds, and the slots are free again.
+    const fast = deps([done]);
+    for (let n = 0; n < 3; n++) await handleVibeCommand(fakePort(), cmd('u-cap-c'), fast);
+    expect(fast.generate).toHaveBeenCalledTimes(3);
+  });
+
+  it('posts a fixed message, not the exception text', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const port = fakePort();
+    await handleVibeCommand(
+      port,
+      cmd('u-throw'),
+      deps([], {
+        generate: vi.fn(async function* () {
+          yield* [];
+          throw new Error('PrismaClientKnownRequestError: secret column');
+        }) as unknown as VibeDeps['generate'],
+      }),
+    );
+    expect(lastEmbed(port).description).toBe('Could not build that vibe. Try again.');
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('escapes Discord markdown in the model-written title and description', async () => {
+    const port = fakePort();
+    await handleVibeCommand(
+      port,
+      cmd('u-md'),
+      deps([{ ...done, title: '[free](http://x)', description: '**bold** _it_' }]),
+    );
+    expect(lastEmbed(port).title).toBe(String.raw`\[free\]\(http://x\)`);
+    expect(lastEmbed(port).description).toBe('\\*\\*bold\\*\\* \\_it\\_');
+  });
+
+  it('escapeMarkdown escapes every markdown character', () => {
+    expect(escapeMarkdown('\\*_~`|>[]()')).toBe('\\\\\\*\\_\\~\\`\\|\\>\\[\\]\\(\\)');
   });
 });
