@@ -21,6 +21,7 @@ import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
 import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
 import { parsePartialProject } from '@/lib/rmhvibe/vibe-project';
 import { ChevronUp } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 
 const GENERIC_ERROR = 'Something went wrong while generating. Give it another go.';
@@ -127,6 +128,7 @@ function VibeNew() {
     };
   }, [prompt, model, navigate]);
 
+  const wide = useMediaQuery('(min-width: 900px)');
   const writing = useMemo(() => parsePartialProject(content).writing, [content]);
 
   if (error) return <VibeError message={error} />;
@@ -139,7 +141,9 @@ function VibeNew() {
           done: preview.done,
           total: preview.total,
         })
-      : t('thinking-it-through', { defaultValue: 'Thinking it through.' });
+      : content
+        ? t('live-status-finishing', { defaultValue: 'Finishing up' })
+        : t('thinking-it-through', { defaultValue: 'Thinking it through.' });
     const phase = content ? 'writing' : 'thinking';
     return (
       <>
@@ -150,6 +154,7 @@ function VibeNew() {
               html={preview.html}
               title={t('vibe-frame-title', { defaultValue: 'Vibe page' })}
             />
+            {!wide && (
             <div className="vibe-live__sheet">
               <button
                 type="button"
@@ -162,21 +167,27 @@ function VibeNew() {
                 }
                 onClick={() => setSheetOpen((v) => !v)}
               >
-                <span className="flex-1 truncate" aria-live="polite">
+                <span className="flex-1 truncate" aria-hidden="true">
                   {status}
                 </span>
                 <ChevronUp size={16} aria-hidden="true" className={sheetOpen ? 'rotate-180' : ''} />
               </button>
+              <p className="sr-only" aria-live="polite">
+                {status}
+              </p>
               {sheetOpen && (
                 <div className="vibe-live__sheet-body">
                   <LiveBuildPanel thinking={thinking} content={content} phase={phase} />
                 </div>
               )}
             </div>
+            )}
           </div>
+          {wide && (
           <aside className="vibe-live__side">
             <LiveBuildPanel thinking={thinking} content={content} phase={phase} />
           </aside>
+          )}
         </div>
       </>
     );

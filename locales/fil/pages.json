@@ -248,5 +248,6 @@
   "live-status-writing": "Writing {{file}} · {{done}} of {{total}} files",
   "live-sheet-expand": "Show build details",
   "live-sheet-collapse": "Hide build details",
-  "vibe-frame-title": "Vibe page"
+  "vibe-frame-title": "Vibe page",
+  "live-status-finishing": "Finishing up"
 }
