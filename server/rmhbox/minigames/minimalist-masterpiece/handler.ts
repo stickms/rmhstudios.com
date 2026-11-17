@@ -16,6 +16,7 @@
 
 import crypto from 'crypto';
 import { BaseMinigame } from '../base-minigame';
+import { shuffle } from '@/lib/core/rng';
 import type {
   MinigameContext,
   MinigameResults,
@@ -68,6 +69,13 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   private state!: MinimalistMasterpieceState;
   private startedAt: number = 0;
   private actionSeq = 0;
+  /**
+   * The one pending phase-transition timeout. Every transition replaces it, and
+   * an early end (everyone submitted) cancels it, so a stale timer from an
+   * earlier phase can never fire a second transition chain.
+   */
+  private phaseTimeout: NodeJS.Timeout | null =
+    null;
 
   get spectatorMode(): 'competitive-individual' {
     return 'competitive-individual';
@@ -150,6 +158,10 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         drawingSubmissions:
           new Set(),
         cumulativeScores,
+        galleryOrder:
+          [],
+        drawingStartedAt:
+          now,
         phaseStartedAt:
           now,
         phaseEndsAt:
@@ -200,6 +212,18 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     if (
       !this
         .isRunning
+    )
+      return;
+    // First round starts from start() (round 0); later rounds only from RESULTS.
+    if (
+      this
+        .state
+        .currentRound >
+        0 &&
+      this
+        .state
+        .phase !==
+        'RESULTS'
     )
       return;
 
@@ -316,6 +340,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       new Set();
     this.state.drawingSubmissions =
       new Set();
+    // Anonymous gallery order: shuffled once per round so "Artist N" never
+    // follows join order, and stays stable across gallery, auction and reconnects.
+    this.state.galleryOrder =
+      shuffle(
+        Array.from(
+          userIdToDrawingId.values(),
+        ),
+      );
 
     const now =
       Date.now();
@@ -395,11 +427,78 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.startPhaseTimer(
       MM_PROMPT_REVEAL_SECONDS,
     );
-    this.setTimeout(
+    this.schedulePhase(
       () =>
         this.startDrawingPhase(),
       MM_PROMPT_REVEAL_SECONDS *
         1000,
+    );
+  }
+
+  /**
+   * Schedule the next phase transition, replacing (and cancelling) any pending
+   * one. The callback only runs if the round has not moved on in the meantime.
+   */
+  private schedulePhase(
+    fn: () => void,
+    ms: number,
+  ): void {
+    this.clearPhaseTimeout();
+    const round =
+      this
+        .state
+        .currentRound;
+    this.phaseTimeout =
+      this.setTimeout(
+        () => {
+          this.phaseTimeout =
+            null;
+          if (
+            this
+              .state
+              .currentRound !==
+            round
+          )
+            return;
+          fn();
+        },
+        ms,
+      );
+  }
+
+  private clearPhaseTimeout(): void {
+    this.clearTrackedTimeout(
+      this
+        .phaseTimeout,
+    );
+    this.phaseTimeout =
+      null;
+  }
+
+  /** Whether a player is still connected (departed/disconnected players don't hold up a phase). */
+  private isConnected(
+    userId: string,
+  ): boolean {
+    return (
+      this.context.players.get(
+        userId,
+      )
+        ?.isConnected ??
+      false
+    );
+  }
+
+  /** Connected participants of this round (players who have a drawing). */
+  private connectedParticipants(): string[] {
+    return Array.from(
+      this.state.drawings.keys(),
+    ).filter(
+      (
+        id,
+      ) =>
+        this.isConnected(
+          id,
+        ),
     );
   }
 
@@ -409,6 +508,13 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     if (
       !this
         .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      'PROMPT_REVEAL'
     )
       return;
 
@@ -426,6 +532,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       'DRAWING',
       drawingDuration,
     );
+    this.state.drawingStartedAt =
+      this.state.phaseStartedAt;
 
     logger.info(
       {
@@ -454,7 +562,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.startPhaseTimer(
       drawingDuration,
     );
-    this.setTimeout(
+    this.schedulePhase(
       () =>
         this.endDrawingPhase(),
       drawingDuration *
@@ -468,6 +576,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      'DRAWING'
+    )
+      return;
+    this.clearPhaseTimeout();
     this.clearPhaseTimer();
 
     // Auto-submit for players who haven't submitted
@@ -523,6 +639,13 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      'DRAWING'
+    )
+      return;
 
     this.setPhase(
       'GALLERY',
@@ -560,7 +683,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.startPhaseTimer(
       MM_GALLERY_DURATION_SECONDS,
     );
-    this.setTimeout(
+    this.schedulePhase(
       () =>
         this.startAuctionPhase(),
       MM_GALLERY_DURATION_SECONDS *
@@ -574,6 +697,13 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      'GALLERY'
+    )
+      return;
 
     const auctionDuration =
       this.getSetting(
@@ -584,6 +714,11 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       'AUCTION',
       auctionDuration,
     );
+    const bidIncrement =
+      this.getSetting(
+        'bidIncrement',
+        MM_BID_INCREMENT,
+      );
 
     logger.info(
       {
@@ -618,6 +753,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
               userId,
             ) ??
             0,
+          bidIncrement,
         },
       );
     }
@@ -645,13 +781,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
             }),
           ),
         currency: 0,
+        bidIncrement,
       },
     );
 
     this.startPhaseTimer(
       auctionDuration,
     );
-    this.setTimeout(
+    this.schedulePhase(
       () =>
         this.endAuctionPhase(),
       auctionDuration *
@@ -665,6 +802,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      'AUCTION'
+    )
+      return;
+    this.clearPhaseTimeout();
     this.clearPhaseTimer();
 
     // Second-price auction model:
@@ -795,6 +940,13 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     if (
       !this
         .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      'AUCTION'
     )
       return;
 
@@ -952,7 +1104,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.startPhaseTimer(
       MM_RESULTS_DURATION_SECONDS,
     );
-    this.setTimeout(
+    this.schedulePhase(
       () =>
         this.afterResults(),
       MM_RESULTS_DURATION_SECONDS *
@@ -965,6 +1117,13 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     if (
       !this
         .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      'RESULTS'
     )
       return;
 
@@ -1093,6 +1252,11 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       backgroundColor,
     } =
       parsed.data;
+    if (
+      strokes.length >
+      this.maxStrokes()
+    )
+      return;
 
     // Validate stroke colors
     for (const stroke of strokes) {
@@ -1199,6 +1363,22 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     } =
       parsed.data;
 
+    if (
+      strokes.length >
+      this.maxStrokes()
+    ) {
+      this.context.sendToPlayer(
+        userId,
+        'rmhbox:game:action',
+        {
+          type: 'MM_DRAWING_REJECTED',
+          reason:
+            'too_many_strokes',
+        },
+      );
+      return;
+    }
+
     // Anti-bot: validate stroke colors against palette or valid hex
     for (const stroke of strokes) {
       if (
@@ -1287,35 +1467,115 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       },
     );
 
-    // Broadcast submission count to all
-    const submittedCount =
-      this
-        .state
-        .drawingSubmissions
-        .size;
-    const totalPlayers =
-      this
-        .state
-        .drawings
-        .size;
+    this.broadcastDrawingStatus();
+    this.maybeEndDrawingEarly();
+  }
+
+  /** Submission count over the connected participants. */
+  private broadcastDrawingStatus(): void {
     this.broadcastGameAction(
       {
         type: 'MM_DRAWING_SUBMIT_STATUS',
-        submitted:
-          submittedCount,
-        total:
-          totalPlayers,
+        ...this.drawingSubmitStatus(),
       },
     );
+  }
 
-    // End drawing phase early if all players submitted
+  private drawingSubmitStatus(): {
+    submitted: number;
+    total: number;
+  } {
+    const connected =
+      this.connectedParticipants();
+    return {
+      submitted:
+        connected.filter(
+          (
+            id,
+          ) =>
+            this.state.drawingSubmissions.has(
+              id,
+            ),
+        )
+          .length,
+      total:
+        connected.length,
+    };
+  }
+
+  private bidSubmitStatus(): {
+    submitted: number;
+    total: number;
+  } {
+    const connected =
+      this.connectedParticipants();
+    return {
+      submitted:
+        connected.filter(
+          (
+            id,
+          ) =>
+            this.state.bidSubmissions.has(
+              id,
+            ),
+        )
+          .length,
+      total:
+        connected.length,
+    };
+  }
+
+  /** End the drawing phase once every connected participant has submitted. */
+  private maybeEndDrawingEarly(): void {
     if (
-      submittedCount >=
-      totalPlayers
-    ) {
-      this.clearPhaseTimer();
+      this
+        .state
+        .phase !==
+      'DRAWING'
+    )
+      return;
+    const {
+      submitted,
+      total,
+    } =
+      this.drawingSubmitStatus();
+    if (
+      total >
+        0 &&
+      submitted >=
+        total
+    )
       this.endDrawingPhase();
-    }
+  }
+
+  /** End the auction once every connected participant has locked in their bids. */
+  private maybeEndAuctionEarly(): void {
+    if (
+      this
+        .state
+        .phase !==
+      'AUCTION'
+    )
+      return;
+    const {
+      submitted,
+      total,
+    } =
+      this.bidSubmitStatus();
+    if (
+      total >
+        0 &&
+      submitted >=
+        total
+    )
+      this.endAuctionPhase();
+  }
+
+  private maxStrokes(): number {
+    return this.getSetting(
+      'maxStrokes',
+      MM_MAX_STROKES,
+    );
   }
 
   private handlePlaceBid(
@@ -1668,36 +1928,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       },
     );
 
-    // Broadcast submission count
-    const submittedCount =
-      this
-        .state
-        .bidSubmissions
-        .size;
-    const totalPlayers =
-      this
-        .context
-        .players
-        .size;
-
     this.broadcastGameAction(
       {
         type: 'MM_BID_SUBMIT_STATUS',
-        submitted:
-          submittedCount,
-        total:
-          totalPlayers,
+        ...this.bidSubmitStatus(),
       },
     );
 
-    // End auction early if all players submitted
-    if (
-      submittedCount >=
-      totalPlayers
-    ) {
-      this.clearPhaseTimer();
-      this.endAuctionPhase();
-    }
+    this.maybeEndAuctionEarly();
   }
 
   // ─── State Masking ───────────────────────────────────────────
@@ -1777,20 +2015,11 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
                 }
               : null,
           maxStrokes:
-            MM_MAX_STROKES,
+            this.maxStrokes(),
+          colorPalette:
+            MM_COLOR_PALETTE,
           drawingSubmitStatus:
-            {
-              submitted:
-                this
-                  .state
-                  .drawingSubmissions
-                  .size,
-              total:
-                this
-                  .state
-                  .drawings
-                  .size,
-            },
+            this.drawingSubmitStatus(),
         };
       }
 
@@ -1813,6 +2042,17 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
               userId,
             ) ??
             0,
+          bidIncrement:
+            this.getSetting(
+              'bidIncrement',
+              MM_BID_INCREMENT,
+            ),
+          bidsSubmitted:
+            this.state.bidSubmissions.has(
+              userId,
+            ),
+          bidSubmitStatus:
+            this.bidSubmitStatus(),
         };
       }
 
@@ -1906,18 +2146,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
               }),
             ),
           drawingSubmitStatus:
-            {
-              submitted:
-                this
-                  .state
-                  .drawingSubmissions
-                  .size,
-              total:
-                this
-                  .state
-                  .drawings
-                  .size,
-            },
+            this.drawingSubmitStatus(),
         };
 
       case 'GALLERY':
@@ -1945,6 +2174,11 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
               }),
             ),
           bids: this.serializeBids(),
+          bidIncrement:
+            this.getSetting(
+              'bidIncrement',
+              MM_BID_INCREMENT,
+            ),
         };
 
       case 'RESULTS':
@@ -1993,6 +2227,34 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
             .phase,
       },
     );
+    if (
+      !this
+        .isRunning
+    )
+      return;
+    // A departed player no longer holds up the drawing or the auction.
+    if (
+      this
+        .state
+        .phase ===
+      'DRAWING'
+    ) {
+      this.broadcastDrawingStatus();
+      this.maybeEndDrawingEarly();
+    } else if (
+      this
+        .state
+        .phase ===
+      'AUCTION'
+    ) {
+      this.broadcastGameAction(
+        {
+          type: 'MM_BID_SUBMIT_STATUS',
+          ...this.bidSubmitStatus(),
+        },
+      );
+      this.maybeEndAuctionEarly();
+    }
   }
 
   handlePlayerReconnect(
@@ -2483,7 +2745,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
           drawing.submittedAt -
           this
             .state
-            .phaseStartedAt;
+            .drawingStartedAt;
         if (
           elapsed <
           fastestTime
@@ -2539,16 +2801,28 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   }
 
   private buildGalleryDrawings(): GalleryDrawing[] {
-    // Anonymous labels: "Artist 1", "Artist 2", etc.
+    // Anonymous labels: "Artist 1", "Artist 2", etc., in the round's shuffled order.
     const drawings: GalleryDrawing[] =
       [];
     let index = 1;
-    for (const [
-      ,
-      drawing,
-    ] of this
+    for (const drawingId of this
       .state
-      .drawings) {
+      .galleryOrder) {
+      const userId =
+        this.state.drawingIdToUserId.get(
+          drawingId,
+        );
+      const drawing =
+        userId !==
+        undefined
+          ? this.state.drawings.get(
+              userId,
+            )
+          : undefined;
+      if (
+        !drawing
+      )
+        continue;
       drawings.push(
         {
           drawingId:

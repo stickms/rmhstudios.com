@@ -163,6 +163,10 @@ export interface MinimalistMasterpieceState {
     string,
     number
   >;
+  /** This round's drawing ids in their shuffled, anonymous gallery order. */
+  galleryOrder: string[];
+  /** When this round's DRAWING phase began (for the Speed Painter award). */
+  drawingStartedAt: number;
   phaseStartedAt: number;
   phaseEndsAt: number;
   actionLog: Array<{

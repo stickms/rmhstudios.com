@@ -1,7 +1,7 @@
 /**
  * CategoryCrashGame — Phase router for the Category Crash minigame.
  *
- * A brainstorming game where players fill in 5 categories with answers
+ * A brainstorming game where players fill in 3-7 categories (5 by default) with answers
  * starting with a random letter. After input, a peer-review phase lets
  * players "crash" (challenge) dubious answers. Unique, unchallenged
  * answers score the most.
@@ -379,20 +379,24 @@ export default function CategoryCrashGame({
             setLetter(
               data.letter as string,
             );
+            const roundCategories =
+              (data.categories as Category[]) ??
+              [];
             setCategories(
-              data.categories as Category[],
+              roundCategories,
             );
             setTimeRemaining(
               data.duration as number,
             );
             setMyAnswers(
-              [
+              Array<
+                | string
+                | null
+              >(
+                roundCategories.length,
+              ).fill(
                 null,
-                null,
-                null,
-                null,
-                null,
-              ],
+              ),
             );
             setIsLocked(
               false,
@@ -561,6 +565,13 @@ export default function CategoryCrashGame({
             setCurrentVotingCategoryIndex(
               data.currentVotingCategoryIndex as number,
             );
+            if (
+              typeof data.duration ===
+              'number'
+            )
+              setTimeRemaining(
+                data.duration,
+              );
             setVoteTallies(
               {},
             );
@@ -852,7 +863,22 @@ export default function CategoryCrashGame({
           setMyAnonymousLabel(
             data.myAnonymousLabel as string,
           );
+        // One round's results; tolerate the older snapshot that sent every round as an array.
         if (
+          Array.isArray(
+            data.roundResults,
+          )
+        ) {
+          const rounds =
+            data.roundResults as CCRoundResults[];
+          setRoundResults(
+            rounds[
+              rounds.length -
+                1
+            ] ??
+              null,
+          );
+        } else if (
           data.roundResults
         )
           setRoundResults(
@@ -1010,12 +1036,17 @@ export default function CategoryCrashGame({
         !isHost
       )
         return;
+      // Name the category: a click that lands after the timer already moved on is ignored.
       emitGameInput(
         'ADVANCE_VOTING',
-        {},
+        {
+          categoryIndex:
+            currentVotingCategoryIndex,
+        },
       );
     }, [
       isHost,
+      currentVotingCategoryIndex,
     ]);
 
   // Player name lookup

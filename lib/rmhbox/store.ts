@@ -23,6 +23,8 @@ import type {
   GameSettingValues,
   SpectatorTargetInfo,
 } from './types';
+import { MINIGAME_REGISTRY } from './minigame-registry';
+import { getDefaultSettings } from './game-settings';
 
 // ─── Game Settings State ────────────────────────────────────────────
 
@@ -163,6 +165,14 @@ export const useRMHboxStore = create<RMHboxStore>()(
           lobby: fullState,
           lastSeq: fullState.seq,
         });
+        // The snapshot carries the running timer, so a client that joins,
+        // reloads or reconnects mid-phase shows the right ring (and the host
+        // "Next" button). Older servers omit the field: leave the timer alone.
+        if (fullState.timer !== undefined) {
+          set({
+            timerInfo: fullState.timer,
+          });
+        }
 
         // After a full sync (e.g. returning to WAITING after force-end),
         // reinitialize gameSettingsState if a game is pre-selected and the
@@ -171,12 +181,8 @@ export const useRMHboxStore = create<RMHboxStore>()(
           const { minigameId, displayName } = fullState.selectedGame;
           if (minigameId !== '__vote__') {
             try {
-              // eslint-disable-next-line @typescript-eslint/no-require-imports
-              const { MINIGAME_REGISTRY } = require('./minigame-registry') as typeof import('./minigame-registry');
               const def = MINIGAME_REGISTRY[minigameId];
               if (def?.settingsSchema && def.settingsSchema.length > 0) {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
-                const { getDefaultSettings } = require('./game-settings') as typeof import('./game-settings');
                 set({
                   gameSettingsState: {
                     minigameId,
@@ -401,6 +407,12 @@ export function applyLobbyAction(
       if (newState === 'INSTRUCTIONS' || newState === 'PLAYING') {
         useRMHboxStore.setState({ gameSettingsState: null });
       }
+      // A new game is on its way: drop the last one's snapshot, or a cached
+      // game component (same game again) hydrates from the previous match's
+      // final state — its old question, phase and scores — when it mounts.
+      if (newState === 'INSTRUCTIONS' || newState === 'PRELOADING' || newState === 'COUNTDOWN') {
+        useRMHboxStore.setState({ gameState: {}, minigameRound: null, liveMinigameScore: null });
+      }
       return {
         ...lobby,
         state: newState,
@@ -467,15 +479,10 @@ export function applyLobbyAction(
       const displayName = data.displayName as string;
 
       // Initialize game settings state from the minigame registry
-      // (deferred import to avoid circular dependency)
       if (minigameId !== '__vote__') {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const { MINIGAME_REGISTRY } = require('./minigame-registry') as typeof import('./minigame-registry');
           const def = MINIGAME_REGISTRY[minigameId];
           if (def?.settingsSchema && def.settingsSchema.length > 0) {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const { getDefaultSettings } = require('./game-settings') as typeof import('./game-settings');
             useRMHboxStore.setState({
               gameSettingsState: {
                 minigameId,

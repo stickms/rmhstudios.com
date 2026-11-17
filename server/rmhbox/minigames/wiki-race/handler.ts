@@ -78,8 +78,27 @@ export class WikiRaceMinigame extends BaseMinigame {
     RateLimitEntry
   > =
     new Map();
-  private navigationTimeoutHandle: NodeJS.Timeout | null =
+  /** The one pending phase-advance timeout (reveal end, navigation end, results end). */
+  private phaseTimeoutHandle: NodeJS.Timeout | null =
     null;
+  /** This round's start article, prefetched during the reveal. */
+  private startArticle: CachedArticle | null =
+    null;
+  /** The reveal countdown ran out (navigation waits for the start article). */
+  private revealElapsed = false;
+  /** Replacement pairs tried this round after a start article failed. */
+  private revealAttempt = 0;
+  /** The current round was skipped because Wikipedia was unavailable. */
+  private roundSkipped = false;
+  /**
+   * Players with an article fetch in flight. Their links are still the
+   * previous page's, so a second NAVIGATE now would skip the link check.
+   */
+  private pendingFetches =
+    new Set<string>();
+  /** Players currently disconnected (kept in sync by the disconnect/reconnect hooks). */
+  private disconnectedPlayers =
+    new Set<string>();
 
   get spectatorMode(): 'competitive-individual' {
     return 'competitive-individual';
@@ -152,9 +171,81 @@ export class WikiRaceMinigame extends BaseMinigame {
       },
     );
 
-    // Phase 1: ARTICLE_REVEAL
+    this.beginReveal(
+      0,
+    );
+  }
+
+  /** A player in the roster who is connected right now. */
+  private isActivePlayer(
+    userId: string,
+  ): boolean {
+    const p =
+      this.context.players.get(
+        userId,
+      );
+    return (
+      !!p &&
+      p.isConnected !==
+        false &&
+      !this.disconnectedPlayers.has(
+        userId,
+      )
+    );
+  }
+
+  private cancelPhaseAdvance(): void {
+    if (
+      this
+        .phaseTimeoutHandle
+    ) {
+      this.clearTrackedTimeout(
+        this
+          .phaseTimeoutHandle,
+      );
+      this.phaseTimeoutHandle =
+        null;
+    }
+  }
+
+  /**
+   * ARTICLE_REVEAL for the current `state.articlePair`. The start article is
+   * fetched NOW, during the reveal, so navigation can begin with it in hand.
+   * `attempt` counts replacement pairs tried this round after a start article
+   * failed to load.
+   */
+  private beginReveal(
+    attempt: number,
+  ): void {
+    const pair =
+      this
+        .state
+        .articlePair;
+    const round =
+      this
+        .state
+        .currentRound;
     this.state.phase =
       WikiRacePhase.ARTICLE_REVEAL;
+    this.revealElapsed = false;
+    this.startArticle =
+      null;
+    this.revealAttempt =
+      attempt;
+
+    // Every player starts the round on the start article.
+    for (const ps of this.state.playerStates.values()) {
+      ps.currentArticleTitle =
+        pair.startArticle.title;
+      ps.currentArticleLinks =
+        new Set<string>();
+      ps.path =
+        [
+          pair
+            .startArticle
+            .title,
+        ];
+    }
 
     this.broadcastGameAction(
       {
@@ -162,40 +253,34 @@ export class WikiRaceMinigame extends BaseMinigame {
         startArticle:
           {
             title:
-              this
-                .state
-                .articlePair
+              pair
                 .startArticle
                 .title,
             description:
-              this
-                .state
-                .articlePair
+              pair
                 .startArticle
                 .description,
           },
         targetArticle:
           {
             title:
-              this
-                .state
-                .articlePair
+              pair
                 .targetArticle
                 .title,
             description:
-              this
-                .state
-                .articlePair
+              pair
                 .targetArticle
                 .description,
           },
         difficulty:
-          this
-            .state
-            .articlePair
-            .difficulty,
+          pair.difficulty,
         duration:
           WR_REVEAL,
+        round,
+        totalRounds:
+          this
+            .state
+            .totalRounds,
       },
     );
 
@@ -203,22 +288,193 @@ export class WikiRaceMinigame extends BaseMinigame {
     this.startPhaseTimer(
       WR_REVEAL,
     );
-
     // Broadcast round info for the footer counter
     this.broadcastRound(
-      this
-        .state
-        .currentRound,
+      round,
       this
         .state
         .totalRounds,
     );
 
-    this.setTimeout(
+    const isCurrent =
       () =>
-        this.startNavigation(),
-      WR_REVEAL *
-        1000,
+        this
+          .isRunning &&
+        this
+          .state
+          .currentRound ===
+          round &&
+        this
+          .state
+          .phase ===
+          WikiRacePhase.ARTICLE_REVEAL &&
+        this
+          .revealAttempt ===
+          attempt &&
+        this
+          .state
+          .articlePair ===
+          pair;
+
+    this.fetchAndSendArticle(
+      pair
+        .startArticle
+        .title,
+    )
+      .catch(
+        () =>
+          null,
+      )
+      .then(
+        (
+          article,
+        ) => {
+          if (
+            !isCurrent()
+          )
+            return;
+          if (
+            article
+          ) {
+            this.startArticle =
+              article;
+            // The reveal already ran out while we waited: go now.
+            if (
+              this
+                .revealElapsed
+            )
+              this.startNavigation();
+          } else {
+            this.handleStartArticleUnavailable();
+          }
+        },
+      );
+
+    this.cancelPhaseAdvance();
+    this.phaseTimeoutHandle =
+      this.setTimeout(
+        () => {
+          this.phaseTimeoutHandle =
+            null;
+          if (
+            !isCurrent()
+          )
+            return;
+          this.revealElapsed = true;
+          // Otherwise navigation starts when the start article arrives (the
+          // fetch is bounded: timeout + at most two retries).
+          if (
+            this
+              .startArticle
+          )
+            this.startNavigation();
+        },
+        WR_REVEAL *
+          1000,
+      );
+  }
+
+  /**
+   * The start article could not be loaded (Wikipedia down or rate limiting).
+   * Try one other pair; if that fails too, skip the round with a message —
+   * never leave players on a spinner with every click rejected.
+   */
+  private handleStartArticleUnavailable(): void {
+    logger.warn(
+      {
+        event:
+          'wiki_race:start_article_unavailable',
+        lobbyId:
+          this
+            .context
+            .lobbyId,
+        round:
+          this
+            .state
+            .currentRound,
+        title:
+          this
+            .state
+            .articlePair
+            .startArticle
+            .title,
+        attempt:
+          this
+            .revealAttempt,
+      },
+    );
+
+    if (
+      this
+        .revealAttempt <
+      1
+    ) {
+      const newPair =
+        selectArticlePair(
+          this
+            .state
+            .usedPairKeys,
+        );
+      this.state.usedPairKeys.push(
+        pairKey(
+          newPair,
+        ),
+      );
+      this.state.articlePair =
+        newPair;
+      const entry =
+        this.state.roundArticlePairs.find(
+          (
+            r,
+          ) =>
+            r.round ===
+            this
+              .state
+              .currentRound,
+        );
+      if (
+        entry
+      ) {
+        entry.startArticle =
+          newPair.startArticle.title;
+        entry.targetArticle =
+          newPair.targetArticle.title;
+        entry.difficulty =
+          newPair.difficulty;
+      }
+      this.beginReveal(
+        this
+          .revealAttempt +
+          1,
+      );
+      return;
+    }
+
+    this.cancelPhaseAdvance();
+    this.clearPhaseTimer();
+    this.logAction(
+      'round_skipped',
+      {
+        reason:
+          'wikipedia_unavailable',
+      },
+    );
+    this.broadcastGameAction(
+      {
+        type: 'WR_ROUND_UNAVAILABLE',
+        reason:
+          'wikipedia_unavailable',
+        round:
+          this
+            .state
+            .currentRound,
+      },
+    );
+    // Nobody played: nobody scores (not even the DNF base).
+    for (const ps of this.state.playerStates.values())
+      ps.score = 0;
+    this.showResults(
+      true,
     );
   }
 
@@ -323,16 +579,34 @@ export class WikiRaceMinigame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      WikiRacePhase.ARTICLE_REVEAL
+    )
+      return;
+    const article =
+      this
+        .startArticle;
+    if (
+      !article
+    )
+      return;
+    this.cancelPhaseAdvance();
 
-    this.state.phase =
-      WikiRacePhase.NAVIGATION;
-    this.state.timeRemaining =
+    const navDuration =
       this.getSetting(
         'navDuration',
         WR_NAV_DURATION,
       );
+    this.state.phase =
+      WikiRacePhase.NAVIGATION;
+    this.state.timeRemaining =
+      navDuration;
     this.navigationStartedAt =
       Date.now();
+    this.pendingFetches.clear();
 
     logger.info(
       {
@@ -343,10 +617,7 @@ export class WikiRaceMinigame extends BaseMinigame {
             .context
             .lobbyId,
         duration:
-          this.getSetting(
-            'navDuration',
-            WR_NAV_DURATION,
-          ),
+          navDuration,
       },
     );
 
@@ -354,15 +625,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       {
         type: 'WR_NAVIGATION_START',
         duration:
-          this.getSetting(
-            'navDuration',
-            WR_NAV_DURATION,
-          ),
+          navDuration,
         timeRemaining:
-          this.getSetting(
-            'navDuration',
-            WR_NAV_DURATION,
-          ),
+          navDuration,
       },
     );
 
@@ -393,98 +658,62 @@ export class WikiRaceMinigame extends BaseMinigame {
       },
     );
 
-    // Fetch start article for each player. Tagged with the round: a slow
-    // fetch from round N resolving during round N+1 must not overwrite the
-    // new round's links and article.
-    const startTitle =
-      this
-        .state
-        .articlePair
-        .startArticle
-        .title;
+    // The start article was prefetched during the reveal. A redirect gives
+    // it a canonical title; players start there.
+    for (const ps of this.state.playerStates.values()) {
+      ps.currentArticleLinks =
+        new Set(
+          article.links,
+        );
+      ps.currentArticleTitle =
+        article.title;
+      ps.path =
+        [
+          article.title,
+        ];
+    }
+    // Send article content to each player and their spectator followers
+    for (const userId of this.state.playerStates.keys()) {
+      this.sendArticleToPlayerAndFollowers(
+        userId,
+        {
+          type: 'WR_ARTICLE_CONTENT',
+          title:
+            article.title,
+          html: article.sanitizedHtml,
+          linkCount:
+            article
+              .links
+              .size,
+        },
+      );
+    }
+
+    // Timer tick every second — drives the header timer ring
+    this.startPhaseTimer(
+      navDuration,
+    );
+
+    // End navigation when time expires
     const round =
       this
         .state
         .currentRound;
-    this.fetchAndSendArticle(
-      startTitle,
-    )
-      .then(
-        (
-          article,
-        ) => {
-          if (
-            !this
-              .isRunning ||
-            !article
-          )
-            return;
+    this.phaseTimeoutHandle =
+      this.setTimeout(
+        () => {
+          this.phaseTimeoutHandle =
+            null;
           if (
             this
               .state
               .currentRound !==
-              round ||
-            this
-              .state
-              .phase !==
-              WikiRacePhase.NAVIGATION ||
-            this
-              .state
-              .articlePair
-              .startArticle
-              .title !==
-              startTitle
-          ) {
+            round
+          )
             return;
-          }
-          // Populate links for all players from the start article
-          for (const ps of this.state.playerStates.values()) {
-            ps.currentArticleLinks =
-              new Set(
-                article.links,
-              );
-          }
-          // Send article content to each player and their spectator followers
-          for (const userId of this.state.playerStates.keys()) {
-            this.sendArticleToPlayerAndFollowers(
-              userId,
-              {
-                type: 'WR_ARTICLE_CONTENT',
-                title:
-                  article.title,
-                html: article.sanitizedHtml,
-                linkCount:
-                  article
-                    .links
-                    .size,
-              },
-            );
-          }
+          this.endNavigation();
         },
-      )
-      .catch(
-        () => {
-          // Article fetch failed — logged inside fetchAndSendArticle
-        },
-      );
-
-    // Timer tick every second — drives the header timer ring
-    this.startPhaseTimer(
-      this.getSetting(
-        'navDuration',
-        WR_NAV_DURATION,
-      ),
-    );
-
-    // End navigation when time expires
-    this.navigationTimeoutHandle =
-      this.setTimeout(
-        () =>
-          this.endNavigation(),
-        this.getSetting(
-          'navDuration',
-          WR_NAV_DURATION,
-        ) *
+        navDuration *
           1000,
       );
   }
@@ -495,6 +724,14 @@ export class WikiRaceMinigame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      WikiRacePhase.NAVIGATION
+    )
+      return;
+    this.cancelPhaseAdvance();
 
     // Clear the phase timer
     this.clearPhaseTimer();
@@ -550,9 +787,20 @@ export class WikiRaceMinigame extends BaseMinigame {
     this.showResults();
   }
 
-  private showResults(): void {
+  private showResults(
+    skipped = false,
+  ): void {
+    if (
+      this
+        .state
+        .phase ===
+      WikiRacePhase.RESULTS
+    )
+      return;
+    this.cancelPhaseAdvance();
     this.state.phase =
       WikiRacePhase.RESULTS;
+    this.pendingFetches.clear();
 
     logger.info(
       {
@@ -630,7 +878,78 @@ export class WikiRaceMinigame extends BaseMinigame {
       },
     );
 
-    // Build results payload with all player data visible
+    this.roundSkipped =
+      skipped;
+    const hasMoreRounds =
+      this
+        .state
+        .currentRound <
+      this
+        .state
+        .totalRounds;
+
+    this.broadcastGameAction(
+      {
+        type: 'WR_RESULTS',
+        playerResults:
+          this.buildPlayerResults(),
+        duration:
+          WR_RESULTS,
+        round:
+          this
+            .state
+            .currentRound,
+        totalRounds:
+          this
+            .state
+            .totalRounds,
+        hasMoreRounds,
+        skipped,
+      },
+    );
+
+    // Show results countdown in the header timer
+    this.startPhaseTimer(
+      WR_RESULTS,
+    );
+
+    const round =
+      this
+        .state
+        .currentRound;
+    this.phaseTimeoutHandle =
+      this.setTimeout(
+        () => {
+          this.phaseTimeoutHandle =
+            null;
+          if (
+            this
+              .state
+              .currentRound !==
+              round ||
+            this
+              .state
+              .phase !==
+              WikiRacePhase.RESULTS
+          )
+            return;
+          if (
+            hasMoreRounds
+          )
+            this.startNextRound();
+          else
+            this.endGame();
+        },
+        WR_RESULTS *
+          1000,
+      );
+  }
+
+  /** Every player's round result (paths revealed) — WR_RESULTS and the RESULTS snapshot. */
+  private buildPlayerResults(): Record<
+    string,
+    unknown
+  > {
     const playerResults: Record<
       string,
       unknown
@@ -664,55 +983,7 @@ export class WikiRaceMinigame extends BaseMinigame {
             ps.score,
         };
     }
-
-    const hasMoreRounds =
-      this
-        .state
-        .currentRound <
-      this
-        .state
-        .totalRounds;
-
-    this.broadcastGameAction(
-      {
-        type: 'WR_RESULTS',
-        playerResults,
-        duration:
-          WR_RESULTS,
-        round:
-          this
-            .state
-            .currentRound,
-        totalRounds:
-          this
-            .state
-            .totalRounds,
-        hasMoreRounds,
-      },
-    );
-
-    // Show results countdown in the header timer
-    this.startPhaseTimer(
-      WR_RESULTS,
-    );
-
-    if (
-      hasMoreRounds
-    ) {
-      this.setTimeout(
-        () =>
-          this.startNextRound(),
-        WR_RESULTS *
-          1000,
-      );
-    } else {
-      this.setTimeout(
-        () =>
-          this.endGame(),
-        WR_RESULTS *
-          1000,
-      );
-    }
+    return playerResults;
   }
 
   /** Advance to the next round with a new article pair. */
@@ -720,6 +991,13 @@ export class WikiRaceMinigame extends BaseMinigame {
     if (
       !this
         .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      WikiRacePhase.RESULTS
     )
       return;
 
@@ -789,8 +1067,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       void userId; // used as map key
     }
 
-    // Clear rate limits for the new round
+    // Clear rate limits and in-flight fetch locks for the new round
     this.rateLimits.clear();
+    this.pendingFetches.clear();
 
     logger.info(
       {
@@ -815,67 +1094,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       },
     );
 
-    // Broadcast round info
-    this.broadcastRound(
-      this
-        .state
-        .currentRound,
-      this
-        .state
-        .totalRounds,
-    );
-
-    // Enter ARTICLE_REVEAL for the new round
-    this.state.phase =
-      WikiRacePhase.ARTICLE_REVEAL;
-    this.broadcastGameAction(
-      {
-        type: 'WR_ARTICLES_REVEALED',
-        startArticle:
-          {
-            title:
-              newPair
-                .startArticle
-                .title,
-            description:
-              newPair
-                .startArticle
-                .description,
-          },
-        targetArticle:
-          {
-            title:
-              newPair
-                .targetArticle
-                .title,
-            description:
-              newPair
-                .targetArticle
-                .description,
-          },
-        difficulty:
-          newPair.difficulty,
-        duration:
-          WR_REVEAL,
-        round:
-          this
-            .state
-            .currentRound,
-        totalRounds:
-          this
-            .state
-            .totalRounds,
-      },
-    );
-
-    this.startPhaseTimer(
-      WR_REVEAL,
-    );
-    this.setTimeout(
-      () =>
-        this.startNavigation(),
-      WR_REVEAL *
-        1000,
+    // Enter ARTICLE_REVEAL for the new round (prefetches its start article)
+    this.beginReveal(
+      0,
     );
   }
 
@@ -973,6 +1194,25 @@ export class WikiRaceMinigame extends BaseMinigame {
       targetTitle,
     } =
       parsed.data;
+
+    // The previous click's article is still loading: its links are not known
+    // yet, so this click cannot be checked against them.
+    if (
+      this.pendingFetches.has(
+        userId,
+      )
+    ) {
+      this.context.sendToPlayer(
+        userId,
+        'rmhbox:game:action',
+        {
+          type: 'WR_NAVIGATE_REJECTED',
+          reason:
+            'navigation_pending',
+        },
+      );
+      return;
+    }
 
     // Anti-cheat: validate target is in current article's links
     if (
@@ -1084,11 +1324,23 @@ export class WikiRaceMinigame extends BaseMinigame {
     }
 
     // Rollback player state on fetch failure and notify client
+    const round =
+      this
+        .state
+        .currentRound;
     const rollbackNavigation =
       () => {
         if (
           !this
-            .isRunning
+            .isRunning ||
+          this
+            .state
+            .currentRound !==
+            round ||
+          this
+            .state
+            .phase !==
+            WikiRacePhase.NAVIGATION
         )
           return;
         const currentPs =
@@ -1114,7 +1366,10 @@ export class WikiRaceMinigame extends BaseMinigame {
           {
             type: 'WR_NAVIGATE_REJECTED',
             reason:
-              'This article is unavailable. Try another link.',
+              'article_unavailable',
+            currentTitle:
+              currentPs.currentArticleTitle,
+            path: currentPs.path,
           },
         );
         this.broadcastGameAction(
@@ -1132,6 +1387,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       };
 
     // Fetch article and send to player
+    this.pendingFetches.add(
+      userId,
+    );
     this.fetchAndSendArticle(
       targetTitle,
     )
@@ -1139,6 +1397,15 @@ export class WikiRaceMinigame extends BaseMinigame {
         (
           article,
         ) => {
+          if (
+            this
+              .state
+              .currentRound ===
+            round
+          )
+            this.pendingFetches.delete(
+              userId,
+            );
           if (
             !this
               .isRunning
@@ -1150,6 +1417,17 @@ export class WikiRaceMinigame extends BaseMinigame {
             rollbackNavigation();
             return;
           }
+          if (
+            this
+              .state
+              .currentRound !==
+              round ||
+            this
+              .state
+              .phase !==
+              WikiRacePhase.NAVIGATION
+          )
+            return;
           const currentPs =
             this.state.playerStates.get(
               userId,
@@ -1232,6 +1510,15 @@ export class WikiRaceMinigame extends BaseMinigame {
       )
       .catch(
         () => {
+          if (
+            this
+              .state
+              .currentRound ===
+            round
+          )
+            this.pendingFetches.delete(
+              userId,
+            );
           rollbackNavigation();
         },
       );
@@ -1284,6 +1571,23 @@ export class WikiRaceMinigame extends BaseMinigame {
     } =
       parsed.data;
 
+    if (
+      this.pendingFetches.has(
+        userId,
+      )
+    ) {
+      this.context.sendToPlayer(
+        userId,
+        'rmhbox:game:action',
+        {
+          type: 'WR_NAVIGATE_REJECTED',
+          reason:
+            'navigation_pending',
+        },
+      );
+      return;
+    }
+
     // Validate pathIndex is in bounds
     if (
       pathIndex <
@@ -1324,6 +1628,20 @@ export class WikiRaceMinigame extends BaseMinigame {
       );
       return;
     }
+
+    // Saved for rollback if the fetch fails
+    const prevPath =
+      [
+        ...ps.path,
+      ];
+    const prevTitle =
+      ps.currentArticleTitle;
+    const prevClickCount =
+      ps.clickCount;
+    const round =
+      this
+        .state
+        .currentRound;
 
     // Going back costs a click
     ps.clickCount++;
@@ -1368,7 +1686,70 @@ export class WikiRaceMinigame extends BaseMinigame {
       },
     );
 
+    // The fetch failed: put the player back where they were and tell them
+    // (the client truncated its path and shows a spinner until it hears back).
+    const rollbackGoBack =
+      () => {
+        if (
+          !this
+            .isRunning ||
+          this
+            .state
+            .currentRound !==
+            round ||
+          this
+            .state
+            .phase !==
+            WikiRacePhase.NAVIGATION
+        )
+          return;
+        const currentPs =
+          this.state.playerStates.get(
+            userId,
+          );
+        if (
+          !currentPs ||
+          currentPs.hasFinished ||
+          currentPs.currentArticleTitle !==
+            targetTitle
+        )
+          return;
+        currentPs.path =
+          prevPath;
+        currentPs.currentArticleTitle =
+          prevTitle;
+        currentPs.clickCount =
+          prevClickCount;
+        this.context.sendToPlayer(
+          userId,
+          'rmhbox:game:action',
+          {
+            type: 'WR_NAVIGATE_REJECTED',
+            reason:
+              'article_unavailable',
+            currentTitle:
+              prevTitle,
+            path: prevPath,
+          },
+        );
+        this.broadcastGameAction(
+          {
+            type: 'WR_PLAYER_PROGRESS',
+            userId,
+            clickCount:
+              currentPs.clickCount,
+            pathLength:
+              currentPs
+                .path
+                .length,
+          },
+        );
+      };
+
     // Fetch and send the article at the back-tracked position
+    this.pendingFetches.add(
+      userId,
+    );
     this.fetchAndSendArticle(
       targetTitle,
     )
@@ -1377,11 +1758,25 @@ export class WikiRaceMinigame extends BaseMinigame {
           article,
         ) => {
           if (
+            this
+              .state
+              .currentRound ===
+            round
+          )
+            this.pendingFetches.delete(
+              userId,
+            );
+          if (
             !this
-              .isRunning ||
-            !article
+              .isRunning
           )
             return;
+          if (
+            !article
+          ) {
+            rollbackGoBack();
+            return;
+          }
           const currentPs =
             this.state.playerStates.get(
               userId,
@@ -1413,7 +1808,16 @@ export class WikiRaceMinigame extends BaseMinigame {
       )
       .catch(
         () => {
-          // Article fetch error
+          if (
+            this
+              .state
+              .currentRound ===
+            round
+          )
+            this.pendingFetches.delete(
+              userId,
+            );
+          rollbackGoBack();
         },
       );
   }
@@ -1424,6 +1828,14 @@ export class WikiRaceMinigame extends BaseMinigame {
     userId: string,
     ps: WRPlayerState,
   ): void {
+    if (
+      this
+        .state
+        .phase !==
+        WikiRacePhase.NAVIGATION ||
+      ps.hasFinished
+    )
+      return;
     this
       .state
       .finishCounter++;
@@ -1525,18 +1937,57 @@ export class WikiRaceMinigame extends BaseMinigame {
         },
       );
 
-    // Check if all players finished — end early
-    const allFinished =
+    this.endIfAllConnectedFinished();
+  }
+
+  /**
+   * End the round early once every CONNECTED player has finished (a player
+   * who left must not hold the race open for the full timer).
+   */
+  private endIfAllConnectedFinished(): void {
+    if (
+      !this
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        WikiRacePhase.NAVIGATION
+    )
+      return;
+    const states =
       Array.from(
         this.state.playerStates.values(),
-      ).every(
+      );
+    const connected =
+      states.filter(
         (
           p,
         ) =>
-          p.hasFinished,
+          this.isActivePlayer(
+            p.userId,
+          ),
       );
+    const allFinished =
+      connected.length >
+      0
+        ? connected.every(
+            (
+              p,
+            ) =>
+              p.hasFinished,
+          )
+        : states.some(
+            (
+              p,
+            ) =>
+              p.hasFinished,
+          );
     if (
-      allFinished
+      allFinished &&
+      this
+        .state
+        .finishCounter >
+        0
     ) {
       this.logAction(
         'game_end',
@@ -1554,12 +2005,7 @@ export class WikiRaceMinigame extends BaseMinigame {
               .size,
         },
       );
-      this.clearTrackedTimeout(
-        this
-          .navigationTimeoutHandle,
-      );
-      this.navigationTimeoutHandle =
-        null;
+      this.cancelPhaseAdvance();
       this.clearPhaseTimer();
       this.computeScores();
       this.showResults();
@@ -1818,8 +2264,9 @@ export class WikiRaceMinigame extends BaseMinigame {
         };
     }
 
-    // Include current article HTML from cache so reconnecting clients
-    // can render immediately without waiting for an async fetch.
+    // Include current article HTML from the (shared) cache so a client that
+    // mounts or reconnects mid-race renders at once: WR_ARTICLE_CONTENT for
+    // the start article is sent only once, when navigation begins.
     let currentArticleHtml:
       | string
       | undefined;
@@ -1838,6 +2285,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       const cached =
         this.articleCache.get(
           normalizedTitle,
+        ) ??
+        this.articleCache.get(
+          ps.currentArticleTitle,
         );
       if (
         cached
@@ -1909,6 +2359,16 @@ export class WikiRaceMinigame extends BaseMinigame {
                 currentArticleTitle:
                   ps.currentArticleTitle,
                 currentArticleHtml,
+                // The previous click's article is still loading
+                isLoading:
+                  this.pendingFetches.has(
+                    userId,
+                  ) ||
+                  (this
+                    .state
+                    .phase ===
+                    WikiRacePhase.NAVIGATION &&
+                    !currentArticleHtml),
                 path: ps.path,
                 clickCount:
                   ps.clickCount,
@@ -1927,6 +2387,19 @@ export class WikiRaceMinigame extends BaseMinigame {
             : null,
         otherPlayers,
       };
+
+    // The client renders RESULTS only once it has the results.
+    if (
+      this
+        .state
+        .phase ===
+      WikiRacePhase.RESULTS
+    ) {
+      base.playerResults =
+        this.buildPlayerResults();
+      base.skipped =
+        this.roundSkipped;
+    }
 
     return base;
   }
@@ -2033,6 +2506,17 @@ export class WikiRaceMinigame extends BaseMinigame {
         players:
           allPlayers,
       };
+    if (
+      this
+        .state
+        .phase ===
+      WikiRacePhase.RESULTS
+    ) {
+      base.playerResults =
+        this.buildPlayerResults();
+      base.skipped =
+        this.roundSkipped;
+    }
 
     return base;
   }
@@ -2053,6 +2537,14 @@ export class WikiRaceMinigame extends BaseMinigame {
   handlePlayerDisconnect(
     userId: string,
   ): void {
+    this.disconnectedPlayers.add(
+      userId,
+    );
+    if (
+      !this
+        .state
+    )
+      return;
     // State preserved; scored as DNF at end if not finished
     logger.info(
       {
@@ -2075,11 +2567,21 @@ export class WikiRaceMinigame extends BaseMinigame {
           false,
       },
     );
+    // Everyone still here may have finished already
+    this.endIfAllConnectedFinished();
   }
 
   handlePlayerReconnect(
     userId: string,
   ): void {
+    this.disconnectedPlayers.delete(
+      userId,
+    );
+    if (
+      !this
+        .state
+    )
+      return;
     // Re-fetch current article HTML so the player has content to click
     // and restore server-side currentArticleLinks for anti-cheat validation.
     // State snapshot delivery is handled centrally by ReconnectionHandler.
@@ -2105,7 +2607,11 @@ export class WikiRaceMinigame extends BaseMinigame {
             if (
               !this
                 .isRunning ||
-              !article
+              !article ||
+              this
+                .state
+                .phase !==
+                WikiRacePhase.NAVIGATION
             )
               return;
             const currentPs =
@@ -2261,14 +2767,28 @@ export class WikiRaceMinigame extends BaseMinigame {
         b.score -
         a.score,
     );
+    // Equal scores share a rank (1, 1, 3)
     entries.forEach(
       (
         e,
         i,
       ) => {
         e.rank =
-          i +
-          1;
+          i >
+            0 &&
+          e.score ===
+            entries[
+              i -
+                1
+            ]!
+              .score
+            ? entries[
+                i -
+                  1
+              ]!
+                .rank
+            : i +
+              1;
       },
     );
 

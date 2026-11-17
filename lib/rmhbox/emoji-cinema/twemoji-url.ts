@@ -24,10 +24,11 @@
 
 import twemoji from '@twemoji/api';
 import type { ParseCallback } from '@twemoji/api';
+import { isDiscordActivity } from '@/lib/discord-activity';
 
 /**
  * Get the Twemoji PNG URL for a native emoji string.
- * Returns null if the emoji cannot be parsed.
+ * Returns null if the emoji cannot be parsed, or inside a Discord Activity.
  *
  * `twemoji.parse` is the public API for resolving an emoji to its asset, but it
  * returns marked-up HTML rather than a URL. The callback is where the resolved
@@ -40,6 +41,14 @@ export function getEmojiUrl(
 ):
   | string
   | null {
+  // The Discord Activity iframe's CSP blocks the Twemoji CDN (cdn.jsdelivr.net),
+  // so every image would break. Returning null makes every caller render the
+  // native emoji instead.
+  if (
+    isDiscordActivity()
+  )
+    return null;
+
   let url:
     | string
     | null =

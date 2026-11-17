@@ -61,7 +61,7 @@ export default function ResultsScreen({
   const showNextButton = isHost;
 
   const handleNext = useCallback(() => {
-    emit(C2S.GAME_FORCE_SKIP, { lobbyId });
+    emit(C2S.GAME_FORCE_SKIP, { lobbyId, fromState: 'ROUND_RESULTS' });
   }, [lobbyId]);
 
   const celebrate = useCelebration();

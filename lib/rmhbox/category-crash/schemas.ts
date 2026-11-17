@@ -5,10 +5,13 @@
  */
 
 import { z } from 'zod';
-import {
-  CC_MAX_ANSWER_LENGTH,
-  CC_CATEGORIES_PER_ROUND,
-} from '../constants';
+import { CC_MAX_ANSWER_LENGTH } from '../constants';
+
+/**
+ * Most categories a round can have (the registry's `categoriesPerRound` max).
+ * The handler checks an answer array against the round's actual count.
+ */
+export const CC_MAX_CATEGORIES_PER_ROUND = 7;
 
 /** Schema for auto-saving draft answers (debounced). */
 export const SaveAnswersSchema =
@@ -34,8 +37,11 @@ export const SaveAnswersSchema =
               ],
             ),
           )
-          .length(
-            CC_CATEGORIES_PER_ROUND,
+          .min(
+            1,
+          )
+          .max(
+            CC_MAX_CATEGORIES_PER_ROUND,
           ),
     },
   );
@@ -66,8 +72,11 @@ export const SubmitAnswersSchema =
               ],
             ),
           )
-          .length(
-            CC_CATEGORIES_PER_ROUND,
+          .min(
+            1,
+          )
+          .max(
+            CC_MAX_CATEGORIES_PER_ROUND,
           ),
     },
   );
@@ -90,7 +99,7 @@ export const CrashAnswerSchema =
             0,
           )
           .max(
-            CC_CATEGORIES_PER_ROUND -
+            CC_MAX_CATEGORIES_PER_ROUND -
               1,
           ),
     },
@@ -114,7 +123,7 @@ export const UncrashAnswerSchema =
             0,
           )
           .max(
-            CC_CATEGORIES_PER_ROUND -
+            CC_MAX_CATEGORIES_PER_ROUND -
               1,
           ),
     },
@@ -138,7 +147,7 @@ export const VoteAnswerSchema =
             0,
           )
           .max(
-            CC_CATEGORIES_PER_ROUND -
+            CC_MAX_CATEGORIES_PER_ROUND -
               1,
           ),
       vote: z.enum(

@@ -142,6 +142,15 @@ export const UNDERCOVER_AGENT_SETTINGS: GameSettingsSchema =
         UA_ASSASSIN >
         0,
     },
+    {
+      key: 'turnTimers',
+      type: 'boolean',
+      label:
+        'Turn Timers',
+      description:
+        'Limit each clue and guessing turn. The host can switch this on or off during the game.',
+      default: true,
+    },
   ];
 
 export const CATEGORY_CRASH_SETTINGS: GameSettingsSchema =
@@ -398,7 +407,8 @@ export const EMOJI_CINEMA_SETTINGS: GameSettingsSchema =
       default:
         EC_MAX_GUESSES_PER_PLAYER,
       min: 1,
-      max: 5,
+      // The default (EC_MAX_GUESSES_PER_PLAYER = 15) must be inside the range.
+      max: 20,
       step: 1,
     },
   ];

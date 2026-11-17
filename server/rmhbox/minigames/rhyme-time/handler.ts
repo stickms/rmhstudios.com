@@ -35,7 +35,10 @@ import {
   isMultiSyllableRhyme,
   isKnownWord,
 } from '@/lib/rmhbox/rhyme-time/dictionary-loader';
-import { SubmitRhymeSchema } from '@/lib/rmhbox/rhyme-time/schemas';
+import {
+  SubmitRhymeSchema,
+  rhymeKey,
+} from '@/lib/rmhbox/rhyme-time/schemas';
 import {
   RT_TOTAL_ROUNDS,
   RT_INPUT_DURATION,
@@ -305,7 +308,11 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private startInputPhase(): void {
     if (
       !this
-        .isRunning
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        RhymeTimePhase.ROUND_START
     )
       return;
 
@@ -362,7 +369,11 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private endInputPhase(): void {
     if (
       !this
-        .isRunning
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        RhymeTimePhase.INPUT
     )
       return;
 
@@ -501,8 +512,23 @@ export class RhymeTimeMinigame extends BaseMinigame {
       RT_SCORING_DURATION,
     );
 
+    const scoredRound =
+      this
+        .state
+        .currentRound;
     this.setTimeout(
       () => {
+        if (
+          this
+            .state
+            .phase !==
+            RhymeTimePhase.SCORING ||
+          this
+            .state
+            .currentRound !==
+            scoredRound
+        )
+          return;
         if (
           this
             .state
@@ -524,7 +550,11 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private startIntermission(): void {
     if (
       !this
-        .isRunning
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        RhymeTimePhase.SCORING
     )
       return;
 
@@ -571,8 +601,15 @@ export class RhymeTimeMinigame extends BaseMinigame {
     );
 
     this.setTimeout(
-      () =>
-        this.startRound(),
+      () => {
+        if (
+          this
+            .state
+            .phase ===
+          RhymeTimePhase.INTERMISSION
+        )
+          this.startRound();
+      },
       RT_INTERMISSION_DURATION *
         1000,
     );
@@ -684,14 +721,23 @@ export class RhymeTimeMinigame extends BaseMinigame {
       return;
     }
 
-    // Check for duplicate submission by this player
+    // Check for duplicate submission by this player. Keyed on the scored
+    // segment, so "tree" / "x-tree" / "y-tree" are one rhyme, not three.
+    const key =
+      rhymeKey(
+        word,
+      );
     if (
       playerSubs.some(
         (
           s,
         ) =>
           s.word ===
-          word,
+            word ||
+          rhymeKey(
+            s.word,
+          ) ===
+            key,
       )
     ) {
       this.context.sendToPlayer(
@@ -837,6 +883,16 @@ export class RhymeTimeMinigame extends BaseMinigame {
     word: string,
     rootWord: RootWord,
   ): boolean {
+    // The root word itself never counts; neither does it behind a prefix ("x-tree")
+    if (
+      rhymeKey(
+        word,
+      ) ===
+      rhymeKey(
+        rootWord.word,
+      )
+    )
+      return false;
     return isValidRhyme(
       word,
       rootWord.word,
@@ -867,6 +923,8 @@ export class RhymeTimeMinigame extends BaseMinigame {
     > =
       {};
 
+    // Keyed on the scored segment (rhymeKey) so "tree" and "x-tree" from two
+    // players are one shared rhyme, not two rare ones.
     for (const [
       userId,
       subs,
@@ -875,24 +933,37 @@ export class RhymeTimeMinigame extends BaseMinigame {
         .state
         .submissions,
     )) {
+      const counted =
+        new Set<string>();
       for (const sub of subs) {
         if (
           !sub.isValid
         )
           continue;
+        const key =
+          rhymeKey(
+            sub.word,
+          );
+        if (
+          counted.has(
+            key,
+          )
+        )
+          continue;
+        counted.add(
+          key,
+        );
         wordSubmitterCounts[
-          sub.word
+          key
         ] =
           (wordSubmitterCounts[
-            sub
-              .word
+            key
           ] ??
             0) +
           1;
         const first =
           wordFirstSubmitter[
-            sub
-              .word
+            key
           ];
         if (
           !first ||
@@ -900,7 +971,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
             first.timestamp
         ) {
           wordFirstSubmitter[
-            sub.word
+            key
           ] =
             {
               userId,
@@ -984,10 +1055,13 @@ export class RhymeTimeMinigame extends BaseMinigame {
         }
 
         validCount++;
+        const key =
+          rhymeKey(
+            sub.word,
+          );
         const submitterCount =
           wordSubmitterCounts[
-            sub
-              .word
+            key
           ] ??
           1;
         const rarity =
@@ -1028,8 +1102,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
         ) {
           const first =
             wordFirstSubmitter[
-              sub
-                .word
+              key
             ];
           if (
             first &&
@@ -1149,6 +1222,18 @@ export class RhymeTimeMinigame extends BaseMinigame {
     };
   }
 
+  /** Seconds left in the current phase, read off the (pause-aware) phase timer. */
+  private currentTimeRemaining(): number {
+    const timer =
+      this.getPhaseTimerSnapshot();
+    return timer &&
+      !timer.infinite
+      ? timer.remaining
+      : this
+          .state
+          .timeRemaining;
+  }
+
   getStateForPlayer(
     userId: string,
   ): unknown {
@@ -1171,9 +1256,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
             .state
             .rootWord,
         timeRemaining:
-          this
-            .state
-            .timeRemaining,
+          this.currentTimeRemaining(),
         scores:
           this
             .state
@@ -1239,9 +1322,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
             .state
             .rootWord,
         timeRemaining:
-          this
-            .state
-            .timeRemaining,
+          this.currentTimeRemaining(),
         scores:
           this
             .state

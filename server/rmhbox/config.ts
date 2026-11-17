@@ -65,6 +65,7 @@ export const config = {
     'rmhbox:lobby:chat': { max: 20, windowMs: 60_000 },
     'rmhbox:game:input': { max: 100, windowMs: 10_000 },
     'rmhbox:game:cast_vote': { max: 10, windowMs: 60_000 },
+    'rmhbox:game:sync_request': { max: 20, windowMs: 60_000 },
     'rmhbox:leaderboard:fetch': { max: 5, windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 

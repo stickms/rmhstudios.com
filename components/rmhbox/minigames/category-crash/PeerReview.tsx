@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Flame, Shield, User, Copy, ChevronRight } from 'lucide-react';
 import type { Category, AnonymizedAnswerSet } from './CategoryCrashGame';
+import { groupMatchingAnswers } from '@/lib/rmhbox/category-crash/answer-match';
 
 interface CrashEntry {
   targetUserId: string;
@@ -90,26 +91,12 @@ export default function PeerReview({
 
   const activeCategory = categories[activeCatIndex];
 
-  // Detect duplicate answers per category for "pre-crashed" display
+  // Detect shared (duplicate) answers per category — the same matching the
+  // server scores with (whole answers, plurals, typos; never prefixes).
   const duplicateSetPerCat = useMemo(() => {
     return categories.map((_, catIdx) => {
-      const answerMap = new Map<string, string[]>();
-      for (const answerSet of anonymizedAnswers) {
-        const raw = answerSet.answers[catIdx];
-        if (!raw) continue;
-        const normalised = raw.trim().toLowerCase();
-        if (!normalised) continue;
-        const existing = answerMap.get(normalised) ?? [];
-        existing.push(answerSet.anonymousLabel);
-        answerMap.set(normalised, existing);
-      }
-      const dupes = new Set<string>();
-      for (const [, labels] of answerMap) {
-        if (labels.length > 1) {
-          for (const label of labels) dupes.add(label);
-        }
-      }
-      return dupes;
+      const groups = groupMatchingAnswers(anonymizedAnswers.map((a) => ({ id: a.anonymousLabel, answer: a.answers[catIdx] })));
+      return new Set(groups.filter((g) => g.length > 1).flat());
     });
   }, [categories, anonymizedAnswers]);
 

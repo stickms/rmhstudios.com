@@ -116,9 +116,52 @@ export function selectRoundLetter(
   ][0];
 }
 
-/** Selects CC_CATEGORIES_PER_ROUND categories with correct difficulty distribution, excluding used IDs. */
+/**
+ * Difficulty mix for `count` categories: CC_CATEGORY_DISTRIBUTION (2 easy, 2
+ * medium, 1 hard) at the default of 5, scaled for the host's 3-7.
+ */
+function distributionFor(
+  count: number,
+): Record<
+  string,
+  number
+> {
+  if (
+    count ===
+    CC_CATEGORIES_PER_ROUND
+  )
+    return CC_CATEGORY_DISTRIBUTION as Record<
+      string,
+      number
+    >;
+  const hard =
+    Math.max(
+      1,
+      Math.round(
+        count /
+          5,
+      ),
+    );
+  const easy =
+    Math.ceil(
+      (count -
+        hard) /
+        2,
+    );
+  return {
+    easy,
+    medium:
+      count -
+      hard -
+      easy,
+    hard,
+  };
+}
+
+/** Selects `count` categories (default CC_CATEGORIES_PER_ROUND) with the difficulty distribution, excluding used IDs. */
 export function selectRoundCategories(
   usedCategoryIds: string[],
+  count: number = CC_CATEGORIES_PER_ROUND,
 ): Category[] {
   const all =
     loadCategories();
@@ -202,10 +245,9 @@ export function selectRoundCategories(
   const selected: Category[] =
     [];
   const dist =
-    CC_CATEGORY_DISTRIBUTION as Record<
-      string,
-      number
-    >;
+    distributionFor(
+      count,
+    );
   for (const [
     diff,
     count,
@@ -227,7 +269,7 @@ export function selectRoundCategories(
   // If we didn't get enough (rare edge case), fill from any remaining
   while (
     selected.length <
-    CC_CATEGORIES_PER_ROUND
+    count
   ) {
     const remaining =
       available.filter(

@@ -26,7 +26,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { Shield, Eye, Shuffle } from 'lucide-react';
+import { Shield, Eye, Shuffle, Timer, TimerOff } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { playSound } from '@/lib/rmhbox/audio';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
@@ -85,6 +85,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   const [guessesRemaining, setGuessesRemaining] = useState(0);
   const [turnNumber, setTurnNumber] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [turnTimersEnabled, setTurnTimersEnabled] = useState(true);
   const [winner, setWinner] = useState<Team | 'draw' | null>(null);
   const [winReason, setWinReason] = useState<string | null>(null);
   const [myRole, setMyRole] = useState<Role>('operative');
@@ -102,6 +103,10 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
 
   // Key card data — only populated for spymasters
   const keyCardRef = useRef<GridTileClient[]>([]);
+
+  // Raw action log: a snapshot carries its tail, each broadcast the entries
+  // added since the previous one (`actionLogEntries`), appended here by seq.
+  const actionLogRef = useRef<Array<{ seq: number; type: string; payload: Record<string, unknown> }>>([]);
 
   const players = useRMHboxStore((s) => s.lobby?.players);
 
@@ -220,6 +225,16 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           setMyTeam(team);
           break;
         }
+        case 'UA_ROLES_CHANGED': {
+          // A disconnected spymaster was replaced by an operative mid-game; the
+          // new spymaster also receives UA_KEY_CARD privately.
+          const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
+          setTeams(rawTeams);
+          const { role, team } = deriveRole(rawTeams);
+          setMyRole(role);
+          setMyTeam(team);
+          break;
+        }
         case 'UA_TEAMS_UPDATED': {
           const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
           setTeams(rawTeams);
@@ -290,12 +305,24 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
         case 'UA_TILE_REVEALED': {
           const pos = data.position as number;
           const tileType = data.tileType as TileType;
-          const revealedBy = data.teamId as string;
+          const revealedBy = data.revealedBy as string;
           setGrid((prev) =>
             prev.map((t) =>
               t.position === pos ? { ...t, type: tileType, state: 'REVEALED' as const, revealedBy } : t,
             ),
           );
+          // Authoritative totals for both teams on every reveal
+          const revealedCounts = data.agentsRevealed as { red: number; blue: number } | undefined;
+          if (revealedCounts) {
+            setTeams((prev) =>
+              prev
+                ? {
+                    red: { ...prev.red, agentsRevealed: revealedCounts.red },
+                    blue: { ...prev.blue, agentsRevealed: revealedCounts.blue },
+                  }
+                : prev,
+            );
+          }
           playSound(tileType === 'RED_AGENT' || tileType === 'BLUE_AGENT' ? 'scoreDing' : 'buzzer');
           break;
         }
@@ -351,6 +378,11 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           setHighlightCounts(data.counts as Record<number, number>);
           break;
         }
+        case 'UA_TURN_TIMERS_TOGGLED': {
+          setTurnTimersEnabled(data.enabled as boolean);
+          setTimeRemaining((data.timeRemaining as number) ?? 0);
+          break;
+        }
         case 'UA_ACTION_REJECTED': {
           setErrorMsg(data.reason as string);
           // Auto-clear error after 3 seconds
@@ -375,8 +407,18 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       }
 
       // Sync the game log from the server's authoritative actionLog
-      if (Array.isArray(data.actionLog)) {
-        syncGameLog(data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>);
+      if (Array.isArray(data.actionLogEntries) && data.actionLogEntries.length > 0) {
+        const known = new Set(actionLogRef.current.map((e) => e.seq));
+        const added = (
+          data.actionLogEntries as Array<{ seq: number; type: string; payload: Record<string, unknown> }>
+        ).filter((e) => !known.has(e.seq));
+        if (added.length > 0) {
+          actionLogRef.current = [...actionLogRef.current, ...added].sort((a, b) => a.seq - b.seq);
+          syncGameLog(actionLogRef.current);
+        }
+      } else if (Array.isArray(data.actionLog)) {
+        actionLogRef.current = data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>;
+        syncGameLog(actionLogRef.current);
       }
     },
     [currentTeam, deriveRole, syncGameLog],
@@ -398,11 +440,13 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       setMyRole(data.myRole as Role);
       setMyTeam(data.myTeam as Team | null);
       setTimeRemaining(data.timeRemaining as number ?? 0);
+      if (typeof data.turnTimersEnabled === 'boolean') setTurnTimersEnabled(data.turnTimersEnabled);
       if (typeof data.isTeamValid === 'boolean') setIsTeamValid(data.isTeamValid as boolean);
       setHighlightCounts(data.highlightCounts as Record<number, number> ?? {});
       // Sync game log from server's authoritative actionLog
       if (Array.isArray(data.actionLog)) {
-        syncGameLog(data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>);
+        actionLogRef.current = data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>;
+        syncGameLog(actionLogRef.current);
       }
       // Derive role from teams
       const { role, team } = deriveRole(rawTeams);
@@ -458,12 +502,25 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
     emitGameInput('START_GAME', {});
   }, []);
 
+  const handleToggleTurnTimer = useCallback(() => {
+    emitGameInput('TOGGLE_TURN_TIMER', {});
+  }, []);
+
   const { t } = useTranslation("c-rmhbox");
 
   const isHost = playerId === storeHostId;
 
-  // Only the current team's operatives can click tiles
-  const canGuess = phase === 'GUESS' && myRole === 'operative' && myTeam === currentTeam;
+  // A team with no connected operative guesses through its spymaster (the
+  // server applies the same rule).
+  const spymasterGuesses =
+    !!teams &&
+    teams[currentTeam].operativeIds.every((id) => !players?.find((p) => p.userId === id)?.isConnected);
+
+  // Only the current team's operatives (or its lone spymaster) can click tiles
+  const canGuess =
+    phase === 'GUESS' &&
+    myTeam === currentTeam &&
+    (myRole === 'operative' || (myRole === 'spymaster' && spymasterGuesses));
   const isMyCluePhase = phase === 'CLUE' && myRole === 'spymaster' && myTeam === currentTeam;
 
   // Look up player names for display
@@ -484,6 +541,30 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           winner={winner}
           winReason={winReason}
         />
+      )}
+
+      {/* Host: switch turn timers off / on at any point (the server restarts or stops the current turn's clock) */}
+      {isHost && phase !== 'GAME_OVER' && phase !== 'BOARD_REVEAL' && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={handleToggleTurnTimer}
+            aria-pressed={turnTimersEnabled}
+            className="surface-card rounded-app-sm px-4 py-2 text-sm font-medium text-app-text transition-colors hover:bg-app-accent/10"
+          >
+            {turnTimersEnabled ? (
+              <>
+                <TimerOff className="mr-1 inline-block h-4 w-4" aria-hidden="true" />
+                {t("ua-turn-timers-off", { defaultValue: "Turn off turn timers" })}
+              </>
+            ) : (
+              <>
+                <Timer className="mr-1 inline-block h-4 w-4" aria-hidden="true" />
+                {t("ua-turn-timers-on", { defaultValue: "Turn on turn timers" })}
+              </>
+            )}
+          </button>
+        </div>
       )}
 
       {/* Error toast */}
@@ -672,7 +753,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                       teams ? getPlayerName(teams[currentTeam].spymasterId) : 'Spymaster'
                     }
                     teamId={currentTeam}
-                    onEndTurn={myRole === 'operative' && myTeam === currentTeam ? handleEndTurn : undefined}
+                    onEndTurn={canGuess ? handleEndTurn : undefined}
                   />
                 </motion.div>
               )}

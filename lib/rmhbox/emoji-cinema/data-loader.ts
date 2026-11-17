@@ -152,9 +152,31 @@ export function selectMoviesForGame(
 }
 
 /**
+ * Longest emoji accepted, in UTF-16 code units. ZWJ sequences, skin tones and
+ * subdivision flags run long: a family is 11 units, the England flag 14, a
+ * couple-with-heart with two skin tones 15.
+ */
+const EC_MAX_EMOJI_CODE_UNITS = 16;
+
+const graphemeSegmenter: Intl.Segmenter | null =
+  typeof Intl !==
+    'undefined' &&
+  'Segmenter' in
+    Intl
+    ? new Intl.Segmenter(
+        undefined,
+        {
+          granularity:
+            'grapheme',
+        },
+      )
+    : null;
+
+/**
  * Validate that a string is a valid emoji character (Unicode grapheme cluster).
  * We no longer restrict to a static palette — emoji-mart handles the UI selection.
- * Server-side validation ensures the input is actually an emoji, not arbitrary text.
+ * Server-side validation ensures the input is actually ONE emoji, not arbitrary
+ * text: no letters or whitespace, a single grapheme, at most 16 code units.
  */
 export function validateEmoji(
   emoji: string,
@@ -165,16 +187,37 @@ export function validateEmoji(
       'string'
   )
     return false;
-  // Accept any non-empty string that is <= 8 chars (emoji grapheme clusters can be multi-codepoint)
   if (
     emoji.length >
-    8
+    EC_MAX_EMOJI_CODE_UNITS
   )
     return false;
+  // Text is never an emoji. (Keycaps carry a digit, so digits are allowed;
+  // subdivision-flag tag characters are format characters, not letters.)
+  if (
+    /[\p{L}\s]/u.test(
+      emoji,
+    )
+  )
+    return false;
+  if (
+    graphemeSegmenter
+  ) {
+    let count = 0;
+    for (const _segment of graphemeSegmenter.segment(
+      emoji,
+    )) {
+      if (
+        ++count >
+        1
+      )
+        return false;
+    }
+  }
   // Must contain at least one emoji codepoint (U+2000+ range covers most emoji)
   // This regex matches common emoji ranges: emoticons, dingbats, symbols, supplementary
   const emojiPattern =
-    /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27FF}]|[\u{2300}-\u{23FF}]|[\u{FE00}-\u{FEFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]/u;
+    /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27FF}]|[\u{2300}-\u{23FF}]|[\u{2B00}-\u{2BFF}]|[\u{FE00}-\u{FEFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]/u;
   return emojiPattern.test(
     emoji,
   );

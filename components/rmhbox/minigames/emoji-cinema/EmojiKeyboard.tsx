@@ -1,18 +1,23 @@
 /**
  * EmojiKeyboard — Emoji picker using emoji-picker-react with Twemoji
- * for a unified look across all platforms.
+ * for a unified look across all platforms (native emoji inside a Discord
+ * Activity, whose CSP blocks the Twemoji CDN).
  *
  * Uses the React component import (not web component) as recommended.
  * Respects RMHbox theming (light/dark mode).
  */
 
-import { useCallback } from 'react';
+import {
+  useCallback,
+  useState,
+} from 'react';
 import EmojiPicker, {
   EmojiClickData,
   Theme,
   EmojiStyle,
 } from 'emoji-picker-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
+import { isDiscordActivity } from '@/lib/discord-activity';
 
 interface EmojiKeyboardProps {
   onSelect: (
@@ -33,6 +38,17 @@ export default function EmojiKeyboard({
           .theme,
     ) ??
     'dark';
+  // Twitter-style images load from cdn.jsdelivr.net, which the Discord Activity
+  // iframe blocks — the grid would render empty. Use the platform's own emoji there.
+  const [
+    emojiStyle,
+  ] =
+    useState(
+      () =>
+        isDiscordActivity()
+          ? EmojiStyle.NATIVE
+          : EmojiStyle.TWITTER,
+    );
 
   const handleEmojiClick =
     useCallback(
@@ -61,7 +77,7 @@ export default function EmojiKeyboard({
             : Theme.DARK
         }
         emojiStyle={
-          EmojiStyle.TWITTER
+          emojiStyle
         }
         width="100%"
         height={

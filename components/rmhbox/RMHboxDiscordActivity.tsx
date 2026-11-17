@@ -260,8 +260,12 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                 // Users without a voice channel fall through to the manual browser.
                 // Skipped when the store already has a lobby: the hub re-attaches
                 // a returning socket to its slot on its own.
+                // Queued: connectToRMHbox resolves before the handshake, and an
+                // unqueued emit on a socket that is not connected yet is dropped
+                // — so on a cold open nobody was auto-joined, everyone made
+                // their own one-player lobby, and no game could start.
                 if (discord.channelId && !useRMHboxStore.getState().lobby) {
-                    emit(C2S.LOBBY_AUTO_JOIN);
+                    emit(C2S.LOBBY_AUTO_JOIN, undefined, { queue: true });
                 }
 
             } catch (err) {
@@ -401,7 +405,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                 tips={instructions.tips}
                                 durationSeconds={instructions.durationSeconds}
                                 isHost={isHost}
-                                onSkip={() => emit(C2S.GAME_FORCE_SKIP, { lobbyId })}
+                                onSkip={() => emit(C2S.GAME_FORCE_SKIP, { lobbyId, fromState: 'INSTRUCTIONS' })}
                             />
                         )}
 
@@ -499,7 +503,12 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                 )}
 
                                 <button
-                                    onClick={() => useRMHboxStore.getState().leaveLobby()}
+                                    onClick={() => {
+                                        // Tell the hub too, or it holds the seat until the
+                                        // lobby disbands and Create/Join say "already in a lobby".
+                                        if (lobby) emit(C2S.LOBBY_LEAVE, { lobbyId: lobby.lobbyId });
+                                        useRMHboxStore.getState().leaveLobby();
+                                    }}
                                     className="px-8 py-3 rounded-lg font-semibold bg-app-accent text-app-accent-fg hover:bg-app-accent-hover transition-colors"
                                 >
                                     {t("back-to-lobby-browser", { defaultValue: "Back to Lobby Browser" })}

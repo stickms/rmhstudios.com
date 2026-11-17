@@ -298,6 +298,21 @@ export class ReconnectionHandler {
       }
     }
 
+    // ─── Phase Payloads ──────────────────────────────────────
+    // Vote candidates, instructions, preload progress, round/session results
+    // reach clients only as one-shot events; re-send the current one. (PLAYING
+    // is covered by the game snapshot above.)
+    if (
+      lobby.state !==
+      'PLAYING'
+    ) {
+      this.lobbyManager.notifyMemberResync(
+        lobby,
+        userId,
+        socket,
+      );
+    }
+
     // ─── Broadcast Reconnection ──────────────────────────────
     this.lobbyManager.broadcastAction(
       lobby.id,

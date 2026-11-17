@@ -19,6 +19,7 @@ import {
   useState,
   useCallback,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   m as motion,
   AnimatePresence,
@@ -121,6 +122,12 @@ function extractMatchupFromSnapshot(
 export default function WitWarGame({
   playerId,
 }: MinigameProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
   const [
     phase,
     setPhase,
@@ -457,7 +464,13 @@ export default function WitWarGame({
             );
             setTotalVoters(
               Math.max(
-                (players?.length ??
+                (players?.filter(
+                  (
+                    p,
+                  ) =>
+                    p.isConnected,
+                )
+                  .length ??
                   0) -
                   2,
                 1,
@@ -701,6 +714,13 @@ export default function WitWarGame({
           setTotalMatchups(
             snapshot.totalMatchups as number,
           );
+        if (
+          p ===
+          'PROMPT_REVEAL'
+        )
+          setWritingTimeUp(
+            false,
+          );
 
         // Reconstruct matchup data from spectator/reconnection snapshots
         if (
@@ -762,6 +782,13 @@ export default function WitWarGame({
             setTotalVoters(
               snapshot.totalVoters as number,
             );
+          if (
+            typeof snapshot.audienceCount ===
+            'number'
+          )
+            setAudienceCount(
+              snapshot.audienceCount as number,
+            );
           setMyVote(
             (snapshot.myVote as
               | string
@@ -789,6 +816,29 @@ export default function WitWarGame({
             setMatchupResult(
               extractMatchupFromSnapshot(
                 cm,
+              ),
+            );
+          }
+        } else if (
+          p ===
+            'ROUND_RESULTS' ||
+          p ===
+            'GAME_OVER'
+        ) {
+          // Both player and spectator snapshots carry the round's `matchups`
+          if (
+            Array.isArray(
+              snapshot.matchups,
+            )
+          ) {
+            setRoundMatchups(
+              (
+                snapshot.matchups as Record<
+                  string,
+                  unknown
+                >[]
+              ).map(
+                extractMatchupFromSnapshot,
               ),
             );
           }
@@ -863,81 +913,127 @@ export default function WitWarGame({
   return (
     <div className="flex flex-col items-center w-full max-w-2xl mx-auto px-4">
       <AnimatePresence mode="wait">
-        {phase ===
-          'PROMPT_REVEAL' && (
-          <motion.div
-            key="prompt-reveal"
-            initial={{
-              opacity: 0,
-              y: 20,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              y: -20,
-            }}
-            className="w-full"
-          >
-            <PromptReveal
-              prompts={
-                prompts
-              }
-              round={
-                currentRound
-              }
-              totalRounds={
-                totalRounds
-              }
-            />
-          </motion.div>
-        )}
+        {isAudience &&
+          (phase ===
+            'PROMPT_REVEAL' ||
+            phase ===
+              'WRITING') && (
+            <motion.div
+              key="audience-writing"
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
+              className="flex w-full flex-col items-center gap-2 py-8 text-center"
+            >
+              <p className="text-base font-medium text-app-text">
+                {t(
+                  'ww-audience-writing',
+                  {
+                    defaultValue:
+                      'Players are writing their answers',
+                  },
+                )}
+              </p>
+              {phase ===
+                'WRITING' && (
+                <p className="text-sm text-app-text-muted">
+                  {t(
+                    'submitted-count-done',
+                    {
+                      defaultValue:
+                        '{{submittedCount}}/{{totalPlayers}} done',
+                      submittedCount,
+                      totalPlayers,
+                    },
+                  )}
+                </p>
+              )}
+            </motion.div>
+          )}
 
-        {phase ===
-          'WRITING' && (
-          <motion.div
-            key="writing"
-            initial={{
-              opacity: 0,
-              y: 20,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              y: -20,
-            }}
-            className="w-full"
-          >
-            <WritingPhase
-              prompts={
-                prompts
-              }
-              onSubmitAnswer={
-                handleSubmitAnswer
-              }
-              onSubmitAll={
-                handleSubmitAllAnswers
-              }
-              hasSubmitted={
-                hasSubmitted
-              }
-              submittedCount={
-                submittedCount
-              }
-              totalPlayers={
-                totalPlayers
-              }
-              writingTimeUp={
-                writingTimeUp
-              }
-            />
-          </motion.div>
-        )}
+        {!isAudience &&
+          phase ===
+            'PROMPT_REVEAL' && (
+            <motion.div
+              key="prompt-reveal"
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                y: -20,
+              }}
+              className="w-full"
+            >
+              <PromptReveal
+                prompts={
+                  prompts
+                }
+                round={
+                  currentRound
+                }
+                totalRounds={
+                  totalRounds
+                }
+              />
+            </motion.div>
+          )}
+
+        {!isAudience &&
+          phase ===
+            'WRITING' && (
+            <motion.div
+              key="writing"
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                y: -20,
+              }}
+              className="w-full"
+            >
+              <WritingPhase
+                prompts={
+                  prompts
+                }
+                onSubmitAnswer={
+                  handleSubmitAnswer
+                }
+                onSubmitAll={
+                  handleSubmitAllAnswers
+                }
+                hasSubmitted={
+                  hasSubmitted
+                }
+                submittedCount={
+                  submittedCount
+                }
+                totalPlayers={
+                  totalPlayers
+                }
+                writingTimeUp={
+                  writingTimeUp
+                }
+              />
+            </motion.div>
+          )}
 
         {phase ===
           'VOTING' &&

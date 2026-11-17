@@ -57,7 +57,7 @@ export default function GameShell({
 
   const handleNext = useCallback(() => {
     if (!lobby) return;
-    emit(C2S.GAME_FORCE_SKIP, { lobbyId: lobby.lobbyId });
+    emit(C2S.GAME_FORCE_SKIP, { lobbyId: lobby.lobbyId, fromState: 'PLAYING' });
   }, [lobby]);
 
   const roundLabel = minigameRound
