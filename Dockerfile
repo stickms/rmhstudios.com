@@ -69,7 +69,8 @@ RUN pnpm exec prisma generate
 # ── Stage 1c: Production-only node_modules ────────────────────────────────
 # Builds on prisma-generate so the Prisma client is already generated —
 # no need for the prisma CLI (a devDep) here. pnpm install --prod then
-# prunes devDependencies (vite, esbuild, typescript, eslint, etc.).
+# prunes devDependencies (vite, typescript, eslint, etc.; esbuild is a prod
+# dependency: the jobs worker bundles vibes at runtime for /vibe).
 # Rebuilds only when lockfile or prisma schema changes.
 FROM prisma-generate AS prod-deps
 
@@ -480,7 +481,8 @@ LABEL io.rmh.public-config-hash=${PUBLIC_BUILD_CONFIG_HASH}
 
 # ─── Production-only node_modules ───────────────────────────────────────
 # Sourced from prod-deps (not prisma-generate) — excludes devDependencies
-# (vite, esbuild, typescript, eslint, etc.) for a significantly smaller image.
+# (vite, typescript, eslint, etc.; esbuild stays, the jobs worker bundles vibes
+# at runtime) for a significantly smaller image.
 # Includes @prisma/client from the prod prisma generate run.
 # Rebuilds only when lockfile OR prisma schema changes.
 COPY --link --from=prod-deps --chown=1001:1001 /app/node_modules ./node_modules
