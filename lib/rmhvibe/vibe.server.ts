@@ -723,7 +723,7 @@ async function* streamModel(
   client: OpenAI,
   modelId: string,
   messages: VibeMessage[],
-): AsyncGenerator<VibeStreamEvent, string> {
+): AsyncGenerator<VibeStreamEvent, { content: string; truncated: boolean }> {
   const abort = new AbortController();
   let stalled = false;
   let timedOut = false;
@@ -741,6 +741,7 @@ async function* streamModel(
   }, STREAM_TOTAL_MS);
 
   let content = '';
+  let truncated = false;
   try {
     armIdle(); // also bounds time-to-first-token
     const stream = await client.chat.completions.create(
@@ -765,6 +766,7 @@ async function* streamModel(
         content += delta.content;
         yield { type: 'content', text: delta.content };
       }
+      if (chunk.choices[0]?.finish_reason === 'length') truncated = true;
     }
   } catch (err) {
     // A fired timer takes precedence over the abort error it caused.
@@ -776,7 +778,7 @@ async function* streamModel(
     if (idleTimer) clearTimeout(idleTimer);
     clearTimeout(totalTimer);
   }
-  return content;
+  return { content, truncated };
 }
 
 const PREVIEW_MIN_GAP_MS = 1200;
@@ -1065,6 +1067,7 @@ export async function* generateVibeStream(opts: {
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS && !result; attempt++) {
     content = '';
+    let truncated = false;
 
     // Run one streaming attempt, falling back through the model candidates if the
     // chosen tier is unavailable on this account. `produced` flips true once a model
@@ -1088,7 +1091,8 @@ export async function* generateVibeStream(opts: {
           if (preview) yield preview;
           step = await inner.next();
         }
-        content = step.value; // generator's return = full answer text
+        content = step.value.content; // generator's return = full answer text
+        truncated = step.value.truncated;
         produced = true;
       } catch (err) {
         const reason = err instanceof ModelStreamError ? err.reason : 'failed';
@@ -1114,7 +1118,11 @@ export async function* generateVibeStream(opts: {
       return;
     }
 
-    const materialized = await materialize(content, editBase);
+    // A cut-off answer can still parse (the last file just ends early), so it must
+    // never be materialized: fail the attempt and let the corrective retry run.
+    const materialized: Materialized = truncated
+      ? { ok: false, reason: 'the answer was cut off at the output limit — output fewer or smaller files' }
+      : await materialize(content, editBase);
     if (materialized.ok) {
       result = materialized;
       break;

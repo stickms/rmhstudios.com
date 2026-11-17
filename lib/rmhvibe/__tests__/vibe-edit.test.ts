@@ -5,6 +5,7 @@ import {
 } from 'vitest';
 import {
   applyVibeEdit,
+  parsePartialProject,
   serializeVibeProject,
 } from '@/lib/rmhvibe/vibe-project';
 import { parseVibeProject } from '@/lib/rmhvibe/vibe-bundle.server';
@@ -139,5 +140,41 @@ describe('serializeVibeProject', () => {
     ).toEqual(
       base.deps,
     );
+  });
+});
+
+describe('edit edge cases', () => {
+  it('returns null for an edit that lists no files and no deletes', () => {
+    expect(
+      applyVibeEdit(
+        base,
+        'TITLE: T\n===FILES===\n',
+      ),
+    ).toBeNull();
+  });
+
+  it('treats a delete line as the end of the file before it', () => {
+    const p =
+      parsePartialProject(
+        '===FILES===\n--- file: a.tsx ---\nA\n--- delete: b.css ---\n',
+      );
+    expect(
+      p.files,
+    ).toEqual(
+      {
+        'a.tsx':
+          'A',
+      },
+    );
+    expect(
+      p.done,
+    ).toEqual(
+      [
+        'a.tsx',
+      ],
+    );
+    expect(
+      p.writing,
+    ).toBeNull();
   });
 });

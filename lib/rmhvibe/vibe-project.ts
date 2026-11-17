@@ -240,6 +240,17 @@ export function parsePartialProject(
       buf =
         [];
     } else if (
+      DELETE_HEADER_RE.test(
+        line,
+      )
+    ) {
+      // A delete line ends the current file; the deleted path is not a file.
+      flush();
+      current =
+        null;
+      buf =
+        [];
+    } else if (
       current !==
       null
     ) {
@@ -248,20 +259,27 @@ export function parsePartialProject(
       );
     }
   }
+  // A trailing delete line closed the last file, so nothing is still streaming.
+  const closed =
+    current ===
+    null;
   flush();
 
   result.writing =
-    order.length
+    order.length &&
+    !closed
       ? order[
           order.length -
             1
         ]
       : null;
   result.done =
-    order.slice(
-      0,
-      -1,
-    );
+    closed
+      ? order
+      : order.slice(
+          0,
+          -1,
+        );
   return result;
 }
 
@@ -394,7 +412,7 @@ export type AppliedVibeEdit = VibeProjectFiles & {
 /**
  * Merge a model's edit answer onto a base project. Listed files replace the base
  * file wholesale, `--- delete: path ---` lines remove files, everything else is
- * kept as-is. Null when the answer has no `===FILES===` marker.
+ * kept as-is. Null when the answer has no `===FILES===` marker or changes no file.
  */
 export function applyVibeEdit(base: VibeProjectFiles, editRaw: string): AppliedVibeEdit | null {
   const idx = editRaw.indexOf(FILES_MARKER);
@@ -435,6 +453,7 @@ export function applyVibeEdit(base: VibeProjectFiles, editRaw: string): AppliedV
     }
   }
   flush();
+  if (changed.length === 0 && deleted.length === 0) return null;
 
   return {
     deps: depsLine === null ? base.deps : parseDeps(depsLine),
