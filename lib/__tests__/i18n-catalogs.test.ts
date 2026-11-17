@@ -137,26 +137,6 @@ function requiredCategories(
   ].sort();
 }
 
-// Plural groups the translate pipeline emitted with English's shape (one/other)
-// instead of the target language's categories. i18next selects the missing
-// category, misses, and falls back to English — so e.g. a Russian player sees
-// "2 continue" mid-sentence. Verified against i18next 26 with fallbackLng 'en'.
-//
-// Not filled in by hand here: picking the right Russian or Arabic plural stem is
-// a translator's job, not a mechanical one, and duplicating the `_other` string
-// into `_few` would replace a visible gap with a silently wrong one. Remove
-// entries as the `i18n-translate` workflow regenerates them.
-const KNOWN_PARTIAL_PLURALS: Record<
-  string,
-  string[]
-> =
-  {
-    'c-dream-rift':
-      [
-        'continues-count',
-      ],
-  };
-
 // There is no allowlist of untranslated keys. The non-English catalogs live on
 // the i18n/catalogs branch and lag English by design: a key English gained since
 // the last translate run falls back to English per key, and one English lost is
@@ -396,13 +376,6 @@ describe('catalog integrity', () => {
           requiredCategories(
             locale,
           );
-        const partial =
-          new Set(
-            KNOWN_PARTIAL_PLURALS[
-              ns
-            ] ??
-              [],
-          );
         const byBase =
           new Map<
             string,
@@ -440,14 +413,6 @@ describe('catalog integrity', () => {
           [
             ...byBase.entries(),
           ]
-            .filter(
-              ([
-                base,
-              ]) =>
-                !partial.has(
-                  base,
-                ),
-            )
             .map(
               ([
                 base,
