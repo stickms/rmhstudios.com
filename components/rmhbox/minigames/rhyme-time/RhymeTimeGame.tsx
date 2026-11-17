@@ -70,6 +70,155 @@ type Phase =
 /** How long a rejected-submission toast stays up, in ms. */
 const REJECT_TOAST_MS = 1800;
 
+/**
+ * Flatten a server RoundResult ({ playerResults: Record<userId, …> }) into the
+ * word list and per-player breakdown the results screen draws. Used for the
+ * live RT_ROUND_RESULTS action and for a snapshot taken during SCORING.
+ */
+function buildRoundView(
+  results:
+    | Record<
+        string,
+        unknown
+      >
+    | undefined,
+): {
+  words: WordResult[];
+  breakdowns: PlayerBreakdown[];
+} {
+  const playerResults =
+    results?.playerResults as Record<
+      string,
+      {
+        userId: string;
+        userName: string;
+        breakdown: Array<{
+          word: string;
+          isValid: boolean;
+          invalidReason?: string;
+          rarity: number;
+          basePoints: number;
+          multiSyllableBonus: number;
+          speedBonus: number;
+          totalPoints: number;
+          submitterCount: number;
+          isMultiSyllable: boolean;
+        }>;
+        roundScore: number;
+        validCount: number;
+        invalidCount: number;
+      }
+    >;
+
+  // Flatten all breakdowns into WordResult[]
+  const words: WordResult[] =
+    [];
+  const breakdowns: PlayerBreakdown[] =
+    [];
+
+  if (
+    playerResults
+  ) {
+    for (const pr of Object.values(
+      playerResults,
+    )) {
+      breakdowns.push(
+        {
+          userId:
+            pr.userId,
+          userName:
+            pr.userName,
+          validCount:
+            pr.validCount,
+          invalidCount:
+            pr.invalidCount,
+          roundScore:
+            pr.roundScore,
+        },
+      );
+      for (const wb of pr.breakdown) {
+        if (
+          wb.isValid
+        ) {
+          // Map rarity number → tier name
+          let rarity:
+            | 'rare'
+            | 'uncommon'
+            | 'common' =
+            'common';
+          if (
+            wb.submitterCount ===
+            1
+          )
+            rarity =
+              'rare';
+          else if (
+            wb.submitterCount <=
+            2
+          )
+            rarity =
+              'uncommon';
+
+          words.push(
+            {
+              word: wb.word,
+              submitters:
+                [
+                  {
+                    userId:
+                      pr.userId,
+                    userName:
+                      pr.userName,
+                    speedBonus:
+                      wb.speedBonus >
+                      0,
+                  },
+                ],
+              rarity,
+              points:
+                wb.basePoints +
+                (wb.multiSyllableBonus ??
+                  0),
+              multiSyllable:
+                wb.isMultiSyllable,
+            },
+          );
+        } else {
+          // Invalid words: not_in_dictionary or does_not_rhyme
+          words.push(
+            {
+              word: wb.word,
+              submitters:
+                [
+                  {
+                    userId:
+                      pr.userId,
+                    userName:
+                      pr.userName,
+                    speedBonus: false,
+                  },
+                ],
+              rarity:
+                wb.invalidReason ===
+                'not_in_dictionary'
+                  ? 'not_in_dict'
+                  : 'does_not_rhyme',
+              points:
+                wb.totalPoints,
+              multiSyllable: false,
+            },
+          );
+        }
+      }
+    }
+  }
+
+  return {
+    words,
+    breakdowns,
+  };
+}
+
 interface RhymeTimeGameProps {
   playerId: string;
   playerName: string;
@@ -501,138 +650,18 @@ export default function RhymeTimeGame({
             playSound(
               'victoryFanfare',
             );
-            const results =
-              data.results as Record<
-                string,
-                unknown
-              >;
-            const playerResults =
-              results?.playerResults as Record<
-                string,
-                {
-                  userId: string;
-                  userName: string;
-                  breakdown: Array<{
-                    word: string;
-                    isValid: boolean;
-                    invalidReason?: string;
-                    rarity: number;
-                    basePoints: number;
-                    multiSyllableBonus: number;
-                    speedBonus: number;
-                    totalPoints: number;
-                    submitterCount: number;
-                    isMultiSyllable: boolean;
-                  }>;
-                  roundScore: number;
-                  validCount: number;
-                  invalidCount: number;
-                }
-              >;
-
-            // Flatten all breakdowns into WordResult[]
-            const words: WordResult[] =
-              [];
-            const breakdowns: PlayerBreakdown[] =
-              [];
-
-            if (
-              playerResults
-            ) {
-              for (const pr of Object.values(
-                playerResults,
-              )) {
-                breakdowns.push(
-                  {
-                    userId:
-                      pr.userId,
-                    userName:
-                      pr.userName,
-                    validCount:
-                      pr.validCount,
-                    invalidCount:
-                      pr.invalidCount,
-                    roundScore:
-                      pr.roundScore,
-                  },
-                );
-                for (const wb of pr.breakdown) {
-                  if (
-                    wb.isValid
-                  ) {
-                    // Map rarity number → tier name
-                    let rarity:
-                      | 'rare'
-                      | 'uncommon'
-                      | 'common' =
-                      'common';
-                    if (
-                      wb.submitterCount ===
-                      1
-                    )
-                      rarity =
-                        'rare';
-                    else if (
-                      wb.submitterCount <=
-                      2
-                    )
-                      rarity =
-                        'uncommon';
-
-                    words.push(
-                      {
-                        word: wb.word,
-                        submitters:
-                          [
-                            {
-                              userId:
-                                pr.userId,
-                              userName:
-                                pr.userName,
-                              speedBonus:
-                                wb.speedBonus >
-                                0,
-                            },
-                          ],
-                        rarity,
-                        points:
-                          wb.basePoints +
-                          (wb.multiSyllableBonus ??
-                            0),
-                        multiSyllable:
-                          wb.isMultiSyllable,
-                      },
-                    );
-                  } else {
-                    // Invalid words: not_in_dictionary or does_not_rhyme
-                    words.push(
-                      {
-                        word: wb.word,
-                        submitters:
-                          [
-                            {
-                              userId:
-                                pr.userId,
-                              userName:
-                                pr.userName,
-                              speedBonus: false,
-                            },
-                          ],
-                        rarity:
-                          wb.invalidReason ===
-                          'not_in_dictionary'
-                            ? 'not_in_dict'
-                            : 'does_not_rhyme',
-                        points:
-                          wb.totalPoints,
-                        multiSyllable: false,
-                      },
-                    );
-                  }
-                }
-              }
-            }
-
+            const {
+              words,
+              breakdowns,
+            } =
+              buildRoundView(
+                data.results as
+                  | Record<
+                      string,
+                      unknown
+                    >
+                  | undefined,
+              );
             setWordResults(
               words,
             );
@@ -992,10 +1021,107 @@ export default function RhymeTimeGame({
             [],
           );
         }
+
+        // Results screen: a snapshot taken during SCORING carries every round's
+        // results; draw the current round's (the last one, if numbering is off).
+        if (
+          p ===
+            'SCORING' &&
+          Array.isArray(
+            data.roundResults,
+          )
+        ) {
+          const all =
+            data.roundResults as Array<
+              Record<
+                string,
+                unknown
+              >
+            >;
+          const current =
+            all.find(
+              (
+                r,
+              ) =>
+                r.roundNumber ===
+                data.currentRound,
+            ) ??
+            all[
+              all.length -
+                1
+            ];
+          if (
+            current
+          ) {
+            const {
+              words,
+              breakdowns,
+            } =
+              buildRoundView(
+                current,
+              );
+            setWordResults(
+              words,
+            );
+            setPlayerBreakdowns(
+              breakdowns,
+            );
+          }
+        }
+
+        // Intermission standings from the cumulative scores
+        if (
+          p ===
+            'INTERMISSION' &&
+          data.scores &&
+          typeof data.scores ===
+            'object'
+        ) {
+          const standingsList: Standing[] =
+            Object.entries(
+              data.scores as Record<
+                string,
+                number
+              >,
+            ).map(
+              ([
+                uid,
+                sc,
+              ]) => ({
+                userId:
+                  uid,
+                userName:
+                  players?.find(
+                    (
+                      pl,
+                    ) =>
+                      pl.userId ===
+                      uid,
+                  )
+                    ?.userName ??
+                  uid,
+                totalScore:
+                  sc,
+                delta: 0,
+              }),
+            );
+          standingsList.sort(
+            (
+              a,
+              b,
+            ) =>
+              b.totalScore -
+              a.totalScore,
+          );
+          setStandings(
+            standingsList,
+          );
+        }
       },
       [
         t,
         invalidPenalty,
+        players,
       ],
     );
 

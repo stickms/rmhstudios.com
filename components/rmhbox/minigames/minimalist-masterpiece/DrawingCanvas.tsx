@@ -39,6 +39,13 @@ interface Point {
   y: number;
 }
 
+/**
+ * Screen-pixel distance a pointer must travel before a press counts as a drag.
+ * Below it, a press is a tap (first endpoint of click-click mode); without the
+ * threshold a finger's natural jitter turned every tap into a tiny stroke.
+ */
+const DRAG_THRESHOLD_PX = 6;
+
 export default function DrawingCanvas({
   strokes,
   setStrokes,
@@ -90,6 +97,14 @@ export default function DrawingCanvas({
     );
   const dragStart =
     useRef<Point | null>(
+      null,
+    );
+  // Screen position of the press, for the drag threshold
+  const dragStartClient =
+    useRef<{
+      x: number;
+      y: number;
+    } | null>(
       null,
     );
 
@@ -240,6 +255,11 @@ export default function DrawingCanvas({
         isDragging.current = false;
         dragStart.current =
           pt;
+        dragStartClient.current =
+          {
+            x: e.clientX,
+            y: e.clientY,
+          };
         setPreviewEnd(
           pt,
         );
@@ -279,8 +299,28 @@ export default function DrawingCanvas({
         if (
           dragStart.current
         ) {
-          // Drag mode: track as dragging once the mouse moves
-          isDragging.current = true;
+          // Drag mode: only once the pointer has really moved (a tap jitters)
+          if (
+            !isDragging.current
+          ) {
+            const origin =
+              dragStartClient.current;
+            const moved =
+              origin
+                ? Math.hypot(
+                    e.clientX -
+                      origin.x,
+                    e.clientY -
+                      origin.y,
+                  )
+                : 0;
+            if (
+              moved <=
+              DRAG_THRESHOLD_PX
+            )
+              return;
+            isDragging.current = true;
+          }
           setPreviewEnd(
             pt,
           );
@@ -358,6 +398,8 @@ export default function DrawingCanvas({
           }
           dragStart.current =
             null;
+          dragStartClient.current =
+            null;
           isDragging.current = false;
         }
       },
@@ -368,6 +410,24 @@ export default function DrawingCanvas({
         setStrokes,
       ],
     );
+
+  /** The browser took the pointer (scroll, gesture, palm rejection): drop the press. */
+  const handlePointerCancel =
+    useCallback(() => {
+      dragStart.current =
+        null;
+      dragStartClient.current =
+        null;
+      isDragging.current = false;
+      if (
+        !pendingStart
+      )
+        setPreviewEnd(
+          null,
+        );
+    }, [
+      pendingStart,
+    ]);
 
   const handlePointerLeave =
     useCallback(() => {
@@ -380,6 +440,8 @@ export default function DrawingCanvas({
         isDragging.current
       ) {
         dragStart.current =
+          null;
+        dragStartClient.current =
           null;
         isDragging.current = false;
         setPreviewEnd(
@@ -458,6 +520,9 @@ export default function DrawingCanvas({
         }
         onPointerUp={
           handlePointerUp
+        }
+        onPointerCancel={
+          handlePointerCancel
         }
         onPointerLeave={
           handlePointerLeave

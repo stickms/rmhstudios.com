@@ -46,6 +46,8 @@ import {
   LockInMatchingSchema,
   NextSentenceSchema,
   NextStorySchema,
+  UE_REVIEW_TIMEOUT_SECONDS,
+  UE_READING_AUTO_ADVANCE_SECONDS,
 } from '@/lib/rmhbox/undercover-editor/schemas';
 import type { StoryPrompt } from '@/lib/rmhbox/undercover-editor/schemas';
 import {
@@ -147,6 +149,9 @@ export class UndercoverEditorGame extends BaseMinigame {
     new Map();
   /** Handle for the current phase-transition timeout; cancelled on early transitions. */
   private phaseTransitionHandle: NodeJS.Timeout | null =
+    null;
+  /** READING autopilot tick, armed only while the host is disconnected. */
+  private readingAutoHandle: NodeJS.Timeout | null =
     null;
 
   constructor(
@@ -984,6 +989,110 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.startInfinitePhaseTimer(
       false,
     );
+    // The host may already be gone (a reload during the last edit round).
+    this.armReadingAutopilot();
+  }
+
+  /** Whether the current host is connected (host can change via getHostId()). */
+  private isHostConnected(): boolean {
+    return (
+      this.context.players.get(
+        this.context.getHostId(),
+      )
+        ?.isConnected ??
+      false
+    );
+  }
+
+  private isPlayerConnected(
+    userId: string,
+  ): boolean {
+    return (
+      this.context.players.get(
+        userId,
+      )
+        ?.isConnected ??
+      false
+    );
+  }
+
+  /**
+   * READING is host-driven. While no connected host can drive it, reveal the
+   * next sentence (or story) on a timer; stop as soon as a host is back.
+   */
+  private armReadingAutopilot(): void {
+    if (
+      this
+        .state
+        .phase !==
+        'READING' ||
+      this.isHostConnected()
+    )
+      return;
+    if (
+      this
+        .readingAutoHandle
+    )
+      return;
+    this.readingAutoHandle =
+      this.setTimeout(
+        () => {
+          this.readingAutoHandle =
+            null;
+          if (
+            !this
+              .isRunning ||
+            this
+              .state
+              .phase !==
+              'READING' ||
+            this.isHostConnected()
+          )
+            return;
+          this.advanceReading();
+          this.armReadingAutopilot();
+        },
+        UE_READING_AUTO_ADVANCE_SECONDS *
+          1000,
+      );
+  }
+
+  private stopReadingAutopilot(): void {
+    this.clearTrackedTimeout(
+      this
+        .readingAutoHandle,
+    );
+    this.readingAutoHandle =
+      null;
+  }
+
+  /** One autopilot step: the next sentence, or the next story once this one is fully read. */
+  private advanceReading(): void {
+    const storyIds =
+      Array.from(
+        this.state.stories.keys(),
+      );
+    const currentStory =
+      this.state.stories.get(
+        storyIds[
+          this
+            .state
+            .readingStoryIndex
+        ]!,
+      );
+    if (
+      currentStory &&
+      this
+        .state
+        .readingSentenceIndex <
+        currentStory
+          .sentences
+          .length
+    ) {
+      this.revealNextSentence();
+    } else {
+      this.advanceToNextStory();
+    }
   }
 
   // ─── Phase: REVIEW (Infinite Time) ────────────────────────────────────────
@@ -994,6 +1103,14 @@ export class UndercoverEditorGame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      'READING'
+    )
+      return;
+    this.stopReadingAutopilot();
 
     this.state.phase =
       'REVIEW';
@@ -1050,25 +1167,91 @@ export class UndercoverEditorGame extends BaseMinigame {
       },
     );
 
-    // Infinite phase timer — no host skip; auto-advances when all locked in
-    this.startInfinitePhaseTimer(
-      false,
+    // Generous bound: advances as soon as every connected player has locked
+    // in, and locks in whoever is left when it runs out.
+    this.startPhaseTimer(
+      UE_REVIEW_TIMEOUT_SECONDS,
     );
+    this.state.phaseEndsAt =
+      now +
+      UE_REVIEW_TIMEOUT_SECONDS *
+        1000;
+    this.schedulePhaseTransition(
+      () =>
+        this.endReviewOnTimeout(),
+      UE_REVIEW_TIMEOUT_SECONDS *
+        1000,
+    );
+
+    // Players who left before REVIEW cannot lock in.
+    this.checkReviewComplete();
   }
 
-  /** Check if all players have locked in their matching. */
+  /** REVIEW ran out: lock in everyone with the guesses they have saved. */
+  private endReviewOnTimeout(): void {
+    if (
+      !this
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        'REVIEW'
+    )
+      return;
+    logger.info(
+      {
+        event:
+          'undercover_editor:review_timeout',
+        lobbyId:
+          this
+            .context
+            .lobbyId,
+        lockedInCount:
+          this
+            .state
+            .matchLockedIn
+            .size,
+        totalPlayers:
+          this
+            .state
+            .playerIds
+            .length,
+      },
+    );
+    for (const uid of this
+      .state
+      .playerIds)
+      this.state.matchLockedIn.add(
+        uid,
+      );
+    this.startRevealPhase();
+  }
+
+  /**
+   * Advance to REVEAL once every CONNECTED player has locked in. A departed or
+   * disconnected player counts as locked in with whatever guesses they saved.
+   */
   private checkReviewComplete(): void {
+    if (
+      this
+        .state
+        .phase !==
+      'REVIEW'
+    )
+      return;
     for (const uid of this
       .state
       .playerIds) {
       if (
         !this.state.matchLockedIn.has(
           uid,
+        ) &&
+        this.isPlayerConnected(
+          uid,
         )
       )
         return;
     }
-    // All players locked in — proceed to reveal
     this.startRevealPhase();
   }
 
@@ -1080,6 +1263,19 @@ export class UndercoverEditorGame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      'REVIEW'
+    )
+      return;
+    this.clearTrackedTimeout(
+      this
+        .phaseTransitionHandle,
+    );
+    this.phaseTransitionHandle =
+      null;
     this.clearPhaseTimer();
 
     this.state.phase =
@@ -1097,54 +1293,8 @@ export class UndercoverEditorGame extends BaseMinigame {
       this.buildStoryReveals();
     const scores =
       this.buildScoreResults();
-
-    // Build matching results per player
-    const matchResults: Record<
-      string,
-      {
-        storyId: string;
-        guessedEditorId: string;
-        actualEditorId: string;
-        correct: boolean;
-      }[]
-    > =
-      {};
-    for (const [
-      guesserId,
-      guessMap,
-    ] of this
-      .state
-      .matchGuesses) {
-      matchResults[
-        guesserId
-      ] =
-        [];
-      for (const [
-        storyId,
-        guessedId,
-      ] of guessMap) {
-        const story =
-          this.state.stories.get(
-            storyId,
-          );
-        const actualEditorId =
-          story?.editorUserId ??
-          '';
-        matchResults[
-          guesserId
-        ].push(
-          {
-            storyId,
-            guessedEditorId:
-              guessedId,
-            actualEditorId,
-            correct:
-              guessedId ===
-              actualEditorId,
-          },
-        );
-      }
-    }
+    const matchResults =
+      this.buildMatchResults();
 
     this.logAction(
       'reveal',
@@ -1231,6 +1381,70 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.startInfinitePhaseTimer(
       true,
     );
+  }
+
+  /** Matching results per guesser (REVEAL only: names the editors). */
+  private buildMatchResults(): Record<
+    string,
+    {
+      storyId: string;
+      guessedEditorId: string;
+      actualEditorId: string;
+      correct: boolean;
+    }[]
+  > {
+    const matchResults: Record<
+      string,
+      {
+        storyId: string;
+        guessedEditorId: string;
+        actualEditorId: string;
+        correct: boolean;
+      }[]
+    > =
+      {};
+    for (const [
+      guesserId,
+      guessMap,
+    ] of this
+      .state
+      .matchGuesses) {
+      const list: {
+        storyId: string;
+        guessedEditorId: string;
+        actualEditorId: string;
+        correct: boolean;
+      }[] =
+        [];
+      for (const [
+        storyId,
+        guessedId,
+      ] of guessMap) {
+        const story =
+          this.state.stories.get(
+            storyId,
+          );
+        const actualEditorId =
+          story?.editorUserId ??
+          '';
+        list.push(
+          {
+            storyId,
+            guessedEditorId:
+              guessedId,
+            actualEditorId,
+            correct:
+              guessedId ===
+              actualEditorId,
+          },
+        );
+      }
+      matchResults[
+        guesserId
+      ] =
+        list;
+    }
+    return matchResults;
   }
 
   // ─── End Game ─────────────────────────────────────────────────────
@@ -1403,7 +1617,22 @@ export class UndercoverEditorGame extends BaseMinigame {
     const sanitized =
       sanitizeString(
         text,
-      ).trim();
+      )
+        .replace(
+          /\s+/g,
+          ' ',
+        )
+        .trim();
+    if (
+      sanitized.length ===
+      0
+    ) {
+      this.sendError(
+        userId,
+        'Sentence is empty',
+      );
+      return;
+    }
     this.state.roundSubmissions.set(
       userId,
       sanitized,
@@ -1674,6 +1903,27 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
+    // A replacement that sanitizes to nothing (e.g. "<b>") would drop a word
+    // and shift every later index.
+    if (
+      edits.some(
+        (
+          edit,
+        ) =>
+          sanitizeString(
+            edit.newWord,
+          ).trim()
+            .length ===
+          0,
+      )
+    ) {
+      this.sendError(
+        userId,
+        'Invalid replacement word',
+      );
+      return;
+    }
+
     // Apply edits atomically
     for (const edit of edits) {
       const originalWord =
@@ -1685,7 +1935,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       const newWord =
         sanitizeString(
           edit.newWord,
-        );
+        ).trim();
       sentence.words[
         edit.wordIndex
       ] =
@@ -1893,6 +2143,38 @@ export class UndercoverEditorGame extends BaseMinigame {
       Array.from(
         this.state.stories.keys(),
       );
+    const story =
+      this.state.stories.get(
+        storyIds[
+          this
+            .state
+            .readingStoryIndex
+        ]!,
+      );
+    if (
+      story &&
+      this
+        .state
+        .readingSentenceIndex >=
+        story
+          .sentences
+          .length
+    ) {
+      this.sendError(
+        userId,
+        'All sentences revealed for this story',
+      );
+      return;
+    }
+    this.revealNextSentence();
+  }
+
+  /** Reveal the next sentence of the current READING story. */
+  private revealNextSentence(): void {
+    const storyIds =
+      Array.from(
+        this.state.stories.keys(),
+      );
     const currentStory =
       this.state.stories.get(
         storyIds[
@@ -1928,13 +2210,8 @@ export class UndercoverEditorGame extends BaseMinigame {
       currentStory
         .sentences
         .length
-    ) {
-      this.sendError(
-        userId,
-        'All sentences revealed for this story',
-      );
+    )
       return;
-    }
 
     const sentence =
       currentStory
@@ -2024,6 +2301,18 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
+    this.advanceToNextStory();
+  }
+
+  /** Move READING to the next story, or to REVIEW after the last one. */
+  private advanceToNextStory(): void {
+    if (
+      this
+        .state
+        .phase !==
+      'READING'
+    )
+      return;
     const storyIds =
       Array.from(
         this.state.stories.keys(),
@@ -2151,11 +2440,20 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
+    // A guess map is a partial 1-to-1 matching of OTHER players' stories to
+    // OTHER players: never the story you edited, never yourself, never the
+    // same editor twice, and only real stories and players.
+    const myEditedStoryId =
+      this.state.editorAssignments.get(
+        userId,
+      );
     const guessMap =
       new Map<
         string,
         string
       >();
+    const usedEditors =
+      new Set<string>();
     for (const [
       storyId,
       guessedEditorId,
@@ -2164,9 +2462,35 @@ export class UndercoverEditorGame extends BaseMinigame {
         .data
         .guesses,
     )) {
+      const invalid =
+        !this.state.stories.has(
+          storyId,
+        ) ||
+        storyId ===
+          myEditedStoryId ||
+        guessedEditorId ===
+          userId ||
+        !this.state.playerIds.includes(
+          guessedEditorId,
+        ) ||
+        usedEditors.has(
+          guessedEditorId,
+        );
+      if (
+        invalid
+      ) {
+        this.sendError(
+          userId,
+          'Invalid matching submission',
+        );
+        return;
+      }
+      usedEditors.add(
+        guessedEditorId,
+      );
       guessMap.set(
         storyId,
-        guessedEditorId as string,
+        guessedEditorId,
       );
     }
     this.state.matchGuesses.set(
@@ -2544,6 +2868,7 @@ export class UndercoverEditorGame extends BaseMinigame {
             userId,
           ) ??
           null,
+        ...this.buildPhaseSnapshotExtras(),
       };
 
     // Editor gets their assignment info; editable story only during EDIT phase
@@ -2563,6 +2888,11 @@ export class UndercoverEditorGame extends BaseMinigame {
                 this.buildEditableStory(
                   assignedStoryId,
                 ),
+              editDone:
+                this.state.roundEditsDone.get(
+                  userId,
+                ) ??
+                false,
             }
           : {}),
       };
@@ -2609,8 +2939,101 @@ export class UndercoverEditorGame extends BaseMinigame {
         this
           .state
           .readingSentenceIndex,
+      ...this.buildPhaseSnapshotExtras(),
       isSpectator: true,
     };
+  }
+
+  /**
+   * Phase data a client cannot rebuild from the base snapshot after a reload
+   * or a late mount: the READING board and progress, and the REVEAL results.
+   * The REVEAL fields name the editors, so they are only sent in REVEAL.
+   */
+  private buildPhaseSnapshotExtras(): Record<
+    string,
+    unknown
+  > {
+    if (
+      this
+        .state
+        .phase ===
+      'READING'
+    ) {
+      const storyIds =
+        Array.from(
+          this.state.stories.keys(),
+        );
+      const current =
+        this.state.stories.get(
+          storyIds[
+            this
+              .state
+              .readingStoryIndex
+          ]!,
+        );
+      return {
+        readingStories:
+          storyIds.map(
+            (
+              id,
+            ) => {
+              const story =
+                this.state.stories.get(
+                  id,
+                )!;
+              return {
+                storyId:
+                  story.storyId,
+                ownerName:
+                  story.ownerName,
+                prompt:
+                  story.prompt,
+                sentenceCount:
+                  story
+                    .sentences
+                    .length,
+              };
+            },
+          ),
+        revealedSentences:
+          current
+            ? current.sentences
+                .slice(
+                  0,
+                  this
+                    .state
+                    .readingSentenceIndex,
+                )
+                .map(
+                  (
+                    s,
+                  ): StorySentenceView => ({
+                    authorName:
+                      s.authorName,
+                    text: s.text,
+                    roundNumber:
+                      s.roundNumber,
+                  }),
+                )
+            : [],
+      };
+    }
+    if (
+      this
+        .state
+        .phase ===
+      'REVEAL'
+    ) {
+      return {
+        storyReveals:
+          this.buildStoryReveals(),
+        matchResults:
+          this.buildMatchResults(),
+        scores:
+          this.buildScoreResults(),
+      };
+    }
+    return {};
   }
 
   // ─── Join-in-Progress / Reconnection / Disconnect ───────────────────────
@@ -2644,6 +3067,11 @@ export class UndercoverEditorGame extends BaseMinigame {
   handlePlayerDisconnect(
     userId: string,
   ): void {
+    if (
+      !this
+        .isRunning
+    )
+      return;
     // During EDIT, auto-complete the editor's edit if they disconnect
     if (
       this
@@ -2665,6 +3093,22 @@ export class UndercoverEditorGame extends BaseMinigame {
         );
         this.checkEditComplete();
       }
+    } else if (
+      this
+        .state
+        .phase ===
+      'READING'
+    ) {
+      // Nobody else can press "Next": keep the reading moving until a host is back.
+      this.armReadingAutopilot();
+    } else if (
+      this
+        .state
+        .phase ===
+      'REVIEW'
+    ) {
+      // A departed player no longer holds up the reveal.
+      this.checkReviewComplete();
     }
 
     logger.info(
@@ -2687,6 +3131,14 @@ export class UndercoverEditorGame extends BaseMinigame {
   handlePlayerReconnect(
     userId: string,
   ): void {
+    if (
+      this
+        .state
+        .phase ===
+        'READING' &&
+      this.isHostConnected()
+    )
+      this.stopReadingAutopilot();
     this.context.sendToPlayer(
       userId,
       'rmhbox:game:state_snapshot',
@@ -2973,6 +3425,37 @@ export class UndercoverEditorGame extends BaseMinigame {
     }
 
     return awards;
+  }
+
+  // ─── Host Skip ──────────────────────────────────────────────────────
+
+  /**
+   * The host's footer "Next" is only offered in REVEAL (the one phase started
+   * with `startInfinitePhaseTimer(true)`), where it finishes the game. Anywhere
+   * else it is ignored: READING has its own controls and REVIEW must never end
+   * the game on a stray skip.
+   */
+  handleHostSkip(): void {
+    if (
+      !this
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        'REVEAL'
+    )
+      return;
+    logger.info(
+      {
+        event:
+          'undercover_editor:host_skip_reveal',
+        lobbyId:
+          this
+            .context
+            .lobbyId,
+      },
+    );
+    this.endGame();
   }
 
   // ─── Force End ──────────────────────────────────────────────────────

@@ -54,6 +54,10 @@ export const C2S =
       'rmhbox:game:pause_timer',
     GAME_READY_TO_RENDER:
       'rmhbox:game:ready_to_render',
+    // A minigame component that has just mounted asks for the current game
+    // snapshot: its chunk may have loaded after the first phase began.
+    GAME_SYNC_REQUEST:
+      'rmhbox:game:sync_request',
     GAME_INPUT:
       'rmhbox:game:input',
     GAME_UPDATE_SETTINGS:

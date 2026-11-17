@@ -73,6 +73,21 @@ export interface ClientLobbyState {
   myUserId: string;
   seq: number;
   matchHistory: MatchSummary[];
+  /**
+   * The running phase timer, so a client that joins, reloads or reconnects
+   * mid-phase shows the right ring (and the host's "Next" button) at once.
+   * Absent from older servers; null when no timer runs.
+   */
+  timer?: ClientTimerSnapshot | null;
+}
+
+/** A phase timer as the lobby snapshot carries it (-1 total/remaining = infinite). */
+export interface ClientTimerSnapshot {
+  total: number;
+  remaining: number;
+  paused: boolean;
+  infinite: boolean;
+  showSkip: boolean;
 }
 
 export interface ClientPlayerInfo {

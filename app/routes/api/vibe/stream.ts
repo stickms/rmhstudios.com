@@ -1,38 +1,30 @@
 /**
  * POST /api/vibe/stream
  *
- * Streams RMHVibe generation as Server-Sent Events. Body: { prompt, slug? }.
- * Each SSE `data:` frame is a VibeStreamEvent (thinking | content | done | error).
- * When `slug` is present, this customizes the existing page; otherwise it creates
- * a new one. The page is persisted before the final `done` event is emitted.
+ * Streams RMHVibe generation as Server-Sent Events. Body: vibeStreamBodySchema.
+ * Each SSE `data:` frame is a VibeStreamEvent (created | thinking | content | done | error).
+ * Without `slug` this creates a page. With `slug`, the signed-in owner customizes
+ * it in place; anyone else remixes it into a new page of their own. The page is persisted before the final `done` event is emitted.
  */
 
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { generateVibeStream } from '@/lib/rmhvibe/vibe.server';
+import { vibeStreamBodySchema } from '@/lib/rmhvibe/vibe-schema';
 import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
 
 export const Route = createFileRoute('/api/vibe/stream')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 10, windowMs: 5 * 60_000, prefix: 'vibe' } },
-        async ({ request }) => {
-          const body = (await request.json().catch(() => ({}))) as {
-            prompt?: unknown;
-            slug?: unknown;
-            fromVersionId?: unknown;
-            model?: unknown;
-          };
-          const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
-          const slug = typeof body.slug === 'string' ? body.slug : undefined;
-          const fromVersionId =
-            typeof body.fromVersionId === 'string' ? body.fromVersionId : undefined;
+        {
+          auth: 'optional',
+          rateLimit: { limit: 10, windowMs: 5 * 60_000, prefix: 'vibe' },
+          body: vibeStreamBodySchema,
+        },
+        async ({ userId, body }) => {
+          const { prompt, slug, fromVersionId, kind } = body;
           const model = asVibeModel(body.model);
-
-          if (!prompt) {
-            return new Response('Missing prompt', { status: 400 });
-          }
 
           const encoder = new TextEncoder();
           // `open` tracks whether the client is still connected. Generation is
@@ -57,6 +49,8 @@ export const Route = createFileRoute('/api/vibe/stream')({
                   slug,
                   fromVersionId,
                   model,
+                  userId,
+                  kind,
                 })) {
                   send(event);
                 }

@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
+import { EC_MAX_EMOJIS, EC_MAX_GUESSES_PER_PLAYER } from '@/lib/rmhbox/constants';
 import type { MinigameProps } from '../MinigameRenderer';
 import ProducerView from './ProducerView';
 import AudienceView from './AudienceView';
@@ -27,8 +28,12 @@ import type { GuessLogEntry } from './GuessLog';
 
 type ECPhase = 'PRODUCER_ASSIGNMENT' | 'MOVIE_SELECTION' | 'EMOJI_CONSTRUCTION' | 'ROUND_RESULTS' | 'TRANSITION';
 
-const MAX_EMOJIS = 12;
-const MAX_GUESSES = 5;
+type MovieChoice = { title: string; year: number; genre: string[]; difficulty: string };
+
+/** Apply a numeric field from a server payload, ignoring anything that is not a number. */
+function setIfNum(v: unknown, set: (n: number) => void): void {
+  if (typeof v === 'number' && Number.isFinite(v)) set(v);
+}
 
 interface PlayerResult {
   userId: string;
@@ -50,7 +55,10 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [producerId, setProducerId] = useState('');
   const [producerName, setProducerName] = useState('');
   const [movieTitle, setMovieTitle] = useState('');
-  const [movieChoices, setMovieChoices] = useState<Array<{ title: string; year: number; genre: string[]; difficulty: string }>>([]);
+  const [movieChoices, setMovieChoices] = useState<MovieChoice[]>([]);
+  // Limits come from the server (host settings); the constants are only the defaults.
+  const [maxEmojis, setMaxEmojis] = useState(EC_MAX_EMOJIS);
+  const [maxGuesses, setMaxGuesses] = useState(EC_MAX_GUESSES_PER_PLAYER);
   const [emojis, setEmojis] = useState<string[]>([]);
   const [guesses, setGuesses] = useState<GuessEntry[]>([]);
   const [hasGuessedCorrectly, setHasGuessedCorrectly] = useState(false);
@@ -103,7 +111,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         }
         case 'EC_MOVIE_CHOICES': {
           // Producer receives 3 movie choices
-          const movies = data.movies as Array<{ title: string; year: number; genre: string[]; difficulty: string }>;
+          const movies = data.movies as MovieChoice[];
           setMovieChoices(movies ?? []);
           setPhase('MOVIE_SELECTION');
           break;
@@ -124,8 +132,16 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         case 'EC_CONSTRUCTION_START':
           // Marks the start of the emoji construction phase — transition audience too
           if (Array.isArray(data.movieTitles)) setMovieTitles(data.movieTitles as string[]);
+          setIfNum(data.maxEmojis, setMaxEmojis);
+          setIfNum(data.maxGuesses, setMaxGuesses);
           if (phase !== 'EMOJI_CONSTRUCTION') setPhase('EMOJI_CONSTRUCTION');
           break;
+        case 'EC_EMOJI_REJECTED': {
+          // Roll back the optimistic edit to the server's sequence.
+          const seq = data.emojiSequence as string[] | undefined;
+          if (Array.isArray(seq)) setEmojis(seq);
+          break;
+        }
         case 'EC_EMOJI_UPDATED': {
           const seq = (data.emojiSequence ?? data.emojis) as string[] | undefined;
           setEmojis(seq ?? []);
@@ -154,8 +170,8 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           break;
         }
         case 'EC_GUESS_COUNT': {
-          setGuessCount(data.totalGuesses as number);
-          setCorrectCount(data.correctGuesses as number);
+          setIfNum(data.totalGuesses, setGuessCount);
+          setIfNum(data.correctGuesses, setCorrectCount);
           break;
         }
         case 'EC_GUESS_LOG_ENTRY': {
@@ -169,8 +185,8 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         }
         case 'EC_ROUND_OVER': {
           // Server sends movie.title, emojiSequence, correctGuessers, roundScores
-          const movie = data.movie as { title?: string } | undefined;
-          setResultsMovieTitle((movie?.title ?? data.movieTitle) as string);
+          const movie = data.movie as { title?: string } | null | undefined;
+          setResultsMovieTitle(((movie?.title ?? data.movieTitle) as string | undefined) ?? '');
           const emojiSeq = (data.emojiSequence ?? data.emojis) as string[] | undefined;
           setResultsEmojis(emojiSeq ?? []);
 
@@ -231,14 +247,37 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
       else if (snapshot.producerId) setProducerId(snapshot.producerId as string);
       if (snapshot.producerUserName) setProducerName(snapshot.producerUserName as string);
       else if (snapshot.producerName) setProducerName(snapshot.producerName as string);
-      if (snapshot.movieTitle) setMovieTitle(snapshot.movieTitle as string);
+      let snapshotTitle = '';
+      if (snapshot.movieTitle) snapshotTitle = snapshot.movieTitle as string;
       else if (snapshot.movie && typeof snapshot.movie === 'object') {
-        const m = snapshot.movie as { title?: string };
-        if (m.title) setMovieTitle(m.title);
+        snapshotTitle = (snapshot.movie as { title?: string }).title ?? '';
       }
+      // No movie in the snapshot means none is picked yet: clear last round's.
+      setMovieTitle(snapshotTitle);
+      if (p === 'ROUND_RESULTS' || p === 'TRANSITION') setResultsMovieTitle(snapshotTitle);
+      setMovieChoices(Array.isArray(snapshot.movieChoices) ? (snapshot.movieChoices as MovieChoice[]) : []);
+      setIfNum(snapshot.maxEmojis, setMaxEmojis);
+      setIfNum(snapshot.maxGuesses, setMaxGuesses);
+      if (Array.isArray(snapshot.myGuesses)) {
+        const mine = (snapshot.myGuesses as Array<{ text?: string; guess?: string; result: GuessEntry['result'] }>).map((g) => ({
+          guess: g.text ?? g.guess ?? '',
+          result: g.result,
+        }));
+        setGuesses(mine);
+        setHasGuessedCorrectly(mine.some((g) => g.result === 'correct'));
+      }
+      if (Array.isArray(snapshot.correctGuessers)) {
+        const cgs = snapshot.correctGuessers as CorrectGuesserInfo[];
+        setCorrectGuessers(cgs.map((g) => ({ userId: g.userId, userName: g.userName, rank: g.rank })));
+        setCorrectCount(cgs.length);
+      }
+      setIfNum(snapshot.totalGuesses, setGuessCount);
       if (Array.isArray(snapshot.movieTitles)) setMovieTitles(snapshot.movieTitles as string[]);
       const seq = (snapshot.emojiSequence ?? snapshot.emojis) as string[] | undefined;
-      if (Array.isArray(seq)) setEmojis(seq);
+      if (Array.isArray(seq)) {
+        setEmojis(seq);
+        if (p === 'ROUND_RESULTS' || p === 'TRANSITION') setResultsEmojis(seq);
+      }
       if (snapshot.currentRound) setRoundNumber(snapshot.currentRound as number);
       else if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
       if (Array.isArray(snapshot.guessLog)) setGuessLog(snapshot.guessLog as GuessLogEntry[]);
@@ -257,15 +296,11 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const handleAddEmoji = useCallback(
     (emoji: string) => {
       const position = emojis.length;
-      setEmojis((prev) => {
-        if (prev.length >= MAX_EMOJIS) return prev;
-        return [...prev, emoji];
-      });
-      if (emojis.length < MAX_EMOJIS) {
-        emitGameInput('ADD_EMOJI', { emoji, position });
-      }
+      if (position >= maxEmojis) return;
+      setEmojis((prev) => (prev.length >= maxEmojis ? prev : [...prev, emoji]));
+      emitGameInput('ADD_EMOJI', { emoji, position });
     },
-    [emojis.length],
+    [emojis.length, maxEmojis],
   );
 
   const handleRemoveEmoji = useCallback(
@@ -364,7 +399,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
             <ProducerView
               movieTitle={movieTitle}
               emojis={emojis}
-              maxEmojis={MAX_EMOJIS}
+              maxEmojis={maxEmojis}
               onAddEmoji={handleAddEmoji}
               onRemoveEmoji={handleRemoveEmoji}
               guessCount={guessCount}
@@ -383,11 +418,11 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               )}
               <AudienceView
                 emojis={emojis}
-                maxEmojis={MAX_EMOJIS}
+                maxEmojis={maxEmojis}
                 producerName={producerName}
                 roundNumber={roundNumber}
                 guesses={guesses}
-                maxGuesses={MAX_GUESSES}
+                maxGuesses={maxGuesses}
                 hasGuessedCorrectly={hasGuessedCorrectly}
                 onSubmitGuess={handleSubmitGuess}
                 timeRemaining={timeRemaining}

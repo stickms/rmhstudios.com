@@ -61,6 +61,13 @@ export interface MinigameResults {
 // ─── Pausable Timer Entry ────────────────────────────────────────
 
 interface PausableTimer {
+  /**
+   * The handle returned to the caller by `setTimeout`. It never changes, so
+   * `clearTrackedTimeout` still finds the entry after a pause/resume has
+   * re-armed it under a new `handle`.
+   */
+  key: NodeJS.Timeout;
+  /** The live timer, or null while paused. */
   handle: NodeJS.Timeout | null;
   callback: () => void;
   /** Unix timestamp when the timer was (re)scheduled. */
@@ -85,10 +92,18 @@ export abstract class BaseMinigame {
   }
   /** Interval handle for the current phase timer (managed by startPhaseTimer/clearPhaseTimer). */
   private phaseTimerInterval: NodeJS.Timeout | null = null;
-  /** Whether the phase timer is paused. */
+  /**
+   * Whether the host has paused the game. Game-wide, not per phase: a phase
+   * that starts while paused (an input can still end a phase) starts paused,
+   * and tracked timeouts stay suspended until the host resumes.
+   */
   private phaseTimerPaused: boolean = false;
-  /** Remaining seconds snapshot when paused (for accurate resume). */
+  /** Remaining seconds of the current phase timer (-1 = infinite phase). */
   private phaseTimerRemaining: number = 0;
+  /** Total seconds of the current phase timer (-1 = infinite phase). */
+  private phaseTimerTotal: number = 0;
+  /** Whether the current infinite phase shows the host "Next" button. */
+  private phaseShowSkip: boolean = false;
 
   constructor(context: MinigameContext) {
     this.context = context;
@@ -247,12 +262,14 @@ export abstract class BaseMinigame {
    */
   protected startPhaseTimer(durationSeconds: number): void {
     this.clearPhaseTimer();
-    this.phaseTimerPaused = false;
     this.phaseTimerRemaining = durationSeconds;
+    this.phaseTimerTotal = durationSeconds;
+    this.phaseShowSkip = false;
     this.context.broadcastAction({
       type: 'TIMER_START',
       payload: { totalDuration: durationSeconds, timeRemaining: durationSeconds },
     });
+    this.rebroadcastPauseIfPaused();
     this.phaseTimerInterval = this.setInterval(() => {
       if (this.phaseTimerPaused) return;
       this.phaseTimerRemaining--;
@@ -272,7 +289,10 @@ export abstract class BaseMinigame {
       this.intervals = this.intervals.filter((i) => i !== this.phaseTimerInterval);
       this.phaseTimerInterval = null;
     }
-    this.phaseTimerPaused = false;
+    // No timer now: a reconnect snapshot must not report the last phase's clock.
+    this.phaseTimerRemaining = 0;
+    this.phaseTimerTotal = 0;
+    this.phaseShowSkip = false;
   }
 
   /**
@@ -286,17 +306,48 @@ export abstract class BaseMinigame {
    */
   protected startInfinitePhaseTimer(showSkip = false): void {
     this.clearPhaseTimer();
-    this.phaseTimerPaused = false;
     this.phaseTimerRemaining = -1;
+    this.phaseTimerTotal = -1;
+    this.phaseShowSkip = showSkip;
     this.context.broadcastAction({
       type: 'TIMER_START',
       payload: { totalDuration: -1, timeRemaining: -1, showSkip },
     });
+    this.rebroadcastPauseIfPaused();
   }
 
-  /** Pause the current phase timer and all tracked setTimeout timers. Broadcasts TIMER_PAUSED action. */
+  /** TIMER_START clears the client's paused flag; restate it while the game is paused. */
+  private rebroadcastPauseIfPaused(): void {
+    if (!this.phaseTimerPaused) return;
+    this.context.broadcastAction({
+      type: 'TIMER_PAUSED',
+      payload: { timeRemaining: this.pausedDisplayRemaining() },
+    });
+  }
+
+  private pausedDisplayRemaining(): number {
+    return this.phaseTimerRemaining === -1 ? -1 : Math.max(0, this.phaseTimerRemaining);
+  }
+
+  /**
+   * The host pressed "Next" (GAME_FORCE_SKIP) while the game is PLAYING.
+   * The button is only shown in an infinite phase started with
+   * `startInfinitePhaseTimer(true)`, so by default the press ends such a
+   * phase through `forceEnd('host_skip')` and is ignored anywhere else.
+   * Games whose "Next" means something narrower override this.
+   */
+  handleHostSkip(): void {
+    if (this.phaseTimerRemaining === -1 && this.phaseShowSkip) {
+      this.forceEnd('host_skip');
+    }
+  }
+
+  /**
+   * Pause the game: the phase timer and every tracked setTimeout timer.
+   * Works in any phase, timed or infinite. Broadcasts TIMER_PAUSED.
+   */
   pausePhaseTimer(): void {
-    if (!this.phaseTimerInterval || this.phaseTimerPaused) return;
+    if (this.phaseTimerPaused) return;
     this.phaseTimerPaused = true;
 
     // Suspend all tracked setTimeout timers — snapshot remaining time
@@ -304,41 +355,31 @@ export abstract class BaseMinigame {
     for (const pt of this.pausableTimers) {
       if (!pt.handle) continue;
       const elapsed = now - pt.scheduledAt;
-      const remaining = Math.max(0, pt.delayMs - elapsed);
-      pt.delayMs = remaining; // Store remaining for resume
+      pt.delayMs = Math.max(0, pt.delayMs - elapsed); // Store remaining for resume
       clearTimeout(pt.handle);
       pt.handle = null;
     }
 
     this.context.broadcastAction({
       type: 'TIMER_PAUSED',
-      payload: { timeRemaining: Math.max(0, this.phaseTimerRemaining) },
+      payload: { timeRemaining: this.pausedDisplayRemaining() },
     });
   }
 
-  /** Resume the current phase timer and all tracked setTimeout timers. Broadcasts TIMER_RESUMED action. */
+  /** Resume the game: the phase timer and all tracked setTimeout timers. Broadcasts TIMER_RESUMED. */
   resumePhaseTimer(): void {
-    if (!this.phaseTimerInterval || !this.phaseTimerPaused) return;
+    if (!this.phaseTimerPaused) return;
     this.phaseTimerPaused = false;
 
     // Re-schedule all suspended setTimeout timers with their remaining time
-    const now = Date.now();
     for (const pt of this.pausableTimers) {
       if (pt.handle) continue; // Already running (shouldn't happen)
-      pt.scheduledAt = now;
-      pt.handle = globalThis.setTimeout(() => {
-        this.pausableTimers = this.pausableTimers.filter((x) => x !== pt);
-        try {
-          pt.callback();
-        } catch (e) {
-          this.context.onError(e as Error);
-        }
-      }, pt.delayMs);
+      this.armTimer(pt);
     }
 
     this.context.broadcastAction({
       type: 'TIMER_RESUMED',
-      payload: { timeRemaining: Math.max(0, this.phaseTimerRemaining) },
+      payload: { timeRemaining: this.pausedDisplayRemaining() },
     });
   }
 
@@ -357,11 +398,11 @@ export abstract class BaseMinigame {
     if (!this.phaseTimerInterval && this.phaseTimerRemaining === 0) return null;
     const infinite = this.phaseTimerRemaining === -1;
     return {
-      total: infinite ? -1 : this.phaseTimerRemaining,
-      remaining: this.phaseTimerRemaining,
+      total: infinite ? -1 : this.phaseTimerTotal,
+      remaining: infinite ? -1 : Math.max(0, this.phaseTimerRemaining),
       paused: this.phaseTimerPaused,
       infinite,
-      showSkip: false,
+      showSkip: infinite && this.phaseShowSkip,
     };
   }
 
@@ -415,41 +456,47 @@ export abstract class BaseMinigame {
    * The callback is wrapped in try-catch to prevent unhandled exceptions.
    */
   protected setTimeout(fn: () => void, ms: number): NodeJS.Timeout {
+    const key = globalThis.setTimeout(() => {}, 0);
+    clearTimeout(key);
     const entry: PausableTimer = {
+      key,
       handle: null,
       callback: fn,
       scheduledAt: Date.now(),
       delayMs: ms,
     };
+    this.pausableTimers.push(entry);
+    // Created while paused (an input handler can schedule one): it waits for resume.
+    if (!this.phaseTimerPaused) this.armTimer(entry);
+    return key;
+  }
 
-    const handle = globalThis.setTimeout(() => {
+  /** (Re)schedule a tracked timeout for its remaining `delayMs`. */
+  private armTimer(entry: PausableTimer): void {
+    entry.scheduledAt = Date.now();
+    entry.handle = globalThis.setTimeout(() => {
       this.pausableTimers = this.pausableTimers.filter((x) => x !== entry);
       try {
-        fn();
+        entry.callback();
       } catch (e) {
         this.context.onError(e as Error);
       }
-    }, ms);
-
-    entry.handle = handle;
-    this.pausableTimers.push(entry);
-    return handle;
+    }, entry.delayMs);
   }
 
   /**
-   * Cancel and untrack a previously created setTimeout by its handle.
-   * Safe to call with null/undefined or an already-fired timer.
+   * Cancel and untrack a previously created setTimeout by the handle it
+   * returned. Safe to call with null/undefined or an already-fired timer, and
+   * across a pause/resume (the entry is found by its stable key).
    */
-  protected clearTrackedTimeout(handle: NodeJS.Timeout | null): void {
+  protected clearTrackedTimeout(handle: NodeJS.Timeout | null | undefined): void {
     if (!handle) return;
-    const entry = this.pausableTimers.find((pt) => pt.handle === handle);
+    const entry = this.pausableTimers.find((pt) => pt.key === handle || pt.handle === handle);
     if (entry) {
-      clearTimeout(handle);
+      if (entry.handle) clearTimeout(entry.handle);
       entry.handle = null;
       this.pausableTimers = this.pausableTimers.filter((pt) => pt !== entry);
     } else {
-      // Handle might be from a paused timer (handle is null during pause)
-      // or already removed — just clear it safely
       clearTimeout(handle);
     }
   }

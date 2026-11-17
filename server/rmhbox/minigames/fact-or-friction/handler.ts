@@ -28,6 +28,7 @@ import type {
 import {
   loadQuestions,
   selectQuestionsForGame,
+  type FFDifficultySetting,
 } from '@/lib/rmhbox/fact-or-friction/question-loader';
 import {
   SubmitAnswerSchema,
@@ -92,6 +93,15 @@ export class FactOrFrictionGame extends BaseMinigame {
   /** Handle for the current phase-transition timeout; cancelled on early transitions. */
   private phaseTransitionHandle: NodeJS.Timeout | null =
     null;
+  /** The last FF_ANSWER_REVEAL payload, so a snapshot during ANSWER_REVEAL / PAUSE can redraw the reveal. */
+  private lastReveal: {
+    questionIndex: number;
+    correctIndex: number;
+    playerResults: FFPlayerQuestionResult[];
+  } | null =
+    null;
+  /** When the host paused the game (0 = not paused); used to push `phaseEndsAt` back on resume. */
+  private pausedAt = 0;
 
   constructor(
     context: MinigameContext,
@@ -180,17 +190,32 @@ export class FactOrFrictionGame extends BaseMinigame {
         'totalQuestions',
         FF_TOTAL_QUESTIONS,
       );
-    const questions =
+    const difficultySetting =
+      this.getSetting(
+        'difficulty',
+        'mixed',
+      );
+    const difficulty: FFDifficultySetting =
+      (
+        [
+          'easy',
+          'medium',
+          'hard',
+          'mixed',
+        ] as const
+      ).includes(
+        difficultySetting as FFDifficultySetting,
+      )
+        ? (difficultySetting as FFDifficultySetting)
+        : 'mixed';
+    const selected =
       selectQuestionsForGame(
         this
           .questionPool,
         this
           .usedQuestionIndices,
-      );
-    const selected =
-      questions.slice(
-        0,
         totalQuestions,
+        difficulty,
       );
     for (const q of selected) {
       this.usedQuestionIndices.add(
@@ -272,6 +297,8 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.state.playerAnswers =
       new Map();
     this.state.potStartedAt = 0;
+    this.lastReveal =
+      null;
 
     const question =
       this
@@ -404,6 +431,14 @@ export class FactOrFrictionGame extends BaseMinigame {
         .isRunning
     )
       return;
+    // Phase guard: only the question reveal leads here (a late timer can't re-run it)
+    if (
+      this
+        .state
+        .phase !==
+      'QUESTION_REVEAL'
+    )
+      return;
 
     const answerDuration =
       this.getSetting(
@@ -479,6 +514,12 @@ export class FactOrFrictionGame extends BaseMinigame {
               .state
               .phase !==
             'ANSWER'
+          )
+            return;
+          // The pot holds its value while the host has the game paused
+          if (
+            this
+              .isPhaseTimerPaused
           )
             return;
           this.state.potValue =
@@ -735,6 +776,17 @@ export class FactOrFrictionGame extends BaseMinigame {
       },
     );
 
+    this.lastReveal =
+      {
+        questionIndex:
+          this
+            .state
+            .currentQuestionIndex,
+        correctIndex:
+          question.correctIndex,
+        playerResults,
+      };
+
     this.broadcastGameAction(
       {
         type: 'FF_ANSWER_REVEAL',
@@ -790,6 +842,14 @@ export class FactOrFrictionGame extends BaseMinigame {
     if (
       !this
         .isRunning
+    )
+      return;
+    // Phase guard: only the answer reveal leads here
+    if (
+      this
+        .state
+        .phase !==
+      'ANSWER_REVEAL'
     )
       return;
 
@@ -1119,31 +1179,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     );
 
     // Check if all active players have answered → early end
-    const activePlayerCount =
-      this.getActivePlayerCount();
-    if (
-      this
-        .state
-        .playerAnswers
-        .size >=
-      activePlayerCount
-    ) {
-      logger.info(
-        {
-          event:
-            'fact_or_friction:all_answered_early',
-          lobbyId:
-            this
-              .context
-              .lobbyId,
-          questionIndex:
-            this
-              .state
-              .currentQuestionIndex,
-        },
-      );
-      this.endAnswerPhase();
-    }
+    this.endAnswerPhaseIfAllAnswered();
   }
 
   private handlePassQuestion(
@@ -1279,31 +1315,56 @@ export class FactOrFrictionGame extends BaseMinigame {
     );
 
     // Check if all active players have answered
-    const activePlayerCount =
-      this.getActivePlayerCount();
+    this.endAnswerPhaseIfAllAnswered();
+  }
+
+  /**
+   * End the answer phase early once every connected participant has answered
+   * or passed. Disconnected players don't hold the question open; they are
+   * timed out as a pass when the phase ends.
+   */
+  private endAnswerPhaseIfAllAnswered(): void {
     if (
       this
         .state
-        .playerAnswers
-        .size >=
-      activePlayerCount
-    ) {
-      logger.info(
-        {
-          event:
-            'fact_or_friction:all_answered_early',
-          lobbyId:
-            this
-              .context
-              .lobbyId,
-          questionIndex:
-            this
-              .state
-              .currentQuestionIndex,
-        },
-      );
-      this.endAnswerPhase();
-    }
+        .phase !==
+      'ANSWER'
+    )
+      return;
+    const active =
+      this.getActivePlayerIds();
+    // Nobody connected: keep the timer running so a blip doesn't skip the question
+    if (
+      active.length ===
+      0
+    )
+      return;
+    if (
+      !active.every(
+        (
+          id,
+        ) =>
+          this.state.playerAnswers.has(
+            id,
+          ),
+      )
+    )
+      return;
+    logger.info(
+      {
+        event:
+          'fact_or_friction:all_answered_early',
+        lobbyId:
+          this
+            .context
+            .lobbyId,
+        questionIndex:
+          this
+            .state
+            .currentQuestionIndex,
+      },
+    );
+    this.endAnswerPhase();
   }
 
   // ─── Scoring ─────────────────────────────────────────────────
@@ -1424,6 +1485,18 @@ export class FactOrFrictionGame extends BaseMinigame {
           this
             .state
             .potValue,
+        potStartValue:
+          this
+            .state
+            .questions[
+            this
+              .state
+              .currentQuestionIndex
+          ]
+            ? this.getScaledPotStart()
+            : this
+                .state
+                .potValue,
         scores,
         phaseStartedAt:
           this
@@ -1437,6 +1510,9 @@ export class FactOrFrictionGame extends BaseMinigame {
           Array.from(
             this.state.playerAnswers.keys(),
           ),
+        ...this.getTimingSnapshot(),
+        reveal:
+          this.getRevealSnapshot(),
         myAnswer:
           myAnswer
             ? {
@@ -1444,6 +1520,8 @@ export class FactOrFrictionGame extends BaseMinigame {
                   myAnswer.selectedIndex,
                 potValueAtSubmission:
                   myAnswer.potValueAtSubmission,
+                timedOut:
+                  myAnswer.timedOut,
               }
             : null,
       };
@@ -1549,6 +1627,18 @@ export class FactOrFrictionGame extends BaseMinigame {
           this
             .state
             .potValue,
+        potStartValue:
+          this
+            .state
+            .questions[
+            this
+              .state
+              .currentQuestionIndex
+          ]
+            ? this.getScaledPotStart()
+            : this
+                .state
+                .potValue,
         scores,
         phaseStartedAt:
           this
@@ -1562,6 +1652,9 @@ export class FactOrFrictionGame extends BaseMinigame {
           Array.from(
             this.state.playerAnswers.keys(),
           ),
+        ...this.getTimingSnapshot(),
+        reveal:
+          this.getRevealSnapshot(),
         myAnswer:
           null,
       };
@@ -1619,6 +1712,111 @@ export class FactOrFrictionGame extends BaseMinigame {
     };
   }
 
+  /**
+   * Seconds left in the current phase (pause-aware, from the base phase timer)
+   * and whether the host has the game paused. `phaseEndsAt` is pushed back by
+   * the paused time on resume, so a client may also count down from it.
+   */
+  private getTimingSnapshot(): {
+    timeRemaining: number;
+    paused: boolean;
+  } {
+    const timer =
+      this.getPhaseTimerSnapshot();
+    const fallback =
+      Math.max(
+        0,
+        Math.ceil(
+          (this
+            .state
+            .phaseEndsAt -
+            Date.now()) /
+            1000,
+        ),
+      );
+    return {
+      timeRemaining:
+        timer &&
+        !timer.infinite
+          ? timer.remaining
+          : fallback,
+      paused:
+        this
+          .isPhaseTimerPaused,
+    };
+  }
+
+  /** The reveal for the current question, once it has been revealed (ANSWER_REVEAL / PAUSE). */
+  private getRevealSnapshot(): {
+    correctIndex: number;
+    playerResults: FFPlayerQuestionResult[];
+  } | null {
+    if (
+      this
+        .state
+        .phase !==
+        'ANSWER_REVEAL' &&
+      this
+        .state
+        .phase !==
+        'PAUSE'
+    )
+      return null;
+    if (
+      !this
+        .lastReveal ||
+      this
+        .lastReveal
+        .questionIndex !==
+        this
+          .state
+          .currentQuestionIndex
+    )
+      return null;
+    return {
+      correctIndex:
+        this
+          .lastReveal
+          .correctIndex,
+      playerResults:
+        this
+          .lastReveal
+          .playerResults,
+    };
+  }
+
+  // ─── Pause ───────────────────────────────────────────────────
+
+  pausePhaseTimer(): void {
+    if (
+      !this
+        .isPhaseTimerPaused
+    )
+      this.pausedAt =
+        Date.now();
+    super.pausePhaseTimer();
+  }
+
+  resumePhaseTimer(): void {
+    if (
+      this
+        .isPhaseTimerPaused &&
+      this
+        .pausedAt >
+        0 &&
+      this
+        .state
+    ) {
+      // The phase deadline moves back by however long the game sat paused
+      this.state.phaseEndsAt +=
+        Date.now() -
+        this
+          .pausedAt;
+    }
+    this.pausedAt = 0;
+    super.resumePhaseTimer();
+  }
+
   // ─── Join-in-Progress / Reconnection / Disconnect ────────────
 
   handlePlayerJoin(
@@ -1653,9 +1851,10 @@ export class FactOrFrictionGame extends BaseMinigame {
   }
 
   handlePlayerDisconnect(
-    _userId: string,
+    userId: string,
   ): void {
-    // No-op — unanswered players treated as pass (scoreChange = 0) at phase end
+    // Unanswered players are treated as a pass (scoreChange = 0) at phase end,
+    // and no longer hold the question open for everyone else.
     logger.info(
       {
         event:
@@ -1664,14 +1863,21 @@ export class FactOrFrictionGame extends BaseMinigame {
           this
             .context
             .lobbyId,
-        userId:
-          _userId,
+        userId,
         questionIndex:
           this
             .state
-            .currentQuestionIndex,
+            ?.currentQuestionIndex,
       },
     );
+    if (
+      !this
+        .isRunning ||
+      !this
+        .state
+    )
+      return;
+    this.endAnswerPhaseIfAllAnswered();
   }
 
   handlePlayerReconnect(
@@ -2303,9 +2509,20 @@ export class FactOrFrictionGame extends BaseMinigame {
     }
   }
 
-  private getActivePlayerCount(): number {
-    let count = 0;
-    for (const userId of this.context.players.keys()) {
+  /** Connected participants who are in the current question (not queued join-in-progress players). */
+  private getActivePlayerIds(): string[] {
+    const ids: string[] =
+      [];
+    for (const [
+      userId,
+      player,
+    ] of this
+      .context
+      .players) {
+      if (
+        !player.isConnected
+      )
+        continue;
       if (
         this.state.playerScores.has(
           userId,
@@ -2314,9 +2531,11 @@ export class FactOrFrictionGame extends BaseMinigame {
           userId,
         )
       ) {
-        count++;
+        ids.push(
+          userId,
+        );
       }
     }
-    return count;
+    return ids;
   }
 }

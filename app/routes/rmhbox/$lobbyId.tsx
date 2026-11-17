@@ -81,16 +81,24 @@ function LobbyPage() {
   // Connect and join lobby on mount
   useEffect(() => {
     let mounted = true;
+    const listeners: Array<() => void> = [];
 
     async function init() {
       try {
         const socket = await connectToRMHbox();
+        if (!mounted) return;
+        // Every listener goes through listen() so the cleanup can remove it:
+        // they used to stack up on the shared socket with each remount.
+        const listen = (event: string, handler: (...args: never[]) => void) => {
+          socket.on(event, handler as (...args: unknown[]) => void);
+          listeners.push(() => socket.off(event, handler as (...args: unknown[]) => void));
+        };
 
         // Join the lobby
         socket.emit(C2S.LOBBY_JOIN, { lobbyId });
 
         // Listen for voting events
-        socket.on(S2C.GAME_VOTE_STARTED, (data: { candidates: VoteCandidate[]; durationSeconds: number; endsAt: number }) => {
+        listen(S2C.GAME_VOTE_STARTED, (data: { candidates: VoteCandidate[]; durationSeconds: number; endsAt: number }) => {
           if (mounted) {
             setVoteCandidates(data.candidates);
             setVoteDuration(data.durationSeconds);
@@ -99,7 +107,7 @@ function LobbyPage() {
         });
 
         // Listen for instructions
-        socket.on(S2C.GAME_INSTRUCTIONS, (data: { title: string; description: string; rules?: string[]; tips?: string[]; durationSeconds: number }) => {
+        listen(S2C.GAME_INSTRUCTIONS, (data: { title: string; description: string; rules?: string[]; tips?: string[]; durationSeconds: number }) => {
           if (mounted) {
             setInstructions({
               title: data.title,
@@ -112,32 +120,32 @@ function LobbyPage() {
         });
 
         // Listen for preload progress
-        socket.on(S2C.GAME_PRELOAD_PROGRESS, (data: { players: { userId: string; userName: string; ready: boolean }[] }) => {
+        listen(S2C.GAME_PRELOAD_PROGRESS, (data: { players: { userId: string; userName: string; ready: boolean }[] }) => {
           if (mounted) setPreloadPlayers(data.players);
         });
 
         // Listen for preload start
-        socket.on(S2C.GAME_PRELOAD_START, () => {
+        listen(S2C.GAME_PRELOAD_START, () => {
           if (mounted) setPreloadPlayers([]);
         });
 
         // Listen for countdown
-        socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number }) => {
+        listen(S2C.GAME_COUNTDOWN, (data: { seconds: number }) => {
           if (mounted) setCountdownValue(data.seconds);
         });
 
         // Listen for round results
-        socket.on(S2C.GAME_ROUND_RESULTS, (data: RoundResultsPayload) => {
+        listen(S2C.GAME_ROUND_RESULTS, (data: RoundResultsPayload) => {
           if (mounted) setRoundResults(data);
         });
 
         // Listen for session results
-        socket.on(S2C.GAME_SESSION_RESULTS, (data: { standings: SessionStanding[]; matchHistory: MatchSummary[] }) => {
+        listen(S2C.GAME_SESSION_RESULTS, (data: { standings: SessionStanding[]; matchHistory: MatchSummary[] }) => {
           if (mounted) setSessionResults(data);
         });
 
         // Listen for kick
-        socket.on(S2C.LOBBY_KICKED, () => {
+        listen(S2C.LOBBY_KICKED, () => {
           if (mounted) {
             useRMHboxStore.getState().leaveLobby();
             navigate({ to: '/rmhbox' });
@@ -145,7 +153,7 @@ function LobbyPage() {
         });
 
         // Listen for disband
-        socket.on(S2C.LOBBY_DISBANDED, () => {
+        listen(S2C.LOBBY_DISBANDED, () => {
           if (mounted) {
             useRMHboxStore.getState().leaveLobby();
             navigate({ to: '/rmhbox' });
@@ -154,7 +162,7 @@ function LobbyPage() {
 
         // Listen for errors — only handle redirects here.
         // Toast display is handled by the global S2C.ERROR listener in socket.ts.
-        socket.on(S2C.ERROR, (data: { code?: string; message?: string }) => {
+        listen(S2C.ERROR, (data: { code?: string; message?: string }) => {
           if (!mounted) return;
           if (data.code === 'LOBBY_NOT_FOUND') {
             useRMHboxStore.getState().leaveLobby();
@@ -164,7 +172,7 @@ function LobbyPage() {
 
         // If the server tells us we're not in any lobby (e.g. after long idle
         // and auto-reconnect), redirect back to the landing page.
-        socket.on(S2C.NOT_IN_LOBBY, () => {
+        listen(S2C.NOT_IN_LOBBY, () => {
           if (!mounted) return;
           useRMHboxStore.getState().leaveLobby();
           navigate({ to: '/rmhbox' });
@@ -175,7 +183,10 @@ function LobbyPage() {
     }
 
     init();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      for (const off of listeners) off();
+    };
   }, [lobbyId, navigate]);
 
   // Reset stale round results when entering a new game to prevent
@@ -295,7 +306,7 @@ function LobbyPage() {
           tips={instructions.tips}
           durationSeconds={instructions.durationSeconds}
           isHost={isHost}
-          onSkip={() => emit(C2S.GAME_FORCE_SKIP, { lobbyId })}
+          onSkip={() => emit(C2S.GAME_FORCE_SKIP, { lobbyId, fromState: 'INSTRUCTIONS' })}
         />
       )}
 
@@ -395,6 +406,9 @@ function LobbyPage() {
 
           <button
             onClick={() => {
+              // Tell the hub too, or it holds the seat until the lobby
+              // disbands and Create/Join say "already in a lobby".
+              emit(C2S.LOBBY_LEAVE, { lobbyId });
               useRMHboxStore.getState().leaveLobby();
               navigate({ to: '/rmhbox' });
             }}

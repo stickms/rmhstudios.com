@@ -137,3 +137,17 @@ export const HighlightTileSchema =
         z.boolean(),
     },
   );
+
+// ─── Game-local constants ────────────────────────────────────────
+
+/**
+ * How long a disconnected spymaster has to come back (a reload, a Discord
+ * Activity restart) before a connected operative takes over the role.
+ */
+export const UA_SPYMASTER_RECONNECT_GRACE_SECONDS = 10;
+
+/** Most recent action-log entries carried by a state snapshot (the full log stays server-side). */
+export const UA_SNAPSHOT_LOG_LIMIT = 150;
+
+/** Points each player receives when the game ends in a draw (max passes). */
+export const UA_DRAW_POINTS = 300;

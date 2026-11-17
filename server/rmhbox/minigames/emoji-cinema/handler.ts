@@ -3,8 +3,9 @@
  *
  * One player per round is the "Producer" who sees a movie title and
  * builds an emoji sequence to represent it. All other players ("Audience")
- * try to guess the movie from the emojis. Fuzzy matching via Fuse.js
- * classifies guesses as correct, close, or wrong.
+ * try to guess the movie from the emojis. Whole-string matching
+ * (lib/rmhbox/emoji-cinema/guess-matcher.ts) classifies guesses as correct,
+ * close, or wrong.
  *
  * Phases per round:
  *   PRODUCER_ASSIGNMENT → EMOJI_CONSTRUCTION → ROUND_RESULTS → TRANSITION → (next round or end)
@@ -15,7 +16,6 @@
  * Reference: docs/rmhbox/design-spec/minigames-2.md §4
  */
 
-import Fuse from 'fuse.js';
 import { BaseMinigame } from '../base-minigame';
 import type {
   MinigameContext,
@@ -30,6 +30,7 @@ import {
   loadMovies,
   validateEmoji,
 } from '@/lib/rmhbox/emoji-cinema/data-loader';
+import { classifyMovieGuess } from '../../../../lib/rmhbox/emoji-cinema/guess-matcher';
 import {
   AddEmojiSchema,
   RemoveEmojiSchema,
@@ -47,8 +48,6 @@ import {
   EC_TRANSITION_SECONDS,
   EC_MAX_EMOJIS,
   EC_MAX_GUESSES_PER_PLAYER,
-  EC_FUZZY_MATCH_THRESHOLD,
-  EC_CLOSE_THRESHOLD,
   EC_PRODUCER_BASE_POINTS,
   EC_PRODUCER_SPEED_BONUS,
   EC_FIRST_GUESS_POINTS,
@@ -66,23 +65,6 @@ import type {
 } from './types';
 import { shuffle } from '@/lib/core/rng';
 
-// ─── Helpers ─────────────────────────────────────────────────────
-
-/** Strip leading articles ("the", "a", "an") and lowercase. */
-function normalizeGuess(
-  text: string,
-): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .replace(
-      /^(the|a|an)\s+/i,
-      '',
-    );
-}
-
-/** Fisher-Yates shuffle (in-place). */
-
 // ─── Emoji Cinema Minigame ───────────────────────────────────────
 
 export class EmojiCinemaGame extends BaseMinigame {
@@ -92,8 +74,22 @@ export class EmojiCinemaGame extends BaseMinigame {
   private state!: EmojiCinemaState;
   private startedAt: number = 0;
   private actionSeq = 0;
-  private constructionTimeoutHandle: NodeJS.Timeout | null =
+  /**
+   * The one pending phase-advance timeout (assignment → selection → construction
+   * → results → transition → next round). Every transition replaces it, so a
+   * phase that ends early (a manual movie pick, everyone guessing) can never
+   * leave a stale timer behind to fire in a later round.
+   */
+  private phaseTimeoutHandle: NodeJS.Timeout | null =
     null;
+  /** Players currently disconnected (kept in sync by the disconnect/reconnect hooks). */
+  private disconnectedPlayers =
+    new Set<string>();
+  /** Host settings, resolved once at start (registry keys: maxEmojis, maxGuessesPerPlayer). */
+  private maxEmojis: number =
+    EC_MAX_EMOJIS;
+  private maxGuesses: number =
+    EC_MAX_GUESSES_PER_PLAYER;
 
   get spectatorMode(): 'shared-privileged' {
     return 'shared-privileged';
@@ -116,10 +112,37 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.startedAt =
       Date.now();
 
+    this.maxEmojis =
+      this.getSetting(
+        'maxEmojis',
+        EC_MAX_EMOJIS,
+      );
+    // `maxGuessesPerPlayer` is the registry key; `maxGuesses` is the old name.
+    this.maxGuesses =
+      this.getSetting(
+        'maxGuessesPerPlayer',
+        this.getSetting(
+          'maxGuesses',
+          EC_MAX_GUESSES_PER_PLAYER,
+        ),
+      );
+
     const playerIds =
       Array.from(
         this.context.players.keys(),
       );
+    for (const uid of playerIds) {
+      if (
+        this.context.players.get(
+          uid,
+        )
+          ?.isConnected ===
+        false
+      )
+        this.disconnectedPlayers.add(
+          uid,
+        );
+    }
     const producerOrder =
       shuffle(
         [
@@ -147,8 +170,7 @@ export class EmojiCinemaGame extends BaseMinigame {
             uid,
           ) => ({
             movie:
-              this
-                .moviePool[0], // placeholder — will be set during MOVIE_SELECTION
+              null,
             producerUserId:
               uid,
           }),
@@ -178,8 +200,7 @@ export class EmojiCinemaGame extends BaseMinigame {
         currentProducerUserId:
           '',
         currentMovie:
-          this
-            .moviePool[0],
+          null,
         movieChoices:
           [],
         emojiSequence:
@@ -230,13 +251,230 @@ export class EmojiCinemaGame extends BaseMinigame {
 
   // ─── Round Lifecycle ─────────────────────────────────────────
 
+  /** A player in the roster who is connected right now. */
+  private isActivePlayer(
+    userId: string,
+  ): boolean {
+    const p =
+      this.context.players.get(
+        userId,
+      );
+    return (
+      !!p &&
+      p.isConnected !==
+        false &&
+      !this.disconnectedPlayers.has(
+        userId,
+      )
+    );
+  }
+
+  /**
+   * Schedule the single pending phase advance, replacing any earlier one. The
+   * callback only runs if the game is still in the same round and phase it was
+   * scheduled for, so a late or duplicated timer can never advance twice.
+   */
+  private schedulePhaseAdvance(
+    fn: () => void,
+    seconds: number,
+  ): void {
+    this.cancelPhaseAdvance();
+    const round =
+      this
+        .state
+        .currentRound;
+    const phase =
+      this
+        .state
+        .phase;
+    this.phaseTimeoutHandle =
+      this.setTimeout(
+        () => {
+          this.phaseTimeoutHandle =
+            null;
+          if (
+            !this
+              .isRunning ||
+            this
+              .state
+              .currentRound !==
+              round ||
+            this
+              .state
+              .phase !==
+              phase
+          )
+            return;
+          fn();
+        },
+        seconds *
+          1000,
+      );
+  }
+
+  private cancelPhaseAdvance(): void {
+    if (
+      this
+        .phaseTimeoutHandle
+    ) {
+      this.clearTrackedTimeout(
+        this
+          .phaseTimeoutHandle,
+      );
+      this.phaseTimeoutHandle =
+        null;
+    }
+  }
+
+  private cancelProducerDisconnectTimer(): void {
+    if (
+      this
+        .state
+        ?.producerDisconnectTimer
+    ) {
+      this.clearTrackedTimeout(
+        this
+          .state
+          .producerDisconnectTimer,
+      );
+      this.state.producerDisconnectTimer =
+        null;
+    }
+  }
+
+  /**
+   * The producer for round `idx`: the pre-assigned one if still connected,
+   * otherwise a connected player who has not produced yet (swapping rounds
+   * with them so nobody produces twice), otherwise any connected player.
+   */
+  private pickProducerForRound(
+    idx: number,
+  ):
+    | string
+    | null {
+    const rounds =
+      this
+        .state
+        .rounds;
+    const assigned =
+      rounds[
+        idx
+      ]
+        .producerUserId;
+    if (
+      this.isActivePlayer(
+        assigned,
+      )
+    )
+      return assigned;
+
+    const produced =
+      new Set(
+        rounds
+          .slice(
+            0,
+            idx,
+          )
+          .map(
+            (
+              r,
+            ) =>
+              r.producerUserId,
+          ),
+      );
+    const fresh =
+      this.state.producerOrder.filter(
+        (
+          uid,
+        ) =>
+          this.isActivePlayer(
+            uid,
+          ) &&
+          !produced.has(
+            uid,
+          ),
+      );
+    const unassigned =
+      fresh.find(
+        (
+          uid,
+        ) =>
+          !rounds.some(
+            (
+              r,
+              i,
+            ) =>
+              i >
+                idx &&
+              r.producerUserId ===
+                uid,
+          ),
+      );
+    if (
+      unassigned
+    )
+      return unassigned;
+    const laterIdx =
+      rounds.findIndex(
+        (
+          r,
+          i,
+        ) =>
+          i >
+            idx &&
+          fresh.includes(
+            r.producerUserId,
+          ),
+      );
+    if (
+      laterIdx !==
+      -1
+    ) {
+      const substitute =
+        rounds[
+          laterIdx
+        ]
+          .producerUserId;
+      // The departed producer takes the later slot (and is skipped again then if still gone).
+      rounds[
+        laterIdx
+      ].producerUserId =
+        assigned;
+      return substitute;
+    }
+    return (
+      this.state.producerOrder.find(
+        (
+          uid,
+        ) =>
+          this.isActivePlayer(
+            uid,
+          ),
+      ) ??
+      null
+    );
+  }
+
   private startNextRound(): void {
     if (
       !this
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .currentRound >
+        0 &&
+      this
+        .state
+        .phase !==
+        'TRANSITION'
+    )
+      return;
 
+    this.cancelPhaseAdvance();
+    this.cancelProducerDisconnectTimer();
     this
       .state
       .currentRound++;
@@ -262,8 +500,28 @@ export class EmojiCinemaGame extends BaseMinigame {
           .currentRound -
           1
       ];
+    const producerUserId =
+      this.pickProducerForRound(
+        this
+          .state
+          .currentRound -
+          1,
+      );
+    if (
+      !producerUserId
+    ) {
+      this.endGame();
+      return;
+    }
+    roundData.producerUserId =
+      producerUserId;
+    roundData.movie =
+      null;
+
     this.state.currentProducerUserId =
       roundData.producerUserId;
+    this.state.currentMovie =
+      null;
     this.state.emojiSequence =
       [];
     this.state.correctGuessers =
@@ -367,11 +625,10 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.startPhaseTimer(
       EC_PRODUCER_ASSIGNMENT_SECONDS,
     );
-    this.setTimeout(
+    this.schedulePhaseAdvance(
       () =>
         this.startMovieSelection(),
-      EC_PRODUCER_ASSIGNMENT_SECONDS *
-        1000,
+      EC_PRODUCER_ASSIGNMENT_SECONDS,
     );
   }
 
@@ -382,34 +639,16 @@ export class EmojiCinemaGame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      'PRODUCER_ASSIGNMENT'
+    )
+      return;
 
-    // Pick 3 random movies from the pool that haven't been used
-    const available =
-      this.moviePool.filter(
-        (
-          m,
-        ) =>
-          !this.usedMovieTitles.has(
-            m.title,
-          ),
-      );
-    const pool =
-      available.length >=
-      EC_MOVIE_CHOICES_COUNT
-        ? available
-        : this
-            .moviePool;
-    const shuffled =
-      shuffle(
-        [
-          ...pool,
-        ],
-      );
     const choices =
-      shuffled.slice(
-        0,
-        EC_MOVIE_CHOICES_COUNT,
-      );
+      this.pickMovieChoices();
     this.state.movieChoices =
       choices;
 
@@ -444,19 +683,7 @@ export class EmojiCinemaGame extends BaseMinigame {
       {
         type: 'EC_MOVIE_CHOICES',
         movies:
-          choices.map(
-            (
-              m,
-            ) => ({
-              title:
-                m.title,
-              year: m.year,
-              genre:
-                m.genre,
-              difficulty:
-                m.difficulty,
-            }),
-          ),
+          this.serializeMovieChoices(),
         duration:
           EC_MOVIE_SELECTION_SECONDS,
       },
@@ -474,11 +701,58 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.startPhaseTimer(
       EC_MOVIE_SELECTION_SECONDS,
     );
-    this.setTimeout(
+    this.schedulePhaseAdvance(
       () =>
         this.autoSelectMovie(),
-      EC_MOVIE_SELECTION_SECONDS *
-        1000,
+      EC_MOVIE_SELECTION_SECONDS,
+    );
+  }
+
+  /** Up to EC_MOVIE_CHOICES_COUNT random movies not used earlier in this game. */
+  private pickMovieChoices(): MovieEntry[] {
+    const available =
+      this.moviePool.filter(
+        (
+          m,
+        ) =>
+          !this.usedMovieTitles.has(
+            m.title,
+          ),
+      );
+    const pool =
+      available.length >=
+      EC_MOVIE_CHOICES_COUNT
+        ? available
+        : this
+            .moviePool;
+    return shuffle(
+      [
+        ...pool,
+      ],
+    ).slice(
+      0,
+      EC_MOVIE_CHOICES_COUNT,
+    );
+  }
+
+  private serializeMovieChoices(): Array<{
+    title: string;
+    year: number;
+    genre: string[];
+    difficulty: string;
+  }> {
+    return this.state.movieChoices.map(
+      (
+        m,
+      ) => ({
+        title:
+          m.title,
+        year: m.year,
+        genre:
+          m.genre,
+        difficulty:
+          m.difficulty,
+      }),
     );
   }
 
@@ -513,34 +787,26 @@ export class EmojiCinemaGame extends BaseMinigame {
 
   /** Finalize the selected movie and proceed to emoji construction */
   private selectMovie(
-    movie: import('@/lib/rmhbox/emoji-cinema/data-loader').MovieEntry,
+    movie: MovieEntry,
   ): void {
-    this.state.currentMovie =
-      movie;
-    this.usedMovieTitles.add(
-      movie.title,
-    );
-
-    // Update the round data with the selected movie
-    const roundIdx =
+    if (
+      !this
+        .isRunning
+    )
+      return;
+    if (
       this
         .state
-        .currentRound -
-      1;
-    if (
-      roundIdx >=
-        0 &&
-      roundIdx <
-        this
-          .state
-          .rounds
-          .length
-    ) {
-      this.state.rounds[
-        roundIdx
-      ].movie =
-        movie;
-    }
+        .phase !==
+      'MOVIE_SELECTION'
+    )
+      return;
+
+    // The producer picked: the auto-select timeout must not fire later.
+    this.cancelPhaseAdvance();
+    this.assignMovie(
+      movie,
+    );
 
     logger.info(
       {
@@ -571,12 +837,7 @@ export class EmojiCinemaGame extends BaseMinigame {
       },
     );
 
-    // Send the selected movie ONLY to the producer
-    this.context.sendToPlayer(
-      this
-        .state
-        .currentProducerUserId,
-      'rmhbox:game:action',
+    const assigned =
       {
         type: 'EC_MOVIE_ASSIGNED',
         movie:
@@ -589,17 +850,66 @@ export class EmojiCinemaGame extends BaseMinigame {
             difficulty:
               movie.difficulty,
           },
-      },
+      };
+    // The producer needs the title to encode it; spectators (shared-privileged
+    // view) show it as their answer banner. The audience must not get it.
+    this.context.sendToPlayer(
+      this
+        .state
+        .currentProducerUserId,
+      'rmhbox:game:action',
+      assigned,
+    );
+    this.context.sendToSpectators(
+      'rmhbox:game:action',
+      assigned,
     );
 
     this.clearPhaseTimer();
     this.startEmojiConstruction();
   }
 
+  /** Record `movie` as this round's movie. */
+  private assignMovie(
+    movie: MovieEntry,
+  ): void {
+    this.state.currentMovie =
+      movie;
+    this.usedMovieTitles.add(
+      movie.title,
+    );
+    const roundIdx =
+      this
+        .state
+        .currentRound -
+      1;
+    if (
+      roundIdx >=
+        0 &&
+      roundIdx <
+        this
+          .state
+          .rounds
+          .length
+    ) {
+      this.state.rounds[
+        roundIdx
+      ].movie =
+        movie;
+    }
+  }
+
   private startEmojiConstruction(): void {
     if (
       !this
         .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      'MOVIE_SELECTION'
     )
       return;
 
@@ -636,7 +946,11 @@ export class EmojiCinemaGame extends BaseMinigame {
         duration:
           roundDuration,
         maxEmojis:
-          EC_MAX_EMOJIS,
+          this
+            .maxEmojis,
+        maxGuesses:
+          this
+            .maxGuesses,
         movieTitles:
           this.moviePool.map(
             (
@@ -650,15 +964,13 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.startPhaseTimer(
       roundDuration,
     );
-    this.constructionTimeoutHandle =
-      this.setTimeout(
-        () =>
-          this.endRound(
-            'timeout',
-          ),
-        roundDuration *
-          1000,
-      );
+    this.schedulePhaseAdvance(
+      () =>
+        this.endRound(
+          'timeout',
+        ),
+      roundDuration,
+    );
   }
 
   private endRound(
@@ -685,19 +997,34 @@ export class EmojiCinemaGame extends BaseMinigame {
       return;
 
     this.clearPhaseTimer();
+    // Cancel the construction timeout and any producer-disconnect wait: neither
+    // may carry over into the next round.
+    this.cancelPhaseAdvance();
+    this.cancelProducerDisconnectTimer();
 
-    // Cancel the construction timeout if still pending
+    // A round skipped before a movie was picked still reveals a movie, so
+    // results and the game log always have one.
     if (
-      this
-        .constructionTimeoutHandle
+      !this
+        .state
+        .currentMovie
     ) {
-      this.clearTrackedTimeout(
+      const fallback =
         this
-          .constructionTimeoutHandle,
-      );
-      this.constructionTimeoutHandle =
-        null;
+          .state
+          .movieChoices[0] ??
+        this.pickMovieChoices()[0];
+      if (
+        fallback
+      )
+        this.assignMovie(
+          fallback,
+        );
     }
+    const movie =
+      this
+        .state
+        .currentMovie;
 
     // If no emojis were submitted, notify all players and skip to next round
     const noEmojis =
@@ -772,10 +1099,8 @@ export class EmojiCinemaGame extends BaseMinigame {
             .state
             .closeGuessCount,
         movieTitle:
-          this
-            .state
-            .currentMovie
-            .title,
+          movie?.title ??
+          '',
         emojiSequence:
           [
             ...this
@@ -851,22 +1176,15 @@ export class EmojiCinemaGame extends BaseMinigame {
           effectiveReason,
         noEmojis,
         movie:
-          {
-            title:
-              this
-                .state
-                .currentMovie
-                .title,
-            year: this
-              .state
-              .currentMovie
-              .year,
-            genre:
-              this
-                .state
-                .currentMovie
-                .genre,
-          },
+          movie
+            ? {
+                title:
+                  movie.title,
+                year: movie.year,
+                genre:
+                  movie.genre,
+              }
+            : null,
         emojiSequence:
           this
             .state
@@ -890,11 +1208,10 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.startPhaseTimer(
       EC_ROUND_RESULTS_SECONDS,
     );
-    this.setTimeout(
+    this.schedulePhaseAdvance(
       () =>
         this.startTransition(),
-      EC_ROUND_RESULTS_SECONDS *
-        1000,
+      EC_ROUND_RESULTS_SECONDS,
     );
   }
 
@@ -902,6 +1219,13 @@ export class EmojiCinemaGame extends BaseMinigame {
     if (
       !this
         .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      'ROUND_RESULTS'
     )
       return;
 
@@ -927,11 +1251,10 @@ export class EmojiCinemaGame extends BaseMinigame {
       },
     );
 
-    this.setTimeout(
+    this.schedulePhaseAdvance(
       () =>
         this.startNextRound(),
-      EC_TRANSITION_SECONDS *
-        1000,
+      EC_TRANSITION_SECONDS,
     );
   }
 
@@ -1098,6 +1421,10 @@ export class EmojiCinemaGame extends BaseMinigame {
         'rmhbox:game:action',
         {
           type: 'EC_EMOJI_REJECTED',
+          emojiSequence:
+            this
+              .state
+              .emojiSequence,
           reason:
             'invalid_input',
         },
@@ -1121,6 +1448,10 @@ export class EmojiCinemaGame extends BaseMinigame {
         'rmhbox:game:action',
         {
           type: 'EC_EMOJI_REJECTED',
+          emojiSequence:
+            this
+              .state
+              .emojiSequence,
           reason:
             'invalid_emoji',
         },
@@ -1133,13 +1464,18 @@ export class EmojiCinemaGame extends BaseMinigame {
         .state
         .emojiSequence
         .length >=
-      EC_MAX_EMOJIS
+      this
+        .maxEmojis
     ) {
       this.context.sendToPlayer(
         userId,
         'rmhbox:game:action',
         {
           type: 'EC_EMOJI_REJECTED',
+          emojiSequence:
+            this
+              .state
+              .emojiSequence,
           reason:
             'max_emojis',
         },
@@ -1214,6 +1550,10 @@ export class EmojiCinemaGame extends BaseMinigame {
         'rmhbox:game:action',
         {
           type: 'EC_EMOJI_REJECTED',
+          emojiSequence:
+            this
+              .state
+              .emojiSequence,
           reason:
             'invalid_input',
         },
@@ -1240,6 +1580,10 @@ export class EmojiCinemaGame extends BaseMinigame {
         'rmhbox:game:action',
         {
           type: 'EC_EMOJI_REJECTED',
+          emojiSequence:
+            this
+              .state
+              .emojiSequence,
           reason:
             'invalid_position',
         },
@@ -1302,6 +1646,10 @@ export class EmojiCinemaGame extends BaseMinigame {
         'rmhbox:game:action',
         {
           type: 'EC_EMOJI_REJECTED',
+          emojiSequence:
+            this
+              .state
+              .emojiSequence,
           reason:
             'invalid_input',
         },
@@ -1336,6 +1684,10 @@ export class EmojiCinemaGame extends BaseMinigame {
         'rmhbox:game:action',
         {
           type: 'EC_EMOJI_REJECTED',
+          emojiSequence:
+            this
+              .state
+              .emojiSequence,
           reason:
             'invalid_position',
         },
@@ -1428,10 +1780,8 @@ export class EmojiCinemaGame extends BaseMinigame {
       return;
 
     const maxGuesses =
-      this.getSetting(
-        'maxGuesses',
-        EC_MAX_GUESSES_PER_PLAYER,
-      );
+      this
+        .maxGuesses;
     if (
       playerGuesses
         .guesses
@@ -1472,12 +1822,18 @@ export class EmojiCinemaGame extends BaseMinigame {
       return;
     }
 
+    const movie =
+      this
+        .state
+        .currentMovie;
+    if (
+      !movie
+    )
+      return;
     const result =
-      this.classifyGuess(
+      classifyMovieGuess(
         guess,
-        this
-          .state
-          .currentMovie,
+        movie,
       );
     const now =
       Date.now();
@@ -1605,15 +1961,6 @@ export class EmojiCinemaGame extends BaseMinigame {
             ),
         },
       );
-
-      // Check if ALL audience players have guessed correctly → end round
-      if (
-        this.allAudienceGuessedCorrectly()
-      ) {
-        this.endRound(
-          'guessed',
-        );
-      }
     } else if (
       result ===
       'close'
@@ -1631,100 +1978,32 @@ export class EmojiCinemaGame extends BaseMinigame {
               .closeGuessCount,
         },
       );
-    } else {
-      // Wrong — broadcast total guess count for the round
-      const totalGuesses =
-        this.getTotalGuessCount();
-      this.broadcastGameAction(
-        {
-          type: 'EC_GUESS_COUNT',
-          totalGuesses,
-        },
-      );
-    }
-  }
-
-  // ─── Fuzzy Matching ──────────────────────────────────────────
-
-  private classifyGuess(
-    guess: string,
-    movie: MovieEntry,
-  ):
-    | 'correct'
-    | 'close'
-    | 'wrong' {
-    const normalizedGuess =
-      normalizeGuess(
-        guess,
-      );
-
-    // Build search targets
-    const targets =
-      [
-        {
-          title:
-            movie.title,
-        },
-        {
-          title:
-            movie.titleNormalized,
-        },
-        ...movie.alternativeTitles.map(
-          (
-            t,
-          ) => ({
-            title:
-              t,
-          }),
-        ),
-      ];
-
-    const fuse =
-      new Fuse(
-        targets,
-        {
-          keys: [
-            'title',
-          ],
-          includeScore: true,
-          threshold:
-            1 -
-            EC_CLOSE_THRESHOLD, // Fuse threshold (lower = stricter)
-        },
-      );
-
-    const results =
-      fuse.search(
-        normalizedGuess,
-      );
-
-    if (
-      results.length ===
-      0
-    )
-      return 'wrong';
-
-    const bestScore =
-      results[0]
-        .score ??
-      1;
-
-    // Fuse score: 0 = perfect match, 1 = no match
-    if (
-      bestScore <=
-      1 -
-        EC_FUZZY_MATCH_THRESHOLD
-    ) {
-      return 'correct';
-    } else if (
-      bestScore <=
-      1 -
-        EC_CLOSE_THRESHOLD
-    ) {
-      return 'close';
     }
 
-    return 'wrong';
+    // Round tally for the producer's counters (every guess, not just wrong ones)
+    this.broadcastGameAction(
+      {
+        type: 'EC_GUESS_COUNT',
+        totalGuesses:
+          this.getTotalGuessCount(),
+        correctGuesses:
+          this
+            .state
+            .correctGuessers
+            .length,
+      },
+    );
+
+    // Check if ALL connected audience players have guessed correctly → end round
+    if (
+      result ===
+        'correct' &&
+      this.allAudienceGuessedCorrectly()
+    ) {
+      this.endRound(
+        'guessed',
+      );
+    }
   }
 
   // ─── Scoring ─────────────────────────────────────────────────
@@ -1863,7 +2142,17 @@ export class EmojiCinemaGame extends BaseMinigame {
           this
             .state
             .phaseEndsAt,
+        maxEmojis:
+          this
+            .maxEmojis,
+        maxGuesses:
+          this
+            .maxGuesses,
       };
+    const movie =
+      this
+        .state
+        .currentMovie;
 
     if (
       isProducer
@@ -1871,28 +2160,31 @@ export class EmojiCinemaGame extends BaseMinigame {
       return {
         ...base,
         role: 'producer',
-        movie:
-          {
-            title:
-              this
-                .state
-                .currentMovie
-                .title,
-            year: this
-              .state
-              .currentMovie
-              .year,
-            genre:
-              this
-                .state
-                .currentMovie
-                .genre,
-            difficulty:
-              this
-                .state
-                .currentMovie
-                .difficulty,
-          },
+        // Only once picked — never a placeholder or last round's movie.
+        ...(movie
+          ? {
+              movie:
+                {
+                  title:
+                    movie.title,
+                  year: movie.year,
+                  genre:
+                    movie.genre,
+                  difficulty:
+                    movie.difficulty,
+                },
+            }
+          : {}),
+        // A producer who (re)mounts mid-selection needs the choices back.
+        ...(this
+          .state
+          .phase ===
+        'MOVIE_SELECTION'
+          ? {
+              movieChoices:
+                this.serializeMovieChoices(),
+            }
+          : {}),
         correctGuessers:
           this
             .state
@@ -1916,10 +2208,15 @@ export class EmojiCinemaGame extends BaseMinigame {
         userId,
       );
     const revealMovie =
-      this
+      (this
         .state
         .phase ===
-      'ROUND_RESULTS';
+        'ROUND_RESULTS' ||
+        this
+          .state
+          .phase ===
+          'TRANSITION') &&
+      !!movie;
 
     // Strip guessText from correctGuessers for audience — it may contain the movie title
     const safeGuessers =
@@ -1961,24 +2258,16 @@ export class EmojiCinemaGame extends BaseMinigame {
         this
           .state
           .guessLog,
-      ...(revealMovie
+      ...(revealMovie &&
+      movie
         ? {
             movie:
               {
                 title:
-                  this
-                    .state
-                    .currentMovie
-                    .title,
-                year: this
-                  .state
-                  .currentMovie
-                  .year,
+                  movie.title,
+                year: movie.year,
                 genre:
-                  this
-                    .state
-                    .currentMovie
-                    .genre,
+                  movie.genre,
               },
           }
         : {}),
@@ -1986,6 +2275,10 @@ export class EmojiCinemaGame extends BaseMinigame {
   }
 
   getStateForSpectator(): unknown {
+    const movie =
+      this
+        .state
+        .currentMovie;
     const producerPlayer =
       this.context.players.get(
         this
@@ -2059,28 +2352,26 @@ export class EmojiCinemaGame extends BaseMinigame {
         this
           .state
           .phaseEndsAt,
-      movie:
-        {
-          title:
-            this
-              .state
-              .currentMovie
-              .title,
-          year: this
-            .state
-            .currentMovie
-            .year,
-          genre:
-            this
-              .state
-              .currentMovie
-              .genre,
-          difficulty:
-            this
-              .state
-              .currentMovie
-              .difficulty,
-        },
+      maxEmojis:
+        this
+          .maxEmojis,
+      maxGuesses:
+        this
+          .maxGuesses,
+      ...(movie
+        ? {
+            movie:
+              {
+                title:
+                  movie.title,
+                year: movie.year,
+                genre:
+                  movie.genre,
+                difficulty:
+                  movie.difficulty,
+              },
+          }
+        : {}),
       allGuesses,
       correctGuessers:
         this
@@ -2135,6 +2426,15 @@ export class EmojiCinemaGame extends BaseMinigame {
   handlePlayerDisconnect(
     userId: string,
   ): void {
+    if (
+      !this
+        .state
+    )
+      return;
+    this.disconnectedPlayers.add(
+      userId,
+    );
+
     logger.info(
       {
         event:
@@ -2154,17 +2454,33 @@ export class EmojiCinemaGame extends BaseMinigame {
             .phase,
       },
     );
+    if (
+      !this
+        .isRunning
+    )
+      return;
 
-    // If the Producer disconnects during construction, wait then skip round
+    const roundActive =
+      this
+        .state
+        .phase ===
+        'PRODUCER_ASSIGNMENT' ||
+      this
+        .state
+        .phase ===
+        'MOVIE_SELECTION' ||
+      this
+        .state
+        .phase ===
+        'EMOJI_CONSTRUCTION';
+
+    // If the Producer disconnects before the round is over, wait, then skip the round
     if (
       userId ===
         this
           .state
           .currentProducerUserId &&
-      this
-        .state
-        .phase ===
-        'EMOJI_CONSTRUCTION' &&
+      roundActive &&
       !this
         .state
         .producerDisconnectTimer
@@ -2174,6 +2490,10 @@ export class EmojiCinemaGame extends BaseMinigame {
           'producerDisconnectWait',
           EC_PRODUCER_DISCONNECT_WAIT_SECONDS,
         );
+      const round =
+        this
+          .state
+          .currentRound;
 
       logger.warn(
         {
@@ -2191,6 +2511,33 @@ export class EmojiCinemaGame extends BaseMinigame {
       this.state.producerDisconnectTimer =
         this.setTimeout(
           () => {
+            this.state.producerDisconnectTimer =
+              null;
+            // Only the round this producer was producing, and only while it is still running.
+            if (
+              !this
+                .isRunning ||
+              this
+                .state
+                .currentRound !==
+                round ||
+              this
+                .state
+                .currentProducerUserId !==
+                userId
+            )
+              return;
+            if (
+              this
+                .state
+                .phase ===
+                'ROUND_RESULTS' ||
+              this
+                .state
+                .phase ===
+                'TRANSITION'
+            )
+              return;
             logger.warn(
               {
                 event:
@@ -2200,14 +2547,9 @@ export class EmojiCinemaGame extends BaseMinigame {
                     .context
                     .lobbyId,
                 userId,
-                round:
-                  this
-                    .state
-                    .currentRound,
+                round,
               },
             );
-            this.state.producerDisconnectTimer =
-              null;
             this.endRound(
               'timeout',
             );
@@ -2215,12 +2557,44 @@ export class EmojiCinemaGame extends BaseMinigame {
           waitSeconds *
             1000,
         );
+      return;
+    }
+
+    // An audience member leaving can complete the round: everyone still here has guessed it.
+    if (
+      this
+        .state
+        .phase ===
+        'EMOJI_CONSTRUCTION' &&
+      userId !==
+        this
+          .state
+          .currentProducerUserId &&
+      this
+        .state
+        .correctGuessers
+        .length >
+        0 &&
+      this.allAudienceGuessedCorrectly()
+    ) {
+      this.endRound(
+        'guessed',
+      );
     }
   }
 
   handlePlayerReconnect(
     userId: string,
   ): void {
+    this.disconnectedPlayers.delete(
+      userId,
+    );
+    if (
+      !this
+        .state
+    )
+      return;
+
     // Cancel producer disconnect timer if they come back
     if (
       userId ===
@@ -2231,13 +2605,7 @@ export class EmojiCinemaGame extends BaseMinigame {
         .state
         .producerDisconnectTimer
     ) {
-      this.clearTrackedTimeout(
-        this
-          .state
-          .producerDisconnectTimer,
-      );
-      this.state.producerDisconnectTimer =
-        null;
+      this.cancelProducerDisconnectTimer();
 
       logger.info(
         {
@@ -2760,7 +3128,7 @@ export class EmojiCinemaGame extends BaseMinigame {
     return total;
   }
 
-  /** Check if every audience member (non-producer) has guessed correctly. */
+  /** Check if every CONNECTED audience member (non-producer) has guessed correctly. */
   private allAudienceGuessedCorrectly(): boolean {
     const correctSet =
       new Set(
@@ -2771,11 +3139,7 @@ export class EmojiCinemaGame extends BaseMinigame {
             g.userId,
         ),
       );
-    for (const [
-      uid,
-    ] of this
-      .context
-      .players) {
+    for (const uid of this.state.guesses.keys()) {
       if (
         uid ===
         this
@@ -2783,6 +3147,12 @@ export class EmojiCinemaGame extends BaseMinigame {
           .currentProducerUserId
       )
         continue; // skip producer
+      if (
+        !this.isActivePlayer(
+          uid,
+        )
+      )
+        continue; // departed players can't guess
       if (
         !correctSet.has(
           uid,
@@ -2794,19 +3164,9 @@ export class EmojiCinemaGame extends BaseMinigame {
   }
 
   override cleanup(): void {
-    if (
-      this
-        .state
-        ?.producerDisconnectTimer
-    ) {
-      this.clearTrackedTimeout(
-        this
-          .state
-          .producerDisconnectTimer,
-      );
-      this.state.producerDisconnectTimer =
-        null;
-    }
+    this.cancelProducerDisconnectTimer();
+    this.phaseTimeoutHandle =
+      null;
     super.cleanup();
   }
 

@@ -25,6 +25,32 @@ import {
 const SINGLE_WORD =
   /^[a-z]+(?:['-][a-z]+)*$/;
 
+/**
+ * The part of a submission that `rhyming-part` actually scores: the last
+ * hyphen-separated segment ("well-being" → "being", "x-tree" → "tree").
+ * Duplicate checks and rarity counting key on this, so prefixing a word
+ * ("a-tree", "b-tree", …) can't bank the same rhyme again as a new word.
+ */
+export function rhymeKey(
+  word: string,
+): string {
+  const normalised =
+    word
+      .trim()
+      .toLowerCase();
+  const parts =
+    normalised.split(
+      '-',
+    );
+  return (
+    parts[
+      parts.length -
+        1
+    ] ??
+    normalised
+  );
+}
+
 /** Schema for validating a player's rhyme submission. */
 export const SubmitRhymeSchema =
   z.object(

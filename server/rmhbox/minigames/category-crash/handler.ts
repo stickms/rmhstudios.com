@@ -7,9 +7,14 @@
  * phase lets players "crash" answers they believe are invalid. Crashes
  * that reach threshold are upheld; failed crashes penalise the crasher.
  *
- * Scoring rewards unique answers (no other player submitted the same),
- * shared answers, and successful crashes. Invalid, empty, and crashed
- * answers score zero.
+ * Scoring rewards unique answers (no other player submitted the same)
+ * with CC_UNIQUE_POINTS and shared answers (another player submitted the
+ * same answer, or a typo/plural of it) with CC_SHARED_POINTS (design spec
+ * §3.3.5). Invalid, empty, and crashed answers score zero.
+ *
+ * Peer review walks the categories one at a time; each gets a
+ * `peerReviewDuration` timer and advances on its own, and the host's
+ * ADVANCE_VOTING skips ahead early.
  *
  * Phases per round:
  *   REVEAL → INPUT → PEER_REVIEW → CRASH_RESOLUTION → ROUND_RESULTS
@@ -21,7 +26,6 @@
  * Reference: docs/rmhbox/design-spec/minigames/category-crash.md
  */
 
-import Fuse from 'fuse.js';
 import { BaseMinigame } from '../base-minigame';
 import type {
   MinigameContext,
@@ -41,7 +45,13 @@ import {
   CrashAnswerSchema,
   UncrashAnswerSchema,
   VoteAnswerSchema,
+  CC_MAX_CATEGORIES_PER_ROUND,
 } from '@/lib/rmhbox/category-crash/schemas';
+import {
+  answersMatch,
+  groupMatchingAnswers,
+  normalizeAnswer,
+} from '../../../../lib/rmhbox/category-crash/answer-match';
 import {
   CC_TOTAL_ROUNDS,
   CC_CATEGORIES_PER_ROUND,
@@ -50,9 +60,10 @@ import {
   CC_ROUND_RESULTS,
   CC_REVEAL,
   CC_UNIQUE_POINTS,
+  CC_SHARED_POINTS,
   CC_CRASH_BONUS,
   CC_CRASH_PENALTY,
-  CC_FUZZY_THRESHOLD,
+  CC_PEER_REVIEW_DURATION,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import {
@@ -65,11 +76,26 @@ import {
   type CategoryCrashState,
 } from './types';
 
+/**
+ * How long saves are still accepted after the input timer runs out, so an
+ * answer typed in the last second (and its save in flight) is not lost.
+ */
+const CC_INPUT_GRACE_MS = 1500;
+
 // ─── Category Crash Minigame ─────────────────────────────────────
 
 export class CategoryCrashMinigame extends BaseMinigame {
   private state!: CategoryCrashState;
   private startedAt: number = 0;
+  /** The one pending phase-advance timeout; every transition replaces it. */
+  private phaseTimeoutHandle: NodeJS.Timeout | null =
+    null;
+  /** Host setting `categoriesPerRound` (registry 3-7). */
+  private categoriesPerRound: number =
+    CC_CATEGORIES_PER_ROUND;
+  /** Host setting `peerReviewDuration` (registry 15-60 s), per category. */
+  private peerReviewDuration: number =
+    CC_PEER_REVIEW_DURATION;
 
   get spectatorMode(): 'competitive-individual' {
     return 'competitive-individual';
@@ -89,6 +115,25 @@ export class CategoryCrashMinigame extends BaseMinigame {
     this.isRunning = true;
     this.startedAt =
       Date.now();
+    this.categoriesPerRound =
+      Math.max(
+        1,
+        Math.min(
+          CC_MAX_CATEGORIES_PER_ROUND,
+          this.getSetting(
+            'categoriesPerRound',
+            CC_CATEGORIES_PER_ROUND,
+          ),
+        ),
+      );
+    this.peerReviewDuration =
+      Math.max(
+        1,
+        this.getSetting(
+          'peerReviewDuration',
+          CC_PEER_REVIEW_DURATION,
+        ),
+      );
     this.initializeState();
 
     logger.info(
@@ -174,12 +219,92 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
   // ─── Round Flow ─────────────────────────────────────────────
 
+  /**
+   * Schedule the single pending phase advance, replacing any earlier one. It
+   * only runs if the game is still in the round and phase it was scheduled in.
+   */
+  private schedulePhaseAdvance(
+    fn: () => void,
+    ms: number,
+  ): void {
+    this.cancelPhaseAdvance();
+    const round =
+      this
+        .state
+        .currentRound;
+    const phase =
+      this
+        .state
+        .phase;
+    const votingIndex =
+      this
+        .state
+        .currentVotingCategoryIndex;
+    this.phaseTimeoutHandle =
+      this.setTimeout(
+        () => {
+          this.phaseTimeoutHandle =
+            null;
+          if (
+            !this
+              .isRunning ||
+            this
+              .state
+              .currentRound !==
+              round ||
+            this
+              .state
+              .phase !==
+              phase
+          )
+            return;
+          if (
+            phase ===
+              CategoryCrashPhase.PEER_REVIEW &&
+            this
+              .state
+              .currentVotingCategoryIndex !==
+              votingIndex
+          )
+            return;
+          fn();
+        },
+        ms,
+      );
+  }
+
+  private cancelPhaseAdvance(): void {
+    if (
+      this
+        .phaseTimeoutHandle
+    ) {
+      this.clearTrackedTimeout(
+        this
+          .phaseTimeoutHandle,
+      );
+      this.phaseTimeoutHandle =
+        null;
+    }
+  }
+
   private startRound(): void {
     if (
       !this
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .currentRound >
+        0 &&
+      this
+        .state
+        .phase !==
+        CategoryCrashPhase.ROUND_RESULTS
+    )
+      return;
+    this.cancelPhaseAdvance();
 
     // Promote pending players
     for (const userId of this
@@ -222,6 +347,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
         this
           .state
           .usedCategoryIds,
+        this
+          .categoriesPerRound,
       );
     this.state.usedCategoryIds.push(
       ...this.state.categories.map(
@@ -262,10 +389,10 @@ export class CategoryCrashMinigame extends BaseMinigame {
           userId
         ] =
           new Array(
-            this.getSetting(
-              'categoriesPerRound',
-              CC_CATEGORIES_PER_ROUND,
-            ),
+            this
+              .state
+              .categories
+              .length,
           ).fill(
             null,
           );
@@ -372,7 +499,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       CC_REVEAL,
     );
 
-    this.setTimeout(
+    this.schedulePhaseAdvance(
       () =>
         this.startInputPhase(),
       CC_REVEAL *
@@ -384,6 +511,13 @@ export class CategoryCrashMinigame extends BaseMinigame {
     if (
       !this
         .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      CategoryCrashPhase.REVEAL
     )
       return;
 
@@ -445,9 +579,17 @@ export class CategoryCrashMinigame extends BaseMinigame {
       scaledInputDuration,
     );
 
-    this.setTimeout(
-      () =>
-        this.endInputPhase(),
+    // When the clock runs out, saves already in flight still land during a
+    // short grace (the phase stays INPUT), then answers lock.
+    this.schedulePhaseAdvance(
+      () => {
+        this.clearPhaseTimer();
+        this.schedulePhaseAdvance(
+          () =>
+            this.endInputPhase(),
+          CC_INPUT_GRACE_MS,
+        );
+      },
       scaledInputDuration *
         1000,
     );
@@ -459,6 +601,14 @@ export class CategoryCrashMinigame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      CategoryCrashPhase.INPUT
+    )
+      return;
+    this.cancelPhaseAdvance();
     this.clearPhaseTimer();
 
     // Auto-lock any unlocked answers and log them
@@ -568,9 +718,11 @@ export class CategoryCrashMinigame extends BaseMinigame {
       {
         type: 'CC_PEER_REVIEW_START',
         duration:
-          -1,
+          this
+            .peerReviewDuration,
         timeRemaining:
-          -1,
+          this
+            .peerReviewDuration,
         anonymizedAnswers,
         categories:
           this
@@ -611,10 +763,122 @@ export class CategoryCrashMinigame extends BaseMinigame {
       }
     }
 
-    // Infinite phase timer — host advances with ADVANCE_VOTING
-    this.startInfinitePhaseTimer(
-      false,
+    // Each category is timed and advances on its own; the host's
+    // ADVANCE_VOTING skips ahead early. (It used to be an infinite phase
+    // only the host could end, so an AFK host stalled the game.)
+    this.startReviewCategoryTimer();
+  }
+
+  /** Time the category currently under review; when it runs out, advance. */
+  private startReviewCategoryTimer(): void {
+    this.state.timeRemaining =
+      this.peerReviewDuration;
+    this.startPhaseTimer(
+      this
+        .peerReviewDuration,
     );
+    const round =
+      this
+        .state
+        .currentRound;
+    const index =
+      this
+        .state
+        .currentVotingCategoryIndex;
+    this.schedulePhaseAdvance(
+      () =>
+        this.advanceVoting(
+          round,
+          index,
+        ),
+      this
+        .peerReviewDuration *
+        1000,
+    );
+  }
+
+  /**
+   * Move peer review past category `fromIndex` of round `round` — from the
+   * timer or the host. A second call for the same category (the host's click
+   * racing the timer, a double click) finds the index already moved and does
+   * nothing, so a category is never skipped twice.
+   */
+  private advanceVoting(
+    round: number,
+    fromIndex: number,
+  ): void {
+    if (
+      !this
+        .isRunning
+    )
+      return;
+    if (
+      this
+        .state
+        .phase !==
+      CategoryCrashPhase.PEER_REVIEW
+    )
+      return;
+    if (
+      this
+        .state
+        .currentRound !==
+        round ||
+      this
+        .state
+        .currentVotingCategoryIndex !==
+        fromIndex
+    )
+      return;
+    this.cancelPhaseAdvance();
+
+    const nextIndex =
+      fromIndex +
+      1;
+    if (
+      nextIndex >=
+      this
+        .state
+        .categories
+        .length
+    ) {
+      // All categories voted on — skip directly to round results
+      this.clearPhaseTimer();
+      this.showRoundResults();
+      return;
+    }
+
+    this.state.currentVotingCategoryIndex =
+      nextIndex;
+
+    logger.info(
+      {
+        event:
+          'category_crash:advance_voting',
+        lobbyId:
+          this
+            .context
+            .lobbyId,
+        newCategoryIndex:
+          nextIndex,
+        round:
+          this
+            .state
+            .currentRound,
+      },
+    );
+
+    this.broadcastGameAction(
+      {
+        type: 'CC_VOTING_CATEGORY_CHANGED',
+        currentVotingCategoryIndex:
+          nextIndex,
+        duration:
+          this
+            .peerReviewDuration,
+      },
+    );
+    this.startReviewCategoryTimer();
   }
 
   private startCrashResolution(): void {
@@ -623,6 +887,14 @@ export class CategoryCrashMinigame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+      CategoryCrashPhase.PEER_REVIEW
+    )
+      return;
+    this.cancelPhaseAdvance();
     this.clearPhaseTimer();
 
     this.state.phase =
@@ -663,7 +935,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       CC_CRASH_RESOLUTION,
     );
 
-    this.setTimeout(
+    this.schedulePhaseAdvance(
       () =>
         this.showRoundResults(),
       CC_CRASH_RESOLUTION *
@@ -677,6 +949,18 @@ export class CategoryCrashMinigame extends BaseMinigame {
         .isRunning
     )
       return;
+    if (
+      this
+        .state
+        .phase !==
+        CategoryCrashPhase.PEER_REVIEW &&
+      this
+        .state
+        .phase !==
+        CategoryCrashPhase.CRASH_RESOLUTION
+    )
+      return;
+    this.cancelPhaseAdvance();
 
     this.state.phase =
       CategoryCrashPhase.ROUND_RESULTS;
@@ -847,7 +1131,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       CC_ROUND_RESULTS,
     );
 
-    this.setTimeout(
+    this.schedulePhaseAdvance(
       () => {
         if (
           this
@@ -933,6 +1217,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       case 'ADVANCE_VOTING':
         return this.handleAdvanceVoting(
           userId,
+          data,
         );
       default:
         return;
@@ -974,6 +1259,28 @@ export class CategoryCrashMinigame extends BaseMinigame {
       );
     if (
       !parsed.success
+    ) {
+      this.context.sendToPlayer(
+        userId,
+        'rmhbox:game:action',
+        {
+          type: 'CC_SAVE_REJECTED',
+          reason:
+            'invalid_input',
+        },
+      );
+      return;
+    }
+
+    if (
+      parsed
+        .data
+        .answers
+        .length !==
+      this
+        .state
+        .categories
+        .length
     ) {
       this.context.sendToPlayer(
         userId,
@@ -1057,6 +1364,28 @@ export class CategoryCrashMinigame extends BaseMinigame {
       );
     if (
       !parsed.success
+    ) {
+      this.context.sendToPlayer(
+        userId,
+        'rmhbox:game:action',
+        {
+          type: 'CC_SUBMIT_REJECTED',
+          reason:
+            'invalid_input',
+        },
+      );
+      return;
+    }
+
+    if (
+      parsed
+        .data
+        .answers
+        .length !==
+      this
+        .state
+        .categories
+        .length
     ) {
       this.context.sendToPlayer(
         userId,
@@ -1206,6 +1535,24 @@ export class CategoryCrashMinigame extends BaseMinigame {
       categoryIndex,
     } =
       parsed.data;
+    if (
+      categoryIndex >=
+      this
+        .state
+        .categories
+        .length
+    ) {
+      this.context.sendToPlayer(
+        userId,
+        'rmhbox:game:action',
+        {
+          type: 'CC_CRASH_REJECTED',
+          reason:
+            'invalid_input',
+        },
+      );
+      return;
+    }
 
     // Resolve anonymous label to real userId if needed
     const realTargetId =
@@ -1281,7 +1628,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       return;
     }
 
-    // Cannot crash a pre-crashed (duplicate) answer — it already scores 0
+    // Cannot crash a shared (duplicate) answer — it is scored as shared
     const targetAnswer =
       this
         .state
@@ -1293,14 +1640,10 @@ export class CategoryCrashMinigame extends BaseMinigame {
     if (
       targetAnswer
     ) {
-      const normalised =
-        (
-          targetAnswer as string
-        )
-          .trim()
-          .toLowerCase();
       if (
-        normalised
+        normalizeAnswer(
+          targetAnswer,
+        )
       ) {
         const isDuplicate =
           Object.entries(
@@ -1314,17 +1657,12 @@ export class CategoryCrashMinigame extends BaseMinigame {
             ]) =>
               otherId !==
                 realTargetId &&
-              answers[
-                categoryIndex
-              ] &&
-              (
+              answersMatch(
                 answers[
                   categoryIndex
-                ] as string
-              )
-                .trim()
-                .toLowerCase() ===
-                normalised,
+                ],
+                targetAnswer,
+              ),
           );
         if (
           isDuplicate
@@ -1799,9 +2137,13 @@ export class CategoryCrashMinigame extends BaseMinigame {
     );
   }
 
-  /** Host advances to the next voting category. */
+  /**
+   * Host skips the rest of the current category's review. The client may
+   * name the category it was looking at; a stale click is then ignored.
+   */
   private handleAdvanceVoting(
     userId: string,
+    data?: unknown,
   ): void {
     if (
       this
@@ -1818,51 +2160,29 @@ export class CategoryCrashMinigame extends BaseMinigame {
     )
       return;
 
-    const nextIndex =
+    const requested =
+      (
+        data as
+          | {
+              categoryIndex?: unknown;
+            }
+          | null
+          | undefined
+      )
+        ?.categoryIndex;
+    const fromIndex =
+      typeof requested ===
+      'number'
+        ? requested
+        : this
+            .state
+            .currentVotingCategoryIndex;
+    this.advanceVoting(
       this
         .state
-        .currentVotingCategoryIndex +
-      1;
-
-    if (
-      nextIndex >=
-      this
-        .state
-        .categories
-        .length
-    ) {
-      // All categories voted on — skip directly to round results
-      this.clearPhaseTimer();
-      this.showRoundResults();
-    } else {
-      this.state.currentVotingCategoryIndex =
-        nextIndex;
-
-      logger.info(
-        {
-          event:
-            'category_crash:advance_voting',
-          lobbyId:
-            this
-              .context
-              .lobbyId,
-          newCategoryIndex:
-            nextIndex,
-          round:
-            this
-              .state
-              .currentRound,
-        },
-      );
-
-      this.broadcastGameAction(
-        {
-          type: 'CC_VOTING_CATEGORY_CHANGED',
-          currentVotingCategoryIndex:
-            nextIndex,
-        },
-      );
-    }
+        .currentRound,
+      fromIndex,
+    );
   }
 
   /** Broadcast live vote tallies for a specific category to all players. */
@@ -2033,6 +2353,11 @@ export class CategoryCrashMinigame extends BaseMinigame {
       this
         .state
         .letter;
+    const categoryCount =
+      this
+        .state
+        .categories
+        .length;
 
     // Determine which answers are crashed using vote-based system:
     // An answer is crashed if crash votes > safe votes. Ties are safe.
@@ -2054,7 +2379,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     for (
       let catIdx = 0;
       catIdx <
-      CC_CATEGORIES_PER_ROUND;
+      categoryCount;
       catIdx++
     ) {
       for (const userId of Object.keys(
@@ -2110,7 +2435,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     for (
       let catIdx = 0;
       catIdx <
-      CC_CATEGORIES_PER_ROUND;
+      categoryCount;
       catIdx++
     ) {
       const entries: {
@@ -2157,6 +2482,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
           )
         )
           continue;
+        // Compared on the raw answer: findDuplicateGroups normalises whole strings itself
         entries.push(
           {
             userId,
@@ -2182,7 +2508,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     for (
       let catIdx = 0;
       catIdx <
-      CC_CATEGORIES_PER_ROUND;
+      categoryCount;
       catIdx++
     ) {
       const entries =
@@ -2245,7 +2571,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       for (
         let catIdx = 0;
         catIdx <
-        CC_CATEGORIES_PER_ROUND;
+        categoryCount;
         catIdx++
       ) {
         const raw =
@@ -2329,16 +2655,15 @@ export class CategoryCrashMinigame extends BaseMinigame {
         if (
           isDuplicate
         ) {
-          // Duplicate answers auto-crash — same answer = 0 points
+          // Shared answer (another player gave the same one) — design spec §3.3.5
           pointsPerCategory.push(
-            0,
-          );
-          crashedIndices.push(
-            catIdx,
+            CC_SHARED_POINTS,
           );
           duplicateIndices.push(
             catIdx,
           );
+          roundScore +=
+            CC_SHARED_POINTS;
         } else {
           pointsPerCategory.push(
             CC_UNIQUE_POINTS,
@@ -2384,7 +2709,12 @@ export class CategoryCrashMinigame extends BaseMinigame {
     };
   }
 
-  /** Find groups of duplicate answers (exact + fuzzy) for a single category. */
+  /**
+   * Find groups of duplicate answers for a single category: whole normalised
+   * strings that are equal, a plural of each other, or a typo apart
+   * (lib/rmhbox/category-crash/answer-match.ts). Never prefixes: "bear" and
+   * "bearded dragon" are two answers.
+   */
   private findDuplicateGroups(
     entries: {
       userId: string;
@@ -2394,101 +2724,39 @@ export class CategoryCrashMinigame extends BaseMinigame {
     string,
     string[]
   > {
-    // Map: canonical answer → list of userIds
+    // Map: first member's answer → list of userIds
     const groups =
       new Map<
         string,
         string[]
       >();
-    if (
-      entries.length ===
-      0
-    )
-      return groups;
-
-    // Use Fuse.js for fuzzy matching
-    const fuse =
-      new Fuse(
-        entries,
-        {
-          keys: [
-            'answer',
+    const byId =
+      new Map(
+        entries.map(
+          (
+            e,
+          ) => [
+            e.userId,
+            e.answer,
           ],
-          threshold:
-            1 -
-            CC_FUZZY_THRESHOLD,
-          includeScore: true,
-        },
+        ),
       );
-
-    const assigned =
-      new Set<string>();
-
-    for (const entry of entries) {
-      if (
-        assigned.has(
-          entry.userId,
-        )
-      )
-        continue;
-
-      const results =
-        fuse.search(
-          entry.answer,
-        );
-      const groupMembers: string[] =
-        [];
-
-      for (const result of results) {
-        if (
-          assigned.has(
-            result
-              .item
-              .userId,
-          )
-        )
-          continue;
-        // Exact match or fuzzy match within threshold
-        const score =
-          result.score ??
-          1;
-        if (
-          score <=
-          1 -
-            CC_FUZZY_THRESHOLD
-        ) {
-          groupMembers.push(
-            result
-              .item
-              .userId,
-          );
-          assigned.add(
-            result
-              .item
-              .userId,
-          );
-        }
-      }
-
-      if (
-        groupMembers.length ===
-        0
-      ) {
-        // Self not matched (shouldn't happen but fallback)
-        groupMembers.push(
-          entry.userId,
-        );
-        assigned.add(
-          entry.userId,
-        );
-      }
-
+    for (const members of groupMatchingAnswers(
+      entries.map(
+        (
+          e,
+        ) => ({
+          id: e.userId,
+          answer:
+            e.answer,
+        }),
+      ),
+    )) {
       groups.set(
-        entry.answer,
-        groupMembers,
+        `${byId.get(members[0]!) ?? ''}#${members[0]}`,
+        members,
       );
     }
-
     return groups;
   }
 
@@ -2777,10 +3045,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
       case CategoryCrashPhase.ROUND_RESULTS:
         return {
           ...base,
+          // The client renders ONE round's results (as CC_ROUND_RESULTS sends them).
           roundResults:
-            this
-              .state
-              .roundResults,
+            this.latestRoundResults(),
           anonymizationMap:
             this
               .state
@@ -2790,6 +3057,21 @@ export class CategoryCrashMinigame extends BaseMinigame {
       default:
         return base;
     }
+  }
+
+  private latestRoundResults(): CCRoundResults | null {
+    return (
+      this
+        .state
+        .roundResults[
+        this
+          .state
+          .roundResults
+          .length -
+          1
+      ] ??
+      null
+    );
   }
 
   getStateForSpectator(): unknown {
@@ -2882,9 +3164,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       return {
         ...base,
         roundResults:
-          this
-            .state
-            .roundResults,
+          this.latestRoundResults(),
         anonymizationMap:
           this
             .state
@@ -3076,14 +3356,28 @@ export class CategoryCrashMinigame extends BaseMinigame {
         b.score -
         a.score,
     );
+    // Equal scores share a rank (1, 1, 3)
     entries.forEach(
       (
         e,
         i,
       ) => {
         e.rank =
-          i +
-          1;
+          i >
+            0 &&
+          e.score ===
+            entries[
+              i -
+                1
+            ]!
+              .score
+            ? entries[
+                i -
+                  1
+              ]!
+                .rank
+            : i +
+              1;
       },
     );
 
@@ -3143,7 +3437,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
           pr
             .uniqueIndices
             .length ===
-          CC_CATEGORIES_PER_ROUND
+          rr
+            .categories
+            .length
         ) {
           stats[
             userId

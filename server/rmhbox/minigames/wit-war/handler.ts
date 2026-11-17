@@ -65,6 +65,11 @@ export class WitWarMinigame extends BaseMinigame {
   /** Handle for the current voting timeout, so early-end can cancel it. */
   private votingTimeoutHandle: NodeJS.Timeout | null =
     null;
+  /** Handle for the writing-phase timeout, so an early end (everyone submitted) can cancel it. */
+  private writingTimeoutHandle: NodeJS.Timeout | null =
+    null;
+  /** The round whose writing phase has already been closed (guards the 1 s grace window). */
+  private writingClosedRound = 0;
   /** Audience (spectator) votes for the current matchup; counted as ONE aggregated vote. */
   private audienceVotes =
     new Map<
@@ -81,8 +86,14 @@ export class WitWarMinigame extends BaseMinigame {
       number
     >();
 
-  get spectatorMode(): 'competitive-individual' {
-    return 'competitive-individual';
+  /**
+   * Spectators are the audience: they all share the omniscient view
+   * (getStateForSpectator) and vote as one aggregated audience vote. Following
+   * a single player would hand them that player's private prompts and mark
+   * them as an author of that player's matchups.
+   */
+  get spectatorMode(): 'shared-privileged' {
+    return 'shared-privileged';
   }
 
   constructor(
@@ -144,6 +155,16 @@ export class WitWarMinigame extends BaseMinigame {
                 );
         }
         this.begin();
+        // The coordinator's initial snapshot went out before the first round
+        // existed (no prompts). Re-send it now so a client that mounts after the
+        // one-shot WW_PROMPT_REVEAL still hydrates its prompts from the store.
+        if (
+          this
+            .isRunning
+        )
+          this.broadcastInitialState(
+            'rmhbox:game:state_snapshot',
+          );
       },
     );
   }
@@ -451,6 +472,15 @@ export class WitWarMinigame extends BaseMinigame {
   }
 
   private startWritingPhase(): void {
+    if (
+      !this
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        WitWarPhase.PROMPT_REVEAL
+    )
+      return;
     this.state.phase =
       WitWarPhase.WRITING;
     const duration =
@@ -474,15 +504,50 @@ export class WitWarMinigame extends BaseMinigame {
       duration,
     );
 
-    this.setTimeout(
-      () =>
-        this.endWritingPhase(),
-      duration *
-        1000,
+    this.clearTrackedTimeout(
+      this
+        .writingTimeoutHandle,
     );
+    this.writingTimeoutHandle =
+      this.setTimeout(
+        () =>
+          this.endWritingPhase(),
+        duration *
+          1000,
+      );
   }
 
   private endWritingPhase(): void {
+    // Idempotent: the timer and the "everyone submitted" check can both get here
+    if (
+      !this
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        WitWarPhase.WRITING
+    )
+      return;
+    if (
+      this
+        .writingClosedRound ===
+      this
+        .state
+        .currentRound
+    )
+      return;
+    this.writingClosedRound =
+      this.state.currentRound;
+    const round =
+      this
+        .state
+        .currentRound;
+    this.clearTrackedTimeout(
+      this
+        .writingTimeoutHandle,
+    );
+    this.writingTimeoutHandle =
+      null;
     this.clearPhaseTimer();
 
     // Broadcast writing end so clients can auto-submit typed answers
@@ -495,6 +560,17 @@ export class WitWarMinigame extends BaseMinigame {
     // Brief grace period for client auto-submitted answers to arrive
     this.setTimeout(
       () => {
+        if (
+          this
+            .state
+            .phase !==
+            WitWarPhase.WRITING ||
+          this
+            .state
+            .currentRound !==
+            round
+        )
+          return;
         // Fill in safety quips for still-missing answers
         for (const matchup of this
           .state
@@ -553,6 +629,12 @@ export class WitWarMinigame extends BaseMinigame {
       return;
     }
 
+    this.clearTrackedTimeout(
+      this
+        .votingTimeoutHandle,
+    );
+    this.votingTimeoutHandle =
+      null;
     this.state.phase =
       WitWarPhase.VOTING;
     this.audienceVotes.clear();
@@ -611,16 +693,51 @@ export class WitWarMinigame extends BaseMinigame {
       duration,
     );
 
+    const matchupIndex =
+      this
+        .state
+        .currentMatchupIndex;
     this.votingTimeoutHandle =
       this.setTimeout(
         () =>
-          this.endMatchupVoting(),
+          this.endMatchupVoting(
+            matchupIndex,
+          ),
         duration *
           1000,
       );
   }
 
-  private endMatchupVoting(): void {
+  /**
+   * Close the vote on the current matchup. Idempotent: only runs in VOTING,
+   * and only for the matchup the caller saw (a stale vote timer from an
+   * earlier matchup can't score this one or advance the index twice).
+   */
+  private endMatchupVoting(
+    expectedIndex: number = this
+      .state
+      .currentMatchupIndex,
+  ): void {
+    if (
+      !this
+        .isRunning ||
+      this
+        .state
+        .phase !==
+        WitWarPhase.VOTING
+    )
+      return;
+    if (
+      expectedIndex !==
+      this
+        .state
+        .currentMatchupIndex
+    )
+      return;
+    this.clearTrackedTimeout(
+      this
+        .votingTimeoutHandle,
+    );
     this.votingTimeoutHandle =
       null;
     this.clearPhaseTimer();
@@ -632,6 +749,10 @@ export class WitWarMinigame extends BaseMinigame {
           .state
           .currentMatchupIndex
       ];
+    if (
+      !matchup
+    )
+      return;
 
     this.resolveMatchup(
       matchup,
@@ -892,8 +1013,23 @@ export class WitWarMinigame extends BaseMinigame {
       },
     );
 
+    const matchupIndex =
+      this
+        .state
+        .currentMatchupIndex;
     this.setTimeout(
       () => {
+        if (
+          this
+            .state
+            .phase !==
+            WitWarPhase.MATCHUP_RESULTS ||
+          this
+            .state
+            .currentMatchupIndex !==
+            matchupIndex
+        )
+          return;
         this
           .state
           .currentMatchupIndex++;
@@ -938,42 +1074,7 @@ export class WitWarMinigame extends BaseMinigame {
                   .scores,
               },
             matchups:
-              this.state.matchups.map(
-                (
-                  m,
-                ) => ({
-                  promptText:
-                    m.promptText,
-                  playerA:
-                    m.playerA,
-                  playerAName:
-                    this.context.players.get(
-                      m.playerA,
-                    )
-                      ?.userName ??
-                    'Unknown',
-                  answerA:
-                    m.answerA,
-                  playerB:
-                    m.playerB,
-                  playerBName:
-                    this.context.players.get(
-                      m.playerB,
-                    )
-                      ?.userName ??
-                    'Unknown',
-                  answerB:
-                    m.answerB,
-                  votePercentA:
-                    m.votePercentA,
-                  votePercentB:
-                    m.votePercentB,
-                  winnerId:
-                    m.winnerId,
-                  isWitWham:
-                    m.isWitWham,
-                }),
-              ),
+              this.publicMatchups(),
           },
       },
     );
@@ -982,8 +1083,23 @@ export class WitWarMinigame extends BaseMinigame {
       WW_ROUND_RESULTS_DURATION,
     );
 
+    const round =
+      this
+        .state
+        .currentRound;
     this.setTimeout(
       () => {
+        if (
+          this
+            .state
+            .phase !==
+            WitWarPhase.ROUND_RESULTS ||
+          this
+            .state
+            .currentRound !==
+            round
+        )
+          return;
         this.clearPhaseTimer();
         if (
           this
@@ -1001,6 +1117,202 @@ export class WitWarMinigame extends BaseMinigame {
       WW_ROUND_RESULTS_DURATION *
         1000,
     );
+  }
+
+  /** The current round's matchups as shown on the results screen. */
+  private publicMatchups() {
+    return this.state.matchups.map(
+      (
+        m,
+      ) => ({
+        promptText:
+          m.promptText,
+        playerA:
+          m.playerA,
+        playerAName:
+          this.context.players.get(
+            m.playerA,
+          )
+            ?.userName ??
+          'Unknown',
+        answerA:
+          m.answerA,
+        playerB:
+          m.playerB,
+        playerBName:
+          this.context.players.get(
+            m.playerB,
+          )
+            ?.userName ??
+          'Unknown',
+        answerB:
+          m.answerB,
+        votePercentA:
+          m.votePercentA,
+        votePercentB:
+          m.votePercentB,
+        winnerId:
+          m.winnerId,
+        isWitWham:
+          m.isWitWham,
+      }),
+    );
+  }
+
+  // ─── Connected-player bookkeeping ───────────────────────────
+
+  private isConnected(
+    userId: string,
+  ): boolean {
+    return (
+      this.context.players.get(
+        userId,
+      )
+        ?.isConnected ===
+      true
+    );
+  }
+
+  /** Connected players who write this round (have prompt assignments). */
+  private connectedWriters(): string[] {
+    return Object.keys(
+      this
+        .state
+        .assignments,
+    ).filter(
+      (
+        id,
+      ) =>
+        (this
+          .state
+          .assignments[
+          id
+        ]
+          ?.length ??
+          0) >
+          0 &&
+        this.isConnected(
+          id,
+        ),
+    );
+  }
+
+  /** Connected players who may vote on a matchup (everyone but its two authors). */
+  private eligibleVoters(
+    matchup: WWMatchup,
+  ): string[] {
+    const ids: string[] =
+      [];
+    for (const [
+      id,
+      p,
+    ] of this
+      .context
+      .players) {
+      if (
+        !p.isConnected ||
+        id ===
+          matchup.playerA ||
+        id ===
+          matchup.playerB
+      )
+        continue;
+      ids.push(
+        id,
+      );
+    }
+    return ids;
+  }
+
+  /** End WRITING once every connected writer has submitted all of their prompts. */
+  private endWritingIfAllSubmitted(): void {
+    if (
+      this
+        .state
+        .phase !==
+      WitWarPhase.WRITING
+    )
+      return;
+    const writers =
+      this.connectedWriters();
+    if (
+      writers.length ===
+      0
+    )
+      return;
+    if (
+      writers.every(
+        (
+          id,
+        ) =>
+          this.state.submitted.has(
+            id,
+          ),
+      )
+    ) {
+      this.endWritingPhase();
+    }
+  }
+
+  /** End the current vote once every connected eligible voter has voted. */
+  private endVotingIfAllVoted(): void {
+    if (
+      this
+        .state
+        .phase !==
+      WitWarPhase.VOTING
+    )
+      return;
+    const matchup =
+      this
+        .state
+        .matchups[
+        this
+          .state
+          .currentMatchupIndex
+      ];
+    if (
+      !matchup
+    )
+      return;
+    const voters =
+      this.eligibleVoters(
+        matchup,
+      );
+    // Nobody can vote (e.g. both authors are the only ones left): the audience
+    // still may, so let the timer run.
+    if (
+      voters.length ===
+      0
+    )
+      return;
+    if (
+      voters.every(
+        (
+          id,
+        ) =>
+          matchup
+            .votes[
+            id
+          ] !==
+          undefined,
+      )
+    ) {
+      this.endMatchupVoting(
+        this
+          .state
+          .currentMatchupIndex,
+      );
+    }
+  }
+
+  private currentTimeRemaining(): number {
+    const timer =
+      this.getPhaseTimerSnapshot();
+    return timer &&
+      !timer.infinite
+      ? timer.remaining
+      : 0;
   }
 
   private endGame(): void {
@@ -1147,24 +1459,7 @@ export class WitWarMinigame extends BaseMinigame {
       );
     }
 
-    this.context.broadcastAction(
-      {
-        type: 'WW_SUBMIT_COUNT',
-        payload:
-          {
-            submittedCount:
-              this
-                .state
-                .submitted
-                .size,
-            totalPlayers:
-              this
-                .context
-                .players
-                .size,
-          },
-      },
-    );
+    this.broadcastSubmitCount();
 
     this.context.sendToPlayer(
       userId,
@@ -1183,6 +1478,34 @@ export class WitWarMinigame extends BaseMinigame {
       {
         userId,
         promptIndex,
+      },
+    );
+
+    // Everyone still here is done: don't make the room wait out the clock
+    this.endWritingIfAllSubmitted();
+  }
+
+  private broadcastSubmitCount(): void {
+    const writers =
+      this.connectedWriters();
+    this.context.broadcastAction(
+      {
+        type: 'WW_SUBMIT_COUNT',
+        payload:
+          {
+            submittedCount:
+              writers.filter(
+                (
+                  id,
+                ) =>
+                  this.state.submitted.has(
+                    id,
+                  ),
+              )
+                .length,
+            totalPlayers:
+              writers.length,
+          },
       },
     );
   }
@@ -1256,49 +1579,49 @@ export class WitWarMinigame extends BaseMinigame {
     ] =
       votedForUserId;
 
-    const voterCount =
-      this
-        .context
-        .players
-        .size -
-      2;
-    const voteCount =
-      Object.keys(
-        matchup.votes,
-      ).length;
+    this.broadcastVoteCount(
+      matchupIndex,
+    );
 
+    // End voting early if all connected eligible voters have voted
+    this.endVotingIfAllVoted();
+  }
+
+  private broadcastVoteCount(
+    matchupIndex: number,
+  ): void {
+    const matchup =
+      this
+        .state
+        .matchups[
+        matchupIndex
+      ];
+    if (
+      !matchup
+    )
+      return;
     this.context.broadcastAction(
       {
         type: 'WW_VOTE_COUNT',
         payload:
           {
             matchupIndex,
-            voteCount,
+            voteCount:
+              Object.keys(
+                matchup.votes,
+              )
+                .length,
             totalVoters:
               Math.max(
-                voterCount,
+                this.eligibleVoters(
+                  matchup,
+                )
+                  .length,
                 1,
               ),
           },
       },
     );
-
-    // End voting early if all eligible voters have voted
-    if (
-      voteCount >=
-        Math.max(
-          voterCount,
-          1,
-        ) &&
-      this
-        .votingTimeoutHandle
-    ) {
-      this.clearTrackedTimeout(
-        this
-          .votingTimeoutHandle,
-      );
-      this.endMatchupVoting();
-    }
   }
 
   /** Audience vote (spectators). Max 5 changes each; aggregated into one vote at resolve time. */
@@ -1405,9 +1728,7 @@ export class WitWarMinigame extends BaseMinigame {
             .state
             .scores,
         timeRemaining:
-          this
-            .state
-            .timeRemaining,
+          this.currentTimeRemaining(),
       };
 
     switch (
@@ -1440,15 +1761,18 @@ export class WitWarMinigame extends BaseMinigame {
               }),
             ),
           submittedCount:
-            this
-              .state
-              .submitted
-              .size,
+            this.connectedWriters().filter(
+              (
+                id,
+              ) =>
+                this.state.submitted.has(
+                  id,
+                ),
+            )
+              .length,
           totalPlayers:
-            this
-              .context
-              .players
-              .size,
+            this.connectedWriters()
+              .length,
           hasSubmitted:
             this.state.submitted.has(
               userId,
@@ -1507,14 +1831,15 @@ export class WitWarMinigame extends BaseMinigame {
                   .length
               : 0,
           totalVoters:
-            Math.max(
-              this
-                .context
-                .players
-                .size -
-                2,
-              1,
-            ),
+            matchup
+              ? Math.max(
+                  this.eligibleVoters(
+                    matchup,
+                  )
+                    .length,
+                  1,
+                )
+              : 1,
         };
       }
 
@@ -1571,7 +1896,11 @@ export class WitWarMinigame extends BaseMinigame {
 
       case WitWarPhase.ROUND_RESULTS:
       case WitWarPhase.GAME_OVER:
-        return base;
+        return {
+          ...base,
+          matchups:
+            this.publicMatchups(),
+        };
 
       default:
         return base;
@@ -1625,6 +1954,13 @@ export class WitWarMinigame extends BaseMinigame {
         }),
       );
 
+    const voting =
+      this
+        .state
+        .phase ===
+      WitWarPhase.VOTING;
+    const writers =
+      this.connectedWriters();
     return {
       phase:
         this
@@ -1652,19 +1988,53 @@ export class WitWarMinigame extends BaseMinigame {
           .matchups
           .length,
       timeRemaining:
-        this
-          .state
-          .timeRemaining,
+        this.currentTimeRemaining(),
       submittedCount:
+        writers.filter(
+          (
+            id,
+          ) =>
+            this.state.submitted.has(
+              id,
+            ),
+        )
+          .length,
+      totalPlayers:
+        writers.length,
+      voteCount:
+        matchup
+          ? Object.keys(
+              matchup.votes,
+            )
+              .length
+          : 0,
+      totalVoters:
+        matchup
+          ? Math.max(
+              this.eligibleVoters(
+                matchup,
+              )
+                .length,
+              1,
+            )
+          : 1,
+      audienceCount:
+        voting
+          ? this
+              .audienceVotes
+              .size
+          : 0,
+      matchups:
         this
           .state
-          .submitted
-          .size,
-      totalPlayers:
+          .phase ===
+          WitWarPhase.ROUND_RESULTS ||
         this
-          .context
-          .players
-          .size,
+          .state
+          .phase ===
+          WitWarPhase.GAME_OVER
+          ? this.publicMatchups()
+          : undefined,
       allPrompts,
       currentMatchup:
         matchup
@@ -1699,8 +2069,11 @@ export class WitWarMinigame extends BaseMinigame {
                 matchup.winnerId,
               isWitWham:
                 matchup.isWitWham,
+              // Who voted for whom stays private until the vote closes
               votes:
-                matchup.votes,
+                voting
+                  ? {}
+                  : matchup.votes,
             }
           : null,
     };
@@ -2192,12 +2565,41 @@ export class WitWarMinigame extends BaseMinigame {
         round:
           this
             .state
-            .currentRound,
+            ?.currentRound,
         phase:
           this
             .state
-            .phase,
+            ?.phase,
       },
     );
+    if (
+      !this
+        .isRunning ||
+      !this
+        .state
+    )
+      return;
+    // A player who is gone no longer holds up the writing or the vote
+    if (
+      this
+        .state
+        .phase ===
+      WitWarPhase.WRITING
+    ) {
+      this.broadcastSubmitCount();
+      this.endWritingIfAllSubmitted();
+    } else if (
+      this
+        .state
+        .phase ===
+      WitWarPhase.VOTING
+    ) {
+      this.broadcastVoteCount(
+        this
+          .state
+          .currentMatchupIndex,
+      );
+      this.endVotingIfAllVoted();
+    }
   }
 }

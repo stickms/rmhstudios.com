@@ -14,14 +14,14 @@
  * Handles server actions:
  *   WR_ARTICLES_REVEALED, WR_NAVIGATION_START, WR_ARTICLE_CONTENT,
  *   WR_PLAYER_PROGRESS, WR_PLAYER_FINISHED, WR_RESULTS,
- *   WR_NAVIGATE_REJECTED, TIMER_TICK
+ *   WR_NAVIGATE_REJECTED, WR_ROUND_UNAVAILABLE, TIMER_TICK
  *
  * Props:
  *   playerId: string — Current player's user ID
  *   playerName: string — Current player's display name
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { Flag } from 'lucide-react';
@@ -192,10 +192,30 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
           break;
         }
         case 'WR_NAVIGATE_REJECTED': {
+          // A second click while the first page loads: the first is still
+          // on its way, so keep the spinner and say nothing.
+          if (data.reason === 'navigation_pending') break;
           setIsLoading(false);
-          setErrorMsg(data.reason as string);
+          // A failed fetch rolls the player back to where the server has them.
+          if (Array.isArray(data.path)) setPath(data.path as string[]);
+          if (typeof data.currentTitle === 'string') setCurrentTitle(data.currentTitle);
+          setErrorMsg(
+            data.reason === 'article_unavailable'
+              ? t('wr-article-unavailable', { defaultValue: 'This article is unavailable. Try another link.' })
+              : (data.reason as string),
+          );
           globalThis.setTimeout(() => setErrorMsg(null), 2000);
           playSound('buzzer');
+          break;
+        }
+        case 'WR_ROUND_UNAVAILABLE': {
+          setIsLoading(false);
+          setErrorMsg(
+            t('wr-round-unavailable', {
+              defaultValue: 'Wikipedia could not be reached, so this round was skipped.',
+            }),
+          );
+          globalThis.setTimeout(() => setErrorMsg(null), 6000);
           break;
         }
         case 'TIMER_START': {
@@ -215,7 +235,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
         }
       }
     },
-    [playerId],
+    [playerId, t],
   );
 
   /** Handle full state snapshot (reconnection / spectator player switch) */
@@ -235,6 +255,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
         if (myState.currentArticleHtml) {
           setArticleHtml(myState.currentArticleHtml as string);
         }
+        setIsLoading(data.phase === 'NAVIGATION' && (!!myState.isLoading || !myState.currentArticleHtml));
         setPath(myState.path as string[]);
         setClickCount(myState.clickCount as number);
         setHasFinished(myState.hasFinished as boolean);
@@ -243,6 +264,10 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
       const other = data.otherPlayers as Record<string, OtherPlayer> | undefined;
       if (other) setOtherPlayers(other);
+
+      // RESULTS renders only once results are set
+      const playerResults = data.playerResults as Record<string, WRPlayerResult> | undefined;
+      setResults(data.phase === 'RESULTS' && playerResults ? playerResults : null);
     },
     [],
   );
@@ -276,19 +301,14 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
     [players],
   );
 
-  // Populate other player names from lobby
-  useEffect(() => {
-    if (!players) return;
-    setOtherPlayers((prev) => {
-      const next = { ...prev };
-      for (const p of players) {
-        if (p.userId !== playerId && next[p.userId]) {
-          next[p.userId] = { ...next[p.userId], userName: p.userName };
-        }
-      }
-      return next;
-    });
-  }, [players, playerId]);
+  // Other players' names come from the lobby roster at render time.
+  // (Entries re-created by WR_PLAYER_PROGRESS after WR_ARTICLES_REVEALED
+  // cleared the map only know the user id; an effect keyed on the roster
+  // never re-ran for them, so they showed raw ids.)
+  const nameFor = useCallback(
+    (p: OtherPlayer) => players?.find((lp) => lp.userId === p.userId)?.userName ?? (p.userName !== p.userId ? p.userName : p.userId),
+    [players],
+  );
 
   return (
     <div className="flex w-full max-w-4xl flex-col gap-4 text-app-text">
@@ -398,7 +418,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
                 {Object.values(otherPlayers).map((p) => (
                   <PlayerProgressBar
                     key={p.userId}
-                    name={p.userName}
+                    name={nameFor(p)}
                     clickCount={p.clickCount}
                     hasFinished={p.hasFinished}
                     finishRank={p.finishRank}

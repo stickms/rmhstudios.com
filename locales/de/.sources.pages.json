@@ -13,6 +13,7 @@
   "building-slow": "Still working — a detailed build can take a couple of minutes.",
   "building-vibe": "Building your vibe…",
   "building-with-title": "\"{{title}}\" is coming together. This page updates on its own — you can safely wait here.",
+  "by-owner": "by {{name}}",
   "close": "Close",
   "close-history": "Close history",
   "connecting": "Connecting…",

@@ -33,6 +33,7 @@ import type {
   VoteCastPayload,
   VoteResultPayload,
 } from '../../lib/rmhbox/types';
+import type { RMHboxLobby } from './types';
 
 // ─── Active Vote State ───────────────────────────────────────────
 
@@ -51,6 +52,8 @@ interface ActiveVote {
   graceTimer: ReturnType<
     typeof setTimeout
   > | null;
+  /** When the vote actually resolves (endsAt, or sooner once everyone has voted). */
+  resolvesAt: number;
 }
 
 // ─── VoteManager ─────────────────────────────────────────────────
@@ -113,6 +116,99 @@ export class VoteManager {
           lobbyId,
         ),
     );
+    // A member who reloads or joins mid-vote gets the candidates (they came
+    // only from GAME_VOTE_STARTED, so the vote screen was empty) and tallies.
+    this.lobbyManager.onMemberResync(
+      (
+        lobby,
+        userId,
+        socket,
+      ) => {
+        if (
+          lobby.state !==
+          'VOTING'
+        )
+          return;
+        const activeVote =
+          this.activeVotes.get(
+            lobby.id,
+          );
+        if (
+          !activeVote
+        )
+          return;
+        const voteStarted: VoteStartedPayload =
+          {
+            candidates:
+              activeVote.candidates,
+            durationSeconds:
+              Math.max(
+                0,
+                Math.round(
+                  (activeVote.endsAt -
+                    activeVote.startedAt) /
+                    1000,
+                ),
+              ),
+            endsAt:
+              activeVote.resolvesAt,
+          };
+        socket.emit(
+          S2C.GAME_VOTE_STARTED,
+          voteStarted,
+        );
+        const update: VoteCastPayload =
+          {
+            userId,
+            tallies:
+              this.computeTallies(
+                activeVote,
+              ),
+            totalVoters:
+              this.countVoters(
+                lobby,
+                activeVote,
+              ),
+            totalPlayers:
+              this.countEligibleVoters(
+                lobby,
+              ),
+          };
+        socket.emit(
+          S2C.GAME_VOTE_UPDATE,
+          update,
+        );
+      },
+    );
+  }
+
+  /** Votes cast by players still in the lobby (a leaver's vote no longer counts toward "everyone voted"). */
+  private countVoters(
+    lobby: RMHboxLobby,
+    activeVote: ActiveVote,
+  ): number {
+    let n = 0;
+    for (const voterId of activeVote.votes.keys())
+      if (
+        lobby.players.has(
+          voterId,
+        )
+      )
+        n++;
+    return n;
+  }
+
+  /** Connected players: a dropped player no longer forces the full vote timer. */
+  private countEligibleVoters(
+    lobby: RMHboxLobby,
+  ): number {
+    let n = 0;
+    for (const p of lobby.players.values())
+      if (
+        p.isConnected
+      )
+        n++;
+    return n;
   }
 
   /** Drop a lobby's active vote and clear its timers (no result). */
@@ -372,6 +468,8 @@ export class VoteManager {
         endsAt,
         graceTimer:
           null,
+        resolvesAt:
+          endsAt,
       };
 
     this.activeVotes.set(
@@ -533,23 +631,39 @@ export class VoteManager {
       userId,
       payload.minigameId,
     );
+    // Drop votes of players who have left since they voted.
+    for (const voterId of [
+      ...activeVote.votes.keys(),
+    ]) {
+      if (
+        !lobby.players.has(
+          voterId,
+        )
+      )
+        activeVote.votes.delete(
+          voterId,
+        );
+    }
 
     const tallies =
       this.computeTallies(
         activeVote,
       );
+    const totalVoters =
+      this.countVoters(
+        lobby,
+        activeVote,
+      );
+    const totalPlayers =
+      this.countEligibleVoters(
+        lobby,
+      );
     const voteUpdate: VoteCastPayload =
       {
         userId,
         tallies,
-        totalVoters:
-          activeVote
-            .votes
-            .size,
-        totalPlayers:
-          lobby
-            .players
-            .size,
+        totalVoters,
+        totalPlayers,
       };
 
     logger.info(
@@ -567,12 +681,8 @@ export class VoteManager {
     // If all players have voted, start/reset a grace period of min(5s, remaining time)
     // so players can still change their pick before the vote resolves
     if (
-      activeVote
-        .votes
-        .size >=
-      lobby
-        .players
-        .size
+      totalVoters >=
+      totalPlayers
     ) {
       // Always clear existing grace timer so it resets on each vote change
       if (
@@ -611,6 +721,8 @@ export class VoteManager {
 
       // Send the updated endsAt so clients can show the countdown
       voteUpdate.endsAt =
+        newEndsAt;
+      activeVote.resolvesAt =
         newEndsAt;
 
       if (

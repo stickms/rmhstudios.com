@@ -4,18 +4,24 @@
  *
  * Renders a saved vibe page full-screen (outside the _site sidebar layout) inside
  * a sandboxed iframe, with a minimal floating toolbar to Customize, Share, or go
- * Back home. Customizing streams the model's live "thinking" and updates the page
- * in place. Anyone can customize — last write wins, no auth.
+ * Back home. The page's owner customizes it in place, streaming the model's live
+ * "thinking". Everyone else (signed out included) sees "Remix": the same prompt
+ * box builds a new page of their own, and the viewer navigates to it as soon as
+ * the server reserves its slug. The source page is never changed by a visitor.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createFileRoute, notFound, Link } from '@tanstack/react-router';
+import { createFileRoute, notFound, Link, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
+import { auth } from '@/lib/auth';
+import { canEditVibe } from '@/lib/rmhvibe/ownership';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import {
   ArrowLeft,
   Pencil,
+  GitFork,
   Share2,
   Check,
   Loader2,
@@ -50,7 +56,11 @@ const fetchVibe = createServerFn({ method: 'GET' })
   .handler(async ({ data: slug }) => {
     const page = await getVibePage(slug);
     if (!page) throw notFound();
+    const session = await auth.api.getSession({ headers: getRequest().headers });
     return {
+      canEdit: canEditVibe(page.ownerId, session?.user?.id ?? null),
+      owner: page.owner ? { name: page.owner.name, handle: page.owner.handle } : null,
+      parent: page.parent,
       slug: page.slug,
       html: page.html,
       title: page.title || page.prompt,
@@ -117,7 +127,11 @@ function VibeViewer() {
     html: initialHtml,
     status: initialStatus,
     title: initialTitle,
+    canEdit,
+    owner,
+    parent,
   } = Route.useLoaderData();
+  const navigate = useNavigate();
 
   // Generation lifecycle for the page itself: a freshly-reserved page arrives here
   // as "generating" (the user was navigated over before the build finished), so we
@@ -321,6 +335,10 @@ function VibeViewer() {
     setThinking('');
     setContent('');
 
+    // Not the owner: this builds a remix, a new page. The request is detached
+    // from this view (no abort signal) so the build keeps going after we
+    // navigate to the new page, which polls until it is ready.
+    const remix = !canEdit;
     let finalHtml = '';
     let finalTitle = '';
     let hadError = false;
@@ -332,7 +350,9 @@ function VibeViewer() {
         { slug, prompt: trimmed, fromVersionId, model },
         (event) => {
           if (gen !== genRef.current) return;
-          if (event.type === 'thinking') {
+          if (event.type === 'created' && remix) {
+            void navigate({ to: '/v/$slug', params: { slug: event.slug } });
+          } else if (event.type === 'thinking') {
             setThinking((t) => t + event.text);
           } else if (event.type === 'content') {
             setContent((c) => c + event.text);
@@ -344,7 +364,7 @@ function VibeViewer() {
             setError(event.message);
           }
         },
-        abort.signal,
+        remix ? undefined : abort.signal,
       );
     } catch (err) {
       if (gen !== genRef.current) return;
@@ -356,6 +376,21 @@ function VibeViewer() {
       );
     }
     if (gen !== genRef.current) return;
+
+    if (remix) {
+      // We would already have navigated away on `created`; reaching here means
+      // the remix never started, so there is nothing to apply to this page.
+      customizeAbortRef.current = null;
+      setBusy(false);
+      if (!hadError) {
+        setError(
+          t('connection-lost', {
+            defaultValue: 'Lost the connection before the update finished. Please try again.',
+          }),
+        );
+      }
+      return;
+    }
 
     // Stream ended without a result and without an explicit error — most likely the
     // connection dropped. The customize runs to completion server-side regardless, so
@@ -472,10 +507,29 @@ function VibeViewer() {
             <History size={17} />
           </button>
           <button type="button" onClick={() => setPanelOpen((v) => !v)} className="vibe-toolbar__cta">
-            <Pencil size={15} />
-            {t('customize', { defaultValue: 'Customize' })}
+            {canEdit ? <Pencil size={15} /> : <GitFork size={15} />}
+            {canEdit
+              ? t('customize', { defaultValue: 'Customize' })
+              : t('remix', { defaultValue: 'Remix' })}
           </button>
         </div>
+
+        {/* Credit — who made this page, and what it was remixed from */}
+        {(owner?.name || parent) && (
+          <div className="vibe-hint fixed bottom-[calc(0.75rem+var(--safe-bottom))] left-[calc(0.75rem+var(--safe-left))] z-30 flex flex-col gap-0.5 text-xs">
+            {owner?.name && (
+              <span>{t('by-owner', { defaultValue: 'by {{name}}', name: owner.name })}</span>
+            )}
+            {parent && (
+              <Link to="/v/$slug" params={{ slug: parent.slug }} className="underline">
+                {t('remixed-from', {
+                  defaultValue: 'Remixed from {{title}}',
+                  title: parent.title || parent.slug,
+                })}
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Banner shown while previewing an earlier variant */}
         {viewingOlder && (
@@ -579,7 +633,9 @@ function VibeViewer() {
           <div className="vibe-panel mx-auto">
             <div className="mb-2 flex items-center justify-between gap-3">
               <p className="vibe-panel__title">
-                {t('customize-this-page', { defaultValue: 'Customize this page' })}
+                {canEdit
+                  ? t('customize-this-page', { defaultValue: 'Customize this page' })
+                  : t('remix-this-page', { defaultValue: 'Remix this page' })}
               </p>
               <div className="flex items-center gap-2">
                 <ModelSelect value={model} onChange={setModel} disabled={busy} />

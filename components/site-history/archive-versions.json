@@ -8,7 +8,7 @@
     { "id": "feed-home", "commit": "74f665f4b", "path": "/", "links": 10 },
     { "id": "tanstack", "commit": "f876d4469", "path": "/", "links": 10 },
     { "id": "vibe-home", "commit": "fc1b35f34", "path": "/", "links": 8 },
-    { "id": "sidebar-shell", "commit": "41748c0e0", "path": "/", "links": 10 },
+    { "id": "sidebar-shell", "commit": "41748c0e0", "path": "/home", "links": 10 },
     { "id": "black-shell", "commit": "15bcfeab6", "path": "/", "links": 10 },
     { "id": "apple-shell", "commit": "e8c1e4b71", "path": "/", "links": 10 },
     { "id": "liquid-glass", "commit": "6fde0b5e2", "path": "/", "links": 10 },

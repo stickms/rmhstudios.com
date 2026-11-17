@@ -2,7 +2,7 @@
  * PreloadScreen — Loading screen shown while game assets are being prepared.
  *
  * Displays a progress bar and player ready-status indicators.
- * Auto-emits the ready_to_render event on mount.
+ * Loads the game's code, then emits ready_to_render (again after a reconnect).
  *
  * Props:
  *   players: { userId: string; userName: string; ready: boolean }[] — Player readiness list
@@ -11,6 +11,7 @@
 import {
   useEffect,
   useMemo,
+  useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -20,6 +21,8 @@ import {
 } from 'lucide-react';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
+import { useRMHboxStore } from '@/lib/rmhbox/store';
+import { preloadMinigame } from '@/components/rmhbox/minigames/minigame-loaders';
 
 interface PreloadPlayer {
   userId: string;
@@ -43,15 +46,85 @@ export default function PreloadScreen({
       'c-rmhbox',
     );
 
-  // Auto-emit ready on mount
+  const minigameId =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s
+          .lobby
+          ?.currentGame
+          ?.minigameId ??
+        null,
+    );
+  const connectionStatus =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s.connectionStatus,
+    );
+  const [
+    loadedFor,
+    setLoadedFor,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+
+  // Load the game's code first: "ready" means the game can render the moment
+  // PLAYING starts, not merely that this screen mounted.
   useEffect(() => {
+    let cancelled = false;
+    void preloadMinigame(
+      minigameId,
+    ).then(
+      () => {
+        if (
+          !cancelled
+        )
+          setLoadedFor(
+            minigameId ??
+              '',
+          );
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    minigameId,
+  ]);
+
+  // Report ready once loaded, and again after every reconnect: a ready sent
+  // while the socket was down was dropped, and nothing used to resend it, so
+  // everyone waited out the server's 30 s preload timeout.
+  const loaded =
+    loadedFor ===
+    (minigameId ??
+      '');
+  useEffect(() => {
+    if (
+      !loaded ||
+      connectionStatus !==
+        'connected'
+    )
+      return;
     emit(
       C2S.GAME_READY_TO_RENDER,
       {
         lobbyId,
       },
+      {
+        queue: true,
+      },
     );
   }, [
+    loaded,
+    connectionStatus,
     lobbyId,
   ]);
 

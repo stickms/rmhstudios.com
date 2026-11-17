@@ -48,6 +48,14 @@ async function describeHttpError(
   } catch {
     /* body unavailable */
   }
+  // The API wraps errors as {"error": "..."}; show that text, not the raw JSON.
+  try {
+    const parsed: unknown = JSON.parse(body);
+    const msg = (parsed as { error?: unknown } | null)?.error;
+    if (typeof msg === 'string' && msg.trim()) body = msg.trim();
+  } catch {
+    /* plain-text body */
+  }
   if (
     res.status ===
     429
@@ -84,6 +92,7 @@ export async function streamVibe(
     slug?: string;
     fromVersionId?: string;
     model?: VibeModel;
+    kind?: 'page' | 'widget';
   },
   onEvent: (
     event: VibeStreamEvent,

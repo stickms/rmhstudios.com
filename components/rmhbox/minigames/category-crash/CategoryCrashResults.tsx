@@ -51,12 +51,13 @@ export default function CategoryCrashResults({
 
   const { t } = useTranslation("c-rmhbox");
 
-  const { categories, playerResults } = roundResults;
+  // Tolerate a missing/partial results object (an older snapshot sent an array).
+  const categories = roundResults?.categories ?? [];
 
   // Sort players by round score descending
   const sortedPlayers = useMemo(() => {
-    return Object.values(playerResults).sort((a, b) => b.roundScore - a.roundScore);
-  }, [playerResults]);
+    return Object.values(roundResults?.playerResults ?? {}).sort((a, b) => b.roundScore - a.roundScore);
+  }, [roundResults]);
 
   // Leaderboard sorted by cumulative score
   const leaderboard = useMemo(() => {
@@ -83,7 +84,7 @@ export default function CategoryCrashResults({
           {isGameOver ? <><Trophy size={18} className="text-app-warning" /> {t("final-results", { defaultValue: "Final Results" })}</> : t("round-of-category-crash-results", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })}
         </h3>
         <p className="text-sm text-app-text-muted">
-          {t("letter-label", { defaultValue: "Letter:" })} <span className="font-bold text-app-accent">{roundResults.letter}</span>
+          {t("letter-label", { defaultValue: "Letter:" })} <span className="font-bold text-app-accent">{roundResults?.letter}</span>
         </p>
       </div>
 
