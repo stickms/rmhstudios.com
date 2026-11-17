@@ -73,11 +73,13 @@ interface CutExample {
 
 /**
  * The author whose r differs most from their h, among authors with at least
- * four papers; then among anyone with r ≠ h; then the author with most papers.
+ * four papers and both indices above zero (so both cuts have a square to draw);
+ * then without that; then anyone with r ≠ h; then the author with most papers.
  */
 const CUT: CutExample | null = (() => {
   const diff = (m: AuthorMetrics) => Math.abs(m.h - m.r);
   const pool = [
+    AUTHOR_RANKING.filter((m) => m.papers >= 4 && m.h !== m.r && m.r > 0 && m.h > 0),
     AUTHOR_RANKING.filter((m) => m.papers >= 4 && m.h !== m.r),
     AUTHOR_RANKING.filter((m) => m.h !== m.r),
     AUTHOR_RANKING.filter((m) => m.papers > 0),
@@ -414,7 +416,7 @@ function CutChart({ values, k, max, kLabel, title, a }: { values: number[]; k: n
         <ol className="rix-bars">
           {shown.map((v, i) => {
             const s = r2(a + i * step);
-            return <li key={i} className={`rix-bar sc-t${i < k ? ' is-core' : ''}`} style={cssVars({ '--v': v / max, '--a': s, '--b': r2(s + 8) })} />;
+            return <li key={i} className="rix-bar sc-t" style={cssVars({ '--v': v / max, '--a': s, '--b': r2(s + 8) })} />;
           })}
         </ol>
       </div>
@@ -505,7 +507,10 @@ function CutScene({ ex }: { ex: CutExample }) {
 
         <div className="sc-stack rix-sift-steps">
           <Step index={0} count={STEPS} className="rix-step">
-            <span className="rix-count num">h&nbsp;{n(m.h)}</span>
+            <span className="rix-count num">
+              <span className="rix-count-k">h</span>
+              {n(m.h)}
+            </span>
             <h3 className="h3">{t('rix-cut-0-title', { defaultValue: 'Cut on citations' })}</h3>
             <p className="body mute">
               {t('rix-cut-0-body', {
@@ -516,7 +521,10 @@ function CutScene({ ex }: { ex: CutExample }) {
             </p>
           </Step>
           <Step index={1} count={STEPS} className="rix-step">
-            <span className="rix-count num">r&nbsp;{n(m.r)}</span>
+            <span className="rix-count num">
+              <span className="rix-count-k">r</span>
+              {n(m.r)}
+            </span>
             <h3 className="h3">{t('rix-cut-1-title', { defaultValue: 'Cut on resonance' })}</h3>
             <p className="body mute">
               {t('rix-cut-1-body', {
@@ -527,7 +535,10 @@ function CutScene({ ex }: { ex: CutExample }) {
           </Step>
           <Step index={2} count={STEPS} className="rix-step">
             <span className="rix-count num">
-              h&nbsp;{n(m.h)} · r&nbsp;{n(m.r)}
+              <span className="rix-count-k">h</span>
+              {n(m.h)}
+              <span className="rix-count-k rix-count-k--gap">r</span>
+              {n(m.r)}
             </span>
             <h3 className="h3">{t('rix-cut-2-title', { defaultValue: 'Why the two differ' })}</h3>
             <p className="body mute">

@@ -50,8 +50,12 @@
 .rmhr-root .home-fld-blurb { font-size: 14px; line-height: 1.45; color: var(--mute); max-width: 62ch; }
 .rmhr-root .home-fld-count { white-space: nowrap; }
 @media (max-width: 620px) {
-  .rmhr-root .home-fld { grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; }
-  .rmhr-root .home-fld-count { grid-column: 2; }
+  .rmhr-root .home-fld { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 4px 12px; padding-block: 14px; }
+  .rmhr-root .home-fld-text { display: contents; }
+  .rmhr-root .home-fld-code { grid-area: 1 / 1; }
+  .rmhr-root .home-fld-name { grid-area: 1 / 2; }
+  .rmhr-root .home-fld-count { grid-area: 1 / 3; }
+  .rmhr-root .home-fld-blurb { grid-area: 2 / 2 / 3 / 4; }
 }
 
 /* ── 3. the archive ── */
@@ -166,13 +170,13 @@
       .rmhr-root .home-hero-b { margin-top: 0; align-self: center; }
       .rmhr-root .home-stat-v { font-size: clamp(36px, 6.4vw, 96px); }
       .rmhr-root .home-rail { margin-block: 16px clamp(20px, 4svh, 32px); }
-      .rmhr-root .home-hero .home-title { font-size: clamp(48px, min(12vw, 22svh), 168px); }
+      .rmhr-root .home-hero .home-title { font-size: clamp(48px, min(19vw, 22svh), 168px); }
 
       /* fields: an index of the four divisions beside the live one */
-      .rmhr-root .home-fields-wrap { grid-template-rows: auto minmax(0, 1fr) auto; }
+      .rmhr-root .home-fields-wrap { grid-template-rows: auto minmax(0, 1fr) auto; row-gap: clamp(16px, 3svh, 32px); }
       .rmhr-root .home-fields-head { margin-bottom: 0; gap: 10px; }
       .rmhr-root .home-fields-head .h2 { font-size: clamp(26px, 3.2vw, 44px); }
-      .rmhr-root .home-fields-body { display: grid; align-items: start; align-content: center; min-height: 0; }
+      .rmhr-root .home-fields-body { display: grid; align-items: start; align-content: safe center; min-height: 0; }
       .rmhr-root .home-div + .home-div { margin-top: 0; }
       @media (min-width: 900px) {
         .rmhr-root .home-fields-body { grid-template-columns: 240px minmax(0, 1fr); gap: clamp(32px, 5vw, 80px); }
@@ -191,11 +195,11 @@
       }
 
       /* r-index: the number steps, the dots empty beside it */
-      .rmhr-root .home-rix-wrap { grid-template-rows: auto minmax(0, 1fr) auto; }
+      .rmhr-root .home-rix-wrap { grid-template-rows: auto minmax(0, 1fr) auto; row-gap: clamp(16px, 3svh, 32px); }
       .rmhr-root .home-rix-head { margin-bottom: 0; gap: 10px; }
       .rmhr-root .home-rix-head .h2 { font-size: clamp(26px, 3.2vw, 44px); }
       .rmhr-root .home-rix-paper { margin-top: 4px; padding-top: 12px; }
-      .rmhr-root .home-rix-body { align-items: center; align-content: center; min-height: 0; gap: clamp(20px, 4vw, 72px); }
+      .rmhr-root .home-rix-body { align-items: center; align-content: safe center; min-height: 0; gap: clamp(20px, 4vw, 72px); }
       .rmhr-root .home-rix-fig { position: static; }
       .rmhr-root .home-rix-step + .home-rix-step { margin-top: 0; padding-top: 0; border-top: 0; }
       .rmhr-root .home-rix-num { font-size: clamp(64px, min(11vw, 20svh), 168px); }

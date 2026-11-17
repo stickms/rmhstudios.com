@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { ARCHIVE_STATS, getAuthor } from '@/lib/rmh-research/catalog';
 import { FIELDS } from '@/lib/rmh-research/fields';
 import {
-  ARCHIVE_PAGE_SIZE,
   pageWindow,
   paginate,
   searchArchive,
@@ -25,6 +24,12 @@ import { Crumbs, NS, PaperRow, useFieldLabels, useNumber } from './shared';
 
 const route = getRouteApi('/rmh-research/archive');
 const PATH = '/rmh-research/archive';
+/**
+ * The router marks a link active when its search is a SUBSET of the current one,
+ * which would light "page 1" and the author chip on every filtered view. Every
+ * link here compares the whole search instead.
+ */
+const EXACT = { exact: true } as const;
 
 /** Drop unset keys, so a link carries only the params that mean something. */
 function clean(s: ArchiveSearch): ArchiveSearch {
@@ -58,6 +63,7 @@ function Opt({ on, to, count, children }: { on: boolean; to: ArchiveSearch; coun
       <Link
         className={`arc-opt${on ? ' is-on' : ''}${count === 0 ? ' is-empty' : ''}`}
         to={PATH}
+        activeOptions={EXACT}
         search={to}
         aria-current={on ? 'true' : undefined}
       >
@@ -206,7 +212,7 @@ export default function ArchivePage() {
               {t('arc-filters-title', { defaultValue: 'Filters' })}
             </h2>
             {filtered ? (
-              <Link className="btn-text arc-clear" to={PATH} search={clean({ q: search.q, sort: search.sort })}>
+              <Link className="btn-text arc-clear" to={PATH} activeOptions={EXACT} search={clean({ q: search.q, sort: search.sort })}>
                 {t('arc-clear-filters', { defaultValue: 'Clear filters' })}
               </Link>
             ) : null}
@@ -326,6 +332,7 @@ export default function ArchivePage() {
               <Link
                 className="chip arc-author"
                 to={PATH}
+                activeOptions={EXACT}
                 search={withPatch(search, { author: undefined })}
                 aria-label={t('arc-author-remove', { defaultValue: 'Remove the author filter, {{name}}', name: authorName })}
               >
@@ -352,12 +359,12 @@ export default function ArchivePage() {
               </ul>
               <div className="actions">
                 {filtered ? (
-                  <Link className="btn-quiet" to={PATH} search={clean({ q: search.q })}>
+                  <Link className="btn-quiet" to={PATH} activeOptions={EXACT} search={clean({ q: search.q })}>
                     {t('arc-clear-filters', { defaultValue: 'Clear filters' })}
                   </Link>
                 ) : null}
                 {search.q || filtered ? (
-                  <Link className="btn-text" to={PATH} search={{}}>
+                  <Link className="btn-text" to={PATH} activeOptions={EXACT} search={{}}>
                     {t('arc-empty-all', { defaultValue: 'Browse the whole archive' })}
                   </Link>
                 ) : null}
@@ -368,7 +375,7 @@ export default function ArchivePage() {
           {pages > 1 ? (
             <nav className="arc-pager" aria-label={t('arc-pager-label', { defaultValue: 'Result pages' })}>
               {page > 1 ? (
-                <Link className="btn-text arc-pg-step" to={PATH} search={clean({ ...search, page: page - 1 > 1 ? page - 1 : undefined })} rel="prev">
+                <Link className="btn-text arc-pg-step" to={PATH} activeOptions={EXACT} search={clean({ ...search, page: page - 1 > 1 ? page - 1 : undefined })} rel="prev">
                   <span aria-hidden="true" className="arc-pg-arw">
                     ←
                   </span>
@@ -391,6 +398,7 @@ export default function ArchivePage() {
                       <Link
                         className="arc-pg num"
                         to={PATH}
+                        activeOptions={EXACT}
                         search={clean({ ...search, page: p > 1 ? p : undefined })}
                         aria-current={p === page ? 'page' : undefined}
                         aria-label={t('arc-pager-page', { defaultValue: 'Page {{page}}', page: p })}
@@ -402,7 +410,7 @@ export default function ArchivePage() {
                 )}
               </ol>
               {page < pages ? (
-                <Link className="btn-text arc-pg-step" to={PATH} search={clean({ ...search, page: page + 1 })} rel="next">
+                <Link className="btn-text arc-pg-step" to={PATH} activeOptions={EXACT} search={clean({ ...search, page: page + 1 })} rel="next">
                   {t('arc-pager-next', { defaultValue: 'Next' })}
                   <span aria-hidden="true" className="arc-pg-arw">
                     →
@@ -416,9 +424,6 @@ export default function ArchivePage() {
               )}
             </nav>
           ) : null}
-          <p className="meta arc-foot">
-            {t('arc-per-page', { defaultValue: '{{count}} per page', count: ARCHIVE_PAGE_SIZE })}
-          </p>
         </section>
       </div>
     </>

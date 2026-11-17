@@ -14,8 +14,11 @@
 }
 
 /* ════ ARCHIVE ════ */
-.rmhr-root .arc-head { padding-block: calc(var(--nav-h) + clamp(48px, 7vw, 96px)) clamp(32px, 4vw, 48px); }
-.rmhr-root .arc-search { display: grid; gap: 10px; margin-top: clamp(28px, 4vw, 40px); max-width: 860px; }
+.rmhr-root .arc-head { padding-block: calc(var(--nav-h) + clamp(36px, 5vw, 64px)) clamp(28px, 3.4vw, 40px); }
+/* A working tool, not a cover: a smaller title so the results start on the first screen. */
+.rmhr-root .arc-head .arc-title { margin-top: 16px; font-size: clamp(36px, 4.6vw, 56px); }
+.rmhr-root .arc-head .lede { margin-top: 14px; font-size: clamp(16px, 1.4vw, 18px); max-width: 60ch; }
+.rmhr-root .arc-search { display: grid; gap: 10px; margin-top: clamp(22px, 3vw, 32px); max-width: 860px; }
 .rmhr-root .arc-search-row { display: flex; gap: 10px; }
 .rmhr-root .arc-search-row .field { flex: 1 1 auto; min-width: 0; }
 .rmhr-root .arc-search .btn { min-height: 52px; }
@@ -83,7 +86,11 @@
 .rmhr-root .arc-pg-step.is-off { display: inline-flex; align-items: center; min-height: 36px; font-size: 14px; font-weight: 500; color: var(--mute); cursor: default; }
 .rmhr-root .arc-pg-arw { display: inline-block; }
 [dir='rtl'] .rmhr-root .arc-pg-arw { scale: -1 1; }
-.rmhr-root .arc-foot { margin-top: 16px; }
+
+/* A phone scrolls each row sideways, so it leaves out the fields this search has nothing in. */
+@media (max-width: 899px) {
+  .rmhr-root .arc-opts > li:has(> .arc-opt.is-empty:not(.is-on)) { display: none; }
+}
 
 @media (max-width: 560px) {
   .rmhr-root .arc-search-row { flex-wrap: wrap; }
@@ -170,22 +177,31 @@
 @media screen and (prefers-reduced-motion: no-preference) {
   html:where(:not([data-jelly-motion='still'])) {
     @supports (animation-timeline: view()) {
-      .rmhr-root .pap-pin { display: flex; flex-direction: column; justify-content: center; padding-block: calc(var(--nav-h) + 24px) 24px; }
+      .rmhr-root .pap-pin { display: flex; flex-direction: column; justify-content: safe center; padding-block: calc(var(--nav-h) + 28px) 20px; }
       .rmhr-root .pap-res { padding-block: 0; }
-      .rmhr-root .pap-res-prog { display: flex; align-items: center; gap: 16px; max-width: 780px; margin-top: 24px; }
+      .rmhr-root .pap-res-head { gap: 8px; margin-bottom: 24px; }
+      .rmhr-root .pap-res-head .h2 { font-size: clamp(26px, 3.2vw, 40px); }
+      .rmhr-root .pap-bars { gap: 16px; }
+      .rmhr-root .pap-bar { gap: 6px; }
+      .rmhr-root .pap-res-end { margin-top: 20px; padding-top: 16px; }
+      .rmhr-root .pap-res-score { font-size: clamp(30px, 3.6vw, 44px); }
+      .rmhr-root .pap-res-prog { display: flex; align-items: center; gap: 16px; max-width: 780px; margin-top: 20px; }
       .rmhr-root .pap-res-prog .scene-rail { flex: 1 1 auto; }
 
       /* A short or narrow viewport: tighten so the whole breakdown fits in one screen. */
       @media (max-width: 640px), (max-height: 760px) {
-        .rmhr-root .pap-pin { padding-block: calc(var(--nav-h) + 16px) 16px; }
-        .rmhr-root .pap-res-head { gap: 6px; margin-bottom: 18px; }
-        .rmhr-root .pap-res-head .h2 { font-size: clamp(24px, 6.4vw, 34px); }
+        .rmhr-root .pap-pin { padding-block: calc(var(--nav-h) + 20px) 14px; }
+        .rmhr-root .pap-res-head { gap: 4px; margin-bottom: 16px; }
+        .rmhr-root .pap-res-head .h2 { font-size: clamp(24px, 6.4vw, 32px); }
         .rmhr-root .pap-bars { gap: 12px; }
-        .rmhr-root .pap-bar { gap: 6px; }
+        .rmhr-root .pap-bar { gap: 5px; }
+        .rmhr-root .pap-bar .bar-track { height: 8px; }
+        .rmhr-root .pap-bar.is-score .bar-track { height: 12px; }
+        .rmhr-root .pap-bar-n { font-size: 18px; }
         .rmhr-root .pap-bar-why { font-size: 13px; line-height: 1.4; }
-        .rmhr-root .pap-res-end { margin-top: 16px; padding-top: 12px; }
-        .rmhr-root .pap-res-score { font-size: 30px; }
-        .rmhr-root .pap-res-prog { margin-top: 14px; }
+        .rmhr-root .pap-res-end { margin-top: 14px; padding-top: 12px; }
+        .rmhr-root .pap-res-score { font-size: 28px; }
+        .rmhr-root .pap-res-prog { margin-top: 12px; }
       }
     }
   }
