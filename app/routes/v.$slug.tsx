@@ -10,7 +10,7 @@
  * the server reserves its slug. The source page is never changed by a visitor.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, notFound, Link, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
@@ -29,9 +29,13 @@ import {
   CornerDownLeft,
   History,
   RotateCcw,
+  MousePointerClick,
+  Wrench,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   getVibePage,
+  getVibeTweaks,
   listVibeVersions,
   getVibeVersion,
   type VibeVersionSummary,
@@ -39,13 +43,23 @@ import {
 import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
-import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
-import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
+import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
+import { TweakPanel } from '@/components/rmhvibe/TweakPanel';
+import { resolveTweakValues, type TweakSpec, type TweakValue } from '@/lib/rmhvibe/tweaks';
+import { saveVibeTweaks } from '@/lib/rmhvibe/vibe-page-client';
+import { toast } from '@/lib/toast';
+import { type BridgeFrameEvent, type VibeSelection } from '@/lib/rmhvibe/bridge';
+import { formatFixPrompt } from '@/lib/rmhvibe/vibe-selection';
+import { useVibeBridge } from '@/components/rmhvibe/useVibeBridge';
+import { createVibeHostHandlers } from '@/components/rmhvibe/vibe-host-handlers';
+import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 // Background-build polling cadence + guards (see the generating-status effect).
+const MAX_COLLECTED_ERRORS = 3;
+
 const POLL_INTERVAL_MS = 1500;
 const POLL_MAX_FAILURES = 12; // ~18s of solid failures → treat the page as gone
 const BUILD_SLOW_AFTER_MS = 60_000; // reassure the user it's still working
@@ -56,6 +70,7 @@ const fetchVibe = createServerFn({ method: 'GET' })
   .handler(async ({ data: slug }) => {
     const page = await getVibePage(slug);
     if (!page) throw notFound();
+    const { tweakSpec, tweakValues } = await getVibeTweaks(slug);
     const session = await auth.api.getSession({ headers: getRequest().headers });
     return {
       canEdit: canEditVibe(page.ownerId, session?.user?.id ?? null),
@@ -67,9 +82,16 @@ const fetchVibe = createServerFn({ method: 'GET' })
       description: page.description || `A vibe page about "${page.prompt}".`,
       // "generating" | "ready" | "error" — drives the still-building overlay below.
       status: page.status,
+      kind: page.kind === 'widget' ? ('widget' as const) : ('page' as const),
       thumbnailUrl: page.thumbnailUrl,
+      tweakSpec,
+      tweakValues,
     };
   });
+
+const fetchVibeTweaks = createServerFn({ method: 'GET' })
+  .validator((slug: string) => slug)
+  .handler(({ data: slug }) => getVibeTweaks(slug));
 
 const fetchVibeVersions = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -126,11 +148,15 @@ function VibeViewer() {
     slug,
     html: initialHtml,
     status: initialStatus,
+    kind,
     title: initialTitle,
     canEdit,
     owner,
     parent,
+    tweakSpec: initialSpec,
+    tweakValues: savedValues,
   } = Route.useLoaderData();
+  const isWidget = kind === 'widget';
   const navigate = useNavigate();
 
   // Generation lifecycle for the page itself: a freshly-reserved page arrives here
@@ -141,10 +167,6 @@ function VibeViewer() {
   // The page's current (latest) HTML — what "Back to latest" returns to. Diverges
   // from `html` while previewing an older version, and advances on each customize.
   const [latestHtml, setLatestHtml] = useState(initialHtml);
-  // Bumped on every html change so the iframe fully remounts — without this,
-  // backdrop-filter overlays (toolbar/panel) leave stale composite "ghosts"
-  // each time the iframe repaints, stacking up as the user customizes.
-  const [renderKey, setRenderKey] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState<VibeModel>(DEFAULT_VIBE_MODEL);
@@ -164,7 +186,51 @@ function VibeViewer() {
   const isNewVersion = useArrivingKeys(versions?.map((v) => v.id) ?? []);
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // The visible frame, reported by VibeFrame after each swap.
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [bridgeFrame, setBridgeFrame] = useState<HTMLIFrameElement | null>(null);
+  // Click-to-edit: the element the user picked, and whether picking is armed.
+  const [picking, setPicking] = useState(false);
+  // Read by the bridge handler, which must not see a stale value: the page is
+  // untrusted and may send `picked` at any time, so only an armed picker counts.
+  const pickingRef = useRef(false);
+  pickingRef.current = picking;
+  const [selection, setSelection] = useState<VibeSelection | null>(null);
+  // Runtime errors the page reported (deduped, newest last) that "Fix it" can target.
+  const [pageErrors, setPageErrors] = useState<string[]>([]);
+  // Tweak knobs: the spec of the version on screen, the page's latest spec (what
+  // "Back to latest" returns to), the owner's saved values, and what the frame shows now.
+  const [tweakSpec, setTweakSpec] = useState<TweakSpec[]>(initialSpec);
+  const [latestSpec, setLatestSpec] = useState<TweakSpec[]>(initialSpec);
+  const [saved, setSaved] = useState<Record<string, TweakValue>>(savedValues);
+  const [tweakValues, setTweakValues] = useState(() => resolveTweakValues(initialSpec, savedValues));
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+  const [savingTweaks, setSavingTweaks] = useState(false);
+  // Store ops go to the per-page KV endpoint; room ops are refused in the viewer.
+  // Frame events (picked / pick:cancel / error) are handled below.
+  const bridgeHandlers = useMemo(() => createVibeHostHandlers(slug), [slug]);
+  const { post } = useVibeBridge(bridgeFrame, {
+    kind: 'viewer',
+    ...bridgeHandlers,
+    onEvent(e: BridgeFrameEvent) {
+      if (e.event === 'picked') {
+        if (!pickingRef.current) return;
+        pickingRef.current = false;
+        setSelection(e.data as VibeSelection);
+        setPicking(false);
+        setPanelOpen(true);
+      } else if (e.event === 'pick:cancel') {
+        if (!pickingRef.current) return;
+        pickingRef.current = false;
+        setPicking(false);
+      } else if (e.event === 'error') {
+        const message = (e.data as { message: string }).message;
+        setPageErrors((prev) =>
+          prev.includes(message) ? prev : [...prev, message].slice(-MAX_COLLECTED_ERRORS),
+        );
+      }
+    },
+  });
   // The in-flight customize stream, aborted on slug change and unmount, and a
   // generation counter every async step checks before it writes state — so a
   // result for the previous page never lands on this one.
@@ -188,12 +254,31 @@ function VibeViewer() {
     setThinking('');
     setContent('');
     setError(null);
+    setPicking(false);
+    setSelection(null);
+    setPageErrors([]);
   }, [slug]);
+  // A swapped frame (version preview, new build) starts with picking off and a
+  // fresh error slate: its errors are its own.
+  useEffect(() => {
+    setPicking(false);
+    setPageErrors([]);
+  }, [bridgeFrame]);
+  useEffect(() => {
+    setTweakSpec(initialSpec);
+    setLatestSpec(initialSpec);
+    setSaved(savedValues);
+    setTweakValues(resolveTweakValues(initialSpec, savedValues));
+    setTweaksOpen(false);
+  }, [slug, initialSpec, savedValues]);
+  // Values are applied to every new frame (after its hello) and on every change.
+  useEffect(() => {
+    if (bridgeFrame && tweakSpec.length) post('tweaks', tweakValues);
+  }, [bridgeFrame, tweakSpec, tweakValues, post]);
   useEffect(() => {
     setHtml(initialHtml);
     setLatestHtml(initialHtml);
     setStatus(initialStatus);
-    setRenderKey((k) => k + 1);
     setVersions(null);
     setActiveVersionId(null);
     setHistoryOpen(false);
@@ -236,7 +321,6 @@ function VibeViewer() {
         if (data.status === 'ready') {
           setHtml(data.html);
           setLatestHtml(data.html);
-          setRenderKey((k) => k + 1);
           if (data.title) document.title = `${data.title} | RMH Studios`;
           setStatus('ready');
         } else if (data.status === 'error') {
@@ -293,7 +377,8 @@ function VibeViewer() {
         return;
       }
       setHtml(version.html);
-      setRenderKey((k) => k + 1);
+      setTweakSpec(version.tweakSpec);
+      setTweakValues(resolveTweakValues(version.tweakSpec, saved));
       setActiveVersionId(versionId);
       if (version.title) document.title = `${version.title} | RMH Studios`;
     } catch {
@@ -306,8 +391,27 @@ function VibeViewer() {
     if (busy) return;
     previewSeqRef.current += 1;
     setHtml(latestHtml);
-    setRenderKey((k) => k + 1);
+    setTweakSpec(latestSpec);
+    setTweakValues(resolveTweakValues(latestSpec, saved));
     setActiveVersionId(null);
+  }
+
+  function changeTweak(key: string, value: TweakValue) {
+    setTweakValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function saveTweaks() {
+    if (savingTweaks) return;
+    setSavingTweaks(true);
+    try {
+      const values = await saveVibeTweaks(slug, tweakSpec, tweakValues);
+      setSaved((prev) => ({ ...prev, ...values }));
+      toast.success(t('tweak-saved', { defaultValue: 'Tweaks saved' }));
+    } catch {
+      toast.error(t('tweak-save-error', { defaultValue: 'Could not save the tweaks' }));
+    } finally {
+      setSavingTweaks(false);
+    }
   }
 
   useEffect(() => {
@@ -319,8 +423,26 @@ function VibeViewer() {
     }
   }, [panelOpen]);
 
-  async function handleCustomize() {
-    const trimmed = prompt.trim();
+  function togglePicking() {
+    const next = !picking;
+    setPicking(next);
+    post(next ? 'pick:start' : 'pick:stop', null);
+  }
+
+  // "Fix it" is a customize/remix run with a fixed, model-facing prompt.
+  function handleFix() {
+    const message = pageErrors[pageErrors.length - 1];
+    if (!message) return;
+    setPanelOpen(true);
+    void handleCustomize({
+      prompt: formatFixPrompt(message),
+      selection: null,
+    });
+  }
+
+  async function handleCustomize(override?: { prompt: string; selection: VibeSelection | null }) {
+    const trimmed = (override ? override.prompt : prompt).trim();
+    const target = override ? override.selection : selection;
     if (!trimmed || busy || customizeAbortRef.current) return;
     const gen = genRef.current;
     const abort = new AbortController();
@@ -330,6 +452,9 @@ function VibeViewer() {
     // The page as it stood when this customize began: the fallback below asks
     // "did the server's copy move past this?".
     const baselineHtml = latestHtml;
+    // What the frame shows now; restored if the build never lands, since live
+    // previews swap the visible frame while it runs.
+    const htmlBefore = html;
     setBusy(true);
     setError(null);
     setThinking('');
@@ -347,7 +472,7 @@ function VibeViewer() {
       // continue from the page's latest version.
       const fromVersionId = viewingOlder ? (activeVersionId ?? undefined) : undefined;
       await streamVibe(
-        { slug, prompt: trimmed, fromVersionId, model },
+        { slug, prompt: trimmed, fromVersionId, model, ...(target ? { selection: target } : {}) },
         (event) => {
           if (gen !== genRef.current) return;
           if (event.type === 'created' && remix) {
@@ -356,6 +481,8 @@ function VibeViewer() {
             setThinking((t) => t + event.text);
           } else if (event.type === 'content') {
             setContent((c) => c + event.text);
+          } else if (event.type === 'preview') {
+            setHtml(event.html);
           } else if (event.type === 'done') {
             finalHtml = event.html;
             finalTitle = event.title;
@@ -382,6 +509,7 @@ function VibeViewer() {
       // the remix never started, so there is nothing to apply to this page.
       customizeAbortRef.current = null;
       setBusy(false);
+      setHtml(htmlBefore);
       if (!hadError) {
         setError(
           t('connection-lost', {
@@ -426,13 +554,16 @@ function VibeViewer() {
     // start while this one is still deciding whether it landed.
     customizeAbortRef.current = null;
     setBusy(false);
+    if (!finalHtml || hadError) setHtml(htmlBefore);
 
     if (finalHtml && !hadError) {
       setHtml(finalHtml);
       setLatestHtml(finalHtml);
-      setRenderKey((k) => k + 1);
       if (finalTitle) document.title = `${finalTitle} | RMH Studios`;
-      setPrompt('');
+      if (!override) setPrompt('');
+      // A Fix it run ignored the chip, so the chip stays.
+      if (!override) setSelection(null);
+      setPageErrors([]);
       setThinking('');
       setContent('');
       setPanelOpen(false);
@@ -440,6 +571,17 @@ function VibeViewer() {
       // refresh the history list so the new entry shows up.
       setActiveVersionId(null);
       if (historyOpen || versions !== null) void loadVersions();
+      // The new version may declare different knobs.
+      void fetchVibeTweaks({ data: slug }).then(
+        (next) => {
+          if (gen !== genRef.current) return;
+          setTweakSpec(next.tweakSpec);
+          setLatestSpec(next.tweakSpec);
+          setSaved(next.tweakValues);
+          setTweakValues(resolveTweakValues(next.tweakSpec, next.tweakValues));
+        },
+        () => {},
+      );
     }
   }
 
@@ -458,27 +600,27 @@ function VibeViewer() {
   if (status === 'generating') return <VibeGenerating title={initialTitle} slow={buildSlow} />;
   if (status === 'error') return <VibeGenerationFailed />;
 
+  const frameEl = (
+    <VibeFrame
+      key={slug}
+      html={html}
+      title={
+        isWidget
+          ? t('vibe-widget-frame-title', { defaultValue: 'Vibe widget' })
+          : t('vibe-frame-title', { defaultValue: 'Vibe page' })
+      }
+      onFrame={(f) => {
+        iframeRef.current = f;
+        setBridgeFrame(f);
+      }}
+    />
+  );
+
   return (
     <>
       <VibeStyles />
-      <div className="fixed inset-0 bg-black">
-        <iframe
-          key={renderKey}
-          ref={iframeRef}
-          title="Vibe page"
-          srcDoc={html}
-          sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock"
-          className="h-full w-full border-0"
-          onLoad={(e) => {
-            // Move focus into the iframe so keyboard-driven pages (spacebar, arrow
-            // keys, WASD, etc.) receive input immediately without a manual click.
-            try {
-              e.currentTarget.contentWindow?.focus();
-            } catch {
-              /* cross-origin focus call — safe to ignore */
-            }
-          }}
-        />
+      <div className={`fixed inset-0 bg-black${isWidget ? ' vibe-widget-stage' : ''}`}>
+        {isWidget ? <div className="vibe-widget-frame">{frameEl}</div> : frameEl}
 
         {/* Floating toolbar — top-right */}
         <div className="vibe-toolbar fixed right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-40">
@@ -506,6 +648,42 @@ function VibeViewer() {
           >
             <History size={17} />
           </button>
+          <button
+            type="button"
+            onClick={togglePicking}
+            aria-label={
+              picking
+                ? t('select-cancel', { defaultValue: 'Stop selecting' })
+                : t('select-element', { defaultValue: 'Select an element' })
+            }
+            aria-pressed={picking}
+            className="vibe-toolbar__icon"
+          >
+            <MousePointerClick size={17} />
+          </button>
+          {tweakSpec.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTweaksOpen((v) => !v)}
+              aria-label={t('tweak-title', { defaultValue: 'Tweak' })}
+              aria-pressed={tweaksOpen}
+              className="vibe-toolbar__icon"
+            >
+              <SlidersHorizontal size={17} />
+            </button>
+          )}
+          {pageErrors.length > 0 && (
+            <button
+              type="button"
+              onClick={handleFix}
+              disabled={busy}
+              aria-label={t('fix-it', { defaultValue: 'Fix it' })}
+              title={pageErrors[pageErrors.length - 1]}
+              className="vibe-toolbar__icon"
+            >
+              <Wrench size={17} />
+            </button>
+          )}
           <button type="button" onClick={() => setPanelOpen((v) => !v)} className="vibe-toolbar__cta">
             {canEdit ? <Pencil size={15} /> : <GitFork size={15} />}
             {canEdit
@@ -529,6 +707,16 @@ function VibeViewer() {
               </Link>
             )}
           </div>
+        )}
+
+        {tweaksOpen && tweakSpec.length > 0 && (
+          <TweakPanel
+            spec={tweakSpec}
+            values={tweakValues}
+            onChange={changeTweak}
+            onClose={() => setTweaksOpen(false)}
+            {...(canEdit && !viewingOlder ? { onSave: () => void saveTweaks(), saving: savingTweaks } : {})}
+          />
         )}
 
         {/* Banner shown while previewing an earlier variant */}
@@ -650,12 +838,36 @@ function VibeViewer() {
               </div>
             </div>
 
-            {busy &&
-              (content ? (
-                <VibeProgress content={content} className="vibe-progress--sm mb-3" />
-              ) : (
-                <ThinkingStream text={thinking} className="vibe-think--sm mb-3" />
-              ))}
+            {busy && (
+              <LiveBuildPanel
+                thinking={thinking}
+                content={content}
+                phase={content ? 'writing' : 'thinking'}
+                className="mb-3"
+              />
+            )}
+
+            {selection && (
+              <div className="vibe-panel__hint mb-2 flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate">
+                  {selection.text
+                    ? t('editing-element-text', {
+                        defaultValue: "Editing: {{tag}} '{{text}}'",
+                        tag: selection.tag,
+                        text: selection.text.slice(0, 30),
+                      })
+                    : t('editing-element', { defaultValue: 'Editing: {{tag}}', tag: selection.tag })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelection(null)}
+                  aria-label={t('remove-selection', { defaultValue: 'Remove selection' })}
+                  className="vibe-panel__close"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
 
             <div className="flex items-end gap-2">
               <textarea

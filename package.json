@@ -300,7 +300,11 @@
     },
     "patchedDependencies": {
       "@discord/embedded-app-sdk@2.5.0": "patches/@discord__embedded-app-sdk@2.5.0.patch",
-      "@react-three/drei@10.7.9": "patches/@react-three__drei@10.7.9.patch"
+      "@react-three/drei@10.7.9": "patches/@react-three__drei@10.7.9.patch",
+      "picomatch@4.0.7": "patches/picomatch@4.0.7.patch"
+    },
+    "auditConfig": {
+      "ignoreGhsas": ["GHSA-fc5q-39xc-vjpf"]
     }
   }
 }
