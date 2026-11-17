@@ -213,8 +213,8 @@ export function localeSource(
 }
 
 /**
- * Make a catalog safe to write. Removes plural forms the language does not use
- * (dead keys i18next can never select), and removes any plural group or new
+ * Make a catalog safe to write. Removes keys English no longer has and plural
+ * forms the language does not use (dead keys i18next can never select), and removes any plural group or new
  * file that free work (reuse, memory) filled only partly: a half-filled group
  * makes the count fall back to English mid-sentence, and a locale with no file
  * has not started that namespace. `paid` keeps a run's model output even when
@@ -240,6 +240,34 @@ export function settleCatalog(args: {
     original,
   } =
     args;
+  // Keys English no longer has: nothing can ask for them. Pruned here because a
+  // pull request that removes an English key cannot touch the other catalogs.
+  for (const key of Object.keys(
+    target,
+  )) {
+    if (
+      !(
+        key in
+        source
+      )
+    )
+      delete target[
+        key
+      ];
+  }
+  for (const key of Object.keys(
+    sources,
+  )) {
+    if (
+      !(
+        key in
+        source
+      )
+    )
+      delete sources[
+        key
+      ];
+  }
   const bases =
     pluralBases(
       english,

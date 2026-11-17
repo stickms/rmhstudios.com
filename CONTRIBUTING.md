@@ -530,10 +530,7 @@ them.
   `app/routeTree.gen.ts`
   (dev/build
   regenerates
-  it)
-  or
-  `lib/i18n/resources.<locale>.ts`
-  (`pnpm i18n:resources`).
+  it).
 
 ## Go services
 

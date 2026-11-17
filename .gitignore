@@ -121,3 +121,8 @@ scripts/perf/.*.tmp.*
 scripts/perf/out/
 
 __pycache__/
+
+# Non-English catalogs live on the i18n/catalogs branch; `pnpm i18n:pull`
+# copies them here (docs/translations.md). Only English is committed on main.
+/locales/*
+!/locales/en/

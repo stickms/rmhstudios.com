@@ -49,6 +49,12 @@ jobs:
         with:
           fetch-depth: 2
 
+      # The non-English catalogs live on the i18n/catalogs branch, not main.
+      # Strict here (CI is set): no catalogs means no deploy, never an
+      # English-only site. The image build prints the commit it got.
+      - name: Pull translation catalogs
+        run: bash scripts/i18n-pull.sh
+
       - name: Resolve commit info (for Discord pipeline embed)
         id: commit
         if: github.ref == 'refs/heads/main'
