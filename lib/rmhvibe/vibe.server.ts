@@ -232,6 +232,18 @@ TWEAKS: [...]            (optional — the FULL knob list as one line of JSON, s
 
 Output ONLY new or changed files, each one complete from first line to last. NEVER output a file that did not change. Every file you do not list is kept exactly as it is. The project must still compile and mount from its entry file.`;
 
+/**
+ * Appended to the system prompt for widgets: compact vibes shown inside a social feed card.
+ */
+const VIBE_WIDGET_ADDENDUM = `
+
+WIDGET MODE
+This vibe is a WIDGET, not a page. It is shown inside a social feed card at about 560x420 CSS px (4:3) and must also stay legible at 360px wide.
+- No page structure: no hero, no navigation, no footer, no section stack.
+- One focused interaction (a vote, a counter, a quiz, a toy, a small game). Do it well.
+- Everything fits the frame at once: no scrolling, no overflow, and sizes in relative units so it scales from 360px to 640px wide.
+- Prefer RMHVibe.store for anything shared: counters, votes, leaderboards. Always keep working when the store is unavailable (fall back to local state and never show an error).`;
+
 const VIBE_FRONTEND_DESIGN_SKILL = `
 
 FRONTEND DESIGN SKILL — Reach for the unexpected. Fidelity to the anchor. Discipline on the content. Nothing left to default.
@@ -493,6 +505,7 @@ export type VibeCard = {
   description: string | null;
   prompt: string;
   thumbnailUrl: string | null;
+  kind: 'page' | 'widget';
   createdAt: string; // ISO — serialised for the client
 };
 
@@ -556,6 +569,7 @@ export async function listVibePages(opts: {
       description: true,
       prompt: true,
       thumbnailUrl: true,
+      kind: true,
       createdAt: true,
     },
   });
@@ -567,6 +581,7 @@ export async function listVibePages(opts: {
       description: r.description,
       prompt: r.prompt,
       thumbnailUrl: r.thumbnailUrl,
+      kind: r.kind === 'widget' ? 'widget' : 'page',
       createdAt: r.createdAt.toISOString(),
     })),
     nextCursor,
@@ -960,7 +975,7 @@ export async function* generateVibeStream(opts: {
 
   // Kimi tends toward generic, templated UI — give it the frontend-design skill
   // (art-direction guidance) on top of the base prompt. DeepSeek keeps the base.
-  const systemPrompt =
+  let systemPrompt =
     provider === 'kimi' ? VIBE_SYSTEM_PROMPT + VIBE_FRONTEND_DESIGN_SKILL : VIBE_SYSTEM_PROMPT;
   let history: VibeMessage[] = [];
   let editBase: EditBase | undefined;
@@ -979,6 +994,8 @@ export async function* generateVibeStream(opts: {
     yield { type: 'error', message: 'Vibe page not found' };
     return;
   }
+  // A widget stays a widget on edit and remix: the source page's kind wins over the request's.
+  if ((existing ? existing.kind : opts.kind) === 'widget') systemPrompt += VIBE_WIDGET_ADDENDUM;
   const plan = planVibeWrite({
     existing: existing ? { id: existing.id, ownerId: existing.ownerId } : null,
     userId: opts.userId,

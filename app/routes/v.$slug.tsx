@@ -82,6 +82,7 @@ const fetchVibe = createServerFn({ method: 'GET' })
       description: page.description || `A vibe page about "${page.prompt}".`,
       // "generating" | "ready" | "error" — drives the still-building overlay below.
       status: page.status,
+      kind: page.kind === 'widget' ? ('widget' as const) : ('page' as const),
       thumbnailUrl: page.thumbnailUrl,
       tweakSpec,
       tweakValues,
@@ -147,6 +148,7 @@ function VibeViewer() {
     slug,
     html: initialHtml,
     status: initialStatus,
+    kind,
     title: initialTitle,
     canEdit,
     owner,
@@ -154,6 +156,7 @@ function VibeViewer() {
     tweakSpec: initialSpec,
     tweakValues: savedValues,
   } = Route.useLoaderData();
+  const isWidget = kind === 'widget';
   const navigate = useNavigate();
 
   // Generation lifecycle for the page itself: a freshly-reserved page arrives here
@@ -597,19 +600,27 @@ function VibeViewer() {
   if (status === 'generating') return <VibeGenerating title={initialTitle} slow={buildSlow} />;
   if (status === 'error') return <VibeGenerationFailed />;
 
+  const frameEl = (
+    <VibeFrame
+      key={slug}
+      html={html}
+      title={
+        isWidget
+          ? t('vibe-widget-frame-title', { defaultValue: 'Vibe widget' })
+          : t('vibe-frame-title', { defaultValue: 'Vibe page' })
+      }
+      onFrame={(f) => {
+        iframeRef.current = f;
+        setBridgeFrame(f);
+      }}
+    />
+  );
+
   return (
     <>
       <VibeStyles />
-      <div className="fixed inset-0 bg-black">
-        <VibeFrame
-          key={slug}
-          html={html}
-          title={t('vibe-frame-title', { defaultValue: 'Vibe page' })}
-          onFrame={(frame) => {
-            iframeRef.current = frame;
-            setBridgeFrame(frame);
-          }}
-        />
+      <div className={`fixed inset-0 bg-black${isWidget ? ' vibe-widget-stage' : ''}`}>
+        {isWidget ? <div className="vibe-widget-frame">{frameEl}</div> : frameEl}
 
         {/* Floating toolbar — top-right */}
         <div className="vibe-toolbar fixed right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-40">

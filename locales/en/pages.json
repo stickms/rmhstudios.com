@@ -259,5 +259,6 @@
   "tweak-title": "Tweak",
   "tweak-save": "Save",
   "tweak-saved": "Tweaks saved",
-  "tweak-save-error": "Could not save the tweaks"
+  "tweak-save-error": "Could not save the tweaks",
+  "vibe-widget-frame-title": "Vibe widget"
 }

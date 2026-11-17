@@ -916,6 +916,20 @@
   background: var(--site-bg);
 }
 
+/* Widgets: a centred 4:3 frame on the app ground, as wide as the feed card's frame allows. */
+.vibe-widget-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vibe-widget-frame {
+  width: 100%;
+  max-width: 640px;
+  max-height: 100%;
+  aspect-ratio: 4 / 3;
+}
+
 .vibe-frame__layer {
   position: absolute;
   inset: 0;

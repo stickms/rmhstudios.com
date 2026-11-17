@@ -23,6 +23,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { SearchField } from '@/components/ui/search-field';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
+import { Tabs } from '@/components/ui/tabs';
 import {
   DEFAULT_VIBE_MODEL,
   type VibeModel,
@@ -170,6 +171,8 @@ export function PagesTab({
       DEFAULT_VIBE_MODEL,
     );
 
+  const [kind, setKind] = useState<'page' | 'widget'>('page');
+
   function submit() {
     const prompt =
       inputRef.current?.value.trim();
@@ -184,6 +187,7 @@ export function PagesTab({
           {
             prompt,
             model,
+            kind,
           },
       },
     );
@@ -436,9 +440,21 @@ export function PagesTab({
                     'Open page',
                 },
               ),
-              meta: timeAgo(
-                card.createdAt,
-              ),
+              meta:
+                card.kind ===
+                'widget'
+                  ? `${t(
+                      'widget-label',
+                      {
+                        defaultValue:
+                          'Widget',
+                      },
+                    )} · ${timeAgo(
+                      card.createdAt,
+                    )}`
+                  : timeAgo(
+                      card.createdAt,
+                    ),
               to: `/v/${card.slug}`,
             };
           },
@@ -544,6 +560,54 @@ export function PagesTab({
               className="vibe-dock__textarea"
             />
             <div className="vibe-dock__footer">
+              <Tabs
+                size="sm"
+                sheet={false}
+                aria-label={t(
+                  'kind-aria-label',
+                  {
+                    defaultValue:
+                      'What to generate',
+                  },
+                )}
+                tabs={[
+                  {
+                    id: 'page',
+                    label:
+                      t(
+                        'kind-page',
+                        {
+                          defaultValue:
+                            'Page',
+                        },
+                      ),
+                  },
+                  {
+                    id: 'widget',
+                    label:
+                      t(
+                        'kind-widget',
+                        {
+                          defaultValue:
+                            'Widget',
+                        },
+                      ),
+                  },
+                ]}
+                value={
+                  kind
+                }
+                onChange={(
+                  id,
+                ) =>
+                  setKind(
+                    id ===
+                      'widget'
+                      ? 'widget'
+                      : 'page',
+                  )
+                }
+              />
               <ModelSelect
                 value={
                   model

@@ -31,6 +31,7 @@ export const Route = createFileRoute('/v/new')({
   validateSearch: (search: Record<string, unknown>) => ({
     prompt: typeof search.prompt === 'string' ? search.prompt : '',
     model: asVibeModel(search.model),
+    kind: search.kind === 'widget' ? ('widget' as const) : ('page' as const),
   }),
   beforeLoad: ({ search }) => {
     if (!search.prompt.trim()) throw redirect({ to: '/v' });
@@ -40,7 +41,7 @@ export const Route = createFileRoute('/v/new')({
 
 function VibeNew() {
   const { t } = useTranslation("pages");
-  const { prompt, model } = Route.useSearch();
+  const { prompt, model, kind } = Route.useSearch();
   const navigate = useNavigate();
   const started = useRef(false);
   const [thinking, setThinking] = useState('');
@@ -85,7 +86,7 @@ function VibeNew() {
       setError(message);
     };
 
-    streamVibe({ prompt: prompt.trim(), model }, (event) => {
+    streamVibe({ prompt: prompt.trim(), model, kind }, (event) => {
       if (cancelled) return;
       if (event.type === 'created') {
         reservedSlug = event.slug;
@@ -126,7 +127,7 @@ function VibeNew() {
     return () => {
       cancelled = true;
     };
-  }, [prompt, model, navigate]);
+  }, [prompt, model, kind, navigate]);
 
   const wide = useMediaQuery('(min-width: 900px)');
   const writing = useMemo(() => parsePartialProject(content).writing, [content]);

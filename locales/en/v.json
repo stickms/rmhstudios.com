@@ -6,6 +6,9 @@
   "empty-gallery": "No pages yet — be the first to make one.",
   "generate-aria-label": "Generate",
   "hero-headline": "The everything platform.",
+  "kind-aria-label": "What to generate",
+  "kind-page": "Page",
+  "kind-widget": "Widget",
   "loading": "Loading…",
   "no-results": "No pages match that search.",
   "open-page": "Open page",
@@ -14,5 +17,6 @@
   "prompt-heading": "Describe a page to generate",
   "prompt-placeholder": "Where do you want to go?",
   "search-aria-label": "Search pages",
-  "search-placeholder": "Search pages..."
+  "search-placeholder": "Search pages...",
+  "widget-label": "Widget"
 }
