@@ -360,18 +360,20 @@
   0% { opacity: 1; translate: 0 0; pointer-events: auto; }
   100% { opacity: 0; translate: 0 calc(var(--sc-y, 24px) * -1); pointer-events: none; }
 }
+/* A step is live for most of its window and hands over quickly at the edges, so
+   the gap where neither neighbour is readable is a sliver of scroll, not a beat. */
 @keyframes rr-step {
-  0%, 4% { opacity: 0; translate: 0 var(--sc-y, 24px); pointer-events: none; z-index: 0; }
-  24%, 76% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
-  96%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 24px) * -1); pointer-events: none; z-index: 0; }
+  0%, 1% { opacity: 0; translate: 0 var(--sc-y, 24px); pointer-events: none; z-index: 0; }
+  13%, 87% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  99%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 24px) * -1); pointer-events: none; z-index: 0; }
 }
 @keyframes rr-step-first {
-  0%, 76% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
-  96%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 24px) * -1); pointer-events: none; z-index: 0; }
+  0%, 87% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  99%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 24px) * -1); pointer-events: none; z-index: 0; }
 }
 @keyframes rr-step-last {
-  0%, 4% { opacity: 0; translate: 0 var(--sc-y, 24px); pointer-events: none; z-index: 0; }
-  24%, 100% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  0%, 1% { opacity: 0; translate: 0 var(--sc-y, 24px); pointer-events: none; z-index: 0; }
+  13%, 100% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
 }
 @keyframes rr-dot { 0%, 10%, 90%, 100% { background: var(--rule); } 24%, 76% { background: var(--ink); } }
 @keyframes rr-dot-first { 0%, 76% { background: var(--ink); } 90%, 100% { background: var(--rule); } }
