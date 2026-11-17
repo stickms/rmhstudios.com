@@ -9,6 +9,10 @@ import {
 
 const launchCreate =
   vi.fn();
+const launchFind =
+  vi.fn();
+const pageFind =
+  vi.fn();
 vi.mock(
   '../../lib/prisma.server',
   () => ({
@@ -23,11 +27,23 @@ vi.mock(
                 launchCreate(
                   ...a,
                 ),
+            findFirst:
+              (
+                ...a: unknown[]
+              ) =>
+                launchFind(
+                  ...a,
+                ),
           },
         vibePage:
           {
             findUnique:
-              vi.fn(),
+              (
+                ...a: unknown[]
+              ) =>
+                pageFind(
+                  ...a,
+                ),
           },
       },
   }),
@@ -188,8 +204,22 @@ const done =
   };
 
 beforeEach(
-  () =>
-    launchCreate.mockReset(),
+  () => {
+    launchCreate.mockReset();
+    launchFind
+      .mockReset()
+      .mockResolvedValue(
+        null,
+      );
+    pageFind
+      .mockReset()
+      .mockResolvedValue(
+        {
+          status:
+            'ready',
+        },
+      );
+  },
 );
 
 describe('/vibe', () => {
@@ -561,6 +591,236 @@ describe('/vibe', () => {
       n,
     ).toBe(
       2,
+    );
+  });
+
+  it('rejects a whitespace-only prompt without generating', async () => {
+    const d =
+      deps(
+        [
+          done,
+        ],
+      );
+    const port =
+      fakePort();
+    await handleVibeCommand(
+      port,
+      cmd(
+        'u-blank',
+        '   ',
+      ),
+      d,
+    );
+    expect(
+      d.generate,
+    ).not.toHaveBeenCalled();
+    expect(
+      (
+        port
+          .calls[0]![1][1] as {
+          data: {
+            flags: number;
+          };
+        }
+      )
+        .data
+        .flags,
+    ).toBe(
+      64,
+    );
+  });
+
+  it('throttles progress edits to one per 2.5s and survives a failed progress edit', async () => {
+    let t = 0;
+    let fail = true;
+    const edits: unknown[] =
+      [];
+    const port =
+      fakePort(
+        {
+          editOriginal:
+            (async (
+              _t: string,
+              body: unknown,
+            ) => {
+              if (
+                fail
+              ) {
+                fail = false;
+                throw new Error(
+                  '429',
+                );
+              }
+              edits.push(
+                body,
+              );
+              return {
+                id: 'm',
+                channel_id:
+                  'c1',
+              };
+            }) as DiscordPort['editOriginal'],
+        },
+      );
+    const d =
+      deps(
+        [],
+        {
+          now: () =>
+            t,
+          generate:
+            vi.fn(
+              async function* () {
+                for (const at of [
+                  1000,
+                  2600,
+                  3000,
+                  5200,
+                ]) {
+                  t =
+                    at;
+                  yield {
+                    type: 'content',
+                    text: 'x',
+                  };
+                }
+                t = 5300;
+                yield done;
+              },
+            ) as unknown as VibeDeps['generate'],
+        },
+      );
+    await handleVibeCommand(
+      port,
+      cmd(
+        'u-throttle',
+      ),
+      d,
+    );
+    // Progress at 2600 (fails, skipped) and 5200; then the final edit. 1000 and 3000 are inside the window.
+    expect(
+      edits,
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      port.calls.some(
+        ([
+          n,
+        ]) =>
+          n ===
+          'send',
+      ),
+    ).toBe(
+      false,
+    );
+  });
+
+  it('ignores a bad slug on play and customize', async () => {
+    const port =
+      fakePort();
+    await handleVibePlay(
+      port,
+      cmd(
+        'u-bad',
+      ),
+      '../x',
+      'https://rmhstudios.com',
+    );
+    await handleVibeEditButton(
+      port,
+      cmd(
+        'u-bad',
+      ),
+      'Bad Slug',
+    );
+    expect(
+      port.calls,
+    ).toHaveLength(
+      0,
+    );
+    expect(
+      launchCreate,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('play skips the insert for a missing page or a launch recorded in the last minute', async () => {
+    pageFind.mockResolvedValueOnce(
+      null,
+    );
+    await handleVibePlay(
+      fakePort(),
+      cmd(
+        'u-p1',
+      ),
+      'abc',
+      'https://rmhstudios.com',
+    );
+    launchFind.mockResolvedValueOnce(
+      {
+        id: 'x',
+      },
+    );
+    const port =
+      fakePort();
+    await handleVibePlay(
+      port,
+      cmd(
+        'u-p2',
+      ),
+      'abc',
+      'https://rmhstudios.com',
+    );
+    expect(
+      launchCreate,
+    ).not.toHaveBeenCalled();
+    expect(
+      (
+        port
+          .calls[0]![1][1] as {
+          type: number;
+        }
+      )
+        .type,
+    ).toBe(
+      12,
+    );
+  });
+
+  it('play still launches when the database is slow', async () => {
+    vi.useFakeTimers();
+    pageFind.mockReturnValue(
+      new Promise(
+        () =>
+          undefined,
+      ),
+    );
+    const port =
+      fakePort();
+    const p =
+      handleVibePlay(
+        port,
+        cmd(
+          'u-slow',
+        ),
+        'abc',
+        'https://rmhstudios.com',
+      );
+    await vi.advanceTimersByTimeAsync(
+      2100,
+    );
+    await p;
+    vi.useRealTimers();
+    expect(
+      (
+        port
+          .calls[0]![1][1] as {
+          type: number;
+        }
+      )
+        .type,
+    ).toBe(
+      12,
     );
   });
 });

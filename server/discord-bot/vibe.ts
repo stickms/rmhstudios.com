@@ -43,6 +43,19 @@ const RATE_LIMIT =
       'vibe-bot',
     applyMultiplier: false,
   } as const;
+const PLAY_RATE_LIMIT =
+  {
+    limit: 10,
+    windowMs: 60_000,
+    prefix:
+      'vibe-play',
+    applyMultiplier: false,
+  } as const;
+/** Discord wants a button response within 3s; the launch bookkeeping gets this much of it. */
+const PLAY_DB_BUDGET_MS = 2000;
+const PLAY_DEDUPE_MS = 60_000;
+const SLUG_RE =
+  /^[a-z0-9-]{1,64}$/;
 const BUTTON_LINK = 5;
 const BUTTON_PRIMARY = 1;
 const BUTTON_SECONDARY = 2;
@@ -159,6 +172,26 @@ function progressText(
   return `Writing **${p.writing}** · ${p.done.length} files done`;
 }
 
+const errorBody =
+  (
+    description: string,
+  ): MessageBody => ({
+    embeds:
+      [
+        {
+          title:
+            'Could not build that vibe',
+          description:
+            truncate(
+              description,
+              1000,
+            ),
+          color:
+            ERROR_EMBED_COLOR,
+        },
+      ],
+  });
+
 export interface VibeRequest {
   prompt: string;
   widget?: boolean;
@@ -179,6 +212,16 @@ export async function runVibe(
     interactionUser(
       i,
     );
+  if (
+    !req.prompt
+  ) {
+    await respondEphemeral(
+      port,
+      i,
+      'Describe what you want to build.',
+    );
+    return;
+  }
   const rl =
     rateLimit(
       'discord:' +
@@ -203,17 +246,37 @@ export async function runVibe(
   const started =
     deps.now();
   const title = `Building: ${truncate(req.prompt, PROMPT_TITLE_MAX)}`;
-  // Past the token's life (or when an edit is refused) results go to the channel instead.
-  let viaChannel = false;
-  const publish =
+  const tokenAlive =
+    () =>
+      deps.now() -
+        started <
+      TOKEN_LIFETIME_MS;
+
+  /** A progress edit: a failed or throttled one is skipped, the next tick tries again. */
+  const progress =
     async (
       body: MessageBody,
     ): Promise<void> => {
       if (
-        !viaChannel &&
-        deps.now() -
-          started <
-          TOKEN_LIFETIME_MS
+        !tokenAlive()
+      )
+        return;
+      try {
+        await port.editOriginal(
+          i.token,
+          body,
+        );
+      } catch {
+        // skippable
+      }
+    };
+  /** The final body must land: edit the reply, else (failed edit or expired token) post to the channel. */
+  const finish =
+    async (
+      body: MessageBody,
+    ): Promise<void> => {
+      if (
+        tokenAlive()
       ) {
         try {
           if (
@@ -227,7 +290,6 @@ export async function runVibe(
           // fall through to the channel
         }
       }
-      viaChannel = true;
       if (
         i.channel_id
       )
@@ -272,30 +334,17 @@ export async function runVibe(
         ev.type ===
         'error'
       ) {
-        await publish(
-          {
-            embeds:
-              [
-                {
-                  title:
-                    'Could not build that vibe',
-                  description:
-                    truncate(
-                      ev.message,
-                      1000,
-                    ),
-                  color:
-                    ERROR_EMBED_COLOR,
-                },
-              ],
-          },
+        await finish(
+          errorBody(
+            ev.message,
+          ),
         );
         return;
       } else if (
         ev.type ===
         'done'
       ) {
-        await publish(
+        await finish(
           await doneBody(
             deps,
             ev,
@@ -306,17 +355,13 @@ export async function runVibe(
       const now =
         deps.now();
       if (
-        !viaChannel &&
         now -
           lastEdit >=
-          EDIT_INTERVAL_MS &&
-        now -
-          started <
-          TOKEN_LIFETIME_MS
+        EDIT_INTERVAL_MS
       ) {
         lastEdit =
           now;
-        await publish(
+        await progress(
           {
             embeds:
               [
@@ -333,43 +378,20 @@ export async function runVibe(
       }
     }
     // The stream ended without a result: treat it as a failed build.
-    await publish(
-      {
-        embeds:
-          [
-            {
-              title:
-                'Could not build that vibe',
-              description:
-                'The build ended early. Try again.',
-              color:
-                ERROR_EMBED_COLOR,
-            },
-          ],
-      },
+    await finish(
+      errorBody(
+        'The build ended early. Try again.',
+      ),
     );
   } catch (err) {
-    await publish(
-      {
-        embeds:
-          [
-            {
-              title:
-                'Could not build that vibe',
-              description:
-                truncate(
-                  (
-                    err as Error
-                  )
-                    .message ||
-                    'Something went wrong.',
-                  1000,
-                ),
-              color:
-                ERROR_EMBED_COLOR,
-            },
-          ],
-      },
+    await finish(
+      errorBody(
+        (
+          err as Error
+        )
+          .message ||
+          'Something went wrong.',
+      ),
     );
   }
 }
@@ -504,12 +526,18 @@ export function handleVibeCommand(
 }
 
 /** The Customize button: ask what to change. */
-export function handleVibeEditButton(
+export async function handleVibeEditButton(
   port: DiscordPort,
   i: Interaction,
   slug: string,
 ): Promise<void> {
-  return showModal(
+  if (
+    !SLUG_RE.test(
+      slug,
+    )
+  )
+    return;
+  await showModal(
     port,
     i,
     'vibe_edit_modal:' +
@@ -521,13 +549,19 @@ export function handleVibeEditButton(
 }
 
 /** The Customize modal submit: the same build flow, on the existing slug. */
-export function handleVibeEditModal(
+export async function handleVibeEditModal(
   port: DiscordPort,
   i: Interaction,
   slug: string,
   deps: VibeDeps,
 ): Promise<void> {
-  return runVibe(
+  if (
+    !SLUG_RE.test(
+      slug,
+    )
+  )
+    return;
+  await runVibe(
     port,
     i,
     {
@@ -542,6 +576,64 @@ export function handleVibeEditModal(
   );
 }
 
+/** Record the launch (so the Activity can preselect the vibe) unless it is bogus or just recorded. */
+async function recordLaunch(
+  channelId: string,
+  slug: string,
+): Promise<void> {
+  const page =
+    await prisma.vibePage.findUnique(
+      {
+        where:
+          {
+            slug,
+          },
+        select:
+          {
+            status: true,
+          },
+      },
+    );
+  if (
+    page?.status !==
+    'ready'
+  )
+    return;
+  const recent =
+    await prisma.discordVibeLaunch.findFirst(
+      {
+        where:
+          {
+            channelId,
+            slug,
+            createdAt:
+              {
+                gte: new Date(
+                  Date.now() -
+                    PLAY_DEDUPE_MS,
+                ),
+              },
+          },
+        select:
+          {
+            id: true,
+          },
+      },
+    );
+  if (
+    recent
+  )
+    return;
+  await prisma.discordVibeLaunch.create(
+    {
+      data: {
+        channelId,
+        slug,
+      },
+    },
+  );
+}
+
 /** The Play button: queue the launch for the Activity and open it; fall back to the link. */
 export async function handleVibePlay(
   port: DiscordPort,
@@ -549,22 +641,60 @@ export async function handleVibePlay(
   slug: string,
   baseUrl: string,
 ): Promise<void> {
-  try {
-    if (
-      !i.channel_id
+  if (
+    !SLUG_RE.test(
+      slug,
     )
-      throw new Error(
-        'no channel',
-      );
-    await prisma.discordVibeLaunch.create(
-      {
-        data: {
-          channelId:
-            i.channel_id,
-          slug,
-        },
-      },
+  )
+    return;
+  const {
+    id: discordId,
+  } =
+    interactionUser(
+      i,
     );
+  if (
+    rateLimit(
+      'discord:' +
+        discordId,
+      PLAY_RATE_LIMIT,
+    )
+      .allowed &&
+    i.channel_id
+  ) {
+    // Time-boxed: past the budget the Activity launches anyway, it just will not preselect.
+    let timer:
+      | ReturnType<
+          typeof setTimeout
+        >
+      | undefined;
+    await Promise.race(
+      [
+        recordLaunch(
+          i.channel_id,
+          slug,
+        ).catch(
+          () =>
+            undefined,
+        ),
+        new Promise<void>(
+          (
+            resolve,
+          ) => {
+            timer =
+              setTimeout(
+                resolve,
+                PLAY_DB_BUDGET_MS,
+              );
+          },
+        ),
+      ],
+    );
+    clearTimeout(
+      timer,
+    );
+  }
+  try {
     await port.respond(
       i,
       {
