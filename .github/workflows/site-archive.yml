@@ -3,8 +3,12 @@
 # Each version in components/site-history/archive-versions.json is an old commit: this checks it out, builds it, serves it
 # against a seeded Postgres, browses it with Playwright and saves everything it fetched as a WARC
 # (scripts/site-archive/). ReplayWeb.page plays the WARC back in the visitor's browser, so the old site and its
-# games run again, on the CDN origin and never on the live one. A version is recorded once; re-record one with
-# the `force` input.
+# games run again, on the CDN origin and never on the live one.
+#
+# Everything is uploaded once. A version is recorded and uploaded only while it is not in the bucket (each record
+# job checks again before it builds, and the upload itself refuses an existing object, so an overlapping run
+# cannot record or upload it twice); the player files only when their bytes changed. Re-recording a version is
+# explicit: the `force` input.
 #
 # Runs when the archive scripts or the version list change on main, and by hand. Needs the same S3_* repository
 # secrets as csgo-assets-sync.yml; without them it reports that and stops.
@@ -66,7 +70,7 @@ jobs:
         if: steps.cfg.outputs.ready == 'true'
       - uses: ./.github/actions/setup-deps
         if: steps.cfg.outputs.ready == 'true'
-      - name: Check the bucket is writable
+      - name: Check the bucket is reachable (reads only)
         if: steps.cfg.outputs.ready == 'true'
         run: pnpm exec tsx scripts/site-archive/publish.ts check
       - name: Publish the player (play.html + ReplayWeb.page ${{ env.REPLAYWEBPAGE_VERSION }})
@@ -106,6 +110,7 @@ jobs:
       S3_REGION: ${{ secrets.S3_REGION }}
       S3_FORCE_PATH_STYLE: 'false'
       PGURL: postgresql://postgres:postgres@localhost:5432
+      ARCHIVE_FORCE: ${{ inputs.force }}
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -122,9 +127,15 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-deps
+      - name: Still to record?
+        id: needed
+        run: echo "needed=$(pnpm exec tsx scripts/site-archive/publish.ts needed "${{ matrix.id }}")" >> "$GITHUB_OUTPUT"
       - name: Install Playwright's Chromium
+        if: steps.needed.outputs.needed == 'true'
         run: pnpm exec playwright install --with-deps chromium
       - name: Record ${{ matrix.id }}
+        if: steps.needed.outputs.needed == 'true'
         run: bash scripts/site-archive/archive-version.sh "${{ matrix.id }}" "$RUNNER_TEMP/out" 7140
       - name: Publish ${{ matrix.id }}
+        if: steps.needed.outputs.needed == 'true'
         run: pnpm exec tsx scripts/site-archive/publish.ts version "${{ matrix.id }}" "$RUNNER_TEMP/out/${{ matrix.id }}.warc.gz"
