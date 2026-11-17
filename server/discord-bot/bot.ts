@@ -19,6 +19,7 @@ import { createLogger } from '../shared/logger';
 import { prisma } from '../../lib/prisma.server';
 import { getBool, getDuration, getString } from './config';
 import { ChatService } from './chat';
+import { defaultVibeDeps, handleVibeCommand, handleVibeEditButton, handleVibeEditModal, handleVibePlay, type VibeDeps } from './vibe';
 import { Sql, type RawClient } from './db';
 import { DeepSeekClient } from './deepseek';
 import { RestDiscordPort, type CommandDefinition, type DiscordPort, type Message } from './discord';
@@ -367,6 +368,10 @@ export class DiscordBot {
     }
   }
 
+  private vibeDeps(): VibeDeps {
+    return defaultVibeDeps(this.cfg.imageBaseURL);
+  }
+
   private async routeCommand(i: Interaction, signal: AbortSignal): Promise<void> {
     const name = i.data?.name ?? '';
     const opts = new OptionMap(i.data?.options);
@@ -410,6 +415,9 @@ export class DiscordBot {
         case 'alexmessages':
           if (!canToggleAlex(i, this.cfg.ownerId, guildOwner)) return await deny('messages').catch(() => undefined);
           return await this.pet.handleSetMessages(i, opts.str('level'));
+        case 'vibe':
+          // No abort signal: a build outlives INTERACTION_TIMEOUT_MS (see vibe.ts).
+          return await handleVibeCommand(this.port, i, this.vibeDeps());
         case 'prompt':
           if (!canToggleAlex(i, this.cfg.ownerId, guildOwner)) return await deny('personality').catch(() => undefined);
           return await this.chat.handlePrompt(i, opts.str('text'), opts.bool('reset'));
@@ -434,6 +442,15 @@ export class DiscordBot {
 
   private async routeComponent(i: Interaction): Promise<void> {
     const [action, ownerId] = splitCustomId(i.data?.custom_id ?? '');
+    if (action === 'vibe_play' || action === 'vibe_edit') {
+      try {
+        if (action === 'vibe_play') await handleVibePlay(this.port, i, ownerId, this.cfg.imageBaseURL);
+        else await handleVibeEditButton(this.port, i, ownerId);
+      } catch (err) {
+        this.log.error({ event: 'discord_bot.vibe_component_error', action, err: (err as Error).message });
+      }
+      return;
+    }
     if (action !== 'chat_continue') return;
     if (!(await this.ownerOk(i, ownerId))) return;
     await showModal(this.port, i, 'chat_continue_modal:' + ownerId, 'Keep talking with Alex 💬', 'message', 'What do you wanna say?').catch(
@@ -443,6 +460,14 @@ export class DiscordBot {
 
   private async routeModal(i: Interaction, signal: AbortSignal): Promise<void> {
     const [action, ownerId] = splitCustomId(i.data?.custom_id ?? '');
+    if (action === 'vibe_edit_modal') {
+      try {
+        await handleVibeEditModal(this.port, i, ownerId, this.vibeDeps());
+      } catch (err) {
+        this.log.error({ event: 'discord_bot.modal_error', customId: action, err: (err as Error).message });
+      }
+      return;
+    }
     if (action !== 'chat_continue_modal') return;
     if (!(await this.ownerOk(i, ownerId))) return;
     try {

@@ -192,6 +192,7 @@ export const InteractionResponse =
     ChannelMessageWithSource: 4,
     DeferredChannelMessageWithSource: 5,
     Modal: 9,
+    LaunchActivity: 12,
   } as const;
 
 export const MESSAGE_FLAG_EPHEMERAL =
