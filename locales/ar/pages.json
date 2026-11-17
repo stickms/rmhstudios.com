@@ -227,5 +227,14 @@
   "viewing-earlier-version": "عرض نسخة سابقة",
   "warming-up-the-model": "تسخين النموذج.",
   "welcome-back": "مرحبًا بعودتك",
-  "writing-the-code": "كتابة الكود."
+  "writing-the-code": "كتابة الكود.",
+  "check-inbox-back": "Back to sign in",
+  "check-inbox-resend": "Send the link again",
+  "check-inbox-sign-in": "Confirm your email before you sign in. We sent a new link to {{email}}.",
+  "check-inbox-sign-up": "We sent a link to {{email}}. Open it to confirm your email and finish signing up.",
+  "check-inbox-title": "Check your inbox",
+  "notice-account-not-linked": "An RMH account already uses that email, but it was not connected automatically because the email is not confirmed on both sides. Sign in the way you did before, then connect it in Settings, Security.",
+  "notice-cancelled": "Sign-in was cancelled.",
+  "notice-link-expired": "That link has expired or was already used. Sign in to get a new one.",
+  "notice-sign-in-failed": "Sign-in did not finish. Try again."
 }

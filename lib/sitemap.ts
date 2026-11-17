@@ -790,6 +790,8 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/rmhladder/settings':
       'personal',
+    '/account/connect':
+      'personal', // the account-merge step after a new sign-in; needs a session
     '/settings':
       'personal',
     '/settings/account-status':
