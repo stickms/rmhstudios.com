@@ -88,6 +88,16 @@
   gap: 10px;
 }
 
+/* Page/Widget tabs and the model picker sit together on the left; submit stays right. */
+.vibe-dock__options {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Squared-off submit inside the textarea dock — the site's small radius, so it
    matches the other square-ish controls instead of picking its own 9px. */
 .vibe-dock--area .vibe-dock__submit {
@@ -924,9 +934,8 @@
 }
 
 .vibe-widget-frame {
-  width: 100%;
-  max-width: 640px;
-  max-height: 100%;
+  /* Stays 4:3 on a short viewport: the width is capped by the height too. */
+  width: min(100%, 640px, calc(100dvh * 4 / 3));
   aspect-ratio: 4 / 3;
 }
 

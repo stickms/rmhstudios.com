@@ -560,6 +560,7 @@ export function PagesTab({
               className="vibe-dock__textarea"
             />
             <div className="vibe-dock__footer">
+              <div className="vibe-dock__options">
               <Tabs
                 size="sm"
                 sheet={false}
@@ -616,6 +617,7 @@ export function PagesTab({
                   setModel
                 }
               />
+              </div>
               <button
                 type="button"
                 onClick={
