@@ -802,10 +802,10 @@ it
   (not
   a
   Promise);
-  `room.members()`
-  returns
-  `[{ name, avatarUrl, away }]`;
-  `room.onMembers(fn)`.
+  `room.members()` returns `[{ name, avatarUrl, away, host, self }]` (`host` is the member who picked the vibe, `self` the viewer's own entry); `room.onMembers(fn)`.
+- `room.send` is limited to 10 messages per second (the host rejects the excess with `rate`): throttle state updates and send only changes.
+- Store calls are rate limited (a frame gets 10 `store.*` calls a second, and the endpoint's read bucket is 120 a minute): poll at most once every 2 seconds and prefer reacting to your own writes.
+- `RMHVibe.visible` (boolean, true by default) and `RMHVibe.onVisibility(fn)` (returns an unsubscribe) follow the host's `visibility` event: pause audio and animation while hidden.
 - `tweaks.get(key)`,
   `tweaks.all()`
   and
