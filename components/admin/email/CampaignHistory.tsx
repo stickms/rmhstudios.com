@@ -86,6 +86,16 @@ export function CampaignHistory({ refreshKey }: { refreshKey: number }) {
                   <Badge>{categoryName(t, r.category)}</Badge>
                 </div>
                 <p className="t-body break-words text-site-text">{r.subject}</p>
+                {r.duplicates > 0 || r.throttled > 0 ? (
+                  <p className="t-meta">
+                    {t('email-history-skips', {
+                      duplicates: r.duplicates,
+                      throttled: r.throttled,
+                      defaultValue:
+                        'Skipped: {{duplicates}} already had it · {{throttled}} emailed too recently',
+                    })}
+                  </p>
+                ) : null}
                 <p className="t-meta">
                   {t('email-history-counts', {
                     sent: r.sent,

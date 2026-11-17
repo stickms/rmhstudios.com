@@ -16,7 +16,8 @@
 
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
-import { sendEmail } from '@/lib/email/send.server';
+import { sendOnce } from '@/lib/email/deliveries.server';
+import { isoWeekKey } from '@/lib/email/frequency';
 import { assembleDigest } from '@/lib/digest/assemble.server';
 import { signUnsubToken } from '@/lib/email/unsubscribe';
 import { SITE_URL } from '@/lib/seo';
@@ -62,6 +63,7 @@ export async function runWeeklyDigest(staggerMs = 150): Promise<DigestRunResult>
   const userIds = optedIn.map((p) => p.userId).sort((a, b) => hash32(a) - hash32(b));
 
   const result: DigestRunResult = { eligible: userIds.length, sent: 0, skipped: 0, failed: 0 };
+  const week = isoWeekKey(new Date());
 
   // Addresses for the whole cohort in one query. This was a findUnique per user
   // inside the send loop; the sends themselves stay sequential on purpose, so
@@ -88,7 +90,12 @@ export async function runWeeklyDigest(staggerMs = 150): Promise<DigestRunResult>
 
       // RFC 8058 one-click unsubscribe headers, in addition to the footer link.
       const unsubUrl = `${SITE_URL}/api/email/unsubscribe?token=${encodeURIComponent(signUnsubToken(userId))}`;
-      const ok = await sendEmail({
+      // One digest per person per ISO week: a re-fired cron or a retried job
+      // finds the delivery row and sends nothing.
+      const outcome = await sendOnce({
+        userId,
+        kind: 'digest',
+        dedupeKey: `digest:${week}`,
         to: email,
         subject: digest.subject,
         html: digest.html,
@@ -98,8 +105,9 @@ export async function runWeeklyDigest(staggerMs = 150): Promise<DigestRunResult>
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
       });
-      if (ok) result.sent++;
-      else result.failed++;
+      if (outcome === 'sent') result.sent++;
+      else if (outcome === 'failed') result.failed++;
+      else result.skipped++;
     } catch (error) {
       result.failed++;
       console.error(

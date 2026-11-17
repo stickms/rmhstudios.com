@@ -9,6 +9,7 @@ export const route = apiRoute('/api/admin/email/preview', {
   POST: implement(
     adminEmailPreview,
     { auth: 'admin', rateLimit: { limit: 60, windowMs: 60_000, prefix: 'admin-email-preview' }, body: previewBodySchema },
-    async ({ body }) => previewAudience(body.audience, body.category),
+    async ({ body }) =>
+      previewAudience(body.audience, body.category, { subject: body.subject, body: body.body }),
   ),
 });

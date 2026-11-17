@@ -18,6 +18,7 @@ import {
 } from '@/lib/admin/email.contract';
 import { CAMPAIGN_CATEGORIES, type CampaignCategory } from '@/lib/email/preferences';
 import { MAX_BODY, MAX_SUBJECT, type Audience } from '@/lib/email/campaign-schema';
+import { BULK_MIN_GAP_HOURS } from '@/lib/email/frequency';
 import {
   AudienceEditor,
   EMPTY_FILTERS,
@@ -59,7 +60,10 @@ export function EmailComposer() {
   }, [mode, filters, selected]);
   const audienceKey = JSON.stringify(audience);
 
-  // Re-count whenever the audience or the type changes, after a short pause in typing.
+  // The draft goes into the preview too, so it can count who already had this exact message.
+  const draftKey = `${subject.trim()}\u0000${body.trim()}`;
+
+  // Re-count whenever the audience, the type or the draft changes, after a short pause in typing.
   useEffect(() => {
     if (!audience) {
       setPreview(null);
@@ -68,7 +72,13 @@ export function EmailComposer() {
     let live = true;
     setPreviewing(true);
     const timer = setTimeout(() => {
-      api(adminEmailPreview, { body: { audience, category } })
+      api(adminEmailPreview, {
+        body: {
+          audience,
+          category,
+          ...(subject.trim() && body.trim() ? { subject: subject.trim(), body: body.trim() } : {}),
+        },
+      })
         .then((p) => {
           if (live) setPreview(p);
         })
@@ -78,14 +88,14 @@ export function EmailComposer() {
         .finally(() => {
           if (live) setPreviewing(false);
         });
-    }, 400);
+    }, 600);
     return () => {
       live = false;
       clearTimeout(timer);
     };
-    // audienceKey stands in for `audience`, whose identity changes every render.
+    // audienceKey and draftKey stand in for `audience` and the draft fields.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audienceKey, category]);
+  }, [audienceKey, category, draftKey]);
 
   const draftReady = subject.trim().length > 0 && body.trim().length > 0;
   const canSend = draftReady && !!audience && !!preview && preview.eligible > 0 && !previewing;
@@ -133,13 +143,21 @@ export function EmailComposer() {
       const r = await api(adminEmailSend, {
         body: { subject: subject.trim(), body: body.trim(), category, audience },
       });
-      toast.success(
-        t('email-queued', {
-          count: r.total,
-          defaultValue_one: 'Sending to {{count}} person',
-          defaultValue: 'Sending to {{count}} people',
-        }),
-      );
+      if (r.duplicate) {
+        toast.message(
+          t('email-already-sending', {
+            defaultValue: 'This message was just sent. Nothing new was sent.',
+          }),
+        );
+      } else {
+        toast.success(
+          t('email-queued', {
+            count: r.total,
+            defaultValue_one: 'Sending to {{count}} person',
+            defaultValue: 'Sending to {{count}} people',
+          }),
+        );
+      }
       setSubject('');
       setBody('');
       setSelected([]);
@@ -230,6 +248,21 @@ export function EmailComposer() {
                     count: preview.optedOut,
                     defaultValue_one: '{{count}} more matches but opted out of this type of email.',
                     defaultValue: '{{count}} more match but opted out of this type of email.',
+                  })}`
+                : ''}
+              {preview.duplicates > 0
+                ? ` ${t('email-preview-duplicates', {
+                    count: preview.duplicates,
+                    defaultValue_one: '{{count}} already received this message.',
+                    defaultValue: '{{count}} already received this message.',
+                  })}`
+                : ''}
+              {preview.throttled > 0
+                ? ` ${t('email-preview-throttled', {
+                    count: preview.throttled,
+                    hours: BULK_MIN_GAP_HOURS,
+                    defaultValue_one: '{{count}} had an email in the last {{hours}} hours and is left out.',
+                    defaultValue: '{{count}} had an email in the last {{hours}} hours and are left out.',
                   })}`
                 : ''}
             </p>

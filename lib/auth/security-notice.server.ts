@@ -10,7 +10,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { dispatch } from '@/lib/notify/dispatch.server';
-import { sendEmail } from '@/lib/email/send.server';
+import { sendOnce } from '@/lib/email/deliveries.server';
 import { canEmail } from '@/lib/email/preferences.server';
 import { SITE_URL } from '@/lib/seo';
 import { CREDENTIAL_PROVIDER_ID, PROVIDER_NAMES, isSignInProviderId } from '@/lib/auth/providers';
@@ -76,11 +76,18 @@ export async function notifySignInChange(userId: string, change: SignInChange): 
     });
 
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
-    // sendEmail skips placeholder addresses itself. The email honours the
+    // The sender skips placeholder addresses itself. The email honours the
     // "Account security" email preference (on by default); the in-app notice
     // above is sent either way.
     if (user?.email && (await canEmail(userId, 'security'))) {
-      await sendEmail({
+      // The same change reported twice within ten minutes (a retried request)
+      // is one email; the hourly security cap bounds a burst of real changes.
+      const what =
+        change.kind === 'merged' ? change.providerIds.join(',') : change.providerId;
+      await sendOnce({
+        userId,
+        kind: 'security',
+        dedupeKey: `security:sign-in-change:${change.kind}:${what}:${Math.floor(Date.now() / 600_000)}`,
         to: user.email,
         subject,
         html: [

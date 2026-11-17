@@ -99,3 +99,20 @@ export function preferenceWhere(category: CampaignCategory): Prisma.UserWhereInp
     ? { NOT: { notificationPreference: { is: { [column]: false } } } }
     : { notificationPreference: { is: { [column]: true } } };
 }
+
+/** People who have not already received the message with this dedupe key. */
+export function notAlreadySentWhere(dedupeKey: string): Prisma.UserWhereInput {
+  return { NOT: { emailDeliveries: { some: { dedupeKey } } } };
+}
+
+/**
+ * People who got no optional bulk email after `since` (the frequency cap,
+ * `lib/email/frequency.ts`), or `null` for a category the cap does not cover.
+ */
+export function notThrottledWhere(
+  category: CampaignCategory,
+  since: Date,
+): Prisma.UserWhereInput | null {
+  if (category === 'service') return null;
+  return { NOT: { emailDeliveries: { some: { kind: 'campaign', createdAt: { gt: since } } } } };
+}

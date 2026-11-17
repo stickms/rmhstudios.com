@@ -80,6 +80,13 @@ vi.mock(
   }),
 );
 const prefsMock = vi.hoisted(() => ({ canEmail: vi.fn() }));
+// The delivery log (dedupe + hourly cap) is covered by email-campaigns.test.ts;
+// here it passes straight through to the sender so the alert logic is what is tested.
+vi.mock('@/lib/email/deliveries.server', () => ({
+  sendOnce: vi.fn(async ({ userId: _u, kind: _k, dedupeKey: _d, ...message }: Record<string, unknown>) =>
+    (await emailMock.sendEmail(message)) ? 'sent' : 'failed',
+  ),
+}));
 vi.mock('@/lib/email/preferences.server', () => ({ canEmail: prefsMock.canEmail }));
 vi.mock(
   '@/lib/email/send.server',
@@ -96,6 +103,7 @@ import {
   UNKNOWN_DEVICE,
   SESSION_ALERT_REVOKE_PARAM,
 } from '@/lib/auth/session-alert.server';
+import { sendOnce } from '@/lib/email/deliveries.server';
 
 /* -------------------------------------------------------------------------- */
 /* The table                                                                   */
@@ -448,6 +456,14 @@ beforeEach(
 );
 
 describe('onSessionCreated', () => {
+  it('sends the email through the delivery log, once per session, as security mail', async () => {
+    prismaMock.session.findFirst.mockResolvedValue(null);
+    await onSessionCreated({ id: 's1', userId: 'u1' }, signInRequest());
+    expect(vi.mocked(sendOnce)).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'u1', kind: 'security', dedupeKey: 'security:new-device:s1' }),
+    );
+  });
+
   it('still notifies in-app but skips the email when security email is turned off', async () => {
     prismaMock.session.findFirst.mockResolvedValue(null);
     prefsMock.canEmail.mockResolvedValue(false);

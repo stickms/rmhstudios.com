@@ -59,6 +59,9 @@ export const campaignCategorySchema = z.enum(CAMPAIGN_CATEGORIES);
 export const previewBodySchema = z.object({
   audience: audienceSchema,
   category: campaignCategorySchema,
+  /** With both, the preview also counts who already received this exact message. */
+  subject: z.string().max(MAX_SUBJECT).optional(),
+  body: z.string().max(MAX_BODY).optional(),
 });
 
 const draftFields = {

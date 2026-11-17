@@ -8,17 +8,30 @@
  *   2. The send runs on the `email.campaign` pg-boss queue in the `jobs`
  *      worker (inline in the web process when the queue is unavailable).
  *   3. `runCampaign` claims up to 100 pending rows at a time with
- *      `FOR UPDATE SKIP LOCKED`, so two runners never mail the same person,
- *      re-checks each preference (someone may have unsubscribed meanwhile),
- *      and sends them as one Resend batch.
+ *      `FOR UPDATE SKIP LOCKED`, re-checks each preference (someone may have
+ *      unsubscribed meanwhile) and the frequency cap, claims a row per person
+ *      in the delivery log, and sends the claimed ones as one Resend batch.
  *   4. A send that stops making progress (the worker restarted mid-batch) can
  *      be resumed from the admin page once it has been idle for
  *      {@link RESUME_AFTER_MS}; resuming releases the claimed rows.
  *
+ * Never twice, never too often (the "no spam" rules):
+ *   - The per-user delivery log (`lib/email/deliveries.server.ts`) is keyed by
+ *     `campaign:<contentHash>`, a hash of category, subject and body. The same
+ *     message reaches a person at most once, even if an admin sends it again
+ *     as a new campaign, a job retries, or two runners overlap.
+ *   - Sending the same message twice within {@link DOUBLE_SUBMIT_MS} returns
+ *     the first campaign instead of creating a second (a double click).
+ *   - Optional bulk mail is capped at one email per person per
+ *     `BULK_MIN_GAP_HOURS` (`lib/email/frequency.ts`). The cap check and the
+ *     claim run under one advisory lock, so two campaigns sending at once
+ *     cannot both get through to the same person.
+ *
  * Required service notices (`category: 'service'`) skip the preference check
- * and carry no unsubscribe link. Every other campaign carries a one-click
+ * and the frequency cap (never the dedupe) and carry no unsubscribe link. Every other campaign carries a one-click
  * `List-Unsubscribe` for its own list.
  */
+import { createHash } from 'node:crypto';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { getBoss } from '@/lib/jobs/boss.server';
@@ -26,7 +39,16 @@ import { SITE_URL } from '@/lib/seo';
 import { EMAIL_BATCH_LIMIT, sendEmail, sendEmailBatch } from '@/lib/email/send.server';
 import { signUnsubToken } from '@/lib/email/unsubscribe';
 import { renderCampaignEmail } from '@/lib/email/campaign-render';
-import { audienceWhere, needsMemberIds, preferenceWhere } from '@/lib/email/audience';
+import {
+  audienceWhere,
+  needsMemberIds,
+  notAlreadySentWhere,
+  notThrottledWhere,
+  preferenceWhere,
+} from '@/lib/email/audience';
+import { claimDeliveries, releaseDeliveries, type DeliveryKind } from '@/lib/email/deliveries.server';
+import { bulkGapStart } from '@/lib/email/frequency';
+import type { Prisma } from '@prisma/client';
 import {
   campaignPreference,
   resolveEmailPrefs,
@@ -64,6 +86,8 @@ export const EMAIL_CAMPAIGN_QUEUE = 'email.campaign';
 
 /** A send with no finished batch for this long can be resumed. */
 export const RESUME_AFTER_MS = 5 * 60_000;
+/** A second send of the same message within this window is treated as a double submit. */
+export const DOUBLE_SUBMIT_MS = 10 * 60_000;
 /** Pause between batches, under Resend's default of two requests a second. */
 const BATCH_GAP_MS = 600;
 const SETTINGS_URL = `${SITE_URL}/settings/notifications`;
@@ -94,6 +118,43 @@ async function whereFor(audience: Audience) {
   return audienceWhere(audience, needsMemberIds(audience) ? { memberIds: await memberIds() } : {});
 }
 
+/** The hash a message is deduplicated by: same type, subject and body = same message. */
+export function campaignContentHash(category: CampaignCategory, subject: string, body: string): string {
+  const norm = (v: string) => v.replace(/\r\n?/g, '\n').trim();
+  return createHash('sha256')
+    .update(`${category}\n${norm(subject)}\n${norm(body)}`)
+    .digest('hex');
+}
+
+const dedupeKeyFor = (contentHash: string) => `campaign:${contentHash}`;
+const deliveryKindFor = (category: CampaignCategory): DeliveryKind =>
+  category === 'service' ? 'service' : 'campaign';
+
+/**
+ * The audience narrowed step by step, so each exclusion can be counted:
+ * base → accepts this type of email → has not had this message → not emailed too recently.
+ */
+async function funnel(
+  audience: Audience,
+  category: CampaignCategory,
+  contentHash: string | null,
+  now: Date,
+) {
+  const base = await whereFor(audience);
+  const steps: Prisma.UserWhereInput[] = [base];
+  const pref = preferenceWhere(category);
+  const afterPref = pref ? [...steps, pref] : steps;
+  const afterDup = contentHash ? [...afterPref, notAlreadySentWhere(dedupeKeyFor(contentHash))] : afterPref;
+  const throttle = notThrottledWhere(category, bulkGapStart(now));
+  const eligible = throttle ? [...afterDup, throttle] : afterDup;
+  return {
+    base,
+    afterPref: { AND: afterPref },
+    afterDup: { AND: afterDup },
+    eligible: { AND: eligible } as Prisma.UserWhereInput,
+  };
+}
+
 export interface AudiencePreview {
   /** Everyone the audience matches, before preferences. */
   matched: number;
@@ -101,31 +162,41 @@ export interface AudiencePreview {
   eligible: number;
   /** Matched people who opted out of this category. */
   optedOut: number;
+  /** People who already received this exact message (only known once a subject and body are given). */
+  duplicates: number;
+  /** People held back because they had an optional email too recently. */
+  throttled: number;
   sample: { id: string; name: string | null; handle: string | null; email: string | null }[];
 }
 
 export async function previewAudience(
   audience: Audience,
   category: CampaignCategory,
+  draft?: { subject?: string | undefined; body?: string | undefined },
 ): Promise<AudiencePreview> {
-  const base = await whereFor(audience);
-  const pref = preferenceWhere(category);
-  const eligibleWhere = pref ? { AND: [base, pref] } : base;
-  const [matched, eligible, sample] = await Promise.all([
-    prisma.user.count({ where: base }),
-    pref ? prisma.user.count({ where: eligibleWhere }) : null,
+  const hash =
+    draft?.subject?.trim() && draft.body?.trim()
+      ? campaignContentHash(category, draft.subject, draft.body)
+      : null;
+  const f = await funnel(audience, category, hash, new Date());
+  const [matched, afterPref, afterDup, eligible, sample] = await Promise.all([
+    prisma.user.count({ where: f.base }),
+    prisma.user.count({ where: f.afterPref }),
+    prisma.user.count({ where: f.afterDup }),
+    prisma.user.count({ where: f.eligible }),
     prisma.user.findMany({
-      where: eligibleWhere,
+      where: f.eligible,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 8,
       select: recipientSelect,
     }),
   ]);
-  const eligibleCount = eligible ?? matched;
   return {
     matched,
-    eligible: eligibleCount,
-    optedOut: matched - eligibleCount,
+    eligible,
+    optedOut: matched - afterPref,
+    duplicates: afterPref - afterDup,
+    throttled: afterDup - eligible,
     sample: sample.map(summary),
   };
 }
@@ -204,11 +275,24 @@ const ID_PAGE = 5_000;
 export async function createCampaign(
   adminId: string,
   input: CreateCampaignBody,
-): Promise<{ id: string; total: number; skipped: number }> {
-  const base = await whereFor(input.audience);
-  const pref = preferenceWhere(input.category);
-  const eligibleWhere = pref ? { AND: [base, pref] } : base;
-  const matched = await prisma.user.count({ where: base });
+): Promise<{ id: string; total: number; skipped: number; duplicate: boolean }> {
+  const contentHash = campaignContentHash(input.category, input.subject, input.body);
+
+  // Double submit: the same message sent again moments later is the first send.
+  const recent = await prisma.emailCampaign.findFirst({
+    where: { contentHash, createdAt: { gt: new Date(Date.now() - DOUBLE_SUBMIT_MS) } },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, total: true, skipped: true },
+  });
+  if (recent) return { ...recent, duplicate: true };
+
+  const now = new Date();
+  const f = await funnel(input.audience, input.category, contentHash, now);
+  const [matched, afterPref, afterDup] = await Promise.all([
+    prisma.user.count({ where: f.base }),
+    prisma.user.count({ where: f.afterPref }),
+    prisma.user.count({ where: f.afterDup }),
+  ]);
 
   const campaign = await prisma.emailCampaign.create({
     data: {
@@ -217,6 +301,7 @@ export async function createCampaign(
       body: input.body,
       category: input.category,
       audience: input.audience,
+      contentHash,
     },
     select: { id: true },
   });
@@ -226,7 +311,7 @@ export async function createCampaign(
   let cursor: string | undefined;
   for (;;) {
     const page = await prisma.user.findMany({
-      where: eligibleWhere,
+      where: f.eligible,
       orderBy: { id: 'asc' },
       take: ID_PAGE,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -242,12 +327,16 @@ export async function createCampaign(
     if (page.length < ID_PAGE) break;
   }
 
+  const duplicates = afterPref - afterDup;
+  const throttled = Math.max(0, afterDup - total);
   const skipped = Math.max(0, matched - total);
   await prisma.emailCampaign.update({
     where: { id: campaign.id },
     data: {
       total,
       skipped,
+      duplicates,
+      throttled,
       ...(total === 0 ? { status: 'sent', finishedAt: new Date() } : {}),
     },
   });
@@ -259,7 +348,7 @@ export async function createCampaign(
   });
 
   if (total > 0) await startCampaign(campaign.id);
-  return { id: campaign.id, total, skipped };
+  return { id: campaign.id, total, skipped, duplicate: false };
 }
 
 async function startCampaign(campaignId: string): Promise<void> {
@@ -322,14 +411,51 @@ async function finish(campaignId: string): Promise<void> {
   });
 }
 
+/**
+ * Decide, under one advisory lock, who in a batch may be sent this message:
+ * not emailed too recently (optional mail only) and not sent it before. Holding
+ * the lock across the cap check and the claim is what stops two campaigns that
+ * run at the same moment from both reaching one person inside the cap window.
+ */
+async function claimForBatch(
+  userIds: string[],
+  category: CampaignCategory,
+  contentHash: string,
+  campaignId: string,
+): Promise<{ claimed: Set<string>; throttled: Set<string>; duplicates: Set<string> }> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('email-delivery-claim'))`;
+    const throttled = new Set<string>();
+    if (category !== 'service' && userIds.length > 0) {
+      const recent = await tx.emailDelivery.findMany({
+        where: { userId: { in: userIds }, kind: 'campaign', createdAt: { gt: bulkGapStart() } },
+        select: { userId: true },
+        distinct: ['userId'],
+      });
+      for (const r of recent) throttled.add(r.userId);
+    }
+    const candidates = userIds.filter((id) => !throttled.has(id));
+    const claimed = await claimDeliveries(
+      candidates,
+      deliveryKindFor(category),
+      dedupeKeyFor(contentHash),
+      campaignId,
+      tx,
+    );
+    const duplicates = new Set(candidates.filter((id) => !claimed.has(id)));
+    return { claimed, throttled, duplicates };
+  });
+}
+
 export async function runCampaign(campaignId: string): Promise<void> {
   const campaign = await prisma.emailCampaign.findUnique({
     where: { id: campaignId },
-    select: { id: true, subject: true, body: true, category: true, status: true },
+    select: { id: true, subject: true, body: true, category: true, status: true, contentHash: true },
   });
   if (!campaign || campaign.status !== 'sending') return;
   const category = campaign.category as CampaignCategory;
   const pref = campaignPreference(category);
+  const dedupeKey = dedupeKeyFor(campaign.contentHash);
 
   for (;;) {
     const ids = await claimBatch(campaignId);
@@ -348,16 +474,24 @@ export async function runCampaign(campaignId: string): Promise<void> {
     });
 
     // Re-check at send time: an unsubscribe since the campaign was created wins.
-    const deliverable = users.filter(
+    const wanting = users.filter(
       (u): u is typeof u & { email: string } =>
         !!u.email && (!pref || resolveEmailPrefs(u.notificationPreference)[pref]),
     );
-    const deliverableIds = new Set(deliverable.map((u) => u.id));
-    const skippedIds = ids.filter((id) => !deliverableIds.has(id));
+    const { claimed, throttled, duplicates } = await claimForBatch(
+      wanting.map((u) => u.id),
+      category,
+      campaign.contentHash,
+      campaignId,
+    );
+    const deliverable = wanting.filter((u) => claimed.has(u.id));
+    const skippedIds = ids.filter((id) => !claimed.has(id));
 
     const results = await sendEmailBatch(deliverable.map((u) => messageFor({ ...campaign, category }, u)));
     const sentIds = deliverable.filter((_, i) => results[i]).map((u) => u.id);
     const failedIds = deliverable.filter((_, i) => !results[i]).map((u) => u.id);
+    // A refused message was not received: drop its log row so it is not counted as sent.
+    await releaseDeliveries(failedIds, dedupeKey);
     const now = new Date();
 
     await prisma.$transaction([
@@ -379,6 +513,8 @@ export async function runCampaign(campaignId: string): Promise<void> {
           sent: { increment: sentIds.length },
           failed: { increment: failedIds.length },
           skipped: { increment: skippedIds.length },
+          duplicates: { increment: duplicates.size },
+          throttled: { increment: throttled.size },
           lastBatchAt: now,
         },
       }),
@@ -437,6 +573,8 @@ export async function listCampaigns(limit = 30) {
       sent: true,
       failed: true,
       skipped: true,
+      duplicates: true,
+      throttled: true,
       createdAt: true,
       lastBatchAt: true,
       finishedAt: true,
@@ -454,6 +592,8 @@ export async function listCampaigns(limit = 30) {
     sent: r.sent,
     failed: r.failed,
     skipped: r.skipped,
+    duplicates: r.duplicates,
+    throttled: r.throttled,
     createdAt: r.createdAt.toISOString(),
     finishedAt: r.finishedAt?.toISOString() ?? null,
     author: r.author.profile?.displayName || r.author.name || r.author.handle || null,

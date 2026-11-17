@@ -3,7 +3,19 @@
  * mail (consent) and what an admin's text can do inside an email (injection).
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { audienceWhere, preferenceWhere } from '@/lib/email/audience';
+import {
+  audienceWhere,
+  notAlreadySentWhere,
+  notThrottledWhere,
+  preferenceWhere,
+} from '@/lib/email/audience';
+import {
+  BULK_MIN_GAP_HOURS,
+  SECURITY_MAX_PER_HOUR,
+  bulkGapStart,
+  isoWeekKey,
+  securityAllowed,
+} from '@/lib/email/frequency';
 import { renderCampaignEmail } from '@/lib/email/campaign-render';
 import { EMAIL_DEFAULTS, resolveEmailPrefs } from '@/lib/email/preferences';
 import { audienceSchema } from '@/lib/email/campaign-schema';
@@ -165,5 +177,46 @@ describe('renderCampaignEmail', () => {
       unsubscribeUrl: null,
     });
     expect(out.subject).toBe('Line one Bcc: someone');
+  });
+});
+
+describe('no repeats, no floods', () => {
+  it('pins the caps', () => {
+    expect(BULK_MIN_GAP_HOURS).toBe(48);
+    expect(SECURITY_MAX_PER_HOUR).toBe(5);
+    expect(bulkGapStart(NOW).toISOString()).toBe('2026-11-15T12:00:00.000Z');
+  });
+
+  it('excludes people who already had the message', () => {
+    expect(notAlreadySentWhere('campaign:abc')).toEqual({
+      NOT: { emailDeliveries: { some: { dedupeKey: 'campaign:abc' } } },
+    });
+  });
+
+  it('caps optional bulk mail but never a required notice', () => {
+    expect(notThrottledWhere('announcements', bulkGapStart(NOW))).toEqual({
+      NOT: {
+        emailDeliveries: {
+          some: { kind: 'campaign', createdAt: { gt: new Date('2026-11-15T12:00:00.000Z') } },
+        },
+      },
+    });
+    expect(notThrottledWhere('service', bulkGapStart(NOW))).toBeNull();
+  });
+
+  it('allows five security emails an hour, then holds the rest', () => {
+    const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000);
+    expect(securityAllowed([minutesAgo(1), minutesAgo(2), minutesAgo(3), minutesAgo(4)], NOW)).toBe(true);
+    expect(
+      securityAllowed([minutesAgo(1), minutesAgo(2), minutesAgo(3), minutesAgo(4), minutesAgo(5)], NOW),
+    ).toBe(false);
+    // Older than an hour no longer counts.
+    expect(securityAllowed([1, 2, 3, 4, 61].map(minutesAgo), NOW)).toBe(true);
+  });
+
+  it('keys the weekly digest by ISO week', () => {
+    expect(isoWeekKey(new Date('2026-11-17T12:00:00Z'))).toBe('2026-W47');
+    expect(isoWeekKey(new Date('2027-01-01T00:00:00Z'))).toBe('2026-W53');
+    expect(isoWeekKey(new Date('2026-01-01T00:00:00Z'))).toBe('2026-W01');
   });
 });

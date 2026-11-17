@@ -38,7 +38,7 @@ import { prisma } from '@/lib/prisma.server';
 import { hashIp } from '@/lib/hash-ip.server';
 import { getClientIp } from '@/lib/rate-limit';
 import { dispatch } from '@/lib/notify/dispatch.server';
-import { sendEmail } from '@/lib/email/send.server';
+import { sendOnce } from '@/lib/email/deliveries.server';
 import { canEmail } from '@/lib/email/preferences.server';
 import { SITE_URL } from '@/lib/seo';
 import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n/config';
@@ -259,7 +259,11 @@ export async function onSessionCreated(
     // The email honours the "Account security" email preference (on by
     // default); the in-app notice above is sent either way.
     if (user.email && (await canEmail(session.userId, 'security'))) {
-      await sendEmail({
+      // Once per session (the dedupe key), and within the hourly security cap.
+      await sendOnce({
+        userId: session.userId,
+        kind: 'security',
+        dedupeKey: `security:new-device:${session.id}`,
         to: user.email,
         subject: strings.subject,
         html: alertHtml(strings, deviceFp, session.id),

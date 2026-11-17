@@ -323,6 +323,7 @@ model User {
   notificationPreference NotificationPreference?
   emailCampaignsSent     EmailCampaign[]          @relation("EmailCampaignAuthor")
   emailCampaignReceipts  EmailCampaignRecipient[]
+  emailDeliveries        EmailDelivery[]
 
   // Appearance preferences (theme + accent), synced across devices
   appearancePreference AppearancePreference?

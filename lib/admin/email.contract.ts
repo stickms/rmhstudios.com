@@ -22,6 +22,8 @@ export interface EmailAudiencePreview {
   matched: number;
   eligible: number;
   optedOut: number;
+  duplicates: number;
+  throttled: number;
   sample: EmailRecipientSummary[];
 }
 
@@ -35,6 +37,8 @@ export interface EmailCampaignRow {
   sent: number;
   failed: number;
   skipped: number;
+  duplicates: number;
+  throttled: number;
   createdAt: string;
   finishedAt: string | null;
   author: string | null;
@@ -63,7 +67,8 @@ export const adminEmailCampaigns = endpoint<{ res: { campaigns: EmailCampaignRow
 
 export const adminEmailSend = endpoint<{
   body: CreateCampaignBody;
-  res: { id: string; total: number; skipped: number };
+  /** `duplicate`: the same message was sent moments ago; this is that send, not a new one. */
+  res: { id: string; total: number; skipped: number; duplicate: boolean };
 }>()({ method: 'POST', path: '/api/admin/email/campaigns' });
 
 export const adminEmailResume = endpoint<{
