@@ -197,7 +197,7 @@ workspace.
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                                                                                                                                                                                                                                                                     | `lib/CLAUDE.md`                                  |
 | `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                                                                                                                                                                                                                                                                                          | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                                                                                                                                                                                                                                | `lib/CLAUDE.md`                                  |
-| `locales/`     | 9 shipped locales × the registered namespaces (count: `docs/_generated/facts.json`); `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                                                                                                                                                                                                                          | `lib/CLAUDE.md` §i18n                            |
+| `locales/`     | English only (`en`, authoritative; namespace count in `docs/_generated/facts.json`). The other 8 shipped locales and the parked ones live on the `i18n/catalogs` branch; `pnpm i18n:pull` copies them in (`docs/translations.md`).                                                                                                                                                                                 | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                                                                                                                                                                                                                                                              | —                                                |
 | `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                                                                                                                                                                                                                                                               | —                                                |
 | `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                                                                                                                                                                                                                                                            | `docs/README.md`                                 |
@@ -220,6 +220,7 @@ pnpm test:epic               # epic content-build suite (needs Chromium)
 pnpm test:integration        # real flows vs a running app + throwaway Postgres (docs/testing.md §8)
 pnpm build                   # vibe-packages → islands (vite.islands.config.ts) → vite build → esbuild server bundles
 pnpm i18n:extract            # after adding t() strings
+pnpm i18n:pull               # copy the non-English catalogs in from the i18n/catalogs branch (pnpm dev runs it)
 pnpm facts:generate          # refresh docs/_generated/facts.json (model/route/test/namespace counts; facts:check gates it)
 pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)
 pnpm audit:pages             # real-browser sweep: iOS edge-pinned layers + page-anatomy drift (needs pnpm dev)
@@ -846,8 +847,7 @@ no
 hand-edited
 generated
 files
-(`app/routeTree.gen.ts`,
-`lib/i18n/resources.<locale>.ts`),
+(`app/routeTree.gen.ts`),
 no
 new
 type
@@ -3466,7 +3466,12 @@ maintenance),
 `i18n-translate.yml`
 (manual
 machine
-translation;
+translation,
+committed
+to
+the
+`i18n/catalogs`
+branch;
 `docs/translations.md`),
 and
 the

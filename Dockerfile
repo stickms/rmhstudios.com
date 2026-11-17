@@ -327,17 +327,12 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # inside the shared BuildKit graph without rebuilding Vite in a separate CI job.
 # Bundle sizing remains visible in build logs, but no longer blocks images.
 RUN rm -rf .output \
-    # i18n translation is NOT run here. It used to call the DeepSeek API to
-    # translate any missing keys before the build — a ~39s live-network step on
-    # the deploy critical path that re-translated the same still-uncommitted keys
-    # every deploy and discarded the result. Translation now runs in
-    # .github/workflows/i18n-translate.yml, whose output is merged by PR, so the
-    # checked-in catalog is the source of truth. We still regenerate the resource
-    # modules from that committed locale JSON (fast, deterministic, offline) so a
-    # locale edit that skipped `pnpm i18n:resources` can't ship stale strings.
-    # Anything not yet translated falls back to English at runtime.
-    && echo "[i18n] regenerating resource modules from committed locales (translation runs in CI, not here)" \
-    && pnpm exec tsx scripts/gen-i18n-resources.ts \
+    # i18n: nothing is translated or generated here. The non-English catalogs
+    # live on the i18n/catalogs branch (.github/workflows/i18n-translate.yml
+    # commits there) and the workflow that builds this image copies them into
+    # locales/ first (scripts/i18n-pull.sh, strict in CI). lib/i18n/resources.*
+    # glob whatever is there, so a missing catalog falls back to English.
+    && echo "[i18n] catalogs: $(cat locales/.catalogs-commit 2>/dev/null || echo 'none: English only')" \
     # Responsive image variants (OPT-24) are NOT generated here any more — they
     # come from the cached image-variants stage, COPYd in above. They are still
     # NOT optional decoration: the files under public/images/_variants/ are

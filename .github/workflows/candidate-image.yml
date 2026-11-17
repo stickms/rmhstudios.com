@@ -24,6 +24,9 @@ jobs:
         if: steps.classify.outputs.candidate == 'true'
         with:
           cleanup: false
+      - name: Pull translation catalogs
+        if: steps.classify.outputs.candidate == 'true'
+        run: bash scripts/i18n-pull.sh
       - name: Build production-shaped images locally (never push a PR image)
         if: steps.classify.outputs.candidate == 'true'
         env:

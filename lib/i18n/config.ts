@@ -9,8 +9,9 @@ export type Locale = (typeof LOCALES)[number];
 /**
  * Locale directories that exist under `locales/` but are NOT shipped.
  *
- * These carry real, machine-translated catalogs, but nothing serves them and the
- * translate workflow skips them: a locale reaches users only through `LOCALES`
+ * Their catalogs are real and machine-translated, kept on the i18n/catalogs
+ * branch with the shipped ones, but nothing serves them and the translate
+ * workflow skips them: a locale reaches users only through `LOCALES`
  * above. Their catalogs stay on disk so promoting one later only pays for the
  * keys added since it was parked. de, ko, it, id, tr, ur and vi were shipped
  * until 2026-11-17 and were parked to cut translation spend. They are listed here rather than left implicit
@@ -20,8 +21,8 @@ export type Locale = (typeof LOCALES)[number];
  * Promoting one is a product decision, not a mechanical one — it commits us to
  * maintaining its catalog and needs a `LOCALE_LABELS` / `TRANSLATE_TARGETS` /
  * `LOCALE_TO_LANGUAGE_NAME` entry (the types below enforce all three), a
- * `LOCALE_NAMESPACE_LOADERS` entry in `lib/i18n/resources.ts`, and
- * `pnpm i18n:resources` to regenerate its `resources.<locale>.ts`. Note that
+ * `LOCALE_NAMESPACE_LOADERS` entry in `lib/i18n/resources.ts`, and a
+ * `lib/i18n/resources.<locale>.ts` (copy another locale's). Note that
  * `fa` and `ur` are RTL and would also need adding to `RTL_LOCALES`.
  */
 export const PENDING_LOCALES = [
