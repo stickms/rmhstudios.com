@@ -17,7 +17,6 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import {
   Spine,
   SpineItem,
@@ -48,8 +47,9 @@ type Size =
 
 const IMG =
   '/images/site-history';
-// The size each picture is shown at, at most (the column, and the phone frame). OptimizedImage turns it into `sizes`, so
-// a phone downloads a 640px variant rather than the 1440px original; the ratio is the pictures' own (16:10, 390:844).
+// The size each picture is shown at, at most (the column, and the phone frame), in the pictures' own ratio (16:10,
+// 390:844), so the box is reserved before the file arrives. A plain lazy <img>, not OptimizedImage: these files are
+// excluded from the variant manifest (scripts/gen-image-variants.ts says why), and average 32 KB.
 const SIZE: Record<
   Size,
   {
@@ -790,8 +790,7 @@ function Entry({
                     'max-w-[260px]',
                 )}
               >
-                <OptimizedImage
-                  layout="constrained"
+                <img
                   key={
                     src
                   }
@@ -820,6 +819,8 @@ function Entry({
                     ]
                       .height
                   }
+                  loading="lazy"
+                  decoding="async"
                   className="block h-auto w-full rounded-site border border-site-border bg-site-bg-subtle"
                 />
               </a>
