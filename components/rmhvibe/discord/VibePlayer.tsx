@@ -12,9 +12,9 @@ import { resolveTweakValues, type TweakSpec, type TweakValue } from '@/lib/rmhvi
 /** What `RMHVibe.room.members()` and the `room:members` event carry to the frame. */
 function memberPayload(members: VibeRoomMember[], hostSid: string | null, selfSid: string | null) {
   return members.map((m) => ({
-    id: m.sid,
     name: m.name,
     avatarUrl: m.avatarUrl,
+    away: m.away,
     host: m.sid === hostSid,
     self: m.sid === selfSid,
   }));
@@ -80,7 +80,7 @@ export function VibePlayer({
   }, [frame, payload, post]);
 
   useEffect(
-    () => client.onMessage((m) => post('room:message', { from: m.fromSid, data: m.data })),
+    () => client.onMessage((m) => post('room:message', m.data)),
     [client, post],
   );
 

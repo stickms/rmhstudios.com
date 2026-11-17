@@ -25,6 +25,7 @@ export function VibeGalleryPicker({
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const generation = useRef(0);
+  const hostFallback = t('vibes-host-fallback', { defaultValue: 'the host' });
 
   useEffect(() => {
     const id = window.setTimeout(() => setDebounced(query.trim()), SEARCH_DEBOUNCE_MS);
@@ -61,7 +62,7 @@ export function VibeGalleryPicker({
             ? t('vibes-pick-prompt', { defaultValue: 'Pick a vibe for everyone in this channel' })
             : t('vibes-waiting-for-pick', {
                 defaultValue: 'Waiting for {{name}} to pick a vibe',
-                name: hostName ?? t('vibes-host-fallback', { defaultValue: 'the host' }),
+                name: hostName ?? hostFallback,
               })}
         </p>
         <label className="relative block mb-4">

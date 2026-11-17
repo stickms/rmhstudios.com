@@ -21,6 +21,7 @@
   "vibes-connecting": "Joining the room...",
   "vibes-gallery-failed": "Couldn't load vibes",
   "vibes-guest": "Guest",
+  "vibes-host-fallback": "the host",
   "vibes-invite": "Invite",
   "vibes-invite-failed": "Couldn't open the invite dialog",
   "vibes-link-account": "Link account",

@@ -92,7 +92,9 @@ export function VibeDiscordActivity({
     let c: VibeRoomClient | null = null;
     setConnectFailed(false);
     setRoom(null);
+    launchChecked.current = false;
     const fail = () => {
+      c?.destroy();
       setConnectFailed(true);
       toast.error(t('vibes-connect-failed-toast', { defaultValue: "Couldn't connect to the room" }));
     };
