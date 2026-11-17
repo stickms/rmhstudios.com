@@ -1,1 +1,192 @@
-/* RMH Research — archive page sheet. Scoped under .rmhr-root; see ../rmh-research.css for the vocabulary. */
+/* RMH Research — archive and paper page sheet. Scoped under .rmhr-root; see ../rmh-research.css for the vocabulary.
+
+   arc-  /rmh-research/archive        a working tool: search, filters, results, pager. No scenes.
+   pap-  /rmh-research/paper/$paperId  head, abstract, cite, the resonance scene, lists.
+
+   Flow mode is written first. The resonance scene's pinned layout lives in the
+   motion gate at the foot of the sheet; outside it the scene is a plain
+   section with every bar drawn at its full length (--te is 1 there). */
+
+/* ════ SHARED ════ */
+.rmhr-root .arc-vh {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ════ ARCHIVE ════ */
+.rmhr-root .arc-head { padding-block: calc(var(--nav-h) + clamp(48px, 7vw, 96px)) clamp(32px, 4vw, 48px); }
+.rmhr-root .arc-search { display: grid; gap: 10px; margin-top: clamp(28px, 4vw, 40px); max-width: 860px; }
+.rmhr-root .arc-search-row { display: flex; gap: 10px; }
+.rmhr-root .arc-search-row .field { flex: 1 1 auto; min-width: 0; }
+.rmhr-root .arc-search .btn { min-height: 52px; }
+
+.rmhr-root .arc-layout { display: grid; grid-template-columns: minmax(0, 1fr); padding-block: 8px clamp(64px, 8vw, 104px); }
+
+/* Filters: on a phone, one scrolling row of options per group, above the results. */
+.rmhr-root .arc-filters { min-width: 0; }
+.rmhr-root .arc-filters-head { display: flex; justify-content: flex-end; }
+.rmhr-root .arc-filters-head:not(:has(.arc-clear)) { display: none; }
+.rmhr-root .arc-group { padding-block: 14px; border-bottom: 1px solid var(--rule); min-width: 0; }
+.rmhr-root .arc-group-h { margin-bottom: 10px; }
+.rmhr-root .arc-opts {
+  display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  margin-inline: calc(-1 * var(--pad)); padding-inline: var(--pad); scroll-padding-inline: var(--pad);
+}
+.rmhr-root .arc-opts::-webkit-scrollbar { display: none; }
+.rmhr-root .arc-opts > li { flex: 0 0 auto; }
+.rmhr-root .arc-opt {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px;
+  border: 1px solid var(--rule); border-radius: var(--r-sm); background: transparent;
+  font-size: 13px; line-height: 1.2; font-weight: 500; color: var(--mute); white-space: nowrap; cursor: pointer;
+  transition: background-color 90ms, color 90ms, border-color 90ms;
+}
+.rmhr-root .arc-opt:hover { background: var(--wash); color: var(--ink); }
+.rmhr-root .arc-opt-n { font-size: 12px; font-weight: 400; color: var(--mute); }
+.rmhr-root .arc-opt.is-on { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+.rmhr-root .arc-opt.is-on .arc-opt-n { color: var(--on-ink); }
+
+.rmhr-root .arc-custom { margin-top: 8px; }
+.rmhr-root .arc-custom > summary { list-style: none; }
+.rmhr-root .arc-custom > summary::-webkit-details-marker { display: none; }
+.rmhr-root .arc-custom > summary::after { content: '+'; font-family: var(--mono); font-weight: 400; }
+.rmhr-root .arc-custom[open] > summary::after { content: '−'; }
+.rmhr-root .arc-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; max-width: 360px; }
+.rmhr-root .arc-range-f { display: grid; gap: 4px; }
+.rmhr-root .arc-range .btn-quiet { grid-column: 1 / -1; }
+
+/* Results. */
+.rmhr-root .arc-results { min-width: 0; }
+.rmhr-root .arc-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; min-height: 56px; padding-block: 12px; }
+.rmhr-root .arc-count { color: var(--ink); }
+.rmhr-root .arc-author { gap: 8px; max-width: 100%; }
+.rmhr-root .arc-author-k { color: var(--mute); }
+.rmhr-root .arc-author-n { font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.rmhr-root .arc-author:hover .arc-author-n { text-decoration: line-through; }
+.rmhr-root .arc-list { border-top: 1px solid var(--rule); }
+
+.rmhr-root .arc-empty { display: grid; gap: 16px; padding-block: clamp(32px, 5vw, 56px); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.rmhr-root .arc-empty-tips { display: grid; gap: 6px; color: var(--mute); max-width: 60ch; }
+.rmhr-root .arc-empty-tips li { position: relative; padding-inline-start: 18px; }
+.rmhr-root .arc-empty-tips li::before { content: '–'; position: absolute; inset-inline-start: 0; }
+.rmhr-root .arc-empty .actions { margin-top: 8px; }
+
+.rmhr-root .arc-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding-top: 28px; }
+.rmhr-root .arc-pages { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.rmhr-root .arc-pg {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; padding-inline: 8px;
+  border-radius: var(--r-sm); font-size: 13px; color: var(--mute); transition: background-color 90ms, color 90ms;
+}
+.rmhr-root .arc-pg:hover { background: var(--wash); color: var(--ink); }
+.rmhr-root .arc-pg[aria-current='page'] { background: var(--ink); color: var(--on-ink); }
+.rmhr-root .arc-pg-gap { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; }
+.rmhr-root .arc-pg-step { gap: 8px; }
+.rmhr-root .arc-pg-step.is-off { display: inline-flex; align-items: center; min-height: 36px; font-size: 14px; font-weight: 500; color: var(--mute); cursor: default; }
+.rmhr-root .arc-pg-arw { display: inline-block; }
+[dir='rtl'] .rmhr-root .arc-pg-arw { scale: -1 1; }
+.rmhr-root .arc-foot { margin-top: 16px; }
+
+@media (max-width: 560px) {
+  .rmhr-root .arc-search-row { flex-wrap: wrap; }
+  .rmhr-root .arc-search .btn { flex: 1 1 100%; min-height: 48px; }
+  .rmhr-root .arc-pages { order: -1; width: 100%; justify-content: center; }
+}
+
+/* Desktop: the filters are a left column of plain rows, divided from the results by a rule. */
+@media (min-width: 900px) {
+  .rmhr-root .arc-layout { grid-template-columns: 228px minmax(0, 1fr); padding-top: 0; }
+  .rmhr-root .arc-filters { padding-block: 12px 24px; padding-inline-end: 24px; border-inline-end: 1px solid var(--rule); }
+  .rmhr-root .arc-filters-head { justify-content: flex-start; margin-bottom: 4px; }
+  .rmhr-root .arc-group { padding-block: 16px 18px; }
+  .rmhr-root .arc-group:last-child { border-bottom: 0; }
+  .rmhr-root .arc-opts { display: grid; gap: 0; overflow: visible; margin-inline: 0; padding-inline: 0; }
+  .rmhr-root .arc-opt {
+    display: flex; justify-content: space-between; align-items: center; min-height: 32px;
+    margin-inline: -8px; width: calc(100% + 16px); padding: 4px 8px; border: 0; font-size: 14px; font-weight: 400; white-space: normal;
+  }
+  .rmhr-root .arc-opt.is-on { background: transparent; color: var(--ink); font-weight: 600; }
+  .rmhr-root .arc-opt.is-on:hover { background: var(--wash); }
+  .rmhr-root .arc-opt.is-on .arc-opt-n { color: var(--ink); }
+  .rmhr-root .arc-opt.is-empty:not(.is-on) .arc-opt-k { color: var(--mute); }
+  .rmhr-root .arc-custom { margin-top: 0; }
+  .rmhr-root .arc-custom > summary { justify-content: space-between; }
+  .rmhr-root .arc-results { padding-inline-start: clamp(28px, 3vw, 44px); }
+}
+
+@media (pointer: coarse) {
+  .rmhr-root .arc-opt, .rmhr-root .arc-pg, .rmhr-root .arc-pg-step.is-off { min-height: 44px; }
+  .rmhr-root .arc-pg { min-width: 44px; }
+}
+
+/* ════ PAPER ════ */
+.rmhr-root .pap-head { padding-block: calc(var(--nav-h) + clamp(56px, 8vw, 112px)) clamp(36px, 5vw, 56px); }
+.rmhr-root .pap-title {
+  margin-top: 20px; max-width: 30ch; font-size: clamp(30px, 4.4vw, 56px); line-height: 1.06; font-weight: 600;
+  letter-spacing: -0.032em; color: var(--ink); text-wrap: balance;
+}
+.rmhr-root .pap-by { margin-top: 20px; font-size: clamp(16px, 1.5vw, 19px); line-height: 1.45; color: var(--ink); }
+.rmhr-root .pap-by a { text-decoration: underline; text-decoration-color: var(--rule); text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.rmhr-root .pap-by a:hover { text-decoration-color: var(--ink); }
+.rmhr-root .pap-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 16px; }
+.rmhr-root .pap-figs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; margin-top: 14px; }
+.rmhr-root .pap-figs a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .pap-figs a:hover { color: var(--ink); }
+.rmhr-root .pap-figs b { font-weight: 500; color: var(--ink); }
+.rmhr-root .pap-head .actions { margin-top: 28px; }
+
+.rmhr-root .pap-abs p { font-size: clamp(16px, 1.4vw, 18px); line-height: 1.65; color: var(--ink); }
+
+.rmhr-root .pap-cite { display: grid; gap: 36px; }
+.rmhr-root .pap-cite-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.rmhr-root .pap-ref { max-width: 72ch; padding-inline-start: 16px; border-inline-start: 1px solid var(--rule); font-size: 16px; line-height: 1.6; color: var(--ink); overflow-wrap: anywhere; }
+.rmhr-root .pap-bib {
+  margin: 0; padding: 16px; background: var(--wash); border: 1px solid var(--rule); border-radius: var(--r);
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.6; color: var(--ink); white-space: pre; overflow-x: auto;
+}
+
+.rmhr-root .pap-list-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: clamp(20px, 3vw, 32px); }
+.rmhr-root .pap-list { border-top: 1px solid var(--rule); }
+
+/* The resonance scene, flow mode: a section of bars, every one drawn. */
+.rmhr-root .pap-scene { border-top: 1px solid var(--rule); }
+.rmhr-root .pap-res { padding-block: clamp(56px, 8vw, 104px); }
+.rmhr-root .pap-res-head { display: grid; gap: 12px; margin-bottom: clamp(28px, 4vw, 44px); }
+.rmhr-root .pap-bars { display: grid; gap: 22px; max-width: 780px; }
+.rmhr-root .pap-bar { display: grid; gap: 8px; }
+.rmhr-root .pap-bar-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rmhr-root .pap-bar-k { font-size: 15px; line-height: 1.3; font-weight: 600; color: var(--ink); }
+.rmhr-root .pap-bar-n { font-size: clamp(18px, 2vw, 24px); line-height: 1; font-weight: 500; color: var(--ink); }
+.rmhr-root .pap-bar .bar-track { height: 10px; }
+.rmhr-root .pap-bar.is-score .bar-track { height: 16px; }
+.rmhr-root .pap-fill { height: 100%; width: calc(var(--v, 0) * var(--te, 1) * 100%); background: var(--ink); border-radius: var(--r-sm); }
+.rmhr-root .pap-bar-why { font-size: 14px; line-height: 1.45; color: var(--mute); max-width: 62ch; }
+.rmhr-root .pap-res-end {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px;
+  max-width: 780px; margin-top: clamp(28px, 4vw, 40px); padding-top: 20px; border-top: 1px solid var(--rule);
+}
+.rmhr-root .pap-res-score { font-size: clamp(30px, 4.4vw, 52px); line-height: 1; font-weight: 600; letter-spacing: -0.035em; color: var(--ink); }
+.rmhr-root .pap-res-prog { display: none; }
+
+/* ════ MOTION ════ The resonance scene pins and builds its bars with scroll. */
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    @supports (animation-timeline: view()) {
+      .rmhr-root .pap-pin { display: flex; flex-direction: column; justify-content: center; padding-block: calc(var(--nav-h) + 24px) 24px; }
+      .rmhr-root .pap-res { padding-block: 0; }
+      .rmhr-root .pap-res-prog { display: flex; align-items: center; gap: 16px; max-width: 780px; margin-top: 24px; }
+      .rmhr-root .pap-res-prog .scene-rail { flex: 1 1 auto; }
+
+      /* A short or narrow viewport: tighten so the whole breakdown fits in one screen. */
+      @media (max-width: 640px), (max-height: 760px) {
+        .rmhr-root .pap-pin { padding-block: calc(var(--nav-h) + 16px) 16px; }
+        .rmhr-root .pap-res-head { gap: 6px; margin-bottom: 18px; }
+        .rmhr-root .pap-res-head .h2 { font-size: clamp(24px, 6.4vw, 34px); }
+        .rmhr-root .pap-bars { gap: 12px; }
+        .rmhr-root .pap-bar { gap: 6px; }
+        .rmhr-root .pap-bar-why { font-size: 13px; line-height: 1.4; }
+        .rmhr-root .pap-res-end { margin-top: 16px; padding-top: 12px; }
+        .rmhr-root .pap-res-score { font-size: 30px; }
+        .rmhr-root .pap-res-prog { margin-top: 14px; }
+      }
+    }
+  }
+}

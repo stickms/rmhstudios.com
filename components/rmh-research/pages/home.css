@@ -35,7 +35,7 @@
 .rmhr-root .home-fields-head { display: grid; gap: 16px; margin-bottom: clamp(28px, 4vw, 48px); }
 .rmhr-root .home-div-index { display: none; }
 .rmhr-root .home-div + .home-div { margin-top: clamp(40px, 6vw, 72px); }
-.rmhr-root .home-div-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; padding-bottom: 16px; }
+.rmhr-root .home-div-head { display: grid; gap: 8px; padding-bottom: 16px; }
 .rmhr-root .home-div-name { font-size: clamp(26px, 3.4vw, 44px); line-height: 1.05; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); }
 .rmhr-root .home-fld-list { border-top: 1px solid var(--rule); }
 .rmhr-root .home-fld {
@@ -94,6 +94,7 @@
   --ds: 20px;
   display: flex; flex-wrap: wrap; gap: 12px;
 }
+.rmhr-root .home-cites--few { --ds: 34px; gap: 16px; }
 .rmhr-root .home-cites--dense { --ds: 11px; gap: 7px; }
 .rmhr-root .home-cite { display: inline-flex; gap: calc(var(--k4) * 4px); }
 .rmhr-root .home-cite-dot { position: relative; display: block; width: var(--ds); height: var(--ds); border: 1px solid var(--mute); border-radius: 50%; }
@@ -133,14 +134,14 @@
 }
 
 /* ── 6. sections and reports ── */
-.rmhr-root .home-more-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: baseline; gap: 6px 24px; padding-block: 24px; }
+.rmhr-root a.home-more-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: baseline; gap: 6px 24px; padding-block: 24px; }
 .rmhr-root .home-more-row .arw { align-self: center; }
 .rmhr-root .home-more-text { min-width: 0; }
 .rmhr-root .home-more-text .h3 { display: block; }
 .rmhr-root .home-more-row:hover .h3 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .rmhr-root .home-more-desc { display: block; margin-top: 6px; max-width: 62ch; font-size: 15px; line-height: 1.5; color: var(--mute); }
 @media (max-width: 620px) {
-  .rmhr-root .home-more-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .rmhr-root a.home-more-row { grid-template-columns: minmax(0, 1fr) auto; }
   .rmhr-root .home-more-kind { grid-column: 1 / -1; }
 }
 
@@ -171,9 +172,8 @@
       .rmhr-root .home-fields-wrap { grid-template-rows: auto minmax(0, 1fr) auto; }
       .rmhr-root .home-fields-head { margin-bottom: 0; gap: 10px; }
       .rmhr-root .home-fields-head .h2 { font-size: clamp(26px, 3.2vw, 44px); }
-      .rmhr-root .home-fields-body { display: grid; align-items: center; min-height: 0; }
+      .rmhr-root .home-fields-body { display: grid; align-items: start; align-content: center; min-height: 0; }
       .rmhr-root .home-div + .home-div { margin-top: 0; }
-      .rmhr-root .home-div-stack { align-self: center; }
       @media (min-width: 900px) {
         .rmhr-root .home-fields-body { grid-template-columns: 240px minmax(0, 1fr); gap: clamp(32px, 5vw, 80px); }
         .rmhr-root .home-div-index { display: block; border-top: 1px solid var(--rule); }
@@ -207,6 +207,7 @@
         .rmhr-root .home-rix-text { font-size: 15px; }
         .rmhr-root .home-rix-fig { padding: 16px; }
         .rmhr-root .home-cites { --ds: 16px; gap: 9px; }
+        .rmhr-root .home-cites--few { --ds: 22px; gap: 11px; }
         .rmhr-root .home-cites--dense { --ds: 9px; gap: 5px; }
         .rmhr-root .home-rix-key { margin-top: 14px; padding-top: 10px; }
       }

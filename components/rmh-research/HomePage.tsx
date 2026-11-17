@@ -103,7 +103,7 @@ function Hero() {
               <span className="label">{t('home-figs-label', { defaultValue: 'The archive today' })}</span>
               <h2 className="h2">{t('home-figs-title', { defaultValue: 'Twelve fields, one record.' })}</h2>
             </div>
-            <div className="stats home-stats" style={cssVars({ '--stats': stats.length })}>
+            <div className="stats home-stats sc-in" style={cssVars({ '--stats': stats.length, '--a': 64, '--b': 70 })}>
               {stats.map((x, i) => (
                 <div key={x.k} className="stat sc-in" style={cssVars({ '--a': 66 + i * 5, '--b': 76 + i * 5 })}>
                   <span className="stat-v home-stat-v">{x.v}</span>
@@ -344,7 +344,7 @@ function Resonance() {
     },
   ];
   const count = steps.length;
-  const dense = cites.length > 48 ? ' home-cites--dense' : '';
+  const size = cites.length > 48 ? ' home-cites--dense' : cites.length <= 16 ? ' home-cites--few' : '';
 
   return (
     <Scene len={count + 1} steps={count} className="home-rix" pinClassName="home-rix-pin">
@@ -378,7 +378,7 @@ function Resonance() {
 
           <figure className="home-rix-fig">
             <div
-              className={`home-cites${dense}`}
+              className={`home-cites${size}`}
               role="img"
               aria-label={t('home-rix-fig-label', {
                 defaultValue:

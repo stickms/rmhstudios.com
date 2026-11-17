@@ -97,7 +97,7 @@ function FieldBody({ id }: { id: Parameters<typeof getField>[0] }) {
                   return (
                     <div key={y.year} className="fld-bar sc-t" style={cssVars({ '--a': a, '--b': a + 45, '--v': y.count / (peak.count || 1) })}>
                       {showValues ? <span className="fld-bv num">{y.count}</span> : null}
-                      <i className={`fld-bf${y.year === peak.year ? ' is-peak' : ''}`} />
+                      <i className={`fld-bf${y.year === peak.year && peak.count > 1 ? ' is-peak' : ''}`} />
                     </div>
                   );
                 })}

@@ -327,7 +327,7 @@ export default function ArchivePage() {
                 className="chip arc-author"
                 to={PATH}
                 search={withPatch(search, { author: undefined })}
-                aria-label={t('arc-author-remove', { defaultValue: 'Remove author filter: {{name}}', name: authorName })}
+                aria-label={t('arc-author-remove', { defaultValue: 'Remove the author filter, {{name}}', name: authorName })}
               >
                 <span className="arc-author-k">{t('arc-author-chip', { defaultValue: 'Author' })}</span>
                 <span className="arc-author-n">{authorName}</span>

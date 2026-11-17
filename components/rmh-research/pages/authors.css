@@ -14,7 +14,7 @@
 .rmhr-root .aut-who { display: grid; gap: 4px; min-width: 0; }
 .rmhr-root .aut-name { font-size: 17px; }
 .rmhr-root .aut-name:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-.rmhr-root .aut-field, .rmhr-root .aut-opt { display: none; }
+.rmhr-root .aut-field, .rmhr-root .aut-cell.aut-opt { display: none; }
 .rmhr-root .aut-cell { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 15px; }
 .rmhr-root .aut-r { color: var(--ink); font-size: 17px; }
 @media (min-width: 760px) {
@@ -23,8 +23,7 @@
   .rmhr-root .aut-list { border-top: 0; }
   .rmhr-root .aut-head > :nth-child(n + 4) { text-align: end; }
   .rmhr-root .aut-field { display: block; }
-  .rmhr-root .aut-opt { display: flex; }
-  .rmhr-root .aut-cell { display: block; text-align: end; }
+    .rmhr-root .aut-cell, .rmhr-root .aut-cell.aut-opt { display: block; text-align: end; }
   .rmhr-root .aut-k { position: absolute; width: 1px; height: 1px; overflow: clip; clip-path: inset(50%); white-space: nowrap; }
 }
 @media (max-width: 759px) {
@@ -37,12 +36,12 @@
 .rmhr-root .aut-stats .stat-v { font-size: clamp(26px, 3.6vw, 46px); }
 .rmhr-root .aut-aside .h2 { font-size: clamp(24px, 2.6vw, 34px); }
 .rmhr-root .aut-more { margin-top: 24px; }
-.rmhr-root .aut-co-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 20px; align-items: center; }
+.rmhr-root a.aut-co-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 20px; align-items: center; }
 .rmhr-root .aut-co-who { display: grid; gap: 4px; min-width: 0; }
-.rmhr-root .aut-co-row > .meta { grid-column: 1 / -1; }
+.rmhr-root a.aut-co-row > .meta { grid-column: 1 / -1; }
 @media (min-width: 720px) {
-  .rmhr-root .aut-co-row { grid-template-columns: minmax(0, 1fr) 80px 140px; }
-  .rmhr-root .aut-co-row > .meta { grid-column: auto; text-align: end; }
+  .rmhr-root a.aut-co-row { grid-template-columns: minmax(0, 1fr) 80px 140px; }
+  .rmhr-root a.aut-co-row > .meta { grid-column: auto; text-align: end; }
 }
 
 /* the r-core scene: flow mode is the finished figure under all three captions */
