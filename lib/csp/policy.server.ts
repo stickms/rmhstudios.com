@@ -98,3 +98,50 @@ export function buildCspPolicy(opts: CspOptions = {}): string {
     `report-to ${CSP_REPORT_GROUP}`,
   ].join('; ');
 }
+
+/**
+ * The sandbox flags of a frame that runs user code (vibe pages, code embeds). The
+ * same set as the host-side iframe attribute (`VIEWER_SANDBOX`), repeated here
+ * because the CSP `sandbox` directive is what forces an OPAQUE origin even if
+ * someone opens the loader URL as a top-level page. Never `allow-same-origin`,
+ * never `allow-top-navigation*`, never `allow-popups*`.
+ */
+export const FRAME_SANDBOX = 'allow-scripts allow-forms allow-modals allow-pointer-lock';
+
+/**
+ * The whole policy of `GET /vibe-frame` (docs/csp.md, "Frames that run user code").
+ *
+ * A `srcdoc` or `blob:` frame inherits its parent's policy container, so it would run
+ * under the host page's nonce policy and every inline vibe script would be blocked.
+ * The loader document is fetched by URL and carries THIS header instead; the page the
+ * host hands it by postMessage is `document.write`n into that same Document, so it
+ * runs under this policy.
+ *
+ * `script-src` has `'unsafe-inline'` and deliberately NO nonce, hash or
+ * `'strict-dynamic'`: any of those makes a browser ignore `'unsafe-inline'`, and a
+ * vibe's own inline scripts are not ours to nonce. The page's meta CSP (VIBE_CSP,
+ * code-embed/shared.ts) still intersects with this one and narrows it further.
+ * `connect-src`/`script-src` name `'self'` and esm.sh only: no other network
+ * destination, so nothing can be exfiltrated to.
+ */
+export function buildFramePolicy(): string {
+  return [
+    `sandbox ${FRAME_SANDBOX}`,
+    "default-src 'none'",
+    "base-uri 'none'",
+    "script-src 'self' 'unsafe-inline' blob: https://esm.sh",
+    'worker-src blob:',
+    "style-src 'self' 'unsafe-inline' https://esm.sh",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data: https://esm.sh",
+    "media-src 'self' data: blob:",
+    "connect-src 'self' https://esm.sh",
+    "form-action 'none'",
+    FRAME_ANCESTORS,
+  ].join('; ');
+}
+
+/** True for a response that carries its own frame policy (the CSP `sandbox` directive). */
+export function carriesFramePolicy(csp: string | null | undefined): boolean {
+  return /(^|;)\s*sandbox(\s|;|$)/.test(csp ?? '');
+}

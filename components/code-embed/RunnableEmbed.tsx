@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FRAME_URL, useFrameDocument } from '@/lib/rmhvibe/frame-loader';
 import { useTranslation } from 'react-i18next';
 import {
   Play,
@@ -50,6 +51,13 @@ export function RunnableEmbed({
   ] =
     useState(
       false,
+    );
+  // The iframe is unmounted on Stop and mounted fresh on Run, so each document gets
+  // its own frame (the loader takes one document per iframe).
+  const frameRef =
+    useFrameDocument(
+      doc ??
+        '',
     );
   const arrival =
     useArrival(
@@ -181,9 +189,8 @@ export function RunnableEmbed({
           )}
           sandbox="allow-scripts"
           referrerPolicy="no-referrer"
-          srcDoc={
-            doc
-          }
+          ref={frameRef}
+          src={FRAME_URL}
           loading="lazy"
           className={cn(
             'block h-60 w-full border-0',
