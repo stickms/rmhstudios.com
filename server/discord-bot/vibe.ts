@@ -55,7 +55,7 @@ const PLAY_RATE_LIMIT =
 const PLAY_DB_BUDGET_MS = 2000;
 const PLAY_DEDUPE_MS = 60_000;
 const SLUG_RE =
-  /^[a-z0-9-]{1,64}$/;
+  /^[a-z0-9_-]{1,64}$/;
 const BUTTON_LINK = 5;
 const BUTTON_PRIMARY = 1;
 const BUTTON_SECONDARY = 2;

@@ -823,4 +823,30 @@ describe('/vibe', () => {
       12,
     );
   });
+
+  it('accepts a slug containing an underscore', async () => {
+    const port =
+      fakePort();
+    await handleVibeEditButton(
+      port,
+      cmd(
+        'u-us',
+      ),
+      'ab_c-1',
+    );
+    expect(
+      (
+        port
+          .calls[0]![1][1] as {
+          data: {
+            custom_id: string;
+          };
+        }
+      )
+        .data
+        .custom_id,
+    ).toBe(
+      'vibe_edit_modal:ab_c-1',
+    );
+  });
 });

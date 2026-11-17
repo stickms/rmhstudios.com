@@ -151,7 +151,7 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
 # invalidates this layer and it rebuilds correctly. Output is COPYd into vite-builder.
 #
 # Runs FROM prisma-generate (full node_modules incl. the devDep bundlers three/
-# pixi/p5/esbuild), not prod-deps (which prunes them). node_modules + package.json
+# pixi/p5), not prod-deps (which prunes them; esbuild is kept there). node_modules + package.json
 # are already present from that base; we add only the three inputs the bundler reads.
 FROM prisma-generate AS vibe-builder
 
