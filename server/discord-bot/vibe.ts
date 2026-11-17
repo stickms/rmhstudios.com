@@ -35,6 +35,9 @@ const TOKEN_LIFETIME_MS =
   14 *
   60_000;
 const PROMPT_TITLE_MAX = 80;
+/** Process-wide cap on builds running at once: each is minutes of model time and a bundle. */
+const MAX_CONCURRENT_BUILDS = 2;
+let activeBuilds = 0;
 const RATE_LIMIT =
   {
     limit: 3,
@@ -117,6 +120,14 @@ export function defaultVibeDeps(
   };
 }
 
+/**
+ * Neutralise Discord markdown in text a model wrote (titles, descriptions), so a vibe called
+ * `[free nitro](https://…)` renders literally.
+ */
+export function escapeMarkdown(s: string): string {
+  return s.replace(/[\\*_~`|>[\]()]/g, '\\$&');
+}
+
 function truncate(
   s: string,
   max: number,
@@ -169,7 +180,7 @@ function progressText(
     !p.writing
   )
     return 'Thinking';
-  return `Writing **${p.writing}** · ${p.done.length} files done`;
+  return `Writing **${escapeMarkdown(p.writing)}** · ${p.done.length} files done`;
 }
 
 const errorBody =
@@ -222,6 +233,18 @@ export async function runVibe(
     );
     return;
   }
+  // Before the rate limit, so a refusal for load does not use up the user's builds.
+  if (
+    activeBuilds >=
+    MAX_CONCURRENT_BUILDS
+  ) {
+    await respondEphemeral(
+      port,
+      i,
+      'RMH Vibes is busy. Try again in a minute.',
+    );
+    return;
+  }
   const rl =
     rateLimit(
       'discord:' +
@@ -238,6 +261,27 @@ export async function runVibe(
     );
     return;
   }
+  activeBuilds++;
+  try {
+    await runBuild(
+      port,
+      i,
+      req,
+      deps,
+      discordId,
+    );
+  } finally {
+    activeBuilds--;
+  }
+}
+
+async function runBuild(
+  port: DiscordPort,
+  i: Interaction,
+  req: VibeRequest,
+  deps: VibeDeps,
+  discordId: string,
+): Promise<void> {
   await deferReply(
     port,
     i,
@@ -245,7 +289,7 @@ export async function runVibe(
 
   const started =
     deps.now();
-  const title = `Building: ${truncate(req.prompt, PROMPT_TITLE_MAX)}`;
+  const title = `Building: ${truncate(escapeMarkdown(req.prompt), PROMPT_TITLE_MAX)}`;
   const tokenAlive =
     () =>
       deps.now() -
@@ -322,6 +366,8 @@ export async function runVibe(
         kind: req.widget
           ? 'widget'
           : 'page',
+        // The bot cannot show in-progress previews; building them is wasted work.
+        previews: false,
       },
     )) {
       if (
@@ -384,13 +430,11 @@ export async function runVibe(
       ),
     );
   } catch (err) {
+    // A thrown error can carry internals (SQL, paths): log it, say something fixed.
+    console.error('discord_bot.vibe_failed', err);
     await finish(
       errorBody(
-        (
-          err as Error
-        )
-          .message ||
-          'Something went wrong.',
+        'Could not build that vibe. Try again.',
       ),
     );
   }
@@ -426,14 +470,18 @@ async function doneBody(
         {
           title:
             truncate(
-              ev.title ||
-                'Your vibe',
+              escapeMarkdown(
+                ev.title ||
+                  'Your vibe',
+              ),
               256,
             ),
           description:
             truncate(
-              ev.description ||
-                '',
+              escapeMarkdown(
+                ev.description ||
+                  '',
+              ),
               400,
             ),
           url,

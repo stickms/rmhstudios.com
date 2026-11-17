@@ -28,3 +28,11 @@ export const vibeTweaksBodySchema = z.object({
 });
 
 export const vibePageQuerySchema = z.object({ versionId: z.string().max(40).optional() });
+
+export const vibeGalleryQuerySchema = z.object({
+  q: z.string().max(100).optional(),
+  cursor: z.string().max(200).optional(),
+  sort: z.enum(['best', 'popular', 'newest']).optional(),
+});
+
+export const vibeLaunchQuerySchema = z.object({ channelId: z.string().regex(/^\d{1,32}$/) });

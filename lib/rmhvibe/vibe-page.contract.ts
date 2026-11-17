@@ -1,7 +1,12 @@
 /** Contracts for per-page vibe endpoints. Client-safe: no zod ships from here. */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { z } from 'zod';
-import type { vibePageQuerySchema } from '@/lib/rmhvibe/vibe-schema';
+import type {
+  vibeGalleryQuerySchema,
+  vibeLaunchQuerySchema,
+  vibePageQuerySchema,
+} from '@/lib/rmhvibe/vibe-schema';
+import type { VibeCard } from '@/lib/rmhvibe/vibe.server';
 import type { TweakSpec, TweakValue } from '@/lib/rmhvibe/tweaks';
 
 /**
@@ -34,3 +39,23 @@ export const vibePageApi = endpoint<{
     tweakSpec: TweakSpec[];
   };
 }>()({ method: 'GET', path: '/api/vibe/page/$slug' });
+
+export type VibeGalleryPage = {
+  items: VibeCard[];
+  nextCursor: string | null;
+};
+
+/** Public gallery list (search, newest/best sort, cursor paging) — the Discord Activity's browse view. */
+export const vibeGalleryApi = endpoint<{
+  query: z.infer<typeof vibeGalleryQuerySchema>;
+  res: VibeGalleryPage;
+}>()({ method: 'GET', path: '/api/vibe/gallery' });
+
+/**
+ * The vibe most recently launched into a Discord channel in the last 30 minutes, or null.
+ * Public; reads only a slug keyed by a channel id.
+ */
+export const vibeLaunchApi = endpoint<{
+  query: z.infer<typeof vibeLaunchQuerySchema>;
+  res: { slug: string | null };
+}>()({ method: 'GET', path: '/api/discord/vibe-launch' });

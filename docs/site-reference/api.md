@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1024 endpoints across 201 groups: 110 route files under `app/routes/api` and 914 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1026 endpoints across 201 groups: 110 route files under `app/routes/api` and 916 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -596,7 +596,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/discord`
 
-6 routes.
+7 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -606,6 +606,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/discord/race` | `GET` `POST` | `app/routes/api/discord/race.ts` |
 | `/api/discord/sync-score` | `POST` | `lib/api/routes/discord.sync-score.server.ts` |
 | `/api/discord/token` | `POST` | `lib/api/routes/discord.token.server.ts` |
+| `/api/discord/vibe-launch` | `GET` | `lib/rmhvibe/api/discord.vibe-launch.server.ts` |
 
 ## `/api/discovery`
 
@@ -2351,11 +2352,12 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/vibe`
 
-7 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/vibe/ai` | `OPTIONS` `POST` | `app/routes/api/vibe/ai.ts` |
+| `/api/vibe/gallery` | `GET` | `lib/rmhvibe/api/vibe.gallery.server.ts` |
 | `/api/vibe/kv/:slug` | `GET` `POST` | `lib/rmhvibe/api/vibe.kv.$slug.server.ts` |
 | `/api/vibe/page/:slug` | `GET` | `lib/rmhvibe/api/vibe.page.$slug.server.ts` |
 | `/api/vibe/page/:slug/tweaks` | `POST` | `lib/rmhvibe/api/vibe.page.$slug.tweaks.server.ts` |

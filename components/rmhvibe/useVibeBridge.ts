@@ -38,6 +38,8 @@ export interface VibeBridgeHost {
 }
 
 const MAX_REQUESTS_PER_SECOND = 50;
+/** `store.*` is a network round trip to the KV endpoint, so a frame gets far fewer of them. */
+const MAX_STORE_REQUESTS_PER_SECOND = 10;
 
 function reply(
   frame: HTMLIFrameElement,
@@ -100,6 +102,26 @@ export function useVibeBridge(
         return (
           ++count >
           MAX_REQUESTS_PER_SECOND
+        );
+      };
+    let storeWindowStart = 0;
+    let storeCount = 0;
+    const storeOverLimit =
+      () => {
+        const now =
+          Date.now();
+        if (
+          now -
+            storeWindowStart >=
+          1000
+        ) {
+          storeWindowStart =
+            now;
+          storeCount = 0;
+        }
+        return (
+          ++storeCount >
+          MAX_STORE_REQUESTS_PER_SECOND
         );
       };
     const hello =
@@ -203,6 +225,18 @@ export function useVibeBridge(
           } catch {
             /* a host callback must not break the bridge */
           }
+          return;
+        }
+        if (
+          msg.op.startsWith(
+            'store.',
+          ) &&
+          storeOverLimit()
+        ) {
+          fail(
+            msg.id,
+            'rate',
+          );
           return;
         }
         Promise.resolve()

@@ -226,6 +226,9 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     //     and a tombstone would keep showing in "Most played by" with its hours.
     prisma.gamePlaytime.deleteMany({ where: { userId } }),
     prisma.gamePlaytimeDay.deleteMany({ where: { userId } }),
+    // 2c. Per-user vibe store rows (`scope: 'user'`, `ownerKey` = the user id): the vibe pages
+    //     they sit on belong to other people, and the user row is anonymised, not removed.
+    prisma.vibeKv.deleteMany({ where: { scope: 'user', ownerKey: userId } }),
     // Trading cards, drop ledger and badges — same reason: the cascade never fires.
     prisma.userCard.deleteMany({ where: { userId } }),
     prisma.cardDrop.deleteMany({ where: { userId } }),

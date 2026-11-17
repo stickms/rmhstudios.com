@@ -1,5 +1,7 @@
 # RMHVibe — Implementation Spec
 
+> **Historical.** This is the original 2025 spec. For how RMH Vibes works today (ownership and remix, live build, edit protocol, host bridge, KV store, widgets, feed, `/vibe`, the Activity) read [`platform.md`](./platform.md).
+
 ## Overview
 
 RMHVibe transforms the RMH Studios homepage into an AI-powered "vibe" platform. Users enter a prompt and get a fully generated, shareable, collaboratively-editable webpage — instantly. Think of it as a public creative scratchpad where any prompt becomes a living page.

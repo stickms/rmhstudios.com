@@ -46,6 +46,10 @@ const maxWorkers = Math.min(12, Math.max(2, Math.ceil(availableParallelism() * 1
 
 export default defineConfig({
   test: {
+    // No persistent module cache on CI. CI restores node_modules (where the cache lives) from a
+    // lockfile-keyed actions cache, so a transformed `lib/__tests__/api-handler-modules.ts` keeps
+    // a stale `import.meta.glob` expansion and misses API files added since. Local runs keep it.
+    fsModuleCache: !process.env.CI,
     // Every *.test.ts(x) in the repo, minus the exclusions below.
     include: ['**/*.test.{ts,tsx}'],
     exclude: [

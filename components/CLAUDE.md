@@ -96,6 +96,11 @@ feature lives in that feature's directory; genuinely shared primitives live in
   address/tab bars for document scroll. Rules 2–4 are gated by
   `lib/__tests__/game-viewport-consistency.test.ts`; the full rationale is
   [`docs/design-language.md`](../docs/design-language.md) §12.1.
+- **RMH Vibes run in a sandbox; the bridge is the only door.** A vibe frame is untrusted
+  code under `sandbox="allow-scripts …"` (never `allow-same-origin`). A new capability for
+  vibes is a new op in `lib/rmhvibe/bridge.ts` (validated, size-limited) handled in
+  `components/rmhvibe/useVibeBridge.ts` / `vibe-host-handlers.ts`, never a wider sandbox or
+  a direct `fetch` from the frame. See `docs/rmhvibe/platform.md`.
 
 ## Adding UI — decision tree
 

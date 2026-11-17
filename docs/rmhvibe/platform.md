@@ -1,0 +1,1741 @@
+# RMH Vibes — how it works now
+
+[`implementation.md`](./implementation.md)
+is
+the
+original
+2025
+spec
+(a
+single
+generated
+HTML
+file
+in
+an
+iframe).
+It
+is
+historical.
+This
+page
+describes
+what
+the
+code
+does
+today.
+Where
+the
+two
+disagree,
+the
+code
+and
+this
+page
+win.
+The
+Discord
+Activity
+has
+its
+own
+page,
+[`discord-activity.md`](./discord-activity.md).
+
+A
+vibe
+is
+a
+small
+React
+and
+TypeScript
+project
+written
+by
+a
+model,
+bundled
+by
+esbuild
+on
+the
+server
+and
+served
+as
+one
+self-contained
+HTML
+document
+inside
+a
+sandboxed
+iframe.
+The
+module
+map
+is
+`lib/rmhvibe/`,
+`components/rmhvibe/`
+and
+`server/discord-bot/vibe.ts`.
+
+## Ownership and remix
+
+`lib/rmhvibe/ownership.ts`
+decides
+what
+a
+write
+to
+an
+existing
+slug
+means
+(`planVibeWrite`):
+
+- No
+  existing
+  page:
+  **create**.
+- The
+  signed-in
+  user
+  owns
+  the
+  page
+  (`canEditVibe`):
+  **edit**
+  in
+  place,
+  which
+  adds
+  a
+  version.
+- Anyone
+  else
+  (signed
+  out,
+  another
+  user,
+  or
+  an
+  unowned
+  legacy
+  page):
+  **remix**.
+  The
+  generator
+  reserves
+  a
+  new
+  page
+  owned
+  by
+  the
+  caller
+  (slug
+  is
+  the
+  source
+  slug
+  trimmed
+  to
+  26
+  characters
+  plus
+  `-remix`,
+  made
+  unique),
+  records
+  the
+  parent
+  page
+  and
+  version,
+  and
+  never
+  touches
+  the
+  source.
+  A
+  remix
+  of
+  "the
+  page
+  as
+  it
+  is
+  now"
+  records
+  the
+  latest
+  version.
+
+`fromVersionId`
+branches
+an
+edit
+or
+remix
+from
+an
+earlier
+version,
+replaying
+that
+version's
+history
+and
+stored
+project.
+A
+widget
+stays
+a
+widget
+on
+edit
+and
+remix
+(the
+source
+page's
+`kind`
+wins).
+
+## Live build
+
+`generateVibeStream`
+(`lib/rmhvibe/vibe.server.ts`)
+streams
+`VibeStreamEvent`s
+over
+SSE
+(`lib/rmhvibe/vibe-stream.ts`
+is
+the
+one
+raw-fetch
+client):
+`created`
+(slug
+reserved,
+the
+page
+row
+exists
+as
+"generating",
+so
+a
+dropped
+connection
+loses
+nothing),
+`thinking`,
+`content`,
+`preview`,
+`done`,
+`error`.
+
+While
+the
+model
+is
+still
+writing,
+a
+previewer
+parses
+the
+partial
+answer
+(`parsePartialProject`)
+and,
+at
+most
+once
+every
+1.2
+s
+and
+only
+when
+another
+file
+has
+finished,
+builds
+it
+with
+`buildVibePreview`
+(`vibe-bundle.server.ts`).
+Imports
+of
+files
+that
+are
+missing
+or
+still
+being
+written
+resolve
+to
+a
+generated
+placeholder
+component,
+so
+the
+page
+renders
+whatever
+is
+ready
+and
+never
+blanks.
+A
+`preview`
+event
+carries
+the
+bundled
+`html`
+plus
+the
+`done`
+and
+`pending`
+file
+lists.
+Failed
+preview
+builds
+are
+dropped
+silently.
+Previews
+end
+with
+each
+attempt.
+`VibeFrame`
+crossfades
+successive
+documents
+(160
+ms)
+and
+`LiveBuildPanel`
+shows
+the
+frame
+beside
+the
+file
+progress.
+
+A
+response
+is
+validated
+before
+it
+is
+saved.
+If
+it
+is
+not
+a
+working
+app,
+the
+failure
+is
+fed
+back
+and
+the
+generator
+retries,
+up
+to
+3
+attempts,
+then
+surfaces
+an
+error.
+Raw
+model
+text
+is
+never
+rendered
+as
+the
+page.
+
+## Edit protocol
+
+When
+the
+page
+has
+a
+stored
+project,
+an
+edit
+sends
+the
+current
+project
+to
+the
+model
+as
+fenced
+data
+(`serializeVibeProject`)
+with
+`VIBE_EDIT_PROTOCOL`
+appended.
+The
+model
+answers
+with
+optional
+`TITLE`,
+`DESCRIPTION`,
+`DEPS`
+and
+`TWEAKS`
+lines,
+`===FILES===`,
+then
+only
+new
+or
+changed
+files
+in
+full
+(`--- file: path ---`)
+and
+`--- delete: path ---`
+lines
+with
+no
+body.
+`applyVibeEdit`
+(`lib/rmhvibe/vibe-project.ts`)
+merges
+that
+onto
+the
+base:
+listed
+files
+replace
+wholesale,
+deleted
+files
+go,
+everything
+else
+is
+kept.
+An
+omitted
+`DEPS`
+or
+`TWEAKS`
+line
+keeps
+the
+base;
+`TWEAKS: []`
+removes
+the
+knobs.
+It
+returns
+null
+when
+the
+answer
+has
+no
+marker
+or
+changes
+nothing,
+which
+counts
+as
+a
+failed
+attempt.
+
+Each
+version
+stores
+its
+`project`
+(deps
+and
+files)
+and
+`tweakSpec`,
+so
+the
+next
+edit
+starts
+from
+them.
+A
+legacy
+page
+with
+no
+stored
+project
+recovers
+one
+from
+the
+last
+assistant
+turn
+in
+its
+history;
+failing
+that,
+the
+model
+regenerates
+the
+whole
+page.
+
+**Truncation:**
+if
+the
+provider
+reports
+`finish_reason: length`,
+the
+answer
+is
+never
+materialized,
+even
+if
+it
+parses.
+That
+attempt
+fails
+with
+"cut
+off
+at
+the
+output
+limit
+—
+output
+fewer
+or
+smaller
+files"
+and
+the
+retry
+carries
+that
+reason
+back.
+
+## Host bridge: `window.RMHVibe`
+
+A
+vibe
+frame
+is
+untrusted.
+Its
+sandbox
+is
+`allow-scripts allow-forms allow-modals allow-pointer-lock`
+in
+the
+viewer
+and
+the
+Activity
+(`VIEWER_SANDBOX`)
+and
+just
+`allow-scripts`
+in
+the
+feed.
+**Never
+add
+`allow-same-origin`.**
+New
+capabilities
+reach
+a
+vibe
+only
+through
+the
+bridge.
+
+- `lib/rmhvibe/bridge.ts`
+  (client-safe,
+  zod-free)
+  is
+  the
+  protocol.
+  Messages
+  carry
+  `__rmhvibe: 1`.
+  `parseBridgeMessage`
+  returns
+  null
+  for
+  anything
+  malformed;
+  it
+  validates
+  every
+  frame
+  message
+  and
+  clamps
+  what
+  it
+  keeps.
+- `lib/rmhvibe/bridge-runtime.ts`
+  is
+  the
+  script
+  injected
+  into
+  the
+  page
+  that
+  defines
+  `window.RMHVibe`.
+- `components/rmhvibe/useVibeBridge.ts`
+  is
+  the
+  host
+  side.
+  It
+  accepts
+  a
+  message
+  only
+  when
+  `e.source`
+  is
+  the
+  frame's
+  `contentWindow`,
+  replies
+  with
+  target
+  origin
+  `*`
+  (the
+  frame
+  origin
+  is
+  opaque),
+  allows
+  at
+  most
+  50
+  requests
+  per
+  second,
+  and
+  turns
+  every
+  failure
+  into
+  one
+  of
+  an
+  allowlisted
+  set
+  of
+  error
+  codes
+  (`unavailable`,
+  `rate`,
+  `invalid`,
+  `forbidden`,
+  `too-large`,
+  `unauthorized`,
+  `not-found`,
+  `conflict`,
+  `failed`).
+  The
+  frame
+  never
+  sees
+  other
+  error
+  text.
+- `components/rmhvibe/vibe-host-handlers.ts`
+  maps
+  `store.*`
+  to
+  the
+  KV
+  endpoint.
+  The
+  host
+  kind
+  is
+  `viewer`,
+  `feed`
+  or
+  `discord`.
+  `room.*`
+  is
+  answered
+  only
+  by
+  the
+  Activity
+  (`VibePlayer`);
+  elsewhere
+  it
+  rejects
+  as
+  `unavailable`,
+  so
+  a
+  vibe
+  must
+  keep
+  working
+  without
+  the
+  bridge.
+
+The
+API
+as
+the
+model
+is
+told
+it
+(`VIBE_SYSTEM_PROMPT`):
+
+- Always
+  `await RMHVibe.ready`
+  before
+  first
+  use
+  and
+  wrap
+  calls
+  in
+  try/catch.
+  Scope
+  defaults
+  to
+  `'page'`
+  (shared
+  by
+  everyone);
+  `'user'`
+  is
+  per
+  visitor
+  and
+  needs
+  a
+  signed-in
+  viewer.
+- `store.get(key, {scope}?)`
+  returns
+  the
+  value
+  or
+  null.
+  `store.set(key, value, {scope}?)`.
+  `store.incr(key, by = 1, {scope, oncePerUser}?)`
+  returns
+  `{ value, counted }`.
+  `store.list(prefix, {scope, order: 'key' | 'value-desc', limit}?)`
+  returns
+  `[{ key, value }]`
+  (limit
+  defaults
+  to
+  50).
+- `room.send(data)`;
+  `room.on(fn)`
+  returns
+  an
+  unsubscribe
+  function
+  (not
+  a
+  Promise);
+  `room.members()` returns `[{ name, avatarUrl, away, host, self }]` (`host` is the member who picked the vibe, `self` the viewer's own entry); `room.onMembers(fn)`.
+- `room.send` is limited to 10 messages per second (the host rejects the excess with `rate`): throttle state updates and send only changes.
+- Store calls are rate limited (a frame gets 10 `store.*` calls a second, and the endpoint's read bucket is 120 a minute): poll at most once every 2 seconds and prefer reacting to your own writes.
+- `RMHVibe.visible` (boolean, true by default) and `RMHVibe.onVisibility(fn)` (returns an unsubscribe) follow the host's `visibility` event: pause audio and animation while hidden.
+- `tweaks.get(key)`,
+  `tweaks.all()`
+  and
+  `tweaks.on(fn)`
+  are
+  synchronous.
+  Each
+  knob
+  also
+  sets
+  `--tweak-<key>`
+  on
+  the
+  root
+  element.
+- Limits:
+  key
+  `/^[A-Za-z0-9:_.-]{1,64}$/`;
+  a
+  stored
+  value
+  is
+  JSON
+  of
+  at
+  most
+  4096
+  characters;
+  `by`
+  is
+  an
+  integer
+  from
+  -1000
+  to
+  1000;
+  list
+  `limit`
+  at
+  most
+  100;
+  a
+  room
+  message
+  is
+  JSON
+  of
+  at
+  most
+  2048
+  characters.
+  A
+  call
+  that
+  breaks
+  a
+  limit
+  rejects
+  with
+  an
+  Error.
+
+The
+frame
+can
+also
+send
+events:
+`ready`,
+`error`
+(message
+at
+most
+500
+characters),
+`picked`
+and
+`pick:cancel`.
+The
+host
+sends
+`hello`,
+`tweaks`,
+`room:message`,
+`room:members`,
+`pick:start`,
+`pick:stop`
+and
+`visibility`.
+
+## Click to edit and Fix it
+
+The
+viewer
+can
+ask
+the
+frame
+to
+start
+picking
+(`pick:start`);
+the
+page
+outlines
+the
+hovered
+element
+and
+replies
+`picked`
+with
+`{ tag, text, html, path }`,
+clamped
+to
+32,
+120,
+600
+and
+200
+characters.
+The
+selection
+is
+sent
+with
+the
+next
+customize
+request
+and
+`lib/rmhvibe/vibe-selection.ts`
+appends
+it
+to
+the
+model-facing
+message
+as
+fenced
+data,
+with
+backticks
+neutralised
+so
+it
+cannot
+close
+the
+fence.
+It
+never
+changes
+the
+stored
+prompt.
+
+Runtime
+errors
+the
+page
+reports
+through
+the
+bridge
+are
+collected
+(deduped,
+newest
+last)
+in
+`app/routes/v.$slug.tsx`.
+**Fix
+it**
+runs
+a
+normal
+customize
+(owner
+edits,
+others
+remix)
+with
+a
+fixed
+prompt
+from
+`formatFixPrompt`:
+fix
+the
+error
+without
+changing
+anything
+else,
+with
+the
+error
+text
+as
+fenced
+data.
+
+## Tweaks
+
+The
+model
+may
+emit
+one
+`TWEAKS:`
+line:
+a
+JSON
+array
+of
+at
+most
+8
+knobs
+of
+type
+`color`,
+`range`,
+`toggle`
+or
+`select`
+(key
+at
+most
+32
+characters,
+label
+40,
+select
+1
+to
+8
+options
+of
+at
+most
+40).
+`parseTweakSpec`
+drops
+anything
+invalid.
+`TweakPanel`
+lets
+any
+viewer
+play
+with
+the
+knobs
+live.
+Only
+the
+owner
+can
+save:
+`POST /api/vibe/page/$slug/tweaks`
+(403
+otherwise)
+validates
+the
+values
+against
+the
+latest
+version's
+spec,
+stores
+them,
+and
+marks
+the
+thumbnail
+stale
+so
+it
+re-renders.
+Saved
+values
+go
+to
+every
+new
+frame
+as
+the
+`tweaks`
+event
+and
+`--tweak-*`
+variables.
+
+## KV store
+
+`GET`
+and
+`POST /api/vibe/kv/$slug`
+(`vibe-kv.contract.ts`,
+`vibe-kv.server.ts`)
+back
+`RMHVibe.store`.
+It
+exists
+only
+for
+a
+ready
+page.
+The
+server
+enforces
+every
+limit;
+the
+frame
+cannot.
+
+| Rule           | Value                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Scopes         | `page` (shared, owner `''`) and `user` (the signed-in viewer; signed out is 401)        |
+| Key            | `/^[A-Za-z0-9:_.-]{1,64}$/`; the `__` prefix is reserved                                |
+| Value          | JSON, at most 4096 characters                                                           |
+| Keys per scope | 500 per page, 50 per user per page (409 when full)                                      |
+| `incr`         | `by` an integer in [-1000, 1000]; `oncePerUser` needs sign-in and counts each user once |
+| List           | `prefix` at most 64 characters, `limit` at most 100, order `key` or `value-desc`        |
+| Writes         | 60 per minute per user, `maxBodyBytes` 16 KiB                                           |
+
+Key-creating
+writes
+take
+a
+per-(page,
+scope,
+owner)
+advisory
+lock
+so
+the
+key
+count
+cannot
+race
+past
+its
+limit.
+
+## Widgets
+
+`kind: 'widget'`
+pages
+get
+`VIBE_WIDGET_ADDENDUM`:
+a
+compact
+vibe
+for
+a
+feed
+card
+(about
+560
+by
+420,
+4:3,
+legible
+at
+360
+wide),
+one
+focused
+interaction,
+no
+scrolling,
+prefer
+`RMHVibe.store`
+for
+shared
+state
+and
+keep
+working
+without
+it.
+The
+feed
+card
+draws
+widgets
+at
+`aspect-[4/3]`
+and
+pages
+at
+`aspect-[16/10]`.
+
+## Vibes on RMHarks
+
+A
+post
+can
+pin
+a
+vibe
+(`PostVibeEmbed`,
+one
+per
+post:
+page
+plus
+version).
+Creating
+the
+post
+(`/api/rmharks`)
+requires
+the
+page
+to
+be
+ready
+and
+the
+version
+to
+belong
+to
+that
+page
+(400
+`Vibe not available`
+otherwise);
+the
+post
+gets
+`hasVibe`.
+
+The
+feed
+shows
+`PostVibeEmbed`'s
+poster
+(`VibeEmbedCard`)
+and
+fetches
+nothing
+until
+the
+card
+nears
+the
+viewport
+(`postVibeApi`,
+`GET /api/rmharks/$id/vibe`).
+No
+frame
+exists
+until
+the
+reader
+presses
+Run,
+which
+fetches
+the
+page
+(`vibePageApi`,
+`GET /api/vibe/page/$slug`,
+optionally
+at
+`versionId`)
+and
+mounts
+`VibeEmbedRunner`
+with
+the
+feed
+sandbox.
+The
+pinned
+version
+stays
+served
+if
+the
+page
+later
+rebuilds
+or
+fails.
+**Paid-post
+rule:**
+`getPostVibe`
+returns
+null
+(the
+card
+renders
+nothing)
+when
+the
+post
+is
+locked
+for
+the
+viewer
+(`isLocked`,
+a
+paid
+post
+not
+yet
+unlocked),
+when
+the
+viewer
+cannot
+see
+the
+post,
+or
+when
+the
+post,
+page
+or
+version
+is
+gone.
+`VibePostComposer`
+and
+`VibeComposeChip`
+attach
+a
+vibe
+in
+the
+composer.
+
+## RMH Bot `/vibe`
+
+`server/discord-bot/vibe.ts`
+builds
+a
+vibe
+from
+Discord.
+The
+command
+takes
+a
+`prompt`
+and
+an
+optional
+`widget`
+flag,
+defers
+the
+reply,
+streams
+the
+generator's
+progress
+into
+it
+(at
+most
+one
+edit
+per
+2.5
+s),
+and
+ends
+on
+an
+embed
+with
+Open,
+Play
+in
+Discord
+and
+Customize.
+Customize
+opens
+a
+modal
+whose
+submit
+runs
+the
+same
+flow
+on
+the
+existing
+slug.
+The
+Discord
+user
+is
+mapped
+through
+`findLinkedUserId`,
+so
+a
+linked
+account
+owns
+what
+it
+builds
+and
+edits
+in
+place;
+an
+unlinked
+user
+builds
+an
+unowned
+page
+and
+remixes
+anything
+else.
+The
+limit
+is
+3
+builds
+per
+10
+minutes
+per
+Discord
+user.
+The
+build
+far
+outlives
+the
+interaction
+timeout,
+so
+the
+flow
+takes
+no
+abort
+signal
+and
+is
+a
+tracked
+task
+in
+`bot.ts`;
+past
+14
+minutes
+the
+result
+is
+posted
+to
+the
+channel
+because
+the
+interaction
+token
+is
+gone.
+
+Play
+in
+Discord
+records
+the
+launch
+(`DiscordVibeLaunch`,
+read
+back
+by
+`GET /api/discord/vibe-launch`
+for
+30
+minutes
+per
+channel)
+and
+answers
+with
+a
+launch-Activity
+response,
+or
+falls
+back
+to
+the
+`/v/<slug>`
+link
+where
+Activities
+are
+unavailable
+(10
+plays
+per
+minute
+per
+user).
+
+`esbuild`
+is
+now
+a
+production
+dependency
+(`dependencies`,
+not
+dev):
+the
+bundler
+runs
+inside
+the
+web
+server
+and
+the
+`jobs`
+worker
+that
+hosts
+the
+bot.
+
+## The Activity
+
+The
+Discord
+Activity
+(`components/rmhvibe/discord/`,
+routed
+from
+`app/routes/discord/index.tsx`
+as
+the
+`vibes`
+game)
+lets
+everyone
+in
+a
+voice
+channel's
+Activity
+instance
+share
+one
+room.
+The
+host
+picks
+a
+vibe
+from
+the
+gallery
+(`VibeGalleryPicker`,
+`GET /api/vibe/gallery`)
+or
+the
+vibe
+launched
+from
+`/vibe`;
+`VibePlayer`
+runs
+it
+with
+the
+viewer
+sandbox
+and
+bridges
+`room.*`
+to
+the
+room
+and
+`store.*`
+to
+the
+KV
+store.
+The
+room
+lives
+on
+the
+games
+hub
+(`server/socket-server/handlers/vibe-room.ts`)
+and
+its
+protocol
+is
+`lib/rmhvibe/room-events.ts`:
+
+- Client
+  to
+  server:
+  `vibe:room:join`,
+  `leave`,
+  `select`,
+  `away`,
+  `active`,
+  `send`.
+- Server
+  to
+  client:
+  `vibe:room:state`
+  (instance,
+  slug,
+  host,
+  members),
+  `message`,
+  `error`.
+- Limits:
+  25
+  members,
+  a
+  relayed
+  message
+  is
+  JSON
+  of
+  at
+  most
+  2048
+  characters,
+  the
+  instance
+  id
+  matches
+  `/^[A-Za-z0-9_-]{1,64}$/`.
+  Error
+  codes:
+  `AUTH`,
+  `FULL`,
+  `NOT_HOST`,
+  `BAD_SLUG`,
+  `TOO_LARGE`,
+  `RATE`.
+
+Stored
+vibe
+HTML
+is
+rewritten
+for
+the
+Discord
+proxy
+origin
+(`lib/rmhvibe/activity-html.ts`);
+the
+Developer
+Portal
+URL
+mappings
+and
+the
+esm.sh
+limitation
+are
+in
+[`discord-activity.md`](./discord-activity.md).
+
+## Follow-ups not done
+
+Generation
+and
+`/api/vibe/ai`
+are
+not
+yet
+metered
+into
+`AiUsage`
+or
+`assertAiBudget`;
+esm.sh
+fallback
+packages
+do
+not
+load
+inside
+Discord
+(no
+server-side
+proxy);
+there
+are
+no
+starter
+templates;
+the
+bot
+has
+no
+thread
+conversations
+(it
+would
+need
+the
+Message
+Content
+intent).
