@@ -24,6 +24,9 @@ const FILES = walk(ROOT).map((f) => ({ file: f.slice(process.cwd().length + 1), 
 /** Strip block and line comments so a rule's own documentation does not trip it. */
 const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
+/** Rules that only mean something in a stylesheet: in TSX, `filter:` and `mask:` are ordinary object keys. */
+const CSS_ONLY = new Set(['blur or filter (R1, B2)', 'blend or mask (B2)']);
+
 const FORBIDDEN: [string, RegExp][] = [
   ['gradient (R1)', /(linear|radial|conic)-gradient\(/],
   ['blur or filter (R1, B2)', /(backdrop-filter|(^|[\s;{])filter\s*:|blur\()/m],
@@ -42,7 +45,7 @@ describe('RMH Research is flat Steel', () => {
   });
   for (const [rule, re] of FORBIDDEN) {
     it(`uses no ${rule}`, () => {
-      const hits = FILES.filter(({ src }) => re.test(code(src))).map(({ file }) => file);
+      const hits = FILES.filter(({ file, src }) => (!CSS_ONLY.has(rule) || file.endsWith('.css')) && re.test(code(src))).map(({ file }) => file);
       expect(hits).toEqual([]);
     });
   }
