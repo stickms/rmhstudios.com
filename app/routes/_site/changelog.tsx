@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ChangelogList } from '@/components/devplatform/ChangelogList';
@@ -19,7 +19,15 @@ export const Route = createFileRoute('/_site/changelog')({
 function ChangelogPage() {
   const { t } = useTranslation('site');
   return (
-    <PageLayout title={t('changelog-title', { defaultValue: 'Changelog' })} backTo="/">
+    <PageLayout
+      title={t('changelog-title', { defaultValue: 'Changelog' })}
+      backTo="/"
+      headerRight={
+        <Link to="/site-history" className="t-body text-site-text underline">
+          {t('changelog-site-history', { defaultValue: 'Site history' })}
+        </Link>
+      }
+    >
       <div className="px-4 pt-4 pb-12">
         <ChangelogList />
       </div>

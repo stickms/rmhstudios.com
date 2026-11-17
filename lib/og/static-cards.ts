@@ -379,6 +379,16 @@ export const STATIC_CARDS: StaticCard[] =
       art: '/images/psychology/og-art.jpg',
     },
     {
+      path: '/site-history',
+      file: 'site-history',
+      eyebrow:
+        'Site history',
+      title:
+        'Every version of the site.',
+      subtitle:
+        'Each homepage redesign and each game and app as it arrived, from the first commit to today.',
+    },
+    {
       path: '/achievements',
       file: 'achievements',
       eyebrow:
