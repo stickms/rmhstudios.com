@@ -1,10 +1,17 @@
 /**
  * The /site-history timeline: the entries from ./entries.ts, grouped by month on the spine (Steel section 7).
  *
- * Each entry with a picture has a Desktop / Phone switch (one <Tabs>, K5) and, when the page still exists, an
- * "Open here" button that swaps the picture for the live page in a same-origin frame (frame-ancestors 'self' allows
- * it). Nothing loads a frame until it is asked for, and closing it removes it, so the page holds no live frames at
- * rest (R5, B3). In Phone view the frame is 390px wide, so the page inside lays itself out as it does on a phone.
+ * Each entry with a picture has a Desktop / Phone switch (one <Tabs>, K5). Two buttons swap the picture for a frame:
+ *
+ *  - "Open this version" plays the old build itself, recorded by .github/workflows/site-archive.yml
+ *    (scripts/site-archive/) for every id in ./archive-versions.json and replayed by ReplayWeb.page. The player and
+ *    the recordings are on the CDN origin (cdn.rmhstudios.com/site-archive/), never on this one, so the old code
+ *    cannot read this site's cookies or call its API with the visitor's session.
+ *  - "Open today's page" loads the page as it is now, same-origin (frame-ancestors 'self' allows it).
+ *
+ * Nothing loads a frame until it is asked for, one frame per entry, and closing it removes it, so the page holds no
+ * live frames at rest (R5, B3). In Phone view the frame is 390px wide, so the page inside lays itself out as it does
+ * on a phone.
  */
 import {
   useMemo,
@@ -13,6 +20,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
   ExternalLink,
+  History,
   Play,
   X,
 } from 'lucide-react';
@@ -26,7 +34,9 @@ import {
   Tabs,
   type TabItem,
 } from '@/components/ui/tabs';
+import { CDN_BASE } from '@/lib/storage/asset';
 import { cn } from '@/lib/utils';
+import archive from './archive-versions.json';
 import {
   historyEntries,
   REPO_URL,
@@ -44,6 +54,10 @@ type View =
 type Size =
   | 'desktop'
   | 'mobile';
+type Frame =
+  | 'archive'
+  | 'live'
+  | null;
 
 const IMG =
   '/images/site-history';
@@ -69,6 +83,42 @@ const SIZE: Record<
         height: 563,
       },
   };
+
+/**
+ * The CDN origin the archive player is published to: the media bucket's public origin (CDN_BASE), or production's
+ * when a local build has none, since the recordings only exist there.
+ */
+const ARCHIVE_ORIGIN =
+  CDN_BASE ||
+  'https://cdn.rmhstudios.com';
+
+interface ArchiveVersion {
+  id: string;
+  commit: string;
+  path: string;
+}
+const ARCHIVED =
+  new Map<
+    string,
+    ArchiveVersion
+  >(
+    (
+      archive.versions as ArchiveVersion[]
+    ).map(
+      (
+        v,
+      ) => [
+        v.id,
+        v,
+      ],
+    ),
+  );
+
+function archiveSrc(
+  v: ArchiveVersion,
+): string {
+  return `${ARCHIVE_ORIGIN}/site-archive/play.html?v=${encodeURIComponent(v.id)}&path=${encodeURIComponent(v.path)}`;
+}
 
 function monthsBetween(
   a: string,
@@ -480,18 +530,23 @@ function Entry({
       'desktop',
     );
   const [
-    live,
-    setLive,
+    frame,
+    setFrame,
   ] =
-    useState(
-      false,
+    useState<Frame>(
+      null,
     );
   const headingId = `site-history-${entry.id}`;
   const idBase = `site-history-view-${entry.id}`;
+  const archived =
+    ARCHIVED.get(
+      entry.id,
+    );
   const hasPreview =
     Boolean(
       entry.shot ||
-      entry.live,
+      entry.live ||
+      archived,
     );
 
   const viewTabs: TabItem[] =
@@ -521,7 +576,7 @@ function Entry({
     ];
   if (
     entry.alt &&
-    !live
+    !frame
   )
     viewTabs.push(
       {
@@ -565,6 +620,34 @@ function Entry({
       view
     ] ??
     '';
+
+  const open =
+    (
+      next: Frame,
+    ) => {
+      if (
+        view ===
+        'open'
+      )
+        setView(
+          'desktop',
+        );
+      setFrame(
+        next,
+      );
+    };
+  const frameSrc =
+    frame ===
+      'archive' &&
+    archived
+      ? archiveSrc(
+          archived,
+        )
+      : frame ===
+          'live'
+        ? (entry.live ??
+          null)
+        : null;
 
   return (
     <SpineItem
@@ -639,112 +722,126 @@ function Entry({
 
       {hasPreview && (
         <figure className="mt-3">
-          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-            <Tabs
-              tabs={
-                viewTabs
-              }
-              value={
-                view
-              }
-              onChange={(
-                id,
-              ) =>
-                setView(
-                  id as View,
-                )
-              }
-              idBase={
-                idBase
-              }
-              aria-label={t(
-                'view.label',
-                {
-                  defaultValue:
-                    'View as',
-                },
-              )}
-              className="min-w-0 flex-1"
-            />
-            <div className="flex shrink-0 gap-2 pb-1">
-              {entry.live &&
-                (live ? (
+          <Tabs
+            tabs={
+              viewTabs
+            }
+            value={
+              view
+            }
+            onChange={(
+              id,
+            ) =>
+              setView(
+                id as View,
+              )
+            }
+            idBase={
+              idBase
+            }
+            aria-label={t(
+              'view.label',
+              {
+                defaultValue:
+                  'View as',
+              },
+            )}
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {frame ? (
+              <Button
+                size="sm"
+                onClick={() =>
+                  setFrame(
+                    null,
+                  )
+                }
+              >
+                <X
+                  aria-hidden
+                />
+                {t(
+                  'live.close',
+                  {
+                    defaultValue:
+                      'Close',
+                  },
+                )}
+              </Button>
+            ) : (
+              <>
+                {archived && (
                   <Button
                     size="sm"
                     onClick={() =>
-                      setLive(
-                        false,
+                      open(
+                        'archive',
                       )
                     }
                   >
-                    <X
+                    <History
                       aria-hidden
                     />
                     {t(
-                      'live.close',
+                      'archive.open',
                       {
                         defaultValue:
-                          'Close',
+                          'Open this version',
                       },
                     )}
                   </Button>
-                ) : (
+                )}
+                {entry.live && (
                   <Button
                     size="sm"
-                    onClick={() => {
-                      if (
-                        view ===
-                        'open'
+                    onClick={() =>
+                      open(
+                        'live',
                       )
-                        setView(
-                          'desktop',
-                        );
-                      setLive(
-                        true,
-                      );
-                    }}
+                    }
                   >
                     <Play
                       aria-hidden
                     />
                     {t(
-                      'live.open',
+                      'live.openToday',
                       {
                         defaultValue:
-                          'Open here',
+                          "Open today's page",
                       },
                     )}
                   </Button>
-                ))}
-              {entry.live && (
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  asChild
+                )}
+              </>
+            )}
+            {frameSrc && (
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                asChild
+              >
+                <a
+                  href={
+                    frameSrc
+                  }
+                  target="_blank"
+                  rel="noopener"
+                  aria-label={t(
+                    'live.newTab',
+                    {
+                      defaultValue:
+                        'Open {{title}} in a new tab',
+                      title:
+                        entry.title,
+                    },
+                  )}
                 >
-                  <a
-                    href={
-                      entry.live
-                    }
-                    target="_blank"
-                    rel="noopener"
-                    aria-label={t(
-                      'live.newTab',
-                      {
-                        defaultValue:
-                          'Open {{title}} in a new tab',
-                        title:
-                          entry.title,
-                      },
-                    )}
-                  >
-                    <ExternalLink
-                      aria-hidden
-                    />
-                  </a>
-                </Button>
-              )}
-            </div>
+                  <ExternalLink
+                    aria-hidden
+                  />
+                </a>
+              </Button>
+            )}
           </div>
 
           <div
@@ -753,21 +850,33 @@ function Entry({
             aria-labelledby={`${idBase}-tab-${view}`}
             className="mt-3"
           >
-            {live &&
-            entry.live ? (
+            {frameSrc ? (
               <iframe
                 src={
-                  entry.live
+                  frameSrc
                 }
-                title={t(
-                  'live.frameTitle',
-                  {
-                    defaultValue:
-                      '{{title}}, live',
-                    title:
-                      entry.title,
-                  },
-                )}
+                title={
+                  frame ===
+                  'archive'
+                    ? t(
+                        'archive.frameTitle',
+                        {
+                          defaultValue:
+                            '{{title}}, as it was',
+                          title:
+                            entry.title,
+                        },
+                      )
+                    : t(
+                        'live.frameTitle',
+                        {
+                          defaultValue:
+                            '{{title}}, live',
+                          title:
+                            entry.title,
+                        },
+                      )
+                }
                 allow="fullscreen; autoplay; gamepad"
                 className={cn(
                   'mx-auto block h-[70svh] max-h-[720px] min-h-[420px] w-full rounded-site border border-site-border bg-site-bg-subtle',
@@ -826,38 +935,66 @@ function Entry({
               </a>
             ) : (
               <p className="t-body text-site-text-muted">
-                {t(
-                  'shot.none',
-                  {
-                    defaultValue:
-                      'No picture of this one. Open it to see the page as it is now.',
-                  },
-                )}
-              </p>
-            )}
-          </div>
-          {!live &&
-            src && (
-              <figcaption className="t-meta mt-2">
-                {entry.shotIsCurrent
+                {archived
                   ? t(
-                      'shot.current',
+                      'shot.noneArchive',
                       {
                         defaultValue:
-                          'The page as it is today.',
+                          'No picture of this one. Open this version to see it.',
                       },
                     )
                   : t(
-                      'shot.atCommit',
+                      'shot.none',
                       {
                         defaultValue:
-                          'Built from {{commit}} and photographed signed out.',
-                        commit:
-                          entry.commit,
+                          'No picture of this one. Open it to see the page as it is now.',
                       },
                     )}
-              </figcaption>
+              </p>
             )}
+          </div>
+          <figcaption className="t-meta mt-2">
+            {frame ===
+              'archive' &&
+            archived
+              ? t(
+                  'archive.caption',
+                  {
+                    defaultValue:
+                      'A recording of {{commit}}, played back in your browser. Signing in, posting, saving and multiplayer did not exist in the recording, so they do nothing here.',
+                    commit:
+                      archived.commit,
+                  },
+                )
+              : frame ===
+                  'live'
+                ? t(
+                    'live.caption',
+                    {
+                      defaultValue:
+                        'The page as it is today.',
+                    },
+                  )
+                : src
+                  ? entry.shotIsCurrent
+                    ? t(
+                        'shot.current',
+                        {
+                          defaultValue:
+                            'The page as it is today.',
+                        },
+                      )
+                    : t(
+                        'shot.atCommit',
+                        {
+                          defaultValue:
+                            'Built from {{commit}} and photographed signed out.',
+                          commit:
+                            entry.commit,
+                        },
+                      )
+                  : null}
+          </figcaption>
         </figure>
       )}
     </SpineItem>
