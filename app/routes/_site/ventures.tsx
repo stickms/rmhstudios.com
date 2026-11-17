@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Atom, Brain, Landmark, Server, Shield, type LucideIcon } from 'lucide-react';
+import { Atom, Brain, FlaskConical, Landmark, Server, Shield, type LucideIcon } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { HubLinkRow } from '@/components/feed/HubLinkRow';
 import { buildMeta, buildCanonical } from '@/lib/seo';
@@ -16,7 +16,7 @@ import { buildMeta, buildCanonical } from '@/lib/seo';
  * prominent link-out. The microsites stay reachable directly at their own URLs.
  *
  * Like /services, the hub is a list now rather than a tab strip over one card:
- * five brand names do not fit a segmented control ("RMH Data…", "Adaptive I…",
+ * six brand names do not fit a segmented control ("RMH Data…", "Adaptive I…",
  * "RMH Dee…" at 1440px), and a hub that hides four of its five destinations is
  * not doing a hub's job (UI minimalism audit, 2026-10-09). `?tab=` is still
  * accepted so old links resolve; it simply opens the list.
@@ -26,6 +26,7 @@ const VENTURE_TABS = [
   'rmh-capital',
   'rmh-datacenter',
   'rmh-pmc',
+  'rmh-research',
   'adaptive-intelligence',
   'deeplink',
 ] as const;
@@ -40,8 +41,8 @@ interface VentureDef {
    * not a router page, so it is linked with a plain anchor.
    */
   external?: boolean;
-  /** Reuse the existing sidebar nav string (feed namespace). */
-  navKey: string;
+  /** Reuse the existing sidebar nav string (feed namespace). Omitted for a brand with no nav string: brand names are not translated. */
+  navKey?: string;
   name: string;
   descKey: string;
   desc: string;
@@ -76,13 +77,23 @@ const VENTURES: VentureDef[] = [
     desc: 'The private security arm: operators, an intelligence cell, and a logistics tail held under a single chain of command.',
   },
   {
+    id: 'rmh-research',
+    icon: FlaskConical,
+    href: '/rmh-research',
+    name: 'RMH Research',
+    descKey: 'ventures-research-desc',
+    desc: 'The research institute: work across twelve scientific fields, a searchable archive of its papers, and the r-index, a measure of how far a result travelled.',
+  },
+  {
     id: 'adaptive-intelligence',
     icon: Atom,
     href: '/adaptive-intelligence',
     navKey: 'nav-adaptive-intelligence',
     name: 'Adaptive Intelligence',
-    descKey: 'ventures-ai-desc',
-    desc: 'The research arm — the applied AI work that shows up across the platform, from the feed to the tools that build pages and games.',
+    // A new key, not an edited default: RMH Research is the research arm now, and a
+    // changed `defaultValue` would change English alone (CLAUDE.md, i18n (a)).
+    descKey: 'ventures-ai-desc-applied',
+    desc: 'The applied AI arm — the work that shows up across the platform, from the feed to the tools that build pages and games.',
   },
   {
     id: 'deeplink',
@@ -101,7 +112,7 @@ export const Route = createFileRoute('/_site/ventures')({
     meta: buildMeta({
       title: 'RMH Ventures | RMH Studios',
       description:
-        'RMH Capital, Datacenter, PMC, Adaptive Intelligence and Deeplink: the brands around RMH Studios.',
+        'RMH Capital, Datacenter, PMC, Research, Adaptive Intelligence and Deeplink: the brands around RMH Studios.',
       path: '/ventures',
     }),
     links: [buildCanonical('/ventures')],
@@ -132,7 +143,7 @@ function VenturesPage() {
               href={v.href}
               external={v.external}
               icon={v.icon}
-              title={t(v.navKey, { ns: 'feed', defaultValue: v.name })}
+              title={v.navKey ? t(v.navKey, { ns: 'feed', defaultValue: v.name }) : v.name}
               description={t(v.descKey, { defaultValue: v.desc })}
             />
           </li>

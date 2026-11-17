@@ -1,0 +1,220 @@
+/* ════════════════════════════════════════════════════════════════════════
+   RMH Research — home. Every selector starts `.rmhr-root .home-`.
+   See ../rmh-research.css for the vocabulary and the pinned-scene system.
+
+   Written FLOW MODE first: at the top level every scene is an ordinary,
+   readable section and every step is shown. Everything that pins, stacks or
+   hides is in the one gate block at the foot.
+
+   The r-index figure is drawn from --p (the scene's progress, 0→1). Flow mode
+   gives --p its end state (1), so without a scroll timeline the figure shows
+   the finished sift: dropped citations empty, carried ones doubled.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. hero ── */
+.rmhr-root .home-hero-pin { padding-block: calc(var(--nav-h) + clamp(72px, 11vw, 148px)) clamp(56px, 8vw, 104px); }
+.rmhr-root .home-kicker { margin-bottom: clamp(16px, 2vw, 24px); }
+.rmhr-root .home-title { max-width: 11ch; }
+.rmhr-root .home-line {
+  margin-top: clamp(20px, 2.6vw, 36px); max-width: 20ch;
+  font-size: clamp(28px, 4.4vw, 60px); line-height: 1.04; font-weight: 600; letter-spacing: -0.035em; color: var(--ink); text-wrap: balance;
+}
+.rmhr-root .home-line + .home-line { margin-top: 8px; }
+.rmhr-root .home-line--mute { color: var(--mute); }
+.rmhr-root .home-lede { margin-top: clamp(24px, 3vw, 40px); max-width: 52ch; }
+.rmhr-root .home-hero-b { margin-top: clamp(64px, 9vw, 120px); }
+.rmhr-root .home-figs-head { display: grid; gap: 12px; margin-bottom: clamp(24px, 3vw, 40px); }
+.rmhr-root .home-stats .stat:last-child:nth-child(odd) { grid-column: 1 / -1; padding-inline-start: 0; border-inline-start: 0; }
+@media (min-width: 820px) {
+  .rmhr-root .home-stats .stat:last-child:nth-child(odd) { grid-column: auto; padding-inline-start: 24px; border-inline-start: 1px solid var(--rule); }
+}
+
+/* ── 2. the twelve fields ── */
+.rmhr-root .home-fields { border-top: 1px solid var(--rule); }
+.rmhr-root .home-fields-pin { padding-block: clamp(64px, 10vw, 136px); }
+.rmhr-root .home-fields-head { display: grid; gap: 16px; margin-bottom: clamp(28px, 4vw, 48px); }
+.rmhr-root .home-div-index { display: none; }
+.rmhr-root .home-div + .home-div { margin-top: clamp(40px, 6vw, 72px); }
+.rmhr-root .home-div-head { display: grid; gap: 8px; padding-bottom: 16px; }
+.rmhr-root .home-div-name { font-size: clamp(26px, 3.4vw, 44px); line-height: 1.05; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); }
+.rmhr-root .home-fld-list { border-top: 1px solid var(--rule); }
+.rmhr-root .home-fld {
+  display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: baseline; gap: 6px 20px;
+  padding-block: 18px; border-bottom: 1px solid var(--rule); transition: background-color 90ms;
+}
+.rmhr-root .home-fld:hover { background: var(--wash); }
+.rmhr-root .home-fld-code { justify-self: start; }
+.rmhr-root .home-fld-text { display: grid; gap: 4px; min-width: 0; }
+.rmhr-root .home-fld-name { font-size: clamp(17px, 1.6vw, 21px); line-height: 1.25; font-weight: 600; letter-spacing: -0.015em; color: var(--ink); }
+.rmhr-root .home-fld:hover .home-fld-name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .home-fld-blurb { font-size: 14px; line-height: 1.45; color: var(--mute); max-width: 62ch; }
+.rmhr-root .home-fld-count { white-space: nowrap; }
+@media (max-width: 620px) {
+  .rmhr-root .home-fld { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 4px 12px; padding-block: 14px; }
+  .rmhr-root .home-fld-text { display: contents; }
+  .rmhr-root .home-fld-code { grid-area: 1 / 1; }
+  .rmhr-root .home-fld-name { grid-area: 1 / 2; }
+  .rmhr-root .home-fld-count { grid-area: 1 / 3; }
+  .rmhr-root .home-fld-blurb { grid-area: 2 / 2 / 3 / 4; }
+}
+
+/* ── 3. the archive ── */
+.rmhr-root .home-search { display: grid; gap: 10px; max-width: 780px; margin-bottom: clamp(56px, 8vw, 104px); }
+.rmhr-root .home-search-row { display: flex; gap: 10px; }
+.rmhr-root .home-search-row .field { flex: 1 1 auto; min-width: 0; }
+.rmhr-root .home-search-row .btn { min-height: 52px; padding-inline: 24px; }
+.rmhr-root .home-top-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 12px; }
+
+/* ── 4. the r-index, on one paper ── */
+.rmhr-root .home-rix { border-top: 1px solid var(--rule); }
+.rmhr-root .home-rix-pin { padding-block: clamp(64px, 10vw, 136px); }
+.rmhr-root .home-rix-empty .lede { max-width: 60ch; }
+.rmhr-root .home-rix-head { display: grid; gap: 16px; margin-bottom: clamp(32px, 5vw, 56px); }
+.rmhr-root .home-rix-paper { display: grid; gap: 6px; max-width: 72ch; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--rule); }
+.rmhr-root .home-rix-title { font-size: clamp(17px, 1.6vw, 21px); line-height: 1.3; font-weight: 600; letter-spacing: -0.012em; color: var(--ink); text-wrap: pretty; }
+.rmhr-root .home-rix-title:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .home-rix-by { font-size: 14px; line-height: 1.45; color: var(--mute); }
+.rmhr-root .home-rix-by a { color: var(--ink); }
+.rmhr-root .home-rix-by a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.rmhr-root .home-rix-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: start; }
+@media (min-width: 900px) {
+  .rmhr-root .home-rix-body { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+  .rmhr-root .home-rix-fig { position: sticky; top: calc(var(--nav-h) + 40px); }
+}
+.rmhr-root .home-rix-step { display: grid; gap: 10px; align-content: start; }
+.rmhr-root .home-rix-step + .home-rix-step { margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.rmhr-root .home-rix-name { font-size: clamp(18px, 1.6vw, 21px); line-height: 1.3; font-weight: 600; letter-spacing: -0.012em; color: var(--ink); }
+.rmhr-root .home-rix-num { font-size: clamp(64px, 10vw, 152px); line-height: 0.9; font-weight: 500; letter-spacing: -0.06em; color: var(--ink); }
+.rmhr-root .home-rix-text { font-size: 16px; line-height: 1.5; color: var(--mute); max-width: 42ch; text-wrap: pretty; }
+
+/* The figure: one dot per citing paper, a picture on the wash. */
+.rmhr-root .home-rix-fig { padding: clamp(20px, 3vw, 40px); background: var(--wash); border: 1px solid var(--rule); border-radius: var(--r); }
+.rmhr-root .home-cites {
+  /* Each rule's moment, eased in over 8% of the pin just as its step arrives. */
+  --k2: clamp(0, calc((var(--p) * 100 - 26) / 8), 1);
+  --k3: clamp(0, calc((var(--p) * 100 - 51) / 8), 1);
+  --k4: clamp(0, calc((var(--p) * 100 - 76) / 8), 1);
+  --ds: 20px;
+  display: flex; flex-wrap: wrap; gap: 12px;
+}
+.rmhr-root .home-cites--few { --ds: 34px; gap: 16px; }
+.rmhr-root .home-cites--dense { --ds: 11px; gap: 7px; }
+.rmhr-root .home-cite { display: inline-flex; gap: calc(var(--k4) * 4px); }
+.rmhr-root .home-cite-dot { position: relative; display: block; width: var(--ds); height: var(--ds); border: 1px solid var(--mute); border-radius: 50%; corner-shape: round; }
+.rmhr-root .home-cite-dot::after { content: ''; position: absolute; inset: -1px; border-radius: 50%; corner-shape: round; background: var(--ink); }
+.rmhr-root .home-cite.is-own .home-cite-dot::after { scale: calc(1 - var(--k2)); }
+.rmhr-root .home-cite.is-dead .home-cite-dot::after { scale: calc(1 - var(--k3)); }
+.rmhr-root .home-cite-twin { width: calc(var(--k4) * var(--ds)); border: 0; }
+.rmhr-root .home-cite-twin::after { inset: 0; scale: var(--k4); }
+.rmhr-root .home-rix-key { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: clamp(20px, 2.4vw, 28px); padding-top: 14px; border-top: 1px solid var(--rule); }
+.rmhr-root .home-rix-key > span { display: inline-flex; align-items: center; }
+.rmhr-root .home-key { display: inline-block; width: 10px; height: 10px; margin-inline-end: 8px; border: 1px solid var(--mute); border-radius: 50%; corner-shape: round; }
+.rmhr-root .home-key--on { background: var(--ink); border-color: var(--ink); }
+.rmhr-root .home-key--on + .home-key--on { margin-inline-start: -5px; }
+.rmhr-root .home-rix-foot { margin-top: clamp(32px, 4vw, 48px); }
+
+/* ── 5. leading authors ── */
+.rmhr-root .home-auth .split-aside .sechead { margin-bottom: 16px; }
+.rmhr-root .home-auth-table { width: 100%; border-collapse: collapse; }
+.rmhr-root .home-auth-table th {
+  padding-block: 0 12px; border-bottom: 1px solid var(--rule); text-align: start;
+  font-size: 13px; line-height: 1.3; font-weight: 600; color: var(--mute);
+}
+.rmhr-root .home-auth-table td { padding-block: 18px; border-bottom: 1px solid var(--rule); vertical-align: baseline; }
+.rmhr-root .home-auth-table :is(th, td) + :is(th, td) { padding-inline-start: 16px; }
+.rmhr-root .home-auth-rank { width: 56px; font-size: 14px; color: var(--mute); }
+.rmhr-root .home-auth-name { font-size: clamp(17px, 1.5vw, 20px); line-height: 1.3; font-weight: 600; letter-spacing: -0.012em; color: var(--ink); }
+.rmhr-root .home-auth-name:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .home-auth-lab { display: block; margin-top: 2px; font-size: 13px; line-height: 1.4; color: var(--mute); }
+.rmhr-root .home-auth-field { width: 96px; }
+.rmhr-root .home-auth-table .home-auth-n { width: 56px; text-align: end; }
+.rmhr-root td.home-auth-n { font-size: clamp(18px, 1.8vw, 24px); font-weight: 500; }
+.rmhr-root .home-auth-r { color: var(--ink); }
+@media (max-width: 520px) {
+  .rmhr-root .home-auth-field { display: none; }
+  .rmhr-root .home-auth-rank { width: 36px; }
+  .rmhr-root .home-auth-table .home-auth-n { width: 40px; }
+}
+
+/* ── 6. sections and reports ── */
+.rmhr-root a.home-more-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: baseline; gap: 6px 24px; padding-block: 24px; }
+.rmhr-root .home-more-row .arw { align-self: center; }
+.rmhr-root .home-more-text { min-width: 0; }
+.rmhr-root .home-more-text .h3 { display: block; }
+.rmhr-root .home-more-row:hover .h3 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rmhr-root .home-more-desc { display: block; margin-top: 6px; max-width: 62ch; font-size: 15px; line-height: 1.5; color: var(--mute); }
+@media (max-width: 620px) {
+  .rmhr-root a.home-more-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .rmhr-root .home-more-kind { grid-column: 1 / -1; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE GATE — pinned layout. Same gate as the foundation: nothing here exists
+   with motion off, so every scene above stays a plain document.
+   ════════════════════════════════════════════════════════════════════════ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    @supports (animation-timeline: view()) {
+      /* Shared frame for a pinned scene: clear the floating bar, head / body / foot. */
+      .rmhr-root :is(.home-hero-pin, .home-fields-pin, .home-rix-pin) {
+        padding: calc(var(--nav-h) + 10px + env(safe-area-inset-top, 0px) + clamp(16px, 4svh, 40px)) 0 0;
+      }
+      .rmhr-root :is(.home-hero-wrap, .home-fields-wrap, .home-rix-wrap) { height: 100%; display: grid; min-height: 0; }
+      .rmhr-root .home-scene-foot { display: flex; align-items: center; gap: 16px; padding-block: 16px clamp(20px, 4svh, 32px); }
+      .rmhr-root .home-scene-foot .scene-rail { flex: 1 1 auto; }
+
+      /* hero: the name, the two lines and the lede build; then the figures take the frame */
+      .rmhr-root .home-hero-wrap { grid-template-rows: minmax(0, 1fr) auto; }
+      .rmhr-root .home-hero-stack { align-self: center; }
+      .rmhr-root .home-hero-b { margin-top: 0; align-self: center; }
+      .rmhr-root .home-stat-v { font-size: clamp(36px, 6.4vw, 96px); }
+      .rmhr-root .home-rail { margin-block: 16px clamp(20px, 4svh, 32px); }
+      .rmhr-root .home-hero .home-title { font-size: clamp(48px, min(19vw, 22svh), 168px); }
+
+      /* fields: an index of the four divisions beside the live one */
+      .rmhr-root .home-fields-wrap { grid-template-rows: auto minmax(0, 1fr) auto; row-gap: clamp(16px, 3svh, 32px); }
+      .rmhr-root .home-fields-head { margin-bottom: 0; gap: 10px; }
+      .rmhr-root .home-fields-head .h2 { font-size: clamp(26px, 3.2vw, 44px); }
+      .rmhr-root .home-fields-body { display: grid; align-items: start; align-content: safe center; min-height: 0; }
+      .rmhr-root .home-div + .home-div { margin-top: 0; }
+      @media (min-width: 900px) {
+        .rmhr-root .home-fields-body { grid-template-columns: 240px minmax(0, 1fr); gap: clamp(32px, 5vw, 80px); }
+        .rmhr-root .home-div-index { display: block; border-top: 1px solid var(--rule); }
+        .rmhr-root .home-div-index li {
+          display: flex; align-items: baseline; gap: 14px; padding-block: 14px; border-bottom: 1px solid var(--rule);
+          font-size: 15px; line-height: 1.3; font-weight: 500; color: var(--ink);
+        }
+      }
+      @media (max-height: 760px) and (max-width: 899px) {
+        .rmhr-root .home-fld-blurb { display: none; }
+      }
+      @media (max-height: 640px) {
+        .rmhr-root .home-fld-blurb { display: none; }
+        .rmhr-root .home-fld { padding-block: 12px; }
+      }
+
+      /* r-index: the number steps, the dots empty beside it */
+      .rmhr-root .home-rix-wrap { grid-template-rows: auto minmax(0, 1fr) auto; row-gap: clamp(16px, 3svh, 32px); }
+      .rmhr-root .home-rix-head { margin-bottom: 0; gap: 10px; }
+      .rmhr-root .home-rix-head .h2 { font-size: clamp(26px, 3.2vw, 44px); }
+      .rmhr-root .home-rix-paper { margin-top: 4px; padding-top: 12px; }
+      .rmhr-root .home-rix-body { align-items: center; align-content: safe center; min-height: 0; gap: clamp(20px, 4vw, 72px); }
+      .rmhr-root .home-rix-fig { position: static; }
+      .rmhr-root .home-rix-step + .home-rix-step { margin-top: 0; padding-top: 0; border-top: 0; }
+      .rmhr-root .home-rix-num { font-size: clamp(64px, min(11vw, 20svh), 168px); }
+      .rmhr-root .home-rix-foot { margin-top: 0; }
+      @media (max-width: 899px) {
+        .rmhr-root .home-rix-paper .meta { display: none; }
+        .rmhr-root .home-rix-step { gap: 6px; }
+        .rmhr-root .home-rix-num { font-size: clamp(56px, 13svh, 120px); }
+        .rmhr-root .home-rix-text { font-size: 15px; }
+        .rmhr-root .home-rix-fig { padding: 16px; }
+        .rmhr-root .home-cites { --ds: 16px; gap: 9px; }
+        .rmhr-root .home-cites--few { --ds: 22px; gap: 11px; }
+        .rmhr-root .home-cites--dense { --ds: 9px; gap: 5px; }
+        .rmhr-root .home-rix-key { margin-top: 14px; padding-top: 10px; }
+      }
+    }
+  }
+}

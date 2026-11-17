@@ -253,6 +253,13 @@ export const STATIC_CARDS: StaticCard[] =
         'Six campuses, 148 MW, one backbone.',
     },
     {
+      path: '/rmh-research',
+      file: 'rmh-research',
+      eyebrow: 'RMH Research',
+      title: 'Twelve fields, one archive.',
+      subtitle: 'The research institute of RMH Studios, and the r-index.',
+    },
+    {
       path: '/rmh-pmc',
       file: 'rmh-pmc',
       eyebrow:
@@ -358,7 +365,7 @@ export const STATIC_CARDS: StaticCard[] =
         'Scoped API keys, a documented REST API, webhooks and quotas.',
     },
     {
-      path: '/psychology',
+      path: '/rmh-research/psychology',
       file: 'psychology',
       eyebrow:
         'Psychology',

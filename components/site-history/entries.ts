@@ -1480,7 +1480,7 @@ export function historyEntries(
       pr: 1650,
       shot: 'live-psychology',
       shotIsCurrent: true,
-      live: '/psychology',
+      live: '/rmh-research/psychology',
       title:
         t(
           'e.psychology.title',
@@ -1493,7 +1493,7 @@ export function historyEntries(
         'e.psychology.body',
         {
           defaultValue:
-            'The research behind how the site behaves, who did it, and where you meet it here, including the things the site chooses not to do.',
+            'The research behind how the site behaves, who did it, and where you meet it here, including the things the site chooses not to do. It now lives in RMH Research.',
         },
       ),
     },
@@ -1517,6 +1517,32 @@ export function historyEntries(
         {
           defaultValue:
             'Steam, Twitch, Microsoft, GitLab and X sign-in, then account consolidation and email verification, so one person has one account however they arrive.',
+        },
+      ),
+    },
+    {
+      id: 'rmh-research',
+      date: '2026-11-16',
+      kind: 'platform',
+      commit:
+        'dffc09114',
+      pr: 1669,
+      shot: 'live-rmh-research',
+      shotIsCurrent: true,
+      live: '/rmh-research',
+      title:
+        t(
+          'e.rmh-research.title',
+          {
+            defaultValue:
+              'RMH Research returns',
+          },
+        ),
+      body: t(
+        'e.rmh-research.body',
+        {
+          defaultValue:
+            'The research section came back as an institute of its own: twelve fields, a searchable archive, author pages and the r-index.',
         },
       ),
     },

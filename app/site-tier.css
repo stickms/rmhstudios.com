@@ -80,6 +80,10 @@
 @source not "../components/replays";
 @source not "../components/rmh-capital";
 @source not "../components/rmh-pmc";
+@source not "../components/rmh-research";
+@source not "../lib/rmh-research";
+/* Its one consumer is RMH Research's Psychology section since /psychology moved there. */
+@source not "../lib/psychology";
 @source not "../components/rmhbox";
 @source not "../components/rmhcalculator";
 @source not "../components/rmhcode";
@@ -184,6 +188,10 @@
 @source not "./routes/rmh-capital";
 @source not "./routes/rmh-pmc.tsx";
 @source not "./routes/rmh-pmc";
+@source not "./routes/rmh-research.tsx";
+@source not "./routes/rmh-research";
+@source not "./routes/rmh-research_.reports.optimization.tsx";
+@source not "./routes/rmh-research_.reports.feature-leak.tsx";
 @source not "./routes/rmhbox.tsx";
 @source not "./routes/rmhbox";
 @source not "./routes/rmhcalculator.tsx";
