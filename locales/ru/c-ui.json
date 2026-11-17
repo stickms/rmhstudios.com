@@ -7,6 +7,7 @@
   "clear-selection": "Очистить выбор",
   "close": "Закрыть",
   "confirm": "Подтвердить",
+  "confirm-unavailable": "Не удалось открыть подтверждение. Проверьте подключение и попробуйте снова.",
   "copied": "Скопировано",
   "copy": "Копировать",
   "doc-body-label": "Содержимое страницы",
@@ -38,5 +39,9 @@
   "scroll-back": "Scroll left",
   "scroll-forward": "Scroll right",
   "select-all": "Выбрать все",
-  "selection-actions": "Действия с выбором"
+  "selection-actions": "Действия с выбором",
+  "selection-count_few": "Выбрано: {{count}}",
+  "selection-count_many": "Выбрано: {{count}}",
+  "selection-count_one": "Выбран {{count}}",
+  "selection-count_other": "Выбрано {{count}}"
 }

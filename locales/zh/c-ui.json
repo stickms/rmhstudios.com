@@ -7,6 +7,7 @@
   "clear-selection": "清除选择",
   "close": "关闭",
   "confirm": "确认",
+  "confirm-unavailable": "无法打开确认页面。请检查您的网络连接，然后重试。",
   "copied": "已复制",
   "copy": "复制",
   "doc-body-label": "页面内容",

@@ -7,6 +7,7 @@
   "clear-selection": "Borrar selección",
   "close": "Cerrar",
   "confirm": "Confirmar",
+  "confirm-unavailable": "No se pudo abrir la confirmación. Comprueba tu conexión e inténtalo de nuevo.",
   "copied": "Copiado",
   "copy": "Copiar",
   "doc-body-label": "Contenido de la página",
@@ -38,5 +39,8 @@
   "scroll-back": "Scroll left",
   "scroll-forward": "Scroll right",
   "select-all": "Seleccionar todo",
-  "selection-actions": "Acciones de selección"
+  "selection-actions": "Acciones de selección",
+  "selection-count_many": "{{count}} seleccionados",
+  "selection-count_one": "{{count}} seleccionado",
+  "selection-count_other": "{{count}} seleccionados"
 }

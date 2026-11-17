@@ -692,6 +692,7 @@
   "play_error_title": "The game stopped",
   "play_error_unknown": "Something went wrong while running the game.",
   "play_error_webgl": "This browser or device cannot run the game: WebGL 2 is not available.",
+  "play_error_wrong_game": "Cette salle appartient à un autre jeu de ce site. Ouvrez-la depuis la page de ce jeu.",
   "play_exit_fullscreen": "Exit full screen",
   "play_fullscreen": "Full screen",
   "play_hl2_ch1": "Point Insertion: Arrival",

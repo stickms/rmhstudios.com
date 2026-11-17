@@ -7,6 +7,7 @@
   "clear-selection": "مسح التحديد",
   "close": "قريب",
   "confirm": "تأكيد",
+  "confirm-unavailable": "تعذّر فتح التأكيد. تحقق من اتصالك وحاول مرة أخرى.",
   "copied": "تم النسخ",
   "copy": "نسخ",
   "doc-body-label": "محتوى الصفحة",
@@ -38,5 +39,11 @@
   "scroll-back": "Scroll left",
   "scroll-forward": "Scroll right",
   "select-all": "تحديد الكل",
-  "selection-actions": "إجراءات التحديد"
+  "selection-actions": "إجراءات التحديد",
+  "selection-count_few": "تم تحديد {{count}}",
+  "selection-count_many": "تم تحديد {{count}}",
+  "selection-count_one": "تم تحديد {{count}}",
+  "selection-count_other": "تم تحديد {{count}}",
+  "selection-count_two": "تم تحديد {{count}}",
+  "selection-count_zero": "تم تحديد {{count}}"
 }

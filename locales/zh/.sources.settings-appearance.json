@@ -1,4 +1,9 @@
 {
+  "choose-edition": "Choose an edition",
   "color-vision-sample-warning": "Warning",
-  "globe-motion-on": "On"
+  "globe-motion": "Globe motion",
+  "globe-motion-desc": "The globe drifts slowly when idle. Still stops the drift. Dragging it always works.",
+  "globe-motion-on": "On",
+  "globe-motion-still": "Still",
+  "theme-desc-two-editions": "Night (the default) and Day."
 }

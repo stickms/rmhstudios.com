@@ -110,6 +110,7 @@
   "play_difficulty_expert": "Expert",
   "play_difficulty_hard": "Hard",
   "play_difficulty_normal": "Normal",
+  "play_error_wrong_game": "This room belongs to a different game on this site. Open it from that game’s own page.",
   "play_join": "Join",
   "play_leave": "Leave",
   "play_max_players": "Max players",

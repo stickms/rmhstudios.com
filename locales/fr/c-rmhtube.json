@@ -1,5 +1,8 @@
 {
   "add": "Ajouter",
+  "add-batch-to-queue_many": "Ajouter {{count}} à la file d'attente",
+  "add-batch-to-queue_one": "Ajouter {{count}} à la file d'attente",
+  "add-batch-to-queue_other": "Ajouter {{count}} à la file d'attente",
   "add-gif-aria": "Add a GIF",
   "add-to-favorites": "Ajouter aux favoris",
   "add-to-playlist": "Add to playlist",
@@ -28,6 +31,9 @@
   "banned-at": "Banni {{time}}",
   "banned-users": "Utilisateurs bannis",
   "batch-cancel": "Ajouter un seul lien à la place",
+  "batch-count_many": "{{count}} liens trouvés",
+  "batch-count_one": "{{count}} lien trouvé",
+  "batch-count_other": "{{count}} liens trouvés",
   "bring-back": "Le faire revenir",
   "cancel": "Annuler",
   "cancel-reply": "Cancel reply",
