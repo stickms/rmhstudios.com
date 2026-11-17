@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Сбросить фильтры",
+  "clear-search": "Очистить поиск",
+  "like-this-build": "Нравится эта сборка",
+  "no-builds-found": "Сборки не найдены",
+  "read-more": "Читать далее",
+  "screenshot-of": "Скриншот {{title}}",
+  "search-aria-label": "Поиск сборок",
+  "search-placeholder": "Поиск сборок...",
+  "sort-builds": "Сортировать сборки",
+  "sort-default": "По умолчанию",
+  "sort-most-discussed": "Самые обсуждаемые",
+  "sort-most-liked": "Самые популярные",
+  "sort-most-viewed": "Самые просматриваемые",
+  "sort-options": "Параметры сортировки",
+  "unlike-this-build": "Не нравится эта сборка",
+  "view-comments": "Посмотреть комментарии"
+}

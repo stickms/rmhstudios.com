@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Xóa bộ lọc",
+  "clear-search": "Xóa tìm kiếm",
+  "like-this-build": "Thích build này",
+  "no-builds-found": "Không tìm thấy build nào",
+  "read-more": "Đọc thêm",
+  "screenshot-of": "Ảnh chụp màn hình của {{title}}",
+  "search-aria-label": "Tìm kiếm build",
+  "search-placeholder": "Tìm kiếm build...",
+  "sort-builds": "Sắp xếp build",
+  "sort-default": "Mặc định",
+  "sort-most-discussed": "Thảo luận nhiều nhất",
+  "sort-most-liked": "Được thích nhiều nhất",
+  "sort-most-viewed": "Xem nhiều nhất",
+  "sort-options": "Tùy chọn sắp xếp",
+  "unlike-this-build": "Bỏ thích build này",
+  "view-comments": "Xem bình luận"
+}

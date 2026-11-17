@@ -1,0 +1,18 @@
+{
+  "clear-filters": "مسح الفلاتر",
+  "clear-search": "مسح البحث",
+  "like-this-build": "مثل هذا البناء",
+  "no-builds-found": "لم يتم العثور على أي بنيات",
+  "read-more": "اقرأ المزيد",
+  "screenshot-of": "لقطة شاشة لـ {{title}}",
+  "search-aria-label": "بناء عمليات البحث",
+  "search-placeholder": "جارٍ البحث عن البناء...",
+  "sort-builds": "فرز البناءات",
+  "sort-default": "تقصير",
+  "sort-most-discussed": "الأكثر مناقشة",
+  "sort-most-liked": "الأكثر إعجابًا",
+  "sort-most-viewed": "الأكثر مشاهدة",
+  "sort-options": "خيارات الفرز",
+  "unlike-this-build": "على عكس هذا البناء",
+  "view-comments": "عرض التعليقات"
+}

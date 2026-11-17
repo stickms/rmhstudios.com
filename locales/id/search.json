@@ -1,0 +1,12 @@
+{
+  "alerts-off": "Alerts off",
+  "alerts-on": "Alerts on",
+  "error": "Couldn't save the search",
+  "operator-copied": "{{operator}} disalin",
+  "operator-copy": "Salin {{operator}}",
+  "operators": "Operator",
+  "remove": "Hapus",
+  "save": "Simpan",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
+}

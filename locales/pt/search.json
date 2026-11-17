@@ -1,0 +1,12 @@
+{
+  "alerts-off": "Alerts off",
+  "alerts-on": "Alerts on",
+  "error": "Couldn't save the search",
+  "operator-copied": "{{operator}} copiado",
+  "operator-copy": "Copiar {{operator}}",
+  "operators": "Operadores",
+  "remove": "Remover",
+  "save": "Salvar",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
+}

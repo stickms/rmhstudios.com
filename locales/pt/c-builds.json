@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Limpar filtros",
+  "clear-search": "Limpar pesquisa",
+  "like-this-build": "Curtir esta build",
+  "no-builds-found": "Nenhuma build encontrada",
+  "read-more": "Leia Mais",
+  "screenshot-of": "Captura de tela de {{title}}",
+  "search-aria-label": "Pesquisar builds",
+  "search-placeholder": "Pesquisar builds...",
+  "sort-builds": "Ordenar builds",
+  "sort-default": "Padrão",
+  "sort-most-discussed": "Mais Discutidas",
+  "sort-most-liked": "Mais Curtidas",
+  "sort-most-viewed": "Mais Visualizadas",
+  "sort-options": "Opções de ordenação",
+  "unlike-this-build": "Descurtir esta build",
+  "view-comments": "Ver comentários"
+}

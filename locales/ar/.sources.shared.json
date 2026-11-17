@@ -1,0 +1,23 @@
+{
+  "chat-placeholder": "Chat...",
+  "connected": "Connected",
+  "connecting": "Connecting…",
+  "copy-room-code": "Copy room code",
+  "dismiss": "Dismiss",
+  "error-boundary-message": "An unexpected error occurred.",
+  "error-boundary-retry": "Try Again",
+  "error-boundary-title": "Something went wrong",
+  "failed-to-load-media": "Failed to load media",
+  "game-crashed": "Game crashed",
+  "game-crashed-named": "{{gameName}} crashed",
+  "loading": "Loading…",
+  "no-messages-yet": "No messages yet",
+  "notifications": "Notifications",
+  "react": "React",
+  "reconnecting": "Reconnecting…",
+  "return-home": "Return Home",
+  "save-conflict-progress": "Progress",
+  "sign-in-required-go": "Sign in",
+  "try-again": "Try Again",
+  "unexpected-error": "An unexpected error occurred."
+}

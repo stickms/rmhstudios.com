@@ -1,0 +1,12 @@
+{
+  "alerts-off": "Alerts off",
+  "alerts-on": "Alerts on",
+  "error": "Couldn't save the search",
+  "operator-copied": "Скопировано: {{operator}}",
+  "operator-copy": "Скопировать {{operator}}",
+  "operators": "Операторы",
+  "remove": "Удалить",
+  "save": "Сохранить",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
+}

@@ -1,0 +1,18 @@
+{
+  "clear-filters": "清除筛选",
+  "clear-search": "清除搜索",
+  "like-this-build": "像这样的构建",
+  "no-builds-found": "未找到构建版本",
+  "read-more": "阅读更多",
+  "screenshot-of": "{{title}}的截图",
+  "search-aria-label": "搜索构建",
+  "search-placeholder": "正在搜索构建...",
+  "sort-builds": "排序构建",
+  "sort-default": "默认",
+  "sort-most-discussed": "最多讨论",
+  "sort-most-liked": "最多点赞",
+  "sort-most-viewed": "观看次数最多",
+  "sort-options": "排序选项",
+  "unlike-this-build": "不像这个构建",
+  "view-comments": "查看评论"
+}

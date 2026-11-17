@@ -1,0 +1,22 @@
+{
+  "app-run": "Run",
+  "bulk-status-cancelled": "Cancelled",
+  "bulk-status-done": "Finished",
+  "bulk-status-running": "Running",
+  "calendar-outlook": "Outlook",
+  "cookie-consent-learn": "Learn more",
+  "home-aria-label": "RMH Studios home",
+  "loading": "Loading…",
+  "messages": "Messages",
+  "notFound.explore": "Explore",
+  "notFound.search": "Search",
+  "notifications": "Notifications",
+  "offline-retry": "Try again",
+  "profile": "Profile",
+  "search": "Search",
+  "sign-in": "Sign in",
+  "skipToContent": "Skip to content",
+  "studio-wordmark": "Studios",
+  "tr-ns-count": "{{ns}} ({{missing}} missing, {{weak}} untranslated)",
+  "type-file": "File"
+}

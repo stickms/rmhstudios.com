@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Filtreleri temizle",
+  "clear-search": "Aramayı temizle",
+  "like-this-build": "Bu yapıyı beğen",
+  "no-builds-found": "Yapı bulunamadı",
+  "read-more": "Devamını Oku",
+  "screenshot-of": "{{title}} ekran görüntüsü",
+  "search-aria-label": "Yapıları ara",
+  "search-placeholder": "Yapıları ara...",
+  "sort-builds": "Yapıları sırala",
+  "sort-default": "Varsayılan",
+  "sort-most-discussed": "En Çok Tartışılan",
+  "sort-most-liked": "En Beğenilen",
+  "sort-most-viewed": "En Çok Görüntülenen",
+  "sort-options": "Sıralama seçenekleri",
+  "unlike-this-build": "Bu yapıyı beğenmekten vazgeç",
+  "view-comments": "Yorumları görüntüle"
+}

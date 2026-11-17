@@ -1,0 +1,8 @@
+{
+  "lang-firstrun-body_one": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-body_few": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-body_other": "RMH Studios is available in {{count}} languages. You can change this any time in Settings.",
+  "lang-firstrun-continue": "Continue in {{lang}}",
+  "lang-firstrun-title": "Choose your language",
+  "language": "Language"
+}

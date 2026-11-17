@@ -1,0 +1,18 @@
+{
+  "clear-filters": "フィルターをクリア",
+  "clear-search": "検索をクリア",
+  "like-this-build": "このビルドをいいね",
+  "no-builds-found": "ビルドが見つかりません",
+  "read-more": "続きを読む",
+  "screenshot-of": "{{title}}のスクリーンショット",
+  "search-aria-label": "ビルドを検索",
+  "search-placeholder": "ビルドを検索...",
+  "sort-builds": "ビルドを並べ替え",
+  "sort-default": "デフォルト",
+  "sort-most-discussed": "最も議論された",
+  "sort-most-liked": "最もいいねされた",
+  "sort-most-viewed": "最も閲覧された",
+  "sort-options": "並べ替えオプション",
+  "unlike-this-build": "このビルドのいいねを解除",
+  "view-comments": "コメントを見る"
+}

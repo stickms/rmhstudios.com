@@ -1,0 +1,12 @@
+{
+  "alerts-off": "Alerts off",
+  "alerts-on": "Alerts on",
+  "error": "Couldn't save the search",
+  "operator-copied": "已复制 {{operator}}",
+  "operator-copy": "复制 {{operator}}",
+  "operators": "操作员",
+  "remove": "移除",
+  "save": "保存",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
+}

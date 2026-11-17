@@ -1,0 +1,12 @@
+{
+  "alerts-off": "Alerts off",
+  "alerts-on": "Alerts on",
+  "error": "Couldn't save the search",
+  "operator-copied": "{{operator}} 복사됨",
+  "operator-copy": "{{operator}} 복사",
+  "operators": "작전 요원",
+  "remove": "제거",
+  "save": "저장",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
+}

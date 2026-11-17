@@ -1,0 +1,15 @@
+{
+  "back": "Games",
+  "fullscreen": "Fullscreen",
+  "leave": "Leave",
+  "mp_hub_connected": "Online",
+  "mp_hub_offline": "Offline",
+  "mp_invite": "Invite",
+  "mp_invite_code": "Lobby code",
+  "mp_invite_copied": "Link copied",
+  "mp_invite_copy": "Copy invite link",
+  "mp_invite_offline": "Offline",
+  "mp_invite_send": "Invite",
+  "mp_invite_sending": "Sending…",
+  "rotate_hint_dismiss": "Dismiss"
+}
