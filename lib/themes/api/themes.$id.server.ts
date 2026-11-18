@@ -2,7 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
 import { updateThemeBody } from '@/lib/themes/themes-schema';
-import { updateThemeApi } from '@/lib/themes/themes.contract';
+import { getThemeApi, updateThemeApi } from '@/lib/themes/themes.contract';
 import { getTheme, updateTheme, deleteOrDelistTheme, ThemeError } from '@/lib/themes/themes.server';
 
 /**
@@ -11,7 +11,7 @@ import { getTheme, updateTheme, deleteOrDelistTheme, ThemeError } from '@/lib/th
  * DELETE /api/themes/:id — delete a draft, or delist a published theme.
  */
 export const route = apiRoute('/api/themes/$id', {
-  GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+  GET: implement(getThemeApi, { auth: 'optional' }, async ({ params, session }) => {
     const theme = await getTheme(params.id, session?.user.id ?? null);
     if (!theme) return Response.json({ error: 'Not found' }, { status: 404 });
     return Response.json(theme);

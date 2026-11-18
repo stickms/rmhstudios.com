@@ -340,7 +340,8 @@ model DailyStreak {
 // and which item is currently equipped per slot.
 
 enum ShopItemKind {
-  THEME // unlocks a premium site theme
+  THEME // a premium profile theme (recolours the owner's profile; lib/shop/themes.ts)
+  SITE_THEME // an official site theme (recolours the whole site for its owner; lib/themes/official.ts)
   PET // profile pet variant
   NAME_COLOR // username color
   BADGE // profile flair badge

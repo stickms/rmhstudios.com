@@ -2869,8 +2869,10 @@ describe('liveAnnouncement (default announcement source)', () => {
           'rmh-capital',
         announcedAt:
           NOW,
+        // #1693: the discussion is blog comments now, which the bots do not write, so the adapter drops the
+        // legacy thread id even when the source still carries one.
         discussionPostId:
-          'post-ann',
+          null,
       },
     );
     currentMock.mockResolvedValueOnce(

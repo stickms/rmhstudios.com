@@ -29,7 +29,7 @@ import {
   appRouteGround,
   paintDocumentGround,
 } from '@/stores/themeStore';
-import { clearThemeTokens, type AppliedUserTheme } from '@/lib/themes/tokens';
+import { clearThemeTokens, isStaleAppliedTheme, type AppliedUserTheme } from '@/lib/themes/tokens';
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY, accentCssVars } from '@/lib/appearance';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import {
@@ -353,6 +353,11 @@ export function Providers({
     const parsed = readJson<AppliedUserTheme | null>(USER_THEME_KEY, null);
     if (parsed && typeof parsed.id === 'string' && parsed.vars && typeof parsed.bg === 'string') {
       st.setUserTheme(parsed);
+      // A cache from an older derivation (no gradients, translucent surfaces) would paint that old look on every
+      // page; fetch the theme and re-derive it. Lazy, so a current cache costs nothing.
+      if (isStaleAppliedTheme(parsed)) {
+        void import('@/lib/themes/refresh-applied').then((m) => m.refreshAppliedTheme(parsed.id));
+      }
     }
   }, []);
 

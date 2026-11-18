@@ -27,6 +27,21 @@ export const listMyThemesApi =
     },
   );
 
+/** One theme (a draft only for its author). 404 when unknown or not visible. */
+export const getThemeApi =
+  endpoint<{
+    params: {
+      id: string;
+    };
+    res: UserThemeView;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/themes/$id',
+    },
+  );
+
 /** Creates a draft. */
 export const createThemeApi =
   endpoint<{

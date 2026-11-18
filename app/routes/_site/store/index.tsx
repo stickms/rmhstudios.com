@@ -20,6 +20,7 @@
  *
  * (`/store/$userid` is a separate per-creator storefront route.)
  */
+import type { ShopItemKind } from '@/lib/shop/kinds';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -78,8 +79,15 @@ export const Route = createFileRoute('/_site/store/')({
   }),
   validateSearch: (
     search: Record<string, unknown>,
-  ): { tab?: StoreTab; feature?: MemberFeature } => {
+  ): { tab?: StoreTab; feature?: MemberFeature; kind?: ShopItemKind } => {
     const tab = search.tab;
+    // `?kind=` opens the shop on one category (Settings links to the site themes). Only its shape is checked here
+    // (a route module is on every page's critical path, so it does not import the category list); ShopPanel, which
+    // loads with the store, keeps it only if it names a real category.
+    const kind =
+      typeof search.kind === 'string' && /^[A-Z_]{3,20}$/.test(search.kind)
+        ? (search.kind as ShopItemKind)
+        : undefined;
     // `?feature=` is set by `upgradeHref` when a gated action refuses, so the
     // membership tab can highlight what the viewer actually came for. Validated
     // against the registry rather than passed through — it reaches the DOM.
@@ -87,6 +95,7 @@ export const Route = createFileRoute('/_site/store/')({
     return {
       ...(STORE_TABS.includes(tab as StoreTab) ? { tab: tab as StoreTab } : {}),
       ...(feature ? { feature } : {}),
+      ...(kind ? { kind } : {}),
     };
   },
   component: Store,
@@ -96,7 +105,7 @@ function Store() {
   const { t } = useTranslation('site');
   const { t: te } = useTranslation('f-economy-plus');
   const { tier: currentTier, shop, listings, viewerId } = Route.useLoaderData();
-  const { tab: requestedTab, feature } = Route.useSearch();
+  const { tab: requestedTab, feature, kind } = Route.useSearch();
   const tab = requestedTab ?? (feature ? 'membership' : 'shop');
   const navigate = useNavigate();
 
@@ -160,7 +169,7 @@ function Store() {
       )}
       {tab === 'shop' && (
         <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">
-          <ShopPanel data={shop} />
+          <ShopPanel data={shop} {...(kind ? { initialKind: kind } : {})} />
         </div>
       )}
       {tab === 'daily' && (

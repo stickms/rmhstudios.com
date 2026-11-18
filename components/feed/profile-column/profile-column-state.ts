@@ -106,6 +106,14 @@ export function profileThemeStyle(
             theme.accentDim,
         }
       : {}),
+    // The theme's own gradient, for the quiet wash behind the header (profile.css). It used to show only as the
+    // banner's fallback, so on a profile with a banner picture the bought theme was invisible.
+    ...(theme.gradient
+      ? {
+          '--profile-theme-gradient':
+            theme.gradient,
+        }
+      : {}),
   } as CSSProperties;
 }
 

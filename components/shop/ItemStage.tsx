@@ -5,6 +5,8 @@ import { ProfileBanner } from '@/components/profile/ProfileBanner';
 import { Emoji } from '@/components/ui/emoji';
 import type { ShopItemKind } from '@/lib/shop/catalog';
 import { getPremiumTheme } from '@/lib/shop/themes';
+import { OFFICIAL_SITE_THEMES } from '@/lib/themes/official';
+import { ThemeMiniShell } from '@/components/themes/ThemeMiniShell';
 import {
   ItemPicture,
   type ItemArt,
@@ -51,6 +53,30 @@ export function ItemStage({
     data: session,
   } =
     useSession();
+
+  // A site theme recolours the whole site, not a profile, so it is previewed as a small copy of the site in it.
+  const official =
+    kind ===
+      'SITE_THEME' &&
+    art.siteThemeId
+      ? OFFICIAL_SITE_THEMES[
+          art
+            .siteThemeId
+        ]
+      : undefined;
+  if (
+    official
+  ) {
+    return (
+      <ThemeMiniShell
+        tokens={
+          official.tokens
+        }
+        size="lg"
+        className="mx-auto w-full max-w-80"
+      />
+    );
+  }
 
   if (
     !kind ||

@@ -35,6 +35,7 @@ import { CoinAmount } from './CoinAmount';
 import { ItemDialog } from './ItemDialog';
 import { ItemPicture } from './ItemPicture';
 import { kindLabel } from './kind-label';
+import { SiteThemeApply } from './SiteThemeApply';
 import {
   PRODUCT_GRID,
   ProductTile,
@@ -58,12 +59,15 @@ import {
  */
 export function ShopPanel({
   data,
+  initialKind,
 }: {
   data: {
     coins: number;
     items: ShopListItem[];
     signedIn: boolean;
   };
+  /** The category to open on (`/store?kind=`), e.g. Settings' link to the site themes. */
+  initialKind?: ShopItemKind;
 }) {
   const {
     t,
@@ -84,7 +88,12 @@ export function ShopPanel({
     setKind,
   ] =
     useState<ShopItemKind>(
-      'NAME_COLOR',
+      initialKind &&
+        KIND_ORDER.includes(
+          initialKind,
+        )
+        ? initialKind
+        : 'NAME_COLOR',
     );
   const [
     show,
@@ -738,6 +747,16 @@ export function ShopPanel({
                 )}
               </a>
             </Button>
+          ) : open.owned &&
+            open.kind ===
+              'SITE_THEME' ? (
+            <SiteThemeApply
+              siteThemeId={
+                open
+                  .data
+                  .siteThemeId
+              }
+            />
           ) : open.owned ? (
             <Button
               variant="primary"
