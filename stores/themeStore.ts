@@ -51,6 +51,15 @@ export const SITE_STYLES = [
 export const DEFAULT_STYLE: SiteStyle = 'graphite';
 
 export type SiteStyle = (typeof SITE_STYLES)[number]['id'];
+/**
+ * The edition a bought theme's background belongs to: Night (`graphite`) for a dark ground, Day (`default`) for a
+ * light one, by the same WCAG luminance rule that pins `color-scheme`. While a bought theme is on, this — not the
+ * stored `style` — is the class on `<html>`, so the globe and everything else that reads `.style-graphite` follows the
+ * theme (owner, 2026-11-18). The pre-paint script (`lib/prepaint/theme.ts`) applies the same threshold.
+ */
+export function editionForBackground(bg: string): SiteStyle {
+  return colorSchemeForBackground(bg) === 'dark' ? 'graphite' : 'default';
+}
 
 /** Neutral document chrome for full-screen games/apps that own their palette. */
 export const APP_THEME_BG = '#0b0b0b';

@@ -24,10 +24,20 @@ import {
 
 export function ThemeMiniShell({
   tokens,
+  edition,
   size = 'sm',
   className,
 }: {
-  tokens: ThemeTokens;
+  /** A bought or draft theme's tokens, scoped onto this container. */
+  tokens?: ThemeTokens;
+  /**
+   * Or one of the two editions, drawn from its own scoped token block (`.style-default` / `.style-graphite` in
+   * app/globals/tokens-themes.css restate the edition so a preview can show Day while Night is up). Ignored when
+   * `tokens` is given.
+   */
+  edition?:
+    | 'default'
+    | 'graphite';
   size?:
     | 'sm'
     | 'lg';
@@ -36,9 +46,11 @@ export function ThemeMiniShell({
   const vars =
     useMemo(
       () =>
-        themeCssVars(
-          tokens,
-        ),
+        tokens
+          ? themeCssVars(
+              tokens,
+            )
+          : undefined,
       [
         tokens,
       ],
@@ -75,6 +87,9 @@ export function ThemeMiniShell({
         } as React.CSSProperties
       }
       className={cn(
+        !tokens &&
+          edition &&
+          `style-${edition}`,
         // §17.3: `contain: layout paint` isolates each mini shell's recalc/repaint
         // so a grid of them (or a root theme-preview swap) can't cascade a
         // full-document style/layout storm through every glass surface inside them.
