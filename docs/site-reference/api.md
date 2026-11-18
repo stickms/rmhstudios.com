@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1026 endpoints across 200 groups: 110 route files under `app/routes/api` and 916 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1028 endpoints across 200 groups: 110 route files under `app/routes/api` and 918 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -279,10 +279,12 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/blog`
 
-1 route.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/blog/:slug/comments` | `GET` `POST` | `lib/blog/api/blog.$slug.comments.server.ts` |
+| `/api/blog/comments/:id` | `DELETE` | `lib/blog/api/blog.comments.$id.server.ts` |
 | `/api/blog/media/:filename` | `GET` | `lib/media/api/blog.media.$filename.server.ts` |
 
 ## `/api/bookmarks`

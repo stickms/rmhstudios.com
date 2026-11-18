@@ -18,14 +18,15 @@ model BlogPost {
   business              String    @default("rmh-studios") @db.VarChar(40)
   announcedAt           DateTime?
   announcementExpiresAt DateTime?
-  // The RMHark that carries the announcement into the feed, where people (and the bots) discuss it.
-  // Created when the post is announced; a plain id, not a relation, so deleting the post never blocks.
+  // Legacy: the announcer-authored RMHark older announcements were discussed under. Nothing creates, backfills or
+  // links to it any more (the discussion is `comments` below); the column stays so no data changes.
   announcementPostId    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  seenBy BlogAnnouncementSeen[]
+  seenBy   BlogAnnouncementSeen[]
+  comments BlogComment[]
 
   @@index([date(sort: Desc)])
   @@index([announcement, announcedAt(sort: Desc)])
@@ -44,6 +45,23 @@ model BlogAnnouncementSeen {
   @@id([userId, postId])
   @@index([postId])
   @@map("blog_announcement_seen")
+}
+
+/// A comment in the discussion under a sitewide announcement (only announcement posts have one). Soft-deleted.
+model BlogComment {
+  id        String    @id @default(cuid())
+  postId    String
+  userId    String
+  content   String    @db.VarChar(2000)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@map("blog_comment")
 }
 
 // ─── News ─────────────────────────────────────────────────────────
