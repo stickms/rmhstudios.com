@@ -30,7 +30,7 @@ export function ThemePreviewBar() {
     try {
       await api(buyThemeApi, { params: { id: preview.id } });
       // Commit the previewed theme as the applied one (drops the transient preview).
-      setUserTheme({ id: preview.id, bg: preview.bg, vars: preview.vars });
+      setUserTheme({ id: preview.id, bg: preview.bg, vars: preview.vars, dv: preview.dv });
       toast.success(t('bought', { defaultValue: 'Theme purchased — it is in your inventory' }));
     } catch (e) {
       toast.error(

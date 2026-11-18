@@ -567,3 +567,56 @@ describe('themeCssVars — the R1 amendment gradients', () => {
     );
   });
 });
+
+describe('applied-theme cache versioning', () => {
+  it('stamps a derived theme and treats an unstamped or older cache as stale', async () => {
+    const {
+      deriveAppliedTheme,
+      isStaleAppliedTheme,
+      THEME_DERIVATION_VERSION,
+      DEFAULT_THEME_TOKENS,
+    } =
+      await import('@/lib/themes/tokens');
+    const fresh =
+      deriveAppliedTheme(
+        't1',
+        DEFAULT_THEME_TOKENS,
+      );
+    expect(
+      fresh.dv,
+    ).toBe(
+      THEME_DERIVATION_VERSION,
+    );
+    expect(
+      isStaleAppliedTheme(
+        fresh,
+      ),
+    ).toBe(
+      false,
+    );
+    // A cache written before the stamp existed (no `dv`) carries the old derivation: refresh it.
+    expect(
+      isStaleAppliedTheme(
+        {
+          id: 't1',
+          bg: '#000000',
+          vars: {},
+        },
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      isStaleAppliedTheme(
+        {
+          ...fresh,
+          dv:
+            THEME_DERIVATION_VERSION -
+            1,
+        },
+      ),
+    ).toBe(
+      true,
+    );
+  });
+});

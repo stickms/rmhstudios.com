@@ -439,6 +439,25 @@ export interface AppliedUserTheme {
     string,
     string
   >;
+  /**
+   * The derivation version that produced `vars` (THEME_DERIVATION_VERSION). The cache holds derived values only, so
+   * when the derivation changes (the R1-amendment gradients, opaque surfaces) an older cache keeps painting the old
+   * look on every page. Providers re-derives a cache whose stamp is missing or older.
+   */
+  dv?: number;
+}
+
+/** Bump when `themeCssVars` changes what it emits, so every cached applied theme is re-derived once. */
+export const THEME_DERIVATION_VERSION = 2;
+
+/** True when a cached applied theme was derived by an older (or unstamped) derivation. */
+export function isStaleAppliedTheme(
+  theme: AppliedUserTheme,
+): boolean {
+  return (
+    theme.dv !==
+    THEME_DERIVATION_VERSION
+  );
 }
 
 export function deriveAppliedTheme(
@@ -451,6 +470,7 @@ export function deriveAppliedTheme(
     vars: themeCssVars(
       tokens,
     ),
+    dv: THEME_DERIVATION_VERSION,
   };
 }
 

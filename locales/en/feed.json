@@ -1846,5 +1846,12 @@
   "moderate-reply": "Moderate",
   "removed-by-site-moderation": "This post was removed by site moderation.",
   "standing-restrictions": "Feature restrictions",
-  "standing-restrictions-desc": "Features site moderation has restricted on your account. Everything else works as usual."
+  "standing-restrictions-desc": "Features site moderation has restricted on your account. Everything else works as usual.",
+  "profile-shop-empty-title": "Your shop",
+  "profile-shop-empty-hint": "Sell downloads and extras to people who follow you.",
+  "profile-shop-open": "Open your shop",
+  "profile-shop-title": "Shop",
+  "profile-shop-see-all": "See all",
+  "profile-shop-products": "Products",
+  "profile-shop-owned": "Owned"
 }

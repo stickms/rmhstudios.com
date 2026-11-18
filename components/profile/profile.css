@@ -14,6 +14,24 @@
 .profile-themed [role='tab']::after {
   background-color: var(--site-accent);
 }
+/* An equipped point-shop theme's gradient as a quiet wash behind the whole header (R1 amendment: a bought theme keeps
+   its colours as a quiet gradient). It sits under the banner picture and shows around and below it, so a profile with
+   a banner still reads as themed; without a banner the gradient also fills the banner box (ProfileBanner). A flat
+   layer at low opacity, never over the text: the header's content is painted above it. */
+.profile-themed .profile-head {
+  position: relative;
+  isolation: isolate;
+}
+.profile-themed .profile-head::before {
+  content: '';
+  position: absolute;
+  inset: -12px -12px 0;
+  z-index: -1;
+  border-radius: var(--site-radius);
+  background: var(--profile-theme-gradient, none);
+  opacity: 0.16;
+  pointer-events: none;
+}
 /* Membership and tip goal: a heading and a line under a rule, not a card. */
 .profile-head__block {
   margin-block-start: 16px;

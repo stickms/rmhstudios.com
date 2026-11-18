@@ -1,17 +1,11 @@
 /**
  * Bought themes (Steel section 10, Settings): one row under the edition picker. The themes you own from the shop, in
  * a dropdown, with "None" to go back to the plain edition. Choosing one applies it at once, exactly as the theme
- * studio's Apply does.
- *
- * The applied theme is cached on the device as its derived `--site-*` map, so a theme applied before the derivation
- * changed (the glow wash and accent sheen, R1 amendment) would keep its old, flatter map. Opening Settings re-derives
- * the applied theme from the tokens the server just sent, so an owned theme always looks the way it does today.
+ * studio's Apply does. (A cache from an older derivation is refreshed on every page by Providers, not here:
+ * lib/themes/refresh-applied.ts.)
  */
 
-import {
-  useEffect,
-  useId,
-} from 'react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Select } from '@/components/ui/select';
@@ -65,37 +59,6 @@ export function OwnedThemesRow({
         o.id ===
         appliedId,
     );
-
-  // Refresh a stale cached map once per visit (see the note above).
-  useEffect(() => {
-    if (
-      !appliedOwned
-    )
-      return;
-    const fresh =
-      deriveAppliedTheme(
-        appliedOwned.id,
-        appliedOwned.tokens,
-      );
-    const current =
-      useThemeStore.getState()
-        .userTheme;
-    if (
-      current &&
-      JSON.stringify(
-        current.vars,
-      ) !==
-        JSON.stringify(
-          fresh.vars,
-        )
-    )
-      setUserTheme(
-        fresh,
-      );
-  }, [
-    appliedOwned,
-    setUserTheme,
-  ]);
 
   return (
     <div className="settings-row">

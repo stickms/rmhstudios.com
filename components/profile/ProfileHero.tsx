@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { CallButton } from '@/components/call/CallButton';
 import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
 import { CopyButton } from '@/components/ui/copy-button';
+import { ProfileStorefrontStrip } from '@/components/profile/ProfileStorefrontStrip';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { safeHref } from '@/lib/url-safety';
@@ -365,7 +366,8 @@ export function ProfileHero({
         </Link>
       </div>
 
-      <p className="t-meta mt-3 flex flex-wrap gap-x-4 gap-y-1">
+      {/* items-center: the copy button is taller than the 12px meta text, and stretched rows put it off-centre. */}
+      <div className="t-meta mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
         {profile.location ? <EmojiText>{profile.location}</EmojiText> : null}
         {profile.website ? (
           <a
@@ -381,13 +383,11 @@ export function ProfileHero({
         <CopyButton
           value={shareUrl}
           variant="ghost"
-          size="xs"
+          size="icon-xs"
+          className="-my-1.5"
           label={t('copy-profile-link', { defaultValue: 'Copy profile link' })}
         />
-        <Link to={`/store/${profile.handle || profile.id}` as string} className="underline">
-          {t('storefront', { defaultValue: 'Storefront' })}
-        </Link>
-      </p>
+      </div>
 
       {featuredLink || profile.links?.length ? (
         <p
@@ -431,6 +431,11 @@ export function ProfileHero({
           <AddToListSheet targetUserId={profile.id} />
         </div>
       ) : null}
+
+      <ProfileStorefrontStrip
+        userKey={profile.handle || profile.id}
+        isOwnProfile={!!profile.isOwnProfile}
+      />
 
       {profile.membershipPriceCoins && profile.membershipPriceCoins > 0 ? (
         <section className="profile-head__block" aria-labelledby="profile-membership-title">
