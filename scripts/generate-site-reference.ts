@@ -155,12 +155,12 @@ type Gate = 'admin' | 'required' | null;
 /** The gate a single route file applies, if any. */
 function gateOf(file: string): Gate {
   const source = readFileSync(join(ROOT, file), 'utf8');
-  const redirects = /throw redirect\(|redirect\(\{/.test(source);
+  const redirects = /throw redirect\(|redirect\(\s*\{/.test(source);
   // The admin gate bounces non-admins to `/`, not to `/login`, so keying on
   // the login path alone would report every admin page as public.
   if (redirects && /isAdmin/.test(source)) return 'admin';
   if (
-    /redirect\(\{[^}]*to:\s*['"]\/login/.test(source) ||
+    /redirect\(\s*\{[^}]*to:\s*['"]\/login/.test(source) ||
     /requireSession|requireUser/.test(source)
   ) {
     return 'required';
@@ -221,7 +221,7 @@ function redirectTarget(file: string): string | null {
   // an unconditional redirect. Both names are listed explicitly; a third resolver
   // belongs here too.
   if (/getSession|getRequestSession|isAdmin/.test(source)) return null;
-  const match = source.match(/throw redirect\(\{\s*to:\s*['"]([^'"]+)['"]/);
+  const match = source.match(/throw redirect\(\s*\{\s*to:\s*['"]([^'"]+)['"]/);
   if (!match) return null;
 
   const to = match[1];

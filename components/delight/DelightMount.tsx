@@ -15,7 +15,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { useSession } from '@/components/Providers';
+import { useSession } from '@/components/session/session-context';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import {
   FOOLS_FLAG_KEY,

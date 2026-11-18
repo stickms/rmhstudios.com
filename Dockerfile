@@ -44,7 +44,8 @@
 # a fast `prisma generate`, not a full 70s+ pnpm install.
 FROM node:26.13.1-alpine AS deps
 
-RUN corepack enable && corepack prepare pnpm@10.34.6 --activate
+# Node 25+ no longer ships corepack, so pnpm comes from npm (pinned, as before).
+RUN npm install -g pnpm@10.34.6
 
 WORKDIR /app
 
@@ -187,7 +188,8 @@ RUN pnpm run build-vibe-packages \
 # committed one, so the manifest and the files can never disagree in the image.
 FROM node:26.13.1-alpine AS media-deps
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.34.6 --activate
+# Node 25+ no longer ships corepack, so pnpm comes from npm (pinned, as before).
+RUN npm install -g pnpm@10.34.6
 COPY scripts/media/package.json scripts/media/pnpm-lock.yaml ./
 RUN --mount=type=cache,id=media-pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile --ignore-scripts --prefer-offline

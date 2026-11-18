@@ -172,10 +172,21 @@ export function sharedSocketIo(
     const mount = read('components/call/CallMount.tsx');
     const store = read('lib/call/store.ts');
     const providers = read('components/Providers.tsx');
+    // The shell mounts CallMount either directly or through the idle-time
+    // ShellMounts bundle (components/site/ShellMounts.tsx), which every page loads.
+    let shellMounts = '';
+    try {
+      shellMounts = read('components/site/ShellMounts.tsx');
+    } catch {
+      /* no such file: only a direct mount counts */
+    }
+    const mounted =
+      /<CallMount\s*\/>/.test(providers) ||
+      (/<CallMount\s*\/>/.test(shellMounts) && /<ShellMounts\s*\/>/.test(providers));
     return (
       /import\(\s*['"]@\/lib\/call\/store['"]\s*\)/.test(mount) &&
       /@\/lib\/shared\/realtime\/client/.test(store) &&
-      /<CallMount\s*\/>/.test(providers)
+      mounted
     );
   } catch {
     return false;
