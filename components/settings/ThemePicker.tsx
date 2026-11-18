@@ -8,6 +8,7 @@
  * The cards are native radios, so arrow keys move through them and Tab leaves the group; the label carries the K10
  * ring for its hidden input.
  */
+import './settings.css';
 import {
   useId,
   useState,
@@ -21,7 +22,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import { ThemeMiniShell } from '@/components/themes/ThemeMiniShell';
-import { cn } from '@/lib/utils';
 import {
   editionForBackground,
   useThemeStore,
@@ -192,12 +192,11 @@ export function ThemePicker({
               c.id
             }
             data-slot="theme-choice"
-            className={cn(
-              'group/choice flex w-36 shrink-0 cursor-pointer snap-start flex-col gap-1.5 rounded-site',
-              'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-site-text',
-              expanded &&
-                'w-auto',
-            )}
+            data-on={
+              on ||
+              undefined
+            }
+            className="theme-choice"
           >
             <input
               type="radio"
@@ -217,40 +216,24 @@ export function ThemePicker({
               }
               className="sr-only"
             />
-            <span
-              className={cn(
-                'block overflow-hidden rounded-site border transition-[border-color] duration-(--m1) ease-[ease]',
-                on
-                  ? 'border-site-text'
-                  : 'border-site-border group-hover/choice:border-site-text-muted',
-              )}
-            >
+            <span className="theme-choice__picture">
               {c.kind ===
               'owned' ? (
                 <ThemeMiniShell
                   tokens={
                     c.tokens
                   }
-                  className="!h-24 !rounded-none"
                 />
               ) : (
                 <ThemeMiniShell
                   edition={
                     c.id
                   }
-                  className="!h-24 !rounded-none"
                 />
               )}
             </span>
-            <span className="flex min-w-0 items-center gap-1.5">
-              <span
-                className={cn(
-                  't-body min-w-0 truncate',
-                  on
-                    ? 'font-semibold text-site-text'
-                    : 'text-site-text',
-                )}
-              >
+            <span className="theme-choice__name">
+              <span className="t-body truncate">
                 {
                   c.name
                 }
@@ -258,11 +241,11 @@ export function ThemePicker({
               {on && (
                 <Check
                   aria-hidden
-                  className="size-3.5 shrink-0 text-site-text"
+                  className="size-4 shrink-0"
                 />
               )}
             </span>
-            <span className="t-meta -mt-1">
+            <span className="t-meta">
               {c.dark
                 ? t(
                     'settings-theme-scheme-dark',
@@ -292,7 +275,7 @@ export function ThemePicker({
           tab: 'shop',
           kind: 'SITE_THEME',
         }}
-        className="t-body inline-flex items-center gap-1 text-site-text-muted hover:text-site-text"
+        className="theme-picker__browse t-body"
       >
         {t(
           'settings-owned-themes-browse',
@@ -303,7 +286,7 @@ export function ThemePicker({
         )}
         <ChevronRight
           aria-hidden
-          className="size-3.5 rtl:-scale-x-100"
+          className="size-4"
         />
       </Link>
     );
@@ -311,7 +294,7 @@ export function ThemePicker({
   return (
     <div
       data-slot="theme-picker"
-      className="border-b border-site-border py-2.5"
+      className="theme-picker"
     >
       <div className="flex items-start justify-between gap-4">
         <span className="settings-row__text">
@@ -393,10 +376,10 @@ export function ThemePicker({
         aria-describedby={
           hintId
         }
-        className="mt-3"
+        className="theme-picker__list"
       >
         {expanded ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-x-3 gap-y-4 p-1">
+          <div className="theme-picker__grid">
             {
               cards
             }
@@ -411,7 +394,7 @@ export function ThemePicker({
                   'Themes',
               },
             )}
-            contentClassName="snap-x snap-mandatory gap-3 p-1"
+            contentClassName="theme-picker__rail"
           >
             {
               cards
@@ -419,7 +402,7 @@ export function ThemePicker({
           </HorizontalScroller>
         )}
       </div>
-      <div className="mt-2">
+      <div className="theme-picker__foot">
         {
           browse
         }

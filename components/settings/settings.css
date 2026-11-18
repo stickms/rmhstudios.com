@@ -79,3 +79,89 @@ a.settings-row:hover {
   inline-size: 16px;
   block-size: 16px;
 }
+
+/* The theme picker (ThemePicker.tsx): Day, Night and the owned themes as a row of preview cards, or as a grid once
+   "Show all" is pressed. Written here rather than as utilities so the picker's rules ride the settings chunk, not the
+   site sheet every page blocks on (B5). The cards are pictures (S4): a 1px border and the 8px radius, ink when chosen. */
+.theme-picker {
+  padding-block: 10px;
+  border-block-end: 1px solid var(--site-border);
+}
+.theme-picker__list {
+  margin-block-start: 12px;
+}
+.theme-picker__rail {
+  gap: 12px;
+  padding: 4px;
+  scroll-snap-type: x mandatory;
+}
+.theme-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 16px 12px;
+  padding: 4px;
+}
+.theme-picker__foot {
+  margin-block-start: 8px;
+}
+.theme-picker__browse {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--site-text-muted);
+  text-decoration: none;
+}
+.theme-picker__browse:hover {
+  color: var(--site-text);
+}
+[dir='rtl'] .theme-picker__browse svg {
+  transform: scaleX(-1);
+}
+.theme-choice {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+  inline-size: 144px;
+  border-radius: var(--site-radius);
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+.theme-picker__grid > .theme-choice {
+  inline-size: auto;
+}
+/* K10: the ring belongs to the hidden radio, so its label draws it. */
+.theme-choice:has(:focus-visible) {
+  outline: 2px solid var(--site-text);
+  outline-offset: 2px;
+}
+.theme-choice__picture {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  transition: border-color 90ms ease;
+}
+.theme-choice:hover .theme-choice__picture {
+  border-color: var(--site-text-muted);
+}
+.theme-choice[data-on] .theme-choice__picture {
+  border-color: var(--site-text);
+}
+.theme-choice__picture > * {
+  block-size: 96px;
+  border-radius: 0;
+}
+.theme-choice__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+  color: var(--site-text);
+}
+.theme-choice[data-on] .theme-choice__name {
+  font-weight: 600;
+}
+.theme-choice .t-meta {
+  margin-block-start: -4px;
+}
