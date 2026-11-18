@@ -60,6 +60,23 @@ const AccountMenu =
   );
 
 /**
+ * The composer, opened in place over the current page. Its own lazy chunk: it is only needed once "Write a post" is
+ * pressed. Navigating to `/share` instead swapped the content column for an empty frame behind the dialog.
+ */
+const ComposeModal =
+  lazy(
+    () =>
+      import('@/components/feed/ComposeModal').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.ComposeModal,
+        }),
+      ),
+  );
+
+/**
  * The desktop sidebar (Steel L4), top to bottom: the words "RMH Studios", the sections as words (Feed, Explore, Games,
  * Inbox), as many of the other places as the window's height leaves room for, the globe, the one ink primary, and at
  * the foot the account row (owner, 2026-11-12). It never scrolls: the globe and the foot keep their place and the lists
@@ -246,6 +263,15 @@ export function Sidebar() {
   const menuAnchor =
     useRef<HTMLButtonElement | null>(
       null,
+    );
+  // "Write a post" stays a link to `/share` (complete with scripting off, B1); a plain click from a signed-in viewer
+  // opens the composer over the page they are on, so the column behind the dialog keeps its content.
+  const [
+    composeOpen,
+    setComposeOpen,
+  ] =
+    useState(
+      false,
     );
   const [
     menuOpen,
@@ -488,6 +514,24 @@ export function Sidebar() {
             to={
               WRITE_HREF
             }
+            onClick={(
+              e,
+            ) => {
+              if (
+                !user ||
+                e.button !==
+                  0 ||
+                e.metaKey ||
+                e.ctrlKey ||
+                e.shiftKey ||
+                e.altKey
+              )
+                return;
+              e.preventDefault();
+              setComposeOpen(
+                true,
+              );
+            }}
           >
             {t(
               'shell-write-post',
@@ -498,6 +542,22 @@ export function Sidebar() {
             )}
           </Link>
         </Button>
+        {composeOpen && (
+          <Suspense
+            fallback={
+              null
+            }
+          >
+            <ComposeModal
+              open
+              onClose={() =>
+                setComposeOpen(
+                  false,
+                )
+              }
+            />
+          </Suspense>
+        )}
 
         {user ? (
           <div
