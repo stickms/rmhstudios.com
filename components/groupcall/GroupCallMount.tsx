@@ -21,7 +21,7 @@ import {
   Suspense,
   lazy,
 } from 'react';
-import { useSession } from '@/components/Providers';
+import { useSession } from '@/components/session/session-context';
 
 const GroupCallSurface =
   lazy(

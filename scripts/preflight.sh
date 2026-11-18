@@ -41,10 +41,10 @@ if ! have node; then
   pkg_install node
 fi
 
-# pnpm via corepack (ships with node).
+# pnpm from npm (Node 25+ no longer ships corepack).
 if ! have pnpm; then
-  say "enabling pnpm via corepack"
-  corepack enable pnpm || die "corepack enable failed — install pnpm manually"
+  say "installing pnpm with npm"
+  npm install -g pnpm@10.34.6 || die "npm install -g pnpm failed — install pnpm manually"
 fi
 
 # helm — only needed at deploy.

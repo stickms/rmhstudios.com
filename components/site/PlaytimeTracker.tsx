@@ -8,7 +8,7 @@
  */
 
 import { useLocation } from '@tanstack/react-router';
-import { useSession } from '@/components/Providers';
+import { useSession } from '@/components/session/session-context';
 import { matchCatalogRoute } from '@/lib/games/route-match';
 import { usePlaytimeHeartbeat } from '@/hooks/usePlaytimeHeartbeat';
 

@@ -21,7 +21,7 @@ import {
   lazy,
   useEffect,
 } from 'react';
-import { useSession } from '@/components/Providers';
+import { useSession } from '@/components/session/session-context';
 
 // Lazy so the overlay's own tree (and, through the store, socket.io-client)
 // stays out of the shared entry chunk. Anonymous viewers never render it, so

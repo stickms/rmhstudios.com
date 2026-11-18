@@ -142,6 +142,12 @@ describe('socket.io accounting', () => {
     expect(sharedSocketIo(files('nothing here'))).toBe(false);
     expect(sharedSocketIo(files("import('@/lib/call/store')", 'no socket'))).toBe(false);
     expect(sharedSocketIo(files("import('@/lib/call/store')", undefined, 'no mount'))).toBe(false);
+    // Mounted through the idle-time ShellMounts bundle instead of directly.
+    const viaShellMounts = (rel: string) =>
+      rel === 'components/site/ShellMounts.tsx'
+        ? '<CallMount />'
+        : files("import('@/lib/call/store')", undefined, '<ShellMounts />')(rel);
+    expect(sharedSocketIo(viaShellMounts)).toBe(true);
     expect(
       sharedSocketIo(() => {
         throw new Error('ENOENT');
