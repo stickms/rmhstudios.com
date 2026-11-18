@@ -7,7 +7,7 @@ practices, and would a smaller or newer library replace one of its foundations?
 their ranges and upgrades four majors (i18next, react-i18next, stripe, web-push).
 The foundations stay: React 19 and Vite 8 are on their latest releases, and
 TanStack Router/Start are exact pins that move together as the framework group
-(Start is one patch behind, 1.169.4 against 1.169.5, to move with the nitro RC);
+(Start 1.169.5 moved with the nitro RC, below);
 nothing smaller replaces them without a rewrite. What is held back
 below is held for a stated reason, and each entry names what lifts it.
 
@@ -47,13 +47,24 @@ below is held for a stated reason, and each entry names what lifts it.
   Arabic, CJK and Greek text render as boxes both before and after, because the
   cards load only Geist.
 
+- **nitro 3.0.260903-beta → 3.0.261103-rc, with TanStack Start 1.169.4 →
+  1.169.5** (the framework group). The RC bundles its own dependencies
+  (unstorage, hookable, db0 and others leave the lockfile) and answers through
+  srvx's `FastResponse`. Checked on a production build: response headers for 22
+  requests (pages signed in and out, Save-Data, a 404, assets with gzip, a
+  missing chunk, images, variants, islands, the service worker, an OG card, API
+  reads, writes and a cross-origin preflight) match the beta's except one, the
+  integration suite passes (31), feed SSE delivers a live event, and pages
+  hydrate and navigate client-side. The one change: a missing `/assets/*` file
+  now answers a small JSON 404 instead of rendering the HTML 404 page. It keeps
+  `cache-control: no-store`, the property `anon-html-cache.ts` exists for.
+
 ## Held back, and what lifts each hold
 
 | Package | Held at | Why | Lift when |
 | --- | --- | --- | --- |
 | `typescript` | 6.0 | TS 7 ships no JavaScript compiler API (planned for 7.1). `typescript-eslint` (peer `<6.1`), `lib/api/__tests__/route-table.test.ts`, `features/rmhos/__tests__/image-publish.test.ts` and `scripts/api-cache-triage.ts` call it. Type-checking already runs on TS 7 through the `typescript-native` alias. | `typescript-eslint` widens its peer range |
 | `prisma` | 7.10 | 8.0 is a release candidate and replaces the client API, schema format and migrate commands (794 importing files). | 8.0 is stable, as its own project (Dependabot holds `prisma`, `@prisma/client` and `@prisma/adapter-pg` at `<8`) |
-| `nitro` | 3.0 beta | The RC replaces the global `Response` with srvx's `FastResponse` on Node; the `response`-hook header plugins need a boot test. | a build-and-boot run of the integration suite on the RC |
 
 ## Runtime
 
