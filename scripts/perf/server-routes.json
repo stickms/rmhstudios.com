@@ -436,12 +436,6 @@
       "auth": "signed"
     },
     {
-      "id": "api-announcements",
-      "path": "/api/announcements",
-      "class": "api",
-      "auth": "both"
-    },
-    {
       "id": "api-experiments",
       "path": "/api/experiments",
       "class": "api",
