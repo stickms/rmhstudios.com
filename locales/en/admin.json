@@ -45,8 +45,6 @@
   "analytics-load-error": "Could not load analytics.",
   "analytics-title": "Analytics",
   "announcement-published": "Announcement published",
-  "announcements-description": "Publish pinned banners shown at the top of everyone's feed. Activate, deactivate, or remove them.",
-  "announcements-title": "Feed Announcements",
   "announcements-title-announcements": "Announcements",
   "anonymous": "Anonymous",
   "app-status-approved": "Approved",
@@ -679,5 +677,7 @@
   "user-strikes_other": "{{count}} strikes",
   "user-suspended": "Suspended",
   "user-timeouts_one": "{{count}} timeout",
-  "user-timeouts_other": "{{count}} timeouts"
+  "user-timeouts_other": "{{count}} timeouts",
+  "announcements-sitewide-title": "Announcements",
+  "announcements-sitewide-description": "Announce a blog post sitewide: it pops up once for every visitor and is pinned at the top of the feed."
 }
