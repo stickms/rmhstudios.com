@@ -37,23 +37,29 @@ below is held for a stated reason, and each entry names what lifts it.
 | Package | Held at | Why | Lift when |
 | --- | --- | --- | --- |
 | `typescript` | 6.0 | TS 7 ships no JavaScript compiler API (planned for 7.1). `typescript-eslint` (peer `<6.1`), `lib/api/__tests__/route-table.test.ts`, `features/rmhos/__tests__/image-publish.test.ts` and `scripts/api-cache-triage.ts` call it. Type-checking already runs on TS 7 through the `typescript-native` alias. | `typescript-eslint` widens its peer range |
-| `@types/node` | 24 | Types track the runtime (Node 24 in the Dockerfile, `.nvmrc`, `engines`). | the runtime moves (below) |
-| `prisma` | 7.10 | 8.0 is a release candidate and replaces the client API, schema format and migrate commands (794 importing files). | 8.0 is stable, as its own project |
+| `prisma` | 7.10 | 8.0 is a release candidate and replaces the client API, schema format and migrate commands (794 importing files). | 8.0 is stable, as its own project (Dependabot holds `prisma`, `@prisma/client` and `@prisma/adapter-pg` at `<8`) |
 | `satori` | 0.35.1 | The original hold (an ESM `__dirname` crash) was fixed in 0.37.1, but 0.38–0.62 change text layout, opacity, overflow and synthetic bold, so every card changes pixels. | a render check of every card kind on a production build |
 | `nitro` | 3.0 beta | The RC replaces the global `Response` with srvx's `FastResponse` on Node; the `response`-hook header plugins need a boot test. | a build-and-boot run of the integration suite on the RC |
 
 ## Runtime
 
-- **Node 26 is the Active LTS** (since 2026-10-28). Node 24 is in maintenance
-  until April 2028, so there is no urgency.
-- **Move as one PR** that changes the runtime and `@types/node` together:
-  - `engines` (`<25`) and `.nvmrc`;
-  - the three Node stages of the `Dockerfile` and the esbuild `--target`;
-  - `.github/actions/setup-deps` and the workflows that pin `node-version`.
+- **Moved to Node 26** (Active LTS since 2026-10-28; 26.13.1) in one PR, with
+  `@types/node` 26:
+  - `engines` (`>=26.13.0 <27`, in the root and the four workspace packages)
+    and `.nvmrc`;
+  - the three Node stages of the `Dockerfile` (still Alpine 3.24, so the OS
+    packages are unchanged) and the esbuild `--target=node26`;
+  - `.github/actions/setup-deps` and every workflow that pins `node-version`.
 - **Native modules are N-API prebuilds** (`@napi-rs/canvas`, `@resvg/resvg-js`,
-  `sharp`), so they are ABI-independent.
-- **Meanwhile:** 24.22 is out and the pin is 24.21, so a patch bump is worth
-  taking.
+  `sharp`), so they are ABI-independent; all three were exercised on 26.
+- **Web Storage.** Node 25 turned on a global `localStorage`. Without
+  `--localstorage-file` it is `undefined` (so `typeof localStorage` checks
+  behave as on 24) and the first read logs an `ExperimentalWarning`. The test
+  environments print it; the web server and the seven Node services did not
+  read it in a boot and an integration run.
+- **Verified on 26.13.1:** `tsc -b`, the main suite (12,168 tests), `pnpm build`,
+  the production server with the integration suite (31 tests), and a start of
+  every compose Node service. The image itself is first built by CI.
 
 ## Foundations, considered for replacement
 

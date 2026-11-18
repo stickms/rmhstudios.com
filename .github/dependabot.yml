@@ -37,7 +37,16 @@ updates:
       # on TS 7 through the `typescript-native` alias.
       - dependency-name: "typescript"
         versions: [">=6.1.0"]
-      # Types track the runtime: Node 24 (Dockerfile, .nvmrc, engines).
+      # Prisma 8 replaces the client API, schema format and migrate commands
+      # (794 importing files): it moves as its own project once 8.0 is stable,
+      # not as a Dependabot bump. The three packages move together.
+      - dependency-name: "prisma"
+        versions: [">=8.0.0"]
+      - dependency-name: "@prisma/client"
+        versions: [">=8.0.0"]
+      - dependency-name: "@prisma/adapter-pg"
+        versions: [">=8.0.0"]
+      # Types track the runtime: Node 26 (Dockerfile, .nvmrc, engines).
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
 

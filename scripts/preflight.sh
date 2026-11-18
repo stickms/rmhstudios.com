@@ -37,7 +37,7 @@ fi
 # node — required for the frontend leaf. Heavy runtime: install on bootstrap,
 # guide on guard.
 if ! have node; then
-  [ "$GUARD" = 1 ] && die "node missing — install Node 24 LTS then re-run (e.g. 'brew install node@24')"
+  [ "$GUARD" = 1 ] && die "node missing — install Node 26 LTS then re-run (e.g. 'brew install node@26')"
   pkg_install node
 fi
 

@@ -180,7 +180,7 @@ RTL
 for
 `ar`).
 Node
-≥24.18,
+≥26.13,
 pnpm
 workspace.
 

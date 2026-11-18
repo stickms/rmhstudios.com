@@ -42,7 +42,7 @@
 # Cached as long as package.json / lockfile don't change.
 # Prisma files are NOT copied here — schema changes should only trigger
 # a fast `prisma generate`, not a full 70s+ pnpm install.
-FROM node:24.21.0-alpine AS deps
+FROM node:26.13.1-alpine AS deps
 
 RUN corepack enable && corepack prepare pnpm@10.34.6 --activate
 
@@ -125,7 +125,7 @@ RUN pnpm exec esbuild \
     server/ladder-worker/index.ts \
     server/homes-worker/index.ts \
     server/jobs/index.ts \
-    --bundle --platform=node --target=node24 \
+    --bundle --platform=node --target=node26 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
     --tsconfig=tsconfig.server.json
@@ -185,7 +185,7 @@ RUN pnpm run build-vibe-packages \
 # It also emits lib/images/variants.gen.ts. vite-builder takes that regenerated
 # manifest along with the files, exactly as the in-RUN step used to overwrite the
 # committed one, so the manifest and the files can never disagree in the image.
-FROM node:24.21.0-alpine AS media-deps
+FROM node:26.13.1-alpine AS media-deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.34.6 --activate
 COPY scripts/media/package.json scripts/media/pnpm-lock.yaml ./
@@ -427,7 +427,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
 # ── Shared runtime base (both images start here) ─────────────────────────────
 # Everything below this line in either image is a layer on top of these, so the
 # two images share them on the VPS. Nothing here depends on app source.
-FROM node:24.21.0-alpine AS runtime-base
+FROM node:26.13.1-alpine AS runtime-base
 
 # curl: container healthchecks (compose) + the deploy's port probes.
 # ca-certificates: outbound TLS (R2 sync, DeepSeek, Discord, etc.).

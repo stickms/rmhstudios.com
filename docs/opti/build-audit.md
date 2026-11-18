@@ -92,7 +92,7 @@ stale Vinxi entries, rather than a full `builder prune -af`. Keeps layer cache
 
 ### C. (Optional) Verify base-image layer caching
 `runner` does `apk add chromium nss freetype …` — a cached layer that only
-rebuilds if the `node:24-alpine` base digest changes. Pin/refresh deliberately so
+rebuilds if the `node:26-alpine` base digest changes. Pin/refresh deliberately so
 a silent base bump doesn't cause a surprise slow build.
 
 ## Expected impact of changes 1–3
