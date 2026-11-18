@@ -157,6 +157,9 @@ export default function HomePage() {
             <Link className="trio-item rv" to="/rmh-capital/businesses" hash="investment-banking">
               <h3 className="h3">{t('biz-ib-name', { defaultValue: 'Investment Banking' })}</h3>
               <span className="trio-alias">RMHan Stanley</span>
+              <span className="trio-tagline">
+                {t('biz-ib-catchphrase', { defaultValue: 'Advise and raise.' })}
+              </span>
               <p>
                 {t('biz-ib-desc', {
                   defaultValue:
@@ -168,6 +171,9 @@ export default function HomePage() {
             <Link className="trio-item rv d1" to="/rmh-capital/businesses" hash="markets">
               <h3 className="h3">{t('biz-markets-name', { defaultValue: 'Markets' })}</h3>
               <span className="trio-alias">RMH Street</span>
+              <span className="trio-tagline">
+                {t('biz-markets-catchphrase', { defaultValue: 'Execute and access.' })}
+              </span>
               <p>
                 {t('biz-markets-desc', {
                   defaultValue:
@@ -178,6 +184,9 @@ export default function HomePage() {
             </Link>
             <Link className="trio-item rv d2" to="/rmh-capital/businesses" hash="corporate-banking">
               <h3 className="h3">{t('biz-cb-name', { defaultValue: 'Corporate Banking' })}</h3>
+              <span className="trio-tagline">
+                {t('biz-cb-catchphrase', { defaultValue: 'Fund and grow.' })}
+              </span>
               <p>
                 {t('biz-cb-desc', {
                   defaultValue:
@@ -189,6 +198,9 @@ export default function HomePage() {
             <Link className="trio-item rv" to="/rmh-capital/businesses" hash="venture-capital">
               <h3 className="h3">{t('biz-vc-name', { defaultValue: 'Venture Capital' })}</h3>
               <span className="trio-alias">RMHCombinator</span>
+              <span className="trio-tagline">
+                {t('biz-vc-catchphrase', { defaultValue: 'Back and build.' })}
+              </span>
               <p>
                 {t('biz-vc-desc', {
                   defaultValue:
@@ -204,6 +216,9 @@ export default function HomePage() {
             >
               <h3 className="h3">{t('biz-mc-name', { defaultValue: 'Management Consulting' })}</h3>
               <span className="trio-alias">RMHcKinsey</span>
+              <span className="trio-tagline">
+                {t('biz-mc-catchphrase', { defaultValue: 'Strategize and transform.' })}
+              </span>
               <p>
                 {t('biz-mc-desc', {
                   defaultValue:
@@ -215,6 +230,9 @@ export default function HomePage() {
             <Link className="trio-item rv d2" to="/rmh-capital/businesses" hash="private-equity">
               <h3 className="h3">{t('biz-pe-name', { defaultValue: 'Private Equity' })}</h3>
               <span className="trio-alias">RMHstone</span>
+              <span className="trio-tagline">
+                {t('biz-pe-catchphrase', { defaultValue: 'Own and compound.' })}
+              </span>
               <p>
                 {t('biz-pe-desc', {
                   defaultValue:
