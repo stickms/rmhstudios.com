@@ -12,7 +12,7 @@
  * log line sees it. Each handled event runs as its own task (Go ran a goroutine per mention and
  * per interaction), tracked so shutdown can let in-flight replies finish.
  */
-import { REST } from '@discordjs/rest';
+import { REST, type RESTOptions } from '@discordjs/rest';
 import { WebSocketManager, WebSocketShardEvents } from '@discordjs/ws';
 import { GatewayIntentBits } from '@discordjs/core';
 import { createLogger } from '../shared/logger';
@@ -137,7 +137,11 @@ export class DiscordBot {
   ) {
     this.guard = loadGuardConfig();
     configurePetRates();
-    this.rest = new REST({ version: '10' }).setToken(cfg.token);
+    // Node's built-in fetch, not @discordjs/rest's default undici `request()` path: on Node 26 that
+    // path builds `new Headers(res.headers)` from a headers object carrying a symbol key
+    // (`Symbol(sensitiveHeaders)`), Headers throws, and every REST call fails, so the gateway never
+    // opens (B07, 2026-11-18). The built-in fetch returns a real Response, which is all REST reads.
+    this.rest = new REST({ version: '10', makeRequest: fetch as unknown as RESTOptions['makeRequest'] }).setToken(cfg.token);
     const sql = new Sql(raw, this.log);
     const deepseek = new DeepSeekClient(cfg.deepseekKey, cfg.deepseekModel, this.log);
     const watchCfg = loadWatchConfig();
