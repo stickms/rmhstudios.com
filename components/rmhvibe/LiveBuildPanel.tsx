@@ -3,9 +3,16 @@
  * view (thinking, then the file list) and a Code tab that shows each file's
  * source as it streams. While writing, the file being written is selected and
  * pinned to the bottom unless the reader scrolled up or picked another file.
+ *
+ * Progress and Code are two views of one area, so they stay a `Tabs` strip with
+ * `tabpanel`s (not a radio group); the inactive panel renders empty and `hidden` so the
+ * tab's `aria-controls` always resolves. A caller that renders the panel in more than one
+ * place (a bottom sheet, a side column) lends it one `useLiveBuildView()` so the choice
+ * survives the move.
  */
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -21,11 +28,26 @@ type PanelTab =
   | 'progress'
   | 'code';
 
+export interface LiveBuildView {
+  tab: PanelTab;
+  setTab: (tab: PanelTab) => void;
+  /** A file the reader chose; null follows the file being written. */
+  picked: string | null;
+  setPicked: (name: string | null) => void;
+}
+
+export function useLiveBuildView(): LiveBuildView {
+  const [tab, setTab] = useState<PanelTab>('progress');
+  const [picked, setPicked] = useState<string | null>(null);
+  return { tab, setTab, picked, setPicked };
+}
+
 export function LiveBuildPanel({
   thinking,
   content,
   phase,
   className = '',
+  view,
 }: {
   thinking: string;
   content: string;
@@ -34,6 +56,8 @@ export function LiveBuildPanel({
     | 'writing'
     | 'done';
   className?: string;
+  /** Lifted view state; omitted, the panel keeps its own. */
+  view?: LiveBuildView;
 }) {
   const {
     t,
@@ -41,23 +65,16 @@ export function LiveBuildPanel({
     useTranslation(
       'pages',
     );
-  const [
+  const own =
+    useLiveBuildView();
+  const {
     tab,
     setTab,
-  ] =
-    useState<PanelTab>(
-      'progress',
-    );
-  const [
     picked,
     setPicked,
-  ] =
-    useState<
-      | string
-      | null
-    >(
-      null,
-    );
+  } =
+    view ??
+    own;
 
   const project =
     useMemo(
@@ -79,6 +96,24 @@ export function LiveBuildPanel({
         project.files,
       ],
     );
+  // A pick that no longer exists (a new build began) is dropped, so following resumes.
+  useEffect(
+    () => {
+      if (
+        picked &&
+        !(picked in
+          project.files)
+      )
+        setPicked(
+          null,
+        );
+    },
+    [
+      picked,
+      project.files,
+      setPicked,
+    ],
+  );
   // A pick wins only while that file still exists; otherwise follow the writer.
   const selected =
     picked &&
@@ -212,8 +247,15 @@ export function LiveBuildPanel({
                       }
                       className="vibe-build__file"
                       onClick={() =>
+                        // Returning to the newest file hands the view back to the writer.
                         setPicked(
-                          name,
+                          name ===
+                            names[
+                              names.length -
+                                1
+                            ]
+                            ? null
+                            : name,
                         )
                       }
                     >
@@ -237,6 +279,12 @@ export function LiveBuildPanel({
           )}
         </div>
       )}
+      <div
+        role="tabpanel"
+        hidden
+        id={`vibe-build-panel-${tab === 'progress' ? 'code' : 'progress'}`}
+        aria-labelledby={`vibe-build-tab-${tab === 'progress' ? 'code' : 'progress'}`}
+      />
     </div>
   );
 }

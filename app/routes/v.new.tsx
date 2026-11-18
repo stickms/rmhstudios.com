@@ -18,7 +18,7 @@ import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
 import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
-import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
+import { LiveBuildPanel, useLiveBuildView } from '@/components/rmhvibe/LiveBuildPanel';
 import { parsePartialProject } from '@/lib/rmhvibe/vibe-project';
 import { ChevronUp } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -130,6 +130,8 @@ function VibeNew() {
   }, [prompt, model, kind, navigate]);
 
   const wide = useMediaQuery('(min-width: 900px)');
+  // Lifted so crossing the breakpoint (or collapsing the sheet) keeps the tab and the picked file.
+  const buildView = useLiveBuildView();
   const writing = useMemo(() => parsePartialProject(content).writing, [content]);
 
   if (error) return <VibeError message={error} />;
@@ -178,7 +180,7 @@ function VibeNew() {
               </p>
               {sheetOpen && (
                 <div className="vibe-live__sheet-body">
-                  <LiveBuildPanel thinking={thinking} content={content} phase={phase} />
+                  <LiveBuildPanel thinking={thinking} content={content} phase={phase} view={buildView} />
                 </div>
               )}
             </div>
@@ -186,7 +188,7 @@ function VibeNew() {
           </div>
           {wide && (
           <aside className="vibe-live__side">
-            <LiveBuildPanel thinking={thinking} content={content} phase={phase} />
+            <LiveBuildPanel thinking={thinking} content={content} phase={phase} view={buildView} />
           </aside>
           )}
         </div>

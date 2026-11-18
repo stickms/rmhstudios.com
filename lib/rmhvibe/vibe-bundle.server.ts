@@ -642,7 +642,13 @@ export function vibeStubModule(path: string, names: string[]): string {
  * local aliases; `import * as ns` adds none. `targetPath` is a VFS path, or for a
  * file that does not exist yet, the extension-less path the specifier names.
  */
-export function collectImportedNames(files: Record<string, string>, targetPath: string): string[] {
+export function collectImportedNames(
+  files: Record<string, string>,
+  targetPath: string,
+  seen: Set<string> = new Set(),
+): string[] {
+  if (seen.has(targetPath)) return [];
+  seen.add(targetPath);
   const names = new Set<string>();
   const re = /\b(?:import|export)\s+([^'";]*?)\s*from\s*['"]([^'"]+)['"]/g;
   for (const [importer, src] of Object.entries(files)) {
@@ -655,6 +661,17 @@ export function collectImportedNames(files: Record<string, string>, targetPath: 
         ? resolved === targetPath
         : RESOLVE_EXTS.some((ext) => target + ext === targetPath);
       if (!hit) continue;
+      if (/^\*(\s+as\s+\w+)?$/.test(m[1].trim())) {
+        // `export * from`: whatever the re-exporter's own importers take from it comes from here.
+        // `export * as ns from` and `import * as ns` bring in one binding, no names.
+        if (/^\*$/.test(m[1].trim()) && /\bexport\s+\*\s+from/.test(m[0])) {
+          for (const n of collectImportedNames(files, importer, seen)) {
+            // A name another file of the same barrel already exports would turn ambiguous.
+            if (!exportedElsewhere(files, importer, targetPath, n)) names.add(n);
+          }
+        }
+        continue;
+      }
       const braces = m[1].match(/\{([^}]*)\}/);
       if (!braces) continue;
       for (const part of braces[1].split(',')) {
@@ -664,6 +681,23 @@ export function collectImportedNames(files: Record<string, string>, targetPath: 
     }
   }
   return [...names];
+}
+
+/** Does a sibling module that `barrel` also re-exports (`export * from`) already export `name`? */
+function exportedElsewhere(
+  files: Record<string, string>,
+  barrel: string,
+  targetPath: string,
+  name: string,
+): boolean {
+  const star = /\bexport\s+\*\s+from\s*['"]([^'"]+)['"]/g;
+  const own = new RegExp(`\\bexport\\b[^;\\n]*\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+  for (const m of (files[barrel] ?? '').matchAll(star)) {
+    if (!m[1].startsWith('.') && !m[1].startsWith('/')) continue;
+    const resolved = resolveInVfs(m[1], barrel, files);
+    if (resolved && resolved !== targetPath && own.test(files[resolved] ?? '')) return true;
+  }
+  return false;
 }
 
 function formatBuildError(err: unknown): string {
