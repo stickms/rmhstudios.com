@@ -163,34 +163,74 @@ offline visits.
 | `/apps` | usable | 8.7 → **6.0 s** | 9.7 → **7.9 s** | 35.0 → **28.0 s** |
 | `/` | post-load download | 396 → 359 KB | 207 → **168 KB** | — |
 
-## Not done, ranked
+## Follow-up the same day
 
-1. **The entry chunk: 225 KB Brotli (695 KB raw) on every page, ~45% of what arrives
-   before usable.** By source map:
-   - Router and framework: `@tanstack/*` ~100 KB raw, `seroval` 25 KB.
-   - `i18next`: 43 KB raw.
-   - `tailwind-merge`: 28 KB raw.
-   - `motion-dom`: 26 KB raw.
-   - **Route options: ~110 KB raw from 414 route files.** TanStack Router splits each
-     route's component but keeps its options (`head`, `validateSearch`, loader stubs)
-     in the main bundle, plus the 39 KB `routeTree.gen.ts`.
+Items 1, 2 and 5 of the first ranking, and the service-worker storage leak, were taken
+further after the report. The entry, measured at maximum Brotli quality on a source-map
+build (the repository's own `bundle-budget` metric in brackets):
 
-   The last one is the biggest structural lever. It needs route-option splitting in
-   the router plugin or a slimmer `head()` (most of it is `buildMeta` strings), and it
-   is a design change, not a patch. It is inside its advisory budget (240 / 300 KB in
-   `scripts/ci/perf-budgets.json`), so it is not a regression.
-2. **`lib/og/static-cards.ts` (13 KB raw) is in the entry** because `buildMeta` maps a
-   path to its card. Only path → file is needed client-side, but `head()` runs during
-   hydration, so making the client skip it would desynchronise the `<meta>` tags and
-   cause a document-level hydration mismatch. It needs a generated path → file index
-   kept in sync with `STATIC_CARDS`.
-3. **First-page images under data saver** (see LB-2): server-side `Save-Data`, with
-   `Vary: Save-Data` and a matching Cloudflare cache-key rule.
-4. **`/games` still carries ~1.3 MB of art on a first visit:** 34 portrait capsules at
-   the right density for a 3× phone. A shorter first screen (fewer capsules before a
-   "Show all") would do more than any encoding change.
-5. **Post-load speculation on "fast" phones** (300–500 KB on slow 4G). This is the
-   stated policy; revisit only with RUM evidence that it delays first interactions.
+| Step | Entry, Brotli | `platform_shell_eager_js` |
+| --- | --- | --- |
+| Start of the day | 182.1 KB | 239.5 KB |
+| Short server-function ids, card index | 177.1 KB | 234.9 KB |
+| Own lazy-motion provider | **169.0 KB** | **226.8 KB** |
+
+### LB-5 [fixed] Server-function ids were 64-character hashes
+
+Start's default id is the SHA-256 hex of `<absolute path>--<name>`. The entry carried 113
+of them (7.3 KB raw, ~3.6 KB Brotli), and every lazy chunk that calls a server function
+carries its own. `serverFns.generateFunctionId` in `vite.config.ts` now uses the same
+input, made path-relative, cut to 12 base64url characters (72 bits; the compiler
+de-duplicates a collision). Only the `/_serverFn/` prefix is matched anywhere. Verified
+in Chromium: client navigations call `/_serverFn/<12 chars>` and get 200. Renaming the
+scheme renames every function once, so tabs open across that deploy need one reload.
+
+### LB-6 [fixed] The social-card copy shipped to every browser
+
+`buildMeta` needs path → card file, and the route heads it runs in execute in the browser.
+`lib/og/static-card-index.ts` is that mapping alone (2.4 KB, down from 13.2 KB). `seo.ts`
+and `lib/rmh-research/og.ts` read it, and `og-cards.test.ts` holds it identical to
+`STATIC_CARDS` and fails a client import of `static-cards`.
+
+### LB-7 [fixed] framer-motion's engine sat in the entry for a lazy provider
+
+`<LazyMotion>` imports `loadFeatures`, and that imports motion-dom's
+`setFeatureDefinitions` from the same module as the whole `VisualElement` class (25.8 KB
+raw, 8.1 KB Brotli), although the features load later.
+`components/motion/LazyMotionProvider.tsx` supplies framer-motion's own `LazyContext`
+(aliased to the exact file the `m` component imports, `framer-motion-internals.mjs`). The lazy bundle (`lib/motion-features.ts`) registers its own features.
+`framer-motion-internals.test.ts` fails if an upgrade moves either file, and the
+`check-entry-composition` caps dropped from 26,400 B and 1,480 B to 90 B and 550 B.
+Verified in Chromium: on `/rideshare` and `/slice-it`, `m` elements move from their
+`initial` styles to their `animate` values once the feature chunk loads.
+
+### LB-8 [fixed] Speculation on links that are fast by round trip but thin
+
+`shouldSpeculate()` now also holds back when Chromium's `downlink` estimate is under
+5 Mbit/s. Slow 4G (150 ms, 1.6 Mbit/s) rated "fast" and the prefetchers pulled
+300–500 KB there. Hover and tap preloading are unaffected.
+
+### LB-9 [fixed] The offline cache never dropped old build files
+
+The first cache miss in a worker's lifetime (a new deploy's hashes) prunes build files
+cached more than 30 days ago, then the oldest past 1,500 entries (`assetsToPrune` in
+`public/sw.js`, unit-tested).
+
+### Still open
+
+1. **Route setup (22 KB Brotli).** This is mostly `head()` across 365 routes. The router
+   awaits every `head()` during hydration, so lazy-loading their strings would delay
+   the first interactive render by a round trip. Meta descriptions are only ~3 KB.
+   It stays until the router can split `head`.
+2. **The catalog (9 KB Brotli)** reaches the entry through seven modules (route heads,
+   the pre-paint theme routes, route matching, two shell mounts). A slim generated
+   index would save about a third.
+3. **First-page images under data saver:** server-side `Save-Data`, with
+   `Vary: Save-Data` and a matching Cloudflare cache key.
+4. **`/games`' first screen:** fewer capsules before a "Show all". This is a layout
+   decision.
+5. **`tailwind-merge` (7 KB Brotli) and `i18next` (13 KB):** shell infrastructure.
+   Replacing either changes behaviour site-wide.
 
 ## Reproducing
 
