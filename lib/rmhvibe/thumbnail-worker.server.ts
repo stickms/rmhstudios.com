@@ -69,6 +69,25 @@ export type VibeCapture = (
 
 export type VibeRunOutcome = 'ok' | 'partial' | 'error';
 
+/** The select that carries what {@link savedTweakValues} needs. */
+export const TWEAK_SOURCE_SELECT = {
+  tweakValues: true,
+  versions: { orderBy: { createdAt: 'desc' as const }, take: 1, select: { tweakSpec: true } },
+};
+
+/**
+ * The owner's saved knob values resolved against the latest version's spec (the viewer's
+ * rule), or undefined when the page declares no knobs. Shared by the worker and
+ * `scripts/backfill-vibe-thumbs.ts` so both render what a visitor sees.
+ */
+export function savedTweakValues(row: {
+  tweakValues: unknown;
+  versions: { tweakSpec: unknown }[];
+}): Record<string, TweakValue> | undefined {
+  const spec = parseTweakSpec(row.versions[0]?.tweakSpec);
+  return spec.length ? resolveTweakValues(spec, row.tweakValues) : undefined;
+}
+
 export const prismaVibeThumbRepo: VibeThumbRepo = {
   async selectStale(limit) {
     const rows = await prisma.vibePage.findMany({
@@ -80,13 +99,12 @@ export const prismaVibeThumbRepo: VibeThumbRepo = {
         slug: true,
         html: true,
         updatedAt: true,
-        tweakValues: true,
-        versions: { orderBy: { createdAt: 'desc' }, take: 1, select: { tweakSpec: true } },
+        ...TWEAK_SOURCE_SELECT,
       },
     });
     return rows.map(({ tweakValues, versions, ...page }) => {
-      const spec = parseTweakSpec(versions[0]?.tweakSpec);
-      return spec.length ? { ...page, tweakValues: resolveTweakValues(spec, tweakValues) } : page;
+      const resolved = savedTweakValues({ tweakValues, versions });
+      return resolved ? { ...page, tweakValues: resolved } : page;
     });
   },
   async clearStale(id, thumbnailUrl, expectedUpdatedAt) {
