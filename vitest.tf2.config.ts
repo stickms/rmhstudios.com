@@ -11,6 +11,7 @@
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 import { ENGINE_TESTS_FROM_MAIN_SUITE } from './vitest.engine-tests.mjs';
+import { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';
 
 export default defineConfig({
   test: {
@@ -32,6 +33,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      ...I18N_RUNTIME_ALIASES,
       '@': path.resolve(import.meta.dirname),
       '@features': path.resolve(import.meta.dirname, 'features'),
     },

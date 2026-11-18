@@ -17,6 +17,7 @@
  */
 import path from 'node:path';
 import { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
+import { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';
 import { defineConfig } from 'vitest/config';
 
 export const BALATRO_SUITE_GLOBS = [
@@ -37,6 +38,7 @@ export default defineConfig({
   resolve: {
     alias: {
       ...FRAMER_MOTION_INTERNALS,
+      ...I18N_RUNTIME_ALIASES,
       '@': path.resolve(import.meta.dirname),
       '@features': path.resolve(import.meta.dirname, 'features'),
     },

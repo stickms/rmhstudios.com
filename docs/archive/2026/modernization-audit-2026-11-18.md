@@ -59,6 +59,23 @@ below is held for a stated reason, and each entry names what lifts it.
   now answers a small JSON 404 instead of rendering the HTML 404 page. It keeps
   `cache-control: no-store`, the property `anon-html-cache.ts` exists for.
 
+- **i18next + react-i18next → the site's own runtime** (`lib/i18n/runtime/`,
+  aliased over both package names in every Vite and Vitest build by
+  `i18n-runtime-aliases.mjs`). It implements the part of the API the site uses.
+  Imports and types are unchanged. The critical path for `/` drops from 224.9
+  to 214.4 KB Brotli and the entry from 641.5 to 601.3 KB raw.
+  `lib/i18n/__tests__/runtime-parity.test.ts` compares it with i18next 27.1.5:
+  - every key of every shipped locale (with and without defaults and variables,
+    through `ns:key`, every plural family at nine counts);
+  - every literal `t()` call in the source, in every locale;
+  - an edge-case table, and backend loading and events.
+
+  It fails on anything the runtime leaves out. It caught both bugs planted to
+  test it. In two production builds side by side, 72 page loads across six
+  locales and an in-page switch English → Japanese → Arabic → English render
+  the same text, `lang` and `dir`. CI now pulls the catalogs before the unit
+  shards so the comparison covers every language there.
+
 ## Held back, and what lifts each hold
 
 | Package | Held at | Why | Lift when |
@@ -92,7 +109,7 @@ below is held for a stated reason, and each entry names what lifts it.
 | --- | --- | --- |
 | React 19 + react-dom | ~67 KB Brotli (its own chunk) | **Keep.** Preact's compat layer lacks React 19's streaming SSR, selective hydration and `use()`, which TanStack Start and the lazy-hydration work in the low-bandwidth audit rely on, and Radix and framer-motion depend on React internals. |
 | TanStack Router + Start | ~150 KB raw (router, data layer, `seroval`) | **Keep.** It is current, and the alternatives are a framework migration of 420 routes. Its remaining cost is per-route `head()` setup, which the router runs during hydration (low-bandwidth audit, "Still open"). |
-| i18next + react-i18next | ~13 KB Brotli | **Keep for now; a replacement is feasible.** The site uses a small part of it (flat keys, `{{var}}`, count plurals, namespaces, lazy loading). A ~2–3 KB runtime with the same API and catalogs could save ~12 KB Brotli per page. The risk is silent per-locale differences (plural resolution order, empty-string fallback), so it should only land behind a test that compares both runtimes on every catalog key, every locale and a spread of counts. |
+| i18next + react-i18next | ~13 KB Brotli | **Replaced in the build** by the site's own runtime (`lib/i18n/runtime/`, aliased over both names; below). |
 | tailwind-merge | ~7 KB Brotli | **Keep.** `cn()` resolves class conflicts across every component; a lighter merge changes which class wins. |
 
 ## Practices

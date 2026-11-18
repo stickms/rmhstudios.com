@@ -78,6 +78,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-deps
+      # lib/i18n/__tests__/runtime-parity.test.ts compares the site's translation
+      # runtime with i18next on every catalog of every shipped locale.
+      - name: Pull translation catalogs
+        run: bash scripts/i18n-pull.sh
       - name: Test
         run: pnpm test --shard=${{ matrix.shard }}/2
 
