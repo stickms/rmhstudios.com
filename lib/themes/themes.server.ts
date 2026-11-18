@@ -7,6 +7,7 @@
  * active membership — the same Stripe-subscription check the rest of the economy
  * uses (`getUserTier` !== 'free'). Buying stays open to anyone with coins.
  */
+import { officialThemeView } from '@/lib/themes/official';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { type ThemeTokens, type UserThemeView } from '@/lib/themes/tokens';
@@ -237,11 +238,20 @@ export async function buyTheme(buyerId: string, id: string): Promise<BuyResult> 
 /** Themes the viewer owns (bought or authored) — the inventory shelf (§14.2). */
 export async function listOwnedThemes(userId: string): Promise<UserThemeView[]> {
   const rows = await prisma.userInventory.findMany({
-    where: { userId, kind: 'THEME' },
-    select: { itemId: true },
+    where: { userId, kind: { in: ['THEME', 'SITE_THEME'] } },
+    select: { itemId: true, kind: true },
   });
-  const ids = rows.map((r) => r.itemId.replace(/^user:/, '')).filter(Boolean);
-  if (ids.length === 0) return [];
+  // Official site themes bought in the store (kind SITE_THEME, itemId `site.<id>`), resolved from code. Profile
+  // themes share kind THEME with marketplace themes but are not `user:` ids, so the filter below leaves them out.
+  const official = rows
+    .filter((r) => r.kind === 'SITE_THEME')
+    .map((r) => officialThemeView(r.itemId.replace(/^site\./, '')))
+    .filter((v): v is UserThemeView => !!v);
+  const ids = rows
+    .filter((r) => r.kind === 'THEME' && r.itemId.startsWith('user:'))
+    .map((r) => r.itemId.replace(/^user:/, ''))
+    .filter(Boolean);
+  if (ids.length === 0) return official;
   const themes = await prisma.userTheme.findMany({
     where: { id: { in: ids } },
     select: {
@@ -254,7 +264,7 @@ export async function listOwnedThemes(userId: string): Promise<UserThemeView[]> 
       author: { select: userDisplaySelect },
     },
   });
-  return themes.map((r) => {
+  const community = themes.map((r) => {
     const a = resolveUser(r.author);
     return {
       id: r.id,
@@ -267,6 +277,7 @@ export async function listOwnedThemes(userId: string): Promise<UserThemeView[]> 
       owned: true,
     };
   });
+  return [...official, ...community];
 }
 
 export async function listShop(sort: 'top' | 'new' = 'top'): Promise<UserThemeView[]> {

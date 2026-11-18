@@ -102,7 +102,11 @@ export function OwnedThemesRow({
                 },
               )}{' '}
               <Link
-                to="/settings/themes"
+                to="/store"
+                search={{
+                  tab: 'shop',
+                  kind: 'SITE_THEME',
+                }}
                 className="underline"
               >
                 {t(

@@ -1853,5 +1853,11 @@
   "profile-shop-title": "Shop",
   "profile-shop-see-all": "See all",
   "profile-shop-products": "Products",
-  "profile-shop-owned": "Owned"
+  "profile-shop-owned": "Owned",
+  "shop-kind-profile-theme": "Profile themes",
+  "shop-kind-site-theme": "Site themes",
+  "shop-site-theme-removed": "Back to your edition",
+  "shop-site-theme-applied": "Theme applied",
+  "shop-site-theme-remove": "Remove theme",
+  "shop-site-theme-apply": "Apply theme"
 }

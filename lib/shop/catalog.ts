@@ -13,14 +13,14 @@
  * that fills out every category across all rarities.
  */
 
-export type ShopItemKind =
-  | 'THEME'
-  | 'PET'
-  | 'NAME_COLOR'
-  | 'BADGE'
-  | 'BANNER'
-  | 'POST_FLAIR'
-  | 'AVATAR_FRAME';
+import {
+  OFFICIAL_SITE_THEMES,
+  officialThemePicture,
+} from '@/lib/themes/official';
+
+import type { ShopItemKind } from '@/lib/shop/kinds';
+export type { ShopItemKind } from '@/lib/shop/kinds';
+export { KIND_ORDER } from '@/lib/shop/kinds';
 
 export type Rarity =
   | 'common'
@@ -45,6 +45,8 @@ export interface ShopItem {
     emoji?: string;
     className?: string;
     themeId?: string;
+    /** SITE_THEME: the official site theme it unlocks (lib/themes/official.ts). */
+    siteThemeId?: string;
   };
   /** Requires this subscription tier or higher to purchase (optional). */
   requiresTier?:
@@ -115,7 +117,9 @@ export const KIND_LABELS: Record<
       'Profile Banners',
     PET: 'Pets',
     THEME:
-      'Premium Themes',
+      'Profile Themes',
+    SITE_THEME:
+      'Site Themes',
   };
 
 const LEGACY_SHOP_ITEMS: ShopItem[] =
@@ -2008,10 +2012,46 @@ const GENERATED_ITEMS: ShopItem[] =
     },
   ];
 
+/**
+ * Official site themes (lib/themes/official.ts): each recolours the whole site for its owner, unlike a `THEME`, which
+ * recolours only their profile. Priced by rarity like every other item; applied from the store, Settings or the theme
+ * studio rather than equipped.
+ */
+const SITE_THEME_ITEMS: ShopItem[] =
+  Object.entries(
+    OFFICIAL_SITE_THEMES,
+  ).map(
+    ([
+      id,
+      theme,
+    ]) => ({
+      id: `site.${id}`,
+      kind: 'SITE_THEME',
+      name: theme.name,
+      description:
+        theme.description,
+      price:
+        co(
+          theme.rarity,
+        ),
+      rarity:
+        theme.rarity,
+      data: {
+        siteThemeId:
+          id,
+        gradient:
+          officialThemePicture(
+            theme.tokens,
+          ),
+      },
+    }),
+  );
+
 export const SHOP_ITEMS: ShopItem[] =
   [
     ...LEGACY_SHOP_ITEMS,
     ...GENERATED_ITEMS,
+    ...SITE_THEME_ITEMS,
   ];
 
 const BY_ID =
@@ -2034,14 +2074,3 @@ export function getShopItem(
     id,
   );
 }
-
-export const KIND_ORDER: ShopItemKind[] =
-  [
-    'NAME_COLOR',
-    'AVATAR_FRAME',
-    'BADGE',
-    'POST_FLAIR',
-    'BANNER',
-    'PET',
-    'THEME',
-  ];

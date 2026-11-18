@@ -63,10 +63,18 @@ export function kindLabel(
       );
     case 'THEME':
       return t(
-        'shop-kind-theme',
+        'shop-kind-profile-theme',
         {
           defaultValue:
-            'Themes',
+            'Profile themes',
+        },
+      );
+    case 'SITE_THEME':
+      return t(
+        'shop-kind-site-theme',
+        {
+          defaultValue:
+            'Site themes',
         },
       );
   }

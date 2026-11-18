@@ -10,6 +10,8 @@ export interface ItemArt {
   gradient?: string;
   emoji?: string;
   themeId?: string;
+  /** SITE_THEME: the official site theme (lib/themes/official.ts). */
+  siteThemeId?: string;
 }
 
 /**
@@ -59,7 +61,9 @@ export function ItemPicture({
     kind ===
       'BANNER' ||
     kind ===
-      'THEME'
+      'THEME' ||
+    kind ===
+      'SITE_THEME'
   ) {
     // A banner or a theme's backdrop is a picture that fills its box. What a theme sells beyond
     // the backdrop is its accent, so the accent is shown as a dot: two themes from one backdrop
