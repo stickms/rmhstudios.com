@@ -352,6 +352,7 @@ export function AccountStandingPanel() {
     <>
       {/* Standing summary */}
       <SettingsSection
+        id="account-status"
         className={
           arrival
         }
@@ -371,7 +372,7 @@ export function AccountStandingPanel() {
         }
       >
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="rounded-site px-4 py-3">
+          <div className="py-3">
             <dt className="text-xs text-site-text-muted">
               {t(
                 'standing-active-strikes',
@@ -395,7 +396,7 @@ export function AccountStandingPanel() {
               </span>
             </dd>
           </div>
-          <div className="rounded-site px-4 py-3">
+          <div className="py-3">
             <dt className="text-xs text-site-text-muted">
               {t(
                 'standing-total-strikes',
@@ -411,7 +412,7 @@ export function AccountStandingPanel() {
               }
             </dd>
           </div>
-          <div className="rounded-site px-4 py-3">
+          <div className="py-3">
             <dt className="text-xs text-site-text-muted">
               {t(
                 'standing-appeal-window',

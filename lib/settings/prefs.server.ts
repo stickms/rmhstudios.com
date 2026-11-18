@@ -3,6 +3,8 @@
  * and by the route loaders that seed React Query (redesign audit B4), so the
  * server-rendered page and the API answer from one body.
  */
+import { foldColumnsIntoMatrix } from '@/lib/notify/legacy-columns';
+import type { NotifyMatrix } from '@/lib/notify/categories';
 import { prisma } from '@/lib/prisma.server';
 import { DEFAULT_PRESENCE_VISIBILITY } from '@/lib/presence-types';
 import { DEFAULT_CALL_PRIVACY, isCallPrivacy } from '@/lib/call/state';
@@ -74,10 +76,23 @@ export async function getNotificationToggles(userId: string) {
 export async function getNotificationMatrix(userId: string) {
   const row = await prisma.notificationPreference.findUnique({
     where: { userId },
-    select: { matrix: true, quietStart: true, quietEnd: true, tz: true, emailDigest: true },
+    select: {
+      matrix: true,
+      quietStart: true,
+      quietEnd: true,
+      tz: true,
+      emailDigest: true,
+      likes: true,
+      comments: true,
+      follows: true,
+      mentions: true,
+      reposts: true,
+      system: true,
+    },
   });
   return {
-    matrix: row?.matrix ?? {},
+    // A type switched off with the old per-type switches shows (and stays) off in the grid.
+    matrix: foldColumnsIntoMatrix((row?.matrix as NotifyMatrix | null) ?? {}, row),
     quietStart: row?.quietStart ?? null,
     quietEnd: row?.quietEnd ?? null,
     tz: row?.tz ?? null,

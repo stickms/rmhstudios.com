@@ -177,10 +177,10 @@ Standard pages, rendered inside the sidebar shell.
 | `/services/cars` | RMH Cars | public | `app/routes/_site/services/cars.tsx` |
 | `/services/fashion` | RMH Fashion | public | `app/routes/_site/services/fashion.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
-| `/settings/account-status` | Account status | public | `app/routes/_site/settings/account-status.tsx` |
+| `/settings/account-status` | redirects to `/settings/security` | public | `app/routes/_site/settings/account-status.tsx` |
 | `/settings/appearance` | Appearance | public | `app/routes/_site/settings/appearance.tsx` |
-| `/settings/calendar` | Calendar | public | `app/routes/_site/settings/calendar.tsx` |
-| `/settings/circle` | Close Friends | public | `app/routes/_site/settings/circle.tsx` |
+| `/settings/calendar` | redirects to `/settings/notifications` | public | `app/routes/_site/settings/calendar.tsx` |
+| `/settings/circle` | redirects to `/settings/privacy` | public | `app/routes/_site/settings/circle.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
 | `/settings/layout` | Layout | public | `app/routes/_site/settings/layout.tsx` |
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |

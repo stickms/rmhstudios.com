@@ -1,10 +1,10 @@
-/** K3 — `/settings/calendar`: the private calendar feed, plus shortcuts to polls and office hours. */
+/** K3 — the calendar section of /settings/notifications (it was `/settings/calendar`): the private calendar feed, plus shortcuts to polls and office hours. */
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { CalendarCheck, CalendarClock, RefreshCw } from 'lucide-react';
+import { ChevronRight, RefreshCw } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -40,7 +40,7 @@ export default function CalendarSettings() {
     return (
       <SignedOutPrompt
         title={t('feed-signed-out', { defaultValue: 'Sign in to get your calendar feed' })}
-        callbackURL="/settings/calendar"
+        callbackURL="/settings/notifications#calendar"
       />
     );
   }
@@ -86,6 +86,7 @@ export default function CalendarSettings() {
   return (
     <>
       <SettingsSection
+        id="calendar"
         title={t('feed-title', { defaultValue: 'Calendar feed' })}
         description={t('feed-intro', {
           defaultValue:
@@ -155,7 +156,7 @@ export default function CalendarSettings() {
             {feed?.slots.map((s) => (
               <li
                 key={s.id}
-                className="flex items-center justify-between gap-3 rounded-site px-4 py-3"
+                className="settings-row"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-site-text">
@@ -186,29 +187,20 @@ export default function CalendarSettings() {
         )}
       </SettingsSection>
 
-      <section
-        className="grid gap-3 sm:grid-cols-2"
-        aria-label={t('feed-more', { defaultValue: 'More scheduling tools' })}
-      >
-        <Link
-          to="/when"
-          className="flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
-        >
-          <CalendarCheck className="size-5 text-site-accent" aria-hidden />
-          <span className="text-sm font-semibold text-site-text">
+      <nav aria-label={t('feed-more', { defaultValue: 'More scheduling tools' })}>
+        <Link to="/when" className="settings-row">
+          <span className="settings-row__name">
             {t('feed-link-polls', { defaultValue: 'Find a time (availability polls)' })}
           </span>
+          <ChevronRight className="settings-row__mark rtl:-scale-x-100" aria-hidden />
         </Link>
-        <Link
-          to="/office-hours"
-          className="flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
-        >
-          <CalendarClock className="size-5 text-site-accent" aria-hidden />
-          <span className="text-sm font-semibold text-site-text">
+        <Link to="/office-hours" className="settings-row">
+          <span className="settings-row__name">
             {t('feed-link-oh', { defaultValue: 'Your office hours' })}
           </span>
+          <ChevronRight className="settings-row__mark rtl:-scale-x-100" aria-hidden />
         </Link>
-      </section>
+      </nav>
     </>
   );
 }

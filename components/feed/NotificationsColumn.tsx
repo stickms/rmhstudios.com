@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { AlarmClock, Bell } from 'lucide-react';
@@ -10,7 +10,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { Spine, SpineItem } from '@/components/ui/spine';
 import { InboxAvatar } from '@/components/feed/InboxAvatar';
-import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { yieldToMain } from '@/lib/scheduler';
 import { usePushSubscription } from '@/lib/usePushSubscription';
@@ -18,8 +17,6 @@ import { SwipeRow } from '@/components/ui/swipe-row';
 import type { RemindTarget } from '@/components/reminders/RemindMeDialog';
 import { isSiteRelativePath } from '@/lib/reminders/shared';
 import {
-  getNotificationTogglesApi,
-  setNotificationTogglesApi,
   markNotificationsReadApi,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
@@ -124,93 +121,6 @@ function groupNotifications(items: NotificationItem[]): DisplayGroup[] {
   return groups;
 }
 
-interface NotificationPrefs {
-  likes: boolean;
-  comments: boolean;
-  follows: boolean;
-  mentions: boolean;
-  reposts: boolean;
-  system: boolean;
-}
-
-/** Inline per-type toggles, saved on every change. */
-function PreferencesPanel() {
-  const { t } = useTranslation('feed');
-  const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
-  const { run: runToggle } = useOptimisticAction();
-  // Steel M9: the toggles replace the spinner.
-  const arrival = useArrival(!!prefs);
-
-  useEffect(() => {
-    let cancelled = false;
-    api(getNotificationTogglesApi)
-      .then((data) => {
-        if (!cancelled) setPrefs(data);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const toggle = (field: keyof NotificationPrefs) => {
-    if (!prefs) return;
-    const nextValue = !prefs[field];
-    runToggle({
-      apply: () => setPrefs((p) => (p ? { ...p, [field]: nextValue } : p)),
-      // Previously a failed PUT was swallowed, leaving the switch out of sync
-      // with the server — now it reverts.
-      rollback: () => setPrefs((p) => (p ? { ...p, [field]: !nextValue } : p)),
-      commit: () => api(setNotificationTogglesApi, { body: { [field]: nextValue } }),
-    });
-  };
-
-  const ROWS: Array<{ field: keyof NotificationPrefs; label: string; fallback: string }> = [
-    { field: 'likes', label: 'pref-likes', fallback: 'Likes' },
-    { field: 'comments', label: 'pref-comments', fallback: 'Comments & replies' },
-    { field: 'follows', label: 'pref-follows', fallback: 'New followers' },
-    { field: 'mentions', label: 'pref-mentions', fallback: 'Mentions' },
-    { field: 'reposts', label: 'pref-reposts', fallback: 'Reposts & quotes' },
-    { field: 'system', label: 'pref-system', fallback: 'Achievements & system' },
-  ];
-
-  return (
-    <div className="mb-3 border-b border-site-border pb-3">
-      <p className="mb-2 text-sm font-semibold text-site-text">
-        {t('notification-prefs-title', { defaultValue: 'Which notifications do you want?' })}
-      </p>
-      {!prefs ? (
-        <div className="py-3">
-          <Spinner />
-        </div>
-      ) : (
-        <div className={cn('grid grid-cols-1 gap-1.5 sm:grid-cols-2', arrival)}>
-          {ROWS.map((row) => (
-            <label
-              key={row.field}
-              className="flex cursor-pointer items-center justify-between gap-2 rounded-site-sm px-2 py-1.5 text-sm text-site-text hover:bg-site-surface-hover"
-            >
-              {t(row.label, { defaultValue: row.fallback })}
-              <input
-                type="checkbox"
-                checked={prefs[row.field]}
-                onChange={() => toggle(row.field)}
-                className="h-4 w-4 accent-(--site-accent)"
-              />
-            </label>
-          ))}
-        </div>
-      )}
-      <p className="mt-2 text-xs text-site-text-muted">
-        {t('notification-prefs-hint', {
-          defaultValue:
-            'Applies to in-app and push notifications. Moderation notices are always delivered.',
-        })}
-      </p>
-    </div>
-  );
-}
-
 export function NotificationsColumn({
   embedded = false,
   initialData,
@@ -222,7 +132,6 @@ export function NotificationsColumn({
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const push = usePushSubscription(true);
-  const [prefsOpen, setPrefsOpen] = useState(false);
   // Seed from the loader when provided so the list paints immediately.
   const seeded = useRef(initialData !== undefined && initialData !== null);
   const [items, setItems] = useState<NotificationItem[]>(initialData?.items ?? []);
@@ -385,12 +294,12 @@ export function NotificationsColumn({
         <Button variant="ghost" onClick={markAllRead}>
           {t('mark-all-read', { defaultValue: 'Mark all read' })}
         </Button>
-        <Button variant="ghost" onClick={() => setPrefsOpen((v) => !v)} aria-expanded={prefsOpen}>
-          {t('notification-prefs-toggle', { defaultValue: 'Notification preferences' })}
+        <Button asChild variant="ghost">
+          <Link to="/settings/notifications">
+            {t('notification-prefs-toggle', { defaultValue: 'Notification preferences' })}
+          </Link>
         </Button>
       </div>
-
-      {prefsOpen && <PreferencesPanel />}
 
       {loading ? (
         <div className="flex items-center justify-center px-4 pt-4 pb-12">

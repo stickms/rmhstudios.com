@@ -1,5 +1,5 @@
 /**
- * Account standing — the read model behind `/settings/account-status` and the
+ * Account standing — the read model behind the account-status section of `/settings/security` and the
  * shared definition of what counts as an *active* strike.
  *
  * One rule matters more than the rest here: an OVERTURNED strike is void. It

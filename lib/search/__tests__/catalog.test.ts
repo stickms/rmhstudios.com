@@ -147,11 +147,11 @@ describe('searchCatalog', () => {
       [
         [
           'close friends',
-          '/settings/circle',
+          '/settings/privacy#close-friends',
         ],
         [
           'appeal',
-          '/settings/account-status',
+          '/settings/security#account-status',
         ],
         [
           'content preferences',

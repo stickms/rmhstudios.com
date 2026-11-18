@@ -4,15 +4,12 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
 
 import { Switch } from '@/components/ui/switch';
 import { useAccessPrefs } from '@/lib/access/use-access-prefs';
 import {
   setAccessPrefs,
-  mirrorQuietHours,
-  readQuietHours,
   SHAKE_OK_KEY,
   type AccessPrefs,
 } from '@/lib/access/prefs';
@@ -26,10 +23,6 @@ import {
   requestMotionPermission,
 } from '@/lib/access/shake';
 import { activityNotificationsSupported } from '@/lib/access/activity';
-import { getNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
-import { api } from '@/lib/contract/client';
-import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { Select } from '@/components/ui/select';
 
@@ -189,7 +182,7 @@ function ToggleRow({
 
 /**
  * Settings for the access & comfort additions (text spacing, formats, captions,
- * shake-to-report, bedtime mode, running-timer notification). Everything is
+ * shake-to-report, running-timer notification; bedtime mode moved beside quiet hours, BedtimeRow). Everything is
  * per-device (localStorage) and applied immediately; nothing here needs an account.
  */
 export function AccessPrefsPanel() {
@@ -217,22 +210,6 @@ export function AccessPrefsPanel() {
     useState(
       false,
     );
-  const [
-    quiet,
-    setQuiet,
-  ] =
-    useState<
-      | boolean
-      | null
-    >(
-      null,
-    );
-  const quietArrival =
-    useArrival(
-      quiet !==
-        null,
-    );
-
   useEffect(() => {
     setPhone(
       isTouchPhone(),
@@ -240,34 +217,6 @@ export function AccessPrefsPanel() {
     setActivityOk(
       activityNotificationsSupported(),
     );
-    setQuiet(
-      readQuietHours() !==
-        null,
-    );
-    // Bedtime follows the quiet hours saved with the notification settings; mirror
-    // them onto this device so the pre-paint script can read them without a request.
-    api(
-      getNotificationMatrixApi,
-    )
-      .then(
-        (
-          d,
-        ) => {
-          mirrorQuietHours(
-            d.quietStart ??
-              null,
-            d.quietEnd ??
-              null,
-          );
-          setQuiet(
-            readQuietHours() !==
-              null,
-          );
-        },
-      )
-      .catch(
-        () => {},
-      );
   }, []);
 
   async function onShake(
@@ -789,65 +738,6 @@ export function AccessPrefsPanel() {
               )
             }
           />
-        ) : null}
-        <ToggleRow
-          label={t(
-            'bedtime-label',
-            {
-              defaultValue:
-                'Bedtime mode',
-            },
-          )}
-          description={t(
-            'bedtime-desc',
-            {
-              defaultValue:
-                'Dim and soften colours during your quiet hours.',
-            },
-          )}
-          checked={
-            p.bedtime
-          }
-          onChange={(
-            v,
-          ) =>
-            setAccessPrefs(
-              {
-                bedtime:
-                  v,
-              },
-            )
-          }
-        />
-        {p.bedtime &&
-        quiet ===
-          false ? (
-          <p
-            className={cn(
-              'text-xs text-site-text-muted',
-              quietArrival,
-            )}
-          >
-            {t(
-              'bedtime-no-quiet',
-              {
-                defaultValue:
-                  'You have not set quiet hours yet.',
-              },
-            )}{' '}
-            <Link
-              to="/settings/notifications"
-              className="underline"
-            >
-              {t(
-                'bedtime-set-quiet',
-                {
-                  defaultValue:
-                    'Set quiet hours',
-                },
-              )}
-            </Link>
-          </p>
         ) : null}
         {activityOk ? (
           <ToggleRow

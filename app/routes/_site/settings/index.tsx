@@ -11,15 +11,12 @@ import { getRequestSession } from '@/lib/auth-session.server';
 import { listOwnedThemes } from '@/lib/themes/themes.server';
 import type { UserThemeView } from '@/lib/themes/tokens';
 import { useTranslation } from 'react-i18next';
-import { prefetchRouteQuery } from '@/lib/route/route-query';
-import { notificationTogglesQuery } from '@/lib/settings/prefs.queries';
 import { ChevronRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemeGallery } from '@/components/settings/ThemeGallery';
 import { AccentPicker } from '@/components/settings/AccentPicker';
 import { OwnedThemesRow } from '@/components/settings/OwnedThemesRow';
-import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsPanel';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
 import { SearchField } from '@/components/ui/search-field';
@@ -37,13 +34,7 @@ export const Route = createFileRoute('/_site/settings/')({
   head: () => ({
     meta: [{ title: 'Settings | RMH Studios' }],
   }),
-  loader: async ({ context }) => {
-    const [, ownedThemes] = await Promise.all([
-      prefetchRouteQuery(context.queryClient, notificationTogglesQuery()),
-      fetchOwnedThemes(),
-    ]);
-    return { ownedThemes };
-  },
+  loader: async () => ({ ownedThemes: await fetchOwnedThemes() }),
   component: SettingsPage,
 });
 
@@ -90,7 +81,12 @@ function SettingsPage() {
     </p>
   );
 
-  const lookItems = groups.find((g) => g.group === 'personalization')?.items ?? [];
+  // The notification grid is the one place "what notifies me" is set; Alerts links to it rather than repeating it.
+  const isAlert = (d: { id: string }) => d.id === 'notifications';
+  const alertItems = SETTINGS_DESTINATIONS.filter((d) => isAlert(d) && (signedIn || !d.requiresAuth));
+  const lookItems = (groups.find((g) => g.group === 'personalization')?.items ?? []).filter(
+    (d) => !isAlert(d),
+  );
   const accountItems = groups.filter((g) => g.group !== 'personalization').flatMap((g) => g.items);
   const row = (d: (typeof lookItems)[number]) => (
     <DestinationRow
@@ -164,11 +160,11 @@ function SettingsPage() {
           <SettingsSection
             id="notifications"
             title={t('settings-alerts', { defaultValue: 'Alerts' })}
-            description={t('settings-notifications-hint', {
-              defaultValue: 'Choose which activity creates a notification.',
+            description={t('settings-alerts-hint', {
+              defaultValue: 'What notifies you, where, and when it stays quiet.',
             })}
           >
-            {!isPending && !signedIn ? signInPrompt : <NotificationPrefsPanel />}
+            {!isPending && !signedIn ? signInPrompt : <div>{alertItems.map(row)}</div>}
           </SettingsSection>
         )}
 

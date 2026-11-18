@@ -14,7 +14,6 @@ import {
 import {
   getEmailPrefsApi,
   getNotificationMatrixApi,
-  getNotificationTogglesApi,
   getPresencePrefsApi,
 } from '@/lib/preferences/preferences.contract';
 import {
@@ -109,20 +108,6 @@ export const callAnswerQuery =
       {
         retries: 0,
       },
-      {
-        staleTime: 30_000,
-      },
-    );
-
-export const notificationTogglesQuery =
-  () =>
-    contractQuery(
-      [
-        'settings',
-        'notification-toggles',
-      ],
-      getNotificationTogglesApi,
-      undefined,
       {
         staleTime: 30_000,
       },

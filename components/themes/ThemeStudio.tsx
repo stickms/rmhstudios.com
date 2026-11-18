@@ -48,6 +48,9 @@ export function ThemeStudio({
   const [sort, setSort] = useState<'top' | 'new'>('top');
   const [sorting, setSorting] = useState(false);
 
+  const ownsTheme = (id: string) =>
+    owned.some((o) => o.id === id) || mine.some((m) => m.id === id);
+
   const applied = useThemeStore((s) => s.userTheme);
   const setUserTheme = useThemeStore((s) => s.setUserTheme);
   const setUserThemePreview = useThemeStore((s) => s.setUserThemePreview);
@@ -266,7 +269,11 @@ export function ThemeStudio({
           />
         ) : (
           <ul className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-3', sorting && 'opacity-60')}>
-            {shop.map((theme) => (
+            {shop.map((t0) => {
+              // The shop list is public and cached, so it never knows who is looking. A theme you bought or wrote
+              // is yours: apply it rather than being offered it for sale again.
+              const theme = ownsTheme(t0.id) ? { ...t0, owned: true } : t0;
+              return (
               <li key={theme.id}>
                 <Card interactive className="gap-3 px-4 py-3">
                   <ThemeMiniShell tokens={theme.tokens} size="sm" />
@@ -313,7 +320,8 @@ export function ThemeStudio({
                   </div>
                 </Card>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </SettingsSection>

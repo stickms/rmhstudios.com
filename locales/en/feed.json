@@ -1834,5 +1834,12 @@
   "settings-owned-themes-browse": "Browse themes",
   "settings-owned-themes-none": "None",
   "settings-accent-row-hint": "Recolours buttons and highlights.",
-  "settings-accent-custom": "Custom"
+  "settings-accent-custom": "Custom",
+  "settings-alerts-hint": "What notifies you, where, and when it stays quiet.",
+  "security-subtitle-standing": "How you sign in, how you get back in, and your account standing.",
+  "privacy-subtitle-full": "Who sees you and can reach you, and the data tied to your account.",
+  "profile-basics-title": "Name, bio and avatar",
+  "profile-basics-edit": "Edit on your profile",
+  "profile-basics-hint": "Opens the editor on your public page, where you see the result.",
+  "profile-settings-subtitle": "What everyone who visits your profile sees: your name, cosmetics, links and more."
 }

@@ -1,8 +1,9 @@
 /**
  * Security settings — how you sign in, and how you get back in.
  *
- * Passkeys and sessions were here already; J1/I3 add profile-link verification,
- * recovery codes and trusted contacts. The page also answers the recovery email
+ * Passkeys and sessions were here already; J1/I3 add recovery codes and trusted
+ * contacts, and account standing (strikes and appeals) moved in from its own page.
+ * Profile-link verification moved to /settings/profile, beside the profile it proves. The page also answers the recovery email
  * link (`?recovery=<id>&token=<token>`), which is why the recovery panel renders
  * for signed-OUT visitors too: the entire point of that link is that the person
  * following it cannot sign in.
@@ -12,7 +13,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { KeyRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
-import { profileLinksQuery } from '@/lib/profile-links/profile-links.queries';
+import { accountStandingQuery } from '@/lib/moderation/standing.queries';
 import {
   recoveryCodeStatusQuery,
   recoveryHoldQuery,
@@ -23,7 +24,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { PasskeyManager } from '@/components/site/PasskeyManager';
 import { SignInMethodsPanel } from '@/components/settings/SignInMethodsPanel';
 import { SessionManager } from '@/components/site/SessionManager';
-import { ProfileLinksPanel } from '@/components/settings/ProfileLinksPanel';
+import { AccountStandingPanel } from '@/components/moderation/AccountStandingPanel';
 import { RecoveryPanel } from '@/components/settings/RecoveryPanel';
 import { TrustedContactsPanel } from '@/components/settings/TrustedContactsPanel';
 import { useSession } from '@/components/Providers';
@@ -50,7 +51,7 @@ export const Route = createFileRoute('/_site/settings/security')({
   }),
   loader: async ({ context }) => {
     await Promise.all([
-      prefetchRouteQuery(context.queryClient, profileLinksQuery()),
+      prefetchRouteQuery(context.queryClient, accountStandingQuery()),
       prefetchRouteQuery(context.queryClient, recoveryCodeStatusQuery()),
       prefetchRouteQuery(context.queryClient, recoveryHoldQuery()),
       prefetchRouteQuery(context.queryClient, recoveryRequestsQuery()),
@@ -65,7 +66,6 @@ function SecuritySettingsPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
   const { recovery, token, error: linkError } = Route.useSearch();
-  const user = session?.user as { id: string; handle?: string | null } | undefined;
   const settingsLabel = t('settings', { defaultValue: 'Settings' });
   const title = t('security-title', { defaultValue: 'Security' });
 
@@ -75,8 +75,8 @@ function SecuritySettingsPage() {
   return (
     <PageLayout
       title={title}
-      description={t('security-subtitle', {
-        defaultValue: 'Manage how you sign in to your account.',
+      description={t('security-subtitle-standing', {
+        defaultValue: 'How you sign in, how you get back in, and your account standing.',
       })}
       wide
       backTo="/settings"
@@ -102,7 +102,7 @@ function SecuritySettingsPage() {
             <SessionManager />
             {completion ? null : <RecoveryPanel />}
             <TrustedContactsPanel />
-            <ProfileLinksPanel handle={user?.handle ?? null} />
+            <AccountStandingPanel />
           </>
         )}
       </SettingsPageBody>

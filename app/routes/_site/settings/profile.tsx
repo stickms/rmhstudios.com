@@ -6,13 +6,16 @@
  * whereas the Appearance section controls the site-wide theme for this viewer.
  */
 
-import { createFileRoute } from '@tanstack/react-router';
-import { Sparkles } from 'lucide-react';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { ChevronRight, Sparkles } from 'lucide-react';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { profileLinksQuery } from '@/lib/profile-links/profile-links.queries';
+import { ProfileLinksPanel } from '@/components/settings/ProfileLinksPanel';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ProfileCosmetics } from '@/components/settings/ProfileCosmetics';
 import { useSession } from '@/components/Providers';
-import { SettingsPageBody } from '@/components/settings/SettingsSection';
+import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
@@ -27,6 +30,7 @@ export const Route = createFileRoute('/_site/settings/profile')({
   head: () => ({
     meta: [{ title: 'Profile customization | RMH Studios' }],
   }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, profileLinksQuery()),
   component: ProfileCustomizationPage,
 });
 
@@ -54,9 +58,8 @@ function ProfileCustomizationPage() {
   return (
     <PageLayout
       title={title}
-      description={t('profile-cosmetics-subtitle', {
-        defaultValue:
-          'Equip the cosmetics you own from the shop. These apply to your profile — everyone who visits it sees them.',
+      description={t('profile-settings-subtitle', {
+        defaultValue: 'What everyone who visits your profile sees: your name, cosmetics, links and more.',
       })}
       wide
       // Back to your own profile when we know the handle — that's what these
@@ -66,7 +69,32 @@ function ProfileCustomizationPage() {
       breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
       <SettingsPageBody>
+        {signedIn && handle ? (
+          <SettingsSection
+            title={t('profile-basics-title', { defaultValue: 'Name, bio and avatar' })}
+          >
+            <Link
+              to="/u/$userid"
+              params={{ userid: handle }}
+              search={{ edit: 1 }}
+              className="settings-row"
+            >
+              <span className="settings-row__text">
+                <span className="settings-row__name block">
+                  {t('profile-basics-edit', { defaultValue: 'Edit on your profile' })}
+                </span>
+                <span className="settings-row__hint block">
+                  {t('profile-basics-hint', {
+                    defaultValue: 'Opens the editor on your public page, where you see the result.',
+                  })}
+                </span>
+              </span>
+              <ChevronRight className="settings-row__mark rtl:-scale-x-100" aria-hidden />
+            </Link>
+          </SettingsSection>
+        ) : null}
         {!isPending && !signedIn ? signInPrompt : <ProfileCosmetics />}
+        {signedIn ? <ProfileLinksPanel handle={handle ?? null} /> : null}
         {/* No box (display: contents): the idle-deferred sections fade in (M9). */}
         <div className={cn('contents', idleArrival && 'arrive-group')}>
           {signedIn && idle ? <ProfilePlusSettings /> : null}

@@ -1,31 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
-import { PageLayout } from '@/components/feed/PageLayout';
-import CalendarSettings from '@/components/calendar/CalendarSettings';
-import { SettingsPageBody } from '@/components/settings/SettingsSection';
+/**
+ * /settings/calendar — folded into /settings/notifications#calendar (settings simplification, 2026-11-17): it was one panel on a page of its own.
+ * The URL stays so bookmarks and support links still land on the section.
+ */
+
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_site/settings/calendar')({
   head: () => ({
     meta: [{ title: 'Calendar | RMH Studios' }, { name: 'robots', content: 'noindex' }],
   }),
-  component: CalendarSettingsPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/settings/notifications', hash: 'calendar', replace: true });
+  },
 });
-
-function CalendarSettingsPage() {
-  const { t } = useTranslation('f-calendar');
-  const settingsLabel = t('settings-crumb', { defaultValue: 'Settings' });
-  const title = t('settings-title', { defaultValue: 'Calendar' });
-  return (
-    <PageLayout
-      title={title}
-      wide
-      backTo="/settings"
-      backLabel={settingsLabel}
-      breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
-    >
-      <SettingsPageBody>
-        <CalendarSettings />
-      </SettingsPageBody>
-    </PageLayout>
-  );
-}

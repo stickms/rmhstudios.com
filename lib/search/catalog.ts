@@ -425,7 +425,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'close-friends',
       title:
         'Close Friends',
-      href: '/settings/circle',
+      href: '/settings/privacy#close-friends',
       iconName:
         'Users',
       keywords:
@@ -445,13 +445,13 @@ export const SITE_DESTINATIONS: SiteDestination[] =
         'profile customize customise cosmetics banner links birthday modules settings',
       requiresAuth: true,
       description:
-        'Cosmetics, links and modules on your profile.',
+        'Name, bio and avatar, cosmetics, links and modules on your profile.',
     },
     {
       id: 'account-status',
       title:
         'Account status',
-      href: '/settings/account-status',
+      href: '/settings/security#account-status',
       iconName:
         'ShieldUser',
       keywords:

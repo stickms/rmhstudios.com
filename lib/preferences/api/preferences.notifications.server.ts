@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 import { getNotificationMatrix } from '@/lib/settings/prefs.server';
 import { notifPrefsSchema } from '@/lib/notify/categories-schema';
+import { columnsFromMatrix } from '@/lib/notify/legacy-columns';
+import type { NotifyMatrix } from '@/lib/notify/categories';
 import { getNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
 import { setNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
 
@@ -24,7 +26,11 @@ export const route = apiRoute('/api/preferences/notifications', {
     },
     async ({ session, body }) => {
       const data = {
-        ...(body.matrix !== undefined ? { matrix: body.matrix } : {}),
+        // The grid is the one control for "notify me about X": its in-app channel also writes the per-type columns
+        // that createNotification() checks (lib/notify/legacy-columns.ts).
+        ...(body.matrix !== undefined
+          ? { matrix: body.matrix, ...columnsFromMatrix(body.matrix as NotifyMatrix) }
+          : {}),
         ...(body.quietStart !== undefined ? { quietStart: body.quietStart } : {}),
         ...(body.quietEnd !== undefined ? { quietEnd: body.quietEnd } : {}),
         ...(body.tz !== undefined ? { tz: body.tz } : {}),

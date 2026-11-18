@@ -3,6 +3,8 @@ import { implement } from '@/lib/api/implement.server';
 import { z } from 'zod';
 import { getNotificationToggles } from '@/lib/settings/prefs.server';
 import { prisma } from '@/lib/prisma.server';
+import { matrixFromColumns } from '@/lib/notify/legacy-columns';
+import type { NotifyMatrix } from '@/lib/notify/categories';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 import { getNotificationTogglesApi } from '@/lib/preferences/preferences.contract';
 import { setNotificationTogglesApi } from '@/lib/preferences/preferences.contract';
@@ -28,10 +30,15 @@ export const route = apiRoute('/api/notifications/preferences', {
   ),
 
   PUT: implement(setNotificationTogglesApi, { body: prefsSchema }, async ({ session, body }) => {
-    const prefs = await prisma.notificationPreference.upsert({
+    let prefs = await prisma.notificationPreference.upsert({
       where: { userId: session.user.id },
       create: { userId: session.user.id, ...body },
       update: body,
+    });
+    // Keep the grid (/settings/notifications) in step, so the two stores never disagree (lib/notify/legacy-columns.ts).
+    prefs = await prisma.notificationPreference.update({
+      where: { userId: session.user.id },
+      data: { matrix: matrixFromColumns((prefs.matrix as NotifyMatrix | null) ?? {}, prefs) },
     });
     // perf: createNotification() caches mute prefs for 60s; drop it so the toggle is instant.
     invalidateNotificationPrefs(session.user.id);
