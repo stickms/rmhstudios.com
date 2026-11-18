@@ -13,7 +13,7 @@ import { HttpError, serverError } from'@/lib/http';
 import { chatWithPersonaApi, deletePersonaApi, getPersonaApi } from'@/lib/personas/personas.contract';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { AdminModerateButton } from '@/components/moderation/AdminModerateButton';
+import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 
 interface Msg {
  role: string;

@@ -59,7 +59,7 @@ import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/components/Providers';
 import { VibePostComposer } from '@/components/rmhvibe/VibePostComposer';
-import { AdminModerateButton } from '@/components/moderation/AdminModerateButton';
+import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 import { VIBE_REMOVED_STATUS } from '@/lib/rmhvibe/vibe-status';
 
 // Background-build polling cadence + guards (see the generating-status effect).

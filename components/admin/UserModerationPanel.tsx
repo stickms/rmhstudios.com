@@ -17,19 +17,18 @@ import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { banAdminUserApi, strikeAdminUserApi } from '@/lib/admin/admin-ops.contract';
+import type { AdminUserModeration } from '@/lib/moderation/admin-moderation.contract';
+import type { RestrictableFeature } from '@/lib/moderation/restrictions';
 import {
   getAdminUserModerationApi,
   liftAdminRestrictionApi,
   restrictAdminUserApi,
-  type AdminUserModeration,
-} from '@/lib/moderation/admin-moderation.contract';
-import {
   RESTRICTABLE_FEATURES,
+  RestrictionList,
   TIMEOUT_PRESETS,
-  type RestrictableFeature,
-} from '@/lib/moderation/restrictions';
-import { RestrictionList } from '@/components/moderation/RestrictionList';
-import { useFeatureLabels, useTimeoutLabel } from '@/components/moderation/moderation-labels';
+  useFeatureLabels,
+  useTimeoutLabel,
+} from '@/components/moderation/moderation-ui';
 import { cn } from '@/lib/utils';
 
 type Form = 'strike' | 'timeout' | 'ban' | null;

@@ -9,7 +9,7 @@ import { useResolvedUser, useSession } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { RelatedPosts } from './RelatedPosts';
-import { AdminModerateButton } from '@/components/moderation/AdminModerateButton';
+import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 import { PostArticle } from './post-detail/PostArticle';
 import { ReplyComposer } from './post-detail/ReplyComposer';
 import { ReplyList } from './post-detail/ReplyList';

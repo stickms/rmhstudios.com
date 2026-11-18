@@ -31,7 +31,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
-import { RestrictionList } from '@/components/moderation/RestrictionList';
+import { RestrictionList } from '@/components/moderation/moderation-ui';
 
 type AppealStatus =
   | 'NONE'

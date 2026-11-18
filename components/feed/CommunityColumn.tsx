@@ -40,7 +40,7 @@ import {
  setCommunityMemberRoleApi,
 } from '@/lib/communities/communities.contract';
 import { useArrival } from '@/components/ui/arrive';
-import { AdminModerateButton } from '@/components/moderation/AdminModerateButton';
+import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 import { cn } from '@/lib/utils';
 
 interface Announcement {

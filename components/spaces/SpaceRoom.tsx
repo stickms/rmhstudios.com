@@ -20,7 +20,7 @@ import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { slowModeEvents } from '@/lib/safety/slow-mode-events';
 import { ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { AdminModerateButton } from '@/components/moderation/AdminModerateButton';
+import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 
 interface LiveMessage {
   id: string;

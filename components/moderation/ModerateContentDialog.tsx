@@ -25,7 +25,6 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
-import { moderateContentApi } from '@/lib/moderation/admin-moderation.contract';
 import {
   DEFAULT_FEATURE,
   EDITABLE_FIELDS,
@@ -33,12 +32,14 @@ import {
   type ModeratableType,
   type ModerationAction,
 } from '@/lib/moderation/content';
+import type { RestrictableFeature } from '@/lib/moderation/restrictions';
 import {
+  moderateContentApi,
   RESTRICTABLE_FEATURES,
   TIMEOUT_PRESETS,
-  type RestrictableFeature,
-} from '@/lib/moderation/restrictions';
-import { useFeatureLabels, useTimeoutLabel } from '@/components/moderation/moderation-labels';
+  useFeatureLabels,
+  useTimeoutLabel,
+} from '@/components/moderation/moderation-ui';
 
 export interface ModerateContentDialogProps {
   open: boolean;
