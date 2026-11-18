@@ -15,10 +15,9 @@ const buttonVariants = cva(
       variant: {
         // K1: surface fill, border, ink text.
         default: 'border-site-border bg-site-surface text-site-text hover:bg-site-bg-subtle',
-        // K2: ink fill. One per view (R4). Under a bought theme the fill carries its gentle sheen (R1 amendment,
-        // `--site-accent-fill`); without one the variable is unset and the fill stays flat ink.
-        primary:
-          'bg-site-accent [background-image:var(--site-accent-fill,none)] text-site-accent-fg hover:opacity-88',
+        // K2: ink fill. One per view (R4). Under a bought theme it carries a gentle sheen (R1 amendment,
+        // `--site-accent-fill`), drawn by site-shell.css from `data-variant` so the sheet every page blocks on stays small.
+        primary: 'bg-site-accent text-site-accent-fg hover:opacity-88',
         // K3: no border, no fill.
         ghost: 'text-site-text hover:bg-site-bg-subtle',
         // A destructive action: the K1 body with danger text and border (the label names the action; A2).

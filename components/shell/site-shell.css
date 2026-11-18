@@ -23,6 +23,12 @@
   color: var(--site-text);
 }
 
+/* The ink primary's sheen under a bought theme (R1 amendment, `accentFill` in lib/themes/tokens.ts). Kept here, beside
+   the wash, rather than as a utility on the button, so the render-blocking site-tier sheet does not grow (B5). */
+[data-slot='button'][data-variant='primary'] {
+  background-image: var(--site-accent-fill, none);
+}
+
 .site-skip {
   position: absolute;
   inset-inline-start: 12px;
