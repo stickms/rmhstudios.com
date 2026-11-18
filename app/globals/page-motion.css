@@ -40,27 +40,6 @@
   pointer-events: none;
 }
 
-/* Sahur screen shake on button clicks */
-@keyframes doctrine-shake {
-  0%,
-  100% {
-    transform: translate(0);
-  }
-  25% {
-    transform: translate(-2px, 1px);
-  }
-  50% {
-    transform: translate(2px, -1px);
-  }
-  75% {
-    transform: translate(-1px, 2px);
-  }
-}
-
-[data-theme='sahur'] button:active {
-  animation: doctrine-shake 0.15s ease-in-out;
-}
-
 /* ─── Doctrine layout base ───────────────────────────────────────────────── */
 .doctrine-layout {
   background: var(--doctrine-bg-primary);
@@ -99,27 +78,7 @@ input[type='number'] {
 }
 
 /* ─── Dream Rift menu animations ─────────────────────────────────────────
- * Staggered entrance for menu items and a gentle title float. Respects the
- * user's reduced-motion preference. */
-@keyframes dr-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes dr-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
+ * The title glow. (The menu rise and title float went unused and were deleted.) */
 @keyframes dr-title-glow {
   0%,
   100% {
@@ -130,13 +89,6 @@ input[type='number'] {
     filter: drop-shadow(0 0 30px rgba(231, 205, 140, 0.6))
       drop-shadow(0 0 10px rgba(212, 64, 90, 0.5));
   }
-}
-.dr-rise {
-  opacity: 0;
-  animation: dr-rise 0.5s var(--ease-reveal) forwards;
-}
-.dr-float {
-  animation: dr-float 4.5s ease-in-out infinite;
 }
 .dr-title-glow {
   animation: dr-title-glow 5s ease-in-out infinite;

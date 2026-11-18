@@ -223,7 +223,7 @@
 }
 /* The inverse surfaces carry a complete contract of their own, so pair those
    too rather than letting them inherit the page's ink. */
-:where([data-contrast='inverse'], .site-inverse) {
+:where(.site-inverse) {
   color: var(--site-inverse-text);
 }
 

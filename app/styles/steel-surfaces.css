@@ -20,7 +20,7 @@
     position: relative;
   }
 
-  :is(.surface-card, .surface-panel, .surface-chrome--aside) {
+  :is(.surface-card, .surface-panel) {
     background: none;
     border: 0;
     box-shadow: none;
