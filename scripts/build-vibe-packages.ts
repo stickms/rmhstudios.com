@@ -109,12 +109,41 @@ const VALID_IDENT = /^[A-Za-z_$][\w$]*$/;
  * We also resolve the package's ESM entry (`import.meta.resolve`) so libraries
  * whose `require` main is CJS (e.g. three) still bundle their real named exports.
  */
+/**
+ * The export names of a package. Node is the authority (it sees CJS exports
+ * through cjs-module-lexer), so ask it first. A package whose entry runs
+ * browser-only code at import time cannot be imported in Node at all (p5 2.4
+ * calls `waitForDocumentReady().then(...)`, which returns nothing without a
+ * `document`); for those, read the ESM entry's exports statically from esbuild.
+ */
+async function exportNamesOf(spec: string, entry: string, externals: string[]): Promise<string[]> {
+  try {
+    return Object.keys((await import(spec)) as Record<string, unknown>);
+  } catch (err) {
+    const probe = await build({
+      entryPoints: [entry],
+      bundle: true,
+      write: false,
+      format: 'esm',
+      metafile: true,
+      outdir: 'vibe-pkg-probe',
+      external: externals,
+      logLevel: 'silent',
+    });
+    const outputs = Object.values(probe.metafile?.outputs ?? {});
+    const exports = outputs.flatMap((o) => o.exports ?? []);
+    console.warn(`  (${spec}: not importable in Node — ${(err as Error).message}; using its ${exports.length} static export(s))`);
+    return exports;
+  }
+}
+
 async function bundleOne(spec: string, stem: string): Promise<number> {
   // ESM entry (absolute path → never matched by `external`); names from Node.
   const entry = fileURLToPath(import.meta.resolve(spec));
-  const ns: Record<string, unknown> = await import(spec);
-  const names = Object.keys(ns).filter((k) => k !== 'default' && VALID_IDENT.test(k) && !RESERVED.has(k));
   const externals = externalsFor(spec);
+  const names = (await exportNamesOf(spec, entry, externals)).filter(
+    (k) => k !== 'default' && VALID_IDENT.test(k) && !RESERVED.has(k),
+  );
 
   const entryLit = JSON.stringify(entry);
   const reexports = names
