@@ -24,7 +24,7 @@ export default function PlannerApp() {
   const d =
     useDunesday();
   return (
-    <BareChrome.Provider
+    <BareChrome
       value
     >
       <div className="ds-app-grid2">
@@ -82,7 +82,7 @@ export default function PlannerApp() {
           <TitleMix />
         </div>
       </div>
-    </BareChrome.Provider>
+    </BareChrome>
   );
 }
 

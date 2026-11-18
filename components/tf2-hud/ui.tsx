@@ -21,7 +21,6 @@ import { useSentinel } from '@/hooks/useSentinel';
 import {
   Children,
   Fragment,
-  forwardRef,
   isValidElement,
   useEffect,
   useId,
@@ -89,54 +88,49 @@ export interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Btn =
-  forwardRef<
-    HTMLButtonElement,
-    BtnProps
-  >(
-    function Btn(
-      {
-        variant = 'secondary',
-        size = 'sm',
-        icon: Icon,
-        className,
-        children,
-        type = 'button',
-        ...rest
-      },
-      ref,
-    ) {
-      return (
-        <button
-          ref={
-            ref
-          }
-          type={
-            type
-          }
-          className={cn(
-            BTN_BASE,
-            BTN_VARIANT[
-              variant
-            ],
-            BTN_SIZE[
-              size
-            ],
-            className,
-          )}
-          {...rest}
-        >
-          {Icon ? (
-            <Icon
-              aria-hidden
-            />
-          ) : null}
-          {
-            children
-          }
-        </button>
-      );
-    },
-  );
+  function Btn({
+    variant = 'secondary',
+    size = 'sm',
+    icon: Icon,
+    className,
+    children,
+    type = 'button',
+    ref,
+    ...rest
+  }: BtnProps & {
+    ref?: React.Ref<HTMLButtonElement>;
+  }) {
+    return (
+      <button
+        ref={
+          ref
+        }
+        type={
+          type
+        }
+        className={cn(
+          BTN_BASE,
+          BTN_VARIANT[
+            variant
+          ],
+          BTN_SIZE[
+            size
+          ],
+          className,
+        )}
+        {...rest}
+      >
+        {Icon ? (
+          <Icon
+            aria-hidden
+          />
+        ) : null}
+        {
+          children
+        }
+      </button>
+    );
+  };
 
 export interface IconBtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: LucideIcon;
@@ -149,59 +143,54 @@ export interface IconBtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const IconBtn =
-  forwardRef<
-    HTMLButtonElement,
-    IconBtnProps
-  >(
-    function IconBtn(
-      {
-        icon: Icon,
-        label,
-        active,
-        size = 'sm',
-        className,
-        type = 'button',
-        ...rest
-      },
-      ref,
-    ) {
-      return (
-        <button
-          ref={
-            ref
-          }
-          type={
-            type
-          }
-          aria-label={
-            label
-          }
-          title={
-            label
-          }
-          aria-pressed={
-            active
-          }
-          className={cn(
-            'inline-flex shrink-0 items-center justify-center rounded-app-sm border border-transparent text-app-text-muted transition-[color,background-color] duration-(--app-duration-fast) hover:bg-app-surface-hover hover:text-app-text disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
-            size ===
-              'xs'
-              ? 'size-7'
-              : 'size-8',
-            'pointer-coarse:size-11',
-            active &&
-              'bg-app-accent-dim text-app-accent-text',
-            className,
-          )}
-          {...rest}
-        >
-          <Icon
-            aria-hidden
-          />
-        </button>
-      );
-    },
-  );
+  function IconBtn({
+    icon: Icon,
+    label,
+    active,
+    size = 'sm',
+    className,
+    type = 'button',
+    ref,
+    ...rest
+  }: IconBtnProps & {
+    ref?: React.Ref<HTMLButtonElement>;
+  }) {
+    return (
+      <button
+        ref={
+          ref
+        }
+        type={
+          type
+        }
+        aria-label={
+          label
+        }
+        title={
+          label
+        }
+        aria-pressed={
+          active
+        }
+        className={cn(
+          'inline-flex shrink-0 items-center justify-center rounded-app-sm border border-transparent text-app-text-muted transition-[color,background-color] duration-(--app-duration-fast) hover:bg-app-surface-hover hover:text-app-text disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
+          size ===
+            'xs'
+            ? 'size-7'
+            : 'size-8',
+          'pointer-coarse:size-11',
+          active &&
+            'bg-app-accent-dim text-app-accent-text',
+          className,
+        )}
+        {...rest}
+      >
+        <Icon
+          aria-hidden
+        />
+      </button>
+    );
+  };
 
 /* ─────────────────────────────── fields ─────────────────────────────── */
 
@@ -210,31 +199,26 @@ const FIELD =
   'h-8 w-full min-w-0 rounded-app-sm border border-app-border-bright bg-app-bg px-2 text-xs text-app-text placeholder:text-app-text-dim focus-visible:border-app-accent disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:text-base';
 
 export const TextField =
-  forwardRef<
-    HTMLInputElement,
-    InputHTMLAttributes<HTMLInputElement>
-  >(
-    function TextField(
-      {
-        className,
-        ...rest
-      },
-      ref,
-    ) {
-      return (
-        <input
-          ref={
-            ref
-          }
-          className={cn(
-            FIELD,
-            className,
-          )}
-          {...rest}
-        />
-      );
-    },
-  );
+  function TextField({
+    className,
+    ref,
+    ...rest
+  }: InputHTMLAttributes<HTMLInputElement> & {
+    ref?: React.Ref<HTMLInputElement>;
+  }) {
+    return (
+      <input
+        ref={
+          ref
+        }
+        className={cn(
+          FIELD,
+          className,
+        )}
+        {...rest}
+      />
+    );
+  };
 
 interface SelectEntry {
   value: string;
@@ -343,534 +327,529 @@ function selectEntries(
  * a native `<select>`, and calls `onChange` with an event carrying `target.value`.
  */
 export const SelectField =
-  forwardRef<
-    HTMLButtonElement,
-    SelectHTMLAttributes<HTMLSelectElement>
-  >(
-    function SelectField(
-      {
-        className,
-        children,
-        value,
-        defaultValue,
-        onChange,
-        disabled,
-        id,
-        name,
-        ...rest
-      },
-      ref,
-    ) {
-      const entries =
-        useMemo(
-          () =>
-            selectEntries(
-              children,
-            ),
-          [
+  function SelectField({
+    className,
+    children,
+    value,
+    defaultValue,
+    onChange,
+    disabled,
+    id,
+    name,
+    ref,
+    ...rest
+  }: SelectHTMLAttributes<HTMLSelectElement> & {
+    ref?: React.Ref<HTMLButtonElement>;
+  }) {
+    const entries =
+      useMemo(
+        () =>
+          selectEntries(
             children,
-          ],
-        );
-      const [
-        inner,
-        setInner,
-      ] =
-        useState(
-          String(
-            defaultValue ??
-              entries[0]
-                ?.value ??
-              '',
           ),
-        );
-      const current =
+        [
+          children,
+        ],
+      );
+    const [
+      inner,
+      setInner,
+    ] =
+      useState(
         String(
-          value ??
-            inner,
-        );
-      const [
-        anchor,
-        setAnchor,
-      ] =
-        useState<HTMLButtonElement | null>(
-          null,
-        );
-      const [
-        open,
-        setOpen,
-      ] =
-        useState(
-          false,
-        );
-      const [
-        active,
-        setActive,
-      ] =
-        useState(
-          0,
-        );
-      const listId =
-        useId();
-      const selected =
-        entries.find(
-          (
-            e,
-          ) =>
-            e.value ===
-            current,
-        );
-
-      const setRefs =
+          defaultValue ??
+            entries[0]
+              ?.value ??
+            '',
+        ),
+      );
+    const current =
+      String(
+        value ??
+          inner,
+      );
+    const [
+      anchor,
+      setAnchor,
+    ] =
+      useState<HTMLButtonElement | null>(
+        null,
+      );
+    const [
+      open,
+      setOpen,
+    ] =
+      useState(
+        false,
+      );
+    const [
+      active,
+      setActive,
+    ] =
+      useState(
+        0,
+      );
+    const listId =
+      useId();
+    const selected =
+      entries.find(
         (
-          node: HTMLButtonElement | null,
-        ) => {
-          setAnchor(
+          e,
+        ) =>
+          e.value ===
+          current,
+      );
+
+    const setRefs =
+      (
+        node: HTMLButtonElement | null,
+      ) => {
+        setAnchor(
+          node,
+        );
+        if (
+          typeof ref ===
+          'function'
+        )
+          ref(
             node,
           );
-          if (
-            typeof ref ===
-            'function'
-          )
-            ref(
-              node,
-            );
-          else if (
-            ref
-          )
-            ref.current =
-              node;
-        };
+        else if (
+          ref
+        )
+          ref.current =
+            node;
+      };
 
-      const openList =
-        () => {
-          setActive(
-            Math.max(
-              0,
-              entries.findIndex(
-                (
-                  e,
-                ) =>
-                  e.value ===
-                  current,
-              ),
+    const openList =
+      () => {
+        setActive(
+          Math.max(
+            0,
+            entries.findIndex(
+              (
+                e,
+              ) =>
+                e.value ===
+                current,
             ),
+          ),
+        );
+        setOpen(
+          true,
+        );
+      };
+    const pick =
+      (
+        entry:
+          | SelectEntry
+          | undefined,
+      ) => {
+        setOpen(
+          false,
+        );
+        anchor?.focus();
+        if (
+          !entry ||
+          entry.disabled
+        )
+          return;
+        if (
+          value ===
+          undefined
+        )
+          setInner(
+            entry.value,
           );
-          setOpen(
-            true,
+        if (
+          entry.value !==
+          current
+        ) {
+          const target =
+            {
+              value:
+                entry.value,
+              name:
+                name ??
+                '',
+              id:
+                id ??
+                '',
+            };
+          onChange?.(
+            {
+              target,
+              currentTarget:
+                target,
+            } as unknown as ChangeEvent<HTMLSelectElement>,
           );
-        };
-      const pick =
-        (
-          entry:
-            | SelectEntry
-            | undefined,
-        ) => {
+        }
+      };
+    const step =
+      (
+        from: number,
+        dir:
+          | 1
+          | -1,
+      ) => {
+        for (
+          let n =
+            from +
+            dir;
+          n >=
+            0 &&
+          n <
+            entries.length;
+          n +=
+            dir
+        ) {
+          if (
+            !entries[
+              n
+            ]
+              .disabled
+          )
+            return n;
+        }
+        return from;
+      };
+
+    useEffect(() => {
+      if (
+        open
+      )
+        document
+          .getElementById(
+            `${listId}-${active}`,
+          )
+          ?.scrollIntoView(
+            {
+              block:
+                'nearest',
+            },
+          );
+    }, [
+      open,
+      active,
+      listId,
+    ]);
+
+    const onKey =
+      (
+        e: ReactKeyboardEvent<HTMLButtonElement>,
+      ) => {
+        if (
+          e.key ===
+            'ArrowDown' ||
+          e.key ===
+            'ArrowUp'
+        ) {
+          e.preventDefault();
+          if (
+            !open
+          )
+            return openList();
+          setActive(
+            (
+              a,
+            ) =>
+              step(
+                a,
+                e.key ===
+                  'ArrowDown'
+                  ? 1
+                  : -1,
+              ),
+          );
+        } else if (
+          e.key ===
+            'Home' ||
+          e.key ===
+            'End'
+        ) {
+          if (
+            !open
+          )
+            return;
+          e.preventDefault();
+          setActive(
+            e.key ===
+              'Home'
+              ? step(
+                  -1,
+                  1,
+                )
+              : step(
+                  entries.length,
+                  -1,
+                ),
+          );
+        } else if (
+          e.key ===
+            'Enter' ||
+          e.key ===
+            ' '
+        ) {
+          e.preventDefault();
+          if (
+            open
+          )
+            pick(
+              entries[
+                active
+              ],
+            );
+          else
+            openList();
+        } else if (
+          e.key ===
+          'Tab'
+        ) {
           setOpen(
             false,
           );
-          anchor?.focus();
-          if (
-            !entry ||
-            entry.disabled
-          )
-            return;
-          if (
-            value ===
-            undefined
-          )
-            setInner(
-              entry.value,
-            );
-          if (
-            entry.value !==
-            current
-          ) {
-            const target =
-              {
-                value:
-                  entry.value,
-                name:
-                  name ??
-                  '',
-                id:
-                  id ??
-                  '',
-              };
-            onChange?.(
-              {
-                target,
-                currentTarget:
-                  target,
-              } as unknown as ChangeEvent<HTMLSelectElement>,
-            );
-          }
-        };
-      const step =
-        (
-          from: number,
-          dir:
-            | 1
-            | -1,
-        ) => {
-          for (
-            let n =
-              from +
-              dir;
-            n >=
-              0 &&
-            n <
-              entries.length;
-            n +=
-              dir
-          ) {
-            if (
-              !entries[
-                n
-              ]
-                .disabled
-            )
-              return n;
-          }
-          return from;
-        };
-
-      useEffect(() => {
-        if (
-          open
-        )
-          document
-            .getElementById(
-              `${listId}-${active}`,
-            )
-            ?.scrollIntoView(
-              {
-                block:
-                  'nearest',
-              },
-            );
-      }, [
-        open,
-        active,
-        listId,
-      ]);
-
-      const onKey =
-        (
-          e: ReactKeyboardEvent<HTMLButtonElement>,
-        ) => {
-          if (
-            e.key ===
-              'ArrowDown' ||
-            e.key ===
-              'ArrowUp'
-          ) {
-            e.preventDefault();
-            if (
-              !open
-            )
-              return openList();
-            setActive(
+        } else if (
+          e
+            .key
+            .length ===
+            1 &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          !e.altKey
+        ) {
+          // Type a letter to jump to the next entry that starts with it.
+          const at =
+            entries.findIndex(
               (
-                a,
+                x,
+                n,
               ) =>
-                step(
-                  a,
-                  e.key ===
-                    'ArrowDown'
-                    ? 1
-                    : -1,
-                ),
-            );
-          } else if (
-            e.key ===
-              'Home' ||
-            e.key ===
-              'End'
-          ) {
-            if (
-              !open
-            )
-              return;
-            e.preventDefault();
-            setActive(
-              e.key ===
-                'Home'
-                ? step(
-                    -1,
-                    1,
-                  )
-                : step(
-                    entries.length,
-                    -1,
+                n >
+                  active &&
+                !x.disabled &&
+                x.label
+                  .toLowerCase()
+                  .startsWith(
+                    e.key.toLowerCase(),
                   ),
             );
-          } else if (
-            e.key ===
-              'Enter' ||
-            e.key ===
-              ' '
+          const first =
+            entries.findIndex(
+              (
+                x,
+              ) =>
+                !x.disabled &&
+                x.label
+                  .toLowerCase()
+                  .startsWith(
+                    e.key.toLowerCase(),
+                  ),
+            );
+          const next =
+            at >=
+            0
+              ? at
+              : first;
+          if (
+            next >=
+            0
           ) {
-            e.preventDefault();
             if (
-              open
+              !open
             )
-              pick(
-                entries[
-                  active
-                ],
-              );
-            else
               openList();
-          } else if (
-            e.key ===
-            'Tab'
-          ) {
+            setActive(
+              next,
+            );
+          }
+        }
+      };
+
+    const width =
+      Math.max(
+        anchor?.getBoundingClientRect()
+          .width ??
+          0,
+        140,
+      );
+    let lastGroup:
+      | string
+      | undefined;
+    return (
+      <>
+        <button
+          {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+          ref={
+            setRefs
+          }
+          id={
+            id
+          }
+          type="button"
+          role="combobox"
+          aria-haspopup="listbox"
+          aria-expanded={
+            open
+          }
+          aria-controls={
+            open
+              ? listId
+              : undefined
+          }
+          aria-activedescendant={
+            open
+              ? `${listId}-${active}`
+              : undefined
+          }
+          disabled={
+            disabled
+          }
+          onClick={() =>
+            open
+              ? setOpen(
+                  false,
+                )
+              : openList()
+          }
+          onKeyDown={
+            onKey
+          }
+          className={cn(
+            FIELD,
+            'flex items-center justify-between gap-1 text-start',
+            className,
+          )}
+        >
+          <span className="min-w-0 flex-1 truncate">
+            {selected?.label ??
+              ''}
+          </span>
+          <ChevronDown
+            className="size-3.5 shrink-0 text-app-text-dim"
+            aria-hidden
+          />
+        </button>
+        <Popover
+          anchor={
+            anchor
+          }
+          open={
+            open
+          }
+          onClose={() =>
             setOpen(
               false,
-            );
-          } else if (
-            e
-              .key
-              .length ===
-              1 &&
-            !e.ctrlKey &&
-            !e.metaKey &&
-            !e.altKey
-          ) {
-            // Type a letter to jump to the next entry that starts with it.
-            const at =
-              entries.findIndex(
-                (
-                  x,
-                  n,
-                ) =>
-                  n >
-                    active &&
-                  !x.disabled &&
-                  x.label
-                    .toLowerCase()
-                    .startsWith(
-                      e.key.toLowerCase(),
-                    ),
-              );
-            const first =
-              entries.findIndex(
-                (
-                  x,
-                ) =>
-                  !x.disabled &&
-                  x.label
-                    .toLowerCase()
-                    .startsWith(
-                      e.key.toLowerCase(),
-                    ),
-              );
-            const next =
-              at >=
-              0
-                ? at
-                : first;
-            if (
-              next >=
-              0
-            ) {
-              if (
-                !open
-              )
-                openList();
-              setActive(
-                next,
-              );
-            }
+            )
           }
-        };
-
-      const width =
-        Math.max(
-          anchor?.getBoundingClientRect()
-            .width ??
-            0,
-          140,
-        );
-      let lastGroup:
-        | string
-        | undefined;
-      return (
-        <>
-          <button
-            {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
-            ref={
-              setRefs
-            }
+          label={
+            rest[
+              'aria-label'
+            ] ??
+            ''
+          }
+          width={
+            width
+          }
+          className="p-1"
+        >
+          <ul
             id={
-              id
+              listId
             }
-            type="button"
-            role="combobox"
-            aria-haspopup="listbox"
-            aria-expanded={
-              open
-            }
-            aria-controls={
-              open
-                ? listId
-                : undefined
-            }
-            aria-activedescendant={
-              open
-                ? `${listId}-${active}`
-                : undefined
-            }
-            disabled={
-              disabled
-            }
-            onClick={() =>
-              open
-                ? setOpen(
-                    false,
-                  )
-                : openList()
-            }
-            onKeyDown={
-              onKey
-            }
-            className={cn(
-              FIELD,
-              'flex items-center justify-between gap-1 text-start',
-              className,
-            )}
-          >
-            <span className="min-w-0 flex-1 truncate">
-              {selected?.label ??
-                ''}
-            </span>
-            <ChevronDown
-              className="size-3.5 shrink-0 text-app-text-dim"
-              aria-hidden
-            />
-          </button>
-          <Popover
-            anchor={
-              anchor
-            }
-            open={
-              open
-            }
-            onClose={() =>
-              setOpen(
-                false,
-              )
-            }
-            label={
+            role="listbox"
+            aria-label={
               rest[
                 'aria-label'
-              ] ??
-              ''
+              ]
             }
-            width={
-              width
-            }
-            className="p-1"
+            className="max-h-64 overflow-y-auto overscroll-contain"
           >
-            <ul
-              id={
-                listId
-              }
-              role="listbox"
-              aria-label={
-                rest[
-                  'aria-label'
-                ]
-              }
-              className="max-h-64 overflow-y-auto overscroll-contain"
-            >
-              {entries.map(
-                (
-                  o,
-                  i,
-                ) => {
-                  const header =
-                    o.group !==
-                    lastGroup
-                      ? o.group
-                      : undefined;
-                  lastGroup =
-                    o.group;
-                  return (
-                    <Fragment
-                      key={`${o.group ?? ''}:${o.value}`}
-                    >
-                      {header ? (
-                        <li
-                          role="presentation"
-                          className="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold text-app-text-dim"
-                        >
-                          {
-                            header
-                          }
-                        </li>
-                      ) : null}
-                      {/* Keyboard picking happens on the combobox button (aria-activedescendant). */}
-                      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
+            {entries.map(
+              (
+                o,
+                i,
+              ) => {
+                const header =
+                  o.group !==
+                  lastGroup
+                    ? o.group
+                    : undefined;
+                lastGroup =
+                  o.group;
+                return (
+                  <Fragment
+                    key={`${o.group ?? ''}:${o.value}`}
+                  >
+                    {header ? (
                       <li
-                        id={`${listId}-${i}`}
-                        role="option"
-                        aria-selected={
-                          o.value ===
-                          current
-                        }
-                        aria-disabled={
-                          o.disabled ||
-                          undefined
-                        }
-                        onPointerDown={(
-                          e,
-                        ) =>
-                          e.preventDefault()
-                        }
-                        onClick={() =>
-                          pick(
-                            o,
-                          )
-                        }
-                        onPointerMove={() =>
-                          !o.disabled &&
-                          setActive(
-                            i,
-                          )
-                        }
-                        className={cn(
-                          'flex cursor-pointer items-center gap-2 rounded-app-sm px-2 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:text-sm',
-                          i ===
-                            active &&
-                            'bg-app-surface-hover',
-                          o.disabled &&
-                            'cursor-default opacity-45',
-                        )}
+                        role="presentation"
+                        className="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold text-app-text-dim"
                       >
-                        <span className="min-w-0 flex-1 truncate">
-                          {
-                            o.label
-                          }
-                        </span>
-                        {o.value ===
-                        current ? (
-                          <Check
-                            className="size-3.5 shrink-0 text-app-accent-text"
-                            aria-hidden
-                          />
-                        ) : null}
+                        {
+                          header
+                        }
                       </li>
-                    </Fragment>
-                  );
-                },
-              )}
-            </ul>
-          </Popover>
-        </>
-      );
-    },
-  );
+                    ) : null}
+                    {/* Keyboard picking happens on the combobox button (aria-activedescendant). */}
+                    {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
+                    <li
+                      id={`${listId}-${i}`}
+                      role="option"
+                      aria-selected={
+                        o.value ===
+                        current
+                      }
+                      aria-disabled={
+                        o.disabled ||
+                        undefined
+                      }
+                      onPointerDown={(
+                        e,
+                      ) =>
+                        e.preventDefault()
+                      }
+                      onClick={() =>
+                        pick(
+                          o,
+                        )
+                      }
+                      onPointerMove={() =>
+                        !o.disabled &&
+                        setActive(
+                          i,
+                        )
+                      }
+                      className={cn(
+                        'flex cursor-pointer items-center gap-2 rounded-app-sm px-2 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:text-sm',
+                        i ===
+                          active &&
+                          'bg-app-surface-hover',
+                        o.disabled &&
+                          'cursor-default opacity-45',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        {
+                          o.label
+                        }
+                      </span>
+                      {o.value ===
+                      current ? (
+                        <Check
+                          className="size-3.5 shrink-0 text-app-accent-text"
+                          aria-hidden
+                        />
+                      ) : null}
+                    </li>
+                  </Fragment>
+                );
+              },
+            )}
+          </ul>
+        </Popover>
+      </>
+    );
+  };
 
 export function Field({
   label,

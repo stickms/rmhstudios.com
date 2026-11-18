@@ -188,7 +188,7 @@ export default function ReaderTextView({
           tabIndex={0}
           aria-label={t('text-view-scroll', { defaultValue: 'Book text' })}
         >
-          <GlossaryContext.Provider value={glossaryMap}>
+          <GlossaryContext value={glossaryMap}>
             <div className="mx-auto max-w-2xl px-4 py-6">
               {text === null && !failed ? (
                 <p role="status" className="flex items-center gap-2 text-site-text-muted">
@@ -248,7 +248,7 @@ export default function ReaderTextView({
                 />
               ) : null}
             </div>
-          </GlossaryContext.Provider>
+          </GlossaryContext>
         </div>
         {ruler ? <ReadingRuler scope="contained" containerRef={bodyRef} /> : null}
       </div>

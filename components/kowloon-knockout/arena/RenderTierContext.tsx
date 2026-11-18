@@ -175,7 +175,7 @@ export function RenderTierProvider({
     ]);
 
   return (
-    <Ctx.Provider
+    <Ctx
       value={
         value
       }
@@ -183,7 +183,7 @@ export function RenderTierProvider({
       {
         children
       }
-    </Ctx.Provider>
+    </Ctx>
   );
 }
 

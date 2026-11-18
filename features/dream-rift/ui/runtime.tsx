@@ -199,7 +199,7 @@ export function DreamRiftRuntimeProvider({
   ]);
 
   return (
-    <RuntimeContext.Provider
+    <RuntimeContext
       value={{
         ...base,
         assets,
@@ -208,6 +208,6 @@ export function DreamRiftRuntimeProvider({
       {
         children
       }
-    </RuntimeContext.Provider>
+    </RuntimeContext>
   );
 }

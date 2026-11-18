@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { type ButtonHTMLAttributes } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 
 interface PostMenuTriggerProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
@@ -16,8 +16,7 @@ interface PostMenuTriggerProps extends Omit<ButtonHTMLAttributes<HTMLButtonEleme
  * It is drawn as a 16px glyph in the action row's ink and keeps a 44px hit area through `.feed-action`'s `::after`
  * (feed.css), so it can sit on a line of text without making the line taller.
  */
-export const PostMenuTrigger = forwardRef<HTMLButtonElement, PostMenuTriggerProps>(
-  function PostMenuTrigger({ label, open, className, ...props }, ref) {
+export const PostMenuTrigger = function PostMenuTrigger({ label, open, className, ref, ...props }: PostMenuTriggerProps & { ref?: React.Ref<HTMLButtonElement> }) {
     return (
       <button
         ref={ref}
@@ -32,5 +31,4 @@ export const PostMenuTrigger = forwardRef<HTMLButtonElement, PostMenuTriggerProp
         <MoreHorizontal className="feed-action__icon" aria-hidden />
       </button>
     );
-  },
-);
+  };

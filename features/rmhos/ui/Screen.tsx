@@ -4,7 +4,6 @@
  * on at focus and off at blur, because v86 listens on `window`). Ctrl+Alt+Shift+Escape gives the
  * focus back to the page, so the screen is never a keyboard trap.
  */
-import { forwardRef } from 'react';
 import type {
   KeyboardEvent,
   PointerEvent,
@@ -29,130 +28,125 @@ interface Props {
 }
 
 const Screen =
-  forwardRef<
-    HTMLDivElement,
-    Props
-  >(
-    function Screen(
-      {
-        label,
-        hint,
-        hintId,
-        interactive,
-        onCapture,
-        onRelease,
-        onInput,
-      },
-      ref,
-    ) {
-      const keyDown =
-        (
-          e: KeyboardEvent<HTMLDivElement>,
-        ) => {
-          if (
-            e.ctrlKey &&
-            e.altKey &&
-            e.shiftKey &&
-            e.key ===
-              'Escape'
-          ) {
-            e.preventDefault();
-            e.stopPropagation();
-            onRelease();
-            e.currentTarget.blur();
-            return;
+  function Screen({
+    label,
+    hint,
+    hintId,
+    interactive,
+    onCapture,
+    onRelease,
+    onInput,
+    ref,
+  }: Props & {
+    ref?: React.Ref<HTMLDivElement>;
+  }) {
+    const keyDown =
+      (
+        e: KeyboardEvent<HTMLDivElement>,
+      ) => {
+        if (
+          e.ctrlKey &&
+          e.altKey &&
+          e.shiftKey &&
+          e.key ===
+            'Escape'
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          onRelease();
+          e.currentTarget.blur();
+          return;
+        }
+        onInput();
+      };
+    // A press focuses the screen. In fullscreen it also captures the pointer; Escape (the browser's
+    // own) releases it and leaves fullscreen. Outside fullscreen the pointer is never locked.
+    const press =
+      (
+        e: PointerEvent<HTMLDivElement>,
+      ) => {
+        const el =
+          e.currentTarget;
+        el.focus();
+        onInput();
+        // Fullscreen is on the app container (toolbar, dialogs and the screen together).
+        if (
+          document.fullscreenElement?.contains(
+            el,
+          ) &&
+          !document.pointerLockElement
+        )
+          void Promise.resolve(
+            el.requestPointerLock?.(),
+          ).catch(
+            () => {},
+          );
+      };
+    return (
+      <>
+        <div
+          ref={
+            ref
           }
-          onInput();
-        };
-      // A press focuses the screen. In fullscreen it also captures the pointer; Escape (the browser's
-      // own) releases it and leaves fullscreen. Outside fullscreen the pointer is never locked.
-      const press =
-        (
-          e: PointerEvent<HTMLDivElement>,
-        ) => {
-          const el =
-            e.currentTarget;
-          el.focus();
-          onInput();
-          // Fullscreen is on the app container (toolbar, dialogs and the screen together).
-          if (
-            document.fullscreenElement?.contains(
-              el,
-            ) &&
-            !document.pointerLockElement
-          )
-            void Promise.resolve(
-              el.requestPointerLock?.(),
-            ).catch(
-              () => {},
+          className="rmhos-screen"
+          // The guest's own text mode draws left to right whatever the page language is.
+          dir="ltr"
+          tabIndex={
+            interactive
+              ? 0
+              : -1
+          }
+          inert={
+            !interactive
+          }
+          role="application"
+          aria-label={
+            label
+          }
+          aria-describedby={
+            hintId
+          }
+          onFocus={() =>
+            interactive &&
+            onCapture(
+              true,
+            )
+          }
+          onBlur={(
+            e,
+          ) => {
+            // Leaving the screen gives the pointer back too.
+            if (
+              document.pointerLockElement ===
+              e.currentTarget
+            )
+              document.exitPointerLock?.();
+            onCapture(
+              false,
             );
-        };
-      return (
-        <>
-          <div
-            ref={
-              ref
-            }
-            className="rmhos-screen"
-            // The guest's own text mode draws left to right whatever the page language is.
-            dir="ltr"
-            tabIndex={
-              interactive
-                ? 0
-                : -1
-            }
-            inert={
-              !interactive
-            }
-            role="application"
-            aria-label={
-              label
-            }
-            aria-describedby={
-              hintId
-            }
-            onFocus={() =>
-              interactive &&
-              onCapture(
-                true,
-              )
-            }
-            onBlur={(
-              e,
-            ) => {
-              // Leaving the screen gives the pointer back too.
-              if (
-                document.pointerLockElement ===
-                e.currentTarget
-              )
-                document.exitPointerLock?.();
-              onCapture(
-                false,
-              );
-            }}
-            onKeyDownCapture={
-              keyDown
-            }
-            onPointerDown={
-              press
-            }
-          >
-            <div />
-            <canvas />
-          </div>
-          <span
-            id={
-              hintId
-            }
-            className="sr-only"
-          >
-            {
-              hint
-            }
-          </span>
-        </>
-      );
-    },
-  );
+          }}
+          onKeyDownCapture={
+            keyDown
+          }
+          onPointerDown={
+            press
+          }
+        >
+          <div />
+          <canvas />
+        </div>
+        <span
+          id={
+            hintId
+          }
+          className="sr-only"
+        >
+          {
+            hint
+          }
+        </span>
+      </>
+    );
+  };
 
 export default Screen;

@@ -334,332 +334,327 @@ const TIER_CLASSES =
   } as const;
 
 const Select =
-  React.forwardRef<
-    HTMLButtonElement,
-    SelectProps
-  >(
-    (
-      {
-        className,
-        children,
-        controlSize = 'default',
-        containerClassName,
-        value,
-        defaultValue,
-        onChange,
-        name,
-        disabled,
-        required,
-        placeholder,
-        tier = 'site',
-        ...props
-      },
-      ref,
-    ) => {
-      const nodes =
-        React.useMemo(
-          () =>
-            parseOptions(
-              children,
-            ),
-          [
+  ({
+    className,
+    children,
+    controlSize = 'default',
+    containerClassName,
+    value,
+    defaultValue,
+    onChange,
+    name,
+    disabled,
+    required,
+    placeholder,
+    tier = 'site',
+    ref,
+    ...props
+  }: SelectProps & {
+    ref?: React.Ref<HTMLButtonElement>;
+  }) => {
+    const nodes =
+      React.useMemo(
+        () =>
+          parseOptions(
             children,
-          ],
-        );
-      const styles =
-        TIER_CLASSES[
-          tier
-        ];
-
-      // `--app-*` lives on the `.app-theme` shell, so an app-tier popup has to be
-      // portalled inside it or every token resolves to nothing. Resolved after
-      // mount (there is no DOM during SSR) and left null for the site tier, where
-      // Radix's default `<body>` container is correct.
-      // Both scoped tiers portal into the element their tokens are declared on.
-      // `site` stays null so Radix uses its `<body>` default, which is correct
-      // there because `--site-*` lives on `:root`.
-      const [
-        appContainer,
-        setAppContainer,
-      ] =
-        React.useState<HTMLElement | null>(
-          null,
-        );
-      React.useEffect(() => {
-        const host =
-          tier ===
-          'app'
-            ? '.app-theme'
-            : tier ===
-                'slice'
-              ? '.slice-theme'
-              : null;
-        if (
-          !host
-        )
-          return;
-        setAppContainer(
-          document.querySelector<HTMLElement>(
-            host,
           ),
-        );
-      }, [
-        tier,
-      ]);
+        [
+          children,
+        ],
+      );
+    const styles =
+      TIER_CLASSES[
+        tier
+      ];
 
-      const handleValueChange =
-        React.useCallback(
-          (
-            next: string,
-          ) => {
-            const plain =
-              fromItemValue(
-                next,
-              );
-            const target =
-              {
-                value:
-                  plain,
-                name:
-                  name ??
-                  '',
-              };
-            onChange?.(
-              {
-                target,
-                currentTarget:
-                  target,
-              } as React.ChangeEvent<HTMLSelectElement>,
-            );
-          },
-          [
-            onChange,
-            name,
-          ],
-        );
+    // `--app-*` lives on the `.app-theme` shell, so an app-tier popup has to be
+    // portalled inside it or every token resolves to nothing. Resolved after
+    // mount (there is no DOM during SSR) and left null for the site tier, where
+    // Radix's default `<body>` container is correct.
+    // Both scoped tiers portal into the element their tokens are declared on.
+    // `site` stays null so Radix uses its `<body>` default, which is correct
+    // there because `--site-*` lives on `:root`.
+    const [
+      appContainer,
+      setAppContainer,
+    ] =
+      React.useState<HTMLElement | null>(
+        null,
+      );
+    React.useEffect(() => {
+      const host =
+        tier ===
+        'app'
+          ? '.app-theme'
+          : tier ===
+              'slice'
+            ? '.slice-theme'
+            : null;
+      if (
+        !host
+      )
+        return;
+      setAppContainer(
+        document.querySelector<HTMLElement>(
+          host,
+        ),
+      );
+    }, [
+      tier,
+    ]);
 
-      const renderOption =
+    const handleValueChange =
+      React.useCallback(
         (
-          option: OptionNode,
-          key: React.Key,
-        ) => (
-          <SelectPrimitive.Item
-            key={
-              key
-            }
-            value={toItemValue(
-              option.value,
-            )}
-            disabled={
-              option.disabled
-            }
-            data-slot="select-item"
-            className={cn(
-              // The same row metrics as `MenuItem` (components/ui/menu.tsx), because
-              // a select's list and an overflow menu are the same object to whoever
-              // is looking at them: same gap, same padding, same `min-h-9` with the
-              // `pointer-coarse:min-h-11` touch floor. These rows were `py-1.5
-              // pl-2.5`, which lands at ~30px — under the floor, and visibly tighter
-              // than the menu that opens from the button next to it.
-              'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5 py-2 pl-4 pr-9 outline-none',
-              'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-              styles.item,
-            )}
-          >
-            <SelectPrimitive.ItemText>
-              {
-                option.label
-              }
-            </SelectPrimitive.ItemText>
-            <SelectPrimitive.ItemIndicator className="absolute right-2.5 flex items-center">
-              <Check
-                className="h-3.5 w-3.5"
-                aria-hidden
-              />
-            </SelectPrimitive.ItemIndicator>
-          </SelectPrimitive.Item>
-        );
+          next: string,
+        ) => {
+          const plain =
+            fromItemValue(
+              next,
+            );
+          const target =
+            {
+              value:
+                plain,
+              name:
+                name ??
+                '',
+            };
+          onChange?.(
+            {
+              target,
+              currentTarget:
+                target,
+            } as React.ChangeEvent<HTMLSelectElement>,
+          );
+        },
+        [
+          onChange,
+          name,
+        ],
+      );
 
-      return (
-        <SelectPrimitive.Root
-          value={
-            value ===
-            undefined
-              ? undefined
-              : toItemValue(
-                  String(
-                    value,
-                  ),
-                )
+    const renderOption =
+      (
+        option: OptionNode,
+        key: React.Key,
+      ) => (
+        <SelectPrimitive.Item
+          key={
+            key
           }
-          defaultValue={
-            defaultValue ===
-            undefined
-              ? undefined
-              : toItemValue(
-                  String(
-                    defaultValue,
-                  ),
-                )
-          }
-          onValueChange={
-            handleValueChange
-          }
+          value={toItemValue(
+            option.value,
+          )}
           disabled={
-            disabled
+            option.disabled
           }
-          required={
-            required
-          }
-          name={
-            name
-          }
+          data-slot="select-item"
+          className={cn(
+            // The same row metrics as `MenuItem` (components/ui/menu.tsx), because
+            // a select's list and an overflow menu are the same object to whoever
+            // is looking at them: same gap, same padding, same `min-h-9` with the
+            // `pointer-coarse:min-h-11` touch floor. These rows were `py-1.5
+            // pl-2.5`, which lands at ~30px — under the floor, and visibly tighter
+            // than the menu that opens from the button next to it.
+            'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5 py-2 pl-4 pr-9 outline-none',
+            'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+            styles.item,
+          )}
         >
-          <span
-            className={cn(
-              'relative block',
-              containerClassName,
-            )}
-            data-slot="select-control"
-          >
-            <SelectPrimitive.Trigger
-              ref={
-                ref
-              }
-              data-slot="select"
-              className={cn(
-                'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition-colors duration-(--m1) ease-[ease]',
-                // Full-size selects match Input (K4, 40px); compact ones are 36px.
-                controlSize ===
-                  'sm'
-                  ? 'h-9 px-3 py-1 pr-9'
-                  : 'h-10 px-3 py-2 pr-9',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                // The value can be longer than the control: clip it rather than let
-                // it push the chevron out of the box.
-                '[&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:text-left',
-                styles.trigger,
-                className,
-              )}
-              {...props}
-            >
-              <SelectPrimitive.Value
-                placeholder={
-                  placeholder
-                }
-              />
-              <SelectPrimitive.Icon
-                asChild
-              >
-                <ChevronDown
-                  aria-hidden
-                  className={cn(
-                    'pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2',
-                    styles.chevron,
-                  )}
-                />
-              </SelectPrimitive.Icon>
-            </SelectPrimitive.Trigger>
+          <SelectPrimitive.ItemText>
+            {
+              option.label
+            }
+          </SelectPrimitive.ItemText>
+          <SelectPrimitive.ItemIndicator className="absolute right-2.5 flex items-center">
+            <Check
+              className="h-3.5 w-3.5"
+              aria-hidden
+            />
+          </SelectPrimitive.ItemIndicator>
+        </SelectPrimitive.Item>
+      );
 
-            <SelectPrimitive.Portal
-              container={
-                appContainer ??
-                undefined
+    return (
+      <SelectPrimitive.Root
+        value={
+          value ===
+          undefined
+            ? undefined
+            : toItemValue(
+                String(
+                  value,
+                ),
+              )
+        }
+        defaultValue={
+          defaultValue ===
+          undefined
+            ? undefined
+            : toItemValue(
+                String(
+                  defaultValue,
+                ),
+              )
+        }
+        onValueChange={
+          handleValueChange
+        }
+        disabled={
+          disabled
+        }
+        required={
+          required
+        }
+        name={
+          name
+        }
+      >
+        <span
+          className={cn(
+            'relative block',
+            containerClassName,
+          )}
+          data-slot="select-control"
+        >
+          <SelectPrimitive.Trigger
+            ref={
+              ref
+            }
+            data-slot="select"
+            className={cn(
+              'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition-colors duration-(--m1) ease-[ease]',
+              // Full-size selects match Input (K4, 40px); compact ones are 36px.
+              controlSize ===
+                'sm'
+                ? 'h-9 px-3 py-1 pr-9'
+                : 'h-10 px-3 py-2 pr-9',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              // The value can be longer than the control: clip it rather than let
+              // it push the chevron out of the box.
+              '[&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:text-left',
+              styles.trigger,
+              className,
+            )}
+            {...props}
+          >
+            <SelectPrimitive.Value
+              placeholder={
+                placeholder
               }
+            />
+            <SelectPrimitive.Icon
+              asChild
             >
-              <SelectPrimitive.Content
-                data-slot="select-content"
-                // M5: an overlay fades in and out in 160 ms (no scale, no slide) via `data-motion="pop"`, which
-                // app/styles/steel-overlay.css reduces to an opacity transition.
-                data-motion="pop"
-                position="popper"
-                sideOffset={
-                  6
-                }
+              <ChevronDown
+                aria-hidden
                 className={cn(
-                  // The whole point of the rewrite: the list is one of OUR surfaces,
-                  // in the theme's own material. `surface-overlay` is the shared
-                  // floating-panel tier (globals.css §5.1). z-60 clears the z-50
-                  // dialogs a select can be opened from inside.
-                  'z-topbar max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden py-1.5',
-                  styles.content,
+                  'pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2',
+                  styles.chevron,
+                )}
+              />
+            </SelectPrimitive.Icon>
+          </SelectPrimitive.Trigger>
+
+          <SelectPrimitive.Portal
+            container={
+              appContainer ??
+              undefined
+            }
+          >
+            <SelectPrimitive.Content
+              data-slot="select-content"
+              // M5: an overlay fades in and out in 160 ms (no scale, no slide) via `data-motion="pop"`, which
+              // app/styles/steel-overlay.css reduces to an opacity transition.
+              data-motion="pop"
+              position="popper"
+              sideOffset={
+                6
+              }
+              className={cn(
+                // The whole point of the rewrite: the list is one of OUR surfaces,
+                // in the theme's own material. `surface-overlay` is the shared
+                // floating-panel tier (globals.css §5.1). z-60 clears the z-50
+                // dialogs a select can be opened from inside.
+                'z-topbar max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden py-1.5',
+                styles.content,
+              )}
+            >
+              <SelectPrimitive.ScrollUpButton
+                className={cn(
+                  'flex h-5 items-center justify-center',
+                  styles.scrollButton,
                 )}
               >
-                <SelectPrimitive.ScrollUpButton
-                  className={cn(
-                    'flex h-5 items-center justify-center',
-                    styles.scrollButton,
-                  )}
-                >
-                  <ChevronUp
-                    className="h-3.5 w-3.5"
-                    aria-hidden
-                  />
-                </SelectPrimitive.ScrollUpButton>
+                <ChevronUp
+                  className="h-3.5 w-3.5"
+                  aria-hidden
+                />
+              </SelectPrimitive.ScrollUpButton>
 
-                <SelectPrimitive.Viewport className="p-0.5">
-                  {/* Keyed by position, not by value: a list is free to repeat a
+              <SelectPrimitive.Viewport className="p-0.5">
+                {/* Keyed by position, not by value: a list is free to repeat a
                     value (or use `''` twice for a placeholder plus an "any" row)
                     and React would then drop one of them. */}
-                  {nodes.map(
-                    (
-                      node,
-                      i,
-                    ) =>
-                      node.kind ===
-                      'option' ? (
-                        renderOption(
-                          node,
-                          `option-${i}`,
-                        )
-                      ) : (
-                        <SelectPrimitive.Group
-                          key={`group-${i}`}
-                        >
-                          <SelectPrimitive.Label
-                            className={cn(
-                              // Matches `MenuLabel` — same inset as the rows below it.
-                              'px-3 pb-1 pt-2 text-xs font-semibold',
-                              styles.label,
-                            )}
-                          >
-                            {
-                              node.label
-                            }
-                          </SelectPrimitive.Label>
-                          {node.options.map(
-                            (
-                              option,
-                              j,
-                            ) =>
-                              renderOption(
-                                option,
-                                `option-${i}-${j}`,
-                              ),
+                {nodes.map(
+                  (
+                    node,
+                    i,
+                  ) =>
+                    node.kind ===
+                    'option' ? (
+                      renderOption(
+                        node,
+                        `option-${i}`,
+                      )
+                    ) : (
+                      <SelectPrimitive.Group
+                        key={`group-${i}`}
+                      >
+                        <SelectPrimitive.Label
+                          className={cn(
+                            // Matches `MenuLabel` — same inset as the rows below it.
+                            'px-3 pb-1 pt-2 text-xs font-semibold',
+                            styles.label,
                           )}
-                        </SelectPrimitive.Group>
-                      ),
-                  )}
-                </SelectPrimitive.Viewport>
+                        >
+                          {
+                            node.label
+                          }
+                        </SelectPrimitive.Label>
+                        {node.options.map(
+                          (
+                            option,
+                            j,
+                          ) =>
+                            renderOption(
+                              option,
+                              `option-${i}-${j}`,
+                            ),
+                        )}
+                      </SelectPrimitive.Group>
+                    ),
+                )}
+              </SelectPrimitive.Viewport>
 
-                <SelectPrimitive.ScrollDownButton
-                  className={cn(
-                    'flex h-5 items-center justify-center',
-                    styles.scrollButton,
-                  )}
-                >
-                  <ChevronDown
-                    className="h-3.5 w-3.5"
-                    aria-hidden
-                  />
-                </SelectPrimitive.ScrollDownButton>
-              </SelectPrimitive.Content>
-            </SelectPrimitive.Portal>
-          </span>
-        </SelectPrimitive.Root>
-      );
-    },
-  );
+              <SelectPrimitive.ScrollDownButton
+                className={cn(
+                  'flex h-5 items-center justify-center',
+                  styles.scrollButton,
+                )}
+              >
+                <ChevronDown
+                  className="h-3.5 w-3.5"
+                  aria-hidden
+                />
+              </SelectPrimitive.ScrollDownButton>
+            </SelectPrimitive.Content>
+          </SelectPrimitive.Portal>
+        </span>
+      </SelectPrimitive.Root>
+    );
+  };
 Select.displayName =
   'Select';
 

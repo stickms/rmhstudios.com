@@ -283,7 +283,7 @@ export function TempleOfJoyGate() {
   }
 
   return (
-    <MainMenuContext.Provider
+    <MainMenuContext
       value={
         returnToMenu
       }
@@ -297,6 +297,6 @@ export function TempleOfJoyGate() {
             : null
         }
       />
-    </MainMenuContext.Provider>
+    </MainMenuContext>
   );
 }

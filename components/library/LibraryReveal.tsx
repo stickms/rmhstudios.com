@@ -288,7 +288,7 @@ export function LibraryRevealProvider({
     );
 
   return (
-    <RevealCtx.Provider
+    <RevealCtx
       value={
         api
       }
@@ -296,7 +296,7 @@ export function LibraryRevealProvider({
       {
         children
       }
-    </RevealCtx.Provider>
+    </RevealCtx>
   );
 }
 

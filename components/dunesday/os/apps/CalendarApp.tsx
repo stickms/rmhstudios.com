@@ -13,7 +13,7 @@ export default function CalendarApp() {
   } =
     useDunesday();
   return (
-    <BareChrome.Provider
+    <BareChrome
       value
     >
       <Schedule
@@ -30,6 +30,6 @@ export default function CalendarApp() {
           today
         }
       />
-    </BareChrome.Provider>
+    </BareChrome>
   );
 }

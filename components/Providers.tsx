@@ -616,10 +616,10 @@ export function Providers({
         <LazyMotionProvider load={loadMotionFeatures}>
           {/* One shared animation scheme for every account and device. */}
           <MotionConfig reducedMotion="never">
-            <SessionCtx.Provider value={effectiveSession}>
-              <DataSaverRequestContext.Provider value={saveData}>
-                <AppTierContext.Provider value={isAppRoute}>
-                  <ResolvedUserCtx.Provider
+            <SessionCtx value={effectiveSession}>
+              <DataSaverRequestContext value={saveData}>
+                <AppTierContext value={isAppRoute}>
+                  <ResolvedUserCtx
                     value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
                   >
                     <ConfirmProvider>
@@ -643,11 +643,11 @@ export function Providers({
                         ) : null}
                       </SilentErrorBoundary>
                     </ConfirmProvider>
-                  </ResolvedUserCtx.Provider>
+                  </ResolvedUserCtx>
                   <ToastHost theme={style === 'graphite' ? 'dark' : 'light'} />
-                </AppTierContext.Provider>
-              </DataSaverRequestContext.Provider>
-            </SessionCtx.Provider>
+                </AppTierContext>
+              </DataSaverRequestContext>
+            </SessionCtx>
           </MotionConfig>
         </LazyMotionProvider>
       </AppI18nProvider>

@@ -1,4 +1,4 @@
-import { forwardRef, useRef, type TextareaHTMLAttributes } from'react';
+import { useRef, type TextareaHTMLAttributes } from'react';
 
 interface GhostTextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
  value: string;
@@ -21,10 +21,7 @@ interface GhostTextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement>
  * reliable way to render styled inline ghost text in a textarea). Tab — or → at
  * the end of the input — accepts it.
  */
-export const GhostTextArea = forwardRef<HTMLTextAreaElement, GhostTextAreaProps>(
- function GhostTextArea(
- { value, suggestion ='', onAcceptSuggestion, className ='', onKeyDown, ...props },
- ref
+export const GhostTextArea = function GhostTextArea({ value, suggestion ='', onAcceptSuggestion, className ='', onKeyDown, ref, ...props }: GhostTextAreaProps & { ref?: React.Ref<HTMLTextAreaElement> }
  ) {
  const innerRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -92,5 +89,4 @@ export const GhostTextArea = forwardRef<HTMLTextAreaElement, GhostTextAreaProps>
  />
  </div>
  );
- }
-);
+ };

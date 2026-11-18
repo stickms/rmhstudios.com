@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -110,224 +109,219 @@ export interface MarkdownEditorHandle {
 }
 
 export const MarkdownEditor =
-  forwardRef<
-    MarkdownEditorHandle,
-    {
-      value: string;
-      onChange: (
-        value: string,
-      ) => void;
-      className?: string;
-      placeholder?: string;
-    }
-  >(
-    function MarkdownEditor(
-      {
-        value,
+  function MarkdownEditor({
+    value,
+    onChange,
+    className,
+    placeholder,
+    ref,
+  }: {
+    value: string;
+    onChange: (
+      value: string,
+    ) => void;
+    className?: string;
+    placeholder?: string;
+  } & {
+    ref?: React.Ref<MarkdownEditorHandle>;
+  }) {
+    const hostRef =
+      useRef<HTMLDivElement>(
+        null,
+      );
+    const viewRef =
+      useRef<EditorView | null>(
+        null,
+      );
+    // Keep onChange current without recreating the editor on every render.
+    const onChangeRef =
+      useRef(
         onChange,
-        className,
-        placeholder,
-      },
+      );
+    onChangeRef.current =
+      onChange;
+
+    useImperativeHandle(
       ref,
-    ) {
-      const hostRef =
-        useRef<HTMLDivElement>(
-          null,
-        );
-      const viewRef =
-        useRef<EditorView | null>(
-          null,
-        );
-      // Keep onChange current without recreating the editor on every render.
-      const onChangeRef =
-        useRef(
-          onChange,
-        );
-      onChangeRef.current =
-        onChange;
-
-      useImperativeHandle(
-        ref,
-        () => ({
-          insertAtCursor:
-            (
-              text: string,
-              options?: {
-                ownLine?: boolean;
-              },
-            ) => {
-              const view =
-                viewRef.current;
-              if (
-                !view
-              )
-                return false;
-              const {
+      () => ({
+        insertAtCursor:
+          (
+            text: string,
+            options?: {
+              ownLine?: boolean;
+            },
+          ) => {
+            const view =
+              viewRef.current;
+            if (
+              !view
+            )
+              return false;
+            const {
+              from,
+              to,
+            } =
+              view
+                .state
+                .selection
+                .main;
+            const doc =
+              view
+                .state
+                .doc;
+            const lead =
+              options?.ownLine &&
+              from >
+                0 &&
+              doc.sliceString(
+                from -
+                  1,
                 from,
+              ) !==
+                '\n'
+                ? '\n'
+                : '';
+            const trail =
+              options?.ownLine &&
+              doc.sliceString(
                 to,
-              } =
-                view
-                  .state
-                  .selection
-                  .main;
-              const doc =
-                view
-                  .state
-                  .doc;
-              const lead =
-                options?.ownLine &&
-                from >
-                  0 &&
-                doc.sliceString(
-                  from -
-                    1,
-                  from,
-                ) !==
-                  '\n'
-                  ? '\n'
-                  : '';
-              const trail =
-                options?.ownLine &&
-                doc.sliceString(
-                  to,
-                  to +
-                    1,
-                ) !==
-                  '\n'
-                  ? '\n'
-                  : '';
-              const insert = `${lead}${text}${trail}`;
-              view.dispatch(
-                {
-                  changes:
-                    {
-                      from,
-                      to,
-                      insert,
-                    },
-                  selection:
-                    {
-                      anchor:
-                        from +
-                        insert.length,
-                    },
-                  scrollIntoView: true,
-                  userEvent:
-                    'input.paste',
-                },
-              );
-              view.focus();
-              return true;
-            },
-        }),
-      );
+                to +
+                  1,
+              ) !==
+                '\n'
+                ? '\n'
+                : '';
+            const insert = `${lead}${text}${trail}`;
+            view.dispatch(
+              {
+                changes:
+                  {
+                    from,
+                    to,
+                    insert,
+                  },
+                selection:
+                  {
+                    anchor:
+                      from +
+                      insert.length,
+                  },
+                scrollIntoView: true,
+                userEvent:
+                  'input.paste',
+              },
+            );
+            view.focus();
+            return true;
+          },
+      }),
+    );
 
-      useEffect(() => {
-        if (
-          !hostRef.current
-        )
-          return;
-        const view =
-          new EditorView(
-            {
-              doc: value,
-              parent:
-                hostRef.current,
-              extensions:
-                [
-                  history(),
-                  drawSelection(),
-                  highlightActiveLine(),
-                  keymap.of(
-                    [
-                      ...defaultKeymap,
-                      ...historyKeymap,
-                    ],
-                  ),
-                  markdown(),
-                  EditorView.lineWrapping,
-                  syntaxHighlighting(
-                    defaultHighlightStyle,
-                    {
-                      fallback: true,
-                    },
-                  ),
-                  editorTheme,
-                  ...(placeholder
-                    ? [
-                        cmPlaceholder(
-                          placeholder,
-                        ),
-                      ]
-                    : []),
-                  EditorView.updateListener.of(
-                    (
-                      u,
-                    ) => {
-                      if (
-                        u.docChanged
-                      )
-                        onChangeRef.current(
-                          u.state.doc.toString(),
-                        );
-                    },
-                  ),
-                ],
-            },
-          );
+    useEffect(() => {
+      if (
+        !hostRef.current
+      )
+        return;
+      const view =
+        new EditorView(
+          {
+            doc: value,
+            parent:
+              hostRef.current,
+            extensions:
+              [
+                history(),
+                drawSelection(),
+                highlightActiveLine(),
+                keymap.of(
+                  [
+                    ...defaultKeymap,
+                    ...historyKeymap,
+                  ],
+                ),
+                markdown(),
+                EditorView.lineWrapping,
+                syntaxHighlighting(
+                  defaultHighlightStyle,
+                  {
+                    fallback: true,
+                  },
+                ),
+                editorTheme,
+                ...(placeholder
+                  ? [
+                      cmPlaceholder(
+                        placeholder,
+                      ),
+                    ]
+                  : []),
+                EditorView.updateListener.of(
+                  (
+                    u,
+                  ) => {
+                    if (
+                      u.docChanged
+                    )
+                      onChangeRef.current(
+                        u.state.doc.toString(),
+                      );
+                  },
+                ),
+              ],
+          },
+        );
+      viewRef.current =
+        view;
+      return () => {
+        view.destroy();
         viewRef.current =
-          view;
-        return () => {
-          view.destroy();
-          viewRef.current =
-            null;
-        };
-        // Created once; external value changes are synced by the effect below.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, []);
+          null;
+      };
+      // Created once; external value changes are synced by the effect below.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-      // Sync external value changes (e.g. a file upload replacing the whole doc)
-      // into the editor — but only when it genuinely differs, so it never clobbers
-      // the cursor while the user is typing (that path round-trips through onChange).
-      useEffect(() => {
-        const view =
-          viewRef.current;
-        if (
-          !view
-        )
-          return;
-        const current =
-          view.state.doc.toString();
-        if (
-          value !==
-          current
-        ) {
-          view.dispatch(
-            {
-              changes:
-                {
-                  from: 0,
-                  to: current.length,
-                  insert:
-                    value,
-                },
-            },
-          );
+    // Sync external value changes (e.g. a file upload replacing the whole doc)
+    // into the editor — but only when it genuinely differs, so it never clobbers
+    // the cursor while the user is typing (that path round-trips through onChange).
+    useEffect(() => {
+      const view =
+        viewRef.current;
+      if (
+        !view
+      )
+        return;
+      const current =
+        view.state.doc.toString();
+      if (
+        value !==
+        current
+      ) {
+        view.dispatch(
+          {
+            changes:
+              {
+                from: 0,
+                to: current.length,
+                insert:
+                  value,
+              },
+          },
+        );
+      }
+    }, [
+      value,
+    ]);
+
+    return (
+      <div
+        ref={
+          hostRef
         }
-      }, [
-        value,
-      ]);
-
-      return (
-        <div
-          ref={
-            hostRef
-          }
-          className={cn(
-            'h-full w-full overflow-hidden',
-            className,
-          )}
-        />
-      );
-    },
-  );
+        className={cn(
+          'h-full w-full overflow-hidden',
+          className,
+        )}
+      />
+    );
+  };
