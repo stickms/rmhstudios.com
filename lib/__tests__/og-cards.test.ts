@@ -8,6 +8,7 @@ import {
   readFileSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
+import { execSync } from 'node:child_process';
 import {
   buildMeta,
   ogCardPath,
@@ -22,6 +23,10 @@ import {
   staticCardImage,
 } from '@/lib/og/static-cards';
 import { catalogStatsFor } from '@/lib/og/catalog-stats';
+import {
+  STATIC_CARD_INDEX,
+  staticCardFileFor,
+} from '@/lib/og/static-card-index';
 import { fitText } from '@/lib/og/chrome.server';
 import {
   MAX_COLLAGE_TILES,
@@ -1302,5 +1307,130 @@ describe('fitText', () => {
     ).toBe(
       28,
     );
+  });
+});
+
+/*
+ * `buildMeta` resolves a page's card through the path → file index so the cards'
+ * copy stays out of the client entry (lib/og/static-card-index.ts). The index is
+ * a second list of the same rows, so it must never disagree with STATIC_CARDS.
+ */
+describe('static card index', () => {
+  it('lists exactly the STATIC_CARDS rows, in order', () => {
+    const expected =
+      STATIC_CARDS.map(
+        (
+          c,
+        ) => [
+          c.path,
+          c.file,
+        ],
+      );
+    expect(
+      STATIC_CARD_INDEX.map(
+        ([
+          p,
+          f,
+        ]) => [
+          p,
+          f,
+        ],
+      ),
+      "lib/og/static-card-index.ts STATIC_CARD_INDEX is out of step with STATIC_CARDS: copy each card's [path, file] into it, in the same order",
+    ).toEqual(
+      expected,
+    );
+  });
+
+  it('is the only card module client code imports', () => {
+    // Route heads run in the browser: a client import of static-cards puts every
+    // card's copy back into the entry of every page. Server code, the renderer's
+    // scripts and tests may import it.
+    const files =
+      execSync(
+        "git ls-files 'app/**' 'lib/**' 'components/**' 'features/**' 'hooks/**' 'stores/**'",
+        {
+          cwd: resolve(
+            __dirname,
+            '../..',
+          ),
+          encoding:
+            'utf8',
+        },
+      )
+        .split(
+          '\n',
+        )
+        .filter(
+          (
+            f,
+          ) =>
+            /\.(ts|tsx)$/.test(
+              f,
+            ) &&
+            !/\.server\.tsx?$|__tests__\/|\.test\.tsx?$/.test(
+              f,
+            ),
+        )
+        .filter(
+          (
+            f,
+          ) =>
+            f !==
+            'lib/og/static-cards.ts',
+        );
+    const offenders =
+      files.filter(
+        (
+          f,
+        ) =>
+          /from '@\/lib\/og\/static-cards'/.test(
+            readFileSync(
+              resolve(
+                __dirname,
+                '../..',
+                f,
+              ),
+              'utf8',
+            ),
+          ),
+      );
+    expect(
+      offenders,
+      'import OG_CARD_VERSION / the path → file lookup from @/lib/og/static-card-index instead',
+    ).toEqual(
+      [],
+    );
+  });
+
+  it('resolves every path the way staticCardFor does', () => {
+    const probes =
+      [
+        '/',
+        '/nowhere-at-all',
+        '/terms?x=1',
+        '/games/',
+        ...STATIC_CARDS.flatMap(
+          (
+            c,
+          ) => [
+            c.path,
+            `${c.path}/child`,
+          ],
+        ),
+      ];
+    for (const path of probes)
+      expect(
+        staticCardFileFor(
+          path,
+        ),
+        path,
+      ).toBe(
+        staticCardFor(
+          path,
+        )
+          ?.file ??
+          null,
+      );
   });
 });
