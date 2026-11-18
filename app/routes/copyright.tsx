@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
 export const Route = createFileRoute('/copyright')({
+  // Static text: the first load ships no JavaScript (lib/static-document.ts).
+  staticData: { staticDocument: true },
   head: () => ({
     meta: buildMeta({
       title: 'Copyright | RMH Studios',

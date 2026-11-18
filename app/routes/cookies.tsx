@@ -5,6 +5,8 @@ import { LegalSummaryBox } from '@/components/access/LegalSummaryBox';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
 export const Route = createFileRoute('/cookies')({
+  // Static text: the first load ships no JavaScript (lib/static-document.ts).
+  staticData: { staticDocument: true },
   head: () => ({
     meta: buildMeta({
       title: 'Cookie Policy | RMH Studios',

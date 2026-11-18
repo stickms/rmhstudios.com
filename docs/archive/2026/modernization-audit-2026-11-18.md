@@ -692,6 +692,30 @@ it.
   language
   there.
 
+- **Static documents for the legal pages.** `/privacy`, `/terms`, `/cookies`
+  and `/copyright` set `staticData: { staticDocument: true }`
+  (`lib/static-document.ts`). A first load of one is the server render with no
+  entry module, no modulepreloads and no router `<Scripts />`; the inline
+  pre-paint and JSON-LD stay.
+  - 469 KB in 45 requests (357 KB of it JavaScript) becomes 111 KB in 6, with
+    the same text at 390 and 1280 px and the same edition.
+  - Leaving through a link lands in the full app, hydrated.
+  - Reaching a legal page by client navigation is unchanged.
+  - `testing/integration/static-documents.test.ts` holds it on the built
+    server.
+- **Articles and news are not static documents, and should not become ones by
+  the same switch.** An article carries live widgets (the discussion thread,
+  ads, the takeaways panel) and the shell's globe needs its renderer. Dropping
+  the scripts would stop comments and ad revenue. The way there is islands:
+  - server-render the article;
+  - mount only those widgets, each as its own small root, with the providers
+    `components/island/IslandProviders.tsx` already builds for the game islands;
+  - load the chrome renderer at idle, as the shell does today.
+
+  That is its own project. It needs a decision on what an article keeps when
+  scripting is slow: the globe, client navigation, and the command palette
+  from an article.
+
 ## Held back, and what lifts each hold
 
 | Package      | Held at | Why                                                                                                                                                                                                                                                                                                        | Lift when                                                                                                        |

@@ -26,6 +26,7 @@ import {
   useRouter,
   useTags,
 } from '@tanstack/react-router';
+import { useIsStaticDocument } from '@/lib/static-document';
 
 /** Adds `fetchPriority: 'low'` to modulepreload links; every other tag is returned as-is. */
 export function deprioritizeModulePreloads(
@@ -59,10 +60,37 @@ export function deprioritizeModulePreloads(
 }
 
 export function SiteHeadContent() {
-  const tags =
+  const staticDocument =
+    useIsStaticDocument();
+  const all =
     deprioritizeModulePreloads(
       useTags(),
     );
+  // A static document (lib/static-document.ts) boots no client app: no entry
+  // module and nothing preloaded for one.
+  const tags =
+    staticDocument
+      ? all.filter(
+          (
+            tag,
+          ) =>
+            !(
+              tag.tag ===
+                'link' &&
+              tag
+                .attrs
+                ?.rel ===
+                'modulepreload'
+            ) &&
+            !(
+              tag.tag ===
+                'script' &&
+              tag
+                .attrs
+                ?.src
+            ),
+        )
+      : all;
   const nonce =
     useRouter()
       .options
