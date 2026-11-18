@@ -780,6 +780,7 @@ code".
   `unauthorized`,
   `not-found`,
   `conflict`,
+  `read-only`,
   `failed`).
   The
   frame
@@ -981,6 +982,15 @@ sends
 `pick:stop`
 and
 `visibility`.
+
+## Bridge host rules
+
+- **Previews are read-only.** While a customize or remix streams, the visible frame is a half-written page. The viewer builds its host handlers with `readOnly`, so `store.set` and `store.incr` answer `read-only` and `store.get` / `store.list` still work. The builder at `/v/new` attaches no bridge at all (`RMHVibe.host` is `none`).
+- **Replies always come back.** A host result that cannot be structured-cloned answers `failed` at once instead of leaving the page to its 10 s timeout. A frame may have at most 64 requests in flight; extras answer `rate`.
+- **Picking owns the input.** While picking, the runtime swallows pointer, mouse and touch down/up and click in the capture phase (non-passive listeners), and Escape inside the frame cancels and is not passed on. The host also stops picking on Escape from the host page.
+- **A retired layer goes quiet.** When a new `VibeFrame` layer becomes visible, the layers underneath get `visibility` with `{ hidden: true, suspend: true }`: the runtime pauses and mutes `audio`/`video`, for good. Web Audio is not touched: tracking contexts would mean replacing the page's `AudioContext` constructor, which breaks pages that subclass it, and the retired layer unmounts about 200 ms later (a plain `{ hidden: true }`, as Discord sends, only fires `onVisibility`).
+- **Errors are held until the host attaches.** A runtime error raised while a layer is still a hidden candidate is queued and sent on `hello`; the viewer keys collected errors to the frame that sent them.
+- **Thumbnails use the saved knobs.** The worker resolves the owner's `tweakValues` against the latest spec and posts them to the rendered page as the viewer does; saving tweaks sets `thumbnailStale`.
 
 ## Click to edit and Fix it
 
@@ -1242,6 +1252,13 @@ race
 past
 its
 limit.
+
+A stored `null` reads back exactly like a missing key (`store.get` answers `null` for both, and
+`store.list` includes the row), so a page must not use `null` to mean "set": store `0`, `false` or
+an empty string instead. The generator's system prompt says so. A value is also refused when it
+holds a NUL character or a lone UTF-16 surrogate (neither can round-trip through `jsonb`); the
+check runs on the decoded value, so the literal text `\u0000` is fine. The size limit counts
+bytes on the chunked path as well as on `Content-Length`.
 
 ## Widgets
 
@@ -1640,6 +1657,13 @@ hosts
 the
 bot.
 
+Before a bot build starts it runs the spend gate (see Metering and spend ceilings) and answers a
+refusal with a fixed sentence. A build still running when the shutdown grace ends has its reply
+edited to "The bot restarted before this finished. Try again." (`abandonVibeBuilds`, called from
+`bot.ts` `stop()`). The done embed usually has no image yet, because the screenshot worker runs
+about a minute later: the bot looks again at 75 s and 150 s (unawaited, so it holds no build slot
+and is dropped at shutdown) and edits the message once to add the image when it exists.
+
 ## The Activity
 
 The
@@ -1783,19 +1807,38 @@ are
 in
 [`discord-activity.md`](./discord-activity.md).
 
+## Metering and spend ceilings
+
+Every vibe model call is written to the `AiUsage` ledger (`meterVibe` in `lib/ai/provider.server.ts`):
+each build attempt, including a fallback model and a truncation retry (task `vibe`, in
+`streamModel`), the Discord bot's builds (same generator), and each in-page `RMHVibeAI` completion
+(task `vibe-ai`, `lib/rmhvibe/vibe-ai.server.ts`). A row carries the real provider (`kimi` or
+`deepseek`), the concrete model id, token counts and the `userId`: the signed-in user, the linked
+site user for a bot build, null for a signed-out or unlinked build and always null for `vibe-ai`
+(the proxy is called cross-origin from a sandboxed frame, with no session). Token counts are the
+provider's `usage` (`stream_options: { include_usage: true }`, also read from `choices[0].usage` for
+Moonshot); when none arrives the count is estimated at four characters a token. An attempt that
+stalls or is abandoned is metered too, because the tokens were billed. Metering never throws into a
+build. Prices are in `COST_PER_MTOK` (`provider.server.ts`).
+
+The shared monthly AI allowance (`spentThisMonth`, `/wallet`) does NOT count vibe rows
+(`task NOT LIKE 'vibe%'`): a build costs a few cents against a $0.25 free allowance. Vibes have their
+own gates, in `lib/ai/vibe-budget.server.ts`, run before a build starts (the web stream route and
+the bot):
+
+| Gate                           | Limit                                                                                    | Refusal                                     |
+| ------------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Monthly ceiling per user, tier | free $2, starter $5, pro $20, enterprise $100 (`VIBE_MONTHLY_BUDGET_MICROS`)             | 402 `AI_BUDGET_EXCEEDED`, `detail.scope: 'vibe'` |
+| Platform daily cap, all users  | `VIBE_DAILY_BUDGET_MICROS` (default 25000000 = $25 a UTC day, `0` = no cap), signed-out included | 503 `AI_UNAVAILABLE`, `detail.scope: 'vibe-busy'` |
+
+The daily total is summed from the ledger (so the web and bot processes agree) and cached about 30
+seconds. Both gates fail open on a ledger read error. Both reuse existing error codes, marked with
+`detail.scope` (`lib/ai/vibe-tasks.ts`), because `ERROR_CODES` ships on every page's critical path;
+the builder (`vibe-stream.ts`) and the bot read the scope and word the refusal for vibes. `/api/vibe/ai` is not gated by these (it keeps its own rate limits and daily cap) but its
+spend counts toward the daily total.
+
 ## Follow-ups not done
 
-Generation
-and
-`/api/vibe/ai`
-are
-not
-yet
-metered
-into
-`AiUsage`
-or
-`assertAiBudget`;
 esm.sh
 fallback
 packages

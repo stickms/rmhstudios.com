@@ -42,6 +42,11 @@ function toBridgeError(err: unknown): BridgeError {
 export function createVibeHostHandlers(
   slug: string,
   authToken?: () => string | null,
+  /**
+   * True while the frame shows a half-written build (a customize or remix preview): reads
+   * answer, writes are refused with `read-only` so the draft cannot touch the real store.
+   */
+  readOnly?: () => boolean,
 ): Pick<VibeBridgeHost, 'handle'> {
   const params = {
     slug,
@@ -57,6 +62,7 @@ export function createVibeHostHandlers(
       : {};
   };
   async function run(op: BridgeOp, args: unknown): Promise<unknown> {
+    if ((op === 'store.set' || op === 'store.incr') && readOnly?.()) throw new BridgeError('read-only');
     switch (op) {
       case 'store.get': {
         const a = args as BridgeArgs['store.get'];

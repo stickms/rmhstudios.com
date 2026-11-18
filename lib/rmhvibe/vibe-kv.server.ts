@@ -9,9 +9,11 @@
 
 import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
+import { v7 as uuidv7 } from 'uuid';
 import { prisma } from '@/lib/prisma.server';
 import { AppError } from '@/lib/errors/codes';
 import { KEY_RE, MAX_VALUE_CHARS } from '@/lib/rmhvibe/bridge';
+import { hasUnstorableText } from '@/lib/rmhvibe/vibe-kv-schema';
 
 export type KvScope = 'page' | 'user';
 
@@ -39,7 +41,9 @@ function assertValue(value: unknown): void {
   if (typeof text !== 'string') throw invalid('value');
   if (text.length > MAX_VALUE_CHARS) throw invalid('too-large');
   // Postgres jsonb refuses NUL in a string; reject it here rather than 500 on the insert.
-  if (text.includes('\\u0000')) throw invalid('value');
+  // A NUL or lone surrogate in the DECODED value (see hasUnstorableText), not in the
+  // serialized text, where the six literal characters `\u0000` are legitimate content.
+  if (hasUnstorableText(value)) throw invalid('value');
 }
 
 /** The marker row for "this user already counted on `key`"; hashed when it would not fit the column. */
@@ -148,7 +152,12 @@ export async function kvSet(
   });
 }
 
-/** One atomic upsert-and-add. Zero rows back means the existing value is not a number. */
+/**
+ * One atomic upsert-and-add. The raw path writes what Prisma writes for this model: a
+ * time-sortable UUIDv7 id (`@default(uuid(7))`; minted here because the Postgres version on
+ * the VPS is not pinned in the repo, so `uuidv7()` cannot be assumed) and UTC wall-clock
+ * timestamps (the columns are `TIMESTAMP(3)` without a zone, so a bare `now()` would be
+ * stored in the session's zone). Zero rows back means the existing value is not a number. */
 async function incrRow(
   tx: Tx,
   pageId: string,
@@ -163,10 +172,10 @@ async function incrRow(
     }>
   >`
     INSERT INTO "vibe_kv" ("id", "pageId", "scope", "ownerKey", "key", "value", "createdAt", "updatedAt")
-    VALUES (gen_random_uuid()::text, ${pageId}, ${scope}, ${ownerKey}, ${key}, to_jsonb(${by}::numeric), now(), now())
+    VALUES (${uuidv7()}, ${pageId}, ${scope}, ${ownerKey}, ${key}, to_jsonb(${by}::numeric), timezone('UTC', now()), timezone('UTC', now()))
     ON CONFLICT ("pageId", "scope", "ownerKey", "key") DO UPDATE
       SET "value" = to_jsonb(("vibe_kv"."value" #>> '{}')::numeric + ${by}::numeric),
-          "updatedAt" = now()
+          "updatedAt" = timezone('UTC', now())
       WHERE jsonb_typeof("vibe_kv"."value") = 'number'
     RETURNING "value"`;
   const row = rows[0];

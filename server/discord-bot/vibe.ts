@@ -12,6 +12,9 @@ import { prisma } from '../../lib/prisma.server';
 import { rateLimit } from '../../lib/rate-limit';
 import { findLinkedUserId } from '../../lib/discord-link.server';
 import { generateVibeStream } from '../../lib/rmhvibe/vibe.server';
+import { assertVibeAllowed } from '../../lib/ai/vibe-budget.server';
+import { isAppError } from '../../lib/errors/codes';
+import { VIBE_BUDGET_SCOPE, VIBE_BUSY_SCOPE } from '../../lib/ai/vibe-tasks';
 import { parsePartialProject } from '../../lib/rmhvibe/vibe-project';
 import {
   InteractionResponse,
@@ -74,6 +77,17 @@ export interface VibeDeps {
   >;
   now: () => number;
   baseUrl: string;
+  /**
+   * The spend gate, run before a build starts: the platform's daily vibe cap, then the linked
+   * user's monthly vibe ceiling. Absent = no gate (tests that do not exercise it).
+   */
+  gate?: (
+    userId: string | null,
+  ) => Promise<'ok' | 'budget' | 'busy'>;
+  /** Waits `ms` for the late-thumbnail follow-up; absent = no follow-up. */
+  sleep?: (
+    ms: number,
+  ) => Promise<void>;
   /** The screenshot the viewer page uses as og:image (a path or URL), once captured; null before. */
   thumbnailUrl?: (
     slug: string,
@@ -82,6 +96,47 @@ export interface VibeDeps {
     | null
   >;
 }
+
+/** Map the budget errors to the two refusals the bot words itself; anything else is allowed. */
+async function defaultVibeGate(
+  userId: string | null,
+): Promise<'ok' | 'budget' | 'busy'> {
+  try {
+    await assertVibeAllowed(userId);
+    return 'ok';
+  } catch (err) {
+    if (isAppError(err)) {
+      const scope = err.detail?.scope;
+      if (err.code === 'AI_UNAVAILABLE' && scope === VIBE_BUSY_SCOPE) return 'busy';
+      if (err.code === 'AI_BUDGET_EXCEEDED' && scope === VIBE_BUDGET_SCOPE) return 'budget';
+    }
+    return 'ok';
+  }
+}
+
+/**
+ * Replies of builds still running, so shutdown can say so instead of leaving "Building…" on the
+ * message forever. A build removes itself when it finishes.
+ */
+const liveReplies = new Set<{
+  stop: () => Promise<void>;
+}>();
+let draining = false;
+
+/** The bot is stopping and a build is being abandoned: edit each unfinished reply to a fixed note. */
+export async function abandonVibeBuilds(): Promise<void> {
+  draining = true;
+  await Promise.allSettled(
+    [...liveReplies].map(
+      (r) =>
+        r.stop(),
+    ),
+  );
+  liveReplies.clear();
+}
+
+/** Late-thumbnail follow-ups: the screenshot lands about a minute after the build, so look twice. */
+const THUMB_FOLLOWUP_DELAYS_MS = [75_000, 150_000];
 
 export function defaultVibeDeps(
   baseUrl: string,
@@ -93,6 +148,12 @@ export function defaultVibeDeps(
     now: () =>
       Date.now(),
     baseUrl,
+    gate: defaultVibeGate,
+    sleep: (ms) =>
+      new Promise((resolve) => {
+        // unref: a pending follow-up must never hold the process open at shutdown.
+        setTimeout(resolve, ms).unref?.();
+      }),
     thumbnailUrl:
       async (
         slug,
@@ -352,11 +413,40 @@ async function runBuild(
     '';
   let lastEdit =
     started;
+  // A bot that is stopping starts no builds, so a new one means the flag is stale (a restart in-process).
+  draining = false;
+  let settled = false;
+  const live = {
+    stop: async () => {
+      if (settled) return;
+      settled = true;
+      await finish(
+        errorBody(
+          'The bot restarted before this finished. Try again.',
+        ),
+      );
+    },
+  };
+  liveReplies.add(live);
   try {
     const userId =
       await deps.findLinkedUserId(
         discordId,
       );
+    const verdict =
+      (await deps.gate?.(
+        userId,
+      )) ?? 'ok';
+    if (verdict !== 'ok') {
+      await finish(
+        errorBody(
+          verdict === 'busy'
+            ? 'RMH Vibes is busy right now. Try again later.'
+            : 'You have used this month’s vibe allowance.',
+        ),
+      );
+      return;
+    }
     for await (const ev of deps.generate(
       {
         prompt:
@@ -380,6 +470,8 @@ async function runBuild(
         ev.type ===
         'error'
       ) {
+        if (settled) return;
+        settled = true;
         await finish(
           errorBody(
             ev.message,
@@ -390,12 +482,27 @@ async function runBuild(
         ev.type ===
         'done'
       ) {
+        if (settled) return;
+        settled = true;
+        const done = await doneBody(
+          deps,
+          ev,
+        );
         await finish(
-          await doneBody(
+          done.body,
+        );
+        if (
+          !done.hasImage &&
+          deps.sleep &&
+          deps.thumbnailUrl
+        )
+          void addThumbnailLater(
+            port,
+            i,
             deps,
             ev,
-          ),
-        );
+            tokenAlive,
+          );
         return;
       }
       const now =
@@ -424,19 +531,72 @@ async function runBuild(
       }
     }
     // The stream ended without a result: treat it as a failed build.
-    await finish(
-      errorBody(
-        'The build ended early. Try again.',
-      ),
-    );
+    if (!settled) {
+      settled = true;
+      await finish(
+        errorBody(
+          'The build ended early. Try again.',
+        ),
+      );
+    }
   } catch (err) {
     // A thrown error can carry internals (SQL, paths): log it, say something fixed.
     console.error('discord_bot.vibe_failed', err);
-    await finish(
-      errorBody(
-        'Could not build that vibe. Try again.',
-      ),
+    if (!settled) {
+      settled = true;
+      await finish(
+        errorBody(
+          'Could not build that vibe. Try again.',
+        ),
+      );
+    }
+  } finally {
+    liveReplies.delete(live);
+  }
+}
+
+/**
+ * The done embed usually has no image: the screenshot is taken by a worker about a minute later.
+ * Look twice more (bounded), and when it exists edit the message once to add it. Best effort and
+ * never awaited by the build, so it holds neither a build slot nor the shutdown drain.
+ */
+async function addThumbnailLater(
+  port: DiscordPort,
+  i: Interaction,
+  deps: VibeDeps,
+  ev: {
+    slug: string;
+    title: string;
+    description: string;
+  },
+  tokenAlive: () => boolean,
+): Promise<void> {
+  for (const delay of THUMB_FOLLOWUP_DELAYS_MS) {
+    await deps.sleep?.(
+      delay,
     );
+    if (
+      draining ||
+      !tokenAlive()
+    )
+      return;
+    try {
+      const done = await doneBody(
+        deps,
+        ev,
+      );
+      if (
+        !done.hasImage
+      )
+        continue;
+      await port.editOriginal(
+        i.token,
+        done.body,
+      );
+      return;
+    } catch {
+      return;
+    }
   }
 }
 
@@ -447,7 +607,10 @@ async function doneBody(
     title: string;
     description: string;
   },
-): Promise<MessageBody> {
+): Promise<{
+  body: MessageBody;
+  hasImage: boolean;
+}> {
   const url =
     deps.baseUrl.replace(
       /\/$/,
@@ -464,7 +627,7 @@ async function doneBody(
         () =>
           null,
       );
-  return {
+  const body: MessageBody = {
     embeds:
       [
         {
@@ -539,6 +702,10 @@ async function doneBody(
             ],
         },
       ],
+  };
+  return {
+    body,
+    hasImage: Boolean(thumb),
   };
 }
 

@@ -149,6 +149,46 @@ describe('vibe kv', () => {
     expect(db.vibeKv.upsert).not.toHaveBeenCalled();
   });
 
+  it('rejects a lone surrogate, which jsonb cannot store', async () => {
+    const res = await post({ op: 'set', key: 'a', scope: 'page', value: 'a\ud800b' });
+    expect(res.status).toBe(400);
+    expect(db.vibeKv.upsert).not.toHaveBeenCalled();
+  });
+
+  it('stores the literal text \\u0000 (backslash, u, four zeros): only a decoded NUL is refused', async () => {
+    const res = await post({ op: 'set', key: 'a', scope: 'page', value: '\\u0000' });
+    expect(res.status).toBe(200);
+  });
+
+  it('counts a chunked body in bytes, not UTF-16 units', async () => {
+    // No content-length (a string body sets none): 6000 euro signs are ~6000 units but 18000 bytes.
+    const res = await handlers.POST!({
+      params: { slug: 'neon' },
+      request: new Request('https://x.test/api/vibe/kv/neon', {
+        method: 'POST',
+        headers: { ...headers, 'content-type': 'application/json' },
+        body: JSON.stringify({ op: 'set', key: 'a', scope: 'page', value: '\u20ac'.repeat(6000) }),
+      }),
+    });
+    expect(res.status).toBe(413);
+    expect(db.vibeKv.upsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses a new key once a viewer has 50 of their own', async () => {
+    setUsed(50);
+    const res = await post({ op: 'set', key: 'new', scope: 'user', value: 1 });
+    expect(res.status).toBe(409);
+    expect((await res.json()).detail.reason).toBe('VIBE_KV_FULL');
+    expect(db.vibeKv.upsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses a signed-out oncePerUser increment', async () => {
+    getSession.mockResolvedValue(null);
+    const res = await post({ op: 'incr', key: 'votes', scope: 'page', by: 1, oncePerUser: true });
+    expect(res.status).toBe(401);
+    expect(incrSql).not.toHaveBeenCalled();
+  });
+
   it('rejects writes to the reserved __ namespace', async () => {
     const res = await post({
       op: 'set',

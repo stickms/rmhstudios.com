@@ -19,7 +19,7 @@ import { createLogger } from '../shared/logger';
 import { prisma } from '../../lib/prisma.server';
 import { getBool, getDuration, getString } from './config';
 import { ChatService } from './chat';
-import { defaultVibeDeps, handleVibeCommand, handleVibeEditButton, handleVibeEditModal, handleVibePlay, type VibeDeps } from './vibe';
+import { abandonVibeBuilds, defaultVibeDeps, handleVibeCommand, handleVibeEditButton, handleVibeEditModal, handleVibePlay, type VibeDeps } from './vibe';
 import { Sql, type RawClient } from './db';
 import { DeepSeekClient } from './deepseek';
 import { RestDiscordPort, type CommandDefinition, type DiscordPort, type Message } from './discord';
@@ -517,6 +517,9 @@ export class DiscordBot {
       sleep(this.cfg.drainMs).then(() => false),
     ]);
     if (!drained) this.log.warn({ event: 'discord_bot.drain_timeout', abandoned: this.inflight.size });
+    // Builds still running when the grace ran out will never edit their reply again: say so
+    // while the REST client is still usable, instead of leaving "Building…" on it forever.
+    await abandonVibeBuilds().catch(() => undefined);
     this.lifecycle.abort();
     if (this.watch) await this.watch.closeAll('shutdown').catch(() => undefined);
     if (testMode(this.guard)) {

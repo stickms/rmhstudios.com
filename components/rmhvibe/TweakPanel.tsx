@@ -14,6 +14,16 @@ import type { TweakSpec, TweakValue } from '@/lib/rmhvibe/tweaks';
 const FIELD =
   'h-9 rounded-site border border-site-border bg-site-surface px-2 text-sm font-medium text-site-text';
 
+/** The knob's value at its step's precision (0.1 + 0.2 reads 0.3, not 0.30000000000000004). */
+export function formatRange(value: number, step?: number): string {
+  if (!Number.isFinite(value)) return '';
+  const text = String(step && step > 0 ? step : 0);
+  const exp = /e-(\d+)$/.exec(text);
+  const decimals = exp ? Number(exp[1]) : (text.split('.')[1]?.length ?? 0);
+  // No step ('any'): trim float noise to a readable length.
+  return step && step > 0 ? value.toFixed(Math.min(decimals, 6)) : String(Number(value.toFixed(3)));
+}
+
 function Row({ spec, value, onChange }: { spec: TweakSpec; value: TweakValue; onChange: (v: TweakValue) => void }) {
   const id = useId();
   return (
@@ -42,7 +52,7 @@ function Row({ spec, value, onChange }: { spec: TweakSpec; value: TweakValue; on
             onChange={(e) => onChange(e.target.valueAsNumber)}
             className="w-32"
           />
-          <span className="t-meta w-10 text-right">{Number(value)}</span>
+          <span className="t-meta w-12 text-right">{formatRange(Number(value), spec.step)}</span>
         </span>
       )}
       {spec.type === 'toggle' && (

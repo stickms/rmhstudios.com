@@ -32,28 +32,34 @@ export interface VibeBridgeHost {
     op: BridgeOp,
     args: unknown,
   ): Promise<unknown>;
+  /** `frame` is the iframe that sent the event: key anything you keep to it. */
   onEvent?(
     event: BridgeFrameEvent,
+    frame: HTMLIFrameElement,
   ): void;
 }
 
 const MAX_REQUESTS_PER_SECOND = 50;
 /** `store.*` is a network round trip to the KV endpoint, so a frame gets far fewer of them. */
 const MAX_STORE_REQUESTS_PER_SECOND = 10;
+/** Requests a frame may have waiting on the host at once. */
+const MAX_IN_FLIGHT = 64;
 
 function reply(
   frame: HTMLIFrameElement,
   msg:
     | BridgeResponse
     | BridgeHostEvent,
-) {
+): boolean {
   try {
     frame.contentWindow?.postMessage(
       msg,
       '*',
     );
+    return true;
   } catch {
-    /* the frame went away */
+    /* the frame went away, or the message cannot be structured-cloned */
+    return false;
   }
 }
 
@@ -104,6 +110,7 @@ export function useVibeBridge(
           MAX_REQUESTS_PER_SECOND
         );
       };
+    let inFlight = 0;
     let storeWindowStart = 0;
     let storeCount = 0;
     const storeOverLimit =
@@ -221,6 +228,7 @@ export function useVibeBridge(
           try {
             hostRef.current.onEvent?.(
               msg,
+              frame,
             );
           } catch {
             /* a host callback must not break the bridge */
@@ -239,6 +247,17 @@ export function useVibeBridge(
           );
           return;
         }
+        if (
+          inFlight >=
+          MAX_IN_FLIGHT
+        ) {
+          fail(
+            msg.id,
+            'rate',
+          );
+          return;
+        }
+        inFlight++;
         Promise.resolve()
           .then(
             () =>
@@ -250,16 +269,24 @@ export function useVibeBridge(
           .then(
             (
               result,
-            ) =>
-              reply(
-                frame,
-                {
-                  [BRIDGE_TAG]: 1,
-                  id: msg.id,
-                  ok: true,
-                  result,
-                },
-              ),
+            ) => {
+              // A result that cannot be cloned must answer now, not after the page's 10 s timeout.
+              if (
+                !reply(
+                  frame,
+                  {
+                    [BRIDGE_TAG]: 1,
+                    id: msg.id,
+                    ok: true,
+                    result,
+                  },
+                )
+              )
+                fail(
+                  msg.id,
+                  'failed',
+                );
+            },
             (
               err: unknown,
             ) =>
@@ -269,6 +296,11 @@ export function useVibeBridge(
                   err,
                 ),
               ),
+          )
+          .finally(
+            () => {
+              inFlight--;
+            },
           );
       };
 

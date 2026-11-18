@@ -34,13 +34,20 @@ export const MONTHLY_BUDGET_MICROS: Record<Tier, number> = {
   enterprise: 50_000_000, //  $50.00
 };
 
-/** Spend so far this calendar month, in micro-dollars. */
+/**
+ * Spend so far this calendar month, in micro-dollars, against the SHARED
+ * allowance. RMHVibe builds (`task LIKE 'vibe%'`) are in the ledger but are
+ * deliberately not counted here: they have their own ceiling
+ * (`lib/ai/vibe-budget.server.ts`), and one evening of builds would otherwise
+ * lock a free member out of every other AI feature.
+ */
 export async function spentThisMonth(userId: string): Promise<number> {
   const rows = await prisma.$queryRaw<{ spent: bigint | null }[]>`
     SELECT SUM("costMicros")::bigint AS spent
     FROM ai_usage
     WHERE "userId" = ${userId}
       AND "createdAt" >= date_trunc('month', now())
+      AND task NOT LIKE 'vibe%'
   `;
   return Number(rows[0]?.spent ?? 0);
 }

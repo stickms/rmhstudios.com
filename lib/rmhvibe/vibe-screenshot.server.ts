@@ -14,6 +14,8 @@
 
 import type { Browser } from 'playwright';
 import sharp from 'sharp';
+import { ensureBridgeRuntime } from '@/lib/rmhvibe/bridge-runtime';
+import type { TweakValue } from '@/lib/rmhvibe/tweaks';
 import { putObject } from '@/lib/storage/s3.server';
 import { vibeThumbKey, vibeThumbUrl } from '@/lib/storage/keys';
 
@@ -90,7 +92,11 @@ export async function closeVibeBrowser(): Promise<void> {
  * Returns the public, cache-busted URL on success, or `null` on any failure
  * (caller leaves the thumbnail unset → gallery shows a placeholder).
  */
-export async function captureVibeThumbnail(slug: string, html: string): Promise<string | null> {
+export async function captureVibeThumbnail(
+  slug: string,
+  html: string,
+  tweakValues?: Record<string, TweakValue>,
+): Promise<string | null> {
   let context;
   try {
     const browser = await getBrowser();
@@ -121,9 +127,19 @@ export async function captureVibeThumbnail(slug: string, html: string): Promise<
     page.setDefaultTimeout(10_000);
 
     try {
-      await page.setContent(html, { waitUntil: 'networkidle', timeout: 10_000 });
+      // With saved knob values the page gets the bridge runtime, as in the viewer; the top-level
+      // window is its own parent, so the same `tweaks` message the viewer posts reaches it.
+      await page.setContent(tweakValues ? ensureBridgeRuntime(html) : html, {
+        waitUntil: 'networkidle',
+        timeout: 10_000,
+      });
     } catch {
       // networkidle can time out on animation-heavy pages; screenshot anyway.
+    }
+    if (tweakValues) {
+      await page
+        .evaluate((data) => window.postMessage({ __rmhvibe: 1, event: 'tweaks', data }, '*'), tweakValues)
+        .catch(() => {});
     }
 
     // Let esm.sh modules load + first React paint + intro animations settle.
