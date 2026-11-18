@@ -16,7 +16,10 @@ name: site-archive
 
 on:
   push:
-    branches: [main]
+    branches:
+      [
+        main,
+      ]
     paths:
       - scripts/site-archive/**
       - components/site-history/archive-versions.json
@@ -24,7 +27,14 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: Re-record these version ids (comma-separated), or "all"
+        description:
+          Re-record
+          these
+          version
+          ids
+          (comma-separated),
+          or
+          "all"
         type: string
         default: ''
 
@@ -43,19 +53,43 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
-      ready: ${{ steps.cfg.outputs.ready }}
-      ids: ${{ steps.missing.outputs.ids }}
+      ready:
+        ${{
+        steps.cfg.outputs.ready
+        }}
+      ids:
+        ${{
+        steps.missing.outputs.ids
+        }}
     env:
-      S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-      S3_BUCKET: ${{ secrets.S3_BUCKET }}
-      S3_REGION: ${{ secrets.S3_REGION }}
+      S3_ENDPOINT:
+        ${{
+        secrets.S3_ENDPOINT
+        }}
+      S3_ACCESS_KEY_ID:
+        ${{
+        secrets.S3_ACCESS_KEY_ID
+        }}
+      S3_SECRET_ACCESS_KEY:
+        ${{
+        secrets.S3_SECRET_ACCESS_KEY
+        }}
+      S3_BUCKET:
+        ${{
+        secrets.S3_BUCKET
+        }}
+      S3_REGION:
+        ${{
+        secrets.S3_REGION
+        }}
       S3_FORCE_PATH_STYLE: 'false'
     steps:
-      - name: Check configuration
+      - name:
+          Check
+          configuration
         id: cfg
-        run: |
+        run:
+          |
           missing=""
           for v in S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
             [ -n "${!v}" ] || missing="$missing $v"
@@ -67,50 +101,128 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: steps.cfg.outputs.ready == 'true'
+        if:
+          steps.cfg.outputs.ready
+          ==
+          'true'
       - uses: ./.github/actions/setup-deps
-        if: steps.cfg.outputs.ready == 'true'
-      - name: Check the bucket is reachable (reads only)
-        if: steps.cfg.outputs.ready == 'true'
-        run: pnpm exec tsx scripts/site-archive/publish.ts check
-      - name: Publish the player (play.html + ReplayWeb.page ${{ env.REPLAYWEBPAGE_VERSION }})
-        if: steps.cfg.outputs.ready == 'true'
-        run: |
+        if:
+          steps.cfg.outputs.ready
+          ==
+          'true'
+      - name:
+          Check
+          the
+          bucket
+          is
+          reachable
+          (reads
+          only)
+        if:
+          steps.cfg.outputs.ready
+          ==
+          'true'
+        run:
+          pnpm
+          exec
+          tsx
+          scripts/site-archive/publish.ts
+          check
+      - name:
+          Publish
+          the
+          player
+          (play.html
+          +
+          ReplayWeb.page
+          ${{
+          env.REPLAYWEBPAGE_VERSION
+          }})
+        if:
+          steps.cfg.outputs.ready
+          ==
+          'true'
+        run:
+          |
           dir="$RUNNER_TEMP/player"
           mkdir -p "$dir"
           (cd "$RUNNER_TEMP" && npm pack "replaywebpage@$REPLAYWEBPAGE_VERSION" --silent && tar xzf "replaywebpage-$REPLAYWEBPAGE_VERSION.tgz")
           cp "$RUNNER_TEMP/package/index.html" "$RUNNER_TEMP/package/ui.js" "$RUNNER_TEMP/package/sw.js" "$dir/"
           cp scripts/site-archive/player/play.html "$dir/"
           pnpm exec tsx scripts/site-archive/publish.ts player "$dir"
-      - name: List the versions to record
+      - name:
+          List
+          the
+          versions
+          to
+          record
         id: missing
-        if: steps.cfg.outputs.ready == 'true'
+        if:
+          steps.cfg.outputs.ready
+          ==
+          'true'
         env:
-          ARCHIVE_FORCE: ${{ inputs.force }}
-        run: |
+          ARCHIVE_FORCE:
+            ${{
+            inputs.force
+            }}
+        run:
+          |
           ids=$(pnpm exec tsx scripts/site-archive/publish.ts missing)
           echo "ids=$ids" >> "$GITHUB_OUTPUT"
           echo "To record: $ids"
 
   record:
     needs: plan
-    if: needs.plan.outputs.ready == 'true' && needs.plan.outputs.ids != '[]' && needs.plan.outputs.ids != ''
+    if:
+      needs.plan.outputs.ready
+      ==
+      'true'
+      &&
+      needs.plan.outputs.ids
+      !=
+      '[]'
+      &&
+      needs.plan.outputs.ids
+      !=
+      ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       max-parallel: 6
       matrix:
-        id: ${{ fromJSON(needs.plan.outputs.ids) }}
+        id:
+          ${{
+          fromJSON(needs.plan.outputs.ids)
+          }}
     env:
-      S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-      S3_BUCKET: ${{ secrets.S3_BUCKET }}
-      S3_REGION: ${{ secrets.S3_REGION }}
+      S3_ENDPOINT:
+        ${{
+        secrets.S3_ENDPOINT
+        }}
+      S3_ACCESS_KEY_ID:
+        ${{
+        secrets.S3_ACCESS_KEY_ID
+        }}
+      S3_SECRET_ACCESS_KEY:
+        ${{
+        secrets.S3_SECRET_ACCESS_KEY
+        }}
+      S3_BUCKET:
+        ${{
+        secrets.S3_BUCKET
+        }}
+      S3_REGION:
+        ${{
+        secrets.S3_REGION
+        }}
       S3_FORCE_PATH_STYLE: 'false'
       PGURL: postgresql://postgres:postgres@localhost:5432
-      ARCHIVE_FORCE: ${{ inputs.force }}
+      ARCHIVE_FORCE:
+        ${{
+        inputs.force
+        }}
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -118,24 +230,94 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s --health-timeout 5s --health-retries 10
+        ports:
+          [
+            '5432:5432',
+          ]
+        options:
+          >-
+          --health-cmd
+          "pg_isready
+          -U
+          postgres"
+          --health-interval
+          5s
+          --health-timeout
+          5s
+          --health-retries
+          10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-deps
-      - name: Still to record?
+      - name:
+          Still
+          to
+          record?
         id: needed
-        run: echo "needed=$(pnpm exec tsx scripts/site-archive/publish.ts needed "${{ matrix.id }}")" >> "$GITHUB_OUTPUT"
-      - name: Install Playwright's Chromium
-        if: steps.needed.outputs.needed == 'true'
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Record ${{ matrix.id }}
-        if: steps.needed.outputs.needed == 'true'
-        run: bash scripts/site-archive/archive-version.sh "${{ matrix.id }}" "$RUNNER_TEMP/out" 7140
-      - name: Publish ${{ matrix.id }}
-        if: steps.needed.outputs.needed == 'true'
-        run: pnpm exec tsx scripts/site-archive/publish.ts version "${{ matrix.id }}" "$RUNNER_TEMP/out/${{ matrix.id }}.warc.gz"
+        run:
+          echo
+          "needed=$(pnpm
+          exec
+          tsx
+          scripts/site-archive/publish.ts
+          needed
+          "${{
+          matrix.id
+          }}")"
+          >>
+          "$GITHUB_OUTPUT"
+      - name:
+          Install
+          Playwright's
+          Chromium
+        if:
+          steps.needed.outputs.needed
+          ==
+          'true'
+        run:
+          pnpm
+          exec
+          playwright
+          install
+          --with-deps
+          chromium
+      - name:
+          Record
+          ${{
+          matrix.id
+          }}
+        if:
+          steps.needed.outputs.needed
+          ==
+          'true'
+        run:
+          bash
+          scripts/site-archive/archive-version.sh
+          "${{
+          matrix.id
+          }}"
+          "$RUNNER_TEMP/out"
+          7140
+      - name:
+          Publish
+          ${{
+          matrix.id
+          }}
+        if:
+          steps.needed.outputs.needed
+          ==
+          'true'
+        run:
+          pnpm
+          exec
+          tsx
+          scripts/site-archive/publish.ts
+          version
+          "${{
+          matrix.id
+          }}"
+          "$RUNNER_TEMP/out/${{
+          matrix.id
+          }}.warc.gz"

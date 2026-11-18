@@ -6,10 +6,27 @@ import { vibeGalleryQuerySchema } from '@/lib/rmhvibe/vibe-schema';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 
 /** GET /api/vibe/gallery — ready pages, searchable and paged by cursor (the Discord Activity's browse view). Public. */
-export const route = apiRoute('/api/vibe/gallery', {
-  GET: implement(
-    vibeGalleryApi,
-    { auth: 'none', rateLimit: 'read', query: vibeGalleryQuerySchema, cache: CACHE_POLICY.liveList },
-    ({ query }) => listVibePages(query),
-  ),
-});
+export const route =
+  apiRoute(
+    '/api/vibe/gallery',
+    {
+      GET: implement(
+        vibeGalleryApi,
+        {
+          auth: 'none',
+          rateLimit:
+            'read',
+          query:
+            vibeGalleryQuerySchema,
+          cache:
+            CACHE_POLICY.liveList,
+        },
+        ({
+          query,
+        }) =>
+          listVibePages(
+            query,
+          ),
+      ),
+    },
+  );

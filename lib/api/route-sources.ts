@@ -34,9 +34,9 @@ const REGISTERED_ROOTS =
   ];
 const REGISTERED_FILE =
   /\.server\.ts$/;
-/** The one spelling a registered module uses; the generator and the tests key on it. */
+/** The one spelling a registered module uses (line breaks allowed, as Prettier writes it); the generator and the tests key on it. */
 const REGISTRATION =
-  /^export const route = apiRoute\(\s*'([^']+)'/m;
+  /^export const route\s*=\s*apiRoute\(\s*'([^']+)'/m;
 
 const posix =
   (

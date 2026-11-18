@@ -579,9 +579,118 @@ end.
      last
      15
      minutes
-     (sliding: a WebSocket upgrade, a DoH query, any relayed stream activity for that user and every answered ping refresh it; a status request does not) and it is under 12 hours old (hard cap). Otherwise 401.
-   - A live socket ends with its ticket: when a ticket stops being valid for any reason other than a newer ticket (12 h reached, idle expiry, evicted by the table cap) the user's socket is closed with code 4001 and its streams torn down, within one ping interval (30 s) for age and idle and at once for eviction. The page learns from the status endpoint's 401: toolbar "Network unavailable" and a notice to restart rmhOS.
-  
+     (sliding:
+     a
+     WebSocket
+     upgrade,
+     a
+     DoH
+     query,
+     any
+     relayed
+     stream
+     activity
+     for
+     that
+     user
+     and
+     every
+     answered
+     ping
+     refresh
+     it;
+     a
+     status
+     request
+     does
+     not)
+     and
+     it
+     is
+     under
+     12
+     hours
+     old
+     (hard
+     cap).
+     Otherwise 401.
+   - A
+     live
+     socket
+     ends
+     with
+     its
+     ticket:
+     when
+     a
+     ticket
+     stops
+     being
+     valid
+     for
+     any
+     reason
+     other
+     than
+     a
+     newer
+     ticket
+     (12
+     h
+     reached,
+     idle
+     expiry,
+     evicted
+     by
+     the
+     table
+     cap)
+     the
+     user's
+     socket
+     is
+     closed
+     with
+     code
+     4001
+     and
+     its
+     streams
+     torn
+     down,
+     within
+     one
+     ping
+     interval
+     (30
+     s)
+     for
+     age
+     and
+     idle
+     and
+     at
+     once
+     for
+     eviction.
+     The
+     page
+     learns
+     from
+     the
+     status
+     endpoint's
+     401:
+     toolbar
+     "Network
+     unavailable"
+     and
+     a
+     notice
+     to
+     restart
+     rmhOS.
+
    - One
      live
      ticket
@@ -820,7 +929,37 @@ end.
    ticket's
    user
    only
-   (same ticket check as DoH, but it never refreshes the ticket, and it is limited to 12 requests per user per minute; DoH has its own budget of 600 per minute).
+   (same
+   ticket
+   check
+   as
+   DoH,
+   but
+   it
+   never
+   refreshes
+   the
+   ticket,
+   and
+   it
+   is
+   limited
+   to
+   12
+   requests
+   per
+   user
+   per
+   minute;
+   DoH
+   has
+   its
+   own
+   budget
+   of
+   600
+   per
+   minute).
    The
    page
    asks
@@ -2271,7 +2410,19 @@ us.
   the
   Apache
   vhost,
-  `go-services/cmd/status` (NOT done: the status service does not watch the hub; see docs/rmhos.md),
+  `go-services/cmd/status`
+  (NOT
+  done:
+  the
+  status
+  service
+  does
+  not
+  watch
+  the
+  hub;
+  see
+  docs/rmhos.md),
   `.env.example`.
 - `pnpm check:consistency`
   passes

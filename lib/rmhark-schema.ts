@@ -248,25 +248,23 @@ export const createRMHarkSchema =
           codeEmbedSchema.optional(),
         // RMH Vibes: a vibe page pinned to one of its versions, shown click-to-run on the post.
         // The server resolves the page by slug; the client never sends a page id.
-        vibe:
-          z
-            .object(
-              {
-                slug:
-                  z
-                    .string()
-                    .max(
-                      64,
-                    ),
-                versionId:
-                  z
-                    .string()
-                    .max(
-                      40,
-                    ),
-              },
-            )
-            .optional(),
+        vibe: z
+          .object(
+            {
+              slug: z
+                .string()
+                .max(
+                  64,
+                ),
+              versionId:
+                z
+                  .string()
+                  .max(
+                    40,
+                  ),
+            },
+          )
+          .optional(),
         // P06 communities-plus: flair (N1) and challenge entry (N5); community posts only.
         flairId:
           z

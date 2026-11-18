@@ -10,11 +10,23 @@
  * Relative on purpose: inside a Discord Activity it resolves to the proxy origin.
  */
 
-export const FRAME_URL = '/vibe-frame';
-export const FRAME_TAG = '__rmhvibeFrame';
+export const FRAME_URL =
+  '/vibe-frame';
+export const FRAME_TAG =
+  '__rmhvibeFrame';
 
-export type FrameToHost = { [FRAME_TAG]: 'ready' } | { [FRAME_TAG]: 'loaded' };
-export type HostToFrame = { [FRAME_TAG]: 'html'; html: string };
+export type FrameToHost =
+  | {
+      [FRAME_TAG]: 'ready';
+    }
+  | {
+      [FRAME_TAG]: 'loaded';
+    };
+export type HostToFrame =
+  {
+    [FRAME_TAG]: 'html';
+    html: string;
+  };
 
 /**
  * The one inline script of the loader. Classic, not a module: a module script would

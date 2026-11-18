@@ -12,25 +12,90 @@ import { validateTweakValues } from '@/lib/rmhvibe/tweaks';
  * Values are validated against the latest version's spec, so a forged key or an
  * out-of-range number never reaches the stored row (or the frames that read it).
  */
-export const route = apiRoute('/api/vibe/page/$slug/tweaks', {
-  POST: implement(
-    vibeTweaksApi,
-    { rateLimit: 'write', body: vibeTweaksBodySchema },
-    async ({ userId, params, body }) => {
-      const page = await prisma.vibePage.findUnique({
-        where: { slug: params.slug },
-        select: { id: true, ownerId: true },
-      });
-      if (!page) return Response.json({ error: 'Not found' }, { status: 404 });
-      if (!canEditVibe(page.ownerId, userId)) {
-        return Response.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      const { tweakSpec } = await getVibeTweaks(params.slug);
-      await prisma.vibePage.update({
-        where: { id: page.id },
-        data: { tweakValues: validateTweakValues(tweakSpec, body.values), thumbnailStale: true },
-      });
-      return { ok: true as const };
+export const route =
+  apiRoute(
+    '/api/vibe/page/$slug/tweaks',
+    {
+      POST: implement(
+        vibeTweaksApi,
+        {
+          rateLimit:
+            'write',
+          body: vibeTweaksBodySchema,
+        },
+        async ({
+          userId,
+          params,
+          body,
+        }) => {
+          const page =
+            await prisma.vibePage.findUnique(
+              {
+                where:
+                  {
+                    slug: params.slug,
+                  },
+                select:
+                  {
+                    id: true,
+                    ownerId: true,
+                  },
+              },
+            );
+          if (
+            !page
+          )
+            return Response.json(
+              {
+                error:
+                  'Not found',
+              },
+              {
+                status: 404,
+              },
+            );
+          if (
+            !canEditVibe(
+              page.ownerId,
+              userId,
+            )
+          ) {
+            return Response.json(
+              {
+                error:
+                  'Forbidden',
+              },
+              {
+                status: 403,
+              },
+            );
+          }
+          const {
+            tweakSpec,
+          } =
+            await getVibeTweaks(
+              params.slug,
+            );
+          await prisma.vibePage.update(
+            {
+              where:
+                {
+                  id: page.id,
+                },
+              data: {
+                tweakValues:
+                  validateTweakValues(
+                    tweakSpec,
+                    body.values,
+                  ),
+                thumbnailStale: true,
+              },
+            },
+          );
+          return {
+            ok: true as const,
+          };
+        },
+      ),
     },
-  ),
-});
+  );

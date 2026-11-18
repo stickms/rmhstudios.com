@@ -16,7 +16,8 @@ import path from 'path';
 import * as rhymingPartModule from 'rhyming-part';
 import { syllableCount as countSyllables } from 'syllable-count-english';
 
-type RhymingPartFn = (typeof rhymingPartModule)['default'];
+type RhymingPartFn =
+  (typeof rhymingPartModule)['default'];
 
 /**
  * `rhyming-part` is ESM-only. The rmhbox hub is bundled by esbuild as CJS
@@ -27,17 +28,37 @@ type RhymingPartFn = (typeof rhymingPartModule)['default'];
  * either shape.
  */
 function resolveRhymingPart(): RhymingPartFn {
-  let candidate: unknown = rhymingPartModule;
-  for (let depth = 0; depth < 3 && typeof candidate !== 'function'; depth++) {
-    candidate = (candidate as { default?: unknown } | null)?.default;
+  let candidate: unknown =
+    rhymingPartModule;
+  for (
+    let depth = 0;
+    depth <
+      3 &&
+    typeof candidate !==
+      'function';
+    depth++
+  ) {
+    candidate =
+      (
+        candidate as {
+          default?: unknown;
+        } | null
+      )
+        ?.default;
   }
-  if (typeof candidate !== 'function') {
-    throw new Error('rhyming-part: default export is not a function');
+  if (
+    typeof candidate !==
+    'function'
+  ) {
+    throw new Error(
+      'rhyming-part: default export is not a function',
+    );
   }
   return candidate as RhymingPartFn;
 }
 
-const rhymingPart = resolveRhymingPart();
+const rhymingPart =
+  resolveRhymingPart();
 
 // ─── Types ───────────────────────────────────────────────────────
 

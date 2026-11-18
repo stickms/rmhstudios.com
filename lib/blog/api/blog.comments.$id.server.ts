@@ -5,7 +5,9 @@ import { deleteBlogCommentApi } from '@/lib/blog/blog-comments.contract';
 import { canDeleteComment } from '@/lib/blog/blog-comments.server';
 
 /** DELETE /api/blog/comments/$id — soft delete, by the author or an admin. */
-export const route = apiRoute('/api/blog/comments/$id',
+export const route =
+  apiRoute(
+    '/api/blog/comments/$id',
     {
       DELETE:
         implement(

@@ -88,31 +88,51 @@ export function GithubIcon({
  * Microsoft — the four-square mark in its four brand colours, drawn as plain
  * squares (the Font Awesome glyph is one flat path and cannot carry them).
  */
-export function MicrosoftIcon({ className }: BrandIconProps) {
+export function MicrosoftIcon({
+  className,
+}: BrandIconProps) {
   return (
     <svg
       viewBox="0 0 23 23"
       aria-hidden="true"
       focusable="false"
-      className={className}
+      className={
+        className
+      }
     >
-      <path fill="#F25022" d="M1 1h10v10H1z" />
-      <path fill="#7FBA00" d="M12 1h10v10H12z" />
-      <path fill="#00A4EF" d="M1 12h10v10H1z" />
-      <path fill="#FFB900" d="M12 12h10v10H12z" />
+      <path
+        fill="#F25022"
+        d="M1 1h10v10H1z"
+      />
+      <path
+        fill="#7FBA00"
+        d="M12 1h10v10H12z"
+      />
+      <path
+        fill="#00A4EF"
+        d="M1 12h10v10H1z"
+      />
+      <path
+        fill="#FFB900"
+        d="M12 12h10v10H12z"
+      />
     </svg>
   );
 }
 
 /** Twitch — Twitch purple #9146FF. */
-export function TwitchIcon({ className }: BrandIconProps) {
+export function TwitchIcon({
+  className,
+}: BrandIconProps) {
   return (
     <svg
       viewBox="0 0 512 512"
       fill="#9146FF"
       aria-hidden="true"
       focusable="false"
-      className={className}
+      className={
+        className
+      }
     >
       <path d="M391.17,103.47H352.54v109.7h38.63ZM285,103H246.37V212.75H285ZM120.83,0,24.31,91.42V420.58H140.14V512l96.53-91.42h77.25L487.69,256V0ZM449.07,237.75l-77.22,73.12H294.61l-67.6,64v-64H140.14V36.58H449.07Z" />
     </svg>
@@ -120,14 +140,18 @@ export function TwitchIcon({ className }: BrandIconProps) {
 }
 
 /** GitLab — GitLab orange #FC6D26. */
-export function GitlabIcon({ className }: BrandIconProps) {
+export function GitlabIcon({
+  className,
+}: BrandIconProps) {
   return (
     <svg
       viewBox="0 0 512 512"
       fill="#FC6D26"
       aria-hidden="true"
       focusable="false"
-      className={className}
+      className={
+        className
+      }
     >
       <path d="M503.5 204.6L502.8 202.8L433.1 21.02C431.7 17.45 429.2 14.43 425.9 12.38C423.5 10.83 420.8 9.865 417.9 9.57C415 9.275 412.2 9.653 409.5 10.68C406.8 11.7 404.4 13.34 402.4 15.46C400.5 17.58 399.1 20.13 398.3 22.9L351.3 166.9H160.8L113.7 22.9C112.9 20.13 111.5 17.59 109.6 15.47C107.6 13.35 105.2 11.72 102.5 10.7C99.86 9.675 96.98 9.295 94.12 9.587C91.26 9.878 88.51 10.83 86.08 12.38C82.84 14.43 80.33 17.45 78.92 21.02L9.267 202.8L8.543 204.6C-1.484 230.8-2.72 259.6 5.023 286.6C12.77 313.5 29.07 337.3 51.47 354.2L51.74 354.4L52.33 354.8L158.3 434.3L210.9 474L242.9 498.2C246.6 500.1 251.2 502.5 255.9 502.5C260.6 502.5 265.2 500.1 268.9 498.2L300.9 474L353.5 434.3L460.2 354.4L460.5 354.1C482.9 337.2 499.2 313.5 506.1 286.6C514.7 259.6 513.5 230.8 503.5 204.6z" />
     </svg>
@@ -135,14 +159,18 @@ export function GitlabIcon({ className }: BrandIconProps) {
 }
 
 /** Steam — drawn in the surface's ink, so it inherits `currentColor`. */
-export function SteamIcon({ className }: BrandIconProps) {
+export function SteamIcon({
+  className,
+}: BrandIconProps) {
   return (
     <svg
       viewBox="0 0 496 512"
       fill="currentColor"
       aria-hidden="true"
       focusable="false"
-      className={className}
+      className={
+        className
+      }
     >
       <path d="M496 256c0 137-111.2 248-248.4 248-113.8 0-209.6-76.3-239-180.4l95.2 39.3c6.4 32.1 34.9 56.4 68.9 56.4 39.2 0 71.9-32.4 70.2-73.5l84.5-60.2c52.1 1.3 95.8-40.9 95.8-93.5 0-51.6-42-93.5-93.7-93.5s-93.7 42-93.7 93.5v1.2L176.6 279c-15.5-.9-30.7 3.4-43.5 12.1L0 236.1C10.2 108.4 117.1 8 247.6 8 384.8 8 496 119 496 256zM155.7 384.3l-30.5-12.6a52.79 52.79 0 0 0 27.2 25.8c26.9 11.2 57.8-1.6 69-28.4 5.4-13 5.5-27.3.1-40.3-5.4-13-15.5-23.2-28.5-28.6-12.9-5.4-26.7-5.2-38.9-.6l31.5 13c19.8 8.2 29.2 30.9 20.9 50.7-8.3 19.9-31 29.2-50.8 21zm173.8-129.9c-34.4 0-62.4-28-62.4-62.3s28-62.3 62.4-62.3 62.4 28 62.4 62.3-27.9 62.3-62.4 62.3zm.1-15.6c25.9 0 46.9-21 46.9-46.8 0-25.9-21-46.8-46.9-46.8s-46.9 21-46.9 46.8c.1 25.8 21.1 46.8 46.9 46.8z" />
     </svg>
@@ -150,32 +178,63 @@ export function SteamIcon({ className }: BrandIconProps) {
 }
 
 /** X (formerly Twitter) — drawn in the surface's ink, so it inherits `currentColor`. */
-export function XIcon({ className }: BrandIconProps) {
+export function XIcon({
+  className,
+}: BrandIconProps) {
   return (
     <svg
       viewBox="0 0 512 512"
       fill="currentColor"
       aria-hidden="true"
       focusable="false"
-      className={className}
+      className={
+        className
+      }
     >
       <path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z" />
     </svg>
   );
 }
 
-const PROVIDER_ICONS: Record<SignInProviderId, (props: BrandIconProps) => React.JSX.Element> = {
-  discord: DiscordIcon,
-  github: GithubIcon,
-  steam: SteamIcon,
-  twitch: TwitchIcon,
-  microsoft: MicrosoftIcon,
-  gitlab: GitlabIcon,
-  twitter: XIcon,
-};
+const PROVIDER_ICONS: Record<
+  SignInProviderId,
+  (
+    props: BrandIconProps,
+  ) => React.JSX.Element
+> =
+  {
+    discord:
+      DiscordIcon,
+    github:
+      GithubIcon,
+    steam:
+      SteamIcon,
+    twitch:
+      TwitchIcon,
+    microsoft:
+      MicrosoftIcon,
+    gitlab:
+      GitlabIcon,
+    twitter:
+      XIcon,
+  };
 
 /** The brand mark for a sign-in provider (login page, Settings → Sign-in methods). */
-export function ProviderIcon({ id, className }: BrandIconProps & { id: SignInProviderId }) {
-  const Icon = PROVIDER_ICONS[id];
-  return <Icon className={className} />;
+export function ProviderIcon({
+  id,
+  className,
+}: BrandIconProps & {
+  id: SignInProviderId;
+}) {
+  const Icon =
+    PROVIDER_ICONS[
+      id
+    ];
+  return (
+    <Icon
+      className={
+        className
+      }
+    />
+  );
 }

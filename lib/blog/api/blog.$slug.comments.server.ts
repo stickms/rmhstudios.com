@@ -28,7 +28,9 @@ const HEADERS =
  * GET  /api/blog/$slug/comments — the discussion under a sitewide announcement, oldest first.
  * POST /api/blog/$slug/comments — add a comment. Only announcement posts have a discussion (404 otherwise).
  */
-export const route = apiRoute('/api/blog/$slug/comments',
+export const route =
+  apiRoute(
+    '/api/blog/$slug/comments',
     {
       GET: implement(
         listBlogCommentsApi,

@@ -343,13 +343,26 @@ export const markNotificationsReadApi =
 /* ── Email ────────────────────────────────────────────────────────────────── */
 
 /** GET — the caller's effective email preferences (defaults filled in). */
-export const getEmailPrefsApi = endpoint<{ res: EmailPrefs }>()({
-  method: 'GET',
-  path: '/api/preferences/email',
-});
+export const getEmailPrefsApi =
+  endpoint<{
+    res: EmailPrefs;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/preferences/email',
+    },
+  );
 
 /** PUT — partial update; a category left out is unchanged. */
-export const setEmailPrefsApi = endpoint<{
-  body: EmailPrefsInput;
-  res: EmailPrefs;
-}>()({ method: 'PUT', path: '/api/preferences/email' });
+export const setEmailPrefsApi =
+  endpoint<{
+    body: EmailPrefsInput;
+    res: EmailPrefs;
+  }>()(
+    {
+      method:
+        'PUT',
+      path: '/api/preferences/email',
+    },
+  );

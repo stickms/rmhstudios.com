@@ -7,25 +7,64 @@ import { VIBE_ROOM_LIMITS } from '@/lib/rmhvibe/room-events';
  * Activity's own proxy origin (which Discord maps to the site), so a site-absolute URL is
  * reduced to its path. Anything else is left alone.
  */
-export function displayThumbUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
+export function displayThumbUrl(
+  url:
+    | string
+    | null
+    | undefined,
+):
+  | string
+  | null {
+  if (
+    !url
+  )
+    return null;
   try {
-    const u = new URL(url, SITE_URL);
-    return u.origin === new URL(SITE_URL).origin ? u.pathname + u.search : url;
+    const u =
+      new URL(
+        url,
+        SITE_URL,
+      );
+    return u.origin ===
+      new URL(
+        SITE_URL,
+      )
+        .origin
+      ? u.pathname +
+          u.search
+      : url;
   } catch {
     return null;
   }
 }
 
 /** An absolute https URL for rich presence (Discord fetches it itself, outside the proxy). */
-export function presenceThumbUrl(url: string | null | undefined): string | undefined {
-  if (!url) return undefined;
+export function presenceThumbUrl(
+  url:
+    | string
+    | null
+    | undefined,
+):
+  | string
+  | undefined {
+  if (
+    !url
+  )
+    return undefined;
   try {
-    const u = new URL(url, SITE_URL);
-    return u.protocol === 'https:' ? u.toString() : undefined;
+    const u =
+      new URL(
+        url,
+        SITE_URL,
+      );
+    return u.protocol ===
+      'https:'
+      ? u.toString()
+      : undefined;
   } catch {
     return undefined;
   }
 }
 
-export const VIBES_MAX_PARTY = VIBE_ROOM_LIMITS.MAX_MEMBERS;
+export const VIBES_MAX_PARTY =
+  VIBE_ROOM_LIMITS.MAX_MEMBERS;

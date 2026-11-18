@@ -538,10 +538,44 @@ describe('anonymizeAccount', () => {
   });
 
   it('erases the per-user vibe store rows', async () => {
-    (prismaMock.$transaction as ReturnType<typeof vi.fn>).mockClear();
-    await anonymizeAccount('user-1');
-    const tx = (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls[0][0] as Op[];
-    const op = tx.find((o) => o.model === 'vibeKv' && o.method === 'deleteMany');
-    expect(op?.args).toEqual({ where: { scope: 'user', ownerKey: 'user-1' } });
+    (
+      prismaMock.$transaction as ReturnType<
+        typeof vi.fn
+      >
+    ).mockClear();
+    await anonymizeAccount(
+      'user-1',
+    );
+    const tx =
+      (
+        prismaMock.$transaction as ReturnType<
+          typeof vi.fn
+        >
+      )
+        .mock
+        .calls[0][0] as Op[];
+    const op =
+      tx.find(
+        (
+          o,
+        ) =>
+          o.model ===
+            'vibeKv' &&
+          o.method ===
+            'deleteMany',
+      );
+    expect(
+      op?.args,
+    ).toEqual(
+      {
+        where:
+          {
+            scope:
+              'user',
+            ownerKey:
+              'user-1',
+          },
+      },
+    );
   });
 });

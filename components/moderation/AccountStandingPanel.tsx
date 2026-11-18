@@ -482,16 +482,34 @@ export function AccountStandingPanel() {
       </SettingsSection>
 
       {/* Feature timeouts: only shown when there has ever been one. */}
-      {standing.restrictions.length > 0 && (
+      {standing
+        .restrictions
+        .length >
+        0 && (
         <SettingsSection
-          className={arrival}
-          title={t('standing-restrictions', { defaultValue: 'Feature restrictions' })}
-          description={t('standing-restrictions-desc', {
-            defaultValue:
-              'Features site moderation has restricted on your account. Everything else works as usual.',
-          })}
+          className={
+            arrival
+          }
+          title={t(
+            'standing-restrictions',
+            {
+              defaultValue:
+                'Feature restrictions',
+            },
+          )}
+          description={t(
+            'standing-restrictions-desc',
+            {
+              defaultValue:
+                'Features site moderation has restricted on your account. Everything else works as usual.',
+            },
+          )}
         >
-          <RestrictionList restrictions={standing.restrictions} />
+          <RestrictionList
+            restrictions={
+              standing.restrictions
+            }
+          />
         </SettingsSection>
       )}
 

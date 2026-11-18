@@ -58,7 +58,9 @@ const get =
   (
     cookie?: string,
   ) =>
-    route.handlers.GET!(
+    route
+      .handlers
+      .GET!(
       {
         request:
           new Request(
@@ -80,59 +82,52 @@ const get =
       },
     );
 
-describe(
-  'GET /api/explore caching',
-  () => {
-    beforeEach(
-      () => {
-        getSession.mockReset();
-      },
-    );
+describe('GET /api/explore caching', () => {
+  beforeEach(
+    () => {
+      getSession.mockReset();
+    },
+  );
 
-    it(
-      'varies on Cookie when signed in, so a signed-out copy is never reused',
-      async () => {
-        getSession.mockResolvedValue(
-          {
-            user: {
-              id: 'viewer',
-            },
-          },
-        );
-        const res =
-          await get(
-            'better-auth.session_token=abc',
-          );
-        expect(
-          res.headers.get(
-            'cache-control',
-          ),
-        ).toMatch(
-          /private/,
-        );
-        expect(
-          res.headers.get(
-            'vary',
-          ) ?? '',
-        ).toMatch(
-          /cookie/i,
-        );
+  it('varies on Cookie when signed in, so a signed-out copy is never reused', async () => {
+    getSession.mockResolvedValue(
+      {
+        user: {
+          id: 'viewer',
+        },
       },
     );
+    const res =
+      await get(
+        'better-auth.session_token=abc',
+      );
+    expect(
+      res.headers.get(
+        'cache-control',
+      ),
+    ).toMatch(
+      /private/,
+    );
+    expect(
+      res.headers.get(
+        'vary',
+      ) ??
+        '',
+    ).toMatch(
+      /cookie/i,
+    );
+  });
 
-    it(
-      'varies on Cookie when signed out, so a signed-in copy is never reused',
-      async () => {
-        const res =
-          await get();
-        expect(
-          res.headers.get(
-            'vary',
-          ) ?? '',
-        ).toMatch(
-          /cookie/i,
-        );
-      },
+  it('varies on Cookie when signed out, so a signed-in copy is never reused', async () => {
+    const res =
+      await get();
+    expect(
+      res.headers.get(
+        'vary',
+      ) ??
+        '',
+    ).toMatch(
+      /cookie/i,
     );
-  },
-);
+  });
+});

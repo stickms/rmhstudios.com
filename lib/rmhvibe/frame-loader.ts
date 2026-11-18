@@ -14,29 +14,77 @@
  * Trust: a message counts only when `e.source` is the registered iframe's
  * `contentWindow`. The frame's origin is opaque, so the host posts with target '*'.
  */
-import { useCallback, useRef } from 'react';
-import { FRAME_TAG, type HostToFrame } from '@/lib/rmhvibe/frame-protocol';
+import {
+  useCallback,
+  useRef,
+} from 'react';
+import {
+  FRAME_TAG,
+  type HostToFrame,
+} from '@/lib/rmhvibe/frame-protocol';
 
 export { FRAME_URL } from '@/lib/rmhvibe/frame-protocol';
 
-type Entry = { getHtml: () => string; onLoaded?: () => void; sent: boolean };
+type Entry =
+  {
+    getHtml: () => string;
+    onLoaded?: () => void;
+    sent: boolean;
+  };
 
-const entries = new Map<Window, Entry>();
+const entries =
+  new Map<
+    Window,
+    Entry
+  >();
 
-function onMessage(e: MessageEvent) {
-  const source = e.source as Window | null;
-  const entry = source && entries.get(source);
-  if (!entry) return;
-  const kind = (e.data as { [FRAME_TAG]?: unknown } | null)?.[FRAME_TAG];
-  if (kind === 'ready' && !entry.sent) {
+function onMessage(
+  e: MessageEvent,
+) {
+  const source =
+    e.source as Window | null;
+  const entry =
+    source &&
+    entries.get(
+      source,
+    );
+  if (
+    !entry
+  )
+    return;
+  const kind =
+    (
+      e.data as {
+        [FRAME_TAG]?: unknown;
+      } | null
+    )?.[
+      FRAME_TAG
+    ];
+  if (
+    kind ===
+      'ready' &&
+    !entry.sent
+  ) {
     entry.sent = true;
-    const msg: HostToFrame = { [FRAME_TAG]: 'html', html: entry.getHtml() };
+    const msg: HostToFrame =
+      {
+        [FRAME_TAG]:
+          'html',
+        html: entry.getHtml(),
+      };
     try {
-      source.postMessage(msg, '*');
+      source.postMessage(
+        msg,
+        '*',
+      );
     } catch {
       /* the frame went away */
     }
-  } else if (kind === 'loaded' && entry.sent) {
+  } else if (
+    kind ===
+      'loaded' &&
+    entry.sent
+  ) {
     entry.onLoaded?.();
   }
 }
@@ -51,13 +99,40 @@ export function attachFrameDocument(
   getHtml: () => string,
   onLoaded?: () => void,
 ): () => void {
-  const win = frame.contentWindow;
-  if (!win) return () => {};
-  if (entries.size === 0) window.addEventListener('message', onMessage);
-  entries.set(win, { getHtml, onLoaded, sent: false });
+  const win =
+    frame.contentWindow;
+  if (
+    !win
+  )
+    return () => {};
+  if (
+    entries.size ===
+    0
+  )
+    window.addEventListener(
+      'message',
+      onMessage,
+    );
+  entries.set(
+    win,
+    {
+      getHtml,
+      onLoaded,
+      sent: false,
+    },
+  );
   return () => {
-    entries.delete(win);
-    if (entries.size === 0) window.removeEventListener('message', onMessage);
+    entries.delete(
+      win,
+    );
+    if (
+      entries.size ===
+      0
+    )
+      window.removeEventListener(
+        'message',
+        onMessage,
+      );
   };
 }
 
@@ -68,24 +143,57 @@ export function attachFrameDocument(
 export function useFrameDocument(
   html: string,
   onLoaded?: () => void,
-  onElement?: (el: HTMLIFrameElement | null) => void,
+  onElement?: (
+    el: HTMLIFrameElement | null,
+  ) => void,
 ) {
-  const htmlRef = useRef(html);
-  htmlRef.current = html;
-  const loadedRef = useRef(onLoaded);
-  loadedRef.current = onLoaded;
-  const elementRef = useRef(onElement);
-  elementRef.current = onElement;
-  const detach = useRef<(() => void) | undefined>(undefined);
-  return useCallback((el: HTMLIFrameElement | null) => {
-    detach.current?.();
-    detach.current = undefined;
-    elementRef.current?.(el);
-    if (el)
-      detach.current = attachFrameDocument(
+  const htmlRef =
+    useRef(
+      html,
+    );
+  htmlRef.current =
+    html;
+  const loadedRef =
+    useRef(
+      onLoaded,
+    );
+  loadedRef.current =
+    onLoaded;
+  const elementRef =
+    useRef(
+      onElement,
+    );
+  elementRef.current =
+    onElement;
+  const detach =
+    useRef<
+      | (() => void)
+      | undefined
+    >(
+      undefined,
+    );
+  return useCallback(
+    (
+      el: HTMLIFrameElement | null,
+    ) => {
+      detach.current?.();
+      detach.current =
+        undefined;
+      elementRef.current?.(
         el,
-        () => htmlRef.current,
-        () => loadedRef.current?.(),
       );
-  }, []);
+      if (
+        el
+      )
+        detach.current =
+          attachFrameDocument(
+            el,
+            () =>
+              htmlRef.current,
+            () =>
+              loadedRef.current?.(),
+          );
+    },
+    [],
+  );
 }

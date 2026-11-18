@@ -24,7 +24,9 @@ function wikiPath(
  * wiki does not have, and no page at all, get the wiki's card. The revision is
  * in the cache key, so an edit gets a fresh card.
  */
-export const route = apiRoute('/api/og/wiki',
+export const route =
+  apiRoute(
+    '/api/og/wiki',
     {
       GET: implement(
         wikiOgCardApi,

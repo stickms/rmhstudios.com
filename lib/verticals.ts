@@ -247,14 +247,45 @@ export const VERTICALS: readonly Vertical[] =
       name: 'RMH Research',
       // The field, paper and author pages are parameterised; the sitemap lists
       // them from the catalogue (`DYNAMIC_ROUTES` in lib/sitemap.ts).
-      pages: [
-        { segment: '', cadence: 'weekly' },
-        { segment: 'archive', cadence: 'weekly' },
-        { segment: 'authors', cadence: 'monthly' },
-        { segment: 'fields', cadence: 'monthly' },
-        { segment: 'psychology', cadence: 'monthly' },
-        { segment: 'r-index', cadence: 'yearly' },
-      ],
+      pages:
+        [
+          {
+            segment:
+              '',
+            cadence:
+              'weekly',
+          },
+          {
+            segment:
+              'archive',
+            cadence:
+              'weekly',
+          },
+          {
+            segment:
+              'authors',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'fields',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'psychology',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'r-index',
+            cadence:
+              'yearly',
+          },
+        ],
     },
     {
       id: 'adaptive-intelligence',

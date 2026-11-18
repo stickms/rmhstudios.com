@@ -424,33 +424,80 @@ describe('shared helpers', () => {
 });
 
 describe('getCurrentAnnouncement', () => {
-  const row = {
-    id: 'bf1',
-    slug: 'slug-bf1',
-    title: 'T',
-    description: 'D',
-    image: null,
-    content: 'c',
-    business: 'rmh',
-    announcedAt: new Date('2026-11-13T00:00:00Z'),
-    announcementExpiresAt: null,
-    // A legacy announcer-authored RMHark: still in the column, never read.
-    announcementPostId: 'legacy-rmhark',
-  };
+  const row =
+    {
+      id: 'bf1',
+      slug: 'slug-bf1',
+      title:
+        'T',
+      description:
+        'D',
+      image:
+        null,
+      content:
+        'c',
+      business:
+        'rmh',
+      announcedAt:
+        new Date(
+          '2026-11-13T00:00:00Z',
+        ),
+      announcementExpiresAt:
+        null,
+      // A legacy announcer-authored RMHark: still in the column, never read.
+      announcementPostId:
+        'legacy-rmhark',
+    };
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.spyOn(Date, 'now').mockImplementation(() => Date.parse('2026-11-14T12:00:00Z'));
-    db.cached.mockImplementation(async (_k: string, _t: number, loader: () => unknown) => loader());
-  });
+  beforeEach(
+    () => {
+      vi.clearAllMocks();
+      vi.spyOn(
+        Date,
+        'now',
+      ).mockImplementation(
+        () =>
+          Date.parse(
+            '2026-11-14T12:00:00Z',
+          ),
+      );
+      db.cached.mockImplementation(
+        async (
+          _k: string,
+          _t: number,
+          loader: () => unknown,
+        ) =>
+          loader(),
+      );
+    },
+  );
 
   it('returns the live announcement without a discussion post and creates no feed post', async () => {
-    db.blogMany2.mockResolvedValue([row]);
-    const r = await getCurrentAnnouncement();
-    expect(r?.id).toBe('bf1');
-    expect(r).not.toHaveProperty('discussionPostId');
-    expect(db.harkCreate).not.toHaveBeenCalled();
-    expect(db.hark).not.toHaveBeenCalled();
-    expect(db.audit).not.toHaveBeenCalled();
+    db.blogMany2.mockResolvedValue(
+      [
+        row,
+      ],
+    );
+    const r =
+      await getCurrentAnnouncement();
+    expect(
+      r?.id,
+    ).toBe(
+      'bf1',
+    );
+    expect(
+      r,
+    ).not.toHaveProperty(
+      'discussionPostId',
+    );
+    expect(
+      db.harkCreate,
+    ).not.toHaveBeenCalled();
+    expect(
+      db.hark,
+    ).not.toHaveBeenCalled();
+    expect(
+      db.audit,
+    ).not.toHaveBeenCalled();
   });
 });

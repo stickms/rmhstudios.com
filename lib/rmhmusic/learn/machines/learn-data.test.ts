@@ -27,8 +27,10 @@ const PROFILE: Profile =
       'screen',
     latencyMs: 0,
     dailyGoal: 1,
-    sound: null,
-    voiceRange: null,
+    sound:
+      null,
+    voiceRange:
+      null,
   };
 const ROW: LessonProgressRow =
   {

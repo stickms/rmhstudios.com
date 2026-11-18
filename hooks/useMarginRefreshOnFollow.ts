@@ -21,35 +21,32 @@ export function useMarginRefreshOnFollow(
 ) {
   const queryClient =
     useQueryClient();
-  useEffect(
-    () => {
-      const updatedAt =
-        queryClient.getQueryState(
-          marginExploreKey(
-            viewerId,
-          ),
-        )?.dataUpdatedAt;
-      if (
-        updatedAt &&
-        followChangedSince(
-          updatedAt,
-        )
-      ) {
+  useEffect(() => {
+    const updatedAt =
+      queryClient.getQueryState(
+        marginExploreKey(
+          viewerId,
+        ),
+      )?.dataUpdatedAt;
+    if (
+      updatedAt &&
+      followChangedSince(
+        updatedAt,
+      )
+    ) {
+      void invalidateMarginExplore(
+        queryClient,
+      );
+    }
+    return subscribeFollowChanged(
+      () => {
         void invalidateMarginExplore(
           queryClient,
         );
-      }
-      return subscribeFollowChanged(
-        () => {
-          void invalidateMarginExplore(
-            queryClient,
-          );
-        },
-      );
-    },
-    [
-      queryClient,
-      viewerId,
-    ],
-  );
+      },
+    );
+  }, [
+    queryClient,
+    viewerId,
+  ]);
 }

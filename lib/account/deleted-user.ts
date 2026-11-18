@@ -7,9 +7,18 @@
  * so every place that hides or labels tombstones treats it the same. It has no email, password,
  * sessions, accounts or passkeys, so nobody can ever sign in as it.
  */
-export const DELETED_USER_ID = 'deleted-user';
+export const DELETED_USER_ID =
+  'deleted-user';
 
 /** True for the shared "Deleted user" sentinel row itself (not for an individual tombstone). */
-export function isDeletedUserSentinel(userId: string | null | undefined): boolean {
-  return userId === DELETED_USER_ID;
+export function isDeletedUserSentinel(
+  userId:
+    | string
+    | null
+    | undefined,
+): boolean {
+  return (
+    userId ===
+    DELETED_USER_ID
+  );
 }

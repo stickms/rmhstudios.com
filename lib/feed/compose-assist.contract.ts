@@ -172,10 +172,19 @@ export type AiGenerateRequest =
     }
   /** Admin email composer (admin only): the subject or the body of an email. */
   | {
-      mode: 'email-subject' | 'email-body';
-      subject?: string | undefined;
-      body?: string | undefined;
-      category: 'announcements' | 'product' | 'service';
+      mode:
+        | 'email-subject'
+        | 'email-body';
+      subject?:
+        | string
+        | undefined;
+      body?:
+        | string
+        | undefined;
+      category:
+        | 'announcements'
+        | 'product'
+        | 'service';
     };
 
 export const aiGeneratePostApi =
