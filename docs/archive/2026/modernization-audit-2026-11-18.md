@@ -5,8 +5,10 @@ practices, and would a smaller or newer library replace one of its foundations?
 
 **Answer:** it was close to current. One commit brings 50 dependencies up within
 their ranges and upgrades four majors (i18next, react-i18next, stripe, web-push).
-The foundations stay: React 19, TanStack Router/Start and Vite 8 are the latest
-releases, and nothing smaller replaces them without a rewrite. What is held back
+The foundations stay: React 19 and Vite 8 are on their latest releases, and
+TanStack Router/Start are exact pins that move together as the framework group
+(Start is one patch behind, 1.169.4 against 1.169.5, to move with the nitro RC);
+nothing smaller replaces them without a rewrite. What is held back
 below is held for a stated reason, and each entry names what lifts it.
 
 ## Upgraded (commit "Bring dependencies up to date…")
