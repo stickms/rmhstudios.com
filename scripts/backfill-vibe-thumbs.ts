@@ -13,6 +13,9 @@
  *   now 404:                                   pnpm backfill-vibe-thumbs --all
  *   Cap how many to do this run:               pnpm backfill-vibe-thumbs --all --limit=50
  *
+ * Renders what a visitor sees: the owner's saved knob (tweak) values, not the
+ * defaults, resolved the same way as the jobs worker (`savedTweakValues`).
+ *
  * Safe to run on prod and re-runnable anytime.
  */
 
@@ -21,6 +24,10 @@ import {
   captureVibeThumbnail,
   closeVibeBrowser,
 } from '@/lib/rmhvibe/vibe-screenshot.server';
+import {
+  savedTweakValues,
+  TWEAK_SOURCE_SELECT,
+} from '@/lib/rmhvibe/thumbnail-worker.server';
 
 function parseArgs() {
   const args =
@@ -91,6 +98,7 @@ async function main() {
           {
             slug: true,
             html: true,
+            ...TWEAK_SOURCE_SELECT,
           },
         orderBy:
           {
@@ -134,6 +142,9 @@ async function main() {
       await captureVibeThumbnail(
         page.slug,
         page.html,
+        savedTweakValues(
+          page,
+        ),
       );
     if (
       url
