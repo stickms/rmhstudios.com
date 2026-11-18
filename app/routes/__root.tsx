@@ -17,6 +17,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { Providers } from '@/components/Providers';
 import { PREPAINT_BODY_SCRIPT, prepaintHeadScripts } from '@/lib/prepaint/config';
 import { SiteHeadContent } from '@/components/SiteHeadContent';
+import { useIsStaticDocument } from '@/lib/static-document';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
@@ -415,6 +416,8 @@ function RootDocument({ children }: { children: ReactNode }) {
   // The CSP nonce (docs/csp.md): every inline executable script in this document
   // carries it, or is covered by a static hash of the generated pre-paint code.
   const nonce = useRouter().options.ssr?.nonce;
+  // A static document's first load ships no client JavaScript (lib/static-document.ts).
+  const staticDocument = useIsStaticDocument();
   let locale: Locale = 'en';
   try {
     const data = Route.useLoaderData();
@@ -451,7 +454,7 @@ function RootDocument({ children }: { children: ReactNode }) {
           dangerouslySetInnerHTML={{ __html: PREPAINT_BODY_SCRIPT }}
         />
         {children}
-        <Scripts />
+        {staticDocument ? null : <Scripts />}
       </body>
     </html>
   );
