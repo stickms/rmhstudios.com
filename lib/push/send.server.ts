@@ -6,7 +6,8 @@
  * Generate keys once with: npx web-push generate-vapid-keys
  */
 
-import webpush from 'web-push';
+// Named imports: web-push 4 is ESM-only with no default export.
+import { sendNotification, setVapidDetails } from 'web-push';
 import { prisma } from '@/lib/prisma.server';
 import type { NotificationType } from '@prisma/client';
 
@@ -22,7 +23,7 @@ export function pushConfigured(): boolean {
     return configured;
   }
   try {
-    webpush.setVapidDetails(
+    setVapidDetails(
       process.env.VAPID_SUBJECT || 'mailto:admin@rmhstudios.com',
       publicKey,
       privateKey
@@ -100,7 +101,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
     await Promise.all(
       subs.map(async (sub) => {
         try {
-          await webpush.sendNotification(
+          await sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
             body,
             { TTL: 60 * 60 * 24 }

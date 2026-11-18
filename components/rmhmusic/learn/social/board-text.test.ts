@@ -294,7 +294,7 @@ describe('board-text', () => {
         );
         // Forward unchanged: the spy only records which key was asked for.
         return (
-          t as (
+          t as unknown as (
             k: string,
             o?: unknown,
           ) => string

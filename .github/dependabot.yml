@@ -33,9 +33,6 @@ updates:
       # its ESM build, so importing satori throws and every OG card 500s.
       - dependency-name: "satori"
         versions: [">=0.35.2"]
-      # @better-auth/stripe's peer range stops at stripe ^22.
-      - dependency-name: "stripe"
-        update-types: ["version-update:semver-major"]
       # typescript-eslint supports typescript <6.1. Type-checking already runs
       # on TS 7 through the `typescript-native` alias.
       - dependency-name: "typescript"

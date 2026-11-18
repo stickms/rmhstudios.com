@@ -338,7 +338,7 @@ function ApplyControl({
   active: boolean;
   onApply: () => void;
   onRemove: () => void;
-  t: (key: string, opts?: { defaultValue: string }) => string;
+  t: (key: string, opts: { defaultValue: string }) => string;
 }) {
   if (active) {
     return (

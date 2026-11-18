@@ -306,7 +306,7 @@ export function ThemeEditor({
   );
 }
 
-function saveError(e: unknown, t: (k: string, o?: { defaultValue: string }) => string): string {
+function saveError(e: unknown, t: (k: string, o: { defaultValue: string }) => string): string {
   return e instanceof Error && e.message === 'MEMBERS_ONLY'
     ? t('members-only', { defaultValue: 'Creating themes needs a membership' })
     : t('error', { defaultValue: 'Something went wrong' });
@@ -332,7 +332,7 @@ function ColorField({
   field: { key: ColorKey; label: string };
   value: string;
   onChange: (key: ColorKey, value: string) => void;
-  t: (k: string, o?: { defaultValue: string }) => string;
+  t: (k: string, o: { defaultValue: string }) => string;
 }) {
   const label = t(field.key, { defaultValue: field.label });
   return (
