@@ -37,7 +37,7 @@ import {
   ArrowDown,
   Clock,
 } from 'lucide-react';
-import { GifPicker } from '@/components/feed/GifPicker';
+import { GifPicker } from '@/components/feed/GifPickerLazy';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';

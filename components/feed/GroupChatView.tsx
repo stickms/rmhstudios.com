@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { GifPicker } from './GifPicker';
+import { GifPicker } from './GifPickerLazy';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { ChatPinnedBar } from '@/components/chat-plus/ChatPinnedBar';

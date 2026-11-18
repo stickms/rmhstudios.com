@@ -15,7 +15,7 @@ import { Button } from'@/components/ui/button';
 import { Textarea } from'@/components/ui/textarea';
 import { toast } from '@/lib/toast';
 import { MAX_RMHARK_LENGTH } from'@/lib/rmhark-limits';
-import { GifPicker } from'./GifPicker';
+import { GifPicker } from './GifPickerLazy';
 import { GifEmbed } from'./GifEmbed';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';

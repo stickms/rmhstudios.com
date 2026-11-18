@@ -115,7 +115,7 @@ vi.mock('@/components/shared/ReactionMenu', () => ({ ReactionMenu: marker('React
 vi.mock('@/components/shared/EmojiPickerButton', () => ({
   EmojiPickerButton: marker('EmojiPickerButton'),
 }));
-vi.mock('../GifPicker', () => ({ GifPicker: marker('GifPicker') }));
+vi.mock('../GifPickerLazy', () => ({ GifPicker: marker('GifPicker') }));
 vi.mock('../UserAvatar', () => ({ UserAvatar: marker('UserAvatar') }));
 vi.mock('../MentionTextarea', () => ({
   MentionTextarea: forwardRef<HTMLTextAreaElement, Record<string, unknown>>(

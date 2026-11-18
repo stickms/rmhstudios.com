@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
-import { GifPicker } from '@/components/feed/GifPicker';
+import { GifPicker } from '@/components/feed/GifPickerLazy';
 import {
   parseRemind,
   resolveCommand,

@@ -18,6 +18,11 @@ const ctl = vi.hoisted(() => ({
   signedIn: true,
 }));
 
+// The GIF picker loads lazily in the app (components/feed/GifPickerLazy.tsx); a synchronous server render would
+// capture its loading skeleton. This file characterizes the open composer, so it renders the real picker.
+vi.mock('@/components/feed/GifPickerLazy', async () => ({
+  GifPicker: (await import('@/components/feed/GifPicker')).GifPicker,
+}));
 vi.mock('react', async (orig) => {
   const actual = await orig<typeof import('react')>();
   return {

@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react';
 import { COMMAND_PALETTE_EVENT } from './command-palette-bus';
+import { shouldSpeculate } from '@/lib/network-quality';
 
 /**
  * Lazy mount boundary for the ⌘K command palette.
@@ -102,6 +103,13 @@ export function CommandPaletteMount() {
 
     // Prefetch/mount on idle so the first ⌘K is instant and the palette's own
     // listeners are live by then — without competing for the hydration window.
+    // A warm-up is speculation, so it follows the site's one network policy: on a
+    // slow or thin link, or with data saver, the palette (~18 KB with its dialog
+    // primitives) waits for the first ⌘K or open event instead. Its own listeners
+    // are those same two, which this mount already handles.
+    const warm = () => {
+      if (shouldSpeculate()) setActive(true);
+    };
     let idleId:
       | number
       | undefined;
@@ -111,10 +119,7 @@ export function CommandPaletteMount() {
     ) {
       idleId =
         w.requestIdleCallback(
-          () =>
-            setActive(
-              true,
-            ),
+          warm,
           {
             timeout: 3000,
           },
@@ -122,10 +127,7 @@ export function CommandPaletteMount() {
     } else {
       idleId =
         window.setTimeout(
-          () =>
-            setActive(
-              true,
-            ),
+          warm,
           1500,
         ) as unknown as number;
     }
