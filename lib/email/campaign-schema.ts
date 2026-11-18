@@ -77,6 +77,8 @@ export const previewBodySchema = z.object({
   body: z.string().max(MAX_BODY).optional(),
   imageUrls: z.array(z.string().max(500)).max(MAX_EMAIL_IMAGES).optional(),
   design: z.lazy(() => emailDesignSchema).nullable().optional(),
+  /** Count as the send would with the frequency cap overridden. */
+  ignoreFrequencyCap: z.boolean().optional(),
 });
 
 /**
@@ -148,6 +150,11 @@ export const testSendBodySchema = z.object(draftFields);
 export const createCampaignBodySchema = z.object({
   ...draftFields,
   audience: audienceSchema,
+  /**
+   * Send to people who had an optional email within the frequency cap window
+   * (`BULK_MIN_GAP_HOURS`). Opt-outs and the per-message dedupe still apply.
+   */
+  ignoreFrequencyCap: z.boolean().optional(),
 });
 
 /* ── AI writing help ─────────────────────────────────────────────────────── */

@@ -44,6 +44,8 @@ export interface EmailCampaignRow {
   skipped: number;
   duplicates: number;
   throttled: number;
+  /** The admin sent past the frequency cap for this campaign. */
+  ignoreFrequencyCap: boolean;
   createdAt: string;
   finishedAt: string | null;
   author: string | null;

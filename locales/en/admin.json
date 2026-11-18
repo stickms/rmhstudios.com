@@ -679,5 +679,9 @@
   "user-strikes_other": "{{count}} strikes",
   "user-suspended": "Suspended",
   "user-timeouts_one": "{{count}} timeout",
-  "user-timeouts_other": "{{count}} timeouts"
+  "user-timeouts_other": "{{count}} timeouts",
+  "email-confirm-override": "This goes to people who had an email in the last {{hours}} hours too. An email cannot be recalled once sent.",
+  "email-history-override": "Sent past the frequency cap",
+  "email-override-cap": "Also send to people emailed in the last {{hours}} hours",
+  "email-preview-override": "Includes people who had an email in the last {{hours}} hours."
 }

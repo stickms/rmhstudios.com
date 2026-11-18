@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from '@/lib/toast';
 import { serverError } from '@/lib/http';
@@ -65,6 +66,10 @@ export function EmailComposer() {
   const [mode, setMode] = useState<AudienceMode>('all');
   const [filters, setFilters] = useState<FilterDraft>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<EmailRecipientSummary[]>([]);
+  // Send past the frequency cap: people emailed in the last BULK_MIN_GAP_HOURS get it too.
+  // Required notices are never capped, so the switch only exists for optional mail.
+  const [overrideCap, setOverrideCap] = useState(false);
+  const ignoreFrequencyCap = overrideCap && category !== 'service';
 
   const [preview, setPreview] = useState<EmailAudiencePreview | null>(null);
   const [previewing, setPreviewing] = useState(false);
@@ -124,6 +129,7 @@ export function EmailComposer() {
         body: {
           audience,
           category,
+          ...(ignoreFrequencyCap ? { ignoreFrequencyCap: true } : {}),
           ...(subject.trim() && body.trim()
             ? { subject: subject.trim(), body: body.trim(), imageUrls: images, design }
             : {}),
@@ -145,7 +151,7 @@ export function EmailComposer() {
     };
     // audienceKey and draftKey stand in for `audience` and the draft fields.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audienceKey, category, draftKey]);
+  }, [audienceKey, category, draftKey, ignoreFrequencyCap]);
 
   const draftReady = subject.trim().length > 0 && body.trim().length > 0;
   const canSend = draftReady && !!audience && !!preview && preview.eligible > 0 && !previewing;
@@ -183,7 +189,13 @@ export function EmailComposer() {
               defaultValue:
                 'This is a required notice: it goes to everyone in the audience, including people who turned email off. It cannot be recalled once sent.',
             })
-          : t('email-confirm-desc', { defaultValue: 'An email cannot be recalled once sent.' }),
+          : ignoreFrequencyCap
+            ? t('email-confirm-override', {
+                hours: BULK_MIN_GAP_HOURS,
+                defaultValue:
+                  'This goes to people who had an email in the last {{hours}} hours too. An email cannot be recalled once sent.',
+              })
+            : t('email-confirm-desc', { defaultValue: 'An email cannot be recalled once sent.' }),
       confirmLabel: t('email-send', { defaultValue: 'Send' }),
       danger: category === 'service',
     });
@@ -198,6 +210,7 @@ export function EmailComposer() {
           audience,
           imageUrls: images,
           design,
+          ...(ignoreFrequencyCap ? { ignoreFrequencyCap: true } : {}),
         },
       });
       if (r.duplicate) {
@@ -221,6 +234,7 @@ export function EmailComposer() {
       setDesign(null);
       setSelection(null);
       setSelected([]);
+      setOverrideCap(false);
       setHistoryKey((k) => k + 1);
     } catch (e) {
       toast.error(serverError(e) || t('email-send-failed', { defaultValue: 'The email could not be sent' }));
@@ -379,7 +393,31 @@ export function EmailComposer() {
                     defaultValue: '{{count}} had an email in the last {{hours}} hours and are left out.',
                   })}`
                 : ''}
+              {ignoreFrequencyCap
+                ? ` ${t('email-preview-override', {
+                    hours: BULK_MIN_GAP_HOURS,
+                    defaultValue: 'Includes people who had an email in the last {{hours}} hours.',
+                  })}`
+                : ''}
             </p>
+            {category !== 'service' && (preview.throttled > 0 || overrideCap) ? (
+              <div className="flex min-h-11 items-center justify-between gap-3">
+                <span
+                  id="email-override-cap"
+                  className="t-body text-site-text"
+                >
+                  {t('email-override-cap', {
+                    hours: BULK_MIN_GAP_HOURS,
+                    defaultValue: 'Also send to people emailed in the last {{hours}} hours',
+                  })}
+                </span>
+                <Switch
+                  checked={overrideCap}
+                  aria-labelledby="email-override-cap"
+                  onCheckedChange={setOverrideCap}
+                />
+              </div>
+            ) : null}
             {preview.sample.length > 0 ? (
               <ul className="divide-y divide-site-border border-t border-site-border">
                 {preview.sample.map((u) => (

@@ -25,7 +25,10 @@
  *   - Optional bulk mail is capped at one email per person per
  *     `BULK_MIN_GAP_HOURS` (`lib/email/frequency.ts`). The cap check and the
  *     claim run under one advisory lock, so two campaigns sending at once
- *     cannot both get through to the same person.
+ *     cannot both get through to the same person. An admin may override the
+ *     cap for one campaign (`ignoreFrequencyCap`, recorded on the campaign and
+ *     in the audit log); opt-outs and the dedupe still apply, and the send
+ *     still counts toward the next campaign's cap.
  *
  * Required service notices (`category: 'service'`) skip the preference check
  * and the frequency cap (never the dedupe) and carry no unsubscribe link. Every other campaign carries a one-click
@@ -173,13 +176,14 @@ async function funnel(
   category: CampaignCategory,
   contentHash: string | null,
   now: Date,
+  ignoreFrequencyCap = false,
 ) {
   const base = await whereFor(audience);
   const steps: Prisma.UserWhereInput[] = [base];
   const pref = preferenceWhere(category);
   const afterPref = pref ? [...steps, pref] : steps;
   const afterDup = contentHash ? [...afterPref, notAlreadySentWhere(dedupeKeyFor(contentHash))] : afterPref;
-  const throttle = notThrottledWhere(category, bulkGapStart(now));
+  const throttle = ignoreFrequencyCap ? null : notThrottledWhere(category, bulkGapStart(now));
   const eligible = throttle ? [...afterDup, throttle] : afterDup;
   return {
     base,
@@ -212,6 +216,7 @@ export async function previewAudience(
     imageUrls?: readonly string[] | undefined;
     design?: EmailDesign | null | undefined;
   },
+  ignoreFrequencyCap = false,
 ): Promise<AudiencePreview> {
   const hash =
     draft?.subject?.trim() && draft.body?.trim()
@@ -223,7 +228,7 @@ export async function previewAudience(
           checkedDesign(draft.design, draft.body, draft.imageUrls ?? []),
         )
       : null;
-  const f = await funnel(audience, category, hash, new Date());
+  const f = await funnel(audience, category, hash, new Date(), ignoreFrequencyCap);
   const [matched, afterPref, afterDup, eligible, sample] = await Promise.all([
     prisma.user.count({ where: f.base }),
     prisma.user.count({ where: f.afterPref }),
@@ -382,8 +387,9 @@ export async function createCampaign(
   });
   if (recent) return { ...recent, duplicate: true };
 
+  const ignoreFrequencyCap = input.category !== 'service' && input.ignoreFrequencyCap === true;
   const now = new Date();
-  const f = await funnel(input.audience, input.category, contentHash, now);
+  const f = await funnel(input.audience, input.category, contentHash, now, ignoreFrequencyCap);
   const [matched, afterPref, afterDup] = await Promise.all([
     prisma.user.count({ where: f.base }),
     prisma.user.count({ where: f.afterPref }),
@@ -399,6 +405,7 @@ export async function createCampaign(
       audience: input.audience,
       contentHash,
       imageUrls,
+      ignoreFrequencyCap,
       ...(design ? { design } : {}),
     },
     select: { id: true },
@@ -442,7 +449,7 @@ export async function createCampaign(
   await logAdminAction(adminId, 'email.campaign.send', {
     targetType: 'email_campaign',
     targetId: campaign.id,
-    detail: `${input.category} to ${total} (${input.audience.mode}): ${input.subject}`,
+    detail: `${input.category} to ${total} (${input.audience.mode}${ignoreFrequencyCap ? ', frequency cap overridden' : ''}): ${input.subject}`,
   });
 
   if (total > 0) await startCampaign(campaign.id);
@@ -511,7 +518,8 @@ async function finish(campaignId: string): Promise<void> {
 
 /**
  * Decide, under one advisory lock, who in a batch may be sent this message:
- * not emailed too recently (optional mail only) and not sent it before. Holding
+ * not emailed too recently (optional mail only, unless the admin overrode the
+ * cap for this campaign) and not sent it before. Holding
  * the lock across the cap check and the claim is what stops two campaigns that
  * run at the same moment from both reaching one person inside the cap window.
  */
@@ -520,11 +528,12 @@ async function claimForBatch(
   category: CampaignCategory,
   contentHash: string,
   campaignId: string,
+  ignoreFrequencyCap: boolean,
 ): Promise<{ claimed: Set<string>; throttled: Set<string>; duplicates: Set<string> }> {
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('email-delivery-claim'))`;
     const throttled = new Set<string>();
-    if (category !== 'service' && userIds.length > 0) {
+    if (category !== 'service' && !ignoreFrequencyCap && userIds.length > 0) {
       const recent = await tx.emailDelivery.findMany({
         where: { userId: { in: userIds }, kind: 'campaign', createdAt: { gt: bulkGapStart() } },
         select: { userId: true },
@@ -557,6 +566,7 @@ export async function runCampaign(campaignId: string): Promise<void> {
       contentHash: true,
       imageUrls: true,
       design: true,
+      ignoreFrequencyCap: true,
     },
   });
   if (!campaign || campaign.status !== 'sending') return;
@@ -590,6 +600,7 @@ export async function runCampaign(campaignId: string): Promise<void> {
       category,
       campaign.contentHash,
       campaignId,
+      campaign.ignoreFrequencyCap,
     );
     const deliverable = wanting.filter((u) => claimed.has(u.id));
     const skippedIds = ids.filter((id) => !claimed.has(id));
@@ -686,6 +697,7 @@ export async function listCampaigns(limit = 30) {
       skipped: true,
       duplicates: true,
       throttled: true,
+      ignoreFrequencyCap: true,
       createdAt: true,
       lastBatchAt: true,
       finishedAt: true,
@@ -705,6 +717,7 @@ export async function listCampaigns(limit = 30) {
     skipped: r.skipped,
     duplicates: r.duplicates,
     throttled: r.throttled,
+    ignoreFrequencyCap: r.ignoreFrequencyCap,
     createdAt: r.createdAt.toISOString(),
     finishedAt: r.finishedAt?.toISOString() ?? null,
     author: r.author.profile?.displayName || r.author.name || r.author.handle || null,
