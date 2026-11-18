@@ -121,11 +121,9 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
           where: { userId: u.id },
           select: {
             style: true,
-            accent: true,
             fontScale: true,
             density: true,
             readableFont: true,
-            customAccent: true,
             colorVision: true,
             jellyMotion: true,
           },

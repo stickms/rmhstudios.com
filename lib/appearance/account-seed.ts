@@ -39,16 +39,10 @@
  * seeded: every account uses the shared material and animation scheme.
  */
 import {
-  ACCENT_STORAGE_KEY,
-  isAccentId,
-} from '@/lib/appearance';
-import {
   COLOR_VISION_KEY,
-  CUSTOM_ACCENT_KEY,
   DEFAULT_JELLY_MOTION,
   DENSITY_KEY,
   FONT_SCALE_KEY,
-  HEX_RE,
   JELLY_MOTION_KEY,
   READABLE_FONT_KEY,
   isColorVisionMode,
@@ -65,9 +59,6 @@ export interface AccountAppearanceRow {
   style?:
     | string
     | null;
-  accent?:
-    | string
-    | null;
   fontScale?:
     | number
     | null;
@@ -76,9 +67,6 @@ export interface AccountAppearanceRow {
     | null;
   readableFont?:
     | boolean
-    | null;
-  customAccent?:
-    | string
     | null;
   colorVision?:
     | string
@@ -144,17 +132,6 @@ export function accountAppearanceSeed(
     ] =
       row.style;
 
-  // `isAccentId(remote.accent) ? remote.accent : store.accent`
-  if (
-    isAccentId(
-      row.accent,
-    )
-  )
-    seed[
-      ACCENT_STORAGE_KEY
-    ] =
-      row.accent;
-
   // `if ([875, 1000, 1125, 1250].includes(Number(r.fontScale))) setFontScale(...)`
   const fontScale =
     Number(
@@ -211,20 +188,6 @@ export function accountAppearanceSeed(
       row.readableFont
         ? '1'
         : null;
-
-  // `if (typeof r.customAccent === 'string' && HEX_RE.test(...)) setCustomAccent(...)`
-  if (
-    typeof row.customAccent ===
-      'string' &&
-    HEX_RE.test(
-      row.customAccent,
-    )
-  ) {
-    seed[
-      CUSTOM_ACCENT_KEY
-    ] =
-      row.customAccent;
-  }
 
   // `if (isColorVisionMode(r.colorVision)) setColorVision(...)` — `none` is the
   // default, which the script expresses by absence.

@@ -5,24 +5,21 @@ import { prisma } from '@/lib/prisma.server';
 import { invalidateCached } from '@/lib/cached.server';
 import { appearanceSeedKey } from '@/lib/appearance/seed-cache.server';
 import { SITE_STYLES } from '@/stores/themeStore';
-import { ACCENT_PRESETS } from '@/lib/appearance';
 import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
-import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { getAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
 import { setAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
 
 /**
- * GET  /api/preferences/appearance — the caller's saved theme + accent (nulls
+ * GET  /api/preferences/appearance — the caller's saved theme and comfort settings (nulls
  *      when nothing is saved yet, meaning "use the defaults").
- * PUT  /api/preferences/appearance — save theme and/or accent (partial upsert).
+ * PUT  /api/preferences/appearance — save them (partial upsert).
  *
  * This is the cross-device source of truth for appearance; the client also keeps
  * a localStorage copy for a no-flash first paint and for signed-out users.
- * Only known theme/accent ids are accepted. A field left out is unchanged; an
+ * Only known theme ids are accepted. A field left out is unchanged; an
  * explicit null clears it back to the default.
  */
 const STYLE_IDS = new Set<string>(SITE_STYLES.map((s) => s.id));
-const ACCENT_IDS = new Set<string>(ACCENT_PRESETS.map((a) => a.id));
 
 const schema = z
   .object({
@@ -31,11 +28,6 @@ const schema = z
       .nullable()
       .optional()
       .refine((v) => v == null || STYLE_IDS.has(v), { message: 'Unknown theme' }),
-    accent: z
-      .string()
-      .nullable()
-      .optional()
-      .refine((v) => v == null || ACCENT_IDS.has(v), { message: 'Unknown accent' }),
   })
   .and(appearanceComfortSchema);
 
@@ -46,11 +38,9 @@ export const route = apiRoute('/api/preferences/appearance', {
     });
     return Response.json({
       style: row?.style ?? null,
-      accent: row?.accent ?? null,
       fontScale: row?.fontScale ?? null,
       density: row?.density ?? null,
       readableFont: row?.readableFont ?? false,
-      customAccent: row?.customAccent ?? null,
       colorVision: row?.colorVision ?? null,
       jellyMotion: row?.jellyMotion ?? null,
     });
@@ -60,17 +50,12 @@ export const route = apiRoute('/api/preferences/appearance', {
     setAppearancePrefsApi,
     { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'appearance-prefs' }, body: schema },
     async ({ session, body }) => {
-      const { style, accent, fontScale, density, readableFont, colorVision, jellyMotion } = body;
-      // Custom accent is normalized/nudged through the contrast guard so the
-      // stored value is guaranteed to carry a legible label (AA).
-      let customAccent = body.customAccent;
-      if (customAccent) customAccent = ensureReadableAccent(customAccent).hex;
+      const { style, fontScale, density, readableFont, colorVision, jellyMotion } = body;
 
       const comfort = {
         ...(fontScale !== undefined ? { fontScale } : {}),
         ...(density !== undefined ? { density } : {}),
         ...(readableFont !== undefined ? { readableFont } : {}),
-        ...(customAccent !== undefined ? { customAccent } : {}),
         ...(jellyMotion !== undefined ? { jellyMotion } : {}),
         // 'none' is stored as null so the column means "no override".
         ...(colorVision !== undefined
@@ -82,21 +67,20 @@ export const route = apiRoute('/api/preferences/appearance', {
         create: {
           userId: session.user.id,
           style,
-          accent,
           ...comfort,
         },
-        update: { style, accent, ...comfort },
+        // The accent presets and custom accent were retired (owner, 2026-11-18). Their columns stay until a
+        // contract migration drops them; any save clears what an older client left there.
+        update: { style, accent: null, customAccent: null, ...comfort },
       });
       // perf: the root loader caches the seed row (__root.tsx); drop it so the
       // next render reflects this save on every instance.
       await invalidateCached(appearanceSeedKey(session.user.id));
       return Response.json({
         style: row.style ?? null,
-        accent: row.accent ?? null,
         fontScale: row.fontScale ?? null,
         density: row.density ?? null,
         readableFont: row.readableFont ?? false,
-        customAccent: row.customAccent ?? null,
         colorVision: row.colorVision ?? null,
         jellyMotion: row.jellyMotion ?? null,
       });

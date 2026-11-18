@@ -13,7 +13,6 @@ import {
   DENSITIES,
   COLOR_VISION_MODES,
   JELLY_MOTION_LEVELS,
-  HEX_RE,
 } from '@/lib/appearance/prefs';
 
 export const appearanceComfortSchema =
@@ -49,14 +48,6 @@ export const appearanceComfortSchema =
       readableFont:
         z
           .boolean()
-          .optional(),
-      customAccent:
-        z
-          .string()
-          .regex(
-            HEX_RE,
-          )
-          .nullable()
           .optional(),
       colorVision:
         z

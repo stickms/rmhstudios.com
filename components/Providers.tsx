@@ -35,14 +35,10 @@ import {
   editionForBackground,
 } from '@/stores/themeStore';
 import { clearThemeTokens, isStaleAppliedTheme, type AppliedUserTheme } from '@/lib/themes/tokens';
-import { applyAccent, isAccentId, ACCENT_STORAGE_KEY, accentCssVars } from '@/lib/appearance';
-import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import {
-  HEX_RE,
   FONT_SCALE_KEY,
   DENSITY_KEY,
   READABLE_FONT_KEY,
-  CUSTOM_ACCENT_KEY,
   COLOR_VISION_KEY,
   isColorVisionMode,
   applyColorVision,
@@ -179,11 +175,9 @@ export function Providers({
   const queryClient = useRouter().options.context.queryClient;
   const session = useLiveSession();
   const style = useThemeStore((s) => s.style);
-  const accent = useThemeStore((s) => s.accent);
   const fontScale = useThemeStore((s) => s.fontScale);
   const density = useThemeStore((s) => s.density);
   const readableFont = useThemeStore((s) => s.readableFont);
-  const customAccent = useThemeStore((s) => s.customAccent);
   const colorVision = useThemeStore((s) => s.colorVision);
   const jellyMotion = useThemeStore((s) => s.jellyMotion);
   const userTheme = useThemeStore((s) => s.userTheme);
@@ -330,18 +324,12 @@ export function Providers({
       writeString('rmh-style', DEFAULT_STYLE);
       useThemeStore.getState().setStyle(DEFAULT_STYLE);
     }
-    const storedAccent = readString(ACCENT_STORAGE_KEY);
-    if (isAccentId(storedAccent)) {
-      useThemeStore.getState().setAccent(storedAccent);
-    }
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
     const fs = Number(readString(FONT_SCALE_KEY));
     if ([875, 1000, 1125, 1250].includes(fs)) st.setFontScale(fs);
     if (readString(DENSITY_KEY) === 'compact') st.setDensity('compact');
     if (readString(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
-    const ca = readString(CUSTOM_ACCENT_KEY);
-    if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
     const cv = readString(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
     const jm = readString(JELLY_MOTION_KEY);
@@ -355,6 +343,10 @@ export function Providers({
       'rmh-eversion-level',
       'rmh-always-evert-globe',
       'rmh-electric-arcs',
+      // The accent presets and the custom accent hex were retired (owner, 2026-11-18): Steel has no accent colour, and
+      // a theme's own accent is the one way colour enters the page.
+      'rmh-accent',
+      'rmh-custom-accent',
     ])
       removeKey(key);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
@@ -371,12 +363,12 @@ export function Providers({
     }
   }, []);
 
-  // Sync style class + accent override to <html> and persist.
+  // Sync the style class and any bought theme to <html> and persist.
   useEffect(() => {
     // On the very first render the Zustand store still holds DEFAULT_STYLE
     // because localStorage hasn't hydrated yet. The inline ThemeScript
     // already applied the correct class, background colour, meta tag, and
-    // accent — touching ANYTHING here would flash the wrong colour and Safari
+    // bought theme — touching ANYTHING here would flash the wrong colour and Safari
     // (iOS 26+) derives its bar tint from the body background-color on
     // the first paint, so a single wrong frame is enough to break it.
     if (isFirstRun.current) {
@@ -401,7 +393,7 @@ export function Providers({
 
     // Marketplace user theme (§14): a full v2 retint set inline over the built-in
     // cascade (a transient preview beats the committed one). Skipped on app/game
-    // routes (they own their palette). Accent presets are applied AFTER this
+    // routes (they own their palette).
     // block so they still win.
     if (userThemeOn && activeUserTheme) {
       for (const [k, v] of Object.entries(activeUserTheme.vars)) html.style.setProperty(k, v);
@@ -420,13 +412,6 @@ export function Providers({
     removeKey('rmh-glass-level');
     removeKey('rmh-reduce-transparency');
     removeKey('rmh-reduce-motion');
-
-    // Accent override: apply on content pages; clear on app/game routes (they own
-    // their palette) and when no accent is chosen. applyAccent no-ops safely for a
-    // null/unknown id by clearing the tokens.
-    applyAccent(html, isAppRoute ? null : accent);
-    if (isAccentId(accent)) writeString(ACCENT_STORAGE_KEY, accent);
-    else removeKey(ACCENT_STORAGE_KEY);
 
     // ── Comfort suite (§13) ──────────────────────────────────────────────
     if (fontScale && fontScale !== 1000) {
@@ -459,16 +444,6 @@ export function Providers({
     applyJellyMotion(html, jellyMotion);
     if (jellyMotion !== DEFAULT_JELLY_MOTION) writeString(JELLY_MOTION_KEY, jellyMotion);
     else removeKey(JELLY_MOTION_KEY);
-    // Custom accent (raw hex) overrides the preset accent applied just above.
-    if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
-      const { hex, fg } = ensureReadableAccent(customAccent);
-      for (const [name, val] of Object.entries(accentCssVars(hex, fg)))
-        html.style.setProperty(name, val);
-      writeString(CUSTOM_ACCENT_KEY, customAccent);
-    } else {
-      removeKey(CUSTOM_ACCENT_KEY);
-    }
-
     // Excluded app/game routes keep their own document background so the browser
     // bar tint and overscroll match their :root-token chrome — same gate as the
     // inline themeScript in app/routes/__root.tsx, and the same `APP_ROUTE_*`
@@ -500,12 +475,10 @@ export function Providers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     style,
-    accent,
     isAppRoute,
     fontScale,
     density,
     readableFont,
-    customAccent,
     colorVision,
     jellyMotion,
     userTheme,
@@ -514,17 +487,16 @@ export function Providers({
 
   // ── Account sync ─────────────────────────────────────────────────────────
   // Appearance follows the signed-in user across devices. On sign-in we pull the
-  // saved theme/accent; the account wins when it has a value, otherwise the
+  // saved theme; the account wins when it has a value, otherwise the
   // current device value is kept (and seeded up so the account isn't left empty).
   const appearanceSyncedRef = useRef(false);
   const lastSavedAppearanceRef = useRef<{
     style: string;
-    accent: string | null;
   } | null>(null);
 
   // Fire-and-forget PUT of the appearance to the account, recording it as the
   // last-saved value so the change-watcher below never echoes it straight back.
-  const saveAppearance = useCallback((next: { style: string; accent: string | null }) => {
+  const saveAppearance = useCallback((next: { style: string }) => {
     lastSavedAppearanceRef.current = next;
     api(setAppearancePrefsApi, { body: next }).catch((err) => {
       console.error('Appearance save failed:', err);
@@ -561,29 +533,24 @@ export function Providers({
           remote.style && SITE_STYLES.some((s) => s.id === remote.style)
             ? (remote.style as SiteStyle)
             : store.style;
-        const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
-        if (remote.style !== nextStyle || remote.accent !== nextAccent) {
+        if (remote.style !== nextStyle) {
           // Server was missing a value this device has → seed the account with the
           // merged result (also records it as last-saved).
           saveAppearance({
             style: nextStyle,
-            accent: nextAccent,
           });
         } else {
           lastSavedAppearanceRef.current = {
             style: nextStyle,
-            accent: nextAccent,
           };
         }
         store.setStyle(nextStyle);
-        store.setAccent(nextAccent);
         // Comfort suite (§13): apply account values on this device (account
         // wins where set; the settings panel persists device changes).
         const r = remote as typeof remote & {
           fontScale?: number | null;
           density?: string | null;
           readableFont?: boolean | null;
-          customAccent?: string | null;
           colorVision?: string | null;
           jellyMotion?: string | null;
         };
@@ -591,8 +558,6 @@ export function Providers({
           store.setFontScale(Number(r.fontScale));
         if (r.density === 'compact' || r.density === 'cozy') store.setDensity(r.density);
         if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
-        if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
-          store.setCustomAccent(r.customAccent);
         if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
         if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
         appearanceSyncedRef.current = true;
@@ -603,15 +568,15 @@ export function Providers({
     };
   }, [userId, idleReady, saveAppearance]);
 
-  // Persist later appearance changes (theme gallery, accent picker, command
+  // Persist later appearance changes (the theme picker, the command
   // palette) for signed-in users. Guarded so it never fires before the initial
   // sync and never re-saves a value we just pulled from the server.
   useEffect(() => {
     if (!userId || !appearanceSyncedRef.current) return;
     const last = lastSavedAppearanceRef.current;
-    if (last && last.style === style && last.accent === accent) return;
-    saveAppearance({ style, accent });
-  }, [style, accent, userId, saveAppearance]);
+    if (last && last.style === style) return;
+    saveAppearance({ style });
+  }, [style, userId, saveAppearance]);
 
   return (
     <QueryClientProvider client={queryClient}>

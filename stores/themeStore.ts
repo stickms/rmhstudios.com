@@ -323,12 +323,6 @@ interface ThemeStore {
   /** The committed site theme (persisted). */
   style: SiteStyle;
   setStyle: (style: SiteStyle) => void;
-  /**
-   * Accent-color override (an ACCENT_PRESETS id) applied on top of the active
-   * theme, or null to use the theme's own accent. Persisted like `style`.
-   */
-  accent: string | null;
-  setAccent: (accent: string | null) => void;
   // ── Appearance & accessibility comfort suite (§13) ──────────────────────
   /** Root font scale in per-mille (875|1000|1125|1250); null = default (1000). */
   fontScale: number | null;
@@ -339,9 +333,6 @@ interface ThemeStore {
   /** Legible body-font stack for dyslexia-friendly reading. */
   readableFont: boolean;
   setReadableFont: (value: boolean) => void;
-  /** Custom accent hex (#rrggbb); wins over the `accent` preset. null = none. */
-  customAccent: string | null;
-  setCustomAccent: (value: string | null) => void;
   /**
    * Colour-vision deficiency mode. Retints the three semantic tokens
    * (success/danger/warning) to a palette that stays separable under that
@@ -381,16 +372,12 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   // Committing a built-in style clears any user-theme preview (they are mutually
   // exclusive site looks) but keeps a committed user theme until removed.
   setStyle: (style) => set({ style, userThemePreview: null }),
-  accent: null,
-  setAccent: (accent) => set({ accent }),
   fontScale: null,
   setFontScale: (fontScale) => set({ fontScale }),
   density: null,
   setDensity: (density) => set({ density }),
   readableFont: false,
   setReadableFont: (readableFont) => set({ readableFont }),
-  customAccent: null,
-  setCustomAccent: (customAccent) => set({ customAccent }),
   colorVision: DEFAULT_COLOR_VISION,
   setColorVision: (colorVision) => set({ colorVision }),
   jellyMotion: DEFAULT_JELLY_MOTION,
