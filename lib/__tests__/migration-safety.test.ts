@@ -229,7 +229,7 @@ beforeAll(
         format:
           'esm',
         target:
-          'node24',
+          'node26',
       },
     );
   },

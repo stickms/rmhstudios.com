@@ -101,7 +101,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # pnpm + Node 24.21.0 + node_modules (cached by lockfile + schema), as web-ci.yml.
+      # pnpm + Node 26.13.1 + node_modules (cached by lockfile + schema), as web-ci.yml.
       - uses: ./.github/actions/setup-deps
 
       # PUC Lua 5.1 — the same VM family as love.js — for the L1 specs.

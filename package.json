@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@10.34.6",
   "engines": {
-    "node": ">=24.18.0 <25"
+    "node": ">=26.13.0 <27"
   },
   "scripts": {
     "dev": "pnpm run i18n:pull && pnpm run images:variants && concurrently \"vite dev\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\" \"pnpm run rmhos-net-server\" \"pnpm run ladder-worker:dev\" \"pnpm run homes-worker:dev\" \"pnpm run jobs:dev\"",
@@ -24,7 +24,7 @@
     "hooks:install": "git config core.hooksPath .githooks && echo 'commit gate installed (.githooks/pre-commit)'",
     "check:bundle-budget": "pnpm exec tsx scripts/check-bundle-budget.ts",
     "check:entry-composition": "pnpm exec tsx scripts/check-entry-composition.ts",
-    "build": "pnpm run build-vibe-packages && pnpm run images:variants && pnpm run build:islands && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts server/rmhos-net/index.ts server/ladder-worker/index.ts server/homes-worker/index.ts server/jobs/index.ts features/slice-it/engine/beatmap/stft.worker.ts --bundle --platform=node --target=node24 --outdir=dist-server --outbase=. --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
+    "build": "pnpm run build-vibe-packages && pnpm run images:variants && pnpm run build:islands && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts server/rmhos-net/index.ts server/ladder-worker/index.ts server/homes-worker/index.ts server/jobs/index.ts features/slice-it/engine/beatmap/stft.worker.ts --bundle --platform=node --target=node26 --outdir=dist-server --outbase=. --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
     "start": "concurrently \"node .output/server/index.mjs\" \"node dist-server/server/socket-server/index.cjs\" \"node dist-server/server/rmhbox/index.cjs\" \"node dist-server/server/rmhtube/index.cjs\" \"node dist-server/server/rmhos-net/index.cjs\" \"node dist-server/server/ladder-worker/index.cjs\" \"node dist-server/server/homes-worker/index.cjs\" \"node dist-server/server/jobs/index.cjs\"",
     "socket-server": "pnpm exec tsx watch --include \"server/socket-server/**/*\" --include \"server/shared/**/*\" server/socket-server/index.ts",
     "rmhbox-server": "pnpm exec tsx watch --include \"server/rmhbox/**/*\" --include \"server/shared/**/*\" server/rmhbox/index.ts",
@@ -233,7 +233,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/howler": "^2.2.13",
     "@types/lodash-es": "^4.17.12",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
