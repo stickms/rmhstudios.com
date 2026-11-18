@@ -1,22 +1,14 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
 import * as C from '@/lib/admin/admin-ops.contract';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
-import { logAdminAction } from '@/lib/admin-audit.server';
-import { createNotification } from '@/lib/notifications.server';
-import {
-  AUTO_BAN_DURATION_MS,
-  AUTO_BAN_REASON,
-  AUTO_BAN_THRESHOLD,
-  activeStrikeWhere,
-} from '@/lib/moderation/standing.server';
-import { DELETED_ACCOUNT_BAN_REASON, isDeletedAccount } from '@/lib/account-lifecycle';
+import { issueStrike } from '@/lib/moderation/strikes.server';
+import { isDeletedAccount } from '@/lib/account-lifecycle';
 
 /**
  * POST /api/admin/users/$id/strike — issue a warning strike. Admin only.
- * Three active strikes auto-applies a 7-day ban.
+ * Three active strikes auto-applies a 7-day ban (`issueStrike`).
  *
  * "Active" is `activeStrikeWhere` — unexpired AND not overturned on appeal — so
  * a strike the user successfully appealed can never push them to the threshold.
@@ -48,65 +40,13 @@ export const route = apiRoute('/api/admin/users/$id/strike', {
         return Response.json({ error: 'This account has been deleted' }, { status: 409 });
       }
 
-      const strike = await prisma.userStrike.create({
-        data: {
-          userId: params.id,
-          adminId: session.user.id,
-          reason: body.reason,
-          expiresAt: body.expiresDays
-            ? new Date(Date.now() + body.expiresDays * 24 * 60 * 60 * 1000)
-            : null,
-          entityType: body.entityType ?? null,
-          entityId: body.entityId ?? null,
-        },
-        select: { id: true },
-      });
-      await logAdminAction(session.user.id, 'user.strike', {
-        targetType: 'user',
-        targetId: params.id,
-        detail: body.reason,
-      });
-
-      // Auto-ban on the 3rd active strike.
-      const activeStrikes = await prisma.userStrike.count({
-        where: activeStrikeWhere(params.id),
-      });
-      let autoBanned = false;
-      if (activeStrikes >= AUTO_BAN_THRESHOLD) {
-        const until = new Date(Date.now() + AUTO_BAN_DURATION_MS);
-        // Conditional: the auto-ban only ever extends. A longer (manual or
-        // permanent) ban is never shortened to 7 days, and a deletion
-        // tombstone is never overwritten.
-        const banned = await prisma.user.updateMany({
-          where: {
-            id: params.id,
-            AND: [
-              { OR: [{ bannedUntil: null }, { bannedUntil: { lt: until } }] },
-              { OR: [{ banReason: null }, { banReason: { not: DELETED_ACCOUNT_BAN_REASON } }] },
-            ],
-          },
-          data: { bannedUntil: until, banReason: AUTO_BAN_REASON },
-        });
-        if (banned.count > 0) {
-          await prisma.session.deleteMany({ where: { userId: params.id } }).catch(() => {});
-          await dropLearnerBoardCaches(params.id, Date.now());
-          await logAdminAction(session.user.id, 'user.autoban', {
-            targetType: 'user',
-            targetId: params.id,
-            detail: `${AUTO_BAN_THRESHOLD} strikes`,
-          });
-          autoBanned = true;
-        }
-      }
-
-      // Point the notification at the strike so the user lands on their
-      // account-status page, where they can read the record and appeal it.
-      await createNotification({
+      const { activeStrikes, autoBanned } = await issueStrike({
         userId: params.id,
-        type: 'SYSTEM',
-        entityType: 'strike',
-        entityId: strike.id,
-        preview: `You received a moderation warning: ${body.reason}. You can review or appeal it in Settings → Account status.`,
+        adminId: session.user.id,
+        reason: body.reason,
+        expiresDays: body.expiresDays,
+        entityType: body.entityType,
+        entityId: body.entityId,
       });
 
       return Response.json({ success: true, activeStrikes, autoBanned });

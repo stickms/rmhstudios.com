@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
@@ -141,6 +142,8 @@ export const route = apiRoute('/api/messages/$conversationId', {
   POST: implement(sendToConversationApi, {}, async ({ request, params, session }) => {
     const { conversationId } = params;
     const userId = session.user.id;
+    const restricted = await restrictionResponse(userId, 'message');
+    if (restricted) return restricted;
 
     // Anti-spam, tuned to never hinder a real fast-typed conversation — only
     // botnet-scale flooding. Every limit carries the global ×4 multiplier, so

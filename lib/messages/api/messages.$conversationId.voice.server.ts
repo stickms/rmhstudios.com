@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { sendVoiceMessageApi } from '@/lib/messages/voice.contract';
@@ -46,6 +47,8 @@ export const route = apiRoute('/api/messages/$conversationId/voice', {
       },
     },
     async ({ request, params, userId }) => {
+      const restricted = await restrictionResponse(userId, 'message');
+      if (restricted) return restricted;
       const contentLength = Number(request.headers.get('content-length') ?? 0);
       // Rejected before the body is buffered. The multipart envelope adds a
       // little overhead, hence the slack above the absolute object ceiling.

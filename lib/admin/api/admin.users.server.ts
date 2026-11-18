@@ -7,6 +7,8 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { adminUserUpdateSchema } from '@/lib/admin/schemas';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { activeStrikeWhere } from '@/lib/moderation/standing.server';
+import { activeRestrictionWhere } from '@/lib/moderation/restrictions.server';
 
 export const route = apiRoute('/api/admin/users', {
   GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
@@ -70,6 +72,7 @@ export const route = apiRoute('/api/admin/users', {
         isVerified: true,
         isBot: true,
         createdAt: true,
+        bannedUntil: true,
         profile: { select: { coins: true } },
         _count: {
           select: {
@@ -82,7 +85,35 @@ export const route = apiRoute('/api/admin/users', {
     });
 
     const hasMore = users.length > limit;
-    const items = users.slice(0, limit);
+    const page = users.slice(0, limit);
+
+    // Strikes and feature timeouts currently counting against each user on
+    // this page, so the table shows a user's standing without a click.
+    const ids = page.map((u) => u.id);
+    const now = new Date();
+    const [strikeCounts, restrictionCounts] = ids.length
+      ? await Promise.all([
+          prisma.userStrike.groupBy({
+            by: ['userId'],
+            // The one active-strike rule, widened from one user to the page.
+            where: { ...activeStrikeWhere('', now), userId: { in: ids } },
+            _count: { _all: true },
+          }),
+          prisma.featureRestriction.groupBy({
+            by: ['userId'],
+            where: { ...activeRestrictionWhere('', now), userId: { in: ids } },
+            _count: { _all: true },
+          }),
+        ])
+      : [[], []];
+    const strikesBy = new Map(strikeCounts.map((r) => [r.userId, r._count._all]));
+    const restrictionsBy = new Map(restrictionCounts.map((r) => [r.userId, r._count._all]));
+    const items = page.map((u) => ({
+      ...u,
+      activeStrikes: strikesBy.get(u.id) ?? 0,
+      activeRestrictions: restrictionsBy.get(u.id) ?? 0,
+      banned: !!u.bannedUntil && u.bannedUntil.getTime() > now.getTime(),
+    }));
 
     return Response.json({
       items,

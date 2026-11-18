@@ -1841,5 +1841,10 @@
   "profile-basics-title": "Name, bio and avatar",
   "profile-basics-edit": "Edit on your profile",
   "profile-basics-hint": "Opens the editor on your public page, where you see the result.",
-  "profile-settings-subtitle": "What everyone who visits your profile sees: your name, cosmetics, links and more."
+  "profile-settings-subtitle": "What everyone who visits your profile sees: your name, cosmetics, links and more.",
+  "moderate-post": "Moderate",
+  "moderate-reply": "Moderate",
+  "removed-by-site-moderation": "This post was removed by site moderation.",
+  "standing-restrictions": "Feature restrictions",
+  "standing-restrictions-desc": "Features site moderation has restricted on your account. Everything else works as usual."
 }

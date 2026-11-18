@@ -282,9 +282,17 @@ const BUDGETS = {
   // deploy of the page put 117 manifest rows, about 11 KB, on every page and failed this gate). Measured on a plain
   // `vite build`: entry 708,500 B on the parent commit -> 709,355 B; critical path about 931,530 B raw and 245,050 B
   // brotli. Each raised line keeps the feature's bytes plus about 1 KB of headroom, as the two lines above did.
+  //
+  // Site moderation (2026-11-18): entry RAISED 710,300 -> 711,300 B and critical path RAISED 932,500 -> 933,500 B raw
+  // (OPT-01 line); brotli unchanged. The feature that bought the bytes is admin moderation of user content with
+  // per-feature timeouts: its client UI is one lazily used chunk (components/moderation/moderation-ui.tsx, folded from
+  // four so the entry names one file), and the entry pays only for naming it in the preload map, which renumbers the
+  // map's indices after it, plus the lucide icon chunks regrouping around ShieldAlert. No moderation code is in the
+  // entry. Measured on a plain `vite build`: entry 710,273 B on the parent commit (27 B under the old line) ->
+  // 710,525 B. Each raised line keeps the feature's bytes plus about 750 B of headroom.
   siteCssBrotli: 32_600,
-  entryRaw: 710_300,
-  criticalPathRaw: 932_500,
+  entryRaw: 711_300,
+  criticalPathRaw: 933_500,
   criticalPathBrotli: 245_300,
 };
 

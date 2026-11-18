@@ -8,7 +8,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from '@/lib/toast';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Search, CheckCircle, Shield, Pencil, Check, X, Crown, Coins, Bot, User as UserIcon, Users } from 'lucide-react';
+import { Search, CheckCircle, Shield, ShieldAlert, Pencil, Check, X, Crown, Coins, Bot, User as UserIcon, Users } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
 import { SearchField } from '@/components/ui/search-field';
@@ -28,6 +28,7 @@ import {
 } from '@/lib/admin/admin-ops.contract';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { UserModerationPanel } from '@/components/admin/UserModerationPanel';
 
 type AccountFilter = 'all' | 'people' | 'bots';
 
@@ -45,6 +46,11 @@ interface User {
   createdAt: string;
   profile: { coins: number } | null;
   _count: { userBuilds: number; rmharks: number };
+  /** Strikes still counting (unexpired, not overturned). */
+  activeStrikes: number;
+  /** Feature timeouts in force. */
+  activeRestrictions: number;
+  banned: boolean;
 }
 
 export const Route = createFileRoute('/_site/admin/users')({
@@ -70,6 +76,8 @@ function AdminUsersPage() {
   // Bot accounts are ordinary user rows, so they're impossible to pick out of a
   // flat list — this narrows the table to one population or the other.
   const [accounts, setAccounts] = useState<AccountFilter>('all');
+  // The one user whose moderation record is open under their row.
+  const [moderating, setModerating] = useState<string | null>(null);
   const arrival = useArrival(!(loading && users.length === 0));
   const isNewUser = useArrivingKeys(users.map((u) => u.id));
 
@@ -251,7 +259,7 @@ function AdminUsersPage() {
             <div className="t-label grid grid-cols-[1fr_auto_auto_auto] gap-4">
               <div>{t("col-user", { defaultValue: "User" })}</div>
               <div className="w-20 text-center">{t("col-verified", { defaultValue: "Verified" })}</div>
-              <div className="w-32 text-center">{t("col-actions", { defaultValue: "Actions" })}</div>
+              <div className="w-44 text-center">{t("col-actions", { defaultValue: "Actions" })}</div>
               <div className="w-24 text-end">{t("col-activity", { defaultValue: "Activity" })}</div>
             </div>
           </div>
@@ -330,6 +338,17 @@ function AdminUsersPage() {
                       <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
                       <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
                       <span className="flex items-center gap-1"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
+                      <span className={cn(user.activeStrikes > 0 && 'text-site-danger')}>
+                        {t("user-strikes", { count: user.activeStrikes, defaultValue_one: "{{count}} strike", defaultValue: "{{count}} strikes" })}
+                      </span>
+                      {user.activeRestrictions > 0 && (
+                        <span className="text-site-danger">
+                          {t("user-timeouts", { count: user.activeRestrictions, defaultValue_one: "{{count}} timeout", defaultValue: "{{count}} timeouts" })}
+                        </span>
+                      )}
+                      {user.banned && (
+                        <span className="text-site-danger">{t("user-suspended", { defaultValue: "Suspended" })}</span>
+                      )}
                     </div>
                     <div className="flex shrink-0 justify-center sm:w-20">
                       <IconButton
@@ -342,7 +361,16 @@ function AdminUsersPage() {
                         label={user.isVerified ? t("title-remove-verification", { defaultValue: "Remove Verification" }) : t("title-verify-user", { defaultValue: "Verify User" })}
                       />
                     </div>
-                    <div className="flex shrink-0 justify-center gap-2 sm:w-32">
+                    <div className="flex shrink-0 justify-center gap-2 sm:w-44">
+                      <IconButton
+                        icon={ShieldAlert}
+                        size="icon-sm"
+                        variant="default"
+                        className={user.activeStrikes > 0 || user.activeRestrictions > 0 || user.banned ? 'border-site-danger text-site-danger' : undefined}
+                        onClick={() => setModerating((cur) => (cur === user.id ? null : user.id))}
+                        aria-expanded={moderating === user.id}
+                        label={t("title-moderation", { defaultValue: "Strikes and timeouts" })}
+                      />
                       <IconButton icon={Coins} size="icon-sm" variant="default" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
                       <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
                       <IconButton
@@ -356,6 +384,15 @@ function AdminUsersPage() {
                         label={user.isAdmin ? t("title-remove-admin", { defaultValue: "Remove Admin" }) : t("title-make-admin", { defaultValue: "Make Admin" })}
                       />
                     </div>
+                    {moderating === user.id && (
+                      <UserModerationPanel
+                        userId={user.id}
+                        isAdminUser={user.isAdmin}
+                        onChanged={(summary) =>
+                          setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, ...summary } : u)))
+                        }
+                      />
+                    )}
                   </div>
                 );
               })}

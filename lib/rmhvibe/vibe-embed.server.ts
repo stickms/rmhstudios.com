@@ -1,3 +1,4 @@
+import { VIBE_REMOVED_STATUS } from '@/lib/rmhvibe/vibe-status';
 import { prisma } from '@/lib/prisma.server';
 import { canViewPost } from '@/lib/feed/audience.server';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
@@ -73,6 +74,8 @@ export async function getVibeRunnable(slug: string, versionId: string | undefine
   });
   // A named version finished when it was written, so it outlives a later rebuild; the latest needs a ready page.
   if (!page || (!versionId && page.status !== 'ready')) return null;
+  // Removed by site moderation: no version of it runs anywhere, by id or not.
+  if (page.status === VIBE_REMOVED_STATUS) return null;
   const version = await prisma.vibePageVersion.findFirst({
     where: versionId ? { id: versionId, pageId: page.id } : { pageId: page.id },
     orderBy: { createdAt: 'desc' },

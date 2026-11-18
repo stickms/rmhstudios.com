@@ -262,5 +262,7 @@
   "viewing-earlier-version": "Viewing an earlier version",
   "warming-up-the-model": "Warming up the model.",
   "welcome-back": "Welcome back",
-  "writing-the-code": "Writing the code."
+  "writing-the-code": "Writing the code.",
+  "vibe-removed-hint": "It broke the site rules. If it is yours, the notice in your notifications says why.",
+  "vibe-removed-title": "This vibe was removed by site moderation"
 }

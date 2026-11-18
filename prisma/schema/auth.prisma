@@ -224,6 +224,8 @@ model User {
   auditLogs      AdminAuditLog[] @relation("AuditAdmin")
   strikes        UserStrike[]    @relation("StrikeUser")
   strikesIssued  UserStrike[]    @relation("StrikeAdmin")
+  featureRestrictions       FeatureRestriction[] @relation("FeatureRestrictionUser")
+  featureRestrictionsIssued FeatureRestriction[] @relation("FeatureRestrictionAdmin")
   appealsDecided UserStrike[]    @relation("StrikeAppealAdmin")
 
   // Moderation (reports filed / received, blocks & mutes)

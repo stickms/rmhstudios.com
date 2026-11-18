@@ -9,6 +9,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { generateVibeStream } from '@/lib/rmhvibe/vibe.server';
 import { vibeStreamBodySchema } from '@/lib/rmhvibe/vibe-schema';
 import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
@@ -23,6 +24,11 @@ export const Route = createFileRoute('/api/vibe/stream')({
           body: vibeStreamBodySchema,
         },
         async ({ userId, body }) => {
+          // A timed-out user cannot build or remix (anonymous builds have no account to time out).
+          if (userId) {
+            const restricted = await restrictionResponse(userId, 'vibe');
+            if (restricted) return restricted;
+          }
           const { prompt, slug, fromVersionId, kind, selection } = body;
           const model = asVibeModel(body.model);
 

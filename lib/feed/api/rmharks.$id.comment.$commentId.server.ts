@@ -28,6 +28,7 @@ export const route = apiRoute('/api/rmharks/$id/comment/$commentId', {
       data: {
         deletedAt: new Date(),
         deletedByAdmin,
+        ...(deletedByAdmin ? { deletedBy: 'moderator' } : {}),
       },
     });
 

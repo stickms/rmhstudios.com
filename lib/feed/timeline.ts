@@ -14,6 +14,7 @@
  * path no longer does `_count` aggregation per item.
  */
 
+import { REMOVED_POST_TEXT } from '@/lib/moderation/removed-text';
 import { Prisma } from '@prisma/client';
 import { activeMutedWords, nextExpiry, parseExpiries } from '@/lib/feed/muted-expiry';
 import { prisma } from '../prisma.server';
@@ -302,7 +303,7 @@ function attachReactions(items: FeedItem[], summaries: Map<string, ReactionSumma
 
 function deletedMessageFor(record: { deletedByAdmin?: boolean }): string {
   return record.deletedByAdmin
-    ? '[This RMHark was deleted by an admin]'
+    ? REMOVED_POST_TEXT
     : '[This RMHark was deleted by the user]';
 }
 

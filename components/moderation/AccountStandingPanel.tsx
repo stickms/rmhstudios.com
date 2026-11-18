@@ -31,6 +31,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
+import { RestrictionList } from '@/components/moderation/moderation-ui';
 
 type AppealStatus =
   | 'NONE'
@@ -479,6 +480,20 @@ export function AccountStandingPanel() {
           </div>
         )}
       </SettingsSection>
+
+      {/* Feature timeouts: only shown when there has ever been one. */}
+      {standing.restrictions.length > 0 && (
+        <SettingsSection
+          className={arrival}
+          title={t('standing-restrictions', { defaultValue: 'Feature restrictions' })}
+          description={t('standing-restrictions-desc', {
+            defaultValue:
+              'Features site moderation has restricted on your account. Everything else works as usual.',
+          })}
+        >
+          <RestrictionList restrictions={standing.restrictions} />
+        </SettingsSection>
+      )}
 
       {/* Strike history */}
       <SettingsSection

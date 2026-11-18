@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
@@ -29,6 +30,8 @@ export const route = apiRoute('/api/spaces', {
         Response.json({ error: e.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
     },
     async ({ userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'space');
+      if (restricted) return restricted;
       try {
         const space = await createSpace({
           hostId: userId,
