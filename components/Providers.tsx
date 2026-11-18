@@ -12,6 +12,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
 import { MotionConfig } from 'framer-motion';
 import { LazyMotionProvider } from '@/components/motion/LazyMotionProvider';
+import { DataSaverRequestContext } from '@/hooks/useDataSaver';
 import { ToastHost } from '@/components/ui/toast-host';
 import {
   SessionCtx,
@@ -139,6 +140,12 @@ interface ProvidersProps {
    * translations the server rendered (no hydration mismatch, no flash).
    */
   i18nResources?: LocaleBundle | null;
+  /**
+   * The server's data-saver decision for this document (lib/data-saver-request.ts):
+   * what the first page's images were rendered with, and so what the hydrating
+   * render must read (hooks/useDataSaver#useDataSaverAtMount).
+   */
+  saveData?: boolean;
 }
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
@@ -167,6 +174,7 @@ export function Providers({
   sessionResolved = true,
   locale = 'en',
   i18nResources = null,
+  saveData = false,
 }: ProvidersProps) {
   // The router's QueryClient (lib/query/make-query-client.ts): built once per SSR request and once
   // per page load in getRouter(), so route loaders seed the same cache the components read.
@@ -612,38 +620,40 @@ export function Providers({
           {/* One shared animation scheme for every account and device. */}
           <MotionConfig reducedMotion="never">
             <SessionCtx.Provider value={effectiveSession}>
-              <AppTierContext.Provider value={isAppRoute}>
-                <ResolvedUserCtx.Provider
-                  value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
-                >
-                  <ConfirmProvider>
-                    {children}
-                    {/* Globally-mounted, non-critical chrome. Isolate it so a throw
-                      in the command palette / recents tracker / theme-preview bar
-                      is reported and swallowed instead of bubbling to the root
-                      errorComponent and taking down the whole app. `children`
-                      (the page) is deliberately OUTSIDE this boundary — primary
-                      content must still surface a real route-level error. */}
-                    <SilentErrorBoundary label="global-chrome">
-                      <CommandPaletteMount />
-                      <RecentsTracker />
-                      <PlaytimeTracker />
-                      <PatchNotesMount />
-                      {/* §14: the floating try-before-buy / preview-on-site confirm bar,
-                        mounted globally so it survives navigation under a previewed theme. */}
-                      <ThemePreviewBar />
-                      {/* Voice calls. Mounted here for the same reason: an
-                        incoming call has to ring wherever the user is, and
-                        answering one must survive navigating away. */}
-                      <CallMount />
-                      <GroupCallMount />
-                      <AccessMount />
-                      <DelightMount />
-                    </SilentErrorBoundary>
-                  </ConfirmProvider>
-                </ResolvedUserCtx.Provider>
-                <ToastHost theme={style === 'graphite' ? 'dark' : 'light'} />
-              </AppTierContext.Provider>
+              <DataSaverRequestContext.Provider value={saveData}>
+                <AppTierContext.Provider value={isAppRoute}>
+                  <ResolvedUserCtx.Provider
+                    value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
+                  >
+                    <ConfirmProvider>
+                      {children}
+                      {/* Globally-mounted, non-critical chrome. Isolate it so a throw
+                        in the command palette / recents tracker / theme-preview bar
+                        is reported and swallowed instead of bubbling to the root
+                        errorComponent and taking down the whole app. `children`
+                        (the page) is deliberately OUTSIDE this boundary — primary
+                        content must still surface a real route-level error. */}
+                      <SilentErrorBoundary label="global-chrome">
+                        <CommandPaletteMount />
+                        <RecentsTracker />
+                        <PlaytimeTracker />
+                        <PatchNotesMount />
+                        {/* §14: the floating try-before-buy / preview-on-site confirm bar,
+                          mounted globally so it survives navigation under a previewed theme. */}
+                        <ThemePreviewBar />
+                        {/* Voice calls. Mounted here for the same reason: an
+                          incoming call has to ring wherever the user is, and
+                          answering one must survive navigating away. */}
+                        <CallMount />
+                        <GroupCallMount />
+                        <AccessMount />
+                        <DelightMount />
+                      </SilentErrorBoundary>
+                    </ConfirmProvider>
+                  </ResolvedUserCtx.Provider>
+                  <ToastHost theme={style === 'graphite' ? 'dark' : 'light'} />
+                </AppTierContext.Provider>
+              </DataSaverRequestContext.Provider>
             </SessionCtx.Provider>
           </MotionConfig>
         </LazyMotionProvider>

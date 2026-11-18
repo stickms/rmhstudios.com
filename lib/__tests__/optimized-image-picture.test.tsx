@@ -35,6 +35,7 @@ import {
   OptimizedImage,
   generateSrcSet,
 } from '@/components/ui/OptimizedImage';
+import { DataSaverRequestContext } from '@/hooks/useDataSaver';
 import { IMAGE_VARIANTS } from '@/lib/images/variants.gen';
 
 const [
@@ -359,9 +360,9 @@ describe('OptimizedImage sizes and data saver', () => {
     );
   });
 
-  it('never caps a server-rendered image, whatever the stored setting', () => {
-    // Data saver is decided at mount, and an image in the server HTML is already
-    // downloading; capping it after hydration would fetch a second file.
+  it('renders uncapped on the server when the request did not ask for less data', () => {
+    // The server's decision comes from the request (lib/data-saver-request.ts),
+    // through DataSaverRequestContext; without one, nothing is capped.
     const html =
       render(
         {
@@ -373,6 +374,50 @@ describe('OptimizedImage sizes and data saver', () => {
       expect(
         html,
       ).toContain(
+        ` ${w}w`,
+      );
+  });
+
+  it('renders capped on the server when the request asked for less data, and hydrates the same', () => {
+    // The hydrating client reads the server's decision from the same context, so
+    // the markup it expects is this one: no mismatch, and no second download.
+    const html =
+      renderToStaticMarkup(
+        <DataSaverRequestContext.Provider
+          value={
+            true
+          }
+        >
+          <OptimizedImage
+            src={
+              variantPath
+            }
+            alt="t"
+            width={
+              160
+            }
+          />
+        </DataSaverRequestContext.Provider>,
+      );
+    const smallest =
+      Math.min(
+        ...variantEntry.widths,
+      );
+    expect(
+      html,
+    ).toContain(
+      ` ${smallest}w`,
+    );
+    for (const w of variantEntry.widths.filter(
+      (
+        x,
+      ) =>
+        x >
+        160,
+    ))
+      expect(
+        html,
+      ).not.toContain(
         ` ${w}w`,
       );
   });

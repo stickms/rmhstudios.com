@@ -446,9 +446,11 @@ function OptimizedImageImpl({
   const degraded =
     failedSrc ===
     src;
-  // Data saver caps the candidates at the slot's CSS width (~1x). Decided at
-  // mount and only for images mounted on the client: one that came with the
-  // server HTML is already downloading (hooks/useDataSaver#useDataSaverAtMount).
+  // Data saver caps the candidates at the slot's CSS width (~1x). Decided once, at
+  // mount: on the server from the request (its setting cookie or `Save-Data`), and
+  // read back unchanged while hydrating; on a client mount from the live setting.
+  // Never changed after, because the image is already downloading
+  // (hooks/useDataSaver#useDataSaverAtMount, lib/data-saver-request.ts).
   const saving =
     useDataSaverAtMount();
   const maxWidth =

@@ -199,8 +199,9 @@ export function BlurImage({
     src,
   ]);
 
-  // Data saver caps the candidates at the slot's CSS width — for images mounted on
-  // the client only (hooks/useDataSaver#useDataSaverAtMount). Never for `priority`:
+  // Data saver caps the candidates at the slot's CSS width, decided once at mount:
+  // from the request on the server, from the live setting on a client mount
+  // (hooks/useDataSaver#useDataSaverAtMount). Never for `priority`:
   // its <link rel=preload> is built from the uncapped srcset by
   // `blurImagePreload`, and a preload that disagrees with its <img> downloads twice.
   const saving =

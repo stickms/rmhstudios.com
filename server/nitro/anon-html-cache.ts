@@ -80,6 +80,7 @@ const AUTHENTICATED_CACHE_CONTROL =
 // Shared with security-headers.ts: both plugins hook `response`, and both need
 // the headers of the response that is actually being sent.
 import { responseHeaders } from './security-headers';
+import { dataSaverFromRequest } from '../../lib/data-saver-request';
 
 /**
  * Exact paths whose HTML is byte-identical for every signed-out, default-locale
@@ -302,6 +303,9 @@ export function decideCacheControl(
     | string
     | null
     | undefined,
+  saveDataHeader?:
+    | string
+    | null,
 ): CacheDecision | null {
   // Authenticated → guarantee no shared cache ever stores this personalized
   // HTML. Defense-in-depth beneath the edge rule's cookie bypass. Checked first
@@ -309,6 +313,22 @@ export function decideCacheControl(
   if (
     isAuthenticated(
       cookieHeader,
+    )
+  )
+    return {
+      value:
+        AUTHENTICATED_CACHE_CONTROL,
+      shared: false,
+    };
+  // A data-saver render (the visitor's setting, or the browser's `Save-Data`)
+  // carries smaller images than the default page, so it must never be the copy a
+  // shared cache hands to everyone else. Private, like a signed-in document, on
+  // every path: the edge rule bypasses these requests too, but the origin is the
+  // gate that holds even before that rule is applied (lib/data-saver-request.ts).
+  if (
+    dataSaverFromRequest(
+      cookieHeader,
+      saveDataHeader,
     )
   )
     return {
@@ -532,6 +552,10 @@ export default function anonHtmlCachePlugin(nitroApp: {
           decideCacheControl(
             pathname,
             cookie,
+            req.headers?.get?.(
+              'save-data',
+            ) ??
+              null,
           );
         if (
           !decision
