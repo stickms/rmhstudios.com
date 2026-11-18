@@ -22,7 +22,7 @@ import {
 } from '@/lib/sitewide-announcement';
 import { useSitewideAnnouncementStore } from '@/stores/sitewideAnnouncementStore';
 import '@/components/ui/spine.css';
-import { useArrival } from '@/components/ui/arrive';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 // Mirrors the first-run gates in WhatsNewModal / LanguageFirstRunModal / WelcomeModal (same keys, same event) so the
@@ -102,6 +102,10 @@ export function SitewideAnnouncementModal() {
   }, [eligible, session, setOpen, langTick, pathname]);
 
   const { data: full, isLoading, isError } = useSitewideAnnouncementContent(open || eligible);
+  // Fetch the reader's chunk alongside the post's content, not after it.
+  useEffect(() => {
+    if (open || eligible) void loadBody();
+  }, [open, eligible]);
   const announcement = full?.announcement ?? summary;
   // Steel M9: the full post replaces the spinner inside the open dialog.
   const bodyArrival = useArrival(
@@ -172,11 +176,11 @@ export function SitewideAnnouncementModal() {
           ) : isLoading || content === undefined ? (
             loadingSpinner
           ) : (
-            <Suspense fallback={loadingSpinner}>
+            <ArrivalSuspense fallback={loadingSpinner}>
               <div className={cn('spine break-words', bodyArrival)}>
                 <AnnouncementPost content={content} />
               </div>
-            </Suspense>
+            </ArrivalSuspense>
           )}
         </div>
 
