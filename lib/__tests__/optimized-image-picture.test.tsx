@@ -31,7 +31,11 @@ import {
   expect,
 } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import {
+  OptimizedImage,
+  generateSrcSet,
+} from '@/components/ui/OptimizedImage';
+import { DataSaverRequestContext } from '@/hooks/useDataSaver';
 import { IMAGE_VARIANTS } from '@/lib/images/variants.gen';
 
 const [
@@ -274,5 +278,147 @@ describe('OptimizedImage <picture>/AVIF', () => {
     ).toContain(
       'height="480"',
     );
+  });
+});
+
+/*
+ * Bandwidth (low-bandwidth audit, 2026-11-18). On a 390px phone at 3x, `/games`
+ * capsules drawn 111px wide fetched the 960 variant (~100 KB each) because the
+ * only `sizes` reaching the AVIF `<source>` was derived from the 240px intrinsic
+ * width. A caller's `sizes` must reach BOTH elements: the browser picks from the
+ * `<source>`, and one that disagrees with its `<img>` wastes a request.
+ */
+describe('OptimizedImage sizes and data saver', () => {
+  it('applies a caller sizes to the AVIF source and the img alike', () => {
+    const html =
+      render(
+        {
+          src: variantPath,
+          width: 240,
+          sizes:
+            '(max-width: 767px) 34vw, 240px',
+        },
+      );
+    const matches =
+      html.match(
+        /sizes="\(max-width: 767px\) 34vw, 240px"/g,
+      ) ??
+      [];
+    expect(
+      matches,
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      html,
+    ).not.toContain(
+      '100vw',
+    );
+  });
+
+  it('caps candidates at maxWidth and never empties the srcset', () => {
+    const smallest =
+      Math.min(
+        ...variantEntry.widths,
+      );
+    const capped =
+      generateSrcSet(
+        variantPath,
+        undefined,
+        undefined,
+        smallest,
+      );
+    expect(
+      capped.split(
+        ', ',
+      ),
+    ).toHaveLength(
+      1,
+    );
+    expect(
+      generateSrcSet(
+        variantPath,
+        undefined,
+        undefined,
+        1,
+      ).split(
+        ', ',
+      ),
+    ).toHaveLength(
+      1,
+    );
+    expect(
+      generateSrcSet(
+        variantPath,
+      ).split(
+        ', ',
+      ),
+    ).toHaveLength(
+      variantEntry
+        .widths
+        .length,
+    );
+  });
+
+  it('renders uncapped on the server when the request did not ask for less data', () => {
+    // The server's decision comes from the request (lib/data-saver-request.ts),
+    // through DataSaverRequestContext; without one, nothing is capped.
+    const html =
+      render(
+        {
+          src: variantPath,
+          width: 160,
+        },
+      );
+    for (const w of variantEntry.widths)
+      expect(
+        html,
+      ).toContain(
+        ` ${w}w`,
+      );
+  });
+
+  it('renders capped on the server when the request asked for less data, and hydrates the same', () => {
+    // The hydrating client reads the server's decision from the same context, so
+    // the markup it expects is this one: no mismatch, and no second download.
+    const html =
+      renderToStaticMarkup(
+        <DataSaverRequestContext.Provider
+          value={
+            true
+          }
+        >
+          <OptimizedImage
+            src={
+              variantPath
+            }
+            alt="t"
+            width={
+              160
+            }
+          />
+        </DataSaverRequestContext.Provider>,
+      );
+    const smallest =
+      Math.min(
+        ...variantEntry.widths,
+      );
+    expect(
+      html,
+    ).toContain(
+      ` ${smallest}w`,
+    );
+    for (const w of variantEntry.widths.filter(
+      (
+        x,
+      ) =>
+        x >
+        160,
+    ))
+      expect(
+        html,
+      ).not.toContain(
+        ` ${w}w`,
+      );
   });
 });

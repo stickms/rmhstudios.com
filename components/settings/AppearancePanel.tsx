@@ -28,6 +28,11 @@ import {
   type AppearancePrefsInput,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import {
+  DATA_SAVER_PREFERENCES,
+  useDataSaverPreference,
+  type DataSaverPreference,
+} from '@/hooks/useDataSaver';
 
 async function persist(body: AppearancePrefsInput) {
   await api(setAppearancePrefsApi, { body }).catch(() => {});
@@ -198,7 +203,43 @@ export function AppearancePanel() {
         {/* Tilt effects (§5.5x C.3): only renders where iOS gates device orientation behind a prompt. */}
         <TiltEffectsRow />
       </Section>
+
+      <DataSaverSection />
     </>
+  );
+}
+
+/**
+ * Data saver (plan B20). Stored per device in localStorage (`rmh-data-saver`), not
+ * on the account: a phone on a metered plan and a desktop on broadband are the
+ * same account. `Auto` follows the browser's Save-Data flag and the measured
+ * connection (lib/network-quality); the link prefetchers and the image
+ * components read the same setting.
+ */
+function DataSaverSection() {
+  const { t } = useTranslation('settings-appearance');
+  const [preference, setPreference] = useDataSaverPreference();
+  const labels: Record<DataSaverPreference, string> = {
+    auto: t('data-saver-auto', { defaultValue: 'Auto' }),
+    on: t('data-saver-on', { defaultValue: 'On' }),
+    off: t('data-saver-off', { defaultValue: 'Off' }),
+  };
+  return (
+    <Section title={t('data', { defaultValue: 'Data' })}>
+      <SettingsSelectRow
+        label={t('data-saver', { defaultValue: 'Data saver' })}
+        hint={t('data-saver-desc', {
+          defaultValue: 'Load smaller images and skip preloading pages. Auto follows your browser and connection.',
+        })}
+        value={preference}
+        onChange={(v) => {
+          if ((DATA_SAVER_PREFERENCES as readonly string[]).includes(v)) {
+            setPreference(v as DataSaverPreference);
+          }
+        }}
+        options={DATA_SAVER_PREFERENCES.map((id) => ({ value: id, label: labels[id] }))}
+      />
+    </Section>
   );
 }
 

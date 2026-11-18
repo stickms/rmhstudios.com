@@ -32,6 +32,7 @@
 import { defineConfig } from 'vitest/config';
 import { availableParallelism } from 'node:os';
 import path from 'node:path';
+import { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
 import { ENGINE_TESTS_FROM_MAIN_SUITE } from './vitest.engine-tests.mjs';
 
 /**
@@ -160,6 +161,7 @@ export default defineConfig({
       // `import.meta.dirname`, not `__dirname`: Vite 8.2's native config loader
       // warns on the CJS global and will drop it when `configLoader: 'native'`
       // becomes the default.
+      ...FRAMER_MOTION_INTERNALS,
       '@': path.resolve(import.meta.dirname),
       // Feature-sliced workspace (redesign A1): features/<id>/{engine,ui,net,server,api}.
       '@features': path.resolve(import.meta.dirname, 'features'),

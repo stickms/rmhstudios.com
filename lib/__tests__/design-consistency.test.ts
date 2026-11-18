@@ -119,10 +119,24 @@ const TABLIST_ALLOW =
  * `LeftSidebar.tsx` used to be listed here for its active nav capsule; it was
  * deleted with the mobile push-drawer it belonged to, so the exemption is gone.
  */
+/**
+ * The renderer's own app-tier capsule. It is part of the one renderer, split into a
+ * module of its own so framer-motion loads only where the capsule is drawn (the
+ * games and apps), never on a site page's tab strip (low-bandwidth audit,
+ * 2026-11-18). Imported by tabs.tsx alone.
+ */
+const RENDERER_CAPSULE =
+  join(
+    'components',
+    'ui',
+    'tab-capsule.tsx',
+  );
+
 const LAYOUTID_ALLOW =
   new Set(
     [
       RENDERER,
+      RENDERER_CAPSULE,
     ],
   );
 

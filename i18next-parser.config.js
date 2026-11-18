@@ -1,5 +1,7 @@
 /**
- * Extracts t("...") keys from the app into locales/<lng>/<ns>.json.
+ * Extracts t("...") keys from the app into locales/en/<ns>.json. English only:
+ * the other locales are written by the i18n-translate workflow on the
+ * `i18n/catalogs` branch (docs/translations.md).
  *
  * ## Why this config is load-bearing (read before changing `keepRemoved`)
  *

@@ -7,9 +7,10 @@
  *   - Idempotent: only keys that are missing, or whose English changed since
  *     they were translated, are sent. locales/<lng>/.sources.<ns>.json records
  *     the English each translation was made from, so human edits survive.
- *   - Paid work is reused: I18N_REUSE_DIR names catalogs from earlier runs that
- *     have not merged yet (the pending translation PR's branch). Any of their
- *     translations made from today's English is adopted instead of re-sent.
+ *   - Paid work is reused: I18N_REUSE_DIR names catalogs from earlier runs (the
+ *     i18n-translate workflow points it at the older `i18n/*` branches that
+ *     scripts/i18n-collect-reuse.ts gathers). Any of their translations made
+ *     from today's English is adopted instead of re-sent.
  *   - Identical English is sent once per locale: a string that already has a
  *     current translation under any key is copied, and one that appears under
  *     several untranslated keys is sent once and fanned out.

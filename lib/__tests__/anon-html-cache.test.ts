@@ -1301,6 +1301,19 @@ describe('cloudflare cache rule stays in sync with the origin allowlist', () => 
       'rmh-lang=',
     );
   });
+
+  it('bypasses cache for a data-saver request (cookie or Save-Data header)', () => {
+    expect(
+      htmlRule,
+    ).toContain(
+      'rmh-data-saver=on',
+    );
+    expect(
+      htmlRule,
+    ).toMatch(
+      /http\.request\.headers\[\\?"save-data\\?"\]\[\*\] eq \\?"on\\?"/,
+    );
+  });
 });
 
 /**
@@ -1749,6 +1762,72 @@ describe('failed /assets lookups are never cacheable', () => {
         '/assets/x.js',
         404,
       ),
+    ).toBe(
+      true,
+    );
+  });
+});
+
+/*
+ * A data-saver render has smaller images than the default page, so a shared
+ * cache must never store it and hand it to everyone else (lib/data-saver-request.ts).
+ */
+describe('data-saver requests are never shared-cacheable', () => {
+  it('marks the page private when the visitor turned data saver on', () => {
+    const d =
+      decideCacheControl(
+        '/',
+        'theme=dark; rmh-data-saver=on',
+      );
+    expect(
+      d?.shared,
+    ).toBe(
+      false,
+    );
+    expect(
+      d?.value,
+    ).toMatch(
+      /^private/,
+    );
+  });
+
+  it('marks the page private when the browser sends Save-Data: on', () => {
+    const d =
+      decideCacheControl(
+        '/',
+        null,
+        'on',
+      );
+    expect(
+      d?.shared,
+    ).toBe(
+      false,
+    );
+    expect(
+      d?.value,
+    ).toMatch(
+      /^private/,
+    );
+  });
+
+  it("lets an explicit 'off' win over the header, so that page stays shareable", () => {
+    expect(
+      decideCacheControl(
+        '/',
+        'rmh-data-saver=off',
+        'on',
+      )
+        ?.shared,
+    ).toBe(
+      true,
+    );
+    expect(
+      decideCacheControl(
+        '/',
+        null,
+        null,
+      )
+        ?.shared,
     ).toBe(
       true,
     );

@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { AnnouncementDiscussion } from '@/components/announcements/AnnouncementDiscussion';
-import { markdownComponents } from '@/components/blog/markdown-components';
 import { useSession } from '@/components/Providers';
 import { useCookieConsentAnswered } from '@/components/site/CookieConsent';
 import { Button } from '@/components/ui/button';
@@ -25,7 +22,7 @@ import {
 } from '@/lib/sitewide-announcement';
 import { useSitewideAnnouncementStore } from '@/stores/sitewideAnnouncementStore';
 import '@/components/ui/spine.css';
-import { useArrival } from '@/components/ui/arrive';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 // Mirrors the first-run gates in WhatsNewModal / LanguageFirstRunModal / WelcomeModal (same keys, same event) so the
@@ -34,6 +31,15 @@ const LANG_KEY = 'rmh-lang-picked-v1';
 const LANG_PICKED_EVENT = 'rmh:lang-picked';
 const WELCOME_KEY = 'rmh-welcome-seen-v1';
 let presentedInThisRuntime = false;
+
+// The post's markdown and its discussion load only once the dialog has the post to
+// show — not with the overlays chunk every `_site` page fetches after `load`
+// (components/announcements/SitewideAnnouncementBody.tsx). One chunk, two slots.
+const loadBody = () => import('@/components/announcements/SitewideAnnouncementBody');
+const AnnouncementPost = lazy(() => loadBody().then((m) => ({ default: m.AnnouncementPost })));
+const AnnouncementDiscussion = lazy(() =>
+  loadBody().then((m) => ({ default: m.AnnouncementDiscussion })),
+);
 
 function readStorage(key: string) {
   try {
@@ -96,6 +102,10 @@ export function SitewideAnnouncementModal() {
   }, [eligible, session, setOpen, langTick, pathname]);
 
   const { data: full, isLoading, isError } = useSitewideAnnouncementContent(open || eligible);
+  // Fetch the reader's chunk alongside the post's content, not after it.
+  useEffect(() => {
+    if (open || eligible) void loadBody();
+  }, [open, eligible]);
   const announcement = full?.announcement ?? summary;
   // Steel M9: the full post replaces the spinner inside the open dialog.
   const bodyArrival = useArrival(
@@ -120,6 +130,14 @@ export function SitewideAnnouncementModal() {
 
   const business = getBusiness(announcement.business);
   const content = full?.announcement?.content;
+  const loadingSpinner = (
+    <div className="flex justify-center py-6">
+      <Spinner
+        size={20}
+        label={t('sitewide-announcement-loading', { defaultValue: 'Loading announcement' })}
+      />
+    </div>
+  );
 
   // Rows on rules (R3). No `overflow-hidden` on the content: the primitive's `overflow-y-auto` is what scrolls a
   // long post.
@@ -156,23 +174,22 @@ export function SitewideAnnouncementModal() {
               })}
             </p>
           ) : isLoading || content === undefined ? (
-            <div className="flex justify-center py-6">
-              <Spinner
-                size={20}
-                label={t('sitewide-announcement-loading', { defaultValue: 'Loading announcement' })}
-              />
-            </div>
+            loadingSpinner
           ) : (
-            <div className={cn('spine break-words', bodyArrival)}>
-              <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
-            </div>
+            <ArrivalSuspense fallback={loadingSpinner}>
+              <div className={cn('spine break-words', bodyArrival)}>
+                <AnnouncementPost content={content} />
+              </div>
+            </ArrivalSuspense>
           )}
         </div>
 
         {/* The discussion follows the post inside the same scrolling content. Posting here does not dismiss. */}
         {content !== undefined && !isError ? (
           <div className="px-5 pb-5 sm:px-6">
-            <AnnouncementDiscussion slug={announcement.slug} />
+            <Suspense fallback={null}>
+              <AnnouncementDiscussion slug={announcement.slug} />
+            </Suspense>
           </div>
         ) : null}
 

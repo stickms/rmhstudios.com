@@ -21,13 +21,9 @@ import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
-import { startViewportPrefetch } from '@/lib/viewport-prefetch';
-import { startForesightPrefetch } from '@/lib/foresight-prefetch';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
-import { initWebVitals } from '@/lib/rum';
-import { registerServiceWorker } from '@/lib/sw-register';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
 // The site-wide document defaults, shared with the island document (redesign B1).
 import { ROOT_LINKS, ROOT_META } from '@/lib/root-head';
@@ -45,6 +41,7 @@ import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // the document can PRELOAD it — see the `links` block in `head()` below.
 import geistLatinWoff2 from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
 import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
+import { dataSaverFromRequest } from '@/lib/data-saver-request';
 import { dirFor, DEFAULT_LOCALE, LOCALES, type Locale } from '@/lib/i18n/config';
 import { localeCoreResources, preloadLocale } from '@/lib/i18n/resources.server';
 
@@ -212,6 +209,11 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
   const cookie = parseLocaleCookie(request.headers.get('cookie'));
   const locale = resolveLocale({ cookie, acceptLanguage: request.headers.get('accept-language') });
+  // The request's data-saver answer rides along with the other per-request
+  // preference this function already resolves, so it costs no extra round trip on
+  // a client refetch. It shapes the first page's images, and the client reads the
+  // same value while hydrating (lib/data-saver-request.ts, hooks/useDataSaver).
+  const saveData = dataSaverFromRequest(request.headers.get('cookie'), request.headers.get('save-data'));
   // en is bundled on the client and needs nothing here. For non-en we lazily load
   // ONLY the active language's bundle (its own async chunk) — the server no longer
   // imports all 32 catalogs at boot (cold-start win; see lib/i18n/resources.server.ts)
@@ -222,15 +224,15 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // so we await it here. The other namespaces load client-side on demand
   // (perf audit B6; see lib/i18n/instances.ts). SSR renders from the
   // same core set, so hydration still matches.
-  if (locale === DEFAULT_LOCALE) return { locale, resources: null };
+  if (locale === DEFAULT_LOCALE) return { locale, resources: null, saveData };
   try {
     await preloadLocale(locale);
-    return { locale, resources: localeCoreResources(locale) };
+    return { locale, resources: localeCoreResources(locale), saveData };
   } catch {
     // A failed locale chunk load must not take the whole document down with a
     // 500 / "Something went wrong": render English (the always-available
     // defaultValues) and let the client load the real locale's namespaces on demand.
-    return { locale: DEFAULT_LOCALE, resources: null };
+    return { locale: DEFAULT_LOCALE, resources: null, saveData };
   }
 });
 
@@ -240,13 +242,15 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
  * tab already holds the active locale's resources, so keep `<html lang>`'s
  * locale and send no new bundle rather than throwing the root loader.
  */
-function i18nFallback(): { locale: Locale; resources: null } {
+function i18nFallback(): { locale: Locale; resources: null; saveData: boolean } {
   let locale: Locale = DEFAULT_LOCALE;
   if (typeof document !== 'undefined') {
     const lang = document.documentElement.lang as Locale;
     if ((LOCALES as readonly string[]).includes(lang)) locale = lang;
   }
-  return { locale, resources: null };
+  // Data saver only matters to a render that is hydrating server HTML, which a
+  // client refetch never is: `false` changes nothing on screen.
+  return { locale, resources: null, saveData: false };
 }
 
 /** Check if a URL path is a Discord Activity route (embedded iframe) */
@@ -283,6 +287,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       locale: i18n.locale,
       i18nResources: i18n.resources,
       appearanceSeed: user.appearanceSeed,
+      saveData: i18n.saveData,
     };
   },
   head: (ctx) => {
@@ -426,11 +431,28 @@ function RootDocument({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Start something whose module is loaded on demand, and stop it on unmount even
+ * when the unmount comes before the module has arrived.
+ */
+function startDeferred<M>(load: () => Promise<M>, start: (m: M) => void | (() => void)): () => void {
+  let stop: void | (() => void);
+  let live = true;
+  void load().then((m) => {
+    if (live) stop = start(m);
+  });
+  return () => {
+    live = false;
+    stop?.();
+  };
+}
+
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const router = useRouter();
-  const { user: initialUser, sessionResolved, locale, i18nResources } = Route.useLoaderData();
+  const { user: initialUser, sessionResolved, locale, i18nResources, saveData } =
+    Route.useLoaderData();
 
   // Restore the exact feed position on back/forward (and cover the mobile scroll
   // container, which the router's window-only restoration doesn't track).
@@ -439,10 +461,17 @@ function RootComponent() {
   // Install global error/unhandled-rejection reporting + Core Web Vitals
   // collection once on the client so runtime errors and perf regressions
   // surface in the server logs instead of failing silently.
+  //
+  // Error reporting is installed at once (an error during start-up must be heard).
+  // Everything else here waits for `load` or idle anyway, so its CODE does not need
+  // to be in the entry either: RUM, the service worker and its offline outbox, and
+  // the two link prefetchers below arrive as dynamic imports after hydration
+  // (low-bandwidth audit, 2026-11-18). RUM loses nothing: web-vitals reads buffered
+  // performance entries.
   useEffect(() => {
     installGlobalErrorHandlers();
-    initWebVitals();
-    registerServiceWorker();
+    void import('@/lib/rum').then((m) => m.initWebVitals());
+    void import('@/lib/sw-register').then((m) => m.registerServiceWorker());
     // From here on, a mount is a page switch, not hydration — the point after
     // which `DeferOnNavigate` may split a page's first render.
     markDocumentHydrated();
@@ -457,12 +486,26 @@ function RootComponent() {
   // document has hydrated rather than from `getRouter()`: a preload issued while
   // the router is still adopting the server's matches re-runs the root loader
   // and holds hydration up behind it (app/router.tsx). It still waits for `load`.
-  useEffect(() => startViewportPrefetch(router), [router]);
+  useEffect(
+    () =>
+      startDeferred(
+        () => import('@/lib/viewport-prefetch'),
+        (m) => m.startViewportPrefetch(router),
+      ),
+    [router],
+  );
 
   // Predictive prefetch (ForesightJS): pointer trajectory, Tab stops, scroll and
   // touchstart start the same router preload earlier than a hover would. Loaded
   // at idle after `load`, for the same hydration reason as the line above.
-  useEffect(() => startForesightPrefetch(router), [router]);
+  useEffect(
+    () =>
+      startDeferred(
+        () => import('@/lib/foresight-prefetch'),
+        (m) => m.startForesightPrefetch(router),
+      ),
+    [router],
+  );
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
@@ -483,6 +526,7 @@ function RootComponent() {
       sessionResolved={sessionResolved}
       locale={(locale ?? 'en') as Locale}
       i18nResources={i18nResources}
+      saveData={saveData}
     >
       <NavigationProgress />
       <TwemojiProvider portals>

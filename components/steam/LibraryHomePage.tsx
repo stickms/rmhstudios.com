@@ -10,7 +10,7 @@ import {
   filterRail,
   groupRail,
 } from '@/lib/games/library';
-import { TitleArt } from './TitleArt';
+import { CAPSULE_SIZES, TitleArt } from './TitleArt';
 
 const layoutApi =
   getRouteApi(
@@ -225,7 +225,7 @@ function Capsules({
                 }
                 height={
                   360
-                }
+                } sizes={CAPSULE_SIZES}
               />
               <span className="stm-capsule-name">
                 {

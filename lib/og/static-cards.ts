@@ -17,6 +17,11 @@
  * imports it and `buildMeta` runs during SSR of every route.
  */
 
+import {
+  OG_CARD_VERSION,
+  staticCardImageFor,
+} from '@/lib/og/static-card-index';
+
 export interface StaticCard {
   /** Path prefix this card answers for. `/` matches only the home page. */
   path: string;
@@ -255,9 +260,12 @@ export const STATIC_CARDS: StaticCard[] =
     {
       path: '/rmh-research',
       file: 'rmh-research',
-      eyebrow: 'RMH Research',
-      title: 'Twelve fields, one archive.',
-      subtitle: 'The research institute of RMH Studios, and the r-index.',
+      eyebrow:
+        'RMH Research',
+      title:
+        'Twelve fields, one archive.',
+      subtitle:
+        'The research institute of RMH Studios, and the r-index.',
     },
     {
       path: '/rmh-pmc',
@@ -992,24 +1000,14 @@ export function staticCardFor(
  * it are read from the catalog when it is drawn and a new section is one entry here, with no PNG to regenerate and
  * commit. (The older section PNGs are still on disk: a link shared before this change still points at them.)
  */
-/**
- * The card design's version, carried on every card URL (`?v=`) here and by
- * `ogCardPath` in lib/seo.
- *
- * Link-preview services (Discord, X, Slack, iMessage) cache an image by its
- * URL, often for weeks, so a card redrawn under the same URL keeps unfurling
- * in the old design. Bump this when the look of the cards changes (not when
- * one card's content does: the renderers key that themselves) and every page's
- * og:image becomes a new URL. `steel` is the Steel redesign of 2026-11-15.
- */
-export const OG_CARD_VERSION =
-  'steel';
+// The card design's version lives with the path → file index the client reads
+// (./static-card-index), so there is one definition of it.
+export { OG_CARD_VERSION };
 
 export function staticCardImage(
   card: StaticCard,
 ): string {
-  return card.file ===
-    'default'
-    ? `/images/og/default.png?v=${OG_CARD_VERSION}`
-    : `/api/og/section/${card.file}?v=${OG_CARD_VERSION}`;
+  return staticCardImageFor(
+    card.file,
+  );
 }

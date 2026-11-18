@@ -15,7 +15,7 @@ import {
   InGameCard,
 } from './FriendActivity';
 import { PersonAvatar } from './SteamPeople';
-import { TitleArt } from './TitleArt';
+import { CAPSULE_SIZES, TitleArt } from './TitleArt';
 
 export function GroupRow({
   group,
@@ -203,7 +203,7 @@ export function CommunityHome({
                           }
                           height={
                             360
-                          }
+                          } sizes={CAPSULE_SIZES}
                         />
                         <span className="stm-capsule-name">
                           {

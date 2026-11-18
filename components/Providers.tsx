@@ -1,7 +1,9 @@
 import { readJson, readString, removeKey, writeString } from '@/lib/core/persist';
 import {
   ReactNode,
+  Suspense,
   createContext,
+  lazy,
   useContext,
   useEffect,
   useRef,
@@ -10,7 +12,9 @@ import {
 } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
-import { MotionConfig, LazyMotion } from 'framer-motion';
+import { MotionConfig } from 'framer-motion';
+import { LazyMotionProvider } from '@/components/motion/LazyMotionProvider';
+import { DataSaverRequestContext } from '@/hooks/useDataSaver';
 import { ToastHost } from '@/components/ui/toast-host';
 import {
   SessionCtx,
@@ -55,14 +59,6 @@ import { applyHtmlLangDir } from '@/lib/i18n/dom';
 import { isAppThemeRoute } from '@/lib/prepaint/theme-routes';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
-import { CallMount } from '@/components/call/CallMount';
-import { GroupCallMount } from '@/components/groupcall/GroupCallMount';
-import { AccessMount } from '@/components/access/AccessMount';
-import { DelightMount } from '@/components/delight/DelightMount';
-import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
-import { RecentsTracker } from '@/components/site/RecentsTracker';
-import { PlaytimeTracker } from '@/components/site/PlaytimeTracker';
-import { PatchNotesMount } from '@/components/arcade/PatchNotesMount';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
@@ -138,14 +134,26 @@ interface ProvidersProps {
    * translations the server rendered (no hydration mismatch, no flash).
    */
   i18nResources?: LocaleBundle | null;
+  /**
+   * The server's data-saver decision for this document (lib/data-saver-request.ts):
+   * what the first page's images were rendered with, and so what the hydrating
+   * render must read (hooks/useDataSaver#useDataSaverAtMount).
+   */
+  saveData?: boolean;
 }
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 
 // framer-motion feature bundle, loaded on demand so the animation/gesture/layout
 // drivers stay out of the initial bundle. Every component ships the lightweight
-// `m` component (aliased as `motion`) and picks these up from LazyMotion context.
-const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => mod.default);
+// `m` component (aliased as `motion`) and picks these up from the lazy context.
+// The bundle registers its own features and returns the renderer, so the provider
+// in the shell imports none of motion-dom (components/motion/LazyMotionProvider).
+// Mounted when idle; see components/site/ShellMounts.tsx.
+const ShellMounts = lazy(() => import('@/components/site/ShellMounts'));
+
+const loadMotionFeatures = () =>
+  import('@/lib/motion-features').then((mod) => mod.registerMotionFeatures());
 
 // THEME_BG (theme → document background color) lives in stores/themeStore.ts,
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
@@ -163,6 +171,7 @@ export function Providers({
   sessionResolved = true,
   locale = 'en',
   i18nResources = null,
+  saveData = false,
 }: ProvidersProps) {
   // The router's QueryClient (lib/query/make-query-client.ts): built once per SSR request and once
   // per page load in getRouter(), so route loaders seed the same cache the components read.
@@ -604,45 +613,43 @@ export function Providers({
     <QueryClientProvider client={queryClient}>
       <AppI18nProvider locale={locale} resources={i18nResources}>
         {/* Load framer-motion features lazily so they're off the initial bundle. */}
-        <LazyMotion features={loadMotionFeatures}>
+        <LazyMotionProvider load={loadMotionFeatures}>
           {/* One shared animation scheme for every account and device. */}
           <MotionConfig reducedMotion="never">
             <SessionCtx.Provider value={effectiveSession}>
-              <AppTierContext.Provider value={isAppRoute}>
-                <ResolvedUserCtx.Provider
-                  value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
-                >
-                  <ConfirmProvider>
-                    {children}
-                    {/* Globally-mounted, non-critical chrome. Isolate it so a throw
-                      in the command palette / recents tracker / theme-preview bar
-                      is reported and swallowed instead of bubbling to the root
-                      errorComponent and taking down the whole app. `children`
-                      (the page) is deliberately OUTSIDE this boundary — primary
-                      content must still surface a real route-level error. */}
-                    <SilentErrorBoundary label="global-chrome">
-                      <CommandPaletteMount />
-                      <RecentsTracker />
-                      <PlaytimeTracker />
-                      <PatchNotesMount />
-                      {/* §14: the floating try-before-buy / preview-on-site confirm bar,
-                        mounted globally so it survives navigation under a previewed theme. */}
-                      <ThemePreviewBar />
-                      {/* Voice calls. Mounted here for the same reason: an
-                        incoming call has to ring wherever the user is, and
-                        answering one must survive navigating away. */}
-                      <CallMount />
-                      <GroupCallMount />
-                      <AccessMount />
-                      <DelightMount />
-                    </SilentErrorBoundary>
-                  </ConfirmProvider>
-                </ResolvedUserCtx.Provider>
-                <ToastHost theme={style === 'graphite' ? 'dark' : 'light'} />
-              </AppTierContext.Provider>
+              <DataSaverRequestContext.Provider value={saveData}>
+                <AppTierContext.Provider value={isAppRoute}>
+                  <ResolvedUserCtx.Provider
+                    value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
+                  >
+                    <ConfirmProvider>
+                      {children}
+                      {/* Globally-mounted, non-critical chrome. Isolate it so a throw
+                        in the command palette / recents tracker / theme-preview bar
+                        is reported and swallowed instead of bubbling to the root
+                        errorComponent and taking down the whole app. `children`
+                        (the page) is deliberately OUTSIDE this boundary — primary
+                        content must still surface a real route-level error. */}
+                      <SilentErrorBoundary label="global-chrome">
+                        <CommandPaletteMount />
+                        {/* Trackers, patch notes, the theme-preview bar, calls, the
+                          access sheet and delight: all render nothing at load, so
+                          they arrive as one chunk once the browser is idle
+                          (components/site/ShellMounts.tsx). */}
+                        {idleReady ? (
+                          <Suspense fallback={null}>
+                            <ShellMounts />
+                          </Suspense>
+                        ) : null}
+                      </SilentErrorBoundary>
+                    </ConfirmProvider>
+                  </ResolvedUserCtx.Provider>
+                  <ToastHost theme={style === 'graphite' ? 'dark' : 'light'} />
+                </AppTierContext.Provider>
+              </DataSaverRequestContext.Provider>
             </SessionCtx.Provider>
           </MotionConfig>
-        </LazyMotion>
+        </LazyMotionProvider>
       </AppI18nProvider>
     </QueryClientProvider>
   );

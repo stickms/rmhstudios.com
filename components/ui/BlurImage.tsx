@@ -5,6 +5,7 @@ import {
   useState,
 } from 'react';
 import { cn } from '@/lib/utils';
+import { useDataSaverAtMount } from '@/hooks/useDataSaver';
 import {
   buildOptimizedUrl,
   generateSrcSet,
@@ -198,6 +199,15 @@ export function BlurImage({
     src,
   ]);
 
+  // Data saver caps the candidates at the slot's CSS width, decided once at mount:
+  // from the request on the server, from the live setting on a client mount
+  // (hooks/useDataSaver#useDataSaverAtMount). Never for `priority`:
+  // its <link rel=preload> is built from the uncapped srcset by
+  // `blurImagePreload`, and a preload that disagrees with its <img> downloads twice.
+  const saving =
+    useDataSaverAtMount() &&
+    !priority;
+
   const fitClass =
     fit ===
     'contain'
@@ -227,6 +237,11 @@ export function BlurImage({
       ? generateSrcSet(
           src,
           quality,
+          undefined,
+          saving
+            ? width ||
+                800
+            : undefined,
         )
       : undefined;
   // No blur-up for the LCP candidate: the placeholder is a second request

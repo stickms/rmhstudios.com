@@ -7,7 +7,7 @@ rmhstudios.com is one large, high-performance web platform: a social feed
 blog/news/library system, a coin economy with Stripe memberships, and a scoped
 developer API — served by a React SSR tier with Node realtime hubs and a Go
 worker fleet behind it. It features a dynamic, animated UI (7 themes + accent
-presets, 32 locales) alongside real-time multiplayer.
+presets, 9 locales) alongside real-time multiplayer.
 
 ## Features
 

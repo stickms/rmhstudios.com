@@ -21,6 +21,7 @@
 @source "../../components/games/SessionHighlight.tsx";
 @source "../../components/i18n/AppI18nProvider.tsx";
 @source "../../components/games/ResultMoment.tsx";
+@source "../../components/motion/LazyMotionProvider.tsx";
 @source "../../components/share/ShareMomentSheet.tsx";
 @source "../../components/shared/GameErrorBoundary.tsx";
 @source "../../components/shared/GameLoadingFallback.tsx";

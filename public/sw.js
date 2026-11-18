@@ -22,6 +22,58 @@ const IMAGE_CACHE = `rmh-images-${VERSION}`;
 const OFFLINE_URL = '/offline';
 const IMAGE_CACHE_LIMIT = 80;
 
+/* ─── Build-asset pruning ─────────────────────────────────────────────────────
+ *
+ * Hashed build files are cached cache-first under one cache whose name never
+ * changes (`rmh-static-v1`), and nothing ever removed one: every deploy's new
+ * chunks were added beside the old ones, so a regular visitor's storage grew
+ * with every release (low-bandwidth audit, 2026-11-18). `activate` cannot fix
+ * that, because it runs only when this file changes, not per deploy. A deploy
+ * shows up here as cache misses for new hashes, so the first miss in a worker's
+ * lifetime prunes: build files cached more than ASSET_MAX_AGE_MS ago (by their
+ * response's `Date`), then the oldest past ASSET_CACHE_LIMIT. A pruned file that
+ * is still in use is simply fetched again on its next request.
+ */
+const ASSET_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const ASSET_CACHE_LIMIT = 1500;
+let assetsPrunedThisRun = false;
+
+function isBuildAsset(pathname) {
+  return pathname.startsWith('/assets/') || pathname.startsWith('/_build/');
+}
+
+/**
+ * Which cached build files to delete. `entries` are `{ url, date }` in the cache's
+ * insertion order (oldest first), `date` the response's `Date` in ms or NaN when
+ * absent. Pure, so it is unit-tested (lib/__tests__/sw-outbox.test.ts).
+ */
+function assetsToPrune(entries, now) {
+  const assets = entries.filter((e) => isBuildAsset(new URL(e.url).pathname));
+  const expired = assets.filter((e) => Number.isFinite(e.date) && now - e.date > ASSET_MAX_AGE_MS);
+  const gone = new Set(expired.map((e) => e.url));
+  const left = assets.filter((e) => !gone.has(e.url));
+  for (const e of left.slice(0, Math.max(0, left.length - ASSET_CACHE_LIMIT))) gone.add(e.url);
+  return [...gone];
+}
+
+async function pruneBuildAssets() {
+  if (assetsPrunedThisRun) return;
+  assetsPrunedThisRun = true;
+  try {
+    const cache = await caches.open(STATIC_CACHE);
+    const requests = await cache.keys();
+    const entries = await Promise.all(
+      requests.map(async (req) => {
+        const res = await cache.match(req);
+        return { url: req.url, date: Date.parse((res && res.headers.get('date')) || '') };
+      })
+    );
+    await Promise.all(assetsToPrune(entries, Date.now()).map((url) => cache.delete(url)));
+  } catch (_) {
+    /* best effort: a failed prune leaves the cache as it was */
+  }
+}
+
 /* ─── Offline write queue (B10) ────────────────────────────────────
  *
  * Writes made with no signal used to fail with a toast. They are now parked in
@@ -525,7 +577,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Hashed build assets are immutable: cache-first.
-  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/_build/')) {
+  if (isBuildAsset(url.pathname)) {
     event.respondWith(
       (async () => {
         const cached = await caches.match(request);
@@ -533,7 +585,9 @@ self.addEventListener('fetch', (event) => {
         const response = await fetch(request);
         if (response.ok) {
           const cache = await caches.open(STATIC_CACHE);
-          cache.put(request, response.clone());
+          // A miss on a hashed file means a new build: prune once per worker run,
+          // after this file is stored, so the pruning never removes it.
+          event.waitUntil(cache.put(request, response.clone()).then(pruneBuildAssets));
         }
         return response;
       })()
@@ -541,8 +595,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static images/fonts: stale-while-revalidate with an LRU cap.
-  if (/\.(png|jpe?g|webp|gif|svg|ico|woff2?)$/.test(url.pathname)) {
+  // Static images/fonts: stale-while-revalidate with an LRU cap. `avif` is the
+  // format OptimizedImage's <picture> serves to every browser that has it, so
+  // without it here the build-time variants were never kept for offline/repeat use.
+  if (/\.(png|jpe?g|webp|avif|gif|svg|ico|woff2?)$/.test(url.pathname)) {
     event.respondWith(
       (async () => {
         const cached = await caches.match(request);

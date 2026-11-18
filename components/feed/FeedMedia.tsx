@@ -2,7 +2,7 @@ import { memo, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EyeOff } from 'lucide-react';
 import { BlurImage } from '@/components/ui/BlurImage';
-import { GifEmbed } from '@/components/feed/GifEmbed';
+import { GifEmbed } from '@/components/feed/GifEmbedLazy';
 import { knownSize } from '@/lib/image-aspect';
 import { AltChip } from '@/components/feed/AltChip';
 

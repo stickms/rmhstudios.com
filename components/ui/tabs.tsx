@@ -25,13 +25,36 @@
  *  - No i18n here: labels/aria-label come from callers (already translated).
  */
 
-import { useCallback, useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ComponentType } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { SPRING } from '@/lib/app-motion';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useIsAppTier } from '@/components/ui/app-tier-context';
+// The app tier's morphing capsule, loaded only where it is drawn (./tab-capsule). Not a
+// lazy()/Suspense pair: what shows before it loads is the same thumb without the slide,
+// not content arriving, so nothing may fade (M9 is for content that arrives).
+type TabCapsuleComponent = ComponentType<{ layoutId: string }>;
+let loadedCapsule: TabCapsuleComponent | null = null;
+function useTabCapsule(enabled: boolean): TabCapsuleComponent | null {
+  // `null` on the server and on the first client render alike, so hydration matches.
+  const [capsule, setCapsule] = useState<TabCapsuleComponent | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    if (loadedCapsule) {
+      setCapsule(() => loadedCapsule);
+      return;
+    }
+    let live = true;
+    void import('./tab-capsule').then((m) => {
+      loadedCapsule = m.default;
+      if (live) setCapsule(() => m.default);
+    });
+    return () => {
+      live = false;
+    };
+  }, [enabled]);
+  return capsule;
+}
 
 /**
  * Strips with this many tabs or fewer are a segmented control — equal segments
@@ -126,6 +149,7 @@ export function Tabs({
 }: TabsProps) {
   // Games and apps keep the raised thumb (L8); the main site is Steel's words on a rule (K5).
   const appTier = useIsAppTier();
+  const TabCapsule = useTabCapsule(appTier);
   const uid = useId();
   const listRef = useRef<HTMLElement>(null);
   // useId scopes the capsule's layoutId so multiple Tabs never collide.
@@ -220,26 +244,21 @@ export function Tabs({
     );
   const siteItem = (active: boolean) => (appTier ? itemClass(active) : steelItem(active));
 
-  // The active thumb — identical material in both modes. Outer element owns the
-  // layoutId projection (position morph); the inner span carries the material,
-  // so scaling never fights framer-motion's projection transform. The material
-  // itself (`--tab-thumb-*`) lives in globals.css so themes and games re-skin it
-  // with two custom properties.
+  // The active thumb, app tier only (./tab-capsule). Until its module has loaded this
+  // draws the same element and material without the morph, so the strip looks the
+  // same either way and only the slide waits for the code.
   const capsule = (active: boolean) =>
     appTier && active ? (
-      <motion.span
-        layoutId={layoutId}
-        aria-hidden
-        // The hook globals.css uses to decide whether the thumb ink is safe.
-        data-tab-capsule=""
-        className="absolute inset-0"
-        transition={SPRING.snappy}
-      >
-        <span
-          data-tab-thumb=""
-          className="absolute inset-0 rounded-[var(--tab-radius,var(--site-control-radius))]"
-        />
-      </motion.span>
+      TabCapsule ? (
+        <TabCapsule layoutId={layoutId} />
+      ) : (
+        <span aria-hidden data-tab-capsule="" className="absolute inset-0">
+          <span
+            data-tab-thumb=""
+            className="absolute inset-0 rounded-[var(--tab-radius,var(--site-control-radius))]"
+          />
+        </span>
+      )
     ) : null;
 
   // Icon + label + count/badge, each above the thumb at z-1. In `iconOnly` mode

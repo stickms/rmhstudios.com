@@ -21,7 +21,8 @@
  * application, command palette, calls, the globe) and is deliberately absent.
  */
 import { type ReactNode, useEffect } from 'react';
-import { LazyMotion, MotionConfig } from 'framer-motion';
+import { MotionConfig } from 'framer-motion';
+import { LazyMotionProvider } from '@/components/motion/LazyMotionProvider';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import {
   SessionCtx,
@@ -40,7 +41,8 @@ import { initWebVitals } from '@/lib/rum';
 import type { IslandData } from './island-data';
 
 // The same lazy feature bundle the site's Providers loads (framer-motion's drivers stay out of the entry).
-const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => mod.default);
+const loadMotionFeatures = () =>
+  import('@/lib/motion-features').then((mod) => mod.registerMotionFeatures());
 
 function IslandSession({ data, children }: { data: IslandData; children: ReactNode }) {
   const live = sessionAuthClient.useSession() as unknown as SessionCtxValue;
@@ -74,7 +76,7 @@ export function IslandProviders({ data, children }: { data: IslandData; children
 
   return (
     <AppI18nProvider locale={locale} resources={data.resources}>
-      <LazyMotion features={loadMotionFeatures}>
+      <LazyMotionProvider load={loadMotionFeatures}>
         <MotionConfig reducedMotion="never">
           <IslandSession data={data}>
             <AppTierContext.Provider value>
@@ -83,7 +85,7 @@ export function IslandProviders({ data, children }: { data: IslandData; children
           </IslandSession>
           <ToastHost theme={dark ? 'dark' : 'light'} />
         </MotionConfig>
-      </LazyMotion>
+      </LazyMotionProvider>
     </AppI18nProvider>
   );
 }

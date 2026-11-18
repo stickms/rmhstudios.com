@@ -1,8 +1,10 @@
+// The path → file index, not `static-cards`: route heads run in the browser, and
+// the cards' copy is only for the renderer (lib/og/static-card-index.ts).
 import {
   OG_CARD_VERSION,
-  staticCardFor,
-  staticCardImage,
-} from '@/lib/og/static-cards';
+  staticCardFileFor,
+  staticCardImageFor,
+} from '@/lib/og/static-card-index';
 
 export const SITE_URL =
   'https://rmhstudios.com';
@@ -113,20 +115,21 @@ export function buildMeta({
   // A route that names no image gets its section's card — `/library/…` shares
   // the library card, `/terms` the legal one — and only falls through to the
   // site-wide default when the path matches no section at all. That mapping is
-  // data (`lib/og/static-cards.ts`), so adding a section card is one entry
+  // data (`lib/og/static-cards.ts`, read here through its path → file index,
+  // `lib/og/static-card-index.ts`), so adding a section card is one entry
   // rather than an edit to every route under it.
-  const section =
+  const sectionFile =
     image
       ? null
-      : staticCardFor(
+      : staticCardFileFor(
           path,
         );
   const ogImage =
     absoluteUrl(
       image ||
-        (section
-          ? staticCardImage(
-              section,
+        (sectionFile
+          ? staticCardImageFor(
+              sectionFile,
             )
           : DEFAULT_OG_IMAGE),
     );

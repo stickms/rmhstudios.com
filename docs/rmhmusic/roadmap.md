@@ -23,7 +23,7 @@ Where things live: pure logic `lib/rmhmusic/learn/{theory,scoring,srs,content,ma
 UI `components/rmhmusic/learn/`; lesson path and units `lib/rmhmusic/learn/content/path.ts`
 (every `available` lesson's `mode` must be in `content/routing.ts` `ROUTED_MODES`); styles
 `components/rmhmusic/rmhmusic.css`; catalog `lib/catalog/apps/rmhmusic.ts`; progress API
-`app/routes/api/rmhmusic/learn/`; strings `locales/<lang>/c-rmhmusic.json`.
+`app/routes/api/rmhmusic/learn/`; strings `locales/en/c-rmhmusic.json` (other locales: `i18n/catalogs`).
 Architecture rule: every lesson is an explicit `{initial, step}` state machine in `machines/`;
 all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbacks `onStart`,
 `onNoteStart`, `onAllStarted`).
@@ -332,7 +332,7 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   stalled the cursor, end focus, the octave-off sentence, flags touching the next note. Screenshots
   looked at: notebook paper, no chips or badges.
 - **Not done:** Firefox / WebKit / iOS Safari, 200 % text, RTL with real strings (English until
-  `pnpm i18n:translate`), a real MIDI keyboard, the microphone in either mode (untested in the
+  the i18n-translate workflow runs), a real MIDI keyboard, the microphone in either mode (untested in the
   browser; known limit: the mic segmenter only reports a repeated note after a short silence, so
   repeated notes on a sustaining instrument may be missed, and `MIC_ONSET_MS` is reasoned, not
   measured; the re-attack thresholds are tuned on synthetic levels only), audible check of "Hear it" (headless has no output; the sequence started and ended),
@@ -388,7 +388,7 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   notes off the card, the reader's history across tabs, and a mic frame fan-out that isolates a
   throwing listener; re-checked in Chromium at 390 (CLS 0, skeleton = loaded height, 0 rAF at rest).
 - **Not done:** Firefox / WebKit / iOS Safari, 200 % text, RTL with real strings (strings are
-  English until `pnpm i18n:translate`), a real microphone and instrument (thresholds are reasoned
+  English until the i18n-translate workflow runs), a real microphone and instrument (thresholds are reasoned
   and tested on synthetic tones only), alternate guitar tunings or other instruments' presets, the
   shared `<Tabs>` is 40 px tall without a coarse pointer (the primitive's own rule;
   44 px on touch), `pnpm typecheck` on a bigger machine (scoped `tsc` passed).
@@ -515,9 +515,9 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   sharer blocked sees "gone", and can confirm the block by opening the link in a private window
   (signed out, the link is live); a capability link cannot hide that.
 
-- **Translations:** every new string in the 15 non-English shipped locales is the English default
-  until `pnpm i18n:translate` is run (only the 16 shipped `locales/*/c-rmhmusic.json` were kept
-  when extracting; do not commit the thousands of other extractor files).
+- **Translations:** every new string in the 8 non-English shipped locales is the English default
+  until the i18n-translate workflow is run (Actions tab; it translates from `locales/en` and commits
+  to `i18n/catalogs`, `docs/translations.md`). Commit `locales/en/c-rmhmusic.json` only.
 - **Never tested on real hardware:** microphone + speaker (echo guard timings 250 ms confirm /
   400 ms tail are reasoned; the tuner's level/clarity floors, median window and hysteresis were
   tuned on synthetic tones only), MIDI controllers, Bluetooth output latency (`OUTPUT_LATENCY_MS = 40`

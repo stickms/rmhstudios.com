@@ -10,7 +10,7 @@ import { PostMenuTrigger } from '@/components/feed/PostMenuTrigger';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 import { FeedMedia } from '@/components/feed/FeedMedia';
 import { TakeMeterLazy } from '@/components/feed/TakeMeterLazy';
-import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
+import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadgesLazy';
 import { cn, relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
 import { useLocaleStore } from '@/stores/localeStore';

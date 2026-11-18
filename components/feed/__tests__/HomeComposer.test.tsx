@@ -1,5 +1,6 @@
 /**
- * The home composer keeps one look (owner, 2026-11-13). `HomeComposer` draws a light row first and hands over to
+ * The home composer keeps one look (owner, 2026-11-13). Its signed-in row (`HomeComposerSignedIn`, which
+ * `HomeComposer` loads lazily) draws a light row first and hands over to
  * `ComposeBox` in its `row` variant when a quick action is pressed; the swap is invisible only while both draw the
  * same avatar, field, quick actions and Post. This pins that: the two server-rendered rows are compared part by part.
  */
@@ -97,7 +98,7 @@ vi.mock(
   }),
 );
 
-import { HomeComposer } from '../HomeComposer';
+import HomeComposerSignedIn from '../HomeComposerSignedIn';
 import { ComposeBox } from '../ComposeBox';
 
 /** Attributes that are state, not look: the full composer's field adds its own autocomplete hints. */
@@ -207,8 +208,9 @@ function parts(
 
 describe('HomeComposer', () => {
   const light =
+    // The signed-in row: HomeComposer loads it lazily, so it is rendered directly here.
     renderToString(
-      <HomeComposer />,
+      <HomeComposerSignedIn arrival="" />,
     );
   const full =
     renderToString(

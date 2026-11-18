@@ -433,7 +433,7 @@ export function ProfilePage({
                             height={
                               180
                             }
-                            className="stm-art-sm"
+                            className="stm-art-sm" sizes="48px"
                           />
                           <span className="stm-person-body">
                             <span className="stm-person-name">

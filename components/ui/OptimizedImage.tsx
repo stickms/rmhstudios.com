@@ -7,6 +7,7 @@ import {
   IMAGE_VARIANTS,
   variantUrl,
 } from '@/lib/images/variants.gen';
+import { useDataSaverAtMount } from '@/hooks/useDataSaver';
 
 interface OptimizedImageProps extends Omit<
   ImgHTMLAttributes<HTMLImageElement>,
@@ -45,11 +46,24 @@ interface OptimizedImageProps extends Omit<
    * element the metric is about. Never set it on a list item.
    */
   priority?: boolean;
+  /**
+   * The slot's real rendered width, as a `sizes` value. Applied to BOTH the AVIF
+   * `<source>` and the `<img>`: the browser picks from the `<source>`, so a
+   * `sizes` that only reached the `<img>` changed nothing. Pass it whenever the
+   * slot is narrower than `width` — a grid tile. The default derived from
+   * `width` (`(max-width: Wpx) 100vw, Wpx`) reads as "100vw" on any viewport at
+   * or below W, which on a 390px phone at 3x asked for 1170 device pixels for a
+   * 111px capsule: the 960 variant (~100 KB) where the 640 (~40 KB) covers it.
+   */
+  sizes?: string;
 }
 
-// Breakpoints for responsive srcSet
+// Breakpoints for responsive srcSet. 160 is for avatars and list icons: a
+// 22–48px slot at 3x needs 66–144 device pixels, and without it the smallest
+// candidate was 320. The server's ladder (lib/images/variant-params) has the rung.
 const WIDTHS =
   [
+    160,
     320,
     480,
     640,
@@ -272,10 +286,41 @@ export function isOptimizable(
   );
 }
 
+/**
+ * The candidate widths at or under `maxWidth`, keeping at least the smallest so a
+ * srcset is never empty. No cap leaves the list as it is. Data saver passes the
+ * slot's CSS width: the browser then picks about a 1x file instead of 2–3x.
+ */
+function capWidths(
+  widths: readonly number[],
+  maxWidth?: number,
+): readonly number[] {
+  if (
+    maxWidth ==
+    null
+  )
+    return widths;
+  const kept =
+    widths.filter(
+      (
+        w,
+      ) =>
+        w <=
+        maxWidth,
+    );
+  return kept.length
+    ? kept
+    : widths.slice(
+        0,
+        1,
+      );
+}
+
 export function generateSrcSet(
   src: string,
   quality?: number,
   format?: string,
+  maxWidth?: number,
 ): string {
   // A build-time-variant image advertises exactly the widths that were
   // generated. Running it through `WIDTHS` instead would emit descriptors that
@@ -288,7 +333,10 @@ export function generateSrcSet(
   if (
     entry
   ) {
-    return entry.widths
+    return capWidths(
+      entry.widths,
+      maxWidth,
+    )
       .map(
         (
           w,
@@ -299,14 +347,19 @@ export function generateSrcSet(
         ', ',
       );
   }
-  return WIDTHS.map(
-    (
-      w,
-    ) =>
-      `${buildOptimizedUrl(src, w, quality, format)} ${w}w`,
-  ).join(
-    ', ',
-  );
+  return capWidths(
+    WIDTHS,
+    maxWidth,
+  )
+    .map(
+      (
+        w,
+      ) =>
+        `${buildOptimizedUrl(src, w, quality, format)} ${w}w`,
+    )
+    .join(
+      ', ',
+    );
 }
 
 /**
@@ -324,6 +377,7 @@ export function generateSrcSet(
  */
 function avifSrcSet(
   src: string,
+  maxWidth?: number,
 ):
   | string
   | null {
@@ -335,7 +389,10 @@ function avifSrcSet(
     !entry
   )
     return null;
-  return entry.widths
+  return capWidths(
+    entry.widths,
+    maxWidth,
+  )
     .map(
       (
         w,
@@ -362,6 +419,8 @@ function OptimizedImageImpl({
   className,
   loading = 'lazy',
   priority = false,
+  sizes:
+    sizesProp,
   onError,
   ...rest
 }: OptimizedImageProps) {
@@ -387,6 +446,18 @@ function OptimizedImageImpl({
   const degraded =
     failedSrc ===
     src;
+  // Data saver caps the candidates at the slot's CSS width (~1x). Decided once, at
+  // mount: on the server from the request (its setting cookie or `Save-Data`), and
+  // read back unchanged while hydrating; on a client mount from the live setting.
+  // Never changed after, because the image is already downloading
+  // (hooks/useDataSaver#useDataSaverAtMount, lib/data-saver-request.ts).
+  const saving =
+    useDataSaverAtMount();
+  const maxWidth =
+    saving
+      ? width ||
+        640
+      : undefined;
 
   if (
     !src
@@ -403,17 +474,19 @@ function OptimizedImageImpl({
           src,
           quality,
           format,
+          maxWidth,
         )
       : undefined;
 
-  // Default sizes attribute based on layout
+  // The caller's slot width when given, else a default based on layout.
   const sizes =
-    layout ===
+    sizesProp ??
+    (layout ===
     'fullWidth'
       ? '100vw'
       : width
         ? `(max-width: ${width}px) 100vw, ${width}px`
-        : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
+        : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw');
 
   // Optimized default src (pick a reasonable middle size)
   const defaultSrc =
@@ -437,6 +510,7 @@ function OptimizedImageImpl({
     !format
       ? avifSrcSet(
           src,
+          maxWidth,
         )
       : null;
 

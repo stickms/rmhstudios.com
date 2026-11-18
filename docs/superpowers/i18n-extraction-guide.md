@@ -6,7 +6,6 @@ This guide captures the repeatable pattern for localizing a new route group (e.g
 
 ## Prerequisites
 
-- `DEEPSEEK_API_KEY` set in your environment for machine translation (step 5). Without it, `pnpm run i18n:translate` will still run but will skip every key with a warning.
 - You are in the repo root.
 
 ---
@@ -21,8 +20,6 @@ Choose one self-contained route group: its page file(s) under `app/` and its com
 
 If this route group needs its own translation namespace (rather than `common`):
 
-**Both of these files must be updated or the namespace will not load.**
-
 **`lib/i18n/config.ts`** — add the name to `NAMESPACES`:
 
 ```ts
@@ -30,19 +27,7 @@ export const NAMESPACES = ["common", "nav", "feed"] as const;
 //                                               ^^^^^^ new
 ```
 
-**`lib/i18n/resources.ts`** — add the JSON imports and `RESOURCES` entry for all three locales:
-
-```ts
-import enFeed from "@/locales/en/feed.json";
-import zhFeed from "@/locales/zh/feed.json";
-import arFeed from "@/locales/ar/feed.json";
-
-export const RESOURCES = {
-  en: { common: enCommon, nav: enNav, feed: enFeed },
-  zh: { common: zhCommon, nav: zhNav, feed: zhFeed },
-  ar: { common: arCommon, nav: arNav, feed: arFeed },
-} as const;
-```
+A namespace not listed there is never loaded. Nothing else is registered: `lib/i18n/resources.<locale>.ts` builds each locale's namespace map with `import.meta.glob` from whatever catalogs are on disk, so never import a locale JSON by hand.
 
 The JSON files do not need to exist yet — `i18n:extract` creates them.
 
@@ -68,7 +53,7 @@ For dynamic text use interpolation:
 {t("greeting", { name, defaultValue: "Hello, {{name}}!" })}
 ```
 
-**Why `defaultValue` matters:** `i18next-parser.config.js` sets `keepRemoved: false` and `resetDefaultValueLocale: "en"`. Without `defaultValue`, the parser resets the `en` value to the bare key string on every extract run, and drops unreferenced keys. The `defaultValue` form preserves the English copy through re-extractions.
+**Why `defaultValue` matters:** `i18next-parser.config.js` sets `resetDefaultValueLocale: "en"`, so without `defaultValue` the parser resets the `en` value to the bare key string on every extract run; the `defaultValue` form preserves the English copy through re-extractions. It also sets `keepRemoved: true`: a key the parser cannot see (an aliased `t`, a key built at runtime) is kept rather than deleted, so a key that is no longer used has to be removed by hand.
 
 ### Step 4 — Extract
 
@@ -76,7 +61,7 @@ For dynamic text use interpolation:
 pnpm run i18n:extract
 ```
 
-This runs `i18next-parser` over `app/**/*.{ts,tsx}` and `components/**/*.{ts,tsx}`, writing keys into `locales/en/<ns>.json`, `locales/zh/<ns>.json`, and `locales/ar/<ns>.json`.
+This runs `i18next-parser` over `app/**/*.{ts,tsx}` and `components/**/*.{ts,tsx}`, writing keys into `locales/en/<ns>.json` only. The other locales live on the `i18n/catalogs` branch and are never written by the extractor.
 
 After extraction, open `locales/en/<ns>.json` and verify:
 - Every key has its correct English string as the value (not a bare key).
@@ -86,13 +71,7 @@ If any value looks wrong, fix it in `locales/en/<ns>.json` directly, then adjust
 
 ### Step 5 — Translate
 
-```bash
-pnpm run i18n:translate
-```
-
-This calls `scripts/translate-locales.ts`, which is idempotent: it only (re)translates keys that are missing or whose English source has changed since the last run. Human edits to `zh`/`ar` catalogs survive because the script tracks source snapshots in `locales/<lng>/.sources.<ns>.json`.
-
-Requires `DEEPSEEK_API_KEY`. Without it, every key is skipped with a warning and the `zh`/`ar` files remain unchanged.
+Nothing to do locally. Translation is the **i18n-translate** GitHub Action (`.github/workflows/i18n-translate.yml`), which a maintainer runs from the Actions tab after the English lands on `main`. It translates only keys in `locales/en` that are missing or changed, commits the result to the `i18n/catalogs` branch and redeploys. Until it runs, the new keys show English in every other locale. See [`docs/translations.md`](../translations.md).
 
 ### Step 6 — RTL audit
 
@@ -119,7 +98,7 @@ For directional icons (arrows, chevrons) that must flip in RTL, add the `.rtl-fl
 
 > Use `./node_modules/.bin/vitest run` directly, not `pnpm exec vitest`, on this repo.
 
-The catalog test verifies that every key present in `en` is also present in `zh` and `ar`. Fix any missing keys before proceeding.
+Locally only `locales/en` is checked in; the non-English catalogs come from `pnpm i18n:pull`, and the workflow runs this test against them before it commits to `i18n/catalogs`. Do not add keys to other locales by hand to make it pass.
 
 Also run lint to catch any stray import issues:
 
@@ -132,11 +111,11 @@ pnpm run lint
 Stage only the files changed for this route group:
 
 ```bash
-git add app/<group>/ components/<group>/ locales/ lib/i18n/config.ts lib/i18n/resources.ts
-git commit -m "feat(i18n): localize <group> route group (en/zh/ar)"
+git add app/<group>/ components/<group>/ locales/en/ lib/i18n/config.ts
+git commit -m "feat(i18n): localize <group> route group"
 ```
 
-Open a PR scoped to this single route group. Keeping PRs small makes translation review easier and reduces merge conflicts with other i18n PRs.
+Open a PR scoped to this single route group. It carries English only: never commit a non-English catalog to `main`, and never open a translation PR. Keeping PRs small makes review easier and reduces merge conflicts with other i18n PRs.
 
 ---
 
@@ -144,13 +123,13 @@ Open a PR scoped to this single route group. Keeping PRs small makes translation
 
 | Command | What it does |
 |---|---|
-| `pnpm run i18n:extract` | Parse source files → populate `locales/en/<ns>.json` (and stub zh/ar) |
-| `pnpm run i18n:translate` | Translate missing/changed keys from en → zh and ar via DeepSeek |
-| `./node_modules/.bin/vitest run lib/__tests__/i18n-catalogs.test.ts` | Assert key parity across all three locales |
+| `pnpm run i18n:extract` | Parse source files → populate `locales/en/<ns>.json` |
+| i18n-translate workflow (Actions tab) | Translate missing/changed keys from `en` into the other shipped locales via DeepSeek, on `i18n/catalogs` |
+| `./node_modules/.bin/vitest run lib/__tests__/i18n-catalogs.test.ts` | Assert the catalogs agree with `en` (needs `pnpm i18n:pull` for the other locales) |
 
 ## Common Mistakes
 
-- **Missing namespace registration**: Adding a namespace to only `config.ts` or only `resources.ts` causes a silent load failure. Both files must be updated together.
+- **Missing namespace registration**: A `locales/en/<ns>.json` without its `NAMESPACES` entry in `lib/i18n/config.ts` is never loaded, and the UI silently serves its `defaultValue`s.
 - **Omitting `defaultValue`**: The parser resets `en` values to bare keys on re-extraction. Always use `t("key", { defaultValue: "English text" })`.
 - **Physical Tailwind utilities in new components**: Use logical equivalents (`ps-`/`pe-`/`ms-`/`me-`/`start-`/`end-`) from the start — retrofitting is error-prone.
 - **Running `pnpm exec vitest`**: On this repo the vitest binary must be invoked directly via `./node_modules/.bin/vitest run`.
