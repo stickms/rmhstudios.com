@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 389 routes. 204 render inside the standard site shell (sidebar, nav, context rail); 185 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 388 routes. 203 render inside the standard site shell (sidebar, nav, context rail); 185 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -26,7 +26,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/albums` | Library Albums \| Admin | admin | `app/routes/_site/admin/albums/index.tsx` |
 | `/admin/albums/:id` | Manage Album \| Admin | admin | `app/routes/_site/admin/albums/$id.tsx` |
 | `/admin/analytics` | Analytics | admin | `app/routes/_site/admin/analytics.tsx` |
-| `/admin/announcements` | Announcements | admin | `app/routes/_site/admin/announcements.tsx` |
 | `/admin/appeals` | Strike Appeals | admin | `app/routes/_site/admin/appeals.tsx` |
 | `/admin/audit` | Audit Log | admin | `app/routes/_site/admin/audit.tsx` |
 | `/admin/blog` | Manage Blog Posts \| Admin | admin | `app/routes/_site/admin/blog/index.tsx` |

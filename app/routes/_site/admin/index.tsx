@@ -191,11 +191,11 @@ function AdminDashboardPage() {
           />
 
           <AdminHubCard
-            to="/admin/announcements"
-            title={t('announcements-title', { defaultValue: 'Feed Announcements' })}
-            description={t('announcements-description', {
+            to="/admin/blog"
+            title={t('announcements-sitewide-title', { defaultValue: 'Announcements' })}
+            description={t('announcements-sitewide-description', {
               defaultValue:
-                "Publish pinned banners shown at the top of everyone's feed. Activate, deactivate, or remove them.",
+                'Announce a blog post sitewide: it pops up once for every visitor and is pinned at the top of the feed.',
             })}
           />
 

@@ -876,8 +876,6 @@ export const EXCLUDED_ROUTES: Record<
       'admin',
     '/admin/alarms':
       'admin',
-    '/admin/announcements':
-      'admin',
     '/admin/insights':
       'admin',
     '/admin/appeals':

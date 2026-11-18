@@ -5,7 +5,7 @@ import { ArrowIcon, PageHead, Plate, type PlateKind } from './shared';
 type BizProps = {
   id: string;
   ordinal: string;
-  stage: string;
+  catchphrase: string;
   name: string;
   alias?: string;
   desc: string;
@@ -15,17 +15,18 @@ type BizProps = {
   last?: boolean;
 };
 
-function Biz({ id, ordinal, stage, name, alias, desc, caps, plate, wide, last }: BizProps) {
+function Biz({ id, ordinal, catchphrase, name, alias, desc, caps, plate, wide, last }: BizProps) {
   return (
     <section className="sec sec--tight" id={id}>
       <div className="wrap">
         <div className="offset">
           <div className="o-lead biz-lead rv stack">
             <p className="meta">
-              {ordinal} / 06 · {stage}
+              {ordinal} / 06
             </p>
             <h2 className="h2">{name}</h2>
             {alias ? <p className="trio-alias">{alias}</p> : null}
+            <p className="trio-tagline">{catchphrase}</p>
           </div>
           <div className="o-wide rv d1">
             <p className="body ink">{desc}</p>
@@ -67,7 +68,7 @@ export default function BusinessesPage() {
       <Biz
         id="investment-banking"
         ordinal="01"
-        stage={t('ib-stage', { defaultValue: 'Advise & raise' })}
+        catchphrase={t('biz-ib-catchphrase', { defaultValue: 'Advise and raise.' })}
         name="Investment Banking"
         alias="RMHan Stanley"
         desc={t('ib-desc', {
@@ -88,7 +89,7 @@ export default function BusinessesPage() {
       <Biz
         id="markets"
         ordinal="02"
-        stage={t('markets-stage', { defaultValue: 'Execute & access' })}
+        catchphrase={t('biz-markets-catchphrase', { defaultValue: 'Execute and access.' })}
         name="Markets"
         alias="RMH Street"
         desc={t('markets-desc', {
@@ -109,7 +110,7 @@ export default function BusinessesPage() {
       <Biz
         id="corporate-banking"
         ordinal="03"
-        stage={t('corp-stage', { defaultValue: 'Fund & grow' })}
+        catchphrase={t('biz-cb-catchphrase', { defaultValue: 'Fund and grow.' })}
         name="Corporate Banking"
         desc={t('corp-desc', {
           defaultValue:
@@ -129,7 +130,7 @@ export default function BusinessesPage() {
       <Biz
         id="venture-capital"
         ordinal="04"
-        stage={t('vc-stage', { defaultValue: 'Back & build' })}
+        catchphrase={t('biz-vc-catchphrase', { defaultValue: 'Back and build.' })}
         name="Venture Capital"
         alias="RMHCombinator"
         desc={t('vc-desc', {
@@ -149,7 +150,7 @@ export default function BusinessesPage() {
       <Biz
         id="management-consulting"
         ordinal="05"
-        stage={t('consulting-stage', { defaultValue: 'Strategize & transform' })}
+        catchphrase={t('biz-mc-catchphrase', { defaultValue: 'Strategize and transform.' })}
         name="Management Consulting"
         alias="RMHcKinsey"
         desc={t('consulting-desc', {
@@ -169,7 +170,7 @@ export default function BusinessesPage() {
       <Biz
         id="private-equity"
         ordinal="06"
-        stage={t('pe-stage', { defaultValue: 'Own & compound' })}
+        catchphrase={t('biz-pe-catchphrase', { defaultValue: 'Own and compound.' })}
         name="Private Equity"
         alias="RMHstone"
         desc={t('pe-desc', {

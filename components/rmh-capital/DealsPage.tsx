@@ -1,9 +1,10 @@
 /**
- * RMH Capital — Deals. The two announced transactions: the tombstones, then
+ * RMH Capital — Deals. The announced transactions: the tombstones, then
  * the NvidiAMD combination (figures, ownership bar, terms on rules, the
- * timetable as a sequence, each business's role) and the Senior Secured
+ * timetable as a sequence, each business's role), the Senior Secured
  * Enlightenment Facility (a disc plate beside the headline, terms in a grid,
- * the closing line as a quote). Motion is CSS only: this file applies the
+ * the closing line as a quote) and RMHcKinsey's mandate for the University of
+ * Minnesota (the same shape, on the consulting business's orb plate). Motion is CSS only: this file applies the
  * classes (see the MOTION block in rmh-capital.css; page rules in css/deals.css).
  */
 
@@ -1007,6 +1008,305 @@ export default function DealsPage() {
                 {
                   defaultValue:
                     'This announcement appears as a matter of karma only.',
+                },
+              )}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="wrap">
+        <hr className="rule rv-rule" />
+      </div>
+
+      <section
+        className="sec"
+        id="university-of-minnesota"
+        aria-labelledby="deals-umn-heading"
+      >
+        <div className="wrap">
+          <div className="offset">
+            <div className="o-lead">
+              <div className="rv-wipe deal-plate">
+                <Plate
+                  kind="orb"
+                  className="plate--sq"
+                />
+              </div>
+            </div>
+            <div className="o-wide stack">
+              <p className="meta rv">
+                {t(
+                  'deals-umn-date',
+                  {
+                    defaultValue:
+                      'Announced September 24, 2026',
+                  },
+                )}
+              </p>
+              <h2
+                className="h2 rv"
+                id="deals-umn-heading"
+              >
+                {t(
+                  'deals-umn-heading',
+                  {
+                    defaultValue:
+                      'The University of Minnesota cuts $225 million from its budget',
+                  },
+                )}
+              </h2>
+              <p className="lede rv d1">
+                {t(
+                  'deals-umn-lede',
+                  {
+                    defaultValue:
+                      'A two-year reduction of 12 to 15 percent of allocated operating revenue, in response to shifting enrollment, unpredictable state and federal funding, and rising costs.',
+                  },
+                )}
+              </p>
+              <p className="body rv d2">
+                {t(
+                  'deals-umn-body-1',
+                  {
+                    defaultValue:
+                      'RMHcKinsey, the management consulting business of RMH Capital, acted as strategic advisor to the University of Minnesota. President Rebecca Cunningham described the decision as an "institutional inflection point."',
+                  },
+                )}
+              </p>
+              <p className="body rv d2">
+                {t(
+                  'deals-umn-body-2',
+                  {
+                    defaultValue:
+                      'Later estimates put the final figure between $230 million and $262 million, against an annual budget gap of about $100 million.',
+                  },
+                )}
+              </p>
+            </div>
+
+            <div
+              className="o-full figs"
+              style={cssVars(
+                {
+                  '--n': 3,
+                },
+              )}
+            >
+              <div className="fig rv">
+                <Amount
+                  className="fig-n ink"
+                  value="$225"
+                  unit={t(
+                    'tomb-unit-million',
+                    {
+                      defaultValue:
+                        'million',
+                    },
+                  )}
+                />
+                <span className="fig-k">
+                  {t(
+                    'deals-umn-fig-reduction',
+                    {
+                      defaultValue:
+                        'Operating budget reduction over two years',
+                    },
+                  )}
+                </span>
+              </div>
+              <div className="fig rv d1">
+                <span className="fig-n deal-fig-term ink">
+                  {t(
+                    'deals-umn-fig-share',
+                    {
+                      defaultValue:
+                        '12–15%',
+                    },
+                  )}
+                </span>
+                <span className="fig-k">
+                  {t(
+                    'deals-umn-fig-share-k',
+                    {
+                      defaultValue:
+                        'Of allocated operating revenue',
+                    },
+                  )}
+                </span>
+              </div>
+              <div className="fig rv d2">
+                <span className="fig-n deal-fig-term ink">
+                  {t(
+                    'deals-umn-fig-role',
+                    {
+                      defaultValue:
+                        'Strategic advisor',
+                    },
+                  )}
+                </span>
+                <span className="fig-k">
+                  {t(
+                    'deals-umn-fig-role-k',
+                    {
+                      defaultValue:
+                        'RMHcKinsey',
+                    },
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <dl className="o-full deal-terms">
+              <div className="rv">
+                <dt>
+                  {t(
+                    'deals-umn-term-client',
+                    {
+                      defaultValue:
+                        'Client',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-umn-term-client-v',
+                    {
+                      defaultValue:
+                        'University of Minnesota',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv d1">
+                <dt>
+                  {t(
+                    'deals-umn-term-mandate',
+                    {
+                      defaultValue:
+                        'Mandate',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-umn-term-mandate-v',
+                    {
+                      defaultValue:
+                        '$225 million operating budget reduction over two years',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv d2">
+                <dt>
+                  {t(
+                    'deals-umn-term-diagnostic',
+                    {
+                      defaultValue:
+                        'Cost diagnostic',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-umn-term-diagnostic-v',
+                    {
+                      defaultValue:
+                        'A baseline of every allocated unit, its revenue and its cost to serve',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv">
+                <dt>
+                  {t(
+                    'deals-umn-term-priorities',
+                    {
+                      defaultValue:
+                        'Prioritization',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-umn-term-priorities-v',
+                    {
+                      defaultValue:
+                        "Academic and administrative units ranked against the University's mission and funding outlook",
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv d1">
+                <dt>
+                  {t(
+                    'deals-umn-term-path',
+                    {
+                      defaultValue:
+                        'Implementation',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-umn-term-path-v',
+                    {
+                      defaultValue:
+                        'A two-year sequence of reductions, with the decisions that depend on state and federal funding set apart',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv d2">
+                <dt>
+                  {t(
+                    'deals-umn-term-team',
+                    {
+                      defaultValue:
+                        'Team',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-umn-term-team-v',
+                    {
+                      defaultValue:
+                        'RMHcKinsey Public Sector and Higher Education, led by Anouk Achterberg, Managing Partner',
+                    },
+                  )}
+                </dd>
+              </div>
+            </dl>
+
+            <figure className="o-wide">
+              <blockquote className="quote rv">
+                {t(
+                  'deals-umn-quote',
+                  {
+                    defaultValue:
+                      'We helped the University make its decisions on its own timeline, before they were made for it.',
+                  },
+                )}
+              </blockquote>
+              <figcaption className="quote-by rv d1">
+                {t(
+                  'deals-umn-quote-by',
+                  {
+                    defaultValue:
+                      'Anouk Achterberg, Managing Partner, RMHcKinsey',
+                  },
+                )}
+              </figcaption>
+            </figure>
+
+            <p className="o-wide meta rv">
+              {t(
+                'deals-umn-record',
+                {
+                  defaultValue:
+                    'RMHcKinsey. Strategize and transform.',
                 },
               )}
             </p>

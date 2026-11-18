@@ -63,8 +63,6 @@ interface Case {
   error: string;
 }
 
-const ANN = '@/lib/admin/api/admin.announcements.server';
-const ANN_ID = '@/lib/admin/api/admin.announcements.$id.server';
 const ALBUMS = '@/lib/admin/api/admin.albums.server';
 const ALBUM = '@/lib/admin/api/admin.albums.$id.server';
 const REORDER = '@/lib/admin/api/admin.albums.$id.reorder.server';
@@ -75,18 +73,6 @@ const MODERATE = '@/lib/predictions/api/admin.predictions.$id.moderate.server';
 const RESOLVE = '@/lib/predictions/api/admin.predictions.$id.resolve.server';
 
 const ADMIN_CASES: Case[] = [
-  {
-    name: 'announcement create: empty body names the first issue',
-    mod: ANN,
-    body: '{nope',
-    error: 'Invalid input: expected string, received undefined',
-  },
-  {
-    name: 'announcement update: wrong type',
-    mod: ANN_ID,
-    body: { active: 'yes' },
-    error: 'Invalid input',
-  },
   { name: 'album create: no title', mod: ALBUMS, body: {}, error: 'Title is required.' },
   { name: 'album create: malformed JSON', mod: ALBUMS, body: '{nope', error: 'Title is required.' },
   {
@@ -167,8 +153,7 @@ describe('admin routes keep their bespoke 400 texts', () => {
       const res = await fn({ params: { id: 'a1' }, request: req(c.method ?? 'POST', c.body) });
       expect(res.status).toBe(400);
       const json = (await res.json()) as { error: string };
-      if (c.name.startsWith('announcement create')) expect(typeof json.error).toBe('string');
-      else expect(json).toEqual({ error: c.error });
+      expect(json).toEqual({ error: c.error });
     });
   }
 
@@ -184,10 +169,6 @@ describe('admin routes keep their bespoke 400 texts', () => {
 
 describe('admin routes: 401 signed out, 403 non-admin', () => {
   const ROUTES: [string, string][] = [
-    [ANN, 'GET'],
-    [ANN, 'POST'],
-    [ANN_ID, 'POST'],
-    [ANN_ID, 'DELETE'],
     [ALBUMS, 'GET'],
     [ALBUMS, 'POST'],
     [ALBUM, 'PATCH'],
