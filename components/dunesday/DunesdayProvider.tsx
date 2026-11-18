@@ -851,7 +851,7 @@ export function DunesdayProvider({
       closeBalloon,
     };
   return (
-    <Ctx.Provider
+    <Ctx
       value={
         value
       }
@@ -859,6 +859,6 @@ export function DunesdayProvider({
       {
         children
       }
-    </Ctx.Provider>
+    </Ctx>
   );
 }

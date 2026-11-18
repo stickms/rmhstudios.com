@@ -13,7 +13,7 @@
  * and shrinks it sensibly when each eye only owns half the panel.
  */
 
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { BOOST_MAX, KMH_PER_UNIT, STREAK_WINDOW_MS, V_MAX_NORMAL } from '@/lib/neon-driftway/constants';
@@ -45,9 +45,7 @@ function formatClock(ms: number): string {
   return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
 }
 
-export const NeonDriftwayHud = forwardRef<HudHandle, Props>(function NeonDriftwayHud(
-  { stereo, visible },
-  ref,
+export const NeonDriftwayHud = function NeonDriftwayHud({ stereo, visible, ref }: Props & { ref?: React.Ref<HudHandle> }
 ) {
   const { t } = useTranslation('c-neon-driftway');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -375,4 +373,4 @@ export const NeonDriftwayHud = forwardRef<HudHandle, Props>(function NeonDriftwa
       )}
     </div>
   );
-});
+};

@@ -115,7 +115,7 @@ export function FigureSystem({
   );
 
   return (
-    <FigureContext.Provider
+    <FigureContext
       value={
         registry
       }
@@ -123,6 +123,6 @@ export function FigureSystem({
       {
         children
       }
-    </FigureContext.Provider>
+    </FigureContext>
   );
 }

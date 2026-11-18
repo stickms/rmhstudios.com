@@ -13,36 +13,33 @@ const labelVariants =
   );
 
 const Label =
-  React.forwardRef<
-    React.ElementRef<
-      typeof LabelPrimitive.Root
-    >,
-    React.ComponentPropsWithoutRef<
-      typeof LabelPrimitive.Root
-    > &
-      VariantProps<
-        typeof labelVariants
-      >
-  >(
-    (
-      {
+  ({
+    className,
+    ref,
+    ...props
+  }: React.ComponentPropsWithoutRef<
+    typeof LabelPrimitive.Root
+  > &
+    VariantProps<
+      typeof labelVariants
+    > & {
+      ref?: React.Ref<
+        React.ElementRef<
+          typeof LabelPrimitive.Root
+        >
+      >;
+    }) => (
+    <LabelPrimitive.Root
+      ref={
+        ref
+      }
+      data-slot="label"
+      className={cn(
+        labelVariants(),
         className,
-        ...props
-      },
-      ref,
-    ) => (
-      <LabelPrimitive.Root
-        ref={
-          ref
-        }
-        data-slot="label"
-        className={cn(
-          labelVariants(),
-          className,
-        )}
-        {...props}
-      />
-    ),
+      )}
+      {...props}
+    />
   );
 Label.displayName =
   LabelPrimitive.Root.displayName;

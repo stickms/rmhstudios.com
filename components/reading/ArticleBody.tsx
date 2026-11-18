@@ -312,7 +312,7 @@ export function ArticleBody({
   ]);
 
   return (
-    <GlossaryContext.Provider
+    <GlossaryContext
       value={
         glossaryMap
       }
@@ -387,6 +387,6 @@ export function ArticleBody({
           />
         </Suspense>
       ) : null}
-    </GlossaryContext.Provider>
+    </GlossaryContext>
   );
 }

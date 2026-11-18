@@ -34,7 +34,7 @@ export function SceneProvider({
   const value =
     useScene();
   return (
-    <Ctx.Provider
+    <Ctx
       value={
         value
       }
@@ -42,7 +42,7 @@ export function SceneProvider({
       {
         children
       }
-    </Ctx.Provider>
+    </Ctx>
   );
 }
 

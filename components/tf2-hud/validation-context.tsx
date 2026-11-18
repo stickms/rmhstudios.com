@@ -109,7 +109,7 @@ export function ValidationProvider({
       ],
     );
   return (
-    <Ctx.Provider
+    <Ctx
       value={
         value
       }
@@ -117,7 +117,7 @@ export function ValidationProvider({
       {
         children
       }
-    </Ctx.Provider>
+    </Ctx>
   );
 }
 

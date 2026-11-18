@@ -74,7 +74,7 @@ export function LazyMotionProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
-    <LazyContext.Provider
+    <LazyContext
       value={{
         renderer:
           renderer.current,
@@ -84,6 +84,6 @@ export function LazyMotionProvider({
       {
         children
       }
-    </LazyContext.Provider>
+    </LazyContext>
   );
 }

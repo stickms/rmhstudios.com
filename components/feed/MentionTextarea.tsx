@@ -1,5 +1,4 @@
 import {
- forwardRef,
  useCallback,
  useEffect,
  useImperativeHandle,
@@ -78,8 +77,7 @@ interface MentionTextareaProps
  priorityUsers?: UserSuggestion[];
 }
 
-export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
- function MentionTextarea({ value, onChange, onKeyDown, priorityUsers, ...props }, forwardedRef) {
+export const MentionTextarea = function MentionTextarea({ value, onChange, onKeyDown, priorityUsers, ref: forwardedRef, ...props }: MentionTextareaProps & { ref?: React.Ref<HTMLTextAreaElement> }) {
  const { t: tl } = useTranslation('feed');
  const innerRef = useRef<HTMLTextAreaElement>(null);
  useImperativeHandle(forwardedRef, () => innerRef.current as HTMLTextAreaElement, []);
@@ -415,5 +413,4 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  </AnchoredMenu>
  </div>
  );
- },
-);
+ };

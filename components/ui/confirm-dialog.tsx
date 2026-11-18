@@ -182,7 +182,7 @@ export function ConfirmProvider({
     );
 
   return (
-    <ConfirmContext.Provider
+    <ConfirmContext
       value={
         confirm
       }
@@ -200,7 +200,7 @@ export function ConfirmProvider({
           }
         />
       )}
-    </ConfirmContext.Provider>
+    </ConfirmContext>
   );
 }
 

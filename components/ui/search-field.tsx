@@ -44,102 +44,97 @@ export interface SearchFieldProps extends Omit<
 }
 
 export const SearchField =
-  React.forwardRef<
-    HTMLInputElement,
-    SearchFieldProps
-  >(
-    (
-      {
-        value,
-        onValueChange,
-        trailing,
-        className,
-        containerClassName,
-        ...props
-      },
-      ref,
-    ) => {
-      const {
-        t,
-      } =
-        useTranslation(
-          'c-ui',
-        );
+  ({
+    value,
+    onValueChange,
+    trailing,
+    className,
+    containerClassName,
+    ref,
+    ...props
+  }: SearchFieldProps & {
+    ref?: React.Ref<HTMLInputElement>;
+  }) => {
+    const {
+      t,
+    } =
+      useTranslation(
+        'c-ui',
+      );
 
-      return (
-        <div
+    return (
+      <div
+        className={cn(
+          'relative min-w-0',
+          containerClassName,
+        )}
+        data-slot="search-field"
+      >
+        <Search
+          aria-hidden
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted"
+        />
+        <input
+          ref={
+            ref
+          }
+          type="search"
+          value={
+            value
+          }
+          onChange={(
+            event,
+          ) =>
+            onValueChange(
+              event
+                .target
+                .value,
+            )
+          }
           className={cn(
-            'relative min-w-0',
-            containerClassName,
+            // Steel K4: a 40px field with the K4 surface, border and a leading icon.
+            'h-10 w-full rounded-site border border-site-border bg-site-surface py-2 pl-10 pr-11 text-base sm:text-sm text-site-text transition-[border-color] duration-(--m1) ease-[ease]',
+            'placeholder:text-site-text-muted',
+            className,
           )}
-          data-slot="search-field"
-        >
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted"
-          />
-          <input
-            ref={
-              ref
-            }
-            type="search"
-            value={
-              value
-            }
-            onChange={(
-              event,
-            ) =>
-              onValueChange(
-                event
-                  .target
-                  .value,
-              )
-            }
-            className={cn(
-              // Steel K4: a 40px field with the K4 surface, border and a leading icon.
-              'h-10 w-full rounded-site border border-site-border bg-site-surface py-2 pl-10 pr-11 text-base sm:text-sm text-site-text transition-[border-color] duration-(--m1) ease-[ease]',
-              'placeholder:text-site-text-muted',
-              className,
-            )}
-            {...props}
-          />
-          {/* The trailing slot and the clear button share the right padding: a
+          {...props}
+        />
+        {/* The trailing slot and the clear button share the right padding: a
             field that is both loading and clearable would otherwise stack two
             controls on top of each other. Loading wins while it lasts. */}
-          {trailing ? (
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-              {
-                trailing
+        {trailing ? (
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+            {
+              trailing
+            }
+          </span>
+        ) : (
+          value && (
+            <button
+              type="button"
+              onClick={() =>
+                onValueChange(
+                  '',
+                )
               }
-            </span>
-          ) : (
-            value && (
-              <button
-                type="button"
-                onClick={() =>
-                  onValueChange(
-                    '',
-                  )
-                }
-                className="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-site text-site-text-muted hover:bg-site-bg-subtle hover:text-site-text pointer-coarse:size-11"
-                aria-label={t(
-                  'clear-search',
-                  {
-                    defaultValue:
-                      'Clear search',
-                  },
-                )}
-              >
-                <X
-                  className="h-3.5 w-3.5"
-                  aria-hidden
-                />
-              </button>
-            )
-          )}
-        </div>
-      );
-    },
-  );
+              className="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-site text-site-text-muted hover:bg-site-bg-subtle hover:text-site-text pointer-coarse:size-11"
+              aria-label={t(
+                'clear-search',
+                {
+                  defaultValue:
+                    'Clear search',
+                },
+              )}
+            >
+              <X
+                className="h-3.5 w-3.5"
+                aria-hidden
+              />
+            </button>
+          )
+        )}
+      </div>
+    );
+  };
 SearchField.displayName =
   'SearchField';

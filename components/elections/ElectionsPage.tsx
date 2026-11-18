@@ -774,12 +774,12 @@ export function ElectionsPage({
   );
 
   return (
-    <BaselineContext.Provider
+    <BaselineContext
       value={
         baseline
       }
     >
-      <FollowContext.Provider
+      <FollowContext
         value={
           followValue
         }
@@ -2300,7 +2300,7 @@ export function ElectionsPage({
             />
           ) : null}
         </div>
-      </FollowContext.Provider>
-    </BaselineContext.Provider>
+      </FollowContext>
+    </BaselineContext>
   );
 }

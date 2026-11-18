@@ -487,7 +487,7 @@ export function MultiplayerProvider({
     };
 
   return (
-    <MultiplayerContext.Provider
+    <MultiplayerContext
       value={
         value
       }
@@ -495,6 +495,6 @@ export function MultiplayerProvider({
       {
         children
       }
-    </MultiplayerContext.Provider>
+    </MultiplayerContext>
   );
 }

@@ -144,168 +144,163 @@ const ICON_TONE: Record<
  * ```
  */
 export const MenuItem =
-  React.forwardRef<
-    HTMLElement,
-    MenuItemProps
-  >(
-    function MenuItem(
-      {
-        icon: Icon,
-        iconClassName,
-        tone = 'default',
-        checked,
-        hint,
-        onSelect,
-        onClick,
-        children,
-        className,
-        disabled,
-        href,
-        ...rest
-      },
-      ref,
-    ) {
-      const body =
-        (
-          <>
-            {Icon ? (
-              <Icon
-                className={cn(
-                  'h-4 w-4 shrink-0',
-                  ICON_TONE[
-                    tone
-                  ],
-                  iconClassName,
-                )}
-                aria-hidden
-              />
-            ) : null}
-            {/* `min-w-0` + `truncate`: a menu is a fixed-width panel and a label can be
+  function MenuItem({
+    icon: Icon,
+    iconClassName,
+    tone = 'default',
+    checked,
+    hint,
+    onSelect,
+    onClick,
+    children,
+    className,
+    disabled,
+    href,
+    ref,
+    ...rest
+  }: MenuItemProps & {
+    ref?: React.Ref<HTMLElement>;
+  }) {
+    const body =
+      (
+        <>
+          {Icon ? (
+            <Icon
+              className={cn(
+                'h-4 w-4 shrink-0',
+                ICON_TONE[
+                  tone
+                ],
+                iconClassName,
+              )}
+              aria-hidden
+            />
+          ) : null}
+          {/* `min-w-0` + `truncate`: a menu is a fixed-width panel and a label can be
           a username or a filename. Without this the row grows the panel instead. */}
-            <span className="min-w-0 flex-1 truncate">
+          <span className="min-w-0 flex-1 truncate">
+            {
+              children
+            }
+          </span>
+          {hint ? (
+            <span className="shrink-0 text-xs tabular-nums text-site-text-muted">
               {
-                children
+                hint
               }
             </span>
-            {hint ? (
-              <span className="shrink-0 text-xs tabular-nums text-site-text-muted">
-                {
-                  hint
-                }
-              </span>
-            ) : null}
-            {checked ? (
-              <Check
-                className="h-4 w-4 shrink-0 text-site-accent"
-                aria-hidden
-              />
-            ) : null}
-          </>
-        );
+          ) : null}
+          {checked ? (
+            <Check
+              className="h-4 w-4 shrink-0 text-site-accent"
+              aria-hidden
+            />
+          ) : null}
+        </>
+      );
 
-      const shared =
-        {
-          [MENU_ITEM_ATTR]:
-            '',
-          'data-slot':
-            'menu-item',
-          'data-tone':
-            tone,
-          role:
-            checked ===
-            undefined
-              ? 'menuitem'
-              : 'menuitemradio',
-          ...(checked ===
+    const shared =
+      {
+        [MENU_ITEM_ATTR]:
+          '',
+        'data-slot':
+          'menu-item',
+        'data-tone':
+          tone,
+        role:
+          checked ===
           undefined
-            ? {}
-            : {
-                'aria-checked':
-                  checked,
-              }),
-          className:
-            cn(
-              ROW_BASE,
-              TONE[
-                tone
-              ],
-              className,
-            ),
-        } as const;
+            ? 'menuitem'
+            : 'menuitemradio',
+        ...(checked ===
+        undefined
+          ? {}
+          : {
+              'aria-checked':
+                checked,
+            }),
+        className:
+          cn(
+            ROW_BASE,
+            TONE[
+              tone
+            ],
+            className,
+          ),
+      } as const;
 
-      if (
-        href
-      ) {
-        return (
-          <Link
-            {...shared}
-            ref={
-              ref as React.Ref<HTMLAnchorElement>
-            }
-            to={
-              href
-            }
-            aria-disabled={
-              disabled ||
-              undefined
-            }
-            onClick={(
-              e: React.MouseEvent<HTMLAnchorElement>,
-            ) => {
-              if (
-                disabled
-              ) {
-                e.preventDefault();
-                return;
-              }
-              onSelect?.(
-                e,
-              );
-              onClick?.(
-                e as unknown as React.MouseEvent<HTMLButtonElement>,
-              );
-            }}
-            {...(rest as Record<
-              string,
-              unknown
-            >)}
-          >
-            {
-              body
-            }
-          </Link>
-        );
-      }
-
+    if (
+      href
+    ) {
       return (
-        <button
+        <Link
           {...shared}
           ref={
-            ref as React.Ref<HTMLButtonElement>
+            ref as React.Ref<HTMLAnchorElement>
           }
-          type="button"
-          disabled={
-            disabled
+          to={
+            href
+          }
+          aria-disabled={
+            disabled ||
+            undefined
           }
           onClick={(
-            e,
+            e: React.MouseEvent<HTMLAnchorElement>,
           ) => {
+            if (
+              disabled
+            ) {
+              e.preventDefault();
+              return;
+            }
             onSelect?.(
               e,
             );
             onClick?.(
-              e,
+              e as unknown as React.MouseEvent<HTMLButtonElement>,
             );
           }}
-          {...rest}
+          {...(rest as Record<
+            string,
+            unknown
+          >)}
         >
           {
             body
           }
-        </button>
+        </Link>
       );
-    },
-  );
+    }
+
+    return (
+      <button
+        {...shared}
+        ref={
+          ref as React.Ref<HTMLButtonElement>
+        }
+        type="button"
+        disabled={
+          disabled
+        }
+        onClick={(
+          e,
+        ) => {
+          onSelect?.(
+            e,
+          );
+          onClick?.(
+            e,
+          );
+        }}
+        {...rest}
+      >
+        {
+          body
+        }
+      </button>
+    );
+  };
 
 /**
  * A hairline between groups of rows.

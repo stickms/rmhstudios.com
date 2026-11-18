@@ -49,7 +49,7 @@ function IslandSession({ data, children }: { data: IslandData; children: ReactNo
   const session = useEffectiveSession(live, data.user, data.sessionResolved);
   const signedIn = !!session.data?.user;
   usePlaytimeHeartbeat(data.catalog?.id ?? null, signedIn);
-  return <SessionCtx.Provider value={session}>{children}</SessionCtx.Provider>;
+  return <SessionCtx value={session}>{children}</SessionCtx>;
 }
 
 export function IslandProviders({ data, children }: { data: IslandData; children: ReactNode }) {
@@ -79,9 +79,9 @@ export function IslandProviders({ data, children }: { data: IslandData; children
       <LazyMotionProvider load={loadMotionFeatures}>
         <MotionConfig reducedMotion="never">
           <IslandSession data={data}>
-            <AppTierContext.Provider value>
+            <AppTierContext value>
               <TwemojiProvider>{children}</TwemojiProvider>
-            </AppTierContext.Provider>
+            </AppTierContext>
           </IslandSession>
           <ToastHost theme={dark ? 'dark' : 'light'} />
         </MotionConfig>

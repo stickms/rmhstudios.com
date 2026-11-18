@@ -29,7 +29,7 @@ interface SiteShellProps {
  */
 export function SiteShell({ children, overlays }: SiteShellProps) {
   return (
-    <ShellLayoutContext.Provider value>
+    <ShellLayoutContext value>
       <MarginSlotProvider>
         <div className="vibe-app site-shell">
           <SkipLink />
@@ -46,6 +46,6 @@ export function SiteShell({ children, overlays }: SiteShellProps) {
           {overlays}
         </div>
       </MarginSlotProvider>
-    </ShellLayoutContext.Provider>
+    </ShellLayoutContext>
   );
 }

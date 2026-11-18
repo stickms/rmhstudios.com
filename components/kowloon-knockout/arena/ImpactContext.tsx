@@ -15,7 +15,7 @@ const Ctx =
   );
 
 export const ImpactProvider =
-  Ctx.Provider;
+  Ctx;
 
 /** The bus, or null when no provider is above (a fighter must work without one). */
 export function useImpactBus(): ImpactBus | null {

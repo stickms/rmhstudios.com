@@ -81,7 +81,7 @@ export function HudProvider({
   children: ReactNode;
 }) {
   return (
-    <HudContext.Provider
+    <HudContext
       value={
         value
       }
@@ -89,7 +89,7 @@ export function HudProvider({
       {
         children
       }
-    </HudContext.Provider>
+    </HudContext>
   );
 }
 

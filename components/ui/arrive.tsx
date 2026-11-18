@@ -105,13 +105,13 @@ interface ArrivalSuspenseProps {
 export function ArrivalSuspense({ fallback = null, children, wrap = true }: ArrivalSuspenseProps) {
   const [record] = useState<FallbackRecord>(() => ({ shown: false }));
   return (
-    <ArrivalContext.Provider value={record}>
+    <ArrivalContext value={record}>
       <Suspense fallback={<FallbackMark record={record}>{fallback}</FallbackMark>}>
         <ArrivedContent record={record} wrap={wrap}>
           {children}
         </ArrivedContent>
       </Suspense>
-    </ArrivalContext.Provider>
+    </ArrivalContext>
   );
 }
 

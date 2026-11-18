@@ -17,7 +17,7 @@
  * legible from a 320px phone to an ultrawide without a single media query.
  */
 
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RunState } from '@features/nightrail/engine/game';
 import { runProgress } from '@features/nightrail/engine/game';
@@ -42,7 +42,7 @@ interface Props {
   visible: boolean;
 }
 
-export const NightrailHud = forwardRef<HudHandle, Props>(function NightrailHud({ visible }, ref) {
+export const NightrailHud = function NightrailHud({ visible, ref }: Props & { ref?: React.Ref<HudHandle> }) {
   const { t } = useTranslation('c-nightrail');
   const rootRef = useRef<HTMLDivElement>(null);
   const cache = useRef(new Map<string, HTMLElement[]>());
@@ -477,4 +477,4 @@ export const NightrailHud = forwardRef<HudHandle, Props>(function NightrailHud({
       </div>
     </div>
   );
-});
+};

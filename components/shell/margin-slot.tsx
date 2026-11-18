@@ -56,7 +56,7 @@ export function MarginSlotProvider({
       ],
     );
   return (
-    <MarginSlotContext.Provider
+    <MarginSlotContext
       value={
         value
       }
@@ -64,7 +64,7 @@ export function MarginSlotProvider({
       {
         children
       }
-    </MarginSlotContext.Provider>
+    </MarginSlotContext>
   );
 }
 

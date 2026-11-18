@@ -10,7 +10,7 @@ export default function SyncApp() {
   } =
     useDunesday();
   return (
-    <BareChrome.Provider
+    <BareChrome
       value
     >
       <Connect
@@ -18,6 +18,6 @@ export default function SyncApp() {
           sync
         }
       />
-    </BareChrome.Provider>
+    </BareChrome>
   );
 }
