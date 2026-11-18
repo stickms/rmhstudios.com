@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
 import { Button } from '@/components/ui/button';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -143,7 +144,7 @@ export function CallPrivacyControls() {
       },
     ).catch(
       () => {
-        // Put the radio back: showing a setting that did not save is worse than
+        // Put the choice back: showing a setting that did not save is worse than
         // showing the old one.
         queryClient.setQueryData(
           privacy.queryKey,
@@ -243,69 +244,47 @@ export function CallPrivacyControls() {
         },
       )}
     >
-      <fieldset
+      <SettingsSelectRow
+        label={t(
+          'call-privacy-who',
+          {
+            defaultValue:
+              'Who can call me',
+          },
+        )}
+        hint={
+          LABEL[
+            value
+          ]
+            .hint
+        }
+        value={
+          value
+        }
+        options={CALL_PRIVACY_VALUES.map(
+          (
+            v,
+          ) => ({
+            value:
+              v,
+            label:
+              LABEL[
+                v
+              ]
+                .title,
+          }),
+        )}
+        onChange={(
+          v,
+        ) =>
+          choose(
+            v as CallPrivacy,
+          )
+        }
         disabled={
           !loaded
         }
-      >
-        <legend className="mb-2 text-sm font-medium text-site-text">
-          {t(
-            'call-privacy-who',
-            {
-              defaultValue:
-                'Who can call me',
-            },
-          )}
-        </legend>
-        <div className="flex flex-col gap-1">
-          {CALL_PRIVACY_VALUES.map(
-            (
-              v,
-            ) => (
-              <label
-                key={
-                  v
-                }
-                className="grid cursor-pointer grid-cols-[auto_1fr] items-start gap-x-3 rounded-site-sm px-3 py-2 hover:bg-site-surface-hover"
-              >
-                <input
-                  type="radio"
-                  name="call-privacy"
-                  value={
-                    v
-                  }
-                  checked={
-                    value ===
-                    v
-                  }
-                  onChange={() =>
-                    choose(
-                      v,
-                    )
-                  }
-                  className="mt-1 accent-site-accent"
-                />
-                <span className="text-sm text-site-text">
-                  {
-                    LABEL[
-                      v
-                    ]
-                      .title
-                  }
-                </span>
-                <span className="col-start-2 text-xs text-site-text-muted">
-                  {
-                    LABEL[
-                      v
-                    ]
-                      .hint
-                  }
-                </span>
-              </label>
-            ),
-          )}
-        </div>
-      </fieldset>
+      />
 
       {mutes.length >
         0 && (

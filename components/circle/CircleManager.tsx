@@ -244,9 +244,17 @@ export function CircleManager() {
 
   return (
     <SettingsSection
+      id="close-friends"
       className={
         arrival
       }
+      title={t(
+        'title',
+        {
+          defaultValue:
+            'Close friends',
+        },
+      )}
       description={t(
         'intro',
         {

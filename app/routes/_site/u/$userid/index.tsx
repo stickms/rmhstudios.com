@@ -73,6 +73,10 @@ const fetchProfileData = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/_site/u/$userid/')({
+  // `?edit=1` opens the profile editor on your own profile (Settings › Edit profile links here; ProfileColumn
+  // reads it once and drops it). A number, so the router writes it as a bare `edit=1`.
+  validateSearch: (search: Record<string, unknown>): { edit?: 1 } =>
+    search.edit === 1 || search.edit === '1' ? { edit: 1 } : {},
   // The post list is requested by `ProfileColumn` after it mounts; start it at
   // the navigation so it runs alongside this loader (lib/feed/profile-prefetch).
   // Not on a preload — speculation stays code + loader only.

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
-import { Check } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
+import { ThemeGallery } from '@/components/settings/ThemeGallery';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   FONT_SCALES,
@@ -22,7 +22,6 @@ import {
 } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
-import { Tabs } from '@/components/ui/tabs';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import {
   setAppearancePrefsApi,
@@ -34,12 +33,6 @@ async function persist(body: AppearancePrefsInput) {
   await api(setAppearancePrefsApi, { body }).catch(() => {});
 }
 
-const FONT_LABELS: Record<FontScale, string> = {
-  875: 'A−',
-  1000: 'A',
-  1125: 'A+',
-  1250: 'A++',
-};
 
 /**
  * AppearancePanel (§13) — the comfort + accessibility controls. Each knob
@@ -96,130 +89,49 @@ export function AppearancePanel() {
   const activeFontScale = (store.fontScale ?? 1000) as FontScale;
   const activeDensity = store.density ?? 'cozy';
 
+  const fontLabels: Record<FontScale, string> = {
+    875: t('text-size-small', { defaultValue: 'Small' }),
+    1000: t('text-size-default', { defaultValue: 'Default' }),
+    1125: t('text-size-large', { defaultValue: 'Large' }),
+    1250: t('text-size-larger', { defaultValue: 'Larger' }),
+  };
+
   return (
     <>
-      {/* Text size */}
       <Section
-        title={t('text-size', { defaultValue: 'Text size' })}
-        description={t('text-size-desc', { defaultValue: 'Scale the whole interface.' })}
+        title={t('display', { defaultValue: 'Display' })}
+        description={t('display-desc', { defaultValue: 'How the page reads on this device.' })}
       >
-        <Tabs
-          aria-label={t('text-size', { defaultValue: 'Text size' })}
-          tabs={FONT_SCALES.map((scale) => ({ id: String(scale), label: FONT_LABELS[scale] }))}
+        <ThemeGallery />
+        <SettingsSelectRow
+          label={t('text-size', { defaultValue: 'Text size' })}
+          hint={t('text-size-desc', { defaultValue: 'Scale the whole interface.' })}
           value={String(activeFontScale)}
-          onChange={(id) => setFontScale(Number(id) as FontScale)}
+          onChange={(v) => setFontScale(Number(v) as FontScale)}
+          options={FONT_SCALES.map((scale) => ({ value: String(scale), label: fontLabels[scale] }))}
         />
-      </Section>
-
-      {/* Density */}
-      <Section
-        title={t('density', { defaultValue: 'Density' })}
-        description={t('density-desc', { defaultValue: 'Compact tightens spacing.' })}
-      >
-        <Tabs
-          aria-label={t('density', { defaultValue: 'Density' })}
-          tabs={(['cozy', 'compact'] as const).map((d) => ({
-            id: d,
-            label: t(`density-${d}`, { defaultValue: d }),
-          }))}
+        <SettingsSelectRow
+          label={t('density', { defaultValue: 'Density' })}
+          hint={t('density-desc', { defaultValue: 'Compact tightens spacing.' })}
           value={activeDensity}
-          onChange={(id) => setDensity(id as 'cozy' | 'compact')}
+          onChange={(v) => setDensity(v as 'cozy' | 'compact')}
+          options={[
+            { value: 'cozy', label: t('density-option-cozy', { defaultValue: 'Cozy' }) },
+            { value: 'compact', label: t('density-option-compact', { defaultValue: 'Compact' }) },
+          ]}
         />
-      </Section>
-
-      {/* Custom accent */}
-      <Section
-        title={t('custom-accent', { defaultValue: 'Custom accent' })}
-        description={t('custom-accent-desc', {
-          defaultValue: 'Pick any color — it is auto-adjusted to stay readable.',
-        })}
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="color"
-            value={HEX_RE.test(hexDraft) ? hexDraft : '#0b0b0b'}
-            onChange={(e) => applyCustomAccent(e.target.value)}
-            aria-label={t('custom-accent', { defaultValue: 'Custom accent' })}
-            className="h-11 w-14 cursor-pointer rounded-site-sm border border-site-border bg-transparent"
-          />
-          <Input
-            value={hexDraft}
-            onChange={(e) => setHexDraft(e.target.value)}
-            onBlur={() => applyCustomAccent(hexDraft)}
-            spellCheck={false}
-            autoCapitalize="off"
-            className="w-32 font-mono"
-            aria-label={t('accent-hex', { defaultValue: 'Accent hex' })}
-          />
-          {store.customAccent ? (
-            <Button type="button" variant="ghost" onClick={clearCustomAccent}>
-              {t('clear', { defaultValue: 'Reset to theme' })}
-            </Button>
-          ) : null}
-        </div>
-        {/* The field always shows *a* hex, including the placeholder it starts
-            with, so "no custom accent" looked identical to "custom accent set
-            to #0b0b0b" — and on graphite everything on screen was rendering
-            the theme's blue while this said near-black. Say which it is. */}
-        {!store.customAccent ? (
-          <p className="text-xs text-site-text-muted">
-            {t('custom-accent-none', {
-              defaultValue: 'No custom accent — using the theme’s own color.',
-            })}
-          </p>
-        ) : null}
-      </Section>
-
-      {/* Colour vision */}
-      <Section
-        title={t('color-vision', { defaultValue: 'Colour vision' })}
-        description={t('color-vision-desc', {
-          defaultValue:
-            'Retint success, warning and danger colours so they stay distinguishable. Status labels also carry their own icon, so nothing depends on colour alone.',
-        })}
-      >
-        <div role="radiogroup" aria-label={t('color-vision', { defaultValue: 'Colour vision' })}>
-          {COLOR_VISION_MODES.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              role="radio"
-              aria-checked={store.colorVision === mode}
-              onClick={() => setColorVision(mode)}
-              className="settings-row settings-choice"
-            >
-              <span className="settings-row__text">
-                <span className="settings-row__name block">
-                  {t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] })}
-                </span>
-                <span className="settings-row__hint block">
-                  {t(`color-vision-${mode}-hint`, { defaultValue: COLOR_VISION_HINTS[mode] })}
-                </span>
-              </span>
-              {store.colorVision === mode ? (
-                <Check className="settings-choice__mark" aria-hidden />
-              ) : null}
-            </button>
-          ))}
-        </div>
-
-        {/* A live swatch row: the three semantic colours as they will actually
-            render, so the choice can be judged instead of guessed. */}
-        <div className="flex flex-wrap gap-4" aria-hidden>
-          <span className="text-xs font-semibold text-site-success">
-            ✓ {t('color-vision-sample-success', { defaultValue: 'Success' })}
-          </span>
-          <span className="text-xs font-semibold text-site-warning">
-            ⚠ {t('color-vision-sample-warning', { defaultValue: 'Warning' })}
-          </span>
-          <span className="text-xs font-semibold text-site-danger">
-            ✕ {t('color-vision-sample-danger', { defaultValue: 'Danger' })}
-          </span>
-        </div>
-      </Section>
-
-      {/* Comfort toggles */}
-      <Section title={t('comfort', { defaultValue: 'Comfort' })}>
+        <SettingsSelectRow
+          label={t('color-vision', { defaultValue: 'Colour vision' })}
+          hint={t(`color-vision-${store.colorVision}-hint`, {
+            defaultValue: COLOR_VISION_HINTS[store.colorVision],
+          })}
+          value={store.colorVision}
+          onChange={(v) => setColorVision(v as ColorVisionMode)}
+          options={COLOR_VISION_MODES.map((mode) => ({
+            value: mode,
+            label: t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] }),
+          }))}
+        />
         <ToggleRow
           label={t('readable-font', { defaultValue: 'Readable font' })}
           description={t('readable-font-desc', {
@@ -228,41 +140,63 @@ export function AppearancePanel() {
           checked={store.readableFont}
           onChange={setReadableFont}
         />
-        {/* Tilt effects (§5.5x C.3): only renders on platforms that gate device
-            orientation behind a permission prompt (iOS). Self-contained consent. */}
-        <TiltEffectsRow />
       </Section>
 
       <Section
-        title={t('globe-motion', { defaultValue: 'Globe motion' })}
-        description={t('globe-motion-desc', {
-          defaultValue:
-            'The globe drifts slowly when idle. Still stops the drift. Dragging it always works.',
+        title={t('custom-accent', { defaultValue: 'Custom accent' })}
+        description={t('custom-accent-desc', {
+          defaultValue: 'Pick any color — it is auto-adjusted to stay readable.',
         })}
       >
-        <Tabs
-          aria-label={t('globe-motion', { defaultValue: 'Globe motion' })}
-          tabs={JELLY_MOTION_LEVELS.map((id) => ({ id, label: globeMotionLabels[id] }))}
+        <div className="settings-row flex-wrap">
+          <span className="settings-row__hint">
+            {store.customAccent
+              ? t('custom-accent-on', { defaultValue: 'Using your colour.' })
+              : t('custom-accent-none', {
+                  defaultValue: 'No custom accent — using the theme’s own color.',
+                })}
+          </span>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={HEX_RE.test(hexDraft) ? hexDraft : '#0b0b0b'}
+              onChange={(e) => applyCustomAccent(e.target.value)}
+              aria-label={t('custom-accent', { defaultValue: 'Custom accent' })}
+              className="h-9 w-12 cursor-pointer rounded-site-sm border border-site-border bg-transparent pointer-coarse:h-11"
+            />
+            <Input
+              value={hexDraft}
+              onChange={(e) => setHexDraft(e.target.value)}
+              onBlur={() => applyCustomAccent(hexDraft)}
+              spellCheck={false}
+              autoCapitalize="off"
+              className="w-28 font-mono"
+              aria-label={t('accent-hex', { defaultValue: 'Accent hex' })}
+            />
+            {store.customAccent ? (
+              <Button type="button" variant="ghost" onClick={clearCustomAccent}>
+                {t('clear', { defaultValue: 'Reset to theme' })}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </Section>
+
+      <Section title={t('motion', { defaultValue: 'Motion' })}>
+        <SettingsSelectRow
+          label={t('globe-motion', { defaultValue: 'Globe motion' })}
+          hint={t('globe-motion-desc', {
+            defaultValue:
+              'The globe drifts slowly when idle. Still stops the drift. Dragging it always works.',
+          })}
           value={store.jellyMotion}
-          onChange={(id) => {
-            if (isJellyMotion(id)) setJellyMotion(id);
+          onChange={(v) => {
+            if (isJellyMotion(v)) setJellyMotion(v);
           }}
+          options={JELLY_MOTION_LEVELS.map((id) => ({ value: id, label: globeMotionLabels[id] }))}
         />
-      </Section>
-
-      {/* The theme gallery lives on the settings index, so the page named
-          "Appearance" contained no way to change the theme. Point at it. */}
-      <Section
-        title={t('theme', { defaultValue: 'Theme' })}
-        description={t('theme-desc-two-editions', {
-          defaultValue: 'Night (the default) and Day.',
-        })}
-      >
-        <Button asChild variant="default">
-          <Link to="/settings" hash="appearance">
-            {t('choose-edition', { defaultValue: 'Choose an edition' })}
-          </Link>
-        </Button>
+        {/* Tilt effects (§5.5x C.3): only renders where iOS gates device orientation behind a prompt. */}
+        <TiltEffectsRow />
       </Section>
     </>
   );

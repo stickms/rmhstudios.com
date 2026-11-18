@@ -15,7 +15,18 @@
 .site-shell {
   min-block-size: 100dvh;
   background: var(--site-bg);
+  /* A bought theme's glow wash (R1 amendment, lib/themes/tokens.ts `themeWash`): faint, on the first screen only, and
+     scrolling with the page, never a fixed layer (the iOS bar contract). Unset without a user theme, so flat. */
+  background-image: var(--site-theme-wash, none);
+  background-size: 100% 100vh;
+  background-repeat: no-repeat;
   color: var(--site-text);
+}
+
+/* The ink primary's sheen under a bought theme (R1 amendment, `accentFill` in lib/themes/tokens.ts). Kept here, beside
+   the wash, rather than as a utility on the button, so the render-blocking site-tier sheet does not grow (B5). */
+[data-slot='button'][data-variant='primary'] {
+  background-image: var(--site-accent-fill, none);
 }
 
 .site-skip {

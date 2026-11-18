@@ -287,6 +287,7 @@ describe('v1 → v2 upcast (§14.1)', () => {
 });
 
 describe('themeCssVars (v2 derivation)', () => {
+  // The Steel section-2 names plus the two R1-amendment gradients a bought theme carries (owner, 2026-11-17).
   it('derives exactly the Steel section-2 contract from the closed token map', () => {
     const vars =
       themeCssVars(
@@ -311,6 +312,8 @@ describe('themeCssVars (v2 derivation)', () => {
         '--site-surface-hover',
         '--site-text',
         '--site-text-muted',
+        '--site-theme-wash',
+        '--site-accent-fill',
       ].sort(),
     );
     for (const value of Object.values(

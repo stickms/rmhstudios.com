@@ -19,8 +19,6 @@
 
 import {
   Bell,
-  CalendarDays,
-  Gavel,
   KeyRound,
   LayoutDashboard,
   Palette,
@@ -29,7 +27,6 @@ import {
   SlidersHorizontal,
   Trash2,
   User,
-  Users,
   Wallet,
   Zap,
   type LucideIcon,
@@ -105,24 +102,10 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
         'personalization',
       icon: Bell,
       label:
-        'Notification channels & quiet hours',
-      hint: 'Per-category push, in-app and email',
+        'Notifications',
+      hint: 'What notifies you and how, quiet hours, bedtime and your calendar feed',
       keywords:
-        'push email mute silence dnd schedule',
-      requiresAuth: true,
-    },
-
-    {
-      id: 'calendar',
-      to: '/settings/calendar',
-      group:
-        'personalization',
-      icon: CalendarDays,
-      label:
-        'Calendar feed & scheduling',
-      hint: 'Subscribe to your RSVPs and bookings; polls and office hours',
-      keywords:
-        'ics google calendar apple outlook subscribe feed office hours availability poll find a time',
+        'push email mute silence dnd schedule likes follows mentions bedtime ics google calendar apple outlook subscribe feed office hours availability poll find a time',
       requiresAuth: true,
     },
 
@@ -138,19 +121,6 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       hint: 'What the feed shows you, and why',
       keywords:
         'feed algorithm ranking sensitive muted tags interests',
-      requiresAuth: true,
-    },
-    {
-      id: 'circle',
-      to: '/settings/circle',
-      group:
-        'content',
-      icon: Users,
-      label:
-        'Close friends',
-      hint: 'The private circle that sees your circle-only posts',
-      keywords:
-        'close friends circle private audience list',
       requiresAuth: true,
     },
     // `/trash` already presented itself as a settings page — `backTo="/settings"`,
@@ -182,9 +152,9 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       icon: User,
       label:
         'Edit profile',
-      hint: 'Name, bio, avatar, banner and equipped cosmetics',
+      hint: 'Name, bio and avatar, cosmetics, profile links and birthday',
       keywords:
-        'bio avatar banner handle username display cosmetics badge frame',
+        'bio avatar banner handle username display cosmetics badge frame rel me verify website link',
       requiresAuth: true,
     },
     {
@@ -195,9 +165,9 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       icon: KeyRound,
       label:
         'Passkeys & security',
-      hint: 'Passkeys, active sessions and devices',
+      hint: 'Sign-in methods, passkeys, sessions, recovery and account standing',
       keywords:
-        'password login 2fa sign in devices logout revoke',
+        'password login 2fa sign in devices logout revoke recovery codes trusted contacts strike ban suspended appeal moderation warning status',
       requiresAuth: true,
     },
     {
@@ -208,22 +178,9 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       icon: ShieldUser,
       label:
         'Privacy & data',
-      hint: 'Visibility, blocking, and exporting or deleting your data',
+      hint: 'Who sees you, close friends, calls, muted words, and your data',
       keywords:
-        'block mute export download delete gdpr visibility private',
-      requiresAuth: true,
-    },
-    {
-      id: 'account-status',
-      to: '/settings/account-status',
-      group:
-        'account',
-      icon: Gavel,
-      label:
-        'Account status',
-      hint: 'Standing, strikes and appeals',
-      keywords:
-        'strike ban suspended appeal moderation warning',
+        'block mute export download delete gdpr visibility private close friends circle audience list presence calls playtime',
       requiresAuth: true,
     },
     {

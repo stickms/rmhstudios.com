@@ -4,19 +4,12 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
 
 import { Switch } from '@/components/ui/switch';
-import {
-  Tabs,
-  type TabItem,
-} from '@/components/ui/tabs';
 import { useAccessPrefs } from '@/lib/access/use-access-prefs';
 import {
   setAccessPrefs,
-  mirrorQuietHours,
-  readQuietHours,
   SHAKE_OK_KEY,
   type AccessPrefs,
 } from '@/lib/access/prefs';
@@ -30,11 +23,10 @@ import {
   requestMotionPermission,
 } from '@/lib/access/shake';
 import { activityNotificationsSupported } from '@/lib/access/activity';
-import { getNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
-import { api } from '@/lib/contract/client';
-import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
+import { SettingsSection } from '@/components/settings/SettingsSection';
+import { Select } from '@/components/ui/select';
 
+/** One group on the Appearance spine: the shared settings section, so this panel spaces like every other. */
 function Section({
   title,
   description,
@@ -45,30 +37,22 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-site p-5">
-      <h3 className="text-sm font-semibold text-site-text">
-        {
-          title
-        }
-      </h3>
-      {description ? (
-        <p className="mb-3 text-sm text-site-text-muted">
-          {
-            description
-          }
-        </p>
-      ) : (
-        <div className="mb-3" />
-      )}
-      <div className="max-w-xl space-y-3">
-        {
-          children
-        }
-      </div>
-    </section>
+    <SettingsSection
+      title={
+        title
+      }
+      description={
+        description
+      }
+    >
+      {
+        children
+      }
+    </SettingsSection>
   );
 }
 
+/** One choice as a settings row: the name at the start, a dropdown of the options at the end. */
 function Seg<
   K extends
     keyof AccessPrefs,
@@ -88,45 +72,61 @@ function Seg<
   value: AccessPrefs[K] &
     string;
 }) {
-  const tabs: TabItem[] =
-    options.map(
-      (
-        o,
-      ) => ({
-        id: o.id,
-        label:
-          o.label,
-      }),
-    );
+  const id =
+    useId();
   return (
-    <div>
-      <p className="mb-1.5 text-xs text-site-text-muted">
+    <div className="settings-row">
+      <span
+        id={
+          id
+        }
+        className="settings-row__name"
+      >
         {
           label
         }
-      </p>
-      <Tabs
-        tabs={
-          tabs
-        }
+      </span>
+      <Select
         value={
           value
         }
-        aria-label={
-          label
-        }
-        size="sm"
         onChange={(
-          id,
+          e,
         ) =>
           setAccessPrefs(
             {
               [field]:
-                id,
+                e
+                  .target
+                  .value,
             } as Partial<AccessPrefs>,
           )
         }
-      />
+        aria-labelledby={
+          id
+        }
+        controlSize="sm"
+        containerClassName="w-36 shrink-0 sm:w-40"
+      >
+        {options.map(
+          (
+            o,
+          ) => (
+            <option
+              key={
+                o.id
+              }
+              value={
+                o.id
+              }
+            >
+              {
+                o.label
+              }
+            </option>
+          ),
+        )}
+      </Select>
     </div>
   );
 }
@@ -147,19 +147,19 @@ function ToggleRow({
   const id =
     useId();
   return (
-    <div className="flex items-center justify-between gap-4 py-1.5">
-      <span className="min-w-0">
+    <div className="settings-row">
+      <span className="settings-row__text">
         <span
           id={
             id
           }
-          className="block text-sm text-site-text"
+          className="settings-row__name block"
         >
           {
             label
           }
         </span>
-        <span className="block text-xs text-site-text-muted">
+        <span className="settings-row__hint block">
           {
             description
           }
@@ -182,7 +182,7 @@ function ToggleRow({
 
 /**
  * Settings for the access & comfort additions (text spacing, formats, captions,
- * shake-to-report, bedtime mode, running-timer notification). Everything is
+ * shake-to-report, running-timer notification; bedtime mode moved beside quiet hours, BedtimeRow). Everything is
  * per-device (localStorage) and applied immediately; nothing here needs an account.
  */
 export function AccessPrefsPanel() {
@@ -210,22 +210,6 @@ export function AccessPrefsPanel() {
     useState(
       false,
     );
-  const [
-    quiet,
-    setQuiet,
-  ] =
-    useState<
-      | boolean
-      | null
-    >(
-      null,
-    );
-  const quietArrival =
-    useArrival(
-      quiet !==
-        null,
-    );
-
   useEffect(() => {
     setPhone(
       isTouchPhone(),
@@ -233,34 +217,6 @@ export function AccessPrefsPanel() {
     setActivityOk(
       activityNotificationsSupported(),
     );
-    setQuiet(
-      readQuietHours() !==
-        null,
-    );
-    // Bedtime follows the quiet hours saved with the notification settings; mirror
-    // them onto this device so the pre-paint script can read them without a request.
-    api(
-      getNotificationMatrixApi,
-    )
-      .then(
-        (
-          d,
-        ) => {
-          mirrorQuietHours(
-            d.quietStart ??
-              null,
-            d.quietEnd ??
-              null,
-          );
-          setQuiet(
-            readQuietHours() !==
-              null,
-          );
-        },
-      )
-      .catch(
-        () => {},
-      );
   }, []);
 
   async function onShake(
@@ -391,7 +347,7 @@ export function AccessPrefsPanel() {
     );
 
   return (
-    <div className="space-y-6">
+    <>
       <Section
         title={t(
           'spacing-title',
@@ -424,15 +380,6 @@ export function AccessPrefsPanel() {
             p.spacing
           }
         />
-        <p className="surface-field rounded-site-sm p-3 text-sm text-site-text">
-          {t(
-            'spacing-sample',
-            {
-              defaultValue:
-                'The quick brown fox jumps over the lazy dog. Spacing changes here as soon as you pick a level.',
-            },
-          )}
-        </p>
       </Section>
 
       <Section
@@ -586,7 +533,7 @@ export function AccessPrefsPanel() {
             p.numberFormat
           }
         />
-        <p className="text-xs text-site-text-muted">
+        <p className="settings-row__hint py-2">
           {t(
             'formats-preview',
             {
@@ -732,7 +679,7 @@ export function AccessPrefsPanel() {
             p.captionBg
           }
         />
-        <div className="rounded-site-sm bg-site-bg p-4 text-center">
+        <div className="py-4 text-center">
           <span
             className="inline-block rounded-site-sm px-2 py-1"
             style={{
@@ -792,65 +739,6 @@ export function AccessPrefsPanel() {
             }
           />
         ) : null}
-        <ToggleRow
-          label={t(
-            'bedtime-label',
-            {
-              defaultValue:
-                'Bedtime mode',
-            },
-          )}
-          description={t(
-            'bedtime-desc',
-            {
-              defaultValue:
-                'Dim and soften colours during your quiet hours.',
-            },
-          )}
-          checked={
-            p.bedtime
-          }
-          onChange={(
-            v,
-          ) =>
-            setAccessPrefs(
-              {
-                bedtime:
-                  v,
-              },
-            )
-          }
-        />
-        {p.bedtime &&
-        quiet ===
-          false ? (
-          <p
-            className={cn(
-              'text-xs text-site-text-muted',
-              quietArrival,
-            )}
-          >
-            {t(
-              'bedtime-no-quiet',
-              {
-                defaultValue:
-                  'You have not set quiet hours yet.',
-              },
-            )}{' '}
-            <Link
-              to="/settings/notifications"
-              className="underline"
-            >
-              {t(
-                'bedtime-set-quiet',
-                {
-                  defaultValue:
-                    'Set quiet hours',
-                },
-              )}
-            </Link>
-          </p>
-        ) : null}
         {activityOk ? (
           <ToggleRow
             label={t(
@@ -880,6 +768,6 @@ export function AccessPrefsPanel() {
           />
         ) : null}
       </Section>
-    </div>
+    </>
   );
 }

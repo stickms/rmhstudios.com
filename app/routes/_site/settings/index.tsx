@@ -6,25 +6,35 @@
 
 import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequestSession } from '@/lib/auth-session.server';
+import { listOwnedThemes } from '@/lib/themes/themes.server';
+import type { UserThemeView } from '@/lib/themes/tokens';
 import { useTranslation } from 'react-i18next';
-import { prefetchRouteQuery } from '@/lib/route/route-query';
-import { notificationTogglesQuery } from '@/lib/settings/prefs.queries';
 import { ChevronRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemeGallery } from '@/components/settings/ThemeGallery';
 import { AccentPicker } from '@/components/settings/AccentPicker';
-import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsPanel';
+import { OwnedThemesRow } from '@/components/settings/OwnedThemesRow';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
 import { SearchField } from '@/components/ui/search-field';
 import { SETTINGS_DESTINATIONS, filterSettings, type SettingsGroup } from '@/lib/settings-nav';
 
+/** The themes this account bought, for the "Bought themes" row (empty when signed out). */
+const fetchOwnedThemes = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<UserThemeView[]> => {
+    const session = await getRequestSession();
+    return session ? listOwnedThemes(session.user.id) : [];
+  },
+);
+
 export const Route = createFileRoute('/_site/settings/')({
   head: () => ({
     meta: [{ title: 'Settings | RMH Studios' }],
   }),
-  loader: ({ context }) => prefetchRouteQuery(context.queryClient, notificationTogglesQuery()),
+  loader: async () => ({ ownedThemes: await fetchOwnedThemes() }),
   component: SettingsPage,
 });
 
@@ -36,7 +46,7 @@ function DestinationRow({ to, label, hint }: { to: string; label: string; hint: 
         <span className="settings-row__name block">{label}</span>
         <span className="settings-row__hint block">{hint}</span>
       </span>
-      <ChevronRight className="settings-choice__mark rtl:-scale-x-100" aria-hidden />
+      <ChevronRight className="settings-row__mark rtl:-scale-x-100" aria-hidden />
     </Link>
   );
 }
@@ -46,6 +56,7 @@ const GROUP_ORDER: SettingsGroup[] = ['personalization', 'content', 'account'];
 function SettingsPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
+  const { ownedThemes } = Route.useLoaderData();
   const signedIn = !!session?.user;
   const handle = (session?.user as { handle?: string | null } | undefined)?.handle;
   const [query, setQuery] = useState('');
@@ -70,7 +81,12 @@ function SettingsPage() {
     </p>
   );
 
-  const lookItems = groups.find((g) => g.group === 'personalization')?.items ?? [];
+  // The notification grid is the one place "what notifies me" is set; Alerts links to it rather than repeating it.
+  const isAlert = (d: { id: string }) => d.id === 'notifications';
+  const alertItems = SETTINGS_DESTINATIONS.filter((d) => isAlert(d) && (signedIn || !d.requiresAuth));
+  const lookItems = (groups.find((g) => g.group === 'personalization')?.items ?? []).filter(
+    (d) => !isAlert(d),
+  );
   const accountItems = groups.filter((g) => g.group !== 'personalization').flatMap((g) => g.items);
   const row = (d: (typeof lookItems)[number]) => (
     <DestinationRow
@@ -117,46 +133,24 @@ function SettingsPage() {
             }
           >
             {!query && (
-              <>
+              <div>
                 <ThemeGallery />
-                <div id="accent">
-                  <h3 className="t-label mb-2">
-                    {t('settings-accent-title', { defaultValue: 'Accent color' })}
-                  </h3>
-                  <p className="settings-row__hint mb-3">
-                    {t('settings-accent-hint', {
-                      defaultValue:
-                        'Recolor highlights on top of any theme, or keep the theme default.',
-                    })}
-                  </p>
-                  <AccentPicker />
-                </div>
-                <p className="settings-row__hint">
-                  {t('settings-premium-themes', {
-                    defaultValue: 'Looking for more? Premium profile themes are in the shop.',
-                  })}{' '}
-                  <Link to="/store" search={{ tab: 'shop' }} className="underline">
-                    {t('settings-premium-themes-link', { defaultValue: 'Browse the shop' })}
-                  </Link>{' '}
-                  {t('settings-premium-themes-or', { defaultValue: 'or' })}{' '}
-                  <Link to="/settings/profile" className="underline">
-                    {t('settings-premium-themes-equip-link', {
-                      defaultValue: 'equip what you own',
-                    })}
-                  </Link>
-                </p>
-                <div id="language">
-                  <h3 className="t-label mb-2">
-                    {t('settings-language', { defaultValue: 'Language' })}
-                  </h3>
-                  <p className="settings-row__hint mb-3">
-                    {t('settings-language-hint', {
-                      defaultValue: 'RMH Studios is available in 32 languages.',
-                    })}
-                  </p>
+                {signedIn && <OwnedThemesRow owned={ownedThemes} />}
+                <AccentPicker />
+                <div id="language" className="settings-row">
+                  <span className="settings-row__text">
+                    <span className="settings-row__name block">
+                      {t('settings-language', { defaultValue: 'Language' })}
+                    </span>
+                    <span className="settings-row__hint block">
+                      {t('settings-language-hint', {
+                        defaultValue: 'RMH Studios is available in 32 languages.',
+                      })}
+                    </span>
+                  </span>
                   <LanguageSwitcher />
                 </div>
-              </>
+              </div>
             )}
             {lookItems.length > 0 && <div>{lookItems.map(row)}</div>}
           </SettingsSection>
@@ -166,11 +160,11 @@ function SettingsPage() {
           <SettingsSection
             id="notifications"
             title={t('settings-alerts', { defaultValue: 'Alerts' })}
-            description={t('settings-notifications-hint', {
-              defaultValue: 'Choose which activity creates a notification.',
+            description={t('settings-alerts-hint', {
+              defaultValue: 'What notifies you, where, and when it stays quiet.',
             })}
           >
-            {!isPending && !signedIn ? signInPrompt : <NotificationPrefsPanel />}
+            {!isPending && !signedIn ? signInPrompt : <div>{alertItems.map(row)}</div>}
           </SettingsSection>
         )}
 

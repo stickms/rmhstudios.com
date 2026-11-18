@@ -15,7 +15,8 @@ const buttonVariants = cva(
       variant: {
         // K1: surface fill, border, ink text.
         default: 'border-site-border bg-site-surface text-site-text hover:bg-site-bg-subtle',
-        // K2: ink fill. One per view (R4).
+        // K2: ink fill. One per view (R4). Under a bought theme it carries a gentle sheen (R1 amendment,
+        // `--site-accent-fill`), drawn by site-shell.css from `data-variant` so the sheet every page blocks on stays small.
         primary: 'bg-site-accent text-site-accent-fg hover:opacity-88',
         // K3: no border, no fill.
         ghost: 'text-site-text hover:bg-site-bg-subtle',

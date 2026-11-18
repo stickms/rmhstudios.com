@@ -519,7 +519,7 @@ export function TrustedContactsPanel() {
                     key={
                       request.id
                     }
-                    className="rounded-site-sm p-3"
+                    className="py-3"
                   >
                     <div className="flex items-center gap-2">
                       {request.owner ? (
@@ -654,7 +654,7 @@ export function TrustedContactsPanel() {
                     key={
                       row.id
                     }
-                    className="flex items-center gap-2 rounded-site-sm p-3"
+                    className="flex items-center gap-2 py-3"
                   >
                     <UserAvatar
                       src={
@@ -827,7 +827,7 @@ export function TrustedContactsPanel() {
                       key={
                         row.id
                       }
-                      className="flex items-center gap-2 rounded-site-sm p-3"
+                      className="flex items-center gap-2 py-3"
                     >
                       <UserAvatar
                         src={

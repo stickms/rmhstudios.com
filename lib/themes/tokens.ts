@@ -296,8 +296,16 @@ export function effectiveTextBackdrop(
  * Derive the `--site-*` contract from the closed token map (§14.1). Only Steel's section-2 names are written: the
  * glass, jelly, arc, shadow, canvas and aurora tokens the v2 map used to derive are gone (Steel T3), as are
  * `--site-surface-opaque`, `--site-border-bright`, `--site-text-dim` and `--site-accent-dim` (Appendix A). The map's
- * material fields (`glow1..3`, `tintAlpha`, `glintStrength`) are still accepted so stored themes keep parsing, and
- * are now unused. Whether user themes survive a two-edition design is an open question for the owner.
+ * material field `glintStrength` is still accepted so stored themes keep parsing, and is unused; `tintAlpha` now
+ * sets how strongly the tint shows in the surfaces, which are composited onto the base so they are opaque.
+ *
+ * The glows are the one exception to flat (R1 amendment, owner 2026-11-17): a bought theme keeps its colours as two
+ * quiet gradients, so it reads as itself without leaving Steel. `--site-theme-wash` is a faint glow wash over the
+ * first screen of the page ground (each glow at most 22% opacity, under the 30% the contrast gate already
+ * assumes), and `--site-accent-fill` is a gentle 135deg sheen across the ink-primary button, from the accent into the
+ * accent with a third of `glow2` mixed in. The sheen is dropped (`none`) when its far end would take `accentFg` below
+ * AA, so the gradient can never cost a button its legibility. With no user theme neither variable is set and the
+ * consumers fall back to the flat page.
  */
 export function themeCssVars(
   tokens: ThemeTokens,
@@ -308,38 +316,43 @@ export function themeCssVars(
   const t =
     tokens;
 
-  // Surfaces — the tint plate at rising alpha.
+  // Surfaces — the tint composited onto the base, so every surface is opaque (R1: no translucency; an overlay over
+  // content must stay readable). Same rising strength the v2 map used.
   const surface =
-    rgba(
+    over(
       t.tint,
       t.tintAlpha,
+      t.canvasBase,
     );
   const surfaceHover =
-    rgba(
+    over(
       t.tint,
       Math.min(
         t.tintAlpha *
           1.7,
         0.9,
       ),
+      t.canvasBase,
     );
   const surfaceActive =
-    rgba(
+    over(
       t.tint,
       Math.min(
         t.tintAlpha *
           2.4,
         0.95,
       ),
+      t.canvasBase,
     );
 
   return {
     '--site-bg':
       t.canvasBase,
     '--site-bg-subtle':
-      rgba(
+      over(
         t.tint,
         0.08,
+        t.canvasBase,
       ),
     '--site-surface':
       surface,
@@ -360,7 +373,49 @@ export function themeCssVars(
     '--site-accent-hover': `color-mix(in oklab, ${t.accent} 82%, #000)`,
     '--site-radius': `${t.radius}px`,
     '--site-radius-sm': `${Math.round(t.radius * 0.66)}px`,
+    '--site-theme-wash':
+      themeWash(
+        t,
+      ),
+    '--site-accent-fill':
+      accentFill(
+        t,
+      ),
   };
+}
+
+/** A faint wash of the three glows over the first screen of the page ground (R1 amendment). */
+function themeWash(
+  t: ThemeTokens,
+): string {
+  return [
+    `radial-gradient(60% 55% at 0% 0%, ${rgba(t.glow1, 0.22)}, transparent 70%)`,
+    `radial-gradient(55% 50% at 100% 0%, ${rgba(t.glow2, 0.18)}, transparent 70%)`,
+    `radial-gradient(70% 45% at 50% 100%, ${rgba(t.glow3, 0.12)}, transparent 70%)`,
+  ].join(
+    ', ',
+  );
+}
+
+/** The ink-primary sheen: accent into accent-plus-a-third-of-glow2, or `none` if that would fail AA. */
+function accentFill(
+  t: ThemeTokens,
+): string {
+  const end =
+    over(
+      t.glow2,
+      0.35,
+      t.accent,
+    );
+  if (
+    contrastRatio(
+      t.accentFg,
+      end,
+    ) <
+    4.5
+  )
+    return 'none';
+  return `linear-gradient(135deg, ${t.accent}, ${end})`;
 }
 
 /** The `--site-*` variable NAMES a theme sets (so a removal can clear them all). */

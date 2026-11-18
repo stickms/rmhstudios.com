@@ -5,7 +5,6 @@ import { feedSignalsQuery } from '@/lib/feed/signals.queries';
 import { altTextSettingQuery, autoDeleteSettingQuery } from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { FeedControlsSettings } from '@/components/settings/FeedControlsSettings';
-import { HideBotsSetting } from '@/components/settings/HideBotsSetting';
 import { RequireAltTextSetting } from '@/components/settings/RequireAltTextSetting';
 import { AutoDeleteSetting } from '@/components/posts-plus/AutoDeleteSetting';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
@@ -39,7 +38,6 @@ function ContentSettingsPage() {
     >
       <SettingsPageBody>
         <RequireAltTextSetting />
-        <HideBotsSetting />
         <AutoDeleteSetting />
         <FeedControlsSettings />
       </SettingsPageBody>

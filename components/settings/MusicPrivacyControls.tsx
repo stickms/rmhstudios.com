@@ -201,9 +201,9 @@ export function MusicPrivacyControls() {
         },
       )}
     >
-      <div className="chrome-row flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="t-label text-site-text">
+      <div className="chrome-row settings-row">
+        <div className="settings-row__text">
+          <p className="settings-row__name">
             {t(
               'music-privacy-board',
               {
@@ -216,7 +216,7 @@ export function MusicPrivacyControls() {
             id={
               boardHelp
             }
-            className="t-meta"
+            className="settings-row__hint"
           >
             {t(
               'music-privacy-board-hint',
@@ -255,9 +255,9 @@ export function MusicPrivacyControls() {
           }
         />
       </div>
-      <div className="chrome-row flex items-center justify-between gap-3 border-t border-site-border pt-3">
-        <div className="min-w-0">
-          <p className="t-label text-site-text">
+      <div className="chrome-row settings-row">
+        <div className="settings-row__text">
+          <p className="settings-row__name">
             {t(
               'music-privacy-friends',
               {
@@ -270,7 +270,7 @@ export function MusicPrivacyControls() {
             id={
               friendsHelp
             }
-            className="t-meta"
+            className="settings-row__hint"
           >
             {t(
               'music-privacy-friends-hint-full',
@@ -312,7 +312,7 @@ export function MusicPrivacyControls() {
       {failed ? (
         <p
           role="status"
-          className="t-meta text-site-danger"
+          className="settings-row__hint text-site-danger"
         >
           {t(
             'music-privacy-save-failed',

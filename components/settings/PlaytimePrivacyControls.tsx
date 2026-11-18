@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
 import {
   PLAYTIME_PRIVACY_VALUES,
   type PlaytimePrivacy,
@@ -165,69 +166,47 @@ export function PlaytimePrivacyControls() {
         },
       )}
     >
-      <fieldset
+      <SettingsSelectRow
+        label={t(
+          'playtime-privacy-who',
+          {
+            defaultValue:
+              'Who can see my playtime',
+          },
+        )}
+        hint={
+          LABEL[
+            value
+          ]
+            .hint
+        }
+        value={
+          value
+        }
+        options={PLAYTIME_PRIVACY_VALUES.map(
+          (
+            v,
+          ) => ({
+            value:
+              v,
+            label:
+              LABEL[
+                v
+              ]
+                .title,
+          }),
+        )}
+        onChange={(
+          v,
+        ) =>
+          choose(
+            v as PlaytimePrivacy,
+          )
+        }
         disabled={
           !loaded
         }
-      >
-        <legend className="mb-2 text-sm font-medium text-site-text">
-          {t(
-            'playtime-privacy-who',
-            {
-              defaultValue:
-                'Who can see my playtime',
-            },
-          )}
-        </legend>
-        <div className="flex flex-col gap-1">
-          {PLAYTIME_PRIVACY_VALUES.map(
-            (
-              v,
-            ) => (
-              <label
-                key={
-                  v
-                }
-                className="grid cursor-pointer grid-cols-[auto_1fr] items-start gap-x-3 rounded-site-sm px-3 py-2 hover:bg-site-surface-hover"
-              >
-                <input
-                  type="radio"
-                  name="playtime-privacy"
-                  value={
-                    v
-                  }
-                  checked={
-                    value ===
-                    v
-                  }
-                  onChange={() =>
-                    choose(
-                      v,
-                    )
-                  }
-                  className="row-span-2 mt-1 accent-site-accent"
-                />
-                <span className="text-sm text-site-text">
-                  {
-                    LABEL[
-                      v
-                    ]
-                      .title
-                  }
-                </span>
-                <span className="text-xs text-site-text-muted">
-                  {
-                    LABEL[
-                      v
-                    ]
-                      .hint
-                  }
-                </span>
-              </label>
-            ),
-          )}
-        </div>
-      </fieldset>
+      />
     </SettingsSection>
   );
 }

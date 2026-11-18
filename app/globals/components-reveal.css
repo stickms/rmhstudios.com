@@ -157,8 +157,7 @@ body {
 
 /* Inverse surfaces carry their own complete color contract. This prevents a
    theme switch from pairing a light-theme foreground with a dark-theme card. */
-.site-inverse,
-[data-contrast='inverse'] {
+.site-inverse {
   --site-surface: var(--site-inverse-bg);
   --site-surface-hover: color-mix(in srgb, var(--site-inverse-text) 12%, var(--site-inverse-bg));
   --site-surface-active: color-mix(in srgb, var(--site-inverse-text) 18%, var(--site-inverse-bg));

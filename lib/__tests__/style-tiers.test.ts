@@ -436,9 +436,12 @@ const appReach =
 // gitignored paths, but the Docker build context has no .gitignore (.dockerignore drops it),
 // so without these lines the vite build scans the island build that ran just before it
 // (dist-islands/) and the site sheet grows past its budget. They exist only after a build.
+// public/vibe-packages is the same case: the image builds the vibe import map's vendor bundles first, and Tailwind
+// read three.js and react-dom as class names (`hidden!`, `filter!` …), putting the image's site sheet over budget.
 const BUILD_OUTPUTS =
   [
     'dist-islands',
+    'public/vibe-packages',
   ];
 const tierExcluded =
   sourceNots(

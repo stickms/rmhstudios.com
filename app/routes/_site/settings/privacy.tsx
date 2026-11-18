@@ -15,6 +15,8 @@ import {
   presencePrefsQuery,
 } from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { CircleManager } from '@/components/circle/CircleManager';
+import { circleQuery } from '@/lib/circle.queries';
 import { DataExportPanel } from '@/components/site/DataExportPanel';
 import { DeleteAccountPanel } from '@/components/site/DeleteAccountPanel';
 import { MutedWordsPanel } from '@/components/site/MutedWordsPanel';
@@ -41,6 +43,7 @@ export const Route = createFileRoute('/_site/settings/privacy')({
       prefetchRouteQuery(context.queryClient, callPrivacyQuery()),
       prefetchRouteQuery(context.queryClient, callMutesQuery()),
       prefetchRouteQuery(context.queryClient, callAnswerQuery()),
+      prefetchRouteQuery(context.queryClient, circleQuery()),
     ]);
     return undefined;
   },
@@ -56,8 +59,8 @@ function PrivacySettingsPage() {
   return (
     <PageLayout
       title={title}
-      description={t('privacy-subtitle', {
-        defaultValue: 'Export or delete the data tied to your account.',
+      description={t('privacy-subtitle-full', {
+        defaultValue: 'Who sees you and can reach you, and the data tied to your account.',
       })}
       wide
       backTo="/settings"
@@ -80,6 +83,7 @@ function PrivacySettingsPage() {
         ) : (
           <>
             <PresencePrivacyControls />
+            <CircleManager />
             <CallPrivacyControls />
             <CallAnswerControls />
             <PlaytimePrivacyControls />

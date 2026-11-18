@@ -11,6 +11,7 @@ import { DiscoverySettings } from '@/components/discovery/DiscoverySettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { EmailSettings } from '@/components/settings/EmailSettings';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
+import CalendarSettings from '@/components/calendar/CalendarSettings';
 
 export const Route = createFileRoute('/_site/settings/notifications')({
   head: () => ({
@@ -43,6 +44,7 @@ function NotificationSettingsPage() {
         <NotificationSettings />
         <EmailSettings />
         <DiscoverySettings />
+        <CalendarSettings />
       </SettingsPageBody>
     </PageLayout>
   );

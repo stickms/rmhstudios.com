@@ -39,17 +39,11 @@ export const SANCTIONED: Record<
       'no-op presence animation so Radix keeps a [data-motion] node until its exit transition ends',
     'vinyl-spin':
       'feed VinylRecord while playing (components/feed/VinylRecord.tsx)',
-    'doctrine-shake':
-      'doctrine page: 0.15s error shake',
     // Game / arm effects whose classes live in the global sheet (owner is the game, not the site):
     'rainbow-shift':
       'signal-forge title (.rainbow-text)',
     glitch:
       'signal-forge title (.glitch-text)',
-    'dr-rise':
-      'dream-rift menu rise (game)',
-    'dr-float':
-      'dream-rift menu float (game)',
     'dr-title-glow':
       'dream-rift title glow (game)',
 

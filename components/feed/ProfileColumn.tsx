@@ -1,4 +1,4 @@
-import { lazy, useState } from 'react';
+import { lazy, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
@@ -44,6 +44,17 @@ export function ProfileColumn({
   const { profile, setProfile, loading, notFound } = useProfileLoader(userId, initialProfile);
   const [tab, setTab] = useProfileTab(userId);
   const [showEdit, setShowEdit] = useState(false);
+  // `?edit=1` opens the editor on your own profile: Settings › Edit profile links here for name, bio and avatar,
+  // which are edited in place rather than on a settings page. The param is dropped once used.
+  const isOwn = !!profile?.isOwnProfile;
+  useEffect(() => {
+    if (!isOwn) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('edit') !== '1') return;
+    setShowEdit(true);
+    url.searchParams.delete('edit');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  }, [isOwn]);
   const [tipOpen, setTipOpen] = useState(false);
   const [tipMounted, setTipMounted] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);

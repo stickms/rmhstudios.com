@@ -315,13 +315,6 @@ interface ThemeStore {
   style: SiteStyle;
   setStyle: (style: SiteStyle) => void;
   /**
-   * A transient theme to render *instead of* `style` without persisting it —
-   * powers the theme gallery's hover/focus "try it on" preview. Committing a
-   * theme (setStyle) clears it.
-   */
-  preview: SiteStyle | null;
-  setPreview: (style: SiteStyle | null) => void;
-  /**
    * Accent-color override (an ACCENT_PRESETS id) applied on top of the active
    * theme, or null to use the theme's own accent. Persisted like `style`.
    */
@@ -378,9 +371,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   style: DEFAULT_STYLE,
   // Committing a built-in style clears any user-theme preview (they are mutually
   // exclusive site looks) but keeps a committed user theme until removed.
-  setStyle: (style) => set({ style, preview: null, userThemePreview: null }),
-  preview: null,
-  setPreview: (preview) => set({ preview }),
+  setStyle: (style) => set({ style, userThemePreview: null }),
   accent: null,
   setAccent: (accent) => set({ accent }),
   fontScale: null,

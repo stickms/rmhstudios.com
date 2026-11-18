@@ -307,10 +307,6 @@ const BASELINE =
         'cosmetic name effect on a purchased username, text-sized',
       ],
       [
-        'app/globals.css :: dr-float',
-        'Dream Rift landing title float (its game landing, not a surface)',
-      ],
-      [
         'app/globals.css :: dr-title-glow',
         'Dream Rift landing title glow (its game landing, not a surface)',
       ],

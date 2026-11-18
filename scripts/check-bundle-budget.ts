@@ -290,10 +290,21 @@ const BUDGETS = {
   // map's indices after it, plus the lucide icon chunks regrouping around ShieldAlert. No moderation code is in the
   // entry. Measured on a plain `vite build`: entry 710,273 B on the parent commit (27 B under the old line) ->
   // 710,525 B. Each raised line keeps the feature's bytes plus about 750 B of headroom.
+  //
+  // Settings simplification (2026-11-18): critical path brotli RAISED 245,300 -> 245,700 B (OPT-01 line); raw lines and
+  // site CSS unchanged. The feature that bought the bytes is bought themes' quiet gradients (R1 amendment): Providers
+  // applies a user theme on every page, so the two derivation helpers that build `--site-theme-wash` and
+  // `--site-accent-fill` (lib/themes/tokens.ts) ride the entry, plus the profile route's `?edit=1` search validator.
+  // The rest of the delta is the shared-chunk file names in the entry's preload map, renamed because three settings
+  // routes became redirects. The button sheen was moved out of the site sheet to keep site CSS under its line (B5), and
+  // the site sheet stops scanning public/vibe-packages (app/site-tier.css), which only the Docker build could see.
+  // Measured on a plain `vite build`: main at cd58353f 245,137 B -> this branch merged with main at b49e51c9 245,331 B
+  // brotli; entry 710,820 B raw. The line keeps the feature's bytes plus about 0.3 KB brotli of headroom, as the
+  // lines above did.
   siteCssBrotli: 32_600,
   entryRaw: 711_300,
   criticalPathRaw: 933_500,
-  criticalPathBrotli: 245_300,
+  criticalPathBrotli: 245_700,
 };
 
 /**

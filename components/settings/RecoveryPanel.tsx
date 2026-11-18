@@ -260,7 +260,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
           {requests.length > 0 ? (
             <ul className={cn('mb-4 space-y-2', arrival)}>
               {requests.map((row) => (
-                <li key={row.id} className="rounded-site-sm p-3">
+                <li key={row.id} className="py-3">
                   <p className="flex items-start gap-2 text-sm font-semibold text-site-danger">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                     <span>
@@ -290,7 +290,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
             </ul>
           ) : null}
 
-          <div className={cn('rounded-site-sm p-3', arrival)}>
+          <div className={cn('py-3', arrival)}>
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-site-accent" aria-hidden />
               <h3 className="text-sm font-semibold text-site-text">

@@ -11,6 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { Input } from '@/components/ui/input';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { BedtimeRow } from '@/components/access/BedtimeRow';
 import {
   readTabBadgePref,
   writeTabBadgePref,
@@ -601,11 +602,21 @@ export function NotificationSettings() {
             />
           </label>
         </div>
-        <p className="text-xs text-site-text-muted">
+        <p className="settings-row__hint py-2">
           {
             prefs.tz
           }
         </p>
+        <BedtimeRow
+          hasQuietHours={
+            prefs.quietStart !=
+              null &&
+            prefs.quietEnd !=
+              null &&
+            prefs.quietStart !==
+              prefs.quietEnd
+          }
+        />
       </SettingsSection>
 
       <TabBadgeToggle

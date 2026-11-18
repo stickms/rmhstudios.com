@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
 import { setCallAnswerApi } from '@/lib/call/calls.contract';
@@ -240,69 +241,47 @@ export function CallAnswerControls() {
         },
       )}
     >
-      <fieldset
+      <SettingsSelectRow
+        label={t(
+          'call-answer-who',
+          {
+            defaultValue:
+              'When someone calls me',
+          },
+        )}
+        hint={
+          LABEL[
+            mode
+          ]
+            .hint
+        }
+        value={
+          mode
+        }
+        options={CALL_ANSWER_MODES.map(
+          (
+            m,
+          ) => ({
+            value:
+              m,
+            label:
+              LABEL[
+                m
+              ]
+                .title,
+          }),
+        )}
+        onChange={(
+          m,
+        ) =>
+          choose(
+            m as CallAnswerMode,
+          )
+        }
         disabled={
           !loaded
         }
-      >
-        <legend className="mb-2 text-sm font-medium text-site-text">
-          {t(
-            'call-answer-who',
-            {
-              defaultValue:
-                'When someone calls me',
-            },
-          )}
-        </legend>
-        <div className="flex flex-col gap-1">
-          {CALL_ANSWER_MODES.map(
-            (
-              m,
-            ) => (
-              <label
-                key={
-                  m
-                }
-                className="grid cursor-pointer grid-cols-[auto_1fr] items-start gap-x-3 rounded-site-sm px-3 py-2 hover:bg-site-surface-hover"
-              >
-                <input
-                  type="radio"
-                  name="call-answer-mode"
-                  value={
-                    m
-                  }
-                  checked={
-                    mode ===
-                    m
-                  }
-                  onChange={() =>
-                    choose(
-                      m,
-                    )
-                  }
-                  className="mt-1 accent-site-accent"
-                />
-                <span className="text-sm text-site-text">
-                  {
-                    LABEL[
-                      m
-                    ]
-                      .title
-                  }
-                </span>
-                <span className="col-start-2 text-xs text-site-text-muted">
-                  {
-                    LABEL[
-                      m
-                    ]
-                      .hint
-                  }
-                </span>
-              </label>
-            ),
-          )}
-        </div>
-      </fieldset>
+      />
 
       {mode !==
         'ring' && (
@@ -354,7 +333,7 @@ export function CallAnswerControls() {
             }
             className="min-h-0"
           />
-          <p className="mt-1 text-xs text-site-text-muted">
+          <p className="settings-row__hint py-2">
             {t(
               'call-answer-note-hint',
               {
