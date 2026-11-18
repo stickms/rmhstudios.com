@@ -10,8 +10,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * The live sitewide announcement, pinned at the head of the home feed: a dotless spine item (a notice, not a post) of
- * plain words, an optional picture and one line of actions: "Join the discussion" when there is a discussion post, and
- * "Read full post". Not dismissible; it goes when the announcement expires. It renders nothing until the announcement is
+ * plain words, an optional picture and one action, "Read full post" (the discussion is on the post). Not dismissible; it goes when the announcement expires. It renders nothing until the announcement is
  * known, so a visitor without one never sees a gap.
  *
  * The actions sit on one line (owner, 2026-11-14: "I want these buttons and links below an announcement to be inline,
@@ -36,8 +35,6 @@ export function SitewideAnnouncementRow({
   const arrival = useArrival(live);
   if (!announcement || !live) return null;
   const business = getBusiness(announcement.business);
-  const discussionId = announcement.discussionPostId;
-  const quietLink = 't-body text-site-text-muted underline hover:text-site-text';
 
   return (
     <SpineItem
@@ -52,13 +49,9 @@ export function SitewideAnnouncementRow({
         {business.name} · {t('sitewide-announcement-kind', { defaultValue: 'Announcement' })}
       </p>
       <h2 className="t-heading mt-1">
-        {discussionId ? (
-          <Link to="/u/$userid/post/$postid" params={{ userid: 'me', postid: discussionId }}>
-            {announcement.title}
-          </Link>
-        ) : (
-          announcement.title
-        )}
+        <Link to="/blog/$slug" params={{ slug: announcement.slug }}>
+          {announcement.title}
+        </Link>
       </h2>
       {announcement.description && (
         <p className="t-body mt-1 line-clamp-3 text-site-text-muted">{announcement.description}</p>
@@ -72,25 +65,12 @@ export function SitewideAnnouncementRow({
           className="mt-3 aspect-video w-full rounded-site border border-site-border bg-site-bg-subtle object-cover"
         />
       )}
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        {discussionId && (
-          <Button asChild size="sm">
-            <Link to="/u/$userid/post/$postid" params={{ userid: 'me', postid: discussionId }}>
-              {t('sitewide-join-discussion', { defaultValue: 'Join the discussion' })}
-            </Link>
-          </Button>
-        )}
-        {discussionId ? (
-          <Link to="/blog/$slug" params={{ slug: announcement.slug }} className={quietLink}>
+      <div className="mt-3">
+        <Button asChild size="sm">
+          <Link to="/blog/$slug" params={{ slug: announcement.slug }}>
             {t('sitewide-read-full-post', { defaultValue: 'Read full post' })}
           </Link>
-        ) : (
-          <Button asChild size="sm">
-            <Link to="/blog/$slug" params={{ slug: announcement.slug }}>
-              {t('sitewide-read-full-post', { defaultValue: 'Read full post' })}
-            </Link>
-          </Button>
-        )}
+        </Button>
       </div>
     </SpineItem>
   );

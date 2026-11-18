@@ -11,7 +11,7 @@
  * The public URL is unchanged — only the layout nesting moved.
  */
 
-import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { readingTimeMinutes } from '@/lib/reading-time';
@@ -22,9 +22,9 @@ import { Badge } from '@/components/ui/badge';
 import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { ArticleTakeaways } from '@/components/blog/ArticleTakeaways';
+import { AnnouncementDiscussion } from '@/components/announcements/AnnouncementDiscussion';
 import { ArticleBody } from '@/components/reading/ArticleBody';
 import { getPostBySlug } from '@/lib/blog';
-import { prisma } from '@/lib/prisma.server';
 import { getBusiness } from '@/lib/businesses';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
@@ -46,15 +46,7 @@ const fetchPost = createServerFn({ method: 'GET' })
         'tags',
         'announcement',
         'business',
-        'announcementPostId',
       ]);
-      // Only link a discussion post that still exists.
-      const linked = typeof post.announcementPostId === 'string' ? post.announcementPostId : null;
-      const live = post.announcement === true && linked
-        ? await prisma.rMHark.findFirst({ where: { id: linked, deletedAt: null }, select: { id: true } })
-        : null;
-      // Assign in place: spreading would drop the index signature the page reads its other fields through.
-      post.announcementPostId = live?.id ?? null;
       return post;
     } catch {
       throw notFound();
@@ -151,15 +143,6 @@ function BlogPost() {
               {business.name} · {t('blog-announcement-label', { defaultValue: 'Announcement' })}
             </span>
           ) : null}
-          {isAnnouncement && typeof post.announcementPostId === 'string' ? (
-            <Link
-              to="/u/$userid/post/$postid"
-              params={{ userid: 'me', postid: post.announcementPostId }}
-              className="t-meta underline underline-offset-4 hover:text-site-text"
-            >
-              {t('blog-join-discussion', { defaultValue: 'Join the discussion' })}
-            </Link>
-          ) : null}
           <span className="t-meta">{post.date as string}</span>
           {minutes > 0 ? (
             <span className="t-meta">
@@ -208,6 +191,9 @@ function BlogPost() {
         <p className="t-meta max-w-2xl border-t border-site-border pt-4">
           {t('end-of-log', { defaultValue: 'End of Log' })}
         </p>
+
+        {/* Only an announcement has a discussion; it sits below the article, so reading on leads into it. */}
+        {isAnnouncement ? <AnnouncementDiscussion slug={slug} /> : null}
       </article>
     </PageLayout>
   );

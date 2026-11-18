@@ -890,7 +890,8 @@ export async function liveAnnouncement(): Promise<LiveAnnouncement | null> {
       slug: a.slug,
       business: a.business,
       announcedAt,
-      discussionPostId: typeof a.discussionPostId === 'string' ? a.discussionPostId : null,
+      // The discussion is now blog comments, which the bots do not write; legacy announcer-authored threads are left alone.
+      discussionPostId: null,
     };
   } catch {
     return null;
