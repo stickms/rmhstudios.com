@@ -34,6 +34,7 @@ import {
   DELETED_ACCOUNT_LOCK_UNTIL,
   isDeletedAccount,
 } from '@/lib/account-lifecycle';
+import { DELETED_USER_ID } from '@/lib/account/deleted-user';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -199,6 +200,9 @@ export async function finalizeDueDeletions(
  * bucket stall every pending deletion behind it.
  */
 export async function anonymizeAccount(userId: string): Promise<void> {
+  // The shared "Deleted user" owner of orphaned vibes is itself a tombstone and must never be
+  // scrubbed, scheduled or re-pointed at itself.
+  if (userId === DELETED_USER_ID) return;
   await prisma.$transaction([
     // 1. Destroy every way to authenticate as this account. Re-run safe: by the
     //    time the sweep fires these are usually already gone (the schedule step
@@ -229,6 +233,13 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // 2c. Per-user vibe store rows (`scope: 'user'`, `ownerKey` = the user id): the vibe pages
     //     they sit on belong to other people, and the user row is anonymised, not removed.
     prisma.vibeKv.deleteMany({ where: { scope: 'user', ownerKey: userId } }),
+    //     Their vibe pages are not erased (others remixed and embedded them): they move to the
+    //     shared "Deleted user" owner, so nothing keeps pointing at this tombstone and nobody's
+    //     session can edit them (others remix instead — `lib/rmhvibe/ownership.ts`).
+    prisma.vibePage.updateMany({
+      where: { ownerId: userId },
+      data: { ownerId: DELETED_USER_ID },
+    }),
     // Trading cards, drop ledger and badges — same reason: the cascade never fires.
     prisma.userCard.deleteMany({ where: { userId } }),
     prisma.cardDrop.deleteMany({ where: { userId } }),

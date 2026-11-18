@@ -69,6 +69,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as Tf2RouteImport } from './routes/tf2'
 import { Route as Velum2099RouteImport } from './routes/velum2099'
 import { Route as VersecraftRouteImport } from './routes/versecraft'
+import { Route as VibeFrameRouteImport } from './routes/vibe-frame'
 import { Route as VoidBreakerRouteImport } from './routes/void-breaker'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known.apple-app-site-association'
 import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]well-known.assetlinks[.]json'
@@ -838,6 +839,11 @@ const Velum2099Route = Velum2099RouteImport.update({
 const VersecraftRoute = VersecraftRouteImport.update({
   id: '/versecraft',
   path: '/versecraft',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VibeFrameRoute = VibeFrameRouteImport.update({
+  id: '/vibe-frame',
+  path: '/vibe-frame',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VoidBreakerRoute = VoidBreakerRouteImport.update({
@@ -3298,6 +3304,7 @@ export interface FileRoutesByFullPath {
   '/tf2': typeof Tf2RouteWithChildren
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
+  '/vibe-frame': typeof VibeFrameRoute
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/create': typeof SiteCreateRouteRouteWithChildren
@@ -3809,6 +3816,7 @@ export interface FileRoutesByTo {
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
+  '/vibe-frame': typeof VibeFrameRoute
   '/void-breaker': typeof VoidBreakerRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
@@ -4334,6 +4342,7 @@ export interface FileRoutesById {
   '/tf2': typeof Tf2RouteWithChildren
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
+  '/vibe-frame': typeof VibeFrameRoute
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/create': typeof SiteCreateRouteRouteWithChildren
@@ -4869,6 +4878,7 @@ export interface FileRouteTypes {
     | '/tf2'
     | '/velum2099'
     | '/versecraft'
+    | '/vibe-frame'
     | '/void-breaker'
     | '/admin'
     | '/create'
@@ -5380,6 +5390,7 @@ export interface FileRouteTypes {
     | '/synapse-storm'
     | '/terms'
     | '/velum2099'
+    | '/vibe-frame'
     | '/void-breaker'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
@@ -5904,6 +5915,7 @@ export interface FileRouteTypes {
     | '/tf2'
     | '/velum2099'
     | '/versecraft'
+    | '/vibe-frame'
     | '/void-breaker'
     | '/_site/admin'
     | '/_site/create'
@@ -6438,6 +6450,7 @@ export interface RootRouteChildren {
   Tf2Route: typeof Tf2RouteWithChildren
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
+  VibeFrameRoute: typeof VibeFrameRoute
   VoidBreakerRoute: typeof VoidBreakerRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
@@ -6984,6 +6997,13 @@ declare module '@tanstack/react-router' {
       path: '/versecraft'
       fullPath: '/versecraft'
       preLoaderRoute: typeof VersecraftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vibe-frame': {
+      id: '/vibe-frame'
+      path: '/vibe-frame'
+      fullPath: '/vibe-frame'
+      preLoaderRoute: typeof VibeFrameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/void-breaker': {
@@ -11426,6 +11446,7 @@ const rootRouteChildren: RootRouteChildren = {
   Tf2Route: Tf2RouteWithChildren,
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
+  VibeFrameRoute: VibeFrameRoute,
   VoidBreakerRoute: VoidBreakerRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,

@@ -55,6 +55,55 @@ describe('verifyDiscordActivityToken', () => {
   });
 });
 
+describe('verifyDiscordActivityToken abuse protection', () => {
+  it('remembers a refused token for 60 s and never asks Discord again', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 401 });
+    expect(await verifyDiscordActivityToken('bad', '10.0.0.1')).toBeNull();
+    expect(await verifyDiscordActivityToken('bad', '10.0.0.1')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('remembers a token minted for another application', async () => {
+    fetchMock.mockResolvedValue(ok(info({ application: { id: 'other' } })));
+    await verifyDiscordActivityToken('foreign', '10.0.0.2');
+    await verifyDiscordActivityToken('foreign', '10.0.0.2');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not remember 5xx, 429 or network failures', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 503 });
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 429 });
+    fetchMock.mockRejectedValueOnce(new Error('timeout'));
+    fetchMock.mockResolvedValueOnce(ok(info()));
+    for (let i = 0; i < 3; i++) expect(await verifyDiscordActivityToken('flaky', '10.0.0.3')).toBeNull();
+    expect((await verifyDiscordActivityToken('flaky', '10.0.0.3'))?.discordId).toBe('555');
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('shares one outbound call between concurrent verifications of a token', async () => {
+    let release!: (v: unknown) => void;
+    fetchMock.mockReturnValue(new Promise((r) => (release = r)));
+    const calls = [1, 2, 3].map(() => verifyDiscordActivityToken('same', '10.0.0.4'));
+    release(ok(info()));
+    const results = await Promise.all(calls);
+    expect(results.every((r) => r?.discordId === '555')).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('limits unseen-token verifications per IP before calling Discord', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 401 });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (let i = 0; i < 40; i++) await verifyDiscordActivityToken(`spray-${i}`, '10.0.0.5');
+    expect(fetchMock).toHaveBeenCalledTimes(30);
+    expect(warn).toHaveBeenCalledTimes(1);
+    // A different IP is unaffected, and cache hits cost nothing.
+    await verifyDiscordActivityToken('spray-0', '10.0.0.5');
+    await verifyDiscordActivityToken('fresh', '10.0.0.6');
+    expect(fetchMock).toHaveBeenCalledTimes(31);
+    warn.mockRestore();
+  });
+});
+
 describe('bearerToken', () => {
   it('reads a Bearer header only', () => {
     expect(bearerToken(new Headers({ authorization: 'Bearer abc' }))).toBe('abc');

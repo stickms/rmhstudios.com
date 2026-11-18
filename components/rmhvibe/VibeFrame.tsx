@@ -2,14 +2,20 @@
  * VibeFrame — the sandboxed iframe a vibe page renders in, double-buffered.
  *
  * A new `html` mounts a second iframe above the first at opacity 0. When its
- * `load` fires it fades in (160 ms, opacity only) and, once the fade ends, the
+ * document has loaded it fades in (160 ms, opacity only) and, once the fade ends, the
  * older frame unmounts — so a swap (a live preview during a build, a version
  * switch) never shows a blank frame. The sandbox defaults to the viewer's
  * string and never carries `allow-same-origin`.
+ *
+ * Each iframe loads the same-origin loader (`/vibe-frame`, its own CSP) and is handed
+ * its document by postMessage (lib/rmhvibe/frame-loader.ts); "loaded" is the written
+ * document's load, not the loader's. One document per iframe, so a swap is always a
+ * new layer.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ensureBridgeRuntime } from '@/lib/rmhvibe/bridge-runtime';
+import { FRAME_URL, useFrameDocument } from '@/lib/rmhvibe/frame-loader';
 
 export const VIEWER_SANDBOX =
   'allow-scripts allow-forms allow-modals allow-pointer-lock';
@@ -83,22 +89,51 @@ export function VibeFrame({
   return (
     <div className={`vibe-frame ${className ?? ''}`.trim()}>
       {layers.map((layer) => (
-        <iframe
+        <VibeLayer
           key={layer.id}
-          ref={(el) => {
-            if (el) frames.current.set(layer.id, el);
-            else frames.current.delete(layer.id);
-          }}
+          layer={layer}
           title={title}
-          srcDoc={ensureBridgeRuntime(layer.html)}
           sandbox={sandbox}
-          className={`vibe-frame__layer${layer.visible ? ' is-visible' : ''}`}
-          aria-hidden={layer.visible ? undefined : true}
-          tabIndex={layer.visible ? undefined : -1}
-          onLoad={() => handleLoad(layer.id)}
+          onLoaded={handleLoad}
+          onElement={(id, el) => {
+            if (el) frames.current.set(id, el);
+            else frames.current.delete(id);
+          }}
         />
       ))}
     </div>
+  );
+}
+
+function VibeLayer({
+  layer,
+  title,
+  sandbox,
+  onLoaded,
+  onElement,
+}: {
+  layer: Layer;
+  title: string;
+  sandbox: string;
+  onLoaded: (id: number) => void;
+  onElement: (id: number, el: HTMLIFrameElement | null) => void;
+}) {
+  const doc = useMemo(() => ensureBridgeRuntime(layer.html), [layer.html]);
+  const ref = useFrameDocument(
+    doc,
+    () => onLoaded(layer.id),
+    (el) => onElement(layer.id, el),
+  );
+  return (
+    <iframe
+      ref={ref}
+      title={title}
+      src={FRAME_URL}
+      sandbox={sandbox}
+      className={`vibe-frame__layer${layer.visible ? ' is-visible' : ''}`}
+      aria-hidden={layer.visible ? undefined : true}
+      tabIndex={layer.visible ? undefined : -1}
+    />
   );
 }
 

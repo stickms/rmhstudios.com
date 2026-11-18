@@ -64,7 +64,14 @@ describe('Homes: the map', () => {
     expect(host).toBe('https://tile.openstreetmap.org');
     const connect = (policy: string) => /connect-src ([^;]+)/.exec(policy)?.[1] ?? '';
     // Read as text: a component test may not import a `.server` module (boundaries/server-value-import).
-    const mirror = read('../../../lib/csp/policy.server.ts')
+    // Only the site policy (buildCspPolicy): the vibe frame policy has its own, narrower connect-src.
+    const policySource = read('../../../lib/csp/policy.server.ts');
+    const sitePolicy = policySource.slice(
+      policySource.indexOf('export function buildCspPolicy'),
+      policySource.indexOf('export function buildFramePolicy'),
+    );
+    expect(sitePolicy.length).toBeGreaterThan(0);
+    const mirror = sitePolicy
       .split('\n')
       .filter((line) => line.includes('"connect-src '));
     expect(mirror).toHaveLength(1);

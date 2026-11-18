@@ -36,6 +36,11 @@
    Gitignored, but the Docker context has no .gitignore, so it must be excluded by name. */
 @source not "../dist-islands";
 
+/* The vibe import map's vendor bundles (scripts/build-vibe-packages.ts). Gitignored, but the Docker image builds them
+   before this sheet and has no .gitignore, so Tailwind read three.js, framer-motion and react-dom as class names
+   (`hidden!`, `filter!`, `ease-in` …) and the image's site sheet came out over its budget. Excluded by name. */
+@source not "../public/vibe-packages";
+
 /* Full-screen games and apps — components/ and lib/ directories no site page imports. */
 @source not "../features/altair/engine";
 @source not "../features/altair/ui";

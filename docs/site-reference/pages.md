@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 388 routes. 204 render inside the standard site shell (sidebar, nav, context rail); 184 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 389 routes. 204 render inside the standard site shell (sidebar, nav, context rail); 185 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -412,4 +412,5 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/v/new` | redirects to `/v` | public | `app/routes/v.new.tsx` |
 | `/velum2099` | — | public | `app/routes/velum2099.tsx` |
 | `/versecraft` | — | public | `app/routes/versecraft/index.tsx` |
+| `/vibe-frame` | — | public | `app/routes/vibe-frame.ts` |
 | `/void-breaker` | — | public | `app/routes/void-breaker.tsx` |

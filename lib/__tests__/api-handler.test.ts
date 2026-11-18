@@ -555,3 +555,18 @@ describe('session short-circuit (no session cookie)', () => {
     expect(getSession).not.toHaveBeenCalled();
   });
 });
+
+describe('alternateAuth is only allowed with auth: "optional"', () => {
+  // The `@ts-expect-error` lines are the point: `pnpm typecheck` fails if the option is accepted
+  // on a mode that would silently ignore it.
+  const alt = async () => null;
+  it('type-checks only for the optional mode', () => {
+    defineHandler({ auth: 'optional', alternateAuth: alt }, () => Response.json({}));
+    // @ts-expect-error alternateAuth needs auth: 'optional' (the default mode is 'required')
+    defineHandler({ alternateAuth: alt }, () => Response.json({}));
+    // @ts-expect-error alternateAuth needs auth: 'optional'
+    defineHandler({ auth: 'required', alternateAuth: alt }, () => Response.json({}));
+    // @ts-expect-error alternateAuth needs auth: 'optional'
+    defineHandler({ auth: 'admin', alternateAuth: alt }, () => Response.json({}));
+  });
+});
