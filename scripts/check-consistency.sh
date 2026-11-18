@@ -283,8 +283,11 @@ if [ -n "$TABLISTS" ]; then
   printf '%s    → Tab strips are <Tabs> (components/ui/tabs.tsx). The allowlist is closed.%s\n' "$dim" "$off"
 fi
 
+# tabs.tsx and its private capsule module (components/ui/tab-capsule.tsx, split out so
+# framer-motion loads only on the app tier) are the one renderer; see LAYOUTID_ALLOW in
+# lib/__tests__/design-consistency.test.ts.
 CAPSULES=$(scan '^(components|app/routes)/.*\.tsx$' 'layoutId[ ]*=[ ]*[{"]' |
-  grep -v 'components/ui/tabs.tsx' || true)
+  grep -v -e 'components/ui/tabs.tsx' -e 'components/ui/tab-capsule.tsx' || true)
 if [ -n "$CAPSULES" ]; then
   fail "Hand-rolled tab capsule (§13 rule 3)"
   printf '%s\n' "$CAPSULES"
