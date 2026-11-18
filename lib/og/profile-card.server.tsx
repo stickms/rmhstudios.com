@@ -68,17 +68,41 @@ const TTL =
   1000;
 const MAX = 60;
 
+// Everything below is sized against `frameMetrics(LANDSCAPE)`: the frame leaves the pane ~382px of
+// height (at SCALE 2), minus its hairlines and padding. satori does not clip, so a column taller than
+// that paints straight out of the pane: the QR plate and the identity column each fit inside `innerH`.
 const PANE_PAD =
-  26 *
+  20 *
   SCALE;
 const AVATAR =
-  64 *
+  40 *
   SCALE;
 const QR_PLATE =
-  190 *
+  112 *
   SCALE;
 const QR_MODULES_PX =
-  150 *
+  100 *
+  SCALE;
+const QR_CAPTION =
+  12 *
+  SCALE;
+const QR_CAPTION_GAP =
+  8 *
+  SCALE;
+const COLUMN_GAP =
+  28 *
+  SCALE;
+const AVATAR_GAP =
+  12 *
+  SCALE;
+const HANDLE_SIZE =
+  18 *
+  SCALE;
+const HANDLE_GAP =
+  4 *
+  SCALE;
+const BIO_GAP =
+  12 *
   SCALE;
 
 export interface ProfileCardData {
@@ -141,31 +165,56 @@ async function renderProfileCardUncached(
       LANDSCAPE.width,
       LANDSCAPE.height,
     );
+  const hairlines =
+    HAIRLINE_W *
+    2;
+  const innerH =
+    frame.height -
+    hairlines -
+    PANE_PAD *
+      2;
   const textWidth =
     frame.width -
+    hairlines -
     PANE_PAD *
       2 -
     QR_PLATE -
-    28 *
-      SCALE;
+    COLUMN_GAP;
+  // One line of the largest step that still fits; fitText walks down from there.
   const nameSize =
     fitText(
       name,
       {
         width:
           textWidth,
-        height:
-          90 *
-          SCALE,
+        height: 58,
         steps:
           [
-            56,
-            46,
+            52,
+            44,
             38,
             32,
           ],
         lineHeight: 1.1,
       },
+    );
+  // The bio gets what the avatar, name and handle leave of the column.
+  const handleBlock =
+    data.handle
+      ? HANDLE_SIZE *
+          1.2 +
+        HANDLE_GAP
+      : 0;
+  const bioBox =
+    Math.max(
+      0,
+      innerH -
+        AVATAR -
+        AVATAR_GAP -
+        nameSize *
+          1.1 -
+        handleBlock -
+        BIO_GAP,
     );
   const bioSize =
     fitText(
@@ -174,14 +223,15 @@ async function renderProfileCardUncached(
         width:
           textWidth,
         height:
-          80 *
-          SCALE,
+          bioBox,
         steps:
           [
             28,
             24,
             21,
+            18,
           ],
+        lineHeight: 1.3,
       },
     );
 
@@ -214,9 +264,13 @@ async function renderProfileCardUncached(
                       flexDirection:
                         'column',
                       flex: 1,
+                      minWidth: 0,
+                      maxHeight:
+                        innerH,
+                      overflow:
+                        'hidden',
                       paddingRight:
-                        28 *
-                        SCALE,
+                        COLUMN_GAP,
                     }}
                   >
                     <div
@@ -224,8 +278,7 @@ async function renderProfileCardUncached(
                         display:
                           'flex',
                         marginBottom:
-                          16 *
-                          SCALE,
+                          AVATAR_GAP,
                       }}
                     >
                       {avatarDisc(
@@ -238,6 +291,7 @@ async function renderProfileCardUncached(
                       style={{
                         fontSize:
                           nameSize,
+                        lineHeight: 1.1,
                         fontWeight: 600,
                         letterSpacing:
                           displayTracking(
@@ -255,13 +309,12 @@ async function renderProfileCardUncached(
                       <span
                         style={{
                           fontSize:
-                            20 *
-                            SCALE,
+                            HANDLE_SIZE,
+                          lineHeight: 1.2,
                           color:
                             MUTED,
                           marginTop:
-                            4 *
-                            SCALE,
+                            HANDLE_GAP,
                         }}
                       >
                         @
@@ -281,8 +334,7 @@ async function renderProfileCardUncached(
                             INK,
                           fontWeight: 500,
                           marginTop:
-                            14 *
-                            SCALE,
+                            BIO_GAP,
                         }}
                       >
                         {
@@ -343,13 +395,12 @@ async function renderProfileCardUncached(
                     <span
                       style={{
                         fontSize:
-                          12 *
-                          SCALE,
+                          QR_CAPTION,
+                        lineHeight: 1.2,
                         color:
                           DIM,
                         marginTop:
-                          10 *
-                          SCALE,
+                          QR_CAPTION_GAP,
                       }}
                     >
                       Scan
