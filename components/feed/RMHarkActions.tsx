@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Repeat, Repeat2, PenSquare } from 'lucide-react';
+import { Heart, MessageCircle, Repeat2 } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState, useRef } from 'react';
 import { useFeedStore } from '@/stores/feedStore';
@@ -10,17 +10,17 @@ import type { FeedItem } from '@/lib/feed-types';
 const ComposeModal = lazy(() =>
   import('./ComposeModal').then((m) => ({ default: m.ComposeModal })),
 );
+// The repost menu (./RepostMenu): mounted the first time it opens, fetched on intent.
+const loadRepostMenu = () => import('./RepostMenu');
+const RepostMenu = lazy(loadRepostMenu);
 // Quotes view (X10) — its own chunk, fetched the first time "View quotes" is picked.
 const QuotesDialog = lazy(() =>
   import('./QuotesDialog').then((m) => ({ default: m.QuotesDialog })),
 );
-import { QuotesMenuItem } from './QuotesMenuItem';
 import { useTranslation } from 'react-i18next';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { formatCount } from './format-count';
-import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { MenuItem } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 import { likePostApi, repostPostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
@@ -52,6 +52,8 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
   const [quoteOpen, setQuoteOpen] = useState(false);
   // Latch so the quote modal stays mounted after first open (close animation).
   const quoteMounted = useRef(false);
+  const repostMenuMounted = useRef(false);
+  repostMenuMounted.current ||= repostMenu;
   quoteMounted.current ||= quoteOpen;
   const [quotesOpen, setQuotesOpen] = useState(false);
   const quotesMounted = useRef(false);
@@ -145,6 +147,10 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
         <button
           ref={repostBtnRef}
           type="button"
+          // Fetch the menu as the reader reaches for it, so it is there by the click.
+          onPointerEnter={session ? () => void loadRepostMenu() : undefined}
+          onPointerDown={session ? () => void loadRepostMenu() : undefined}
+          onFocus={session ? () => void loadRepostMenu() : undefined}
           onClick={(e) => {
             e.stopPropagation();
             // Every item in this menu needs an account, so a signed-out visitor gets
@@ -168,43 +174,30 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
             <span className="sr-only">{t('action-reposted', { defaultValue: 'Reposted' })}</span>
           )}
         </button>
-        <AnchoredMenu
-          open={repostMenu}
-          onClose={() => setRepostMenu(false)}
-          anchorRef={repostBtnRef}
-          align="start"
-          // Named after its trigger, so the panel's accessible name is not English-only.
-          label={repostLabel}
-          // Wide enough that "Undo repost" does not truncate inside the panel's own padding.
-          className="w-48"
-        >
-          <MenuItem
-            icon={Repeat}
-            onSelect={() => {
-              setRepostMenu(false);
-              toggleRepost();
-            }}
-          >
-            {item.reposted ? t('action-undo-repost', { defaultValue: 'Undo repost' }) : repostLabel}
-          </MenuItem>
-          <MenuItem
-            icon={PenSquare}
-            onSelect={() => {
-              setRepostMenu(false);
-              setQuoteOpen(true);
-            }}
-          >
-            {t('quote', { defaultValue: 'Quote' })}
-          </MenuItem>
-          {(item.repostCount ?? 0) > 0 && (
-            <QuotesMenuItem
-              onSelect={() => {
+        {repostMenuMounted.current && (
+          <Suspense fallback={null}>
+            <RepostMenu
+              open={repostMenu}
+              onClose={() => setRepostMenu(false)}
+              anchorRef={repostBtnRef}
+              label={repostLabel}
+              reposted={!!item.reposted}
+              repostCount={item.repostCount ?? 0}
+              onRepost={() => {
+                setRepostMenu(false);
+                toggleRepost();
+              }}
+              onQuote={() => {
+                setRepostMenu(false);
+                setQuoteOpen(true);
+              }}
+              onViewQuotes={() => {
                 setRepostMenu(false);
                 setQuotesOpen(true);
               }}
             />
-          )}
-        </AnchoredMenu>
+          </Suspense>
+        )}
       </div>
 
       {quoteMounted.current && (
