@@ -206,7 +206,7 @@
     "rhyming-part": "^2.1.0",
     "rss-parser": "^3.13.0",
     "sanitize-html": "^2.18.2",
-    "satori": "0.35.1",
+    "satori": "0.63.2",
     "sharp": "^0.35.5",
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",

@@ -1,5 +1,5 @@
 import React from 'react';
-import satori from 'satori';
+import satori from '@/lib/og/satori.server';
 import { Resvg } from '@resvg/resvg-js';
 import { OG_FONT_MONO, OG_FONT_SANS, satoriFontFaces } from '@/lib/og/fonts.server';
 

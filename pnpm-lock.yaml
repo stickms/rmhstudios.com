@@ -363,8 +363,8 @@ importers:
         specifier: ^2.18.2
         version: 2.18.2
       satori:
-        specifier: 0.35.1
-        version: 0.35.1
+        specifier: 0.63.2
+        version: 0.63.2
       sharp:
         specifier: ^0.35.5
         version: 0.35.5(@types/node@26.6.6)
@@ -7253,8 +7253,8 @@ packages:
     resolution: {integrity: sha512-LTQVNHBeKB5qIae9x2J2Fw68ORnES++8vzYaG7DFT8P4GVCJFeHffHnRUzf5Mrxfx+4GweIvMRqkBPHHodaVNg==}
     engines: {node: '>=22.12.0'}
 
-  satori@0.35.1:
-    resolution: {integrity: sha512-y2GHiXg2o+WNdH2kcjC30kW6tzSLRLOG+gJ7YGkZM8fC7Atj7C+otpGRH7H/c0GLRGWUKivd5dv50vqg6m1aQA==}
+  satori@0.63.2:
+    resolution: {integrity: sha512-h7dm4BRMo8F53l9vOXOIfJoqeVXuZvyz13VsvVuwJb72sLfq+8uddJIJcjLKLv2BqWzDvYIpzi3rvBBS+ETuvw==}
     engines: {node: '>=16'}
 
   sax@1.2.1:
@@ -8203,9 +8203,6 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
-
-  yoga-layout@3.2.1:
-    resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
 
   youtube-video-element@1.9.1:
     resolution: {integrity: sha512-qk5fLKe1Pf+NViSQTyb0YZ9o5ku3yXryjEWEhhu4xbgsZLY+ShCz16FdSHmE+zcFXOWWVMtvu2gCOsa2c/+9aQ==}
@@ -15181,7 +15178,7 @@ snapshots:
       parse-srcset: 1.0.2
       postcss: 8.5.33
 
-  satori@0.35.1:
+  satori@0.63.2:
     dependencies:
       '@shuding/opentype.js': 1.4.0-beta.0
       css-background-parser: 0.1.0
@@ -15195,7 +15192,6 @@ snapshots:
       linebreak: 1.1.0
       parse-css-color: 0.2.1
       postcss-value-parser: 4.2.0
-      yoga-layout: 3.2.1
 
   sax@1.2.1: {}
 
@@ -16196,8 +16192,6 @@ snapshots:
       yargs-parser: 22.0.0
 
   yocto-queue@0.1.0: {}
-
-  yoga-layout@3.2.1: {}
 
   youtube-video-element@1.9.1:
     dependencies:

@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import satori from 'satori';
+import satori from '../lib/og/satori.server';
 import { Resvg } from '@resvg/resvg-js';
 import {
   mkdirSync,

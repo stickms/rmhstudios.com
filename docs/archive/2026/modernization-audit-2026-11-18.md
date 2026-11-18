@@ -32,13 +32,27 @@ below is held for a stated reason, and each entry names what lifts it.
   `lib/push/send.server.ts` imports `sendNotification` and `setVapidDetails` by
   name. It loads through both `require()` (the worker bundles) and `import`.
 
+## Upgraded afterwards
+
+- **satori 0.35.1 → 0.63.2.** Its Yoga 3 layout defaults to CSS's
+  `content-box`, where 0.35 laid out every element `border-box`, so every padded
+  box grew by its padding and each card rendered shifted and cropped.
+  `lib/og/satori.server.ts` is now the one way to call satori and sets
+  `border-box` on every element that does not choose one
+  (`lib/og/__tests__/satori-box.test.ts` holds both). Checked by rendering all
+  143 cards before and after (every section, game, app, post, post story,
+  profile, the elections/wiki/pf2ecal/sohumtracker pages, the Discord activity
+  images and the PWA icons): no layout changes; text sits 1–2 px differently,
+  lines wrap slightly fuller, and Arabic punctuation is ordered correctly.
+  Arabic, CJK and Greek text render as boxes both before and after, because the
+  cards load only Geist.
+
 ## Held back, and what lifts each hold
 
 | Package | Held at | Why | Lift when |
 | --- | --- | --- | --- |
 | `typescript` | 6.0 | TS 7 ships no JavaScript compiler API (planned for 7.1). `typescript-eslint` (peer `<6.1`), `lib/api/__tests__/route-table.test.ts`, `features/rmhos/__tests__/image-publish.test.ts` and `scripts/api-cache-triage.ts` call it. Type-checking already runs on TS 7 through the `typescript-native` alias. | `typescript-eslint` widens its peer range |
 | `prisma` | 7.10 | 8.0 is a release candidate and replaces the client API, schema format and migrate commands (794 importing files). | 8.0 is stable, as its own project (Dependabot holds `prisma`, `@prisma/client` and `@prisma/adapter-pg` at `<8`) |
-| `satori` | 0.35.1 | The original hold (an ESM `__dirname` crash) was fixed in 0.37.1, but 0.38–0.62 change text layout, opacity, overflow and synthetic bold, so every card changes pixels. | a render check of every card kind on a production build |
 | `nitro` | 3.0 beta | The RC replaces the global `Response` with srvx's `FastResponse` on Node; the `response`-hook header plugins need a boot test. | a build-and-boot run of the integration suite on the RC |
 
 ## Runtime
