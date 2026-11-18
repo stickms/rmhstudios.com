@@ -541,8 +541,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static images/fonts: stale-while-revalidate with an LRU cap.
-  if (/\.(png|jpe?g|webp|gif|svg|ico|woff2?)$/.test(url.pathname)) {
+  // Static images/fonts: stale-while-revalidate with an LRU cap. `avif` is the
+  // format OptimizedImage's <picture> serves to every browser that has it, so
+  // without it here the build-time variants were never kept for offline/repeat use.
+  if (/\.(png|jpe?g|webp|avif|gif|svg|ico|woff2?)$/.test(url.pathname)) {
     event.respondWith(
       (async () => {
         const cached = await caches.match(request);
