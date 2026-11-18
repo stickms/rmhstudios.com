@@ -8,8 +8,8 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { type ReactNode, useEffect } from 'react';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
+import { createIsomorphicFn, createServerFn } from '@tanstack/react-start';
+import { getRequest, setResponseHeader } from '@tanstack/react-start/server';
 // NOT from '@/lib/discord-sdk' — that module imports @discord/embedded-app-sdk,
 // which would put 135 KB of Activity SDK into the entry chunk of every page.
 import { isDiscordActivity } from '@/lib/discord-activity';
@@ -253,6 +253,30 @@ function i18nFallback(): { locale: Locale; resources: null; saveData: boolean } 
   return { locale, resources: null, saveData: false };
 }
 
+/**
+ * Early Hints (low-bandwidth audit, 2026-11-18): the document's render-blocking
+ * stylesheet and its preloaded font, as a `Link` response header.
+ *
+ * Cloudflare remembers the `rel=preload` links an HTML response carries and, on the
+ * next request for that URL, sends them in a `103 Early Hints` before the origin has
+ * answered, so the browser fetches the files first paint waits on while the server
+ * is still rendering (the session lookup, the page's queries). The browser also acts
+ * on the header itself, a little ahead of parsing the `<link>` tags.
+ *
+ * Only these two, and exactly the ones `head()` links (the tier's sheet is decided
+ * from the matched routes there, so a hint can never warm the other tier's ~40 KB).
+ * Not the JavaScript: Cloudflare replays `preload` but not `modulepreload`, and a
+ * module script warmed as a classic one can be fetched twice. Server only.
+ */
+const hintDocumentAssets = createIsomorphicFn()
+  .server((sheet: string, font: string) => {
+    setResponseHeader(
+      'Link',
+      `<${sheet}>; rel=preload; as=style, <${font}>; rel=preload; as=font; type="font/woff2"; crossorigin`,
+    );
+  })
+  .client(() => {});
+
 /** Check if a URL path is a Discord Activity route (embedded iframe) */
 function isDiscordRoute(pathname: string): boolean {
   return pathname.startsWith('/discord/') || pathname === '/discord';
@@ -337,6 +361,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         scripts: prepaintHeadScripts({ discord: true, notFound: globalNotFound, seed }),
       };
     }
+
+    hintDocumentAssets(appCss, geistLatinWoff2);
 
     return {
       meta: ROOT_META,
