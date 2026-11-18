@@ -4,7 +4,7 @@ import { Search, Star, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { StoreCard, StoreData } from '@/lib/games/store-types';
 import { StoreNav } from './StoreNav';
-import { TitleArt } from './TitleArt';
+import { CAPSULE_SIZES, TitleArt } from './TitleArt';
 
 function Capsules({ items }: { items: StoreCard[] }) {
   const { t } = useTranslation('games-hub');
@@ -13,7 +13,7 @@ function Capsules({ items }: { items: StoreCard[] }) {
       {items.map((c) => (
         <li key={c.id}>
           <Link to="/games/$gameId" params={{ gameId: c.id }} className="stm-capsule">
-            <TitleArt build={c} width={240} height={360} />
+            <TitleArt build={c} width={240} height={360} sizes={CAPSULE_SIZES} />
             <span className="stm-capsule-name">{c.title}</span>
             <span className="stm-capsule-sub">
               {c.rating ? (
@@ -113,7 +113,7 @@ export function StorePage({ data }: { data: StoreData }) {
                 </h2>
                 <div className="stm-store-hero">
                   <Link to="/games/$gameId" params={{ gameId: hero.id }} className="stm-store-hero-art">
-                    <TitleArt build={hero} width={320} height={480} />
+                    <TitleArt build={hero} width={320} height={480} sizes="200px" />
                   </Link>
                   <div className="stm-store-hero-body">
                     <h3>

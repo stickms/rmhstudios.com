@@ -24,6 +24,7 @@ import {
   useCallback,
   useEffect,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import {
   DATA_SAVER_EVENT,
@@ -183,6 +184,89 @@ export function useDataSaver(): boolean {
   }, []);
 
   return saving;
+}
+
+/*
+ * Data saver as a media component reads it: decided ONCE, when the element first
+ * renders, and never changed after.
+ *
+ * An image that arrived in the server HTML has been downloading since the parser
+ * reached it. Re-rendering it with fewer srcset candidates after hydration would
+ * make the browser fetch a SECOND, smaller file on top of the one it already has,
+ * the opposite of saving data. An image that mounts on the client (the next page
+ * of a feed, a client navigation) has fetched nothing yet, so it can take the real
+ * answer from its very first render.
+ *
+ * `useSyncExternalStore` is what tells those two apart without guessing: while
+ * hydrating, React renders with `getServerSnapshot` (`false`, matching the server
+ * HTML, so no mismatch); on a client mount it renders with `getSnapshot` (the live
+ * answer). `useState` then latches whatever that first render saw.
+ */
+let snapshot:
+  | boolean
+  | null =
+  null;
+let listening = false;
+
+function readSnapshot(): boolean {
+  if (
+    snapshot ===
+    null
+  ) {
+    snapshot =
+      resolveDataSaver(
+        readDataSaverPreference(),
+      );
+    if (
+      !listening &&
+      typeof window !==
+        'undefined'
+    ) {
+      listening = true;
+      const reset =
+        () => {
+          snapshot =
+            null;
+        };
+      window.addEventListener(
+        DATA_SAVER_EVENT,
+        reset,
+      );
+      window.addEventListener(
+        'storage',
+        reset,
+      );
+      readConnection()?.addEventListener?.(
+        'change',
+        reset,
+      );
+    }
+  }
+  return snapshot;
+}
+
+const noSubscribe =
+
+    () =>
+    () => {};
+const serverSnapshot =
+  () =>
+    false;
+
+export function useDataSaverAtMount(): boolean {
+  const live =
+    useSyncExternalStore(
+      noSubscribe,
+      readSnapshot,
+      serverSnapshot,
+    );
+  const [
+    atMount,
+  ] =
+    useState(
+      live,
+    );
+  return atMount;
 }
 
 /**
