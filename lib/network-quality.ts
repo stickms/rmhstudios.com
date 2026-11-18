@@ -152,7 +152,8 @@ export function prefersLessData(): boolean {
  * Is speculative fetching (warming a route the visitor has not asked for yet)
  * appropriate right now?
  *
- * No when the visitor asked for less data, and no on anything slower than a
+ * No when the visitor asked for less data, no when the reported downlink is under
+ * {@link SPECULATE_MIN_DOWNLINK_MBPS}, and no on anything slower than a
  * fast connection: on 3G and below a speculative request queues ahead of the
  * content actually being read and makes the current page slower to win a
  * navigation that may never happen. `unknown` reads as yes — those browsers are
@@ -162,5 +163,20 @@ export function prefersLessData(): boolean {
 export function shouldSpeculate(): boolean {
   if (prefersLessData()) return false;
   const cls = connectionClass();
-  return cls === 'fast' || cls === 'unknown';
+  if (cls !== 'fast' && cls !== 'unknown') return false;
+  // A link can be "fast" by round trip and still thin. Lighthouse's slow-4G profile
+  // (150 ms, 1.6 Mbit/s) reads as `4g` and passed the check above, and the viewport
+  // and ForesightJS prefetchers then pulled 300–500 KB of routes the visitor had not
+  // opened: two seconds of that link, competing with the page being read
+  // (low-bandwidth audit, 2026-11-18). Chromium reports its throughput estimate as
+  // `downlink`; below the line, speculation waits for intent (a hover or a tap).
+  const downlink = readConnection()?.downlink;
+  return !(typeof downlink === 'number' && downlink > 0 && downlink < SPECULATE_MIN_DOWNLINK_MBPS);
 }
+
+/**
+ * The downlink, in Mbit/s, below which no route is fetched speculatively. At 5 the
+ * prefetchers' few hundred KB costs well under a second of the link; on the 1.6 of
+ * a slow-4G phone it cost two. Chromium reports at most 10 and rounds to 25 kbit/s.
+ */
+export const SPECULATE_MIN_DOWNLINK_MBPS = 5;

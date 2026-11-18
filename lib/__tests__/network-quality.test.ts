@@ -25,6 +25,7 @@ type Conn =
     saveData?: boolean;
     effectiveType?: string;
     rtt?: number;
+    downlink?: number;
   };
 
 function stub({
@@ -430,6 +431,85 @@ describe('shouldSpeculate', () => {
       shouldSpeculate(),
     ).toBe(
       false,
+    );
+  });
+});
+
+describe('shouldSpeculate and the downlink', () => {
+  it('holds back on a link that is fast by round trip but thin (slow 4G)', () => {
+    stub(
+      {
+        connection:
+          {
+            effectiveType:
+              '4g',
+            rtt: 150,
+            downlink: 1.6,
+          },
+      },
+    );
+    expect(
+      connectionClass(),
+    ).toBe(
+      'fast',
+    );
+    expect(
+      shouldSpeculate(),
+    ).toBe(
+      false,
+    );
+  });
+
+  it('speculates on a fast link with the bandwidth for it', () => {
+    stub(
+      {
+        connection:
+          {
+            effectiveType:
+              '4g',
+            rtt: 50,
+            downlink: 10,
+          },
+      },
+    );
+    expect(
+      shouldSpeculate(),
+    ).toBe(
+      true,
+    );
+  });
+
+  it('ignores a downlink the browser does not report', () => {
+    stub(
+      {
+        connection:
+          {
+            effectiveType:
+              '4g',
+            rtt: 50,
+          },
+      },
+    );
+    expect(
+      shouldSpeculate(),
+    ).toBe(
+      true,
+    );
+    stub(
+      {
+        connection:
+          {
+            effectiveType:
+              '4g',
+            rtt: 50,
+            downlink: 0,
+          },
+      },
+    );
+    expect(
+      shouldSpeculate(),
+    ).toBe(
+      true,
     );
   });
 });
