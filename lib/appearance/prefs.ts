@@ -139,8 +139,6 @@ export const DENSITY_KEY =
   'rmh-density';
 export const READABLE_FONT_KEY =
   'rmh-readable-font';
-export const CUSTOM_ACCENT_KEY =
-  'rmh-custom-accent';
 export const COLOR_VISION_KEY =
   'rmh-color-vision';
 

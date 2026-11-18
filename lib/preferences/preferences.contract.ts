@@ -20,9 +20,6 @@ export interface AppearancePrefs {
   style:
     | string
     | null;
-  accent:
-    | string
-    | null;
   fontScale:
     | number
     | null;
@@ -30,9 +27,6 @@ export interface AppearancePrefs {
     | string
     | null;
   readableFont: boolean;
-  customAccent:
-    | string
-    | null;
   colorVision:
     | string
     | null;
@@ -45,9 +39,6 @@ export interface AppearancePrefs {
 export type AppearancePrefsInput =
   {
     style?:
-      | string
-      | null;
-    accent?:
       | string
       | null;
   } & AppearanceComfortInput;

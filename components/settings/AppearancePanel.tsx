@@ -1,9 +1,5 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from '@/lib/toast';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
 import { ThemePicker } from '@/components/settings/ThemePicker';
@@ -11,7 +7,6 @@ import type { UserThemeView } from '@/lib/themes/tokens';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   FONT_SCALES,
-  HEX_RE,
   COLOR_VISION_MODES,
   COLOR_VISION_LABELS,
   COLOR_VISION_HINTS,
@@ -21,7 +16,6 @@ import {
   isJellyMotion,
   type JellyMotion,
 } from '@/lib/appearance/prefs';
-import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import {
@@ -49,7 +43,6 @@ async function persist(body: AppearancePrefsInput) {
 export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeView[] }) {
   const { t } = useTranslation('settings-appearance');
   const store = useThemeStore();
-  const [hexDraft, setHexDraft] = useState(store.customAccent ?? '#0b0b0b');
 
   function setFontScale(value: FontScale) {
     store.setFontScale(value === 1000 ? null : value);
@@ -77,20 +70,6 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
     still: t('globe-motion-still', { defaultValue: 'Still' }),
   };
 
-  function applyCustomAccent(hex: string) {
-    if (!HEX_RE.test(hex)) return;
-    const { hex: adjusted, adjusted: wasAdjusted } = ensureReadableAccent(hex);
-    store.setCustomAccent(adjusted);
-    setHexDraft(adjusted);
-    void persist({ customAccent: adjusted });
-    if (wasAdjusted) {
-      toast.info(t('accent-adjusted', { defaultValue: 'Adjusted the color for readability' }));
-    }
-  }
-  function clearCustomAccent() {
-    store.setCustomAccent(null);
-    void persist({ customAccent: null });
-  }
 
   const activeFontScale = (store.fontScale ?? 1000) as FontScale;
   const activeDensity = store.density ?? 'cozy';
@@ -146,46 +125,6 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
           checked={store.readableFont}
           onChange={setReadableFont}
         />
-      </Section>
-
-      <Section
-        title={t('custom-accent', { defaultValue: 'Custom accent' })}
-        description={t('custom-accent-desc', {
-          defaultValue: 'Pick any color — it is auto-adjusted to stay readable.',
-        })}
-      >
-        <div className="settings-row flex-wrap">
-          <span className="settings-row__hint">
-            {store.customAccent
-              ? t('custom-accent-on', { defaultValue: 'Using your colour.' })
-              : t('custom-accent-none', {
-                  defaultValue: 'No custom accent — using the theme’s own color.',
-                })}
-          </span>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={HEX_RE.test(hexDraft) ? hexDraft : '#0b0b0b'}
-              onChange={(e) => applyCustomAccent(e.target.value)}
-              aria-label={t('custom-accent', { defaultValue: 'Custom accent' })}
-              className="h-9 w-12 cursor-pointer rounded-site-sm border border-site-border bg-transparent pointer-coarse:h-11"
-            />
-            <Input
-              value={hexDraft}
-              onChange={(e) => setHexDraft(e.target.value)}
-              onBlur={() => applyCustomAccent(hexDraft)}
-              spellCheck={false}
-              autoCapitalize="off"
-              className="w-28 font-mono"
-              aria-label={t('accent-hex', { defaultValue: 'Accent hex' })}
-            />
-            {store.customAccent ? (
-              <Button type="button" variant="ghost" onClick={clearCustomAccent}>
-                {t('clear', { defaultValue: 'Reset to theme' })}
-              </Button>
-            ) : null}
-          </div>
-        </div>
       </Section>
 
       <Section title={t('motion', { defaultValue: 'Motion' })}>

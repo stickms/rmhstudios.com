@@ -1,4 +1,3 @@
-import { ACCENT_MAP } from '../appearance';
 import { NATIVE_MATERIAL_BASES } from '../native-material-routes';
 import { isAppRoute, pathUnder } from './route';
 import type { PrepaintCtx, PrepaintTheme } from './types';
@@ -6,19 +5,10 @@ import type { PrepaintCtx, PrepaintTheme } from './types';
 const has = (o: object, k: unknown): boolean =>
   Object.prototype.hasOwnProperty.call(o, k as string);
 
-/** The three accent custom properties, in the order the runtime writes them. */
-function setAccent(html: HTMLElement, value: string, fg: string): void {
-  const d = html.style;
-  d.setProperty('--site-accent', value);
-  d.setProperty('--site-accent-fg', fg);
-  d.setProperty('--site-accent-hover', 'color-mix(in oklab,' + value + ' 82%, #000)');
-}
-
 /**
- * The pre-paint theme step: applies the persisted theme class + accent override to
+ * The pre-paint theme step: applies the persisted theme class and any bought theme to
  * <html> before React hydrates, preventing a flash-of-unstyled-content (FOUC).
- * The accent palette is imported from its single source (lib/appearance.ts); the
- * theme→background map and the route tables come from the `rmh-prepaint` config
+ * The theme→background map and the route tables come from the `rmh-prepaint` config
  * block (lib/prepaint/config.ts), serialized from stores/themeStore.ts and
  * lib/prepaint/theme-routes.ts, so this never drifts from the runtime that
  * mirrors it. The route predicate is the runtime's own (lib/prepaint/route.ts).
@@ -99,8 +89,10 @@ export function themeStep({ html, doc, win, path, cfg }: PrepaintCtx): void {
   const ls = localStorage;
   let s = ls.getItem('rmh-style');
   if (!s || !has(m, s)) {
-    if (s) ls.setItem('rmh-style', D);
-    s = D;
+    // Nothing chosen (or a retired id, which is dropped): follow the device, Day when it says nothing. Nothing is
+    // written, so the next load asks the device again (DEFAULT_STYLE in stores/themeStore.ts).
+    if (s) ls.removeItem('rmh-style');
+    s = !!win.matchMedia && win.matchMedia('(prefers-color-scheme: dark)').matches && has(m, 'graphite') ? 'graphite' : D;
   }
   // The route predicate is the runtime's own (lib/prepaint/route.ts).
   const app = !cfg.nf && isAppRoute(path, t.excluded, t.exceptions);
@@ -189,8 +181,9 @@ export function themeStep({ html, doc, win, path, cfg }: PrepaintCtx): void {
       doc.head.appendChild(tc);
     }
   }
-  const ac = ls.getItem('rmh-accent');
-  if (ac && ACCENT_MAP[ac] && !app) setAccent(html, ACCENT_MAP[ac].value, ACCENT_MAP[ac].fg);
+  // The retired accent presets and custom accent (owner, 2026-11-18) are dropped, not applied.
+  ls.removeItem('rmh-accent');
+  ls.removeItem('rmh-custom-accent');
   const fs = ls.getItem('rmh-font-scale');
   if (fs && /^(875|1125|1250)$/.test(fs)) html.style.fontSize = parseInt(fs, 10) / 10 + '%';
   if (ls.getItem('rmh-density') === 'compact') html.setAttribute('data-density', 'compact');
@@ -201,12 +194,4 @@ export function themeStep({ html, doc, win, path, cfg }: PrepaintCtx): void {
     html.setAttribute('data-color-vision', cvm);
   const jm = ls.getItem('rmh-jelly-motion');
   if (jm === 'still') html.setAttribute('data-jelly-motion', jm);
-  const ca = ls.getItem('rmh-custom-accent');
-  if (ca && /^#[0-9a-fA-F]{6}$/.test(ca) && !app) {
-    const cr = parseInt(ca.substr(1, 2), 16);
-    const cg = parseInt(ca.substr(3, 2), 16);
-    const cb = parseInt(ca.substr(5, 2), 16);
-    const cl = (0.2126 * cr + 0.7152 * cg + 0.0722 * cb) / 255;
-    setAccent(html, ca, cl > 0.55 ? '#111111' : '#ffffff');
-  }
 }

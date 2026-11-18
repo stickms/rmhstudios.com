@@ -12,7 +12,6 @@ import { ChevronRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemePicker } from '@/components/settings/ThemePicker';
-import { AccentPicker } from '@/components/settings/AccentPicker';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
 import { SearchField } from '@/components/ui/search-field';
@@ -114,16 +113,15 @@ function SettingsPage() {
             description={
               query
                 ? undefined
-                : t('settings-appearance-hint', {
+                : t('settings-look-hint', {
                     defaultValue:
-                      "Theme and accent apply instantly — and follow you across devices when you're signed in.",
+                      "Your theme applies at once and follows you across devices when you're signed in.",
                   })
             }
           >
             {!query && (
               <div>
                 <ThemePicker owned={ownedThemes} />
-                <AccentPicker />
                 <div id="language" className="settings-row">
                   <span className="settings-row__text">
                     <span className="settings-row__name block">

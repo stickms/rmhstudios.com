@@ -75,6 +75,8 @@ describe('pre-paint steps', () => {
     const run = runPrepaint({
       storage: { 'rmh-cookie-consent': 'all' },
       config: buildPrepaintConfig({ discord: true }),
+      // The theme step still runs there: a dark device gets Night.
+      prefersDark: true,
     });
     expect(run.classes.has('media-reveal')).toBe(false);
     expect(run.classes.has('cookie-consented')).toBe(false);
