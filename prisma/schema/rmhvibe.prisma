@@ -16,7 +16,7 @@ model VibePage {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  /// Creator of the page; null for anonymous or legacy pages and after the account is deleted.
+  /// Creator of the page; null for anonymous or legacy pages. When the creator deletes their account the page moves to the shared "Deleted user" account (lib/account/deleted-user.ts).
   ownerId         String?
   owner           User?      @relation("VibeOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   /// The page this one was remixed from; null for originals or once the source is deleted.

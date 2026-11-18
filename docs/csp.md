@@ -549,6 +549,65 @@ stored.
 | 14    | In `deploy/apache/rmhstudios.conf`, remove the `Content-Security-Policy` line. Nitro then needs to send the same policy as enforced: change `security-headers.ts` to emit `Content-Security-Policy` (instead of `-Report-Only`) with `buildCspPolicy`; keep the `frame-ancestors`-only header out of the way (a second CSP header is intersected, which is harmless but redundant). Hand-install the vhost on the VPS (deploys never touch `/etc/apache2`). Keep Report-Only off, or keep reporting on the enforced header. |
 | 14+   | Watch reports for another week; rollback is reinstating the old Apache line.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
+## Frames that run user code
+
+Vibe pages (`/v`, the feed's `VibeEmbedRunner`, the builder preview, the Discord Activity)
+and runnable code embeds (F14, `RunnableEmbed`) execute user-written inline scripts. They
+cannot run under the nonce policy above, and a `srcdoc` or `blob:` iframe cannot opt out of
+it: such a document **inherits its parent's policy container**, so the host page's
+`script-src 'nonce-…' 'strict-dynamic'` (no `'unsafe-inline'`) would block every inline
+script, import map and inline module the day the policy is enforced. (Today the enforced
+Apache policy already blocks esm.sh fallback imports from those frames for the same reason.)
+
+So the frame is not a srcdoc. The iframe loads a small same-origin loader document by URL,
+`GET /vibe-frame` (`app/routes/vibe-frame.ts`), served with its own policy header from
+`buildFramePolicy()` (`lib/csp/policy.server.ts`): `sandbox allow-scripts allow-forms
+allow-modals allow-pointer-lock` (the CSP `sandbox` directive gives an opaque origin even
+if the URL is opened top-level), `default-src 'none'`, `script-src 'self' 'unsafe-inline'
+blob: https://esm.sh` (no nonce or hash: either would disable `'unsafe-inline'`), network
+limited to the site origin and esm.sh, and `frame-ancestors` for our pages and the Discord
+Activity. The host (`lib/rmhvibe/frame-loader.ts`, used by `VibeFrame` and
+`RunnableEmbed`) waits for `{ __rmhvibeFrame: 'ready' }`, posts `{ __rmhvibeFrame: 'html',
+html }`, and the loader `document.open()/write()/close()`s it. `document.open` keeps the
+Document and its policy container, so the page runs under the loader's policy. The page's
+own `<meta http-equiv="Content-Security-Policy">` (`VIBE_CSP`, `lib/code-embed/shared.ts`)
+still intersects with it and narrows each page further. The protocol is in
+`lib/rmhvibe/frame-protocol.ts`; the loader ignores every message that is not the first
+`html` message from its parent, and does nothing when it is the top-level document.
+
+Consequences worth knowing:
+
+- One document per iframe. Writing a second page into a written frame would leave the old
+  page's timers alive, so a new document is a new iframe (`VibeFrame` layers, `key` in
+  `RunnableEmbed`). The iframe's own `load` event fires for the loader and for the written
+  page in no fixed order, so the loader reports `{ __rmhvibeFrame: 'loaded' }` from the
+  written document's `load` and the host keys the fade-in, focus and `onFrame` on that.
+- `'self'` in the frame policy resolves to the origin of the loader's URL, not the opaque
+  origin of the document: verified in Chromium (`testing/e2e/vibe-frame-csp.mjs`), the
+  page can `fetch` and import from the site origin. Inside a Discord Activity the relative
+  `/vibe-frame` URL goes through the `discordsays.com` proxy, so `'self'` is the proxy
+  there (no new URL mapping: it is under the root mapping).
+- The response must not pick up any other policy. `server/nitro/security-headers.ts` skips
+  a response whose `Content-Security-Policy` has a `sandbox` directive (and drops the
+  report-only policy and `Reporting-Endpoints` that `getRouter()` sets even for server
+  routes), and `deploy/apache/rmhstudios.conf` has `expr=%{REQUEST_URI} != '/vibe-frame'` on
+  its vhost-wide `Header always set Content-Security-Policy`. **The vhost is hand-installed
+  on the VPS** (deploys never touch `/etc/apache2`): until it is reinstalled, Apache
+  overwrites the loader's header with the site policy and, after day 14, vibes stop running.
+  Reinstall it before the cutover. Apache also still sets `Referrer-Policy` and
+  `X-Content-Type-Options` on this path; both are harmless here.
+- The body is static and identical for everyone, `Cache-Control: public, max-age=300`;
+  `anon-html-cache.ts` only touches allowlisted paths, so it leaves this alone.
+- Not covered: `components/admin/email/EmailDesigner.tsx` renders admin-authored email HTML
+  in a `srcDoc` iframe with no scripts. Server-side thumbnails (Playwright `setContent`)
+  do not go through a host page.
+
+Proof: `pnpm exec tsx testing/e2e/vibe-frame-csp.mjs` (real Chromium, a host page with an
+enforced nonce-only policy) shows a srcdoc frame's inline scripts blocked and the loader
+frame running an import map, an inline module, an inline script and same-origin fetches,
+with other-origin fetches blocked. Unit tests: `lib/csp/__tests__/policy.test.ts` and
+`lib/rmhvibe/__tests__/frame-loader.test.ts`.
+
 ## Request body limits (documented, not changed)
 
 `LimitRequestBody 1610612736`

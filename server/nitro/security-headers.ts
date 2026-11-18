@@ -28,6 +28,7 @@
 
 import {
   buildCspPolicy,
+  carriesFramePolicy,
   FRAME_ANCESTORS,
   REPORTING_ENDPOINTS,
 } from '../../lib/csp/policy.server';
@@ -190,6 +191,33 @@ export default function securityHeadersPlugin(nitroApp: {
           typeof headers.has !==
             'function'
         ) {
+          return;
+        }
+
+        // A frame loader (`GET /vibe-frame`) carries its own complete policy, with a CSP
+        // `sandbox` directive. The site's report-only policy and reporting endpoint must
+        // not ride along: that document is the one place user code runs, and its header
+        // is the whole policy (docs/csp.md, "Frames that run user code"). Report-Only
+        // would also be mintRequestCspNonce's, which Start's getRouter() sets even for a
+        // server route, so it is removed here too.
+        if (
+          carriesFramePolicy(
+            headers.get(
+              'Content-Security-Policy',
+            ),
+          )
+        ) {
+          headers.delete(
+            'Content-Security-Policy-Report-Only',
+          );
+          headers.delete(
+            'Reporting-Endpoints',
+          );
+          setIfAbsent(
+            headers,
+            'X-Content-Type-Options',
+            'nosniff',
+          );
           return;
         }
 

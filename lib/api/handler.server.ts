@@ -369,6 +369,11 @@ function withHeaders(response: Response, extra: Record<string, string>): Respons
   }
 }
 
+/** A second way to identify a caller without a site session (see `HandlerOptions.alternateAuth`). */
+export type AlternateAuth = (
+  request: Request,
+) => Promise<{ userId: string | null; rateScope: string } | null>;
+
 export interface HandlerOptions<
   A extends AuthMode = 'required',
   B extends z.ZodType | undefined = undefined,
@@ -383,9 +388,10 @@ export interface HandlerOptions<
    * (e.g. a Discord Activity bearer token, where the iframe has no cookies). A session
    * always wins. `userId` becomes the context's `userId` (null for a guest);
    * `rateScope`, when the rate limit is `scope: 'user'`, keys the bucket. A throw or null
-   * means anonymous, never a 500.
+   * means anonymous, never a 500. Passing it with any other `auth` mode is a type error:
+   * the wrapper only consults it for `'optional'`, so it would otherwise be silently ignored.
    */
-  alternateAuth?: (request: Request) => Promise<{ userId: string | null; rateScope: string } | null>;
+  alternateAuth?: A extends 'optional' ? AlternateAuth : never;
   /** Zod schema for the JSON request body. Invalid/absent body → 400. */
   body?: B;
   /**
@@ -640,8 +646,9 @@ export function defineHandler<
       const user = (session?.user ?? null) as ApiUser | null;
       let userId = user?.id ?? null;
       let rateScope: string | null = null;
-      if (!user && mode === 'optional' && options.alternateAuth) {
-        const alt = await options.alternateAuth(request).catch(() => null);
+      const alternateAuth = options.alternateAuth as AlternateAuth | undefined;
+      if (!user && mode === 'optional' && alternateAuth) {
+        const alt = await alternateAuth(request).catch(() => null);
         if (alt) {
           userId = alt.userId;
           rateScope = alt.rateScope;

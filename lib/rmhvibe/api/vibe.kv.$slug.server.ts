@@ -5,6 +5,7 @@ import { AppError } from '@/lib/errors/codes';
 import { vibeKvReadApi, vibeKvWriteApi } from '@/lib/rmhvibe/vibe-kv.contract';
 import { vibeKvReadQuerySchema, vibeKvWriteBodySchema } from '@/lib/rmhvibe/vibe-kv-schema';
 import { bearerToken, verifyDiscordActivityToken } from '@/lib/discord/verify-activity-token.server';
+import { getClientIp } from '@/lib/rate-limit';
 import { findLinkedUserId } from '@/lib/discord-link.server';
 import { kvGet, kvIncr, kvList, kvSet, type KvScope } from '@/lib/rmhvibe/vibe-kv.server';
 
@@ -40,7 +41,7 @@ function ownerOf(scope: KvScope, userId: string | null): string {
 async function discordAuth(request: Request) {
   const token = bearerToken(request.headers);
   if (!token) return null;
-  const identity = await verifyDiscordActivityToken(token);
+  const identity = await verifyDiscordActivityToken(token, getClientIp(request));
   if (!identity) return null;
   return {
     userId: await findLinkedUserId(identity.discordId),

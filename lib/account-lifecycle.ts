@@ -1,3 +1,5 @@
+import { DELETED_USER_ID } from '@/lib/account/deleted-user';
+
 /**
  * Markers for accounts that have been deleted-in-place.
  *
@@ -20,12 +22,15 @@ export const DELETED_ACCOUNT_LOCK_UNTIL =
 
 /** True when the row is a deletion tombstone rather than a live account. */
 export function isDeletedAccount(user: {
+  id?: string;
   banReason?:
     | string
     | null;
 }): boolean {
   return (
     user.banReason ===
-    DELETED_ACCOUNT_BAN_REASON
+      DELETED_ACCOUNT_BAN_REASON ||
+    // The shared "Deleted user" owner of orphaned vibes (`lib/account/deleted-user.ts`).
+    user.id === DELETED_USER_ID
   );
 }
