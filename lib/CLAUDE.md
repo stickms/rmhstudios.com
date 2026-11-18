@@ -1518,11 +1518,34 @@ plugin.
   `t()`
   calls
   into
-  `locales/*/…json`)
+  `locales/en/<ns>.json`
+  only;
+  the
+  workflow
+  translates
+  from
+  those
+  files,
+  so
+  a
+  key
+  never
+  extracted
+  is
+  never
+  translated)
   →
   commit
+  (English
+  only;
+  never
+  a
+  non-English
+  catalog)
   →
-  run
+  a
+  maintainer
+  runs
   the
   **i18n-translate**
   workflow

@@ -130,7 +130,7 @@ it.
 | Auth                | Better Auth (email/password + Discord/GitHub, plus Steam/Twitch/Microsoft/GitLab/X when configured; Google off), Stripe via `@better-auth/stripe` |
 | Realtime            | Socket.io (Node) hubs; a Go worker fleet (Bazel) for background jobs / status / assets          |
 | 3D / audio / canvas | React Three Fiber + Rapier, Pixi.js, Howler, Tone.js                                            |
-| i18n                | i18next / react-i18next — 32 locales, RTL for ar/ur/fa                                          |
+| i18n                | i18next / react-i18next — 9 locales, RTL for ar                                                 |
 | Media / OG          | satori + `@resvg/resvg-js` (dynamic OG cards), sharp                                            |
 
 ---
@@ -165,7 +165,7 @@ public/             Static assets (favicon, manifest, og/icons, robots.txt)
 deploy/             Apache vhosts, blue/green hotswap, Postgres/backups, Terraform DNS, runbooks
 testing/            Vitest tests (RMHBox phases, game logic, auth)
 docs/               This overview, the improvement plan, per-feature design docs, runbooks
-locales/            32 locale dirs × 66 namespaces (en is the reference)
+locales/            en only (the reference); other locales come from the i18n/catalogs branch (pnpm i18n:pull)
 ```
 
 ---

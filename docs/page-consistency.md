@@ -1075,24 +1075,23 @@ page.
       adding
       strings
       (the
-      owner
+      i18n-translate
+      workflow
       translates
-      later
-      with
-      another
-      tool;
+      from
+      `locales/en`
+      later,
+      so
+      commit
+      English
+      only;
       a
       hand-added
       English
       key
       goes
       in
-      `locales/en/<ns>.json`
-      and
-      in
-      `KNOWN_UNTRANSLATED`
-      in
-      `lib/__tests__/i18n-catalogs.test.ts`).
+      `locales/en/<ns>.json`).
 
 ### Motion and accessibility
 

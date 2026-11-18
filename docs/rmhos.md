@@ -255,23 +255,23 @@ added
 by
 hand
 to
-every
-`locales/<lng>/c-rmhos.json`
-(`pnpm i18n:extract`
+`locales/en/c-rmhos.json`
+only,
+because
+`pnpm i18n:extract`
 does
 not
 scan
-`features/`,
-and
-running
-it
-rewrites
-thousands
-of
-locale
-files;
-do
-not).
+`features/`;
+the
+i18n-translate
+workflow
+fills
+the
+other
+locales
+on
+`i18n/catalogs`.
 
 ## Run it locally
 
