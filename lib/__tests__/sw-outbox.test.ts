@@ -1584,3 +1584,199 @@ describe('sw.js — navigation preload', () => {
     ).not.toHaveBeenCalled();
   });
 });
+
+/*
+ * Build-asset pruning (low-bandwidth audit, 2026-11-18). Hashed build files are
+ * cached under a cache name that never changes, and nothing removed one, so a
+ * regular visitor's storage grew with every deploy. The decision is a pure
+ * function in the worker; the cache plumbing around it is best effort.
+ */
+describe('sw.js — build-asset pruning', () => {
+  type Entry =
+    {
+      url: string;
+      date: number;
+    };
+  const prune =
+    (() => {
+      const sandbox: Record<
+        string,
+        unknown
+      > =
+        {
+          self: {
+            addEventListener:
+              () => {},
+            location:
+              {
+                origin:
+                  'https://rmhstudios.com',
+              },
+            registration:
+              {},
+          },
+          caches:
+            {
+              open: () =>
+                Promise.resolve(
+                  {},
+                ),
+              keys: () =>
+                Promise.resolve(
+                  [],
+                ),
+              match:
+                () =>
+                  Promise.resolve(
+                    undefined,
+                  ),
+            },
+          URL,
+          Date,
+          Math,
+          Number,
+          Set,
+          console,
+          setTimeout,
+          clearTimeout,
+        };
+      vm.createContext(
+        sandbox,
+      );
+      vm.runInContext(
+        SW_SOURCE,
+        sandbox,
+      );
+      return sandbox.assetsToPrune as (
+        entries: Entry[],
+        now: number,
+      ) => string[];
+    })();
+  const DAY =
+    24 *
+    60 *
+    60 *
+    1000;
+  const NOW =
+    Date.UTC(
+      2026,
+      10,
+      18,
+    );
+  const at =
+    (
+      p: string,
+      ageDays: number,
+    ): Entry => ({
+      url: `https://rmhstudios.com${p}`,
+      date:
+        NOW -
+        ageDays *
+          DAY,
+    });
+
+  it('drops build files cached more than 30 days ago and keeps newer ones', () => {
+    const entries =
+      [
+        at(
+          '/assets/old-a1.js',
+          45,
+        ),
+        at(
+          '/assets/new-b2.js',
+          3,
+        ),
+        at(
+          '/_build/old-c3.css',
+          31,
+        ),
+      ];
+    expect(
+      prune(
+        entries,
+        NOW,
+      ).sort(),
+    ).toEqual(
+      [
+        entries[0]
+          .url,
+        entries[2]
+          .url,
+      ].sort(),
+    );
+  });
+
+  it('never touches the offline page or anything outside the build directories', () => {
+    const entries =
+      [
+        at(
+          '/offline',
+          400,
+        ),
+        at(
+          '/images/x.avif',
+          400,
+        ),
+      ];
+    expect(
+      prune(
+        entries,
+        NOW,
+      ),
+    ).toEqual(
+      [],
+    );
+  });
+
+  it('keeps an entry with no Date and caps the count, oldest first', () => {
+    const undated =
+      {
+        url: 'https://rmhstudios.com/assets/nodate.js',
+        date: Number.NaN,
+      };
+    expect(
+      prune(
+        [
+          undated,
+        ],
+        NOW,
+      ),
+    ).toEqual(
+      [],
+    );
+    const many =
+      Array.from(
+        {
+          length: 1503,
+        },
+        (
+          _,
+          i,
+        ) =>
+          at(
+            `/assets/c${i}.js`,
+            1,
+          ),
+      );
+    const gone =
+      prune(
+        many,
+        NOW,
+      );
+    expect(
+      gone,
+    ).toEqual(
+      many
+        .slice(
+          0,
+          3,
+        )
+        .map(
+          (
+            e,
+          ) =>
+            e.url,
+        ),
+    );
+  });
+});
