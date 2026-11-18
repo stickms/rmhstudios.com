@@ -35,6 +35,10 @@
   min-block-size: 0;
   overflow-y: auto;
   padding-block-end: 8px;
+  /* A scroller clips on both axes, and the spine's dots reach past its inline-start edge (a station's dot by 0.5px, a
+     message dot's 3px ring by 1.5px; spine.css). 4px of room, given back by the margin, keeps the line where it was. */
+  padding-inline-start: 4px;
+  margin-inline-start: -4px;
 }
 
 /* Your message: right aligned, ink fill, no dot (P3). The time sits under it in `t-meta`. */
