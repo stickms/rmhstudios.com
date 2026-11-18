@@ -86,6 +86,11 @@ export function CampaignHistory({ refreshKey }: { refreshKey: number }) {
                   <Badge>{categoryName(t, r.category)}</Badge>
                 </div>
                 <p className="t-body break-words text-site-text">{r.subject}</p>
+                {r.ignoreFrequencyCap ? (
+                  <p className="t-meta">
+                    {t('email-history-override', { defaultValue: 'Sent past the frequency cap' })}
+                  </p>
+                ) : null}
                 {r.duplicates > 0 || r.throttled > 0 ? (
                   <p className="t-meta">
                     {t('email-history-skips', {

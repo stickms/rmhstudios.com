@@ -26,6 +26,9 @@ model EmailCampaign {
   duplicates  Int       @default(0)
   /// Of `skipped`: people held back by the frequency cap (lib/email/frequency.ts).
   throttled   Int       @default(0)
+  /// The admin chose to send to people emailed within the frequency cap window (lib/email/frequency.ts).
+  /// Opt-outs and the per-message dedupe still apply.
+  ignoreFrequencyCap Boolean @default(false)
   /// sha256 of category + subject + body. The per-user dedupe key and the double-submit guard.
   contentHash String    @db.VarChar(64)
   createdAt   DateTime  @default(now())
