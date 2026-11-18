@@ -13,6 +13,7 @@ import { HttpError, serverError } from'@/lib/http';
 import { chatWithPersonaApi, deletePersonaApi, getPersonaApi } from'@/lib/personas/personas.contract';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 
 interface Msg {
  role: string;
@@ -191,6 +192,17 @@ export function PersonaChatColumn({
  >
  <Trash2 className="h-4 w-4"/>
  </button>
+ )}
+ {!persona.isOwner && (
+ <AdminModerateButton
+ entityType="persona"
+ entityId={id}
+ current={{ name: persona.name, tagline: persona.tagline }}
+ onDone={(action) => {
+ if (action ==='remove') window.location.assign('/personas');
+ else window.location.reload();
+ }}
+ />
  )}
  </header>
 

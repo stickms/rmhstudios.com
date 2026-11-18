@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
@@ -39,6 +40,8 @@ export const route = apiRoute('/api/rmharks/thread', {
           { status: 403 },
         );
       }
+      const restricted = await restrictionResponse(userId, 'post');
+      if (restricted) return restricted;
 
       const { allowed, retryAfter } = rateLimit(getClientIp(request), {
         limit: 5,

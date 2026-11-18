@@ -12,6 +12,8 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { listRestrictions } from '@/lib/moderation/restrictions.server';
+import type { FeatureRestrictionView } from '@/lib/moderation/restrictions';
 
 /** Strike levels a user can be at, derived from the active strike count. */
 export type StandingLevel = 'GOOD' | 'WARNED' | 'AT_RISK' | 'RESTRICTED';
@@ -86,6 +88,8 @@ export interface AccountStanding {
   bannedUntil: string | null;
   banReason: string | null;
   strikes: StandingStrike[];
+  /** Feature timeouts, active first then history. */
+  restrictions: FeatureRestrictionView[];
 }
 
 /**
@@ -108,7 +112,7 @@ export async function getAccountStanding(userId: string): Promise<AccountStandin
   const nowDate = new Date();
   const now = nowDate.getTime();
 
-  const [user, strikes] = await Promise.all([
+  const [user, strikes, restrictions] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { bannedUntil: true, banReason: true },
@@ -132,6 +136,7 @@ export async function getAccountStanding(userId: string): Promise<AccountStandin
         decidedAt: true,
       },
     }),
+    listRestrictions(userId),
   ]);
 
   const banned = !!user?.bannedUntil && user.bannedUntil.getTime() > now;
@@ -174,5 +179,6 @@ export async function getAccountStanding(userId: string): Promise<AccountStandin
     bannedUntil: banned ? (user?.bannedUntil?.toISOString() ?? null) : null,
     banReason: banned ? (user?.banReason ?? null) : null,
     strikes: mapped,
+    restrictions: [...restrictions.filter((r) => r.active), ...restrictions.filter((r) => !r.active)],
   };
 }

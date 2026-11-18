@@ -70,6 +70,33 @@ model ContentReport {
   @@map("content_report")
 }
 
+/// A per-feature timeout: an admin bars one user from one feature (posting,
+/// replying, creating communities, hosting spaces, building vibes, …) for a
+/// while or for good, without banning the whole account. Active =
+/// `liftedAt IS NULL AND (expiresAt IS NULL OR expiresAt > now)`; the feature
+/// ids live in `lib/moderation/restrictions.ts`, and every gated write path
+/// asks `lib/moderation/restrictions.server.ts`. Rows are never deleted on
+/// lift, so the user's record and the admin users page keep the history.
+model FeatureRestriction {
+  id         String    @id @default(cuid())
+  userId     String
+  feature    String    @db.VarChar(32)
+  reason     String    @db.VarChar(500)
+  adminId    String?
+  /// null = permanent.
+  expiresAt  DateTime?
+  liftedAt   DateTime?
+  liftedById String?
+  createdAt  DateTime  @default(now())
+
+  user  User  @relation("FeatureRestrictionUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin User? @relation("FeatureRestrictionAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([userId, feature])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("feature_restriction")
+}
+
 model UserBlock {
   id        String   @id @default(cuid())
   blockerId String

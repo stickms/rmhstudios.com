@@ -46,6 +46,10 @@ const h =
     }),
   );
 
+// No feature timeouts in these tests (lib/moderation/restrictions.server.ts).
+vi.mock('@/lib/moderation/restrictions.server', () => ({
+  restrictionResponse: async () => null,
+}));
 vi.mock(
   '@/lib/auth',
   () => ({

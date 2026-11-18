@@ -20,6 +20,7 @@ import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { slowModeEvents } from '@/lib/safety/slow-mode-events';
 import { ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 
 interface LiveMessage {
   id: string;
@@ -338,6 +339,15 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
           <div className="flex items-center gap-2">
             {statusBadge}
             {hostActions}
+            <AdminModerateButton
+              entityType="space"
+              entityId={initialSpace.id}
+              current={{ title: initialSpace.title }}
+              onDone={(action) => {
+                if (action === 'remove') window.location.assign('/spaces');
+                else window.location.reload();
+              }}
+            />
           </div>
         }
       />

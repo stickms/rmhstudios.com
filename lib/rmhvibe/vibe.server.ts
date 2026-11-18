@@ -18,6 +18,7 @@
  * Server-only (`.server.ts`) — uses process.env and the Prisma client.
  */
 
+import { VIBE_REMOVED_STATUS } from '@/lib/rmhvibe/vibe-status';
 import OpenAI from 'openai';
 import { userChipSelect } from '@/lib/user-display';
 import { planVibeWrite } from '@/lib/rmhvibe/ownership';
@@ -456,8 +457,8 @@ export type VibeVersionSummary = {
  * `conversationHistory`; fetch a single version with getVibeVersion for the body.
  */
 export async function listVibeVersions(slug: string): Promise<VibeVersionSummary[]> {
-  const page = await prisma.vibePage.findUnique({ where: { slug }, select: { id: true } });
-  if (!page) return [];
+  const page = await prisma.vibePage.findUnique({ where: { slug }, select: { id: true, status: true } });
+  if (!page || page.status === VIBE_REMOVED_STATUS) return [];
 
   const versions = await prisma.vibePageVersion.findMany({
     where: { pageId: page.id },
@@ -479,7 +480,7 @@ export async function listVibeVersions(slug: string): Promise<VibeVersionSummary
  */
 export async function getVibeVersion(slug: string, versionId: string) {
   const version = await prisma.vibePageVersion.findFirst({
-    where: { id: versionId, page: { slug } },
+    where: { id: versionId, page: { slug, status: { not: VIBE_REMOVED_STATUS } } },
     select: {
       id: true,
       prompt: true,
@@ -1000,6 +1001,12 @@ export async function* generateVibeStream(opts: {
     : null;
   if (opts.slug && !existing) {
     yield { type: 'error', message: 'Vibe page not found' };
+    return;
+  }
+  // A page site moderation removed is neither edited (which would flip it back
+  // to "ready") nor remixed (which would copy it out under a new slug).
+  if (existing?.status === VIBE_REMOVED_STATUS) {
+    yield { type: 'error', message: 'This vibe was removed by site moderation.' };
     return;
   }
   // A widget stays a widget on edit and remix: the source page's kind wins over the request's.

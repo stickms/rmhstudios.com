@@ -75,6 +75,9 @@ function systemIdentity(entityType: string | null): { label: string } {
       return { label: 'Ride message' };
     case 'ladder_job':
       return { label: 'RMH Ladder' };
+    case 'moderation':
+    case 'strike':
+      return { label: 'Site moderation' };
     default:
       return { label: 'RMH Studios' };
   }
@@ -312,6 +315,9 @@ export function NotificationsColumn({
         return '/rideshare/drive';
       case 'ladder_job':
         return n.entityId ? `/rmhladder/jobs/${n.entityId}` : '/rmhladder/jobs';
+      case 'moderation':
+      case 'strike':
+        return '/settings/account-status';
       default:
         return null;
     }

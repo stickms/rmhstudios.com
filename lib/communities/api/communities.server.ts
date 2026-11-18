@@ -1,3 +1,4 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
@@ -37,6 +38,8 @@ export const route = apiRoute('/api/communities', {
       verboseValidationErrors: true,
     },
     async ({ session, body }) => {
+      const restricted = await restrictionResponse(session.user.id, 'community');
+      if (restricted) return restricted;
       let slug = slugify(body.name);
       if (!slug) return Response.json({ error: 'Invalid name' }, { status: 400 });
       // Ensure uniqueness.

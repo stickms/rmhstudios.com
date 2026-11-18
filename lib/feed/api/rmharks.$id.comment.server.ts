@@ -1,3 +1,5 @@
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
+import { REMOVED_REPLY_TEXT } from '@/lib/moderation/removed-text';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { Prisma } from '@prisma/client';
@@ -91,7 +93,7 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
     const resolveComment = (c: CommentRow) => {
       const isDeleted = !!c.deletedAt;
       const deletedMessage = c.deletedByAdmin
-        ? '[This reply was deleted by an admin]'
+        ? REMOVED_REPLY_TEXT
         : '[This reply was deleted by the user]';
 
       return {
@@ -240,6 +242,8 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
           { status: 403 },
         );
       }
+      const restricted = await restrictionResponse(session.user.id, 'comment');
+      if (restricted) return restricted;
 
       const ip = getClientIp(request);
       const { allowed, retryAfter } = rateLimit(ip, {
