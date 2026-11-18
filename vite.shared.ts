@@ -143,3 +143,5 @@ export const ISLANDS_BASE_URL = '/islands/';
 // The two framer-motion internals behind components/motion/LazyMotionProvider.tsx.
 // Defined in a plain .mjs so the vitest configs can import it with its extension.
 export { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
+// `i18next` / `react-i18next` -> the site's runtime (lib/i18n/runtime/).
+export { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';

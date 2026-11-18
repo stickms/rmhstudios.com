@@ -30,6 +30,7 @@ import react from '@vitejs/plugin-react';
 import { hoverPolicy } from './lib/hover-css';
 import {
   FRAMER_MOTION_INTERNALS,
+  I18N_RUNTIME_ALIASES,
   ISLANDS_BASE_URL,
   ISLANDS_OUT_DIR,
   quietLogger,
@@ -56,7 +57,7 @@ export default defineConfig({
   base: ISLANDS_BASE_URL,
   // public/ is the site's; Nitro already serves it. An island ships only its own build output.
   publicDir: false,
-  resolve: { tsconfigPaths: true, alias: FRAMER_MOTION_INTERNALS },
+  resolve: { tsconfigPaths: true, alias: { ...FRAMER_MOTION_INTERNALS, ...I18N_RUNTIME_ALIASES } },
   define: sharedDefine(),
   css: { postcss: { plugins: [hoverPolicy()] } },
   plugins: [

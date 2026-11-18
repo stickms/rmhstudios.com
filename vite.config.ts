@@ -13,6 +13,7 @@ import { rmhosDevImage } from './vite.rmhos-dev';
 // checks are shared with the island build (vite.islands.config.ts, redesign audit B1).
 import {
   FRAMER_MOTION_INTERNALS,
+  I18N_RUNTIME_ALIASES,
   ISLANDS_BASE_URL,
   ISLANDS_OUT_DIR,
   quietLogger,
@@ -173,7 +174,7 @@ export default defineConfig({
   customLogger: logger,
   resolve: {
     tsconfigPaths: true,
-    alias: FRAMER_MOTION_INTERNALS,
+    alias: { ...FRAMER_MOTION_INTERNALS, ...I18N_RUNTIME_ALIASES },
   },
   server: {
     port: 7005,
