@@ -31,8 +31,8 @@ export const Route = createFileRoute('/api/vibe/stream')({
             if (restricted) return restricted;
           }
           // Spend gates, before any row is reserved or model called: the platform's daily
-          // vibe cap (503 VIBE_BUSY) and a signed-in user's monthly vibe ceiling (402
-          // VIBE_BUDGET_EXCEEDED). defineHandler turns the AppError into the envelope.
+          // vibe cap (503 AI_UNAVAILABLE, scope vibe-busy) and a signed-in user's monthly vibe
+          // ceiling (402 AI_BUDGET_EXCEEDED, scope vibe). defineHandler turns the AppError into the envelope.
           await assertVibeAllowed(userId);
           const { prompt, slug, fromVersionId, kind, selection } = body;
           const model = asVibeModel(body.model);

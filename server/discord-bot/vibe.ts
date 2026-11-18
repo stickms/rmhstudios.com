@@ -14,6 +14,7 @@ import { findLinkedUserId } from '../../lib/discord-link.server';
 import { generateVibeStream } from '../../lib/rmhvibe/vibe.server';
 import { assertVibeAllowed } from '../../lib/ai/vibe-budget.server';
 import { isAppError } from '../../lib/errors/codes';
+import { VIBE_BUDGET_SCOPE, VIBE_BUSY_SCOPE } from '../../lib/ai/vibe-tasks';
 import { parsePartialProject } from '../../lib/rmhvibe/vibe-project';
 import {
   InteractionResponse,
@@ -105,8 +106,9 @@ async function defaultVibeGate(
     return 'ok';
   } catch (err) {
     if (isAppError(err)) {
-      if (err.code === 'VIBE_BUSY') return 'busy';
-      if (err.code === 'VIBE_BUDGET_EXCEEDED') return 'budget';
+      const scope = err.detail?.scope;
+      if (err.code === 'AI_UNAVAILABLE' && scope === VIBE_BUSY_SCOPE) return 'busy';
+      if (err.code === 'AI_BUDGET_EXCEEDED' && scope === VIBE_BUDGET_SCOPE) return 'budget';
     }
     return 'ok';
   }

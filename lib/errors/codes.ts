@@ -128,18 +128,6 @@ export const ERROR_CODES =
         i18n: 'errors:aiBudget',
         text: "You've used this month's AI allowance",
       },
-    VIBE_BUDGET_EXCEEDED:
-      {
-        http: 402,
-        i18n: 'errors:vibeBudget',
-        text: "You've used this month's vibe-building allowance",
-      },
-    VIBE_BUSY:
-      {
-        http: 503,
-        i18n: 'errors:vibeBusy',
-        text: 'RMH Vibes is busy right now. Try again later.',
-      },
 
     // --- dependencies --------------------------------------------------------
     STORAGE_UNAVAILABLE:

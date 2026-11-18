@@ -1828,13 +1828,13 @@ the bot):
 
 | Gate                           | Limit                                                                                    | Refusal                                     |
 | ------------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------- |
-| Monthly ceiling per user, tier | free $2, starter $5, pro $20, enterprise $100 (`VIBE_MONTHLY_BUDGET_MICROS`)             | 402 `VIBE_BUDGET_EXCEEDED`                  |
-| Platform daily cap, all users  | `VIBE_DAILY_BUDGET_MICROS` (default 25000000 = $25 a UTC day, `0` = no cap), signed-out included | 503 `VIBE_BUSY`                             |
+| Monthly ceiling per user, tier | free $2, starter $5, pro $20, enterprise $100 (`VIBE_MONTHLY_BUDGET_MICROS`)             | 402 `AI_BUDGET_EXCEEDED`, `detail.scope: 'vibe'` |
+| Platform daily cap, all users  | `VIBE_DAILY_BUDGET_MICROS` (default 25000000 = $25 a UTC day, `0` = no cap), signed-out included | 503 `AI_UNAVAILABLE`, `detail.scope: 'vibe-busy'` |
 
 The daily total is summed from the ledger (so the web and bot processes agree) and cached about 30
-seconds. Both gates fail open on a ledger read error. The builder shows the envelope's message
-(`vibe-stream.ts` reads `error`, and prefers it for `VIBE_BUSY`); the bot answers with a fixed
-sentence. `/api/vibe/ai` is not gated by these (it keeps its own rate limits and daily cap) but its
+seconds. Both gates fail open on a ledger read error. Both reuse existing error codes, marked with
+`detail.scope` (`lib/ai/vibe-tasks.ts`), because `ERROR_CODES` ships on every page's critical path;
+the builder (`vibe-stream.ts`) and the bot read the scope and word the refusal for vibes. `/api/vibe/ai` is not gated by these (it keeps its own rate limits and daily cap) but its
 spend counts toward the daily total.
 
 ## Follow-ups not done
