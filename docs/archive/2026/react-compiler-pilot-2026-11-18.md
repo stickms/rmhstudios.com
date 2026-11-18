@@ -1,0 +1,66 @@
+# React Compiler pilot — 2026-11-18
+
+**Question:** does React Compiler 1.0 make the heavy client surfaces faster to
+interact with, and is it safe to turn on?
+
+**Answer:** on the games hub (`components/steam/`), yes: CPU time while typing
+in its search fell by about a quarter, and every page built from it renders the
+same text. On the home feed (`components/feed/`) it changed nothing measurable
+and added 0.9 KB Brotli to the entry, so the feed is not compiled. The compiler
+now runs on `components/steam/` only (`REACT_COMPILER_DIRS` in `vite.config.ts`).
+
+## How it is wired
+
+- `babel-plugin-react-compiler` 1.0.0 through `@rolldown/plugin-babel`, with the
+  `reactCompilerPreset` that `@vitejs/plugin-react` 6 exports. The Rust port
+  (`react({ compiler: true })`, `oxc-transform-react`) is marked experimental
+  and was not used.
+- The preset's file filter is narrowed to the directories in
+  `REACT_COMPILER_DIRS`, test files excluded. It applies to the client and SSR
+  builds alike. Vitest does not use it, so the unit tests exercise the
+  uncompiled components.
+- To add a surface: add its directory, rebuild, and repeat both measurements
+  below. Keep it only if it wins.
+
+## Method
+
+Production build on Node 26, a 390×844 viewport, Chromium with 4× CPU
+throttling, signed in, the globe set to Still. CPU profiles (100 µs sampling)
+during a scripted interaction. Compared:
+
+- busy time: all samples except idle;
+- React time: samples in the `vendor-react` chunk.
+
+Each figure is the median of 3–7 runs.
+
+| Interaction | Without | With | Change |
+| --- | --- | --- | --- |
+| Feed: type 25 characters in the composer, React time | 134 ms | 129 ms | none (within noise) |
+| Feed: like six posts, React time | 96 ms | 100 ms | none (within noise) |
+| Games hub: type 25 characters in the search, busy time | 226 ms | 166 ms | −27% |
+| Games hub: same, React time | 116 ms | 104 ms | −10% |
+
+The games-hub busy time falls by more than React's own time, because the
+component functions in the steam chunks stop re-running for rows whose props
+did not change.
+
+| Size | Without | With (steam only) |
+| --- | --- | --- |
+| Entry, raw | 641.5 KB | 641.5 KB |
+| Critical path, Brotli | 224.9 KB | 225.1 KB |
+| Client JS, all chunks | — | about +0.3% when the feed was compiled too |
+
+**Safety.** Ran the same sweep on both builds: 13 pages built from
+`components/steam` (hub, store, communities, community, daily, inventory,
+market, marketplace, membership, shop, a game page, a game hub, a profile),
+signed out and signed in. For each page it read the rendered text, then filtered
+the hub's search and cleared it. Both builds gave identical output.
+
+## Found along the way
+
+The feed's interaction cost is not React. During six likes the busiest function
+was the chrome renderer's `drawImage` (`lib/chrome/renderer.ts:1734`), which
+copies the one WebGL canvas into each chrome element's 2D canvas. It took
+730 ms of 1,450 ms busy time with the globe set to Still. Headless Chromium
+renders WebGL in software, which inflates that copy, so the number is an upper
+bound. Measure it on a real phone before acting on it.

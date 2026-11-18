@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
-import react from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
 import { hoverPolicy } from './lib/hover-css';
 import { rmhosDevImage } from './vite.rmhos-dev';
@@ -21,6 +22,27 @@ import {
 } from './vite.shared';
 
 const REPO_ROOT = fileURLToPath(new URL('./', import.meta.url));
+
+/**
+ * React Compiler, scoped (modernization audit, "React Compiler pilot").
+ *
+ * The compiler memoizes components and hooks automatically. It is applied to the
+ * directories listed here and nowhere else, so a change in re-render timing can
+ * only show up where it was measured. Grow the list one surface at a time, each
+ * with its own before/after (docs/archive/2026/react-compiler-pilot-2026-11-18.md).
+ */
+const REACT_COMPILER_DIRS = ['components/steam/'];
+function scopedReactCompiler() {
+  const preset = reactCompilerPreset();
+  preset.rolldown.filter = {
+    ...preset.rolldown.filter,
+    id: {
+      include: REACT_COMPILER_DIRS.map((dir) => new RegExp(`/${dir}.*\\.tsx?$`)),
+      exclude: [/\.test\.tsx?$/],
+    },
+  };
+  return preset;
+}
 const logger = quietLogger();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -199,6 +221,7 @@ export default defineConfig({
       // docs/archive/2026/performance-audit-2026-08-04.md.
     }),
     react(),
+    babel({ presets: [scopedReactCompiler()] }),
     nitro({
       // Pre-compress static assets at build time so the origin serves gzip
       // directly (Nitro negotiates via Accept-Encoding). Cloudflare compresses at

@@ -226,7 +226,9 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@babel/core": "^8.1.2",
     "@eslint/js": "^10.0.1",
+    "@rolldown/plugin-babel": "0.3.1",
     "@tailwindcss/vite": "^4.3.5",
     "@tanstack/router-devtools": "1.167.2",
     "@tanstack/router-plugin": "1.168.48",
@@ -243,6 +245,7 @@
     "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^6.3.0",
     "@vitest/coverage-v8": "^5.1.1",
+    "babel-plugin-react-compiler": "1.0.0",
     "chart.js": "^4.6.1",
     "concurrently": "^10.0.7",
     "cross-env": "^10.1.0",
