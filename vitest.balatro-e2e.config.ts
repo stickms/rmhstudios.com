@@ -16,6 +16,7 @@
  * Engine and match pages are heavy (software WebGL), so files run one at a time.
  */
 import path from 'node:path';
+import { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
 import { defineConfig } from 'vitest/config';
 
 const shared = {
@@ -64,6 +65,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      ...FRAMER_MOTION_INTERNALS,
       '@': path.resolve(import.meta.dirname),
       '@features': path.resolve(import.meta.dirname, 'features'),
     },

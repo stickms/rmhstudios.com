@@ -139,3 +139,7 @@ export const rolldownChecks = { moduleLevelDirective: false };
 /** Where the island build writes, and the URL prefix Nitro serves it under (vite.config.ts `publicAssets`). */
 export const ISLANDS_OUT_DIR = 'dist-islands';
 export const ISLANDS_BASE_URL = '/islands/';
+
+// The two framer-motion internals behind components/motion/LazyMotionProvider.tsx.
+// Defined in a plain .mjs so the vitest configs can import it with its extension.
+export { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';

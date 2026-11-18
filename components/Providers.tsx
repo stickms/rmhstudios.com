@@ -10,7 +10,8 @@ import {
 } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
-import { MotionConfig, LazyMotion } from 'framer-motion';
+import { MotionConfig } from 'framer-motion';
+import { LazyMotionProvider } from '@/components/motion/LazyMotionProvider';
 import { ToastHost } from '@/components/ui/toast-host';
 import {
   SessionCtx,
@@ -144,8 +145,11 @@ const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 
 // framer-motion feature bundle, loaded on demand so the animation/gesture/layout
 // drivers stay out of the initial bundle. Every component ships the lightweight
-// `m` component (aliased as `motion`) and picks these up from LazyMotion context.
-const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => mod.default);
+// `m` component (aliased as `motion`) and picks these up from the lazy context.
+// The bundle registers its own features and returns the renderer, so the provider
+// in the shell imports none of motion-dom (components/motion/LazyMotionProvider).
+const loadMotionFeatures = () =>
+  import('@/lib/motion-features').then((mod) => mod.registerMotionFeatures());
 
 // THEME_BG (theme → document background color) lives in stores/themeStore.ts,
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
@@ -604,7 +608,7 @@ export function Providers({
     <QueryClientProvider client={queryClient}>
       <AppI18nProvider locale={locale} resources={i18nResources}>
         {/* Load framer-motion features lazily so they're off the initial bundle. */}
-        <LazyMotion features={loadMotionFeatures}>
+        <LazyMotionProvider load={loadMotionFeatures}>
           {/* One shared animation scheme for every account and device. */}
           <MotionConfig reducedMotion="never">
             <SessionCtx.Provider value={effectiveSession}>
@@ -642,7 +646,7 @@ export function Providers({
               </AppTierContext.Provider>
             </SessionCtx.Provider>
           </MotionConfig>
-        </LazyMotion>
+        </LazyMotionProvider>
       </AppI18nProvider>
     </QueryClientProvider>
   );

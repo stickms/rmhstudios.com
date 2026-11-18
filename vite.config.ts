@@ -11,6 +11,7 @@ import { rmhosDevImage } from './vite.rmhos-dev';
 // `.server` stubbing, the compile-time constants, the quiet logger and the rolldown
 // checks are shared with the island build (vite.islands.config.ts, redesign audit B1).
 import {
+  FRAMER_MOTION_INTERNALS,
   ISLANDS_BASE_URL,
   ISLANDS_OUT_DIR,
   quietLogger,
@@ -150,6 +151,7 @@ export default defineConfig({
   customLogger: logger,
   resolve: {
     tsconfigPaths: true,
+    alias: FRAMER_MOTION_INTERNALS,
   },
   server: {
     port: 7005,

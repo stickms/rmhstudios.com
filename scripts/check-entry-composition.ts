@@ -97,18 +97,19 @@ const FORBIDDEN: Record<string, string> = {
  * entry is a plain FAIL again.
  */
 const KNOWN_VIOLATIONS: Record<string, { maxBytes: number; note: string }> = {
-  // Third-pass audit RT1, 2026-11-12. What is left of framer-motion in the closure is `<LazyMotion>` and
-  // `<MotionConfig>` in components/Providers.tsx: the provider every `m` component on the site reads its renderer
-  // from. It is 1,442 B of framer-motion, but `loadFeatures` imports `setFeatureDefinitions`, which motion-dom
-  // defines in the same module as the VisualElement class (25,832 B). Caps are those measurements + 2%. They come
-  // out when the provider leaves the shell, which needs every `m` user to sit under a provider of its own.
+  // Third-pass audit RT1, 2026-11-12; cut 2026-11-18 (low-bandwidth audit). framer-motion's `<LazyMotion>` is gone
+  // from the shell: components/motion/LazyMotionProvider.tsx supplies framer-motion's own `LazyContext` and leaves
+  // `loadFeatures` (which pulled motion-dom's 25.8 KB `VisualElement` module) to the lazy feature bundle. What is
+  // left is `<MotionConfig>` in components/Providers.tsx: its context and `useConstant` (536 B of framer-motion) and
+  // `resolve-transition` (84 B of motion-dom). Caps are those measurements + 2%. They come out when MotionConfig
+  // leaves the shell.
   'framer-motion': {
-    maxBytes: 1_480,
-    note: '2026-11-12: <LazyMotion> + <MotionConfig> in components/Providers.tsx',
+    maxBytes: 550,
+    note: '2026-11-18: <MotionConfig> in components/Providers.tsx (LazyMotion replaced by LazyMotionProvider)',
   },
   'motion-dom': {
-    maxBytes: 26_400,
-    note: '2026-11-12: VisualElement.mjs, pulled by <LazyMotion> through setFeatureDefinitions',
+    maxBytes: 90,
+    note: '2026-11-18: resolve-transition.mjs, pulled by <MotionConfig>',
   },
 };
 

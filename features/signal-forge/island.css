@@ -14,6 +14,7 @@
 
 @source "./";
 @source "../../components/i18n/AppI18nProvider.tsx";
+@source "../../components/motion/LazyMotionProvider.tsx";
 @source "../../components/shared/GameErrorBoundary.tsx";
 @source "../../components/shared/GameLoadingFallback.tsx";
 @source "../../components/ui/button.tsx";
