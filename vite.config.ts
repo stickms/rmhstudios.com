@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
@@ -17,6 +19,7 @@ import {
   stubServerFiles,
 } from './vite.shared';
 
+const REPO_ROOT = fileURLToPath(new URL('./', import.meta.url));
 const logger = quietLogger();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,6 +163,23 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart({
       srcDirectory: 'app',
+      // Short server-function ids (low-bandwidth audit, 2026-11-18). Start's default
+      // is the full SHA-256 hex of `<absolute path>--<name>`: 64 characters that every
+      // chunk calling the function carries, and random hex barely compresses. The
+      // entry alone held 113 of them (7.3 KB raw, ~3.6 KB brotli) for every page.
+      // Same input made path-relative, so an id no longer depends on the checkout
+      // directory, cut to 12 base64url characters (72 bits; the compiler also
+      // de-duplicates a collision with a suffix). Ids are opaque: only the
+      // `/_serverFn/` prefix is matched anywhere (lib/server-fn-retry.ts). Changing
+      // the scheme renames every function once, so tabs open across that deploy
+      // need one reload, as after any deploy that renames a function.
+      serverFns: {
+        generateFunctionId: ({ filename, functionName }) =>
+          createHash('sha256')
+            .update(`${relative(REPO_ROOT, filename)}--${functionName}`)
+            .digest('base64url')
+            .slice(0, 12),
+      },
       // NOTE: `router: { autoCodeSplitting: true }` was tested (rewrite R3-T5,
       // 2026-07-18) and is a VERIFIED NO-OP here — enabling it produced a
       // byte-identical build (same chunk hashes, same 582 chunks, same 216 KB
