@@ -1,7 +1,9 @@
 import { readJson, readString, removeKey, writeString } from '@/lib/core/persist';
 import {
   ReactNode,
+  Suspense,
   createContext,
+  lazy,
   useContext,
   useEffect,
   useRef,
@@ -57,14 +59,6 @@ import { applyHtmlLangDir } from '@/lib/i18n/dom';
 import { isAppThemeRoute } from '@/lib/prepaint/theme-routes';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
-import { CallMount } from '@/components/call/CallMount';
-import { GroupCallMount } from '@/components/groupcall/GroupCallMount';
-import { AccessMount } from '@/components/access/AccessMount';
-import { DelightMount } from '@/components/delight/DelightMount';
-import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
-import { RecentsTracker } from '@/components/site/RecentsTracker';
-import { PlaytimeTracker } from '@/components/site/PlaytimeTracker';
-import { PatchNotesMount } from '@/components/arcade/PatchNotesMount';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
@@ -155,6 +149,9 @@ const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 // `m` component (aliased as `motion`) and picks these up from the lazy context.
 // The bundle registers its own features and returns the renderer, so the provider
 // in the shell imports none of motion-dom (components/motion/LazyMotionProvider).
+// Mounted when idle; see components/site/ShellMounts.tsx.
+const ShellMounts = lazy(() => import('@/components/site/ShellMounts'));
+
 const loadMotionFeatures = () =>
   import('@/lib/motion-features').then((mod) => mod.registerMotionFeatures());
 
@@ -635,19 +632,15 @@ export function Providers({
                         content must still surface a real route-level error. */}
                       <SilentErrorBoundary label="global-chrome">
                         <CommandPaletteMount />
-                        <RecentsTracker />
-                        <PlaytimeTracker />
-                        <PatchNotesMount />
-                        {/* §14: the floating try-before-buy / preview-on-site confirm bar,
-                          mounted globally so it survives navigation under a previewed theme. */}
-                        <ThemePreviewBar />
-                        {/* Voice calls. Mounted here for the same reason: an
-                          incoming call has to ring wherever the user is, and
-                          answering one must survive navigating away. */}
-                        <CallMount />
-                        <GroupCallMount />
-                        <AccessMount />
-                        <DelightMount />
+                        {/* Trackers, patch notes, the theme-preview bar, calls, the
+                          access sheet and delight: all render nothing at load, so
+                          they arrive as one chunk once the browser is idle
+                          (components/site/ShellMounts.tsx). */}
+                        {idleReady ? (
+                          <Suspense fallback={null}>
+                            <ShellMounts />
+                          </Suspense>
+                        ) : null}
                       </SilentErrorBoundary>
                     </ConfirmProvider>
                   </ResolvedUserCtx.Provider>

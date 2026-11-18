@@ -21,13 +21,9 @@ import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
-import { startViewportPrefetch } from '@/lib/viewport-prefetch';
-import { startForesightPrefetch } from '@/lib/foresight-prefetch';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
-import { initWebVitals } from '@/lib/rum';
-import { registerServiceWorker } from '@/lib/sw-register';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
 // The site-wide document defaults, shared with the island document (redesign B1).
 import { ROOT_LINKS, ROOT_META } from '@/lib/root-head';
@@ -435,6 +431,22 @@ function RootDocument({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Start something whose module is loaded on demand, and stop it on unmount even
+ * when the unmount comes before the module has arrived.
+ */
+function startDeferred<M>(load: () => Promise<M>, start: (m: M) => void | (() => void)): () => void {
+  let stop: void | (() => void);
+  let live = true;
+  void load().then((m) => {
+    if (live) stop = start(m);
+  });
+  return () => {
+    live = false;
+    stop?.();
+  };
+}
+
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
@@ -449,10 +461,17 @@ function RootComponent() {
   // Install global error/unhandled-rejection reporting + Core Web Vitals
   // collection once on the client so runtime errors and perf regressions
   // surface in the server logs instead of failing silently.
+  //
+  // Error reporting is installed at once (an error during start-up must be heard).
+  // Everything else here waits for `load` or idle anyway, so its CODE does not need
+  // to be in the entry either: RUM, the service worker and its offline outbox, and
+  // the two link prefetchers below arrive as dynamic imports after hydration
+  // (low-bandwidth audit, 2026-11-18). RUM loses nothing: web-vitals reads buffered
+  // performance entries.
   useEffect(() => {
     installGlobalErrorHandlers();
-    initWebVitals();
-    registerServiceWorker();
+    void import('@/lib/rum').then((m) => m.initWebVitals());
+    void import('@/lib/sw-register').then((m) => m.registerServiceWorker());
     // From here on, a mount is a page switch, not hydration — the point after
     // which `DeferOnNavigate` may split a page's first render.
     markDocumentHydrated();
@@ -467,12 +486,26 @@ function RootComponent() {
   // document has hydrated rather than from `getRouter()`: a preload issued while
   // the router is still adopting the server's matches re-runs the root loader
   // and holds hydration up behind it (app/router.tsx). It still waits for `load`.
-  useEffect(() => startViewportPrefetch(router), [router]);
+  useEffect(
+    () =>
+      startDeferred(
+        () => import('@/lib/viewport-prefetch'),
+        (m) => m.startViewportPrefetch(router),
+      ),
+    [router],
+  );
 
   // Predictive prefetch (ForesightJS): pointer trajectory, Tab stops, scroll and
   // touchstart start the same router preload earlier than a hover would. Loaded
   // at idle after `load`, for the same hydration reason as the line above.
-  useEffect(() => startForesightPrefetch(router), [router]);
+  useEffect(
+    () =>
+      startDeferred(
+        () => import('@/lib/foresight-prefetch'),
+        (m) => m.startForesightPrefetch(router),
+      ),
+    [router],
+  );
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
