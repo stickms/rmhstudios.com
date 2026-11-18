@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
-import { GifPicker } from '@/components/feed/GifPicker';
+import { GifPicker } from '@/components/feed/GifPickerLazy';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
 import { VoiceComposer } from '@/components/voice/VoiceComposer';

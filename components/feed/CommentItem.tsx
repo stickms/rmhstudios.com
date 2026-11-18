@@ -23,7 +23,7 @@ import ChatMediaEmbed, {
   stripEmbedUrls,
   extractMediaEmbeds,
 } from '@/components/shared/ChatMediaEmbed';
-import { GifPicker } from '@/components/feed/GifPicker';
+import { GifPicker } from '@/components/feed/GifPickerLazy';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { AIGenerateButton } from './AIGenerateButton';

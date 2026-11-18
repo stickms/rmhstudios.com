@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { GifEmbed } from '../GifEmbed';
-import { GifPicker } from '../GifPicker';
+import { GifPicker } from '../GifPickerLazy';
 
 /** The chosen GIF as an attachment in the composer, with a button that removes it. */
 export function GifAttachment({ gifUrl, onRemove }: { gifUrl: string; onRemove: () => void }) {
