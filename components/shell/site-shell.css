@@ -15,12 +15,22 @@
 .site-shell {
   min-block-size: 100dvh;
   background: var(--site-bg);
-  /* A bought theme's glow wash (R1 amendment, lib/themes/tokens.ts `themeWash`): faint, on the first screen only, and
-     scrolling with the page, never a fixed layer (the iOS bar contract). Unset without a user theme, so flat. */
+  /* A bought theme's glow wash (R1 amendment, lib/themes/tokens.ts `themeWash`) behind the whole page: one viewport's
+     worth, held to the viewport while the page scrolls, so every screen of a long page sits in it (it used to scroll
+     away after the first). A fixed BACKGROUND, not a fixed layer: there is no element at an edge for iOS Safari to
+     read into its bars (the iOS bar contract), and without a user theme the image is `none`, so flat and free. */
   background-image: var(--site-theme-wash, none);
   background-size: 100% 100vh;
   background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--site-text);
+}
+/* iOS Safari ignores fixed backgrounds (they render as scroll), which would leave the wash on the first screen only.
+   There it is stretched over the whole document instead: the top lights at the top of the page, the bottom light at its
+   end, still behind every screen in between. */
+html.ios-webkit .site-shell {
+  background-size: 100% 100%;
+  background-attachment: scroll;
 }
 
 /* The ink primary's sheen under a bought theme (R1 amendment, `accentFill` in lib/themes/tokens.ts). Kept here, beside
