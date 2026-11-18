@@ -882,3 +882,8 @@ once
 at
 the
 end).
+
+
+## 2026-11-18: the discussion is blog comments
+
+The discussion of an announcement now lives on the announcement itself. Comments belong to the blog post (`BlogComment`, `GET/POST /api/blog/$slug/comments`, `DELETE /api/blog/comments/$id`), only a post with `announcement: true` has them, and they render below the post body in the popup and on `/blog/$slug` (`components/announcements/AnnouncementDiscussion.tsx`). Announcing a post no longer creates an RMHark from the admin who saved it: `ensureAnnouncementPost`, the backfill, `announcementPostContent` and `discussionPostId` (summary, contract, popup, feed row) are gone. The `announcementPostId` column stays so existing announcer-authored RMHarks are untouched, but nothing creates, backfills or links to them. The RMHark bots no longer seed a thread (they have no discussion post to seed under).

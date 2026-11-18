@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { AnnouncementDiscussion } from '@/components/announcements/AnnouncementDiscussion';
 import { markdownComponents } from '@/components/blog/markdown-components';
 import { useSession } from '@/components/Providers';
 import { useCookieConsentAnswered } from '@/components/site/CookieConsent';
@@ -168,6 +169,13 @@ export function SitewideAnnouncementModal() {
           )}
         </div>
 
+        {/* The discussion follows the post inside the same scrolling content. Posting here does not dismiss. */}
+        {content !== undefined && !isError ? (
+          <div className="border-t border-site-border px-5 py-5 sm:px-6">
+            <AnnouncementDiscussion slug={announcement.slug} />
+          </div>
+        ) : null}
+
         <div className="flex flex-col gap-3 border-t border-site-border px-5 py-4 sm:flex-row sm:items-center sm:px-6">
           <Link
             to="/blog/$slug"
@@ -177,26 +185,9 @@ export function SitewideAnnouncementModal() {
           >
             {t('sitewide-announcement-read-full', { defaultValue: 'Read full post' })}
           </Link>
-          {announcement.discussionPostId ? (
-            <div className="flex flex-col gap-3 sm:ml-auto sm:flex-row sm:items-center">
-              <Button variant="default" className="w-full sm:w-auto" onClick={dismiss}>
-                {t('sitewide-announcement-dismiss', { defaultValue: 'Got it' })}
-              </Button>
-              <Button variant="primary" className="w-full sm:w-auto" asChild>
-                <Link
-                  to="/u/$userid/post/$postid"
-                  params={{ userid: 'me', postid: announcement.discussionPostId }}
-                  onClick={dismiss}
-                >
-                  {t('sitewide-join-discussion', { defaultValue: 'Join the discussion' })}
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <Button variant="primary" className="w-full sm:ml-auto sm:w-auto" onClick={dismiss}>
-              {t('sitewide-announcement-dismiss', { defaultValue: 'Got it' })}
-            </Button>
-          )}
+          <Button variant="primary" className="w-full sm:ml-auto sm:w-auto" onClick={dismiss}>
+            {t('sitewide-announcement-dismiss', { defaultValue: 'Got it' })}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
