@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1030 endpoints across 201 groups: 110 route files under `app/routes/api` and 920 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1026 endpoints across 200 groups: 110 route files under `app/routes/api` and 916 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-108 routes.
+106 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -57,8 +57,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/albums/:id/slides/:slideId` | `DELETE` | `lib/admin/api/admin.albums.$id.slides.$slideId.server.ts` |
 | `/api/admin/albums/reorder` | `POST` | `lib/admin/api/admin.albums.reorder.server.ts` |
 | `/api/admin/analytics` | `GET` | `lib/admin/api/admin.analytics.server.ts` |
-| `/api/admin/announcements` | `GET` `POST` | `lib/admin/api/admin.announcements.server.ts` |
-| `/api/admin/announcements/:id` | `DELETE` `POST` | `lib/admin/api/admin.announcements.$id.server.ts` |
 | `/api/admin/appeals` | `GET` | `lib/admin/api/admin.appeals.server.ts` |
 | `/api/admin/appeals/:id` | `POST` | `lib/admin/api/admin.appeals.$id.server.ts` |
 | `/api/admin/audit-log` | `GET` | `lib/admin/api/admin.audit-log.server.ts` |
@@ -207,15 +205,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/altair/run/start` | `POST` | `features/altair/api/altair.run.start.server.ts` |
 | `/api/altair/run/status` | `GET` | `features/altair/api/altair.run.status.server.ts` |
 | `/api/altair/score` | `POST` | `features/altair/api/altair.score.server.ts` |
-
-## `/api/announcements`
-
-2 routes.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/announcements` | `GET` | `lib/api/routes/announcements.server.ts` |
-| `/api/announcements/:id/vote` | `POST` | `lib/api/routes/announcements.$id.vote.server.ts` |
 
 ## `/api/arcade`
 

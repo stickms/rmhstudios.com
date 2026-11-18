@@ -228,7 +228,6 @@ import { Route as SiteAccountConnectRouteImport } from './routes/_site/account/c
 import { Route as SiteAdminIndexRouteImport } from './routes/_site/admin/index'
 import { Route as SiteAdminAlarmsRouteImport } from './routes/_site/admin/alarms'
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
-import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as SiteAdminAppealsRouteImport } from './routes/_site/admin/appeals'
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminBotsRouteImport } from './routes/_site/admin/bots'
@@ -1635,11 +1634,6 @@ const SiteAdminAlarmsRoute = SiteAdminAlarmsRouteImport.update({
 const SiteAdminAnalyticsRoute = SiteAdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
-  getParentRoute: () => SiteAdminRouteRoute,
-} as any)
-const SiteAdminAnnouncementsRoute = SiteAdminAnnouncementsRouteImport.update({
-  id: '/announcements',
-  path: '/announcements',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminAppealsRoute = SiteAdminAppealsRouteImport.update({
@@ -3460,7 +3454,6 @@ export interface FileRoutesByFullPath {
   '/account/connect': typeof SiteAccountConnectRoute
   '/admin/alarms': typeof SiteAdminAlarmsRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
-  '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/appeals': typeof SiteAdminAppealsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/bots': typeof SiteAdminBotsRoute
@@ -3966,7 +3959,6 @@ export interface FileRoutesByTo {
   '/account/connect': typeof SiteAccountConnectRoute
   '/admin/alarms': typeof SiteAdminAlarmsRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
-  '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/appeals': typeof SiteAdminAppealsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/bots': typeof SiteAdminBotsRoute
@@ -4500,7 +4492,6 @@ export interface FileRoutesById {
   '/_site/account/connect': typeof SiteAccountConnectRoute
   '/_site/admin/alarms': typeof SiteAdminAlarmsRoute
   '/_site/admin/analytics': typeof SiteAdminAnalyticsRoute
-  '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/_site/admin/appeals': typeof SiteAdminAppealsRoute
   '/_site/admin/audit': typeof SiteAdminAuditRoute
   '/_site/admin/bots': typeof SiteAdminBotsRoute
@@ -5034,7 +5025,6 @@ export interface FileRouteTypes {
     | '/account/connect'
     | '/admin/alarms'
     | '/admin/analytics'
-    | '/admin/announcements'
     | '/admin/appeals'
     | '/admin/audit'
     | '/admin/bots'
@@ -5540,7 +5530,6 @@ export interface FileRouteTypes {
     | '/account/connect'
     | '/admin/alarms'
     | '/admin/analytics'
-    | '/admin/announcements'
     | '/admin/appeals'
     | '/admin/audit'
     | '/admin/bots'
@@ -6073,7 +6062,6 @@ export interface FileRouteTypes {
     | '/_site/account/connect'
     | '/_site/admin/alarms'
     | '/_site/admin/analytics'
-    | '/_site/admin/announcements'
     | '/_site/admin/appeals'
     | '/_site/admin/audit'
     | '/_site/admin/bots'
@@ -8110,13 +8098,6 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/admin/analytics'
       preLoaderRoute: typeof SiteAdminAnalyticsRouteImport
-      parentRoute: typeof SiteAdminRouteRoute
-    }
-    '/_site/admin/announcements': {
-      id: '/_site/admin/announcements'
-      path: '/announcements'
-      fullPath: '/admin/announcements'
-      preLoaderRoute: typeof SiteAdminAnnouncementsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/appeals': {
@@ -10309,7 +10290,6 @@ declare module '@tanstack/react-router' {
 interface SiteAdminRouteRouteChildren {
   SiteAdminAlarmsRoute: typeof SiteAdminAlarmsRoute
   SiteAdminAnalyticsRoute: typeof SiteAdminAnalyticsRoute
-  SiteAdminAnnouncementsRoute: typeof SiteAdminAnnouncementsRoute
   SiteAdminAppealsRoute: typeof SiteAdminAppealsRoute
   SiteAdminAuditRoute: typeof SiteAdminAuditRoute
   SiteAdminBotsRoute: typeof SiteAdminBotsRoute
@@ -10353,7 +10333,6 @@ interface SiteAdminRouteRouteChildren {
 const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAlarmsRoute: SiteAdminAlarmsRoute,
   SiteAdminAnalyticsRoute: SiteAdminAnalyticsRoute,
-  SiteAdminAnnouncementsRoute: SiteAdminAnnouncementsRoute,
   SiteAdminAppealsRoute: SiteAdminAppealsRoute,
   SiteAdminAuditRoute: SiteAdminAuditRoute,
   SiteAdminBotsRoute: SiteAdminBotsRoute,
@@ -11576,12 +11555,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
