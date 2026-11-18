@@ -61,8 +61,8 @@ describe('iOS edge contract: invariants', () => {
     });
     expect(other.classes.has('ios-webkit')).toBe(false);
     expect(other.metaCreated(), 'every other browser still gets one').toBe(true);
-    // Steel section 2: Night's page is #0b0d10 (the new-visitor default).
-    expect(other.meta.content).toBe('#0b0d10');
+    // Steel section 2: Day's page is #fafafa (a new visitor whose device names no scheme).
+    expect(other.meta.content).toBe('#fafafa');
     // Runtime (paintDocumentGround): on iOS it removes our tag instead of mirroring the background into it.
     expect(theme).toMatch(
       /if \(html\.classList\.contains\('ios-webkit'\)\) \{\s*marked\?\.remove\(\);/,

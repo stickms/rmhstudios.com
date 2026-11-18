@@ -17,38 +17,50 @@ import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 // hand-copied color map in two other files.
 //
 // The shared site ships one new social-first system in three accessibility
-// modes. Retired decorative themes self-heal to DEFAULT_STYLE during hydration.
-// Listed in picker order: the default first.
+// modes. Retired decorative themes self-heal to the device's edition during hydration.
+// Listed in picker order: Day, then Night.
 //
-// The id `default` is historical: it names Day (the bare `:root` tokens),
-// which is no longer the default. It keeps its id because that is the value
-// already persisted in `rmh-style` and in `AppearancePreference.style` for
-// everyone who has Day — renaming it would silently move those people.
+// The id `default` names Day (the bare `:root` tokens). It keeps its id because that is the value already persisted
+// in `rmh-style` and in `AppearancePreference.style` for everyone who has Day — renaming it would silently move
+// those people.
 export const SITE_STYLES = [
-  { id: 'graphite', label: 'Night', icon: '◐', group: 'RMH', bg: '#0b0d10' },
   { id: 'default', label: 'Day', icon: '☀', group: 'RMH', bg: '#fafafa' },
+  { id: 'graphite', label: 'Night', icon: '◐', group: 'RMH', bg: '#0b0d10' },
 ] as const;
 
 /**
- * Theme applied when the visitor has no stored/saved preference: Night
- * (`graphite`), the near-black edition of Steel (owner
- * decision, 2026-10-23 — it was Day).
+ * A visitor who never chose follows the device (owner, 2026-11-18; it was Night by default from 2026-10-23): Night
+ * when the device asks for a dark scheme, Day when it asks for light, and DEFAULT_STYLE — Day — when it says nothing
+ * (no `matchMedia`, or a browser that does not answer `prefers-color-scheme`).
  *
- * Migration semantics, which follow from what is persisted rather than from any
- * migration code:
- * - `rmh-style` ABSENT (a new visitor, or a browser that never stored one) →
- *   this default, so dark. Nothing is written until something re-persists.
- * - `rmh-style` = `default` → Day, kept. A stored `default` is treated as a
- *   choice of Daylight, never as "whatever the default is now".
- * - `rmh-style` = an unknown/retired id → rewritten to this default.
- * - Signed in: a saved `AppearancePreference.style` wins (seeded pre-paint by
- *   `lib/appearance/account-seed.ts`); a null column means the device's value,
- *   and the account sync then saves that value up.
+ * What is persisted decides it, not any migration code:
+ * - `rmh-style` ABSENT (a new visitor, or a browser that never stored one) → the device's edition, re-read on every
+ *   load and followed live while the tab is open. Nothing is written: storing the resolved value would freeze it,
+ *   and the next flip of the OS setting would be ignored.
+ * - `rmh-style` = `default` or `graphite` → that edition, kept. Only choosing a card in the theme picker writes it.
+ * - `rmh-style` = an unknown/retired id → removed, so the device decides again.
+ * - Signed in: a saved `AppearancePreference.style` wins (seeded pre-paint by `lib/appearance/account-seed.ts`); a
+ *   null column follows the device too, and the account sync leaves it null until the visitor chooses.
  *
- * Read by app/routes/__root.tsx's inline themeScript, the self-heal in
- * components/Providers.tsx, and the store's initial state; never restate it.
+ * Read by the pre-paint theme step (lib/prepaint/theme.ts), Providers and the store's initial state; never restate it.
  */
-export const DEFAULT_STYLE: SiteStyle = 'graphite';
+export const DEFAULT_STYLE: SiteStyle = 'default';
+
+/** The edition the device asks for: Night for `prefers-color-scheme: dark`, otherwise DEFAULT_STYLE (Day). */
+export function deviceStyle(): SiteStyle {
+  try {
+    return typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia(DARK_SCHEME_QUERY).matches
+      ? 'graphite'
+      : DEFAULT_STYLE;
+  } catch {
+    return DEFAULT_STYLE;
+  }
+}
+
+/** The media query the pre-paint step and `deviceStyle` both ask. */
+export const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)';
 
 export type SiteStyle = (typeof SITE_STYLES)[number]['id'];
 /**
@@ -320,9 +332,17 @@ export const THEME_BG: Record<SiteStyle, string> = Object.fromEntries(
 ) as Record<SiteStyle, string>;
 
 interface ThemeStore {
-  /** The committed site theme (persisted). */
+  /** The committed site theme. Persisted only once chosen (`styleFromDevice` false). */
   style: SiteStyle;
+  /** Choose an edition: stored on the device and, signed in, saved to the account. */
   setStyle: (style: SiteStyle) => void;
+  /**
+   * True while nothing was chosen and `style` is the device's edition (DEFAULT_STYLE's doc). Providers neither
+   * persists nor syncs it then, and follows the device when its scheme changes.
+   */
+  styleFromDevice: boolean;
+  /** Follow the device: set its edition without marking it chosen. */
+  followDeviceStyle: (style: SiteStyle) => void;
   // ── Appearance & accessibility comfort suite (§13) ──────────────────────
   /** Root font scale in per-mille (875|1000|1125|1250); null = default (1000). */
   fontScale: number | null;
@@ -371,7 +391,9 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   style: DEFAULT_STYLE,
   // Committing a built-in style clears any user-theme preview (they are mutually
   // exclusive site looks) but keeps a committed user theme until removed.
-  setStyle: (style) => set({ style, userThemePreview: null }),
+  setStyle: (style) => set({ style, styleFromDevice: false, userThemePreview: null }),
+  styleFromDevice: true,
+  followDeviceStyle: (style) => set({ style, styleFromDevice: true }),
   fontScale: null,
   setFontScale: (fontScale) => set({ fontScale }),
   density: null,

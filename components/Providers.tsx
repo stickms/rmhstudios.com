@@ -28,6 +28,8 @@ import {
   THEME_BG,
   APP_THEME_BG,
   DEFAULT_STYLE,
+  deviceStyle,
+  DARK_SCHEME_QUERY,
   SiteStyle,
   USER_THEME_KEY,
   appRouteGround,
@@ -175,6 +177,7 @@ export function Providers({
   const queryClient = useRouter().options.context.queryClient;
   const session = useLiveSession();
   const style = useThemeStore((s) => s.style);
+  const styleFromDevice = useThemeStore((s) => s.styleFromDevice);
   const fontScale = useThemeStore((s) => s.fontScale);
   const density = useThemeStore((s) => s.density);
   const readableFont = useThemeStore((s) => s.readableFont);
@@ -311,18 +314,16 @@ export function Providers({
   // what a slow connection makes visible on every loading state (lib/swap-reveal).
   useEffect(() => installSwapReveal(), []);
 
-  // Hydrate style from localStorage on mount. Self-heal legacy values: any
-  // retired style still persisted from before a catalog change (e.g. the old
-  // `liquid-glass` id, now folded into `default`, or the retired novelty themes)
-  // falls back to the site default (DEFAULT_STYLE) and is rewritten so it
-  // doesn't linger.
+  // Hydrate style from localStorage on mount. A stored edition is a choice and is kept. With none (or a retired id,
+  // which is dropped) the visitor follows the device, live, and nothing is written (DEFAULT_STYLE in
+  // stores/themeStore.ts): the pre-paint step already painted the same edition.
   useEffect(() => {
     const stored = readString('rmh-style');
     if (stored && SITE_STYLES.some((s) => s.id === stored)) {
       useThemeStore.getState().setStyle(stored as SiteStyle);
-    } else if (stored) {
-      writeString('rmh-style', DEFAULT_STYLE);
-      useThemeStore.getState().setStyle(DEFAULT_STYLE);
+    } else {
+      if (stored) removeKey('rmh-style');
+      useThemeStore.getState().followDeviceStyle(deviceStyle());
     }
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
@@ -363,6 +364,19 @@ export function Providers({
     }
   }, []);
 
+  // Follow the device's light/dark setting live while nothing is chosen, so flipping it with the tab open moves the
+  // page too. A media-query listener: it fires only on that change and costs nothing at rest (B3).
+  useEffect(() => {
+    if (!styleFromDevice || typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia(DARK_SCHEME_QUERY);
+    const follow = () => {
+      if (useThemeStore.getState().styleFromDevice)
+        useThemeStore.getState().followDeviceStyle(deviceStyle());
+    };
+    query.addEventListener('change', follow);
+    return () => query.removeEventListener('change', follow);
+  }, [styleFromDevice]);
+
   // Sync the style class and any bought theme to <html> and persist.
   useEffect(() => {
     // On the very first render the Zustand store still holds DEFAULT_STYLE
@@ -389,7 +403,8 @@ export function Providers({
     if (activeStyle !== 'default' && !isAppRoute) {
       html.classList.add(`style-${activeStyle}`);
     }
-    writeString('rmh-style', style);
+    // Only a chosen edition is stored; one that follows the device is re-read from it on every load.
+    if (!styleFromDevice) writeString('rmh-style', style);
 
     // Marketplace user theme (§14): a full v2 retint set inline over the built-in
     // cascade (a transient preview beats the committed one). Skipped on app/game
@@ -475,6 +490,7 @@ export function Providers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     style,
+    styleFromDevice,
     isAppRoute,
     fontScale,
     density,
@@ -491,7 +507,7 @@ export function Providers({
   // current device value is kept (and seeded up so the account isn't left empty).
   const appearanceSyncedRef = useRef(false);
   const lastSavedAppearanceRef = useRef<{
-    style: string;
+    style: string | null;
   } | null>(null);
 
   // Fire-and-forget PUT of the appearance to the account, recording it as the
@@ -527,24 +543,20 @@ export function Providers({
       .then((remote) => {
         if (cancelled || !remote) return;
         const store = useThemeStore.getState();
-        // The account wins where it has a saved value; otherwise this device's
-        // current value is kept.
-        const nextStyle =
+        // The account wins where it has a saved edition. Otherwise a choice made on this device is saved up, and a
+        // device that only follows its OS scheme leaves the account empty, so it keeps following everywhere.
+        const remoteStyle =
           remote.style && SITE_STYLES.some((s) => s.id === remote.style)
             ? (remote.style as SiteStyle)
-            : store.style;
-        if (remote.style !== nextStyle) {
-          // Server was missing a value this device has → seed the account with the
-          // merged result (also records it as last-saved).
-          saveAppearance({
-            style: nextStyle,
-          });
+            : null;
+        if (remoteStyle) {
+          lastSavedAppearanceRef.current = { style: remoteStyle };
+          store.setStyle(remoteStyle);
+        } else if (!store.styleFromDevice) {
+          saveAppearance({ style: store.style });
         } else {
-          lastSavedAppearanceRef.current = {
-            style: nextStyle,
-          };
+          lastSavedAppearanceRef.current = { style: null };
         }
-        store.setStyle(nextStyle);
         // Comfort suite (§13): apply account values on this device (account
         // wins where set; the settings panel persists device changes).
         const r = remote as typeof remote & {
@@ -572,11 +584,11 @@ export function Providers({
   // palette) for signed-in users. Guarded so it never fires before the initial
   // sync and never re-saves a value we just pulled from the server.
   useEffect(() => {
-    if (!userId || !appearanceSyncedRef.current) return;
+    if (!userId || !appearanceSyncedRef.current || styleFromDevice) return;
     const last = lastSavedAppearanceRef.current;
     if (last && last.style === style) return;
     saveAppearance({ style });
-  }, [style, userId, saveAppearance]);
+  }, [style, styleFromDevice, userId, saveAppearance]);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -89,8 +89,10 @@ export function themeStep({ html, doc, win, path, cfg }: PrepaintCtx): void {
   const ls = localStorage;
   let s = ls.getItem('rmh-style');
   if (!s || !has(m, s)) {
-    if (s) ls.setItem('rmh-style', D);
-    s = D;
+    // Nothing chosen (or a retired id, which is dropped): follow the device, Day when it says nothing. Nothing is
+    // written, so the next load asks the device again (DEFAULT_STYLE in stores/themeStore.ts).
+    if (s) ls.removeItem('rmh-style');
+    s = !!win.matchMedia && win.matchMedia('(prefers-color-scheme: dark)').matches && has(m, 'graphite') ? 'graphite' : D;
   }
   // The route predicate is the runtime's own (lib/prepaint/route.ts).
   const app = !cfg.nf && isAppRoute(path, t.excluded, t.exceptions);

@@ -71,14 +71,14 @@ describe('retired glass preferences before first paint', () => {
 });
 
 /**
- * Dark by default (owner decision 2026-10-23): a visitor with nothing stored gets
- * Midnight before first paint, while a stored `default` keeps Daylight. Runs the
- * generated pre-paint code against the real `THEME_BG` / `DEFAULT_STYLE`, so the
- * default cannot drift between the store and the pre-paint script.
+ * Follow the device (owner decision 2026-11-18; Night by default before that): a visitor with nothing stored gets the
+ * edition their device asks for before first paint, and Day when it says nothing. A stored edition is a choice and is
+ * kept. Runs the generated pre-paint code against the real `THEME_BG` / `DEFAULT_STYLE`, so the default cannot drift
+ * between the store and the pre-paint script.
  */
 describe('default theme before first paint', () => {
-  function runThemeScript(initial: Record<string, string>) {
-    const run = runPrepaint({ storage: initial });
+  function runThemeScript(initial: Record<string, string>, prefersDark?: boolean) {
+    const run = runPrepaint({ storage: initial, ...(prefersDark === undefined ? {} : { prefersDark }) });
     return {
       classes: run.classes,
       html: run.html,
@@ -88,45 +88,56 @@ describe('default theme before first paint', () => {
     };
   }
 
-  it('the default is Midnight, listed first in the picker, and Daylight is still offered', () => {
-    expect(DEFAULT_STYLE).toBe('graphite');
+  it('the fallback is Day, listed first in the picker, and Night is still offered', () => {
+    expect(DEFAULT_STYLE).toBe('default');
     expect(SITE_STYLES[0].id).toBe(DEFAULT_STYLE);
-    expect(SITE_STYLES.some((s) => s.id === 'default')).toBe(true);
-    // Steel section 2: the Night page is #0b0d10, the Day page #fafafa (app/globals/tokens-themes.css).
-    expect(THEME_BG[DEFAULT_STYLE]).toBe('#0b0d10');
+    expect(SITE_STYLES.some((s) => s.id === 'graphite')).toBe(true);
+    // Steel section 2: the Day page is #fafafa, the Night page #0b0d10 (app/globals/tokens-themes.css).
+    expect(THEME_BG[DEFAULT_STYLE]).toBe('#fafafa');
+    expect(THEME_BG.graphite).toBe('#0b0d10');
   });
 
-  it('a new visitor paints the dark ground, class, colour scheme and theme-color pre-paint', () => {
-    const { classes, html, meta, stored, setItemCalls } = runThemeScript({});
+  it('a new visitor on a dark device paints Night pre-paint, and nothing is stored', () => {
+    const { classes, html, meta, stored, setItemCalls } = runThemeScript({}, true);
     expect(classes.has('style-graphite')).toBe(true);
     expect(html.style.backgroundColor).toBe('#0b0d10');
     expect(html.style.colorScheme).toBe('dark');
     expect(meta.content).toBe('#0b0d10');
-    // Nothing is persisted for a visitor who never chose.
+    // Nothing is persisted for a visitor who never chose, so the next load asks the device again.
     expect(stored.has('rmh-style')).toBe(false);
     expect(setItemCalls).toHaveLength(0);
   });
 
-  it('a stored `default` keeps Daylight (an explicit choice is never flipped)', () => {
-    const { classes, html, meta, stored } = runThemeScript({ 'rmh-style': 'default' });
+  it('a new visitor on a light device paints Day', () => {
+    const { classes, html, stored } = runThemeScript({}, false);
     expect([...classes].some((c) => c.startsWith('style-'))).toBe(false);
     expect(html.style.backgroundColor).toBe('#fafafa');
     expect(html.style.colorScheme).toBe('light');
-    expect(meta.content).toBe('#fafafa');
-    expect(stored.get('rmh-style')).toBe('default');
+    expect(stored.has('rmh-style')).toBe(false);
   });
 
-  it('a stored high-contrast id (the theme was removed) self-heals to the default', () => {
-    const { classes, stored } = runThemeScript({ 'rmh-style': 'high-contrast' });
-    expect(classes.has('style-high-contrast')).toBe(false);
-    expect(classes.has('style-graphite')).toBe(true);
-    expect(stored.get('rmh-style')).toBe(DEFAULT_STYLE);
+  it('a device that says nothing gets Day', () => {
+    const { classes, html } = runThemeScript({});
+    expect([...classes].some((c) => c.startsWith('style-'))).toBe(false);
+    expect(html.style.backgroundColor).toBe('#fafafa');
   });
 
-  it('a retired id self-heals to the default', () => {
-    const { classes, stored } = runThemeScript({ 'rmh-style': 'sepia' });
+  it('a stored edition is a choice and beats the device', () => {
+    const day = runThemeScript({ 'rmh-style': 'default' }, true);
+    expect([...day.classes].some((c) => c.startsWith('style-'))).toBe(false);
+    expect(day.html.style.backgroundColor).toBe('#fafafa');
+    expect(day.meta.content).toBe('#fafafa');
+    expect(day.stored.get('rmh-style')).toBe('default');
+    const night = runThemeScript({ 'rmh-style': 'graphite' }, false);
+    expect(night.classes.has('style-graphite')).toBe(true);
+    expect(night.stored.get('rmh-style')).toBe('graphite');
+  });
+
+  it.each(['high-contrast', 'sepia'])('a retired id (%s) is dropped and the device decides', (id) => {
+    const { classes, stored } = runThemeScript({ 'rmh-style': id }, true);
+    expect(classes.has(`style-${id}`)).toBe(false);
     expect(classes.has('style-graphite')).toBe(true);
-    expect(stored.get('rmh-style')).toBe(DEFAULT_STYLE);
+    expect(stored.has('rmh-style')).toBe(false);
   });
 });
 
