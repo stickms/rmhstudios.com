@@ -216,6 +216,40 @@ The first cache miss in a worker's lifetime (a new deploy's hashes) prunes build
 cached more than 30 days ago, then the oldest past 1,500 entries (`assetsToPrune` in
 `public/sw.js`, unit-tested).
 
+### LB-10 [fixed] Data saver did not reach the first page
+
+Data saver shaped only images mounted after hydration, because the server could
+not see the setting. Now it can:
+
+- **The setting is mirrored into a cookie,** `rmh-data-saver`, by
+  `setDataSaverPreference`. `auto` removes it.
+- **`lib/data-saver-request.ts` decides per request.** An explicit `on` or `off`
+  wins; otherwise the browser's `Save-Data: on` header decides.
+- **The decision travels to the client.** `getInitialI18n` in `__root.tsx` carries
+  it in the root loader data, so a client refetch costs no extra round trip.
+  `Providers` puts it in `DataSaverRequestContext`.
+- **Hydration reads the same value.** `useDataSaverAtMount()` returns it as its
+  server snapshot, so server and hydrating renders agree and nothing downloads twice.
+- **A data-saver page is never shared.** It is marked
+  `private, no-cache, max-age=0, must-revalidate` on every path
+  (`decideCacheControl`), and the Cloudflare HTML rule bypasses the cache for the
+  cookie and the header. The origin gate holds even before the updated rule is
+  applied, because that rule is applied by running
+  `deploy/apply-cloudflare-cache-rules.sh`.
+
+Verified on a production build (`/games`, 390 px at 3×):
+
+| Request | Server srcset | Cache-Control | Files fetched | Hydration errors |
+| --- | --- | --- | --- | --- |
+| No signal | up to 1280w | `public, s-maxage=30` | 160 and 640 | 0 |
+| Setting on | 160w | `private, no-cache` | 160 only | 0 |
+| `Save-Data: on` | 160w | `private, no-cache` | 160 only | 0 |
+| Setting off + header | up to 1280w | `public, s-maxage=30` | 160 and 640 | 0 |
+
+At slow 4G, `/games` with data saver on was usable at 3.8 s instead of 7.8 s, with
+203 KB of images instead of 1,038 KB (753 KB in total instead of 1,590 KB). The
+Settings control writes the cookie on "On" and removes it on "Auto".
+
 ### Still open
 
 1. **Route setup (22 KB Brotli).** This is mostly `head()` across 365 routes. The router
@@ -225,11 +259,9 @@ cached more than 30 days ago, then the oldest past 1,500 entries (`assetsToPrune
 2. **The catalog (9 KB Brotli)** reaches the entry through seven modules (route heads,
    the pre-paint theme routes, route matching, two shell mounts). A slim generated
    index would save about a third.
-3. **First-page images under data saver:** server-side `Save-Data`, with
-   `Vary: Save-Data` and a matching Cloudflare cache key.
-4. **`/games`' first screen:** fewer capsules before a "Show all". This is a layout
+3. **`/games`' first screen:** fewer capsules before a "Show all". This is a layout
    decision.
-5. **`tailwind-merge` (7 KB Brotli) and `i18next` (13 KB):** shell infrastructure.
+4. **`tailwind-merge` (7 KB Brotli) and `i18next` (13 KB):** shell infrastructure.
    Replacing either changes behaviour site-wide.
 
 ## Reproducing
