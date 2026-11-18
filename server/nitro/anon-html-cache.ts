@@ -363,7 +363,8 @@ export function decideCacheControl(
  *
  * Nitro stamps the `/assets/**` route rule's `public, max-age=31536000,
  * immutable` onto the response BEFORE it knows whether the file exists, so a
- * missing chunk answers `404 text/html` carrying a one-year immutable header.
+ * missing chunk answers 404 (an HTML page on the nitro beta, a small JSON body
+ * since the RC) carrying a one-year immutable header.
  * Cloudflare's `/assets/` cache rule uses `respect_origin`, so it stores that
  * 404 (observed in production: `cf-cache-status: MISS` then `HIT` with a rising
  * `Age` on a deleted chunk), and browsers keep it too. One request that lands
