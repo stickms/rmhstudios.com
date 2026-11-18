@@ -104,10 +104,9 @@ below is held for a stated reason, and each entry names what lifts it.
 - **TypeScript:** `strict: true`, bundler resolution, ES2022 target, strict
   islands and the escape-hatch ratchet. Sound.
 - **Open, in order of value:**
-  1. **React Compiler** (stable since 1.0). It memoizes automatically, which
-     mostly helps interaction latency on slow phones. Adopt as a pilot on a few
-     heavy routes with measurements first: it changes when components
-     re-render, and code that relied on re-render timing would show it.
+  1. **React Compiler** — piloted (`react-compiler-pilot-2026-11-18.md`): on for
+     `components/steam/` (−27% CPU while typing in the games-hub search), not
+     for the feed, where it measured no change.
   2. **`forwardRef` → `ref` as a prop** (18 files, most of them `components/ui/`
      primitives). React 19 passes `ref` like any prop, and `forwardRef` is
      slated for deprecation. A mechanical change, but to primitives every page
