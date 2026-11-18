@@ -9,6 +9,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { assertVibeAllowed } from '@/lib/ai/vibe-budget.server';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { generateVibeStream } from '@/lib/rmhvibe/vibe.server';
 import { vibeStreamBodySchema } from '@/lib/rmhvibe/vibe-schema';
@@ -29,6 +30,10 @@ export const Route = createFileRoute('/api/vibe/stream')({
             const restricted = await restrictionResponse(userId, 'vibe');
             if (restricted) return restricted;
           }
+          // Spend gates, before any row is reserved or model called: the platform's daily
+          // vibe cap (503 VIBE_BUSY) and a signed-in user's monthly vibe ceiling (402
+          // VIBE_BUDGET_EXCEEDED). defineHandler turns the AppError into the envelope.
+          await assertVibeAllowed(userId);
           const { prompt, slug, fromVersionId, kind, selection } = body;
           const model = asVibeModel(body.model);
 

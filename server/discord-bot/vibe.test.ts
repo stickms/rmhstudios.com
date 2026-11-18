@@ -70,6 +70,7 @@ import {
   handleVibeEditButton,
   handleVibeEditModal,
   handleVibePlay,
+  abandonVibeBuilds,
   escapeMarkdown,
   type VibeDeps,
 } from './vibe';
@@ -924,5 +925,75 @@ describe('/vibe safeguards', () => {
 
   it('escapeMarkdown escapes every markdown character', () => {
     expect(escapeMarkdown('\\*_~`|>[]()')).toBe('\\\\\\*\\_\\~\\`\\|\\>\\[\\]\\(\\)');
+  });
+});
+
+describe('/vibe spend gate, shutdown and late thumbnail', () => {
+  const embedsOf = (port: ReturnType<typeof fakePort>) =>
+    port.calls
+      .filter(([n]) => n === 'editOriginal')
+      .map(
+        ([, a]) =>
+          (a[1] as { embeds: Array<{ description: string; image?: { url: string } }> }).embeds[0]!,
+      );
+
+  it('refuses a build over the ceiling or the daily cap with a fixed sentence, without generating', async () => {
+    for (const [verdict, text] of [
+      ['budget', 'You have used this month’s vibe allowance.'],
+      ['busy', 'RMH Vibes is busy right now. Try again later.'],
+    ] as const) {
+      const port = fakePort();
+      const d = deps([done], { gate: async () => verdict });
+      await handleVibeCommand(port, cmd(`u-gate-${verdict}`), d);
+      expect(d.generate).not.toHaveBeenCalled();
+      expect(embedsOf(port).at(-1)!.description).toBe(text);
+    }
+  });
+
+  it('passes the linked user to the gate', async () => {
+    const gate = vi.fn(async () => 'ok' as const);
+    await handleVibeCommand(
+      fakePort(),
+      cmd('u-gate-user'),
+      deps([done], { gate, findLinkedUserId: async () => 'site-user' }),
+    );
+    expect(gate).toHaveBeenCalledWith('site-user');
+  });
+
+  it('edits a build still running at shutdown to a fixed note', async () => {
+    let release!: () => void;
+    const port = fakePort();
+    const slow = deps([], {
+      generate: vi.fn(async function* () {
+        await new Promise<void>((r) => (release = r));
+        yield done;
+      }) as unknown as VibeDeps['generate'],
+    });
+    const run = handleVibeCommand(port, cmd('u-abandon'), slow);
+    await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+    await abandonVibeBuilds();
+    expect(embedsOf(port).at(-1)!.description).toBe('The bot restarted before this finished. Try again.');
+    release();
+    await run;
+    // The late result does not overwrite the note.
+    expect(embedsOf(port).at(-1)!.description).toBe('The bot restarted before this finished. Try again.');
+  });
+
+  it('adds the screenshot to the done message once it exists', async () => {
+    const port = fakePort();
+    const thumbs: Array<string | null> = [null, null, '/thumbs/abc.webp'];
+    const sleeps: number[] = [];
+    await handleVibeCommand(
+      port,
+      cmd('u-late-thumb'),
+      deps([done], {
+        thumbnailUrl: async () => thumbs.shift() ?? null,
+        sleep: async (ms) => {
+          sleeps.push(ms);
+        },
+      }),
+    );
+    await vi.waitFor(() => expect(embedsOf(port).at(-1)!.image?.url).toBe('https://rmhstudios.com/thumbs/abc.webp'));
+    expect(sleeps).toEqual([75_000, 150_000]);
   });
 });

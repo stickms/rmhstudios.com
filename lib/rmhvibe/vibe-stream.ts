@@ -50,9 +50,11 @@ async function describeHttpError(
     /* body unavailable */
   }
   // The API wraps errors as {"error": "..."}; show that text, not the raw JSON.
+  let code: unknown;
   try {
     const parsed: unknown = JSON.parse(body);
     const msg = (parsed as { error?: unknown } | null)?.error;
+    code = (parsed as { code?: unknown } | null)?.code;
     if (typeof msg === 'string' && msg.trim()) body = msg.trim();
   } catch {
     /* plain-text body */
@@ -74,6 +76,14 @@ async function describeHttpError(
       body ||
       'That prompt couldn’t be used. Try rephrasing it.'
     );
+  }
+  // The platform's daily vibe cap is a named, user-meaningful 503, not a server fault.
+  if (
+    code ===
+      'VIBE_BUSY' &&
+    body
+  ) {
+    return body;
   }
   if (
     res.status >=

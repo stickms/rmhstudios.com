@@ -20,6 +20,7 @@
 
 import OpenAI from 'openai';
 import { timedAiFetch } from '../ai/timed-fetch.server';
+import { estimateTokens, meterVibe } from '../ai/provider.server';
 
 // Reuse the existing DeepSeek key already configured for the discord bot and the
 // vibe generator. Never sent to the client.
@@ -105,29 +106,77 @@ export function parseChatRequest(body: unknown): {
   return { messages, stream: b.stream === true };
 }
 
+const charsOf = (messages: VibeChatMessage[]) => messages.reduce((n, m) => n + m.content.length, 0);
+
+/**
+ * Record one proxy completion in the AI ledger. The proxy is called
+ * cross-origin from a sandboxed frame with no credentials, so there is no
+ * signed-in user to attribute it to: `userId` is null by construction. Never throws.
+ */
+function meterProxy(
+  messages: VibeChatMessage[],
+  reply: string,
+  usage: { prompt_tokens?: number; completion_tokens?: number } | null | undefined,
+  ok: boolean,
+): void {
+  void meterVibe({
+    userId: null,
+    task: 'vibe-ai',
+    provider: 'deepseek',
+    model: VIBE_AI_MODEL,
+    inTokens: usage?.prompt_tokens ?? estimateTokens(charsOf(messages)),
+    outTokens: usage?.completion_tokens ?? estimateTokens(reply.length),
+    ok,
+  });
+}
+
 /** One-shot completion. Returns the assistant's reply text. */
 export async function vibeChat(messages: VibeChatMessage[]): Promise<string> {
-  const res = await deepseek.chat.completions.create({
-    model: VIBE_AI_MODEL,
-    messages,
-    max_tokens: MAX_OUTPUT_TOKENS,
-    stream: false,
-  });
-  return res.choices[0]?.message?.content ?? '';
+  let reply = '';
+  let usage: { prompt_tokens?: number; completion_tokens?: number } | undefined;
+  try {
+    const res = await deepseek.chat.completions.create({
+      model: VIBE_AI_MODEL,
+      messages,
+      max_tokens: MAX_OUTPUT_TOKENS,
+      stream: false,
+    });
+    reply = res.choices[0]?.message?.content ?? '';
+    usage = res.usage;
+  } catch (err) {
+    meterProxy(messages, '', undefined, false);
+    throw err;
+  }
+  meterProxy(messages, reply, usage, true);
+  return reply;
 }
 
 /** Streamed completion. Yields text deltas as they arrive. */
 export async function* vibeChatStream(
   messages: VibeChatMessage[],
 ): AsyncGenerator<string> {
-  const stream = await deepseek.chat.completions.create({
-    model: VIBE_AI_MODEL,
-    messages,
-    max_tokens: MAX_OUTPUT_TOKENS,
-    stream: true,
-  });
-  for await (const chunk of stream) {
-    const text = chunk.choices[0]?.delta?.content;
-    if (text) yield text;
+  let reply = '';
+  let usage: { prompt_tokens?: number; completion_tokens?: number } | undefined;
+  let ok = false;
+  try {
+    const stream = await deepseek.chat.completions.create({
+      model: VIBE_AI_MODEL,
+      messages,
+      max_tokens: MAX_OUTPUT_TOKENS,
+      stream: true,
+      stream_options: { include_usage: true },
+    });
+    for await (const chunk of stream) {
+      if (chunk.usage) usage = chunk.usage;
+      const text = chunk.choices[0]?.delta?.content;
+      if (text) {
+        reply += text;
+        yield text;
+      }
+    }
+    ok = true;
+  } finally {
+    // A client that walks away mid-stream still cost what was generated.
+    meterProxy(messages, reply, usage, ok);
   }
 }

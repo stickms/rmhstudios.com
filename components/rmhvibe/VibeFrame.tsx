@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ensureBridgeRuntime } from '@/lib/rmhvibe/bridge-runtime';
+import { BRIDGE_TAG } from '@/lib/rmhvibe/bridge';
 import { FRAME_URL, useFrameDocument } from '@/lib/rmhvibe/frame-loader';
 
 export const VIEWER_SANDBOX =
@@ -72,6 +73,19 @@ export function VibeFrame({
       // Focus follows only if the frame being replaced held it.
       const before = idx > 0 ? frames.current.get(current[idx - 1]!.id) : undefined;
       const hadFocus = !!before && document.activeElement === before;
+      // The layers underneath are about to be unmounted, but their scripts keep running
+      // through the fade: tell their bridge runtime to silence media and Web Audio now.
+      for (let i = 0; i < idx; i++) {
+        const outgoing = frames.current.get(current[i]!.id);
+        try {
+          outgoing?.contentWindow?.postMessage(
+            { [BRIDGE_TAG]: 1, event: 'visibility', data: { hidden: true, suspend: true } },
+            '*',
+          );
+        } catch {
+          /* the frame went away */
+        }
+      }
       setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, visible: true } : l)));
       window.clearTimeout(cleanup.current);
       cleanup.current = window.setTimeout(() => {

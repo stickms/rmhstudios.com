@@ -631,6 +631,7 @@ export const BRIDGE_ERROR_CODES =
     'unauthorized',
     'not-found',
     'conflict',
+    'read-only',
     'failed',
   ] as const;
 export type BridgeErrorCode =

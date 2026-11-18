@@ -16,5 +16,7 @@
   "stakeLimit": "You've reached the limit you set",
   "storageUnavailable": "Uploads are temporarily unavailable",
   "unauthorized": "Sign in to continue",
-  "upgradeRequired": "This feature needs a membership"
+  "upgradeRequired": "This feature needs a membership",
+  "vibeBudget": "You've used this month's vibe-building allowance",
+  "vibeBusy": "RMH Vibes is busy right now. Try again later."
 }

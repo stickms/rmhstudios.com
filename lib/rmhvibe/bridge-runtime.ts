@@ -11,7 +11,12 @@
  * replaces the current values; each is mirrored to `--tweak-<key>` on <html>.
  * `pick:start` outlines the hovered element (a fixed, pointer-events-none
  * overlay, so the page's layout never moves); a click posts `picked` and stops,
- * Escape posts `pick:cancel`, `pick:stop` just stops.
+ * Escape posts `pick:cancel`, `pick:stop` just stops. While picking, every press
+ * (pointer/mouse/touch down and up, click) is swallowed in the capture phase so the
+ * page never sees it; the listeners are non-passive so touchstart can be cancelled.
+ *
+ * `visibility` with `suspend: true` is the host retiring this frame (a newer document
+ * is now showing): media is paused and Web Audio contexts are suspended, for good.
  */
 
 export const BRIDGE_MARKER =
@@ -31,6 +36,9 @@ export const BRIDGE_RUNTIME_JS = `(function () {
   var visible = true;
   var visibilityFns = [];
   var errorCount = 0;
+  var errorQueue = [];
+  var audioContexts = [];
+  var suspended = false;
   var seenErrors = Object.create(null);
   var resolveReady;
   var ready = new Promise(function (r) { resolveReady = r; });
@@ -159,24 +167,27 @@ export const BRIDGE_RUNTIME_JS = `(function () {
 
   function onPickClick(e) {
     var el = e.target;
+    swallow(e);
     if (!pickable(el)) return;
-    e.preventDefault();
-    e.stopPropagation();
     var sel = describeElement(el);
     stopPicking();
     send({ event: 'picked', data: sel });
   }
 
-  // While picking, a press must not reach the page (a button must not fire on mousedown or touch).
-  function onPickPress(e) {
-    if (!pickable(e.target)) return;
+  // While picking nothing reaches the page: not the click, and not the presses before it
+  // (a canvas game reacts to pointerdown; a button can fire on mousedown or touchend).
+  function swallow(e) {
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
   }
+
+  var PICK_PRESSES = ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend'];
+  var PICK_OPTS = { capture: true, passive: false };
 
   function onPickKey(e) {
     if (e.key !== 'Escape' && e.keyCode !== 27) return;
-    e.preventDefault();
+    swallow(e);
     stopPicking();
     send({ event: 'pick:cancel' });
   }
@@ -188,12 +199,10 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     pickOverlay.setAttribute('aria-hidden', 'true');
     pickOverlay.style.cssText = 'position:fixed;display:none;pointer-events:none;box-sizing:border-box;border:2px solid #6366f1;background:none;margin:0;padding:0;z-index:2147483647;';
     (document.body || document.documentElement).appendChild(pickOverlay);
-    document.addEventListener('mousemove', onPickMove, true);
-    document.addEventListener('click', onPickClick, true);
-    document.addEventListener('mousedown', onPickPress, true);
-    document.addEventListener('pointerdown', onPickPress, true);
-    document.addEventListener('touchstart', onPickPress, true);
-    document.addEventListener('keydown', onPickKey, true);
+    document.addEventListener('mousemove', onPickMove, PICK_OPTS);
+    document.addEventListener('click', onPickClick, PICK_OPTS);
+    for (var i = 0; i < PICK_PRESSES.length; i++) document.addEventListener(PICK_PRESSES[i], swallow, PICK_OPTS);
+    document.addEventListener('keydown', onPickKey, PICK_OPTS);
     window.addEventListener('scroll', placeOverlay, true);
     window.addEventListener('resize', placeOverlay);
   }
@@ -201,12 +210,10 @@ export const BRIDGE_RUNTIME_JS = `(function () {
   function stopPicking() {
     picking = false;
     pickTarget = null;
-    document.removeEventListener('mousemove', onPickMove, true);
-    document.removeEventListener('click', onPickClick, true);
-    document.removeEventListener('mousedown', onPickPress, true);
-    document.removeEventListener('pointerdown', onPickPress, true);
-    document.removeEventListener('touchstart', onPickPress, true);
-    document.removeEventListener('keydown', onPickKey, true);
+    document.removeEventListener('mousemove', onPickMove, PICK_OPTS);
+    document.removeEventListener('click', onPickClick, PICK_OPTS);
+    for (var i = 0; i < PICK_PRESSES.length; i++) document.removeEventListener(PICK_PRESSES[i], swallow, PICK_OPTS);
+    document.removeEventListener('keydown', onPickKey, PICK_OPTS);
     window.removeEventListener('scroll', placeOverlay, true);
     window.removeEventListener('resize', placeOverlay);
     if (pickOverlay && pickOverlay.parentNode) pickOverlay.parentNode.removeChild(pickOverlay);
@@ -217,6 +224,8 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     if (name === 'hello') {
       host = (data && data.host) || 'none';
       resolveReady();
+      // Errors raised before the host attached (while this frame was a hidden candidate) were held.
+      while (errorQueue.length) send({ event: 'error', data: errorQueue.shift() });
     } else if (name === 'tweaks') {
       applyTweaks(data);
     } else if (name === 'room:message') {
@@ -225,6 +234,7 @@ export const BRIDGE_RUNTIME_JS = `(function () {
       emit(memberFns, data);
     } else if (name === 'visibility') {
       visible = !(data && data.hidden);
+      if (data && data.hidden && data.suspend) suspendMedia();
       emit(visibilityFns, visible);
     } else if (name === 'pick:start') {
       startPicking();
@@ -253,7 +263,33 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     errorCount++;
     var data = { message: message };
     if (source) data.source = String(source).slice(0, 200);
-    send({ event: 'error', data: data });
+    if (host === 'none') errorQueue.push(data);
+    else send({ event: 'error', data: data });
+  }
+
+  // Web Audio contexts are tracked so a retired frame can silence them.
+  ['AudioContext', 'webkitAudioContext'].forEach(function (name) {
+    var Native = window[name];
+    if (typeof Native !== 'function') return;
+    function Tracked() {
+      var ctx = new (Function.prototype.bind.apply(Native, [null].concat(Array.prototype.slice.call(arguments))))();
+      audioContexts.push(ctx);
+      if (suspended) { try { ctx.suspend(); } catch (e) { /* ignore */ } }
+      return ctx;
+    }
+    Tracked.prototype = Native.prototype;
+    try { window[name] = Tracked; } catch (e) { /* ignore */ }
+  });
+
+  function suspendMedia() {
+    suspended = true;
+    var media = document.querySelectorAll('audio,video');
+    for (var i = 0; i < media.length; i++) {
+      try { media[i].pause(); media[i].muted = true; } catch (e) { /* ignore */ }
+    }
+    for (var j = 0; j < audioContexts.length; j++) {
+      try { audioContexts[j].suspend(); } catch (e) { /* ignore */ }
+    }
   }
 
   window.addEventListener('error', function (e) {
