@@ -188,7 +188,7 @@ export function SatireNotice() {
 }
 
 /**
- * The two announced transactions, as tombstones. Used on the home page and at
+ * The announced transactions, as tombstones. Used on the home page and at
  * the top of Deals, so the wording lives in one place. Each links to its
  * section on the Deals page.
  */
@@ -260,6 +260,41 @@ export function DealTombstones() {
           <p className="tomb-role">
             <b>RMH Capital</b>
             {t('tomb-buddhism-role', { defaultValue: 'Lead left bookrunner' })}
+          </p>
+          <span className="go">
+            {t('tomb-read', { defaultValue: 'Read the transaction' })} <CornerArrow className="" />
+          </span>
+        </div>
+      </Link>
+
+      <Link
+        className="tomb chrome"
+        data-chrome-live=""
+        to="/rmh-capital/deals"
+        hash="university-of-minnesota"
+      >
+        <div className="tomb-face">
+          <p className="tomb-record">
+            {t('tomb-record', {
+              defaultValue: 'This announcement appears as a matter of record only.',
+            })}
+          </p>
+          <p className="tomb-date">
+            {t('tomb-umn-date', { defaultValue: 'September 24, 2026' })}
+          </p>
+          <h3 className="tomb-parties">
+            {t('tomb-umn-parties', { defaultValue: 'University of Minnesota' })}
+          </h3>
+          <p className="tomb-amount steel">
+            <Amount value="$225" unit={t('tomb-unit-million', { defaultValue: 'million' })} />
+          </p>
+          <p className="tomb-what">
+            {t('tomb-umn-terms', { defaultValue: 'Two-year operating budget reduction' })}
+          </p>
+          <span className="tomb-rule" />
+          <p className="tomb-role">
+            <b>RMHcKinsey</b>
+            {t('tomb-umn-role', { defaultValue: 'Strategic advisor' })}
           </p>
           <span className="go">
             {t('tomb-read', { defaultValue: 'Read the transaction' })} <CornerArrow className="" />
@@ -399,6 +434,9 @@ export function SiteFooter() {
             </Link>
             <Link to="/rmh-capital/businesses" hash="venture-capital">
               {t('venture-capital', { defaultValue: 'Venture Capital' })}
+            </Link>
+            <Link to="/rmh-capital/businesses" hash="management-consulting">
+              {t('management-consulting', { defaultValue: 'Management Consulting' })}
             </Link>
             <Link to="/rmh-capital/businesses" hash="private-equity">
               {t('private-equity', { defaultValue: 'Private Equity' })}
