@@ -180,8 +180,9 @@ The hub keeps the Discord user id Discord returned on `socket.data.discordId`. A
 vibe room of an instance it is in: `server/socket-server/discord-instance.ts` asks
 `GET /applications/{DISCORD_ACTIVITY_CLIENT_ID}/activity-instances/{instanceId}` with `Authorization: Bot $DISCORD_ACTIVITY_BOT_TOKEN`
 and checks `users`. Member lists are cached 30 s per instance (a user missing from a list older than 5 s triggers one refresh),
-an unknown instance (404) 60 s, the timeout is 5 s, each Discord user gets 20 lookups per minute, and a transient failure refuses
-the join (`BAD_INSTANCE`) without being remembered. `DISCORD_ACTIVITY_BOT_TOKEN` reaches the socket service through
+an unknown instance (404) 60 s, the timeout is 5 s, each Discord user gets 20 lookups per minute (past that the join is refused, `BAD_INSTANCE`), and a
+failure that says nothing about the caller (network, 5xx, 429, or Discord refusing our bot token, which is logged) lets the join
+through without being remembered, so an outage or a misconfigured token never locks every Activity out. `DISCORD_ACTIVITY_BOT_TOKEN` reaches the socket service through
 `env_file` like every other variable; with it unset the check is skipped and logged once at boot, so dev keeps working. A socket
 signed in with a web session (not through Discord) is not checked: its instance id is unguessable, as before.
 

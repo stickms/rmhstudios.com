@@ -561,16 +561,29 @@ describe('vibe room', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2); // the unknown instance is remembered
     });
 
-    it('fails closed on a transient Discord failure without remembering it', async () => {
+    it('lets the join through on a transient Discord failure, and does not remember it', async () => {
       fetchMock.mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) });
       const a = discordSocket('a', 'd1');
       world.send(a, VIBE_ROOM_C2S.JOIN, { instanceId: 'inst-3' });
       await flush();
-      expect(errors(a)).toEqual(['BAD_INSTANCE']);
-      fetchMock.mockResolvedValueOnce(reply(['d1']));
-      world.send(a, VIBE_ROOM_C2S.JOIN, { instanceId: 'inst-3' });
-      await flush();
+      expect(errors(a)).toEqual([]);
       expect(stateIn(a)?.instanceId).toBe('inst-3');
+      // Not remembered: a later non-member is still asked about, and refused.
+      fetchMock.mockResolvedValueOnce(reply(['d1']));
+      const b = discordSocket('b', 'd2');
+      world.send(b, VIBE_ROOM_C2S.JOIN, { instanceId: 'inst-3' });
+      await flush();
+      expect(errors(b)).toEqual(['BAD_INSTANCE']);
+    });
+
+    it('refuses a Discord user past their lookup budget', async () => {
+      const verifier = createInstanceVerifier({ appId: 'app-1', botToken: 'bot', logger: { warn: () => {} } });
+      fetchMock.mockResolvedValue({ ok: false, status: 404, json: async () => ({}) });
+      const verdicts = [];
+      for (let i = 0; i < 21; i++) verdicts.push(await verifier.check('d9', `spray-${i}`));
+      expect(fetchMock).toHaveBeenCalledTimes(20);
+      expect(verdicts.at(-1)).toBe('over_budget');
+      fetchMock.mockReset();
     });
 
     it('does not check a web-session socket, or anything without a bot token', async () => {

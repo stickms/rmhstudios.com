@@ -32,7 +32,8 @@ export type InstanceCheck =
   | 'skipped' // no bot token configured: not checked
   | 'member'
   | 'not_member' // the instance is unknown, or the user is not in it
-  | 'unavailable' // Discord could not answer (transient) or the caller is over its budget
+  | 'unavailable' // Discord could not answer (network, 5xx, 429, or our bot token was refused)
+  | 'over_budget' // this Discord user asked about too many instances this minute
   ;
 
 export interface InstanceVerifierDeps {
@@ -106,7 +107,7 @@ export function createInstanceVerifier(deps: InstanceVerifierDeps): InstanceVeri
       if (cached?.users.includes(discordId)) return 'member';
       if (cached && Date.now() - cached.at < REFRESH_AFTER_MS) return 'not_member';
 
-      if (!budget.check(discordId, 'instance:lookup')) return 'unavailable';
+      if (!budget.check(discordId, 'instance:lookup')) return 'over_budget';
 
       const result = await flight(instanceId, () => lookup(instanceId));
       if (result.kind === 'transient') return 'unavailable';

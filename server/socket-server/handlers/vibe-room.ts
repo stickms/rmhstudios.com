@@ -328,7 +328,10 @@ export function registerVibeRoomHandlers(
     if (discordId && roomOf.get(socket.id) !== instanceId) {
       const verdict = await instanceVerifier().check(discordId, instanceId);
       if (socket.disconnected) return;
-      if (verdict === 'not_member' || verdict === 'unavailable') {
+      // 'unavailable' (Discord down, or our bot token refused) lets the join through: the
+      // instance id is unguessable, and an outage or a misconfigured token must not lock every
+      // Activity out. Spraying made-up ids is what 'over_budget' and 'not_member' refuse.
+      if (verdict === 'not_member' || verdict === 'over_budget') {
         return fail(socket, 'BAD_INSTANCE');
       }
     }
