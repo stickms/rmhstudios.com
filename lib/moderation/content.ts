@@ -2,7 +2,7 @@
  * Site moderation of user-created things — the client-safe half: which kinds
  * of content an admin can act on, and which fields of each an admin may edit.
  * The server half is `content.server.ts`; the admin dialog is
- * `components/moderation/ModerateContentDialog.tsx`.
+ * `components/moderation/moderation-ui.tsx`.
  *
  * `entityType` uses the vocabulary ContentReport and UserStrike already use
  * ('rmhark' | 'comment' | …), so a strike issued from here links to the same

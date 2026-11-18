@@ -52,7 +52,7 @@ import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { HideReplyMenuItem, HiddenRepliesGroup } from './HiddenReplies';
 
 const ModerateContentDialog = lazy(() =>
-  import('@/components/moderation/ModerateContentDialog').then((m) => ({ default: m.ModerateContentDialog })),
+  import('@/components/moderation/moderation-ui').then((m) => ({ default: m.ModerateContentDialog })),
 );
 import {
   viewCommentApi,

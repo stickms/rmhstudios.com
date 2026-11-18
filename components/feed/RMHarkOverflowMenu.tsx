@@ -70,7 +70,7 @@ const InsightsModal = lazy(() =>
 const ShareModal = lazy(() => import('./ShareModal').then((m) => ({ default: m.ShareModal })));
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 const ModerateContentDialog = lazy(() =>
- import('@/components/moderation/ModerateContentDialog').then((m) => ({ default: m.ModerateContentDialog })),
+ import('@/components/moderation/moderation-ui').then((m) => ({ default: m.ModerateContentDialog })),
 );
 
 export interface RMHarkTranslateControl {
