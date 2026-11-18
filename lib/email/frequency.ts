@@ -24,22 +24,70 @@ export const SECURITY_MAX_PER_HOUR = 5;
 const HOUR_MS = 3_600_000;
 
 /** The time before which an optional bulk email no longer blocks the next one. */
-export function bulkGapStart(now: Date = new Date()): Date {
-  return new Date(now.getTime() - BULK_MIN_GAP_HOURS * HOUR_MS);
+export function bulkGapStart(
+  now: Date = new Date(),
+): Date {
+  return new Date(
+    now.getTime() -
+      BULK_MIN_GAP_HOURS *
+        HOUR_MS,
+  );
 }
 
 /** Whether a person with these recent security emails may get another one now. */
-export function securityAllowed(recentSecurityEmails: readonly Date[], now: Date = new Date()): boolean {
-  const since = now.getTime() - HOUR_MS;
-  return recentSecurityEmails.filter((d) => d.getTime() > since).length < SECURITY_MAX_PER_HOUR;
+export function securityAllowed(
+  recentSecurityEmails: readonly Date[],
+  now: Date = new Date(),
+): boolean {
+  const since =
+    now.getTime() -
+    HOUR_MS;
+  return (
+    recentSecurityEmails.filter(
+      (
+        d,
+      ) =>
+        d.getTime() >
+        since,
+    )
+      .length <
+    SECURITY_MAX_PER_HOUR
+  );
 }
 
 /** ISO-8601 week key, e.g. `2026-W47`: one weekly digest per person per week. */
-export function isoWeekKey(date: Date): string {
-  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - day);
-  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1);
-  const week = Math.ceil(((d.getTime() - yearStart) / 86_400_000 + 1) / 7);
+export function isoWeekKey(
+  date: Date,
+): string {
+  const d =
+    new Date(
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+      ),
+    );
+  const day =
+    d.getUTCDay() ||
+    7;
+  d.setUTCDate(
+    d.getUTCDate() +
+      4 -
+      day,
+  );
+  const yearStart =
+    Date.UTC(
+      d.getUTCFullYear(),
+      0,
+      1,
+    );
+  const week =
+    Math.ceil(
+      ((d.getTime() -
+        yearStart) /
+        86_400_000 +
+        1) /
+        7,
+    );
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }

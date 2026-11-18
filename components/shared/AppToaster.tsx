@@ -143,8 +143,12 @@ export default function AppToaster({
         'pointer-events-none fixed inset-x-0 top-0 z-100 flex flex-col items-center gap-2 px-3 pt-[calc(var(--app-safe-top)+1rem)]',
         className,
       ]
-        .filter(Boolean)
-        .join(' ')}
+        .filter(
+          Boolean,
+        )
+        .join(
+          ' ',
+        )}
       role="region"
       aria-label={t(
         'notifications',

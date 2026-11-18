@@ -417,40 +417,145 @@ describe('every inline executable script is nonced or hashed', () => {
 });
 
 describe('buildFramePolicy (the policy of frames that run user code)', () => {
-  const policy = buildFramePolicy();
-  const dir = (name: string) => directive(policy, name);
+  const policy =
+    buildFramePolicy();
+  const dir =
+    (
+      name: string,
+    ) =>
+      directive(
+        policy,
+        name,
+      );
 
   it('forces an opaque origin: sandbox without allow-same-origin, top navigation or popups', () => {
-    expect(policy.startsWith('sandbox allow-scripts ')).toBe(true);
-    expect(policy).not.toContain('allow-same-origin');
-    expect(policy).not.toContain('allow-top-navigation');
-    expect(policy).not.toContain('allow-popups');
+    expect(
+      policy.startsWith(
+        'sandbox allow-scripts ',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      policy,
+    ).not.toContain(
+      'allow-same-origin',
+    );
+    expect(
+      policy,
+    ).not.toContain(
+      'allow-top-navigation',
+    );
+    expect(
+      policy,
+    ).not.toContain(
+      'allow-popups',
+    );
   });
 
   it("lets inline scripts run: 'unsafe-inline' and no nonce, hash or strict-dynamic", () => {
-    const script = dir('script-src');
-    expect(script).toContain("'unsafe-inline'");
-    expect(script).not.toMatch(/nonce-|sha256-|sha384-|sha512-|strict-dynamic/);
-    expect(policy).not.toMatch(/nonce-|strict-dynamic|'unsafe-eval'/);
+    const script =
+      dir(
+        'script-src',
+      );
+    expect(
+      script,
+    ).toContain(
+      "'unsafe-inline'",
+    );
+    expect(
+      script,
+    ).not.toMatch(
+      /nonce-|sha256-|sha384-|sha512-|strict-dynamic/,
+    );
+    expect(
+      policy,
+    ).not.toMatch(
+      /nonce-|strict-dynamic|'unsafe-eval'/,
+    );
   });
 
   it('allows only our origin and esm.sh on the network, and nothing to exfiltrate through', () => {
-    expect(dir('default-src')).toBe("default-src 'none'");
-    expect(dir('connect-src')).toBe("connect-src 'self' https://esm.sh");
-    expect(dir('form-action')).toBe("form-action 'none'");
-    expect(dir('base-uri')).toBe("base-uri 'none'");
-    expect(policy).not.toMatch(/https:(?!\/\/esm\.sh)(\s|;|$)/);
+    expect(
+      dir(
+        'default-src',
+      ),
+    ).toBe(
+      "default-src 'none'",
+    );
+    expect(
+      dir(
+        'connect-src',
+      ),
+    ).toBe(
+      "connect-src 'self' https://esm.sh",
+    );
+    expect(
+      dir(
+        'form-action',
+      ),
+    ).toBe(
+      "form-action 'none'",
+    );
+    expect(
+      dir(
+        'base-uri',
+      ),
+    ).toBe(
+      "base-uri 'none'",
+    );
+    expect(
+      policy,
+    ).not.toMatch(
+      /https:(?!\/\/esm\.sh)(\s|;|$)/,
+    );
   });
 
   it('is framable only by our pages and the Discord Activity', () => {
-    expect(policy).toContain(FRAME_ANCESTORS);
+    expect(
+      policy,
+    ).toContain(
+      FRAME_ANCESTORS,
+    );
   });
 
   it('carriesFramePolicy recognises the sandbox directive and nothing else', () => {
-    expect(carriesFramePolicy(policy)).toBe(true);
-    expect(carriesFramePolicy(FRAME_ANCESTORS)).toBe(false);
-    expect(carriesFramePolicy(buildCspPolicy({}))).toBe(false);
-    expect(carriesFramePolicy("default-src 'none'; sandbox")).toBe(true);
-    expect(carriesFramePolicy(null)).toBe(false);
+    expect(
+      carriesFramePolicy(
+        policy,
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      carriesFramePolicy(
+        FRAME_ANCESTORS,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      carriesFramePolicy(
+        buildCspPolicy(
+          {},
+        ),
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      carriesFramePolicy(
+        "default-src 'none'; sandbox",
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      carriesFramePolicy(
+        null,
+      ),
+    ).toBe(
+      false,
+    );
   });
 });

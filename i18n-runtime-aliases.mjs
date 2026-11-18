@@ -10,7 +10,22 @@ import { fileURLToPath } from 'node:url';
  * packages. lib/i18n/__tests__/runtime-parity.test.ts compares the two.
  */
 /** @type {Record<string, string>} */
-export const I18N_RUNTIME_ALIASES = {
-  i18next: fileURLToPath(new URL('./lib/i18n/runtime/i18next.ts', import.meta.url)),
-  'react-i18next': fileURLToPath(new URL('./lib/i18n/runtime/react-i18next.ts', import.meta.url)),
-};
+export const I18N_RUNTIME_ALIASES =
+  {
+    i18next:
+      fileURLToPath(
+        new URL(
+          './lib/i18n/runtime/i18next.ts',
+          import.meta
+            .url,
+        ),
+      ),
+    'react-i18next':
+      fileURLToPath(
+        new URL(
+          './lib/i18n/runtime/react-i18next.ts',
+          import.meta
+            .url,
+        ),
+      ),
+  };

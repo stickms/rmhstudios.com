@@ -24,15 +24,44 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Upload the image to R2 after it passes (main only)
+        description:
+          Upload
+          the
+          image
+          to
+          R2
+          after
+          it
+          passes
+          (main
+          only)
         type: boolean
         default: false
       from_run:
-        description: Publish the artifact of this earlier run id instead of rebuilding
+        description:
+          Publish
+          the
+          artifact
+          of
+          this
+          earlier
+          run
+          id
+          instead
+          of
+          rebuilding
         type: string
         default: ''
       force:
-        description: Overwrite an existing rmhos/<version>/ in R2 (repair only)
+        description:
+          Overwrite
+          an
+          existing
+          rmhos/<version>/
+          in
+          R2
+          (repair
+          only)
         type: boolean
         default: false
 
@@ -49,17 +78,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      WANT_PUBLISH: ${{ inputs.publish || inputs.from_run != '' }}
+      WANT_PUBLISH:
+        ${{
+        inputs.publish
+        ||
+        inputs.from_run
+        !=
+        ''
+        }}
     steps:
       # First, before 25 minutes of build: a publish needs main and every R2 secret.
-      - name: Preflight (publish needs main and the R2 secrets)
-        if: env.WANT_PUBLISH == 'true'
+      - name:
+          Preflight
+          (publish
+          needs
+          main
+          and
+          the
+          R2
+          secrets)
+        if:
+          env.WANT_PUBLISH
+          ==
+          'true'
         env:
-          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-        run: |
+          S3_ENDPOINT:
+            ${{
+            secrets.S3_ENDPOINT
+            }}
+          S3_ACCESS_KEY_ID:
+            ${{
+            secrets.S3_ACCESS_KEY_ID
+            }}
+          S3_SECRET_ACCESS_KEY:
+            ${{
+            secrets.S3_SECRET_ACCESS_KEY
+            }}
+          S3_BUCKET:
+            ${{
+            secrets.S3_BUCKET
+            }}
+        run:
+          |
           set -euo pipefail
           if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
             echo "::error::publishing is refused off main (this run is on ${GITHUB_REF}); run it on main, or leave publish off"
@@ -72,12 +132,27 @@ jobs:
       # from_run publishes bytes this job did not build, so the source run is checked first, with the
       # default token (actions: read): it must be a run of THIS workflow, on main, that succeeded. A
       # run of another workflow, of a branch, or a failed run has an artifact nobody vouched for.
-      - name: Verify the source run (from_run)
-        if: inputs.from_run != ''
+      - name:
+          Verify
+          the
+          source
+          run
+          (from_run)
+        if:
+          inputs.from_run
+          !=
+          ''
         env:
-          GH_TOKEN: ${{ github.token }}
-          FROM_RUN: ${{ inputs.from_run }}
-        run: |
+          GH_TOKEN:
+            ${{
+            github.token
+            }}
+          FROM_RUN:
+            ${{
+            inputs.from_run
+            }}
+        run:
+          |
           set -euo pipefail
           [[ "$FROM_RUN" =~ ^[0-9]+$ ]] || { echo "::error::from_run must be a numeric run id, got '$FROM_RUN'"; exit 1; }
           read -r wf_path branch status conclusion < <(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${FROM_RUN}" \
@@ -98,20 +173,55 @@ jobs:
       # post-boot snapshot (state.zst) and writes manifest.json (its version
       # covers the snapshot). Records this commit and run in packages.txt and
       # manifest.json.
-      - name: Build the image and snapshot
-        if: inputs.from_run == ''
+      - name:
+          Build
+          the
+          image
+          and
+          snapshot
+        if:
+          inputs.from_run
+          ==
+          ''
         env:
-          RMHOS_BUILD_COMMIT: ${{ github.sha }}
-          RMHOS_BUILD_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: pnpm rmhos:image
+          RMHOS_BUILD_COMMIT:
+            ${{
+            github.sha
+            }}
+          RMHOS_BUILD_RUN_URL:
+            ${{
+            github.server_url
+            }}/${{
+            github.repository
+            }}/actions/runs/${{
+            github.run_id
+            }}
+        run:
+          pnpm
+          rmhos:image
 
-      - name: Boot it headless (smoke)
-        if: inputs.from_run == ''
-        run: pnpm rmhos:smoke
+      - name:
+          Boot
+          it
+          headless
+          (smoke)
+        if:
+          inputs.from_run
+          ==
+          ''
+        run:
+          pnpm
+          rmhos:smoke
 
-      - name: Size budgets
-        if: inputs.from_run == ''
-        run: |
+      - name:
+          Size
+          budgets
+        if:
+          inputs.from_run
+          ==
+          ''
+        run:
+          |
           set -euo pipefail
           dir=public/rmhos-dev
           kernel=$(stat -c %s "$dir/bzImage")
@@ -126,38 +236,108 @@ jobs:
 
       # Kept so a failed publish costs a re-run of the upload, not of the build (a rebuild is a new
       # version), and so what was published can be audited after the run logs expire.
-      - name: Keep the image as an artifact
-        if: inputs.from_run == ''
+      - name:
+          Keep
+          the
+          image
+          as
+          an
+          artifact
+        if:
+          inputs.from_run
+          ==
+          ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rmhos-image-${{ github.run_id }}
+          name:
+            rmhos-image-${{
+            github.run_id
+            }}
           path: public/rmhos-dev
           retention-days: 30
           if-no-files-found: error
           compression-level: 0
 
-      - name: Fetch the artifact of the earlier run
-        if: inputs.from_run != ''
+      - name:
+          Fetch
+          the
+          artifact
+          of
+          the
+          earlier
+          run
+        if:
+          inputs.from_run
+          !=
+          ''
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: rmhos-image-${{ inputs.from_run }}
-          run-id: ${{ inputs.from_run }}
-          github-token: ${{ github.token }}
+          name:
+            rmhos-image-${{
+            inputs.from_run
+            }}
+          run-id:
+            ${{
+            inputs.from_run
+            }}
+          github-token:
+            ${{
+            github.token
+            }}
           path: public/rmhos-dev
 
-      - name: Publish to R2
-        if: env.WANT_PUBLISH == 'true'
+      - name:
+          Publish
+          to
+          R2
+        if:
+          env.WANT_PUBLISH
+          ==
+          'true'
         env:
-          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          S3_REGION: ${{ secrets.S3_REGION }}
+          S3_ENDPOINT:
+            ${{
+            secrets.S3_ENDPOINT
+            }}
+          S3_ACCESS_KEY_ID:
+            ${{
+            secrets.S3_ACCESS_KEY_ID
+            }}
+          S3_SECRET_ACCESS_KEY:
+            ${{
+            secrets.S3_SECRET_ACCESS_KEY
+            }}
+          S3_BUCKET:
+            ${{
+            secrets.S3_BUCKET
+            }}
+          S3_REGION:
+            ${{
+            secrets.S3_REGION
+            }}
           S3_FORCE_PATH_STYLE: 'false' # R2 uses virtual-hosted-style addressing (see .env.example)
-          FORCE_FLAG: ${{ inputs.force && '--force' || '' }}
-        run: node scripts/rmhos/publish-r2.mjs public/rmhos-dev $FORCE_FLAG
+          FORCE_FLAG:
+            ${{
+            inputs.force
+            &&
+            '--force'
+            ||
+            ''
+            }}
+        run:
+          node
+          scripts/rmhos/publish-r2.mjs
+          public/rmhos-dev
+          $FORCE_FLAG
 
-      - name: Manifest and the block to paste
-        run: |
+      - name:
+          Manifest
+          and
+          the
+          block
+          to
+          paste
+        run:
+          |
           cat public/rmhos-dev/manifest.json
           node scripts/rmhos/print-pin.mjs public/rmhos-dev

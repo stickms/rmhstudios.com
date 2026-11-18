@@ -16,67 +16,239 @@ import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
 
-export function startFront({ key, cert, frontPort = 7443, hubPort = 7009, vitePort = 7005 }) {
-  const relaySockets = new Set();
-  const isRelay = (url) => (url ?? '').startsWith('/rmhos-net/');
-  const server = https.createServer({ key, cert }, (req, res) => {
-    if (req.method === 'POST' && req.url === '/__front/drop-ws') {
-      const n = relaySockets.size;
-      for (const s of relaySockets) s.destroy();
-      relaySockets.clear();
-      res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ dropped: n }));
-      return;
-    }
-    const up = http.request(
+export function startFront({
+  key,
+  cert,
+  frontPort = 7443,
+  hubPort = 7009,
+  vitePort = 7005,
+}) {
+  const relaySockets =
+    new Set();
+  const isRelay =
+    (
+      url,
+    ) =>
+      (
+        url ??
+        ''
+      ).startsWith(
+        '/rmhos-net/',
+      );
+  const server =
+    https.createServer(
       {
-        host: '127.0.0.1',
-        port: isRelay(req.url) ? hubPort : vitePort,
-        method: req.method,
-        path: req.url,
-        headers: { ...req.headers, 'x-forwarded-proto': 'https' },
+        key,
+        cert,
       },
-      (r) => {
-        res.writeHead(r.statusCode ?? 502, r.headers);
-        r.pipe(res);
+      (
+        req,
+        res,
+      ) => {
+        if (
+          req.method ===
+            'POST' &&
+          req.url ===
+            '/__front/drop-ws'
+        ) {
+          const n =
+            relaySockets.size;
+          for (const s of relaySockets)
+            s.destroy();
+          relaySockets.clear();
+          res.writeHead(
+            200,
+            {
+              'content-type':
+                'application/json',
+            },
+          );
+          res.end(
+            JSON.stringify(
+              {
+                dropped:
+                  n,
+              },
+            ),
+          );
+          return;
+        }
+        const up =
+          http.request(
+            {
+              host: '127.0.0.1',
+              port: isRelay(
+                req.url,
+              )
+                ? hubPort
+                : vitePort,
+              method:
+                req.method,
+              path: req.url,
+              headers:
+                {
+                  ...req.headers,
+                  'x-forwarded-proto':
+                    'https',
+                },
+            },
+            (
+              r,
+            ) => {
+              res.writeHead(
+                r.statusCode ??
+                  502,
+                r.headers,
+              );
+              r.pipe(
+                res,
+              );
+            },
+          );
+        up.on(
+          'error',
+          () => {
+            res.writeHead(
+              502,
+            );
+            res.end();
+          },
+        );
+        req.pipe(
+          up,
+        );
       },
     );
-    up.on('error', () => {
-      res.writeHead(502);
-      res.end();
-    });
-    req.pipe(up);
-  });
-  server.on('upgrade', (req, socket, head) => {
-    const relay = isRelay(req.url);
-    const up = net.connect(relay ? hubPort : vitePort, '127.0.0.1', () => {
-      up.write(
-        `${req.method} ${req.url} HTTP/1.1\r\n` +
-          Object.entries(req.headers)
-            .map(([k, v]) => `${k}: ${v}`)
-            .join('\r\n') +
-          '\r\n\r\n',
+  server.on(
+    'upgrade',
+    (
+      req,
+      socket,
+      head,
+    ) => {
+      const relay =
+        isRelay(
+          req.url,
+        );
+      const up =
+        net.connect(
+          relay
+            ? hubPort
+            : vitePort,
+          '127.0.0.1',
+          () => {
+            up.write(
+              `${req.method} ${req.url} HTTP/1.1\r\n` +
+                Object.entries(
+                  req.headers,
+                )
+                  .map(
+                    ([
+                      k,
+                      v,
+                    ]) =>
+                      `${k}: ${v}`,
+                  )
+                  .join(
+                    '\r\n',
+                  ) +
+                '\r\n\r\n',
+            );
+            if (
+              head.length
+            )
+              up.write(
+                head,
+              );
+            socket
+              .pipe(
+                up,
+              )
+              .pipe(
+                socket,
+              );
+          },
+        );
+      if (
+        relay
+      ) {
+        relaySockets.add(
+          socket,
+        );
+        socket.on(
+          'close',
+          () =>
+            relaySockets.delete(
+              socket,
+            ),
+        );
+      }
+      up.on(
+        'error',
+        () =>
+          socket.destroy(),
       );
-      if (head.length) up.write(head);
-      socket.pipe(up).pipe(socket);
-    });
-    if (relay) {
-      relaySockets.add(socket);
-      socket.on('close', () => relaySockets.delete(socket));
-    }
-    up.on('error', () => socket.destroy());
-    socket.on('error', () => up.destroy());
-    socket.on('close', () => up.destroy());
-    up.on('close', () => socket.destroy());
-  });
-  return new Promise((resolve) => server.listen(frontPort, '127.0.0.1', () => resolve(server)));
+      socket.on(
+        'error',
+        () =>
+          up.destroy(),
+      );
+      socket.on(
+        'close',
+        () =>
+          up.destroy(),
+      );
+      up.on(
+        'close',
+        () =>
+          socket.destroy(),
+      );
+    },
+  );
+  return new Promise(
+    (
+      resolve,
+    ) =>
+      server.listen(
+        frontPort,
+        '127.0.0.1',
+        () =>
+          resolve(
+            server,
+          ),
+      ),
+  );
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const server = await startFront({
-    key: fs.readFileSync(process.env.TLS_KEY),
-    cert: fs.readFileSync(process.env.TLS_CERT),
-    frontPort: Number(process.env.FRONT_PORT ?? 7443),
-  });
-  console.log('rmhos tls front on', server.address());
+if (
+  import.meta
+    .url ===
+  `file://${process.argv[1]}`
+) {
+  const server =
+    await startFront(
+      {
+        key: fs.readFileSync(
+          process
+            .env
+            .TLS_KEY,
+        ),
+        cert: fs.readFileSync(
+          process
+            .env
+            .TLS_CERT,
+        ),
+        frontPort:
+          Number(
+            process
+              .env
+              .FRONT_PORT ??
+              7443,
+          ),
+      },
+    );
+  console.log(
+    'rmhos tls front on',
+    server.address(),
+  );
 }

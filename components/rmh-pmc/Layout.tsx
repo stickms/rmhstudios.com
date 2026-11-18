@@ -13,14 +13,31 @@ import { useRef } from 'react';
 import { Outlet } from '@tanstack/react-router';
 import { useChromePointer } from '@/hooks/useChromePointer';
 import { useSceneFocus } from '@/hooks/useSceneFocus';
-import { CommandBar, Gutter, SiteFooter } from './shared';
+import {
+  CommandBar,
+  Gutter,
+  SiteFooter,
+} from './shared';
 
 export default function RmhPmcLayout() {
-  const root = useRef<HTMLDivElement>(null);
-  useChromePointer(root, '--rp-mx');
-  useSceneFocus(root);
+  const root =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  useChromePointer(
+    root,
+    '--rp-mx',
+  );
+  useSceneFocus(
+    root,
+  );
   return (
-    <div className="rmhp-root" ref={root}>
+    <div
+      className="rmhp-root"
+      ref={
+        root
+      }
+    >
       <CommandBar />
       <Gutter />
       <main>

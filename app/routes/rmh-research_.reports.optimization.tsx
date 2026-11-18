@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { OptimizationPage } from '@/components/optimization/OptimizationPage';
-import { buildMeta, buildCanonical } from '@/lib/seo';
+import {
+  buildMeta,
+  buildCanonical,
+} from '@/lib/seo';
 
 /**
  * /rmh-research/reports/optimization — "Speed & Optimization", an RMH Research
@@ -11,17 +14,32 @@ import { buildMeta, buildCanonical } from '@/lib/seo';
  * (`components/security/security.css`), and the archive lists it as a report
  * and links here (`lib/rmh-research/data/reports.ts`).
  */
-const PATH = '/rmh-research/reports/optimization';
+const PATH =
+  '/rmh-research/reports/optimization';
 
-export const Route = createFileRoute('/rmh-research_/reports/optimization')({
-  head: () => ({
-    meta: buildMeta({
-      title: 'Speed & Optimization — RMH Research',
-      description:
-        'How RMH Studios stays fast — from a server-seeded first paint, intent prefetching, and optimistic writes at runtime to a parallel, cache-warm build and deploy pipeline. With the measured before/after numbers.',
-      path: PATH,
-    }),
-    links: [buildCanonical(PATH)],
-  }),
-  component: OptimizationPage,
-});
+export const Route =
+  createFileRoute(
+    '/rmh-research_/reports/optimization',
+  )(
+    {
+      head: () => ({
+        meta: buildMeta(
+          {
+            title:
+              'Speed & Optimization — RMH Research',
+            description:
+              'How RMH Studios stays fast — from a server-seeded first paint, intent prefetching, and optimistic writes at runtime to a parallel, cache-warm build and deploy pipeline. With the measured before/after numbers.',
+            path: PATH,
+          },
+        ),
+        links:
+          [
+            buildCanonical(
+              PATH,
+            ),
+          ],
+      }),
+      component:
+        OptimizationPage,
+    },
+  );

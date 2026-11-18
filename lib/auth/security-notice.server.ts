@@ -13,22 +13,55 @@ import { dispatch } from '@/lib/notify/dispatch.server';
 import { sendOnce } from '@/lib/email/deliveries.server';
 import { canEmail } from '@/lib/email/preferences.server';
 import { SITE_URL } from '@/lib/seo';
-import { CREDENTIAL_PROVIDER_ID, PROVIDER_NAMES, isSignInProviderId } from '@/lib/auth/providers';
+import {
+  CREDENTIAL_PROVIDER_ID,
+  PROVIDER_NAMES,
+  isSignInProviderId,
+} from '@/lib/auth/providers';
 
 export type SignInChange =
-  | { kind: 'connected'; providerId: string }
-  | { kind: 'removed'; providerId: string }
-  | { kind: 'merged'; providerIds: string[] };
+  | {
+      kind: 'connected';
+      providerId: string;
+    }
+  | {
+      kind: 'removed';
+      providerId: string;
+    }
+  | {
+      kind: 'merged';
+      providerIds: string[];
+    };
 
-const SECURITY_PAGE = '/settings/security';
+const SECURITY_PAGE =
+  '/settings/security';
 
-export function providerName(providerId: string): string {
-  if (providerId === CREDENTIAL_PROVIDER_ID) return 'Email and password';
-  return isSignInProviderId(providerId) ? PROVIDER_NAMES[providerId] : providerId;
+export function providerName(
+  providerId: string,
+): string {
+  if (
+    providerId ===
+    CREDENTIAL_PROVIDER_ID
+  )
+    return 'Email and password';
+  return isSignInProviderId(
+    providerId,
+  )
+    ? PROVIDER_NAMES[
+        providerId
+      ]
+    : providerId;
 }
 
-function describe(change: SignInChange): { subject: string; line: string } {
-  switch (change.kind) {
+function describe(
+  change: SignInChange,
+): {
+  subject: string;
+  line: string;
+} {
+  switch (
+    change.kind
+  ) {
     case 'connected':
       return {
         subject: `${providerName(change.providerId)} was connected to your RMH Studios account`,
@@ -40,7 +73,14 @@ function describe(change: SignInChange): { subject: string; line: string } {
         line: `${providerName(change.providerId)} can no longer be used to sign in to your account.`,
       };
     case 'merged': {
-      const names = change.providerIds.map(providerName).join(', ');
+      const names =
+        change.providerIds
+          .map(
+            providerName,
+          )
+          .join(
+            ', ',
+          );
       return {
         subject: `A sign-in was moved to your RMH Studios account`,
         line: `${names} from another, empty account can now be used to sign in to this account. The empty account was closed.`,
@@ -49,59 +89,122 @@ function describe(change: SignInChange): { subject: string; line: string } {
   }
 }
 
-function escapeHtml(value: string): string {
+function escapeHtml(
+  value: string,
+): string {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(
+      /&/g,
+      '&amp;',
+    )
+    .replace(
+      /</g,
+      '&lt;',
+    )
+    .replace(
+      />/g,
+      '&gt;',
+    )
+    .replace(
+      /"/g,
+      '&quot;',
+    )
+    .replace(
+      /'/g,
+      '&#39;',
+    );
 }
 
-export async function notifySignInChange(userId: string, change: SignInChange): Promise<void> {
+export async function notifySignInChange(
+  userId: string,
+  change: SignInChange,
+): Promise<void> {
   try {
-    const { subject, line } = describe(change);
+    const {
+      subject,
+      line,
+    } =
+      describe(
+        change,
+      );
     const link = `${SITE_URL}${SECURITY_PAGE}`;
-    const notIt = 'If this was not you, review your sign-in methods and sessions now.';
+    const notIt =
+      'If this was not you, review your sign-in methods and sessions now.';
 
-    await dispatch({
-      userId,
-      category: 'system',
-      type: 'SYSTEM',
-      entityType: 'security',
-      entityId: `sign-in-methods:${change.kind}`,
-      preview: line,
-      link: SECURITY_PAGE,
-      urgency: 'critical',
-    });
+    await dispatch(
+      {
+        userId,
+        category:
+          'system',
+        type: 'SYSTEM',
+        entityType:
+          'security',
+        entityId: `sign-in-methods:${change.kind}`,
+        preview:
+          line,
+        link: SECURITY_PAGE,
+        urgency:
+          'critical',
+      },
+    );
 
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+    const user =
+      await prisma.user.findUnique(
+        {
+          where:
+            {
+              id: userId,
+            },
+          select:
+            {
+              email: true,
+            },
+        },
+      );
     // The sender skips placeholder addresses itself. The email honours the
     // "Account security" email preference (on by default); the in-app notice
     // above is sent either way.
-    if (user?.email && (await canEmail(userId, 'security'))) {
+    if (
+      user?.email &&
+      (await canEmail(
+        userId,
+        'security',
+      ))
+    ) {
       // The same change reported twice within ten minutes (a retried request)
       // is one email; the hourly security cap bounds a burst of real changes.
       const what =
-        change.kind === 'merged' ? change.providerIds.join(',') : change.providerId;
-      await sendOnce({
-        userId,
-        kind: 'security',
-        dedupeKey: `security:sign-in-change:${change.kind}:${what}:${Math.floor(Date.now() / 600_000)}`,
-        to: user.email,
-        subject,
-        html: [
-          '<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111">',
-          `<h1 style="font-size:20px;margin:0 0 12px">${escapeHtml(subject)}</h1>`,
-          `<p style="margin:0 0 16px;line-height:1.5">${escapeHtml(line)}</p>`,
-          `<p style="margin:0 0 20px;line-height:1.5">${escapeHtml(notIt)}</p>`,
-          `<p style="margin:0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px">Review security settings</a></p>`,
-          '</div>',
-        ].join(''),
-        text: `${subject}\n\n${line}\n\n${notIt}\n${link}`,
-      });
+        change.kind ===
+        'merged'
+          ? change.providerIds.join(
+              ',',
+            )
+          : change.providerId;
+      await sendOnce(
+        {
+          userId,
+          kind: 'security',
+          dedupeKey: `security:sign-in-change:${change.kind}:${what}:${Math.floor(Date.now() / 600_000)}`,
+          to: user.email,
+          subject,
+          html: [
+            '<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111">',
+            `<h1 style="font-size:20px;margin:0 0 12px">${escapeHtml(subject)}</h1>`,
+            `<p style="margin:0 0 16px;line-height:1.5">${escapeHtml(line)}</p>`,
+            `<p style="margin:0 0 20px;line-height:1.5">${escapeHtml(notIt)}</p>`,
+            `<p style="margin:0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px">Review security settings</a></p>`,
+            '</div>',
+          ].join(
+            '',
+          ),
+          text: `${subject}\n\n${line}\n\n${notIt}\n${link}`,
+        },
+      );
     }
   } catch (error) {
-    console.error('[auth] sign-in change notice failed:', error);
+    console.error(
+      '[auth] sign-in change notice failed:',
+      error,
+    );
   }
 }

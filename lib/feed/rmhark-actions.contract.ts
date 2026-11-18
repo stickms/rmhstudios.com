@@ -252,10 +252,18 @@ export const postVibeApi =
     res: {
       slug: string;
       versionId: string;
-      title: string | null;
-      description: string | null;
-      thumbnailUrl: string | null;
-      kind: 'page' | 'widget';
+      title:
+        | string
+        | null;
+      description:
+        | string
+        | null;
+      thumbnailUrl:
+        | string
+        | null;
+      kind:
+        | 'page'
+        | 'widget';
     };
   }>()(
     {

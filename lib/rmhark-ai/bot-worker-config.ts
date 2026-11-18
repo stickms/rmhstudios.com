@@ -584,7 +584,8 @@ export function loadBotConfig(
       FIRST_UPDATES_PER_TICK,
     firstUpdateImagesPerTick:
       FIRST_UPDATE_IMAGES_PER_TICK,
-    restylesPerTick: RESTYLES_PER_TICK,
+    restylesPerTick:
+      RESTYLES_PER_TICK,
   };
 }
 

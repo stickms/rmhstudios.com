@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { FRAME_URL, useFrameDocument } from '@/lib/rmhvibe/frame-loader';
+import {
+  FRAME_URL,
+  useFrameDocument,
+} from '@/lib/rmhvibe/frame-loader';
 import { useTranslation } from 'react-i18next';
 import {
   Play,
@@ -189,8 +192,12 @@ export function RunnableEmbed({
           )}
           sandbox="allow-scripts"
           referrerPolicy="no-referrer"
-          ref={frameRef}
-          src={FRAME_URL}
+          ref={
+            frameRef
+          }
+          src={
+            FRAME_URL
+          }
           loading="lazy"
           className={cn(
             'block h-60 w-full border-0',

@@ -79,15 +79,46 @@ vi.mock(
       dispatchMock.dispatch,
   }),
 );
-const prefsMock = vi.hoisted(() => ({ canEmail: vi.fn() }));
+const prefsMock =
+  vi.hoisted(
+    () => ({
+      canEmail:
+        vi.fn(),
+    }),
+  );
 // The delivery log (dedupe + hourly cap) is covered by email-campaigns.test.ts;
 // here it passes straight through to the sender so the alert logic is what is tested.
-vi.mock('@/lib/email/deliveries.server', () => ({
-  sendOnce: vi.fn(async ({ userId: _u, kind: _k, dedupeKey: _d, ...message }: Record<string, unknown>) =>
-    (await emailMock.sendEmail(message)) ? 'sent' : 'failed',
-  ),
-}));
-vi.mock('@/lib/email/preferences.server', () => ({ canEmail: prefsMock.canEmail }));
+vi.mock(
+  '@/lib/email/deliveries.server',
+  () => ({
+    sendOnce:
+      vi.fn(
+        async ({
+          userId:
+            _u,
+          kind: _k,
+          dedupeKey:
+            _d,
+          ...message
+        }: Record<
+          string,
+          unknown
+        >) =>
+          (await emailMock.sendEmail(
+            message,
+          ))
+            ? 'sent'
+            : 'failed',
+      ),
+  }),
+);
+vi.mock(
+  '@/lib/email/preferences.server',
+  () => ({
+    canEmail:
+      prefsMock.canEmail,
+  }),
+);
 vi.mock(
   '@/lib/email/send.server',
   () => ({
@@ -451,27 +482,77 @@ beforeEach(
     prismaMock.user.findUnique.mockResolvedValue(
       OLD_ACCOUNT,
     );
-    prefsMock.canEmail.mockResolvedValue(true);
+    prefsMock.canEmail.mockResolvedValue(
+      true,
+    );
   },
 );
 
 describe('onSessionCreated', () => {
   it('sends the email through the delivery log, once per session, as security mail', async () => {
-    prismaMock.session.findFirst.mockResolvedValue(null);
-    await onSessionCreated({ id: 's1', userId: 'u1' }, signInRequest());
-    expect(vi.mocked(sendOnce)).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'u1', kind: 'security', dedupeKey: 'security:new-device:s1' }),
+    prismaMock.session.findFirst.mockResolvedValue(
+      null,
+    );
+    await onSessionCreated(
+      {
+        id: 's1',
+        userId:
+          'u1',
+      },
+      signInRequest(),
+    );
+    expect(
+      vi.mocked(
+        sendOnce,
+      ),
+    ).toHaveBeenCalledWith(
+      expect.objectContaining(
+        {
+          userId:
+            'u1',
+          kind: 'security',
+          dedupeKey:
+            'security:new-device:s1',
+        },
+      ),
     );
   });
 
   it('still notifies in-app but skips the email when security email is turned off', async () => {
-    prismaMock.session.findFirst.mockResolvedValue(null);
-    prefsMock.canEmail.mockResolvedValue(false);
-    const res = await onSessionCreated({ id: 's1', userId: 'u1' }, signInRequest());
-    expect(res.alerted).toBe(true);
-    expect(prefsMock.canEmail).toHaveBeenCalledWith('u1', 'security');
-    expect(dispatchMock.dispatch).toHaveBeenCalledTimes(1);
-    expect(emailMock.sendEmail).not.toHaveBeenCalled();
+    prismaMock.session.findFirst.mockResolvedValue(
+      null,
+    );
+    prefsMock.canEmail.mockResolvedValue(
+      false,
+    );
+    const res =
+      await onSessionCreated(
+        {
+          id: 's1',
+          userId:
+            'u1',
+        },
+        signInRequest(),
+      );
+    expect(
+      res.alerted,
+    ).toBe(
+      true,
+    );
+    expect(
+      prefsMock.canEmail,
+    ).toHaveBeenCalledWith(
+      'u1',
+      'security',
+    );
+    expect(
+      dispatchMock.dispatch,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      emailMock.sendEmail,
+    ).not.toHaveBeenCalled();
   });
 
   it('alerts on an unfamiliar device, bypassing quiet hours', async () => {

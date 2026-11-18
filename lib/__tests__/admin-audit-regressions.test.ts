@@ -209,15 +209,57 @@ beforeEach(
 
 describe('announcing a blog post on save', () => {
   it('writes only the blog post: no feed post is created and no discussion link is stored', async () => {
-    mocks.find.mockResolvedValue({ id: 'bp2', announcement: false, announcedAt: new Date() });
-    const response = await post({
-      request: request('POST', { ...validPost, isEdit: true, announcement: true }),
-      params: {},
-    });
-    expect(response.status).toBe(200);
-    const written = mocks.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
-    expect(written.data.announcement).toBe(true);
-    expect(written.data).not.toHaveProperty('announcementPostId');
+    mocks.find.mockResolvedValue(
+      {
+        id: 'bp2',
+        announcement: false,
+        announcedAt:
+          new Date(),
+      },
+    );
+    const response =
+      await post(
+        {
+          request:
+            request(
+              'POST',
+              {
+                ...validPost,
+                isEdit: true,
+                announcement: true,
+              },
+            ),
+          params:
+            {},
+        },
+      );
+    expect(
+      response.status,
+    ).toBe(
+      200,
+    );
+    const written =
+      mocks
+        .update
+        .mock
+        .calls[0]?.[0] as {
+        data: Record<
+          string,
+          unknown
+        >;
+      };
+    expect(
+      written
+        .data
+        .announcement,
+    ).toBe(
+      true,
+    );
+    expect(
+      written.data,
+    ).not.toHaveProperty(
+      'announcementPostId',
+    );
   });
 });
 

@@ -49,8 +49,7 @@ const listeners =
   new Set<
     () => void
   >();
-let lastFollowAt =
-  0;
+let lastFollowAt = 0;
 
 /** Call after a follow or unfollow the server accepted. Needs no provider and no subscriber. */
 export function notifyFollowChanged() {

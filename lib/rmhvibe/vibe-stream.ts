@@ -6,7 +6,10 @@
  */
 
 import type { VibeSelection } from '@/lib/rmhvibe/bridge';
-import { VIBE_BUDGET_SCOPE, VIBE_BUSY_SCOPE } from '@/lib/ai/vibe-tasks';
+import {
+  VIBE_BUDGET_SCOPE,
+  VIBE_BUSY_SCOPE,
+} from '@/lib/ai/vibe-tasks';
 import type {
   VibeStreamEvent,
   VibeModel,
@@ -53,10 +56,34 @@ async function describeHttpError(
   // The API wraps errors as {"error": "..."}; show that text, not the raw JSON.
   let scope: unknown;
   try {
-    const parsed: unknown = JSON.parse(body);
-    const msg = (parsed as { error?: unknown } | null)?.error;
-    scope = (parsed as { detail?: { scope?: unknown } } | null)?.detail?.scope;
-    if (typeof msg === 'string' && msg.trim()) body = msg.trim();
+    const parsed: unknown =
+      JSON.parse(
+        body,
+      );
+    const msg =
+      (
+        parsed as {
+          error?: unknown;
+        } | null
+      )
+        ?.error;
+    scope =
+      (
+        parsed as {
+          detail?: {
+            scope?: unknown;
+          };
+        } | null
+      )
+        ?.detail
+        ?.scope;
+    if (
+      typeof msg ===
+        'string' &&
+      msg.trim()
+    )
+      body =
+        msg.trim();
   } catch {
     /* plain-text body */
   }
@@ -81,10 +108,16 @@ async function describeHttpError(
   // The vibe gates reuse AI_BUDGET_EXCEEDED / AI_UNAVAILABLE (lib/ai/vibe-tasks.ts) and
   // mark them with detail.scope; word them for vibes. The daily cap is a user-meaningful
   // 503, not a server fault.
-  if (scope === VIBE_BUDGET_SCOPE) {
+  if (
+    scope ===
+    VIBE_BUDGET_SCOPE
+  ) {
     return 'You’ve used this month’s vibe-building allowance.';
   }
-  if (scope === VIBE_BUSY_SCOPE) {
+  if (
+    scope ===
+    VIBE_BUSY_SCOPE
+  ) {
     return 'RMH Vibes is busy right now. Try again later.';
   }
   if (
@@ -105,7 +138,9 @@ export async function streamVibe(
     slug?: string;
     fromVersionId?: string;
     model?: VibeModel;
-    kind?: 'page' | 'widget';
+    kind?:
+      | 'page'
+      | 'widget';
     selection?: VibeSelection;
   },
   onEvent: (

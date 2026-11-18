@@ -8,19 +8,41 @@
 import type { CSSProperties } from 'react';
 
 const LEAF_COUNT = 5;
-const LEAVES = Array.from({ length: LEAF_COUNT }, (_, i) => i);
+const LEAVES =
+  Array.from(
+    {
+      length:
+        LEAF_COUNT,
+    },
+    (
+      _,
+      i,
+    ) =>
+      i,
+  );
 
 export function BookLeaves() {
   return (
     <>
-      {LEAVES.map((i) => (
-        <span
-          key={i}
-          className="lib-book__leaf"
-          style={{ '--leaf': i } as CSSProperties}
-          aria-hidden="true"
-        />
-      ))}
+      {LEAVES.map(
+        (
+          i,
+        ) => (
+          <span
+            key={
+              i
+            }
+            className="lib-book__leaf"
+            style={
+              {
+                '--leaf':
+                  i,
+              } as CSSProperties
+            }
+            aria-hidden="true"
+          />
+        ),
+      )}
     </>
   );
 }

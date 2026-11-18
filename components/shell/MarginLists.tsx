@@ -40,11 +40,13 @@ export default function MarginLists() {
   // (lib/discovery/margin-query.ts); a follow elsewhere on the site marks it stale.
   const {
     data: session,
-    isPending: sessionPending,
+    isPending:
+      sessionPending,
   } =
     useSession();
   const viewerId =
-    session?.user
+    session
+      ?.user
       ?.id;
   useMarginRefreshOnFollow(
     viewerId,

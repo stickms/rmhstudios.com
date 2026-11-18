@@ -353,22 +353,194 @@ same.
 
 # picomatch: single-branch repeated extglob ReDoS
 
-`picomatch@4.0.7` (reached through `@tanstack/react-start > @tanstack/router-utils > tinyglobby`)
-is affected by GHSA-fc5q-39xc-vjpf, ReDoS through single-branch repeated extglobs. 4.0.7 is the
-latest release and no patched version exists. `analyzeRepeatedExtglob` in `lib/parse.js` only
-ran its risky-pattern checks when an extglob had more than one branch, so `+(*)`, `+(*a)` or
-`*(?*)` compiled to a nested unbounded quantifier. The patch also treats a repeated `+(…)` /
-`*(…)` as risky when any branch, including a single one, is empty, only `*`/`?`, contains an
-unescaped `*`, or contains a nested extglob. Risky extglobs fall back to the existing
-escaped-literal output. The `+(*(a)|*(b))` char-class optimisation is unchanged.
+`picomatch@4.0.7`
+(reached
+through
+`@tanstack/react-start > @tanstack/router-utils > tinyglobby`)
+is
+affected
+by
+GHSA-fc5q-39xc-vjpf,
+ReDoS
+through
+single-branch
+repeated
+extglobs.
+4.0.7
+is
+the
+latest
+release
+and
+no
+patched
+version
+exists.
+`analyzeRepeatedExtglob`
+in
+`lib/parse.js`
+only
+ran
+its
+risky-pattern
+checks
+when
+an
+extglob
+had
+more
+than
+one
+branch,
+so
+`+(*)`,
+`+(*a)`
+or
+`*(?*)`
+compiled
+to
+a
+nested
+unbounded
+quantifier.
+The
+patch
+also
+treats
+a
+repeated
+`+(…)`
+/
+`*(…)`
+as
+risky
+when
+any
+branch,
+including
+a
+single
+one,
+is
+empty,
+only
+`*`/`?`,
+contains
+an
+unescaped
+`*`,
+or
+contains
+a
+nested
+extglob.
+Risky
+extglobs
+fall
+back
+to
+the
+existing
+escaped-literal
+output.
+The
+`+(*(a)|*(b))`
+char-class
+optimisation
+is
+unchanged.
 
-`pnpm audit` only matches version ranges, so `package.json` carries
-`pnpm.auditConfig.ignoreGhsas: ["GHSA-fc5q-39xc-vjpf"]`. When picomatch publishes a fixed release,
-remove the audit ignore and this patch together, and confirm with `pnpm audit --prod
---audit-level=high`. `lib/__tests__/picomatch-redos.test.ts` covers the behaviour.
+`pnpm audit`
+only
+matches
+version
+ranges,
+so
+`package.json`
+carries
+`pnpm.auditConfig.ignoreGhsas: ["GHSA-fc5q-39xc-vjpf"]`.
+When
+picomatch
+publishes
+a
+fixed
+release,
+remove
+the
+audit
+ignore
+and
+this
+patch
+together,
+and
+confirm
+with
+`pnpm audit --prod --audit-level=high`.
+`lib/__tests__/picomatch-redos.test.ts`
+covers
+the
+behaviour.
 
-The ignore hides every copy of picomatch, not only the patched one, so two things keep it honest:
-`anymatch>picomatch` is overridden to 4.0.7 in `package.json` (i18next-parser's chain used to pull an
-unpatched picomatch 2.3.2 that the ignore was hiding), and `lib/__tests__/audit-ignores.test.ts`
-fails if an ignored advisory has no patch or if any picomatch version in the lockfile is not the
-patched one.
+The
+ignore
+hides
+every
+copy
+of
+picomatch,
+not
+only
+the
+patched
+one,
+so
+two
+things
+keep
+it
+honest:
+`anymatch>picomatch`
+is
+overridden
+to
+4.0.7
+in
+`package.json`
+(i18next-parser's
+chain
+used
+to
+pull
+an
+unpatched
+picomatch
+2.3.2
+that
+the
+ignore
+was
+hiding),
+and
+`lib/__tests__/audit-ignores.test.ts`
+fails
+if
+an
+ignored
+advisory
+has
+no
+patch
+or
+if
+any
+picomatch
+version
+in
+the
+lockfile
+is
+not
+the
+patched
+one.

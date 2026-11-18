@@ -132,6 +132,7 @@ export function SessionHighlight({
             {
               peak.label
             }
+
             :{' '}
             {
               peak.value

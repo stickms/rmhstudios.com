@@ -14,7 +14,10 @@ import { findLinkedUserId } from '../../lib/discord-link.server';
 import { generateVibeStream } from '../../lib/rmhvibe/vibe.server';
 import { assertVibeAllowed } from '../../lib/ai/vibe-budget.server';
 import { isAppError } from '../../lib/errors/codes';
-import { VIBE_BUDGET_SCOPE, VIBE_BUSY_SCOPE } from '../../lib/ai/vibe-tasks';
+import {
+  VIBE_BUDGET_SCOPE,
+  VIBE_BUSY_SCOPE,
+} from '../../lib/ai/vibe-tasks';
 import { parsePartialProject } from '../../lib/rmhvibe/vibe-project';
 import {
   InteractionResponse,
@@ -82,8 +85,14 @@ export interface VibeDeps {
    * user's monthly vibe ceiling. Absent = no gate (tests that do not exercise it).
    */
   gate?: (
-    userId: string | null,
-  ) => Promise<'ok' | 'budget' | 'busy'>;
+    userId:
+      | string
+      | null,
+  ) => Promise<
+    | 'ok'
+    | 'budget'
+    | 'busy'
+  >;
   /** Waits `ms` for the late-thumbnail follow-up; absent = no follow-up. */
   sleep?: (
     ms: number,
@@ -99,16 +108,43 @@ export interface VibeDeps {
 
 /** Map the budget errors to the two refusals the bot words itself; anything else is allowed. */
 async function defaultVibeGate(
-  userId: string | null,
-): Promise<'ok' | 'budget' | 'busy'> {
+  userId:
+    | string
+    | null,
+): Promise<
+  | 'ok'
+  | 'budget'
+  | 'busy'
+> {
   try {
-    await assertVibeAllowed(userId);
+    await assertVibeAllowed(
+      userId,
+    );
     return 'ok';
   } catch (err) {
-    if (isAppError(err)) {
-      const scope = err.detail?.scope;
-      if (err.code === 'AI_UNAVAILABLE' && scope === VIBE_BUSY_SCOPE) return 'busy';
-      if (err.code === 'AI_BUDGET_EXCEEDED' && scope === VIBE_BUDGET_SCOPE) return 'budget';
+    if (
+      isAppError(
+        err,
+      )
+    ) {
+      const scope =
+        err
+          .detail
+          ?.scope;
+      if (
+        err.code ===
+          'AI_UNAVAILABLE' &&
+        scope ===
+          VIBE_BUSY_SCOPE
+      )
+        return 'busy';
+      if (
+        err.code ===
+          'AI_BUDGET_EXCEEDED' &&
+        scope ===
+          VIBE_BUDGET_SCOPE
+      )
+        return 'budget';
     }
     return 'ok';
   }
@@ -118,17 +154,22 @@ async function defaultVibeGate(
  * Replies of builds still running, so shutdown can say so instead of leaving "Building…" on the
  * message forever. A build removes itself when it finishes.
  */
-const liveReplies = new Set<{
-  stop: () => Promise<void>;
-}>();
+const liveReplies =
+  new Set<{
+    stop: () => Promise<void>;
+  }>();
 let draining = false;
 
 /** The bot is stopping and a build is being abandoned: edit each unfinished reply to a fixed note. */
 export async function abandonVibeBuilds(): Promise<void> {
   draining = true;
   await Promise.allSettled(
-    [...liveReplies].map(
-      (r) =>
+    [
+      ...liveReplies,
+    ].map(
+      (
+        r,
+      ) =>
         r.stop(),
     ),
   );
@@ -136,7 +177,11 @@ export async function abandonVibeBuilds(): Promise<void> {
 }
 
 /** Late-thumbnail follow-ups: the screenshot lands about a minute after the build, so look twice. */
-const THUMB_FOLLOWUP_DELAYS_MS = [75_000, 150_000];
+const THUMB_FOLLOWUP_DELAYS_MS =
+  [
+    75_000,
+    150_000,
+  ];
 
 export function defaultVibeDeps(
   baseUrl: string,
@@ -149,11 +194,21 @@ export function defaultVibeDeps(
       Date.now(),
     baseUrl,
     gate: defaultVibeGate,
-    sleep: (ms) =>
-      new Promise((resolve) => {
-        // unref: a pending follow-up must never hold the process open at shutdown.
-        setTimeout(resolve, ms).unref?.();
-      }),
+    sleep:
+      (
+        ms,
+      ) =>
+        new Promise(
+          (
+            resolve,
+          ) => {
+            // unref: a pending follow-up must never hold the process open at shutdown.
+            setTimeout(
+              resolve,
+              ms,
+            ).unref?.();
+          },
+        ),
     thumbnailUrl:
       async (
         slug,
@@ -185,8 +240,13 @@ export function defaultVibeDeps(
  * Neutralise Discord markdown in text a model wrote (titles, descriptions), so a vibe called
  * `[free nitro](https://…)` renders literally.
  */
-export function escapeMarkdown(s: string): string {
-  return s.replace(/[\\*_~`|>[\]()]/g, '\\$&');
+export function escapeMarkdown(
+  s: string,
+): string {
+  return s.replace(
+    /[\\*_~`|>[\]()]/g,
+    '\\$&',
+  );
 }
 
 function truncate(
@@ -416,18 +476,24 @@ async function runBuild(
   // A bot that is stopping starts no builds, so a new one means the flag is stale (a restart in-process).
   draining = false;
   let settled = false;
-  const live = {
-    stop: async () => {
-      if (settled) return;
-      settled = true;
-      await finish(
-        errorBody(
-          'The bot restarted before this finished. Try again.',
-        ),
-      );
-    },
-  };
-  liveReplies.add(live);
+  const live =
+    {
+      stop: async () => {
+        if (
+          settled
+        )
+          return;
+        settled = true;
+        await finish(
+          errorBody(
+            'The bot restarted before this finished. Try again.',
+          ),
+        );
+      },
+    };
+  liveReplies.add(
+    live,
+  );
   try {
     const userId =
       await deps.findLinkedUserId(
@@ -436,11 +502,16 @@ async function runBuild(
     const verdict =
       (await deps.gate?.(
         userId,
-      )) ?? 'ok';
-    if (verdict !== 'ok') {
+      )) ??
+      'ok';
+    if (
+      verdict !==
+      'ok'
+    ) {
       await finish(
         errorBody(
-          verdict === 'busy'
+          verdict ===
+            'busy'
             ? 'RMH Vibes is busy right now. Try again later.'
             : 'You have used this month’s vibe allowance.',
         ),
@@ -470,7 +541,10 @@ async function runBuild(
         ev.type ===
         'error'
       ) {
-        if (settled) return;
+        if (
+          settled
+        )
+          return;
         settled = true;
         await finish(
           errorBody(
@@ -482,12 +556,16 @@ async function runBuild(
         ev.type ===
         'done'
       ) {
-        if (settled) return;
+        if (
+          settled
+        )
+          return;
         settled = true;
-        const done = await doneBody(
-          deps,
-          ev,
-        );
+        const done =
+          await doneBody(
+            deps,
+            ev,
+          );
         await finish(
           done.body,
         );
@@ -531,7 +609,9 @@ async function runBuild(
       }
     }
     // The stream ended without a result: treat it as a failed build.
-    if (!settled) {
+    if (
+      !settled
+    ) {
       settled = true;
       await finish(
         errorBody(
@@ -541,8 +621,13 @@ async function runBuild(
     }
   } catch (err) {
     // A thrown error can carry internals (SQL, paths): log it, say something fixed.
-    console.error('discord_bot.vibe_failed', err);
-    if (!settled) {
+    console.error(
+      'discord_bot.vibe_failed',
+      err,
+    );
+    if (
+      !settled
+    ) {
       settled = true;
       await finish(
         errorBody(
@@ -551,7 +636,9 @@ async function runBuild(
       );
     }
   } finally {
-    liveReplies.delete(live);
+    liveReplies.delete(
+      live,
+    );
   }
 }
 
@@ -581,10 +668,11 @@ async function addThumbnailLater(
     )
       return;
     try {
-      const done = await doneBody(
-        deps,
-        ev,
-      );
+      const done =
+        await doneBody(
+          deps,
+          ev,
+        );
       if (
         !done.hasImage
       )
@@ -627,85 +715,89 @@ async function doneBody(
         () =>
           null,
       );
-  const body: MessageBody = {
-    embeds:
-      [
-        {
-          title:
-            truncate(
-              escapeMarkdown(
-                ev.title ||
-                  'Your vibe',
+  const body: MessageBody =
+    {
+      embeds:
+        [
+          {
+            title:
+              truncate(
+                escapeMarkdown(
+                  ev.title ||
+                    'Your vibe',
+                ),
+                256,
               ),
-              256,
-            ),
-          description:
-            truncate(
-              escapeMarkdown(
-                ev.description ||
-                  '',
+            description:
+              truncate(
+                escapeMarkdown(
+                  ev.description ||
+                    '',
+                ),
+                400,
               ),
-              400,
-            ),
-          url,
-          ...(thumb
-            ? {
-                image:
-                  {
-                    url: absolute(
-                      deps.baseUrl,
-                      thumb,
-                    ),
-                  },
-              }
-            : {}),
-          footer:
-            {
-              text: 'RMH Vibes',
-            },
-        },
-      ],
-    components:
-      [
-        {
-          type: 1,
-          components:
-            [
+            url,
+            ...(thumb
+              ? {
+                  image:
+                    {
+                      url: absolute(
+                        deps.baseUrl,
+                        thumb,
+                      ),
+                    },
+                }
+              : {}),
+            footer:
               {
-                type: 2,
-                style:
-                  BUTTON_LINK,
-                label:
-                  'Open',
-                url,
+                text: 'RMH Vibes',
               },
-              {
-                type: 2,
-                style:
-                  BUTTON_PRIMARY,
-                label:
-                  'Play in Discord',
-                custom_id:
-                  'vibe_play:' +
-                  ev.slug,
-              },
-              {
-                type: 2,
-                style:
-                  BUTTON_SECONDARY,
-                label:
-                  'Customize',
-                custom_id:
-                  'vibe_edit:' +
-                  ev.slug,
-              },
-            ],
-        },
-      ],
-  };
+          },
+        ],
+      components:
+        [
+          {
+            type: 1,
+            components:
+              [
+                {
+                  type: 2,
+                  style:
+                    BUTTON_LINK,
+                  label:
+                    'Open',
+                  url,
+                },
+                {
+                  type: 2,
+                  style:
+                    BUTTON_PRIMARY,
+                  label:
+                    'Play in Discord',
+                  custom_id:
+                    'vibe_play:' +
+                    ev.slug,
+                },
+                {
+                  type: 2,
+                  style:
+                    BUTTON_SECONDARY,
+                  label:
+                    'Customize',
+                  custom_id:
+                    'vibe_edit:' +
+                    ev.slug,
+                },
+              ],
+          },
+        ],
+    };
   return {
     body,
-    hasImage: Boolean(thumb),
+    hasImage:
+      Boolean(
+        thumb,
+      ),
   };
 }
 

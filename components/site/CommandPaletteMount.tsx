@@ -107,9 +107,15 @@ export function CommandPaletteMount() {
     // slow or thin link, or with data saver, the palette (~18 KB with its dialog
     // primitives) waits for the first ⌘K or open event instead. Its own listeners
     // are those same two, which this mount already handles.
-    const warm = () => {
-      if (shouldSpeculate()) setActive(true);
-    };
+    const warm =
+      () => {
+        if (
+          shouldSpeculate()
+        )
+          setActive(
+            true,
+          );
+      };
     let idleId:
       | number
       | undefined;

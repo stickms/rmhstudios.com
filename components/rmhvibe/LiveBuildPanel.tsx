@@ -30,16 +30,44 @@ type PanelTab =
 
 export interface LiveBuildView {
   tab: PanelTab;
-  setTab: (tab: PanelTab) => void;
+  setTab: (
+    tab: PanelTab,
+  ) => void;
   /** A file the reader chose; null follows the file being written. */
-  picked: string | null;
-  setPicked: (name: string | null) => void;
+  picked:
+    | string
+    | null;
+  setPicked: (
+    name:
+      | string
+      | null,
+  ) => void;
 }
 
 export function useLiveBuildView(): LiveBuildView {
-  const [tab, setTab] = useState<PanelTab>('progress');
-  const [picked, setPicked] = useState<string | null>(null);
-  return { tab, setTab, picked, setPicked };
+  const [
+    tab,
+    setTab,
+  ] =
+    useState<PanelTab>(
+      'progress',
+    );
+  const [
+    picked,
+    setPicked,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  return {
+    tab,
+    setTab,
+    picked,
+    setPicked,
+  };
 }
 
 export function LiveBuildPanel({
@@ -97,23 +125,22 @@ export function LiveBuildPanel({
       ],
     );
   // A pick that no longer exists (a new build began) is dropped, so following resumes.
-  useEffect(
-    () => {
-      if (
-        picked &&
-        !(picked in
-          project.files)
+  useEffect(() => {
+    if (
+      picked &&
+      !(
+        picked in
+        project.files
       )
-        setPicked(
-          null,
-        );
-    },
-    [
-      picked,
-      project.files,
-      setPicked,
-    ],
-  );
+    )
+      setPicked(
+        null,
+      );
+  }, [
+    picked,
+    project.files,
+    setPicked,
+  ]);
   // A pick wins only while that file still exists; otherwise follow the writer.
   const selected =
     picked &&

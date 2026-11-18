@@ -241,22 +241,26 @@ export function slashCommands(): CommandDefinition[] {
     },
     {
       name: 'vibe',
-      description: 'Build a vibe page from a prompt',
-      options: [
-        {
-          type: OPTION_STRING,
-          name: 'prompt',
-          description: 'What the page should be',
-          required: true,
-          max_length: 1000,
-        },
-        {
-          type: OPTION_BOOLEAN,
-          name: 'widget',
-          description: 'Make a small widget instead of a page',
-          required: false,
-        },
-      ],
+      description:
+        'Build a vibe page from a prompt',
+      options:
+        [
+          {
+            type: OPTION_STRING,
+            name: 'prompt',
+            description:
+              'What the page should be',
+            required: true,
+            max_length: 1000,
+          },
+          {
+            type: OPTION_BOOLEAN,
+            name: 'widget',
+            description:
+              'Make a small widget instead of a page',
+            required: false,
+          },
+        ],
     },
   ];
 }

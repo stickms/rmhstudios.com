@@ -6,10 +6,18 @@
  */
 import type { SprintState } from '@/lib/rmhmusic/learn/sprint/machine';
 
-export type SprintFocus = 'start' | 'sheet' | 'end' | null;
+export type SprintFocus =
+  | 'start'
+  | 'sheet'
+  | 'end'
+  | null;
 
-export function focusOf(kind: SprintState['kind']): SprintFocus {
-  switch (kind) {
+export function focusOf(
+  kind: SprintState['kind'],
+): SprintFocus {
+  switch (
+    kind
+  ) {
     case 'ready':
       return 'start';
     case 'countdown':

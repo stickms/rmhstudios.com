@@ -17,9 +17,7 @@ import {
   useState,
 } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import {
-  ArrowRight,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SearchField } from '@/components/ui/search-field';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
@@ -171,7 +169,16 @@ export function PagesTab({
       DEFAULT_VIBE_MODEL,
     );
 
-  const [kind, setKind] = useState<'page' | 'widget'>('page');
+  const [
+    kind,
+    setKind,
+  ] =
+    useState<
+      | 'page'
+      | 'widget'
+    >(
+      'page',
+    );
 
   function submit() {
     const prompt =
@@ -561,62 +568,64 @@ export function PagesTab({
             />
             <div className="vibe-dock__footer">
               <div className="vibe-dock__options">
-              <Tabs
-                size="sm"
-                sheet={false}
-                aria-label={t(
-                  'kind-aria-label',
-                  {
-                    defaultValue:
-                      'What to generate',
-                  },
-                )}
-                tabs={[
-                  {
-                    id: 'page',
-                    label:
-                      t(
-                        'kind-page',
-                        {
-                          defaultValue:
-                            'Page',
-                        },
-                      ),
-                  },
-                  {
-                    id: 'widget',
-                    label:
-                      t(
-                        'kind-widget',
-                        {
-                          defaultValue:
-                            'Widget',
-                        },
-                      ),
-                  },
-                ]}
-                value={
-                  kind
-                }
-                onChange={(
-                  id,
-                ) =>
-                  setKind(
-                    id ===
-                      'widget'
-                      ? 'widget'
-                      : 'page',
-                  )
-                }
-              />
-              <ModelSelect
-                value={
-                  model
-                }
-                onChange={
-                  setModel
-                }
-              />
+                <Tabs
+                  size="sm"
+                  sheet={
+                    false
+                  }
+                  aria-label={t(
+                    'kind-aria-label',
+                    {
+                      defaultValue:
+                        'What to generate',
+                    },
+                  )}
+                  tabs={[
+                    {
+                      id: 'page',
+                      label:
+                        t(
+                          'kind-page',
+                          {
+                            defaultValue:
+                              'Page',
+                          },
+                        ),
+                    },
+                    {
+                      id: 'widget',
+                      label:
+                        t(
+                          'kind-widget',
+                          {
+                            defaultValue:
+                              'Widget',
+                          },
+                        ),
+                    },
+                  ]}
+                  value={
+                    kind
+                  }
+                  onChange={(
+                    id,
+                  ) =>
+                    setKind(
+                      id ===
+                        'widget'
+                        ? 'widget'
+                        : 'page',
+                    )
+                  }
+                />
+                <ModelSelect
+                  value={
+                    model
+                  }
+                  onChange={
+                    setModel
+                  }
+                />
               </div>
               <button
                 type="button"

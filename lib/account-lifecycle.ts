@@ -31,6 +31,7 @@ export function isDeletedAccount(user: {
     user.banReason ===
       DELETED_ACCOUNT_BAN_REASON ||
     // The shared "Deleted user" owner of orphaned vibes (`lib/account/deleted-user.ts`).
-    user.id === DELETED_USER_ID
+    user.id ===
+      DELETED_USER_ID
   );
 }

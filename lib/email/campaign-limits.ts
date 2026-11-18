@@ -12,5 +12,14 @@ export const MAX_MANUAL_RECIPIENTS = 500;
 export const MAX_EMAIL_IMAGES = 4;
 
 /** The AI rewrites, the same six as the feed composer's writing assist. */
-export const EMAIL_REWRITE_ACTIONS = ['improve', 'fix', 'shorten', 'expand', 'casual', 'formal'] as const;
-export type EmailRewriteAction = (typeof EMAIL_REWRITE_ACTIONS)[number];
+export const EMAIL_REWRITE_ACTIONS =
+  [
+    'improve',
+    'fix',
+    'shorten',
+    'expand',
+    'casual',
+    'formal',
+  ] as const;
+export type EmailRewriteAction =
+  (typeof EMAIL_REWRITE_ACTIONS)[number];

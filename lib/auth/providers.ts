@@ -15,34 +15,54 @@
  * except Steam, which is `/api/auth/steam/callback`). X keeps Better Auth's
  * historical id, `twitter`.
  */
-export const SIGN_IN_PROVIDERS = [
-  'discord',
-  'github',
-  'steam',
-  'twitch',
-  'microsoft',
-  'gitlab',
-  'twitter',
-] as const;
+export const SIGN_IN_PROVIDERS =
+  [
+    'discord',
+    'github',
+    'steam',
+    'twitch',
+    'microsoft',
+    'gitlab',
+    'twitter',
+  ] as const;
 
-export type SignInProviderId = (typeof SIGN_IN_PROVIDERS)[number];
+export type SignInProviderId =
+  (typeof SIGN_IN_PROVIDERS)[number];
 
 /** Brand names, which are not translated. */
-export const PROVIDER_NAMES: Record<SignInProviderId, string> = {
-  discord: 'Discord',
-  github: 'GitHub',
-  steam: 'Steam',
-  twitch: 'Twitch',
-  microsoft: 'Microsoft',
-  gitlab: 'GitLab',
-  twitter: 'X',
-};
+export const PROVIDER_NAMES: Record<
+  SignInProviderId,
+  string
+> =
+  {
+    discord:
+      'Discord',
+    github:
+      'GitHub',
+    steam:
+      'Steam',
+    twitch:
+      'Twitch',
+    microsoft:
+      'Microsoft',
+    gitlab:
+      'GitLab',
+    twitter:
+      'X',
+  };
 
 /** Better Auth's `account.providerId` for an email-and-password sign-in. */
-export const CREDENTIAL_PROVIDER_ID = 'credential';
+export const CREDENTIAL_PROVIDER_ID =
+  'credential';
 
-export function isSignInProviderId(id: string): id is SignInProviderId {
-  return (SIGN_IN_PROVIDERS as readonly string[]).includes(id);
+export function isSignInProviderId(
+  id: string,
+): id is SignInProviderId {
+  return (
+    SIGN_IN_PROVIDERS as readonly string[]
+  ).includes(
+    id,
+  );
 }
 
 /**
@@ -50,10 +70,14 @@ export function isSignInProviderId(id: string): id is SignInProviderId {
  * disconnect, change email, join accounts). A session stolen earlier than this
  * cannot add a way in. Enforced in `lib/auth/consolidation.server.ts`.
  */
-export const FRESH_SESSION_MS = 10 * 60 * 1000;
+export const FRESH_SESSION_MS =
+  10 *
+  60 *
+  1000;
 
 /** The error code the server sends when a change needs a more recent sign-in. */
-export const SESSION_NOT_FRESH = 'SESSION_NOT_FRESH';
+export const SESSION_NOT_FRESH =
+  'SESSION_NOT_FRESH';
 
 /**
  * Better Auth gives a user from a provider that shares no email (Steam, X
@@ -63,14 +87,32 @@ export const SESSION_NOT_FRESH = 'SESSION_NOT_FRESH';
  * can never resolve, so the address can never belong to a real inbox, and no
  * other account can match it by email.
  */
-export const PLACEHOLDER_EMAIL_SUFFIX = '.placeholder.invalid';
+export const PLACEHOLDER_EMAIL_SUFFIX =
+  '.placeholder.invalid';
 
 /** True for a stand-in address that must never be emailed or typed into a form. */
-export function isPlaceholderEmail(email: string | null | undefined): boolean {
-  return typeof email === 'string' && email.trim().toLowerCase().endsWith(PLACEHOLDER_EMAIL_SUFFIX);
+export function isPlaceholderEmail(
+  email:
+    | string
+    | null
+    | undefined,
+): boolean {
+  return (
+    typeof email ===
+      'string' &&
+    email
+      .trim()
+      .toLowerCase()
+      .endsWith(
+        PLACEHOLDER_EMAIL_SUFFIX,
+      )
+  );
 }
 
 /** The stand-in address for a provider identity, in Better Auth's own format. */
-export function placeholderEmail(providerId: string, accountId: string): string {
+export function placeholderEmail(
+  providerId: string,
+  accountId: string,
+): string {
   return `${accountId}@${providerId}${PLACEHOLDER_EMAIL_SUFFIX}`;
 }

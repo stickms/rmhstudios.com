@@ -4,4 +4,5 @@
  * "removed by site moderation" notice instead (`app/routes/v.$slug.tsx`).
  * Client-safe so the viewer can compare against it.
  */
-export const VIBE_REMOVED_STATUS = 'removed';
+export const VIBE_REMOVED_STATUS =
+  'removed';
