@@ -16,7 +16,10 @@
  * page never sees it; the listeners are non-passive so touchstart can be cancelled.
  *
  * `visibility` with `suspend: true` is the host retiring this frame (a newer document
- * is now showing): media is paused and Web Audio contexts are suspended, for good.
+ * is now showing): <audio>/<video> are paused and muted, for good. Web Audio is left
+ * alone on purpose: tracking contexts means replacing the page's AudioContext
+ * constructor, which breaks pages that subclass it, and the retired layer is unmounted
+ * ~200 ms later anyway.
  */
 
 export const BRIDGE_MARKER =
@@ -37,8 +40,6 @@ export const BRIDGE_RUNTIME_JS = `(function () {
   var visibilityFns = [];
   var errorCount = 0;
   var errorQueue = [];
-  var audioContexts = [];
-  var suspended = false;
   var seenErrors = Object.create(null);
   var resolveReady;
   var ready = new Promise(function (r) { resolveReady = r; });
@@ -267,28 +268,10 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     else send({ event: 'error', data: data });
   }
 
-  // Web Audio contexts are tracked so a retired frame can silence them.
-  ['AudioContext', 'webkitAudioContext'].forEach(function (name) {
-    var Native = window[name];
-    if (typeof Native !== 'function') return;
-    function Tracked() {
-      var ctx = new (Function.prototype.bind.apply(Native, [null].concat(Array.prototype.slice.call(arguments))))();
-      audioContexts.push(ctx);
-      if (suspended) { try { ctx.suspend(); } catch (e) { /* ignore */ } }
-      return ctx;
-    }
-    Tracked.prototype = Native.prototype;
-    try { window[name] = Tracked; } catch (e) { /* ignore */ }
-  });
-
   function suspendMedia() {
-    suspended = true;
     var media = document.querySelectorAll('audio,video');
     for (var i = 0; i < media.length; i++) {
       try { media[i].pause(); media[i].muted = true; } catch (e) { /* ignore */ }
-    }
-    for (var j = 0; j < audioContexts.length; j++) {
-      try { audioContexts[j].suspend(); } catch (e) { /* ignore */ }
     }
   }
 

@@ -182,26 +182,16 @@ describe('bridge runtime: errors and retirement', () => {
     expect(env.posted.filter((m) => m.event === 'error')).toHaveLength(2);
   });
 
-  it('suspends media and Web Audio on a retire signal, not on a plain hidden', () => {
-    const suspended: string[] = [];
-    class FakeCtx {
-      suspend() {
-        suspended.push('ctx');
-        return Promise.resolve();
-      }
-    }
+  it('pauses media on a retire signal, not on a plain hidden, and leaves AudioContext alone', () => {
+    class FakeCtx {}
     const env = makeEnv({ AudioContext: FakeCtx });
-    const Ctor = env.window.AudioContext as new () => FakeCtx;
-    expect(Ctor).not.toBe(FakeCtx);
-    const ctx = new Ctor();
-    expect(ctx).toBeInstanceOf(FakeCtx);
+    // The page's constructor is not replaced: a subclass of it must keep working.
+    expect(env.window.AudioContext).toBe(FakeCtx);
 
     env.hostSays('visibility', { hidden: true });
-    expect(suspended).toEqual([]);
     expect(env.media.paused).toBe(false);
 
     env.hostSays('visibility', { hidden: true, suspend: true });
-    expect(suspended).toEqual(['ctx']);
     expect(env.media.paused).toBe(true);
     expect(env.media.muted).toBe(true);
   });

@@ -247,7 +247,7 @@ This vibe is a WIDGET, not a page. It is shown inside a social feed card at abou
 - No page structure: no hero, no navigation, no footer, no section stack.
 - One focused interaction (a vote, a counter, a quiz, a toy, a small game). Do it well.
 - Everything fits the frame at once: no scrolling, no overflow, and sizes in relative units so it scales from 360px to 640px wide.
-- Prefer RMHVibe.store for anything shared: counters, votes, leaderboards. Always keep working when the store is unavailable (fall back to local state and never show an error).`;
+- Prefer RMHVibe.store for anything shared: counters, votes, leaderboards. Always keep working when the store is unavailable (fall back to local state and never show an error). While the page is a live preview of a build in progress, writes reject with \`read-only\`; treat that like any failed write.`;
 
 const VIBE_FRONTEND_DESIGN_SKILL = `
 

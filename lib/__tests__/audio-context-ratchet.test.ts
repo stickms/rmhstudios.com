@@ -32,8 +32,6 @@ const ALLOW: Record<
       'The one place that constructs the shared context.',
     'features/balatro/engine/runtime.ts':
       'Wraps the constructor so every context the native engine (SDL/OpenAL) opens can be silenced on pause.',
-    'lib/rmhvibe/bridge-runtime.ts':
-      'Runs inside the sandboxed vibe frame, not the site page: wraps the constructor so a retired frame can silence the contexts its page opened (getAudioContext() does not exist there).',
     'features/void-breaker/engine/audio.ts':
       'Island under construction (B1); migrates with it.',
   };
