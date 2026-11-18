@@ -301,7 +301,7 @@ export function effectiveTextBackdrop(
  *
  * The glows are the one exception to flat (R1 amendment, owner 2026-11-17): a bought theme keeps its colours as two
  * quiet gradients, so it reads as itself without leaving Steel. `--site-theme-wash` is a faint glow wash over the
- * first screen of the page ground (each glow at most 22% opacity, under the 30% the contrast gate already
+ * whole page ground, held to the viewport as it scrolls (each glow at most 22% opacity, under the 30% the contrast gate already
  * assumes), and `--site-accent-fill` is a gentle 135deg sheen across the ink-primary button, from the accent into the
  * accent with a third of `glow2` mixed in. The sheen is dropped (`none`) when its far end would take `accentFg` below
  * AA, so the gradient can never cost a button its legibility. With no user theme neither variable is set and the
@@ -384,7 +384,7 @@ export function themeCssVars(
   };
 }
 
-/** A faint wash of the three glows over the first screen of the page ground (R1 amendment). */
+/** A faint wash of the three glows behind the whole page ground, held to the viewport (R1 amendment). */
 function themeWash(
   t: ThemeTokens,
 ): string {
