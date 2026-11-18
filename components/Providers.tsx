@@ -32,6 +32,7 @@ import {
   USER_THEME_KEY,
   appRouteGround,
   paintDocumentGround,
+  editionForBackground,
 } from '@/stores/themeStore';
 import { clearThemeTokens, isStaleAppliedTheme, type AppliedUserTheme } from '@/lib/themes/tokens';
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY, accentCssVars } from '@/lib/appearance';
@@ -384,7 +385,12 @@ export function Providers({
     }
 
     const html = document.documentElement;
-    const activeStyle = style;
+    // A bought theme (or its transient preview) decides the edition from its own background, so a light theme is
+    // never marked dark (stores/themeStore.ts `editionForBackground`). The stored `style` is left as the visitor set it.
+    const activeUserTheme = userThemePreview ?? userTheme;
+    const userThemeOn = !!activeUserTheme && !isAppRoute;
+    const activeStyle =
+      userThemeOn && activeUserTheme ? editionForBackground(activeUserTheme.bg) : style;
     // Remove all style classes
     html.classList.remove(...STYLE_CLASSES);
     // Add active style class only on non-app pages (default needs no class — uses :root tokens)
@@ -397,8 +403,6 @@ export function Providers({
     // cascade (a transient preview beats the committed one). Skipped on app/game
     // routes (they own their palette). Accent presets are applied AFTER this
     // block so they still win.
-    const activeUserTheme = userThemePreview ?? userTheme;
-    const userThemeOn = !!activeUserTheme && !isAppRoute;
     if (userThemeOn && activeUserTheme) {
       for (const [k, v] of Object.entries(activeUserTheme.vars)) html.style.setProperty(k, v);
     } else {

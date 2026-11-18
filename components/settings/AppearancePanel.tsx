@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
-import { ThemeGallery } from '@/components/settings/ThemeGallery';
+import { ThemePicker } from '@/components/settings/ThemePicker';
+import type { UserThemeView } from '@/lib/themes/tokens';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   FONT_SCALES,
@@ -45,7 +46,7 @@ async function persist(body: AppearancePrefsInput) {
  * localStorage for no-flash) and persists to the account. Comfort settings are
  * never paywalled.
  */
-export function AppearancePanel() {
+export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeView[] }) {
   const { t } = useTranslation('settings-appearance');
   const store = useThemeStore();
   const [hexDraft, setHexDraft] = useState(store.customAccent ?? '#0b0b0b');
@@ -107,7 +108,7 @@ export function AppearancePanel() {
         title={t('display', { defaultValue: 'Display' })}
         description={t('display-desc', { defaultValue: 'How the page reads on this device.' })}
       >
-        <ThemeGallery />
+        <ThemePicker owned={ownedThemes} />
         <SettingsSelectRow
           label={t('text-size', { defaultValue: 'Text size' })}
           hint={t('text-size-desc', { defaultValue: 'Scale the whole interface.' })}

@@ -139,13 +139,17 @@ export function themeStep({ html, doc, win, path, cfg }: PrepaintCtx): void {
     }
   }
   const UT = ls.getItem('rmh-user-theme');
+  let utOn = false;
   if (UT && !app) {
     try {
       const utj = JSON.parse(UT);
       if (utj && utj.vars) {
         const uts = html.style;
         for (const uk in utj.vars) uts.setProperty(uk, utj.vars[uk]);
-        if (typeof utj.bg === 'string') bg = utj.bg;
+        if (typeof utj.bg === 'string') {
+          bg = utj.bg;
+          utOn = true;
+        }
       }
     } catch {
       /* a corrupt user theme is ignored */
@@ -167,6 +171,12 @@ export function themeStep({ html, doc, win, path, cfg }: PrepaintCtx): void {
       0.7152 * cv(parseInt(hx.substr(2, 2), 16)) +
       0.0722 * cv(parseInt(hx.substr(4, 2), 16));
     html.style.colorScheme = lm < 0.5 ? 'dark' : 'light';
+    // A bought theme picks its edition from its own ground (`editionForBackground` in stores/themeStore.ts, the
+    // same 0.5 threshold), so the class the globe and the islands read matches what is painted.
+    if (utOn) {
+      html.classList.remove('style-graphite');
+      if (lm < 0.5) html.classList.add('style-graphite');
+    }
   }
   if (!html.classList.contains('ios-webkit')) {
     let tc = doc.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-rmh-theme]');

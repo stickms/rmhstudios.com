@@ -6,29 +6,17 @@
 
 import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequestSession } from '@/lib/auth-session.server';
-import { listOwnedThemes } from '@/lib/themes/themes.server';
-import type { UserThemeView } from '@/lib/themes/tokens';
+import { fetchOwnedThemes } from '@/lib/themes/owned-themes.functions';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
-import { ThemeGallery } from '@/components/settings/ThemeGallery';
+import { ThemePicker } from '@/components/settings/ThemePicker';
 import { AccentPicker } from '@/components/settings/AccentPicker';
-import { OwnedThemesRow } from '@/components/settings/OwnedThemesRow';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
 import { SearchField } from '@/components/ui/search-field';
 import { SETTINGS_DESTINATIONS, filterSettings, type SettingsGroup } from '@/lib/settings-nav';
-
-/** The themes this account bought, for the "Bought themes" row (empty when signed out). */
-const fetchOwnedThemes = createServerFn({ method: 'GET' }).handler(
-  async (): Promise<UserThemeView[]> => {
-    const session = await getRequestSession();
-    return session ? listOwnedThemes(session.user.id) : [];
-  },
-);
 
 export const Route = createFileRoute('/_site/settings/')({
   head: () => ({
@@ -134,8 +122,7 @@ function SettingsPage() {
           >
             {!query && (
               <div>
-                <ThemeGallery />
-                {signedIn && <OwnedThemesRow owned={ownedThemes} />}
+                <ThemePicker owned={ownedThemes} />
                 <AccentPicker />
                 <div id="language" className="settings-row">
                   <span className="settings-row__text">
