@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import satori from 'satori';
+import satori from '@/lib/og/satori.server';
 import {
   dedupeOgRender,
   svgToPng,
