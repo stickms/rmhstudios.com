@@ -33,6 +33,7 @@ import OpenAI from 'openai';
 import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { timedAiFetch } from './timed-fetch.server';
+import type { VibeLedgerTask } from './vibe-tasks';
 
 /* -------------------------------------------------------------------------- */
 /* Tasks + routing                                                            */
@@ -139,10 +140,23 @@ const ROUTES: Record<AiTask, Route> = {
 const COST_PER_MTOK: Record<string, { in: number; out: number }> = {
   'deepseek-chat': { in: 270_000, out: 1_100_000 },
   'deepseek-reasoner': { in: 550_000, out: 2_190_000 },
+  // RMHVibe generation models (lib/rmhvibe/vibe.server.ts VIBE_MODEL_IDS and
+  // fallbacks, lib/rmhvibe/vibe-ai.server.ts). These are the providers'
+  // published list prices as the author knew them, NOT confirmed against the
+  // live pricing pages: the owner should check them. Cache-hit input discounts
+  // are ignored (a cache miss is the safe overestimate for a ceiling).
+  //   Moonshot Kimi K2 family: $0.60 in / $2.50 out per 1M tokens. The
+  //   high-speed tier is listed at roughly 4x that.
+  'kimi-k2.7-code': { in: 600_000, out: 2_500_000 },
+  'kimi-k2.7-code-highspeed': { in: 2_400_000, out: 10_000_000 },
+  //   DeepSeek V4 (the generation after V3.2's $0.28 in / $0.42 out): Flash at
+  //   the V3.2 price level, Pro at roughly 3x.
+  'deepseek-v4-flash': { in: 280_000, out: 420_000 },
+  'deepseek-v4-pro': { in: 840_000, out: 1_260_000 },
 };
 const DEFAULT_COST = { in: 500_000, out: 2_000_000 };
 
-function costMicros(model: string, inTokens: number, outTokens: number): number {
+export function costMicros(model: string, inTokens: number, outTokens: number): number {
   const rate = COST_PER_MTOK[model] ?? DEFAULT_COST;
   return Math.ceil((inTokens * rate.in + outTokens * rate.out) / 1_000_000);
 }
@@ -221,7 +235,9 @@ export interface RunOptions {
  */
 async function meter(row: {
   userId?: string | null;
-  task: AiTask;
+  task: AiTask | VibeLedgerTask;
+  /** The backend that served the call; every `runTask` route is DeepSeek. */
+  provider?: string;
   model: string;
   promptId?: string;
   promptVer?: number;
@@ -234,7 +250,7 @@ async function meter(row: {
       data: {
         userId: row.userId ?? null,
         task: row.task,
-        provider: 'deepseek',
+        provider: row.provider ?? 'deepseek',
         model: row.model,
         promptId: row.promptId ?? null,
         promptVer: row.promptVer ?? null,
@@ -247,6 +263,33 @@ async function meter(row: {
   } catch (err) {
     console.error('[ai] usage metering failed:', (err as Error)?.message);
   }
+}
+
+/**
+ * Record one RMHVibe model call (a build attempt, or an in-page `RMHVibeAI`
+ * completion). Vibe calls do not go through `runTask` (they stream from Kimi or
+ * DeepSeek with their own client), so they meter here instead, into the same
+ * ledger with the real provider. Never throws, like `meter`.
+ */
+export function meterVibe(row: {
+  userId: string | null;
+  task: VibeLedgerTask;
+  provider: 'kimi' | 'deepseek';
+  model: string;
+  inTokens: number;
+  outTokens: number;
+  ok: boolean;
+}): Promise<void> {
+  return meter({
+    ...row,
+    inTokens: Math.max(0, Math.round(row.inTokens) || 0),
+    outTokens: Math.max(0, Math.round(row.outTokens) || 0),
+  });
+}
+
+/** Rough token count for a provider that sent no usage: ~4 characters per token. */
+export function estimateTokens(chars: number): number {
+  return Math.ceil(Math.max(0, chars) / 4);
 }
 
 /* -------------------------------------------------------------------------- */

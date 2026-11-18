@@ -707,7 +707,7 @@ export function defineHandler<
       const needsBody = Boolean(options.body) || (options.idempotent && userId);
       if (needsBody) {
         rawBodyText = await request.text().catch(() => null);
-        if (options.maxBodyBytes && rawBodyText && rawBodyText.length > options.maxBodyBytes) {
+        if (options.maxBodyBytes && rawBodyText && Buffer.byteLength(rawBodyText, 'utf8') > options.maxBodyBytes) {
           return apiError('Request body too large', 413);
         }
       }

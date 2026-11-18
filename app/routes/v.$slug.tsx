@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { HttpError } from '@/lib/http';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, notFound, Link, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
@@ -203,7 +204,6 @@ function VibeViewer() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // The visible frame, reported by VibeFrame after each swap.
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [bridgeFrame, setBridgeFrame] = useState<HTMLIFrameElement | null>(null);
   // Click-to-edit: the element the user picked, and whether picking is armed.
   const [picking, setPicking] = useState(false);
   // Read by the bridge handler, which must not see a stale value: the page is
@@ -212,7 +212,17 @@ function VibeViewer() {
   pickingRef.current = picking;
   const [selection, setSelection] = useState<VibeSelection | null>(null);
   // Runtime errors the page reported (deduped, newest last) that "Fix it" can target.
-  const [pageErrors, setPageErrors] = useState<string[]>([]);
+  // Keyed to the frame that sent them: a swapped frame's errors are its own, and a late event
+  // from the frame it replaced can never be read as the new one's.
+  const [errorLog, setErrorLog] = useState<{ frame: HTMLIFrameElement | null; messages: string[] }>({
+    frame: null,
+    messages: [],
+  });
+  const [bridgeFrame, setBridgeFrame] = useState<HTMLIFrameElement | null>(null);
+  const pageErrors = useMemo(
+    () => (errorLog.frame === bridgeFrame ? errorLog.messages : []),
+    [errorLog, bridgeFrame],
+  );
   // Tweak knobs: the spec of the version on screen, the page's latest spec (what
   // "Back to latest" returns to), the owner's saved values, and what the frame shows now.
   const [tweakSpec, setTweakSpec] = useState<TweakSpec[]>(initialSpec);
@@ -223,11 +233,15 @@ function VibeViewer() {
   const [savingTweaks, setSavingTweaks] = useState(false);
   // Store ops go to the per-page KV endpoint; room ops are refused in the viewer.
   // Frame events (picked / pick:cancel / error) are handled below.
-  const bridgeHandlers = useMemo(() => createVibeHostHandlers(slug), [slug]);
+  // While a customize or remix streams, the frame shows a half-written page: it reads the real
+  // store but may not write to it.
+  const busyRef = useRef(false);
+  busyRef.current = busy;
+  const bridgeHandlers = useMemo(() => createVibeHostHandlers(slug, undefined, () => busyRef.current), [slug]);
   const { post } = useVibeBridge(bridgeFrame, {
     kind: 'viewer',
     ...bridgeHandlers,
-    onEvent(e: BridgeFrameEvent) {
+    onEvent(e: BridgeFrameEvent, from: HTMLIFrameElement) {
       if (e.event === 'picked') {
         if (!pickingRef.current) return;
         pickingRef.current = false;
@@ -240,9 +254,12 @@ function VibeViewer() {
         setPicking(false);
       } else if (e.event === 'error') {
         const message = (e.data as { message: string }).message;
-        setPageErrors((prev) =>
-          prev.includes(message) ? prev : [...prev, message].slice(-MAX_COLLECTED_ERRORS),
-        );
+        setErrorLog((prev) => {
+          const kept = prev.frame === from ? prev.messages : [];
+          return kept.includes(message)
+            ? prev
+            : { frame: from, messages: [...kept, message].slice(-MAX_COLLECTED_ERRORS) };
+        });
       }
     },
   });
@@ -271,13 +288,12 @@ function VibeViewer() {
     setError(null);
     setPicking(false);
     setSelection(null);
-    setPageErrors([]);
+    setErrorLog({ frame: null, messages: [] });
   }, [slug]);
   // A swapped frame (version preview, new build) starts with picking off and a
   // fresh error slate: its errors are its own.
   useEffect(() => {
     setPicking(false);
-    setPageErrors([]);
   }, [bridgeFrame]);
   useEffect(() => {
     setTweakSpec(initialSpec);
@@ -415,6 +431,20 @@ function VibeViewer() {
     setTweakValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  // The endpoint answers 403 (not the owner), 404 (the page is gone) and 429 (rate limited).
+  function tweakSaveErrorMessage(err: unknown): string {
+    switch (err instanceof HttpError ? err.status : 0) {
+      case 403:
+        return t('tweak-save-forbidden', { defaultValue: 'Only the page owner can save tweaks' });
+      case 404:
+        return t('tweak-save-missing', { defaultValue: 'This page no longer exists' });
+      case 429:
+        return t('tweak-save-rate', { defaultValue: 'Saving too fast. Wait a moment and try again' });
+      default:
+        return t('tweak-save-error', { defaultValue: 'Could not save the tweaks' });
+    }
+  }
+
   async function saveTweaks() {
     if (savingTweaks) return;
     setSavingTweaks(true);
@@ -422,8 +452,8 @@ function VibeViewer() {
       const values = await saveVibeTweaks(slug, tweakSpec, tweakValues);
       setSaved((prev) => ({ ...prev, ...values }));
       toast.success(t('tweak-saved', { defaultValue: 'Tweaks saved' }));
-    } catch {
-      toast.error(t('tweak-save-error', { defaultValue: 'Could not save the tweaks' }));
+    } catch (err) {
+      toast.error(tweakSaveErrorMessage(err));
     } finally {
       setSavingTweaks(false);
     }
@@ -601,7 +631,7 @@ function VibeViewer() {
       if (!override) setPrompt('');
       // A Fix it run ignored the chip, so the chip stays.
       if (!override) setSelection(null);
-      setPageErrors([]);
+      setErrorLog({ frame: null, messages: [] });
       setThinking('');
       setContent('');
       setPanelOpen(false);

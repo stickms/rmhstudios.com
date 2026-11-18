@@ -80,14 +80,21 @@ export function parseVibeProgress(
         [],
     };
   }
+  // One row per path: a path the model writes twice is one file in the finished project
+  // (the later copy wins), and `files[name]` already holds that copy. The parser's order
+  // list can repeat it, which would repeat the React key.
   const names =
     [
-      ...partial.done,
-      ...(partial.writing
-        ? [
-            partial.writing,
-          ]
-        : []),
+      ...new Set(
+        [
+          ...partial.done,
+          ...(partial.writing
+            ? [
+                partial.writing,
+              ]
+            : []),
+        ],
+      ),
     ];
   return {
     title:

@@ -33,6 +33,7 @@
  * this worker in the status service, so nothing there moved.
  */
 import { prisma } from '@/lib/prisma.server';
+import { parseTweakSpec, resolveTweakValues, type TweakValue } from '@/lib/rmhvibe/tweaks';
 
 export const VIBE_THUMB_QUEUE = 'vibe-worker.thumbnails';
 export const VIBE_THUMB_CRON = '* * * * *';
@@ -46,6 +47,8 @@ export interface StalePage {
   slug: string;
   html: string;
   updatedAt: Date;
+  /** The owner's saved knob values, resolved against the latest spec (the viewer's own rule). */
+  tweakValues?: Record<string, TweakValue>;
 }
 
 export interface VibeThumbRepo {
@@ -58,17 +61,32 @@ export interface VibeThumbRepo {
 }
 
 /** Render + upload; resolves to the public URL or null on any failure. */
-export type VibeCapture = (slug: string, html: string) => Promise<string | null>;
+export type VibeCapture = (
+  slug: string,
+  html: string,
+  tweakValues?: Record<string, TweakValue>,
+) => Promise<string | null>;
 
 export type VibeRunOutcome = 'ok' | 'partial' | 'error';
 
 export const prismaVibeThumbRepo: VibeThumbRepo = {
   async selectStale(limit) {
-    return prisma.vibePage.findMany({
+    const rows = await prisma.vibePage.findMany({
       where: { thumbnailStale: true },
       orderBy: { updatedAt: 'asc' },
       take: limit,
-      select: { id: true, slug: true, html: true, updatedAt: true },
+      select: {
+        id: true,
+        slug: true,
+        html: true,
+        updatedAt: true,
+        tweakValues: true,
+        versions: { orderBy: { createdAt: 'desc' }, take: 1, select: { tweakSpec: true } },
+      },
+    });
+    return rows.map(({ tweakValues, versions, ...page }) => {
+      const spec = parseTweakSpec(versions[0]?.tweakSpec);
+      return spec.length ? { ...page, tweakValues: resolveTweakValues(spec, tweakValues) } : page;
     });
   },
   async clearStale(id, thumbnailUrl, expectedUpdatedAt) {
@@ -85,9 +103,9 @@ export const prismaVibeThumbRepo: VibeThumbRepo = {
 };
 
 /** The production capturer: Playwright is only loaded (lazily) when a page really needs rendering. */
-export const defaultVibeCapture: VibeCapture = async (slug, html) => {
+export const defaultVibeCapture: VibeCapture = async (slug, html, tweakValues) => {
   const { captureVibeThumbnail } = await import('./vibe-screenshot.server');
-  return captureVibeThumbnail(slug, html);
+  return captureVibeThumbnail(slug, html, tweakValues);
 };
 
 /** Close the shared browser at shutdown (a no-op when nothing was ever rendered). */
@@ -118,7 +136,7 @@ export async function renderStalePage(
 ): Promise<boolean> {
   let url: string | null;
   try {
-    url = await capture(page.slug, page.html);
+    url = await capture(page.slug, page.html, page.tweakValues);
   } catch (err) {
     log.error(`[vibe-worker] capture failed slug=${page.slug} err=${(err as Error)?.message}`);
     return false;

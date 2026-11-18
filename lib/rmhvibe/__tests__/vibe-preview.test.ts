@@ -189,6 +189,40 @@ describe('buildVibePreview', () => {
     );
   });
 
+  it('collects names through a named re-export', () => {
+    const files = {
+      'index.tsx': "import { Board } from './parts';",
+      'parts.ts': "export { Board, Score as S } from './Board';",
+    };
+    expect(collectImportedNames(files, 'Board.tsx').sort()).toEqual(['Board', 'Score']);
+  });
+
+  it('collects what a barrel passes on through export *', () => {
+    const files = {
+      'index.tsx': "import { Board, Score } from './parts';",
+      'parts.ts': "export * from './Board';",
+    };
+    expect(collectImportedNames(files, 'Board.tsx').sort()).toEqual(['Board', 'Score']);
+  });
+
+  it('follows chained export * and survives a cycle', () => {
+    const files = {
+      'index.tsx': "import { Deep } from './a';",
+      'a.ts': "export * from './b';",
+      'b.ts': "export * from './a'; export * from './Deep';",
+    };
+    expect(collectImportedNames(files, 'Deep.tsx')).toEqual(['Deep']);
+  });
+
+  it('leaves out a name another module of the barrel already exports', () => {
+    const files = {
+      'index.tsx': "import { Board, Helper } from './parts';",
+      'parts.ts': "export * from './Board'; export * from './util';",
+      'util.ts': 'export const Helper = 1;',
+    };
+    expect(collectImportedNames(files, 'Board.tsx')).toEqual(['Board']);
+  });
+
   it('adds nothing for a namespace import', () => {
     const files =
       {
