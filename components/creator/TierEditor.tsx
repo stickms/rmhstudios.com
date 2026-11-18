@@ -36,7 +36,7 @@ const TIER_PRICE_MAX = 10_000;
 type TFn =
   (
     key: string,
-    opts?: Record<
+    opts: Record<
       string,
       unknown
     >,
