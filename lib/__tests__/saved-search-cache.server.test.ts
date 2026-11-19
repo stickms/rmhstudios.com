@@ -9,7 +9,7 @@ import {
 const prismaMock =
   vi.hoisted(
     () => ({
-      savedSearch:
+      customFeed:
         {
           findMany:
             vi.fn(),
@@ -41,17 +41,17 @@ import {
 
 beforeEach(
   () => {
-    prismaMock.savedSearch.findMany
+    prismaMock.customFeed.findMany
       .mockReset()
       .mockResolvedValue(
         [],
       );
-    prismaMock.savedSearch.count
+    prismaMock.customFeed.count
       .mockReset()
       .mockResolvedValue(
         0,
       );
-    prismaMock.savedSearch.create
+    prismaMock.customFeed.create
       .mockReset()
       .mockResolvedValue(
         {
@@ -60,21 +60,21 @@ beforeEach(
             'q',
           types:
             [],
-          alerts: false,
+          notify: false,
           createdAt:
             new Date(
               0,
             ),
         },
       );
-    prismaMock.savedSearch.updateMany
+    prismaMock.customFeed.updateMany
       .mockReset()
       .mockResolvedValue(
         {
           count: 1,
         },
       );
-    prismaMock.savedSearch.deleteMany
+    prismaMock.customFeed.deleteMany
       .mockReset()
       .mockResolvedValue(
         {
@@ -94,7 +94,7 @@ describe('listSaved caching', () => {
     );
     expect(
       prismaMock
-        .savedSearch
+        .customFeed
         .findMany,
     ).toHaveBeenCalledTimes(
       1,
@@ -110,7 +110,7 @@ describe('listSaved caching', () => {
     );
     expect(
       prismaMock
-        .savedSearch
+        .customFeed
         .findMany,
     ).toHaveBeenCalledTimes(
       2,
@@ -130,7 +130,7 @@ describe('listSaved caching', () => {
     ); // 2: cache dropped by the write
     expect(
       prismaMock
-        .savedSearch
+        .customFeed
         .findMany,
     ).toHaveBeenCalledTimes(
       2,
@@ -158,7 +158,7 @@ describe('listSaved caching', () => {
     ); // 3
     expect(
       prismaMock
-        .savedSearch
+        .customFeed
         .findMany,
     ).toHaveBeenCalledTimes(
       3,

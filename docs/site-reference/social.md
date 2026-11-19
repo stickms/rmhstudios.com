@@ -53,7 +53,7 @@ Handles are allocated at signup (`lib/handle.ts`, wired into `lib/auth.ts`). Ren
 | `/communities`, `/c/:slug` | Communities. |
 | `/spaces/:id` | A live space. |
 
-`lib/messages.server.ts` and `lib/conversation.server.ts` back DMs; `lib/group-chat/` and `lib/group-chats.server.ts` back group chats; `lib/communities/` and `lib/community.server.ts` back communities. `/spaces` redirects to `/communities` — the surface was folded in, and the old URL was kept rather than broken.
+`lib/messages.server.ts` and `lib/conversation.server.ts` back DMs; `lib/group-chat/` and `lib/group-chats.server.ts` back group chats; `lib/communities/` backs communities (the directory list in `directory.server.ts`, one community and its feed in `detail.server.ts`). `/spaces` redirects to `/communities` — the surface was folded in, and the old URL was kept rather than broken.
 
 ## Notifications and presence
 

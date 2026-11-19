@@ -6,7 +6,7 @@ import {
 import { PendingBadge } from './SteamShell';
 import { useTranslation } from 'react-i18next';
 
-/** The sub-bar under the top bar on community pages: Steam's "Community Home" row. */
+/** The sub-bar under the top bar on community pages: inventory, trades, the market, and the communities directory. */
 export function CommunityNav() {
   const {
     t,
@@ -45,23 +45,6 @@ export function CommunityNav() {
         },
       )}
     >
-      <Link
-        to="/games/community"
-        aria-current={
-          pathname ===
-          '/games/community'
-            ? 'page'
-            : undefined
-        }
-      >
-        {t(
-          'steam-community-home',
-          {
-            defaultValue:
-              'Community Home',
-          },
-        )}
-      </Link>
       <Link
         to="/games/inventory"
         aria-current={
@@ -121,22 +104,8 @@ export function CommunityNav() {
           },
         )}
       </Link>
-      <Link
-        to="/games/communities"
-        aria-current={
-          pathname ===
-          '/games/communities'
-            ? 'page'
-            : undefined
-        }
-      >
-        {t(
-          'steam-all-groups',
-          {
-            defaultValue:
-              'All groups',
-          },
-        )}
+      <Link to="/communities">
+        {t('steam-nav-communities', { defaultValue: 'Communities' })}
       </Link>
     </nav>
   );

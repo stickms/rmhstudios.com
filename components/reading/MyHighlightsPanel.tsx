@@ -112,7 +112,7 @@ export default function MyHighlightsPanel() {
               'Sign in to see your highlights',
           },
         )}
-        callbackURL="/reading"
+        callbackURL="/library?view=reading"
       />
     );
   }

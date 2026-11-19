@@ -22,7 +22,7 @@
  *
  * This is the decision the whole pillar rests on, which is why it is in the
  * first commit rather than a later one: capabilities before a permission model
- * is how a platform gets an incident instead of an ecosystem, and `/breaches`
+ * is how a platform gets an incident instead of an ecosystem, and `/security#breaches`
  * exists because this repo already believes in writing those up honestly.
  */
 

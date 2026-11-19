@@ -1,6 +1,6 @@
 /**
  * Release notes — the zod schemas for the admin release-notes API. Split from
- * `./release-notes`, which the public /changelog page imports for the view
+ * `./release-notes`, which the public release notes on /site-history import for the view
  * type and the body parser.
  */
 import { z } from 'zod';

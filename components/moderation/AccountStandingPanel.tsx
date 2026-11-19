@@ -106,7 +106,7 @@ function entityHref(
     s.entityType ===
     'build'
   )
-    return `/user-builds/${s.entityId}`;
+    return `/builds/${s.entityId}`;
   if (
     s.entityType ===
     'rmhark'

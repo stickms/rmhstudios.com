@@ -74,7 +74,7 @@ export async function buildDigest(now = new Date()): Promise<DigestPayload> {
     }),
     newBuilds: builds.map((b) => ({
       title: b.title,
-      href: `/user-builds/${b.slug}`,
+      href: `/builds/${b.slug}`,
       meta: (() => {
         const u = resolveUser(b.user);
         return u.name ?? u.handle ?? undefined;

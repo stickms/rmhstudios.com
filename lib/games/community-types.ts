@@ -1,10 +1,7 @@
-/** Client-safe shapes for the Steam-style community pages (home, profile, group). */
+/** Client-safe shapes for the Steam-style profile and the people and groups it lists. */
 
 import type { AchievementTier } from '@/lib/achievements/catalog';
-import type {
-  FriendActivity,
-  NowPlaying,
-} from '@/lib/games/activity-types';
+import type { NowPlaying } from '@/lib/games/activity-types';
 
 /** A title as the community pages show it: enough for card art and a link. */
 export type TitleRef =
@@ -175,55 +172,4 @@ export type SteamProfile =
     showcaseEditor: ShowcaseEditorData | null;
     look: ProfileLook;
     lookEditor: LookEditorData | null;
-  };
-
-export type TrendingTitle =
-  TitleRef & {
-    players: number;
-    seconds: number;
-  };
-
-export type RecentReview =
-  {
-    id: string;
-    gameId: string;
-    gameTitle: string;
-    stars: number;
-    body:
-      | string
-      | null;
-    createdAt: string;
-    author: PersonRef;
-  };
-
-export type CommunityHomeData =
-  {
-    signedIn: boolean;
-    groups: GroupRef[];
-    trending: TrendingTitle[];
-    reviews: RecentReview[];
-    /** The viewer's own groups, newest first. */
-    myGroups: GroupRef[];
-    /** Who the viewer follows is in a game, and what they have been up to; null when signed out. */
-    friends: FriendActivity | null;
-  };
-
-export type GroupMember =
-  PersonRef & {
-    role: string;
-  };
-
-export type SteamGroup =
-  GroupRef & {
-    description:
-      | string
-      | null;
-    createdAt: string;
-    joined: boolean;
-    role:
-      | string
-      | null;
-    signedIn: boolean;
-    game: TitleRef | null;
-    members: GroupMember[];
   };

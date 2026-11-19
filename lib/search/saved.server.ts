@@ -1,7 +1,9 @@
 /**
- * Universal search — saved searches server logic (§18). CRUD + a weekly
- * new-results alert flag (the pg-boss alert sweep is a follow-up; the reverse
- * fields lastRunAt/alerts are in place).
+ * Universal search — saved searches server logic (§18). A saved search is a
+ * Feed of kind 'search' (`CustomFeed`, `lib/feeds/kinds.ts`): `query` holds the
+ * raw query with its operators, `types` the entity chips, and the "alerts" flag
+ * is the feed's `notify`. CRUD only; nothing sweeps saved searches for new
+ * results yet (keyword alerts are the push path, `lib/discovery/alerts.server.ts`).
  */
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
@@ -19,25 +21,36 @@ export class SavedSearchError extends Error {}
 const SAVED_TTL_MS = 30_000;
 const savedCacheKey = (userId: string) => `saved-search:list:${userId}`;
 
+const select = { id: true, query: true, types: true, notify: true, createdAt: true } as const;
+
+function toView(r: {
+  id: string;
+  query: string | null;
+  types: string[] | null;
+  notify: boolean;
+  createdAt: Date;
+}): SavedSearchView {
+  return {
+    id: r.id,
+    query: r.query ?? '',
+    types: r.types ?? [],
+    alerts: r.notify,
+    createdAt: r.createdAt.toISOString(),
+  };
+}
+
 export async function listSaved(userId: string): Promise<SavedSearchView[]> {
   const key = savedCacheKey(userId);
   return cached(
     key,
     SAVED_TTL_MS,
     async () => {
-      const rows = await prisma.savedSearch.findMany({
-        where: { userId },
+      const rows = await prisma.customFeed.findMany({
+        where: { ownerId: userId, kind: 'search' },
         orderBy: { createdAt: 'desc' },
-        select: { id: true, query: true, types: true, alerts: true, createdAt: true },
+        select,
       });
-      const views = rows.map((r) => ({
-        id: r.id,
-        query: r.query,
-        types: Array.isArray(r.types) ? (r.types as string[]) : [],
-        alerts: r.alerts,
-        createdAt: r.createdAt.toISOString(),
-      }));
-      return views;
+      return rows.map(toView);
     },
     { l2: false },
   );
@@ -49,29 +62,36 @@ export async function createSaved(
   types: string[] = [],
   alerts = false,
 ): Promise<SavedSearchView> {
-  const count = await prisma.savedSearch.count({ where: { userId } });
+  const count = await prisma.customFeed.count({ where: { ownerId: userId, kind: 'search' } });
   if (count >= MAX_SAVED_SEARCHES) throw new SavedSearchError('LIMIT');
-  const row = await prisma.savedSearch.create({
-    data: { userId, query, types, alerts },
-    select: { id: true, query: true, types: true, alerts: true, createdAt: true },
+  const row = await prisma.customFeed.create({
+    data: {
+      ownerId: userId,
+      kind: 'search',
+      name: query.slice(0, 60),
+      query,
+      types,
+      notify: alerts,
+      tags: [],
+      authorIds: [],
+      keywords: [],
+    },
+    select,
   });
   void invalidateCached(savedCacheKey(userId));
-  return {
-    id: row.id,
-    query: row.query,
-    types: Array.isArray(row.types) ? (row.types as string[]) : [],
-    alerts: row.alerts,
-    createdAt: row.createdAt.toISOString(),
-  };
+  return toView(row);
 }
 
 export async function updateSaved(userId: string, id: string, alerts: boolean): Promise<void> {
-  const res = await prisma.savedSearch.updateMany({ where: { id, userId }, data: { alerts } });
+  const res = await prisma.customFeed.updateMany({
+    where: { id, ownerId: userId, kind: 'search' },
+    data: { notify: alerts },
+  });
   if (res.count === 0) throw new SavedSearchError('NOT_FOUND');
   void invalidateCached(savedCacheKey(userId));
 }
 
 export async function deleteSaved(userId: string, id: string): Promise<void> {
-  await prisma.savedSearch.deleteMany({ where: { id, userId } });
+  await prisma.customFeed.deleteMany({ where: { id, ownerId: userId, kind: 'search' } });
   void invalidateCached(savedCacheKey(userId));
 }

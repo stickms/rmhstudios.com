@@ -3,12 +3,18 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { Plus } from 'lucide-react';
+import { Bell, Bookmark, List as ListIcon, Plus, Rss } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageTabs } from '@/components/feed/PageTabs';
+import { type TabItem } from '@/components/ui/tabs';
+import { ListsManager } from '@/components/lists/ListsManager';
+import { SavedSearches } from '@/components/search/SavedSearches';
+import { DiscoverySettings } from './DiscoverySettings';
+import { userListsQuery } from '@/lib/lists/list-feed.queries';
 import { useArrival } from '@/components/ui/arrive';
 import type { FeedSummary } from '@/lib/discovery/feeds.server';
 import { feedsQuery } from '@/lib/discovery/feeds.queries';
@@ -62,8 +68,34 @@ function Section({ title, items }: { title: string; items: FeedSummary[] }) {
   );
 }
 
-/** /feeds - define feeds and find ones other members published (A4). */
-export function FeedsPage() {
+export const FEEDS_TABS = ['feeds', 'lists', 'searches', 'alerts'] as const;
+export type FeedsTab = (typeof FEEDS_TABS)[number];
+
+/** The Lists tab: the caller's lists of accounts, each a Feed of kind 'list'. */
+function ListsTab() {
+  const lists = useQuery({ ...userListsQuery(), retry: false });
+  const arrival = useArrival(!!lists.data);
+  if (!lists.data) return <Skeleton className="h-40 w-full" />;
+  return (
+    <div className={arrival}>
+      <ListsManager initial={lists.data.lists} />
+    </div>
+  );
+}
+
+/**
+ * /feeds - the one place for every Feed: custom feeds (define them, find ones
+ * other members published, A4), lists of accounts, saved searches and keyword
+ * alerts. They are one model (`CustomFeed`, `lib/feeds/kinds.ts`); the tabs are
+ * its kinds. Reached from Explore.
+ */
+export function FeedsPage({
+  tab = 'feeds',
+  onTabChange,
+}: {
+  tab?: FeedsTab;
+  onTabChange?: (tab: FeedsTab) => void;
+}) {
   const { t } = useTranslation('f-discovery');
   const { data: session } = useSession();
   const navigate = useNavigate();
@@ -71,7 +103,7 @@ export function FeedsPage() {
   const [busy, setBusy] = useState(false);
 
   // Seeded by the /feeds loader; fetched here only when the loader had no session to use.
-  const list = useQuery({ ...feedsQuery(), enabled: !!session, retry: false });
+  const list = useQuery({ ...feedsQuery(), enabled: !!session && tab === 'feeds', retry: false });
   const lists = list.data ?? null;
   const loadFailed = list.isError;
   // Steel M9: the lists replace the skeleton when fetched here; seeded by the loader they are there on first paint.
@@ -94,15 +126,41 @@ export function FeedsPage() {
     }
   };
 
+  const tabs: TabItem[] = [
+    { id: 'feeds', label: t('feeds-tab-feeds', { defaultValue: 'Feeds' }), icon: Rss },
+    { id: 'lists', label: t('feeds-tab-lists', { defaultValue: 'Lists' }), icon: ListIcon },
+    {
+      id: 'searches',
+      label: t('feeds-tab-searches', { defaultValue: 'Searches' }),
+      icon: Bookmark,
+    },
+    { id: 'alerts', label: t('feeds-tab-alerts', { defaultValue: 'Alerts' }), icon: Bell },
+  ];
+
   return (
     <PageLayout
-      title={t('feeds-title', { defaultValue: 'Custom feeds' })}
-      description={t('feeds-desc', {
+      title={t('feeds-hub-title', { defaultValue: 'Feeds' })}
+      description={t('feeds-hub-desc', {
         defaultValue:
-          'Build a feed from tags, people and keywords, or subscribe to one someone else made.',
+          'Feeds, lists of accounts, saved searches and keyword alerts: everything you follow by person, tag or term.',
       })}
     >
-      <div className="space-y-6 px-4 pt-4 pb-12">
+      {session && (
+        <PageTabs
+          tabs={tabs}
+          value={tab}
+          onChange={(next) => onTabChange?.(next as FeedsTab)}
+          idBase="feeds"
+          aria-label={t('feeds-hub-title', { defaultValue: 'Feeds' })}
+        />
+      )}
+      <div
+        // ListsManager carries its own page gutters.
+        className={cn(!(session && tab === 'lists') && 'space-y-6 px-4 pt-4 pb-12')}
+        {...(session
+          ? { role: 'tabpanel', id: `feeds-panel-${tab}`, 'aria-labelledby': `feeds-tab-${tab}` }
+          : {})}
+      >
         {!session ? (
           <EmptyState
             title={t('feeds-signin', { defaultValue: 'Sign in to build and follow feeds' })}
@@ -114,6 +172,12 @@ export function FeedsPage() {
               </Link>
             }
           />
+        ) : tab === 'lists' ? (
+          <ListsTab />
+        ) : tab === 'searches' ? (
+          <SavedSearches currentQuery="" manage />
+        ) : tab === 'alerts' ? (
+          <DiscoverySettings only="alerts" />
         ) : !lists ? (
           <Skeleton className="h-40 w-full" />
         ) : (

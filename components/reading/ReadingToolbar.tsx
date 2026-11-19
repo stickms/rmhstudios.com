@@ -68,8 +68,9 @@ export function ReadingToolbar() {
         </span>
       </span>
       <Link
-        to="/reading"
+        to="/library"
         search={{
+          view: 'reading',
           tab: 'highlights',
         }}
         className="text-site-accent underline-offset-4 hover:underline"

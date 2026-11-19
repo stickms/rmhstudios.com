@@ -105,8 +105,8 @@
       "auth": "both"
     },
     {
-      "id": "changelog",
-      "path": "/changelog",
+      "id": "site-history",
+      "path": "/site-history",
       "class": "content",
       "auth": "both"
     },

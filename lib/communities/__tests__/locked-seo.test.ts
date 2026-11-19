@@ -28,7 +28,7 @@ vi.mock('@tanstack/react-start', () => ({
 }));
 vi.mock('@tanstack/react-start/server', () => ({ getRequest: () => new Request('http://x') }));
 vi.mock('@/lib/auth-session.server', () => ({ getRequestSession: async () => null }));
-vi.mock('@/lib/community.server', () => ({ getCommunity: vi.fn(), getCommunityFeed: vi.fn() }));
+vi.mock('@/lib/communities/detail.server', () => ({ getCommunity: vi.fn(), getCommunityFeed: vi.fn() }));
 vi.mock('@/lib/communities/invites.server', () => ({ isInviteUsable: vi.fn() }));
 vi.mock('@/lib/rate-limit.server', () => ({ checkRateLimit: vi.fn(), getClientIp: () => '' }));
 vi.mock('@/components/feed/PageLayout', () => ({ PageFrame: () => null }));

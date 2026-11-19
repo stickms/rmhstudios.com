@@ -226,7 +226,7 @@ export function JamDetail({ slug }: { slug: string }) {
             <Card key={e.id} className="gap-2 px-4 py-4">
               <div className="flex items-center justify-between gap-2">
                 <Link
-                  to="/user-builds/$slug"
+                  to="/builds/$slug"
                   params={{ slug: e.build.slug }}
                   className="font-semibold truncate"
                 >

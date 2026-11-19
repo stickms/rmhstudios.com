@@ -114,7 +114,7 @@ async function buildItem(not?: string): Promise<Surprise | null> {
       select: sel,
     }));
   return row
-    ? { kind: 'build', id: row.id, title: row.title, href: `/user-builds/${row.slug}` }
+    ? { kind: 'build', id: row.id, title: row.title, href: `/builds/${row.slug}` }
     : null;
 }
 

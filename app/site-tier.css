@@ -57,7 +57,6 @@
 /* The island route helpers (redesign B1): reached only by island routes, and they render no classes. */
 @source not "../lib/islands";
 @source not "../components/blm";
-@source not "../components/breaches";
 @source not "../components/covid";
 @source not "../components/elections";
 @source not "../components/cursed-logic";
@@ -166,7 +165,6 @@
 @source not "./routes/altair.tsx";
 @source not "./routes/altair";
 @source not "./routes/black-lives-matter.tsx";
-@source not "./routes/breaches.tsx";
 @source not "./routes/cookies.tsx";
 @source not "./routes/copyright.tsx";
 @source not "./routes/elections.tsx";

@@ -17,7 +17,7 @@
 export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   // Folded into tabs of a hub page.
   '/bookmarks': '/saves?tab=saved',
-  '/lists': '/saves?tab=lists',
+  '/lists': '/feeds?tab=lists',
   '/wishlist': '/saves?tab=wishlist',
   '/shop': '/store?tab=shop',
   '/market': '/store?tab=market',
@@ -62,6 +62,13 @@ export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   '/lights-out': '/daily/lights-out',
   '/covid': '/rmh-research/reports/feature-leak',
   '/optimization': '/rmh-research/reports/optimization',
+  // Small pages folded into the page that already covered them (2026-11-19).
+  '/changelog': '/site-history#changes',
+  '/breaches': '/security#breaches',
+  '/user-builds/manage': '/create/builds/manage',
+  // The games shell's copy of the community pages; `/communities` is the one directory.
+  '/games/community': '/communities',
+  '/games/communities': '/communities',
 };
 
 /** The target for a legacy pathname, or null when the path is current. */

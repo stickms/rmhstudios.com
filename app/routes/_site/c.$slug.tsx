@@ -10,7 +10,7 @@ import {
   getCommunityFeed,
   type CommunityDetail,
   type CommunityFeedResult,
-} from '@/lib/community.server';
+} from '@/lib/communities/detail.server';
 
 // Prefetch the community details + first page of posts server-side so the page
 // is present at first paint / prefetched on intent instead of a two-request

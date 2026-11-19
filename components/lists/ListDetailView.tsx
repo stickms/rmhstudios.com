@@ -229,7 +229,7 @@ export function ListDetailView({
     );
     void navigate(
       {
-        to: '/saves',
+        to: '/feeds',
         search:
           {
             tab: 'lists',

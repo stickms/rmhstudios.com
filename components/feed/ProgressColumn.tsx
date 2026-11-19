@@ -20,8 +20,6 @@ import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Button } from'@/components/ui/button';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
-import { DailyWheel } from'./DailyWheel';
-import { StakingCard } from'./StakingCard';
 import { ColumnHeader } from'./ColumnHeader';
 import { api } from'@/lib/contract/client';
 import { serverError } from'@/lib/http';
@@ -157,12 +155,6 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  </p>
  </div>
  </section>
-
- {/* Daily wheel */}
- <DailyWheel />
-
- {/* Coin vault (staking) */}
- <StakingCard />
 
  {/* Quests */}
  <QuestSection

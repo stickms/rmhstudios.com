@@ -516,7 +516,7 @@ export function BuildDetail({
               >
                 <Link
                   to={
-                    `/user-builds/submit?edit=${build.id}` as string
+                    `/create/builds/submit?edit=${build.id}` as string
                   }
                 >
                   <Edit
@@ -748,8 +748,8 @@ export function BuildDetail({
               ),
           }}
         >
-          {/* `priority`: on both pages that render this body (/builds/$slug and
-              /user-builds/$slug) the thumbnail is the sole large graphic and
+          {/* `priority`: on the page that renders this body (/builds/$slug; its
+              old twin /user-builds/$slug redirects there) the thumbnail is the sole large graphic and
               therefore the LCP element. Safe to hardcode because BuildDetail is
               only ever the single-build view — never a list item. Both routes
               emit a matching preload from `head()`; keep these props in sync. */}

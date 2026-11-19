@@ -293,7 +293,7 @@ export async function pushBuild(): Promise<void> {
       `Build "${data.title}" ${publish ? 'published' : 'saved as draft'}!`,
     );
     console.log(
-      `  ${color.dim('View at:')} ${API_BASE}/user-builds/${data.slug}`,
+      `  ${color.dim('View at:')} ${API_BASE}/builds/${data.slug}`,
     );
     console.log(
       '',

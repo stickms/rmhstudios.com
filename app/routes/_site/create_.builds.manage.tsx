@@ -20,7 +20,7 @@ import { deleteUserBuildApi, listUserBuildsApi } from '@/lib/user-builds.contrac
 import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
-export const Route = createFileRoute('/_site/user-builds/manage')({
+export const Route = createFileRoute('/_site/create_/builds/manage')({
   // `noindex`: one account's own builds (and `Disallow`ed in robots.txt).
   head: () => ({
     meta: [{ title: 'Manage builds | RMH Studios' }, { name: 'robots', content: 'noindex' }],
@@ -77,7 +77,7 @@ function ManageContent() {
 
   if (isPending) {
     return (
-      <PageLayout title={t('my-builds', { defaultValue: 'My Builds' })} backTo="/user-builds" wide>
+      <PageLayout title={t('my-builds', { defaultValue: 'My Builds' })} backTo="/create/builds" wide>
         <div className="flex min-h-[40dvh] items-center justify-center">
           <Spinner size={32} />
         </div>
@@ -87,11 +87,11 @@ function ManageContent() {
 
   if (!session) {
     return (
-      <PageLayout title={t('my-builds', { defaultValue: 'My Builds' })} backTo="/user-builds" wide>
+      <PageLayout title={t('my-builds', { defaultValue: 'My Builds' })} backTo="/create/builds" wide>
         <SignedOutPrompt
           className={sessionArrival}
           icon={Boxes}
-          callbackURL="/user-builds/manage"
+          callbackURL="/create/builds/manage"
           title={t('sign-in-required', { defaultValue: 'Sign In Required' })}
           description={t('sign-in-to-manage', {
             defaultValue: 'You need to sign in to manage your builds.',
@@ -109,11 +109,11 @@ function ManageContent() {
     <PageLayout
       title={t('my-builds', { defaultValue: 'My Builds' })}
       description={t('manage-subtitle', { defaultValue: 'Manage your published and draft builds' })}
-      backTo="/user-builds"
+      backTo="/create/builds"
       wide
       headerRight={
         <Button asChild variant="default">
-          <Link to="/user-builds/submit">
+          <Link to="/create/builds/submit">
             <Plus aria-hidden /> {t('new-build', { defaultValue: 'New Build' })}
           </Link>
         </Button>
@@ -134,7 +134,7 @@ function ManageContent() {
             })}
             action={
               <Button asChild variant="default">
-                <Link to="/user-builds/submit">
+                <Link to="/create/builds/submit">
                   <Plus aria-hidden /> {t('create-build', { defaultValue: 'Create Build' })}
                 </Link>
               </Button>
@@ -159,7 +159,7 @@ function ManageContent() {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <Link to={`/user-builds/${build.slug}` as string}>
+                  <Link to={`/builds/${build.slug}` as string}>
                     <h3 className="truncate font-semibold text-site-text transition-colors hover:text-site-accent">
                       {build.title}
                     </h3>
@@ -189,7 +189,7 @@ function ManageContent() {
                 <div className="flex items-center gap-2">
                   <Button asChild variant="ghost" size="icon">
                     <Link
-                      to={`/user-builds/${build.slug}` as string}
+                      to={`/builds/${build.slug}` as string}
                       aria-label={t('view', { defaultValue: 'View' })}
                       title={t('view', { defaultValue: 'View' })}
                     >
@@ -198,7 +198,7 @@ function ManageContent() {
                   </Button>
                   <Button asChild variant="ghost" size="icon">
                     <Link
-                      to="/user-builds/submit"
+                      to="/create/builds/submit"
                       search={{ edit: build.id }}
                       aria-label={t('edit', { defaultValue: 'Edit' })}
                       title={t('edit', { defaultValue: 'Edit' })}

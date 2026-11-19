@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
-import { getCommunity } from '@/lib/community.server';
+import { getCommunity } from '@/lib/communities/detail.server';
 
 /** GET /api/communities/$slug — community details + viewer membership. */
 export const route = apiRoute('/api/communities/$slug', {

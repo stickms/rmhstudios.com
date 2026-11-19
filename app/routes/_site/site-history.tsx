@@ -3,15 +3,16 @@
  *
  * Every homepage and feed redesign, with pictures of that commit built and photographed, and each game, app and
  * platform change as it arrived, with the live page one tap away. The entries and how the pictures were made are in
- * components/site-history/entries.ts. (/history is a different page: a signed-in reader's own viewing history.)
+ * components/site-history/entries.ts. The release notes sit above the timeline under
+ * #changes; /changelog, which listed only them, redirects there. (/history is a different page: a signed-in reader's own viewing history.)
  */
 import {
   createFileRoute,
-  Link,
 } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SiteHistoryTimeline } from '@/components/site-history/SiteHistoryTimeline';
+import { ChangelogList } from '@/components/devplatform/ChangelogList';
 import {
   buildCanonical,
   buildMeta,
@@ -28,7 +29,7 @@ export const Route =
             title:
               'Site history | RMH Studios',
             description:
-              'Every redesign of the RMH Studios homepage and feed, and each game and app as it arrived, from the first commit to today, with pictures and the live pages.',
+              'The latest release notes, then every redesign of the RMH Studios homepage and feed and each game and app as it arrived, from the first commit to today.',
             path: '/site-history',
           },
         ),
@@ -87,30 +88,39 @@ function SiteHistoryPage() {
             },
           )}
         </p>
-        <p>
+      </div>
+      <section
+        id="changes"
+        aria-labelledby="site-history-changes"
+        className="scroll-mt-4 border-t border-site-border pt-6 pb-8"
+      >
+        <h2
+          id="site-history-changes"
+          className="t-heading"
+        >
           {t(
-            'intro.changelog',
+            'changes.title',
             {
               defaultValue:
-                'For the small changes, see the',
+                'Latest changes',
             },
-          )}{' '}
-          <Link
-            to="/changelog"
-            className="text-site-text underline"
-          >
-            {t(
-              'intro.changelogLink',
-              {
-                defaultValue:
-                  'changelog',
-              },
-            )}
-          </Link>
-
-          .
+          )}
+        </h2>
+        <p className="t-body mt-1 mb-4 text-site-text-muted">
+          {t(
+            'changes.body',
+            {
+              defaultValue:
+                'The release notes for the small changes: new features, fixes and improvements, newest first.',
+            },
+          )}
         </p>
-      </div>
+        <ChangelogList
+          limit={
+            5
+          }
+        />
+      </section>
       <SiteHistoryTimeline />
     </PageLayout>
   );

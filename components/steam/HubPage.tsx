@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
-import { Lock, MessageSquare, Pin } from 'lucide-react';
+import { Lock, MessageSquare, Pin, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, errorField } from '@/lib/contract/client';
 import { createHubThreadApi } from '@/lib/cards/steam.contract';
@@ -11,11 +11,24 @@ import { formatPlaytime } from '@/lib/games/format-playtime';
 import { relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { CommunityNav } from './CommunityNav';
-import { GroupRow, Stars } from './CommunityHome';
+import { GroupRow } from './GroupRow';
 import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
 import { hubErrorText } from './hub-errors';
+
+/** A review's star rating, read-only (the hub's review rows). */
+function Stars({ value }: { value: number }) {
+  return (
+    <span className="stm-stars" aria-hidden>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className="stm-star" data-on={n <= value}>
+          <Star />
+        </span>
+      ))}
+    </span>
+  );
+}
 
 function NewThread({ gameId, emoteTitles }: { gameId: string; emoteTitles: string[] }) {
   const { t } = useTranslation('games-hub');
@@ -184,7 +197,7 @@ export function HubPage({ data }: { data: HubData }) {
               <ul className="stm-people">
                 {data.workshop.map((w) => (
                   <li key={w.slug}>
-                    <Link to="/user-builds/$slug" params={{ slug: w.slug }} className="stm-person">
+                    <Link to="/builds/$slug" params={{ slug: w.slug }} className="stm-person">
                       <span className="stm-person-body">
                         <span className="stm-person-name">{w.title}</span>
                         <span className="stm-person-sub">
@@ -198,7 +211,7 @@ export function HubPage({ data }: { data: HubData }) {
             )}
             {data.signedIn ? (
               <p className="stm-web-pad">
-                <a className="stm-link" href={`/user-builds/submit?forGame=${encodeURIComponent(data.gameId)}`}>
+                <a className="stm-link" href={`/create/builds/submit?forGame=${encodeURIComponent(data.gameId)}`}>
                   {t('steam-hub-workshop-submit', { defaultValue: 'Submit your own' })}
                 </a>
               </p>

@@ -1444,10 +1444,6 @@ button.stm-star {
   background: var(--stm-raised);
   font-size: 18px;
 }
-.stm-people-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
 .stm-art-sm {
   width: 48px;
   height: auto;
@@ -1466,16 +1462,6 @@ button.stm-star {
   max-width: 1100px;
   margin-inline: auto;
   padding: 24px clamp(12px, 3vw, 24px) 0;
-}
-.stm-group-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  flex: none;
-  background: var(--stm-raised);
-  font-size: 40px;
 }
 .stm-group-title {
   min-width: 0;
@@ -2121,38 +2107,12 @@ button.stm-star {
   flex: 1;
 }
 
-/* Friend activity and in-game status */
-.stm-playing {
-  color: #90ba3c;
-}
+/* In-game status */
 .stm-pf-status[data-playing='true'] {
   color: #90ba3c;
 }
 .stm-pf-avatar:has(+ .stm-pf-summary .stm-pf-status[data-playing='true']) {
   background: linear-gradient(#90ba3c, #5c7e10);
-}
-.stm-activity-feed {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.stm-activity-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 10px 14px;
-  border-top: 1px solid var(--stm-line);
-}
-.stm-activity-text {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.stm-activity-text .stm-stars {
-  vertical-align: middle;
-}
-.stm-activity-when {
-  white-space: nowrap;
 }
 
 /* Profile showcase editor */
@@ -2610,33 +2570,6 @@ html[dir='rtl'] .stm-drawer-panel {
   justify-content: center;
 }
 
-/* ─── Group discussion (/games/groups/$slug) ──────────────────────────────── */
-
-.stm-gposts {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.stm-gpost {
-  padding: 10px 14px;
-  border-top: 1px solid var(--stm-line, rgba(255, 255, 255, 0.06));
-}
-.stm-gpost:first-child {
-  border-top: 0;
-}
-.stm-gpost .stm-person {
-  padding-inline: 0;
-}
-.stm-gpost-text {
-  margin: 4px 0 0;
-  color: var(--stm-text, inherit);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.stm-gpost-meta {
-  margin: 6px 0 0;
-  font-size: 12px;
-}
 .stm-shop .stm-input {
   width: 100%;
   max-width: 360px;

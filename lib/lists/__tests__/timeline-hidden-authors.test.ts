@@ -16,6 +16,8 @@ const h =
     () => ({
       memberFindMany:
         vi.fn(),
+      feedFindUnique:
+        vi.fn(),
       rmharkFindMany:
         vi.fn(),
       closeFriendFindMany:
@@ -30,7 +32,12 @@ vi.mock(
   () => ({
     prisma:
       {
-        userListMember:
+        customFeed:
+          {
+            findUnique:
+              h.feedFindUnique,
+          },
+        customFeedMember:
           {
             findMany:
               h.memberFindMany,
@@ -70,6 +77,17 @@ import { listTimeline } from '@/lib/lists/lists.server';
 
 beforeEach(
   () => {
+    h.feedFindUnique
+      .mockReset()
+      .mockResolvedValue(
+        {
+          id: 'l1',
+          kind: 'list',
+          tags: [],
+          keywords: [],
+          query: null,
+        },
+      );
     h.memberFindMany
       .mockReset()
       .mockResolvedValue(

@@ -5,6 +5,7 @@ import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import type { FeedItem } from '@/lib/feed-types';
 import { getOwnRequestState, type OwnRequestState } from '@/lib/communities/join-requests.server';
 import { loadFlairsForPosts } from '@/lib/communities/flairs.server';
+import { listCuratedBuilds } from '@/lib/builds/curated';
 
 export interface CommunityAnnouncement {
   id: string;
@@ -41,6 +42,18 @@ export interface CommunityDetail {
   starThreshold: number;
   verificationLevel: string;
   verificationValue: number;
+  /**
+   * The catalog title this community is the official home of (`community.gameId`,
+   * set by admins), or null. The title's library page links back here.
+   */
+  game: { id: string; title: string } | null;
+}
+
+/** The catalog title behind a community's `gameId`, if the catalog still has it. */
+function communityGame(gameId: string | null): { id: string; title: string } | null {
+  if (!gameId) return null;
+  const build = listCuratedBuilds().find((b) => b.id === gameId);
+  return build ? { id: build.id, title: build.title } : null;
 }
 
 /**
@@ -70,6 +83,7 @@ export async function getCommunity(
       starThreshold: true,
       verificationLevel: true,
       verificationValue: true,
+      gameId: true,
     },
   });
   if (!community) return null;
@@ -109,6 +123,7 @@ export async function getCommunity(
       starThreshold: 0,
       verificationLevel: 'none',
       verificationValue: 0,
+      game: null,
     };
   }
 
@@ -126,14 +141,16 @@ export async function getCommunity(
     },
   });
 
+  const { gameId, ...fields } = community;
   return {
-    ...community,
+    ...fields,
     createdAt: community.createdAt.toISOString(),
     joined: !!role,
     role,
     announcements: announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
     locked: false,
     requestState: null,
+    game: communityGame(gameId),
   };
 }
 

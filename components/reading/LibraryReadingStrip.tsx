@@ -17,8 +17,9 @@ export default function LibraryReadingStrip() {
       />
       <p className="text-sm text-site-text-muted">
         <Link
-          to="/reading"
+          to="/library"
           search={{
+            view: 'reading',
             tab: 'shelves',
           }}
           className="text-site-accent underline-offset-4 hover:underline"
@@ -35,8 +36,9 @@ export default function LibraryReadingStrip() {
           ' · '
         }
         <Link
-          to="/reading"
+          to="/library"
           search={{
+            view: 'reading',
             tab: 'highlights',
           }}
           className="text-site-accent underline-offset-4 hover:underline"

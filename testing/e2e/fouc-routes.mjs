@@ -181,7 +181,7 @@ export const DYNAMIC_ROUTE_FIXTURES = {
   '/games/groups/$slug': {
     path: '/games/groups/fouc-audit',
     fidelity: 'shell',
-    why: 'Not-found branch of a Steam-style group page.',
+    why: 'A 301 to `/c/$slug`; the audited paint is the community page it lands on.',
   },
   '/groups/$id': {
     path: '/groups/fouc-audit',
@@ -411,9 +411,9 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     why: 'Not-found branch of a post permalink.',
   },
   '/user-builds/$slug': {
-    path: '/user-builds/fouc-audit',
+    path: null,
     fidelity: 'shell',
-    why: 'Not-found branch of a User Build page.',
+    why: 'Redirects to /builds/$slug before any paint of its own; that page is audited.',
   },
   '/v/$slug': {
     path: '/v/fouc-audit',
