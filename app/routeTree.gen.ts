@@ -130,8 +130,6 @@ import { Route as DiscordIndexRouteImport } from './routes/discord/index'
 import { Route as DiscordLightsOutRouteImport } from './routes/discord/lights-out'
 import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
 import { Route as GamesLibraryRouteImport } from './routes/games/_library'
-import { Route as GamesCommunitiesRouteImport } from './routes/games/communities'
-import { Route as GamesCommunityRouteImport } from './routes/games/community'
 import { Route as GamesInventoryRouteImport } from './routes/games/inventory'
 import { Route as GamesMarketplaceRouteImport } from './routes/games/marketplace'
 import { Route as GamesMembershipRouteImport } from './routes/games/membership'
@@ -1103,16 +1101,6 @@ const DiscordRmhboxRoute = DiscordRmhboxRouteImport.update({
 } as any)
 const GamesLibraryRoute = GamesLibraryRouteImport.update({
   id: '/_library',
-  getParentRoute: () => GamesRoute,
-} as any)
-const GamesCommunitiesRoute = GamesCommunitiesRouteImport.update({
-  id: '/communities',
-  path: '/communities',
-  getParentRoute: () => GamesRoute,
-} as any)
-const GamesCommunityRoute = GamesCommunityRouteImport.update({
-  id: '/community',
-  path: '/community',
   getParentRoute: () => GamesRoute,
 } as any)
 const GamesInventoryRoute = GamesInventoryRouteImport.update({
@@ -3107,8 +3095,6 @@ export interface FileRoutesByFullPath {
   '/deeplink/$page': typeof DeeplinkPageRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
-  '/games/communities': typeof GamesCommunitiesRoute
-  '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
   '/games/marketplace': typeof GamesMarketplaceRoute
   '/games/membership': typeof GamesMembershipRoute
@@ -3571,8 +3557,6 @@ export interface FileRoutesByTo {
   '/deeplink/$page': typeof DeeplinkPageRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
-  '/games/communities': typeof GamesCommunitiesRoute
-  '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
   '/games/marketplace': typeof GamesMarketplaceRoute
   '/games/membership': typeof GamesMembershipRoute
@@ -4062,8 +4046,6 @@ export interface FileRoutesById {
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/games/_library': typeof GamesLibraryRouteWithChildren
-  '/games/communities': typeof GamesCommunitiesRoute
-  '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
   '/games/marketplace': typeof GamesMarketplaceRoute
   '/games/membership': typeof GamesMembershipRoute
@@ -4555,8 +4537,6 @@ export interface FileRouteTypes {
     | '/deeplink/$page'
     | '/discord/lights-out'
     | '/discord/rmhbox'
-    | '/games/communities'
-    | '/games/community'
     | '/games/inventory'
     | '/games/marketplace'
     | '/games/membership'
@@ -5019,8 +4999,6 @@ export interface FileRouteTypes {
     | '/deeplink/$page'
     | '/discord/lights-out'
     | '/discord/rmhbox'
-    | '/games/communities'
-    | '/games/community'
     | '/games/inventory'
     | '/games/marketplace'
     | '/games/membership'
@@ -5509,8 +5487,6 @@ export interface FileRouteTypes {
     | '/discord/lights-out'
     | '/discord/rmhbox'
     | '/games/_library'
-    | '/games/communities'
-    | '/games/community'
     | '/games/inventory'
     | '/games/marketplace'
     | '/games/membership'
@@ -6915,20 +6891,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/games'
       preLoaderRoute: typeof GamesLibraryRouteImport
-      parentRoute: typeof GamesRoute
-    }
-    '/games/communities': {
-      id: '/games/communities'
-      path: '/communities'
-      fullPath: '/games/communities'
-      preLoaderRoute: typeof GamesCommunitiesRouteImport
-      parentRoute: typeof GamesRoute
-    }
-    '/games/community': {
-      id: '/games/community'
-      path: '/community'
-      fullPath: '/games/community'
-      preLoaderRoute: typeof GamesCommunityRouteImport
       parentRoute: typeof GamesRoute
     }
     '/games/inventory': {
@@ -9997,8 +9959,6 @@ const GamesLibraryRouteWithChildren = GamesLibraryRoute._addFileChildren(
 
 interface GamesRouteChildren {
   GamesLibraryRoute: typeof GamesLibraryRouteWithChildren
-  GamesCommunitiesRoute: typeof GamesCommunitiesRoute
-  GamesCommunityRoute: typeof GamesCommunityRoute
   GamesInventoryRoute: typeof GamesInventoryRoute
   GamesMarketplaceRoute: typeof GamesMarketplaceRoute
   GamesMembershipRoute: typeof GamesMembershipRoute
@@ -10016,8 +9976,6 @@ interface GamesRouteChildren {
 
 const GamesRouteChildren: GamesRouteChildren = {
   GamesLibraryRoute: GamesLibraryRouteWithChildren,
-  GamesCommunitiesRoute: GamesCommunitiesRoute,
-  GamesCommunityRoute: GamesCommunityRoute,
   GamesInventoryRoute: GamesInventoryRoute,
   GamesMarketplaceRoute: GamesMarketplaceRoute,
   GamesMembershipRoute: GamesMembershipRoute,

@@ -3015,7 +3015,7 @@ PurchaseInput                       type       lib/coins-schema.ts:15:13
 ContributeInput                     type       lib/commerce/pools.ts:60:13                                           
 PoolContributorView                 interface  lib/commerce/pools.ts:78:18                                           
 ChallengeEntryDTO                   interface  lib/communities/plus.ts:129:18                                        
-CommunityAnnouncement               interface  lib/community.server.ts:9:18                                          
+CommunityAnnouncement               interface  lib/communities/detail.server.ts:9:18                                    
 ReviewRedemptionInput               type       lib/creator/redemption-schema.ts:34:13                                
 MonthlyEarnings                     interface  lib/creator/studio.server.ts:23:18                                    
 RecentTip                           interface  lib/creator/studio.server.ts:32:18                                    

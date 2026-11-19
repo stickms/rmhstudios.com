@@ -263,7 +263,7 @@ export function SteamCommunity({
                 }
               >
                 <Link
-                  to="/games/groups/$slug"
+                  to="/c/$slug"
                   params={{
                     slug: c.slug,
                   }}

@@ -3,7 +3,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
 import { prisma } from '@/lib/prisma.server';
-import { listCommunities } from '@/lib/communities.server';
+import { listCommunities } from '@/lib/communities/directory.server';
 import { createCommunityBody } from '@/lib/communities/communities-schema';
 
 /**

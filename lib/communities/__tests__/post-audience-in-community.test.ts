@@ -124,7 +124,7 @@ vi.mock(
   }),
 );
 
-import { getCommunityFeed } from '@/lib/community.server';
+import { getCommunityFeed } from '@/lib/communities/detail.server';
 import { getHallOfFame } from '@/lib/communities/starboard.server';
 
 beforeEach(

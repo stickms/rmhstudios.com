@@ -4,7 +4,7 @@
  * result whatever is wrong with it, and the lookup is rate-limited per IP so the
  * page cannot be used to probe codes.
  */
-import { getCommunity, type CommunityDetail } from '@/lib/community.server';
+import { getCommunity, type CommunityDetail } from '@/lib/communities/detail.server';
 import { isInviteUsable } from '@/lib/communities/invites.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 

@@ -2,7 +2,7 @@ import { pageSize } from '@/lib/pagination';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
-import { getCommunityFeed } from '@/lib/community.server';
+import { getCommunityFeed } from '@/lib/communities/detail.server';
 
 /** GET /api/communities/$slug/feed — posts in a community (cursor paginated). */
 export const route = apiRoute('/api/communities/$slug/feed', {

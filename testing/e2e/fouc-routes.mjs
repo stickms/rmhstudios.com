@@ -181,7 +181,7 @@ export const DYNAMIC_ROUTE_FIXTURES = {
   '/games/groups/$slug': {
     path: '/games/groups/fouc-audit',
     fidelity: 'shell',
-    why: 'Not-found branch of a Steam-style group page.',
+    why: 'A 301 to `/c/$slug`; the audited paint is the community page it lands on.',
   },
   '/groups/$id': {
     path: '/groups/fouc-audit',

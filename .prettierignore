@@ -419,8 +419,6 @@ lib/prepaint/generated.ts
 /app/routes/games/_library/$gameId_.guides.$guideId.tsx
 /app/routes/games/_library/index.tsx
 /app/routes/games/_library/slice-it.tsx
-/app/routes/games/communities.tsx
-/app/routes/games/community.tsx
 /app/routes/games/daily.tsx
 /app/routes/games/groups.$slug.tsx
 /app/routes/games/hub.$gameId.index.tsx
@@ -1113,9 +1111,7 @@ lib/prepaint/generated.ts
 /components/spaces/SpaceRoom.tsx
 /components/spaces/SpacesColumn.tsx
 /components/steam/DailyPage.tsx
-/components/steam/FriendActivity.tsx
 /components/steam/GamePage.tsx
-/components/steam/GroupPage.tsx
 /components/steam/HubPage.tsx
 /components/steam/LibraryHomePage.tsx
 /components/steam/LibraryList.tsx
@@ -2078,7 +2074,7 @@ lib/prepaint/generated.ts
 /lib/commerce/api/pools.$id.server.ts
 /lib/commerce/api/pools.server.ts
 /lib/commerce/pools.server.ts
-/lib/communities.server.ts
+/lib/communities/directory.server.ts
 /lib/communities/__tests__/invites-concurrency.test.ts
 /lib/communities/access.server.ts
 /lib/communities/api/communities.$slug.announcements.$id.server.ts
@@ -2134,7 +2130,7 @@ lib/prepaint/generated.ts
 /lib/communities/settings.server.ts
 /lib/communities/sisters.server.ts
 /lib/communities/starboard.server.ts
-/lib/community.server.ts
+/lib/communities/detail.server.ts
 /lib/competitive/api/friendly.$id.server.ts
 /lib/competitive/api/friendly.server.ts
 /lib/competitive/api/game-night.server.ts
@@ -2436,7 +2432,7 @@ lib/prepaint/generated.ts
 /lib/games/collections-api.server.ts
 /lib/games/collections.server.ts
 /lib/games/collections.ts
-/lib/games/community.server.ts
+/lib/games/profile.server.ts
 /lib/games/detail.server.ts
 /lib/games/hub-api.server.ts
 /lib/games/hub-rules.ts

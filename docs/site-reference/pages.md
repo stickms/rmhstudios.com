@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 347 routes. 167 render inside the standard site shell (sidebar, nav, context rail); 180 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 345 routes. 167 render inside the standard site shell (sidebar, nav, context rail); 178 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -228,9 +228,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/games` | redirects to `/compete?tab=leaderboard` | public | `app/routes/games/_library/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/games/_library/$gameId_.guides.$guideId.tsx` |
-| `/games/communities` | — | public | `app/routes/games/communities.tsx` |
-| `/games/community` | — | public | `app/routes/games/community.tsx` |
-| `/games/groups/:slug` | — | public | `app/routes/games/groups.$slug.tsx` |
+| `/games/groups/:slug` | redirects to `/c/$slug` | public | `app/routes/games/groups.$slug.tsx` |
 | `/games/hub/:gameId` | — | public | `app/routes/games/hub.$gameId.index.tsx` |
 | `/games/hub/:gameId/t/:threadId` | — | public | `app/routes/games/hub.$gameId.t.$threadId.tsx` |
 | `/games/inventory` | — | public | `app/routes/games/inventory.tsx` |

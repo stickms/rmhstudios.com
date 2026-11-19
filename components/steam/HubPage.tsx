@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
-import { Lock, MessageSquare, Pin } from 'lucide-react';
+import { Lock, MessageSquare, Pin, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, errorField } from '@/lib/contract/client';
 import { createHubThreadApi } from '@/lib/cards/steam.contract';
@@ -11,11 +11,24 @@ import { formatPlaytime } from '@/lib/games/format-playtime';
 import { relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { CommunityNav } from './CommunityNav';
-import { GroupRow, Stars } from './CommunityHome';
+import { GroupRow } from './GroupRow';
 import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
 import { hubErrorText } from './hub-errors';
+
+/** A review's star rating, read-only (the hub's review rows). */
+function Stars({ value }: { value: number }) {
+  return (
+    <span className="stm-stars" aria-hidden>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className="stm-star" data-on={n <= value}>
+          <Star />
+        </span>
+      ))}
+    </span>
+  );
+}
 
 function NewThread({ gameId, emoteTitles }: { gameId: string; emoteTitles: string[] }) {
   const { t } = useTranslation('games-hub');

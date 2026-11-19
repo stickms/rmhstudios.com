@@ -13,7 +13,7 @@ import { markRouteArrival } from '@/components/ui/arrive';
 import { EventsColumn } from '@/components/events/EventsColumn';
 import { SpacesColumn } from '@/components/spaces/SpacesColumn';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { listCommunities } from '@/lib/communities.server';
+import { listCommunities } from '@/lib/communities/directory.server';
 
 // `/communities` is the merged social-graph hub: the communities directory plus
 // the former `/events` and `/spaces` index pages, now tabs. The active tab is

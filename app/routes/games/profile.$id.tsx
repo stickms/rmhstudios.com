@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { getSteamProfile } from '@/lib/games/community.server';
+import { getSteamProfile } from '@/lib/games/profile.server';
 import { ProfilePage } from '@/components/steam/ProfilePage';
 import { noindexHead } from '@/lib/seo';
 

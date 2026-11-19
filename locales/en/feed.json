@@ -1877,5 +1877,6 @@
   "send": "Send",
   "settings-language-count": "RMH Studios is available in {{count}} languages.",
   "settings-nav-layout": "Sidebar",
-  "security-subtitle-sessions": "How you sign in, where you are signed in, and your account standing."
+  "security-subtitle-sessions": "How you sign in, where you are signed in, and your account standing.",
+  "community-official-for": "Official community for {{title}}"
 }

@@ -85,8 +85,8 @@ vi.mock('@/lib/communities/pages.server', () => ({
   CommunityPageError: class extends Error {},
 }));
 
-import { getCommunity, getCommunityFeed } from '@/lib/community.server';
-import { listCommunities } from '@/lib/communities.server';
+import { getCommunity, getCommunityFeed } from '@/lib/communities/detail.server';
+import { listCommunities } from '@/lib/communities/directory.server';
 import { getCommunityExtras } from '@/lib/communities/extras.server';
 import { getEvent, listEvents, rsvp } from '@/lib/events.server';
 
@@ -259,7 +259,7 @@ describe('locked community payload', () => {
       [
         'id', 'slug', 'name', 'description', 'icon', 'color', 'isPrivate', 'memberCount', 'createdById',
         'createdAt', 'postCount', 'joined', 'role', 'announcements', 'locked', 'requestState',
-        'flairRequired', 'starThreshold', 'verificationLevel', 'verificationValue',
+        'flairRequired', 'starThreshold', 'verificationLevel', 'verificationValue', 'game',
       ].sort(),
     );
     expect(c).toMatchObject({
@@ -268,6 +268,7 @@ describe('locked community payload', () => {
       starThreshold: 0,
       verificationLevel: 'none',
       verificationValue: 0,
+      game: null,
     });
   });
 });

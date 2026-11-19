@@ -440,5 +440,6 @@
   "steam-marketplace-yours": "Your listing",
   "steam-marketplace-bought": "Bought {{name}}",
   "steam-marketplace-empty": "Nothing is listed right now.",
-  "steam-marketplace-sell": "Sell your own items on the main site"
+  "steam-marketplace-sell": "Sell your own items on the main site",
+  "steam-nav-communities": "Communities"
 }
