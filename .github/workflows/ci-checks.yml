@@ -1,6 +1,6 @@
 # The single definition of the check jobs shared by web-ci (PR / merge queue /
 # nightly) and deploy (push to main). Callers choose which half runs:
-#   checks:   typecheck + lint + docs freshness, unit shards, production audit
+#   checks:   typecheck + lint + docs freshness, lint ratchets, unit shards, production audit
 #   frontend: build + integration suite against a throwaway Postgres
 # `verdict` fails the call if a job that should have run was skipped, or any
 # job failed, so a caller only has to require this one result.
@@ -53,16 +53,37 @@ jobs:
         run: |
           mkdir -p .cache/eslint
           pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
-      - name: Architecture ratchet (import cycles + layer boundaries)
-        run: pnpm run lint:ratchet
-      - name: Accessibility ratchet (jsx-a11y findings only go down)
-        run: pnpm run a11y:ratchet
       - name: Docs freshness
         run: |
           pnpm run docs:api:check
           pnpm run docs:site:check
           pnpm run prepaint:check
           pnpm run sdk:check
+
+  # The two ESLint ratchets took ~2.5 min at the end of the typecheck job, after tsc, so that job ran
+  # ~5 min end to end. They need nothing tsc produces, so they run beside it here.
+  ratchets:
+    if: inputs.checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-deps
+      # import-x/no-cycle depends on other files, so the architecture ratchet is never cached. The
+      # jsx-a11y rules are per file, and that count is cached by content (scripts/count-jsx-a11y.mjs).
+      - name: Restore jsx-a11y cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .cache/eslint-a11y
+          key: eslint-a11y-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            eslint-a11y-${{ runner.os }}-
+      - name: Architecture ratchet (import cycles + layer boundaries)
+        run: pnpm run lint:ratchet
+      - name: Accessibility ratchet (jsx-a11y findings only go down)
+        run: pnpm run a11y:ratchet
 
   test:
     if: inputs.checks
@@ -175,7 +196,7 @@ jobs:
         run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
 
   verdict:
-    needs: [typecheck, test, audit, integration]
+    needs: [typecheck, ratchets, test, audit, integration]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -188,7 +209,7 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           const needs = JSON.parse(process.env.RESULTS);
-          const want = { typecheck: 'CHECKS', test: 'CHECKS', audit: 'CHECKS', integration: 'FRONTEND' };
+          const want = { typecheck: 'CHECKS', ratchets: 'CHECKS', test: 'CHECKS', audit: 'CHECKS', integration: 'FRONTEND' };
           for (const [name, flag] of Object.entries(want)) {
             const expected = process.env[flag] === 'true' ? 'success' : 'skipped';
             if (needs[name].result !== expected) throw new Error(name + ': ' + needs[name].result + ' (expected ' + expected + ')');
