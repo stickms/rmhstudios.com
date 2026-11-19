@@ -2078,7 +2078,7 @@ lib/prepaint/generated.ts
 /lib/commerce/api/pools.$id.server.ts
 /lib/commerce/api/pools.server.ts
 /lib/commerce/pools.server.ts
-/lib/communities.server.ts
+/lib/communities/directory.server.ts
 /lib/communities/__tests__/invites-concurrency.test.ts
 /lib/communities/access.server.ts
 /lib/communities/api/communities.$slug.announcements.$id.server.ts
@@ -2134,7 +2134,7 @@ lib/prepaint/generated.ts
 /lib/communities/settings.server.ts
 /lib/communities/sisters.server.ts
 /lib/communities/starboard.server.ts
-/lib/community.server.ts
+/lib/communities/detail.server.ts
 /lib/competitive/api/friendly.$id.server.ts
 /lib/competitive/api/friendly.server.ts
 /lib/competitive/api/game-night.server.ts

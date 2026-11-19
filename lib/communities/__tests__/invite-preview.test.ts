@@ -21,7 +21,7 @@ const h =
     }),
   );
 vi.mock(
-  '@/lib/community.server',
+  '@/lib/communities/detail.server',
   () => ({
     getCommunity:
       h.getCommunity,

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { listCommunities } from '@/lib/communities.server';
+import { listCommunities } from '@/lib/communities/directory.server';
 import { CommunitiesPage } from '@/components/steam/CommunitiesPage';
 import { noindexHead } from '@/lib/seo';
 

@@ -2,7 +2,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getSteamGroup } from '@/lib/games/community.server';
-import { getCommunity, getCommunityFeed } from '@/lib/community.server';
+import { getCommunity, getCommunityFeed } from '@/lib/communities/detail.server';
 import { toGroupPosts, type SteamAnnouncement } from '@/lib/games/group-posts';
 import { GroupPage } from '@/components/steam/GroupPage';
 import { noindexHead } from '@/lib/seo';

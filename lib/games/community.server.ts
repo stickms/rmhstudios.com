@@ -13,7 +13,7 @@ import { getFriendActivity, getNowPlayingFor } from '@/lib/games/activity.server
 import { getLook, getShowcase } from '@/lib/games/showcase.server';
 import { parseBackground, parseFrame, unlocksFromBadges } from '@/lib/games/customize';
 import { badgeKey } from '@/lib/games/showcase';
-import { listCommunities } from '@/lib/communities.server';
+import { listCommunities } from '@/lib/communities/directory.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
 import { levelInfo } from '@/lib/xp/levels';

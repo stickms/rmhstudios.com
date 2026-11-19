@@ -5,12 +5,12 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { CommunityListItem } from '@/lib/communities.server';
+import type { CommunityListItem } from '@/lib/communities/directory.server';
 import type {
   CommunityAnnouncement,
   CommunityDetail,
   CommunityFeedResult,
-} from '@/lib/community.server';
+} from '@/lib/communities/detail.server';
 import type {
   createAnnouncementBody,
   createCommunityBody,
