@@ -64,7 +64,7 @@ async function countMatches(kind: BulkKind, userId: string, filter: BulkFilter, 
     case 'clear-history':
       return prisma.historyEntry.count({ where });
     case 'clear-bookmarks':
-      return prisma.rMHarkBookmark.count({ where });
+      return prisma.savedItem.count({ where });
   }
 }
 
@@ -133,15 +133,24 @@ async function sampleMatches(
       detail: r.updatedAt.toISOString().slice(0, 10),
     }));
   }
-  const rows = await prisma.rMHarkBookmark.findMany({
+  // Bookmarks are `SavedItem` rows (entityType 'rmhark'). The table is
+  // polymorphic, so there is no relation to the post: its text is fetched by id.
+  const rows = await prisma.savedItem.findMany({
     where,
     take,
     orderBy: { createdAt: 'asc' },
-    select: { id: true, createdAt: true, rmhark: { select: { content: true } } },
+    select: { id: true, entityId: true, createdAt: true },
   });
+  const posts = rows.length
+    ? await prisma.rMHark.findMany({
+        where: { id: { in: rows.map((r) => r.entityId) } },
+        select: { id: true, content: true },
+      })
+    : [];
+  const contentById = new Map(posts.map((p) => [p.id, p.content]));
   return rows.map((r) => ({
     id: r.id,
-    label: excerptOf(r.rmhark?.content ?? '') || '(post)',
+    label: excerptOf(contentById.get(r.entityId) ?? '') || '(post)',
     detail: r.createdAt.toISOString().slice(0, 10),
   }));
 }
@@ -309,7 +318,7 @@ async function nextChunk(
     case 'clear-history':
       return prisma.historyEntry.findMany({ ...args, select: { id: true } });
     case 'clear-bookmarks':
-      return prisma.rMHarkBookmark.findMany({ ...args, select: { id: true } });
+      return prisma.savedItem.findMany({ ...args, select: { id: true } });
   }
 }
 
@@ -356,8 +365,8 @@ async function applyChunk(
       return count;
     }
     case 'clear-bookmarks': {
-      const { count } = await prisma.rMHarkBookmark.deleteMany({
-        where: { userId, id: { in: rows.map((r) => r.id) } },
+      const { count } = await prisma.savedItem.deleteMany({
+        where: { userId, entityType: 'rmhark', id: { in: rows.map((r) => r.id) } },
       });
       return count;
     }

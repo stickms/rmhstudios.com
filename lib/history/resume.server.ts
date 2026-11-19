@@ -5,13 +5,12 @@
  * but it is a per-DEVICE localStorage list of hrefs: it knows you opened
  * Hearthworks, not that you are on day 34 with a save waiting, and it knows
  * nothing at all on the phone you did it from. This module answers the harder
- * question — *what is unfinished on this account* — by projecting the five
+ * question — *what is unfinished on this account* — by projecting the four
  * places the site already stores half-finished state:
  *
  *   | source                     | table            | shipped? |
  *   | -------------------------- | ---------------- | -------- |
  *   | cloud game saves           | `GameSave`       | yes      |
- *   | long-form read positions   | `ReadPosition`   | yes (B7) |
  *   | media watch/listen history | `HistoryEntry`   | see note |
  *   | unpublished drafts         | `ScheduledPost`  | yes      |
  *   | flashcards due for review  | `FlashcardReview`| yes      |
@@ -48,7 +47,7 @@ import { shouldResume, progressRatio, RESUME_MAX_RATIO } from '@/lib/history/con
 /* Contract                                                                   */
 /* -------------------------------------------------------------------------- */
 
-export type ResumeKind = 'game' | 'read' | 'watch' | 'draft' | 'deck';
+export type ResumeKind = 'game' | 'watch' | 'draft' | 'deck';
 
 /**
  * One fact about where the user stopped, in a form the rail can translate.
@@ -90,14 +89,6 @@ export const RESUME_LIMIT_DEFAULT = 8;
 export const RESUME_LIMIT_MAX = 24;
 
 /**
- * A document under this fraction has not really been started — usually the
- * beacon that fired while the reader was still measuring its own height. It is
- * not `RESUME_MIN_SECONDS`, which is a floor on a media POSITION in seconds; a
- * `ReadPosition` has no duration to convert one into.
- */
-const RESUME_MIN_FRACTION = 0.02;
-
-/**
  * How many due-review rows one user's decks may be tallied from.
  *
  * A lapsed account can have thousands of due cards. The subtitle only needs a
@@ -114,8 +105,7 @@ const DUE_SCAN_MAX = 500;
  * Sort by recency, drop the unusable, de-duplicate, and cut to `limit`.
  *
  * De-duplication is by `(kind, href)` because two sources legitimately describe
- * the same thing — a book with both a `ReadPosition` and a `HistoryEntry`, a
- * game with a save and a watch row — and the rail showing the same cover twice
+ * the same thing — a game with a save and a watch row — and the rail showing the same cover twice
  * looks broken in a way that no individual source can detect on its own. Sorting
  * happens first so the copy that survives is the most recently touched one.
  *
@@ -292,97 +282,6 @@ async function gameSaveCards(userId: string, take: number): Promise<ResumeCard[]
 }
 
 /* -------------------------------------------------------------------------- */
-/* Source: long-form read positions (B7)                                      */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Where a `ReadPosition.kind` lives. `entityId` is the slug in every case,
- * which is what the reader routes take.
- *
- * `docs` is absent on purpose: the documentation is a separately-published
- * Sphinx site, not a route in this app, so a card for it could not deep-link.
- */
-const READ_ROUTES: Record<string, (slug: string) => string> = {
-  library: (slug) => `/library/${encodeURIComponent(slug)}`,
-  news: (slug) => `/news/${encodeURIComponent(slug)}`,
-  blog: (slug) => `/blog/${encodeURIComponent(slug)}`,
-};
-
-async function readPositionCards(userId: string, take: number): Promise<ResumeCard[]> {
-  const rows = await prisma.readPosition.findMany({
-    where: {
-      userId,
-      kind: { in: Object.keys(READ_ROUTES) },
-      // `RESUME_MAX_RATIO` is the same "essentially finished" line `shouldResume`
-      // applies to media; `shouldResume` itself cannot be used here because its
-      // floor is a position in SECONDS and a read position has no duration.
-      fraction: { gt: RESUME_MIN_FRACTION, lt: RESUME_MAX_RATIO },
-    },
-    select: { kind: true, entityId: true, fraction: true, anchorId: true, updatedAt: true },
-    orderBy: { updatedAt: 'desc' },
-    take,
-  });
-  if (rows.length === 0) return [];
-
-  const bySlug = await readTitles(rows.map((r) => ({ kind: r.kind, slug: r.entityId })));
-
-  return rows.flatMap((row) => {
-    const title = bySlug.get(`${row.kind}:${row.entityId}`);
-    // Deleted or hidden since the position was written — no title, no card.
-    if (!title) return [];
-    const href = READ_ROUTES[row.kind](row.entityId);
-    return [
-      card('read', {
-        title,
-        // The anchor is what makes this land where the reader stopped even after
-        // a reflow at a different width (`ReadPosition.anchorId`).
-        href: row.anchorId ? `${href}#${encodeURIComponent(row.anchorId)}` : href,
-        state: [{ at: 'percent', value: Math.round(row.fraction * 100) }],
-        progress: row.fraction,
-        updatedAt: row.updatedAt,
-      }),
-    ];
-  });
-}
-
-/** Resolve display titles for a mixed batch of read positions, one query per kind. */
-async function readTitles(
-  refs: ReadonlyArray<{ kind: string; slug: string }>,
-): Promise<Map<string, string>> {
-  const slugsFor = (kind: string) => refs.filter((r) => r.kind === kind).map((r) => r.slug);
-  const library = slugsFor('library');
-  const news = slugsFor('news');
-  const blog = slugsFor('blog');
-
-  const [libraryRows, newsRows, blogRows] = await Promise.all([
-    library.length
-      ? prisma.libraryDocument.findMany({
-          where: { slug: { in: library }, hidden: false },
-          select: { slug: true, title: true },
-        })
-      : Promise.resolve([]),
-    news.length
-      ? prisma.newsArticle.findMany({
-          where: { slug: { in: news }, status: 'PUBLISHED' },
-          select: { slug: true, title: true },
-        })
-      : Promise.resolve([]),
-    blog.length
-      ? prisma.blogPost.findMany({
-          where: { slug: { in: blog } },
-          select: { slug: true, title: true },
-        })
-      : Promise.resolve([]),
-  ]);
-
-  const out = new Map<string, string>();
-  for (const r of libraryRows) out.set(`library:${r.slug}`, r.title);
-  for (const r of newsRows) out.set(`news:${r.slug}`, r.title);
-  for (const r of blogRows) out.set(`blog:${r.slug}`, r.title);
-  return out;
-}
-
-/* -------------------------------------------------------------------------- */
 /* Source: media watch/listen history (§5)                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -551,7 +450,7 @@ async function source(label: string, run: () => Promise<ResumeCard[]>): Promise<
   try {
     return await run();
   } catch (error) {
-    // A rail with four of its five sources is still a rail. One table being
+    // A rail with three of its four sources is still a rail. One table being
     // slow or missing a migration must not blank the home feed's top card.
     console.error(`[resume] ${label} source failed:`, (error as Error)?.message);
     return [];
@@ -573,7 +472,6 @@ export async function resumeCards(
 
   const groups = await Promise.all([
     source('game-saves', () => gameSaveCards(userId, take)),
-    source('read-positions', () => readPositionCards(userId, take)),
     source('watch-history', () => watchHistoryCards(userId, take)),
     source('drafts', () => draftCards(userId, take)),
     source('due-decks', () => dueDeckCards(userId, take)),

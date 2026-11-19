@@ -384,7 +384,10 @@ model SavedSearch {
   @@map("saved_search")
 }
 
-/// Cross-device read position for long-form content (B7).
+/// DEPRECATED (2026-11-19) — its only writer (/api/history/position) and reader
+/// (the resume rail's read-position source) are gone. Kept only because the
+/// previous release still reads it during a blue/green swap: drop the table and
+/// this model in the next release (contract). Do not add callers.
 model ReadPosition {
   userId    String
   /// 'library' | 'news' | 'blog' | 'docs'

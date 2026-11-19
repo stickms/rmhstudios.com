@@ -29,7 +29,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { BookOpen, FileText, Gamepad2, History, Layers, PlayCircle, X } from 'lucide-react';
+import { FileText, Gamepad2, History, Layers, PlayCircle, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
@@ -55,7 +55,6 @@ const MAX_ROWS = 3;
 
 const KIND_ICONS: Record<ResumeKind, LucideIcon> = {
   game: Gamepad2,
-  read: BookOpen,
   watch: PlayCircle,
   draft: FileText,
   deck: Layers,
