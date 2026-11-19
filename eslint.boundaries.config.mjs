@@ -37,7 +37,6 @@ export const FEATURE_DIRS =
     'marathon',
     'neon-driftway',
     'nightrail',
-    'pf2ecal',
     'plinko',
     'rebar-rutabaga',
     'rideshare',

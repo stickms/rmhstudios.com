@@ -65,6 +65,8 @@ export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   '/lights-out': '/daily/lights-out',
   '/covid': '/rmh-research/reports/feature-leak',
   '/optimization': '/rmh-research/reports/optimization',
+  // The PF2e table's calendar, removed 2026-11-19; the character creator replaced it.
+  '/pf2ecal': '/rmhcharacters',
   // Small pages folded into the page that already covered them (2026-11-19).
   '/changelog': '/site-history#changes',
   '/breaches': '/security#breaches',

@@ -143,19 +143,6 @@ export const APP_ROUTE_THEME_BG: Record<
     dark: '#0b1241',
     light: '#0b1241',
   },
-  // The PF2e board. Grounds mirror `--pf2e-bg` in
-  // `components/pf2ecal/pf2ecal.css` — true black in dark, iOS systemGrey6 in
-  // light. Without this entry the site painted the document Daylight white
-  // under a page that had gone dark from `prefers-color-scheme`, which is
-  // invisible on a desktop (the page covers the viewport) and glaring on a
-  // phone, where every rubber-band overscroll flashes the gutter.
-  '/pf2ecal': {
-    key: 'pf2ecal-theme',
-    darkFlag: 'dark',
-    dark: '#000000',
-    light: '#f2f2f7',
-    system: true,
-  },
   // The Dunesday marathon planner. Grounds mirror `--ds-ground` in
   // `components/dunesday/dunesday.css` — Aero sky blue by day, deep night blue
   // with the page's Night toggle on. The toggle lives in the page's own stored
@@ -174,9 +161,8 @@ export const APP_ROUTE_THEME_BG: Record<
     // `DunesdayOS` passes to `paintDocumentGround`, and the two are different
     // colours. The entry named the wrong one, so correcting the default alone
     // moved the flash rather than removing it (Δluma 0.738 → 0.671). `DunesdayOS`
-    // now reads these two values instead of repeating them, which is how
-    // `components/pf2ecal/theme.ts` has always done it and why the board never
-    // drifted this way.
+    // now reads these two values instead of repeating them, so the two cannot
+    // drift apart again.
     light: '#1a4f8f',
   },
   // The activity dossier. Grounds mirror `--stk-bg` in
@@ -265,8 +251,8 @@ export function appRouteGround(pathname: string): { bg: string; dark: boolean } 
  * Paint the document ground and everything pinned to it.
  *
  * Extracted so the two callers cannot drift: `Providers` runs it whenever the
- * theme resolves, and a full-screen page that owns its own light/dark (the PF2e
- * board) runs it when the visitor flips that switch — an effect inside the page
+ * theme resolves, and a full-screen page that owns its own light/dark (the
+ * Dunesday planner) runs it when the visitor flips that switch — an effect inside the page
  * cannot wait for `Providers`, whose theme effect deliberately does not re-run
  * on a pathname change.
  *

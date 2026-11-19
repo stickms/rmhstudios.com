@@ -32,16 +32,11 @@ export const THEME_EXCLUDED_ROUTES =
           a.href,
       ),
     // Unlisted full-screen pages that own their palette but are deliberately in
-    // no catalog, so nothing above can derive them. `/pf2ecal` is the PF2e
-    // board: monochrome, its own light/dark, registered in
-    // FULLSCREEN_ROUTE_SEGMENTS for the design gate — and, until it was listed
-    // here, painted a Daylight-white <html> underneath itself.
-    '/pf2ecal',
+    // no catalog, so nothing above can derive them.
     // The live activity dossier: Discord's palette, its own dark/light, and
-    // registered in FULLSCREEN_ROUTE_SEGMENTS for the design gate. Listed here
-    // for the same reason `/pf2ecal` is — without it the document paints a
-    // Daylight-white <html> under a page that has gone dark, which a desktop
-    // hides and every phone overscroll reveals.
+    // registered in FULLSCREEN_ROUTE_SEGMENTS for the design gate. Without this
+    // entry the document paints a Daylight-white <html> under a page that has
+    // gone dark, which a desktop hides and every phone overscroll reveals.
     '/sohumtracker',
     // The games library: a literal Steam palette (flat, `--stm-*` in
     // `components/steam/steam.css`), full page with its own top bar. Every path under

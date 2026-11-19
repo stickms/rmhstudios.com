@@ -89,8 +89,7 @@ export function DunesdayOS() {
   // same map before this effect can run — and when the two disagreed, every first
   // load flashed. They did disagree: this effect painted `#1a4f8f` while the entry
   // named `--ds-ground` (`#bfe6ff`), so the document was pre-painted one blue and
-  // repainted another. `components/pf2ecal/theme.ts` reads the map for exactly
-  // this reason.
+  // repainted another.
   useEffect(() => {
     const ground = APP_ROUTE_THEME_BG['/dunesday'];
     paintDocumentGround(state.night ? ground.dark : ground.light, state.night);

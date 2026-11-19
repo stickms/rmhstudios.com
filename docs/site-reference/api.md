@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1015 endpoints across 198 groups: 110 route files under `app/routes/api` and 905 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1001 endpoints across 197 groups: 110 route files under `app/routes/api` and 891 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1282,7 +1282,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/og`
 
-19 routes.
+18 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1295,7 +1295,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/og/job/:jobId` | `GET` | `lib/og/api/og.job.$jobId.server.ts` |
 | `/api/og/moment/:id` | `GET` | `lib/og/api/og.moment.$id.server.ts` |
 | `/api/og/music/:token` | `GET` | `lib/og/api/og.music.$token.server.ts` |
-| `/api/og/pf2ecal` | `GET` | `lib/og/api/og.pf2ecal.server.ts` |
 | `/api/og/post/:id` | `GET` | `lib/og/api/og.post.$id.server.ts` |
 | `/api/og/post/:id/story` | `GET` | `lib/og/api/og.post.$id.story.server.ts` |
 | `/api/og/profile/:id` | `GET` | `lib/og/api/og.profile.$id.server.ts` |
@@ -1325,26 +1324,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/personas/:id` | `DELETE` `GET` | `lib/personas/api/personas.$id.server.ts` |
 | `/api/personas/:id/chat` | `POST` | `lib/personas/api/personas.$id.chat.server.ts` |
 | `/api/personas/avatar/:filename` | `GET` | `app/routes/api/personas/avatar/$filename.ts` |
-
-## `/api/pf2ecal`
-
-13 routes.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/pf2ecal` | `GET` | `lib/pf2ecal/api/pf2ecal.server.ts` |
-| `/api/pf2ecal/announcements` | `POST` | `lib/pf2ecal/api/pf2ecal.announcements.server.ts` |
-| `/api/pf2ecal/announcements/:id` | `DELETE` `PATCH` | `lib/pf2ecal/api/pf2ecal.announcements.$id.server.ts` |
-| `/api/pf2ecal/ask` | `POST` | `lib/pf2ecal/api/pf2ecal.ask.server.ts` |
-| `/api/pf2ecal/calendar.ics` | `GET` | `lib/pf2ecal/api/pf2ecal.calendar.ics.server.ts` |
-| `/api/pf2ecal/sessions` | `POST` | `lib/pf2ecal/api/pf2ecal.sessions.server.ts` |
-| `/api/pf2ecal/sessions/:id` | `DELETE` `PATCH` | `lib/pf2ecal/api/pf2ecal.sessions.$id.server.ts` |
-| `/api/pf2ecal/sessions/:id/recap` | `GET` `POST` | `lib/pf2ecal/api/pf2ecal.sessions.$id.recap.server.ts` |
-| `/api/pf2ecal/sessions/:id/response` | `DELETE` `PUT` | `lib/pf2ecal/api/pf2ecal.sessions.$id.response.server.ts` |
-| `/api/pf2ecal/sessions/archive` | `GET` | `lib/pf2ecal/api/pf2ecal.sessions.archive.server.ts` |
-| `/api/pf2ecal/sessions/blurbs` | `POST` | `lib/pf2ecal/api/pf2ecal.sessions.blurbs.server.ts` |
-| `/api/pf2ecal/settings` | `GET` `PUT` | `lib/pf2ecal/api/pf2ecal.settings.server.ts` |
-| `/api/pf2ecal/settings/test-webhook` | `POST` | `lib/pf2ecal/api/pf2ecal.settings.test-webhook.server.ts` |
 
 ## `/api/photo-of-the-day`
 

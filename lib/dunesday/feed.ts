@@ -15,7 +15,7 @@ import {
   getZonedParts,
   zonedDateKey,
   zonedTimeToUtc,
-} from '@/lib/pf2ecal/zoned-time';
+} from '@/lib/core/zoned-time';
 import {
   buildPlan,
   daysBetween,

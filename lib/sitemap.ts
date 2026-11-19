@@ -873,11 +873,6 @@ export const EXCLUDED_ROUTES: Record<
     // robots.txt and `noindex, nofollow` in its head.
     '/balatro':
       'auth-gated',
-    // One tabletop group's scheduling board. Unlisted rather than permissioned:
-    // anyone with the link may read it, so keeping it out of the sitemap (and its
-    // own `noindex, nofollow`) is the whole of its obscurity.
-    '/pf2ecal':
-      'noindex',
     '/secret/cursed-logic':
       'noindex',
     '/secret/signal-forge':

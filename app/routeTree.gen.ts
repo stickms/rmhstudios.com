@@ -37,7 +37,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as NightrailRouteImport } from './routes/nightrail'
 import { Route as OfflineRouteImport } from './routes/offline'
-import { Route as Pf2ecalRouteImport } from './routes/pf2ecal'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -635,11 +634,6 @@ const NightrailRoute = NightrailRouteImport.update({
 const OfflineRoute = OfflineRouteImport.update({
   id: '/offline',
   path: '/offline',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Pf2ecalRoute = Pf2ecalRouteImport.update({
-  id: '/pf2ecal',
-  path: '/pf2ecal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRoute = PortalRouteImport.update({
@@ -3007,7 +3001,6 @@ export interface FileRoutesByFullPath {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
-  '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -3491,7 +3484,6 @@ export interface FileRoutesByTo {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
-  '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -3957,7 +3949,6 @@ export interface FileRoutesById {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
-  '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -4449,7 +4440,6 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
-    | '/pf2ecal'
     | '/portal'
     | '/privacy'
     | '/reset-password'
@@ -4933,7 +4923,6 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
-    | '/pf2ecal'
     | '/portal'
     | '/privacy'
     | '/reset-password'
@@ -5398,7 +5387,6 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
-    | '/pf2ecal'
     | '/portal'
     | '/privacy'
     | '/reset-password'
@@ -5889,7 +5877,6 @@ export interface RootRouteChildren {
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   NightrailRoute: typeof NightrailRoute
   OfflineRoute: typeof OfflineRoute
-  Pf2ecalRoute: typeof Pf2ecalRoute
   PortalRoute: typeof PortalRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -6241,13 +6228,6 @@ declare module '@tanstack/react-router' {
       path: '/offline'
       fullPath: '/offline'
       preLoaderRoute: typeof OfflineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pf2ecal': {
-      id: '/pf2ecal'
-      path: '/pf2ecal'
-      fullPath: '/pf2ecal'
-      preLoaderRoute: typeof Pf2ecalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal': {
@@ -10492,7 +10472,6 @@ const rootRouteChildren: RootRouteChildren = {
   NeonDriftwayRoute: NeonDriftwayRoute,
   NightrailRoute: NightrailRoute,
   OfflineRoute: OfflineRoute,
-  Pf2ecalRoute: Pf2ecalRoute,
   PortalRoute: PortalRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,

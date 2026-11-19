@@ -10,7 +10,7 @@
  *
  * `sohumtracker` is registered in FULLSCREEN_ROUTE_SEGMENTS / FULLSCREEN_TIER_DIRS
  * (lib/__tests__/design-consistency.test.ts) for that reason — the same
- * mechanism `/pf2ecal`, the games and the campaign arms use — so this is an
+ * mechanism the games and the campaign arms use — so this is an
  * exemption the gate knows about rather than one it fails to notice. It is also
  * in THEME_EXCLUDED_ROUTES and APP_ROUTE_THEME_BG so <html> is painted from this
  * page's own ground; without that the document stays Daylight white underneath,
@@ -592,7 +592,7 @@
    Buttons in a `role="group"` with `aria-pressed`, NOT `role="tablist"`: these
    switch a rendered range rather than revealing pre-existing tab panels, and
    the site's <Tabs> carries `--site-*` chrome that would look imported
-   on this palette. Same call, and the same shape, as `/pf2ecal`'s control. */
+   on this palette. */
 
 .stk-segmented {
   display: inline-flex;

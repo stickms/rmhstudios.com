@@ -21,7 +21,7 @@
  *      sixteen handlers started in the same pg-boss poll. Sweeps whose exact
  *      minute carries no meaning get a fixed offset inside their own period; the
  *      table says what each one was. Nothing user-visible moves: event
- *      reminders, the daily lineup, PF2e reminders, the weekly digest and the
+ *      reminders, the daily lineup, the weekly digest and the
  *      birthday/wishlist nudges keep their schedules.
  *
  * No Node, Prisma or pg-boss imports: unit-tested without a database.

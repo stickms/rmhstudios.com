@@ -383,8 +383,6 @@ describe('SCHEDULE_OVERRIDES', () => {
         '*/5 * * * *',
       'gifting.exchange-draws':
         '*/5 * * * *',
-      'pf2ecal.reminder':
-        '*/10 * * * *',
       'chat.expire-messages':
         '*/10 * * * *',
       'dunesday.daily-lineup':
@@ -465,7 +463,6 @@ describe('SCHEDULE_OVERRIDES', () => {
     for (const q of [
       'event.reminder',
       'email.weekly-digest',
-      'pf2ecal.reminder',
       'dunesday.daily-lineup',
       'gifting.birthdays',
       'economy.wishlist-alerts',
@@ -504,8 +501,9 @@ describe('SCHEDULE_OVERRIDES', () => {
       peak(
         REGISTERED,
       ),
+      // 15 since the */10 pf2ecal.reminder sweep was retired (2026-11-19).
     ).toBe(
-      16,
+      15,
     );
     expect(
       peak(

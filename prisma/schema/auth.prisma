@@ -434,7 +434,8 @@ model User {
   kaikaiDebtEntries      KaikaiDebtEntry[]       @relation("KaikaiDebtAuthor")
   kaikaiDebtsOwed        KaikaiDebtEntry[]       @relation("KaikaiDebtCreditor")
 
-  // ─── PF2e team calendar (/pf2ecal) ───────────────────────────────────────
+  // ─── PF2e team calendar (/pf2ecal) — DEPRECATED 2026-11-19, page removed;
+  // back-relations of the Pf2e* models, dropped with them next release (contract).
   pf2eSessionsCreated Pf2eSession[]         @relation("Pf2eSessionAuthor")
   pf2eSessionsEdited  Pf2eSession[]         @relation("Pf2eSessionEditor")
   pf2eResponses       Pf2eSessionResponse[]

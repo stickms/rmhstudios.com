@@ -216,10 +216,9 @@ export const PROFILES = {
     reducedMotion: 'reduce',
   },
   'app-light': {
-    why: "The app tier's light grounds. Slice It and the PF2e board persist their own light/dark, and APP_ROUTE_THEME_BG is how the pre-paint script learns which. Stored LIGHT here because light-under-a-dark-default is the direction that flashes.",
+    why: "The app tier's light grounds. Slice It and the activity dossier persist their own light/dark, and APP_ROUTE_THEME_BG is how the pre-paint script learns which. Stored LIGHT here because light-under-a-dark-default is the direction that flashes.",
     localStorage: {
       'slice-it-storage': JSON.stringify({ state: { isDarkMode: false }, version: 0 }),
-      'pf2ecal-theme': JSON.stringify({ state: { dark: false }, version: 0 }),
       'sohumtracker-theme': JSON.stringify({ state: { dark: false }, version: 0 }),
     },
     colorScheme: 'light',

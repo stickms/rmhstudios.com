@@ -1,9 +1,13 @@
-// ─── PF2e team calendar (/pf2ecal) ─────────────────────────────────────────
+// ─── PF2e team calendar (/pf2ecal) — DEPRECATED 2026-11-19 ──────────────────
+// The page and every caller were removed; the tables stay one release so the
+// previous blue/green release can still read them during the swap (expand/
+// contract). Dropped by the next contract migration.
 // A private, unlisted scheduling board for one Pathfinder 2e table. Everything
 // here is table-wide rather than per-owner: the page has no roles, so any
 // signed-in account may create and edit. Authorship is recorded (`createdBy` /
 // `updatedBy`) so the group can see who moved a session, not to gate anything.
 
+/// DEPRECATED (2026-11-19) — /pf2ecal was removed; nothing reads or writes this; drop next release (contract). Do not add callers.
 /// How one player answers one session.
 enum Pf2eAvailability {
   GOING
@@ -11,6 +15,7 @@ enum Pf2eAvailability {
   UNAVAILABLE
 }
 
+/// DEPRECATED (2026-11-19) — /pf2ecal was removed; nothing reads or writes this; drop next release (contract). Do not add callers.
 model Pf2eSession {
   id String @id @default(cuid())
 
@@ -89,6 +94,7 @@ model Pf2eSession {
   @@map("pf2e_session")
 }
 
+/// DEPRECATED (2026-11-19) — /pf2ecal was removed; nothing reads or writes this; drop next release (contract). Do not add callers.
 /// One person's account of what happened in a session.
 ///
 /// Several per session on purpose rather than one shared text field: the GM
@@ -113,6 +119,7 @@ model Pf2eRecap {
   @@map("pf2e_recap")
 }
 
+/// DEPRECATED (2026-11-19) — /pf2ecal was removed; nothing reads or writes this; drop next release (contract). Do not add callers.
 model Pf2eSessionResponse {
   id        String           @id @default(cuid())
   sessionId String
@@ -132,6 +139,7 @@ model Pf2eSessionResponse {
   @@map("pf2e_session_response")
 }
 
+/// DEPRECATED (2026-11-19) — /pf2ecal was removed; nothing reads or writes this; drop next release (contract). Do not add callers.
 model Pf2eAnnouncement {
   id     String  @id @default(cuid())
   body   String  @db.VarChar(2000)
@@ -172,6 +180,7 @@ model Pf2eAnnouncement {
   @@map("pf2e_announcement")
 }
 
+/// DEPRECATED (2026-11-19) — /pf2ecal was removed; nothing reads or writes this; drop next release (contract). Do not add callers.
 /// Board-wide settings. Exactly one row, id `singleton`.
 ///
 /// A single-row table rather than a config file because the group edits this

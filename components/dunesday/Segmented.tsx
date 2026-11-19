@@ -2,9 +2,8 @@
  * The glossy Aero segmented control.
  *
  * A `radiogroup`, because every use on this page picks a value (a mode, an
- * order, a week rhythm) rather than switching which panel is shown — the same
- * call the PF2e board makes for its own segmented control, and the reason this
- * is not `Tabs`: there are no panels, and the page has its own art
+ * order, a week rhythm) rather than switching which panel is shown — the
+ * reason this is not `Tabs`: there are no panels, and the page has its own art
  * direction. Arrow keys move the selection, per the WAI-ARIA radio pattern.
  */
 

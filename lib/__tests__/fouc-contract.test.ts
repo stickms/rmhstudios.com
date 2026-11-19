@@ -356,8 +356,8 @@ describe('FOUC contract: pre-paint parity', () => {
    * fixing the entry's DEFAULT only moved the flash (Δluma 0.738 → 0.671) because
    * the colour itself was wrong.
    *
-   * `components/pf2ecal/theme.ts` has always read the map, and the board never
-   * drifted this way. That is the pattern, so this makes it the rule. Reading
+   * Reading the map is the pattern (`components/dunesday/os/DunesdayOS.tsx` does
+   * it now), so this makes it the rule. Reading
    * `appRouteGround` counts: it is the map plus the stored-preference resolution.
    */
   it('every page that paints the document ground reads its colours from APP_ROUTE_THEME_BG', () => {
@@ -377,7 +377,7 @@ describe('FOUC contract: pre-paint parity', () => {
       offenders.push(
         `${file} calls paintDocumentGround${
           literal ? ` with a colour literal (${literal[0].slice(-7)})` : ''
-        } without reading APP_ROUTE_THEME_BG. The pre-paint script (lib/prepaint/theme.ts) paints from that map before this code runs, so a second copy of the colour here is a flash waiting for the two to disagree. Read the entry instead — see components/pf2ecal/theme.ts.`,
+        } without reading APP_ROUTE_THEME_BG. The pre-paint script (lib/prepaint/theme.ts) paints from that map before this code runs, so a second copy of the colour here is a flash waiting for the two to disagree. Read the entry instead — see components/dunesday/os/DunesdayOS.tsx.`,
       );
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
