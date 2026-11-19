@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 388 routes. 203 render inside the standard site shell (sidebar, nav, context rail); 185 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 389 routes. 203 render inside the standard site shell (sidebar, nav, context rail); 186 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -181,7 +181,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/calendar` | redirects to `/settings/notifications` | public | `app/routes/_site/settings/calendar.tsx` |
 | `/settings/circle` | redirects to `/settings/privacy` | public | `app/routes/_site/settings/circle.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
-| `/settings/layout` | Layout | public | `app/routes/_site/settings/layout.tsx` |
+| `/settings/layout` | Sidebar | public | `app/routes/_site/settings/layout.tsx` |
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |
 | `/settings/privacy` | Privacy & data | public | `app/routes/_site/settings/privacy.tsx` |
 | `/settings/profile` | Profile customization | public | `app/routes/_site/settings/profile.tsx` |
@@ -304,6 +304,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/privacy` | Privacy Policy | public | `app/routes/privacy.tsx` |
 | `/ref/:code` | Join RMH Studios | public | `app/routes/ref.$code.tsx` |
 | `/replays/:id` | — | public | `app/routes/replays.$id.tsx` |
+| `/reset-password` | Reset password | public | `app/routes/reset-password.tsx` |
 | `/rmh-capital` | — | public | `app/routes/rmh-capital/index.tsx` |
 | `/rmh-capital/businesses` | — | public | `app/routes/rmh-capital/businesses.tsx` |
 | `/rmh-capital/careers` | — | public | `app/routes/rmh-capital/careers.tsx` |
