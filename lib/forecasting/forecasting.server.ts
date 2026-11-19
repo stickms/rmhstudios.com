@@ -9,18 +9,29 @@ import { userChipSelect } from '@/lib/user-display';
 import { aiChat, isAITextConfigured } from '@/lib/ai/text.server';
 import { calibrate, type Calibration } from '@/lib/predictions/calibration';
 import { positionForecast, rankSeason, type SeasonScore } from './scoring';
+import { seasonDates } from './season-dates';
 
 export const MAX_SEASON_MARKETS = 30;
 const RESOLVED = ['RESOLVED_YES', 'RESOLVED_NO'] as const;
 
+/**
+ * Prediction seasons are admin-created over a hand-picked set of markets, so
+ * their dates stay custom. Omit `startsAt`/`endsAt` and the season takes the
+ * window of the current season on the site's one season clock
+ * (`lib/seasons/clock.ts`, shared with the battle pass and ranked). Give one
+ * and you must give both.
+ */
 export const createSeasonSchema = z
   .object({
     title: z.string().trim().min(3).max(80),
-    startsAt: z.string().datetime(),
-    endsAt: z.string().datetime(),
+    startsAt: z.string().datetime().optional(),
+    endsAt: z.string().datetime().optional(),
     marketIds: z.array(z.string().min(1).max(40)).min(1).max(MAX_SEASON_MARKETS),
   })
-  .refine((v) => new Date(v.endsAt) > new Date(v.startsAt), {
+  .refine((v) => (v.startsAt === undefined) === (v.endsAt === undefined), {
+    message: 'Give both dates or neither',
+  })
+  .refine((v) => !v.startsAt || !v.endsAt || new Date(v.endsAt) > new Date(v.startsAt), {
     message: 'Season must end after it starts',
   });
 
@@ -38,8 +49,7 @@ export async function createSeason(input: z.infer<typeof createSeasonSchema>) {
   const season = await prisma.predictionSeason.create({
     data: {
       title: input.title,
-      startsAt: new Date(input.startsAt),
-      endsAt: new Date(input.endsAt),
+      ...seasonDates(input),
       markets: { create: ids.map((predictionId) => ({ predictionId })) },
     },
   });

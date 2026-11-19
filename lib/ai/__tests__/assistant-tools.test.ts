@@ -43,7 +43,7 @@ vi.mock(
             findMany:
               async () => [],
           },
-        dailyStreak:
+        streak:
           {
             findUnique:
               async () =>

@@ -22,6 +22,7 @@
 import { clamp } from '@/lib/core/math';
 import { mulberry32 } from '@/lib/core/rng';
 import { SHOP_ITEMS, type Rarity, type ShopItem } from '@/lib/shop/catalog';
+import { seasonBounds, seasonNumberAt } from '@/lib/seasons/clock';
 
 export interface PassReward {
   type:
@@ -54,11 +55,12 @@ export interface Season {
   tiers: PassTier[];
 }
 
-const DAY_MS = 86_400_000;
-/** Start of season 1. Season 1 ended 2026-09-01, exactly 8 weeks later. */
-export const SEASON_EPOCH = Date.UTC(2026, 6, 7);
-export const SEASON_LENGTH_DAYS = 56;
-const SEASON_MS = SEASON_LENGTH_DAYS * DAY_MS;
+/**
+ * The calendar is the site's one season clock (`lib/seasons/clock.ts`), shared
+ * with ranked and forecasting. Season 1 ended 2026-09-01, exactly 8 weeks after
+ * the epoch.
+ */
+export { SEASON_EPOCH, SEASON_LENGTH_DAYS, seasonNumberAt } from '@/lib/seasons/clock';
 
 export const TIER_COUNT = 30;
 /** Unscaled XP for tier 1; each later tier adds `TIER_XP_STEP`. */
@@ -114,12 +116,6 @@ const PREMIUM_ITEM_TIERS: Record<number, Rarity> = {
 
 export const clampXpScale = (scale: number): number =>
   Number.isFinite(scale) ? clamp(scale, MIN_XP_SCALE, MAX_XP_SCALE) : 1;
-
-/** 1-based season number for an instant. Instants before the epoch are season 1. */
-export function seasonNumberAt(at: Date | number = Date.now()): number {
-  const ms = typeof at === 'number' ? at : at.getTime();
-  return Math.max(1, Math.floor((ms - SEASON_EPOCH) / SEASON_MS) + 1);
-}
 
 export const seasonIdFor = (n: number): string => `S${n}`;
 
@@ -183,13 +179,13 @@ function buildTiers(seasonNumber: number, xpScale: number): PassTier[] {
 /** The full definition of season `n` under a given XP scale. */
 export function buildSeason(n: number, xpScale = 1): Season {
   const scale = clampXpScale(xpScale);
-  const start = SEASON_EPOCH + (n - 1) * SEASON_MS;
+  const { start, end } = seasonBounds(n);
   return {
     id: seasonIdFor(n),
     number: n,
     name: `Season ${n}: ${SEASON_NAMES[(n - 1) % SEASON_NAMES.length]}`,
     startsAt: new Date(start).toISOString(),
-    endsAt: new Date(start + SEASON_MS).toISOString(),
+    endsAt: new Date(end).toISOString(),
     premiumPrice: PREMIUM_PRICE,
     xpPerTier: Math.round(BASE_TIER_XP * scale),
     xpScale: scale,

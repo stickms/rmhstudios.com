@@ -470,6 +470,7 @@ model GameThreadPost {
 // One row per user tracking the cross-game daily-challenge streak. Challenge
 // *definitions* and per-challenge progress are code-driven / reuse UserQuest
 // (questId "a.<day>.<game>.<metric>"); only the streak needs storage.
+/// DEPRECATED (2026-11-19) — copied into Streak; nothing reads or writes this; drop next release (contract). Do not add callers.
 model ArcadeStreak {
   userId    String   @id
   current   Int      @default(0)

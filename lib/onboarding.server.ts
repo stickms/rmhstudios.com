@@ -6,6 +6,7 @@
 
 import type { ShopItemKind } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { streakKey } from '@/lib/streaks/kinds';
 import { awardCoins } from '@/lib/coins.server';
 import { createNotification } from '@/lib/notifications.server';
 import { QUESTS } from '@/lib/quests/catalog';
@@ -36,7 +37,7 @@ export async function getOnboardingStatus(userId: string): Promise<OnboardingSta
     prisma.userProfile.findUnique({ where: { userId }, select: { onboardingRewardedAt: true } }),
     prisma.rMHark.count({ where: { userId, deletedAt: null } }),
     prisma.follow.count({ where: { followerId: userId } }),
-    prisma.dailyStreak.findUnique({ where: { userId }, select: { totalCheckIns: true } }),
+    prisma.streak.findUnique({ where: streakKey(userId, 'daily'), select: { totalDays: true } }),
   ]);
   if (!user) return null;
   return {
@@ -46,7 +47,7 @@ export async function getOnboardingStatus(userId: string): Promise<OnboardingSta
       posted: postCount > 0,
       follows: Math.min(followCount, FOLLOW_TARGET),
       followTarget: FOLLOW_TARGET,
-      checkedIn: (streak?.totalCheckIns ?? 0) > 0,
+      checkedIn: (streak?.totalDays ?? 0) > 0,
     },
   };
 }
@@ -217,7 +218,7 @@ export async function getFirstWeekStatus(userId: string): Promise<FirstWeekStatu
       prisma.communityMember.count({ where: { userId } }),
       prisma.dailyPuzzleScore.count({ where: { userId } }),
       prisma.directMessage.count({ where: { senderId: userId } }),
-      prisma.dailyStreak.findUnique({ where: { userId }, select: { totalCheckIns: true } }),
+      prisma.streak.findUnique({ where: streakKey(userId, 'daily'), select: { totalDays: true } }),
     ]);
   if (!user) return null;
 
@@ -236,7 +237,7 @@ export async function getFirstWeekStatus(userId: string): Promise<FirstWeekStatu
     daily_puzzle: puzzles > 0,
     customize_profile: profileCustomized,
     send_dm: dms > 0,
-    daily_checkin: (streak?.totalCheckIns ?? 0) > 0,
+    daily_checkin: (streak?.totalDays ?? 0) > 0,
   };
 
   const ageDays = (Date.now() - user.createdAt.getTime()) / 86_400_000;

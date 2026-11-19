@@ -11,6 +11,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { streakKey } from '@/lib/streaks/kinds';
 import { creditCoins } from '@/lib/economy/ledger.server';
 import { writeQuestProgress } from '@/lib/quests/engine.server';
 import { awardXp } from '@/lib/xp/engine.server';
@@ -96,25 +97,37 @@ function evaluate(
 }
 
 /**
- * Bump the arcade streak, at most once per UTC day. current = previous + 1 when
- * yesterday was the last active day, otherwise resets to 1; best is the running
- * max. No-ops if the streak was already touched today.
+ * Bump the arcade streak (the user's `'arcade'` row of the one `Streak` model),
+ * at most once per UTC day. current = previous + 1 when yesterday was the last
+ * active day, otherwise resets to 1; longest is the running max. No-ops if the
+ * streak was already touched today.
  */
 async function touchArcadeStreak(userId: string): Promise<void> {
   const today = arcadeDayKey();
   const yesterday = arcadeDayKey(new Date(Date.now() - 86_400_000));
-  const existing = await prisma.arcadeStreak.findUnique({
-    where: { userId },
-    select: { current: true, best: true, lastDay: true },
+  const where = streakKey(userId, 'arcade');
+  const existing = await prisma.streak.findUnique({
+    where,
+    select: { current: true, longest: true, lastDay: true },
   });
   if (existing?.lastDay === today) return;
 
   const current = existing?.lastDay === yesterday ? existing.current + 1 : 1;
-  const best = Math.max(existing?.best ?? 0, current);
-  await prisma.arcadeStreak.upsert({
-    where: { userId },
-    create: { userId, current, best, lastDay: today },
-    update: { current, best, lastDay: today },
+  const longest = Math.max(existing?.longest ?? 0, current);
+  const now = new Date();
+  if (!existing) {
+    // A concurrent first touch loses the create race and changes nothing.
+    await prisma.streak.upsert({
+      where,
+      create: { userId, kind: 'arcade', current, longest, lastDay: today, lastCheckIn: now, totalDays: 1 },
+      update: {},
+    });
+    return;
+  }
+  // Guarded on the day so two concurrent completions book the day once.
+  await prisma.streak.updateMany({
+    where: { userId, kind: 'arcade', NOT: { lastDay: today } },
+    data: { current, longest, lastDay: today, lastCheckIn: now, totalDays: { increment: 1 } },
   });
 }
 
@@ -165,9 +178,9 @@ export async function getArcadeState(userId: string): Promise<ArcadeState> {
       where: { userId, periodKey: dayKey, questId: { in: challenges.map((c) => c.id) } },
       select: { questId: true, progress: true, completed: true, claimed: true },
     }),
-    prisma.arcadeStreak.findUnique({
-      where: { userId },
-      select: { current: true, best: true },
+    prisma.streak.findUnique({
+      where: streakKey(userId, 'arcade'),
+      select: { current: true, longest: true },
     }),
   ]);
   const byId = new Map(rows.map((r) => [r.questId, r]));
@@ -183,7 +196,7 @@ export async function getArcadeState(userId: string): Promise<ArcadeState> {
         claimed: row?.claimed ?? false,
       };
     }),
-    streak: { current: streak?.current ?? 0, best: streak?.best ?? 0 },
+    streak: { current: streak?.current ?? 0, best: streak?.longest ?? 0 },
   };
 }
 

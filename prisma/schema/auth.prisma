@@ -125,7 +125,8 @@ model User {
 
   // Engagement: bookmarks, achievements, daily streak
   achievements UserAchievement[]
-  dailyStreak  DailyStreak?
+  dailyStreak  DailyStreak? // DEPRECATED (2026-11-19): use streaks
+  streaks      Streak[]
   postUnlocks  PostUnlock[]
 
   // Communities created + memberships
@@ -334,7 +335,7 @@ model User {
   layoutPreference LayoutPreference?
 
   // ─── Platform expansion (2026-07-19 design) ──────────────────────────────
-  arcadeStreak         ArcadeStreak?
+  arcadeStreak         ArcadeStreak? // DEPRECATED (2026-11-19): use streaks
   creatorTiers         CreatorTier[]
   spacesHosted         Space[]          @relation("SpaceHost")
   spaceMessages        SpaceMessage[]

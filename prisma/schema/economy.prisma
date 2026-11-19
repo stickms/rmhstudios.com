@@ -317,7 +317,40 @@ model CardTradeItem {
   @@map("card_trade_item")
 }
 
+// ─── Streaks ──────────────────────────────────────────────────────────────
+/// Every platform streak, one row per (user, kind). `kind` is a `StreakKind`
+/// from `lib/streaks/kinds.ts`: 'daily' (the check-in streak, lib/streak.server.ts;
+/// the only kind with freezes) and 'arcade' (daily arcade challenges,
+/// lib/game/results.server.ts). Per-app streaks that are a different concept
+/// stay on their app's profile (rmhtype/rmhbox win streaks, doctrine's
+/// activity streak, rmhstudy's study streak — see lib/streaks/kinds.ts).
+/// Replaces DailyStreak and ArcadeStreak (2026-11-19; copied by migration
+/// 20261120000000_streak_unify).
+model Streak {
+  userId       String
+  kind         String    @db.VarChar(16)
+  current      Int       @default(0)
+  longest      Int       @default(0)
+  /// UTC day key "YYYY-MM-DD" of the last day the streak was extended.
+  lastDay      String?   @db.VarChar(10)
+  /// When the streak was last extended (the reminder job's clock).
+  lastCheckIn  DateTime?
+  /// Days the streak was extended, ever.
+  totalDays    Int       @default(0)
+  /// Streak freezes held ('daily' only; bought with coins, lib/streak.server.ts).
+  freezeTokens Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, kind])
+  @@index([kind, lastCheckIn])
+  @@map("streak")
+}
+
 // ─── Daily Streak ─────────────────────────────────────────────────────────
+/// DEPRECATED (2026-11-19) — copied into Streak; nothing reads or writes this; drop next release (contract). Do not add callers.
 model DailyStreak {
   id            String    @id @default(cuid())
   userId        String    @unique
