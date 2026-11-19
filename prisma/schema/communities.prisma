@@ -49,7 +49,6 @@ model Community {
   posts          RMHark[]
   announcements  CommunityAnnouncement[]
   spaces         Space[]
-  events         CommunityEvent[]
   calendarEvents Event[]                 @relation("CommunityEvents")
   communityPages CommunityPage[]
   groupCalls     GroupCall[]
@@ -160,57 +159,6 @@ enum EventVenueKind {
   GAME
   URL
   IRL
-}
-
-/// DEPRECATED (2026-11-19) — copied into Event (same id, owner COMMUNITY/USER); nothing reads or writes this; drop next release (contract). Do not add callers.
-model CommunityEvent {
-  id              String                @id @default(cuid())
-  hostId          String
-  communityId     String? // null = profile-hosted
-  title           String                @db.VarChar(120)
-  description     String                @db.VarChar(2000)
-  startsAt        DateTime
-  endsAt          DateTime?
-  venueKind       EventVenueKind
-  venueRef        String?               @db.VarChar(191) // spaceId / tournamentId / game id / URL (SSRF-guarded)
-  capacity        Int?
-  canceledAt      DateTime?
-  createdAt       DateTime              @default(now())
-  /// P09 K4 — compact repeat rule ('W' weekly, 'M' monthly on the same nth weekday). Null = one-off.
-  recurrence      String?               @db.VarChar(4)
-  /// P09 K4 — last day a repeating event may occur. Null = until cancelled.
-  recurUntil      DateTime?
-  /// P09 K4 — IANA timezone the repeat keeps its wall-clock time in (so a 8pm event stays 8pm across DST).
-  recurTz         String?               @db.VarChar(64)
-  /// P09 K4 — optional host rotation (user ids, in order). Occurrence n is hosted by [n % length].
-  rotatingHostIds String[]              @default([])
-  occurrenceRsvps EventOccurrenceRsvp[]
-
-  host      User        @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
-  community Community?  @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  rsvps     EventRsvp[]
-
-  @@index([communityId, startsAt])
-  @@index([startsAt])
-  @@map("community_event")
-}
-
-/// DEPRECATED (2026-11-19) — copied into Rsvp (occurrenceAt = WHOLE_EVENT); nothing reads or writes this; drop next release (contract). Do not add callers.
-model EventRsvp {
-  id        String   @id @default(cuid())
-  eventId   String
-  userId    String
-  status    String   @db.VarChar(8) // 'going' | 'maybe'
-  createdAt DateTime @default(now())
-  /// P09 K4 — on a repeating event, this RSVP carries over to every occurrence.
-  everyTime Boolean  @default(false)
-
-  event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, userId])
-  @@index([userId, createdAt])
-  @@map("event_rsvp")
 }
 
 // Lists & custom feeds (§3): user-curated lists of accounts, read as their own
@@ -530,26 +478,6 @@ model CommunitySister {
   @@id([communityId, relatedCommunityId])
   @@index([relatedCommunityId])
   @@map("community_sister")
-}
-
-/// K4 — an RSVP to ONE occurrence of a repeating event (an "every time" RSVP
-/// lives on EventRsvp.everyTime instead).
-/// DEPRECATED (2026-11-19) — copied into Rsvp (occurrenceAt = the occurrence); nothing reads or writes this; drop next release (contract). Do not add callers.
-model EventOccurrenceRsvp {
-  id           String   @id @default(cuid())
-  eventId      String
-  userId       String
-  occurrenceAt DateTime
-  status       String   @db.VarChar(8) // 'going' | 'maybe'
-  createdAt    DateTime @default(now())
-
-  event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, userId, occurrenceAt])
-  @@index([eventId, occurrenceAt])
-  @@index([userId, occurrenceAt])
-  @@map("event_occurrence_rsvp")
 }
 
 // ── P02 posts-plus: X4 X5 X8 X11 ──

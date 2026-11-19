@@ -350,25 +350,6 @@ model Streak {
   @@map("streak")
 }
 
-// ─── Daily Streak ─────────────────────────────────────────────────────────
-/// DEPRECATED (2026-11-19) — copied into Streak; nothing reads or writes this; drop next release (contract). Do not add callers.
-model DailyStreak {
-  id            String    @id @default(cuid())
-  userId        String    @unique
-  current       Int       @default(0)
-  longest       Int       @default(0)
-  lastCheckIn   DateTime?
-  lastDateKey   String?   @db.VarChar(10) // YYYY-MM-DD in the user's tz
-  totalCheckIns Int       @default(0)
-  freezeTokens  Int       @default(0) // optional "streak freeze" inventory
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("daily_streak")
-}
-
 // ─── Cosmetics Shop ───────────────────────────────────────────────────────
 // Catalog lives in code (lib/shop/catalog.ts). UserInventory records ownership
 // and which item is currently equipped per slot.

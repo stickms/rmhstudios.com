@@ -466,23 +466,6 @@ model GameThreadPost {
 // in CoinTransaction.
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ─── Arcade Pass (§2) ──────────────────────────────────────────────────────
-// One row per user tracking the cross-game daily-challenge streak. Challenge
-// *definitions* and per-challenge progress are code-driven / reuse UserQuest
-// (questId "a.<day>.<game>.<metric>"); only the streak needs storage.
-/// DEPRECATED (2026-11-19) — copied into Streak; nothing reads or writes this; drop next release (contract). Do not add callers.
-model ArcadeStreak {
-  userId    String   @id
-  current   Int      @default(0)
-  best      Int      @default(0)
-  lastDay   String?  @db.VarChar(10) // UTC day key "2026-07-19"
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("arcade_streak")
-}
-
 // ─── Replays as content (§7) ───────────────────────────────────────────────
 model GameReplay {
   id         String   @id @default(cuid())

@@ -393,27 +393,6 @@ model GameJamRating {
   @@map("game_jam_rating")
 }
 
-/// A weekly game-night rotation (E8). weekday 0=Sunday..6 and startMinute are
-/// UTC. `games` is an ordered list of catalog game ids; each gets
-/// `minutesPerGame` and the list loops until `durationMinutes` is up.
-/// `lobbyCodes` maps gameId -> the live join code the host posts on the night.
-/// DEPRECATED (2026-11-19) — copied into Event (same id, owner PLATFORM, kind 'game-night', weekly in UTC); nothing reads or writes this; drop next release (contract). Do not add callers.
-model GameNight {
-  id              String   @id @default(cuid())
-  title           String   @db.VarChar(80)
-  weekday         Int
-  startMinute     Int
-  durationMinutes Int
-  minutesPerGame  Int
-  games           Json     @default("[]")
-  lobbyCodes      Json     @default("{}")
-  enabled         Boolean  @default(true)
-  createdAt       DateTime @default(now())
-
-  @@index([enabled])
-  @@map("game_night")
-}
-
 /// An unranked friendly challenge (E9), optionally with an Elo-gap handicap.
 /// Entirely separate from RankedChallenge: resolving one never touches EloRating.
 model FriendlyChallenge {
