@@ -21,6 +21,7 @@ import { slowModeEvents } from '@/lib/safety/slow-mode-events';
 import { ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { AdminModerateButton } from '@/components/moderation/moderation-ui';
+import { VoiceRoomBanner } from '@/components/groupcall/VoiceRoomBanner';
 
 interface LiveMessage {
   id: string;
@@ -397,6 +398,14 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
           ))}
         </div>
       </div>
+
+      {status === 'LIVE' && session?.user && (
+        <VoiceRoomBanner
+          origin={initialSpace.communityId ? 'community' : 'profile'}
+          originId={initialSpace.communityId ?? initialSpace.id}
+          className="border-y border-site-border px-4 py-3"
+        />
+      )}
 
       {/* Messages */}
       <div

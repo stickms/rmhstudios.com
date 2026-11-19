@@ -27,7 +27,7 @@ import {
 } from 'vitest';
 
 /** Lower this when you migrate pages. Never raise it. */
-const BASELINE = 213;
+const BASELINE = 212;
 
 const USE_EFFECT =
   /\buseEffect\b/;

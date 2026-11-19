@@ -157,8 +157,8 @@ async function gatherSpace(id: string, since: Date | null): Promise<Gathered> {
   // never wrote a row, so there is genuinely nothing to summarize.
   if (!space.recordChat) return { ok: false, reason: 'unavailable' };
 
-  const rows = await prisma.spaceMessage.findMany({
-    where: { spaceId: id, ...(since ? { createdAt: { gt: since } } : {}) },
+  const rows = await prisma.groupCallMessage.findMany({
+    where: { callId: id, ...(since ? { createdAt: { gt: since } } : {}) },
     orderBy: { createdAt: 'desc' },
     take: MAX_ITEMS,
     select: { body: true, user: { select: { name: true, username: true } } },

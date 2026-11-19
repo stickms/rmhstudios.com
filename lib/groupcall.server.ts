@@ -36,7 +36,7 @@ import { MAX_GROUP_CALL_PARTICIPANTS, type GroupCallOrigin } from '@/lib/groupca
 /* -------------------------------------------------------------------------- */
 
 /** Prisma enum → the lowercase word the wire and the UI use. */
-function wireOrigin(origin: 'ADHOC' | 'COMMUNITY' | 'PARTY'): GroupCallOrigin {
+function wireOrigin(origin: 'ADHOC' | 'COMMUNITY' | 'PARTY' | 'PROFILE'): GroupCallOrigin {
   switch (origin) {
     case 'ADHOC':
       return 'adhoc';
@@ -44,6 +44,8 @@ function wireOrigin(origin: 'ADHOC' | 'COMMUNITY' | 'PARTY'): GroupCallOrigin {
       return 'community';
     case 'PARTY':
       return 'party';
+    case 'PROFILE':
+      return 'profile';
   }
 }
 
@@ -52,9 +54,16 @@ function wireOrigin(origin: 'ADHOC' | 'COMMUNITY' | 'PARTY'): GroupCallOrigin {
  *
  * `communityId` and `partyId` are separate columns because only one of them can
  * be a foreign key (parties have no table); the wire has a single `originId`,
- * so this is the join between the two shapes.
+ * so this is the join between the two shapes. A profile room is its own
+ * origin, so its id is the room's.
  */
-function wireOriginId(row: { communityId: string | null; partyId: string | null }): string | null {
+function wireOriginId(row: {
+  id: string;
+  origin: 'ADHOC' | 'COMMUNITY' | 'PARTY' | 'PROFILE';
+  communityId: string | null;
+  partyId: string | null;
+}): string | null {
+  if (row.origin === 'PROFILE') return row.id;
   return row.communityId ?? row.partyId ?? null;
 }
 
@@ -71,7 +80,7 @@ export interface GroupCallHistoryEntry {
   hostId: string;
   /** True when the viewer opened the room. */
   hosted: boolean;
-  status: 'RINGING' | 'ACTIVE' | 'ENDED' | 'MISSED' | 'DECLINED' | 'FAILED';
+  status: 'RINGING' | 'ACTIVE' | 'ENDED' | 'MISSED' | 'DECLINED' | 'FAILED' | 'SCHEDULED';
   createdAt: Date;
   startedAt: Date | null;
   endedAt: Date | null;
@@ -310,7 +319,15 @@ export async function getActiveCommunityRoom(
   communityId: string,
 ): Promise<ActiveRoomSummary | null> {
   const call = await prisma.groupCall.findFirst({
-    where: { communityId, status: { in: ['ACTIVE', 'RINGING'] }, endedAt: null },
+    where: {
+      communityId,
+      status: { in: ['ACTIVE', 'RINGING'] },
+      endedAt: null,
+      // A live community Space is a room before anyone is in its voice; until
+      // somebody is, the hub has no voice room to join by id, so the pill
+      // offers "Start voice" (which the hub turns into joining that room).
+      OR: [{ title: null }, { participants: { some: { status: 'JOINED' } } }],
+    },
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,

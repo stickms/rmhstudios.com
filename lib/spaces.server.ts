@@ -1,12 +1,22 @@
 /**
- * Live Spaces (§4) — server-side data logic (Phase 1: text + presence, no audio).
+ * Live Spaces (§4) — server-side data logic.
  *
- * A Space is a scheduled or spontaneous live room attached to a community or a
- * creator profile. This module owns the DB-backed lifecycle (create → start →
- * end), the "Live now" reader, and chat-transcript persistence. Live
- * participant/role state (audience, reactions) is ephemeral in the socket
- * handler (`server/socket-server/handlers/spaces.ts`) — same choice the game
- * handlers make.
+ * A Space is a titled live room — scheduled or spontaneous — attached to a
+ * community or a creator profile. Since 2026-11-19 it is not its own table: it
+ * is a `GroupCall` row with a `title` (the one live-room model), so the same row
+ * carries the room's voice roster (`GroupCallParticipant`, written by the
+ * group-call hub) and its text (`GroupCallMessage`). This module owns the
+ * DB-backed lifecycle of the titled room (create → start → end), the "Live now"
+ * reader, and chat-transcript persistence. Live audience/reaction state is
+ * ephemeral in the socket handler (`server/socket-server/handlers/spaces.ts`);
+ * voice runs in `server/socket-server/handlers/group-call.ts`, which adopts the
+ * room's row rather than opening a second one.
+ *
+ * Every read here is scoped to `title: { not: null }`: an untitled row is a
+ * plain voice call (possibly a private ad-hoc ring) and is never a Space.
+ *
+ * The wire keeps the Space vocabulary (`LIVE`, not `ACTIVE`), so the room UI did
+ * not change with the table.
  *
  * Permission model: community-hosted spaces require the host to be a MOD/ADMIN
  * of that community; profile-hosted spaces (communityId null) are open to any
@@ -40,6 +50,9 @@ export class SpaceError extends Error {
   }
 }
 
+/** Rows that are Spaces: titled rooms. */
+const TITLED = { title: { not: null } } as const;
+
 const spaceSelect = {
   id: true,
   hostId: true,
@@ -56,7 +69,14 @@ const spaceSelect = {
   community: { select: { id: true, slug: true, name: true, icon: true, color: true } },
 } as const;
 
-type SpaceRow = Prisma.SpaceGetPayload<{ select: typeof spaceSelect }>;
+type SpaceRow = Prisma.GroupCallGetPayload<{ select: typeof spaceSelect }>;
+
+/** The room's status in the Space vocabulary the wire and the UI speak. */
+function spaceStatus(status: SpaceRow['status']): SpaceView['status'] {
+  if (status === 'SCHEDULED') return 'SCHEDULED';
+  if (status === 'ACTIVE' || status === 'RINGING') return 'LIVE';
+  return 'ENDED';
+}
 
 // Lighter select for transcript authors — resolveUserDisplay only needs
 // name/image/profile, so we skip the cosmetics join.
@@ -81,8 +101,8 @@ function shapeSpace(row: SpaceRow): SpaceView {
     id: row.id,
     hostId: row.hostId,
     communityId: row.communityId,
-    title: row.title,
-    status: row.status,
+    title: row.title ?? '',
+    status: spaceStatus(row.status),
     scheduledAt: row.scheduledAt?.toISOString() ?? null,
     startedAt: row.startedAt?.toISOString() ?? null,
     endedAt: row.endedAt?.toISOString() ?? null,
@@ -117,9 +137,10 @@ export async function createSpace(input: CreateSpaceInput): Promise<SpaceView> {
     }
   }
 
-  const row = await prisma.space.create({
+  const row = await prisma.groupCall.create({
     data: {
       hostId,
+      origin: communityId ? 'COMMUNITY' : 'PROFILE',
       communityId: communityId ?? null,
       title: title.trim().slice(0, 120),
       status: 'SCHEDULED',
@@ -136,20 +157,22 @@ export async function createSpace(input: CreateSpaceInput): Promise<SpaceView> {
 
 /** Flip a SCHEDULED/LIVE space to LIVE (host only). Idempotent for LIVE. */
 export async function startSpace(id: string, hostId: string): Promise<SpaceView> {
-  const existing = await prisma.space.findUnique({
-    where: { id },
+  const existing = await prisma.groupCall.findFirst({
+    where: { id, ...TITLED },
     select: { hostId: true, status: true, startedAt: true },
   });
   if (!existing) throw new SpaceError(404, 'Space not found');
   if (existing.hostId !== hostId) throw new SpaceError(403, 'Only the host can start this Space');
-  if (existing.status === 'ENDED') throw new SpaceError(400, 'This Space has already ended');
+  if (spaceStatus(existing.status) === 'ENDED') {
+    throw new SpaceError(400, 'This Space has already ended');
+  }
 
   // CAS on not-ENDED: an end landing after the check above must not be undone
   // (ENDED → LIVE). `update` with the extended where throws P2025 on a miss.
-  const row = await prisma.space
+  const row = await prisma.groupCall
     .update({
-      where: { id, status: { in: ['SCHEDULED', 'LIVE'] } },
-      data: { status: 'LIVE', startedAt: existing.startedAt ?? new Date() },
+      where: { id, status: { in: ['SCHEDULED', 'ACTIVE'] } },
+      data: { status: 'ACTIVE', startedAt: existing.startedAt ?? new Date() },
       select: spaceSelect,
     })
     .catch((err: unknown) => {
@@ -168,20 +191,22 @@ export async function startSpace(id: string, hostId: string): Promise<SpaceView>
 
 /** End a LIVE/SCHEDULED space (host only). */
 export async function endSpace(id: string, hostId: string): Promise<SpaceView> {
-  const existing = await prisma.space.findUnique({
-    where: { id },
+  const existing = await prisma.groupCall.findFirst({
+    where: { id, ...TITLED },
     select: { hostId: true, status: true },
   });
   if (!existing) throw new SpaceError(404, 'Space not found');
   if (existing.hostId !== hostId) throw new SpaceError(403, 'Only the host can end this Space');
   // Ending twice keeps the first endedAt.
-  if (existing.status === 'ENDED') {
-    const ended = await prisma.space.findUnique({ where: { id }, select: spaceSelect });
+  if (spaceStatus(existing.status) === 'ENDED') {
+    const ended = await prisma.groupCall.findUnique({ where: { id }, select: spaceSelect });
     if (!ended) throw new SpaceError(404, 'Space not found');
     return shapeSpace(ended);
   }
 
-  const row = await prisma.space.update({
+  // Ended over HTTP, the room's voice (if anyone is in it) runs on in the hub
+  // until it empties; the room page ends over the socket, which closes both.
+  const row = await prisma.groupCall.update({
     where: { id },
     data: { status: 'ENDED', endedAt: new Date() },
     select: spaceSelect,
@@ -192,18 +217,45 @@ export async function endSpace(id: string, hostId: string): Promise<SpaceView> {
 }
 
 /**
- * Live spaces, newest-started first — powers the "Live now" rail. Audience
- * count is left null: it is ephemeral in the socket hub (a separate process),
- * so the rail shows a live dot without a DB-derived count.
+ * Everything live right now, newest-opened first — the one "Live now" listing.
+ *
+ * Two kinds of room, one model: titled rooms (Spaces) that are open, and the
+ * untitled voice rooms of PUBLIC communities that have somebody in them. A
+ * private community's voice room is never listed (who is talking where is a
+ * fact about its members), nor is any ad-hoc ring or party room. `voiceCount`
+ * is the number of people in the room's voice right now, from the roster the
+ * hub persists; the text audience stays ephemeral in the hub, so
+ * `audienceCount` is left null.
  */
 export async function listLiveSpaces(limit = 20): Promise<LiveSpaceSummary[]> {
-  const rows = await prisma.space.findMany({
-    where: { status: 'LIVE' },
+  const take = Math.min(Math.max(limit, 1), 50);
+  const rows = await prisma.groupCall.findMany({
+    where: {
+      status: 'ACTIVE',
+      endedAt: null,
+      OR: [
+        TITLED,
+        {
+          title: null,
+          origin: 'COMMUNITY',
+          community: { isPrivate: false },
+          participants: { some: { status: 'JOINED' } },
+        },
+      ],
+    },
     orderBy: { startedAt: 'desc' },
-    take: Math.min(Math.max(limit, 1), 50),
-    select: spaceSelect,
+    take,
+    select: {
+      ...spaceSelect,
+      _count: { select: { participants: { where: { status: 'JOINED' } } } },
+    },
   });
-  return rows.map((row) => ({ ...shapeSpace(row), audienceCount: null }));
+  return rows.map(({ _count, ...row }) => ({
+    ...shapeSpace(row),
+    audienceCount: null,
+    voiceCount: _count.participants,
+    voiceOnly: row.title === null,
+  }));
 }
 
 /**
@@ -211,14 +263,14 @@ export async function listLiveSpaces(limit = 20): Promise<LiveSpaceSummary[]> {
  * persisted chat transcript (oldest first).
  */
 export async function getSpace(id: string): Promise<SpaceView | null> {
-  const row = await prisma.space.findUnique({ where: { id }, select: spaceSelect });
+  const row = await prisma.groupCall.findFirst({ where: { id, ...TITLED }, select: spaceSelect });
   if (!row) return null;
 
   const view = shapeSpace(row);
 
-  if (row.status === 'ENDED' && row.recordChat) {
-    const msgs = await prisma.spaceMessage.findMany({
-      where: { spaceId: id },
+  if (view.status === 'ENDED' && row.recordChat) {
+    const msgs = await prisma.groupCallMessage.findMany({
+      where: { callId: id },
       orderBy: { createdAt: 'asc' },
       take: 1000,
       select: { id: true, body: true, createdAt: true, user: { select: messageUserSelect } },
@@ -243,18 +295,18 @@ export async function postSpaceMessage(input: {
   userId: string;
   body: string;
 }): Promise<SpaceMessageView> {
-  const space = await prisma.space.findUnique({
-    where: { id: input.spaceId },
+  const space = await prisma.groupCall.findFirst({
+    where: { id: input.spaceId, ...TITLED },
     select: { status: true, recordChat: true },
   });
   if (!space) throw new SpaceError(404, 'Space not found');
-  if (space.status !== 'LIVE') throw new SpaceError(400, 'This Space is not live');
+  if (spaceStatus(space.status) !== 'LIVE') throw new SpaceError(400, 'This Space is not live');
 
   const body = input.body.trim().slice(0, 500);
   if (!body) throw new SpaceError(400, 'Message cannot be empty');
 
-  const msg = await prisma.spaceMessage.create({
-    data: { spaceId: input.spaceId, userId: input.userId, body },
+  const msg = await prisma.groupCallMessage.create({
+    data: { callId: input.spaceId, userId: input.userId, body },
     select: { id: true, body: true, createdAt: true, user: { select: messageUserSelect } },
   });
 

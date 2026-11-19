@@ -110,6 +110,8 @@ describe('orphaned group-call reconciliation', () => {
           id: 'active-room',
           status:
             'ACTIVE',
+          title:
+            null,
           participants:
             [
               {
@@ -127,8 +129,31 @@ describe('orphaned group-call reconciliation', () => {
           id: 'ringing-room',
           status:
             'RINGING',
+          title:
+            null,
           participants:
             [],
+        },
+        // A titled live room (a Space) outlives the hub: only its voice seat
+        // is settled, the room itself stays live for its host to end.
+        {
+          id: 'space-room',
+          status:
+            'ACTIVE',
+          title:
+            'Office hours',
+          participants:
+            [
+              {
+                userId:
+                  'guest',
+                joinedAt:
+                  new Date(
+                    Date.now() -
+                      10_000,
+                  ),
+              },
+            ],
         },
       ],
     );
@@ -210,6 +235,7 @@ describe('orphaned group-call reconciliation', () => {
                   in: [
                     'active-room',
                     'ringing-room',
+                    'space-room',
                   ],
                 },
               status:
@@ -263,6 +289,7 @@ describe('orphaned group-call reconciliation', () => {
         {
           where:
             {
+              // Not 'space-room'.
               id: {
                 in: [
                   'active-room',

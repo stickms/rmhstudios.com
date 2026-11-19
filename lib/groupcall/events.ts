@@ -191,20 +191,31 @@ export const GCALL_S2C =
  * - `community` / `party` — an **open voice room** scoped to that community or
  *   party. Nobody is rung; eligible members walk in. The roster is whoever
  *   happens to have joined.
+ * - `profile` — the open voice room of a titled live room (a Space) hosted on a
+ *   person's profile rather than in a community. `originId` is the room's own
+ *   id; anyone signed in whom the host has not blocked walks in while the room
+ *   is live. (A community Space's voice is the community's open room.)
  *
- * Lowercase on the wire; the Prisma enum is `ADHOC | COMMUNITY | PARTY` and
- * `persistedOrigin()` in `lib/groupcall/state.ts` maps between them.
+ * A titled live room (a Space) already has its `GroupCall` row before anyone
+ * speaks; the hub's open room for it ADOPTS that row instead of minting a new
+ * one, so the room's voice roster and its text chat are one row.
+ *
+ * Lowercase on the wire; the Prisma enum is `ADHOC | COMMUNITY | PARTY |
+ * PROFILE` and `persistedOrigin()` in `lib/groupcall/state.ts` maps between
+ * them.
  */
 export type GroupCallOrigin =
   | 'adhoc'
   | 'community'
-  | 'party';
+  | 'party'
+  | 'profile';
 
 export const GROUP_CALL_ORIGINS: readonly GroupCallOrigin[] =
   [
     'adhoc',
     'community',
     'party',
+    'profile',
   ];
 
 export function isGroupCallOrigin(
@@ -221,12 +232,13 @@ export function isGroupCallOrigin(
   );
 }
 
-/** The two origins that produce an open room rather than a ring. */
+/** The origins that produce an open room rather than a ring. */
 export type OpenRoomOrigin =
   Extract<
     GroupCallOrigin,
     | 'community'
     | 'party'
+    | 'profile'
   >;
 
 /**

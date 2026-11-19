@@ -162,6 +162,17 @@ export interface SpaceView {
     | null;
 }
 
-/** A live space as surfaced in the "Live now" rail. */
+/**
+ * A live room as surfaced in the one "Live now" listing. Spaces and community
+ * voice rooms are the same model (`GroupCall`), so both are listed here.
+ */
 export type LiveSpaceSummary =
-  SpaceView;
+  SpaceView & {
+    /** People in the room's voice right now. */
+    voiceCount: number;
+    /**
+     * An untitled community voice room (no Space page): `title` is empty and
+     * the row links to its community, where the voice banner lives.
+     */
+    voiceOnly: boolean;
+  };

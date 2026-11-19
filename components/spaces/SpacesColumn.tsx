@@ -8,12 +8,17 @@
  *
  * NOTE: this is only the directory. The live room lives at `/spaces/$id` and is
  * untouched — the "start a Space" composer still navigates there on create.
+ *
+ * It is the site's one "Live now" listing. A Space and a community voice room
+ * are the same model (one live room, `GroupCall`), so a public community's
+ * voice room with people in it is listed here beside the Spaces; it has no page
+ * of its own and links to its community, where the voice banner is.
  */
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Clock, Plus, Radio, Users } from 'lucide-react';
+import { Clock, Mic, Plus, Radio, Users } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -156,11 +161,20 @@ export function SpacesColumn() {
             {spaces.map((s: LiveSpaceSummary) => (
               <li key={s.id}>
                 <DirectoryItem
-                  to={`/spaces/${s.id}`}
+                  to={
+                    s.voiceOnly && s.community ? `/c/${s.community.slug}` : `/spaces/${s.id}`
+                  }
                   media={
                     <UserAvatar src={s.host.image} alt="" size={56} fallbackName={hostName(s)} />
                   }
-                  title={s.title}
+                  title={
+                    s.voiceOnly
+                      ? t('space-voice-room-title', {
+                          defaultValue: 'Voice room in {{community}}',
+                          community: s.community?.name ?? '',
+                        })
+                      : s.title
+                  }
                   tag={<DirectoryTag>{t('space-live-tag', { defaultValue: 'Live' })}</DirectoryTag>}
                   description={
                     s.community
@@ -176,6 +190,15 @@ export function SpacesColumn() {
                   }
                   meta={
                     <>
+                      {s.voiceCount > 0 && (
+                        <DirectoryFact>
+                          <Mic className="h-3.5 w-3.5" aria-hidden />
+                          {t('space-in-voice', {
+                            count: s.voiceCount,
+                            defaultValue: '{{count}} in voice',
+                          })}
+                        </DirectoryFact>
+                      )}
                       {s.audienceCount != null && (
                         <DirectoryFact>
                           <Users className="h-3.5 w-3.5" aria-hidden />

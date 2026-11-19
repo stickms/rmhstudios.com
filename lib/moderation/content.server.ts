@@ -176,12 +176,17 @@ async function loadTarget(
         : null;
     }
     case 'space': {
+      // A Space is a titled live room (GroupCall, 2026-11-19); an untitled row
+      // is a private voice call and is never reportable as a Space.
       const r =
-        await prisma.space.findUnique(
+        await prisma.groupCall.findFirst(
           {
             where:
               {
                 id,
+                title: {
+                  not: null,
+                },
               },
             select:
               {
@@ -195,7 +200,7 @@ async function loadTarget(
             ownerId:
               r.hostId,
             label:
-              r.title,
+              r.title ?? '',
             removed: false,
           }
         : null;
@@ -535,11 +540,14 @@ async function removeContent(
       );
     case 'space': {
       const space =
-        await prisma.space.findUnique(
+        await prisma.groupCall.findFirst(
           {
             where:
               {
                 id,
+                title: {
+                  not: null,
+                },
               },
             select:
               {
@@ -548,7 +556,9 @@ async function removeContent(
               },
           },
         );
-      await prisma.space.delete(
+      if (!space) return;
+      // Cascades to the room's text and voice roster.
+      await prisma.groupCall.delete(
         {
           where:
             {
@@ -557,8 +567,8 @@ async function removeContent(
         },
       );
       if (
-        space?.status ===
-        'LIVE'
+        space.status ===
+        'ACTIVE'
       )
         void setActivity(
           space.hostId,
@@ -979,11 +989,14 @@ async function editContent(
         null
       )
         return;
-      await prisma.space.update(
+      await prisma.groupCall.updateMany(
         {
           where:
             {
               id,
+              title: {
+                not: null,
+              },
             },
           data: {
             title:

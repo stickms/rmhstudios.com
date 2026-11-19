@@ -245,7 +245,9 @@ function endReasonLabel(
         origin ===
           'community' ||
         origin ===
-          'party'
+          'party' ||
+        origin ===
+          'profile'
       ) {
         return t(
           'ended-cannot-join',
@@ -298,6 +300,14 @@ function originLabel(
         {
           defaultValue:
             'Party voice room',
+        },
+      );
+    case 'profile':
+      return t(
+        'origin-profile',
+        {
+          defaultValue:
+            'Space voice room',
         },
       );
     default:

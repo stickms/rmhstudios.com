@@ -432,6 +432,7 @@ enum SpaceStatus {
   ENDED
 }
 
+/// DEPRECATED (2026-11-19) — copied into GroupCall; nothing reads or writes this; drop next release (contract). Do not add callers.
 model Space {
   id          String      @id @default(cuid())
   hostId      String
@@ -454,6 +455,7 @@ model Space {
   @@map("space")
 }
 
+/// DEPRECATED (2026-11-19) — copied into GroupCallMessage; nothing reads or writes this; drop next release (contract). Do not add callers.
 model SpaceMessage {
   id        String   @id @default(cuid())
   spaceId   String
@@ -624,6 +626,10 @@ enum GroupCallOrigin {
   COMMUNITY
   /// An open voice room scoped to a party. Same admission rule as COMMUNITY.
   PARTY
+  /// A live room hosted on a person's profile rather than in a community (what
+  /// a profile-hosted Space was before 2026-11-19). Open: any signed-in person
+  /// the host has not blocked walks in. The room's own id is its origin id.
+  PROFILE
 }
 
 enum GroupCallStatus {
@@ -642,6 +648,9 @@ enum GroupCallStatus {
   /// Signalling or ICE never completed for anyone — the honest outcome when
   /// TURN is unavailable and the peers are behind symmetric NAT.
   FAILED
+  /// A titled live room (a Space) that is announced but not yet open. Only ever
+  /// set on a row with a `title`; the host opens it, which makes it ACTIVE.
+  SCHEDULED
 }
 
 /// A group voice call: one room, up to MAX_GROUP_CALL_PARTICIPANTS (8) people.
@@ -695,9 +704,25 @@ model GroupCall {
   /// so the mesh cap can be audited after the fact.
   peakParticipants Int       @default(0)
 
+  /// ── The live room (2026-11-19: Space folded in) ──────────────────────────
+  /// One model for "talk now": a room carries its voice roster
+  /// (`participants`) and its text (`messages`). A room with a `title` is what
+  /// the site calls a Space — announced, listed under "Live now", with chat and
+  /// a pinned item — and lives until its host ends it, whoever is or is not in
+  /// voice at the time. A room with no `title` is a plain voice room (ad-hoc
+  /// ring, community or party room) and ends when its voice does.
+  title       String?   @db.VarChar(120)
+  /// When a SCHEDULED titled room says it will open.
+  scheduledAt DateTime?
+  /// { kind: 'post'|'url'|'tube_room', ref } — see `lib/spaces/types.ts`.
+  pinned      Json?
+  /// Whether room text is kept (`messages`) and shown after the room ends.
+  recordChat  Boolean   @default(true)
+
   host         User                   @relation("GroupCallHost", fields: [hostId], references: [id], onDelete: Cascade)
   community    Community?             @relation(fields: [communityId], references: [id], onDelete: SetNull)
   participants GroupCallParticipant[]
+  messages     GroupCallMessage[]
 
   @@index([hostId, createdAt(sort: Desc)])
   @@index([conversationId, createdAt(sort: Desc)])
@@ -707,7 +732,27 @@ model GroupCall {
   /// Backs the janitor sweep that closes rooms orphaned by a hub restart
   /// (WHERE status IN (RINGING, ACTIVE)).
   @@index([status, createdAt(sort: Desc)])
+  /// The "Live now" listing: live rooms, newest opened first.
+  @@index([status, startedAt(sort: Desc)])
   @@map("group_call")
+}
+
+/// One line of a live room's text chat. Written by the socket hub as it is
+/// sent, only when the room's `recordChat` is on; read back as the transcript
+/// once the room has ended. (Was `SpaceMessage` before 2026-11-19; the copied
+/// rows keep their cuid ids; new rows take a time-sortable uuid v7, R0-T7.)
+model GroupCallMessage {
+  id        String   @id @default(uuid(7))
+  callId    String
+  userId    String
+  body      String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  call GroupCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([callId, createdAt])
+  @@map("group_call_message")
 }
 
 enum GroupCallParticipantStatus {

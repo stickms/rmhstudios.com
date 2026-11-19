@@ -1015,7 +1015,8 @@ export function persistedOrigin(
 ):
   | 'ADHOC'
   | 'COMMUNITY'
-  | 'PARTY' {
+  | 'PARTY'
+  | 'PROFILE' {
   switch (
     origin
   ) {
@@ -1025,6 +1026,8 @@ export function persistedOrigin(
       return 'COMMUNITY';
     case 'party':
       return 'PARTY';
+    case 'profile':
+      return 'PROFILE';
   }
 }
 
