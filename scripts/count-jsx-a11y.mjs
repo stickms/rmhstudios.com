@@ -5,11 +5,19 @@
 // Ratchet (redesign audit F8): `node scripts/count-jsx-a11y.mjs --check` fails if the count rises above
 // scripts/jsx-a11y-baseline.json, and tells you to lower the baseline when it falls. One-directional.
 // Takes ~2.5 min cold (cached afterwards), so it is a script, not part of `pnpm test`.
+//
+// The cache lives under `.cache/`, which CI restores between runs (ci-checks.yml), and is keyed on file
+// content rather than mtime, because a fresh checkout gives every file a new mtime and would miss it.
+// jsx-a11y rules look at one file at a time, so a per-file cache cannot hide a new finding.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { ESLint } from 'eslint';
 
 export async function countJsxA11y() {
-  const eslint = new ESLint({ cache: true, cacheLocation: 'node_modules/.cache/eslint-jsx-a11y' });
+  const eslint = new ESLint({
+    cache: true,
+    cacheLocation: '.cache/eslint-a11y/eslintcache',
+    cacheStrategy: 'content',
+  });
   const results = await eslint.lintFiles(['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}']);
   let n = 0;
   for (const r of results) for (const m of r.messages) if (m.ruleId?.startsWith('jsx-a11y/')) n++;
