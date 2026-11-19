@@ -579,10 +579,10 @@ export function PlayLimitsPanel() {
         </div>
         <p className="text-xs text-site-text-muted">
           {t(
-            'play-limits-exclude-hint',
+            'play-limits-exclude-final',
             {
               defaultValue:
-                'Exclusion also hides wagers, predictions and the casino from your navigation and search. It cannot be shortened or undone once set.',
+                'An exclusion cannot be shortened or undone once set.',
             },
           )}
         </p>

@@ -923,5 +923,7 @@
   "membership-current-line": "You are on {{plan}}.",
   "plan-included": "Included in your plan",
   "plan-create-account": "Create an account",
-  "first-week-step-account": "Create your account"
+  "first-week-step-account": "Create your account",
+  "play-limits-exclude-final": "An exclusion cannot be shortened or undone once set.",
+  "presence-vis-my-followers": "People who follow me"
 }

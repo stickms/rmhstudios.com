@@ -251,7 +251,8 @@ export async function getProfile(
 
   return {
     cosmetics,
-    isOnline,
+    // Through the presence audience, like `presence`: the raw flag told every viewer what "Nobody" hid.
+    isOnline: presence.state === 'online' || presence.state === 'in_game',
     presence,
     tipGoal: user.profile?.tipGoal ?? null,
     tipGoalLabel: user.profile?.tipGoalLabel ?? null,
@@ -306,10 +307,10 @@ export async function getProfile(
 const AWAY_WINDOW_MS = 15 * 60 * 1000;
 
 /**
- * The profile's presence dot. Online and away follow the heartbeat, as the "Online now" line did. "In game" is the
- * live activity the game surface set server-side, shown only where the person's presence settings would show it in
- * the Friends rail: to themselves, never with detail off or visibility `nobody`, to followers for `followers`, and to
- * mutuals for `mutuals` (the default). Everyone else sees plain online.
+ * The profile's presence dot. Online and away follow the heartbeat, as the "Online now" line did, and are shown only to
+ * the person's presence audience: themselves, followers for `followers`, mutuals for `mutuals` (the default), nobody
+ * else for `nobody`; everyone outside it sees offline. "In game" is the live activity the game surface set
+ * server-side, shown within that audience unless activity detail is off.
  */
 async function resolveProfilePresence(p: {
   userId: string;
@@ -321,15 +322,13 @@ async function resolveProfilePresence(p: {
   visibility: string;
   detail: boolean;
 }): Promise<ProfilePresence> {
-  if (!p.isOnline) {
-    const since = p.lastSeenAt ? Date.now() - p.lastSeenAt.getTime() : Infinity;
-    return since < AWAY_WINDOW_MS && p.lastSeenAt
-      ? { state: 'away', lastSeenAt: p.lastSeenAt.toISOString() }
-      : { state: 'offline' };
-  }
-  const mayShowActivity = async (): Promise<boolean> => {
+  // "Who can see my presence" (Settings → Privacy) is the audience for the whole thing: the online/away state and
+  // last seen as well as the activity line. It gated only the activity, so "Nobody" still showed everyone the
+  // online dot and when you were last seen (settings audit, 2026-11-19). `followers` is anyone who follows the
+  // profile owner; `mutuals` also needs the owner to follow them back.
+  const inAudience = async (): Promise<boolean> => {
     if (p.isOwnProfile) return true;
-    if (!p.detail || !p.viewerId || p.visibility === 'nobody' || !p.isFollowing) return false;
+    if (!p.viewerId || p.visibility === 'nobody' || !p.isFollowing) return false;
     if (p.visibility === 'followers') return true;
     const back = await prisma.follow.findFirst({
       where: { followerId: p.userId, followingId: p.viewerId },
@@ -337,6 +336,14 @@ async function resolveProfilePresence(p: {
     });
     return back !== null;
   };
+  if (!(await inAudience())) return { state: 'offline' };
+  if (!p.isOnline) {
+    const since = p.lastSeenAt ? Date.now() - p.lastSeenAt.getTime() : Infinity;
+    return since < AWAY_WINDOW_MS && p.lastSeenAt
+      ? { state: 'away', lastSeenAt: p.lastSeenAt.toISOString() }
+      : { state: 'offline' };
+  }
+  const mayShowActivity = async (): Promise<boolean> => p.isOwnProfile || p.detail;
   try {
     const activity = await getActivity(p.userId);
     if (activity?.kind === 'game' && (await mayShowActivity())) {

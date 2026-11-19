@@ -48,8 +48,11 @@ interface LayoutStore {
   sidebar: SidebarPref;
   homeStack: HomeStackItem[];
   hydrated: boolean;
-  /** Read the mirror synchronously, then reconcile with the account row. */
-  hydrate: () => void;
+  /**
+   * Read the mirror synchronously, then reconcile with the account row. Pass
+   * `remote: false` for a signed-out viewer, who has no account row to fetch.
+   */
+  hydrate: (opts?: { remote?: boolean }) => void;
   togglePin: (
     id: string,
   ) => void;
@@ -111,7 +114,7 @@ export const useLayoutStore =
       hydrated: false,
 
       hydrate:
-        () => {
+        (opts) => {
           if (
             get()
               .hydrated
@@ -145,6 +148,7 @@ export const useLayoutStore =
             },
           );
           // Then reconcile with the account (cross-device). 401 for signed-out is fine.
+          if (opts?.remote === false) return;
           api(
             getLayoutPrefsApi,
           )

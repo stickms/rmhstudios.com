@@ -201,7 +201,7 @@ export const PROFILES = {
     reducedMotion: 'reduce',
   },
   comfort: {
-    why: 'Every root-level accessibility knob at once — font scale, compact density, readable font, colour-vision filter, plus retired glass values that must be ignored. Each one is a different <html> attribute the pre-paint script has to set, and any it misses restyles the document after hydration.',
+    why: 'Every root-level accessibility knob at once — font scale, readable font, colour-vision filter, plus retired values that must be ignored (glass, accent, compact density). Each one is a different <html> attribute the pre-paint script has to set, and any it misses restyles the document after hydration.',
     localStorage: {
       'rmh-style': 'graphite',
       'rmh-font-scale': '1250',

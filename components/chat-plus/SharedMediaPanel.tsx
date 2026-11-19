@@ -408,7 +408,7 @@ export function SharedMediaPanel({
                     }
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="flex min-h-12 items-center gap-3 py-2 hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent"
+                    className="row-hover flex min-h-12 items-center gap-3 py-2 focus-visible:ring-2 focus-visible:ring-site-accent"
                   >
                     <Link2
                       className="size-4 shrink-0 text-site-text-muted"

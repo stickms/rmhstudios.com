@@ -67,9 +67,9 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       icon: Palette,
       label:
         'Appearance & accessibility',
-      hint: 'Text size, density, motion, colour vision',
+      hint: 'Theme, text, colour vision, globe motion, data saver and captions',
       keywords:
-        'dark mode light dyslexia font colorblind',
+        'dark mode light night day dyslexia font readable text size spacing colorblind motion still data saver captions subtitles week numbers',
     },
     {
       id: 'themes',
@@ -90,10 +90,10 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
         'personalization',
       icon: SlidersHorizontal,
       label:
-        'Home & sidebar layout',
-      hint: 'Reorder home widgets; pin or hide navigation items',
+        'Sidebar',
+      hint: 'Order or hide the places in the desktop sidebar',
       keywords:
-        'widgets rail nav arrange customize dashboard',
+        'layout nav navigation rail arrange customize reorder hide tabs',
     },
     {
       id: 'notifications',

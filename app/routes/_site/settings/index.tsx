@@ -15,6 +15,7 @@ import { ThemePicker } from '@/components/settings/ThemePicker';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
 import { SearchField } from '@/components/ui/search-field';
+import { LOCALES } from '@/lib/i18n/config';
 import { SETTINGS_DESTINATIONS, filterSettings, type SettingsGroup } from '@/lib/settings-nav';
 
 export const Route = createFileRoute('/_site/settings/')({
@@ -128,8 +129,9 @@ function SettingsPage() {
                       {t('settings-language', { defaultValue: 'Language' })}
                     </span>
                     <span className="settings-row__hint block">
-                      {t('settings-language-hint', {
-                        defaultValue: 'RMH Studios is available in 32 languages.',
+                      {t('settings-language-count', {
+                        count: LOCALES.length,
+                        defaultValue: 'RMH Studios is available in {{count}} languages.',
                       })}
                     </span>
                   </span>

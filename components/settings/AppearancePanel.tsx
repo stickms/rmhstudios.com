@@ -48,10 +48,6 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
     store.setFontScale(value === 1000 ? null : value);
     void persist({ fontScale: value });
   }
-  function setDensity(value: 'cozy' | 'compact') {
-    store.setDensity(value === 'cozy' ? null : value);
-    void persist({ density: value });
-  }
   function setReadableFont(value: boolean) {
     store.setReadableFont(value);
     void persist({ readableFont: value });
@@ -72,7 +68,6 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
 
 
   const activeFontScale = (store.fontScale ?? 1000) as FontScale;
-  const activeDensity = store.density ?? 'cozy';
 
   const fontLabels: Record<FontScale, string> = {
     875: t('text-size-small', { defaultValue: 'Small' }),
@@ -96,16 +91,6 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
           options={FONT_SCALES.map((scale) => ({ value: String(scale), label: fontLabels[scale] }))}
         />
         <SettingsSelectRow
-          label={t('density', { defaultValue: 'Density' })}
-          hint={t('density-desc', { defaultValue: 'Compact tightens spacing.' })}
-          value={activeDensity}
-          onChange={(v) => setDensity(v as 'cozy' | 'compact')}
-          options={[
-            { value: 'cozy', label: t('density-option-cozy', { defaultValue: 'Cozy' }) },
-            { value: 'compact', label: t('density-option-compact', { defaultValue: 'Compact' }) },
-          ]}
-        />
-        <SettingsSelectRow
           label={t('color-vision', { defaultValue: 'Colour vision' })}
           hint={t(`color-vision-${store.colorVision}-hint`, {
             defaultValue: COLOR_VISION_HINTS[store.colorVision],
@@ -119,8 +104,8 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
         />
         <ToggleRow
           label={t('readable-font', { defaultValue: 'Readable font' })}
-          description={t('readable-font-desc', {
-            defaultValue: 'A more legible body font with looser spacing.',
+          description={t('readable-font-hint', {
+            defaultValue: 'A plainer, more legible font for running text.',
           })}
           checked={store.readableFont}
           onChange={setReadableFont}

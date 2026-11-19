@@ -10,6 +10,7 @@ import { SortableList } from '@/components/ui/sortable-list';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { SIDEBAR_HIDEABLE_IDS } from '@/lib/home-widgets';
 import {
+  SECTION_NAV_IDS,
   SIDEBAR_NAV,
   orderNavItems,
   type NavItem,
@@ -18,22 +19,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 
 /**
- * SidebarEditMode (§15) — reorder the top-level sidebar tabs (G2 SortableList,
- * so touch and keyboard reorder with the ▲/▼ buttons) and hide destinations you
- * don't use. Hidden tabs stay reachable via the command palette and their URL
- * (§2.6, never strand a surface). Backed by the cross-device layout store, so it
- * applies identically to the desktop rail and the mobile drawer (one source).
+ * SidebarEditMode (§15) — arrange the desktop sidebar's list of places (G2
+ * SortableList, so touch and keyboard reorder with the ▲/▼ buttons) and hide the
+ * ones you don't use. The section words at the top of the sidebar (Feed, Explore,
+ * Games, Inbox) are fixed and not listed here, and Admin is always last. Hidden
+ * places stay reachable from the globe, `/sections`, search and their URL (§2.6,
+ * never strand a surface). Backed by the cross-device layout store, which
+ * `components/shell/Sidebar.tsx` reads through `sidebarPlaces()`.
  */
 
-// The orderable tabs (Admin is always pinned to the bottom of the rail, so it's
-// deliberately excluded from the editor).
 const ORDERABLE =
   SIDEBAR_NAV.filter(
-    (
-      i,
-    ) =>
-      i.id !==
-      '/admin',
+    (i) => i.id !== '/admin' && !SECTION_NAV_IDS.has(i.id),
   );
 const HIDEABLE =
   new Set<string>(
@@ -141,10 +138,10 @@ export function SidebarEditMode() {
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 text-xs text-site-text-muted">
           {tl(
-            'sidebar-reorder-hint',
+            'sidebar-places-hint',
             {
               defaultValue:
-                'Drag to reorder. Hide a tab with the eye — hidden tabs stay in search.',
+                'Drag to reorder. Hide a place with the eye; it stays on the globe and in search.',
             },
           )}
         </p>
@@ -216,7 +213,7 @@ export function SidebarEditMode() {
             return (
               <div className="flex items-center gap-2">
                 <Icon
-                  className={`h-4 w-4 shrink-0 ${isHidden ? 'text-site-text-muted' : 'text-site-text-muted'}`}
+                  className="h-4 w-4 shrink-0 text-site-text-muted"
                   aria-hidden
                 />
                 <span

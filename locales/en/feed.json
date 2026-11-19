@@ -1874,5 +1874,7 @@
   "achievement-tier-silver": "Silver",
   "achievement-tier-gold": "Gold",
   "achievement-tier-platinum": "Platinum",
-  "send": "Send"
+  "send": "Send",
+  "settings-language-count": "RMH Studios is available in {{count}} languages.",
+  "settings-nav-layout": "Sidebar"
 }

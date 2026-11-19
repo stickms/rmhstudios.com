@@ -338,3 +338,25 @@ export function orderNavItems<
       );
   return out;
 }
+
+/**
+ * The nav items the shell already names as its section words — Feed, Explore,
+ * Games, Inbox (`components/shell/sections.ts`). The desktop sidebar prints them
+ * as the fixed words at its top, so its list of places, `/sections` and the
+ * Layout editor all leave them out of "everything else".
+ */
+export const SECTION_NAV_IDS: ReadonlySet<string> = new Set(['/', '/search', '/messages', '/games']);
+
+/**
+ * The desktop sidebar's list of places with the viewer's saved arrangement
+ * applied (Settings → Layout): every nav item that is not a section word, in
+ * the saved order, minus the hidden ones. The sidebar and the editor both read
+ * this, so what the editor shows is what the sidebar draws.
+ */
+export function sidebarPlaces(order: readonly string[], hidden: readonly string[]): NavItem[] {
+  const hiddenSet = new Set(hidden);
+  return orderNavItems(
+    SIDEBAR_NAV.filter((item) => !SECTION_NAV_IDS.has(item.id)),
+    [...order],
+  ).filter((item) => !hiddenSet.has(item.id));
+}

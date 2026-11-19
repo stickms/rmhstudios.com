@@ -451,7 +451,7 @@ function ConversationRow({
   const unread = conv.unreadCount > 0;
   const isSelf = conv.otherUser.id === currentUserId;
   return (
-    <SpineItem dot={unread} className={cn('hover:bg-site-bg-subtle', className)}>
+    <SpineItem dot={unread} className={cn('row-hover', className)}>
       <Link
         to={`/messages/${conv.id}` as string}
         className="flex items-start gap-3 after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"

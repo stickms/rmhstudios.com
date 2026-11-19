@@ -436,13 +436,10 @@ export function Providers({
       html.style.removeProperty('font-size');
       removeKey(FONT_SCALE_KEY);
     }
-    if (density === 'compact') {
-      html.setAttribute('data-density', 'compact');
-      writeString(DENSITY_KEY, 'compact');
-    } else {
-      html.removeAttribute('data-density');
-      removeKey(DENSITY_KEY);
-    }
+    // Density is retired (settings audit, 2026-11-19): it only tightened the `<Card>` primitive, which Steel pages do
+    // not use. A stored "compact" is cleared here rather than left applied with no control to undo it.
+    html.removeAttribute('data-density');
+    removeKey(DENSITY_KEY);
     html.classList.toggle('readable-font', readableFont);
     if (readableFont) writeString(READABLE_FONT_KEY, '1');
     else removeKey(READABLE_FONT_KEY);

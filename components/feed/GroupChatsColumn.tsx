@@ -224,7 +224,7 @@ export function GroupChatsColumn({
       ) : (
         <Spine>
           {visibleGroups.map((g) => (
-            <SpineItem key={g.id} dot={!!g.unread} className="hover:bg-site-bg-subtle">
+            <SpineItem key={g.id} dot={!!g.unread} className="row-hover">
               <Link
                 to={`/groups/${g.id}` as string}
                 className="block after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"

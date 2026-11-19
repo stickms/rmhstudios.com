@@ -94,8 +94,13 @@ export async function dispatch(input: DispatchInput): Promise<void> {
       !critical &&
       inQuietHours(minutesInTz(new Date(), prefs?.tz), prefs?.quietStart, prefs?.quietEnd);
     const wantPush = ch.push && !quiet;
+    // A critical notice (a sign-in from a new device) always gets its in-app row:
+    // createNotification() already treats it as unmutable, and the session-alert
+    // caller promises the row is "sent either way". Gating it on the System
+    // category's in-app switch dropped it for anyone who had turned System off.
+    const wantRow = ch.inapp || critical;
 
-    if (ch.inapp) {
+    if (wantRow) {
       // In-app row (+ push mirror unless suppressed by channel/quiet-hours).
       await createNotification({
         userId: input.userId,
