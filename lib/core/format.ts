@@ -71,6 +71,44 @@ export function formatDurationMs(
     : `${s}s`;
 }
 
+/**
+ * `Mar 5, 2026`: short month, day and year, in `locale` and `timeZone` (the
+ * runtime's for either when omitted). Throws on an invalid date, like the
+ * `Intl.DateTimeFormat` it wraps; guard first where the value can be missing.
+ */
+export function formatDateShort(
+  value:
+    | Date
+    | string
+    | number,
+  locale?: string,
+  timeZone?: string,
+): string {
+  const options: Intl.DateTimeFormatOptions =
+    {
+      month:
+        'short',
+      day: 'numeric',
+      year: 'numeric',
+    };
+  if (
+    timeZone
+  )
+    options.timeZone =
+      timeZone;
+  return new Intl.DateTimeFormat(
+    locale,
+    options,
+  ).format(
+    value instanceof
+      Date
+      ? value
+      : new Date(
+          value,
+        ),
+  );
+}
+
 /** Compact count (`1.2K`, `3.4M`) via Intl; `locale` defaults to the runtime's. */
 export function formatCompact(
   n: number,

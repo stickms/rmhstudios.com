@@ -6,6 +6,7 @@ import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDateShort } from '@/lib/core/format';
 import { cn } from '@/lib/utils';
 import { PayBadge } from './PayBadge';
 import { RungMeter } from './RungMeter';
@@ -33,22 +34,13 @@ function VerificationBadge({ status }: { status: string | null | undefined }) {
   );
 }
 
-function formatDate(value: unknown) {
-  if (!value) return '—';
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(value as Date | string));
-}
-
 function Deadline({ value }: { value: unknown }) {
   if (!value) return <span className="text-site-text-muted">—</span>;
   const date = new Date(value as Date | string);
   const daysLeft = (date.getTime() - Date.now()) / 86_400_000;
   return (
     <span className={daysLeft >= 0 && daysLeft <= 14 ? 'font-medium text-site-danger' : undefined}>
-      {formatDate(date)}
+      {formatDateShort(date)}
     </span>
   );
 }

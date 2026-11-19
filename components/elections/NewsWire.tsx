@@ -20,7 +20,7 @@ interface NewsResponse {
  * publisher in a new tab. Follows the selected state when there is one.
  */
 export function NewsWire({ state, live }: { state: string | null; live: boolean }) {
-  const { t } = useTranslation('c-elections');
+  const { t, i18n } = useTranslation('c-elections');
   const now = useNow(30_000);
   const [onlyState, setOnlyState] = useState(true);
   const scoped = Boolean(state) && onlyState;
@@ -62,7 +62,7 @@ export function NewsWire({ state, live }: { state: string | null; live: boolean 
             <li key={n.id} className={isNew(n.id) ? ARRIVE : undefined}>
               <a href={n.url} target="_blank" rel="noopener noreferrer nofollow" style={{ textDecoration: 'none' }}>
                 <span className="el-eyebrow" style={{ display: 'block', marginBottom: 2 }}>
-                  {n.source} · {timeAgo(n.publishedAt, now)}
+                  {n.source} · {timeAgo(n.publishedAt, now, i18n.language)}
                 </span>
                 {n.title} <ExternalLink size={12} aria-hidden style={{ verticalAlign: -1 }} />
               </a>

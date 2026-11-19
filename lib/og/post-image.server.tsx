@@ -34,6 +34,7 @@
  */
 
 import React from 'react';
+import { formatDateShort } from '@/lib/core/format';
 import satori from '@/lib/og/satori.server';
 import {
   dedupeOgRender,
@@ -251,18 +252,10 @@ function formatDate(
     )
   )
     return null;
-  return new Intl.DateTimeFormat(
-    'en-US',
-    {
-      month:
-        'short',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone:
-        'UTC',
-    },
-  ).format(
+  return formatDateShort(
     date,
+    'en-US',
+    'UTC',
   );
 }
 

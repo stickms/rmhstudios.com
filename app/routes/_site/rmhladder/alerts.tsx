@@ -9,7 +9,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listAlerts, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
 import { markAlertsRead, type ActionsPrisma } from '@/lib/rmhladder/server/actions';
-import { timeAgo } from '@/components/rmhladder/time';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -48,7 +48,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function AlertsPage() {
-  const { t } = useTranslation('site');
+  const { t, i18n } = useTranslation('site');
   const { alerts } = Route.useLoaderData();
   const router = useRouter();
   const rows = alerts as AnyRow[];
@@ -98,7 +98,7 @@ function AlertsPage() {
                   </div>
                   <span className="font-semibold text-site-text">{title}{company ? ` — ${company}` : ''}</span>
                   {alertText && <span className="text-sm text-site-text-muted">{alertText}</span>}
-                  <span className="text-xs text-site-text-muted">{timeAgo(alert.createdAt as Date)}</span>
+                  <span className="text-xs text-site-text-muted">{formatRelativeTime(alert.createdAt as Date, i18n.language)}</span>
                 </div>
               </>
             );

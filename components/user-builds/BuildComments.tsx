@@ -10,25 +10,12 @@ import type { BuildComment } from '@/lib/user-builds-types';
 import { api } from '@/lib/contract/client';
 import { createBuildCommentApi, listBuildCommentsApi } from '@/lib/user-builds.contract';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { RelativeTime } from '@/components/ui/RelativeTime';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { cn } from '@/lib/utils';
 
 interface BuildCommentsProps {
   buildId: string;
-}
-
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return 'just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
 }
 
 function CommentItem({
@@ -42,7 +29,7 @@ function CommentItem({
   depth?: number;
   className?: string;
 }) {
-  const { t } = useTranslation('c-user-builds');
+  const { t, i18n } = useTranslation('c-user-builds');
   const [showReplies, setShowReplies] = useState(depth === 0);
 
   return (
@@ -60,7 +47,11 @@ function CommentItem({
               <span className="text-sm font-medium text-site-text">
                 {comment.user.name || t('anonymous', { defaultValue: 'Anonymous' })}
               </span>
-              <span className="text-xs text-site-text-muted">{timeAgo(comment.createdAt)}</span>
+              <RelativeTime
+                date={comment.createdAt}
+                format={(at, now) => formatRelativeTime(at, i18n.language, now)}
+                className="text-xs text-site-text-muted"
+              />
             </div>
             <p className="text-sm text-site-text-muted whitespace-pre-wrap break-words">
               {comment.content}

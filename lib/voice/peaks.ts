@@ -18,6 +18,8 @@
  * with {@link normalizePeaks} before it reaches the database.
  */
 
+import { formatClockSeconds } from '../core/format';
+
 /**
  * Bars in a stored waveform.
  *
@@ -326,21 +328,10 @@ export function frameLevel(
 export function formatDuration(
   ms: number,
 ): string {
-  const total =
-    Math.max(
-      0,
-      Math.round(
-        ms /
-          1000,
-      ),
-    );
-  const minutes =
-    Math.floor(
-      total /
-        60,
-    );
-  const seconds =
-    total %
-    60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  return formatClockSeconds(
+    Math.round(
+      ms /
+        1000,
+    ),
+  );
 }

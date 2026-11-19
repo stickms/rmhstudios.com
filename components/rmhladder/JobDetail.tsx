@@ -21,7 +21,7 @@ import {
 import { InterviewReports } from './InterviewReports';
 import { PayBadge } from './PayBadge';
 import { RungMeter } from './RungMeter';
-import { timeAgo } from './time';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import {
   safeExternalUrl,
   sourceDomain,
@@ -47,6 +47,7 @@ export function JobDetail({
 }) {
   const {
     t,
+    i18n,
   } =
     useTranslation(
       'site',
@@ -302,8 +303,9 @@ export function JobDetail({
                     {
                       defaultValue:
                         'Last verified {{time}}',
-                      time: timeAgo(
+                      time: formatRelativeTime(
                         verificationCheckedAt as Date,
+                        i18n.language,
                       ),
                     },
                   )}

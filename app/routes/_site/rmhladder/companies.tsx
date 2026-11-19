@@ -23,7 +23,7 @@ import {
   toggleWatchlist,
   type ActionsPrisma,
 } from '@/lib/rmhladder/server/actions';
-import { timeAgo } from '@/components/rmhladder/time';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { useTranslation } from 'react-i18next';
 import { Minus, Plus, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -98,7 +98,7 @@ const API_PLATFORMS = [
 ] as const;
 
 function CompaniesPage() {
-  const { t } = useTranslation('site');
+  const { t, i18n } = useTranslation('site');
   const { companies, watchlistCompanyIds } = Route.useLoaderData();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: '/rmhladder/companies' });
@@ -373,7 +373,7 @@ function CompaniesPage() {
                           {s.lastSuccessAt
                             ? t('ladder.companies.okAgo', {
                                 defaultValue: 'ok {{ago}}',
-                                ago: timeAgo(s.lastSuccessAt as Date),
+                                ago: formatRelativeTime(s.lastSuccessAt as Date, i18n.language),
                               })
                             : t('ladder.companies.neverSucceeded', { defaultValue: 'never succeeded' })}
                         </li>

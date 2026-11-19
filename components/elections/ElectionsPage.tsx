@@ -245,6 +245,7 @@ export function ElectionsPage({
 }: ElectionsPageProps) {
   const {
     t,
+    i18n,
   } =
     useTranslation(
       'c-elections',
@@ -1336,6 +1337,7 @@ export function ElectionsPage({
                               dataUpdatedAt,
                             ).toISOString(),
                             now,
+                            i18n.language,
                           ),
                         },
                       )}

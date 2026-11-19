@@ -19,6 +19,7 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { SearchField } from '@/components/ui/search-field';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { Tabs } from '@/components/ui/tabs';
@@ -51,88 +52,6 @@ export type VibeGallery =
       | null;
   };
 
-/** Compact relative time ("just now", "3h ago", "2d ago") via Intl. */
-const rtf =
-  new Intl.RelativeTimeFormat(
-    'en',
-    {
-      numeric:
-        'auto',
-      style:
-        'short',
-    },
-  );
-function timeAgo(
-  iso: string,
-): string {
-  const diffMs =
-    Date.parse(
-      iso,
-    ) -
-    Date.now();
-  const sec =
-    Math.round(
-      diffMs /
-        1000,
-    );
-  const abs =
-    Math.abs(
-      sec,
-    );
-  if (
-    abs <
-    60
-  )
-    return 'just now';
-  const units: [
-    Intl.RelativeTimeFormatUnit,
-    number,
-  ][] =
-    [
-      [
-        'year',
-        31536000,
-      ],
-      [
-        'month',
-        2592000,
-      ],
-      [
-        'week',
-        604800,
-      ],
-      [
-        'day',
-        86400,
-      ],
-      [
-        'hour',
-        3600,
-      ],
-      [
-        'minute',
-        60,
-      ],
-    ];
-  for (const [
-    unit,
-    secs,
-  ] of units) {
-    if (
-      abs >=
-      secs
-    )
-      return rtf.format(
-        Math.round(
-          sec /
-            secs,
-        ),
-        unit,
-      );
-  }
-  return 'just now';
-}
-
 export function PagesTab({
   initial,
   fetchGallery,
@@ -149,6 +68,7 @@ export function PagesTab({
 }) {
   const {
     t,
+    i18n,
   } =
     useTranslation(
       'v',
@@ -456,11 +376,13 @@ export function PagesTab({
                         defaultValue:
                           'Widget',
                       },
-                    )} · ${timeAgo(
+                    )} · ${formatRelativeTime(
                       card.createdAt,
+                      i18n.language,
                     )}`
-                  : timeAgo(
+                  : formatRelativeTime(
                       card.createdAt,
+                      i18n.language,
                     ),
               to: `/v/${card.slug}`,
             };
@@ -469,6 +391,7 @@ export function PagesTab({
       [
         items,
         t,
+        i18n.language,
       ],
     );
 

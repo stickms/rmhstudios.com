@@ -16,6 +16,8 @@ import { TechBadges } from './TechBadges';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { formatCount } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { safeHref } from '@/lib/url-safety';
 import {
   runLiquidOpen,
@@ -30,163 +32,13 @@ interface BuildCardProps {
   ) => void;
 }
 
-type TFunc =
-  (
-    key: string,
-    opts: {
-      defaultValue: string;
-      count?: number;
-    },
-  ) => string;
-
-function timeAgo(
-  dateStr: string,
-  t: TFunc,
-): string {
-  const now =
-    Date.now();
-  const then =
-    new Date(
-      dateStr,
-    ).getTime();
-  const seconds =
-    Math.floor(
-      (now -
-        then) /
-        1000,
-    );
-
-  if (
-    seconds <
-    60
-  )
-    return t(
-      'just-now',
-      {
-        defaultValue:
-          'just now',
-      },
-    );
-  const minutes =
-    Math.floor(
-      seconds /
-        60,
-    );
-  if (
-    minutes <
-    60
-  )
-    return t(
-      'minutes-ago',
-      {
-        defaultValue:
-          '{{count}}m ago',
-        count:
-          minutes,
-      },
-    ).replace(
-      '{{count}}',
-      String(
-        minutes,
-      ),
-    );
-  const hours =
-    Math.floor(
-      minutes /
-        60,
-    );
-  if (
-    hours <
-    24
-  )
-    return t(
-      'hours-ago',
-      {
-        defaultValue:
-          '{{count}}h ago',
-        count:
-          hours,
-      },
-    ).replace(
-      '{{count}}',
-      String(
-        hours,
-      ),
-    );
-  const days =
-    Math.floor(
-      hours /
-        24,
-    );
-  if (
-    days <
-    30
-  )
-    return t(
-      'days-ago',
-      {
-        defaultValue:
-          '{{count}}d ago',
-        count:
-          days,
-      },
-    ).replace(
-      '{{count}}',
-      String(
-        days,
-      ),
-    );
-  const months =
-    Math.floor(
-      days /
-        30,
-    );
-  if (
-    months <
-    12
-  )
-    return t(
-      'months-ago',
-      {
-        defaultValue:
-          '{{count}}mo ago',
-        count:
-          months,
-      },
-    ).replace(
-      '{{count}}',
-      String(
-        months,
-      ),
-    );
-  return t(
-    'years-ago',
-    {
-      defaultValue:
-        '{{count}}y ago',
-      count:
-        Math.floor(
-          months /
-            12,
-        ),
-    },
-  ).replace(
-    '{{count}}',
-    String(
-      Math.floor(
-        months /
-          12,
-      ),
-    ),
-  );
-}
-
 export function BuildCard({
   build,
   onLike,
 }: BuildCardProps) {
   const {
     t,
+    i18n,
   } =
     useTranslation(
       'c-user-builds',
@@ -393,13 +245,23 @@ export function BuildCard({
                       },
                     )}
                 </span>
-                <span className="text-xs text-site-text-muted">
-                  {timeAgo(
+                <RelativeTime
+                  date={
                     build.publishedAt ||
-                      build.createdAt,
-                    t,
-                  )}
-                </span>
+                    build.createdAt
+                  }
+                  format={(
+                    at,
+                    now,
+                  ) =>
+                    formatRelativeTime(
+                      at,
+                      i18n.language,
+                      now,
+                    )
+                  }
+                  className="text-xs text-site-text-muted"
+                />
               </div>
 
               {/* Actions */}
