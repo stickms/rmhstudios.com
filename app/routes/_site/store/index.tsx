@@ -18,6 +18,12 @@
  * The balance is the loader's: every purchase invalidates the route, so the
  * header, the grid and the dialogs read one number.
  *
+ * "Cards" and "Products" are the other two player markets, read through the one
+ * Listing model (`lib/listings/`): the cheapest offer per trading card, and the
+ * newest storefront products, as rows that open the thing's own page (the card's
+ * market page, the creator's storefront), where it is bought. They load only
+ * when their tab is open.
+ *
  * (`/store/$userid` is a separate per-creator storefront route.)
  */
 import type { ShopItemKind } from '@/lib/shop/kinds';
@@ -42,32 +48,51 @@ import type { TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { getShopData } from '@/lib/shop/list.server';
 import { browse } from '@/lib/listings/cosmetic.server';
+import { storeCardGroups } from '@/lib/listings/card.server';
+import { latestProducts } from '@/lib/listings/product.server';
 import type { MarketListingView } from '@/lib/market/market.contract';
+import type { MarketGroup } from '@/lib/cards/market-types';
+import {
+  cardGroupToListingView,
+  productToListingView,
+  type LatestProduct,
+} from '@/lib/listings/views';
+import { ListingRows } from '@/components/market/ListingRows';
 
-const STORE_TABS = ['membership', 'shop', 'daily', 'market'] as const;
+const STORE_TABS = ['membership', 'shop', 'daily', 'market', 'cards', 'products'] as const;
 type StoreTab = (typeof STORE_TABS)[number];
 
 // Membership tier + shop catalog + active marketplace, all server-side so every
 // tab is present at first paint / prefetched on intent instead of fetching on
 // mount.
-const fetchStore = createServerFn({ method: 'GET' }).handler(async () => {
-  const session = await getRequestSession();
-  const userId = session?.user?.id ?? null;
-  const [tier, shop, listings] = await Promise.all([
-    userId ? getUserTier(userId) : Promise.resolve('free' as Tier),
-    getShopData(userId),
-    browse({ sort: 'recent', viewerId: userId }),
-  ]);
-  return {
-    tier,
-    shop,
-    listings: listings as unknown as MarketListingView[],
-    viewerId: userId,
-  };
-});
+// The Cards and Products tabs are read only when open (`tab`).
+const fetchStore = createServerFn({ method: 'GET' })
+  .validator((tab: StoreTab | null) => (STORE_TABS.includes(tab as StoreTab) ? tab : null))
+  .handler(async ({ data: tab }) => {
+    const session = await getRequestSession();
+    const userId = session?.user?.id ?? null;
+    const [tier, shop, listings, cards, products] = await Promise.all([
+      userId ? getUserTier(userId) : Promise.resolve('free' as Tier),
+      getShopData(userId),
+      browse({ sort: 'recent', viewerId: userId }),
+      tab === 'cards'
+        ? storeCardGroups(userId)
+        : Promise.resolve([] as (MarketGroup & { cardTitle: string })[]),
+      tab === 'products' ? latestProducts() : Promise.resolve([] as LatestProduct[]),
+    ]);
+    return {
+      tier,
+      shop,
+      listings: listings as unknown as MarketListingView[],
+      cards,
+      products,
+      viewerId: userId,
+    };
+  });
 
 export const Route = createFileRoute('/_site/store/')({
-  loader: () => fetchStore(),
+  loaderDeps: ({ search }) => ({ tab: search.tab ?? null }),
+  loader: ({ deps }) => fetchStore({ data: deps.tab }),
   head: () => ({
     meta: buildMeta({
       title: 'Store',
@@ -104,7 +129,7 @@ export const Route = createFileRoute('/_site/store/')({
 function Store() {
   const { t } = useTranslation('site');
   const { t: te } = useTranslation('f-economy-plus');
-  const { tier: currentTier, shop, listings, viewerId } = Route.useLoaderData();
+  const { tier: currentTier, shop, listings, cards, products, viewerId } = Route.useLoaderData();
   const { tab: requestedTab, feature, kind } = Route.useSearch();
   const tab = requestedTab ?? (feature ? 'membership' : 'shop');
   const navigate = useNavigate();
@@ -119,6 +144,8 @@ function Store() {
   const tabs: TabItem[] = [
     { id: 'shop', label: t('store-tab-shop', { defaultValue: 'Shop' }) },
     { id: 'market', label: t('store-tab-market', { defaultValue: 'Market' }) },
+    { id: 'cards', label: t('store-tab-cards', { defaultValue: 'Cards' }) },
+    { id: 'products', label: t('store-tab-products', { defaultValue: 'Products' }) },
     { id: 'daily', label: te('store-tab-daily', { defaultValue: 'Daily' }) },
     { id: 'membership', label: t('store-tab-membership', { defaultValue: 'Membership' }) },
   ];
@@ -183,6 +210,26 @@ function Store() {
             initialListings={listings}
             viewerId={viewerId}
             coins={shop.signedIn ? shop.coins : null}
+          />
+        </div>
+      )}
+      {tab === 'cards' && (
+        <div role="tabpanel" id="store-panel-cards" aria-labelledby="store-tab-cards">
+          <ListingRows
+            rows={cards.map((g) =>
+              cardGroupToListingView(g, (game) =>
+                t('store-cards-foil', { defaultValue: '{{game}} · Foil', game }),
+              ),
+            )}
+            empty={t('store-cards-empty', { defaultValue: 'No trading cards are for sale right now.' })}
+          />
+        </div>
+      )}
+      {tab === 'products' && (
+        <div role="tabpanel" id="store-panel-products" aria-labelledby="store-tab-products">
+          <ListingRows
+            rows={products.map(productToListingView)}
+            empty={t('store-products-empty', { defaultValue: 'No creator products are on sale right now.' })}
           />
         </div>
       )}

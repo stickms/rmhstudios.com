@@ -267,3 +267,30 @@ export async function listStorefront(
     }),
   };
 }
+
+/** The newest products on sale across every storefront — the Store's Products tab. */
+export async function latestProducts(limit = 40) {
+  const rows = await prisma.listing.findMany({
+    where: { kind: 'PRODUCT', status: 'ACTIVE' },
+    orderBy: { createdAt: 'desc' },
+    take: Math.min(Math.max(limit, 1), 100),
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      priceCoins: true,
+      salesCount: true,
+      createdAt: true,
+      seller: { select: userDisplaySelect },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title ?? '',
+    description: r.description,
+    priceCoins: r.priceCoins,
+    salesCount: r.salesCount,
+    createdAt: r.createdAt.toISOString(),
+    seller: resolveUser(r.seller),
+  }));
+}

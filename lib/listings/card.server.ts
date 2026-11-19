@@ -534,3 +534,11 @@ export async function getCardMarket(viewerId: string | null, card: CardRef): Pro
     summary: summarize(sales),
   };
 }
+
+/** The cheapest offer per card, named, for the Store's Cards tab (`ListingView` rows). */
+export async function storeCardGroups(
+  viewerId: string | null,
+): Promise<(MarketGroup & { cardTitle: string })[]> {
+  const { groups } = await getMarket(viewerId);
+  return groups.map((g) => ({ ...g, cardTitle: cardName(g.gameId, g.cardIndex) }));
+}
