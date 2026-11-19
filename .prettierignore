@@ -3287,7 +3287,6 @@ lib/prepaint/generated.ts
 /lib/wrapped/narrative.server.ts
 /lib/wrapped/wrapped.server.ts
 /lib/xp/engine.server.ts
-/pass.tmp.ts
 /prisma.config.ts
 /public/balatro/engine/love.js
 /public/deeplink.css
