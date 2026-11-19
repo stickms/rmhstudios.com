@@ -3,7 +3,7 @@
 
  * FALLBACK (appendix A of thurston-derivation.md): the Bednorz-Bednorz analytic eversion check.
  *
- *   pnpm exec tsx docs/plans/globe-eversion/bednorz-check.ts   (or thurston-check.ts --bednorz)
+ *   pnpm exec tsx docs/archive/2026/plans/globe-eversion/bednorz-check.ts   (or thurston-check.ts --bednorz)
  *
  * The formulas below are an independent, direct transcription of the note
  * (section numbers in comments). Nothing is imported from the repo. The math

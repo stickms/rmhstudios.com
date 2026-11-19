@@ -927,7 +927,7 @@ will
 be
 recorded
 in
-`docs/liquid-glass-system.md`
+`docs/archive/2026/liquid-glass-system.md`
 as
 work
 proceeds.

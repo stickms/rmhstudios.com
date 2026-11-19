@@ -8,7 +8,7 @@ Sibling plans cover the hazy material and interior motion (01), electric arcs (0
 coverage, accessibility and performance policy, and the gates and docs migration. Where
 this plan needs something from a sibling, it says so under **Dependencies**.
 
-This plan reverses three rules in `docs/liquid-glass-system.md`: "Clicks never push or
+This plan reverses three rules in `docs/archive/2026/liquid-glass-system.md`: "Clicks never push or
 bounce neighbouring surfaces", "text and hit areas remain fixed", and the `hover-css.ts`
 rationale that hosts never move. The rules it keeps are: one delegated document
 service, no per-component pointer loops, no animated root custom properties, no layout
@@ -512,7 +512,7 @@ WP4 → WP6.
 | WP3 | Engine plus shader    | **M** `lib/liquid/glass/engine.ts` (step lattice, wake, `again`), `lib/liquid/glass/shader.ts` (`uJelly`, SDF warp), `lib/liquid/glass/renderer.ts` (uniform upload), `lib/liquid/glass/policy.ts` and its test (margin), `app/liquid-glass.css` (canvas inset). **Coordinate the shader with plan 01, which owns the rest of the shader.** | WP1, bridge API from WP2 (interface only) |
 | WP4 | Cutover               | **D** `hooks/useFluidPress.ts`. **M** `components/Providers.tsx`, `hooks/useFluidDrag.ts` (`jellyTarget`), `components/ui/dialog.tsx` (pass ref), `app/globals.css` (`:active` opacity guard), comment-only edits in `components/ui/button.tsx`, `liquid-tabs.tsx`, `menu.tsx`, `components/shared/AppShell.tsx`, `components/radial/RadialShell.tsx`, `testing/e2e/site-controls.mjs` | WP2        |
 | WP5 | Opt-outs and groups   | Add `data-jelly-scope="off"` to held-control HUD regions in the game components, plus `data-jelly-group` on feed lists, tab strips, button groups and card grids, and `data-jelly-group="off"` on RMHCode/RMHType editors and data tables. Attribute-only edits, one commit per app or game family. | WP1 policy names |
-| WP6 | Docs and verification | **C** `testing/e2e/jelly-soft-body.mjs`. The `docs/liquid-glass-system.md` rewrite of the "Interaction and layout" section and the `hover-css.ts` docblock **belong to plan 04**. This WP supplies the paragraph text.                                       | WP2–WP4    |
+| WP6 | Docs and verification | **C** `testing/e2e/jelly-soft-body.mjs`. The `docs/archive/2026/liquid-glass-system.md` rewrite of the "Interaction and layout" section and the `hover-css.ts` docblock **belong to plan 04**. This WP supplies the paragraph text.                                       | WP2–WP4    |
 
 **Dependencies on sibling plans:**
 

@@ -1854,7 +1854,7 @@ code.)
     `--site-radius`,
     controls
     `--site-radius-sm`.
-    (`docs/plasmatic-jelly-system.md`
+    (`docs/archive/2026/plasmatic-jelly-system.md`
     §10)
 
 **When

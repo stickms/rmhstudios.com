@@ -8912,7 +8912,7 @@ internals.
 > in
 > `CLAUDE.md`
 > and
-> `docs/plasmatic-jelly-system.md`.
+> `docs/archive/2026/plasmatic-jelly-system.md`.
 > They
 > are
 > about

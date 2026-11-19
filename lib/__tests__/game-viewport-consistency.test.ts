@@ -765,7 +765,7 @@ function viewportUnitViolations(): Violation[] {
  * Every catalog game declares its play-field to the jelly material.
  *
  * The site's surfaces are a soft, moving material (Plasmatic Jelly,
- * docs/plans/plasmatic-jelly/00-master-plan.md R16). A game's play-field is the
+ * docs/archive/2026/plans/plasmatic-jelly/00-master-plan.md R16). A game's play-field is the
  * one place it must never reach: a haze, a carrier or an arc over a canvas, a
  * WebGL scene or a DOM board is drawn over the thing the player is reading at
  * sixty frames a second, and a soft-body squish on a board cell moves the

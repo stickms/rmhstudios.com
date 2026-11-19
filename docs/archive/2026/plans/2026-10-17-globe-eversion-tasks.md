@@ -1777,7 +1777,7 @@ module.
    Waves_
    (1995),
    write
-   `docs/plans/globe-eversion/thurston-derivation.md`:
+   `docs/archive/2026/plans/globe-eversion/thurston-derivation.md`:
    the
    explicit
    parametrisation

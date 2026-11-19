@@ -103,7 +103,7 @@ thickness
 ×
 bevel.
 Studied:
-`docs/liquid-glass-system.md`,
+`docs/archive/2026/liquid-glass-system.md`,
 `docs/design-language.md`
 §0/§5.1,
 `lib/liquid/glass/{engine,shader,renderer,policy,color}.ts`,
@@ -2760,7 +2760,7 @@ behind
 - **05
   gates/docs:**
   rewrite
-  `docs/liquid-glass-system.md`
+  `docs/archive/2026/liquid-glass-system.md`
   →
   `docs/jelly-system.md`;
   amend

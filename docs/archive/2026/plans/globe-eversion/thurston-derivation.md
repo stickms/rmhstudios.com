@@ -27,7 +27,7 @@ port).
 [`thurston-check.ts`](./thurston-check.ts)
 —
 run
-`pnpm exec tsx docs/plans/globe-eversion/thurston-check.ts`
+`pnpm exec tsx docs/archive/2026/plans/globe-eversion/thurston-check.ts`
 (≈
 30
 s);
@@ -2735,7 +2735,7 @@ windows
 
 ## 11. Verification output
 
-`pnpm exec tsx docs/plans/globe-eversion/thurston-check.ts`
+`pnpm exec tsx docs/archive/2026/plans/globe-eversion/thurston-check.ts`
 (shared
 4-core
 box):

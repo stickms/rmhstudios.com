@@ -528,7 +528,7 @@ Hand-offs:
     Settings → Appearance" bullet is stale. Replace it with the `Jelly motion` control
     and the 2.2.2 rationale;
   - §5.1's "≤24 visible shader slabs" and blur-tier wording;
-  - the `docs/liquid-glass-system.md` fallback table, which this plan's §3–§5 replace.
+  - the `docs/archive/2026/liquid-glass-system.md` fallback table, which this plan's §3–§5 replace.
 - **Mount point:** keep `hooks/useLiquidInteractions.ts` (no rename). The registry,
   carriers, physics and arcs are lazy-mounted in its one idle callback with one teardown.
 

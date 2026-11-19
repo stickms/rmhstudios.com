@@ -3,8 +3,8 @@
  * Numeric verification of the Thurston corrugation eversion derived in
  * thurston-derivation.md (section numbers in comments refer to that note).
  *
- *   pnpm exec tsx docs/plans/globe-eversion/thurston-check.ts            (about 25 s)
- *   pnpm exec tsx docs/plans/globe-eversion/thurston-check.ts --bednorz  (the fallback, bednorz-check.ts)
+ *   pnpm exec tsx docs/archive/2026/plans/globe-eversion/thurston-check.ts            (about 25 s)
+ *   pnpm exec tsx docs/archive/2026/plans/globe-eversion/thurston-check.ts --bednorz  (the fallback, bednorz-check.ts)
  *
  * The formulas below are the note's, written for speed (typed scratch buffers, no allocation in
  * the hot path), which is also the shape T08 will give `thurston.ts`. Nothing is imported from the

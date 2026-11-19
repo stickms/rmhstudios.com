@@ -1438,7 +1438,7 @@ services
    dead
    code**,
    rewrite
-   `docs/plasmatic-jelly-system.md`
+   `docs/archive/2026/plasmatic-jelly-system.md`
    and
    the
    Plasmatic
@@ -1896,7 +1896,7 @@ message.
    `lib/CLAUDE.md`,
    `components/CLAUDE.md`
    and
-   `docs/plasmatic-jelly-system.md`.
+   `docs/archive/2026/plasmatic-jelly-system.md`.
 3. **Proceed
    without
    a

@@ -120,7 +120,7 @@
 
 **Files:**
 - Delete (once `tsc` shows no importer): the engine's slab/haze/lattice code and worker (`lib/liquid/glass/{engine,renderer,shader,haze-shader,glass-worker,glass.worker}.ts` and their tests), `lib/jelly/{registry,flow-carriers,lattice,lattice-inputs,envelope,room,compose,physics}.ts`, `arcs/{scheduler,field,pairs,rate}.ts`, and `testing/e2e` scripts that exercise only removed services (keep `frame-budget.mjs`).
-- Modify: `docs/plasmatic-jelly-system.md`, root `CLAUDE.md`, `lib/CLAUDE.md`, `components/CLAUDE.md`, `lib/perf-tier.ts` header (re-scope `perf-lite`), `lib/jelly/tiers.ts` (drop budget fields nothing reads), the affected gate tests.
+- Modify: `docs/archive/2026/plasmatic-jelly-system.md`, root `CLAUDE.md`, `lib/CLAUDE.md`, `components/CLAUDE.md`, `lib/perf-tier.ts` header (re-scope `perf-lite`), `lib/jelly/tiers.ts` (drop budget fields nothing reads), the affected gate tests.
 
 - [ ] **Step 1: Delete in dependency order**, running `pnpm exec tsc --noEmit` after each group; a file the globe imports (Global Constraints) must survive.
 - [ ] **Step 2: Remove the stale gate entries** (each backlog list is one-directional: delete the entry in the same commit) and run `pnpm test`.

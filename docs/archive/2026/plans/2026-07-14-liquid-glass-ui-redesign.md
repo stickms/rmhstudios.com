@@ -82,7 +82,7 @@ vision).
 > or
 > superseded
 > by
-> [`docs/plans/2026-07-21-liquid-glass-v2-optics.md`](./2026-07-21-liquid-glass-v2-optics.md)
+> [`docs/archive/2026/plans/2026-07-21-liquid-glass-v2-optics.md`](./2026-07-21-liquid-glass-v2-optics.md)
 > —
 > "Liquid
 > Glass

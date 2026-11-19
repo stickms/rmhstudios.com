@@ -2976,7 +2976,7 @@ normals   = d̂ and −d̂                                    // for contact-glo
   setting
   is
   retired
-  (`docs/liquid-glass-system.md`).
+  (`docs/archive/2026/liquid-glass-system.md`).
   Arcs
   therefore
   do
@@ -3991,7 +3991,7 @@ type JellyEvents =
 | A6 integration    | arcs       | `hooks/useLiquidInteractions.ts` (lazy mount; coordinate if the coverage plan renames it), `lib/eversion/constants.ts` or `lib/liquid/glass/scene.ts` (capture exclusion + test), `useCelebration.ts` (optional `dischargeAt` hook-in, behind the same gates)                                                                       | A3                                               |
 | shared, not owned | soft-body  | `lib/jelly/bus.ts` (event types in §6.3, agreed up front; arcs may land a stub if the bus is late)                                                                                                                                                                                                                                  | —                                                |
 | shared, not owned | coverage   | `lib/jelly/registry.ts`, `lib/jelly/selectors.ts`, `lib/jelly/policy.ts` (off-predicate)                                                                                                                                                                                                                                            | —                                                |
-| docs              | gates/docs | the arcs section of the new jelly system doc (successor of `docs/liquid-glass-system.md`), `docs/design-language.md` motion/effects section, the `lib/CLAUDE.md` pointer                                                                                                                                                            | A3 merged                                        |
+| docs              | gates/docs | the arcs section of the new jelly system doc (successor of `docs/archive/2026/liquid-glass-system.md`), `docs/design-language.md` motion/effects section, the `lib/CLAUDE.md` pointer                                                                                                                                                            | A3 merged                                        |
 
 Rules
 for
@@ -4052,7 +4052,7 @@ passes
 ## 9. Contract changes needing sign-off
 
 1. **Clicks.**
-   `docs/liquid-glass-system.md`
+   `docs/archive/2026/liquid-glass-system.md`
    currently
    says
    "Clicks

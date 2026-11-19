@@ -187,7 +187,7 @@ export const SPRINGS = {
   /** Press-RELEASE. Slower, with a whisper of bounce, so the surface "lets go". */
   release: spring(0.42, 0.18),
   /*
-   * Plasmatic Jelly soft-body springs (docs/plans/plasmatic-jelly/02-soft-body.md §1.2).
+   * Plasmatic Jelly soft-body springs (docs/archive/2026/plans/plasmatic-jelly/02-soft-body.md §1.2).
    * Each is a perceptual period T and a damping ratio ζ, written as `spring(T, 1 − ζ)`.
    * `lib/jelly/soft-policy.ts` samples `jellyPress` / `jellyRelease` into the CSS `--spring-*` curves; the matching `APPLE_SPRING.jelly*` entries keep
    * the declarative tier in step (the "two vocabularies agree" test).
