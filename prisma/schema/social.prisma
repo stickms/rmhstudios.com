@@ -746,7 +746,7 @@ model DailyDigestSnapshot {
 /// object. A4 custom feeds, lists of accounts (was `UserList`), saved universal
 /// searches (was `SavedSearch`) and keyword alerts (was `KeywordAlert`) are all
 /// rows here, told apart by `kind`; every reader goes through
-/// `lib/feeds/feeds.server.ts`. Migration 20261119210000 copied the old rows in
+/// `lib/feeds/feeds.server.ts`. Migration 20261119230000 copied the old rows in
 /// under their old ids, so `/lists/$id` and `/feeds/$id` name the same row.
 model CustomFeed {
   id              String         @id @default(cuid())
