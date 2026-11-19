@@ -47,17 +47,6 @@ export function StoreNav() {
           ),
       },
       {
-        to: '/games/daily',
-        label:
-          t(
-            'steam-store-nav-daily',
-            {
-              defaultValue:
-                'Daily deals',
-            },
-          ),
-      },
-      {
         to: '/games/marketplace',
         label:
           t(

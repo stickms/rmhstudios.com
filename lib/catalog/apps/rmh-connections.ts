@@ -10,10 +10,9 @@ const entry: AppInfo =
       'A daily puzzle about finding the common thread in RMH lore.',
     longDescription:
       'Group sixteen community-themed items into four categories. A daily test of your RMH knowledge, featuring characters, memes, and historical events from across the community.',
-    href: 'https://discord.gg/ZdfhdAKVSf',
-    status:
-      'Discord Game',
-    cta: 'Play on Discord',
+    // The on-site grids (the Connections tab of /daily), not the Discord server.
+    href: '/daily?tab=connections',
+    cta: 'Play',
     isSteam: false,
     gradient:
       'from-[#7289da] to-[#5865F2]',

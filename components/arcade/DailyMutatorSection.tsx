@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Flame, Play } from 'lucide-react';
-import { PageLayout } from '@/components/feed/PageLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -18,7 +17,13 @@ function untilReset(): string {
   return `${h}h ${Math.floor((ms % 3_600_000) / 60_000)}m`;
 }
 
-export function DailyMutatorPage() {
+/**
+ * The Mutator section of `/daily`: one arcade game, one twist and one seed for
+ * everyone each UTC day, with one counted attempt and today's board. It was the
+ * `/daily-mutator` page until the 2026-11-19 consolidation put the daily things
+ * on one page.
+ */
+export function DailyMutatorSection() {
   const { t } = useTranslation('f-arcade');
   const session = useSession();
   const signedIn = !!session.data?.user;
@@ -33,14 +38,13 @@ export function DailyMutatorPage() {
   const arrival = useArrival(failed || (!!data && !!game));
 
   return (
-    <PageLayout
-      title={t('page-title', { defaultValue: 'Daily mutator' })}
-      description={t('page-desc', {
-        defaultValue:
-          'One game, one twist and one seed for everyone, once per UTC day. You get one counted attempt.',
-      })}
-    >
-      <div className="space-y-4 px-4 pt-4 pb-12">
+    <div className="space-y-4 pb-12">
+      <p className="t-body text-site-text-muted">
+        {t('page-desc', {
+          defaultValue:
+            'One game, one twist and one seed for everyone, once per UTC day. You get one counted attempt.',
+        })}
+      </p>
         {failed ? (
           <EmptyState
             className={arrival}
@@ -130,7 +134,6 @@ export function DailyMutatorPage() {
             </section>
           </div>
         )}
-      </div>
-    </PageLayout>
+    </div>
   );
 }

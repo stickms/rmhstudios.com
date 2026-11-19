@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 351 routes. 169 render inside the standard site shell (sidebar, nav, context rail); 182 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 348 routes. 167 render inside the standard site shell (sidebar, nav, context rail); 181 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -69,14 +69,12 @@ Standard pages, rendered inside the sidebar shell.
 | `/changelog` | Changelog | public | `app/routes/_site/changelog.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
 | `/compete` | Compete | public | `app/routes/_site/compete.tsx` |
-| `/connections` | Connections Grids | public | `app/routes/_site/connections.index.tsx` |
 | `/connections/new` | Make a Connections Grid | public | `app/routes/_site/connections.new.tsx` |
 | `/connections/u/:id` | Connections Grid | public | `app/routes/_site/connections.u.$id.tsx` |
 | `/create` | Create | public | `app/routes/_site/create/index.tsx` |
 | `/create/builds` | User Builds | public | `app/routes/_site/create/builds.tsx` |
 | `/create/earnings` | Earnings | public | `app/routes/_site/create/earnings.tsx` |
 | `/create/personas` | AI Personas | public | `app/routes/_site/create/personas.tsx` |
-| `/daily-mutator` | Daily Mutator | public | `app/routes/_site/daily-mutator.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/developer/ai-practices` | Coding with AI \| RMH Studios Developer | public | `app/routes/_site/developer/ai-practices.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
@@ -233,7 +231,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/games/_library/$gameId_.guides.$guideId.tsx` |
 | `/games/communities` | — | public | `app/routes/games/communities.tsx` |
 | `/games/community` | — | public | `app/routes/games/community.tsx` |
-| `/games/daily` | — | public | `app/routes/games/daily.tsx` |
 | `/games/groups/:slug` | — | public | `app/routes/games/groups.$slug.tsx` |
 | `/games/hub/:gameId` | — | public | `app/routes/games/hub.$gameId.index.tsx` |
 | `/games/hub/:gameId/t/:threadId` | — | public | `app/routes/games/hub.$gameId.t.$threadId.tsx` |

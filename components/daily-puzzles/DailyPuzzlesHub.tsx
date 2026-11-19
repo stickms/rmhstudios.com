@@ -13,7 +13,7 @@
  * server first so progress follows them across devices.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -154,7 +154,15 @@ function countAllTimeSolves(): number {
 
 type Filter = 'all' | 'todo' | 'done';
 
-export function DailyPuzzlesHub() {
+export function DailyPuzzlesHub({
+  sectionTabs,
+  panelId,
+}: {
+  /** The `/daily` section strip (Puzzles, Mutator, Connections), drawn at the top of the column. */
+  sectionTabs?: ReactNode;
+  /** The tabpanel id the strip's Puzzles tab controls. */
+  panelId?: string;
+} = {}) {
   const { t } = useTranslation('c-daily-puzzles');
   const navigate = useNavigate();
   const quit = useQuitGame();
@@ -316,6 +324,13 @@ export function DailyPuzzlesHub() {
       <AuroraBackground />
 
       <div className="relative flex flex-col gap-4 sm:gap-6">
+        {sectionTabs}
+        <div
+          className="flex flex-col gap-4 sm:gap-6"
+          {...(panelId
+            ? { role: 'tabpanel', id: panelId, 'aria-labelledby': panelId.replace('-panel-', '-tab-') }
+            : {})}
+        >
         {/* ── Hero ────────────────────────────────────────────────────────── */}
         <header className="flex flex-col items-center gap-2 text-center">
           <motion.p
@@ -503,6 +518,7 @@ export function DailyPuzzlesHub() {
             defaultValue: 'New puzzles every day at midnight EST — same for everyone worldwide.',
           })}
         </p>
+        </div>
       </div>
     </PuzzlePage>
   );

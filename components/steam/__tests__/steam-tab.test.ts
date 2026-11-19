@@ -106,13 +106,6 @@ describe('steamTabFor', () => {
     );
     expect(
       steamTabFor(
-        '/games/daily',
-      ),
-    ).toBe(
-      'store',
-    );
-    expect(
-      steamTabFor(
         '/games/membership',
       ),
     ).toBe(

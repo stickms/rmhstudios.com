@@ -263,5 +263,11 @@
   "wrong-guess-hint": "Wrong — that suspect has been cleared. You have 1 guess left.",
   "wrong-outcast-was": "❌ Wrong — the outcast was {{name}}",
   "youre-the-first": "You're the first!",
-  "quit": "Quit"
+  "quit": "Quit",
+  "daily-tab-puzzles": "Puzzles",
+  "daily-tab-mutator": "Mutator",
+  "daily-tab-connections": "Connections",
+  "daily-sections-label": "Daily sections",
+  "daily-mutator-heading": "Daily mutator",
+  "daily-connections-heading": "Connections grids"
 }

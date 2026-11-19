@@ -437,16 +437,6 @@ export const STATIC_CARDS: StaticCard[] =
         'Member-made Connections grids. Solve them, rate them and catch the daily pick.',
     },
     {
-      path: '/daily-mutator',
-      file: 'daily-mutator',
-      eyebrow:
-        'Daily Mutator',
-      title:
-        'One game, one twist, one seed.',
-      subtitle:
-        'The same twisted arcade run for everyone today, with one counted attempt.',
-    },
-    {
       path: '/quotes',
       file: 'quotes',
       eyebrow:

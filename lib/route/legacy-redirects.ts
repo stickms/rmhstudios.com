@@ -40,6 +40,10 @@ export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   '/tournaments': '/compete?tab=tournaments',
   '/speedruns': '/compete?tab=speedruns',
   '/wager': '/compete?tab=wagers',
+  '/daily-mutator': '/daily?tab=mutator',
+  '/connections': '/daily?tab=connections',
+  // The Steam-framed copy of the Store's daily rotation (it said so itself).
+  '/games/daily': '/store?tab=daily',
   // Settings that became a section of another settings page.
   '/settings/account-status': '/settings/security#account-status',
   '/settings/calendar': '/settings/notifications#calendar',

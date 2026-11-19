@@ -81,7 +81,6 @@ import { Route as SiteChangelogRouteImport } from './routes/_site/changelog'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteCompeteRouteImport } from './routes/_site/compete'
 import { Route as SiteCreateRouteRouteImport } from './routes/_site/create/route'
-import { Route as SiteDailyMutatorRouteImport } from './routes/_site/daily-mutator'
 import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer/route'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteEmojiPacksRouteImport } from './routes/_site/emoji-packs'
@@ -135,7 +134,6 @@ import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
 import { Route as GamesLibraryRouteImport } from './routes/games/_library'
 import { Route as GamesCommunitiesRouteImport } from './routes/games/communities'
 import { Route as GamesCommunityRouteImport } from './routes/games/community'
-import { Route as GamesDailyRouteImport } from './routes/games/daily'
 import { Route as GamesInventoryRouteImport } from './routes/games/inventory'
 import { Route as GamesMarketplaceRouteImport } from './routes/games/marketplace'
 import { Route as GamesMembershipRouteImport } from './routes/games/membership'
@@ -242,7 +240,6 @@ import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteBlogSlugRouteImport } from './routes/_site/blog/$slug'
 import { Route as SiteBuildsSlugRouteImport } from './routes/_site/builds/$slug'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
-import { Route as SiteConnectionsIndexRouteImport } from './routes/_site/connections.index'
 import { Route as SiteConnectionsNewRouteImport } from './routes/_site/connections.new'
 import { Route as SiteCreateIndexRouteImport } from './routes/_site/create/index'
 import { Route as SiteCreateBuildsRouteImport } from './routes/_site/create/builds'
@@ -865,11 +862,6 @@ const SiteCreateRouteRoute = SiteCreateRouteRouteImport.update({
   path: '/create',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteDailyMutatorRoute = SiteDailyMutatorRouteImport.update({
-  id: '/daily-mutator',
-  path: '/daily-mutator',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteDeveloperRouteRoute = SiteDeveloperRouteRouteImport.update({
   id: '/developer',
   path: '/developer',
@@ -1132,11 +1124,6 @@ const GamesCommunitiesRoute = GamesCommunitiesRouteImport.update({
 const GamesCommunityRoute = GamesCommunityRouteImport.update({
   id: '/community',
   path: '/community',
-  getParentRoute: () => GamesRoute,
-} as any)
-const GamesDailyRoute = GamesDailyRouteImport.update({
-  id: '/daily',
-  path: '/daily',
   getParentRoute: () => GamesRoute,
 } as any)
 const GamesInventoryRoute = GamesInventoryRouteImport.update({
@@ -1669,11 +1656,6 @@ const SiteBuildsSlugRoute = SiteBuildsSlugRouteImport.update({
 const SiteCSlugRoute = SiteCSlugRouteImport.update({
   id: '/c/$slug',
   path: '/c/$slug',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteConnectionsIndexRoute = SiteConnectionsIndexRouteImport.update({
-  id: '/connections/',
-  path: '/connections/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteConnectionsNewRoute = SiteConnectionsNewRouteImport.update({
@@ -3087,7 +3069,6 @@ export interface FileRoutesByFullPath {
   '/changelog': typeof SiteChangelogRoute
   '/communities': typeof SiteCommunitiesRoute
   '/compete': typeof SiteCompeteRoute
-  '/daily-mutator': typeof SiteDailyMutatorRoute
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
   '/explore': typeof SiteExploreRoute
@@ -3136,7 +3117,6 @@ export interface FileRoutesByFullPath {
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
-  '/games/daily': typeof GamesDailyRoute
   '/games/inventory': typeof GamesInventoryRoute
   '/games/marketplace': typeof GamesMarketplaceRoute
   '/games/membership': typeof GamesMembershipRoute
@@ -3387,7 +3367,6 @@ export interface FileRoutesByFullPath {
   '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin/': typeof SiteAdminIndexRoute
-  '/connections/': typeof SiteConnectionsIndexRoute
   '/create/': typeof SiteCreateIndexRoute
   '/developer/': typeof SiteDeveloperIndexRoute
   '/exchange/': typeof SiteExchangeIndexRoute
@@ -3558,7 +3537,6 @@ export interface FileRoutesByTo {
   '/changelog': typeof SiteChangelogRoute
   '/communities': typeof SiteCommunitiesRoute
   '/compete': typeof SiteCompeteRoute
-  '/daily-mutator': typeof SiteDailyMutatorRoute
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
   '/explore': typeof SiteExploreRoute
@@ -3604,7 +3582,6 @@ export interface FileRoutesByTo {
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
-  '/games/daily': typeof GamesDailyRoute
   '/games/inventory': typeof GamesInventoryRoute
   '/games/marketplace': typeof GamesMarketplaceRoute
   '/games/membership': typeof GamesMembershipRoute
@@ -3855,7 +3832,6 @@ export interface FileRoutesByTo {
   '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin': typeof SiteAdminIndexRoute
-  '/connections': typeof SiteConnectionsIndexRoute
   '/create': typeof SiteCreateIndexRoute
   '/developer': typeof SiteDeveloperIndexRoute
   '/exchange': typeof SiteExchangeIndexRoute
@@ -4049,7 +4025,6 @@ export interface FileRoutesById {
   '/_site/changelog': typeof SiteChangelogRoute
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/compete': typeof SiteCompeteRoute
-  '/_site/daily-mutator': typeof SiteDailyMutatorRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/emoji-packs': typeof SiteEmojiPacksRoute
   '/_site/explore': typeof SiteExploreRoute
@@ -4099,7 +4074,6 @@ export interface FileRoutesById {
   '/games/_library': typeof GamesLibraryRouteWithChildren
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
-  '/games/daily': typeof GamesDailyRoute
   '/games/inventory': typeof GamesInventoryRoute
   '/games/marketplace': typeof GamesMarketplaceRoute
   '/games/membership': typeof GamesMembershipRoute
@@ -4351,7 +4325,6 @@ export interface FileRoutesById {
   '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
-  '/_site/connections/': typeof SiteConnectionsIndexRoute
   '/_site/create/': typeof SiteCreateIndexRoute
   '/_site/developer/': typeof SiteDeveloperIndexRoute
   '/_site/exchange/': typeof SiteExchangeIndexRoute
@@ -4547,7 +4520,6 @@ export interface FileRouteTypes {
     | '/changelog'
     | '/communities'
     | '/compete'
-    | '/daily-mutator'
     | '/drafts'
     | '/emoji-packs'
     | '/explore'
@@ -4596,7 +4568,6 @@ export interface FileRouteTypes {
     | '/discord/rmhbox'
     | '/games/communities'
     | '/games/community'
-    | '/games/daily'
     | '/games/inventory'
     | '/games/marketplace'
     | '/games/membership'
@@ -4847,7 +4818,6 @@ export interface FileRouteTypes {
     | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/admin/'
-    | '/connections/'
     | '/create/'
     | '/developer/'
     | '/exchange/'
@@ -5018,7 +4988,6 @@ export interface FileRouteTypes {
     | '/changelog'
     | '/communities'
     | '/compete'
-    | '/daily-mutator'
     | '/drafts'
     | '/emoji-packs'
     | '/explore'
@@ -5064,7 +5033,6 @@ export interface FileRouteTypes {
     | '/discord/rmhbox'
     | '/games/communities'
     | '/games/community'
-    | '/games/daily'
     | '/games/inventory'
     | '/games/marketplace'
     | '/games/membership'
@@ -5315,7 +5283,6 @@ export interface FileRouteTypes {
     | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/admin'
-    | '/connections'
     | '/create'
     | '/developer'
     | '/exchange'
@@ -5508,7 +5475,6 @@ export interface FileRouteTypes {
     | '/_site/changelog'
     | '/_site/communities'
     | '/_site/compete'
-    | '/_site/daily-mutator'
     | '/_site/drafts'
     | '/_site/emoji-packs'
     | '/_site/explore'
@@ -5558,7 +5524,6 @@ export interface FileRouteTypes {
     | '/games/_library'
     | '/games/communities'
     | '/games/community'
-    | '/games/daily'
     | '/games/inventory'
     | '/games/marketplace'
     | '/games/membership'
@@ -5810,7 +5775,6 @@ export interface FileRouteTypes {
     | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/_site/admin/'
-    | '/_site/connections/'
     | '/_site/create/'
     | '/_site/developer/'
     | '/_site/exchange/'
@@ -6623,13 +6587,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteCreateRouteRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/daily-mutator': {
-      id: '/_site/daily-mutator'
-      path: '/daily-mutator'
-      fullPath: '/daily-mutator'
-      preLoaderRoute: typeof SiteDailyMutatorRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/developer': {
       id: '/_site/developer'
       path: '/developer'
@@ -6999,13 +6956,6 @@ declare module '@tanstack/react-router' {
       path: '/community'
       fullPath: '/games/community'
       preLoaderRoute: typeof GamesCommunityRouteImport
-      parentRoute: typeof GamesRoute
-    }
-    '/games/daily': {
-      id: '/games/daily'
-      path: '/daily'
-      fullPath: '/games/daily'
-      preLoaderRoute: typeof GamesDailyRouteImport
       parentRoute: typeof GamesRoute
     }
     '/games/inventory': {
@@ -7748,13 +7698,6 @@ declare module '@tanstack/react-router' {
       path: '/c/$slug'
       fullPath: '/c/$slug'
       preLoaderRoute: typeof SiteCSlugRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/connections/': {
-      id: '/_site/connections/'
-      path: '/connections'
-      fullPath: '/connections/'
-      preLoaderRoute: typeof SiteConnectionsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/connections/new': {
@@ -9765,7 +9708,6 @@ interface SiteRouteChildren {
   SiteChangelogRoute: typeof SiteChangelogRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteCompeteRoute: typeof SiteCompeteRoute
-  SiteDailyMutatorRoute: typeof SiteDailyMutatorRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteEmojiPacksRoute: typeof SiteEmojiPacksRoute
   SiteExploreRoute: typeof SiteExploreRoute
@@ -9845,7 +9787,6 @@ interface SiteRouteChildren {
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteWagerIdRoute: typeof SiteWagerIdRoute
   SiteWhenIdRoute: typeof SiteWhenIdRoute
-  SiteConnectionsIndexRoute: typeof SiteConnectionsIndexRoute
   SiteExchangeIndexRoute: typeof SiteExchangeIndexRoute
   SiteFeedsIndexRoute: typeof SiteFeedsIndexRoute
   SiteGroupsIndexRoute: typeof SiteGroupsIndexRoute
@@ -9885,7 +9826,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteChangelogRoute: SiteChangelogRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteCompeteRoute: SiteCompeteRoute,
-  SiteDailyMutatorRoute: SiteDailyMutatorRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteEmojiPacksRoute: SiteEmojiPacksRoute,
   SiteExploreRoute: SiteExploreRoute,
@@ -9965,7 +9905,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteWagerIdRoute: SiteWagerIdRoute,
   SiteWhenIdRoute: SiteWhenIdRoute,
-  SiteConnectionsIndexRoute: SiteConnectionsIndexRoute,
   SiteExchangeIndexRoute: SiteExchangeIndexRoute,
   SiteFeedsIndexRoute: SiteFeedsIndexRoute,
   SiteGroupsIndexRoute: SiteGroupsIndexRoute,
@@ -10080,7 +10019,6 @@ interface GamesRouteChildren {
   GamesLibraryRoute: typeof GamesLibraryRouteWithChildren
   GamesCommunitiesRoute: typeof GamesCommunitiesRoute
   GamesCommunityRoute: typeof GamesCommunityRoute
-  GamesDailyRoute: typeof GamesDailyRoute
   GamesInventoryRoute: typeof GamesInventoryRoute
   GamesMarketplaceRoute: typeof GamesMarketplaceRoute
   GamesMembershipRoute: typeof GamesMembershipRoute
@@ -10100,7 +10038,6 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesLibraryRoute: GamesLibraryRouteWithChildren,
   GamesCommunitiesRoute: GamesCommunitiesRoute,
   GamesCommunityRoute: GamesCommunityRoute,
-  GamesDailyRoute: GamesDailyRoute,
   GamesInventoryRoute: GamesInventoryRoute,
   GamesMarketplaceRoute: GamesMarketplaceRoute,
   GamesMembershipRoute: GamesMembershipRoute,

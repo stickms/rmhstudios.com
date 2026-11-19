@@ -158,10 +158,6 @@ export const STATIC_CARD_INDEX: readonly (readonly [
       'connections',
     ],
     [
-      '/daily-mutator',
-      'daily-mutator',
-    ],
-    [
       '/quotes',
       'quotes',
     ],

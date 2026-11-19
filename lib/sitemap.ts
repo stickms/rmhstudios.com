@@ -144,18 +144,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.6,
     },
     {
-      loc: '/daily-mutator',
-      changefreq:
-        'daily',
-      priority: 0.6,
-    },
-    {
-      loc: '/connections',
-      changefreq:
-        'daily',
-      priority: 0.5,
-    },
-    {
       loc: '/rmhbox-packs',
       changefreq:
         'weekly',
@@ -665,8 +653,6 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // the viewer's own offers
     '/games/market':
       'noindex', // card listings change by the minute and are behind sign-in to act on
-    '/games/daily':
-      'noindex', // Steam-framed copy of the /store daily tab; /store is the indexed page
     '/games/marketplace':
       'noindex', // Steam-framed copy of the /store market tab; listings change by the minute
     '/games/membership':
