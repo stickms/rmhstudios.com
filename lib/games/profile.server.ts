@@ -1,25 +1,21 @@
 /**
- * Data for the Steam-style community pages: Community Home, a player's profile
- * and a group. Everything here is read-only and public data except playtime,
- * which goes through `canViewPlaytime` like every other read of it.
+ * Data for a player's Steam-style profile. Everything here is read-only and
+ * public data except playtime, which goes through `canViewPlaytime` like every
+ * other read of it. (A group's page is the community's own, `/c/$slug`.)
  */
 
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { getProfile } from '@/lib/profile.server';
-import { trendingTitles } from '@/lib/games/trending.server';
-import { getFriendActivity, getNowPlayingFor } from '@/lib/games/activity.server';
+import { getNowPlayingFor } from '@/lib/games/activity.server';
 import { getLook, getShowcase } from '@/lib/games/showcase.server';
 import { parseBackground, parseFrame, unlocksFromBadges } from '@/lib/games/customize';
 import { badgeKey } from '@/lib/games/showcase';
-import { listCommunities } from '@/lib/communities/directory.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
 import { levelInfo } from '@/lib/xp/levels';
 import type {
-  CommunityHomeData,
-  GroupMember,
   GroupRef,
   PersonRef,
   ProfileAchievement,
@@ -28,11 +24,8 @@ import type {
   LookEditorData,
   ProfileLook,
   ProfileGame,
-  RecentReview,
-  SteamGroup,
   SteamProfile,
   TitleRef,
-  TrendingTitle,
 } from '@/lib/games/community-types';
 
 const TWO_WEEKS_MS = 14 * 86_400_000;
@@ -67,75 +60,6 @@ function groupRef(c: {
 }
 
 const GROUP_SELECT = { slug: true, name: true, icon: true, color: true, memberCount: true } as const;
-
-/** Community Home: popular groups, the viewer's groups, what is being played, newest reviews. */
-export async function getCommunityHome(viewerId: string | null): Promise<CommunityHomeData> {
-  const since = new Date(Date.now() - TWO_WEEKS_MS);
-  const titles = titleIndex();
-
-  const [listed, myMemberships, trending24, reviewRows, friends] = await Promise.all([
-    listCommunities({ userId: viewerId }),
-    viewerId
-      ? prisma.communityMember.findMany({
-          where: { userId: viewerId, community: { isPrivate: false } },
-          orderBy: { joinedAt: 'desc' },
-          take: 8,
-          select: { community: { select: GROUP_SELECT } },
-        })
-      : Promise.resolve([]),
-    trendingTitles(),
-    prisma.gameReview.findMany({
-      where: { body: { not: null } },
-      orderBy: { createdAt: 'desc' },
-      take: 6,
-      select: {
-        id: true,
-        gameId: true,
-        stars: true,
-        body: true,
-        createdAt: true,
-        user: { select: userDisplaySelect },
-      },
-    }),
-    viewerId ? getFriendActivity(viewerId) : Promise.resolve(null),
-  ]);
-
-  const trending: TrendingTitle[] = [];
-  for (const row of trending24) {
-    const title = titles.get(row.gameId);
-    if (!title) continue;
-    trending.push({ ...title, players: row.players, seconds: row.seconds });
-    if (trending.length === 8) break;
-  }
-
-  const reviews: RecentReview[] = reviewRows.flatMap((r) => {
-    const title = titles.get(r.gameId);
-    if (!title) return [];
-    return [
-      {
-        id: r.id,
-        gameId: r.gameId,
-        gameTitle: title.title,
-        stars: r.stars,
-        body: r.body,
-        createdAt: r.createdAt.toISOString(),
-        author: personRef(r.user as DisplayUser),
-      },
-    ];
-  });
-
-  return {
-    signedIn: !!viewerId,
-    groups: listed
-      .filter((c) => !c.locked)
-      .slice(0, 10)
-      .map(groupRef),
-    trending,
-    reviews,
-    myGroups: myMemberships.map((m) => groupRef(m.community)),
-    friends,
-  };
-}
 
 /** A player's Steam-style profile, or null if nobody answers to the id/handle. */
 export async function getSteamProfile(
@@ -312,57 +236,5 @@ export async function getSteamProfile(
     showcaseEditor,
     look,
     lookEditor,
-  };
-}
-
-/** A public group (a Community): header, the title it belongs to, and its members. */
-export async function getSteamGroup(
-  viewerId: string | null,
-  slug: string,
-): Promise<SteamGroup | null> {
-  const community = await prisma.community.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      ...GROUP_SELECT,
-      description: true,
-      createdAt: true,
-      isPrivate: true,
-      gameId: true,
-    },
-  });
-  // A private group's page is members-only on the main site; it has no public
-  // Steam-style page at all.
-  if (!community || community.isPrivate) return null;
-
-  const [members, mine] = await Promise.all([
-    prisma.communityMember.findMany({
-      where: { communityId: community.id },
-      orderBy: [{ role: 'desc' }, { joinedAt: 'asc' }],
-      take: 24,
-      select: { role: true, user: { select: userDisplaySelect } },
-    }),
-    viewerId
-      ? prisma.communityMember.findUnique({
-          where: { communityId_userId: { communityId: community.id, userId: viewerId } },
-          select: { role: true },
-        })
-      : Promise.resolve(null),
-  ]);
-
-  const game = community.gameId ? (titleIndex().get(community.gameId) ?? null) : null;
-  const staff: GroupMember[] = members.map((m) => ({
-    ...personRef(m.user as DisplayUser),
-    role: m.role,
-  }));
-  return {
-    ...groupRef(community),
-    description: community.description,
-    createdAt: community.createdAt.toISOString(),
-    joined: !!mine,
-    role: mine?.role ?? null,
-    signedIn: !!viewerId,
-    game,
-    members: staff,
   };
 }

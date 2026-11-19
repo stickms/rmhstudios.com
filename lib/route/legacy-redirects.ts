@@ -66,6 +66,9 @@ export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   '/changelog': '/site-history#changes',
   '/breaches': '/security#breaches',
   '/user-builds/manage': '/create/builds/manage',
+  // The games shell's copy of the community pages; `/communities` is the one directory.
+  '/games/community': '/communities',
+  '/games/communities': '/communities',
 };
 
 /** The target for a legacy pathname, or null when the path is current. */

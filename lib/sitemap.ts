@@ -644,14 +644,10 @@ export const EXCLUDED_ROUTES: Record<
       'noindex', // Steam-framed copy of /store?tab=membership; /store is the indexed page
     '/games/shop':
       'noindex', // Steam-framed copy of the /store coin shop; /store is the indexed page
-    '/games/communities':
-      'noindex', // Steam-framed copy of the /communities directory; /communities is indexed
     '/games/store':
       'noindex', // discovery page; filters and search make a URL per query
     '/games/inventory':
       'personal', // the viewer's own trading cards and badges
-    '/games/community':
-      'noindex', // Steam-style community home; the viewer's groups ride on it
     '/out':
       'noindex', // link-warning interstitial; the destination rides in ?url=
     '/safety/pile-on':
@@ -1026,7 +1022,7 @@ export const DYNAMIC_ROUTES: Record<
     '/games/trades/new/$id':
       null, // a signed-in composer
     '/games/groups/$slug':
-      null, // a second, noindex view of /c/$slug
+      null, // redirects to `/c/{slug}`
     '/builds/$slug':
       'pages', // curated builds mirror the catalog; member builds are emitted by the `builds` section
     '/user-builds/$slug':

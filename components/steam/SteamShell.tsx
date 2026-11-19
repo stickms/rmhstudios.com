@@ -33,10 +33,7 @@ export function steamTabFor(pathname: string): 'store' | 'library' | 'community'
   }
   if (pathname === '/arcade' || pathname.startsWith('/arcade/')) return 'arcade';
   if (
-    pathname.startsWith('/games/community') ||
-    pathname.startsWith('/games/communities') ||
     pathname.startsWith('/games/profile') ||
-    pathname.startsWith('/games/groups') ||
     pathname.startsWith('/games/inventory') ||
     pathname.startsWith('/games/market') ||
     pathname.startsWith('/games/trades') ||
@@ -48,7 +45,7 @@ export function steamTabFor(pathname: string): 'store' | 'library' | 'community'
   return null;
 }
 
-type SteamNavItem = { to: '/games/store' | '/games' | '/games/community' | '/arcade'; id: ReturnType<typeof steamTabFor>; label: string };
+type SteamNavItem = { to: '/games/store' | '/games' | '/games/market' | '/arcade'; id: ReturnType<typeof steamTabFor>; label: string };
 
 function SteamTopBar() {
   const { t } = useTranslation('games-hub');
@@ -69,7 +66,7 @@ function SteamTopBar() {
   const items: SteamNavItem[] = [
     { to: '/games/store', id: 'store', label: t('steam-nav-store', { defaultValue: 'Store' }) },
     { to: '/games', id: 'library', label: t('steam-nav-library', { defaultValue: 'Library' }) },
-    { to: '/games/community', id: 'community', label: t('steam-nav-community', { defaultValue: 'Community' }) },
+    { to: '/games/market', id: 'community', label: t('steam-nav-community', { defaultValue: 'Community' }) },
     { to: '/arcade', id: 'arcade', label: t('steam-nav-arcade', { defaultValue: 'Arcade' }) },
   ];
 

@@ -33,21 +33,7 @@ describe('steamTabFor', () => {
   it('maps community routes to Community, ahead of the Library prefix', () => {
     expect(
       steamTabFor(
-        '/games/community',
-      ),
-    ).toBe(
-      'community',
-    );
-    expect(
-      steamTabFor(
         '/games/profile/abc',
-      ),
-    ).toBe(
-      'community',
-    );
-    expect(
-      steamTabFor(
-        '/games/groups/x',
       ),
     ).toBe(
       'community',
@@ -117,13 +103,6 @@ describe('steamTabFor', () => {
       ),
     ).toBe(
       'store',
-    );
-    expect(
-      steamTabFor(
-        '/games/communities',
-      ),
-    ).toBe(
-      'community',
     );
     expect(
       steamTabFor(

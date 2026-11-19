@@ -259,7 +259,7 @@ describe('locked community payload', () => {
       [
         'id', 'slug', 'name', 'description', 'icon', 'color', 'isPrivate', 'memberCount', 'createdById',
         'createdAt', 'postCount', 'joined', 'role', 'announcements', 'locked', 'requestState',
-        'flairRequired', 'starThreshold', 'verificationLevel', 'verificationValue',
+        'flairRequired', 'starThreshold', 'verificationLevel', 'verificationValue', 'game',
       ].sort(),
     );
     expect(c).toMatchObject({
@@ -268,6 +268,7 @@ describe('locked community payload', () => {
       starThreshold: 0,
       verificationLevel: 'none',
       verificationValue: 0,
+      game: null,
     });
   });
 });

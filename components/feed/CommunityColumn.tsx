@@ -10,6 +10,7 @@ import {
  UserX,
  X,
  Send,
+ Gamepad2,
 } from'lucide-react';
 import { formatDistanceToNow } from'date-fns';
 import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
@@ -63,6 +64,8 @@ interface CommunityData {
  role: string | null;
  announcements: Announcement[];
  isPrivate?: boolean;
+ /** The catalog title this community is the official home of. */
+ game?: { id: string; title: string } | null;
 }
 
 interface Member {
@@ -221,6 +224,19 @@ export function CommunityColumn({
  defaultValue:'{{formatted}} posts',
  })}
  </span>
+ {community.game && (
+ <Link
+ to="/games/$gameId"
+ params={{ gameId: community.game.id }}
+ className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-site-text"
+ >
+ <Gamepad2 className="h-3.5 w-3.5" aria-hidden />
+ {t('community-official-for', {
+ title: community.game.title,
+ defaultValue:'Official community for {{title}}',
+ })}
+ </Link>
+ )}
  </div>
  </div>
  <div className="flex shrink-0 items-center gap-2">
