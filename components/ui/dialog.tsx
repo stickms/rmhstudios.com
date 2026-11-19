@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useFluidDrag, useFluidDragEnabled } from '@/hooks/useFluidDrag';
 
+import { OverlaySignal } from './overlay-signal';
+
 import './dialog.css';
 
 /**
@@ -160,6 +162,7 @@ const DialogContent = ({ className, children, mobileFullscreen = false, overlayC
         {...props}
       >
         <OpenerCapture into={openerRef} />
+        <OverlaySignal />
         {sheet && (
           // The grab handle. Decorative and pointer-only — the close button below
           // is the accessible, keyboard-operable way out, and this never becomes

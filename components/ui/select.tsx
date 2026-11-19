@@ -45,6 +45,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { chromeContentChanged } from '@/lib/chrome/signal';
 
 /**
  * Which token contract the control paints in.
@@ -509,6 +510,11 @@ const Select =
         }
         name={
           name
+        }
+        // V8: the chrome reflects the open list, and the page again once it closes. Not a child of the content:
+        // Radix Select keeps the content's children mounted in a fragment while it is closed.
+        onOpenChange={
+          chromeContentChanged
         }
       >
         <span

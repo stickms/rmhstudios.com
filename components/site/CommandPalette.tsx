@@ -114,6 +114,7 @@ const ComposeModal =
 // the palette without importing the games+apps registries and scorer this file
 // pulls in: import them from './command-palette-bus', never from here.
 import { COMMAND_PALETTE_EVENT } from './command-palette-bus';
+import { OverlaySignal } from '@/components/ui/overlay-signal';
 
 type Section =
   | 'pages'
@@ -1266,6 +1267,7 @@ export function CommandPalette({
                 },
               )}
             </DialogPrimitive.Title>
+            <OverlaySignal />
             {/* The search row is the panel's HEADER, not a field floating on it.
                 It used to be a `.surface-field` well with its own margin, radius
                 and dark inset shadow — a light box sitting on a darker sheet,

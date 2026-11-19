@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
+import { NoMargin } from '@/components/shell/NoMargin';
 import { PersonaChatColumn } from '@/components/feed/PersonaChatColumn';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getPersonaChat, type PersonaChatPayload } from '@/lib/persona-chat.server';
@@ -64,6 +65,8 @@ function PersonaChatPage() {
   const { personaChat } = Route.useLoaderData();
   return (
     <PageFrame noDockPadding>
+      {/* A chat, laid out like a DM thread (/messages/$conversationId): no margin column. */}
+      <NoMargin />
       {/* `key` remounts the column on persona→persona navigation so it
           re-seeds cleanly from the new loader data (no stale-state carryover). */}
       <PersonaChatColumn key={id} id={id} initialData={personaChat} />

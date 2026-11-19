@@ -564,7 +564,7 @@ export function PagesTab({
                     'Describe the page you want to create',
                 },
               )}
-              className="vibe-dock__textarea"
+              className="vibe-dock__textarea field-bare"
             />
             <div className="vibe-dock__footer">
               <div className="vibe-dock__options">

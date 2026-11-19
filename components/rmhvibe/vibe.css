@@ -64,6 +64,14 @@
   border-color: var(--site-text);
 }
 
+/* The textarea has no box of its own (it is `field-bare` in PagesTab), so the dock is the field: keyboard focus on the
+   textarea draws the K10 ring ON the dock's border, the way base-interaction.css draws it on any bordered text field.
+   Without this the global ring hugged the bare textarea and read as a second box inside the dock. */
+.vibe-dock:has(.vibe-dock__textarea:focus-visible) {
+  outline: 2px solid var(--site-text);
+  outline-offset: -1px;
+}
+
 /* textarea variant — taller, lightly rounded, with a footer row (model toggle +
  * submit) beneath the textarea */
 .vibe-dock--area {
@@ -110,7 +118,6 @@
   resize: none;
   background: transparent;
   border: 0;
-  outline: 0;
   color: var(--site-text);
   font: inherit;
   font-size: 1.05rem;
@@ -277,7 +284,6 @@
   color: var(--site-text);
   font: inherit;
   font-size: 0.92rem;
-  outline: 0;
   transition: border-color 160ms ease;
 }
 

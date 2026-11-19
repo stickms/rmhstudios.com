@@ -28,6 +28,7 @@
 @source "../../components/shared/SaveConflictDialog.tsx";
 @source "../../components/ui/button.tsx";
 @source "../../components/ui/dialog.tsx";
+@source "../../components/ui/overlay-signal.tsx";
 @source "../../components/ui/slider.tsx";
 @source "../../components/ui/site-toaster.tsx";
 @source "../../components/ui/toast-host.tsx";

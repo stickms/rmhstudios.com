@@ -155,6 +155,10 @@ cannot see, and it is the half that decides whether the change looks native:
 - [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
       `aria-hidden`, focus ring visible against the surface it lands on, no new
       jsx-a11y warnings.
+- [ ] **A bare text field inside a box that is the field** (a prompt dock, a search pill with an icon) carries
+      `field-bare`, and the box draws the ring: `.box:has(.box__field:focus-visible) { outline: 2px solid
+      var(--site-text); outline-offset: -1px; }`. `outline: 0` on the field's class is dead against K10 and ships a
+      second box inside the first; `lib/__tests__/bare-field-focus-ring.test.ts` ratchets it.
 - [ ] Full-screen game/app work also holds the §12.1 viewport contract —
       `lib/__tests__/game-viewport-consistency.test.ts` gates three of its five
       rules; safe-area insets, DPR clamping and per-frame canvas reallocation

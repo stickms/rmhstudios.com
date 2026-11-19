@@ -58,6 +58,7 @@ import {
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { useOverlaySignal } from './overlay-signal';
 
 export interface OverlayPanelProps {
   open: boolean;
@@ -82,6 +83,11 @@ export function OverlayPanel({
     useTranslation(
       'c-ui',
     );
+
+  // V8: the chrome reflects the panel and its scrim while they are on screen.
+  useOverlaySignal(
+    open,
+  );
 
   useEffect(() => {
     if (
