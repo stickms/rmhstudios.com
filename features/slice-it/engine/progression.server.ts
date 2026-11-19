@@ -121,10 +121,10 @@ async function awardRunCoins(run: SliceItRunResult): Promise<void> {
 
 /**
  * How many `SliceRun` rows to scan for the streak. Not stored: there is no
- * generic per-(user, game) streak table in the schema (`DailyStreak` and
- * `ArcadeStreak` are both singular per user, for the account check-in and the
- * cross-game arcade rotation respectively — repurposing either would corrupt
- * a feature that already owns it), and this wave does not add one. A practice
+ * per-(user, game) streak in the schema (`Streak` is keyed by user and kind,
+ * and its 'daily' and 'arcade' rows belong to the account check-in and the
+ * cross-game arcade rotation — repurposing either would corrupt a feature
+ * that already owns it), and this wave does not add a kind for it. A practice
  * streak is fully recoverable from `SliceRun.createdAt`, which every ranked
  * run already writes, so it is computed on read instead of maintained on
  * write. 400 rows comfortably covers a year of daily play and several years

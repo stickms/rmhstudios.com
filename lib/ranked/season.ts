@@ -22,12 +22,37 @@
  * Client-safe: a profile badge needs to say "Season 7" without asking a server.
  */
 
+import {
+  SEASON_LENGTH_DAYS as CLOCK_SEASON_LENGTH_DAYS,
+  seasonBounds,
+  seasonNumberAt,
+} from '@/lib/seasons/clock';
+
+/*
+ * ## One season clock (2026-11-19)
+ *
+ * Ranked started on its own calendar (8-week seasons from 5 January 2026), 15
+ * days out of step with the battle pass. Stored `RankedSeasonRating.season`
+ * numbers are kept exactly as they are, so nobody's rating or standing moves:
+ *
+ *  - seasons 1-5 keep their legacy windows;
+ *  - season 6 (legacy start 12 October 2026) runs on until `RANKED_CUTOVER`,
+ *    the next boundary of the shared clock (22 December 2026), 15 days later
+ *    than the legacy calendar would have ended it;
+ *  - from the cutover on, ranked season N is shared-clock season
+ *    N - RANKED_SEASON_OFFSET (`lib/seasons/clock.ts`), so ranked and the
+ *    battle pass roll over at the same instant.
+ *
+ * This only holds while no row for legacy season 7 exists, i.e. it must ship
+ * before 7 December 2026, when the legacy calendar would have opened season 7.
+ */
+
 /** Seasons are eight weeks. Long enough to climb, short enough to matter. */
-export const SEASON_LENGTH_DAYS = 56;
+export const SEASON_LENGTH_DAYS = CLOCK_SEASON_LENGTH_DAYS;
 
 /**
- * Where season 1 began. Fixed forever — moving it renumbers every season that
- * has ever existed, including the ones printed on profiles.
+ * Where season 1 began on the legacy ranked calendar. Fixed forever — moving
+ * it renumbers seasons 1-6, including the ones printed on profiles.
  */
 export const SEASON_EPOCH =
   Date.UTC(
@@ -37,26 +62,54 @@ export const SEASON_EPOCH =
   ); // Monday 5 January 2026
 
 const DAY_MS = 86_400_000;
+const LEGACY_SEASON_MS = SEASON_LENGTH_DAYS * DAY_MS;
+
+/** The last ranked season numbered on the legacy calendar. */
+export const LAST_LEGACY_SEASON = 6;
+/** The shared-clock season that ranked season `LAST_LEGACY_SEASON + 1` is. */
+const FIRST_SHARED_CLOCK_SEASON = 4;
+/** Ranked season = shared-clock season + this, from the cutover on. */
+export const RANKED_SEASON_OFFSET =
+  LAST_LEGACY_SEASON +
+  1 -
+  FIRST_SHARED_CLOCK_SEASON;
+/** When ranked joins the shared clock: 2026-12-22T00:00:00Z. */
+export const RANKED_CUTOVER =
+  seasonBounds(
+    FIRST_SHARED_CLOCK_SEASON,
+  ).start;
 
 /** The season number containing `at`. 1-based; never less than 1. */
 export function seasonFor(
   at: Date = new Date(),
 ): number {
+  const ms =
+    at.getTime();
+  if (
+    ms >=
+    RANKED_CUTOVER
+  )
+    return (
+      seasonNumberAt(
+        ms,
+      ) +
+      RANKED_SEASON_OFFSET
+    );
   const elapsed =
-    at.getTime() -
+    ms -
     SEASON_EPOCH;
   if (
     elapsed <
     0
   )
     return 1;
-  return (
+  return Math.min(
+    LAST_LEGACY_SEASON,
     Math.floor(
       elapsed /
-        (SEASON_LENGTH_DAYS *
-          DAY_MS),
+        LEGACY_SEASON_MS,
     ) +
-    1
+      1,
   );
 }
 
@@ -67,21 +120,41 @@ export function seasonWindow(
   start: Date;
   end: Date;
 } {
+  if (
+    season >
+    LAST_LEGACY_SEASON
+  ) {
+    const { start, end } =
+      seasonBounds(
+        season -
+          RANKED_SEASON_OFFSET,
+      );
+    return {
+      start:
+        new Date(
+          start,
+        ),
+      end: new Date(
+        end,
+      ),
+    };
+  }
   const start =
     SEASON_EPOCH +
     (season -
       1) *
-      SEASON_LENGTH_DAYS *
-      DAY_MS;
+      LEGACY_SEASON_MS;
   return {
     start:
       new Date(
         start,
       ),
     end: new Date(
-      start +
-        SEASON_LENGTH_DAYS *
-          DAY_MS,
+      season ===
+        LAST_LEGACY_SEASON
+        ? RANKED_CUTOVER
+        : start +
+            LEGACY_SEASON_MS,
     ),
   };
 }

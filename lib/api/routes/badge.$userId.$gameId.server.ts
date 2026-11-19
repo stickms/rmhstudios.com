@@ -1,6 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { streakKey } from '@/lib/streaks/kinds';
 import { cached } from '@/lib/cached.server';
 import { games } from '@/lib/catalog';
 import { getGameAdapter } from '@/lib/game/adapters.server';
@@ -16,8 +17,8 @@ async function buildSvg(userKey: string, gameId: string): Promise<string> {
   if (!user) return renderBadge('rmhstudios', 'unknown player', '#9f9f9f');
 
   if (gameId === 'streak') {
-    const s = await prisma.dailyStreak.findUnique({
-      where: { userId: user.id },
+    const s = await prisma.streak.findUnique({
+      where: streakKey(user.id, 'daily'),
       select: { current: true },
     });
     return renderBadge('daily streak', `${s?.current ?? 0} days`, '#fe7d37');

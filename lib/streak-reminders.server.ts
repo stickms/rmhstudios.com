@@ -71,15 +71,17 @@ export function streakCron(intervalMinutes?: string | number | null): string {
 }
 
 /**
- * `system IS NULL` means no preference row, which defaults to opted-in. Same
- * predicate as the Go `findAtRisk`.
+ * `system IS NULL` means no preference row, which defaults to opted-in. Reads
+ * the check-in streak's row of the one `Streak` model (`kind = 'daily'`;
+ * served by the `(kind, lastCheckIn)` index).
  */
 export function findAtRiskQuery(): Prisma.Sql {
   return Prisma.sql`
     SELECT s."userId" AS "userId", s."current" AS "current"
-    FROM daily_streak s
+    FROM streak s
     LEFT JOIN notification_preference np ON np."userId" = s."userId"
-    WHERE s."current" >= ${MIN_STREAK}
+    WHERE s."kind" = 'daily'
+      AND s."current" >= ${MIN_STREAK}
       AND s."lastCheckIn" IS NOT NULL
       AND s."lastCheckIn" < now() - make_interval(hours => ${LOWER_HOURS}::int)
       AND s."lastCheckIn" > now() - make_interval(hours => ${UPPER_HOURS}::int)

@@ -96,17 +96,19 @@ describe('the season calendar', () => {
     );
   });
 
+  // Counts on the legacy calendar through season 6; from 2026-12-22 ranked runs
+  // on the shared season clock (lib/seasons/__tests__/clock.test.ts).
   it('keeps counting', () => {
     expect(
       seasonFor(
         at(
           SEASON_LENGTH_DAYS *
-            9 +
+            4 +
             3,
         ),
       ),
     ).toBe(
-      10,
+      5,
     );
   });
 
