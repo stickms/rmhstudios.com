@@ -44,6 +44,7 @@ import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as Pf2ecalRouteImport } from './routes/pf2ecal'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as RmhInternalAffairsRouteImport } from './routes/rmh-internal-affairs'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
@@ -713,6 +714,11 @@ const PortalRoute = PortalRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhCapitalRoute = RmhCapitalRouteImport.update({
@@ -3273,6 +3279,7 @@ export interface FileRoutesByFullPath {
   '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
@@ -3800,6 +3807,7 @@ export interface FileRoutesByTo {
   '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
   '/rmhos': typeof RmhosRoute
@@ -4309,6 +4317,7 @@ export interface FileRoutesById {
   '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
@@ -4844,6 +4853,7 @@ export interface FileRouteTypes {
     | '/pf2ecal'
     | '/portal'
     | '/privacy'
+    | '/reset-password'
     | '/rmh-capital'
     | '/rmh-internal-affairs'
     | '/rmh-pmc'
@@ -5371,6 +5381,7 @@ export interface FileRouteTypes {
     | '/pf2ecal'
     | '/portal'
     | '/privacy'
+    | '/reset-password'
     | '/rmh-internal-affairs'
     | '/rmhcalculator'
     | '/rmhos'
@@ -5879,6 +5890,7 @@ export interface FileRouteTypes {
     | '/pf2ecal'
     | '/portal'
     | '/privacy'
+    | '/reset-password'
     | '/rmh-capital'
     | '/rmh-internal-affairs'
     | '/rmh-pmc'
@@ -6413,6 +6425,7 @@ export interface RootRouteChildren {
   Pf2ecalRoute: typeof Pf2ecalRoute
   PortalRoute: typeof PortalRoute
   PrivacyRoute: typeof PrivacyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhInternalAffairsRoute: typeof RmhInternalAffairsRouteWithChildren
   RmhPmcRoute: typeof RmhPmcRouteWithChildren
@@ -6810,6 +6823,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmh-capital': {
@@ -11400,6 +11420,7 @@ const rootRouteChildren: RootRouteChildren = {
   Pf2ecalRoute: Pf2ecalRoute,
   PortalRoute: PortalRoute,
   PrivacyRoute: PrivacyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhInternalAffairsRoute: RmhInternalAffairsRouteWithChildren,
   RmhPmcRoute: RmhPmcRouteWithChildren,

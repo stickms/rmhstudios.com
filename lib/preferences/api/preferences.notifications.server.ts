@@ -34,7 +34,6 @@ export const route = apiRoute('/api/preferences/notifications', {
         ...(body.quietStart !== undefined ? { quietStart: body.quietStart } : {}),
         ...(body.quietEnd !== undefined ? { quietEnd: body.quietEnd } : {}),
         ...(body.tz !== undefined ? { tz: body.tz } : {}),
-        ...(body.emailDigest !== undefined ? { emailDigest: body.emailDigest } : {}),
       };
       const row = await prisma.notificationPreference.upsert({
         where: { userId: session.user.id },

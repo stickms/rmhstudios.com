@@ -13,10 +13,7 @@ import {
   SHAKE_OK_KEY,
   type AccessPrefs,
 } from '@/lib/access/prefs';
-import {
-  formatClockTime,
-  formatNumberPref,
-} from '@/lib/access/format';
+import { formatNumberPref } from '@/lib/access/format';
 import {
   isTouchPhone,
   motionPermissionGated,
@@ -293,14 +290,6 @@ export function AccessPrefsPanel() {
     );
   }
 
-  const sample =
-    new Date(
-      2026,
-      9,
-      12,
-      15,
-      45,
-    );
   const spacingOpts =
     [
       {
@@ -391,55 +380,13 @@ export function AccessPrefsPanel() {
           },
         )}
         description={t(
-          'formats-desc',
+          'formats-desc-week-numbers',
           {
             defaultValue:
-              'Clock, week start and number style, independent of your language.',
+              'Week start and number style, independent of your language.',
           },
         )}
       >
-        <Seg
-          field="clock"
-          label={t(
-            'clock-label',
-            {
-              defaultValue:
-                'Clock',
-            },
-          )}
-          options={[
-            {
-              id: 'auto',
-              label:
-                auto,
-            },
-            {
-              id: '12',
-              label:
-                t(
-                  'clock-12',
-                  {
-                    defaultValue:
-                      '12-hour',
-                  },
-                ),
-            },
-            {
-              id: '24',
-              label:
-                t(
-                  'clock-24',
-                  {
-                    defaultValue:
-                      '24-hour',
-                  },
-                ),
-            },
-          ]}
-          value={
-            p.clock
-          }
-        />
         <Seg
           field="weekStart"
           label={t(
@@ -535,14 +482,10 @@ export function AccessPrefsPanel() {
         />
         <p className="settings-row__hint py-2">
           {t(
-            'formats-preview',
+            'formats-preview-number',
             {
               defaultValue:
-                'Preview: {{time}} · {{number}}',
-              time: formatClockTime(
-                sample,
-                p,
-              ),
+                'Preview: {{number}}',
               number:
                 formatNumberPref(
                   1234567.8,

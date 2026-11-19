@@ -16,6 +16,8 @@
   "reset": "Reset to default",
   "sidebar": "Sidebar",
   "sidebar-desc": "Drag the tabs into the order you want, or hide the ones you don’t use. Hidden tabs stay reachable from search and their link.",
+  "sidebar-places-desc": "The places listed under Feed, Explore, Games and Inbox in the sidebar on wide screens. Put them in your order, or hide the ones you don’t use.",
+  "sidebar-places-hint": "Drag to reorder. Hide a place with the eye; it stays on the globe and in search.",
   "sidebar-reorder-hint": "Drag to reorder. Hide a tab with the eye — hidden tabs stay in search.",
   "unhide": "Show {{name}}",
   "your-widgets": "Your widgets"

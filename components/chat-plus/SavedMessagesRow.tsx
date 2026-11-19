@@ -57,7 +57,7 @@ export function SavedMessagesRow() {
           : t('saved-empty', { defaultValue: 'Notes, links and media just for you' });
 
   return (
-    <SpineItem dot={false} className="hover:bg-site-bg-subtle">
+    <SpineItem dot={false} className="row-hover">
       <button
         type="button"
         onClick={() => void open()}

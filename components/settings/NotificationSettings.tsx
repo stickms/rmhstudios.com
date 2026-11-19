@@ -19,7 +19,6 @@ import {
 import { mirrorQuietHours } from '@/lib/access/prefs';
 import {
   NOTIFY_CATEGORIES,
-  CATEGORY_DEFAULTS,
   resolveChannels,
   type NotifyCategory,
   type NotifyMatrix,
@@ -30,16 +29,23 @@ import {
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
 
+// The grid's Email column is gone (settings audit, 2026-11-19): nothing read it. Email is the Email section below the
+// grid, and the matrix keeps its stored `email` values untouched.
 type Channel =
   | 'inapp'
-  | 'push'
-  | 'email';
+  | 'push';
 const CHANNELS: Channel[] =
   [
     'inapp',
     'push',
-    'email',
   ];
+
+// The rows the grid shows. `events` is left out: nothing sends an "Events & live" notification, so its switches
+// changed nothing. It stays in NOTIFY_CATEGORIES so stored matrices still parse.
+const GRID_CATEGORIES: NotifyCategory[] =
+  NOTIFY_CATEGORIES.filter(
+    (c) => c !== 'events',
+  );
 
 // Static-key label resolvers. The category rows and channel headers are dynamic
 // (driven by NOTIFY_CATEGORIES / CHANNELS), but i18next-parser can only extract
@@ -82,10 +88,10 @@ function categoryLabel(
       );
     case 'economy':
       return t(
-        'category-economy',
+        'category-tips-awards',
         {
           defaultValue:
-            'Tips, awards & sales',
+            'Tips & awards',
         },
       );
     case 'events':
@@ -128,14 +134,6 @@ function channelLabel(
         {
           defaultValue:
             'Push',
-        },
-      );
-    case 'email':
-      return t(
-        'channel-email',
-        {
-          defaultValue:
-            'Email',
         },
       );
   }
@@ -199,8 +197,8 @@ interface Prefs {
 }
 
 /**
- * NotificationSettings (§16) — per-category × per-channel matrix (accordion on
- * mobile) plus quiet hours. Saves through /api/preferences/notifications.
+ * NotificationSettings (§16) — per-category in-app and push switches (one row
+ * per category) plus quiet hours. Saves through /api/preferences/notifications.
  */
 export function NotificationSettings() {
   const {
@@ -214,13 +212,6 @@ export function NotificationSettings() {
     setPrefs,
   ] =
     useState<Prefs | null>(
-      null,
-    );
-  const [
-    open,
-    setOpen,
-  ] =
-    useState<NotifyCategory | null>(
       null,
     );
   // Each section is its own child of the settings spine, so each takes the fade.
@@ -243,6 +234,9 @@ export function NotificationSettings() {
               null,
             d.quietEnd ??
               null,
+            d.tz ??
+              Intl.DateTimeFormat().resolvedOptions()
+                .timeZone,
           );
           setPrefs(
             {
@@ -277,6 +271,7 @@ export function NotificationSettings() {
     mirrorQuietHours(
       next.quietStart,
       next.quietEnd,
+      next.tz,
     );
     api(
       setNotificationMatrixApi,
@@ -371,148 +366,51 @@ export function NotificationSettings() {
               'Categories',
           },
         )}
+        description={t(
+          'categories-desc',
+          {
+            defaultValue:
+              'In-app puts it in your inbox. Push sends it to the devices where you turned on push notifications.',
+          },
+        )}
         className={
           arrival
         }
       >
-        <ul className="divide-y divide-site-border">
-          {NOTIFY_CATEGORIES.map(
-            (
-              cat,
-            ) => {
-              const ch =
-                resolveChannels(
-                  prefs.matrix,
-                  cat,
-                );
-              const summary =
-                CHANNELS.filter(
-                  (
-                    c,
-                  ) =>
-                    ch[
-                      c
-                    ],
-                )
-                  .map(
-                    (
-                      c,
-                    ) =>
-                      channelLabel(
-                        t,
-                        c,
-                      ),
-                  )
-                  .join(
-                    ' · ',
-                  ) ||
-                t(
-                  'off',
-                  {
-                    defaultValue:
-                      'Off',
-                  },
-                );
-              const expanded =
-                open ===
-                cat;
-              return (
-                <li
-                  key={
-                    cat
-                  }
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setOpen(
-                        expanded
-                          ? null
-                          : cat,
-                      )
-                    }
-                    aria-expanded={
-                      expanded
-                    }
-                    className="flex min-h-11 w-full items-center justify-between gap-3 py-3 text-start"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-sm text-site-text">
-                        {categoryLabel(
-                          t,
-                          cat,
-                        )}
+        <div>
+          {GRID_CATEGORIES.map((cat) => {
+            const ch = resolveChannels(prefs.matrix, cat);
+            const name = categoryLabel(t, cat);
+            return (
+              <div key={cat} className="settings-row flex-wrap">
+                <span className="settings-row__text">
+                  <span className="settings-row__name block">{name}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-5">
+                  {CHANNELS.map((c) => {
+                    const channel = channelLabel(t, c);
+                    return (
+                      <span key={c} className="chrome-row flex items-center gap-2">
+                        <span className="t-meta" aria-hidden>
+                          {channel}
+                        </span>
+                        <Switch
+                          checked={ch[c]}
+                          onCheckedChange={(v) => setChannel(cat, c, v)}
+                          aria-label={t('channel-switch-label', {
+                            defaultValue: '{{category}}: {{channel}}',
+                            category: name,
+                            channel,
+                          })}
+                        />
                       </span>
-                      <span className="block text-xs text-site-text-muted">
-                        {
-                          summary
-                        }
-                      </span>
-                    </span>
-                    <span className="text-site-text-muted">
-                      {expanded
-                        ? '−'
-                        : '+'}
-                    </span>
-                  </button>
-                  {expanded ? (
-                    <div className="pb-3 ps-1">
-                      {CHANNELS.map(
-                        (
-                          c,
-                        ) => (
-                          <label
-                            key={
-                              c
-                            }
-                            className="chrome-row flex items-center justify-between py-2"
-                          >
-                            <span className="text-sm text-site-text">
-                              {channelLabel(
-                                t,
-                                c,
-                              )}
-                            </span>
-                            <Switch
-                              checked={
-                                ch[
-                                  c
-                                ]
-                              }
-                              onCheckedChange={(
-                                v,
-                              ) =>
-                                setChannel(
-                                  cat,
-                                  c,
-                                  v,
-                                )
-                              }
-                            />
-                          </label>
-                        ),
-                      )}
-                      {CATEGORY_DEFAULTS[
-                        cat
-                      ]
-                        .email ? null : (
-                        <p className="text-xs text-site-text-muted">
-                          {t(
-                            'email-note',
-                            {
-                              defaultValue:
-                                'Email off by default for this category.',
-                            },
-                          )}
-                        </p>
-                      )}
-                    </div>
-                  ) : null}
-                </li>
-              );
-            },
-          )}
-        </ul>
+                    );
+                  })}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </SettingsSection>
 
       <SettingsSection
@@ -603,9 +501,14 @@ export function NotificationSettings() {
           </label>
         </div>
         <p className="settings-row__hint py-2">
-          {
-            prefs.tz
-          }
+          {t(
+            'quiet-tz',
+            {
+              defaultValue:
+                'Times are in {{tz}}.',
+              tz: prefs.tz,
+            },
+          )}
         </p>
         <BedtimeRow
           hasQuietHours={

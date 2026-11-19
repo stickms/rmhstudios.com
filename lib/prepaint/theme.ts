@@ -184,9 +184,10 @@ export function themeStep({ html, doc, win, path, cfg }: PrepaintCtx): void {
   // The retired accent presets and custom accent (owner, 2026-11-18) are dropped, not applied.
   ls.removeItem('rmh-accent');
   ls.removeItem('rmh-custom-accent');
-  const fs = ls.getItem('rmh-font-scale');
-  if (fs && /^(875|1125|1250)$/.test(fs)) html.style.fontSize = parseInt(fs, 10) / 10 + '%';
-  if (ls.getItem('rmh-density') === 'compact') html.setAttribute('data-density', 'compact');
+  // Text size is retired (owner, 2026-11-19); drop a stored scale, never apply it.
+  ls.removeItem('rmh-font-scale');
+  // Density is retired (settings audit, 2026-11-19); drop a stored value, never apply it.
+  ls.removeItem('rmh-density');
   if (ls.getItem('rmh-readable-font') === '1') html.classList.add('readable-font');
   ls.removeItem('rmh-reduce-motion');
   const cvm = ls.getItem('rmh-color-vision');

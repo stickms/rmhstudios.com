@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import { generateHandle } from '@/lib/handle.server';
 import Stripe from 'stripe';
 import { stripe } from '@better-auth/stripe';
-import { customSession } from 'better-auth/plugins';
+import { customSession, emailOTP } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
 import { getUserTier, invalidateUserTier } from '@/lib/entitlements';
 import { sendEmail } from '@/lib/email/send.server';
@@ -19,6 +19,7 @@ import { steam } from '@/lib/auth/steam.server';
 import { consolidation } from '@/lib/auth/consolidation.server';
 import { notifySignInChange } from '@/lib/auth/security-notice.server';
 import { sendExistingAccountNotice } from '@/lib/auth/existing-account-notice.server';
+import { startRecoveryHold } from '@/lib/recovery/hold.server';
 import { CREDENTIAL_PROVIDER_ID } from '@/lib/auth/providers';
 
 // The `!` here used to be load-bearing in the worst way. `new Stripe(undefined)`
@@ -76,7 +77,40 @@ function emailShell(heading: string, body: string, cta: { label: string; url: st
 </div>`;
 }
 
+/** Set once `auth` exists (below): asks the emailOTP plugin to issue and send a verification code. */
+let sendVerificationCode: (email: string) => Promise<void> = async () => {};
+
+/**
+ * The verification-code email. The code leads the subject and stands alone on its own line in both parts, because that
+ * is what lets iOS and macOS Mail, Gmail and the browsers that read them offer it in the code field
+ * (`autocomplete="one-time-code"` on the login page) without the person copying it.
+ */
+function codeEmail(code: string): { subject: string; html: string; text: string } {
+  return {
+    subject: `${code} is your RMH Studios verification code`,
+    html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111">
+  <h1 style="font-size:20px;margin:0 0 12px">Verify your email</h1>
+  <p style="font-size:14px;line-height:1.5;margin:0 0 16px">Enter this code to confirm your address and finish setting up your RMH Studios account. It expires in 10 minutes.</p>
+  <p style="font-size:28px;font-weight:600;letter-spacing:0.2em;margin:0 0 16px;font-family:ui-monospace,Menlo,monospace">${code}</p>
+  <p style="font-size:12px;color:#666;margin:0">If you did not ask for this, you can ignore this email.</p>
+</div>`,
+    text: `Your RMH Studios verification code is ${code}\n\nIt expires in 10 minutes. If you did not ask for this, you can ignore this email.`,
+  };
+}
+
 export const auth = betterAuth({
+  // The email-OTP plugin brings passwordless sign-in, its own password reset and email change along with the
+  // verification code. Only the code is wanted (verification by code, owner 2026-11-19): the rest would be a second
+  // way in that the recent-sign-in rule and the account-linking policy below were never written for.
+  disabledPaths: [
+    '/sign-in/email-otp',
+    '/email-otp/request-password-reset',
+    '/forget-password/email-otp',
+    '/email-otp/reset-password',
+    '/email-otp/request-email-change',
+    '/email-otp/change-email',
+    '/email-otp/check-verification-otp',
+  ],
   baseURL: process.env.BETTER_AUTH_URL,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
@@ -123,10 +157,14 @@ export const auth = betterAuth({
       '/get-session': false,
       '/sign-in/email': { window: 60, max: 10 },
       '/sign-up/email': { window: 60, max: 10 },
-      '/forget-password': { window: 60, max: 6 },
+      // Each one sends an email. Better Auth renamed `/forget-password` to this; the old key matched nothing.
+      '/request-password-reset': { window: 300, max: 3 },
       '/reset-password': { window: 60, max: 10 },
       // Each one sends an email: keep them from being used to flood an inbox.
       '/send-verification-email': { window: 300, max: 3 },
+      '/email-otp/send-verification-otp': { window: 300, max: 3 },
+      // A wrong code also spends one of the code's own attempts (allowedAttempts below).
+      '/email-otp/verify-email': { window: 300, max: 10 },
       '/change-email': { window: 300, max: 5 },
       '/link-social': { window: 60, max: 10 },
       '/unlink-account': { window: 60, max: 10 },
@@ -153,7 +191,26 @@ export const auth = betterAuth({
     onExistingUserSignUp: async ({ user }) => {
       void sendExistingAccountNotice(user);
     },
-    // Make self-service password reset operable (the `/forget-password` and
+    // A reset signs the account out everywhere: whoever had the old password, or a stolen session, is cut off.
+    revokeSessionsOnPasswordReset: true,
+    // A reset by email is how an account is recovered, so it starts the 72-hour economy hold (no tips, gifts or
+    // redemptions) and tells the inbox it happened. Neither may fail the reset itself.
+    onPasswordReset: async ({ user }) => {
+      await startRecoveryHold(user.id, 'password reset by email').catch((err) =>
+        console.error('[auth] recovery hold failed:', err),
+      );
+      void sendEmail({
+        to: user.email,
+        subject: 'Your RMH Studios password was changed',
+        html: emailShell(
+          'Your password was changed',
+          'The password for your RMH Studios account was just reset, and every device was signed out. Coin transfers and redemptions are paused for 72 hours as a precaution. If this was not you, reset it again now and review your security settings.',
+          { label: 'Review security settings', url: `${process.env.BETTER_AUTH_URL?.replace(/\/$/, '') ?? ''}/settings/security` },
+        ),
+        text: 'The password for your RMH Studios account was just reset. If this was not you, reset it again now and review your security settings.',
+      });
+    },
+    // Make self-service password reset operable (the `/request-password-reset` and
     // `/reset-password` rate rules above previously had no transport behind them).
     // Not awaited (nor the verification email below): Better Auth answers a
     // reset for an unknown address without sending, so waiting on the send
@@ -174,24 +231,32 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: emailConfigured,
-    // Signing in before confirming sends a fresh link (the old one may have
-    // expired), and the login page says so. Rate-limited with /sign-in/email.
+    // Signing in before confirming sends a fresh code (the old one may have
+    // expired), and the login page asks for it. Rate-limited with /sign-in/email.
     sendOnSignIn: emailConfigured,
     autoSignInAfterVerification: true,
-    // Not awaited: a new address must answer sign-up as fast as an existing one
-    // (which sends nothing, or the background notice above), or the delay of
-    // this send would reveal which addresses are new.
+    // Confirming the account's own address is a six-digit code (owner, 2026-11-19), sent through the emailOTP plugin
+    // below. The one link left is the email-change one: Better Auth sends it to the NEW address, which no account
+    // holds yet, so a code typed for it could never be matched; that message keeps its link.
+    // Not awaited: a new address must answer sign-up as fast as an existing one (which sends nothing, or the
+    // background notice above), or the delay of this send would reveal which addresses are new.
     sendVerificationEmail: async ({ user, url }) => {
-      void sendEmail({
-        to: user.email,
-        subject: 'Verify your RMH Studios email',
-        html: emailShell(
-          'Verify your email',
-          'Confirm this address to finish setting up your RMH Studios account.',
-          { label: 'Verify email', url },
-        ),
-        text: `Verify your RMH Studios email: ${url}`,
-      });
+      void (async () => {
+        const owner = await prisma.user.findUnique({ where: { email: user.email }, select: { id: true } });
+        if (owner?.id === user.id) {
+          await sendVerificationCode(user.email);
+          return;
+        }
+        await sendEmail({
+          to: user.email,
+          subject: 'Confirm your new RMH Studios email',
+          html: emailShell('Confirm your new email', 'Confirm this address to finish changing the email on your RMH Studios account.', {
+            label: 'Confirm email',
+            url,
+          }),
+          text: `Confirm your new RMH Studios email: ${url}`,
+        });
+      })().catch((err) => console.error('[auth] verification email failed:', err));
     },
   },
   account: {
@@ -358,6 +423,20 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    // Email verification by six-digit code instead of a link (owner, 2026-11-19). Hashed at rest, ten minutes, five
+    // tries; a code is only ever sent for verification (the other kinds are disabled in `disabledPaths`, and this
+    // refuses them too). Not awaited, for the same timing reason as the reset email above.
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 600,
+      allowedAttempts: 5,
+      storeOTP: 'hashed',
+      disableSignUp: true,
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        if (type !== 'email-verification') return;
+        void sendEmail({ to: email, ...codeEmail(otp) });
+      },
+    }),
     // Steam sign-in (OpenID 2.0, so a plugin rather than a socialProviders
     // entry). Always registered so the plugin tuple keeps its type; its
     // endpoints answer 404 unless STEAM_API_KEY is set.
@@ -411,6 +490,10 @@ export const auth = betterAuth({
     }),
   ],
 });
+
+sendVerificationCode = async (email) => {
+  await auth.api.sendVerificationOTP({ body: { email, type: 'email-verification' } });
+};
 
 /* ── Revocation-safe sessions on writes ────────────────────────────────────
  *

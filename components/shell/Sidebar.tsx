@@ -27,23 +27,13 @@ import { usePathname } from './shell-router-state';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
 import {
-  SIDEBAR_NAV,
   isNavGroup,
   isNavLeafActive,
+  sidebarPlaces,
 } from '@/lib/sidebar-nav';
+import { useLayoutStore } from '@/stores/layoutStore';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-
-/** Destinations the five section words already lead to. */
-const SECTION_HREFS =
-  new Set(
-    [
-      '/',
-      '/explore',
-      '/games',
-      '/messages',
-    ],
-  );
 
 /** The handle's menu is a lazy chunk: nothing in it is needed until it is opened. */
 const AccountMenu =
@@ -161,37 +151,22 @@ export function Sidebar() {
     Boolean(
       session,
     );
-  const more =
-    useMemo(
-      () =>
-        SIDEBAR_NAV.flatMap(
-          (
-            item,
-          ) =>
-            isNavGroup(
-              item,
-            )
-              ? item.children
-              : [
-                  item,
-                ],
-        ).filter(
-          (
-            leaf,
-          ) =>
-            !SECTION_HREFS.has(
-              leaf.href,
-            ) &&
-            (!leaf.requiresAuth ||
-              signedIn) &&
-            (!leaf.requiresAdmin ||
-              isAdmin),
-        ),
-      [
-        signedIn,
-        isAdmin,
-      ],
-    );
+  // The places, in the viewer's saved arrangement (Settings → Layout). The store reads its local mirror on mount and
+  // the account row after it; the server render and the first client paint use the default order, so nothing
+  // mismatches at hydration.
+  const placesOrder = useLayoutStore((s) => s.sidebar.order);
+  const placesHidden = useLayoutStore((s) => s.sidebar.hidden);
+  useEffect(() => {
+    if (sessionUnknown) return;
+    useLayoutStore.getState().hydrate({ remote: signedIn });
+  }, [sessionUnknown, signedIn]);
+  const more = useMemo(
+    () =>
+      sidebarPlaces(placesOrder, placesHidden)
+        .flatMap((item) => (isNavGroup(item) ? item.children : [item]))
+        .filter((leaf) => (!leaf.requiresAuth || signedIn) && (!leaf.requiresAdmin || isAdmin)),
+    [placesOrder, placesHidden, signedIn, isAdmin],
+  );
 
   // The lists show as many links as the window's height leaves room for (owner, 2026-11-12: no scrollbar in the
   // sidebar, the globe comes first). CSS does the fitting: each list is a wrapping column, so a link that does not fit

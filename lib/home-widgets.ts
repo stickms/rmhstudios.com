@@ -290,18 +290,17 @@ const SIDEBAR_ID_SET =
   );
 
 /**
- * Which tabs may be hidden from the rail. Home is always present (never strand
- * the feed) and the two hub pages (/services, /ventures) aren't hideable either,
- * since hiding one would take its whole family of destinations off the rail with
- * it. Everything here stays reachable via the command palette and its URL when
- * hidden (§2.6).
+ * Which places may be hidden from the desktop sidebar's list of places. Home,
+ * Explore, Games and Inbox are not here: they are the fixed section words at the
+ * top of the sidebar (components/shell/sections.ts), never part of the list the
+ * editor arranges. The two hub pages (/services, /ventures) aren't hideable
+ * either, since hiding one would take its whole family of destinations off the
+ * sidebar with it. Everything here stays reachable from the globe, `/sections`,
+ * search and its URL when hidden (§2.6).
  */
 export const SIDEBAR_HIDEABLE_IDS =
   [
-    '/search',
-    '/messages',
     '/create',
-    '/games',
     '/library',
     '/communities',
     '/store',

@@ -357,7 +357,7 @@ export function NotificationsColumn({
               <SpineItem
                 key={g.key}
                 dot={!g.read}
-                className={cn('hover:bg-site-bg-subtle', isNew(g.key) && ARRIVE)}
+                className={cn('row-hover', isNew(g.key) && ARRIVE)}
               >
                 <SwipeRow
                   trailing={{

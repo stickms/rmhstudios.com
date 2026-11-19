@@ -13,6 +13,14 @@ import { sendPushToUser, pushTitleFor, pushActionsFor } from '@/lib/push/send.se
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { redisEnabled, redisGetJSON, redisSetJSON, redisIncrBy } from '@/lib/redis.server';
 import { cachedNullable, invalidateCached } from '@/lib/cached.server';
+import {
+  inQuietHours,
+  minutesInTz,
+  resolveChannels,
+  type NotifyCategory,
+  type NotifyMatrix,
+} from '@/lib/notify/categories';
+import { holdNotification } from '@/lib/notify/held.server';
 import type { NotificationType } from '@prisma/client';
 
 /**
@@ -116,7 +124,17 @@ export interface CreateNotificationInput {
   link?: string | null;
   /** §16 batching key — rows sharing it collapse in the list/badge. */
   groupKey?: string | null;
-  /** §16 — suppress the Web Push mirror (e.g. quiet hours / channel off). */
+  /**
+   * The settings-grid row this belongs to, when its type alone does not say. Tips and awards are `SYSTEM` rows but
+   * belong to "Tips & awards" (`economy`), which has no per-type column: its in-app and push switches are read from
+   * the grid directly. Defaults to the type's category ({@link TYPE_CATEGORY}).
+   */
+  category?: NotifyCategory;
+  /**
+   * §16 — the push decision, already made. `dispatch()` sets it from the
+   * category grid and quiet hours. Left undefined (every direct caller), this
+   * function makes the same decision itself from the notification's type.
+   */
   skipPush?: boolean;
   /**
    * When true, collapse repeated identical unread notifications (same actor +
@@ -163,20 +181,51 @@ const UNMUTABLE_ENTITY_TYPES: ReadonlySet<string> = new Set([
   'reminder',
 ]);
 
+/**
+ * The settings-grid category each type belongs to — the same grouping the grid's
+ * in-app switch already drives through the per-type columns
+ * (`CATEGORY_COLUMNS` in `lib/notify/legacy-columns.ts`).
+ */
+const TYPE_CATEGORY: Record<NotificationType, NotifyCategory> = {
+  LIKE: 'social',
+  REPOST: 'social',
+  COMMENT: 'replies',
+  REPLY: 'replies',
+  MENTION: 'replies',
+  FOLLOW: 'follows',
+  SYSTEM: 'system',
+};
+
 const PREF_TTL_MS = 60_000;
 const prefKey = (userId: string) => `notif-pref:${userId}`;
 
-/** True when the recipient has this notification type turned off. */
-async function isMuted(input: CreateNotificationInput): Promise<boolean> {
-  if (input.type === 'SYSTEM' && input.entityType && UNMUTABLE_ENTITY_TYPES.has(input.entityType)) {
-    return false;
-  }
-  // perf: this ran an uncached SELECT for EVERY notification created (likes and
-  // comments fan out heavily). 60s L1/L2 cache; every preference writer calls
-  // invalidateNotificationPrefs() so a toggle takes effect immediately.
-  const prefs = await cachedNullable(prefKey(input.userId), PREF_TTL_MS, () =>
+interface RecipientPrefs {
+  likes: boolean;
+  comments: boolean;
+  follows: boolean;
+  mentions: boolean;
+  reposts: boolean;
+  system: boolean;
+  matrix: unknown;
+  quietStart: number | null;
+  quietEnd: number | null;
+  tz: string | null;
+}
+
+function isUnmutable(input: CreateNotificationInput): boolean {
+  return input.type === 'SYSTEM' && !!input.entityType && UNMUTABLE_ENTITY_TYPES.has(input.entityType);
+}
+
+/**
+ * The recipient's notification preferences, or null for no row (= defaults).
+ * perf: this ran an uncached SELECT for EVERY notification created (likes and
+ * comments fan out heavily). 60s L1/L2 cache; every preference writer calls
+ * invalidateNotificationPrefs() so a toggle takes effect immediately.
+ */
+function loadPrefs(userId: string): Promise<RecipientPrefs | null> {
+  return cachedNullable(prefKey(userId), PREF_TTL_MS, () =>
     prisma.notificationPreference.findUnique({
-      where: { userId: input.userId },
+      where: { userId },
       select: {
         likes: true,
         comments: true,
@@ -184,11 +233,49 @@ async function isMuted(input: CreateNotificationInput): Promise<boolean> {
         mentions: true,
         reposts: true,
         system: true,
+        matrix: true,
+        quietStart: true,
+        quietEnd: true,
+        tz: true,
       },
     }),
   );
+}
+
+/** True when the recipient has this notification type turned off. */
+function isMuted(input: CreateNotificationInput, prefs: RecipientPrefs | null): boolean {
+  if (isUnmutable(input)) return false;
   if (!prefs) return false; // no row = defaults = everything on
+  // A category with no per-type column (economy) is read from the grid; the rest keep their columns, which the grid's
+  // in-app switch writes (lib/notify/legacy-columns.ts).
+  if (input.category && input.category !== TYPE_CATEGORY[input.type]) {
+    return !resolveChannels((prefs.matrix as NotifyMatrix | null) ?? {}, input.category).inapp;
+  }
   return !prefs[PREF_FIELD[input.type]];
+}
+
+/**
+ * What to do with the push mirror for a caller that did not decide (`skipPush`
+ * undefined). Before this, every direct `createNotification()` call — likes,
+ * reposts, follows, replies, tips, keyword alerts — pushed regardless of the
+ * grid's Push column and of quiet hours, which only `dispatch()` read, so those
+ * two settings did nothing for most notifications (settings audit, 2026-11-19).
+ * The rule is `dispatch()`'s: Push off is a plain drop; quiet hours hold the
+ * push for the morning flush; an unmutable notice (security, moderation, a
+ * reminder) is not held by the clock.
+ */
+function pushDecision(
+  input: CreateNotificationInput,
+  prefs: RecipientPrefs | null,
+): 'send' | 'drop' | 'hold' {
+  if (input.skipPush === true) return 'drop';
+  if (input.skipPush === false || !prefs) return 'send';
+  const category = input.category ?? TYPE_CATEGORY[input.type];
+  if (!resolveChannels((prefs.matrix as NotifyMatrix | null) ?? {}, category).push) return 'drop';
+  if (isUnmutable(input)) return 'send';
+  return inQuietHours(minutesInTz(new Date(), prefs.tz), prefs.quietStart, prefs.quietEnd)
+    ? 'hold'
+    : 'send';
 }
 
 /** Drop the cached mute preferences — call after ANY write to notificationPreference. */
@@ -201,7 +288,8 @@ export async function createNotification(input: CreateNotificationInput): Promis
   if (input.actorId && input.actorId === input.userId) return;
 
   try {
-    if (await isMuted(input)) return;
+    const prefs = await loadPrefs(input.userId);
+    if (isMuted(input, prefs)) return;
 
     if (input.dedupeUnread) {
       const existing = await prisma.notification.findFirst({
@@ -246,13 +334,33 @@ export async function createNotification(input: CreateNotificationInput): Promis
 
     // Mirror to Web Push (no-op unless the user enabled push on a device and
     // VAPID keys are configured). Fire-and-forget: never delays the caller.
-    // §16: the dispatch gateway sets skipPush to enforce channel/quiet-hours.
-    if (input.skipPush) return;
+    const push = pushDecision(input, prefs);
+    if (push === 'drop') return;
+    const tag = input.entityType && input.entityId ? `${input.entityType}:${input.entityId}` : undefined;
+    if (push === 'hold') {
+      void holdNotification({
+        userId: input.userId,
+        category: input.category ?? TYPE_CATEGORY[input.type],
+        channel: 'push',
+        payload: {
+          title: pushTitleFor(input.type),
+          ...(input.preview ? { body: input.preview } : {}),
+          url: input.link ?? '/notifications',
+          ...(tag ? { tag } : {}),
+        },
+        dedupeKey:
+          input.groupKey ??
+          (input.entityType && input.entityId
+            ? `${input.type}:${input.entityType}:${input.entityId}`
+            : null),
+      });
+      return;
+    }
     void sendPushToUser(input.userId, {
       title: pushTitleFor(input.type),
       body: input.preview ?? undefined,
       url: input.link ?? '/notifications',
-      tag: input.entityType && input.entityId ? `${input.entityType}:${input.entityId}` : undefined,
+      tag,
       nid: created.id,
       actions: pushActionsFor(input.type, input.entityType),
     });

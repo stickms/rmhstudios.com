@@ -100,10 +100,10 @@ export function PresencePrivacyControls() {
         ),
       followers:
         t(
-          'presence-vis-followers',
+          'presence-vis-my-followers',
           {
             defaultValue:
-              'People I follow back',
+              'People who follow me',
           },
         ),
       nobody:

@@ -27,6 +27,7 @@
   "motion": "Motion",
   "readable-font": "Readable font",
   "readable-font-desc": "A more legible body font with looser spacing.",
+  "readable-font-hint": "A plainer, more legible font for running text.",
   "reduce-motion": "Reduce motion",
   "reduce-motion-desc": "Minimize animations and transitions.",
   "text-size": "Text size",

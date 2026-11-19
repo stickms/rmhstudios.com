@@ -87,6 +87,7 @@ export async function sendChatTip(
     userId: recipient.id,
     actorId: access.viewerId,
     type: 'SYSTEM',
+    category: 'economy',
     entityType: 'tip',
     preview: `${args.senderName} tipped you 🪙 ${args.amount}`,
     link: access.kind === 'dm' ? `/messages/${access.id}` : `/groups/${access.id}`,

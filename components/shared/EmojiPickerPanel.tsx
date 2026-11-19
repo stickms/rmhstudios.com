@@ -98,7 +98,7 @@ interface EmojiPickerPanelProps {
  * them. That one line put the whole lucide barrel (157 KB) and the 431 KB
  * `icons-*` chunk into this component's chunk — and because the composer's
  * picker is in the homepage's lazy-route graph, onto the homepage. Same shape
- * (and same reason) as `components/home/layout-icons.ts`.
+ * (and same reason) as `components/rmhbox/minigame-icons.ts`.
  *
  * Keep in sync with `CATEGORY_META` in `lib/emoji/catalog.ts`; an unlisted name
  * falls back to `Smile`, exactly as the dynamic lookup did.

@@ -6,11 +6,9 @@ import { ThemePicker } from '@/components/settings/ThemePicker';
 import type { UserThemeView } from '@/lib/themes/tokens';
 import { useThemeStore } from '@/stores/themeStore';
 import {
-  FONT_SCALES,
   COLOR_VISION_MODES,
   COLOR_VISION_LABELS,
   COLOR_VISION_HINTS,
-  type FontScale,
   type ColorVisionMode,
   JELLY_MOTION_LEVELS,
   isJellyMotion,
@@ -44,14 +42,6 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
   const { t } = useTranslation('settings-appearance');
   const store = useThemeStore();
 
-  function setFontScale(value: FontScale) {
-    store.setFontScale(value === 1000 ? null : value);
-    void persist({ fontScale: value });
-  }
-  function setDensity(value: 'cozy' | 'compact') {
-    store.setDensity(value === 'cozy' ? null : value);
-    void persist({ density: value });
-  }
   function setReadableFont(value: boolean) {
     store.setReadableFont(value);
     void persist({ readableFont: value });
@@ -71,15 +61,6 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
   };
 
 
-  const activeFontScale = (store.fontScale ?? 1000) as FontScale;
-  const activeDensity = store.density ?? 'cozy';
-
-  const fontLabels: Record<FontScale, string> = {
-    875: t('text-size-small', { defaultValue: 'Small' }),
-    1000: t('text-size-default', { defaultValue: 'Default' }),
-    1125: t('text-size-large', { defaultValue: 'Large' }),
-    1250: t('text-size-larger', { defaultValue: 'Larger' }),
-  };
 
   return (
     <>
@@ -88,23 +69,6 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
         description={t('display-desc', { defaultValue: 'How the page reads on this device.' })}
       >
         <ThemePicker owned={ownedThemes} />
-        <SettingsSelectRow
-          label={t('text-size', { defaultValue: 'Text size' })}
-          hint={t('text-size-desc', { defaultValue: 'Scale the whole interface.' })}
-          value={String(activeFontScale)}
-          onChange={(v) => setFontScale(Number(v) as FontScale)}
-          options={FONT_SCALES.map((scale) => ({ value: String(scale), label: fontLabels[scale] }))}
-        />
-        <SettingsSelectRow
-          label={t('density', { defaultValue: 'Density' })}
-          hint={t('density-desc', { defaultValue: 'Compact tightens spacing.' })}
-          value={activeDensity}
-          onChange={(v) => setDensity(v as 'cozy' | 'compact')}
-          options={[
-            { value: 'cozy', label: t('density-option-cozy', { defaultValue: 'Cozy' }) },
-            { value: 'compact', label: t('density-option-compact', { defaultValue: 'Compact' }) },
-          ]}
-        />
         <SettingsSelectRow
           label={t('color-vision', { defaultValue: 'Colour vision' })}
           hint={t(`color-vision-${store.colorVision}-hint`, {
@@ -119,8 +83,8 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
         />
         <ToggleRow
           label={t('readable-font', { defaultValue: 'Readable font' })}
-          description={t('readable-font-desc', {
-            defaultValue: 'A more legible body font with looser spacing.',
+          description={t('readable-font-hint', {
+            defaultValue: 'A plainer, more legible font for running text.',
           })}
           checked={store.readableFont}
           onChange={setReadableFont}

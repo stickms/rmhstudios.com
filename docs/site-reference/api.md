@@ -6,25 +6,18 @@
 
 # API routes
 
-Every server route in the app tier — 1028 endpoints across 200 groups: 110 route files under `app/routes/api` and 918 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1020 endpoints across 200 groups: 110 route files under `app/routes/api` and 910 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
 ## `/api/account`
 
-11 routes.
+4 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/account/delete` | `POST` | `lib/account/api/account.delete.server.ts` |
 | `/api/account/export` | `GET` | `lib/account/api/account.export.server.ts` |
-| `/api/account/recovery/codes` | `GET` `POST` | `lib/recovery/api/account.recovery.codes.server.ts` |
-| `/api/account/recovery/complete` | `POST` | `lib/recovery/api/account.recovery.complete.server.ts` |
-| `/api/account/recovery/contacts` | `GET` `POST` | `lib/recovery/api/account.recovery.contacts.server.ts` |
-| `/api/account/recovery/contacts/:id` | `DELETE` `POST` | `lib/recovery/api/account.recovery.contacts.$id.server.ts` |
-| `/api/account/recovery/hold` | `GET` | `lib/recovery/api/account.recovery.hold.server.ts` |
-| `/api/account/recovery/requests` | `GET` `POST` | `lib/recovery/api/account.recovery.requests.server.ts` |
-| `/api/account/recovery/requests/:id` | `DELETE` `POST` | `lib/recovery/api/account.recovery.requests.$id.server.ts` |
 | `/api/account/standing` | `GET` | `lib/account/api/account.standing.server.ts` |
 | `/api/account/strikes/:id/appeal` | `POST` | `lib/account/api/account.strikes.$id.appeal.server.ts` |
 
@@ -1894,13 +1887,12 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/settings`
 
-6 routes.
+5 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/settings/alt-text` | `GET` `POST` | `lib/feed/api/settings.alt-text.server.ts` |
 | `/api/settings/auto-delete` | `GET` `PUT` | `lib/posts-plus/api/settings.auto-delete.server.ts` |
-| `/api/settings/email-digest` | `POST` | `lib/settings/api/settings.email-digest.server.ts` |
 | `/api/settings/game-assists` | `GET` `POST` | `lib/game/api/settings.game-assists.server.ts` |
 | `/api/settings/play-limits` | `GET` `POST` | `lib/economy/api/settings.play-limits.server.ts` |
 | `/api/settings/playtime-privacy` | `GET` `POST` `PUT` | `lib/playtime/api/settings.playtime-privacy.server.ts` |

@@ -29,6 +29,7 @@ export const SITE_SHEET_ROUTES: ReadonlySet<string> =
   new Set(
     [
       '/login',
+      '/reset-password',
       '/offline',
       '/library/$slug',
       '/library/albums/$albumId',

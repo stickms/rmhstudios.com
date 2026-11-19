@@ -212,15 +212,15 @@ const LEGACY_SHOP_ITEMS: ShopItem[] =
     {
       id: 'color.rainbow',
       kind: 'NAME_COLOR',
-      name: 'Rainbow',
+      name: 'Twilight',
       description:
-        'Animated rainbow gradient name.',
+        'A soft pink-to-indigo gradient name.',
       price: 1000,
       rarity:
         'legendary',
       data: {
         gradient:
-          'linear-gradient(90deg,#f43f5e,#fbbf24,#34d399,#38bdf8,#a78bfa)',
+          'linear-gradient(90deg,#f472b6,#c084fc,#818cf8)',
       },
     },
 
@@ -273,7 +273,7 @@ const LEGACY_SHOP_ITEMS: ShopItem[] =
       kind: 'AVATAR_FRAME',
       name: 'Inferno',
       description:
-        'A fiery animated frame.',
+        'A warm orange-to-red frame.',
       price: 600,
       rarity:
         'epic',
@@ -301,13 +301,13 @@ const LEGACY_SHOP_ITEMS: ShopItem[] =
       kind: 'AVATAR_FRAME',
       name: 'Prism',
       description:
-        'A shifting rainbow frame.',
+        'A cool blue-to-violet frame.',
       price: 1200,
       rarity:
         'legendary',
       data: {
         gradient:
-          'conic-gradient(#f43f5e,#fbbf24,#34d399,#38bdf8,#a78bfa,#f43f5e)',
+          'conic-gradient(#38bdf8,#818cf8,#c084fc,#818cf8,#38bdf8)',
       },
     },
 
@@ -715,7 +715,7 @@ const GENERATED_ITEMS: ShopItem[] =
       kind: 'NAME_COLOR',
       name: 'Aurora',
       description:
-        'A shifting aurora gradient name.',
+        'A cool aurora gradient name.',
       price:
         co(
           'epic',
@@ -724,7 +724,7 @@ const GENERATED_ITEMS: ShopItem[] =
         'epic',
       data: {
         gradient:
-          'linear-gradient(90deg,#22d3ee,#a78bfa,#f0abfc)',
+          'linear-gradient(90deg,#22d3ee,#60a5fa,#a78bfa)',
       },
     },
     {
@@ -758,7 +758,7 @@ const GENERATED_ITEMS: ShopItem[] =
         'mythic',
       data: {
         gradient:
-          'linear-gradient(90deg,#7c3aed,#db2777,#2563eb)',
+          'linear-gradient(90deg,#4f46e5,#7c3aed,#c026d3)',
       },
     },
     {
@@ -775,7 +775,7 @@ const GENERATED_ITEMS: ShopItem[] =
         'exotic',
       data: {
         gradient:
-          'linear-gradient(90deg,#fca5a5,#fde68a,#a7f3d0,#bfdbfe,#ddd6fe)',
+          'linear-gradient(90deg,#a5f3fc,#bfdbfe,#ddd6fe)',
       },
     },
 
@@ -853,7 +853,7 @@ const GENERATED_ITEMS: ShopItem[] =
       kind: 'AVATAR_FRAME',
       name: 'Venom',
       description:
-        'A toxic green animated frame.',
+        'A toxic green frame.',
       price:
         co(
           'legendary',
@@ -879,7 +879,7 @@ const GENERATED_ITEMS: ShopItem[] =
         'mythic',
       data: {
         gradient:
-          'conic-gradient(#7c3aed,#db2777,#2563eb,#7c3aed)',
+          'conic-gradient(#4f46e5,#7c3aed,#c026d3,#7c3aed,#4f46e5)',
       },
     },
     {
@@ -887,7 +887,7 @@ const GENERATED_ITEMS: ShopItem[] =
       kind: 'AVATAR_FRAME',
       name: 'Prismatic Halo',
       description:
-        'A full-spectrum prismatic halo.',
+        'A pale cyan-to-lilac halo.',
       price:
         co(
           'exotic',
@@ -896,7 +896,7 @@ const GENERATED_ITEMS: ShopItem[] =
         'exotic',
       data: {
         gradient:
-          'conic-gradient(#f43f5e,#fbbf24,#34d399,#38bdf8,#a78bfa,#f43f5e)',
+          'conic-gradient(#a5f3fc,#bfdbfe,#ddd6fe,#bfdbfe,#a5f3fc)',
       },
     },
 

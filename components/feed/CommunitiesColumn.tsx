@@ -226,7 +226,7 @@ export function CommunitiesColumn({
                   <div className="flex flex-col gap-3 rounded-site relative p-5">
                     <Link
                       to={`/c/${c.slug}` as string}
-                      className="rounded-site-sm transition-colors duration-site hover:bg-site-surface-hover"
+                      className="row-hover block"
                     >
                       <LockedCommunityHeader community={c} />
                     </Link>

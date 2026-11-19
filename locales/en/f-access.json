@@ -88,5 +88,7 @@
   "week-mon": "Monday",
   "week-sat": "Saturday",
   "week-sun": "Sunday",
-  "bedtime-needs-hours": "Dims and softens colours during the quiet hours above, once you set them."
+  "bedtime-needs-hours": "Dims and softens colours during the quiet hours above, once you set them.",
+  "formats-desc-week-numbers": "Week start and number style, independent of your language.",
+  "formats-preview-number": "Preview: {{number}}"
 }

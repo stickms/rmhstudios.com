@@ -304,9 +304,6 @@ html.ios-webkit .site-shell {
   font-size: 14px;
   text-decoration: none;
 }
-.site-margin__row:hover {
-  background: var(--site-bg-subtle);
-}
 /* A person in "Who to follow": the avatar, then the name, the handle and the reason, stacked. Still a row on a rule. */
 .site-margin__person {
   align-items: flex-start;
@@ -338,9 +335,6 @@ html.ios-webkit .site-shell {
   text-align: start;
   text-decoration: none;
   cursor: pointer;
-}
-.sections-list__row:hover {
-  background: var(--site-bg-subtle);
 }
 .sections-list__group {
   margin: 26px 0 0;

@@ -849,6 +849,9 @@ export const EXCLUDED_ROUTES: Record<
       'auth-gated',
     '/login':
       'noindex',
+    // Where the reset email lands; useless without its one-time token.
+    '/reset-password':
+      'noindex',
     '/rmhcode/auth':
       'auth-gated',
     // X8 — the Discord Activity gateway. It only functions inside a Discord

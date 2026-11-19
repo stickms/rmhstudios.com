@@ -69,9 +69,6 @@ a.settings-row {
   color: inherit;
   text-decoration: none;
 }
-a.settings-row:hover {
-  background: var(--site-bg-subtle);
-}
 
 /* The chevron at the end of a destination row. */
 .settings-row__mark {

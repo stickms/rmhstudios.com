@@ -57,6 +57,37 @@
       border-color 90ms ease;
   }
 
+  /* A row on a rule that is itself the link or button (a person in "Who to follow", a settings destination, a search
+     result). Its hover fill used to be the row's own background, so it ran flush against the avatar or the first
+     letter and touched the rules above and below (owner, 2026-11-19: "the hover goes right up until the edge").
+     The fill is a layer behind the row instead: it reaches 8px past the content on both sides and stops 3px short of
+     the rules, at the control radius, so the text keeps its column edge and the rules stay unbroken. Every column has
+     at least 18px of gutter (L1, L4, L5), so the bleed is never clipped. The fill follows a hovering pointer only: a
+     finger leaves `:hover` on the last row it pressed (M1, 90 ms). Write `row-hover` on the row; the shell's own rows
+     are listed here by class so their markup does not change. On a spine item (`components/ui/spine.css`) `::before` is
+     the spine dot, so the fill is drawn by `::after` there. */
+  :is(.row-hover, .site-margin__row, .sections-list__row, a.settings-row) {
+    position: relative;
+    isolation: isolate;
+  }
+  :is(.row-hover:not(.spine-item), .site-margin__row, .sections-list__row, a.settings-row)::before,
+  .spine-item.row-hover::after {
+    content: '';
+    position: absolute;
+    inset: 3px -8px;
+    z-index: -1;
+    border-radius: var(--site-radius);
+    background: transparent;
+    transition: background-color 90ms ease;
+    pointer-events: none;
+  }
+  @media (hover: hover) {
+    :is(.row-hover:not(.spine-item), .site-margin__row, .sections-list__row, a.settings-row):hover::before,
+    .spine-item.row-hover:hover::after {
+      background: var(--site-bg-subtle);
+    }
+  }
+
   /* S5: the scrim behind a dialog is the page colour at 80%. */
   .glass-scrim {
     background: color-mix(in srgb, var(--site-bg) 80%, transparent);

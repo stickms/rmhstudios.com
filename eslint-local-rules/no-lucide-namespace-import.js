@@ -48,9 +48,8 @@
  * Ordinary named imports are fine and tree-shake correctly — `import { Search, X }
  * from 'lucide-react'` is the normal case and is not flagged. When an icon name
  * arrives as *data* (a registry field, a catalog entry, a DB column), write the
- * map out. Three existing examples to copy:
+ * map out. Two existing examples to copy:
  *
- *   • `components/home/layout-icons.ts`      → `iconFor(name)`
  *   • `components/site/CommandPalette.tsx`   → `DESTINATION_ICONS`
  *   • `components/rmhbox/minigame-icons.ts`  → `MINIGAME_ICONS`
  *
@@ -87,7 +86,7 @@ export default {
     messages:
       {
         namespace:
-          "Namespace import of '{{source}}' retains ALL ~1,400 icons in one shared chunk (431 KB / 116 KB gzip) for every page that reaches this module — a namespace indexed by a computed key cannot be tree-shaken. Import the icons you name, and for icon names that arrive as data use an explicit Record<string, LucideIcon> map (see components/home/layout-icons.ts or components/rmhbox/minigame-icons.ts).",
+          "Namespace import of '{{source}}' retains ALL ~1,400 icons in one shared chunk (431 KB / 116 KB gzip) for every page that reaches this module — a namespace indexed by a computed key cannot be tree-shaken. Import the icons you name, and for icon names that arrive as data use an explicit Record<string, LucideIcon> map (see components/rmhbox/minigame-icons.ts).",
         iconsExport:
           "The `icons` export of '{{source}}' IS a namespace object (`import * as index from './icons/index.mjs'`), so importing it retains all ~1,400 icons in one shared chunk. Use an explicit Record<string, LucideIcon> map instead (see components/rmhbox/minigame-icons.ts).",
       },

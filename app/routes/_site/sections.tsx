@@ -12,7 +12,7 @@ import { NoMargin } from '@/components/shell/NoMargin';
 import { SECTIONS, viewerPathFor } from '@/components/shell/sections';
 import { useSectionLabels } from '@/components/shell/use-section-labels';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
+import { SECTION_NAV_IDS, SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 
 export const Route = createFileRoute('/_site/sections')({
   head: () => ({
@@ -26,11 +26,8 @@ export const Route = createFileRoute('/_site/sections')({
   component: SectionsPage,
 });
 
-/** The five words name these already. */
-const NAMED = new Set(['/', '/search', '/messages', '/games']);
-
 const MORE: NavLeaf[] = SIDEBAR_NAV.flatMap((item) => (isNavGroup(item) ? item.children : [item])).filter(
-  (leaf) => !NAMED.has(leaf.id),
+  (leaf) => !SECTION_NAV_IDS.has(leaf.id),
 );
 
 function signOut() {
