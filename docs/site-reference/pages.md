@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 346 routes. 167 render inside the standard site shell (sidebar, nav, context rail); 179 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 345 routes. 166 render inside the standard site shell (sidebar, nav, context rail); 179 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -65,6 +65,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/c/:slug/invite/:code` | Community invite | public | `app/routes/_site/c.$slug_.invite.$code.tsx` |
+| `/calendar` | Calendar | public | `app/routes/_site/calendar.tsx` |
 | `/canvas` | Community canvas | public | `app/routes/_site/canvas.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
 | `/compete` | Compete | public | `app/routes/_site/compete.tsx` |
@@ -85,7 +86,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
 | `/feeds` | Feeds | public | `app/routes/_site/feeds.index.tsx` |
 | `/feeds/:id` | Feed | public | `app/routes/_site/feeds.$id.tsx` |
-| `/game-night` | Game Night | public | `app/routes/_site/game-night.tsx` |
 | `/groups` | Group Chats | public | `app/routes/_site/groups/index.tsx` |
 | `/groups/:id` | Group Chat | public | `app/routes/_site/groups/$id.tsx` |
 | `/help` | Help & Concierge | public | `app/routes/_site/help.tsx` |
@@ -146,7 +146,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/roadmap` | Roadmap & requests | public | `app/routes/_site/roadmap.tsx` |
 | `/safety/pile-on` | — | public | `app/routes/_site/safety/pile-on.tsx` |
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
-| `/schedule` | Schedule | public | `app/routes/_site/schedule.tsx` |
 | `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
 | `/sections` | Sections | public | `app/routes/_site/sections.tsx` |
 | `/series` | Series | public | `app/routes/_site/series.index.tsx` |

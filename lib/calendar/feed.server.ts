@@ -6,20 +6,21 @@
  * poll with no cookies — so it is random, rotatable, and the feed can be
  * switched off. Built on `lib/events-ics.ts`.
  *
- * Contents: events the member RSVP'd to (repeating ones expanded for the
- * window), tournaments entered, booked office hours, locked-in polls they
- * organised or answered, study-buddy sessions, and the programming-grid slots
- * (game nights) they opted into.
+ * Contents: every Event the member has an Rsvp for (repeating ones expanded
+ * for the window: community and profile events, booked office hours, the
+ * events their polls locked in, and the platform slots and game nights they
+ * added), the office hours booked with them, the locked-in polls they
+ * answered, tournaments entered and study-buddy sessions. The event half is
+ * mapped by `feed-entries.ts`.
  */
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { SITE_URL } from '@/lib/seo';
 import { calendarFeedICS, type ICSEvent } from '@/lib/events-ics';
-import { expand, type SlotDefinition, type SlotKind } from '@/lib/schedule/slots';
-import { effectiveAttendance, occurrencesBetween } from './recurrence';
-import { seriesFromRow } from './recurring-events.server';
-import { loadPeople } from './people.server';
+import { WHOLE_EVENT, startsBetween } from './event-model';
+import { feedEntries } from './feed-entries';
+import { liveWhere, myEventInputs } from './my-events.server';
 import type { CalendarFeedView } from './types';
 
 const PAST_DAYS = 7;
@@ -41,59 +42,42 @@ async function ensureFeed(userId: string) {
   }
 }
 
-/** Editorial slots a member can opt into (game nights, premieres, …). */
-async function optInCandidates(now: Date) {
-  const rows = await prisma.scheduledSlot.findMany({
-    where: {
-      published: true,
-      kind: { not: 'maintenance' },
-      OR: [{ until: null }, { until: { gte: now } }],
-    },
-    orderBy: { startsAt: 'asc' },
-    take: 60,
-  });
-  return rows;
-}
-
-function slotDef(r: {
-  id: string;
-  kind: string;
-  title: string;
-  href: string | null;
-  startsAt: Date;
-  durationMinutes: number;
-  recurrence: string;
-  until: Date | null;
-}): SlotDefinition {
-  return {
-    id: r.id,
-    kind: r.kind as SlotKind,
-    title: r.title,
-    href: r.href,
-    startsAt: r.startsAt,
-    durationMinutes: r.durationMinutes,
-    recurrence: r.recurrence === 'daily' || r.recurrence === 'weekly' ? r.recurrence : 'once',
-    until: r.until,
-  };
-}
+/** Platform slots a member can add to their feed (game nights, premieres, …). */
+const optInWhere = (now: Date) => ({
+  owner: 'PLATFORM' as const,
+  visibility: 'PUBLIC' as const,
+  canceledAt: null,
+  kind: { not: 'maintenance' },
+  ...liveWhere(now),
+});
 
 export async function getFeedView(userId: string): Promise<CalendarFeedView> {
   const now = new Date();
-  const [feed, optIns, candidates] = await Promise.all([
+  const [feed, candidates] = await Promise.all([
     prisma.calendarFeed.findUnique({ where: { userId } }),
-    prisma.calendarFeedSlot.findMany({ where: { userId }, select: { slotId: true }, take: 200 }),
-    optInCandidates(now),
+    prisma.event.findMany({ where: optInWhere(now), orderBy: { startsAt: 'asc' }, take: 60 }),
   ]);
-  const chosen = new Set(optIns.map((o) => o.slotId));
+  const optIns = candidates.length
+    ? await prisma.rsvp.findMany({
+        where: {
+          userId,
+          eventId: { in: candidates.map((c) => c.id) },
+          occurrenceAt: WHOLE_EVENT,
+          status: 'going',
+        },
+        select: { eventId: true },
+      })
+    : [];
+  const chosen = new Set(optIns.map((o) => o.eventId));
   return {
     enabled: feed?.enabled ?? false,
     url: feed ? feedUrl(feed.token) : null,
     slots: candidates.map((c) => {
-      const next = expand(slotDef(c), now, new Date(now.getTime() + 60 * DAY_MS), 1)[0];
+      const next = startsBetween(c, now, new Date(now.getTime() + 60 * DAY_MS), 1)[0];
       return {
         id: c.id,
         title: c.title,
-        startsAt: (next?.startsAt ?? c.startsAt).toISOString(),
+        startsAt: (next ?? c.startsAt).toISOString(),
         optedIn: chosen.has(c.id),
       };
     }),
@@ -116,15 +100,33 @@ export async function updateFeed(
     void invalidateCached(`calendar-feed:${feed.token}`);
   }
   if (patch.slotIds) {
-    const valid = await prisma.scheduledSlot.findMany({
-      where: { id: { in: patch.slotIds }, published: true },
+    // Adding a slot to the feed is a standing 'going' answer to its event;
+    // the set replaces the member's answers to platform slots and nothing else.
+    const valid = await prisma.event.findMany({
+      where: { id: { in: patch.slotIds }, owner: 'PLATFORM', visibility: 'PUBLIC' },
       select: { id: true },
       take: 100,
     });
     const ids = valid.map((v) => v.id);
     await prisma.$transaction([
-      prisma.calendarFeedSlot.deleteMany({ where: { userId } }),
-      prisma.calendarFeedSlot.createMany({ data: ids.map((slotId) => ({ userId, slotId })) }),
+      prisma.rsvp.deleteMany({
+        where: {
+          userId,
+          occurrenceAt: WHOLE_EVENT,
+          event: { owner: 'PLATFORM' },
+          eventId: { notIn: ids },
+        },
+      }),
+      prisma.rsvp.createMany({
+        data: ids.map((eventId) => ({
+          eventId,
+          userId,
+          status: 'going',
+          everyTime: true,
+          occurrenceAt: WHOLE_EVENT,
+        })),
+        skipDuplicates: true,
+      }),
     ]);
     void invalidateCached(`calendar-feed:${feed.token}`);
   }
@@ -153,130 +155,22 @@ async function buildFeed(userId: string): Promise<string> {
   const to = new Date(now.getTime() + FUTURE_DAYS * DAY_MS);
   const events: ICSEvent[] = [];
 
-  const [rsvps, occRsvps, entrants, bookings, polls, matches, optIns] = await Promise.all([
-    prisma.eventRsvp.findMany({
-      where: {
-        userId,
-        event: {
-          OR: [
-            { startsAt: { gte: from, lte: to } },
-            {
-              recurrence: { not: null },
-              OR: [{ recurUntil: null }, { recurUntil: { gte: from } }],
-            },
-          ],
-        },
-      },
-      orderBy: { event: { startsAt: 'asc' } },
-      take: 300,
-      select: {
-        status: true,
-        everyTime: true,
-        event: { include: { community: { select: { name: true } } } },
-      },
-    }),
-    prisma.eventOccurrenceRsvp.findMany({
-      where: { userId, occurrenceAt: { gte: from, lte: to } },
-      take: 300,
-      select: {
-        occurrenceAt: true,
-        status: true,
-        event: { include: { community: { select: { name: true } } } },
-      },
-    }),
+  const [mine, entrants, matches] = await Promise.all([
+    myEventInputs(userId, from, to),
     prisma.tournamentEntrant.findMany({
       where: { userId, tournament: { startsAt: { gte: from, lte: to } } },
       take: 100,
       select: { tournament: { select: { id: true, name: true, gameId: true, startsAt: true } } },
-    }),
-    prisma.officeHoursBooking.findMany({
-      where: { OR: [{ hostId: userId }, { guestId: userId }], startsAt: { gte: from, lte: to } },
-      take: 100,
-      select: { id: true, hostId: true, guestId: true, startsAt: true, endsAt: true, note: true },
-    }),
-    prisma.availabilityPoll.findMany({
-      where: {
-        lockedStartMin: { not: null },
-        OR: [{ creatorId: userId }, { responses: { some: { userId } } }],
-      },
-      orderBy: { lockedAt: 'desc' },
-      take: 100,
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        lockedStartMin: true,
-        lockedEndMin: true,
-      },
     }),
     prisma.studyBuddyMatch.findMany({
       where: { OR: [{ userAId: userId }, { userBId: userId }], startsAt: { gte: from, lte: to } },
       take: 50,
       select: { id: true, subject: true, startsAt: true, endsAt: true, roomCode: true },
     }),
-    prisma.calendarFeedSlot.findMany({ where: { userId }, select: { slotId: true }, take: 100 }),
   ]);
 
-  // ── Events (one-off and repeating) ──
-  const eventLoc = (e: {
-    venueKind: string;
-    venueRef: string | null;
-    community: { name: string } | null;
-  }) =>
-    e.venueKind === 'URL'
-      ? e.venueRef
-      : e.venueRef
-        ? `${e.venueKind}: ${e.venueRef}`
-        : (e.community?.name ?? null);
-  const seen = new Set<string>();
-  const addEvent = (
-    e: (typeof rsvps)[number]['event'],
-    startsAt: Date,
-    idSuffix: string,
-    status: string,
-  ) => {
-    const key = `${e.id}${idSuffix}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    const duration = e.endsAt ? e.endsAt.getTime() - e.startsAt.getTime() : 0;
-    events.push({
-      id: `event-${key}`,
-      title: status === 'maybe' ? `${e.title} (maybe)` : e.title,
-      description: e.description || undefined,
-      startsAt,
-      endsAt: duration > 0 ? new Date(startsAt.getTime() + duration) : null,
-      location: eventLoc(e),
-      url: `${SITE_URL}/events`,
-      canceledAt: e.canceledAt,
-      categories: ['Event'],
-    });
-  };
-  const standingByEvent = new Map<string, typeof rsvps>();
-  for (const r of rsvps) {
-    if (r.event.recurrence)
-      standingByEvent.set(r.event.id, [...(standingByEvent.get(r.event.id) ?? []), r]);
-    else addEvent(r.event, r.event.startsAt, '', r.status);
-  }
-  const occByEvent = new Map<string, typeof occRsvps>();
-  for (const o of occRsvps) occByEvent.set(o.event.id, [...(occByEvent.get(o.event.id) ?? []), o]);
-  const recurringIds = new Set([...standingByEvent.keys(), ...occByEvent.keys()]);
-  for (const id of recurringIds) {
-    const base = standingByEvent.get(id)?.[0]?.event ?? occByEvent.get(id)?.[0]?.event;
-    const series = base ? seriesFromRow(base) : null;
-    if (!base || !series) continue;
-    const mineStanding = (standingByEvent.get(id) ?? []).filter((r) => r.everyTime);
-    const mineOcc = occByEvent.get(id) ?? [];
-    for (const occ of occurrencesBetween(series, from, to)) {
-      const att = effectiveAttendance(
-        mineStanding.map((r) => ({ userId, status: r.status })),
-        mineOcc
-          .filter((o) => o.occurrenceAt.getTime() === occ.startsAt.getTime())
-          .map((o) => ({ userId, status: o.status })),
-      );
-      const status = att.get(userId);
-      if (status) addEvent(base, occ.startsAt, `-${occ.startsAt.getTime()}`, status);
-    }
-  }
+  // ── Events (one-off and repeating), office hours, polls, platform slots ──
+  for (const input of mine) events.push(...feedEntries(input, from, to, SITE_URL));
 
   // ── Tournaments ──
   for (const t of entrants) {
@@ -293,36 +187,6 @@ async function buildFeed(userId: string): Promise<string> {
     });
   }
 
-  // ── Office hours ──
-  const people = await loadPeople(bookings.flatMap((b) => [b.hostId, b.guestId]));
-  for (const b of bookings) {
-    const other = people.get(b.hostId === userId ? b.guestId : b.hostId);
-    events.push({
-      id: `office-hours-${b.id}`,
-      title: `Office hours with ${other?.name ?? other?.handle ?? 'a member'}`,
-      description: b.note || undefined,
-      startsAt: b.startsAt,
-      endsAt: b.endsAt,
-      url: `${SITE_URL}/office-hours/${b.hostId}`,
-      categories: ['Office hours'],
-      alarmMinutes: 15,
-    });
-  }
-
-  // ── Locked-in polls ──
-  for (const p of polls) {
-    if (p.lockedStartMin == null || p.lockedEndMin == null) continue;
-    events.push({
-      id: `poll-${p.id}`,
-      title: p.title,
-      description: p.description || undefined,
-      startsAt: new Date(p.lockedStartMin * 60_000),
-      endsAt: new Date(p.lockedEndMin * 60_000),
-      url: `${SITE_URL}/when/${p.id}`,
-      categories: ['Poll'],
-    });
-  }
-
   // ── Study buddy sessions ──
   for (const m of matches) {
     events.push({
@@ -334,27 +198,6 @@ async function buildFeed(userId: string): Promise<string> {
       categories: ['Study'],
       alarmMinutes: 5,
     });
-  }
-
-  // ── Opted-in programming-grid slots ──
-  if (optIns.length) {
-    const slots = await prisma.scheduledSlot.findMany({
-      where: { id: { in: optIns.map((o) => o.slotId) }, published: true },
-      take: 100,
-    });
-    for (const s of slots) {
-      for (const occ of expand(slotDef(s), from, to, 60)) {
-        events.push({
-          id: `slot-${s.id}-${occ.startsAt.getTime()}`,
-          title: s.title,
-          startsAt: occ.startsAt,
-          endsAt: occ.endsAt.getTime() > occ.startsAt.getTime() ? occ.endsAt : null,
-          url: `${SITE_URL}${s.href ?? '/schedule'}`,
-          categories: ['Game night'],
-          alarmMinutes: 10,
-        });
-      }
-    }
   }
 
   return calendarFeedICS(events, {

@@ -15,6 +15,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useEffect, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { CalendarDays, Plus } from 'lucide-react';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
@@ -111,11 +112,18 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
         title={embedded ? undefined : t('events-heading', { defaultValue: 'Events' })}
         sticky={!embedded}
         actions={
-          signedIn && (
-            <Button size="sm" variant="default" onClick={() => setComposerOpen(true)}>
-              <Plus aria-hidden /> {t('new-button', { defaultValue: 'New' })}
+          <>
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/calendar">
+                <CalendarDays aria-hidden /> {t('events-calendar-link', { defaultValue: 'Calendar' })}
+              </Link>
             </Button>
-          )
+            {signedIn && (
+              <Button size="sm" variant="default" onClick={() => setComposerOpen(true)}>
+                <Plus aria-hidden /> {t('new-button', { defaultValue: 'New' })}
+              </Button>
+            )}
+          </>
         }
       />
 

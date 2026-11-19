@@ -1,34 +1,36 @@
 /**
  * K4 — recurring group events. Server-only.
  *
- * A repeating event is ONE `community_event` row carrying a compact rule
+ * A repeating event is ONE `event` row carrying a compact rule
  * (`recurrence`, `recurTz`, `recurUntil`) and an optional host rotation.
  * Occurrences are computed (`recurrence.ts`), never stored, so a weekly event
  * with no end date costs one row.
  *
- * RSVPs: an "every time" RSVP is `event_rsvp.everyTime = true` and applies to
- * every occurrence; a one-off RSVP is an `event_occurrence_rsvp` row for that
- * occurrence only, and overrides the standing one (status `no` sits one out).
+ * RSVPs are `rsvp` rows. An "every time" RSVP is the WHOLE_EVENT row with
+ * `everyTime = true` and applies to every occurrence; a one-off RSVP is a row
+ * whose `occurrenceAt` is that occurrence, and overrides the standing one
+ * (status `no` sits one out).
  */
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { getRole } from '@/lib/communities/access.server';
+import { isValidTimeZone } from './tz';
 import type { EventDTO, EventPersonDTO, RsvpResult, RsvpStatus } from '@/lib/events.server';
 import {
   effectiveAttendance,
   hostFor,
-  isRecurrenceRule,
   nextOccurrence,
   occurrenceIndexOf,
   type RecurringSeries,
 } from './recurrence';
 import { loadPeople } from './people.server';
-import { isValidTimeZone } from './tz';
+import { WHOLE_EVENT, seriesOf } from './event-model';
 import type { EventRecurrenceDTO } from './types';
 
 export interface SeriesRow {
   id: string;
-  hostId: string;
+  /** Null only on a platform event, which has no host (the rotation then has none either). */
+  hostId: string | null;
   startsAt: Date;
   endsAt: Date | null;
   recurrence: string | null;
@@ -39,14 +41,15 @@ export interface SeriesRow {
 }
 
 export function seriesFromRow(row: SeriesRow): RecurringSeries | null {
-  if (!isRecurrenceRule(row.recurrence)) return null;
-  return {
-    rule: row.recurrence,
-    tz: row.recurTz && isValidTimeZone(row.recurTz) ? row.recurTz : 'UTC',
-    first: row.startsAt,
-    until: row.recurUntil,
-  };
+  return seriesOf(row);
 }
+
+/** Prisma `where` for the standing "every time" answers of some events. */
+const standingWhere = (eventId: string | { in: string[] }) => ({
+  eventId,
+  occurrenceAt: WHOLE_EVENT,
+  everyTime: true,
+});
 
 /** Prisma `where` fragment: a repeating event that has not ended. */
 export function activeSeriesWhere(now: Date) {
@@ -80,7 +83,7 @@ export async function checkRecurrence(
   input: RecurrenceInput,
   ctx: { communityId: string | null; hostId: string; startsAt: Date },
 ): Promise<RecurrenceCheck> {
-  if (!isRecurrenceRule(input.rule)) return { ok: false, error: 'Unknown repeat rule' };
+  if (input.rule !== 'W' && input.rule !== 'M') return { ok: false, error: 'Unknown repeat rule' };
   if (!isValidTimeZone(input.tz)) return { ok: false, error: 'Unknown timezone' };
   if (input.until && input.until.getTime() < ctx.startsAt.getTime()) {
     return { ok: false, error: 'The repeat must end after the first event' };
@@ -178,12 +181,12 @@ export async function decorateRecurring(
   const ids = planned.map((p) => p.row.id);
   const [standing, occurrenceRows] = ids.length
     ? await Promise.all([
-        prisma.eventRsvp.findMany({
-          where: { eventId: { in: ids }, everyTime: true },
+        prisma.rsvp.findMany({
+          where: standingWhere({ in: ids }),
           select: { eventId: true, userId: true, status: true },
           take: 4000,
         }),
-        prisma.eventOccurrenceRsvp.findMany({
+        prisma.rsvp.findMany({
           where: {
             eventId: { in: ids },
             occurrenceAt: { in: planned.map((p) => p.at) },
@@ -195,7 +198,7 @@ export async function decorateRecurring(
     : [[], []];
 
   const peopleIds = planned.flatMap((p) => [
-    hostFor(p.row.hostId, p.row.rotatingHostIds, p.index),
+    hostFor(p.row.hostId ?? '', p.row.rotatingHostIds, p.index),
     ...p.row.rotatingHostIds,
   ]);
   const attendanceByEvent = new Map<string, Map<string, 'going' | 'maybe'>>();
@@ -228,7 +231,7 @@ export async function decorateRecurring(
       else maybe++;
     }
     const durationMs = durationOf(p.row);
-    const hostId = hostFor(p.row.hostId, p.row.rotatingHostIds, p.index);
+    const hostId = hostFor(p.row.hostId ?? '', p.row.rotatingHostIds, p.index);
     const hostPerson = people.get(hostId);
     const recurrence: EventRecurrenceDTO = {
       rule: p.series.rule,
@@ -274,7 +277,7 @@ function durationOf(row: SeriesRow): number {
 
 /** Event ids the member has a one-off RSVP for in the future (the "mine" list needs them). */
 export async function upcomingOccurrenceEventIds(userId: string, now: Date): Promise<string[]> {
-  const rows = await prisma.eventOccurrenceRsvp.findMany({
+  const rows = await prisma.rsvp.findMany({
     where: { userId, occurrenceAt: { gte: now }, status: { not: 'no' } },
     select: { eventId: true },
     distinct: ['eventId'],
@@ -316,12 +319,12 @@ async function summarizeOccurrence(
   userId: string,
 ): Promise<RsvpResult & { occurrenceAt: string; viewerEveryTime: boolean }> {
   const [standing, occurrence] = await Promise.all([
-    prisma.eventRsvp.findMany({
-      where: { eventId, everyTime: true },
+    prisma.rsvp.findMany({
+      where: standingWhere(eventId),
       select: { userId: true, status: true },
       take: 4000,
     }),
-    prisma.eventOccurrenceRsvp.findMany({
+    prisma.rsvp.findMany({
       where: { eventId, occurrenceAt: at },
       select: { userId: true, status: true },
       take: 4000,
@@ -359,12 +362,12 @@ export async function rsvpRecurring(
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'event-rsvp:' + row.id}))`;
     if (status === 'going' && row.capacity != null) {
       const [standing, occurrence] = await Promise.all([
-        tx.eventRsvp.findMany({
-          where: { eventId: row.id, everyTime: true },
+        tx.rsvp.findMany({
+          where: standingWhere(row.id),
           select: { userId: true, status: true },
           take: 4000,
         }),
-        tx.eventOccurrenceRsvp.findMany({
+        tx.rsvp.findMany({
           where: { eventId: row.id, occurrenceAt: at },
           select: { userId: true, status: true },
           take: 4000,
@@ -376,17 +379,19 @@ export async function rsvpRecurring(
       if (going >= row.capacity) throw new OccurrenceError('CAPACITY_FULL');
     }
     if (opts.everyTime) {
-      await tx.eventRsvp.upsert({
-        where: { eventId_userId: { eventId: row.id, userId } },
-        create: { eventId: row.id, userId, status, everyTime: true },
+      await tx.rsvp.upsert({
+        where: {
+          eventId_userId_occurrenceAt: { eventId: row.id, userId, occurrenceAt: WHOLE_EVENT },
+        },
+        create: { eventId: row.id, userId, status, everyTime: true, occurrenceAt: WHOLE_EVENT },
         update: { status, everyTime: true },
       });
       // "Every time" means every time: drop one-off overrides for upcoming dates.
-      await tx.eventOccurrenceRsvp.deleteMany({
+      await tx.rsvp.deleteMany({
         where: { eventId: row.id, userId, occurrenceAt: { gte: now } },
       });
     } else {
-      await tx.eventOccurrenceRsvp.upsert({
+      await tx.rsvp.upsert({
         where: { eventId_userId_occurrenceAt: { eventId: row.id, userId, occurrenceAt: at } },
         create: { eventId: row.id, userId, occurrenceAt: at, status },
         update: { status },
@@ -411,24 +416,24 @@ export async function unrsvpRecurring(
   const { at } = await resolveOccurrence(row, occurrenceAt, now);
   if (scope === 'all') {
     await prisma.$transaction([
-      prisma.eventRsvp.deleteMany({ where: { eventId: row.id, userId } }),
-      prisma.eventOccurrenceRsvp.deleteMany({
+      prisma.rsvp.deleteMany({ where: { eventId: row.id, userId, occurrenceAt: WHOLE_EVENT } }),
+      prisma.rsvp.deleteMany({
         where: { eventId: row.id, userId, occurrenceAt: { gte: now } },
       }),
     ]);
   } else {
-    const standing = await prisma.eventRsvp.findFirst({
-      where: { eventId: row.id, userId, everyTime: true },
+    const standing = await prisma.rsvp.findFirst({
+      where: { ...standingWhere(row.id), userId },
       select: { id: true },
     });
     if (standing) {
-      await prisma.eventOccurrenceRsvp.upsert({
+      await prisma.rsvp.upsert({
         where: { eventId_userId_occurrenceAt: { eventId: row.id, userId, occurrenceAt: at } },
         create: { eventId: row.id, userId, occurrenceAt: at, status: 'no' },
         update: { status: 'no' },
       });
     } else {
-      await prisma.eventOccurrenceRsvp.deleteMany({
+      await prisma.rsvp.deleteMany({
         where: { eventId: row.id, userId, occurrenceAt: at },
       });
     }

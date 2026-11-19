@@ -397,6 +397,7 @@ model GameJamRating {
 /// UTC. `games` is an ordered list of catalog game ids; each gets
 /// `minutesPerGame` and the list loops until `durationMinutes` is up.
 /// `lobbyCodes` maps gameId -> the live join code the host posts on the night.
+/// DEPRECATED (2026-11-19) — copied into Event (same id, owner PLATFORM, kind 'game-night', weekly in UTC); nothing reads or writes this; drop next release (contract). Do not add callers.
 model GameNight {
   id              String   @id @default(cuid())
   title           String   @db.VarChar(80)

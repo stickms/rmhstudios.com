@@ -340,6 +340,8 @@ model User {
   spaceMessages        SpaceMessage[]
   eventsHosted         CommunityEvent[] @relation("EventHost")
   eventRsvps           EventRsvp[]
+  eventsHostedV2       Event[]          @relation("EventHosted")
+  rsvps                Rsvp[]           @relation("EventRsvps")
   gameReplays          GameReplay[]
   marketListingsSold   MarketListing[]  @relation("MarketSeller")
   marketListingsBought MarketListing[]  @relation("MarketBuyer")

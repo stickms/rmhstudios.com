@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1014 endpoints across 198 groups: 110 route files under `app/routes/api` and 904 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1015 endpoints across 198 groups: 110 route files under `app/routes/api` and 905 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1816,12 +1816,13 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/schedule`
 
-2 routes.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/schedule` | `GET` | `lib/schedule/api/schedule.server.ts` |
 | `/api/schedule/admin` | `DELETE` `GET` `POST` | `lib/schedule/api/schedule.admin.server.ts` |
+| `/api/schedule/mine` | `GET` | `lib/schedule/api/schedule.mine.server.ts` |
 
 ## `/api/scheduled`
 

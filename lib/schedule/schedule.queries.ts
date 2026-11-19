@@ -1,6 +1,6 @@
 /** The "what's on" grid as a route-seeded query (redesign audit B4). Public, same for everyone. */
 import { contractQuery } from '@/lib/route/route-query';
-import { getScheduleApi } from '@/lib/schedule/schedule.contract';
+import { getMyScheduleApi, getScheduleApi } from '@/lib/schedule/schedule.contract';
 
 export const scheduleQuery =
   () =>
@@ -22,3 +22,11 @@ export const scheduleQuery =
         retry: false,
       },
     );
+
+/** The signed-in member's own week (the "Yours" tab of /calendar). Private, so never prefetched by SSR. */
+export const myScheduleQuery = (enabled: boolean) =>
+  contractQuery(['schedule', 'mine', 7], getMyScheduleApi, { query: { days: 7 } }, {
+    staleTime: 30_000,
+    retry: false,
+    enabled,
+  });

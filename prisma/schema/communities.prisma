@@ -50,6 +50,7 @@ model Community {
   announcements  CommunityAnnouncement[]
   spaces         Space[]
   events         CommunityEvent[]
+  calendarEvents Event[]                 @relation("CommunityEvents")
   communityPages CommunityPage[]
   groupCalls     GroupCall[]
 
@@ -161,6 +162,7 @@ enum EventVenueKind {
   IRL
 }
 
+/// DEPRECATED (2026-11-19) — copied into Event (same id, owner COMMUNITY/USER); nothing reads or writes this; drop next release (contract). Do not add callers.
 model CommunityEvent {
   id              String                @id @default(cuid())
   hostId          String
@@ -193,6 +195,7 @@ model CommunityEvent {
   @@map("community_event")
 }
 
+/// DEPRECATED (2026-11-19) — copied into Rsvp (occurrenceAt = WHOLE_EVENT); nothing reads or writes this; drop next release (contract). Do not add callers.
 model EventRsvp {
   id        String   @id @default(cuid())
   eventId   String
@@ -531,6 +534,7 @@ model CommunitySister {
 
 /// K4 — an RSVP to ONE occurrence of a repeating event (an "every time" RSVP
 /// lives on EventRsvp.everyTime instead).
+/// DEPRECATED (2026-11-19) — copied into Rsvp (occurrenceAt = the occurrence); nothing reads or writes this; drop next release (contract). Do not add callers.
 model EventOccurrenceRsvp {
   id           String   @id @default(cuid())
   eventId      String

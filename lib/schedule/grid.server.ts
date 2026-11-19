@@ -1,20 +1,29 @@
 /**
- * Reading the programming grid (L1). Server-only.
+ * Reading the programming grid (L1) — the "What's on" half of /calendar.
+ * Server-only.
  *
- * Merges two sources into one timeline:
+ * Two sources, one timeline:
  *
- *   1. **Editorial slots** — `ScheduledSlot` rows somebody put there.
- *   2. **What the platform already schedules** — tournaments with a start time
- *      and community events with an RSVP. Those are real appointments that
- *      already exist, and copying them into `ScheduledSlot` would mean two
- *      rows that can disagree about when a thing is.
+ *   1. **Events** — the one Event model: the platform's own slots (puzzle
+ *      drops, premieres, game nights) and every PUBLIC community or profile
+ *      event, repeating ones expanded over the window.
+ *   2. **Tournaments** with a start time, which are their own model (a
+ *      bracket, not an appointment) and are read where they are.
  *
- * The second is why this is a merge rather than a query. A grid that only
- * showed what an editor typed would be empty on the days the site is busiest.
+ * A grid that only showed what an editor typed would be empty on the days the
+ * site is busiest, which is why members' events are on it.
  */
 
-import { gridAnchor } from '@/lib/competitive/game-night';
 import { prisma } from '@/lib/prisma.server';
+import {
+  GAME_NIGHT_KIND,
+  OFFICE_HOURS_KIND,
+  durationMs,
+  gridKind,
+  gridOccurrences,
+} from '@/lib/calendar/event-model';
+import { attendanceBetween } from '@/lib/calendar/feed-entries';
+import { myEventInputs } from '@/lib/calendar/my-events.server';
 import {
   buildGrid,
   groupByDay,
@@ -22,7 +31,6 @@ import {
   startOfDay,
   type Occurrence,
   type SlotDefinition,
-  type SlotKind,
 } from '@/lib/schedule/slots';
 
 const DAY_MS = 86_400_000;
@@ -49,14 +57,14 @@ export async function getGrid(from: Date = new Date(), days = 7): Promise<GridVi
   const start = startOfDay(from);
   const end = new Date(start.getTime() + clamped * DAY_MS);
 
-  const [editorial, tournaments, events, nights] = await Promise.all([
-    editorialSlots(start, end),
+  const [events, tournaments] = await Promise.all([
+    eventOccurrences(start, end),
     tournamentSlots(start, end),
-    eventSlots(start, end),
-    gameNightSlots(),
   ]);
 
-  const occurrences = buildGrid([...editorial, ...tournaments, ...events, ...nights], start, end);
+  const occurrences = [...events, ...buildGrid(tournaments, start, end)].sort(
+    (a, b) => a.startsAt.getTime() - b.startsAt.getTime(),
+  );
 
   return {
     from: start.toISOString(),
@@ -69,37 +77,66 @@ export async function getGrid(from: Date = new Date(), days = 7): Promise<GridVi
   };
 }
 
+/** Where an event's grid row links. */
+export function eventHref(e: {
+  kind: string;
+  href: string | null;
+  hostId: string | null;
+  pollId: string | null;
+  community: { slug: string } | null;
+}): string | null {
+  if (e.href) return e.href;
+  if (e.kind === GAME_NIGHT_KIND) return '/calendar#game-night';
+  if (e.kind === OFFICE_HOURS_KIND && e.hostId) return `/office-hours/${e.hostId}`;
+  if (e.pollId) return `/when/${e.pollId}`;
+  if (e.community) return `/c/${e.community.slug}`;
+  return '/communities?tab=events';
+}
+
 /**
- * Editorial rows.
- *
- * A recurring slot that started before the window still belongs in it, so the
- * query cannot filter on `startsAt >= from`. It filters on the slot having not
- * yet ENDED — `until` null or in the future — and lets the expander decide
- * which occurrences land.
+ * Every PUBLIC event with a start in the window. A repeating event that
+ * started before the window still belongs in it, so the query cannot filter on
+ * `startsAt >= from`: it takes series that have not ENDED and lets the
+ * expander decide which occurrences land.
  */
-async function editorialSlots(from: Date, to: Date): Promise<SlotDefinition[]> {
-  const rows = await prisma.scheduledSlot.findMany({
+async function eventOccurrences(from: Date, to: Date): Promise<Occurrence[]> {
+  const rows = await prisma.event.findMany({
     where: {
-      published: true,
-      startsAt: { lte: to },
-      OR: [{ until: null }, { until: { gte: from } }],
+      visibility: 'PUBLIC',
+      canceledAt: null,
+      // Public schedule: events of private communities are members-only.
+      AND: [
+        { OR: [{ communityId: null }, { community: { isPrivate: false } }] },
+        {
+          OR: [
+            { recurrence: null, startsAt: { gte: from, lte: to } },
+            {
+              recurrence: { not: null },
+              startsAt: { lte: to },
+              OR: [{ recurUntil: null }, { recurUntil: { gte: new Date(from.getTime() - DAY_MS) } }],
+            },
+          ],
+        },
+      ],
     },
     orderBy: { startsAt: 'asc' },
-    take: 200,
+    take: 300,
+    select: {
+      id: true,
+      kind: true,
+      title: true,
+      href: true,
+      hostId: true,
+      pollId: true,
+      startsAt: true,
+      endsAt: true,
+      recurrence: true,
+      recurUntil: true,
+      recurTz: true,
+      community: { select: { slug: true } },
+    },
   });
-
-  return rows.map((r) => ({
-    id: r.id,
-    kind: r.kind as SlotKind,
-    title: r.title,
-    href: r.href,
-    startsAt: r.startsAt,
-    durationMinutes: r.durationMinutes,
-    recurrence: (r.recurrence === 'daily' || r.recurrence === 'weekly'
-      ? r.recurrence
-      : 'once') as SlotDefinition['recurrence'],
-    until: r.until,
-  }));
+  return rows.flatMap((r) => gridOccurrences(r, eventHref(r), from, to));
 }
 
 /** Tournaments that start inside the window. */
@@ -122,47 +159,53 @@ async function tournamentSlots(from: Date, to: Date): Promise<SlotDefinition[]> 
   }));
 }
 
-/** Community events with a start inside the window. */
-async function eventSlots(from: Date, to: Date): Promise<SlotDefinition[]> {
-  const rows = await prisma.communityEvent.findMany({
-    // Public schedule: events of private communities are members-only.
-    where: {
-      startsAt: { gte: from, lte: to },
-      OR: [{ communityId: null }, { community: { isPrivate: false } }],
-    },
-    orderBy: { startsAt: 'asc' },
-    take: 100,
-    select: { id: true, title: true, startsAt: true, endsAt: true },
-  });
-  return rows.map((e) => ({
-    id: `event:${e.id}`,
-    kind: 'community-event' as const,
-    title: e.title,
-    href: `/events?event=${e.id}`,
-    startsAt: e.startsAt,
-    durationMinutes: e.endsAt
-      ? Math.max(0, Math.round((e.endsAt.getTime() - e.startsAt.getTime()) / 60_000))
-      : 60,
-    recurrence: 'once' as const,
-    until: null,
-  }));
-}
+/**
+ * The member's own calendar for a window — the "Yours" half of /calendar:
+ * what they RSVP'd to, booked, host, locked in or added, the same set their
+ * ICS feed carries (lib/calendar/my-events.server.ts). 'maybe' answers are
+ * shown; a date they sat out is not.
+ */
+export async function getMyGrid(userId: string, from: Date = new Date(), days = 7): Promise<GridView> {
+  const clamped = Math.min(Math.max(1, Math.trunc(days)), MAX_DAYS);
+  const start = startOfDay(from);
+  const end = new Date(start.getTime() + clamped * DAY_MS);
+  const inputs = await myEventInputs(userId, start, end);
 
-/** Weekly game-night rotations (E8): one recurring weekly slot each. */
-async function gameNightSlots(): Promise<SlotDefinition[]> {
-  const rows = await prisma.gameNight.findMany({
-    where: { enabled: true },
-    take: 20,
-    select: { id: true, title: true, weekday: true, startMinute: true, durationMinutes: true },
-  });
-  return rows.map((n) => ({
-    id: `game-night:${n.id}`,
-    kind: 'game-night' as const,
-    title: n.title,
-    href: '/game-night',
-    startsAt: gridAnchor(n),
-    durationMinutes: n.durationMinutes,
-    recurrence: 'weekly' as const,
-    until: null,
-  }));
+  const occurrences: Occurrence[] = [];
+  for (const input of inputs) {
+    const e = input.event;
+    if (e.canceledAt) continue;
+    const span = durationMs(e);
+    const title =
+      e.kind === OFFICE_HOURS_KIND ? `Office hours with ${input.otherName ?? 'a member'}` : e.title;
+    const href =
+      e.kind === OFFICE_HOURS_KIND && e.hostId
+        ? `/office-hours/${e.hostId}`
+        : e.pollId
+          ? `/when/${e.pollId}`
+          : e.owner === 'PLATFORM'
+            ? (e.href ?? (e.kind === GAME_NIGHT_KIND ? '/calendar#game-night' : null))
+            : '/communities?tab=events';
+    for (const { startsAt } of attendanceBetween(input, start, end)) {
+      occurrences.push({
+        slotId: e.id,
+        kind: gridKind(e.kind),
+        title,
+        href,
+        startsAt,
+        endsAt: new Date(startsAt.getTime() + span),
+      });
+    }
+  }
+  occurrences.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+
+  return {
+    from: start.toISOString(),
+    days: clamped,
+    next: nextUp(occurrences, from),
+    byDay: groupByDay(occurrences, start, clamped).map((b) => ({
+      day: b.day.toISOString(),
+      occurrences: b.occurrences,
+    })),
+  };
 }

@@ -937,5 +937,18 @@
   "compete-tab-speedruns": "Speedruns",
   "compete-tab-tournaments": "Tournaments",
   "compete-tab-wagers": "Wagers",
-  "compete-title": "Compete"
+  "compete-title": "Compete",
+  "calendar-game-night": "Game night",
+  "calendar-link-events": "Events",
+  "calendar-link-feed": "Calendar feed",
+  "calendar-link-when": "Find a time",
+  "calendar-mine-error": "Could not load your calendar just now.",
+  "calendar-mine-more": "RSVP to events in Communities, find a time with a poll, or book office hours.",
+  "calendar-sections": "Calendar sections",
+  "calendar-sign-in": "Sign in to see what you are coming to",
+  "calendar-subtitle": "The next seven days, in your device timezone.",
+  "calendar-tab-on": "What's on",
+  "calendar-tab-yours": "Yours",
+  "calendar-title": "Calendar",
+  "events-calendar-link": "Calendar"
 }

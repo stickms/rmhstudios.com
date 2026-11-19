@@ -619,6 +619,7 @@ model GroupCallParticipant {
 
 /// One thing on the grid. Recurrence is expanded at read time by
 /// `lib/schedule/slots.ts` — a daily drop does not need 365 rows a year.
+/// DEPRECATED (2026-11-19) — copied into Event (same id, owner PLATFORM, kind = slot kind); nothing reads or writes this; drop next release (contract). Do not add callers.
 model ScheduledSlot {
   id String @id @default(cuid())
 
@@ -748,6 +749,7 @@ model AvailabilityPoll {
   lockedStartMin Int?
   lockedEndMin   Int?
   lockedAt       DateTime?
+  /// DEPRECATED (2026-11-19) — superseded by Event.pollId; nothing reads or writes this; drop next release (contract).
   lockedEventId  String?   @db.VarChar(40)
   createdAt      DateTime  @default(now())
 
@@ -829,6 +831,7 @@ model OfficeHoursWindow {
 
 /// One booked slot. The unique (hostId, startsAt) is what makes booking race-safe;
 /// cancelling deletes the row so the slot frees up.
+/// DEPRECATED (2026-11-19) — copied into Event (same id, kind 'office-hours') + the guest's Rsvp; nothing reads or writes this; drop next release (contract). Do not add callers.
 model OfficeHoursBooking {
   id        String   @id @default(cuid())
   hostId    String
@@ -862,6 +865,7 @@ model CalendarFeed {
 }
 
 /// K3 — a programming-grid slot the member opted into.
+/// DEPRECATED (2026-11-19) — copied into Rsvp (status 'going', everyTime) on the slot's Event; nothing reads or writes this; drop next release (contract). Do not add callers.
 model CalendarFeedSlot {
   id        String   @id @default(cuid())
   userId    String

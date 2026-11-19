@@ -697,24 +697,14 @@ export const STATIC_CARDS: StaticCard[] =
         'One image a day, chosen by members.',
     },
     {
-      path: '/game-night',
-      file: 'game-night',
+      path: '/calendar',
+      file: 'calendar',
       eyebrow:
-        'Game night',
-      title:
-        'A weekly lobby of party games.',
-      subtitle:
-        'See what is on now, and what is next.',
-    },
-    {
-      path: '/schedule',
-      file: 'schedule',
-      eyebrow:
-        'Schedule',
+        'Calendar',
       title:
         'Everything on this week.',
       subtitle:
-        'Puzzle drops, tournaments, premieres and events.',
+        'Puzzle drops, game nights, tournaments and events.',
     },
     {
       path: '/when',

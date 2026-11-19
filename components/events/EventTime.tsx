@@ -49,7 +49,7 @@ export interface EventTimeProps {
     | string
     | null;
   /**
-   * The organiser's IANA zone, when known. `CommunityEvent` does not store one
+   * The organiser's IANA zone, when known. A one-off `Event` row does not store one
    * today (see the report accompanying B24), so this is optional — the
    * parenthetical simply does not render without it.
    */

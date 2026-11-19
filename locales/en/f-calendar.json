@@ -34,6 +34,7 @@
   "feed-enabled": "Feed on",
   "feed-error": "Could not update your calendar feed.",
   "feed-intro": "One private link for Google Calendar, Apple Calendar or Outlook: events you RSVP to, tournaments you entered, office hours, locked-in polls and the game nights you pick below.",
+  "feed-link-calendar": "Your calendar",
   "feed-link-oh": "Your office hours",
   "feed-link-polls": "Find a time (availability polls)",
   "feed-more": "More scheduling tools",

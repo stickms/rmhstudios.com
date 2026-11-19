@@ -13,6 +13,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { WHOLE_EVENT } from '@/lib/calendar/event-model';
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { SITE_URL } from '@/lib/seo';
 import { signUnsubToken } from '@/lib/email/unsubscribe';
@@ -194,11 +195,13 @@ async function progressSnapshot(
 /** Best-effort upcoming RSVP'd events. The events models may not be populated. */
 async function upcomingEvents(userId: string): Promise<UpcomingEvent[]> {
   try {
-    const rsvps = await prisma.eventRsvp.findMany({
+    // One-off events the member is going to (an answer about the whole event).
+    const rsvps = await prisma.rsvp.findMany({
       where: {
         userId,
         status: 'going',
-        event: { startsAt: { gte: new Date() }, canceledAt: null },
+        occurrenceAt: WHOLE_EVENT,
+        event: { startsAt: { gte: new Date() }, canceledAt: null, visibility: { not: 'DRAFT' } },
       },
       orderBy: { event: { startsAt: 'asc' } },
       take: 3,

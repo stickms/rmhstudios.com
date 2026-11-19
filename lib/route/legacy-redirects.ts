@@ -23,6 +23,9 @@ export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   '/market': '/store?tab=market',
   '/pricing': '/store?tab=membership',
   '/events': '/communities?tab=events',
+  // Folded into /calendar with the one Event model (2026-11-19).
+  '/schedule': '/calendar',
+  '/game-night': '/calendar#game-night',
   '/spaces': '/communities?tab=spaces',
   '/notifications': '/messages?tab=notifications',
   '/leaderboard': '/compete?tab=leaderboard',
