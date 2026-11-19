@@ -60,6 +60,7 @@ model User {
   synapseStormProfile  SynapseStormPlayer?
   rmhboxProfile        RMHboxProfile?
   rmhtypeProfiles      RmhTypeProfile[]
+  rmhCharacters        RmhCharacter[]
   libraryUploads       LibraryDocument[]     @relation("LibraryUploader")
   libraryCollections   LibraryCollection[]   @relation("LibraryCollectionOwner")
   /// Per-user library upload quota override (null → the default cap). Raised by

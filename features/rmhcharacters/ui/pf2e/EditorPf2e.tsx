@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as R from '@features/rmhcharacters/engine/pf2e/rules';
 import { useAdvisor } from '@features/rmhcharacters/engine/advisor-store';
+import { pending } from '@features/rmhcharacters/engine/pending';
 import { useRoster } from '@features/rmhcharacters/engine/store';
 import type { InventoryItem, Pf2eCharacter } from '@features/rmhcharacters/engine/types';
 import { Advisor } from '../Advisor';
@@ -61,13 +62,14 @@ export function EditorPf2e({ c, onBack }: { c: Pf2eCharacter; onBack: () => void
         onTab={setTab}
         onBack={onBack}
         onLevelUp={klass && c.level < 20 ? () => setLevelling(true) : null}
+        pending={pending(c, d)}
         panels={{
           build: <BuildPf2e c={c} d={d} set={set} />,
           sheet: <SheetPf2e c={c} d={d} set={set} />,
           spells: <SpellsPf2e c={c} d={d} set={set} />,
           inventory: <Inventory c={c} set={set} catalog={catalog} onEquip={onEquip} load={t('ep.bulk', { defaultValue: 'Bulk {{b}} / {{e}}', b: bulk.carried, e: bulk.encumbered })} />,
           story: <Story c={c} set={set} />,
-          advisor: <Advisor c={c} />,
+          advisor: <Advisor c={c} data={d} onApply={(fn) => update(c.id, fn)} />,
         }}
       />
       {levelling ? (

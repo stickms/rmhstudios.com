@@ -14,4 +14,43 @@ export const advisorBody = z.object({
     .default([]),
 });
 
-export const advisorResponse = z.object({ answer: z.string() });
+export const RECOMMENDATION_KINDS = [
+  'spell',
+  'feat',
+  'item',
+  'weapon',
+  'armor',
+  'class',
+  'subclass',
+  'species',
+  'ancestry',
+  'heritage',
+  'background',
+  'archetype',
+  'other',
+] as const;
+
+export const recommendationSchema = z.object({
+  kind: z.enum(RECOMMENDATION_KINDS),
+  name: z.string().min(1).max(120),
+  why: z.string().max(600),
+});
+
+export const advisorResponse = z.object({
+  answer: z.string(),
+  recommendations: z.array(recommendationSchema).max(ADVISOR_LIMITS.recommendations),
+});
+
+/** What the model returns, read leniently: unknown kinds become "other", bad entries are dropped. */
+export const modelReply = z.object({
+  answer: z.string().default(''),
+  recommendations: z
+    .array(
+      z.object({
+        kind: z.string().optional(),
+        name: z.string().optional(),
+        why: z.string().optional(),
+      }),
+    )
+    .default([]),
+});

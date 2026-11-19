@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import * as R from '@features/rmhcharacters/engine/dnd5e/rules';
 import { DND5E_SKILLS } from '@features/rmhcharacters/engine/dnd5e/skills';
 import { ABILITIES, ABILITY_NAMES, type Ability, type Dnd5eAsiChoice, type Dnd5eCharacter, type Dnd5eData } from '@features/rmhcharacters/engine/types';
-import { Chip, Field, Muted, nativeSelectClass, Section, Stepper } from '../controls';
+import { Chip, Field, Muted, nativeSelectClass, Needs, Section, Stepper, warnIf } from '../controls';
 
 type Set5e = (fn: (c: Dnd5eCharacter) => Dnd5eCharacter) => void;
 
@@ -89,6 +89,22 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
     return n + (klass?.weaponMastery?.[k.level - 1] ?? 0);
   }, 0);
 
+  const extraOrigin = c.originFeats.find((f) => f !== bg?.featId);
+  const needSpecies = Number(!c.speciesId) + Number(Boolean(species?.options) && !c.speciesOption) + Number(Boolean(species?.extraOriginFeat) && !extraOrigin);
+  const needClasses =
+    Number(c.classes.length === 0) +
+    c.classes.filter((k) => {
+      const klass = d.classes.find((x) => x.id === k.classId);
+      return klass && k.level >= klass.subclassLevel && !k.subclassId && !k.customSubclass;
+    }).length;
+  const needAsi = slots.filter((slot) => {
+    const ch = c.asi.find((a) => a.slot === slot);
+    if (!ch) return true;
+    if (ch.kind === 'asi') return (ch.abilities?.length ?? 0) < 2;
+    const f = d.feats.find((x) => x.id === ch.featId);
+    return !f || (Boolean(f.abilityIncrease?.length) && !ch.featAbilities?.length);
+  }).length;
+  const needSkills = Math.max(0, pickAllowance - classPicks.length);
   const fightingStyleClasses = c.classes.filter((k) => {
     const klass = d.classes.find((x) => x.id === k.classId);
     return klass?.features.some((f) => f.name.toLowerCase().startsWith('fighting style') && f.level <= k.level);
@@ -97,10 +113,11 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
   return (
     <div className="rmhc-columns">
       <div>
-        <Section title={t('b5.species', { defaultValue: 'Species' })}>
+        <Section title={t('b5.species', { defaultValue: 'Species' })} needs={needSpecies}>
           <div className="flex flex-col gap-3">
             <select
-              className={nativeSelectClass}
+              className={nativeSelectClass + warnIf(!c.speciesId)}
+              aria-invalid={!c.speciesId}
               value={c.speciesId}
               aria-label={t('b5.species', { defaultValue: 'Species' })}
               onChange={(e) => {
@@ -131,7 +148,7 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
                   ) : null}
                   {species.options ? (
                     <Field label={species.options.label}>
-                      <select className={nativeSelectClass} value={c.speciesOption ?? ''} onChange={(e) => set((x) => ({ ...x, speciesOption: e.target.value }))}>
+                      <select className={nativeSelectClass + warnIf(!c.speciesOption)} aria-invalid={!c.speciesOption} value={c.speciesOption ?? ''} onChange={(e) => set((x) => ({ ...x, speciesOption: e.target.value }))}>
                         <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
                         {species.options.choices.map((o) => (
                           <option key={o.id} value={o.id}>
@@ -152,8 +169,9 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
                 {species.extraOriginFeat ? (
                   <Field label={t('b5.extraOrigin', { defaultValue: 'Extra Origin feat (Versatile)' })}>
                     <select
-                      className={nativeSelectClass}
-                      value={c.originFeats.find((f) => f !== bg?.featId) ?? ''}
+                      className={nativeSelectClass + warnIf(!extraOrigin)}
+                      aria-invalid={!extraOrigin}
+                      value={extraOrigin ?? ''}
                       onChange={(e) => set((x) => ({ ...x, originFeats: [...x.originFeats.filter((f) => f === bg?.featId), ...(e.target.value ? [e.target.value] : [])] }))}
                     >
                       <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
@@ -170,9 +188,9 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
           </div>
         </Section>
 
-        <Section title={t('b5.background', { defaultValue: 'Background' })}>
+        <Section title={t('b5.background', { defaultValue: 'Background' })} needs={Number(!c.backgroundId)}>
           <div className="flex flex-col gap-3">
-            <select className={nativeSelectClass} value={c.backgroundId} aria-label={t('b5.background', { defaultValue: 'Background' })} onChange={(e) => setBackground(e.target.value)}>
+            <select className={nativeSelectClass + warnIf(!c.backgroundId)} aria-invalid={!c.backgroundId} value={c.backgroundId} aria-label={t('b5.background', { defaultValue: 'Background' })} onChange={(e) => setBackground(e.target.value)}>
               <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
               {d.backgrounds.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -233,7 +251,7 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
           </div>
         </Section>
 
-        <Section title={t('b5.classes', { defaultValue: 'Classes' })} action={<span className="font-mono text-xs text-app-text-muted">{t('b5.level', { defaultValue: 'Level {{level}}', level })}</span>}>
+        <Section title={t('b5.classes', { defaultValue: 'Classes' })} needs={needClasses} action={<span className="font-mono text-xs text-app-text-muted">{t('b5.level', { defaultValue: 'Level {{level}}', level })}</span>}>
           <ul className="flex flex-col">
             {c.classes.map((k, i) => {
               const klass = d.classes.find((x) => x.id === k.classId);
@@ -254,7 +272,8 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
                     <div className="grid gap-2 sm:grid-cols-2">
                       <Field label={t('b5.subclass', { defaultValue: 'Subclass' })}>
                         <select
-                          className={nativeSelectClass}
+                          className={nativeSelectClass + warnIf(!k.subclassId && !k.customSubclass)}
+                          aria-invalid={!k.subclassId && !k.customSubclass}
                           value={k.subclassId ?? (k.customSubclass ? '__custom' : '')}
                           onChange={(e) => {
                             const v = e.target.value;
@@ -300,7 +319,7 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
           {level < 20 ? (
             <div className="mt-3">
               <Field label={c.classes.length ? t('b5.multiclass', { defaultValue: 'Add a class (multiclass)' }) : t('b5.chooseClass', { defaultValue: 'Choose a class' })}>
-                <select className={nativeSelectClass} value="" onChange={(e) => addClass(e.target.value)}>
+                <select className={nativeSelectClass + warnIf(c.classes.length === 0)} aria-invalid={c.classes.length === 0} value="" onChange={(e) => addClass(e.target.value)}>
                   <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
                   {multiclassOptions.map((k) => {
                     const ok = c.classes.length === 0 || R.meetsMulticlass(c, d, k);
@@ -388,7 +407,7 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
         </Section>
 
         {slots.length ? (
-          <Section title={t('b5.improvements', { defaultValue: 'Ability Score Improvements and feats' })}>
+          <Section title={t('b5.improvements', { defaultValue: 'Ability Score Improvements and feats' })} needs={needAsi}>
             <ul className="flex flex-col">
               {slots.map((slot) => {
                 const [classId, lvl] = slot.split(':');
@@ -400,11 +419,13 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
                   <li key={slot} className="flex flex-col gap-2 border-b border-app-border py-3 last:border-b-0">
                     <span className="text-sm font-medium text-app-text">
                       {d.classes.find((k) => k.id === classId)?.name} {lvl}
-                      {epic ? ` · ${t('b5.epicBoon', { defaultValue: 'Epic Boon' })}` : ''}
+                      {epic ? ` · ${t('b5.epicBoon', { defaultValue: 'Epic Boon' })}` : ''}{' '}
+                      <Needs show={!choice} />
                     </span>
                     <div className="flex flex-wrap gap-2">
                       <select
-                        className={`${nativeSelectClass} sm:w-auto`}
+                        className={`${nativeSelectClass} sm:w-auto${warnIf(!choice)}`}
+                        aria-invalid={!choice}
                         aria-label={t('b5.improvementFor', { defaultValue: 'Improvement for {{slot}}', slot })}
                         value={choice ? (choice.kind === 'asi' ? '__asi' : (choice.featId ?? '')) : ''}
                         onChange={(e) => {
@@ -427,7 +448,8 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
                         ? [0, 1].map((i) => (
                             <select
                               key={i}
-                              className={`${nativeSelectClass} w-auto`}
+                              className={`${nativeSelectClass} w-auto${warnIf(!choice.abilities?.[i])}`}
+                              aria-invalid={!choice.abilities?.[i]}
                               aria-label={t('b5.asiPick', { defaultValue: 'Increase {{n}}', n: i + 1 })}
                               value={choice.abilities?.[i] ?? ''}
                               onChange={(e) => {
@@ -447,7 +469,8 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
                         : null}
                       {feat?.abilityIncrease?.length ? (
                         <select
-                          className={`${nativeSelectClass} w-auto`}
+                          className={`${nativeSelectClass} w-auto${warnIf(!choice?.featAbilities?.[0])}`}
+                          aria-invalid={!choice?.featAbilities?.[0]}
                           aria-label={t('b5.featAbility', { defaultValue: 'Feat ability increase' })}
                           value={choice?.featAbilities?.[0] ?? ''}
                           onChange={(e) => setAsi(slot, { featAbilities: e.target.value ? [e.target.value as Ability] : [] })}
@@ -470,12 +493,12 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
         ) : null}
 
         {fightingStyleClasses.length ? (
-          <Section title={t('b5.fightingStyle', { defaultValue: 'Fighting Style' })}>
+          <Section title={t('b5.fightingStyle', { defaultValue: 'Fighting Style' })} needs={fightingStyleClasses.filter((k) => !c.choices[`${k.classId}:fighting-style`]).length}>
             {fightingStyleClasses.map((k) => {
               const key = `${k.classId}:fighting-style`;
               return (
                 <Field key={key} label={d.classes.find((x) => x.id === k.classId)?.name ?? k.classId}>
-                  <select className={nativeSelectClass} value={c.choices[key] ?? ''} onChange={(e) => set((x) => ({ ...x, choices: { ...x.choices, [key]: e.target.value } }))}>
+                  <select className={nativeSelectClass + warnIf(!c.choices[key])} aria-invalid={!c.choices[key]} value={c.choices[key] ?? ''} onChange={(e) => set((x) => ({ ...x, choices: { ...x.choices, [key]: e.target.value } }))}>
                     <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
                     {d.feats.filter((f) => f.category === 'fighting-style').map((f) => (
                       <option key={f.id} value={f.id}>
@@ -489,7 +512,7 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
           </Section>
         ) : null}
 
-        <Section title={t('b5.skills', { defaultValue: 'Skills' })} action={<span className="font-mono text-xs text-app-text-muted">{t('b5.picks', { defaultValue: '{{used}} / {{max}} chosen', used: classPicks.length, max: pickAllowance })}</span>}>
+        <Section title={t('b5.skills', { defaultValue: 'Skills' })} needs={needSkills} action={<span className="font-mono text-xs text-app-text-muted">{t('b5.picks', { defaultValue: '{{used}} / {{max}} chosen', used: classPicks.length, max: pickAllowance })}</span>}>
           <Muted className="mb-2">
             {first
               ? t('b5.skillHint', { defaultValue: '{{name}} chooses {{count}} from: {{list}}. Background skills are added for you.', name: first.name, count: first.skillChoices.count, list: first.skillChoices.from.map((s) => DND5E_SKILLS.find((k) => k.id === s)?.name ?? s).join(', ') })
@@ -513,7 +536,7 @@ export function Build5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
         </Section>
 
         {masteryCount ? (
-          <Section title={t('b5.mastery', { defaultValue: 'Weapon Mastery' })} action={<span className="font-mono text-xs text-app-text-muted">{c.weaponMasteries.length} / {masteryCount}</span>}>
+          <Section title={t('b5.mastery', { defaultValue: 'Weapon Mastery' })} needs={Math.max(0, masteryCount - c.weaponMasteries.length)} action={<span className="font-mono text-xs text-app-text-muted">{c.weaponMasteries.length} / {masteryCount}</span>}>
             <div className="flex flex-wrap gap-2">
               {d.weapons.map((w) => (
                 <Chip

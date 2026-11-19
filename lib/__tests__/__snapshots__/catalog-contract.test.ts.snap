@@ -363,7 +363,7 @@ exports[`catalog contract > apps: ids, order and every card field 1`] = `
     "title": "rmhOS",
   },
   {
-    "authGate": false,
+    "authGate": true,
     "bannerPath": "/images/games/banners/rmhcharacters.webp",
     "color": "from-red-800/20 to-stone-600/20 hover:border-red-800/50",
     "cta": "Open Characters",

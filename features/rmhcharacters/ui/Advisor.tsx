@@ -7,17 +7,24 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ADVISOR_LIMITS } from '@features/rmhcharacters/engine/advisor-limits';
 import { useAdvisor, useAdvisorThread } from '@features/rmhcharacters/engine/advisor-store';
-import type { Character } from '@features/rmhcharacters/engine/types';
+import type { Character, Dnd5eData, Pf2eData } from '@features/rmhcharacters/engine/types';
+import { Recommendations } from './Recommendations';
 import { Muted, Section } from './controls';
 
-export function Advisor({ c }: { c: Character }) {
+export function Advisor({
+  c,
+  data,
+  onApply,
+}: {
+  c: Character;
+  data: Dnd5eData | Pf2eData;
+  onApply: (fn: (c: Character) => Character) => void;
+}) {
   const { t } = useTranslation('c-rmhcharacters');
-  const { data: session, isPending } = useSession();
   const { turns, busy, error } = useAdvisorThread(c.id);
   const askStore = useAdvisor((st) => st.ask);
   const clear = useAdvisor((st) => st.clear);
@@ -27,6 +34,8 @@ export function Advisor({ c }: { c: Character }) {
     c.system === 'dnd5e'
       ? [
           t('advisor.q.levelUp', { defaultValue: 'What should I take when I level up?' }),
+          t('advisor.q.spellPicks', { defaultValue: 'Recommend spells for my character.' }),
+          t('advisor.q.items', { defaultValue: 'What magic items and gear should I look for?' }),
           t('advisor.q.feat', { defaultValue: 'Which feat or Ability Score Improvement fits my build best?' }),
           t('advisor.q.multiclass', { defaultValue: 'Is a multiclass worth it for this character?' }),
           t('advisor.q.spells', { defaultValue: 'Which spells should I prepare for a typical adventuring day?' }),
@@ -35,6 +44,8 @@ export function Advisor({ c }: { c: Character }) {
         ]
       : [
           t('advisor.q.levelUp', { defaultValue: 'What should I take when I level up?' }),
+          t('advisor.q.spellPicks', { defaultValue: 'Recommend spells for my character.' }),
+          t('advisor.q.items', { defaultValue: 'What magic items and gear should I look for?' }),
           t('advisor.q.pfFeats', { defaultValue: 'Which class and skill feats should I plan for the next few levels?' }),
           t('advisor.q.archetype', { defaultValue: 'Which archetype dedication would suit this character?' }),
           t('advisor.q.actions', { defaultValue: 'How should I spend my three actions each turn?' }),
@@ -48,29 +59,18 @@ export function Advisor({ c }: { c: Character }) {
     void askStore(c, question);
   };
 
-  if (!isPending && !session?.user) {
-    return (
-      <Section title={t('advisor.title', { defaultValue: 'Advisor' })}>
-        <Muted>{t('advisor.signIn', { defaultValue: 'Sign in to ask the advisor about this character. Building, editing and exporting work without an account.' })}</Muted>
-        <a href="/login?callbackURL=%2Frmhcharacters" className="mt-3 inline-block text-sm font-medium text-app-text underline">
-          {t('advisor.signInLink', { defaultValue: 'Sign in' })}
-        </a>
-      </Section>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <Section title={t('advisor.title', { defaultValue: 'Advisor' })}>
         <Muted className="mb-3">
-          {t('advisor.intro', {
+          {t('advisor.introAny', {
             defaultValue:
-              'Ask anything about this character. The advisor reads the full sheet, including what your next level grants, and answers for the current rules of this game. Check its suggestions with your GM.',
+              'Ask anything: rules, builds, spells, items, tactics, backstory. The advisor reads your full sheet, including what your next level grants. Anything it recommends is listed with why; hover a name for the rules, and add it to your sheet in one click. Check its suggestions with your GM.',
           })}
         </Muted>
         <div className="flex flex-wrap gap-2">
           {prompts.map((p) => (
-            <Button key={p} type="button" size="sm" disabled={busy} onClick={() => ask(p)}>
+            <Button key={p} type="button" size="sm" disabled={busy} onClick={() => ask(p)} className="h-auto min-h-9 max-w-full whitespace-normal py-1.5 text-left">
               {p}
             </Button>
           ))}
@@ -85,9 +85,12 @@ export function Advisor({ c }: { c: Character }) {
             {x.role === 'user' ? (
               <p className="text-sm text-app-text">{x.content}</p>
             ) : (
-              <div className="rmhc-markdown text-sm leading-relaxed text-app-text">
-                <ReactMarkdown>{x.content}</ReactMarkdown>
-              </div>
+              <>
+                <div className="rmhc-markdown text-sm leading-relaxed text-app-text">
+                  <ReactMarkdown>{x.content}</ReactMarkdown>
+                </div>
+                {x.recommendations?.length ? <Recommendations c={c} data={data} recs={x.recommendations} onApply={onApply} /> : null}
+              </>
             )}
           </li>
         ))}

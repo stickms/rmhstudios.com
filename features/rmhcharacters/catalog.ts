@@ -34,7 +34,7 @@ const entry: AppInfo =
       '/images/games/banners/rmhcharacters.webp',
     logoPath:
       '/images/games/logos/rmhcharacters.webp',
-    authGate: false,
+    authGate: true,
   };
 
 export default entry;

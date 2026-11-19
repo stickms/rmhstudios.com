@@ -1,15 +1,19 @@
-/** The roster: every character in this browser, new / import / export-all. */
+/** The roster (the app's main menu): every character on the account, new / import / export-all / exit. */
 import { useState } from 'react';
-import { Copy, Download, FileUp, Plus, Trash2, UserRound } from 'lucide-react';
+import { AlertTriangle, Copy, Download, FileUp, LogOut, Plus, Trash2, UserRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { useQuitGame } from '@/hooks/useQuitGame';
+import { toast } from '@/lib/shared/app-toast';
+import { flushRoster } from '@features/rmhcharacters/engine/store';
 import { rosterBundle } from '@features/rmhcharacters/engine/formats';
 import { SYSTEM_LABEL } from '@features/rmhcharacters/engine/data';
 import { useRoster } from '@features/rmhcharacters/engine/store';
 import type { Character, GameSystem } from '@features/rmhcharacters/engine/types';
 import { ImportDialog } from './ImportDialog';
-import { downloadText } from './useData';
+import { pending } from '@features/rmhcharacters/engine/pending';
+import { downloadText, useDnd5eData, usePf2eData } from './useData';
 
 function summary(c: Character): string {
   if (c.system === 'dnd5e') {
@@ -28,13 +32,36 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
   const remove = useRoster((s) => s.remove);
   const confirm = useConfirm();
   const [importing, setImporting] = useState(false);
+  const quit = useQuitGame();
+  // Rules data only for the systems on the roster: it is what counts each character's open choices.
+  const d5 = useDnd5eData(characters.some((c) => c.system === 'dnd5e'));
+  const pf = usePf2eData(characters.some((c) => c.system === 'pf2e'));
+  const toFinish = (c: Character) => {
+    const d = c.system === 'dnd5e' ? d5 : pf;
+    if (!d) return 0;
+    const p = pending(c, d);
+    return p.build + p.spells;
+  };
+  const migrated = useRoster((s) => s.migrated);
 
   const start = (system: GameSystem) => onOpen(create(system).id);
 
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2 border-b border-app-border pb-4">
-        <h1 className="text-2xl font-semibold text-app-text">{t('title', { defaultValue: 'RMHCharacters' })}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-2xl font-semibold text-app-text">{t('title', { defaultValue: 'RMHCharacters' })}</h1>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              flushRoster();
+              quit();
+            }}
+          >
+            <LogOut aria-hidden /> {t('roster.exit', { defaultValue: 'Exit' })}
+          </Button>
+        </div>
         <p className="max-w-2xl text-sm text-app-text-muted">
           {t('intro', {
             defaultValue:
@@ -66,11 +93,16 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
         </div>
       </header>
 
+      {migrated ? (
+        <p role="status" className="border-l-2 border-app-accent pl-3 text-sm text-app-text">
+          {t('roster.migrated', { defaultValue: 'Moved {{count}} character(s) from this browser to your account.', count: migrated })}
+        </p>
+      ) : null}
       {characters.length === 0 ? (
         <div className="flex flex-col items-start gap-2 py-8">
           <p className="text-base font-medium text-app-text">{t('roster.emptyTitle', { defaultValue: 'No characters yet' })}</p>
           <p className="text-sm text-app-text-muted">
-            {t('roster.empty', { defaultValue: 'Start one above, or import a file from another tool. Characters are saved in this browser; export them to keep a copy.' })}
+            {t('roster.emptyAccount', { defaultValue: 'Start one above, or import a file from another tool. Characters are saved to your account and open on any device.' })}
           </p>
         </div>
       ) : (
@@ -88,7 +120,15 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate text-base font-medium text-app-text">{c.name || t('roster.unnamed', { defaultValue: 'Unnamed character' })}</span>
                   <span className="truncate text-sm capitalize text-app-text-muted">{summary(c)}</span>
-                  <span className="font-mono text-xs text-app-text-muted">{SYSTEM_LABEL[c.system]}</span>
+                  <span className="flex flex-wrap items-center gap-x-2 font-mono text-xs text-app-text-muted">
+                    {SYSTEM_LABEL[c.system]}
+                    {toFinish(c) ? (
+                      <span className="inline-flex items-center gap-1 font-sans font-medium text-app-warning">
+                        <AlertTriangle className="size-3" aria-hidden />
+                        {t('roster.toFinish', { defaultValue: '{{count}} to finish', count: toFinish(c) })}
+                      </span>
+                    ) : null}
+                  </span>
                 </span>
               </button>
               <Button type="button" variant="ghost" size="icon" aria-label={t('roster.duplicate', { defaultValue: 'Duplicate {{name}}', name: c.name || '' })} onClick={() => duplicate(c.id)}>
@@ -106,7 +146,7 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
                     confirmLabel: t('roster.deleteConfirm', { defaultValue: 'Delete' }),
                     danger: true,
                   });
-                  if (ok) remove(c.id);
+                  if (ok && !(await remove(c.id))) toast.error(t('roster.deleteFailed', { defaultValue: 'That character could not be deleted. Try again.' }));
                 }}
               >
                 <Trash2 aria-hidden />

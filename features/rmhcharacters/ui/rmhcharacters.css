@@ -132,6 +132,24 @@
   background: var(--app-surface-hover);
 }
 
+/* Unfinished choices: a warning edge on the field, a warning rule down a section's left side. */
+.rmhc-app .rmhc-needs {
+  border-color: var(--app-warning);
+  border-left-width: 3px;
+}
+
+.rmhc-app .rmhc-needs-section {
+  border-left: 2px solid var(--app-warning);
+  padding-left: 12px;
+}
+
+@media print {
+  .rmhc-app .rmhc-needs-section {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
 /* Advisor answers: Markdown from the model. */
 .rmhc-app .rmhc-markdown :is(h1, h2, h3, h4) {
   font-size: 15px;

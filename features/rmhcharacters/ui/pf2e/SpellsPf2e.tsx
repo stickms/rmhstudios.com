@@ -2,6 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import * as R from '@features/rmhcharacters/engine/pf2e/rules';
 import type { Pf2eCharacter, Pf2eData } from '@features/rmhcharacters/engine/types';
+import { pending } from '@features/rmhcharacters/engine/pending';
 import { Muted, Picker, Section, StatRow } from '../controls';
 
 type SetPf = (fn: (c: Pf2eCharacter) => Pf2eCharacter) => void;
@@ -17,7 +18,7 @@ export function SpellsPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: 
     <div className="flex flex-col gap-2">
       {sc ? (
         <>
-          <Section title={t('pfs.title', { defaultValue: 'Spellcasting' })}>
+          <Section title={t('pfs.title', { defaultValue: 'Spellcasting' })} needs={pending(c, d).spells}>
             <StatRow label={t('pfs.tradition', { defaultValue: '{{tradition}} {{type}} ({{rank}})', tradition: sc.tradition, type: sc.type, rank: R.RANK_NAMES[sc.rank] })} value={t('pfs.dc', { defaultValue: 'DC {{dc}} · {{attack}} attack', dc: sc.dc, attack: R.signed(sc.attack) })} />
             <StatRow label={t('pfs.cantrips', { defaultValue: 'Cantrips (heightened to rank {{r}})', r: sc.maxRank })} value={sc.cantrips} />
             {sc.slots.map((n, i) =>
