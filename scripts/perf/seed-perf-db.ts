@@ -13,7 +13,7 @@
  *
  * What it writes:
  *   - the dataset itself (users, posts, follows, likes, comments, notifications,
- *     conversations/DMs, communities, game scores, hashtags);
+ *     DM chats, communities, game scores, hashtags);
  *   - two sessions (bench user, heavy user) and a signed `session_token` cookie
  *     for each, into `scripts/perf/.dataset.json` (gitignored).
  *
@@ -386,12 +386,14 @@ async function main() {
      FROM generate_series(1, ${N.notifications - HEAVY_UNREAD - 1700}) g`,
   );
 
-  /* conversations + DMs ---------------------------------------------------- */
+  /* DM chats + messages --------------------------------------------------- */
+  // One `chat` row of kind 'dm' per pair (dmKey = lower:higher id), its two
+  // members in slots 1 and 2, and the messages in `chat_message` (lib/chat).
   await step(
-    'conversations',
-    `INSERT INTO conversation (id, "participantOneId", "participantTwoId", "lastMessageAt", "createdAt")
-     SELECT 'cv' || lpad(g::text, 7, '0'),
-            'cu' || lpad(LEAST(a, b)::text, 8, '0'), 'cu' || lpad(GREATEST(a, b)::text, 8, '0'),
+    'chat (dm)',
+    `INSERT INTO chat (id, kind, "dmKey", "lastMessageAt", "createdAt")
+     SELECT 'cv' || lpad(g::text, 7, '0'), 'dm',
+            'cu' || lpad(LEAST(a, b)::text, 8, '0') || ':' || 'cu' || lpad(GREATEST(a, b)::text, 8, '0'),
             now() - ${R}(g, 40) * interval '30 days', now() - interval '40 days'
      FROM (
        SELECT g,
@@ -402,13 +404,21 @@ async function main() {
      ON CONFLICT DO NOTHING`,
   );
   await step(
-    'direct_message',
-    `INSERT INTO direct_message (id, "conversationId", "senderId", content, read, "createdAt")
+    'chat_member (dm)',
+    `INSERT INTO chat_member (id, "chatId", "userId", slot, "lastReadAt", "joinedAt")
+     SELECT 'dm' || s.slot || '_' || c.id, c.id, split_part(c."dmKey", ':', s.slot), s.slot, c."createdAt", c."createdAt"
+     FROM chat c CROSS JOIN (VALUES (1), (2)) s(slot)
+     WHERE c.kind = 'dm' AND c.id LIKE 'cv%'
+     ON CONFLICT DO NOTHING`,
+  );
+  await step(
+    'chat_message (dm)',
+    `INSERT INTO chat_message (id, "chatId", "senderId", content, read, "createdAt")
      SELECT 'cd' || lpad(g::text, 8, '0'), c.id,
-            CASE WHEN ${R}(g, 43) < 0.5 THEN c."participantOneId" ELSE c."participantTwoId" END,
+            split_part(c."dmKey", ':', CASE WHEN ${R}(g, 43) < 0.5 THEN 1 ELSE 2 END),
             'Synthetic message #' || g, ${R}(g, 44) > 0.1, c."createdAt" + (g % 5000) * interval '10 minutes'
      FROM generate_series(1, ${N.dms}) g
-     JOIN conversation c ON c.id = 'cv' || lpad((1 + (g % ${N.conversations}))::text, 7, '0')`,
+     JOIN chat c ON c.id = 'cv' || lpad((1 + (g % ${N.conversations}))::text, 7, '0')`,
   );
 
   /* game scores ------------------------------------------------------------ */
@@ -463,13 +473,13 @@ async function main() {
   const threadAuthor = await authorOf(pid(THREAD_POST));
   const newestAuthor = await authorOf(pid(1));
   const commentRow = await one(`SELECT id FROM rmheet_comment WHERE "rmheetId" = '${pid(THREAD_POST)}' AND "parentId" IS NULL LIMIT 1`);
-  const convs = await one(`SELECT id, "participantOneId", "participantTwoId" FROM conversation WHERE "participantOneId" IN ('cu00000001','cu00000002') OR "participantTwoId" IN ('cu00000001','cu00000002') ORDER BY id LIMIT 60`);
-  const convOf = (user: string) => convs.find((c) => c.participantOneId === user || c.participantTwoId === user)?.id;
+  const convs = await one(`SELECT c.id, m."userId" FROM chat c JOIN chat_member m ON m."chatId" = c.id WHERE c.kind = 'dm' AND m."userId" IN ('cu00000001','cu00000002') ORDER BY c.id LIMIT 60`);
+  const convOf = (user: string) => convs.find((c) => c.userId === user)?.id;
   const counts = await one(
     `SELECT (SELECT count(*) FROM "user") users, (SELECT count(*) FROM rmheet) posts, (SELECT count(*) FROM follow) follows,
             (SELECT count(*) FROM rmheet_like) likes, (SELECT count(*) FROM rmheet_comment) comments,
-            (SELECT count(*) FROM notification) notifications, (SELECT count(*) FROM direct_message) dms,
-            (SELECT count(*) FROM conversation) conversations, (SELECT count(*) FROM community) communities,
+            (SELECT count(*) FROM notification) notifications, (SELECT count(*) FROM chat_message m JOIN chat c ON c.id = m."chatId" AND c.kind = 'dm') dms,
+            (SELECT count(*) FROM chat WHERE kind = 'dm') conversations, (SELECT count(*) FROM community) communities,
             (SELECT count(*) FROM community_member) members, (SELECT count(*) FROM game_stat) game_stats`,
   );
 
