@@ -1,4 +1,5 @@
 import { readJson, readString, removeKey, writeJson, writeString } from '@/lib/core/persist';
+import { minutesInTz } from '@/lib/notify/categories';
 /**
  * Access & comfort preferences that sit beside the §13 appearance suite: text
  * spacing, format preferences, caption style, shake-to-report, bedtime mode and
@@ -79,26 +80,33 @@ export function parseAccessPrefs(raw: unknown): AccessPrefs {
   };
 }
 
-/** Quiet window [start, end) in minutes-from-midnight, mirrored from notification settings. */
-export function readQuietHours(): { start: number; end: number } | null {
+/**
+ * Quiet window [start, end) in minutes-from-midnight, mirrored from notification settings, with the time zone the
+ * window is written in. The server holds pushes by that zone (lib/notify/dispatch.server.ts); Bedtime reads the
+ * same zone so the two agree on a device set to another one (settings audit, 2026-11-19). An older mirror without
+ * a zone reads the device clock, as it did.
+ */
+export function readQuietHours(): { start: number; end: number; tz: string | null } | null {
   const raw = readString(QUIET_HOURS_KEY);
   if (!raw) return null;
-  const [s, e] = raw.split(',').map(Number);
+  const [sRaw, eRaw, tz] = raw.split(',');
+  const s = Number(sRaw);
+  const e = Number(eRaw);
   if (!Number.isFinite(s) || !Number.isFinite(e) || s === e) return null;
-  return { start: s, end: e };
+  return { start: s, end: e, tz: tz || null };
 }
 
-export function mirrorQuietHours(start: number | null, end: number | null) {
+export function mirrorQuietHours(start: number | null, end: number | null, tz?: string | null) {
   if (start == null || end == null || start === end) removeKey(QUIET_HOURS_KEY);
-  else writeString(QUIET_HOURS_KEY, `${start},${end}`);
+  else writeString(QUIET_HOURS_KEY, tz ? `${start},${end},${tz}` : `${start},${end}`);
   window.dispatchEvent(new Event(ACCESS_EVENT));
 }
 
-/** True when the local clock is inside the mirrored quiet window. */
+/** True when the clock, in the window's own time zone, is inside the mirrored quiet window. */
 export function inLocalQuietHours(now = new Date()): boolean {
   const q = readQuietHours();
   if (!q) return false;
-  const m = now.getHours() * 60 + now.getMinutes();
+  const m = q.tz ? minutesInTz(now, q.tz) : now.getHours() * 60 + now.getMinutes();
   return q.start < q.end ? m >= q.start && m < q.end : m >= q.start || m < q.end;
 }
 

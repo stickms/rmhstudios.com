@@ -1,7 +1,7 @@
 import { createAuthClient } from 'better-auth/react';
 import { stripeClient } from '@better-auth/stripe/client';
 import { passkeyClient } from '@better-auth/passkey/client';
-import { customSessionClient } from 'better-auth/client/plugins';
+import { customSessionClient, emailOTPClient } from 'better-auth/client/plugins';
 import type { auth } from '@/lib/auth';
 import { refreshLiveSession } from '@/lib/session/live-session';
 
@@ -16,6 +16,7 @@ export const authClient =
             },
           ),
           passkeyClient(),
+          emailOTPClient(),
           customSessionClient<
             typeof auth
           >(),

@@ -88,10 +88,10 @@ function categoryLabel(
       );
     case 'economy':
       return t(
-        'category-awards',
+        'category-tips-awards',
         {
           defaultValue:
-            'Awards',
+            'Tips & awards',
         },
       );
     case 'events':
@@ -234,6 +234,9 @@ export function NotificationSettings() {
               null,
             d.quietEnd ??
               null,
+            d.tz ??
+              Intl.DateTimeFormat().resolvedOptions()
+                .timeZone,
           );
           setPrefs(
             {
@@ -268,6 +271,7 @@ export function NotificationSettings() {
     mirrorQuietHours(
       next.quietStart,
       next.quietEnd,
+      next.tz,
     );
     api(
       setNotificationMatrixApi,

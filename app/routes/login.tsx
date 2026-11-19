@@ -104,6 +104,12 @@ function LoginPage() {
     null,
   );
   const [resending, setResending] = useState(false);
+  const [code, setCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  // Forgot password: `form` asks for the address, `sent` says a link is on its way. The answer is the same whether or
+  // not the address has an account (Better Auth sends nothing for an unknown one), so it never reveals who is signed up.
+  const [forgot, setForgot] = useState<'form' | 'sent' | null>(null);
+  const [sendingReset, setSendingReset] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -206,11 +212,77 @@ function LoginPage() {
     if (!awaitingEmail) return;
     setResending(true);
     try {
-      const res = await authClient.sendVerificationEmail({ email: awaitingEmail.email, callbackURL: returnHere });
+      const res = await authClient.emailOtp.sendVerificationOtp({
+        email: awaitingEmail.email,
+        type: 'email-verification',
+      });
       if (res.error) setError(res.error.message ?? t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
-      else setError(null);
+      else {
+        setError(null);
+        setCode('');
+      }
     } finally {
       setResending(false);
+    }
+  };
+
+  // The account is confirmed and signed in by the code (autoSignInAfterVerification). A picture chosen at sign-up is
+  // uploaded now that there is a session to put it on.
+  const verifyCode = async (value: string) => {
+    if (!awaitingEmail || verifying) return;
+    if (!/^\d{6}$/.test(value)) {
+      setError(t('code-invalid-format', { defaultValue: 'Enter the 6-digit code from the email.' }));
+      return;
+    }
+    setVerifying(true);
+    setError(null);
+    try {
+      const res = await authClient.emailOtp.verifyEmail({ email: awaitingEmail.email, otp: value });
+      if (res.error) {
+        setError(
+          res.error.code === 'OTP_EXPIRED' || res.error.code === 'TOO_MANY_ATTEMPTS'
+            ? t('code-expired', { defaultValue: 'That code has expired. Send a new one.' })
+            : t('code-wrong', { defaultValue: 'That code is not right. Check the email and try again.' }),
+        );
+        setVerifying(false);
+        return;
+      }
+      if (avatarFile) {
+        try {
+          const formData = new FormData();
+          formData.append('avatar', avatarFile);
+          await api(uploadAvatarApi, { body: formData });
+        } catch {
+          // The account is confirmed; the picture is best-effort.
+        }
+      }
+      window.location.href = callbackURL;
+    } catch {
+      setError(t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
+      setVerifying(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError(t('validation-email', { defaultValue: 'Enter a valid email address.' }));
+      return;
+    }
+    setSendingReset(true);
+    try {
+      const res = await authClient.requestPasswordReset({ email: trimmedEmail, redirectTo: '/reset-password' });
+      if (res.error) {
+        setError(res.error.message ?? t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
+      } else {
+        setForgot('sent');
+      }
+    } catch {
+      setError(t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
+    } finally {
+      setSendingReset(false);
     }
   };
 
@@ -480,6 +552,21 @@ function LoginPage() {
         />
       </div>
 
+      {!isSignUp && (
+        <div className="text-end">
+          <button
+            type="button"
+            onClick={() => {
+              setForgot('form');
+              setError(null);
+            }}
+            className="inline-flex min-h-11 items-center px-1 text-sm text-site-text-muted underline underline-offset-4 hover:text-site-text"
+          >
+            {t('forgot-password-link', { defaultValue: 'Forgot password?' })}
+          </button>
+        </div>
+      )}
+
       {error && (
         <div
           id="login-error"
@@ -546,39 +633,151 @@ function LoginPage() {
           </p>
         ) : null}
 
-        {awaitingEmail ? (
-          <div className="space-y-3 text-center">
+        {forgot ? (
+          forgot === 'sent' ? (
+            <div className="space-y-3 text-center">
+              <h2 className="t-heading">{t('check-inbox-title', { defaultValue: 'Check your inbox' })}</h2>
+              <p className="text-sm text-site-text-muted">
+                {t('forgot-sent', {
+                  defaultValue:
+                    'If {{email}} has an account, we sent it a link to choose a new password. The link expires in an hour.',
+                  email: email.trim(),
+                })}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setForgot(null);
+                  setError(null);
+                }}
+                className="inline-flex min-h-11 items-center justify-center px-3 text-sm text-site-text-muted transition-colors hover:text-site-text"
+              >
+                {t('check-inbox-back', { defaultValue: 'Back to sign in' })}
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotSubmit} noValidate className="space-y-3">
+              <h2 className="t-heading text-center">
+                {t('forgot-title', { defaultValue: 'Reset your password' })}
+              </h2>
+              <p className="text-center text-sm text-site-text-muted">
+                {t('forgot-desc', {
+                  defaultValue: 'Enter the email you sign in with and we will send you a link to choose a new password.',
+                })}
+              </p>
+              <div className="relative">
+                <Mail className={fieldIcon} aria-hidden />
+                <Input
+                  type="email"
+                  placeholder={t('email-placeholder', { defaultValue: 'Email address' })}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoFocus
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? 'forgot-error' : undefined}
+                  autoComplete="email"
+                  className="h-12 pl-11 pr-4"
+                />
+              </div>
+              {error && (
+                <p id="forgot-error" role="alert" className="text-center text-sm text-site-danger">
+                  {error}
+                </p>
+              )}
+              <Button type="submit" variant="primary" size="lg" loading={sendingReset} className="w-full">
+                {t('forgot-submit', { defaultValue: 'Send reset link' })}
+              </Button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgot(null);
+                    setError(null);
+                  }}
+                  className="inline-flex min-h-11 items-center justify-center px-3 text-sm text-site-text-muted transition-colors hover:text-site-text"
+                >
+                  {t('check-inbox-back', { defaultValue: 'Back to sign in' })}
+                </button>
+              </div>
+            </form>
+          )
+        ) : awaitingEmail ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void verifyCode(code);
+            }}
+            noValidate
+            className="space-y-3 text-center"
+          >
             <h2 className="t-heading">{t('check-inbox-title', { defaultValue: 'Check your inbox' })}</h2>
             <p className="text-sm text-site-text-muted">
               {awaitingEmail.after === 'sign-up'
-                ? t('check-inbox-sign-up', {
-                    defaultValue: 'We sent a link to {{email}}. Open it to confirm your email and finish signing up.',
+                ? t('code-sent-sign-up', {
+                    defaultValue: 'We sent a 6-digit code to {{email}}. Enter it to confirm your email and finish signing up.',
                     email: awaitingEmail.email,
                   })
-                : t('check-inbox-sign-in', {
-                    defaultValue: 'Confirm your email before you sign in. We sent a new link to {{email}}.',
+                : t('code-sent-sign-in', {
+                    defaultValue: 'Confirm your email before you sign in. We sent a 6-digit code to {{email}}.',
                     email: awaitingEmail.email,
                   })}
             </p>
+            <label htmlFor="verify-code" className="sr-only">
+              {t('code-label', { defaultValue: 'Verification code' })}
+            </label>
+            {/* one-time-code + numeric keypad: iOS and macOS offer the code from Mail above the keyboard, Android's
+                keyboard and Chrome offer it from Gmail, and a pasted "123 456" is cleaned to digits. Six digits submit
+                on their own, so an autofilled code finishes without another tap. */}
+            <Input
+              id="verify-code"
+              name="otp"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              autoFocus
+              value={code}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setCode(digits);
+                if (digits.length === 6) void verifyCode(digits);
+              }}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'verify-error' : undefined}
+              className="h-12 text-center font-mono text-lg tracking-[0.3em]"
+            />
             {error && (
-              <p role="alert" className="text-sm text-site-danger">
+              <p id="verify-error" role="alert" className="text-sm text-site-danger">
                 {error}
               </p>
             )}
-            <Button type="button" size="lg" onClick={resendVerification} loading={resending} className="w-full">
-              {t('check-inbox-resend', { defaultValue: 'Send the link again' })}
+            <Button type="submit" variant="primary" size="lg" loading={verifying} className="w-full">
+              {t('code-submit', { defaultValue: 'Confirm email' })}
             </Button>
-            <button
-              type="button"
-              onClick={() => {
-                setAwaitingEmail(null);
-                setError(null);
-              }}
-              className="inline-flex min-h-11 items-center justify-center px-3 text-sm text-site-text-muted transition-colors hover:text-site-text"
-            >
-              {t('check-inbox-back', { defaultValue: 'Back to sign in' })}
-            </button>
-          </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-4">
+              <button
+                type="button"
+                onClick={resendVerification}
+                disabled={resending}
+                className="inline-flex min-h-11 items-center justify-center px-3 text-sm text-site-text-muted underline underline-offset-4 hover:text-site-text"
+              >
+                {t('code-resend', { defaultValue: 'Send a new code' })}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAwaitingEmail(null);
+                  setCode('');
+                  setError(null);
+                }}
+                className="inline-flex min-h-11 items-center justify-center px-3 text-sm text-site-text-muted hover:text-site-text"
+              >
+                {t('check-inbox-back', { defaultValue: 'Back to sign in' })}
+              </button>
+            </div>
+          </form>
         ) : (
         <div className="space-y-3">
           {/* Passkey is the promoted primary path: fastest + phishing-resistant.

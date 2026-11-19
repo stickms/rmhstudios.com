@@ -61,6 +61,7 @@ export const route = apiRoute('/api/coins/tip', {
           userId: recipientId,
           actorId: senderId,
           type: 'SYSTEM',
+          category: 'economy',
           entityType: 'tip',
           entityId,
           preview: `${senderName} tipped you 🪙 ${amount}${note ? ` — “${note.trim()}”` : ''}`,

@@ -104,18 +104,53 @@ export function accessStep({
       +q[0];
     const b =
       +q[1];
+    // "start,end" or "start,end,tz" (lib/access/prefs.ts mirrorQuietHours): read the clock in the window's own
+    // zone, the one the server holds pushes by, and fall back to the device clock for an older mirror or a bad zone.
     if (
-      q.length ===
-        2 &&
+      (q.length ===
+        2 ||
+        q.length ===
+          3) &&
       a !==
         b
     ) {
       const d =
         new Date();
-      const m =
+      let m =
         d.getHours() *
           60 +
         d.getMinutes();
+      if (q[2]) {
+        try {
+          const parts =
+            new Intl.DateTimeFormat(
+              'en-US',
+              {
+                timeZone:
+                  q[2],
+                hour: '2-digit',
+                minute:
+                  '2-digit',
+                hourCycle:
+                  'h23',
+              },
+            ).formatToParts(
+              d,
+            );
+          let hh = 0;
+          let mm = 0;
+          for (const part of parts) {
+            if (part.type === 'hour') hh = +part.value % 24;
+            else if (part.type === 'minute') mm = +part.value;
+          }
+          m =
+            hh *
+              60 +
+            mm;
+        } catch {
+          // An unknown zone keeps the device clock.
+        }
+      }
       if (
         a <
         b

@@ -68,10 +68,6 @@ export const notifPrefsSchema =
         )
         .nullable()
         .optional(),
-      emailDigest:
-        z
-          .boolean()
-          .optional(),
     },
   );
 

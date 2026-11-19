@@ -178,8 +178,6 @@ export function Providers({
   const session = useLiveSession();
   const style = useThemeStore((s) => s.style);
   const styleFromDevice = useThemeStore((s) => s.styleFromDevice);
-  const fontScale = useThemeStore((s) => s.fontScale);
-  const density = useThemeStore((s) => s.density);
   const readableFont = useThemeStore((s) => s.readableFont);
   const colorVision = useThemeStore((s) => s.colorVision);
   const jellyMotion = useThemeStore((s) => s.jellyMotion);
@@ -327,9 +325,6 @@ export function Providers({
     }
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
-    const fs = Number(readString(FONT_SCALE_KEY));
-    if ([875, 1000, 1125, 1250].includes(fs)) st.setFontScale(fs);
-    if (readString(DENSITY_KEY) === 'compact') st.setDensity('compact');
     if (readString(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
     const cv = readString(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
@@ -429,13 +424,10 @@ export function Providers({
     removeKey('rmh-reduce-motion');
 
     // ── Comfort suite (§13) ──────────────────────────────────────────────
-    if (fontScale && fontScale !== 1000) {
-      html.style.fontSize = `${fontScale / 10}%`;
-      writeString(FONT_SCALE_KEY, String(fontScale));
-    } else {
-      html.style.removeProperty('font-size');
-      removeKey(FONT_SCALE_KEY);
-    }
+    // Text size is retired (owner, 2026-11-19): Steel type is set in px (steel-type.css), so a root font-size only
+    // ever scaled the rem-based controls and left headings and posts as they were. A stored scale is cleared here.
+    html.style.removeProperty('font-size');
+    removeKey(FONT_SCALE_KEY);
     // Density is retired (settings audit, 2026-11-19): it only tightened the `<Card>` primitive, which Steel pages do
     // not use. A stored "compact" is cleared here rather than left applied with no control to undo it.
     html.removeAttribute('data-density');
@@ -489,8 +481,6 @@ export function Providers({
     style,
     styleFromDevice,
     isAppRoute,
-    fontScale,
-    density,
     readableFont,
     colorVision,
     jellyMotion,
@@ -557,15 +547,10 @@ export function Providers({
         // Comfort suite (§13): apply account values on this device (account
         // wins where set; the settings panel persists device changes).
         const r = remote as typeof remote & {
-          fontScale?: number | null;
-          density?: string | null;
           readableFont?: boolean | null;
           colorVision?: string | null;
           jellyMotion?: string | null;
         };
-        if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
-          store.setFontScale(Number(r.fontScale));
-        if (r.density === 'compact' || r.density === 'cozy') store.setDensity(r.density);
         if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
         if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
         if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);

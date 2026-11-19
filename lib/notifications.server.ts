@@ -125,6 +125,12 @@ export interface CreateNotificationInput {
   /** §16 batching key — rows sharing it collapse in the list/badge. */
   groupKey?: string | null;
   /**
+   * The settings-grid row this belongs to, when its type alone does not say. Tips and awards are `SYSTEM` rows but
+   * belong to "Tips & awards" (`economy`), which has no per-type column: its in-app and push switches are read from
+   * the grid directly. Defaults to the type's category ({@link TYPE_CATEGORY}).
+   */
+  category?: NotifyCategory;
+  /**
    * §16 — the push decision, already made. `dispatch()` sets it from the
    * category grid and quiet hours. Left undefined (every direct caller), this
    * function makes the same decision itself from the notification's type.
@@ -240,6 +246,11 @@ function loadPrefs(userId: string): Promise<RecipientPrefs | null> {
 function isMuted(input: CreateNotificationInput, prefs: RecipientPrefs | null): boolean {
   if (isUnmutable(input)) return false;
   if (!prefs) return false; // no row = defaults = everything on
+  // A category with no per-type column (economy) is read from the grid; the rest keep their columns, which the grid's
+  // in-app switch writes (lib/notify/legacy-columns.ts).
+  if (input.category && input.category !== TYPE_CATEGORY[input.type]) {
+    return !resolveChannels((prefs.matrix as NotifyMatrix | null) ?? {}, input.category).inapp;
+  }
   return !prefs[PREF_FIELD[input.type]];
 }
 
@@ -259,7 +270,7 @@ function pushDecision(
 ): 'send' | 'drop' | 'hold' {
   if (input.skipPush === true) return 'drop';
   if (input.skipPush === false || !prefs) return 'send';
-  const category = TYPE_CATEGORY[input.type];
+  const category = input.category ?? TYPE_CATEGORY[input.type];
   if (!resolveChannels((prefs.matrix as NotifyMatrix | null) ?? {}, category).push) return 'drop';
   if (isUnmutable(input)) return 'send';
   return inQuietHours(minutesInTz(new Date(), prefs.tz), prefs.quietStart, prefs.quietEnd)
@@ -329,7 +340,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
     if (push === 'hold') {
       void holdNotification({
         userId: input.userId,
-        category: TYPE_CATEGORY[input.type],
+        category: input.category ?? TYPE_CATEGORY[input.type],
         channel: 'push',
         payload: {
           title: pushTitleFor(input.type),

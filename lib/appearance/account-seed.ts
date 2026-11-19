@@ -132,49 +132,10 @@ export function accountAppearanceSeed(
     ] =
       row.style;
 
-  // `if ([875, 1000, 1125, 1250].includes(Number(r.fontScale))) setFontScale(...)`
-  const fontScale =
-    Number(
-      row.fontScale,
-    );
-  if (
-    [
-      875,
-      1000,
-      1125,
-      1250,
-    ].includes(
-      fontScale,
-    )
-  ) {
-    seed[
-      FONT_SCALE_KEY
-    ] =
-      fontScale ===
-      1000
-        ? null
-        : String(
-            fontScale,
-          );
-  }
-
-  // `if (r.density === 'compact' || r.density === 'cozy') setDensity(r.density)`
-  if (
-    row.density ===
-    'compact'
-  )
-    seed[
-      DENSITY_KEY
-    ] =
-      'compact';
-  else if (
-    row.density ===
-    'cozy'
-  )
-    seed[
-      DENSITY_KEY
-    ] =
-      null;
+  // Text size and density are retired (settings audit, 2026-11-19): whatever the account row holds, the device's
+  // stored values are cleared rather than applied (only when the row holds one, so the seed stays as small as before).
+  if (row.fontScale != null) seed[FONT_SCALE_KEY] = null;
+  if (row.density != null) seed[DENSITY_KEY] = null;
 
   // `if (typeof r.readableFont === 'boolean') setReadableFont(...)` — see the
   // header: the API sends `false` for unset, so this always applies.

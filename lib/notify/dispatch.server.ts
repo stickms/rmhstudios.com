@@ -111,6 +111,7 @@ export async function dispatch(input: DispatchInput): Promise<void> {
         preview: input.preview,
         link: input.link,
         groupKey: input.groupKey,
+        category: input.category,
         skipPush: !wantPush,
       });
     } else if (wantPush) {

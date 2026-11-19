@@ -164,10 +164,10 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
         'account',
       icon: KeyRound,
       label:
-        'Passkeys & security',
-      hint: 'Sign-in methods, passkeys, sessions, recovery and account standing',
+        'Security',
+      hint: 'Sign-in methods, passkeys, sessions and account standing',
       keywords:
-        'password login 2fa sign in devices logout revoke recovery codes trusted contacts strike ban suspended appeal moderation warning status',
+        'password login 2fa sign in devices logout revoke forgot reset strike ban suspended appeal moderation warning status',
       requiresAuth: true,
     },
     {

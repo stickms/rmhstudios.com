@@ -8,13 +8,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const prefsRow = vi.hoisted(() => ({ current: null as Record<string, unknown> | null }));
 const sendPushToUser = vi.hoisted(() => vi.fn());
 const holdNotification = vi.hoisted(() => vi.fn(async () => {}));
+const createRow = vi.hoisted(() => vi.fn(async () => ({ id: 'n1' })));
 
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
     notificationPreference: { findUnique: vi.fn(async () => prefsRow.current) },
     notification: {
       findFirst: vi.fn(async () => null),
-      create: vi.fn(async () => ({ id: 'n1' })),
+      create: createRow,
     },
   },
 }));
@@ -44,6 +45,7 @@ beforeEach(() => {
   prefsRow.current = null;
   sendPushToUser.mockClear();
   holdNotification.mockClear();
+  createRow.mockClear();
 });
 
 describe('createNotification push decision', () => {
@@ -87,5 +89,26 @@ describe('createNotification push decision', () => {
     expect(sendPushToUser).toHaveBeenCalledTimes(1);
     await createNotification({ userId: 'u', actorId: 'a', type: 'LIKE', skipPush: true });
     expect(sendPushToUser).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('tips and awards follow the Tips & awards row', () => {
+  it('a tip is not dropped when only System is off in-app', async () => {
+    prefsRow.current = { ...ON, system: false, matrix: { system: { inapp: false } }, quietStart: null, quietEnd: null, tz: null };
+    await createNotification({ userId: 'u', actorId: 'a', type: 'SYSTEM', category: 'economy', entityType: 'tip' });
+    expect(createRow).toHaveBeenCalledTimes(1);
+  });
+
+  it('a tip is dropped when Tips & awards is off in-app', async () => {
+    prefsRow.current = { ...ON, matrix: { economy: { inapp: false } }, quietStart: null, quietEnd: null, tz: null };
+    await createNotification({ userId: 'u', actorId: 'a', type: 'SYSTEM', category: 'economy', entityType: 'tip' });
+    expect(createRow).not.toHaveBeenCalled();
+  });
+
+  it('a tip is not pushed when Tips & awards has Push off', async () => {
+    prefsRow.current = { ...ON, matrix: { economy: { push: false } }, quietStart: null, quietEnd: null, tz: null };
+    await createNotification({ userId: 'u', actorId: 'a', type: 'SYSTEM', category: 'economy', entityType: 'tip' });
+    expect(createRow).toHaveBeenCalledTimes(1);
+    expect(sendPushToUser).not.toHaveBeenCalled();
   });
 });

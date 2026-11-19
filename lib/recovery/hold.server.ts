@@ -2,34 +2,27 @@
  * The post-recovery economy hold (I3, "security constraints that are not
  * optional").
  *
- * For 72 hours after a completed recovery the account cannot **move coins,
- * change payout details, or file a `RedemptionRequest`**. Without it, account
- * recovery is the cheapest route into the economy: everything else in the flow
- * only slows a takeover down, and a takeover that can cash out in the first
- * minute does not care.
+ * For 72 hours after an account is recovered the account cannot **move coins,
+ * change payout details, or file a `RedemptionRequest`**. Without it, recovery
+ * is the cheapest route into the economy: a takeover that can cash out in the
+ * first minute does not care how slow everything before it was.
  *
- * The hold has no column of its own. It is derived from the mandatory
- * `AdminAuditLog` row that a completed recovery writes — which is the right
- * source anyway: the hold and the audit trail can then never disagree about
- * whether a recovery happened, and there is no second piece of state to forget
- * to set.
+ * Recovery is now one thing: a password reset by email (the recovery codes and
+ * trusted contacts it used to cover were removed, owner 2026-11-19). Better
+ * Auth's `onPasswordReset` (lib/auth.ts) calls {@link startRecoveryHold}.
  *
- * ────────────────────────────────────────────────────────────────────────────
- * WIRING (not yet done — those files are outside this change's ownership):
- * the guard has to be *called*. One line at the top of each of these:
- *
- *   lib/coins.server.ts      → awardCoins / any transfer      (throw / refuse)
- *   lib/creator/earnings.server.ts → createRedemptionRequest   (refuse)
- *   the payout-details settings route                          (refuse)
- *
- * `assertNoRecoveryHold(userId)` returns a ready-to-return 403 `Response` or
- * `null`, so the call site is `const held = await assertNoRecoveryHold(userId);
- * if (held) return held;`.
- * ────────────────────────────────────────────────────────────────────────────
+ * The hold has no column of its own. It is derived from the `AdminAuditLog` row
+ * that a completed recovery writes, so the hold and the audit trail can never
+ * disagree about whether a recovery happened. The guard is called by the tip,
+ * gift and redeem routes: `const held = await assertNoRecoveryHold(userId); if
+ * (held) return held;`.
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { RECOVERY_HOLD_MS } from '@/lib/recovery/policy';
+import { logAdminAction } from '@/lib/admin-audit.server';
+
+/** How long the economy stays paused after a recovery. */
+export const RECOVERY_HOLD_MS = 72 * 60 * 60 * 1000;
 
 /** The audit action a completed recovery writes; the hold reads it back. */
 export const RECOVERY_COMPLETED_ACTION = 'account.recovery.completed';
@@ -84,10 +77,18 @@ export async function assertNoRecoveryHold(
   return Response.json(
     {
       error:
-        'This account was recently recovered. Coin transfers, payout changes and redemptions are paused for 72 hours.',
+        "This account's password was reset recently. Coin transfers, payout changes and redemptions are paused for 72 hours.",
       reason: 'recovery-hold',
       until: hold.until?.toISOString() ?? null,
     },
     { status: 403 },
   );
+}
+
+/**
+ * Record a completed recovery, which starts the hold. `adminId` is the account
+ * itself: no admin acted, and the foreign key needs a real user.
+ */
+export async function startRecoveryHold(userId: string, detail: string): Promise<void> {
+  await logAdminAction(userId, RECOVERY_COMPLETED_ACTION, { targetType: 'user', targetId: userId, detail });
 }
