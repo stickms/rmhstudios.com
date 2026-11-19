@@ -14,6 +14,8 @@ import { chatWithPersonaApi, deletePersonaApi, getPersonaApi } from'@/lib/person
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { AdminModerateButton } from '@/components/moderation/moderation-ui';
+import { NoGlobe } from '@/components/shell/NoGlobe';
+import './conversation/conversation.css';
 
 interface Msg {
  role: string;
@@ -160,38 +162,46 @@ export function PersonaChatColumn({
 
  const greetingShown = messages.length === 0 && persona.greeting;
 
+ // Laid out like a DM thread (ConversationView): `.conversation` is exactly as tall as the window leaves it, so the
+ // message list is the one scroller and the composer is the bottom of the column. <NoGlobe /> takes the docked globe
+ // off a phone, so the header's back link to /personas is the way out there (conversation.css, site-shell.css).
  return (
- <div className={cn('flex h-screen flex-col', arrival)}>
- <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
- <Link to="/personas"className="text-site-text-muted hover:text-site-text">
- <ArrowLeft className="h-5 w-5"/>
+ <div className={cn('conversation', arrival)}>
+ <NoGlobe />
+ <div className="conversation__head">
+ <Button asChild variant="ghost" size="icon" aria-label={t('back', { defaultValue: 'Back' })}>
+ <Link to="/personas">
+ <ArrowLeft className="rtl:-scale-x-100" aria-hidden />
  </Link>
+ </Button>
  {/* §5.48 liquid-open hero — the persona tile avatar morphs into this. */}
  <div
- className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-lg"
+ className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-site-sm border border-site-border bg-site-bg-subtle text-lg"
  style={{ viewTransitionName: liquidVTName('persona', persona.id) }}
  >
  {persona.avatarUrl ? (
- <img src={persona.avatarUrl} alt=""className="h-full w-full object-cover"/>
+ <img src={persona.avatarUrl} alt="" className="h-full w-full object-cover" />
  ) : (
- persona.emoji || <Bot className="h-4 w-4 text-site-accent"/>
+ persona.emoji || <Bot className="h-4 w-4 text-site-text-muted" aria-hidden />
  )}
  </div>
  <div className="min-w-0 flex-1">
- <p className="truncate text-sm font-semibold text-site-text">{persona.name}</p>
+ <h1 className="t-body truncate font-semibold text-site-text">{persona.name}</h1>
  {persona.tagline && (
- <p className="truncate text-xs text-site-text-muted">{persona.tagline}</p>
+ <p className="t-body truncate text-site-text-muted">{persona.tagline}</p>
  )}
  </div>
  {persona.isOwner && (
- <button
+ <Button
+ variant="ghost"
+ size="icon"
  onClick={del}
  className="text-site-text-muted hover:text-site-danger"
- title={t('delete-persona', { defaultValue:'Delete persona'})}
- aria-label={t('delete-persona', { defaultValue:'Delete persona'})}
+ title={t('delete-persona', { defaultValue: 'Delete persona' })}
+ aria-label={t('delete-persona', { defaultValue: 'Delete persona' })}
  >
- <Trash2 className="h-4 w-4"/>
- </button>
+ <Trash2 aria-hidden />
+ </Button>
  )}
  {!persona.isOwner && (
  <AdminModerateButton
@@ -199,23 +209,23 @@ export function PersonaChatColumn({
  entityId={id}
  current={{ name: persona.name, tagline: persona.tagline }}
  onDone={(action) => {
- if (action ==='remove') window.location.assign('/personas');
+ if (action === 'remove') window.location.assign('/personas');
  else window.location.reload();
  }}
  />
  )}
- </header>
+ </div>
 
- <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+ <div ref={scrollRef} className="conversation__thread flex flex-col gap-3 pt-3">
  {greetingShown && (
- <Bubble role="assistant"emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
+ <Bubble from="assistant" emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
  {persona.greeting}
  </Bubble>
  )}
  {messages.map((m, i) => (
  <Bubble
  key={i}
- role={m.role}
+ from={m.role}
  emoji={persona.emoji}
  avatarUrl={persona.avatarUrl}
  className={m.role === 'assistant' && isNewReply(i) ? ARRIVE : undefined}
@@ -224,55 +234,61 @@ export function PersonaChatColumn({
  </Bubble>
  ))}
  {sending && (
- <Bubble role="assistant"emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
+ <Bubble from="assistant" emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
  <span className="inline-flex items-center gap-1 text-site-text-muted">
- <Loader2 className="h-3.5 w-3.5 animate-spin"/>{''}
- {t('typing', { defaultValue:'typing…'})}
+ <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />{' '}
+ {t('typing', { defaultValue: 'typing…' })}
  </span>
  </Bubble>
  )}
  </div>
 
- <div className="border-t border-site-border p-3">
+ <div className="conversation__composer">
  {signedIn ? (
  <div className="flex items-end gap-2">
  <textarea
  value={input}
  onChange={(e) => setInput(e.target.value)}
  onKeyDown={(e) => {
- if (e.key ==='Enter'&& !e.shiftKey) {
+ if (e.key === 'Enter' && !e.shiftKey) {
  e.preventDefault();
  send();
  }
  }}
  placeholder={t('message-placeholder', {
  name: persona.name,
- defaultValue:'Message {{name}}…',
+ defaultValue: 'Message {{name}}…',
+ })}
+ aria-label={t('message-placeholder', {
+ name: persona.name,
+ defaultValue: 'Message {{name}}…',
  })}
  rows={1}
  maxLength={1000}
- className="max-h-32 flex-1 resize-none rounded-site surface-field px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="max-h-32 min-w-0 flex-1 resize-none overflow-y-auto rounded-site surface-field px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted"
+ style={{ minHeight: '42px' }}
  />
  <Button
  variant="default"
- size="sm"
+ size="icon"
  disabled={!input.trim() || sending}
  onClick={send}
- className="h-9 gap-1"
+ className="h-[42px] w-[42px] shrink-0"
+ aria-label={t('send', { defaultValue: 'Send' })}
  >
- <Send className="h-4 w-4"/>
+ <Send aria-hidden />
  </Button>
  </div>
  ) : (
- <p className="py-2 text-center text-sm text-site-text-muted">
+ <p className="t-body py-2 text-center text-site-text-muted">
  <Link
  to="/login"
- search={{ callbackURL: `/personas/${id}`}}
- className="font-semibold text-site-accent hover:underline"
+ search={{ callbackURL: `/personas/${id}` }}
+ className="font-semibold text-site-text underline"
  >
- {t('sign-in', { defaultValue:'Sign in'})}
+ {t('sign-in', { defaultValue: 'Sign in' })}
  </Link>{' '}
- {t('sign-in-to-chat', { name: persona.name, defaultValue:'to chat with {{name}}.'})}
+ {t('sign-in-to-chat', { name: persona.name, defaultValue: 'to chat with {{name}}.' })}
  </p>
  )}
  </div>
@@ -280,36 +296,40 @@ export function PersonaChatColumn({
  );
 }
 
+/**
+ * One message, styled like a DM row (conversation.css): yours is right aligned in an ink bubble, the persona's sits on
+ * the page beside its avatar with no box (R3).
+ */
 function Bubble({
- role,
+ from,
  emoji,
  avatarUrl,
  className,
  children,
 }: {
- role: string;
+ from: string;
  emoji: string | null;
  avatarUrl?: string | null;
  className?: string | undefined;
  children: React.ReactNode;
 }) {
- const isUser = role ==='user';
+ if (from === 'user') {
  return (
- <div className={cn('flex gap-2', isUser && 'flex-row-reverse', className)}>
- {!isUser && (
- <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-sm">
+ <div className={cn('conversation__mine', className)}>
+ <div className="conversation__bubble t-post whitespace-pre-wrap">{children}</div>
+ </div>
+ );
+ }
+ return (
+ <div className={cn('flex gap-2', className)}>
+ <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-site-sm border border-site-border bg-site-bg-subtle text-sm">
  {avatarUrl ? (
- <img src={avatarUrl} alt=""className="h-full w-full object-cover"loading="lazy"/>
+ <img src={avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
  ) : (
- emoji || <Bot className="h-3.5 w-3.5 text-site-accent"/>
+ emoji || <Bot className="h-3.5 w-3.5 text-site-text-muted" aria-hidden />
  )}
  </div>
- )}
- <div
- className={`max-w-[80%] whitespace-pre-wrap break-words rounded-site px-3 py-2 text-sm ${
- isUser ?'bg-site-accent text-(--site-accent-fg)':'bg-site-surface text-site-text'
- }`}
- >
+ <div className="conversation__theirs t-post min-w-0 whitespace-pre-wrap text-site-text">
  {children}
  </div>
  </div>

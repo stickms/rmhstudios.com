@@ -140,11 +140,6 @@ describe('spatial redesign — responsive layout contract', () => {
      */
     const ALLOWED: ReadonlyArray<{ file: string; reason: string }> = [
       {
-        file: 'components/feed/PersonaChatColumn.tsx',
-        reason:
-          'Chat transcript: a fixed-height flex column with its own scroll region, not a document you read top to bottom. Pending the topbar-aware height GroupChatView now uses.',
-      },
-      {
         file: 'components/errors/NotFound.tsx',
         reason:
           'Mounted from BOTH __root (outside the shell, where a viewport-height centred block is right) and _site (inside it). It keeps min-h-dvh for the first case and carries `.error-page`, which radial.css cancels under `.radial-shell__main` for the second.',
