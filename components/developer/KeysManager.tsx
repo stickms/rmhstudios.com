@@ -31,8 +31,8 @@ import {
   createDeveloperKeyApi,
   revokeDeveloperKeyApi,
   updateDeveloperKeyApi,
-} from '@/lib/devplatform/keys.contract';
-import { developerKeysQuery } from '@/lib/devplatform/developer.queries';
+} from '@/lib/developer/keys.contract';
+import { developerKeysQuery } from '@/lib/developer/developer.queries';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 

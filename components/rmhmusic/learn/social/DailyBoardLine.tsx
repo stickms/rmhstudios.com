@@ -21,7 +21,7 @@ import { api } from '@/lib/contract/client';
 import {
   setMusicSocialApi,
   type DailyBoardMe,
-} from '@/lib/music-social/social.contract';
+} from '@/lib/rmhmusic/social/social.contract';
 import { TEXT_BUTTON } from '../buttons';
 import type { SharePayload } from '@/lib/rmhmusic/learn/social/share';
 import { boardStatusSentence } from './board-text';

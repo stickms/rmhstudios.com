@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { PageTabs } from './PageTabs';
-import { useUnreadCount } from '@/lib/useUnreadCount';
-import { useNotificationCount } from '@/lib/useNotificationCount';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
+import { useNotificationCount } from '@/hooks/useNotificationCount';
 import { MessagesColumn } from './MessagesColumn';
 import { GroupChatsColumn } from './GroupChatsColumn';
 import { NotificationsColumn } from './NotificationsColumn';

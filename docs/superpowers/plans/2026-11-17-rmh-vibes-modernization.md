@@ -3098,7 +3098,7 @@ Produces:**
 **Files:**
 Modify
 `lib/rmhvibe/vibe.server.ts`,
-`components/creator-studio/PagesTab.tsx`,
+`components/create/PagesTab.tsx`,
 `app/routes/v.new.tsx`,
 `app/routes/v.$slug.tsx`,
 `lib/rmhvibe/vibe.server.ts#listVibePages`
@@ -3232,7 +3232,7 @@ Modify
       i18n
       extract.
       Run
-      `pnpm test components/creator-studio`
+      `pnpm test components/create`
       (PagesTab
       source
       tests).

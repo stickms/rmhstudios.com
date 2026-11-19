@@ -29,7 +29,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
-import { usePushSubscription } from '@/lib/usePushSubscription';
+import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { api } from '@/lib/contract/client';
 import {
   getSohumAlertApi,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { RARITY_COLORS } from '@/lib/shop/catalog';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';

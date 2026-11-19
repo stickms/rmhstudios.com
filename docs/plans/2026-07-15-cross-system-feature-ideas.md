@@ -300,7 +300,7 @@ derivable — no double-ledger.
   risk, ship first.
 
 ### UI surfaces
-- Creator studio (`components/creator-studio/`) gets an "Earnings" tab: earned
+- Creator studio (`components/create/`) gets an "Earnings" tab: earned
   balance, redemption options, request history.
 - Admin review queue under `_site/admin/` for merch/payout fulfillment.
 

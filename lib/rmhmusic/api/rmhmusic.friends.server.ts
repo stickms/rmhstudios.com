@@ -1,6 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import { friendsApi } from '@/lib/music-social/friends.contract';
+import { friendsApi } from '@/lib/rmhmusic/social/friends.contract';
 import type { FriendsLimit } from '@/lib/rmhmusic/learn/social/friends';
 import { friendsQuery, friendsRes } from '@/lib/rmhmusic/learn/social/friends-schema';
 import { loadFriendsProgress } from '@/lib/rmhmusic/learn/social/friends.server';

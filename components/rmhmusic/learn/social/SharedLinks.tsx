@@ -17,11 +17,11 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { api } from '@/lib/contract/client';
-import { musicSharesQuery } from '@/lib/music-social/social.queries';
+import { musicSharesQuery } from '@/lib/rmhmusic/social/social.queries';
 import {
   stopAllSharesApi,
   stopShareApi,
-} from '@/lib/music-social/share.contract';
+} from '@/lib/rmhmusic/social/share.contract';
 import { TEXT_BUTTON } from '../buttons';
 import {
   shareExpiryLine,

@@ -24,7 +24,7 @@ import { useArrival } from '@/components/ui/arrive';
 import {
   apiJson,
   errorCode,
-} from '@/components/economy-plus/api';
+} from '@/components/wallet/api';
 import type {
   ExchangeKind,
   ExchangeSummary,

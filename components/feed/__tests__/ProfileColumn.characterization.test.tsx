@@ -99,7 +99,7 @@ function marker(name: string) {
     />
   );
 }
-vi.mock('@/components/economy/GiftSubDialog', () => ({ GiftSubDialog: marker('GiftSubDialog') }));
+vi.mock('@/components/wallet/GiftSubDialog', () => ({ GiftSubDialog: marker('GiftSubDialog') }));
 vi.mock('@/components/profile/ProfileShowcase', () => ({
   ProfileShowcase: marker('ProfileShowcase'),
 }));

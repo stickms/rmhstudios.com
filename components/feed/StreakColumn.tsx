@@ -1,6 +1,6 @@
 import { useEffect, useState } from'react';
 import { Flame, Trophy, CalendarCheck, Check } from'lucide-react';
-import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from'@/components/ui/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useTranslation } from'react-i18next';

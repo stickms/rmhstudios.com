@@ -6,7 +6,7 @@ import { toast } from '@/lib/toast';
 import { Library, Search, Plus, Check, Loader2 } from'lucide-react';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
-import { StudyTabs } from'@/components/study/StudyTabs';
+import { StudyTabs } from'@/components/feed/StudyTabs';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { cloneDeckApi } from '@/lib/study/decks.contract';

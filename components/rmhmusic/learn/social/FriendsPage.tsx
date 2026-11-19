@@ -26,17 +26,17 @@ import { useTranslation } from 'react-i18next';
 import { Switch } from '@/components/ui/switch';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { api } from '@/lib/contract/client';
-import type { FriendProgress } from '@/lib/music-social/friends.contract';
+import type { FriendProgress } from '@/lib/rmhmusic/social/friends.contract';
 import {
   DAILY_BOARD_KEY,
   MUSIC_SOCIAL_KEY,
   musicFriendsQuery,
   musicSocialQuery,
-} from '@/lib/music-social/social.queries';
+} from '@/lib/rmhmusic/social/social.queries';
 import {
   setMusicSocialApi,
   type MusicSocial,
-} from '@/lib/music-social/social.contract';
+} from '@/lib/rmhmusic/social/social.contract';
 import { TEXT_BUTTON } from '../buttons';
 import { Shell } from '../LessonScreen';
 import { learnerName } from './board-text';

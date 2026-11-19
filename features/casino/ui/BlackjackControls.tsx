@@ -9,7 +9,7 @@ import {
   BettingCountdown,
 } from '@/components/rmhcoins/BettingCountdown';
 import { Button } from '@/components/ui/button';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
 import { getBlackjackSocket } from '@features/casino/engine/blackjack/socket';
 import { C2S } from '@features/casino/engine/blackjack/events';

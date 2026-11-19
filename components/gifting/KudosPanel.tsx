@@ -17,7 +17,7 @@ import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { apiJson } from '@/components/economy-plus/api';
+import { apiJson } from '@/components/wallet/api';
 import { KUDOS_REASON_MAX, type KudosPage } from '@/lib/gifting/kudos';
 
 export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOwner: boolean }) {

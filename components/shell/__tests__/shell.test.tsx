@@ -41,8 +41,8 @@ vi.mock('@/components/Providers', () => ({
   useSession: () => ({ data: null, isPending: false }),
   useResolvedUser: () => ({ resolved: null, refresh: () => {} }),
 }));
-vi.mock('@/lib/useUnreadCount', () => ({ useUnreadCount: () => state.unread }));
-vi.mock('@/lib/useNotificationCount', () => ({ useNotificationCount: () => ({ count: 0 }) }));
+vi.mock('@/hooks/useUnreadCount', () => ({ useUnreadCount: () => state.unread }));
+vi.mock('@/hooks/useNotificationCount', () => ({ useNotificationCount: () => ({ count: 0 }) }));
 vi.mock('@/hooks/useMediaQuery', () => ({ useMediaQuery: () => false }));
 
 const { SiteShell } = await import('../SiteShell');

@@ -1,6 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import { sharedResultApi } from '@/lib/music-social/share.contract';
+import { sharedResultApi } from '@/lib/rmhmusic/social/share.contract';
 import { utcDate } from '@/lib/rmhmusic/learn/sprint/generate';
 import { sharedResultRes } from '@/lib/rmhmusic/learn/social/share-schema';
 import { getSharedResult } from '@/lib/rmhmusic/learn/social/share.server';

@@ -12,7 +12,7 @@ import {
   messageMutationsApi,
   messageThreadApi,
 } from '@/lib/messages/message-actions.contract';
-import { subscribeMessageStream } from '@/lib/useUnreadCount';
+import { subscribeMessageStream } from '@/hooks/useUnreadCount';
 import type { ReactionRow } from '@/lib/social/reactions';
 import {
   MUTATION_SYNC_INTERVAL_MS,
@@ -554,7 +554,7 @@ export function useConversationThread({
   ]);
 
   // Real-time incoming messages ride the ONE shared message stream
-  // (see lib/useUnreadCount) instead of this view opening its own EventSource.
+  // (see hooks/useUnreadCount) instead of this view opening its own EventSource.
   useEffect(() => {
     if (
       !session

@@ -4,7 +4,7 @@ import { useBaccaratStore } from '@features/casino/engine/baccarat/store';
 import { handValue, isNatural } from '@features/casino/engine/baccarat/logic';
 import type { Card, BaccaratResult } from '@features/casino/engine/baccarat/logic';
 import type { BetType } from '@features/casino/engine/baccarat/types';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 
 // ── Card Rendering with Flip Animation ─────────────────────────────
 

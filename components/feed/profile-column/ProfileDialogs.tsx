@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
+import { GiftSubDialog } from '@/components/wallet/GiftSubDialog';
 import { useResolvedUser } from '@/components/Providers';
 import { useUserDisplayStore } from '@/stores/userDisplayStore';
 import type { ProfileData } from '@/components/profile/profile-types';
@@ -16,7 +16,7 @@ const ProfileSongEmbed = lazy(() => import('@/components/profile/plus/ProfileSon
 // validates with the API's zod schema, which would otherwise put zod on every
 // profile page for a button most visitors never press.
 const TipDialog = lazy(() =>
-  import('@/components/economy/TipDialog').then((m) => ({ default: m.TipDialog })),
+  import('@/components/wallet/TipDialog').then((m) => ({ default: m.TipDialog })),
 );
 
 export type SocialModalKind = 'followers' | 'following';

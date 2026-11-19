@@ -17,7 +17,7 @@ import {
   type Column,
 } from '@/components/admin/perf/DataTable';
 import { Kpi } from '@/components/admin/perf/Kpi';
-import type { HourlyPoint } from '@/lib/deepseek/balance';
+import type { HourlyPoint } from '@/lib/ai/deepseek-balance';
 import {
   useDeepseekBalance,
   useDeepseekHistory,

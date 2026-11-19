@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { useHoldemStore } from '@features/casino/engine/holdem/store';
 import { getHoldemSocket } from '@features/casino/engine/holdem/socket';
 import { C2S } from '@features/casino/engine/holdem/events';

@@ -8,7 +8,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { useArrival, useSuspenseArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { apiJson } from '@/components/economy-plus/api';
+import { apiJson } from '@/components/wallet/api';
 import { api } from '@/lib/contract/client';
 import { searchSpotifyApi } from '@/lib/spotify.contract';
 import { MIXTAPE_MAX_TRACKS, type MixtapeTrack } from '@/lib/gifting/exchange';

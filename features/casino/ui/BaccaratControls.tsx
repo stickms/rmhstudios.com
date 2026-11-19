@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useBettingCountdown, BettingCountdown } from '@/components/rmhcoins/BettingCountdown';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { useBaccaratStore } from '@features/casino/engine/baccarat/store';
 import { getBaccaratSocket } from '@features/casino/engine/baccarat/socket';
 import { C2S } from '@features/casino/engine/baccarat/events';

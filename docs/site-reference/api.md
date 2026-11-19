@@ -64,9 +64,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/curated-builds/image` | `POST` | `lib/admin/api/admin.curated-builds.image.server.ts` |
 | `/api/admin/curated-builds/image/:filename` | `GET` | `lib/admin/api/admin.curated-builds.image.$filename.server.ts` |
 | `/api/admin/curated-builds/image/proxy` | `GET` | `lib/admin/api/admin.curated-builds.image.proxy.server.ts` |
-| `/api/admin/deepseek/balance` | `GET` | `lib/deepseek/api/admin.deepseek.balance.server.ts` |
-| `/api/admin/deepseek/history` | `GET` | `lib/deepseek/api/admin.deepseek.history.server.ts` |
-| `/api/admin/deepseek/refresh` | `POST` | `lib/deepseek/api/admin.deepseek.refresh.server.ts` |
+| `/api/admin/deepseek/balance` | `GET` | `lib/ai/api/admin.deepseek.balance.server.ts` |
+| `/api/admin/deepseek/history` | `GET` | `lib/ai/api/admin.deepseek.history.server.ts` |
+| `/api/admin/deepseek/refresh` | `POST` | `lib/ai/api/admin.deepseek.refresh.server.ts` |
 | `/api/admin/delight/fools` | `GET` `POST` | `lib/delight/api/admin.delight.fools.server.ts` |
 | `/api/admin/delight/fortunes` | `GET` | `lib/delight/api/admin.delight.fortunes.server.ts` |
 | `/api/admin/delight/fortunes/:id` | `POST` | `lib/delight/api/admin.delight.fortunes.$id.server.ts` |
@@ -128,9 +128,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/reading/stories/:id/suggest` | `GET` | `lib/reading/api/admin.reading.stories.$id.suggest.server.ts` |
 | `/api/admin/redemptions` | `GET` | `lib/admin/api/admin.redemptions.server.ts` |
 | `/api/admin/redemptions/:id` | `POST` | `lib/admin/api/admin.redemptions.$id.server.ts` |
-| `/api/admin/release-notes` | `GET` `POST` | `lib/devplatform/api/admin.release-notes.server.ts` |
-| `/api/admin/release-notes/:id` | `DELETE` `PATCH` | `lib/devplatform/api/admin.release-notes.$id.server.ts` |
-| `/api/admin/release-notes/draft` | `POST` | `lib/devplatform/api/admin.release-notes.draft.server.ts` |
+| `/api/admin/release-notes` | `GET` `POST` | `lib/developer/api/admin.release-notes.server.ts` |
+| `/api/admin/release-notes/:id` | `DELETE` `PATCH` | `lib/developer/api/admin.release-notes.$id.server.ts` |
+| `/api/admin/release-notes/draft` | `POST` | `lib/developer/api/admin.release-notes.draft.server.ts` |
 | `/api/admin/reports` | `GET` | `lib/admin/api/admin.reports.server.ts` |
 | `/api/admin/reports/:id` | `POST` | `lib/admin/api/admin.reports.$id.server.ts` |
 | `/api/admin/restrictions/:id` | `DELETE` | `lib/moderation/api/admin.restrictions.$id.server.ts` |
@@ -570,9 +570,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/developer/keys` | `GET` `POST` | `lib/devplatform/api/developer.keys.server.ts` |
-| `/api/developer/keys/:id` | `DELETE` `PATCH` | `lib/devplatform/api/developer.keys.$id.server.ts` |
-| `/api/developer/keys/:id/usage` | `GET` | `lib/devplatform/api/developer.keys.$id.usage.server.ts` |
+| `/api/developer/keys` | `GET` `POST` | `lib/developer/api/developer.keys.server.ts` |
+| `/api/developer/keys/:id` | `DELETE` `PATCH` | `lib/developer/api/developer.keys.$id.server.ts` |
+| `/api/developer/keys/:id/usage` | `GET` | `lib/developer/api/developer.keys.$id.usage.server.ts` |
 
 ## `/api/discord`
 
@@ -854,7 +854,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/games/gems/buy` | `POST` | `lib/games/api/games.gems.buy.server.ts` |
 | `/api/games/gems/pack` | `POST` | `lib/games/api/games.gems.pack.server.ts` |
 | `/api/games/gems/unpack` | `POST` | `lib/cards/api/games.gems.unpack.server.ts` |
-| `/api/games/how-to-play` | `POST` | `lib/devplatform/api/games.how-to-play.server.ts` |
+| `/api/games/how-to-play` | `POST` | `lib/developer/api/games.how-to-play.server.ts` |
 | `/api/games/hub/delete` | `POST` | `lib/games/api/games.hub.delete.server.ts` |
 | `/api/games/hub/moderate` | `POST` | `lib/games/api/games.hub.moderate.server.ts` |
 | `/api/games/hub/post` | `POST` | `lib/games/api/games.hub.post.server.ts` |
@@ -1536,8 +1536,8 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/recipes` | `GET` `POST` | `lib/devplatform/api/recipes.server.ts` |
-| `/api/recipes/:id` | `DELETE` `PATCH` | `lib/devplatform/api/recipes.$id.server.ts` |
+| `/api/recipes` | `GET` `POST` | `lib/developer/api/recipes.server.ts` |
+| `/api/recipes/:id` | `DELETE` `PATCH` | `lib/developer/api/recipes.$id.server.ts` |
 
 ## `/api/referrals`
 
@@ -1554,7 +1554,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/release-notes` | `GET` | `lib/devplatform/api/release-notes.server.ts` |
+| `/api/release-notes` | `GET` | `lib/developer/api/release-notes.server.ts` |
 
 ## `/api/reminders`
 

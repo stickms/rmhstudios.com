@@ -57,7 +57,7 @@ Handles are allocated at signup (`lib/handle.ts`, wired into `lib/auth.ts`). Ren
 
 ## Notifications and presence
 
-`lib/notifications.server.ts` is the single entry point for creating a notification. It respects the user's preference matrix and mirrors to web push via `lib/push/send.server.ts`, so a caller doesn't have to know whether the user wants push. Unread counts come from `lib/useUnreadCount.ts` and `lib/useNotificationCount.ts`.
+`lib/notifications.server.ts` is the single entry point for creating a notification. It respects the user's preference matrix and mirrors to web push via `lib/push/send.server.ts`, so a caller doesn't have to know whether the user wants push. Unread counts come from `hooks/useUnreadCount.ts` and `hooks/useNotificationCount.ts`.
 
 Presence lives in `lib/presence.server.ts` with `lib/usePresenceHeartbeat.ts` on the client and the shared `PEER_GRACE_MS` grace window in `lib/shared/realtime/types.ts` — the same constant the realtime servers read, so a client and server never disagree about when a peer counts as gone.
 

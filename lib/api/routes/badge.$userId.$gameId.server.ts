@@ -5,7 +5,7 @@ import { streakKey } from '@/lib/streaks/kinds';
 import { cached } from '@/lib/cached.server';
 import { games } from '@/lib/catalog';
 import { getGameAdapter } from '@/lib/game/adapters.server';
-import { renderBadge } from '@/lib/devplatform/badge';
+import { renderBadge } from '@/lib/developer/badge';
 
 const TTL_MS = 10 * 60_000;
 

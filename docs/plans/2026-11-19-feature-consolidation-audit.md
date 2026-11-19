@@ -48,7 +48,7 @@
 - **5 progress summaries:** `/progress` and `/achievements` render the same `JourneyColumn`. `/recap`, `/wrapped` (with both `lib/wrapped.server.ts` and `lib/wrapped/`), `progress-summary.server.ts`, `/today` (0 links) and "On this day" memories are the others. → One `/progress` (or "You") page with tabs, and redirects for the rest.
 - **Streaks and seasons:** DailyStreak, ArcadeStreak, and per-app streaks (study, type, doctrine, rmhbox); three season systems (battle pass, ranked, prediction). → One `Streak(userId, kind)` model and one season clock.
 - **Competition routes with no nav at all:** `/tournaments`, `/speedruns` (3.7k LOC), `/wager`, `/daily-mutator`, `/ranked`. → One `/compete` hub.
-- `components/economy` (2 files) vs `components/economy-plus` → merge into `components/wallet`. Staking and the daily wheel sit on /progress but are coin features → move them to /wallet.
+- `components/wallet` (2 files) vs `components/wallet` → merge into `components/wallet`. Staking and the daily wheel sit on /progress but are coin features → move them to /wallet.
 
 ### Content and creator
 - **Builds:** `/create/builds`, `/user-builds/{submit,manage,$slug}` and `/builds/$slug` → everything under `/create/builds/*`, with one detail route.
@@ -57,7 +57,7 @@
 - **Daily/word games, 5+ surfaces:** `/daily` puzzles, `/connections` user grids (orphaned), hidden rmhdle and rmh-connections catalog cards that link to Discord, `/daily-mutator`, `/games/daily` (a copy of `/store?tab=daily`), and the daily puzzles inside doctrine (`/strategies`, 14 models). → One Daily hub.
 - **Reading:** `/reading` (orphaned) → a "My reading" view of `/library`.
 - **Changelog:** `/changelog` (36 LOC) and `/site-history` → one page. `/breaches` → a section of `/security`.
-- **Naming:** `components/creator-studio` is the /create hub, while `/studio` is the music DAW. Rename to `components/create`. Rename `lib/devplatform` to `lib/developer`.
+- **Naming:** `components/create` is the /create hub, while `/studio` is the music DAW. Rename to `components/create`. Rename `lib/developer` to `lib/developer`.
 - **AI:** move every model call behind `lib/ai/provider.server.ts` and fold `lib/deepseek` into it.
 - **Brand registries:** `lib/businesses.ts` and `lib/verticals.ts` list the same brands. → One source.
 

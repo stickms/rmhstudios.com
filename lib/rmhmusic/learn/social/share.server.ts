@@ -22,7 +22,7 @@ import {
   resolveUser,
   userDisplaySelect,
 } from '@/lib/user-display';
-import type { ShareSummary } from '@/lib/music-social/share.contract';
+import type { ShareSummary } from '@/lib/rmhmusic/social/share.contract';
 import type { SongMode } from '../songs/scoring';
 import { eligibleUser } from './board.server';
 import {

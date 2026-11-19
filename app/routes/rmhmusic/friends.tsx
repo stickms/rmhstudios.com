@@ -12,7 +12,7 @@ import {
   musicFriendsQuery,
   musicSharesQuery,
   musicSocialQuery,
-} from '@/lib/music-social/social.queries';
+} from '@/lib/rmhmusic/social/social.queries';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { FriendsPage } from '@/components/rmhmusic/learn/social/FriendsPage';
 

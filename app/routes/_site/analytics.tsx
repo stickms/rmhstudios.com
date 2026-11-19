@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { creatorAnalyticsQuery } from '@/lib/profile/analytics.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { AnalyticsDashboard } from '@/components/creator-studio/AnalyticsDashboard';
+import { AnalyticsDashboard } from '@/components/create/AnalyticsDashboard';
 import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';

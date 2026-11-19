@@ -364,7 +364,7 @@ for (let i = 0; i < path.length - 1; i++) {
 
 **Get More Coins**: only renders if `coins < 10`. Calls `POST /api/coins/claim`, updates parent `coins` state on success. Show success toast via `sonner` (already installed).
 
-### 4E. `components/rmhcoins/CoinIcon.tsx` — Reusable Coin Icon
+### 4E. `components/ui/CoinIcon.tsx` — Reusable Coin Icon
 
 Small inline SVG of a gold coin. Used in:
 - Profile page (next to badges)
@@ -413,7 +413,7 @@ hasProfilePet: boolean;
 
 **New imports needed**:
 ```typescript
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { ProfilePet } from '@/components/rmhcoins/ProfilePet';
 ```
 (`Link` is already imported from `next/link`)
@@ -529,7 +529,7 @@ And the `.pet-dog` class selector:
 | 11 | `components/rmhcoins/RMHCoinsPage.tsx` | Create | Client component: auth gate, fetch balance, tabs (Play/Shop) |
 | 12 | `components/rmhcoins/PlinkoGame.tsx` | Create | Canvas plinko board with bin selector, bet input, ball animation |
 | 13 | `components/rmhcoins/CoinShop.tsx` | Create | Shop tab: Profile Pet card + Get More Coins button |
-| 14 | `components/rmhcoins/CoinIcon.tsx` | Create | Reusable gold coin SVG icon |
+| 14 | `components/ui/CoinIcon.tsx` | Create | Reusable gold coin SVG icon |
 | 15 | `components/rmhcoins/ProfilePet.tsx` | Create | 8-bit grass strip with animated walking dog sprite |
 | 16 | `public/sprites/rmhcoins/dog-walk.png` | Create | 4-frame dog walk sprite sheet (128x32px) |
 | 17 | `public/sprites/rmhcoins/grass-tile.png` | Create | Repeating 8-bit grass tile (32x16px) |

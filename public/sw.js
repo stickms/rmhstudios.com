@@ -113,7 +113,7 @@ const REPLAYED_HEADERS = ['content-type', 'idempotency-key'];
 /* ─── App badge (OPT-65) ───────────────────────────────────────────────────
  *
  * The Badging API paints the unread count on the installed app's icon. The page
- * half is `lib/useAppBadge.ts`; this half exists because a push can arrive with
+ * half is `hooks/useAppBadge.ts`; this half exists because a push can arrive with
  * the app closed, and a badge that only updates while the app is open is a
  * badge that is wrong exactly when someone looks at it.
  *

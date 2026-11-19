@@ -8,7 +8,7 @@ import {
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import type { Market } from './types';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { MarketExtras } from '@/components/forecasting/MarketExtras';

@@ -159,7 +159,7 @@
 
 **Files:**
 - Create: `app/routes/_site/games.tsx` (layout), `components/games-library/LibraryShell.tsx`, `components/games-library/LibraryRail.tsx`, `components/games-library/LibraryHome.tsx`
-- Modify: `app/routes/_site/games/index.tsx` (Home: Recent shelf + the existing `PartyBar`, `RankedSummary`, `ArcadeSection`; validateSearch adds `kind?: 'game' | 'app'`), `app/routes/_site/apps/index.tsx` (redirect), `components/creator-studio/CatalogTabs.tsx` (delete if unused after the redirect), `lib/sitemap.ts:70` (remove the `/apps` entry), `lib/seo-catalog.ts` (`APPS_INDEX_PATH` consumers point at `/games`), `lib/sidebar-nav.ts` and `lib/search/catalog.ts` (the `/apps` links keep working through the redirect; retarget them to `/games?kind=app`), `lib/og/static-cards.ts` (drop the `/apps` card if nothing links to it)
+- Modify: `app/routes/_site/games/index.tsx` (Home: Recent shelf + the existing `PartyBar`, `RankedSummary`, `ArcadeSection`; validateSearch adds `kind?: 'game' | 'app'`), `app/routes/_site/apps/index.tsx` (redirect), `components/create/CatalogTabs.tsx` (delete if unused after the redirect), `lib/sitemap.ts:70` (remove the `/apps` entry), `lib/seo-catalog.ts` (`APPS_INDEX_PATH` consumers point at `/games`), `lib/sidebar-nav.ts` and `lib/search/catalog.ts` (the `/apps` links keep working through the redirect; retarget them to `/games?kind=app`), `lib/og/static-cards.ts` (drop the `/apps` card if nothing links to it)
 - Test: `lib/__tests__/sitemap*.test.ts` already guards the sitemap; add `lib/games/__tests__/apps-redirect.test.ts`
 
 **Interfaces:**

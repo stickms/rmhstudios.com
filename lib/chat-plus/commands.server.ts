@@ -11,7 +11,7 @@ import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit } from '@/lib/rate-limit';
-import { aiAvailable, gameMasterReply } from '@/lib/devplatform/ai.server';
+import { aiAvailable, gameMasterReply } from '@/lib/developer/ai.server';
 import type { ChatAccess } from '@/lib/chat-plus/access.server';
 import { postChatMessage, type PostedMessage } from '@/lib/chat-plus/post.server';
 import { createChecklist } from '@/lib/chat-plus/checklist.server';

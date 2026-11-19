@@ -10,8 +10,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { creatorRedemptionsQuery, studioOverviewQuery } from '@/lib/creator/earnings.queries';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { StudioDashboard } from '@/components/creator-studio/StudioDashboard';
-import { EarningsTab } from '@/components/creator-studio/EarningsTab';
+import { StudioDashboard } from '@/components/create/StudioDashboard';
+import { EarningsTab } from '@/components/create/EarningsTab';
 
 export const Route = createFileRoute('/_site/create/earnings')({
   head: () => ({

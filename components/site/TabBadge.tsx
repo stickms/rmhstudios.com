@@ -3,7 +3,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { setAppBadgeCount } from '@/lib/useAppBadge';
+import { setAppBadgeCount } from '@/hooks/useAppBadge';
 import {
   badgedTitle,
   readTabBadgePref,

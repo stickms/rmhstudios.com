@@ -24,7 +24,7 @@
  *
  * The same trap applies to anything a route definition reads (`validateSearch`,
  * `beforeLoad`): import constants from a UI-free module
- * (`components/creator-studio/arcade-tabs.ts`), never from a component file.
+ * (`components/arcade/arcade-tabs.ts`), never from a component file.
  */
 
 import {

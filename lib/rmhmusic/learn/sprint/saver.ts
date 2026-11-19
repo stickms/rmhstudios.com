@@ -25,7 +25,7 @@
  */
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
-import type { DailyBoardMe } from '@/lib/music-social/social.contract';
+import type { DailyBoardMe } from '@/lib/rmhmusic/social/social.contract';
 import type { SprintSaveOutcome } from './machine';
 import type { SprintLevelId } from './levels';
 import type {

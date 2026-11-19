@@ -38,13 +38,13 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 - **PR C, friends' progress:** `social/friends.ts` (pure: `finishedUnits` — every available lesson
   starred, on the friend's own path — `friendDaily` over scored dates, the order, song bests from
   the songbook) and `friends.server.ts` behind `GET /api/rmhmusic/friends?limit=3|100`
-  (`lib/music-social/friends.contract.ts`). Mutual follows only (the board's cached mutuals, 30 s,
+  (`lib/rmhmusic/social/friends.contract.ts`). Mutual follows only (the board's cached mutuals, 30 s,
   dropped by the viewer's own switch), whose friends switch is on, not banned, deleted or a bot,
   minus blocks both ways on every read (fail closed: the cached mutuals can hold a pair for 30 s
   after a block). Reciprocal: the viewer's own switch is required. Names and avatars only; the
   handler sends `friendsRes.parse(result)`, which drops anything else. UI: `/rmhmusic/friends` ("Friends and sharing": the two
   switches, the friends list with `<details>` song bests, the shared links), seeded by its route
-  loader (`lib/music-social/social.queries.ts`, the one RMH Music social query module, redesign
+  loader (`lib/rmhmusic/social/social.queries.ts`, the one RMH Music social query module, redesign
   audit B4); the learn home's fourth
   footer link and up to three friend rows at the very end of the page (`HomeFriends`, rendered only
   once the list arrives, then faded in, so nothing moves). The Privacy page's friends hint no
@@ -88,7 +88,7 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   server's own gone answer reads "no longer shared". Friend rows carry no stable id (none leaves
   the server), so they are keyed by fetch time and position and a refetch closes any open song
   bests.
-- **Also:** the social contract moved to `lib/music-social/social.contract.ts` (the site's Privacy
+- **Also:** the social contract moved to `lib/rmhmusic/social/social.contract.ts` (the site's Privacy
   page imports it, and the site sheet does not scan `lib/rmhmusic`), the same move the PR #1657
   branch makes; the new contracts sit beside it.
 - **Deviations from the plan:** `GET /api/rmhmusic/social` still carries no `shares` (the list is

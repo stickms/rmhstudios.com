@@ -42,7 +42,7 @@ import type {
   BoardScope,
   DailyBoard,
   DailyBoardRow,
-} from '@/lib/music-social/social.contract';
+} from '@/lib/rmhmusic/social/social.contract';
 import { getMusicSocial } from './prefs.server';
 
 const FRIENDS_TTL_MS = 30_000;

@@ -6,7 +6,7 @@ import {
 import type {
   BurnSummary,
   HourlyPoint,
-} from '@/lib/deepseek/balance';
+} from '@/lib/ai/deepseek-balance';
 import {
   fetchJson,
   HttpError,

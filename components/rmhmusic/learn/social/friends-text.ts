@@ -7,7 +7,7 @@
  * Every call names its namespace (`ns`): this file has no `useTranslation` of its own.
  */
 import type { TFunction } from 'i18next';
-import type { FriendProgress } from '@/lib/music-social/friends.contract';
+import type { FriendProgress } from '@/lib/rmhmusic/social/friends.contract';
 
 type T =
   TFunction<'c-rmhmusic'>;

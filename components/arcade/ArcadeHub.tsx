@@ -21,7 +21,7 @@ import { Check, Clock, Flame, Gamepad2, Gift, Play, Trophy, Zap } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { games } from '@/lib/catalog';
 import { APPLE_SPRING } from '@/lib/app-motion';
 import { api } from '@/lib/contract/client';

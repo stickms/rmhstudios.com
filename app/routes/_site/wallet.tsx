@@ -11,7 +11,7 @@
 import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { definePage } from '@/lib/route/define-page';
-import { WalletPage } from '@/components/economy-plus/WalletPage';
+import { WalletPage } from '@/components/wallet/WalletPage';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { walletBalanceQuery } from '@/lib/economy/wallet.queries';
 import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';

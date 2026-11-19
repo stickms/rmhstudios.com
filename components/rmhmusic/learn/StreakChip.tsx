@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useStreak } from '@/lib/useStreak';
+import { useStreak } from '@/hooks/useStreak';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 

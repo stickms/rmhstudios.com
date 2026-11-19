@@ -143,7 +143,7 @@ MarkdownEm                                             components/blog/MDXAnimat
 default                                      function  components/breaches/BreachesPage.tsx:667:16                    
 LockBadge                                    function  components/communities/LockedCommunity.tsx:42:17               
 default                                      function  components/covid/CovidPage.tsx:915:16                          
-CuratedBuildsTab                             function  components/creator-studio/BuildsTab.tsx:52:17                  
+CuratedBuildsTab                             function  components/create/BuildsTab.tsx:52:17                  
 perkOptions                                  function  components/creator/TierEditor.tsx:35:17                        
 TONE_TEXT                                              components/daily-puzzles/PuzzleShell.tsx:37:14                 
 TASKBAR_H                                              components/dunesday/os/actions.ts:13:14                        
@@ -155,7 +155,7 @@ classify                                     function  components/dunesday/os/ap
 drop                                         function  components/dunesday/os/dnd.ts:104:17                           
 DEFAULT_PREFS                                          components/dunesday/os/store.ts:79:14                          
 Window                                       function  components/dunesday/os/Window.tsx:36:17                        
-WALLET_TABS                                            components/economy-plus/WalletPage.tsx:24:10                   
+WALLET_TABS                                            components/wallet/WalletPage.tsx:24:10                   
 NEEDLE_STOPS                                           components/elections/GlobeCanvas.tsx:19:14                     
 LIVE_POLL_MS                                           components/elections/hooks.ts:8:14                             
 IDLE_POLL_MS                                           components/elections/hooks.ts:9:14                             
@@ -679,10 +679,10 @@ fetchResultsFromServer                       function  lib/daily-puzzles/persist
 DAILY_REPLAY_MODES                                     lib/daily-puzzles/replay-schema.ts:13:14                       
 scoreSpectrumItem                            function  lib/daily-puzzles/spectrum.ts:614:17                           
 ANCHOR                                                 lib/datacenter/campuses.ts:123:14                              
-DEEPSEEK_DEFAULT_BASE                                  lib/deepseek/balance.server.ts:15:14                           
-DEEPSEEK_FETCH_TIMEOUT_MS                              lib/deepseek/balance.server.ts:16:14                           
-DEEPSEEK_RETENTION_DAYS                                lib/deepseek/balance.server.ts:18:14                           
-isDeepseekConfigured                         function  lib/deepseek/balance.server.ts:77:17                           
+DEEPSEEK_DEFAULT_BASE                                  lib/ai/deepseek-balance.server.ts:15:14                           
+DEEPSEEK_FETCH_TIMEOUT_MS                              lib/ai/deepseek-balance.server.ts:16:14                           
+DEEPSEEK_RETENTION_DAYS                                lib/ai/deepseek-balance.server.ts:18:14                           
+isDeepseekConfigured                         function  lib/ai/deepseek-balance.server.ts:77:17                           
 activeHunt                                   function  lib/delight/hunt.server.ts:20:23                               
 dayKeySchema                                           lib/delight/schema.ts:13:14                                    
 SEASONS                                                lib/delight/season.ts:16:14                                    
@@ -690,10 +690,10 @@ PAGE                                                   lib/delight/translate.ser
 MOTION_CONSENT_KEY                                     lib/device-attitude.ts:37:14                                   
 orientationEventSupported                    function  lib/device-attitude.ts:49:17                                   
 normalize                                    function  lib/device-attitude.ts:177:17                                  
-RECIPE_POLL_QUEUE                                      lib/devplatform/recipes.server.ts:25:14                        
-RECIPE_POLL_CRON                                       lib/devplatform/recipes.server.ts:26:14                        
-RECIPE_EVENT_QUEUE                                     lib/devplatform/recipes.server.ts:27:14                        
-runPolledRecipes                             function  lib/devplatform/recipes.server.ts:201:23                       
+RECIPE_POLL_QUEUE                                      lib/developer/recipes.server.ts:25:14                        
+RECIPE_POLL_CRON                                       lib/developer/recipes.server.ts:26:14                        
+RECIPE_EVENT_QUEUE                                     lib/developer/recipes.server.ts:27:14                        
+runPolledRecipes                             function  lib/developer/recipes.server.ts:201:23                       
 WEEKLY_DIGEST_QUEUE                                    lib/digest/pipeline.server.ts:25:14                            
 WEEKLY_DIGEST_CRON                                     lib/digest/pipeline.server.ts:27:14                            
 runWeeklyDigest                              function  lib/digest/pipeline.server.ts:54:23                            
@@ -2734,7 +2734,7 @@ DRAW                                                   lib/tournaments/swiss.ts:
 linkTournamentMatchSession                   function  lib/tournaments/tournament.server.ts:700:23                    
 TRASH_EXCERPT_CHARS                                    lib/trash/types.ts:276:14                                      
 httpUrlOrEmpty                               function  lib/url-schema.ts:29:17                                        
-useAppBadge                                  function  lib/useAppBadge.ts:86:17                                       
+useAppBadge                                  function  hooks/useAppBadge.ts:86:17                                       
 MAX_TITLE_LENGTH                                       lib/user-builds-schema.ts:8:14                                 
 MAX_DESCRIPTION_LENGTH                                 lib/user-builds-schema.ts:9:14                                 
 MAX_README_LENGTH                                      lib/user-builds-schema.ts:10:14                                
@@ -3027,7 +3027,7 @@ OutcastItem                         interface  lib/daily-puzzles/outcast.ts:8:18
 DailyReplayMode                     type       lib/daily-puzzles/replay-schema.ts:14:13                              
 DailyPuzzleReplay                   type       lib/daily-puzzles/replay-schema.ts:35:13                              
 HallWire                            interface  lib/datacenter/hall-hull.ts:102:18                                    
-DeepseekBalanceInfo                 interface  lib/deepseek/balance.server.ts:49:18                                  
+DeepseekBalanceInfo                 interface  lib/ai/deepseek-balance.server.ts:49:18                                  
 StringItem                          interface  lib/delight/translate.server.ts:73:18                                 
 DigestRunResult                     interface  lib/digest/pipeline.server.ts:29:18                                   
 SurpriseKind                        type       lib/discovery/surprise.server.ts:15:13                                
@@ -3663,13 +3663,13 @@ ThemeValidationErr                  interface  lib/themes/validate.ts:97:18
 CreateTournamentInput               type       lib/tournaments/tournament-schema.ts:19:13                            
 ReportMatchInput                    type       lib/tournaments/tournament-schema.ts:24:13                            
 RestoreEligibility                  type       lib/trash/trash.server.ts:648:15                                      
-SuggestionContextMessage            interface  lib/useMessageSuggestion.ts:5:18                                      
+SuggestionContextMessage            interface  hooks/useMessageSuggestion.ts:5:18                                      
 CreateBuildInput                    type       lib/user-builds-schema.ts:86:13                                       
 UpdateBuildInput                    type       lib/user-builds-schema.ts:87:13                                       
 CreateCommentInput                  type       lib/user-builds-schema.ts:88:13                                       
 BuildUser                           interface  lib/user-builds-types.ts:5:18                                         
 BuildVersion                        interface  lib/user-builds-types.ts:23:18                                        
-MessageStreamEventType              type       lib/useUnreadCount.ts:23:13                                           
+MessageStreamEventType              type       hooks/useUnreadCount.ts:23:13                                           
 VelumEvent                          type       lib/velum2099/multiplayer.ts:15:13                                    
 VelumLobbyPlayer                    interface  lib/velum2099/multiplayer.ts:25:18                                    
 VelumLobbyState                     interface  lib/velum2099/multiplayer.ts:33:18                                    

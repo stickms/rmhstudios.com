@@ -21,8 +21,8 @@ import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { musicSharedResultQuery } from '@/lib/music-social/social.queries';
-import type { SharedResultView } from '@/lib/music-social/share.contract';
+import { musicSharedResultQuery } from '@/lib/rmhmusic/social/social.queries';
+import type { SharedResultView } from '@/lib/rmhmusic/social/share.contract';
 import {
   PRIMARY_BUTTON,
   TEXT_BUTTON,

@@ -24,7 +24,7 @@ import {
 import type {
   FriendProgress,
   FriendsProgress,
-} from '@/lib/music-social/friends.contract';
+} from '@/lib/rmhmusic/social/friends.contract';
 import { pathFor } from '../content/path';
 import { utcDate } from '../sprint/generate';
 import {

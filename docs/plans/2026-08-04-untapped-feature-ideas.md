@@ -4864,7 +4864,7 @@ in.
 - **Creator
   analytics**
   —
-  `components/creator-studio/AnalyticsDashboard.tsx`
+  `components/create/AnalyticsDashboard.tsx`
   exists;
   not
   re-proposed

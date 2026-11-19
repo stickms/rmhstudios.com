@@ -2107,18 +2107,29 @@ plugin.
 
 ## Placement quirks (historical inconsistency — follow existing neighbors)
 
-- Some
+- Site-level
   hooks
   live
   in
-  `hooks/`,
-  others
-  as
+  `hooks/`
+  (the
+  old
   `lib/use*.ts`
-  (`useStreak`,
+  ones,
+  `useStreak`,
   `useUnreadCount`,
   `usePushSubscription`,
-  …).
+  …,
+  moved
+  there);
+  a
+  feature's
+  own
+  hooks
+  stay
+  in
+  its
+  folder.
 - Zustand
   stores
   live

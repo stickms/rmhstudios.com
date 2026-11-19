@@ -2,7 +2,7 @@
  * Hook to detect and manage Sahur Mode (3-4 AM time-gated features).
  * Polls the Sahur status endpoint every 30 seconds.
  *
- * The poll is a ref-counted module singleton (mirrors lib/useNotificationCount):
+ * The poll is a ref-counted module singleton (mirrors hooks/useNotificationCount):
  * several consumers (the Sahur overlay + the strategies pages) previously each
  * ran their own 30s interval, so a page holding two of them issued duplicate
  * `/api/doctrine/sahur/status` fetches. Now ONE interval feeds the shared store;

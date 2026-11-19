@@ -18,7 +18,7 @@ import { CallButton } from '@/components/call/CallButton';
 import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ProfileStorefrontStrip } from '@/components/profile/ProfileStorefrontStrip';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { safeHref } from '@/lib/url-safety';
 import { getFeaturedProfileLink } from '@/lib/profile/featured-links';

@@ -1,4 +1,4 @@
-import { parseNoteBody } from '@/lib/devplatform/release-notes';
+import { parseNoteBody } from '@/lib/developer/release-notes';
 
 /** Renders a release-note body as plain text bullets/paragraphs (never HTML). */
 export function NoteBody({

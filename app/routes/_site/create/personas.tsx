@@ -7,7 +7,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { PersonasTab } from '@/components/creator-studio/PersonasTab';
+import { PersonasTab } from '@/components/create/PersonasTab';
 
 export const Route = createFileRoute('/_site/create/personas')({
   head: () => ({

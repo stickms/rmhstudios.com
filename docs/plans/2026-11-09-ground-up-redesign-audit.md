@@ -4972,7 +4972,7 @@ components.
 Wallet
 fetches
 inside
-`components/economy-plus/WalletPage.tsx:51`;
+`components/wallet/WalletPage.tsx:51`;
 login
 and
 tournaments

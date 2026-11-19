@@ -14,11 +14,11 @@ import { toast } from '@/lib/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import {
   apiJson,
   errorCode,
-} from '@/components/economy-plus/api';
+} from '@/components/wallet/api';
 import {
   ADVENT_DOORS,
   type AdventState,

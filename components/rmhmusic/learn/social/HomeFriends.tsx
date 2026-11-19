@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ARRIVE } from '@/components/ui/arrive';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { musicFriendsQuery } from '@/lib/music-social/social.queries';
+import { musicFriendsQuery } from '@/lib/rmhmusic/social/social.queries';
 import { TEXT_BUTTON } from '../buttons';
 import { learnerName } from './board-text';
 import { friendShortLine } from './friends-text';

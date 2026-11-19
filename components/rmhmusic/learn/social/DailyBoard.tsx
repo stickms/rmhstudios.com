@@ -28,17 +28,17 @@ import { api } from '@/lib/contract/client';
 import {
   boardDate,
   type BoardDay,
-} from '@/lib/music-social/board-day';
+} from '@/lib/rmhmusic/social/board-day';
 import {
   DAILY_BOARD_KEY,
   dailyBoardQuery,
   musicSocialQuery,
-} from '@/lib/music-social/social.queries';
+} from '@/lib/rmhmusic/social/social.queries';
 import {
   setMusicSocialApi,
   type BoardScope,
   type DailyBoardRow,
-} from '@/lib/music-social/social.contract';
+} from '@/lib/rmhmusic/social/social.contract';
 import { TEXT_BUTTON } from '../buttons';
 import { Shell } from '../LessonScreen';
 import {

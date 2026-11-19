@@ -10,7 +10,7 @@ import { AdminHubCard } from '@/components/admin/AdminHubCard';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { Badge } from '@/components/ui/badge';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
+import { useAdminReviewCount } from '@/hooks/useAdminReviewCount';
 import { AdminQotdLink } from '@/components/posts-plus/AdminQotdLink';
 import { AdminDelightLink } from '@/components/delight/AdminDelightLink';
 import { AdminCanvasLink } from '@/components/canvas/admin/AdminCanvasLink';

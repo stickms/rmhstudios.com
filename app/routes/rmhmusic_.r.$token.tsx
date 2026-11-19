@@ -17,8 +17,8 @@ import {
 } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { preloadFont } from '@/lib/fonts/self-hosted';
-import { musicSharedResultQuery } from '@/lib/music-social/social.queries';
-import type { SharedResultView } from '@/lib/music-social/share.contract';
+import { musicSharedResultQuery } from '@/lib/rmhmusic/social/social.queries';
+import type { SharedResultView } from '@/lib/rmhmusic/social/share.contract';
 import { RmhMusicStyles } from '@/components/rmhmusic/RmhMusicStyles';
 import { useRmhMusicModeRoot } from '@/components/rmhmusic/useRmhMusicMode';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';

@@ -18,7 +18,7 @@
  */
 
 import { rateLimit } from '@/lib/rate-limit';
-import { emitPersonalBest } from '@/lib/devplatform/recipes.server';
+import { emitPersonalBest } from '@/lib/developer/recipes.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
 import { validateScore, rejectionMessage, type ScoreRejection } from '@/lib/game/registry';

@@ -15,7 +15,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { subscribeMessageStream } from '@/lib/useUnreadCount';
+import { subscribeMessageStream } from '@/hooks/useUnreadCount';
 import { toast } from '@/lib/toast';
 import { ChatFolderBar } from '@/components/chat-plus/ChatFolderBar';
 import { SavedMessagesRow } from '@/components/chat-plus/SavedMessagesRow';
@@ -193,7 +193,7 @@ export function MessagesColumn({
   }, [query, searchConversations]);
 
   // Real-time conversation-list updates ride the ONE shared message stream
-  // (see lib/useUnreadCount) instead of this view opening its own EventSource.
+  // (see hooks/useUnreadCount) instead of this view opening its own EventSource.
   useEffect(() => {
     if (!session) return;
     return subscribeMessageStream((type, data) => {

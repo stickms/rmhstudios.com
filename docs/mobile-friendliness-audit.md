@@ -175,7 +175,7 @@ This neutralizes essentially all ~230–260 fields without editing component cod
 
 `DialogContent` is vertically centered with `translate-y-[-50%]` but sets **no `max-height` and no `overflow-y-auto`.** When content is taller than the viewport — common on phones, and worse when the on-screen keyboard halves the available height — the top and bottom of the dialog (including action buttons) render off-screen with **no way to scroll to them.** This is the "unscrollable when necessary" symptom in the site's *shared* modal primitive.
 
-**Callers that inherit the gap and can grow tall:** `components/feed/EditPostModal.tsx:57`, `components/moderation/ReportDialog.tsx:74`, `components/feed/CommunityColumn.tsx:270,359`, `components/economy/TipDialog.tsx:55`, `components/economy/GiftSubDialog.tsx:59`, `components/game/SongLibrary.tsx:328`.
+**Callers that inherit the gap and can grow tall:** `components/feed/EditPostModal.tsx:57`, `components/moderation/ReportDialog.tsx:74`, `components/feed/CommunityColumn.tsx:270,359`, `components/wallet/TipDialog.tsx:55`, `components/wallet/GiftSubDialog.tsx:59`, `components/game/SongLibrary.tsx:328`.
 
 **Recommended fix (one line, fixes all callers).** Add a `dvh`-based cap and scroll to the base class:
 
