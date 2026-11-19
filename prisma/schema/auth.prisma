@@ -422,7 +422,6 @@ model User {
 
   /// What this member agreed to give which builds (B1).
   buildGrants         BuildGrant[]
-  readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
   idempotencyKeys     SiteIdempotencyKey[]
