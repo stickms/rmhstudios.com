@@ -105,6 +105,7 @@ import {
 } from '../sitewide-announcement';
 import { saveAnnouncementFieldsSchema } from '../sitewide-announcement-schema';
 import {
+  BUSINESSES,
   getBusiness,
   isBusinessId,
 } from '../businesses';
@@ -420,6 +421,29 @@ describe('shared helpers', () => {
     ).toBe(
       'rmh-studios',
     );
+  });
+  // `BlogPost.business` stores these strings: deriving the names from
+  // lib/verticals must never move an id, a name or a page.
+  it('business ids, names and pages are the stored ones', () => {
+    expect(
+      BUSINESSES.map(
+        (
+          b,
+        ) => [
+          b.id,
+          b.name,
+          b.mark,
+          b.href,
+        ],
+      ),
+    ).toEqual([
+      ['rmh-studios', 'RMH Studios', 'RMH', '/'],
+      ['rmh-capital', 'RMH Capital', 'RC', '/rmh-capital'],
+      ['adaptive-intelligence', 'Adaptive Intelligence', 'AI', '/adaptive-intelligence'],
+      ['rmh-research', 'RMH Research', 'RR', '/rmh-research'],
+      ['rmh-designs', 'RMH Designs', 'RD', '/rmh-designs/'],
+      ['rmh-pmc', 'RMH PMC', 'PMC', '/rmh-pmc'],
+    ]);
   });
 });
 

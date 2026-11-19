@@ -4,7 +4,15 @@
  * Add a business by adding one entry here — the admin blog editor, the
  * announcement popup, and the feed card all read from this list. `id` is
  * persisted in `BlogPost.business`, so never rename an existing id.
+ *
+ * A business that is also a vertical (a branded arm with its own pages) takes
+ * its name and href from `VERTICALS` in `./verticals`, the registry the hubs
+ * and the sitemap read, so the two lists cannot spell one brand two ways. The
+ * ids stay written out here: they are stored strings, and the vertical lookup
+ * fails loudly at import if one ever stops matching.
  */
+
+import { VERTICALS } from './verticals';
 
 export interface Business {
   /** Stable id stored in the database (kebab-case, ≤ 40 chars). */
@@ -17,6 +25,40 @@ export interface Business {
   href?: string;
 }
 
+/** A business whose name and page come from its vertical. */
+function fromVertical<
+  const Id extends string,
+>(
+  id: Id,
+  mark: string,
+): {
+  id: Id;
+  name: string;
+  mark: string;
+  href: string;
+} {
+  const vertical =
+    VERTICALS.find(
+      (
+        v,
+      ) =>
+        v.id ===
+        id,
+    );
+  if (
+    !vertical
+  )
+    throw new Error(
+      `lib/businesses: no vertical "${id}"`,
+    );
+  return {
+    id,
+    name: vertical.name,
+    mark,
+    href: vertical.base,
+  };
+}
+
 export const BUSINESSES =
   [
     {
@@ -25,36 +67,28 @@ export const BUSINESSES =
       mark: 'RMH',
       href: '/',
     },
-    {
-      id: 'rmh-capital',
-      name: 'RMH Capital',
-      mark: 'RC',
-      href: '/rmh-capital',
-    },
-    {
-      id: 'adaptive-intelligence',
-      name: 'Adaptive Intelligence',
-      mark: 'AI',
-      href: '/adaptive-intelligence',
-    },
-    {
-      id: 'rmh-research',
-      name: 'RMH Research',
-      mark: 'RR',
-      href: '/rmh-research',
-    },
+    fromVertical(
+      'rmh-capital',
+      'RC',
+    ),
+    fromVertical(
+      'adaptive-intelligence',
+      'AI',
+    ),
+    fromVertical(
+      'rmh-research',
+      'RR',
+    ),
     {
       id: 'rmh-designs',
       name: 'RMH Designs',
       mark: 'RD',
       href: '/rmh-designs/',
     },
-    {
-      id: 'rmh-pmc',
-      name: 'RMH PMC',
-      mark: 'PMC',
-      href: '/rmh-pmc',
-    },
+    fromVertical(
+      'rmh-pmc',
+      'PMC',
+    ),
   ] as const satisfies readonly Business[];
 
 export type BusinessId =
