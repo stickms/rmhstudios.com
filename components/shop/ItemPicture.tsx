@@ -3,6 +3,8 @@ import { Emoji } from '@/components/ui/emoji';
 import { cn } from '@/lib/utils';
 import type { ShopItemKind } from '@/lib/shop/catalog';
 import { getPremiumTheme } from '@/lib/shop/themes';
+import { OFFICIAL_SITE_THEMES } from '@/lib/themes/official';
+import { ThemeMiniShell } from '@/components/themes/ThemeMiniShell';
 
 /** The render data a catalog item carries (`ShopItem['data']`, as the shop and market payloads send it). */
 export interface ItemArt {
@@ -56,6 +58,39 @@ export function ItemPicture({
       'relative flex aspect-[4/3] w-full shrink-0 items-center justify-center overflow-hidden rounded-site border border-site-border bg-site-bg-subtle',
       className,
     );
+
+  // A site theme recolours the whole site, so a tile shows it as the small copy of the site its dialog and the
+  // settings picker already draw (ThemeMiniShell), not as its glows alone. A row thumbnail is too small to read one
+  // and keeps the gradient below.
+  const siteTheme =
+    kind ===
+      'SITE_THEME' &&
+    !thumb &&
+    art.siteThemeId
+      ? OFFICIAL_SITE_THEMES[
+          art
+            .siteThemeId
+        ]
+      : undefined;
+  if (
+    siteTheme
+  ) {
+    return (
+      <span
+        data-slot="item-picture"
+        className={
+          box
+        }
+      >
+        <ThemeMiniShell
+          tokens={
+            siteTheme.tokens
+          }
+          className="h-full w-full"
+        />
+      </span>
+    );
+  }
 
   if (
     kind ===

@@ -237,6 +237,338 @@ export const OFFICIAL_SITE_THEMES: Record<
           radius: 8,
         },
     },
+    // Added 2026-11-19 (owner: "inspire them from other websites"). Each borrows the feel of a well-known palette or
+    // site look, under its own name and with its own values, held to the same publish gate as the rest.
+    fjord:
+      {
+        name: 'Fjord',
+        description:
+          'Arctic slate with frost blue and aurora violet.',
+        rarity:
+          'rare',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#2e3440',
+            glow1:
+              '#88c0d0',
+            glow2:
+              '#81a1c1',
+            glow3:
+              '#b48ead',
+            tint: '#ffffff',
+            tintAlpha: 0.07,
+            glintStrength: 1,
+            text: '#eceff4',
+            textMuted:
+              '#d1d7e2',
+            border:
+              '#434c5e',
+            accent:
+              '#88c0d0',
+            accentFg:
+              '#1f242d',
+            radius: 8,
+          },
+      },
+    nocturne:
+      {
+        name: 'Nocturne',
+        description:
+          'Midnight grey with violet, pink and cyan neon.',
+        rarity:
+          'epic',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#282a36',
+            glow1:
+              '#bd93f9',
+            glow2:
+              '#ff79c6',
+            glow3:
+              '#8be9fd',
+            tint: '#ffffff',
+            tintAlpha: 0.06,
+            glintStrength: 1,
+            text: '#f8f8f2',
+            textMuted:
+              '#c9cbd6',
+            border:
+              '#44475a',
+            accent:
+              '#bd93f9',
+            accentFg:
+              '#1e1f29',
+            radius: 8,
+          },
+      },
+    sundial:
+      {
+        name: 'Sundial',
+        description:
+          'A sunlit parchment page with gold, teal and blue.',
+        rarity:
+          'rare',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#fdf6e3',
+            glow1:
+              '#e2b93b',
+            glow2:
+              '#2aa198',
+            glow3:
+              '#268bd2',
+            tint: '#ffffff',
+            tintAlpha: 0.5,
+            glintStrength: 1,
+            text: '#073642',
+            textMuted:
+              '#4f6168',
+            border:
+              '#e4dcc4',
+            accent:
+              '#1d6a96',
+            accentFg:
+              '#ffffff',
+            radius: 8,
+          },
+      },
+    campfire:
+      {
+        name: 'Campfire',
+        description:
+          'Retro charcoal with amber, orange and olive.',
+        rarity:
+          'rare',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#282828',
+            glow1:
+              '#fabd2f',
+            glow2:
+              '#fe8019',
+            glow3:
+              '#b8bb26',
+            tint: '#ffffff',
+            tintAlpha: 0.06,
+            glintStrength: 1,
+            text: '#ebdbb2',
+            textMuted:
+              '#c9b99a',
+            border:
+              '#3c3836',
+            accent:
+              '#fabd2f',
+            accentFg:
+              '#282828',
+            radius: 8,
+          },
+      },
+    neon:
+      {
+        name: 'Neon City',
+        description:
+          'Late-night indigo with electric blue and lilac.',
+        rarity:
+          'epic',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#1a1b26',
+            glow1:
+              '#7aa2f7',
+            glow2:
+              '#bb9af7',
+            glow3:
+              '#7dcfff',
+            tint: '#ffffff',
+            tintAlpha: 0.06,
+            glintStrength: 1,
+            text: '#c8d0f5',
+            textMuted:
+              '#a9b1d6',
+            border:
+              '#2a2f45',
+            accent:
+              '#7aa2f7',
+            accentFg:
+              '#14151f',
+            radius: 8,
+          },
+      },
+    latte:
+      {
+        name: 'Latte',
+        description:
+          'A soft pastel page with mauve, pink and sky.',
+        rarity:
+          'epic',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#eff1f5',
+            glow1:
+              '#c6a0f6',
+            glow2:
+              '#ea76cb',
+            glow3:
+              '#7dc4e4',
+            tint: '#ffffff',
+            tintAlpha: 0.5,
+            glintStrength: 1,
+            text: '#3a3d55',
+            textMuted:
+              '#55586f',
+            border:
+              '#ccd0da',
+            accent:
+              '#7029d6',
+            accentFg:
+              '#ffffff',
+            radius: 8,
+          },
+      },
+    arcade:
+      {
+        name: 'Arcade',
+        description:
+          'Olive-black with hot pink, lime and cyan.',
+        rarity:
+          'rare',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#272822',
+            glow1:
+              '#f92672',
+            glow2:
+              '#a6e22e',
+            glow3:
+              '#66d9ef',
+            tint: '#ffffff',
+            tintAlpha: 0.06,
+            glintStrength: 1,
+            text: '#f8f8f2',
+            textMuted:
+              '#cfcfc2',
+            border:
+              '#3e3d32',
+            accent:
+              '#a6e22e',
+            accentFg:
+              '#1b1c17',
+            radius: 8,
+          },
+      },
+    phosphor:
+      {
+        name: 'Phosphor',
+        description:
+          'An old green-screen terminal, glowing in the dark.',
+        rarity:
+          'legendary',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#0a0f0a',
+            glow1:
+              '#33ff66',
+            glow2:
+              '#00cc44',
+            glow3:
+              '#99ffbb',
+            tint: '#ffffff',
+            tintAlpha: 0.05,
+            glintStrength: 1,
+            text: '#c8ffd4',
+            textMuted:
+              '#8fd9a0',
+            border:
+              '#1c2b1f',
+            accent:
+              '#33ff66',
+            accentFg:
+              '#04140a',
+            radius: 8,
+          },
+      },
+    newsprint:
+      {
+        name: 'Newsprint',
+        description:
+          'Off-white link-news paper with a safety-orange edge.',
+        rarity:
+          'rare',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#f6f6ef',
+            glow1:
+              '#ff8a3d',
+            glow2:
+              '#ffc285',
+            glow3:
+              '#e0d6b8',
+            tint: '#ffffff',
+            tintAlpha: 0.5,
+            glintStrength: 1,
+            text: '#1c1c1c',
+            textMuted:
+              '#5c5c55',
+            border:
+              '#e2e2d6',
+            accent:
+              '#a84300',
+            accentFg:
+              '#ffffff',
+            radius: 8,
+          },
+      },
+    sunset:
+      {
+        name: 'Sunset Drive',
+        description:
+          'Synthwave dusk with magenta, orange and violet.',
+        rarity:
+          'legendary',
+        tokens:
+          {
+            v,
+            canvasBase:
+              '#1b0f2e',
+            glow1:
+              '#ff2e88',
+            glow2:
+              '#ff9e3d',
+            glow3:
+              '#7b2fff',
+            tint: '#ffffff',
+            tintAlpha: 0.07,
+            glintStrength: 1,
+            text: '#fff0fb',
+            textMuted:
+              '#dcc3e8',
+            border:
+              '#3a2456',
+            accent:
+              '#ff6fae',
+            accentFg:
+              '#2a0718',
+            radius: 8,
+          },
+      },
   };
 
 /** True for an applied-theme id that names an official site theme. */
