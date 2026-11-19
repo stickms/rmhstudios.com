@@ -807,56 +807,6 @@ model GroupCallParticipant {
   @@map("group_call_participant")
 }
 
-// ─── The programming grid (L1, 2026-09-19) ────────────────────────────────
-// Everything on this platform is on-demand. Nothing happens AT a time, which
-// is why there is no reason to open the site at 8pm rather than never. The
-// pieces were all here and scattered — a daily puzzle, a wheel reset, a
-// tournament start, an event RSVP, a scheduled post — and appeared nowhere
-// together, so nothing could answer "what is on today".
-//
-// A schedule is editorial, so this is rows: somebody decides that Thursday's
-// featured build is this one. The opposite call from ranked seasons, which are
-// derived precisely because nobody decides them.
-
-/// One thing on the grid. Recurrence is expanded at read time by
-/// `lib/schedule/slots.ts` — a daily drop does not need 365 rows a year.
-/// DEPRECATED (2026-11-19) — copied into Event (same id, owner PLATFORM, kind = slot kind); nothing reads or writes this; drop next release (contract). Do not add callers.
-model ScheduledSlot {
-  id String @id @default(cuid())
-
-  /// 'daily-puzzle' | 'tournament' | 'premiere' | … — see SLOT_KINDS. A string
-  /// rather than an enum because adding a kind should be a deploy, not a
-  /// migration, and the grid degrades gracefully on one it does not know.
-  kind String @db.VarChar(24)
-
-  title String  @db.VarChar(120)
-  href  String? @db.VarChar(200)
-
-  /// First (or only) occurrence, UTC.
-  startsAt DateTime
-
-  /// Zero means a moment rather than a window — a puzzle dropping.
-  durationMinutes Int @default(0)
-
-  /// 'once' | 'daily' | 'weekly'.
-  recurrence String @default("once") @db.VarChar(8)
-
-  /// When a recurring slot stops. Null runs indefinitely.
-  until DateTime?
-
-  /// Off the grid without being deleted, so a recurring slot can be paused for
-  /// a week and put back rather than re-created from memory.
-  published Boolean @default(true)
-
-  createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  /// The window query: published slots that could overlap a range.
-  @@index([published, startsAt])
-  @@map("scheduled_slot")
-}
-
 // ── P04: M1 M3 M5 M6 M7 M8 M9 M10 (messaging) ──
 // Columns added to existing models (kind/meta/expiresAt/attachFlags/forwardCount
 // on direct_message + group_message, thread columns on group_message, timer and
@@ -951,8 +901,6 @@ model AvailabilityPoll {
   lockedStartMin Int?
   lockedEndMin   Int?
   lockedAt       DateTime?
-  /// DEPRECATED (2026-11-19) — superseded by Event.pollId; nothing reads or writes this; drop next release (contract).
-  lockedEventId  String?   @db.VarChar(40)
   createdAt      DateTime  @default(now())
 
   creator   User                       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
@@ -1031,26 +979,6 @@ model OfficeHoursWindow {
   @@map("office_hours_window")
 }
 
-/// One booked slot. The unique (hostId, startsAt) is what makes booking race-safe;
-/// cancelling deletes the row so the slot frees up.
-/// DEPRECATED (2026-11-19) — copied into Event (same id, kind 'office-hours') + the guest's Rsvp; nothing reads or writes this; drop next release (contract). Do not add callers.
-model OfficeHoursBooking {
-  id        String   @id @default(cuid())
-  hostId    String
-  guestId   String
-  startsAt  DateTime
-  endsAt    DateTime
-  note      String   @default("") @db.VarChar(300)
-  createdAt DateTime @default(now())
-
-  host  User @relation("OfficeHoursHost", fields: [hostId], references: [id], onDelete: Cascade)
-  guest User @relation("OfficeHoursGuest", fields: [guestId], references: [id], onDelete: Cascade)
-
-  @@unique([hostId, startsAt])
-  @@index([guestId, startsAt])
-  @@map("office_hours_booking")
-}
-
 /// K3 — the private tokenised calendar feed. The token is the credential
 /// (calendar apps poll with no cookies); rotating replaces it.
 model CalendarFeed {
@@ -1064,18 +992,4 @@ model CalendarFeed {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("calendar_feed")
-}
-
-/// K3 — a programming-grid slot the member opted into.
-/// DEPRECATED (2026-11-19) — copied into Rsvp (status 'going', everyTime) on the slot's Event; nothing reads or writes this; drop next release (contract). Do not add callers.
-model CalendarFeedSlot {
-  id        String   @id @default(cuid())
-  userId    String
-  slotId    String   @db.VarChar(40)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, slotId])
-  @@map("calendar_feed_slot")
 }

@@ -125,7 +125,6 @@ model User {
 
   // Engagement: bookmarks, achievements, daily streak
   achievements UserAchievement[]
-  dailyStreak  DailyStreak? // DEPRECATED (2026-11-19): use streaks
   streaks      Streak[]
   postUnlocks  PostUnlock[]
 
@@ -342,13 +341,10 @@ model User {
   layoutPreference LayoutPreference?
 
   // ─── Platform expansion (2026-07-19 design) ──────────────────────────────
-  arcadeStreak         ArcadeStreak? // DEPRECATED (2026-11-19): use streaks
   creatorTiers         CreatorTier[]
   spacesHosted         Space[]          @relation("SpaceHost")
   spaceMessages        SpaceMessage[]
   groupCallMessages    GroupCallMessage[]
-  eventsHosted         CommunityEvent[] @relation("EventHost")
-  eventRsvps           EventRsvp[]
   eventsHostedV2       Event[]          @relation("EventHosted")
   rsvps                Rsvp[]           @relation("EventRsvps")
   gameReplays          GameReplay[]
@@ -445,15 +441,6 @@ model User {
   communityPageRevisions CommunityPageRevision[]
   kaikaiDebtEntries      KaikaiDebtEntry[]       @relation("KaikaiDebtAuthor")
   kaikaiDebtsOwed        KaikaiDebtEntry[]       @relation("KaikaiDebtCreditor")
-
-  // ─── PF2e team calendar (/pf2ecal) — DEPRECATED 2026-11-19, page removed;
-  // back-relations of the Pf2e* models, dropped with them next release (contract).
-  pf2eSessionsCreated Pf2eSession[]         @relation("Pf2eSessionAuthor")
-  pf2eSessionsEdited  Pf2eSession[]         @relation("Pf2eSessionEditor")
-  pf2eResponses       Pf2eSessionResponse[]
-  pf2eAnnouncements   Pf2eAnnouncement[]    @relation("Pf2eAnnouncementAuthor")
-  pf2eRecaps          Pf2eRecap[]           @relation("Pf2eRecapAuthor")
-  pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
   // P24 party: R2 rmhbox packs, R15 connections grids
@@ -559,11 +546,7 @@ model User {
   availabilityResponses      AvailabilityPollResponse[]
   availabilityInvites        AvailabilityPollInvitee[]
   officeHoursConfig          OfficeHoursConfig?
-  officeHoursBookingsAsHost  OfficeHoursBooking[]         @relation("OfficeHoursHost")
-  officeHoursBookingsAsGuest OfficeHoursBooking[]         @relation("OfficeHoursGuest")
   calendarFeed               CalendarFeed?
-  calendarFeedSlots          CalendarFeedSlot[]
-  eventOccurrenceRsvps       EventOccurrenceRsvp[]
   studyBuddyRequests         StudyBuddyRequest[]
   studyBuddyMatchesA         StudyBuddyMatch[]            @relation("StudyBuddyA")
   studyBuddyMatchesB         StudyBuddyMatch[]            @relation("StudyBuddyB")

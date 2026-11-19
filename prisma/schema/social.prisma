@@ -759,11 +759,13 @@ model CustomFeed {
   name            String         @db.VarChar(60)
   description     String?        @db.VarChar(200)
   tags            String[]
-  /// DEPRECATED (2026-11-19) — people live in `members` (CustomFeedMember);
-  /// nothing reads or writes this any more. Kept because the previous release
-  /// still names it in every custom_feed SELECT during the blue/green swap;
-  /// drop it next release (contract). Do not add callers.
-  authorIds       String[]
+  /// DEPRECATED (2026-11-19) — people live in `members` (CustomFeedMember).
+  /// `@ignore` takes it out of the generated client, so this release no longer
+  /// names it in any custom_feed query, while migrate still sees the column.
+  /// The previous release's client still selects it (a bare `update` returns
+  /// every scalar), so the column is dropped by the contract after this one,
+  /// together with this line. Do not add callers.
+  authorIds       String[]       @ignore
   keywords        String[]
   /// Listed in "Popular feeds" and subscribable. Kept equal to
   /// `visibility == PUBLIC` by every write; readable-by-link is `visibility`.
