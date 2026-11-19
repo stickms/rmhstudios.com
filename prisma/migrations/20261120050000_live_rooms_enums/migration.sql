@@ -1,6 +1,6 @@
 -- Expand step 1 of 2 for the one live room (Space folded into GroupCall).
 --
--- The two enum values the copy in 20261120020100_live_rooms_expand writes. They
+-- The two enum values the copy in 20261120050100_live_rooms_expand writes. They
 -- are their own migration because PostgreSQL will not let a transaction use an
 -- enum value it added itself ("unsafe use of new value"), and a migration file
 -- runs as one transaction.
