@@ -3,8 +3,9 @@
  *
  * ── Accounting ──────────────────────────────────────────────────────────────
  *
- * Same model as `lib/commerce/pools.server.ts`, whose refund discipline this
- * module deliberately copies rather than reinvents: a pledge is a **SINK**
+ * Same model as `lib/commerce/pools.server.ts`, and the same code: both run on
+ * the shared escrow primitive (`lib/economy/escrow-core.ts`, bound to the
+ * ledger by `lib/economy/escrow.server.ts`). A pledge is a **SINK**
  * (`debitCoins`) and a refund is a **FAUCET** (`creditCoins`). While a goal is
  * open the pledged coins belong to nobody — they are out of circulation, and the
  * supply report shows them that way instead of parked in a holding account that
@@ -37,7 +38,13 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
-import { creditCoins, debitCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
+import { InsufficientFundsError } from '@/lib/economy/ledger.server';
+import {
+  holdEscrow,
+  ledgerEscrow,
+  refundEscrow,
+  type LedgerMovement,
+} from '@/lib/economy/escrow.server';
 import { createNotification } from '@/lib/notifications.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import type {
@@ -209,13 +216,16 @@ export async function pledgeToGoal(
         data: { goalId, userId, coins },
         select: { id: true },
       });
-      await debitCoins(userId, coins, {
-        tx,
-        type: 'GIFT',
-        note: 'Community goal pledge',
-        entityType: 'cgoal',
-        entityId: goalId,
-        idempotencyKey: cgoalPledgeRefId(pledge.id),
+      await holdEscrow(tx, ledgerEscrow, {
+        userId,
+        amount: coins,
+        movement: {
+          type: 'GIFT',
+          note: 'Community goal pledge',
+          entityType: 'cgoal',
+          entityId: goalId,
+          idempotencyKey: cgoalPledgeRefId(pledge.id),
+        },
       });
 
       const after = await tx.communityGoal.findUnique({
@@ -271,78 +281,54 @@ export async function refundGoal(
   goalId: string,
   now: Date = new Date(),
 ): Promise<RefundGoalResult> {
-  const out: RefundGoalResult = {
-    pledgesRefunded: 0,
-    coinsReturned: 0,
-    skipped: 0,
-    goalMarked: false,
-  };
-
-  for (;;) {
-    const batch = await prisma.communityGoalPledge.findMany({
-      where: { goalId, refundedAt: null },
-      select: { id: true, userId: true, coins: true },
-      orderBy: { id: 'asc' },
-      take: REFUND_BATCH,
-    });
-    if (batch.length === 0) break;
-
-    let progressed = false;
-    for (const p of batch) {
-      const paid = await refundPledge(p, goalId, now);
-      if (paid) {
-        out.pledgesRefunded += 1;
-        out.coinsReturned += p.coins;
-        progressed = true;
-      } else {
-        out.skipped += 1;
-      }
-    }
-    if (batch.length < REFUND_BATCH || !progressed) break;
-  }
-
-  const remaining = await prisma.communityGoalPledge.count({
-    where: { goalId, refundedAt: null },
-  });
-  if (remaining === 0) {
-    const marked = await prisma.communityGoal.updateMany({
-      where: { id: goalId, status: 'REFUNDING' },
-      data: { status: 'REFUNDED', refundedAt: now },
-    });
-    out.goalMarked = marked.count > 0;
-    if (out.goalMarked) {
-      bust();
-      await notifyPledgers(
-        goalId,
-        'A community goal you pledged to ended — your coins were refunded.',
-      );
-    }
-  }
-  return out;
-}
-
-async function refundPledge(
-  p: { id: bigint; userId: string; coins: number },
-  goalId: string,
-  now: Date,
-): Promise<boolean> {
-  return prisma.$transaction(async (tx) => {
-    const claim = await tx.communityGoalPledge.updateMany({
-      where: { id: p.id, refundedAt: null },
-      data: { refundedAt: now },
-    });
-    if (claim.count === 0) return false;
-
-    await creditCoins(p.userId, p.coins, {
-      tx,
+  const r = await refundEscrow(prisma, ledgerEscrow, {
+    batchSize: REFUND_BATCH,
+    stopWhenNoProgress: true,
+    outstanding: (take) =>
+      prisma.communityGoalPledge.findMany({
+        where: { goalId, refundedAt: null },
+        select: { id: true, userId: true, coins: true },
+        orderBy: { id: 'asc' },
+        take,
+      }),
+    claim: async (tx, p) => {
+      const claim = await tx.communityGoalPledge.updateMany({
+        where: { id: p.id, refundedAt: null },
+        data: { refundedAt: now },
+      });
+      return claim.count > 0;
+    },
+    movement: (p): LedgerMovement => ({
       type: 'GIFT',
       note: 'Community goal refund',
       entityType: 'cgoal',
       entityId: goalId,
       idempotencyKey: cgoalRefundRefId(p.id),
-    });
-    return true;
+    }),
+    remaining: () =>
+      prisma.communityGoalPledge.count({
+        where: { goalId, refundedAt: null },
+      }),
+    markRefunded: async () => {
+      const marked = await prisma.communityGoal.updateMany({
+        where: { id: goalId, status: 'REFUNDING' },
+        data: { status: 'REFUNDED', refundedAt: now },
+      });
+      return marked.count > 0;
+    },
   });
+
+  const out: RefundGoalResult = {
+    pledgesRefunded: r.refunded,
+    coinsReturned: r.coinsReturned,
+    skipped: r.skipped,
+    goalMarked: r.marked,
+  };
+  if (out.goalMarked) {
+    bust();
+    await notifyPledgers(goalId, 'A community goal you pledged to ended — your coins were refunded.');
+  }
+  return out;
 }
 
 export interface SweepResult {

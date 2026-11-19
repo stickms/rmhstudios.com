@@ -1,7 +1,12 @@
 import type { Prisma } from '@prisma/client';
+import type { EscrowLedger } from '@/lib/economy/escrow-core';
 
 // Shared coin-escrow primitives for wager matches and tournaments. Both features
 // move coins the same way, so the atomicity contract lives here once.
+//
+// The hold / settle / refund lifecycle itself is the shared escrow primitive in
+// `lib/economy/escrow-core.ts`; `wagerEscrow` at the bottom of this file is the
+// ledger it runs on for wagers (a balance write plus its WAGER row, as below).
 //
 // The concurrency guard is the repo-wide idiom (see api/coins/tip.ts,
 // api/coins/bet.ts): a conditional `updateMany` with `coins: { gte: amount }` in
@@ -106,3 +111,38 @@ export async function recordWagerTxn(
     },
   });
 }
+
+/** How a wager or tournament escrow movement is booked by {@link recordWagerTxn}. */
+export interface WagerMovement {
+  entityType: 'wager' | 'tournament';
+  entityId: string;
+  note?: string;
+  idempotencyKey?: string;
+}
+
+/**
+ * The wager tier's ledger for `lib/economy/escrow-core.ts`: the helpers above,
+ * each paired with its WAGER row. A hold is `debitCoins` then a SINK row
+ * (`senderId` = user); a payout or refund is `creditCoins` then a FAUCET row
+ * (`recipientId` = user). A repeated payout key fails the row's unique index
+ * and aborts the caller's transaction, crediting nothing.
+ */
+export const wagerEscrow: EscrowLedger<Tx, WagerMovement> = {
+  debit: async (tx, userId, amount, movement) => {
+    await debitCoins(tx, userId, amount);
+    await recordWagerTxn(tx, {
+      senderId: userId,
+      recipientId: null,
+      amount,
+      ...movement,
+    });
+  },
+  credit: async (tx, userId, amount, movement) => {
+    await creditCoins(tx, userId, amount);
+    await recordWagerTxn(tx, {
+      recipientId: userId,
+      amount,
+      ...movement,
+    });
+  },
+};

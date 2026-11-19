@@ -23,91 +23,30 @@
  * lost leaves no trace here (the ledger holds no zero-amount rows).
  */
 
+
+// Relative, never `@/`: this module is bundled into the socket hub
+// (server/CLAUDE.md gotcha 7). `escrow-core` imports no client and no `.server`
+// module, so the read runs on the hub's own Prisma client.
 import { getPrismaClient } from '../../../server/socket-server/prisma-client';
-import type {
-  StakeFate,
-  StakeKeys,
-} from './stake-keys';
+import { readSettledKeys } from '../../../lib/economy/escrow-core';
+import type { StakeFate, StakeKeys } from './stake-keys';
 
 /** The fate of each stake that has one. Throws if the ledger cannot be read. */
 export async function readStakeFates(
   keys: StakeKeys,
   stakeIds: Iterable<string>,
-): Promise<
-  Map<
-    string,
-    StakeFate
-  >
-> {
-  const byKey =
-    new Map<
-      string,
-      [
-        stakeId: string,
-        fate: StakeFate,
-      ]
-    >();
+): Promise<Map<string, StakeFate>> {
+  const byKey = new Map<string, [stakeId: string, fate: StakeFate]>();
   for (const id of stakeIds) {
-    byKey.set(
-      keys.returned(
-        id,
-      ),
-      [
-        id,
-        'returned',
-      ],
-    );
-    byKey.set(
-      keys.payout(
-        id,
-      ),
-      [
-        id,
-        'paid',
-      ],
-    );
+    byKey.set(keys.returned(id), [id, 'returned']);
+    byKey.set(keys.payout(id), [id, 'paid']);
   }
-  const fates =
-    new Map<
-      string,
-      StakeFate
-    >();
-  if (
-    byKey.size ===
-    0
-  )
-    return fates;
-  const rows =
-    await getPrismaClient().coinTransaction.findMany(
-      {
-        where:
-          {
-            idempotencyKey:
-              {
-                in: [
-                  ...byKey.keys(),
-                ],
-              },
-          },
-        select:
-          {
-            idempotencyKey: true,
-          },
-      },
-    );
-  for (const row of rows) {
-    const hit =
-      byKey.get(
-        row.idempotencyKey ??
-          '',
-      );
-    if (
-      hit
-    )
-      fates.set(
-        hit[0],
-        hit[1],
-      );
+  const fates = new Map<string, StakeFate>();
+  // No ids, no query: `readSettledKeys` returns [] for an empty map without
+  // touching the client.
+  if (byKey.size === 0) return fates;
+  for (const [stakeId, fate] of await readSettledKeys(getPrismaClient(), byKey)) {
+    fates.set(stakeId, fate);
   }
   return fates;
 }
