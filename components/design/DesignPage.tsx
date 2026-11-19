@@ -12,11 +12,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-/**
- * Public design-system story. The legacy export name remains internal-only so
- * the route can stay stable while the page itself is completely redesigned.
- */
-export function LiquidGlassPage() {
+/** Public design-system story, rendered at /design. */
+export function DesignPage() {
   const {
     t,
   } =

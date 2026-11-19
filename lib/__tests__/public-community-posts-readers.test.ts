@@ -1,5 +1,5 @@
 /**
- * Review item 6: the digest, the recommendation candidates and the AI ask-feed
+ * Review item 6: the digest and the AI ask-feed
  * excluded EVERY community post (`communityId: null`) when the intent was only
  * to exclude members-only ones. They now use the shared community predicate, so
  * a public community's posts qualify and a private community's qualify only for
@@ -29,7 +29,6 @@ vi.mock('@/lib/search/embeddings.server', () => ({
   isEmbeddingAvailable: () => false,
   similarTo: async () => [],
 }));
-vi.mock('@/lib/recommend/profile.server', () => ({ buildTasteProfile: vi.fn() }));
 vi.mock('@/lib/api/handler.server', () => ({
   defineHandler: (_o: unknown, fn: (c: unknown) => unknown) => fn,
 }));
@@ -50,7 +49,6 @@ vi.mock('@/lib/ai/text.server', () => ({
 
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { topPostsFromFollows } from '@/lib/digest/assemble.server';
-import { postCandidates } from '@/lib/recommend/recommend.server';
 import { route } from '@/lib/feed/api/ai.ask-feed.server';
 
 function expectCommunityPredicate(where: Record<string, unknown>, viewerId: string | null) {
@@ -74,16 +72,6 @@ describe('public-community posts are not excluded wholesale', () => {
   it('digest: members-only rule for the recipient', async () => {
     await topPostsFromFollows('viewer-1', new Date(0));
     expectCommunityPredicate(h.rmharkFindMany.mock.calls[0][0].where, 'viewer-1');
-  });
-
-  it('recommendation candidates: members-only rule for the viewer', async () => {
-    await postCandidates({}, 'viewer-1');
-    expectCommunityPredicate(h.rmharkFindMany.mock.calls[0][0].where, 'viewer-1');
-  });
-
-  it('recommendation candidates: signed-out viewers are members of nothing', async () => {
-    await postCandidates({}, null);
-    expectCommunityPredicate(h.rmharkFindMany.mock.calls[0][0].where, null);
   });
 
   it('ask-feed: both the keyword query and the recent fallback use the rule', async () => {

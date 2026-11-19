@@ -151,8 +151,8 @@ export function Book3DViewer({
   // book above it every frame, which makes Chromium re-blur the whole scrim per
   // frame. That used to need `useFrostedOverlay()` to stand the pointer metaball
   // down — the drop was the *other* thing moving above the scrim, and the two
-  // together were a standing 6x frame-time cost. The metaball layer is gone (see
-  // components/radial/README.md), so the book is the only thing turning up
+  // together were a standing 6x frame-time cost. The metaball layer is gone
+  // (deleted with the radial shell), so the book is the only thing turning up
   // there now and the hook went with it. Keep it that way: nothing else should
   // animate above this scrim.
 

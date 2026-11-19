@@ -29,8 +29,8 @@
  * ## What is still allowed
  *
  * `translate` + `transition` on the aurora layers — that is the opt-in device
- * tilt parallax, written per input EVENT by `hooks/useLiquidBackground.ts`, not
- * per frame, and it settles. `animation: none` declarations are fine (they are
+ * tilt parallax, written per input EVENT (its hook is gone with the aurora),
+ * not per frame, and it settles. `animation: none` declarations are fine (they are
  * the degradation tiers). One-shot animations on `.glass-liquid::after` are
  * fine; `infinite` is not.
  */
