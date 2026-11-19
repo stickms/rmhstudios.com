@@ -3,6 +3,11 @@
  * (platform expansion §6). Server-only: touches Prisma, the pg-boss queue, and
  * notifications.
  *
+ * Rows are the one `Event` model (kind 'event', owner COMMUNITY or USER) and
+ * answers the one `Rsvp` model; an answer about the event as a whole carries
+ * `occurrenceAt = WHOLE_EVENT` (lib/calendar/event-model.ts). The grid, the
+ * calendar feed, office hours and game nights read the same tables.
+ *
  * Reminders ride pg-boss delayed jobs (T-24h and T-15m before start). We do NOT
  * edit `lib/jobs/boss.server.ts`'s QUEUES array; instead this module owns its
  * own queue constant + an idempotent `createQueue`, and exports
@@ -33,6 +38,9 @@ import {
   type RecurrenceInput,
 } from '@/lib/calendar/recurring-events.server';
 import type { EventRecurrenceDTO } from '@/lib/calendar/types';
+import { EVENT_KIND, WHOLE_EVENT } from '@/lib/calendar/event-model';
+import { SITE_URL } from '@/lib/seo';
+import type { Prisma } from '@prisma/client';
 
 // ─── Types (client-safe: imported as `import type` by the UI) ────────────────
 
@@ -97,6 +105,10 @@ export interface CreateEventInput {
   capacity?: number | null;
   /** K4 — make the event repeat weekly or monthly, with an optional host rotation. */
   recurrence?: RecurrenceInput | null;
+  /** PRIVATE: only the host and the people with an RSVP see it (a poll's event). */
+  visibility?: 'PUBLIC' | 'PRIVATE';
+  /** The availability poll this event is locked in from. */
+  pollId?: string | null;
 }
 
 export interface UpdateEventInput {
@@ -247,10 +259,11 @@ async function cancelEventReminders(
  * un-RSVP or a cancellation). `createNotification` also mirrors to web push.
  */
 export async function runEventReminder(job: EventReminderJob): Promise<void> {
-  const event = await prisma.communityEvent.findUnique({
+  const event = await prisma.event.findUnique({
     where: { id: job.eventId },
     select: {
       id: true,
+      kind: true,
       title: true,
       canceledAt: true,
       hostId: true,
@@ -278,11 +291,11 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
       entityType: 'event',
       entityId: event.id,
       preview: `"${event.title}" starts ${whenRecurring}.`,
-      link: '/events',
+      link: '/calendar',
     }).catch(() => {});
     if (job.offset === '15m') {
-      const standing = await prisma.eventRsvp.findFirst({
-        where: { eventId: event.id, userId: job.userId, everyTime: true },
+      const standing = await prisma.rsvp.findFirst({
+        where: { eventId: event.id, userId: job.userId, occurrenceAt: WHOLE_EVENT, everyTime: true },
         select: { id: true },
       });
       const next = standing ? occurrenceAfter(event, at) : null;
@@ -291,8 +304,14 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
     return;
   }
 
-  const rsvp = await prisma.eventRsvp.findUnique({
-    where: { eventId_userId: { eventId: job.eventId, userId: job.userId } },
+  const rsvp = await prisma.rsvp.findUnique({
+    where: {
+      eventId_userId_occurrenceAt: {
+        eventId: job.eventId,
+        userId: job.userId,
+        occurrenceAt: WHOLE_EVENT,
+      },
+    },
     select: { status: true },
   });
   if (!rsvp || rsvp.status !== 'going') return;
@@ -304,7 +323,7 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
     entityType: 'event',
     entityId: event.id,
     preview: `"${event.title}" starts ${when}.`,
-    link: '/events',
+    link: '/calendar',
   }).catch(() => {});
 }
 
@@ -350,9 +369,75 @@ const eventInclude = {
   community: { select: { id: true, slug: true, name: true, icon: true, color: true } },
 } as const;
 
+/**
+ * The rows these surfaces show: a member's event (kind 'event') — never a
+ * platform grid slot, a game night or an office-hours booking, which the
+ * calendar page lists in their own words — and never a DRAFT.
+ */
+const memberEventWhere = {
+  kind: EVENT_KIND,
+  owner: { in: ['COMMUNITY', 'USER'] },
+  visibility: { not: 'DRAFT' },
+} satisfies Prisma.EventWhereInput;
+
+/** Listings everyone may see: the PUBLIC member events. */
+const publicMemberEventWhere = {
+  ...memberEventWhere,
+  visibility: 'PUBLIC',
+} satisfies Prisma.EventWhereInput;
+
 type EventRow = Awaited<ReturnType<typeof fetchEventRow>>;
 function fetchEventRow(id: string) {
-  return prisma.communityEvent.findUnique({ where: { id }, include: eventInclude });
+  return prisma.event.findFirst({ where: { id, ...memberEventWhere }, include: eventInclude });
+}
+
+/**
+ * A PRIVATE event (a poll's) is the host's and its invitees': the people with
+ * an RSVP, and the poll's organiser, invitees and respondents.
+ */
+async function canViewPrivateEvent(
+  row: { id: string; hostId: string | null; pollId: string | null },
+  viewerId: string | null,
+): Promise<boolean> {
+  if (!viewerId) return false;
+  if (row.hostId === viewerId) return true;
+  const answered = await prisma.rsvp.count({ where: { eventId: row.id, userId: viewerId } });
+  if (answered > 0) return true;
+  if (!row.pollId) return false;
+  const poll = await prisma.availabilityPoll.findUnique({
+    where: { id: row.pollId },
+    select: {
+      creatorId: true,
+      invitees: { where: { userId: viewerId }, select: { id: true }, take: 1 },
+      responses: { where: { userId: viewerId }, select: { id: true }, take: 1 },
+    },
+  });
+  return !!poll && (poll.creatorId === viewerId || poll.invitees.length > 0 || poll.responses.length > 0);
+}
+
+/** Whether `viewerId` may see this event at all (callers answer 404 otherwise). */
+export async function canViewEvent(
+  row: {
+    id: string;
+    hostId: string | null;
+    communityId: string | null;
+    visibility: string;
+    pollId: string | null;
+  },
+  viewerId: string | null,
+): Promise<boolean> {
+  if (row.visibility === 'DRAFT') return false;
+  if (row.visibility === 'PRIVATE' && !(await canViewPrivateEvent(row, viewerId))) return false;
+  return canViewCommunityEvents(row.communityId, viewerId);
+}
+
+/** The venue of a row that predates venues (a poll's own event links its page). */
+function venueOf(row: { venueKind: string | null; venueRef: string | null; href: string | null }): {
+  venueKind: EventVenueKindValue;
+  venueRef: string | null;
+} {
+  if (row.venueKind) return { venueKind: row.venueKind as EventVenueKindValue, venueRef: row.venueRef };
+  return { venueKind: 'URL', venueRef: row.href ? `${SITE_URL}${row.href}` : null };
 }
 
 function toPerson(user: Parameters<typeof resolveUser>[0]): EventPersonDTO {
@@ -373,9 +458,9 @@ async function attachAndMap(
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
 
-  const grouped = await prisma.eventRsvp.groupBy({
+  const grouped = await prisma.rsvp.groupBy({
     by: ['eventId', 'status'],
-    where: { eventId: { in: ids } },
+    where: { eventId: { in: ids }, occurrenceAt: WHOLE_EVENT },
     _count: { _all: true },
   });
   const counts = new Map<string, { going: number; maybe: number }>();
@@ -388,8 +473,8 @@ async function attachAndMap(
 
   // Attendee avatar sample (earliest 'going' RSVPs), bucketed per event. Bounded
   // by a hard `take` cap so a huge list can't pull unbounded rows.
-  const sampleRows = await prisma.eventRsvp.findMany({
-    where: { eventId: { in: ids }, status: 'going' },
+  const sampleRows = await prisma.rsvp.findMany({
+    where: { eventId: { in: ids }, occurrenceAt: WHOLE_EVENT, status: 'going' },
     orderBy: { createdAt: 'asc' },
     take: Math.min(ids.length * attendeeSample, 600),
     select: { eventId: true, user: { select: userDisplaySelect } },
@@ -403,8 +488,8 @@ async function attachAndMap(
 
   const viewerRsvps = new Map<string, RsvpStatus>();
   if (viewerId) {
-    const mine = await prisma.eventRsvp.findMany({
-      where: { eventId: { in: ids }, userId: viewerId },
+    const mine = await prisma.rsvp.findMany({
+      where: { eventId: { in: ids }, userId: viewerId, occurrenceAt: WHOLE_EVENT },
       select: { eventId: true, status: true },
     });
     for (const m of mine) viewerRsvps.set(m.eventId, m.status as RsvpStatus);
@@ -414,18 +499,20 @@ async function attachAndMap(
     const c = counts.get(row.id) ?? { going: 0, maybe: 0 };
     return {
       id: row.id,
-      hostId: row.hostId,
+      // memberEventWhere: a member's event always has a host.
+      hostId: row.hostId ?? '',
       communityId: row.communityId,
       title: row.title,
       description: row.description,
       startsAt: row.startsAt.toISOString(),
       endsAt: row.endsAt ? row.endsAt.toISOString() : null,
-      venueKind: row.venueKind as EventVenueKindValue,
-      venueRef: row.venueRef,
+      ...venueOf(row),
       capacity: row.capacity,
       canceledAt: row.canceledAt ? row.canceledAt.toISOString() : null,
       createdAt: row.createdAt.toISOString(),
-      host: toPerson(row.host),
+      host: row.host
+        ? toPerson(row.host)
+        : { id: '', name: null, image: null, handle: null },
       community: row.community
         ? {
             id: row.community.id,
@@ -446,9 +533,9 @@ async function attachAndMap(
 }
 
 async function summarize(eventId: string, userId: string): Promise<RsvpResult> {
-  const grouped = await prisma.eventRsvp.groupBy({
+  const grouped = await prisma.rsvp.groupBy({
     by: ['status'],
-    where: { eventId },
+    where: { eventId, occurrenceAt: WHOLE_EVENT },
     _count: { _all: true },
   });
   let goingCount = 0;
@@ -457,8 +544,8 @@ async function summarize(eventId: string, userId: string): Promise<RsvpResult> {
     if (g.status === 'going') goingCount = g._count._all;
     else if (g.status === 'maybe') maybeCount = g._count._all;
   }
-  const mine = await prisma.eventRsvp.findUnique({
-    where: { eventId_userId: { eventId, userId } },
+  const mine = await prisma.rsvp.findUnique({
+    where: { eventId_userId_occurrenceAt: { eventId, userId, occurrenceAt: WHOLE_EVENT } },
     select: { status: true },
   });
   return { goingCount, maybeCount, viewerRsvp: (mine?.status as RsvpStatus | undefined) ?? null };
@@ -505,7 +592,7 @@ export async function getEvent(
 ): Promise<EventDTO | null> {
   const row = await fetchEventRow(id);
   if (!row) return null;
-  if (!(await canViewCommunityEvents(row.communityId, viewerId))) return null;
+  if (!(await canViewEvent(row, viewerId))) return null;
   const [mapped] = await attachAndMap([row], viewerId, 12);
   return mapped ?? null;
 }
@@ -528,10 +615,15 @@ export async function listEvents(opts: {
 
   if (opts.scope === 'mine') {
     if (!viewerId) return [];
-    const rsvps = await prisma.eventRsvp.findMany({
+    const rsvps = await prisma.rsvp.findMany({
       where: {
         userId: viewerId,
-        event: { canceledAt: null, OR: [{ startsAt: { gte: now } }, activeSeriesWhere(now)] },
+        occurrenceAt: WHOLE_EVENT,
+        event: {
+          ...memberEventWhere,
+          canceledAt: null,
+          OR: [{ startsAt: { gte: now } }, activeSeriesWhere(now)],
+        },
       },
       orderBy: { event: { startsAt: 'asc' } },
       take: 60,
@@ -548,8 +640,13 @@ export async function listEvents(opts: {
     const occurrenceIds = (await upcomingOccurrenceEventIds(viewerId, now)).filter((id) => !seen.has(id));
     if (occurrenceIds.length) {
       rows.push(
-        ...(await prisma.communityEvent.findMany({
-          where: { id: { in: occurrenceIds }, canceledAt: null, ...eventCommunityVisibleWhere(viewerId) },
+        ...(await prisma.event.findMany({
+          where: {
+            id: { in: occurrenceIds },
+            ...memberEventWhere,
+            canceledAt: null,
+            ...eventCommunityVisibleWhere(viewerId),
+          },
           take: 60,
           include: eventInclude,
         })),
@@ -558,8 +655,9 @@ export async function listEvents(opts: {
   } else if (opts.scope === 'community') {
     if (!opts.communityId) return [];
     if (!(await canViewCommunityEvents(opts.communityId, viewerId))) return [];
-    rows = await prisma.communityEvent.findMany({
+    rows = await prisma.event.findMany({
       where: {
+        ...publicMemberEventWhere,
         communityId: opts.communityId,
         canceledAt: null,
         OR: [{ startsAt: { gte: now } }, activeSeriesWhere(now)],
@@ -569,8 +667,9 @@ export async function listEvents(opts: {
       include: eventInclude,
     });
   } else {
-    rows = await prisma.communityEvent.findMany({
+    rows = await prisma.event.findMany({
       where: {
+        ...publicMemberEventWhere,
         canceledAt: null,
         AND: [
           { OR: [{ startsAt: { gte: now } }, activeSeriesWhere(now)] },
@@ -595,8 +694,9 @@ export async function listMemberCommunityEvents(userId: string): Promise<EventDT
   const communityIds = memberships.map((m) => m.communityId);
   if (communityIds.length === 0) return [];
 
-  const rows = await prisma.communityEvent.findMany({
+  const rows = await prisma.event.findMany({
     where: {
+      ...publicMemberEventWhere,
       communityId: { in: communityIds },
       canceledAt: null,
       OR: [{ startsAt: { gte: new Date() } }, activeSeriesWhere(new Date())],
@@ -643,9 +743,13 @@ export async function createEvent(input: CreateEventInput): Promise<EventDTO> {
     if (!recurrenceData.ok) throw new EventError('INVALID_RECURRENCE');
   }
 
-  const created = await prisma.communityEvent.create({
+  const created = await prisma.event.create({
     data: {
       ...(recurrenceData?.ok ? recurrenceData.data : {}),
+      owner: input.communityId ? 'COMMUNITY' : 'USER',
+      kind: EVENT_KIND,
+      visibility: input.visibility ?? 'PUBLIC',
+      pollId: input.pollId ?? null,
       hostId: input.hostId,
       communityId: input.communityId ?? null,
       title: input.title.trim(),
@@ -669,8 +773,8 @@ export async function createEvent(input: CreateEventInput): Promise<EventDTO> {
 }
 
 export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
-  const event = await prisma.communityEvent.findUnique({
-    where: { id: input.id },
+  const event = await prisma.event.findFirst({
+    where: { id: input.id, ...memberEventWhere },
     select: {
       id: true,
       hostId: true,
@@ -713,7 +817,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
   const effectiveEnd = data.endsAt !== undefined ? data.endsAt : event.endsAt;
   if (effectiveEnd && effectiveEnd <= effectiveStart) throw new EventError('INVALID_DATES');
 
-  const nextKind = input.venueKind ?? (event.venueKind as EventVenueKindValue);
+  const nextKind = input.venueKind ?? ((event.venueKind ?? 'URL') as EventVenueKindValue);
   if (input.venueKind !== undefined) data.venueKind = input.venueKind;
   if (input.venueRef !== undefined) {
     let ref = input.venueRef?.trim() || null;
@@ -740,24 +844,25 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
     Object.assign(data, checked.data);
   }
 
-  await prisma.communityEvent.update({ where: { id: input.id }, data });
+  await prisma.event.update({ where: { id: input.id }, data });
   return (await getEvent(input.id, input.hostId))!;
 }
 
 export async function cancelEvent(id: string, hostId: string): Promise<EventDTO> {
-  const event = await prisma.communityEvent.findUnique({
-    where: { id },
+  const event = await prisma.event.findFirst({
+    where: { id, ...memberEventWhere },
     select: { id: true, hostId: true, canceledAt: true, title: true },
   });
   if (!event) throw new EventError('NOT_FOUND');
   if (event.hostId !== hostId) throw new EventError('FORBIDDEN');
 
   if (!event.canceledAt) {
-    await prisma.communityEvent.update({ where: { id }, data: { canceledAt: new Date() } });
+    await prisma.event.update({ where: { id }, data: { canceledAt: new Date() } });
     // Notify everyone who RSVP'd (best-effort). Pending reminder jobs stay put;
     // the worker's canceled-check turns them into no-ops.
-    const rsvps = await prisma.eventRsvp.findMany({
-      where: { eventId: id },
+    const rsvps = await prisma.rsvp.findMany({
+      where: { eventId: id, status: { not: 'no' } },
+      distinct: ['userId'],
       select: { userId: true },
     });
     for (const r of rsvps) {
@@ -767,7 +872,7 @@ export async function cancelEvent(id: string, hostId: string): Promise<EventDTO>
         entityType: 'event',
         entityId: id,
         preview: `"${event.title}" was canceled.`,
-        link: '/events',
+        link: '/calendar',
       }).catch(() => {});
     }
   }
@@ -782,11 +887,14 @@ export async function rsvp(
   /** K4 — only meaningful on a repeating event. */
   opts: { everyTime?: boolean; occurrenceAt?: Date } = {},
 ): Promise<RsvpResult & { occurrenceAt?: string; viewerEveryTime?: boolean }> {
-  const event = await prisma.communityEvent.findUnique({
+  const event = await prisma.event.findUnique({
     where: { id: eventId },
     select: {
       id: true,
+      kind: true,
       communityId: true,
+      visibility: true,
+      pollId: true,
       hostId: true,
       startsAt: true,
       endsAt: true,
@@ -799,7 +907,9 @@ export async function rsvp(
     },
   });
   if (!event) throw new EventError('NOT_FOUND');
-  if (!(await canViewCommunityEvents(event.communityId, userId))) throw new EventError('NOT_FOUND');
+  if (!(await canViewEvent(event, userId))) throw new EventError('NOT_FOUND');
+  // A booking is answered by booking it (lib/calendar/office-hours.server.ts).
+  if (event.kind === 'office-hours') throw new EventError('FORBIDDEN');
   if (event.canceledAt) throw new EventError('CANCELED');
 
   if (event.recurrence) {
@@ -823,14 +933,14 @@ export async function rsvp(
     // Enforce capacity for 'going' (count other users already going). Best-effort
     // under concurrency — v1 has no waitlist.
     if (status === 'going' && event.capacity != null) {
-      const going = await tx.eventRsvp.count({
-        where: { eventId, status: 'going', userId: { not: userId } },
+      const going = await tx.rsvp.count({
+        where: { eventId, occurrenceAt: WHOLE_EVENT, status: 'going', userId: { not: userId } },
       });
       if (going >= event.capacity) throw new EventError('CAPACITY_FULL');
     }
-    await tx.eventRsvp.upsert({
-      where: { eventId_userId: { eventId, userId } },
-      create: { eventId, userId, status },
+    await tx.rsvp.upsert({
+      where: { eventId_userId_occurrenceAt: { eventId, userId, occurrenceAt: WHOLE_EVENT } },
+      create: { eventId, userId, status, occurrenceAt: WHOLE_EVENT },
       update: { status },
     });
   });
@@ -847,10 +957,11 @@ export async function unrsvp(
   /** K4 — on a repeating event: sit out one date, or leave the series. */
   opts: { scope?: 'occurrence' | 'all'; occurrenceAt?: Date } = {},
 ): Promise<RsvpResult & { occurrenceAt?: string; viewerEveryTime?: boolean }> {
-  const series = await prisma.communityEvent.findUnique({
+  const series = await prisma.event.findUnique({
     where: { id: eventId },
     select: {
       id: true,
+      kind: true,
       hostId: true,
       startsAt: true,
       endsAt: true,
@@ -861,6 +972,8 @@ export async function unrsvp(
       rotatingHostIds: true,
     },
   });
+  // A booking is cancelled, not un-RSVP'd (it would leave the host's slot taken).
+  if (series?.kind === 'office-hours') throw new EventError('FORBIDDEN');
   if (series?.recurrence) {
     try {
       const done = await unrsvpRecurring(series, userId, opts.scope ?? 'occurrence', opts.occurrenceAt);
@@ -871,7 +984,7 @@ export async function unrsvp(
       throw e;
     }
   }
-  await prisma.eventRsvp.deleteMany({ where: { eventId, userId } });
+  await prisma.rsvp.deleteMany({ where: { eventId, userId, occurrenceAt: WHOLE_EVENT } });
   await cancelEventReminders(eventId, userId);
   return summarize(eventId, userId);
 }

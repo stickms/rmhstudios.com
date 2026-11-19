@@ -1,0 +1,113 @@
+// ─── Events: "a time, and who's coming" (2026-11-19 consolidation) ─────────
+//
+// One Event row for everything with a start time that people turn up to: a
+// community or profile event (was CommunityEvent), a platform slot on the
+// programming grid (was ScheduledSlot), a weekly game-night rotation (was
+// GameNight), a booked office-hours slot (was OfficeHoursBooking) and the event
+// a locked-in availability poll produces. One Rsvp row for everyone coming,
+// including the per-occurrence answers of a repeating event (was EventRsvp +
+// EventOccurrenceRsvp) and the grid slots a member added to their calendar
+// feed (was CalendarFeedSlot).
+//
+// What stays separate, on purpose: AvailabilityPoll (+ responses, invitees) is
+// a way to PICK a time and OfficeHoursConfig (+ windows) a way to OFFER times;
+// neither is a time somebody is coming to until it produces an Event. Reminder
+// is the generic "remind me about this" snooze for any page, and CalendarFeed
+// is the credential an external calendar app polls with.
+
+/// Who an event belongs to. COMMUNITY: `communityId` (and the mod who made it
+/// as `hostId`). USER: `hostId`. PLATFORM: neither — the site's own grid.
+enum EventOwner {
+  COMMUNITY
+  USER
+  PLATFORM
+}
+
+/// PUBLIC: anyone who may see the owner (a private community's events stay
+/// members-only). PRIVATE: only the host and the people with an RSVP (office
+/// hours, a poll's event). DRAFT: off the calendar without being deleted (a
+/// paused slot or game night), visible to admins only.
+enum EventVisibility {
+  PUBLIC
+  PRIVATE
+  DRAFT
+}
+
+model Event {
+  id          String          @id @default(cuid())
+  owner       EventOwner
+  hostId      String?
+  communityId String?
+  /// What it is: 'event' (people RSVP), 'office-hours', 'game-night', or a
+  /// grid kind from lib/schedule/slots.ts SLOT_KINDS ('daily-puzzle',
+  /// 'premiere', …). A string so a new kind is a deploy, not a migration.
+  kind        String          @default("event") @db.VarChar(24)
+  title       String          @db.VarChar(120)
+  description String          @default("") @db.VarChar(2000)
+  startsAt    DateTime
+  /// Null means a moment rather than a window (a puzzle drop) or "open-ended".
+  endsAt      DateTime?
+  venueKind   EventVenueKind?
+  venueRef    String?         @db.VarChar(191)
+  /// A same-site path the event happens at (grid slots: '/daily', a game).
+  href        String?         @db.VarChar(200)
+  capacity    Int?
+  visibility  EventVisibility @default(PUBLIC)
+  canceledAt  DateTime?
+  /// Compact repeat rule: 'D' daily, 'W' weekly, 'M' monthly on the same nth
+  /// weekday (lib/calendar/recurrence.ts). Null = one-off.
+  recurrence  String?         @db.VarChar(4)
+  /// Last day a repeating event may occur. Null = until cancelled.
+  recurUntil  DateTime?
+  /// IANA timezone the repeat keeps its wall-clock time in.
+  recurTz     String?         @db.VarChar(64)
+  /// Optional host rotation (user ids, in order). Occurrence n is hosted by [n % length].
+  rotatingHostIds String[]    @default([])
+  /// Kind-specific settings. game-night: { games: string[], minutesPerGame, lobbyCodes: {gameId: code} }.
+  meta        Json            @default("{}")
+  /// The availability poll this event was locked in from.
+  pollId      String?         @unique @db.VarChar(40)
+  /// Office hours: `${hostId}:${startsAt epoch ms}`. Unique, so two guests can
+  /// never book the same slot; cleared (with canceledAt) when it is cancelled.
+  slotKey     String?         @unique @db.VarChar(96)
+  /// Who created a PLATFORM event (an admin). Informational, no relation.
+  createdById String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  host      User?      @relation("EventHosted", fields: [hostId], references: [id], onDelete: Cascade)
+  community Community? @relation("CommunityEvents", fields: [communityId], references: [id], onDelete: Cascade)
+  rsvps     Rsvp[]
+
+  @@index([communityId, startsAt])
+  @@index([hostId, startsAt])
+  @@index([startsAt])
+  @@index([owner, visibility, startsAt])
+  @@map("event")
+}
+
+/// One person's answer to an event. `occurrenceAt` is WHOLE_EVENT (the Unix
+/// epoch, lib/calendar/rsvp.ts) for an answer about the event as a whole — a
+/// one-off event, or a standing "every time" answer to a repeating one — and
+/// the occurrence's start for an answer about one date of a series, which
+/// overrides the standing one ('no' sits one out).
+model Rsvp {
+  id           String   @id @default(cuid())
+  eventId      String
+  userId       String
+  /// 'going' | 'maybe' | 'no' ('no' only on an occurrence).
+  status       String   @db.VarChar(8)
+  occurrenceAt DateTime
+  /// On a repeating event, a WHOLE_EVENT answer that carries over to every occurrence.
+  everyTime    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation("EventRsvps", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId, occurrenceAt])
+  @@index([eventId, occurrenceAt, status])
+  @@index([userId, occurrenceAt])
+  @@index([userId, createdAt])
+  @@map("rsvp")
+}

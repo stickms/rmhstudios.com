@@ -8,7 +8,8 @@ import {
   patchGameNightApi,
 } from '@/lib/competitive/game-night.contract';
 import { prisma } from '@/lib/prisma.server';
-import { GAME_IDS, listGameNights } from '@/lib/competitive/game-night.server';
+import { GAME_IDS, gameNightWhere, listGameNights } from '@/lib/competitive/game-night.server';
+import { gameNightEventData, gameNightMeta } from '@/lib/calendar/event-model';
 import { sanitizeLobbyCode } from '@/lib/lobby-link';
 
 const createSchema = z.object({
@@ -44,7 +45,10 @@ export const route = apiRoute('/api/game-night', {
     createGameNightApi,
     { auth: 'admin', rateLimit: 'write', body: createSchema },
     async ({ body }) => {
-      const night = await prisma.gameNight.create({ data: body, select: { id: true } });
+      const night = await prisma.event.create({
+        data: { owner: 'PLATFORM', kind: 'game-night', title: body.title, ...gameNightEventData(body) },
+        select: { id: true },
+      });
       return Response.json({ id: night.id }, { status: 201 });
     },
   ),
@@ -52,25 +56,28 @@ export const route = apiRoute('/api/game-night', {
     patchGameNightApi,
     { auth: 'admin', rateLimit: 'write', body: patchSchema },
     async ({ body }) => {
-      const night = await prisma.gameNight.findUnique({ where: { id: body.id } });
+      const night = await prisma.event.findFirst({
+        where: { id: body.id, ...gameNightWhere },
+        select: { id: true, meta: true },
+      });
       if (!night) return notFound('Game night not found');
-      const data: { enabled?: boolean; lobbyCodes?: Record<string, string> } = {};
-      if (body.enabled !== undefined) data.enabled = body.enabled;
+      const meta = gameNightMeta(night.meta);
+      const data: { visibility?: 'PUBLIC' | 'DRAFT'; meta?: typeof meta } = {};
+      if (body.enabled !== undefined) data.visibility = body.enabled ? 'PUBLIC' : 'DRAFT';
       if (body.lobby) {
-        const list = Array.isArray(night.games) ? (night.games as unknown[]) : [];
-        if (!list.includes(body.lobby.gameId)) {
+        if (!meta.games.includes(body.lobby.gameId)) {
           return Response.json({ error: 'Game is not in this rotation' }, { status: 400 });
         }
-        const codes = { ...((night.lobbyCodes ?? {}) as Record<string, string>) };
+        const codes = { ...meta.lobbyCodes };
         const clean = body.lobby.code === null ? null : sanitizeLobbyCode(body.lobby.code);
         if (body.lobby.code !== null && !clean) {
           return Response.json({ error: 'Invalid lobby code' }, { status: 400 });
         }
         if (clean) codes[body.lobby.gameId] = clean;
         else delete codes[body.lobby.gameId];
-        data.lobbyCodes = codes;
+        data.meta = { ...meta, lobbyCodes: codes };
       }
-      await prisma.gameNight.update({ where: { id: night.id }, data });
+      await prisma.event.update({ where: { id: night.id }, data });
       return Response.json({ ok: true });
     },
   ),

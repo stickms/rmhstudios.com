@@ -42,3 +42,15 @@ export const getScheduleApi =
       path: '/api/schedule',
     },
   );
+
+/** The signed-in member's own calendar (RSVPs, bookings, locked-in polls, added slots). Private. */
+export const getMyScheduleApi = endpoint<{
+  query: {
+    days?: number | undefined;
+    from?: string | undefined;
+  };
+  res: ScheduleGrid;
+}>()({
+  method: 'GET',
+  path: '/api/schedule/mine',
+});

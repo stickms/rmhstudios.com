@@ -1,8 +1,10 @@
 /**
  * K4 — recurring group events. Pure and client-safe.
  *
- * The rule is two characters on the event row (`W` weekly, `M` monthly on the
- * same nth weekday), plus an optional end date and a timezone. Occurrences are
+ * The rule is one character on the event row (`D` daily, `W` weekly, `M`
+ * monthly on the same nth weekday), plus an optional end date and a timezone.
+ * Members repeat their events weekly or monthly; `D` is for the platform's own
+ * grid (a daily puzzle drop). Occurrences are
  * COMPUTED for the window being looked at and never stored — a weekly event
  * with no end date would otherwise need an unbounded number of rows.
  *
@@ -16,6 +18,7 @@ import {
 
 export const RECURRENCE_RULES =
   [
+    'D',
     'W',
     'M',
   ] as const;
@@ -26,6 +29,8 @@ export function isRecurrenceRule(
   v: unknown,
 ): v is RecurrenceRule {
   return (
+    v ===
+      'D' ||
     v ===
       'W' ||
     v ===
@@ -114,8 +119,15 @@ export function occurrenceStart(
     );
   if (
     series.rule ===
-    'W'
+      'W' ||
+    series.rule ===
+      'D'
   ) {
+    const step =
+      series.rule ===
+      'W'
+        ? 7
+        : 1;
     const day =
       new Date(
         Date.UTC(
@@ -123,7 +135,7 @@ export function occurrenceStart(
           w.mo -
             1,
           w.d +
-            7 *
+            step *
               k,
         ),
       );
@@ -202,7 +214,13 @@ function estimateStart(
     return 0;
   const k =
     series.rule ===
-    'W'
+    'D'
+      ? Math.floor(
+          delta /
+            DAY_MS,
+        )
+      : series.rule ===
+          'W'
       ? Math.floor(
           delta /
             (7 *
@@ -238,12 +256,16 @@ export function occurrencesBetween(
           ),
         )
       : to.getTime();
+  // The safety rail counts steps from where the scan starts, not the absolute
+  // index: a daily series is thousands of occurrences in within a few years.
+  const k0 =
+    estimateStart(
+      series,
+      from,
+    );
   for (
     let k =
-      estimateStart(
-        series,
-        from,
-      );
+      k0;
     out.length <
     max;
     k++
@@ -270,7 +292,8 @@ export function occurrencesBetween(
         },
       );
     if (
-      k >
+      k -
+        k0 >
       5000
     )
       break;

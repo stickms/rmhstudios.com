@@ -311,12 +311,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
     // the log grows every time anyone adds a line or scrolls past the frontier,
     // so the page's content genuinely changes faster than most of this list.
     {
-      loc: '/game-night',
-      changefreq:
-        'weekly',
-      priority: 0.5,
-    },
-    {
       loc: '/jams',
       changefreq:
         'daily',
@@ -345,14 +339,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
       changefreq:
         'weekly',
       priority: 0.5,
-    },
-    // The programming grid (L1). `daily` because that is literally what it is:
-    // a page whose whole value is that today's contents differ from yesterday's.
-    {
-      loc: '/schedule',
-      changefreq:
-        'daily',
-      priority: 0.7,
     },
     {
       loc: '/services',
@@ -397,6 +383,15 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.6,
     },
 
+    // The calendar (the programming grid, game nights and every public event).
+    // `daily` because that is literally what it is: a page whose whole value
+    // is that today's contents differ from yesterday's.
+    {
+      loc: '/calendar',
+      changefreq:
+        'daily',
+      priority: 0.7,
+    },
 
     // Developer platform — the API is a promotable product surface.
     {

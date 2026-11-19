@@ -75,6 +75,7 @@ import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as SiteAdventRouteImport } from './routes/_site/advent'
 import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
 import { Route as SiteArcadeRouteImport } from './routes/_site/arcade'
+import { Route as SiteCalendarRouteImport } from './routes/_site/calendar'
 import { Route as SiteCanvasRouteImport } from './routes/_site/canvas'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteCompeteRouteImport } from './routes/_site/compete'
@@ -83,7 +84,6 @@ import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteEmojiPacksRouteImport } from './routes/_site/emoji-packs'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
-import { Route as SiteGameNightRouteImport } from './routes/_site/game-night'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
 import { Route as SiteHistoryRouteImport } from './routes/_site/history'
 import { Route as SiteHuntRouteImport } from './routes/_site/hunt'
@@ -98,7 +98,6 @@ import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SiteRmhboxPacksRouteImport } from './routes/_site/rmhbox-packs'
 import { Route as SiteRmhladderRouteImport } from './routes/_site/rmhladder'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
-import { Route as SiteScheduleRouteImport } from './routes/_site/schedule'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteSectionsRouteImport } from './routes/_site/sections'
 import { Route as SiteServicesRouteImport } from './routes/_site/services'
@@ -829,6 +828,11 @@ const SiteArcadeRoute = SiteArcadeRouteImport.update({
   path: '/arcade',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteCalendarRoute = SiteCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteCanvasRoute = SiteCanvasRouteImport.update({
   id: '/canvas',
   path: '/canvas',
@@ -867,11 +871,6 @@ const SiteEmojiPacksRoute = SiteEmojiPacksRouteImport.update({
 const SiteExploreRoute = SiteExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteGameNightRoute = SiteGameNightRouteImport.update({
-  id: '/game-night',
-  path: '/game-night',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteHelpRoute = SiteHelpRouteImport.update({
@@ -942,11 +941,6 @@ const SiteRmhladderRoute = SiteRmhladderRouteImport.update({
 const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteScheduleRoute = SiteScheduleRouteImport.update({
-  id: '/schedule',
-  path: '/schedule',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSearchRoute = SiteSearchRouteImport.update({
@@ -3046,13 +3040,13 @@ export interface FileRoutesByFullPath {
   '/advent': typeof SiteAdventRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
+  '/calendar': typeof SiteCalendarRoute
   '/canvas': typeof SiteCanvasRoute
   '/communities': typeof SiteCommunitiesRoute
   '/compete': typeof SiteCompeteRoute
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
   '/explore': typeof SiteExploreRoute
-  '/game-night': typeof SiteGameNightRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
   '/hunt': typeof SiteHuntRoute
@@ -3067,7 +3061,6 @@ export interface FileRoutesByFullPath {
   '/rmhbox-packs': typeof SiteRmhboxPacksRoute
   '/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/roadmap': typeof SiteRoadmapRoute
-  '/schedule': typeof SiteScheduleRoute
   '/search': typeof SiteSearchRoute
   '/sections': typeof SiteSectionsRoute
   '/services': typeof SiteServicesRouteWithChildren
@@ -3511,13 +3504,13 @@ export interface FileRoutesByTo {
   '/advent': typeof SiteAdventRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
+  '/calendar': typeof SiteCalendarRoute
   '/canvas': typeof SiteCanvasRoute
   '/communities': typeof SiteCommunitiesRoute
   '/compete': typeof SiteCompeteRoute
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
   '/explore': typeof SiteExploreRoute
-  '/game-night': typeof SiteGameNightRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
   '/hunt': typeof SiteHuntRoute
@@ -3531,7 +3524,6 @@ export interface FileRoutesByTo {
   '/quotes': typeof SiteQuotesRoute
   '/rmhbox-packs': typeof SiteRmhboxPacksRoute
   '/roadmap': typeof SiteRoadmapRoute
-  '/schedule': typeof SiteScheduleRoute
   '/search': typeof SiteSearchRoute
   '/sections': typeof SiteSectionsRoute
   '/share': typeof SiteShareRoute
@@ -3996,13 +3988,13 @@ export interface FileRoutesById {
   '/_site/advent': typeof SiteAdventRoute
   '/_site/analytics': typeof SiteAnalyticsRoute
   '/_site/arcade': typeof SiteArcadeRoute
+  '/_site/calendar': typeof SiteCalendarRoute
   '/_site/canvas': typeof SiteCanvasRoute
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/compete': typeof SiteCompeteRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/emoji-packs': typeof SiteEmojiPacksRoute
   '/_site/explore': typeof SiteExploreRoute
-  '/_site/game-night': typeof SiteGameNightRoute
   '/_site/help': typeof SiteHelpRoute
   '/_site/history': typeof SiteHistoryRoute
   '/_site/hunt': typeof SiteHuntRoute
@@ -4017,7 +4009,6 @@ export interface FileRoutesById {
   '/_site/rmhbox-packs': typeof SiteRmhboxPacksRoute
   '/_site/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/_site/roadmap': typeof SiteRoadmapRoute
-  '/_site/schedule': typeof SiteScheduleRoute
   '/_site/search': typeof SiteSearchRoute
   '/_site/sections': typeof SiteSectionsRoute
   '/_site/services': typeof SiteServicesRouteWithChildren
@@ -4488,13 +4479,13 @@ export interface FileRouteTypes {
     | '/advent'
     | '/analytics'
     | '/arcade'
+    | '/calendar'
     | '/canvas'
     | '/communities'
     | '/compete'
     | '/drafts'
     | '/emoji-packs'
     | '/explore'
-    | '/game-night'
     | '/help'
     | '/history'
     | '/hunt'
@@ -4509,7 +4500,6 @@ export interface FileRouteTypes {
     | '/rmhbox-packs'
     | '/rmhladder'
     | '/roadmap'
-    | '/schedule'
     | '/search'
     | '/sections'
     | '/services'
@@ -4953,13 +4943,13 @@ export interface FileRouteTypes {
     | '/advent'
     | '/analytics'
     | '/arcade'
+    | '/calendar'
     | '/canvas'
     | '/communities'
     | '/compete'
     | '/drafts'
     | '/emoji-packs'
     | '/explore'
-    | '/game-night'
     | '/help'
     | '/history'
     | '/hunt'
@@ -4973,7 +4963,6 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/rmhbox-packs'
     | '/roadmap'
-    | '/schedule'
     | '/search'
     | '/sections'
     | '/share'
@@ -5437,13 +5426,13 @@ export interface FileRouteTypes {
     | '/_site/advent'
     | '/_site/analytics'
     | '/_site/arcade'
+    | '/_site/calendar'
     | '/_site/canvas'
     | '/_site/communities'
     | '/_site/compete'
     | '/_site/drafts'
     | '/_site/emoji-packs'
     | '/_site/explore'
-    | '/_site/game-night'
     | '/_site/help'
     | '/_site/history'
     | '/_site/hunt'
@@ -5458,7 +5447,6 @@ export interface FileRouteTypes {
     | '/_site/rmhbox-packs'
     | '/_site/rmhladder'
     | '/_site/roadmap'
-    | '/_site/schedule'
     | '/_site/search'
     | '/_site/sections'
     | '/_site/services'
@@ -6508,6 +6496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteArcadeRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/calendar': {
+      id: '/_site/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof SiteCalendarRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/canvas': {
       id: '/_site/canvas'
       path: '/canvas'
@@ -6562,13 +6557,6 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof SiteExploreRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/game-night': {
-      id: '/_site/game-night'
-      path: '/game-night'
-      fullPath: '/game-night'
-      preLoaderRoute: typeof SiteGameNightRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/help': {
@@ -6667,13 +6655,6 @@ declare module '@tanstack/react-router' {
       path: '/roadmap'
       fullPath: '/roadmap'
       preLoaderRoute: typeof SiteRoadmapRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/schedule': {
-      id: '/_site/schedule'
-      path: '/schedule'
-      fullPath: '/schedule'
-      preLoaderRoute: typeof SiteScheduleRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/search': {
@@ -9646,13 +9627,13 @@ interface SiteRouteChildren {
   SiteAdventRoute: typeof SiteAdventRoute
   SiteAnalyticsRoute: typeof SiteAnalyticsRoute
   SiteArcadeRoute: typeof SiteArcadeRoute
+  SiteCalendarRoute: typeof SiteCalendarRoute
   SiteCanvasRoute: typeof SiteCanvasRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteCompeteRoute: typeof SiteCompeteRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteEmojiPacksRoute: typeof SiteEmojiPacksRoute
   SiteExploreRoute: typeof SiteExploreRoute
-  SiteGameNightRoute: typeof SiteGameNightRoute
   SiteHelpRoute: typeof SiteHelpRoute
   SiteHistoryRoute: typeof SiteHistoryRoute
   SiteHuntRoute: typeof SiteHuntRoute
@@ -9667,7 +9648,6 @@ interface SiteRouteChildren {
   SiteRmhboxPacksRoute: typeof SiteRmhboxPacksRoute
   SiteRmhladderRoute: typeof SiteRmhladderRouteWithChildren
   SiteRoadmapRoute: typeof SiteRoadmapRoute
-  SiteScheduleRoute: typeof SiteScheduleRoute
   SiteSearchRoute: typeof SiteSearchRoute
   SiteSectionsRoute: typeof SiteSectionsRoute
   SiteServicesRoute: typeof SiteServicesRouteWithChildren
@@ -9764,13 +9744,13 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAdventRoute: SiteAdventRoute,
   SiteAnalyticsRoute: SiteAnalyticsRoute,
   SiteArcadeRoute: SiteArcadeRoute,
+  SiteCalendarRoute: SiteCalendarRoute,
   SiteCanvasRoute: SiteCanvasRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteCompeteRoute: SiteCompeteRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteEmojiPacksRoute: SiteEmojiPacksRoute,
   SiteExploreRoute: SiteExploreRoute,
-  SiteGameNightRoute: SiteGameNightRoute,
   SiteHelpRoute: SiteHelpRoute,
   SiteHistoryRoute: SiteHistoryRoute,
   SiteHuntRoute: SiteHuntRoute,
@@ -9785,7 +9765,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhboxPacksRoute: SiteRmhboxPacksRoute,
   SiteRmhladderRoute: SiteRmhladderRouteWithChildren,
   SiteRoadmapRoute: SiteRoadmapRoute,
-  SiteScheduleRoute: SiteScheduleRoute,
   SiteSearchRoute: SiteSearchRoute,
   SiteSectionsRoute: SiteSectionsRoute,
   SiteServicesRoute: SiteServicesRouteWithChildren,

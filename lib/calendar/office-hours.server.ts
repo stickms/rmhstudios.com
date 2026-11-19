@@ -1,10 +1,17 @@
 /**
  * K2 — office-hours booking. Server-only.
  *
- * Race-safety lives in the database: `office_hours_booking` has a unique
- * (hostId, startsAt), so two guests taking the same slot cannot both succeed —
- * the loser gets a 409. The weekly cap is checked under a per-host advisory
- * lock so two simultaneous bookings cannot both squeeze under it.
+ * The host's settings and weekly windows are their own tables (a way to OFFER
+ * times); a booking is an Event of kind 'office-hours' hosted by the host,
+ * PRIVATE, with the guest's 'going' Rsvp — the same rows the calendar, the
+ * feed and the reminders read. The booking id is the event id.
+ *
+ * Race-safety lives in the database: the event's `slotKey`
+ * (`${hostId}:${startsAt ms}`) is unique, so two guests taking the same slot
+ * cannot both succeed — the loser gets a 409. Cancelling stamps `canceledAt`
+ * and clears the key, so the slot frees up. The weekly cap is checked under a
+ * per-host advisory lock so two simultaneous bookings cannot both squeeze
+ * under it.
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -13,6 +20,7 @@ import { SITE_URL } from '@/lib/seo';
 import { createNotification } from '@/lib/notifications.server';
 import { eventToICS } from '@/lib/events-ics';
 import { isValidTimeZone } from './tz';
+import { OFFICE_HOURS_KIND, WHOLE_EVENT, officeHoursSlotKey } from './event-model';
 import {
   OFFICE_HOURS_HORIZON_DAYS,
   OFFICE_HOURS_LEAD_MS,
@@ -141,25 +149,57 @@ export async function officeHoursSummary(
   );
 }
 
+interface BookingRow {
+  id: string;
+  hostId: string;
+  guestId: string;
+  startsAt: Date;
+  endsAt: Date;
+  note: string;
+}
+
+/** A live (not cancelled) booking: an office-hours event. */
+const liveBookingWhere = { kind: OFFICE_HOURS_KIND, canceledAt: null } as const;
+
 const bookingSelect = {
   id: true,
   hostId: true,
-  guestId: true,
   startsAt: true,
   endsAt: true,
-  note: true,
+  description: true,
+  rsvps: { where: { occurrenceAt: WHOLE_EVENT }, select: { userId: true }, take: 1 },
 } as const;
 
-async function toBookingViews(
-  rows: {
-    id: string;
-    hostId: string;
-    guestId: string;
-    startsAt: Date;
-    endsAt: Date;
-    note: string;
-  }[],
-): Promise<OfficeHoursBookingView[]> {
+function toBookingRow(e: {
+  id: string;
+  hostId: string | null;
+  startsAt: Date;
+  endsAt: Date | null;
+  description: string;
+  rsvps: { userId: string }[];
+}): BookingRow | null {
+  const guestId = e.rsvps[0]?.userId;
+  if (!e.hostId || !guestId) return null;
+  return {
+    id: e.id,
+    hostId: e.hostId,
+    guestId,
+    startsAt: e.startsAt,
+    endsAt: e.endsAt ?? e.startsAt,
+    note: e.description,
+  };
+}
+
+const toBookingRows = (rows: Parameters<typeof toBookingRow>[0][]): BookingRow[] =>
+  rows.flatMap((r) => {
+    const b = toBookingRow(r);
+    return b ? [b] : [];
+  });
+
+/** Where the member is the guest of a booking. */
+const asGuest = (userId: string) => ({ rsvps: { some: { userId, occurrenceAt: WHOLE_EVENT } } });
+
+async function toBookingViews(rows: BookingRow[]): Promise<OfficeHoursBookingView[]> {
   const people = await loadPeople(rows.flatMap((r) => [r.hostId, r.guestId]));
   return rows.flatMap((r) => {
     const host = people.get(r.hostId);
@@ -207,11 +247,13 @@ export async function getPublicView(
   const config = toConfig(row);
   const slots = row.enabled ? expandSlots(config, from, to) : [];
 
-  const taken = await prisma.officeHoursBooking.findMany({
-    where: { hostId, startsAt: { gte: now, lt: to } },
-    select: { startsAt: true, guestId: true },
-    take: 600,
-  });
+  const taken = toBookingRows(
+    await prisma.event.findMany({
+      where: { ...liveBookingWhere, hostId, startsAt: { gte: now, lt: to } },
+      select: bookingSelect,
+      take: 600,
+    }),
+  );
   const takenSet = new Set(taken.map((b) => b.startsAt.getTime()));
   const mineSet = new Set(
     viewerId ? taken.filter((b) => b.guestId === viewerId).map((b) => b.startsAt.getTime()) : [],
@@ -242,15 +284,15 @@ export async function getPublicView(
 
   let bookings: OfficeHoursBookingView[] = [];
   if (viewerId) {
-    const rows = await prisma.officeHoursBooking.findMany({
+    const rows = await prisma.event.findMany({
       where: isHost
-        ? { hostId, startsAt: { gte: now } }
-        : { hostId, guestId: viewerId, startsAt: { gte: now } },
+        ? { ...liveBookingWhere, hostId, startsAt: { gte: now } }
+        : { ...liveBookingWhere, hostId, ...asGuest(viewerId), startsAt: { gte: now } },
       orderBy: { startsAt: 'asc' },
       take: 50,
       select: bookingSelect,
     });
-    bookings = await toBookingViews(rows);
+    bookings = await toBookingViews(toBookingRows(rows));
   }
 
   return {
@@ -292,21 +334,33 @@ export async function bookSlot(
     const created = await prisma.$transaction(async (tx) => {
       // Serialise bookings per host so the weekly cap and the guest limit cannot be raced.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'office-hours:' + hostId}))`;
-      const upcoming = await tx.officeHoursBooking.count({
-        where: { hostId, guestId, startsAt: { gte: new Date() } },
+      const upcoming = await tx.event.count({
+        where: { ...liveBookingWhere, hostId, ...asGuest(guestId), startsAt: { gte: new Date() } },
       });
       if (upcoming >= OFFICE_HOURS_MAX_PER_GUEST) return 'guest-limit' as const;
       if (cfgRow.maxPerWeek != null) {
         const wk = weekBounds(startsAt, cfgRow.tz);
-        const inWeek = await tx.officeHoursBooking.count({
-          where: { hostId, startsAt: { gte: wk.start, lt: wk.end } },
+        const inWeek = await tx.event.count({
+          where: { ...liveBookingWhere, hostId, startsAt: { gte: wk.start, lt: wk.end } },
         });
         if (inWeek >= cfgRow.maxPerWeek) return 'week-full' as const;
       }
-      return tx.officeHoursBooking.create({
-        data: { hostId, guestId, startsAt, endsAt, note },
+      const event = await tx.event.create({
+        data: {
+          owner: 'USER',
+          kind: OFFICE_HOURS_KIND,
+          visibility: 'PRIVATE',
+          hostId,
+          title: 'Office hours',
+          description: note,
+          startsAt,
+          endsAt,
+          slotKey: officeHoursSlotKey(hostId, startsAt),
+          rsvps: { create: { userId: guestId, status: 'going', occurrenceAt: WHOLE_EVENT } },
+        },
         select: bookingSelect,
       });
+      return toBookingRow(event)!;
     });
     if (created === 'guest-limit') {
       return fail(
@@ -347,12 +401,17 @@ export async function bookSlot(
 
 /** Host or guest cancels; the slot frees up and the other side is told. */
 export async function cancelBooking(bookingId: string, userId: string): Promise<Result<true>> {
-  const b = await prisma.officeHoursBooking.findUnique({
-    where: { id: bookingId },
+  const row = await prisma.event.findFirst({
+    where: { id: bookingId, ...liveBookingWhere },
     select: bookingSelect,
   });
+  const b = row ? toBookingRow(row) : null;
   if (!b || (b.hostId !== userId && b.guestId !== userId)) return fail(404, 'Not found');
-  await prisma.officeHoursBooking.deleteMany({ where: { id: bookingId } });
+  // Kept as a cancelled event (the feed then shows it cancelled); the key goes so the slot frees up.
+  await prisma.event.updateMany({
+    where: { id: bookingId, canceledAt: null },
+    data: { canceledAt: new Date(), slotKey: null },
+  });
   const otherId = b.hostId === userId ? b.guestId : b.hostId;
   const people = await loadPeople([userId]);
   const when = b.startsAt.toUTCString().replace(':00 GMT', ' UTC');
@@ -374,29 +433,33 @@ export async function listMyBookings(
 ): Promise<{ asHost: OfficeHoursBookingView[]; asGuest: OfficeHoursBookingView[] }> {
   const now = new Date();
   const [host, guest] = await Promise.all([
-    prisma.officeHoursBooking.findMany({
-      where: { hostId: userId, startsAt: { gte: now } },
+    prisma.event.findMany({
+      where: { ...liveBookingWhere, hostId: userId, startsAt: { gte: now } },
       orderBy: { startsAt: 'asc' },
       take: 50,
       select: bookingSelect,
     }),
-    prisma.officeHoursBooking.findMany({
-      where: { guestId: userId, startsAt: { gte: now } },
+    prisma.event.findMany({
+      where: { ...liveBookingWhere, ...asGuest(userId), startsAt: { gte: now } },
       orderBy: { startsAt: 'asc' },
       take: 50,
       select: bookingSelect,
     }),
   ]);
-  const [asHost, asGuest] = await Promise.all([toBookingViews(host), toBookingViews(guest)]);
-  return { asHost, asGuest };
+  const [hostViews, guestViews] = await Promise.all([
+    toBookingViews(toBookingRows(host)),
+    toBookingViews(toBookingRows(guest)),
+  ]);
+  return { asHost: hostViews, asGuest: guestViews };
 }
 
 export async function bookingIcs(bookingId: string, userId: string): Promise<string | null> {
-  const b = await prisma.officeHoursBooking.findUnique({
-    where: { id: bookingId },
-    select: bookingSelect,
+  const row = await prisma.event.findFirst({
+    where: { id: bookingId, kind: OFFICE_HOURS_KIND },
+    select: { ...bookingSelect, canceledAt: true },
   });
-  if (!b || (b.hostId !== userId && b.guestId !== userId)) return null;
+  const b = row ? toBookingRow(row) : null;
+  if (!row || !b || (b.hostId !== userId && b.guestId !== userId)) return null;
   const people = await loadPeople([b.hostId, b.guestId]);
   const other = people.get(userId === b.hostId ? b.guestId : b.hostId);
   return eventToICS({
@@ -406,5 +469,6 @@ export async function bookingIcs(bookingId: string, userId: string): Promise<str
     startsAt: b.startsAt,
     endsAt: b.endsAt,
     url: `${SITE_URL}/office-hours/${b.hostId}`,
+    canceledAt: row.canceledAt,
   });
 }

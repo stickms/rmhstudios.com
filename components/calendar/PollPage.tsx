@@ -325,7 +325,7 @@ export default function PollPage({ id }: { id: string }) {
               </Button>
             </a>
             {poll.lockedEventId && (
-              <Link to="/communities" search={{ tab: 'events' }}>
+              <Link to="/calendar" search={{ tab: 'yours' }}>
                 <Button variant="default" size="sm">
                   {t('locked-event', { defaultValue: 'See the event' })}
                 </Button>

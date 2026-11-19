@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma.server';
 import { SITE_URL } from '@/lib/seo';
 import { createNotification } from '@/lib/notifications.server';
 import { getRole, canModerate } from '@/lib/communities/access.server';
-import { createEvent, EventError } from '@/lib/events.server';
+import { createEvent, rsvp, EventError } from '@/lib/events.server';
 import { getChatAccess } from '@/lib/chat-plus/access.server';
 import { postChatMessage } from '@/lib/chat-plus/post.server';
 import { eventToICS } from '@/lib/events-ics';
@@ -138,7 +138,6 @@ const pollSelect = {
   lockedStartMin: true,
   lockedEndMin: true,
   lockedAt: true,
-  lockedEventId: true,
   createdAt: true,
   creator: { select: userDisplaySelect },
   invitees: { select: { userId: true }, take: 50 },
@@ -160,9 +159,14 @@ export async function getPollView(pollId: string, viewerId: string): Promise<Pol
   const answered = new Set(responses.map((r) => r.userId));
   const pendingIds = [...requiredSet].filter((id) => !answered.has(id));
   const people = await loadPeople([...responses.map((r) => r.userId), ...pendingIds]);
-  const community = poll.communityId
-    ? await prisma.community.findUnique({ where: { id: poll.communityId }, select: { name: true } })
-    : null;
+  const [community, lockedEvent] = await Promise.all([
+    poll.communityId
+      ? prisma.community.findUnique({ where: { id: poll.communityId }, select: { name: true } })
+      : null,
+    poll.lockedAt
+      ? prisma.event.findUnique({ where: { pollId: poll.id }, select: { id: true } })
+      : null,
+  ]);
 
   const params = paramsOf(poll);
 
@@ -180,7 +184,7 @@ export async function getPollView(pollId: string, viewerId: string): Promise<Pol
     lockedStartMin: poll.lockedStartMin,
     lockedEndMin: poll.lockedEndMin,
     lockedAt: poll.lockedAt?.toISOString() ?? null,
-    lockedEventId: poll.lockedEventId,
+    lockedEventId: lockedEvent?.id ?? null,
     createdAt: poll.createdAt.toISOString(),
     pending: pendingIds.flatMap((id) => {
       const p = people.get(id);
@@ -243,7 +247,12 @@ export interface LockOutcome {
   notified: number;
 }
 
-/** Organiser locks in a run: creates the community event (if possible) and tells everyone. */
+/**
+ * Organiser locks in a run: it becomes an Event (a community event when the
+ * poll belongs to a community the organiser moderates, otherwise a PRIVATE one
+ * of the organiser's that the poll's people can see), the organiser is
+ * 'going', and everyone is told.
+ */
 export async function lockPoll(
   pollId: string,
   userId: string,
@@ -270,29 +279,25 @@ export async function lockPoll(
   if (claimed.count === 0) return fail(409, 'This poll is already locked in');
 
   let eventId: string | null = null;
-  if (poll.communityId) {
-    const role = await getRole(poll.communityId, userId);
-    if (canModerate(role)) {
-      try {
-        const event = await createEvent({
-          hostId: userId,
-          communityId: poll.communityId,
-          title: poll.title,
-          description: poll.description,
-          startsAt: new Date(startMin * 60_000),
-          endsAt: new Date(endMin * 60_000),
-          venueKind: 'URL',
-          venueRef: `${SITE_URL}${pollUrl(pollId)}`,
-        });
-        eventId = event.id;
-        await prisma.availabilityPoll.update({
-          where: { id: pollId },
-          data: { lockedEventId: eventId },
-        });
-      } catch (e) {
-        if (!(e instanceof EventError)) throw e;
-      }
-    }
+  const asCommunity =
+    !!poll.communityId && canModerate(await getRole(poll.communityId, userId));
+  try {
+    const event = await createEvent({
+      hostId: userId,
+      communityId: asCommunity ? poll.communityId : null,
+      visibility: asCommunity ? 'PUBLIC' : 'PRIVATE',
+      pollId,
+      title: poll.title,
+      description: poll.description,
+      startsAt: new Date(startMin * 60_000),
+      endsAt: new Date(endMin * 60_000),
+      venueKind: 'URL',
+      venueRef: `${SITE_URL}${pollUrl(pollId)}`,
+    });
+    eventId = event.id;
+    await rsvp(event.id, userId, 'going');
+  } catch (e) {
+    if (!(e instanceof EventError)) throw e;
   }
 
   const responders = await prisma.availabilityPollResponse.findMany({
@@ -323,7 +328,7 @@ export async function lockPoll(
       entityType: 'availability-poll',
       entityId: pollId,
       preview: `"${poll.title}" is locked in for ${when}. Open the poll to add it to your calendar.`,
-      link: eventId ? '/events' : pollUrl(pollId),
+      link: pollUrl(pollId),
     });
   }
   if (poll.groupChatId) {

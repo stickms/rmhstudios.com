@@ -188,6 +188,12 @@ export default function CalendarSettings() {
       </SettingsSection>
 
       <nav aria-label={t('feed-more', { defaultValue: 'More scheduling tools' })}>
+        <Link to="/calendar" search={{ tab: 'yours' }} className="settings-row">
+          <span className="settings-row__name">
+            {t('feed-link-calendar', { defaultValue: 'Your calendar' })}
+          </span>
+          <ChevronRight className="settings-row__mark rtl:-scale-x-100" aria-hidden />
+        </Link>
         <Link to="/when" className="settings-row">
           <span className="settings-row__name">
             {t('feed-link-polls', { defaultValue: 'Find a time (availability polls)' })}

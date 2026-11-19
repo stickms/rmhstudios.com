@@ -1,5 +1,6 @@
 /** Client-safe view models for the calendar features (K1–K4, F5). */
 import type { PollParams } from './poll-slots';
+import type { RecurrenceRule } from './recurrence';
 
 export interface CalPerson {
   id: string;
@@ -162,9 +163,8 @@ export interface StudyBuddyMatchView {
 
 /** K4 — what a repeating event adds to its DTO. `startsAt` on the DTO is the shown occurrence. */
 export interface EventRecurrenceDTO {
-  rule:
-    | 'W'
-    | 'M';
+  /** Members' events repeat 'W' or 'M'; 'D' is only on the platform's grid. */
+  rule: RecurrenceRule;
   tz: string;
   until:
     | string

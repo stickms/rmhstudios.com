@@ -262,12 +262,8 @@ export const STATIC_CARD_INDEX: readonly (readonly [
       'photo-of-the-day',
     ],
     [
-      '/game-night',
-      'game-night',
-    ],
-    [
-      '/schedule',
-      'schedule',
+      '/calendar',
+      'calendar',
     ],
     [
       '/when',

@@ -17,7 +17,7 @@ const h = vi.hoisted(() => ({
   joinRequest: { findUnique: vi.fn(), findMany: vi.fn() },
   page: { findUnique: vi.fn() },
   rmhark: { findMany: vi.fn() },
-  event: { findUnique: vi.fn(), findMany: vi.fn() },
+  event: { findUnique: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
   rsvp: { groupBy: vi.fn(), findMany: vi.fn() },
   getSession: vi.fn(),
   transaction: vi.fn(),
@@ -32,8 +32,8 @@ vi.mock('@/lib/prisma.server', () => ({
     communityPage: h.page,
     user: { findUnique: async () => null },
     rMHark: h.rmhark,
-    communityEvent: h.event,
-    eventRsvp: h.rsvp,
+    event: h.event,
+    rsvp: h.rsvp,
     closeFriend: { findMany: async () => [] },
     $transaction: h.transaction,
   },
@@ -276,6 +276,11 @@ describe('locked community payload', () => {
 describe('events of a private community are members-only', () => {
   const EVENT_ROW = {
     id: 'e1',
+    owner: 'COMMUNITY',
+    kind: 'event',
+    visibility: 'PUBLIC',
+    pollId: null,
+    href: null,
     hostId: 'owner',
     communityId: 'c1',
     title: 'Secret meetup',
@@ -297,6 +302,7 @@ describe('events of a private community are members-only', () => {
 
   beforeEach(() => {
     h.event.findUnique.mockResolvedValue(EVENT_ROW);
+    h.event.findFirst.mockResolvedValue(EVENT_ROW);
     h.event.findMany.mockResolvedValue([EVENT_ROW]);
     h.rsvp.groupBy.mockResolvedValue([]);
     h.rsvp.findMany.mockResolvedValue([]);
