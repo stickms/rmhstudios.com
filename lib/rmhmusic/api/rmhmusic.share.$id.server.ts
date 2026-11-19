@@ -1,6 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import { stopShareApi } from '@/lib/music-social/share.contract';
+import { stopShareApi } from '@/lib/rmhmusic/social/share.contract';
 import { stopShareRes } from '@/lib/rmhmusic/learn/social/share-schema';
 import { stopShare } from '@/lib/rmhmusic/learn/social/share.server';
 

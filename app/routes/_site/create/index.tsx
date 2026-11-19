@@ -11,7 +11,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
-import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
+import { PagesTab, type VibeGallery } from '@/components/create/PagesTab';
 import type { CreationSort } from '@/lib/ranking/best';
 
 const fetchGallery = createServerFn({ method: 'GET' })

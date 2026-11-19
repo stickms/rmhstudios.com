@@ -7,7 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { subscribeMessageStream } from '@/lib/useUnreadCount';
+import { subscribeMessageStream } from '@/hooks/useUnreadCount';
 import { subscribeChatUpdates } from '@/lib/chat-plus/client-bus';
 import type {
   ChatRef,

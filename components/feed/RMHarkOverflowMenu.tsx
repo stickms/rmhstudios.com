@@ -56,7 +56,7 @@ const ReportDialog = lazy(() =>
  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
 );
 const TipDialog = lazy(() =>
- import('@/components/economy/TipDialog').then((m) => ({ default: m.TipDialog })),
+ import('@/components/wallet/TipDialog').then((m) => ({ default: m.TipDialog })),
 );
 const EditPostModal = lazy(() =>
  import('./EditPostModal').then((m) => ({ default: m.EditPostModal })),

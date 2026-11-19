@@ -47,7 +47,7 @@ import { VERIFY_SOLO_QUEUE } from '@features/altair/engine/solo/job';
 import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
-import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
+import { registerRecipeJobs } from '@/lib/developer/recipes.server';
 import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
 import { PROFILE_LINK_REVERIFY_QUEUE, registerProfileLinkReverifyCron } from '@/lib/profile-links/jobs.server';
 import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';

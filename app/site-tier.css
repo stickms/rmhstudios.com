@@ -137,7 +137,8 @@
 @source not "../lib/rmhbox";
 @source not "../lib/rmhcalculator";
 @source not "../lib/rmhcode";
-@source not "../lib/rmhmusic";
+@source not "../lib/rmhmusic/api";
+@source not "../lib/rmhmusic/learn";
 @source not "../lib/rmhstudy";
 @source not "../lib/rmhtube";
 @source not "../lib/rmhtype";

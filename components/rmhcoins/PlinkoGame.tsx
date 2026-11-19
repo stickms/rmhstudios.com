@@ -4,7 +4,7 @@ import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { placePlinkoBetApi } from '@/lib/coins.contract';
 import { Button } from '@/components/ui/button';
-import { CoinIcon } from './CoinIcon';
+import { CoinIcon } from '../ui/CoinIcon';
 import {
   physicsTick,
   PEGS,

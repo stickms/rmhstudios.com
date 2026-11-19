@@ -6,7 +6,12 @@ import {
 import type {
   BurnSummary,
   HourlyPoint,
-} from '@/lib/deepseek/balance';
+} from '@/lib/ai/deepseek-balance';
+import {
+  fetchJson,
+  HttpError,
+  type FetchJsonOptions,
+} from '@/lib/http';
 
 export interface LiveBalance {
   isAvailable: boolean;
@@ -44,38 +49,65 @@ export interface HistorySeries {
   summary: BurnSummary;
 }
 
+type JsonRecord =
+  Record<
+    string,
+    unknown
+  >;
+
+/**
+ * `fetchJson` that hands back a failed call's JSON body instead of throwing it:
+ * the balance endpoint still sends its persisted snapshots (`latest`) and an
+ * `{ error }` code alongside a 503. Transport failures and timeouts still throw.
+ */
 async function getJson(
   url: string,
-  init?: RequestInit,
-) {
-  const res =
-    await fetch(
-      url,
-      {
-        credentials:
-          'include',
-        cache:
-          'no-store',
-        ...init,
-      },
-    );
-  let json: unknown =
-    null;
+  init?: FetchJsonOptions,
+): Promise<{
+  ok: boolean;
+  /** The HTTP status of a failed call; 200 for any success. */
+  status: number;
+  json: JsonRecord | null;
+}> {
   try {
-    json =
-      await res.json();
-  } catch {
-    // Non-JSON body (proxy error page): treated as a failure below.
+    const json =
+      await fetchJson<JsonRecord | null>(
+        url,
+        {
+          cache:
+            'no-store',
+          ...init,
+        },
+      );
+    return {
+      ok: true,
+      status: 200,
+      json,
+    };
+  } catch (err) {
+    if (
+      !(err instanceof
+        HttpError)
+    )
+      throw err;
+    const body =
+      err.body;
+    return {
+      ok: false,
+      status:
+        err.status,
+      json:
+        typeof body ===
+          'object' &&
+        body !==
+          null &&
+        !Array.isArray(
+          body,
+        )
+          ? (body as JsonRecord)
+          : null,
+    };
   }
-  return {
-    ok: res.ok,
-    status:
-      res.status,
-    json: json as Record<
-      string,
-      unknown
-    > | null,
-  };
 }
 
 function errorCode(

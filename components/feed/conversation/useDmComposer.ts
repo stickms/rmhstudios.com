@@ -11,7 +11,7 @@ import type {
 import { useTranslation } from 'react-i18next';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
-import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
+import { useMessageSuggestion } from '@/hooks/useMessageSuggestion';
 import { yieldToMain } from '@/lib/scheduler';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';

@@ -24,7 +24,7 @@ import {
 } from '@/lib/rmhladder/server/actions';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck } from 'lucide-react';
-import { timeAgo } from '@/components/rmhladder/time';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Tabs } from '@/components/ui/tabs';
@@ -116,7 +116,7 @@ function taskTitle(task: AnyRow): string {
 }
 
 function ReviewPage() {
-  const { t } = useTranslation('site');
+  const { t, i18n } = useTranslation('site');
   const { tasks } = Route.useLoaderData();
   const tab = Route.useSearch().tab ?? 'open';
   const navigate = useNavigate({ from: '/rmhladder/review' });
@@ -205,7 +205,7 @@ function ReviewPage() {
                   defaultValue: 'resolved {{resolution}}',
                   resolution: task.resolution as string,
                 })}
-                {task.resolvedAt ? ` · ${timeAgo(task.resolvedAt as Date)}` : ''}
+                {task.resolvedAt ? ` · ${formatRelativeTime(task.resolvedAt as Date, i18n.language)}` : ''}
               </span>
             </li>
           ))}
@@ -231,7 +231,7 @@ function ReviewPage() {
                       <span className="rl-mono text-site-text-muted">
                         {t('ladder.review.opened', {
                           defaultValue: 'opened {{ago}}',
-                          ago: timeAgo(task.createdAt as Date),
+                          ago: formatRelativeTime(task.createdAt as Date, i18n.language),
                         })}
                       </span>
                     </div>

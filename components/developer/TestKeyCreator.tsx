@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { SCOPES } from '@/lib/api/scopes';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { createDeveloperKeyApi } from '@/lib/devplatform/keys.contract';
+import { createDeveloperKeyApi } from '@/lib/developer/keys.contract';
 
 /** D1: creates an `rmh_test_` sandbox key — fixtures for reads, no-op writes. */
 export function TestKeyCreator({

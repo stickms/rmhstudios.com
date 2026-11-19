@@ -20,7 +20,7 @@ import {
 } from '@/lib/rmhladder/server/queries';
 import { RungMeter } from '@/components/rmhladder/RungMeter';
 import { StatBlock } from '@/components/rmhladder/StatBlock';
-import { timeAgo } from '@/components/rmhladder/time';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { EmptyState } from '@/components/ui/empty-state';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
@@ -63,7 +63,7 @@ export const Route = createFileRoute('/_site/rmhladder/')({
 });
 
 function useLastRunLine(lastRun: Record<string, unknown> | null): string {
-  const { t } = useTranslation('site');
+  const { t, i18n } = useTranslation('site');
   if (!lastRun) {
     return t('ladder-awaiting-first-run-line', {
       defaultValue: 'Awaiting the first automated update',
@@ -71,7 +71,7 @@ function useLastRunLine(lastRun: Record<string, unknown> | null): string {
   }
   return t('ladder-last-run-line', {
     defaultValue: 'Last run · {{ago}} · {{found}} found · {{errors}} errors',
-    ago: timeAgo(lastRun.startedAt as Date),
+    ago: formatRelativeTime(lastRun.startedAt as Date, i18n.language),
     found: lastRun.discoveredCount ?? 0,
     errors: lastRun.errorCount ?? 0,
   });

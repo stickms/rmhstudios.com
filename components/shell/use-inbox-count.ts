@@ -1,5 +1,5 @@
-import { useUnreadCount } from '@/lib/useUnreadCount';
-import { useNotificationCount } from '@/lib/useNotificationCount';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
+import { useNotificationCount } from '@/hooks/useNotificationCount';
 
 /**
  * What the Inbox section holds unread: direct messages plus notifications (the Inbox's notifications tab). Both are the

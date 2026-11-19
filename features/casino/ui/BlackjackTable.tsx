@@ -4,7 +4,7 @@ import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
 import { formatHandValue } from '@features/casino/engine/blackjack/logic';
 import type { Card } from '@features/casino/engine/blackjack/logic';
 import type { PlayerSeatClient } from '@features/casino/engine/blackjack/types';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 
 // ── Card Rendering with Flip Animation ─────────────────────────────
 

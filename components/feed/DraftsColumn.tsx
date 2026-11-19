@@ -15,7 +15,7 @@ import { ColumnHeader } from'./ColumnHeader';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
-import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from'@/components/ui/CoinIcon';
 import { api } from'@/lib/contract/client';
 import {
  discardScheduledApi,

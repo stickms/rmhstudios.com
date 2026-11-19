@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 
 export function BlackjackSessionStats() {
   const players = useBlackjackStore((s) => s.players);

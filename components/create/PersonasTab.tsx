@@ -1,0 +1,345 @@
+/**
+ * Create · AI Personas tab.
+ *
+ * The AI-persona gallery, rendered as a Steam-style storefront (rotating hero +
+ * spotlight rail + varied mosaic) via the shared `Storefront`, with the inline
+ * "create a persona" form on top. "Your personas" stay pinned in their own strip
+ * above the public showcase, which is ranked (Best by default; lib/ranking/best.ts).
+ */
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Bot, Plus, MessageSquare, X, Globe, Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
+import { Storefront, type StoreItem } from '@/components/create/storefront';
+import { SortSelect, useCreationSortOptions } from '@/components/create/SortSelect';
+import { DEFAULT_CREATION_SORT, type CreationSort } from '@/lib/ranking/best';
+import '@/components/builds/builds.css';
+import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createPersonaApi, listPersonasApi } from '@/lib/personas/personas.contract';
+import '@/components/create/storefront.css';
+
+interface Persona {
+  id: string;
+  name: string;
+  tagline: string | null;
+  emoji: string | null;
+  avatarUrl?: string | null;
+  chatCount: number;
+  owner?: { name: string | null; handle: string | null };
+  isPublic?: boolean;
+}
+
+const fmt = (n: number) => n.toLocaleString();
+
+export function PersonasTab() {
+  const { t } = useTranslation('feed');
+  const navigate = useNavigate();
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [mine, setMine] = useState<Persona[]>([]);
+  const [signedIn, setSignedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
+  const [sort, setSort] = useState<CreationSort>(DEFAULT_CREATION_SORT);
+  const sortOptions = useCreationSortOptions();
+  const [showForm, setShowForm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: '',
+    tagline: '',
+    emoji: '',
+    greeting: '',
+    systemPrompt: '',
+    isPublic: true,
+  });
+
+  const load = useCallback(async () => {
+    try {
+      const data = await api(listPersonasApi, { query: { sort } });
+      setPersonas(data.personas);
+      setMine(data.mine);
+      setSignedIn(data.signedIn);
+    } catch {
+      // Keep the current gallery when the refresh fails.
+    }
+  }, [sort]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        await load();
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [load]);
+
+  async function create() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api(createPersonaApi, {
+        body: {
+          name: form.name.trim(),
+          tagline: form.tagline.trim() || undefined,
+          emoji: form.emoji.trim() || undefined,
+          greeting: form.greeting.trim() || undefined,
+          systemPrompt: form.systemPrompt.trim(),
+          isPublic: form.isPublic,
+        },
+      });
+      setForm({ name: '', tagline: '', emoji: '', greeting: '', systemPrompt: '', isPublic: true });
+      setShowForm(false);
+      await load();
+    } catch (e) {
+      setError(serverError(e) ?? t('could-not-create', { defaultValue: 'Could not create' }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const personaMeta = useCallback(
+    (p: Persona, showOwner: boolean) => (
+      <span className="store-persona-meta">
+        <span className="store-persona-meta__item">
+          <MessageSquare className="size-3" aria-hidden />
+          {fmt(p.chatCount)}
+        </span>
+        {p.isPublic === false && (
+          <>
+            <span aria-hidden>·</span>
+            <span className="store-persona-meta__item">
+              <Lock className="size-3" aria-hidden />
+              {t('private', { defaultValue: 'Private' })}
+            </span>
+          </>
+        )}
+        {showOwner && p.owner && (
+          <>
+            <span aria-hidden>·</span>
+            {t('by-owner', {
+              owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'Someone' }),
+              defaultValue: 'by {{owner}}',
+            })}
+          </>
+        )}
+      </span>
+    ),
+    [t],
+  );
+
+  const items: StoreItem[] = useMemo(
+    () =>
+      personas.map((p) => ({
+        id: p.id,
+        title: p.name,
+        description: p.tagline ?? undefined,
+        coverUrl: p.avatarUrl ?? null,
+        emoji: p.emoji,
+        cta: t('chat', { defaultValue: 'Chat' }),
+        to: `/personas/${p.id}`,
+        meta: personaMeta(p, true),
+      })),
+    [personas, t, personaMeta],
+  );
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Spinner />
+      </div>
+    );
+  }
+
+  const validForm = form.name.trim().length >= 2 && form.systemPrompt.trim().length >= 10;
+
+  return (
+    <div className={cn('store-personas', arrival)}>
+      {signedIn && (
+        <div className="store-personas__bar">
+          <Button
+            size="sm"
+            variant="default"
+            aria-expanded={showForm}
+            onClick={() => setShowForm((v) => !v)}
+          >
+            <Plus aria-hidden /> {t('create', { defaultValue: 'Create' })}
+          </Button>
+        </div>
+      )}
+
+      {showForm && (
+        <div className="mb-6 space-y-3 rounded-site p-5">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="site-section-label">
+              {t('new-persona', { defaultValue: 'New persona' })}
+            </h2>
+            <IconButton
+              icon={X}
+              size="icon-xs"
+              label={t('close', { defaultValue: 'Close' })}
+              onClick={() => setShowForm(false)}
+            />
+          </div>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={form.emoji}
+                onChange={(e) => setForm((f) => ({ ...f, emoji: e.target.value.slice(0, 4) }))}
+                placeholder="🤖"
+                aria-label={t('emoji-label', { defaultValue: 'Emoji' })}
+                className="w-16 text-center"
+              />
+              <Input
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder={t('name-placeholder', { defaultValue: 'Name' })}
+                aria-label={t('name-placeholder', { defaultValue: 'Name' })}
+                maxLength={40}
+                className="flex-1"
+              />
+            </div>
+            <Input
+              value={form.tagline}
+              onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))}
+              placeholder={t('tagline-placeholder', { defaultValue: 'Short tagline (optional)' })}
+              aria-label={t('tagline-placeholder', { defaultValue: 'Short tagline (optional)' })}
+              maxLength={120}
+            />
+            <Textarea
+              value={form.systemPrompt}
+              onChange={(e) => setForm((f) => ({ ...f, systemPrompt: e.target.value }))}
+              placeholder={t('system-prompt-placeholder', {
+                defaultValue:
+                  'Personality & instructions — who is this character, how do they talk, what do they know?',
+              })}
+              aria-label={t('system-prompt-label', {
+                defaultValue: 'Personality and instructions',
+              })}
+              maxLength={2000}
+              rows={4}
+            />
+            <Input
+              value={form.greeting}
+              onChange={(e) => setForm((f) => ({ ...f, greeting: e.target.value }))}
+              placeholder={t('greeting-placeholder', {
+                defaultValue: 'Opening greeting (optional)',
+              })}
+              aria-label={t('greeting-placeholder', {
+                defaultValue: 'Opening greeting (optional)',
+              })}
+              maxLength={500}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                aria-pressed={form.isPublic}
+                onClick={() => setForm((f) => ({ ...f, isPublic: !f.isPublic }))}
+              >
+                {form.isPublic ? <Globe aria-hidden /> : <Lock aria-hidden />}
+                {form.isPublic
+                  ? t('public', { defaultValue: 'Public' })
+                  : t('private-label', { defaultValue: 'Private' })}
+              </Button>
+              {error && (
+                <p role="alert" className="text-xs text-site-danger">
+                  {error}
+                </p>
+              )}
+              <Button
+                size="sm"
+                variant="default"
+                loading={busy}
+                disabled={!validForm}
+                onClick={create}
+              >
+                {t('create-persona', { defaultValue: 'Create persona' })}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mine.length > 0 && (
+        <section className="mb-6 space-y-3">
+          <h2 className="site-section-label">
+            {t('your-personas', { defaultValue: 'Your personas' })}
+          </h2>
+          <div className="store-personas__mine">
+            {mine.map((p) => (
+              <Link
+                key={p.id}
+                to={`/personas/${p.id}` as string}
+                // §5.48: the tile avatar liquidly expands into the chat header
+                // avatar. Name set only at click time (tag the avatar child).
+                onClick={(e) => {
+                  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                  e.preventDefault();
+                  const avatar = e.currentTarget.querySelector(
+                    '[data-persona-avatar]',
+                  ) as HTMLElement | null;
+                  runLiquidOpen(avatar, liquidVTName('persona', p.id), () =>
+                    navigate({ to: `/personas/${p.id}` } as never),
+                  );
+                }}
+                className="surface-press flex items-center gap-3 rounded-site border border-site-border p-3 hover:bg-site-bg-subtle"
+              >
+                <div
+                  data-persona-avatar
+                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-bg-subtle text-xl"
+                >
+                  {p.avatarUrl ? (
+                    <img
+                      src={p.avatarUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    p.emoji || <Bot className="size-5 text-site-accent" aria-hidden />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-site-text">{p.name}</p>
+                  {p.tagline && (
+                    <p className="truncate text-xs text-site-text-muted">{p.tagline}</p>
+                  )}
+                  <p className="mt-0.5 text-xs text-site-text-muted">{personaMeta(p, false)}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <Storefront
+        items={items}
+        featured={sort === DEFAULT_CREATION_SORT}
+        toolbar={
+          <div data-slot="page-controls" className="builds-toolbar">
+            <div className="builds-toolbar__right">
+              <SortSelect value={sort} onChange={setSort} options={sortOptions} />
+            </div>
+          </div>
+        }
+        emptyLabel={t('no-personas-yet', { defaultValue: 'No personas yet — create the first!' })}
+      />
+    </div>
+  );
+}

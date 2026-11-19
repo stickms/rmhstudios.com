@@ -20,7 +20,7 @@ import { serverError } from '@/lib/http';
 import { claimFirstWeekApi } from '@/lib/onboarding.contract';
 import { CheckCircle2, Circle, GraduationCap, Lock, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { useCelebration } from '@/hooks/useCelebration';
 
 /** Mirrors the server `FirstWeekStatus` shape (kept local — server module is

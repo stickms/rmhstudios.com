@@ -3,7 +3,7 @@ import { useTranslation } from'react-i18next';
 import { Eye, Heart, MessageCircle, Repeat, Bookmark, TrendingUp, Unlock } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
-import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from'@/components/ui/CoinIcon';
 import { postInsightsApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
 import { useArrival } from '@/components/ui/arrive';

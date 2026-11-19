@@ -118,7 +118,7 @@ vi.mock('@/components/shared/ReactionMenu', () => ({ ReactionMenu: marker('React
 vi.mock('@/components/voice/VoiceComposer', () => ({ VoiceComposer: marker('VoiceComposer') }));
 vi.mock('./SmartReplies', () => ({ SmartReplies: marker('SmartReplies') }));
 vi.mock('../SmartReplies', () => ({ SmartReplies: marker('SmartReplies') }));
-vi.mock('@/lib/useMessageSuggestion', () => ({
+vi.mock('@/hooks/useMessageSuggestion', () => ({
   useMessageSuggestion: () => ({ suggestion: '', clear: () => undefined }),
 }));
 

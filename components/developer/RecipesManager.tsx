@@ -12,15 +12,15 @@ import {
   type RecipeTrigger,
   type RecipeAction,
   type RecipeView,
-} from '@/lib/devplatform/recipes';
+} from '@/lib/developer/recipes';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import {
   createRecipeApi,
   deleteRecipeApi,
   setRecipeEnabledApi,
-} from '@/lib/devplatform/recipes.contract';
-import { recipesQuery } from '@/lib/devplatform/developer.queries';
+} from '@/lib/developer/recipes.contract';
+import { recipesQuery } from '@/lib/developer/developer.queries';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 

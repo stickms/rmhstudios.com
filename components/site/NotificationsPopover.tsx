@@ -24,7 +24,7 @@ import { NotificationBadge } from '@/components/ui/notification-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { useReservedRows } from '@/hooks/useReservedRows';
-import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
+import { NOTIFICATIONS_READ_EVENT } from '@/hooks/useNotificationCount';
 import {
   cn,
   relativeTimeShort,

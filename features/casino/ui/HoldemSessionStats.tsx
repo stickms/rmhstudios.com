@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useHoldemStore } from '@features/casino/engine/holdem/store';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 
 export function HoldemSessionStats() {
   const players =

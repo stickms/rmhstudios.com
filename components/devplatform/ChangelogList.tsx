@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { NoteBody } from '@/components/devplatform/NoteBody';
-import type { ReleaseNoteView } from '@/lib/devplatform/release-notes';
+import type { ReleaseNoteView } from '@/lib/developer/release-notes';
 import { api } from '@/lib/contract/client';
 import { releaseNotesApi } from '@/lib/site-reads.contract';
 import { useArrival } from '@/components/ui/arrive';

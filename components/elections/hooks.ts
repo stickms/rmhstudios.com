@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { ElectionsApiResponse } from '@/lib/elections/api-types';
 import type { Baseline } from '@/lib/elections/swing';
 import { api } from '@/lib/contract/client';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import {
   getElectionsApi,
   getElectionSwingApi,
@@ -195,45 +196,36 @@ export const fmtInt =
       n,
     );
 
+/**
+ * "5 minutes ago" in `locale`, against the server-skewed clock from {@link useNow}
+ * (empty until it ticks, so SSR and hydration agree). A timestamp the skewed
+ * clock has not reached yet reads as now, never "in 2 seconds".
+ */
 export function timeAgo(
   iso:
     | string
     | null
     | undefined,
   now: Date | null,
+  locale: string,
 ): string {
   if (
     !iso ||
     !now
   )
     return '';
-  const s =
-    Math.max(
-      0,
-      Math.round(
-        (now.getTime() -
-          new Date(
-            iso,
-          ).getTime()) /
-          1000,
-      ),
-    );
-  if (
-    s <
-    60
-  )
-    return `${s}s ago`;
-  if (
-    s <
-    3600
-  )
-    return `${Math.floor(s / 60)}m ago`;
-  if (
-    s <
-    86400
-  )
-    return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+  const nowMs =
+    now.getTime();
+  return formatRelativeTime(
+    Math.min(
+      new Date(
+        iso,
+      ).getTime(),
+      nowMs,
+    ),
+    locale,
+    nowMs,
+  );
 }
 
 /**

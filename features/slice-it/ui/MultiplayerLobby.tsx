@@ -45,6 +45,7 @@ import { SongDetailsPanel } from './SongDetailsPanel';
 import { SpectatorView } from './spectate/SpectatorView';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { formatClockSeconds } from '@/lib/core/format';
 
 interface MultiplayerLobbyProps {
   onBack: () => void;
@@ -574,7 +575,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                   <span className="min-w-0">
                     <span className="block font-bold truncate">{lobby.song.title}</span>
                     <span className="block text-xs text-slice-text-muted truncate">
-                      {lobby.song.artist} · {formatDuration(lobby.song.duration)}
+                      {lobby.song.artist} · {formatClockSeconds(Math.round(lobby.song.duration))}
                       {lobby.song.bpm > 0 ? ` · ${Math.round(lobby.song.bpm)} BPM` : ''}
                     </span>
                   </span>
@@ -1411,11 +1412,6 @@ function LobbyChat({
 }
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
-
-function formatDuration(seconds: number): string {
-  const total = Math.max(0, Math.round(seconds));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
 
 /**
  * @param t the shared `c-game` namespace, where the original lobby errors live.

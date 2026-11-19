@@ -3,7 +3,7 @@
  *
  * Same duplication as `lib/moderation/report-schema.ts`: `app/routes/api/
  * coins/tip.ts` declared `note: z.string().max(280)` and
- * `components/economy/TipDialog.tsx` declared `maxLength={280}`, and the two
+ * `components/wallet/TipDialog.tsx` declared `maxLength={280}`, and the two
  * `280`s had no relationship other than someone having typed both. The
  * `entityType` union was written twice as well.
  *

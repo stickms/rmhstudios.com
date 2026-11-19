@@ -11,7 +11,7 @@
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { adminUserUpdateSchema } from '@/lib/admin/schemas';
-import type { AdminReviewCounts } from '@/lib/useAdminReviewCount';
+import type { AdminReviewCounts } from '@/hooks/useAdminReviewCount';
 import type { CoinFlow, supplyShape } from '@/lib/economy/flows';
 import type { EconomySnapshot } from '@/lib/economy/supply.server';
 import type { createSeasonSchema } from '@/lib/forecasting/forecasting.server';

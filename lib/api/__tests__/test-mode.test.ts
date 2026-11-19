@@ -7,7 +7,7 @@ import {
   sandboxResponse,
   findEndpoint,
 } from '@/lib/api/test-mode';
-import { DISCORD_WEBHOOK_RE } from '@/lib/devplatform/recipes';
+import { DISCORD_WEBHOOK_RE } from '@/lib/developer/recipes';
 
 const id =
   () =>

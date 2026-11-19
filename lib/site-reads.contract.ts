@@ -5,7 +5,7 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { DelightConfig } from '@/lib/delight/shared';
-import type { ReleaseNoteView } from '@/lib/devplatform/release-notes';
+import type { ReleaseNoteView } from '@/lib/developer/release-notes';
 import type { ResumeCard } from '@/lib/history/resume.server';
 
 export const coinBalanceApi =

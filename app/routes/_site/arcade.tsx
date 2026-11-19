@@ -15,12 +15,12 @@ import { useTranslation } from 'react-i18next';
 import { Swords } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { ArcadeSection } from '@/components/creator-studio/ArcadeSection';
+import { ArcadeSection } from '@/components/arcade/ArcadeSection';
 // Read by `validateSearch` (in every page's entry), so it comes from the UI-free
-// module, not ArcadeSection. See components/creator-studio/arcade-tabs.ts.
-import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/creator-studio/arcade-tabs';
-import { CreatorStudioStyles } from '@/components/creator-studio/CreatorStudioStyles';
-import { RankedSummary } from '@/components/creator-studio/RankedSummary';
+// module, not ArcadeSection. See components/arcade/arcade-tabs.ts.
+import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/arcade/arcade-tabs';
+import { CreatorStudioStyles } from '@/components/create/CreatorStudioStyles';
+import { RankedSummary } from '@/components/create/RankedSummary';
 import { PartyBar } from '@/components/party/PartyBar';
 import { definePage } from '@/lib/route/define-page';
 

@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { apiJson, errorCode } from '@/components/economy-plus/api';
+import { apiJson, errorCode } from '@/components/wallet/api';
 import {
   EXCHANGE_MIN_MEMBERS,
   type ExchangeUser,

@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 
 const QUICK_AMOUNTS = [10, 25, 50, 100, 250];
 const MIN = 10;

@@ -26,7 +26,7 @@ import {
   serverError,
 } from '@/lib/http';
 import { claimCoinsApi } from '@/lib/coins.contract';
-import { CoinIcon } from './CoinIcon';
+import { CoinIcon } from '../ui/CoinIcon';
 import { PlayTab } from './PlayTab';
 import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarketTab';
 import { useForecastingTab } from '@/components/forecasting/forecastingTab';

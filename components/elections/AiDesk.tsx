@@ -46,6 +46,7 @@ export function AiDesk({
 }) {
   const {
     t,
+    i18n,
   } =
     useTranslation(
       'c-elections',
@@ -275,6 +276,7 @@ export function AiDesk({
               {timeAgo(
                 data.generatedAt,
                 now,
+                i18n.language,
               )}
             </span>
           ) : null}

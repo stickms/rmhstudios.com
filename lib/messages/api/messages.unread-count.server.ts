@@ -32,7 +32,7 @@ export const route = apiRoute('/api/messages/unread-count', {
         return Response.json({ count: 0 });
       }
 
-      // This endpoint is polled every 15s per active client (lib/useUnreadCount.ts).
+      // This endpoint is polled every 15s per active client (hooks/useUnreadCount.ts).
       // Read the denormalized Redis counter (kept warm by message-send/mark-read),
       // lazily backfilling from a real COUNT with a short TTL on a miss, so the
       // COUNT only runs about once per TTL per user instead of on every poll.

@@ -129,7 +129,7 @@ export const SIDEBAR_NAV: NavItem[] =
     // catalogs, but they are one destination — "show me what was made here" — so
     // they cost the globe ONE pin, the same trade Services and Ventures make
     // below. The pin lands on `/games`, and the two catalogs carry a shared
-    // link-tab strip (`components/creator-studio/CatalogTabs`) that crosses
+    // link-tab strip (`components/create/CatalogTabs`) that crosses
     // between them, so Apps is one visible tap from the pin rather than a second
     // one. Before this they had no pin at all: `/create` dropped its Apps tab
     // when the catalogs became their own pages, which left `/apps` reachable only

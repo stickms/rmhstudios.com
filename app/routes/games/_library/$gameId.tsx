@@ -11,7 +11,7 @@ import { GamePage } from '@/components/steam/GamePage';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
 import { GAMES_INDEX_PATH, appHubHead } from '@/lib/seo-catalog';
-import { aiAvailable } from '@/lib/devplatform/ai.server';
+import { aiAvailable } from '@/lib/developer/ai.server';
 import { listReviews, getRatingAgg, listGuides } from '@/lib/games/meta.server';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
 import { getTrickOfTheWeek } from '@/lib/trick-week/trick-week.server';

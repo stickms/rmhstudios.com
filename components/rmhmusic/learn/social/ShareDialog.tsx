@@ -29,7 +29,7 @@ import {
   createShareApi,
   type CreateShareInput,
   type ShareSummary,
-} from '@/lib/music-social/share.contract';
+} from '@/lib/rmhmusic/social/share.contract';
 import type { SharePayload } from '@/lib/rmhmusic/learn/social/share';
 import {
   PRIMARY_BUTTON,

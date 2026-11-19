@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ColumnHeader } from './ColumnHeader';
-import { StudyTabs } from '@/components/study/StudyTabs';
+import { StudyTabs } from '@/components/feed/StudyTabs';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';

@@ -1007,7 +1007,7 @@ const CSS_DEBT: Record<
         hex: 7,
         radius: 3,
       },
-    'components/creator-studio/storefront.css':
+    'components/create/storefront.css':
       {
         hex: 2,
         radius: 0,

@@ -230,7 +230,7 @@ const FLAT_BASELINE: Record<
         fl: 0,
         gr: 1,
       }, // the scroll-fade mask
-    'components/creator-studio/storefront.css':
+    'components/create/storefront.css':
       {
         bf: 0,
         fl: 0,

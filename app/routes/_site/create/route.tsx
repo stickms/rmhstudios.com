@@ -26,13 +26,13 @@ import {
   StudioTabs,
   STUDIO_TAB_PATHS,
   type StudioTabPath,
-} from '@/components/creator-studio/StudioTabs';
-import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/creator-studio/arcade-tabs';
+} from '@/components/create/StudioTabs';
+import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/arcade/arcade-tabs';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { LibraryStyles } from '@/components/library/LibraryStyles';
 import { BuildsStyles } from '@/components/builds/BuildsStyles';
-import { CreatorStudioStyles } from '@/components/creator-studio/CreatorStudioStyles';
-import { StorefrontStyles } from '@/components/creator-studio/StorefrontStyles';
+import { CreatorStudioStyles } from '@/components/create/CreatorStudioStyles';
+import { StorefrontStyles } from '@/components/create/StorefrontStyles';
 
 /**
  * Where each legacy `?tab=` value now lives.

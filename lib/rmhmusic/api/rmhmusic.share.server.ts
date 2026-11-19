@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { apiError, badRequest } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
-import { createShareApi, listSharesApi, stopAllSharesApi } from '@/lib/music-social/share.contract';
+import { createShareApi, listSharesApi, stopAllSharesApi } from '@/lib/rmhmusic/social/share.contract';
 import { createShareBody, shareListRes, shareSummarySchema, stopShareRes } from '@/lib/rmhmusic/learn/social/share-schema';
 import { createShare, listShares, stopAllShares } from '@/lib/rmhmusic/learn/social/share.server';
 

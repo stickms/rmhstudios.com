@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { CoinIcon } from '@/components/ui/CoinIcon';
 import { cn } from '@/lib/utils';
 
 /**

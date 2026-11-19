@@ -55,7 +55,7 @@ let streak: {
 } | null =
   null;
 vi.mock(
-  '@/lib/useStreak',
+  '@/hooks/useStreak',
   () => ({
     useStreak:
       () =>

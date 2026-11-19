@@ -1,5 +1,5 @@
 /**
- * Zod schemas for sharing a result (Phase 6 plan 1.4, `lib/music-social/share.contract.ts`). The
+ * Zod schemas for sharing a result (Phase 6 plan 1.4, `lib/rmhmusic/social/share.contract.ts`). The
  * client names WHAT to share and whether to show its name; everything the link shows comes from
  * the stored row (`share.server.ts`).
  */

@@ -13,7 +13,7 @@ import type {
   SharePayload,
 } from '@/lib/rmhmusic/learn/social/share';
 import { songById } from '@/lib/rmhmusic/learn/songs/catalog';
-import type { SharedResultView } from '@/lib/music-social/share.contract';
+import type { SharedResultView } from '@/lib/rmhmusic/social/share.contract';
 
 type T =
   TFunction<'c-rmhmusic'>;

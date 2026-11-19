@@ -1,0 +1,632 @@
+/**
+ * Create · Pages tab.
+ *
+ * The page-generation surface: a prompt dock (type anything, get a shareable,
+ * collaboratively-editable webpage) above a public, searchable, lazy-loaded
+ * gallery of every generated page, ranked (Best by default; lib/ranking/best.ts)
+ * and laid out as a storefront (hero + spotlight rail + mosaic) via the shared `Storefront`.
+ * Each card links to the /v/$slug viewer.
+ */
+
+import {
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
+import { SearchField } from '@/components/ui/search-field';
+import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
+import { Tabs } from '@/components/ui/tabs';
+import {
+  DEFAULT_VIBE_MODEL,
+  type VibeModel,
+} from '@/lib/rmhvibe/vibe-types';
+import type { VibeCard } from '@/lib/rmhvibe/vibe.server';
+import {
+  Storefront,
+  type StoreItem,
+} from '@/components/create/storefront';
+import {
+  SortSelect,
+  useCreationSortOptions,
+} from '@/components/create/SortSelect';
+import {
+  DEFAULT_CREATION_SORT,
+  type CreationSort,
+} from '@/lib/ranking/best';
+import '@/components/builds/builds.css';
+import '@/components/create/storefront.css';
+import '@/components/rmhvibe/vibe.css';
+
+export type VibeGallery =
+  {
+    items: VibeCard[];
+    nextCursor:
+      | string
+      | null;
+  };
+
+export function PagesTab({
+  initial,
+  fetchGallery,
+}: {
+  /** The first page in the default sort, from the route loader. */
+  initial: VibeGallery;
+  fetchGallery: (opts: {
+    data: {
+      q?: string;
+      cursor?: string;
+      sort?: CreationSort;
+    };
+  }) => Promise<VibeGallery>;
+}) {
+  const {
+    t,
+    i18n,
+  } =
+    useTranslation(
+      'v',
+    );
+  const navigate =
+    useNavigate();
+
+  // Prompt dock: type a prompt and stream a new page at /v/new.
+  const inputRef =
+    useRef<HTMLTextAreaElement>(
+      null,
+    );
+  const [
+    model,
+    setModel,
+  ] =
+    useState<VibeModel>(
+      DEFAULT_VIBE_MODEL,
+    );
+
+  const [
+    kind,
+    setKind,
+  ] =
+    useState<
+      | 'page'
+      | 'widget'
+    >(
+      'page',
+    );
+
+  function submit() {
+    const prompt =
+      inputRef.current?.value.trim();
+    if (
+      !prompt
+    )
+      return;
+    navigate(
+      {
+        to: '/v/new',
+        search:
+          {
+            prompt,
+            model,
+            kind,
+          },
+      },
+    );
+  }
+
+  function handlePromptKeyDown(
+    event: KeyboardEvent<HTMLTextAreaElement>,
+  ) {
+    if (
+      event.key ===
+        'Enter' &&
+      !event.shiftKey
+    ) {
+      event.preventDefault();
+      submit();
+    }
+  }
+
+  const [
+    query,
+    setQuery,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    sort,
+    setSort,
+  ] =
+    useState<CreationSort>(
+      DEFAULT_CREATION_SORT,
+    );
+  const sortOptions =
+    useCreationSortOptions();
+  const [
+    items,
+    setItems,
+  ] =
+    useState<
+      VibeCard[]
+    >(
+      initial.items,
+    );
+  const [
+    cursor,
+    setCursor,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      initial.nextCursor,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      false,
+    );
+  const reqId =
+    useRef(
+      0,
+    );
+
+  // Debounced search: refetch from the top whenever the query or the sort settles. The first run is
+  // skipped: the loader already delivered exactly that page, and refetching it a moment later could
+  // only reorder what is on screen.
+  const firstRun =
+    useRef(
+      true,
+    );
+  useEffect(() => {
+    if (
+      firstRun.current
+    ) {
+      firstRun.current = false;
+      return;
+    }
+    const q =
+      query.trim();
+    const id =
+      ++reqId.current;
+    const timer =
+      setTimeout(
+        async () => {
+          setLoading(
+            true,
+          );
+          try {
+            const res =
+              await fetchGallery(
+                {
+                  data: {
+                    q,
+                    sort,
+                  },
+                },
+              );
+            if (
+              reqId.current !==
+              id
+            )
+              return;
+            setItems(
+              res.items,
+            );
+            setCursor(
+              res.nextCursor,
+            );
+          } finally {
+            if (
+              reqId.current ===
+              id
+            )
+              setLoading(
+                false,
+              );
+          }
+        },
+        300,
+      );
+    return () =>
+      clearTimeout(
+        timer,
+      );
+  }, [
+    query,
+    sort,
+    fetchGallery,
+  ]);
+
+  const loadMore =
+    useCallback(async () => {
+      if (
+        loading ||
+        !cursor
+      )
+        return;
+      const id =
+        reqId.current;
+      setLoading(
+        true,
+      );
+      try {
+        const res =
+          await fetchGallery(
+            {
+              data: {
+                q: query.trim(),
+                cursor,
+                sort,
+              },
+            },
+          );
+        if (
+          reqId.current !==
+          id
+        )
+          return; // a search superseded us
+        setItems(
+          (
+            prev,
+          ) => [
+            ...prev,
+            ...res.items,
+          ],
+        );
+        setCursor(
+          res.nextCursor,
+        );
+      } finally {
+        if (
+          reqId.current ===
+          id
+        )
+          setLoading(
+            false,
+          );
+      }
+    }, [
+      loading,
+      cursor,
+      query,
+      sort,
+      fetchGallery,
+    ]);
+
+  // Infinite scroll: fetch the next page when the sentinel scrolls into view.
+  const sentinelRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  useEffect(() => {
+    const el =
+      sentinelRef.current;
+    if (
+      !el ||
+      !cursor
+    )
+      return;
+    const obs =
+      new IntersectionObserver(
+        (
+          entries,
+        ) => {
+          if (
+            entries[0]
+              ?.isIntersecting
+          )
+            void loadMore();
+        },
+        {
+          rootMargin:
+            '600px',
+        },
+      );
+    obs.observe(
+      el,
+    );
+    return () =>
+      obs.disconnect();
+  }, [
+    cursor,
+    loadMore,
+  ]);
+
+  const storeItems: StoreItem[] =
+    useMemo(
+      () =>
+        items.map(
+          (
+            card,
+          ) => {
+            const title =
+              card.title ||
+              card.prompt;
+            return {
+              id: card.slug,
+              title,
+              description:
+                card.description ||
+                undefined,
+              coverUrl:
+                card.thumbnailUrl,
+              cta: t(
+                'open-page',
+                {
+                  defaultValue:
+                    'Open page',
+                },
+              ),
+              meta:
+                card.kind ===
+                'widget'
+                  ? `${t(
+                      'widget-label',
+                      {
+                        defaultValue:
+                          'Widget',
+                      },
+                    )} · ${formatRelativeTime(
+                      card.createdAt,
+                      i18n.language,
+                    )}`
+                  : formatRelativeTime(
+                      card.createdAt,
+                      i18n.language,
+                    ),
+              to: `/v/${card.slug}`,
+            };
+          },
+        ),
+      [
+        items,
+        t,
+        i18n.language,
+      ],
+    );
+
+  // The shared page toolbar (the one /games and /create/builds use): the search takes the row at the page gutter. It used to be a `surface-chrome` title bar ("Pages" + search), which started the
+  // search at x=76 on a phone while the heading and tab strip started at 16 — the tab already says "Pages".
+  const toolbar =
+    (
+      <div
+        data-slot="page-controls"
+        className="builds-toolbar"
+      >
+        <div className="builds-toolbar__right">
+          <SearchField
+            containerClassName="min-w-0 flex-1 basis-56"
+            value={
+              query
+            }
+            onValueChange={
+              setQuery
+            }
+            placeholder={t(
+              'search-placeholder',
+              {
+                defaultValue:
+                  'Search pages...',
+              },
+            )}
+            aria-label={t(
+              'search-aria-label',
+              {
+                defaultValue:
+                  'Search pages',
+              },
+            )}
+          />
+          <SortSelect
+            value={
+              sort
+            }
+            onChange={
+              setSort
+            }
+            options={
+              sortOptions
+            }
+          />
+        </div>
+      </div>
+    );
+
+  return (
+    <div className="vibe-gallery">
+      {/* The prompt: generate a new page. This used to be a second full hero —
+          an untranslated "RMH Studios presents" eyebrow over a display-size
+          "The everything platform." — stacked under the page's own title and
+          tabs, so /create opened with two headlines before its one control. A
+          plain section heading says what the box is for. */}
+      <section className="vibe-gallery__hero">
+        <h2 className="vibe-rise site-display-4">
+          {t(
+            'prompt-heading',
+            {
+              defaultValue:
+                'Describe a page to generate',
+            },
+          )}
+        </h2>
+        <div className="mt-6 flex w-full justify-center">
+          <div className="vibe-dock vibe-dock--area surface-field vibe-rise-soft">
+            <textarea
+              ref={
+                inputRef
+              }
+              name="prompt"
+              rows={
+                3
+              }
+              autoComplete="off"
+              onKeyDown={
+                handlePromptKeyDown
+              }
+              placeholder={t(
+                'prompt-placeholder',
+                {
+                  defaultValue:
+                    'Where do you want to go?',
+                },
+              )}
+              aria-label={t(
+                'prompt-aria-label',
+                {
+                  defaultValue:
+                    'Describe the page you want to create',
+                },
+              )}
+              className="vibe-dock__textarea field-bare"
+            />
+            <div className="vibe-dock__footer">
+              <div className="vibe-dock__options">
+                <Tabs
+                  size="sm"
+                  sheet={
+                    false
+                  }
+                  aria-label={t(
+                    'kind-aria-label',
+                    {
+                      defaultValue:
+                        'What to generate',
+                    },
+                  )}
+                  tabs={[
+                    {
+                      id: 'page',
+                      label:
+                        t(
+                          'kind-page',
+                          {
+                            defaultValue:
+                              'Page',
+                          },
+                        ),
+                    },
+                    {
+                      id: 'widget',
+                      label:
+                        t(
+                          'kind-widget',
+                          {
+                            defaultValue:
+                              'Widget',
+                          },
+                        ),
+                    },
+                  ]}
+                  value={
+                    kind
+                  }
+                  onChange={(
+                    id,
+                  ) =>
+                    setKind(
+                      id ===
+                        'widget'
+                        ? 'widget'
+                        : 'page',
+                    )
+                  }
+                />
+                <ModelSelect
+                  value={
+                    model
+                  }
+                  onChange={
+                    setModel
+                  }
+                />
+              </div>
+              <button
+                type="button"
+                onClick={
+                  submit
+                }
+                aria-label={t(
+                  'generate-aria-label',
+                  {
+                    defaultValue:
+                      'Generate',
+                  },
+                )}
+                className="vibe-dock__submit"
+              >
+                <ArrowRight
+                  size={
+                    20
+                  }
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pages storefront: searchable, rotating showcase of everything generated. */}
+      <div className="store-pages">
+        <Storefront
+          items={
+            storeItems
+          }
+          featured={
+            !query.trim() &&
+            sort ===
+              DEFAULT_CREATION_SORT
+          }
+          toolbar={
+            toolbar
+          }
+          emptyLabel={
+            query.trim()
+              ? t(
+                  'no-results',
+                  {
+                    defaultValue:
+                      'No pages match that search.',
+                  },
+                )
+              : t(
+                  'empty-gallery',
+                  {
+                    defaultValue:
+                      'No pages yet — be the first to make one.',
+                  },
+                )
+          }
+        />
+      </div>
+
+      <div
+        ref={
+          sentinelRef
+        }
+        aria-hidden="true"
+        className="h-px w-full"
+      />
+      {loading && (
+        <p className="vibe-hint vibe-gallery__loading">
+          {t(
+            'loading',
+            {
+              defaultValue:
+                'Loading…',
+            },
+          )}
+        </p>
+      )}
+    </div>
+  );
+}

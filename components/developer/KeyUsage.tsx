@@ -28,7 +28,7 @@ import { api } from '@/lib/contract/client';
 import {
   getDeveloperKeyUsageApi,
   type DeveloperKeyUsage,
-} from '@/lib/devplatform/keys.contract';
+} from '@/lib/developer/keys.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 

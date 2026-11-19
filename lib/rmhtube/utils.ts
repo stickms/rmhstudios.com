@@ -3,6 +3,7 @@
  */
 
 import { customAlphabet } from 'nanoid';
+import { formatClockSeconds } from '../core/format';
 import {
   ROOM_CODE_LENGTH,
   ROOM_CODE_ALPHABET,
@@ -61,36 +62,12 @@ export function formatDuration(
       0
   )
     return '--:--';
-  const h =
-    Math.floor(
-      seconds /
-        3600,
-    );
-  const m =
-    Math.floor(
-      (seconds %
-        3600) /
-        60,
-    );
-  const s =
-    Math.floor(
-      seconds %
-        60,
-    );
-  const pad =
-    (
-      n: number,
-    ) =>
-      String(
-        n,
-      ).padStart(
-        2,
-        '0',
-      );
-  return h >
-    0
-    ? `${h}:${pad(m)}:${pad(s)}`
-    : `${m}:${pad(s)}`;
+  return formatClockSeconds(
+    seconds,
+    {
+      hours: true,
+    },
+  );
 }
 
 /**

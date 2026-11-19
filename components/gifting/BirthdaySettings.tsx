@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { apiJson } from '@/components/economy-plus/api';
+import { apiJson } from '@/components/wallet/api';
 import { isValidMonthDay } from '@/lib/gifting/birthday';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 

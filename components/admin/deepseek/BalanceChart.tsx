@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { HourlyPoint } from '@/lib/deepseek/balance';
+import type { HourlyPoint } from '@/lib/ai/deepseek-balance';
 import { fmtHour, fmtMoney } from './format';
 
 const W = 640;

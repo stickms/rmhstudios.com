@@ -21,7 +21,7 @@ import { runIndexSweep } from '@/lib/search/indexer.server';
 import { fireDueReminders } from '@/lib/reminders/reminders.server';
 import { computeCohortRetention } from '@/lib/ops/cohorts.server';
 import { revertExpiredPileOnGuards } from '@/lib/safety/pile-on.server';
-import { runDeepseekBalanceJob } from '@/lib/deepseek/balance.server';
+import { runDeepseekBalanceJob } from '@/lib/ai/deepseek-balance.server';
 import { refundExpiredPools } from '@/lib/commerce/pools.server';
 import { sweepExpiredShares } from '@/lib/rmhmusic/learn/social/share.server';
 

@@ -11,7 +11,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { LibraryHomePage } from '@/components/steam/LibraryHomePage';
 // Read by `validateSearch` (the route definition, which is in every page's entry) — so
 // it comes from the UI-free module, not ArcadeSection.
-import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/creator-studio/arcade-tabs';
+import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/arcade/arcade-tabs';
 import { definePage } from '@/lib/route/define-page';
 import { breadcrumbSchema } from '@/lib/schema';
 import { catalogItemListSchema } from '@/lib/seo-catalog';

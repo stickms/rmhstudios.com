@@ -16,7 +16,7 @@ import {
   musicSocialApi,
   setMusicSocialApi,
   type MusicSocial,
-} from '@/lib/music-social/social.contract';
+} from '@/lib/rmhmusic/social/social.contract';
 
 type SwitchKey =
   | 'board'

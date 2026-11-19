@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getMusicSocial, setMusicSocial } from '@/lib/rmhmusic/learn/social/prefs.server';
-import { musicSocialApi, setMusicSocialApi } from '@/lib/music-social/social.contract';
+import { musicSocialApi, setMusicSocialApi } from '@/lib/rmhmusic/social/social.contract';
 import { musicSocialBody, musicSocialRes } from '@/lib/rmhmusic/learn/social/social-schema';
 
 /**

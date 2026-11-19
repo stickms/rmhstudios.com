@@ -43,7 +43,7 @@ import { CoinAmount } from '@/components/shop/CoinAmount';
 import { Button } from '@/components/ui/button';
 import { NoMargin } from '@/components/shell/NoMargin';
 import { MarketColumn } from '@/components/market/MarketColumn';
-import { DailyTab } from '@/components/economy-plus/DailyTab';
+import { DailyTab } from '@/components/wallet/DailyTab';
 import type { TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { getShopData } from '@/lib/shop/list.server';

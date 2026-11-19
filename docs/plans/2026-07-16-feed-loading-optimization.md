@@ -1399,7 +1399,7 @@ mount:**
   singleton,
   needed.
 - `GET /api/notifications/unread-count`
-  (`lib/useNotificationCount.ts:33`)
+  (`hooks/useNotificationCount.ts:33`)
   —
   immediate,
   then
@@ -1408,7 +1408,7 @@ mount:**
   on
   focus.
 - `POST /api/streak`
-  (`lib/useStreak.ts`)
+  (`hooks/useStreak.ts`)
   —
   auto
   check-in
@@ -2920,7 +2920,7 @@ const ReportDialog =
 const TipDialog =
   lazy(
     () =>
-      import('@/components/economy/TipDialog').then(
+      import('@/components/wallet/TipDialog').then(
         (
           m,
         ) => ({
@@ -3417,8 +3417,8 @@ subtree.
 
 **Files:**
 `components/Providers.tsx`,
-`lib/useNotificationCount.ts`,
-`lib/useStreak.ts`,
+`hooks/useNotificationCount.ts`,
+`hooks/useStreak.ts`,
 `lib/usePresenceHeartbeat.ts`
 
 **Change:**
@@ -3491,7 +3491,7 @@ SSE:
   delay
   is
   invisible).
-- `lib/useNotificationCount.ts`
+- `hooks/useNotificationCount.ts`
   —
   delay
   the
@@ -3504,7 +3504,7 @@ SSE:
   the
   45s/focus
   cadence.
-- `lib/useStreak.ts`
+- `hooks/useStreak.ts`
   /
   `lib/usePresenceHeartbeat.ts`
   —

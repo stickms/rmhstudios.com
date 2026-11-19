@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
-import { developerKeysQuery, recipesQuery } from '@/lib/devplatform/developer.queries';
+import { developerKeysQuery, recipesQuery } from '@/lib/developer/developer.queries';
 import { Terminal, BookOpen, ExternalLink } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';

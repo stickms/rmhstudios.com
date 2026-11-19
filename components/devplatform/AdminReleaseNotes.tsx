@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NoteBody } from '@/components/devplatform/NoteBody';
-import type { ReleaseNoteView } from '@/lib/devplatform/release-notes';
+import type { ReleaseNoteView } from '@/lib/developer/release-notes';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 

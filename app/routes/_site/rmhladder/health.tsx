@@ -21,7 +21,7 @@ import {
 import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
 import { detectLadderHealthAlerts, resolveAlertThresholds } from '@/lib/rmhladder/health-alerts';
 import { useTranslation } from 'react-i18next';
-import { timeAgo } from '@/components/rmhladder/time';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -82,7 +82,7 @@ function durationLabel(run: AnyRow): string {
 }
 
 function HealthPage() {
-  const { t } = useTranslation('site');
+  const { t, i18n } = useTranslation('site');
   const { stale, runs, openReviewTasks, resumeReadiness, alerts } = Route.useLoaderData();
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
@@ -172,7 +172,7 @@ function HealthPage() {
                   {s.lastSuccessAt
                     ? t('ladder.health.lastOk', {
                         defaultValue: 'last ok {{ago}}',
-                        ago: timeAgo(s.lastSuccessAt as Date),
+                        ago: formatRelativeTime(s.lastSuccessAt as Date, i18n.language),
                       })
                     : t('ladder.health.neverSucceeded', { defaultValue: 'never succeeded' })}
                 </span>
@@ -180,7 +180,7 @@ function HealthPage() {
                   {s.lastAttemptAt
                     ? t('ladder.health.lastTried', {
                         defaultValue: 'last tried {{ago}}',
-                        ago: timeAgo(s.lastAttemptAt as Date),
+                        ago: formatRelativeTime(s.lastAttemptAt as Date, i18n.language),
                       })
                     : t('ladder.health.neverAttempted', { defaultValue: 'never attempted' })}
                 </span>
@@ -226,7 +226,7 @@ function HealthPage() {
               const expanded = expandedRun === run.id;
               return [
                 <tr key={run.id as string}>
-                  <td className="rl-mono">{timeAgo(run.startedAt as Date)}</td>
+                  <td className="rl-mono">{formatRelativeTime(run.startedAt as Date, i18n.language)}</td>
                   <td className="rl-mono">{durationLabel(run)}</td>
                   <td className="rl-mono">{run.discoveredCount as number}</td>
                   <td className="rl-mono">{run.newCount as number}</td>

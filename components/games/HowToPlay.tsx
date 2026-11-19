@@ -10,7 +10,7 @@ import {
   api,
 } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { howToPlayApi } from '@/lib/devplatform/how-to-play.contract';
+import { howToPlayApi } from '@/lib/developer/how-to-play.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
