@@ -49,7 +49,6 @@ export async function addAlert(userId: string, query: string) {
       anchor,
       notify: true,
       tags: [],
-      authorIds: [],
       keywords: [],
     },
     select: { id: true },

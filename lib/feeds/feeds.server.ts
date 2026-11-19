@@ -200,10 +200,7 @@ export async function readFeedPage(
   };
 }
 
-/**
- * Replace a feed's people. Also mirrors them into the deprecated `authorIds`
- * column, which only the previous release reads during the blue/green swap.
- */
+/** Replace a feed's people. */
 export async function setFeedPeople(feedId: string, userIds: string[]): Promise<void> {
   await prisma.$transaction([
     prisma.customFeedMember.deleteMany({ where: { feedId, userId: { notIn: userIds } } }),
@@ -211,6 +208,5 @@ export async function setFeedPeople(feedId: string, userIds: string[]): Promise<
       data: userIds.map((userId) => ({ feedId, userId })),
       skipDuplicates: true,
     }),
-    prisma.customFeed.update({ where: { id: feedId }, data: { authorIds: userIds } }),
   ]);
 }

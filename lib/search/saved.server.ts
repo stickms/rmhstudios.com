@@ -73,7 +73,6 @@ export async function createSaved(
       types,
       notify: alerts,
       tags: [],
-      authorIds: [],
       keywords: [],
     },
     select,
