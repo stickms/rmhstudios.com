@@ -72,15 +72,6 @@ export async function sweepExpiredMessages(now: Date = new Date()): Promise<Expi
     if (rows.length < BATCH) break;
   }
 
-  // TRANSITIONAL (chat unify expand, 2026-11-19; the contract deletes this):
-  // the deprecated "direct_message" / "group_message" still hold a copy of
-  // every message until the contract drops them. A disappearing message is a
-  // promise that its text is gone, so that copy is deleted on the same rule
-  // (with the same report exemption). Nothing else touches those tables.
-  // The contract migration drops them while this release is still serving,
-  // so each delete runs only while its table exists.
-  await deleteExpiredLegacyCopies(now);
-
   // Pins have no FK to the message (they predate the one message table).
   for (let i = 0; i < ids.length; i += 1000) {
     const res = await prisma.chatPin.deleteMany({
@@ -100,27 +91,3 @@ export async function registerChatExpiryCron(boss: PgBoss): Promise<void> {
   });
 }
 
-/** Expired copies in the pre-unify tables; a no-op once the contract has dropped them. */
-async function deleteExpiredLegacyCopies(now: Date): Promise<void> {
-  const [present] = await prisma.$queryRaw<{ dm: boolean; grp: boolean }[]>`
-    SELECT to_regclass('public.direct_message') IS NOT NULL AS dm,
-           to_regclass('public.group_message') IS NOT NULL AS grp`;
-  try {
-    if (present?.dm) {
-      await prisma.$executeRaw`
-        DELETE FROM "direct_message" m
-        WHERE m."expiresAt" IS NOT NULL AND m."expiresAt" <= ${now}
-          AND NOT EXISTS (
-            SELECT 1 FROM "content_report" r
-            WHERE r."entityType" = 'dm' AND r."entityId" = m."id" AND r."status" = 'PENDING')`;
-    }
-    if (present?.grp) {
-      await prisma.$executeRaw`
-        DELETE FROM "group_message" m
-        WHERE m."expiresAt" IS NOT NULL AND m."expiresAt" <= ${now}`;
-    }
-  } catch (err) {
-    // 42P01: dropped between the check and the delete (the contract ran).
-    if ((err as { meta?: { code?: string } })?.meta?.code !== '42P01' && !String(err).includes('42P01')) throw err;
-  }
-}
