@@ -20,11 +20,10 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-// The timezone helpers live under `lib/pf2ecal/` because that page needed them
-// first, but they are generic, dependency-free and client-safe. Re-deriving
-// "what local day is it" here would be a second implementation of the one piece
-// of arithmetic this repo has already got wrong once.
-import { zonedDateKey } from '@/lib/pf2ecal/zoned-time';
+// The shared timezone helpers: generic, dependency-free and client-safe.
+// Re-deriving "what local day is it" here would be a second implementation of
+// the one piece of arithmetic this repo has already got wrong once.
+import { zonedDateKey } from '@/lib/core/zoned-time';
 import {
   DEFAULT_HISTORY_DAYS,
   MAX_HISTORY_DAYS,

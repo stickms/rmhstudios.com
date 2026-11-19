@@ -1,6 +1,6 @@
 /**
- * `lib/events-ics.ts` — the iCalendar builder shared by `/api/events/:id/ics`
- * and the `/pf2ecal` subscribe feed.
+ * `lib/events-ics.ts` — the iCalendar builder behind `/api/events/:id/ics` and
+ * the `/dunesday` subscribe feed.
  *
  * In scope for the suite because its output leaves the site: a malformed
  * VCALENDAR is not a rendering bug, it is a calendar app silently refusing to

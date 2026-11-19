@@ -179,8 +179,6 @@ const IDEMPOTENT_SEED_ON_READ: Record<
       "marks the day's fortune served; same row for everyone",
     '/api/kaikai-debt':
       'seeds the ledger rows on first read',
-    '/api/pf2ecal/calendar.ics':
-      'seeds the recurring sessions on first read',
     '/api/elections/summary':
       "generates the shared AI summary on the first read after a race is called (single-flight, memoised per snapshot fingerprint, at most one call per 90s); the same text for every viewer, and the usage-ledger row is platform spend, not the viewer's",
     '/api/elections/rooms':
@@ -231,8 +229,6 @@ const PUBLIC_BUT_NOT_CACHED: Record<
       'the giver must see the award immediately after paying coins for it',
     '/api/ai/takeaways':
       "returns 200 [] when the AI call fails; an HTTP cache would pin that failure (the handler's own memo deliberately never does)",
-    '/api/pf2ecal/sessions/$id/recap':
-      'GET writes (generates the recap); low traffic',
     '/api/rmhladder/interview-reports':
       'user-submitted reports behind a visibility flag; removal must not be stale',
     '/api/slice-it/replay':

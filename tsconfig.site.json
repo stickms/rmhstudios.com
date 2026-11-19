@@ -48,6 +48,7 @@
     "lib/contract/__tests__/contract.test.ts",
     "lib/core/__tests__/core.test.ts",
     "lib/core/__tests__/persist.test.ts",
+    "lib/core/__tests__/zoned-time.test.ts",
     "lib/shared/p2p/__tests__/direct-connection.test.ts",
     "lib/shared/p2p/__tests__/reliable-link.test.ts",
     "lib/shared/p2p/__tests__/wire.test.ts",

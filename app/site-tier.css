@@ -80,7 +80,6 @@
 @source not "../features/rmhcharacters/engine";
 @source not "../features/rmhcharacters/ui";
 @source not "../components/optimization";
-@source not "../components/pf2ecal";
 @source not "../components/rebar-rutabaga";
 @source not "../components/render";
 @source not "../components/replays";
@@ -133,7 +132,6 @@
 @source not "../features/laundry-sort/engine";
 @source not "../lib/lights-out";
 @source not "../lib/neon-driftway";
-@source not "../lib/pf2ecal";
 @source not "../lib/pwa";
 @source not "../lib/rebar-rutabaga";
 @source not "../lib/rmhbox";
@@ -184,7 +182,6 @@
 @source not "./routes/laundry-sort.tsx";
 @source not "./routes/neon-driftway.tsx";
 @source not "./routes/nightrail.tsx";
-@source not "./routes/pf2ecal.tsx";
 @source not "./routes/privacy.tsx";
 @source not "./routes/replays.$id.tsx";
 @source not "./routes/rmh-capital.tsx";

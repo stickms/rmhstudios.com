@@ -7,6 +7,7 @@ import {
 import {
   once,
   registerAll,
+  retireQueues,
   type Registration,
 } from '../jobs/registry';
 
@@ -330,6 +331,127 @@ describe('once', () => {
       load,
     ).toHaveBeenCalledTimes(
       2,
+    );
+  });
+});
+
+describe('retireQueues', () => {
+  it('unschedules then deletes each retired queue, in order', async () => {
+    const calls: string[] =
+      [];
+    const boss =
+      {
+        unschedule:
+          vi.fn(
+            async (
+              n: string,
+            ) =>
+              void calls.push(
+                `unschedule ${n}`,
+              ),
+          ),
+        deleteQueue:
+          vi.fn(
+            async (
+              n: string,
+            ) =>
+              void calls.push(
+                `delete ${n}`,
+              ),
+          ),
+      };
+    const log =
+      logger();
+    const retired =
+      await retireQueues(
+        boss,
+        [
+          'old.a',
+          'old.b',
+        ],
+        log,
+      );
+    expect(
+      retired,
+    ).toEqual(
+      [
+        'old.a',
+        'old.b',
+      ],
+    );
+    expect(
+      calls,
+    ).toEqual(
+      [
+        'unschedule old.a',
+        'delete old.a',
+        'unschedule old.b',
+        'delete old.b',
+      ],
+    );
+    expect(
+      log.info,
+    ).toHaveBeenCalledWith(
+      {
+        event:
+          'jobs.retired',
+        queue:
+          'old.a',
+      },
+    );
+  });
+
+  it('logs a failure and carries on with the next queue', async () => {
+    const boss =
+      {
+        unschedule:
+          vi.fn(
+            async (
+              n: string,
+            ) => {
+              if (
+                n ===
+                'old.a'
+              )
+                throw new Error(
+                  'db down',
+                );
+            },
+          ),
+        deleteQueue:
+          vi.fn(
+            async () =>
+              undefined,
+          ),
+      };
+    const log =
+      logger();
+    const retired =
+      await retireQueues(
+        boss,
+        [
+          'old.a',
+          'old.b',
+        ],
+        log,
+      );
+    expect(
+      retired,
+    ).toEqual(
+      [
+        'old.b',
+      ],
+    );
+    expect(
+      log.error,
+    ).toHaveBeenCalledWith(
+      {
+        event:
+          'jobs.retire_failed',
+        queue:
+          'old.a',
+        err: 'db down',
+      },
     );
   });
 });

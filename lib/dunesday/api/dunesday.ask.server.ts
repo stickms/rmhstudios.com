@@ -12,7 +12,7 @@ import { answerDunesdayQuestion, isAITextConfigured } from '@/lib/dunesday/assis
  * feel half-locked. The cost story is therefore carried entirely by the `'ai'`
  * rate-limit policy — the tightest bucket the site has — keyed per IP.
  *
- * Error shape follows `/api/pf2ecal/ask`: 503 when no key is configured, 502
+ * Error shape: 503 when no key is configured, 502
  * when the upstream fails, both with a sentence the chat window can show.
  */
 export const route = apiRoute('/api/dunesday/ask', {

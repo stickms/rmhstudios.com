@@ -6,7 +6,7 @@
  * has no relationship to the site's themes, and `dunesday` is registered in
  * FULLSCREEN_TIER_DIRS / FULLSCREEN_ROUTE_SEGMENTS
  * (lib/__tests__/design-consistency.test.ts) — the mechanism this repo uses to
- * say "this surface owns its palette", as the PF2e board and the games do.
+ * say "this surface owns its palette", as the games do.
  *
  * Everything hangs off `.ds` so nothing leaks into the site tier. Colours live
  * as `--ds-*` tokens on `.ds`, and Night mode (`[data-night='true']`, toggled

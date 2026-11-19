@@ -8,7 +8,7 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
  *
  * Top level, not under `_site/`: it is a full-screen app with its own Frutiger
  * Aero art direction, so it opts out of the site shell and theme the same way
- * the PF2e board and the games do (`dunesday` is in FULLSCREEN_ROUTE_SEGMENTS /
+ * the games do (`dunesday` is in FULLSCREEN_ROUTE_SEGMENTS /
  * FULLSCREEN_TIER_DIRS; the catalog entry has no `usesSiteTheme`, which puts the
  * route in THEME_EXCLUDED_ROUTES).
  *

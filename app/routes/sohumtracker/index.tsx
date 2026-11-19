@@ -22,8 +22,8 @@ import type { WatchStateDTO } from '@/lib/sohumtracker/types';
  *
  * **Unlisted, not private.** `noindex, nofollow` keeps it out of search and it
  * is in no nav, sitemap or catalog — but the whole point is that a link to it
- * unfurls, so the OG card is public and says what he is doing. That is the same
- * trade `/pf2ecal` makes and it is written down here so nobody has to infer it.
+ * unfurls, so the OG card is public and says what he is doing. That trade is
+ * written down here so nobody has to infer it.
  *
  * The loader server-renders the first paint (so the unfurl and the no-JS view
  * are real); the component then polls `/api/sohumtracker/activity`.

@@ -15,7 +15,7 @@ import 'dotenv/config';
 import { installProcessGuards } from '../../lib/perf/process-guards';
 
 import { type Job, type PgBoss } from 'pg-boss';
-import { registerAll, type Registration } from './registry';
+import { registerAll, retireQueues, type Registration } from './registry';
 import { withQueuePolicy } from './queue-policy';
 import { createLogger } from '@/server/shared/logger';
 import { startProcessMetrics } from '../../lib/perf/process-metrics';
@@ -36,8 +36,6 @@ import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expir
 import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@features/slice-it/engine/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@features/slice-it/engine/regen.server';
-import { registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
-import { PF2E_REMINDER_QUEUE } from '@/lib/pf2ecal/reminders';
 import { DUNESDAY_DAILY_QUEUE, registerDunesdayDailyCron } from '@/lib/dunesday/sync.server';
 import {
   SOHUMTRACKER_ALERT_QUEUE,
@@ -129,8 +127,6 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: VERIFY_COOP_QUEUE, register: registerAltairVerifyWorker },
   // Altair single-player: replay each solo run, credit coins / leaderboard rows from the replay only.
   { queue: VERIFY_SOLO_QUEUE, register: registerAltairSoloWorker },
-  // The PF2e table's morning-of Discord reminders: a no-op unless a board has a webhook and reminders on.
-  { queue: PF2E_REMINDER_QUEUE, register: registerPf2eReminderCron },
   // /dunesday "tonight's lineup" Discord posts (every 10 min, idempotent per plan date).
   { queue: DUNESDAY_DAILY_QUEUE, register: registerDunesdayDailyCron },
   // /sohumtracker voice alert: minute-by-minute sweep of the open voice session; push stays in Node.
@@ -192,6 +188,17 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: PROFILE_LINK_REVERIFY_QUEUE, register: registerProfileLinkReverifyCron },
 ];
 
+/**
+ * Crons whose feature was deleted. pg-boss keeps a schedule in its own table, so
+ * removing the row above is not enough: without this the timekeeper would keep
+ * filling a queue nobody works. Unscheduled and deleted at every boot
+ * (./registry.ts `retireQueues`); an entry can come out a release or two later.
+ */
+const RETIRED_QUEUES: ReadonlyArray<string> = [
+  // /pf2ecal was removed 2026-11-19 (replaced by /rmhcharacters); its morning reminder ran */10.
+  'pf2ecal.reminder',
+];
+
 async function main() {
   // Process metrics for the admin performance page: sample this worker and publish
   // a snapshot to Redis every 10 s (best-effort; see lib/perf/publish.server.ts).
@@ -237,6 +244,7 @@ async function main() {
   log.info({ event: 'jobs.started', queue: PROGRESSION_QUEUE });
 
   await registerAll(policed, REGISTRATIONS, log, () => stopping);
+  if (!stopping) await retireQueues(boss, RETIRED_QUEUES, log);
 
   // On-call app alarms (lib/oncall/checks.server.ts): once a minute, read the
   // fleet's own telemetry and page the watchdog. Also this worker's heartbeat —

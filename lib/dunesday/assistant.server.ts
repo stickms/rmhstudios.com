@@ -1,8 +1,7 @@
 /**
  * Grounding for the Dunesday assistant.
  *
- * Two kinds of question, sourced differently — the same split the PF2e
- * calendar's assistant makes:
+ * Two kinds of question, sourced differently:
  *
  * - **The plan** ("what's on Thursday", "am I on track", "how much is left")
  *   is answered from the context built here and nothing else, because a model

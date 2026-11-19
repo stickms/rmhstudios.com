@@ -74,7 +74,6 @@ export const NAMESPACES = [
   "c-versecraft", "c-void-breaker", "c-wager", "c-wishlist",
   // Route namespaces.
   "r-altair", "r-discord", "r-kowloon-knockout",
-  "r-pf2ecal",
   "r-rmhbox", "r-rmhcode", "r-secret", "r-slice-it", "r-sohumbum",
   "r-sohumtracker",
   "r-strategies", "r-studio",

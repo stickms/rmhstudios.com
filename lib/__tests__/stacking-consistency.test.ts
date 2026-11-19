@@ -200,7 +200,6 @@ const NON_SITE_DIRS =
       'call',
       // Top-level routes (app/routes/<name>.tsx), so no shell and no frame: their
       // numbers are already body-level.
-      'pf2ecal',
       'dunesday',
     ],
   );

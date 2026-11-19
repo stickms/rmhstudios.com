@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 345 routes. 166 render inside the standard site shell (sidebar, nav, context rail); 179 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 344 routes. 166 render inside the standard site shell (sidebar, nav, context rail); 178 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -255,7 +255,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/news/rss.xml` | RMH Studios — News | public | `app/routes/news.rss[.]xml.ts` |
 | `/nightrail` | — | public | `app/routes/nightrail.tsx` |
 | `/offline` | Offline | public | `app/routes/offline.tsx` |
-| `/pf2ecal` | PF2e Calendar | public | `app/routes/pf2ecal.tsx` |
 | `/portal` | — | public | `app/routes/portal.tsx` |
 | `/privacy` | Privacy Policy | public | `app/routes/privacy.tsx` |
 | `/ref/:code` | Join RMH Studios | public | `app/routes/ref.$code.tsx` |

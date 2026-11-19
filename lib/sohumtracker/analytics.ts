@@ -20,7 +20,7 @@
  * must see the same bedtime as a reader in Rochester, because it is HIS bedtime.
  */
 
-import { zonedTimeToUtc } from '@/lib/pf2ecal/zoned-time';
+import { zonedTimeToUtc } from '@/lib/core/zoned-time';
 import { TRACKING_TIME_ZONE } from './config';
 import {
   dateKeyToUtc,

@@ -144,3 +144,70 @@ export function once<
     return pending;
   };
 }
+
+/** What {@link retireQueues} needs from pg-boss (v12: `unschedule`, `deleteQueue`). */
+export interface RetiringBoss {
+  unschedule(
+    name: string,
+  ): Promise<unknown>;
+  deleteQueue(
+    name: string,
+  ): Promise<unknown>;
+}
+
+/**
+ * Remove the schedule and the queue of a cron whose feature was deleted.
+ *
+ * A pg-boss schedule is a row in `pgboss.schedule`, not something the process
+ * holds: dropping a `register*` call from REGISTRATIONS stops the work, but the
+ * timekeeper keeps creating a job on the cron for ever, into a queue nobody
+ * consumes. So a retired cron is named in RETIRED_QUEUES (server/jobs/index.ts)
+ * and this runs at every boot: unschedule, then delete the queue and whatever it
+ * had piled up. Both calls are no-ops for a schedule or queue that is already
+ * gone, so an entry can stay for a release or two and then come out.
+ * Best-effort: a failure is logged (`jobs.retire_failed`) and never stops the
+ * boot or the next entry.
+ */
+export async function retireQueues(
+  boss: RetiringBoss,
+  names: ReadonlyArray<string>,
+  log: RegistryLogger,
+): Promise<
+  string[]
+> {
+  const retired: string[] =
+    [];
+  for (const queue of names) {
+    try {
+      await boss.unschedule(
+        queue,
+      );
+      await boss.deleteQueue(
+        queue,
+      );
+      retired.push(
+        queue,
+      );
+      log.info(
+        {
+          event:
+            'jobs.retired',
+          queue,
+        },
+      );
+    } catch (e) {
+      log.error(
+        {
+          event:
+            'jobs.retire_failed',
+          queue,
+          err: (
+            e as Error
+          )
+            ?.message,
+        },
+      );
+    }
+  }
+  return retired;
+}

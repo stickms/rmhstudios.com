@@ -8,8 +8,8 @@
  * time). That keeps the planner usable signed out, which is the point of it,
  * and means a leaked calendar URL can read a watch list but never change it.
  *
- * Discord posting reuses the PF2e board's webhook helpers
- * (`lib/pf2ecal/discord.server.ts`): host-allowlisted on write AND on send,
+ * Discord posting uses the shared webhook helpers
+ * (`lib/discord/webhook.server.ts`): host-allowlisted on write AND on send,
  * never logged, never returned to a client except masked.
  */
 
@@ -17,7 +17,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { SITE_URL } from '@/lib/seo';
-import { maskWebhookUrl, postToWebhook, validateWebhookUrl } from '@/lib/pf2ecal/discord.server';
+import { maskWebhookUrl, postToWebhook, validateWebhookUrl } from '@/lib/discord/webhook.server';
 import {
   dailyLineupPayload,
   isDailyDue,
@@ -242,9 +242,8 @@ export interface DailySweepResult {
 
 /**
  * Post tonight's lineup for every plan whose window is open. Idempotent on
- * `lastDailyPostDate`, claimed with a conditional update BEFORE sending — the
- * PF2e reminder sweep's ordering, for the same reason: a missed post is cheaper
- * than a channel that gets the same lineup five times when Discord is slow.
+ * `lastDailyPostDate`, claimed with a conditional update BEFORE sending, because
+ * a missed post is cheaper than a channel that gets the same lineup five times when Discord is slow.
  */
 export async function runDailySweep(now = new Date()): Promise<DailySweepResult> {
   const rows = await prisma.dunesdayPlan.findMany({
