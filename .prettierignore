@@ -717,7 +717,7 @@ lib/prepaint/generated.ts
 /components/feed/ComposeModal.tsx
 /components/feed/ContextRail.tsx
 /components/feed/ConversationView.tsx
-/components/feed/DailyWheel.tsx
+/components/economy-plus/DailyWheel.tsx
 /components/feed/DeckMarketplaceColumn.tsx
 /components/feed/DeckStudyColumn.tsx
 /components/feed/DraftsColumn.tsx
@@ -785,7 +785,7 @@ lib/prepaint/generated.ts
 /components/feed/SmartReplies.tsx
 /components/feed/SocialListModal.tsx
 /components/feed/SpotifySongSearch.tsx
-/components/feed/StakingCard.tsx
+/components/economy-plus/StakingCard.tsx
 /components/feed/StatusBadge.tsx
 /components/feed/StatusEditor.tsx
 /components/feed/StorefrontColumn.tsx

@@ -4,15 +4,15 @@
   "prismaEnums": 82,
   "prismaSchemaLines": 13301,
   "prismaMigrations": 295,
-  "routeFiles": 500,
+  "routeFiles": 501,
   "apiRouteFiles": 112,
   "registeredApiEndpoints": 904,
-  "pageRouteFiles": 388,
+  "pageRouteFiles": 389,
   "i18nNamespaces": 136,
   "shippedLocales": 9,
   "testFiles": 1261,
   "workflows": 23,
-  "componentTsxFiles": 1538,
+  "componentTsxFiles": 1539,
   "cssFiles": 135,
   "cssLines": 70273
 }

@@ -8,6 +8,7 @@
 export const WALLET_TABS =
   [
     'goals',
+    'earn',
     'statement',
     'community',
     'gifts',
