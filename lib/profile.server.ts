@@ -11,6 +11,8 @@ import { parseLayout, type ProfileModule } from '@/lib/profile/modules-schema';
 import { pronunciationUrl } from '@/lib/profile/plus';
 import { isBirthdayOn } from '@/lib/gifting/birthday';
 import { filterOnlineUsers } from '@/lib/hot-counters.server';
+import { getActivity } from '@/lib/presence.server';
+import type { ProfilePresence } from '@/lib/presence-types';
 
 /**
  * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
@@ -58,6 +60,8 @@ const profileSelect = {
       statusEmoji: true,
       statusText: true,
       statusExpires: true,
+      presenceVisibility: true,
+      presenceDetail: true,
       tipGoal: true,
       tipGoalLabel: true,
       membershipPriceCoins: true,
@@ -80,6 +84,8 @@ const profileSelect = {
 export interface ProfilePayload {
   cosmetics: Awaited<ReturnType<typeof getEquippedCosmetics>>;
   isOnline: boolean;
+  /** The presence dot on the profile head (lib/presence-types.ts). */
+  presence: ProfilePresence;
   tipGoal: number | null;
   tipGoalLabel: string | null;
   tipsThisMonth: number;
@@ -228,9 +234,25 @@ export async function getProfile(
       ? onlineIds.includes(user.id)
       : !!user.lastSeenAt && Date.now() - user.lastSeenAt.getTime() < 2 * 60 * 1000;
 
+  const isFollowing = viewerId
+    ? Boolean((user as Record<string, unknown>).followers) &&
+      ((user as Record<string, unknown>).followers as unknown[]).length > 0
+    : false;
+  const presence = await resolveProfilePresence({
+    userId: user.id,
+    viewerId,
+    isOwnProfile,
+    isOnline,
+    isFollowing,
+    lastSeenAt: user.lastSeenAt,
+    visibility: user.profile?.presenceVisibility ?? 'mutuals',
+    detail: user.profile?.presenceDetail ?? true,
+  });
+
   return {
     cosmetics,
     isOnline,
+    presence,
     tipGoal: user.profile?.tipGoal ?? null,
     tipGoalLabel: user.profile?.tipGoalLabel ?? null,
     tipsThisMonth,
@@ -269,10 +291,7 @@ export async function getProfile(
     followerCount: user.followerCount,
     followingCount: user.followingCount,
     rmharkCount: user.postCount,
-    isFollowing: viewerId
-      ? Boolean((user as Record<string, unknown>).followers) &&
-        ((user as Record<string, unknown>).followers as unknown[]).length > 0
-      : false,
+    isFollowing,
     isOwnProfile,
     ...(isOwnProfile
       ? {
@@ -281,4 +300,50 @@ export async function getProfile(
         }
       : {}),
   };
+}
+
+/** How long after the last heartbeat a profile still reads as away rather than offline. */
+const AWAY_WINDOW_MS = 15 * 60 * 1000;
+
+/**
+ * The profile's presence dot. Online and away follow the heartbeat, as the "Online now" line did. "In game" is the
+ * live activity the game surface set server-side, shown only where the person's presence settings would show it in
+ * the Friends rail: to themselves, never with detail off or visibility `nobody`, to followers for `followers`, and to
+ * mutuals for `mutuals` (the default). Everyone else sees plain online.
+ */
+async function resolveProfilePresence(p: {
+  userId: string;
+  viewerId: string | null | undefined;
+  isOwnProfile: boolean;
+  isOnline: boolean;
+  isFollowing: boolean;
+  lastSeenAt: Date | null;
+  visibility: string;
+  detail: boolean;
+}): Promise<ProfilePresence> {
+  if (!p.isOnline) {
+    const since = p.lastSeenAt ? Date.now() - p.lastSeenAt.getTime() : Infinity;
+    return since < AWAY_WINDOW_MS && p.lastSeenAt
+      ? { state: 'away', lastSeenAt: p.lastSeenAt.toISOString() }
+      : { state: 'offline' };
+  }
+  const mayShowActivity = async (): Promise<boolean> => {
+    if (p.isOwnProfile) return true;
+    if (!p.detail || !p.viewerId || p.visibility === 'nobody' || !p.isFollowing) return false;
+    if (p.visibility === 'followers') return true;
+    const back = await prisma.follow.findFirst({
+      where: { followerId: p.userId, followingId: p.viewerId },
+      select: { id: true },
+    });
+    return back !== null;
+  };
+  try {
+    const activity = await getActivity(p.userId);
+    if (activity?.kind === 'game' && (await mayShowActivity())) {
+      return { state: 'in_game', label: activity.label };
+    }
+  } catch {
+    /* presence is best-effort: a failed read shows plain online */
+  }
+  return { state: 'online' };
 }

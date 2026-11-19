@@ -25,7 +25,8 @@ export function ProfileTabBar({
   const showLikesTab = canSeeLikesTab(profile);
   const showGuestbookTab = canSeeGuestbookTab(profile);
   return (
-    <div className="py-3">
+    // `profile-tabs`: the achievements badge in the head scrolls here (ProfileColumn).
+    <div id="profile-tabs" className="scroll-mt-4 py-3">
       <Tabs
         tabs={[
           {

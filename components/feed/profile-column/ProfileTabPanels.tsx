@@ -25,17 +25,19 @@ export function ProfileTabPanels({
   tab,
   profile,
   onGuestbookModeChange,
+  onAchievementsLoaded,
 }: {
   tab: ProfileTab;
   profile: ProfileData;
   onGuestbookModeChange: (mode: string) => void;
+  /** The Achievements list has data (AchievementsColumn self-fetches from the public API). */
+  onAchievementsLoaded?: () => void;
 }) {
   return (
     <>
-      {/* Achievements tab content — AchievementsColumn self-fetches (public API) */}
       {tab === 'achievements' && (
         <div className="p-4">
-          <AchievementsColumn userId={profile.id} hideHeader />
+          <AchievementsColumn userId={profile.id} hideHeader onLoaded={onAchievementsLoaded} />
         </div>
       )}
 

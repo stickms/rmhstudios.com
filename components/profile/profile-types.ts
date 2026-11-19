@@ -1,3 +1,4 @@
+import type { ProfilePresence } from '@/lib/presence-types';
 import type { AchievementStripData } from '@/lib/achievements/strip';
 import type { ProfileModule } from '@/lib/profile/modules';
 import type { UserStatus } from '@/lib/profile/status';
@@ -85,6 +86,8 @@ export interface ProfileData {
   hasCustomAvatar?: boolean;
   coins: number;
   isOnline?: boolean;
+  /** The presence dot on the profile head (lib/presence-types.ts). */
+  presence?: ProfilePresence;
   tipGoal?:
     | number
     | null;

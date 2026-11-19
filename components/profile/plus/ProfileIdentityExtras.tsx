@@ -23,10 +23,9 @@ const ProfileCardDialog =
   );
 
 /**
- * The identity extras in the profile header (P3, P4, P10): pronouns, a
- * play-on-tap pronunciation clip, the member's local time, and — on your own
- * profile — the share card. Renders nothing for a profile with none of them, and
- * the audio element is not created until the first tap.
+ * The identity extras in the profile header (P3, P4): pronouns, a play-on-tap pronunciation clip and the member's
+ * local time. Renders nothing for a profile with none of them, and the audio element is not created until the first
+ * tap. The share card (P10) is its own button, `ProfileShareCardButton`, in the head's end column (ProfileHero).
  */
 export function ProfileIdentityExtras({
   profile,
@@ -48,13 +47,6 @@ export function ProfileIdentityExtras({
   const [
     playing,
     setPlaying,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    cardOpen,
-    setCardOpen,
   ] =
     useState(
       false,
@@ -129,106 +121,129 @@ export function ProfileIdentityExtras({
         audio.pause();
     };
 
-  const hasAny =
-    Boolean(
-      profile.pronouns ||
-      clipUrl ||
-      profile.timezone ||
-      profile.isOwnProfile,
-    );
-  if (
-    !hasAny
-  )
+  if (!(
+    profile.pronouns ||
+    clipUrl ||
+    profile.timezone
+  ))
     return null;
 
   return (
-    <>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {profile.pronouns ? (
-          <span className="t-meta">
-            {
-              profile.pronouns
-            }
-          </span>
-        ) : null}
-        {clipUrl ? (
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={
-              toggleClip
-            }
-            aria-pressed={
-              playing
-            }
-            aria-label={
-              playing
-                ? t(
-                    'pronunciation-pause',
-                    {
-                      defaultValue:
-                        'Pause pronunciation',
-                    },
-                  )
-                : t(
-                    'pronunciation-play',
-                    {
-                      name,
-                      defaultValue:
-                        'Hear how to say {{name}}',
-                    },
-                  )
-            }
-          >
-            {playing ? (
-              <Pause
-                aria-hidden
-              />
-            ) : (
-              <Volume2
-                aria-hidden
-              />
-            )}
-            {t(
-              'pronunciation-label',
-              {
-                defaultValue:
-                  'Pronunciation',
-              },
-            )}
-          </Button>
-        ) : null}
-        <LocalTimeChip
-          timezone={
-            profile.timezone
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      {profile.pronouns ? (
+        <span className="t-meta">
+          {
+            profile.pronouns
           }
-          name={
-            name
+        </span>
+      ) : null}
+      {clipUrl ? (
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={
+            toggleClip
           }
-        />
-        {profile.isOwnProfile ? (
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={() =>
-              setCardOpen(
-                true,
-              )
-            }
-          >
-            <QrCode
+          aria-pressed={
+            playing
+          }
+          aria-label={
+            playing
+              ? t(
+                  'pronunciation-pause',
+                  {
+                    defaultValue:
+                      'Pause pronunciation',
+                  },
+                )
+              : t(
+                  'pronunciation-play',
+                  {
+                    name,
+                    defaultValue:
+                      'Hear how to say {{name}}',
+                  },
+                )
+          }
+        >
+          {playing ? (
+            <Pause
               aria-hidden
             />
-            {t(
-              'share-card',
-              {
-                defaultValue:
-                  'Share card',
-              },
-            )}
-          </Button>
-        ) : null}
-      </div>
+          ) : (
+            <Volume2
+              aria-hidden
+            />
+          )}
+          {t(
+            'pronunciation-label',
+            {
+              defaultValue:
+                'Pronunciation',
+            },
+          )}
+        </Button>
+      ) : null}
+      <LocalTimeChip
+        timezone={
+          profile.timezone
+        }
+        name={
+          name
+        }
+      />
+    </div>
+  );
+}
+
+/**
+ * The share card (P10), on your own profile: a button that opens the card dialog. ProfileHero places it in the head's
+ * end column, under the profile song, or in its place when there is none.
+ */
+export function ProfileShareCardButton({
+  profile,
+}: {
+  profile: ProfileData;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-profile-plus',
+    );
+  const [
+    cardOpen,
+    setCardOpen,
+  ] =
+    useState(
+      false,
+    );
+  if (
+    !profile.isOwnProfile
+  )
+    return null;
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="xs"
+        onClick={() =>
+          setCardOpen(
+            true,
+          )
+        }
+      >
+        <QrCode
+          aria-hidden
+        />
+        {t(
+          'share-card',
+          {
+            defaultValue:
+              'Share card',
+          },
+        )}
+      </Button>
       {cardOpen ? (
         <Suspense
           fallback={

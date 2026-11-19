@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { OfficeHoursProfileButton } from '@/components/calendar/OfficeHoursProfileButton';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { BadgeCheck, Coins, Gift, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, CalendarDays, Coins, Gift, Link2, MapPin, ShieldCheck } from 'lucide-react';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 
 import { AchievementBadgeStrip } from '@/components/feed/AchievementBadgeStrip';
@@ -23,7 +23,8 @@ import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { safeHref } from '@/lib/url-safety';
 import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
-import { ProfileIdentityExtras } from './plus/ProfileIdentityExtras';
+import { ProfileIdentityExtras, ProfileShareCardButton } from './plus/ProfileIdentityExtras';
+import { PresenceDot } from './PresenceDot';
 import type { ProfileData } from './profile-types';
 import { ProfileBanner } from './ProfileBanner';
 import './profile.css';
@@ -173,6 +174,8 @@ export function ProfileHero({
       : undefined;
   const count = (n: number) => n.toLocaleString();
 
+  // The head row ends in a column: the profile song, then the share card and the link copy under it, or in the song's
+  // place when there is none. The facts line (location, website, joined) leads each fact with a decorative icon.
   // Steel section 10, Profile: the avatar at 64px, the name as the page title, the handle, a one-line bio, then Follow
   // (the one primary) and Message. No banner box, no stat tiles, no chips: what is left is words. The person's history
   // is the spine below (ProfileColumn).
@@ -187,11 +190,16 @@ export function ProfileHero({
       ) : null}
 
       <div className="flex items-center gap-4">
-        <ProfileAvatar
-          image={displayImage ?? null}
-          name={name}
-          frame={profile.cosmetics?.avatarFrame}
-        />
+        <div className="relative shrink-0">
+          <ProfileAvatar
+            image={displayImage ?? null}
+            name={name}
+            frame={profile.cosmetics?.avatarFrame}
+          />
+          {profile.presence ? (
+            <PresenceDot presence={profile.presence} className="absolute end-0 bottom-0" />
+          ) : null}
+        </div>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
             <h1 className="t-title truncate" style={nameStyle}>
@@ -199,22 +207,27 @@ export function ProfileHero({
             </h1>
             <IdentityBadges profile={profile} />
           </div>
-          <p className="t-meta mt-1 flex flex-wrap gap-x-3">
-            {profile.handle ? <span dir="ltr">@{profile.handle}</span> : null}
-            {profile.isOnline ? (
-              <span>{t('online-now', { defaultValue: 'Online now' })}</span>
-            ) : null}
-          </p>
+          {profile.handle ? (
+            <p className="t-meta mt-1" dir="ltr">
+              @{profile.handle}
+            </p>
+          ) : null}
         </div>
-        {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
-          <VinylRecord
-            albumArt={profile.profileSongAlbumArt}
-            title={profile.profileSongTitle ?? t('unknown', { defaultValue: 'Unknown' })}
-            artist={profile.profileSongArtist ?? t('unknown', { defaultValue: 'Unknown' })}
-            isPlaying={isPlaying}
-            onToggle={onTogglePlay}
-          />
-        ) : null}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
+            <VinylRecord
+              albumArt={profile.profileSongAlbumArt}
+              title={profile.profileSongTitle ?? t('unknown', { defaultValue: 'Unknown' })}
+              artist={profile.profileSongArtist ?? t('unknown', { defaultValue: 'Unknown' })}
+              isPlaying={isPlaying}
+              onToggle={onTogglePlay}
+            />
+          ) : null}
+          <ProfileShareCardButton profile={profile} />
+          <CopyButton value={shareUrl} variant="ghost" size="xs">
+            {t('copy-profile-link-short', { defaultValue: 'Copy link' })}
+          </CopyButton>
+        </div>
       </div>
 
       {profile.bio ? (
@@ -366,27 +379,30 @@ export function ProfileHero({
         </Link>
       </div>
 
-      {/* items-center: the copy button is taller than the 12px meta text, and stretched rows put it off-centre. */}
       <div className="t-meta mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-        {profile.location ? <EmojiText>{profile.location}</EmojiText> : null}
-        {profile.website ? (
-          <a
-            href={safeHref(profile.website)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="max-w-64 truncate underline"
-          >
-            {profile.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-          </a>
+        {profile.location ? (
+          <span className="inline-flex items-center gap-1">
+            <MapPin aria-hidden className="size-3.5 shrink-0" />
+            <EmojiText>{profile.location}</EmojiText>
+          </span>
         ) : null}
-        <span>{t('joined-date', { date: joined, defaultValue: 'Joined {{date}}' })}</span>
-        <CopyButton
-          value={shareUrl}
-          variant="ghost"
-          size="icon-xs"
-          className="-my-1.5"
-          label={t('copy-profile-link', { defaultValue: 'Copy profile link' })}
-        />
+        {profile.website ? (
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <Link2 aria-hidden className="size-3.5 shrink-0" />
+            <a
+              href={safeHref(profile.website)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="max-w-64 truncate underline"
+            >
+              {profile.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+            </a>
+          </span>
+        ) : null}
+        <span className="inline-flex items-center gap-1">
+          <CalendarDays aria-hidden className="size-3.5 shrink-0" />
+          {t('joined-date', { date: joined, defaultValue: 'Joined {{date}}' })}
+        </span>
       </div>
 
       {featuredLink || profile.links?.length ? (

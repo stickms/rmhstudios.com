@@ -1210,3 +1210,37 @@ export const CATEGORY_LABELS: Record<
     special:
       'Special',
   };
+
+/**
+ * The flat medal each tier is drawn as (components/feed/AchievementMedal.tsx; owner, 2026-11-19, plan D9): a disc
+ * in the metal and a darker rim and ribbon, so the lighter metals still hold an edge on the Day page. Solid fills, no
+ * gradient: Steel keeps metallic shading for the three chrome objects (R2).
+ */
+export const TIER_MEDAL: Record<
+  AchievementTier,
+  {
+    disc: string;
+    rim: string;
+  }
+> =
+  {
+    bronze:
+      {
+        disc: '#cd7f32',
+        rim: '#7a4a1e',
+      },
+    silver:
+      {
+        disc: '#c9ced4',
+        rim: '#6b7380',
+      },
+    gold: {
+      disc: '#f2c230',
+      rim: '#9a7400',
+    },
+    platinum:
+      {
+        disc: '#9be7f2',
+        rim: '#2b8a99',
+      },
+  };

@@ -196,3 +196,23 @@ export function contextVerb(
       return 'Open';
   }
 }
+
+/**
+ * What a profile shows as its presence dot (owner, 2026-11-18). `in_game` only reaches a viewer the person's presence
+ * settings allow activity for; `away` is "not on the heartbeat now, but active in the last 15 minutes".
+ */
+export type ProfilePresence =
+  | {
+      state: 'online';
+    }
+  | {
+      state: 'in_game';
+      label: string;
+    }
+  | {
+      state: 'away';
+      lastSeenAt: string;
+    }
+  | {
+      state: 'offline';
+    };

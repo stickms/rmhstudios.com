@@ -1,4 +1,4 @@
-import { lazy, useEffect, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
@@ -83,6 +83,16 @@ export function ProfileColumn({
   // Steel M9: a profile fetched on the client replaces the spinner; one handed over by the loader does not fade.
   const arrival = useArrival(!loading);
 
+  // Set by the head's achievements badge. The scroll waits for the Achievements list to arrive: before it, a short
+  // profile is not tall enough to bring the tab bar up.
+  const scrollToTabsRef = useRef(false);
+  const onAchievementsLoaded = () => {
+    if (!scrollToTabsRef.current) return;
+    scrollToTabsRef.current = false;
+    // Runs from the list's effect, after it rendered, so the page is already tall enough.
+    document.getElementById('profile-tabs')?.scrollIntoView({ block: 'start' });
+  };
+
   const handleTabChange = (newTab: ProfileTab) => {
     setTab(newTab);
     if (newTab === 'likes') posts.ensureLikesLoaded();
@@ -135,7 +145,11 @@ export function ProfileColumn({
         onGift={() => setGiftOpen(true)}
         onJoinMembership={actions.handleJoinMembership}
         onShowSocial={setSocialModal}
-        onShowAchievements={() => handleTabChange('achievements')}
+        onShowAchievements={() => {
+          // Open the person's Achievements tab and bring it into view: the badge sits in the head, the tab far below.
+          scrollToTabsRef.current = true;
+          handleTabChange('achievements');
+        }}
       />
 
       {profile.birthdayToday && (
@@ -179,6 +193,7 @@ export function ProfileColumn({
       {tab === 'likes' && <ProfilePostsPanel kind="likes" profile={profile} list={posts.likes} />}
 
       <ProfileTabPanels
+        onAchievementsLoaded={onAchievementsLoaded}
         tab={tab}
         profile={profile}
         onGuestbookModeChange={(mode) => setProfile((p) => (p ? { ...p, guestbookMode: mode } : p))}
