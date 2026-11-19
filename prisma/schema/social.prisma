@@ -759,11 +759,6 @@ model CustomFeed {
   name            String         @db.VarChar(60)
   description     String?        @db.VarChar(200)
   tags            String[]
-  /// DEPRECATED (2026-11-19) — people moved to `members` (CustomFeedMember);
-  /// nothing reads this. New code still mirrors a feed's people here so the
-  /// previous release reads them during the blue/green swap; drop next release
-  /// (contract). Do not add callers.
-  authorIds       String[]
   keywords        String[]
   /// Listed in "Popular feeds" and subscribable. Kept equal to
   /// `visibility == PUBLIC` by every write; readable-by-link is `visibility`.
@@ -834,22 +829,6 @@ model MemoriesOptIn {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("memories_opt_in")
-}
-
-/// DEPRECATED (2026-11-19) — copied into CustomFeed (kind 'alert', notify true); nothing
-/// reads or writes this; drop next release (contract). Do not add callers.
-model KeywordAlert {
-  id        String   @id @default(cuid())
-  userId    String
-  query     String   @db.VarChar(80)
-  anchor    String   @db.VarChar(64)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, query])
-  @@index([anchor])
-  @@map("keyword_alert")
 }
 
 /// A6 — dedupe ledger: at most one alert notification per (member, post).

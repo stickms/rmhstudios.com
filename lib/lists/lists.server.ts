@@ -64,7 +64,6 @@ export async function createList(
       description: data.bio ?? null,
       visibility: data.visibility ?? 'PRIVATE',
       tags: [],
-      authorIds: [],
       keywords: [],
     },
     select: { id: true, name: true, description: true, visibility: true, pinned: true },

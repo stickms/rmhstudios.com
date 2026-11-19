@@ -355,37 +355,6 @@ model HistoryEntry {
   @@map("history_entry")
 }
 
-// Universal search v2 (§18): site-wide saved searches (promotes the
-// ladder-only pattern). Optional weekly new-result alerts.
-/// DEPRECATED (2026-11-19) — copied into CustomFeed (kind 'search', `alerts` → notify);
-/// nothing reads or writes this; drop next release (contract). Do not add callers.
-model SavedSearch {
-  id        String    @id @default(cuid())
-  userId    String
-  query     String    @db.VarChar(200) // raw query incl. operators
-  types     Json      @default("[]") // entity-type chips
-  alerts    Boolean   @default(false)
-  lastRunAt DateTime?
-  createdAt DateTime  @default(now())
-
-  /// B8 — which list surface this view belongs to ('search' | 'ladder' |
-  /// 'homes' | 'market' | 'arcade' | an admin queue). Defaults to 'search' so
-  /// every existing row keeps meaning exactly what it meant.
-  surface String  @default("search") @db.VarChar(24)
-  /// Filter state, validated per surface at READ time rather than write time —
-  /// so a filter removed from a surface degrades to "drop the unknown key"
-  /// instead of crashing the page on a stale view.
-  payload Json    @default("{}")
-  /// User-given name. Null keeps the old behaviour of labelling by query text.
-  name    String? @db.VarChar(60)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([userId, surface])
-  @@map("saved_search")
-}
-
 // ── P13 reading: L1 L3 L5 L6 L7 L8 ──
 enum ReadingDocKind {
   library
