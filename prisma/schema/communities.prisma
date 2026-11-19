@@ -48,7 +48,6 @@ model Community {
   joinRequests   CommunityJoinRequest[]
   posts          RMHark[]
   announcements  CommunityAnnouncement[]
-  spaces         Space[]
   calendarEvents Event[]                 @relation("CommunityEvents")
   communityPages CommunityPage[]
   groupCalls     GroupCall[]

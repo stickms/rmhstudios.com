@@ -148,10 +148,6 @@ model User {
   // Coin staking (interest-bearing vault)
   coinStake CoinStake?
 
-  // Creator storefront
-  storefrontProducts  StorefrontProduct[]  @relation("StorefrontCreator")
-  storefrontPurchases StorefrontPurchase[] @relation("StorefrontBuyer")
-
   // AI persona chatbots
   aiPersonas        AiPersona[]        @relation("PersonaOwner")
   aiPersonaMessages AiPersonaMessage[]
@@ -167,13 +163,6 @@ model User {
   // Gifted (coin-funded) memberships
   giftMembershipsReceived GiftMembership[] @relation("GiftRecipient")
   giftMembershipsSent     GiftMembership[] @relation("GiftGifter")
-
-  // Group DMs
-  groupChatsOwned       GroupChat[]            @relation("GroupOwner")
-  groupMemberships      GroupChatMember[]
-  groupMessages         GroupMessage[]
-  groupPollVotes        GroupPollVote[]
-  groupMessageReactions GroupMessageReaction[]
 
   // RMHStudy flashcards
   flashcardDecks   FlashcardDeck[]
@@ -247,12 +236,6 @@ model User {
   musicSongBests    MusicSongBest[]
   musicSocial       MusicSocial?
   musicShares       MusicShare[]
-
-  // Direct Messages
-  conversationsAsOne     Conversation[]          @relation("ConversationParticipantOne")
-  conversationsAsTwo     Conversation[]          @relation("ConversationParticipantTwo")
-  directMessages         DirectMessage[]
-  directMessageReactions DirectMessageReaction[]
 
   // Chats (DMs + group chats, one model — prisma/schema/messaging.prisma)
   chatsOwned      Chat[]                @relation("ChatOwner")
@@ -342,14 +325,10 @@ model User {
 
   // ─── Platform expansion (2026-07-19 design) ──────────────────────────────
   creatorTiers         CreatorTier[]
-  spacesHosted         Space[]          @relation("SpaceHost")
-  spaceMessages        SpaceMessage[]
   groupCallMessages    GroupCallMessage[]
   eventsHostedV2       Event[]          @relation("EventHosted")
   rsvps                Rsvp[]           @relation("EventRsvps")
   gameReplays          GameReplay[]
-  marketListingsSold   MarketListing[]  @relation("MarketSeller")
-  marketListingsBought MarketListing[]  @relation("MarketBuyer")
   listingsSold         Listing[]        @relation("ListingSeller")
   listingsBought       Listing[]        @relation("ListingBuyer")
   listingPurchases     ListingPurchase[] @relation("ListingPurchaseBuyer")
@@ -558,7 +537,6 @@ model User {
   postAutoDelete             PostAutoDelete?
   chatFolders                ChatFolder[]
   chatPins                   ChatPin[]
-  dmPollVotes                DirectPollVote[]
   // Back-relations for the models at the end of this file. One line per field,
   // each package's lines together; never re-align this block.
   // P01 feed-plus: X6 take votes, X12 require-alt-text
@@ -589,8 +567,6 @@ model User {
   userCards                 UserCard[]
   cardDrops                 CardDrop[]
   gameBadges                GameBadge[]
-  cardListingsSold          CardListing[]        @relation("CardSeller")
-  cardListingsBought        CardListing[]        @relation("CardBuyer")
   cardBuyOrders             CardBuyOrder[]
   gameCollectionItems       GameCollectionItem[]
   gameProfileShowcase       GameProfileShowcase?

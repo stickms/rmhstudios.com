@@ -195,31 +195,6 @@ model CardDrop {
   @@map("card_drop")
 }
 
-// A single trading card for sale at a fixed price (Phase C; design:
-// docs/superpowers/specs/2026-10-30-card-market-design.md). The card is held in
-// escrow by the listing: creating it decrements the seller's stack in the same
-// transaction. The price is immutable; reuse the shop market's ListingStatus.
-/// DEPRECATED (2026-11-19) — copied into Listing; nothing reads or writes this; drop next release (contract). Do not add callers.
-model CardListing {
-  id         String        @id @default(cuid())
-  sellerId   String
-  gameId     String        @db.VarChar(64)
-  cardIndex  Int           @db.SmallInt
-  foil       Boolean       @default(false)
-  priceCoins Int
-  status     ListingStatus @default(ACTIVE)
-  buyerId    String?
-  createdAt  DateTime      @default(now())
-  closedAt   DateTime?
-
-  seller User  @relation("CardSeller", fields: [sellerId], references: [id], onDelete: Cascade)
-  buyer  User? @relation("CardBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
-
-  @@index([status, gameId, cardIndex, foil, priceCoins])
-  @@index([sellerId, status])
-  @@map("card_listing")
-}
-
 // Gems (design: docs/superpowers/specs/2026-10-30-gems-boosters-design.md). A member's
 // balance, never negative, and an append-only entry for every movement so the balance
 // can always be explained. Gems cannot be traded.
@@ -512,45 +487,6 @@ model CoinStake {
   @@map("coin_stake")
 }
 
-/// A digital product a creator sells for coins (#19). The `deliverable` (a link,
-/// code, or message) is revealed only to the creator and to buyers. A 10%
-/// platform fee is burned on each sale as a coin sink.
-/// DEPRECATED (2026-11-19) — copied into Listing; nothing reads or writes this; drop next release (contract). Do not add callers.
-model StorefrontProduct {
-  id          String   @id @default(cuid())
-  creatorId   String
-  title       String   @db.VarChar(80)
-  description String?  @db.VarChar(500)
-  price       Int // coins
-  deliverable String?  @db.Text
-  active      Boolean  @default(true)
-  salesCount  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  creator   User                 @relation("StorefrontCreator", fields: [creatorId], references: [id], onDelete: Cascade)
-  purchases StorefrontPurchase[]
-
-  @@index([creatorId])
-  @@map("storefront_product")
-}
-
-/// DEPRECATED (2026-11-19) — copied into Listing; nothing reads or writes this; drop next release (contract). Do not add callers.
-model StorefrontPurchase {
-  id        String   @id @default(cuid())
-  productId String
-  buyerId   String
-  pricePaid Int
-  createdAt DateTime @default(now())
-
-  product StorefrontProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
-  buyer   User              @relation("StorefrontBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, buyerId])
-  @@index([buyerId])
-  @@map("storefront_purchase")
-}
-
 /// Global daily counter for AI image generations (cost guard). One row per UTC day.
 model ImageGenBudget {
   day   String @id // UTC date, "YYYY-MM-DD"
@@ -631,30 +567,6 @@ enum ListingStatus {
   HELD // flagged for admin review (anomalous price); funds not yet released
 }
 
-/// DEPRECATED (2026-11-19) — copied into Listing; nothing reads or writes this; drop next release (contract). Do not add callers.
-model MarketListing {
-  id          String        @id @default(cuid())
-  sellerId    String
-  inventoryId String        @unique // the exact UserInventory row held in escrow
-  itemId      String        @db.VarChar(64)
-  priceCoins  Int
-  status      ListingStatus @default(ACTIVE)
-  buyerId     String?
-  createdAt   DateTime      @default(now())
-  closedAt    DateTime?
-  // Set when an admin reviewed a HELD listing and released it: the reviewed
-  // price no longer trips the anomaly hold, so the listing can actually sell.
-  // Cleared whenever the row is recycled into a new listing.
-  reviewedAt  DateTime?
-
-  seller User  @relation("MarketSeller", fields: [sellerId], references: [id], onDelete: Cascade)
-  buyer  User? @relation("MarketBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
-
-  @@index([status, itemId, priceCoins])
-  @@index([sellerId, status])
-  @@map("market_listing")
-}
-
 // ─── Listings: one model for the player marketplaces ──────────────────────
 // Everything a member puts up for coins (design: the header of
 // lib/listings/listings.server.ts). `kind` says which of the three markets the
@@ -668,9 +580,8 @@ model MarketListing {
 //              ListingPurchase each; ACTIVE = on sale, CANCELED = taken down
 //              (was StorefrontProduct).
 // Only lib/listings/** reads or writes it (lib/listings/__tests__/one-module.test.ts).
-// Until the contract release drops the old tables, the expand migration's
-// triggers mirror every write between this table and them, both ways, so the
-// releases on either side of a blue/green swap see one market.
+// The three old tables were dropped by migration
+// 20261120100000_contract_listings_chat_live_rooms.
 enum ListingKind {
   COSMETIC
   CARD
