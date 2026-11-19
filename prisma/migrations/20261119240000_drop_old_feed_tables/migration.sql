@@ -9,7 +9,9 @@
 --    resurrect lists, members, searches or alerts users deleted since.
 -- 2. Refuse to drop saved_search if it holds rows of a surface the copy never
 --    carried (none ever had a writer); the deploy stops instead of losing them.
--- 3. Drop the old tables and the custom_feed.authorIds mirror column.
+-- 3. Drop the old tables. (custom_feed.authorIds stays one more release: the
+--    previous release's Prisma model still selects it on every feed read. This
+--    release stops writing it; the next one drops it.)
 
 DO $$
 DECLARE cutoff timestamptz;
@@ -83,4 +85,3 @@ DROP TABLE IF EXISTS "user_list_member";
 DROP TABLE IF EXISTS "user_list";
 DROP TABLE IF EXISTS "saved_search";
 DROP TABLE IF EXISTS "keyword_alert";
-ALTER TABLE "custom_feed" DROP COLUMN IF EXISTS "authorIds";
