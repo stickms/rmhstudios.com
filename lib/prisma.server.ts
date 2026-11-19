@@ -320,6 +320,16 @@ const unboundedReadExtension = Prisma.defineExtension({
 /* ─── Clients ───────────────────────────────────────────────────────────── */
 
 /**
+ * A client as `withExtensions` uses it. Typecheck cost, not style: handing the callers'
+ * `PrismaClient<{ adapter, log }>` to a `PrismaClient` parameter made the checker compare the two
+ * client types member by member over every model, and the typed `$extends` chain built the extended
+ * client's types only for the cast below to drop them. That was 3.3M types, 21M instantiations,
+ * ~3 GB and ~20 s for this one file (over half the site project's instantiations), which pushed
+ * `pnpm typecheck` past the CI runner's memory into swap. Now: under 0.3 s.
+ */
+type Extendable = { $extends(extension: unknown): Extendable };
+
+/**
  * Compose the extensions onto a raw client, and cast back.
  *
  * Additive: the budget extension stays first (it counts `$allOperations`,
@@ -332,8 +342,8 @@ const unboundedReadExtension = Prisma.defineExtension({
  * keeps its meaning, and the only client members `$extends` drops are `$on` and
  * `$use`, neither of which this repo calls.
  */
-function withExtensions(client: PrismaClient): PrismaClient {
-  const budgeted = client.$extends(queryBudgetExtension);
+function withExtensions(client: object): PrismaClient {
+  const budgeted = (client as Extendable).$extends(queryBudgetExtension);
   const extended =
     process.env.NODE_ENV === 'production' ? budgeted : budgeted.$extends(unboundedReadExtension);
   return extended as unknown as PrismaClient;
