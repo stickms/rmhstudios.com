@@ -19,6 +19,7 @@ import {
   type SavingsGoalsPayload,
   type SavingsGoalView,
 } from '@/lib/economy/savings-goal-schema';
+import { lowestCosmeticPrice } from '@/lib/listings/listings.server';
 
 const DAY_MS = 86_400_000;
 /** The projection looks back 28 days; one extra so "yesterday" is always inside. */
@@ -133,12 +134,9 @@ export async function createSavingsGoal(
       targetCoins = item.price;
     } else {
       if (!isTradable(item.id)) throw new SavingsGoalError('NOT_TRADABLE');
-      const cheapest = await prisma.marketListing.aggregate({
-        where: { itemId: item.id, status: 'ACTIVE' },
-        _min: { priceCoins: true },
-      });
-      if (cheapest._min.priceCoins == null) throw new SavingsGoalError('NO_LISTING');
-      targetCoins = cheapest._min.priceCoins;
+      const cheapest = await lowestCosmeticPrice(item.id);
+      if (cheapest == null) throw new SavingsGoalError('NO_LISTING');
+      targetCoins = cheapest;
     }
   }
 

@@ -27,13 +27,13 @@ vi.mock('@/lib/streak.server', () => ({
   FREEZE_COST: 50,
   MAX_FREEZE_TOKENS: 3,
 }));
-vi.mock('@/lib/market/market.server', () => ({
+vi.mock('@/lib/listings/cosmetic.server', () => ({
   buyListing: vi.fn(),
   cancelListing: vi.fn(),
   MarketError: class extends Error {},
   EscrowError: class extends Error {},
 }));
-vi.mock('@/lib/storefront/storefront.server', () => ({
+vi.mock('@/lib/listings/product.server', () => ({
   buyProduct: vi.fn(),
   StorefrontError: class extends Error {},
 }));

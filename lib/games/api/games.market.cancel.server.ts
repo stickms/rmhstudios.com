@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { cancelCard } from '@/lib/cards/market.server';
+import { cancelCard } from '@/lib/listings/card.server';
 import { marketResponse } from '@/lib/cards/market-api.server';
 
 /** POST /api/games/market/cancel — take your listing down and get the card back. */

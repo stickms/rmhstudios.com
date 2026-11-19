@@ -536,7 +536,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         'The player marketplace',
       source:
-        'lib/market/market.server.ts',
+        'lib/listings/cosmetic.server.ts',
       bounded: false,
       note: 'Buyer to seller, minus a fee that IS destroyed.',
     },
@@ -546,7 +546,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         'The trading-card Community Market',
       source:
-        'lib/cards/market.server.ts',
+        'lib/listings/card.server.ts',
       bounded: false,
       note: 'Buyer to seller, minus a 10% fee that IS destroyed. Cards drop only from playtime (3 per title per account) and sellers must be level 3 and a week old.',
     },
@@ -556,7 +556,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         'A creator storefront',
       source:
-        'lib/storefront/storefront.server.ts',
+        'lib/listings/product.server.ts',
       bounded: false,
       note: 'Buyer to creator, minus a fee.',
     },

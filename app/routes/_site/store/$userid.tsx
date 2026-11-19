@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { StorefrontColumn } from '@/components/feed/StorefrontColumn';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { listStorefront } from '@/lib/storefront.server';
+import { listStorefront } from '@/lib/listings/product.server';
 
 // Prefetch the creator's storefront server-side so it's present at first paint
 // (SSR) and prefetched on hover intent instead of fetched client-side on mount.

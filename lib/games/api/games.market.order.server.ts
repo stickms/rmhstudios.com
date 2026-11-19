@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { placeBuyOrder } from '@/lib/cards/market.server';
+import { placeBuyOrder } from '@/lib/listings/card.server';
 import { marketResponse } from '@/lib/cards/market-api.server';
 
 /** POST /api/games/market/order — a standing offer to buy a card for up to a price (no coins are held). */

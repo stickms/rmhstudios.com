@@ -199,6 +199,7 @@ model CardDrop {
 // docs/superpowers/specs/2026-10-30-card-market-design.md). The card is held in
 // escrow by the listing: creating it decrements the seller's stack in the same
 // transaction. The price is immutable; reuse the shop market's ListingStatus.
+/// DEPRECATED (2026-11-19) — copied into Listing; nothing reads or writes this; drop next release (contract). Do not add callers.
 model CardListing {
   id         String        @id @default(cuid())
   sellerId   String
@@ -533,6 +534,7 @@ model CoinStake {
 /// A digital product a creator sells for coins (#19). The `deliverable` (a link,
 /// code, or message) is revealed only to the creator and to buyers. A 10%
 /// platform fee is burned on each sale as a coin sink.
+/// DEPRECATED (2026-11-19) — copied into Listing; nothing reads or writes this; drop next release (contract). Do not add callers.
 model StorefrontProduct {
   id          String   @id @default(cuid())
   creatorId   String
@@ -552,6 +554,7 @@ model StorefrontProduct {
   @@map("storefront_product")
 }
 
+/// DEPRECATED (2026-11-19) — copied into Listing; nothing reads or writes this; drop next release (contract). Do not add callers.
 model StorefrontPurchase {
   id        String   @id @default(cuid())
   productId String
@@ -647,6 +650,7 @@ enum ListingStatus {
   HELD // flagged for admin review (anomalous price); funds not yet released
 }
 
+/// DEPRECATED (2026-11-19) — copied into Listing; nothing reads or writes this; drop next release (contract). Do not add callers.
 model MarketListing {
   id          String        @id @default(cuid())
   sellerId    String
@@ -668,6 +672,83 @@ model MarketListing {
   @@index([status, itemId, priceCoins])
   @@index([sellerId, status])
   @@map("market_listing")
+}
+
+// ─── Listings: one model for the player marketplaces ──────────────────────
+// Everything a member puts up for coins (design: the header of
+// lib/listings/listings.server.ts). `kind` says which of the three markets the
+// row belongs to and which kind-specific columns it fills:
+//   COSMETIC — a tradable shop item escrowed by its exact UserInventory row
+//              (`inventoryId`, `itemId`); sells once (was MarketListing).
+//   CARD     — one trading card escrowed out of the seller's stack
+//              (`gameId`, `cardIndex`, `foil`); sells once (was CardListing).
+//   PRODUCT  — a creator's digital product (`title`, `description`,
+//              `deliverable`, `salesCount`); sells to many buyers, one
+//              ListingPurchase each; ACTIVE = on sale, CANCELED = taken down
+//              (was StorefrontProduct).
+// Only lib/listings/** reads or writes it (lib/listings/__tests__/one-module.test.ts).
+// Until the contract release drops the old tables, the expand migration's
+// triggers mirror every write between this table and them, both ways, so the
+// releases on either side of a blue/green swap see one market.
+enum ListingKind {
+  COSMETIC
+  CARD
+  PRODUCT
+}
+
+model Listing {
+  id         String        @id @default(cuid())
+  kind       ListingKind
+  sellerId   String
+  priceCoins Int
+  status     ListingStatus @default(ACTIVE)
+  buyerId    String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @default(now()) @updatedAt
+  closedAt   DateTime?
+  // COSMETIC: set when an admin released a HELD listing at its reviewed price.
+  reviewedAt DateTime?
+
+  // COSMETIC — the exact UserInventory row held in escrow (at most one listing per row, ever).
+  inventoryId String? @unique
+  itemId      String? @db.VarChar(64)
+
+  // CARD
+  gameId    String? @db.VarChar(64)
+  cardIndex Int?    @db.SmallInt
+  foil      Boolean @default(false)
+
+  // PRODUCT
+  title       String? @db.VarChar(80)
+  description String? @db.VarChar(500)
+  deliverable String? @db.Text
+  salesCount  Int     @default(0)
+
+  seller    User              @relation("ListingSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer     User?             @relation("ListingBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+  purchases ListingPurchase[]
+
+  @@index([kind, status, itemId, priceCoins])
+  @@index([kind, status, gameId, cardIndex, foil, priceCoins])
+  @@index([sellerId, kind, status])
+  @@map("listing")
+}
+
+/// One buyer's purchase of a PRODUCT listing (was StorefrontPurchase). Unique per
+/// (listing, buyer): a product is bought once and its deliverable stays readable.
+model ListingPurchase {
+  id        String   @id @default(cuid())
+  listingId String
+  buyerId   String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer   User    @relation("ListingPurchaseBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, buyerId])
+  @@index([buyerId])
+  @@map("listing_purchase")
 }
 
 // Post awards (§7): a public, paid recognition badge pinned to content. The

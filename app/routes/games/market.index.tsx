@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { getMarket } from '@/lib/cards/market.server';
+import { getMarket } from '@/lib/listings/card.server';
 import { MarketPage } from '@/components/steam/MarketPage';
 import { noindexHead } from '@/lib/seo';
 

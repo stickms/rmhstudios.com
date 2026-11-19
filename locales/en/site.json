@@ -950,5 +950,12 @@
   "calendar-tab-on": "What's on",
   "calendar-tab-yours": "Yours",
   "calendar-title": "Calendar",
-  "events-calendar-link": "Calendar"
+  "events-calendar-link": "Calendar",
+  "store-tab-cards": "Cards",
+  "store-tab-products": "Products",
+  "store-cards-foil": "{{game}} · Foil",
+  "store-cards-empty": "No trading cards are for sale right now.",
+  "store-products-empty": "No creator products are on sale right now.",
+  "listing-rows-on-offer": "{{n}} on offer",
+  "listing-rows-sold": "{{n}} sold"
 }

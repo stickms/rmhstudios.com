@@ -222,16 +222,18 @@ describe('anonymizeAccount', () => {
           o,
         ) =>
           o.model ===
-            'cardListing' &&
+            'listing' &&
           o.method ===
             'deleteMany',
       );
+    // Card listings are the CARD kind of the one Listing model (lib/listings).
     expect(
       op?.args,
     ).toEqual(
       {
         where:
           {
+            kind: 'CARD',
             sellerId:
               'user-1',
             status:

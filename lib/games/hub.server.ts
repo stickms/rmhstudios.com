@@ -23,6 +23,7 @@ import {
 } from '@/lib/games/hub-rules';
 import type { PersonRef } from '@/lib/games/community-types';
 import type { HubData, ThreadPage, ThreadSummary } from '@/lib/games/hub-types';
+import { countActiveCards } from '@/lib/listings/listings.server';
 
 export type HubErrorCode =
   | 'BAD_INPUT'
@@ -221,13 +222,7 @@ export async function getHub(
     getLibraryExtras(viewer.id, gameId),
     listGuides(gameId, viewer.id),
     listReviews(gameId, viewer.id, 'recent'),
-    prisma.cardListing.count({
-      where: {
-        gameId,
-        status: 'ACTIVE',
-        ...(viewer.id ? { sellerId: { not: viewer.id } } : {}),
-      },
-    }),
+    countActiveCards(gameId, viewer.id ?? null),
     viewer.id ? emoteTitlesFor([viewer.id]) : Promise.resolve({} as Record<string, string[]>),
     listWorkshop(gameId, 6),
   ]);

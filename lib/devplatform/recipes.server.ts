@@ -21,6 +21,7 @@ import {
   type RecipeTrigger,
   type RecipeView,
 } from '@/lib/devplatform/recipes';
+import { lowestCosmeticPrice } from '@/lib/listings/listings.server';
 
 export const RECIPE_POLL_QUEUE = 'devplatform.recipes-poll';
 export const RECIPE_POLL_CRON = '*/2 * * * *';
@@ -226,17 +227,12 @@ export async function runPolledRecipes(): Promise<number> {
               : `${names.slice(0, 3).join(', ')}${rows.length > 3 ? ' and others' : ''} followed you on RMH Studios.`;
         }
       } else {
-        const l = await prisma.marketListing.findFirst({
-          where: {
-            status: 'ACTIVE',
-            itemId: str(c.itemId),
-            priceCoins: { lt: num(c.maxPrice) },
-            createdAt: { gt: since },
-            sellerId: { not: r.userId },
-          },
-          orderBy: { priceCoins: 'asc' },
-          select: { priceCoins: true },
+        const price = await lowestCosmeticPrice(str(c.itemId), {
+          below: num(c.maxPrice),
+          createdAfter: since,
+          excludeSellerId: r.userId,
         });
+        const l = price == null ? null : { priceCoins: price };
         if (l) {
           const name = getShopItem(str(c.itemId))?.name ?? str(c.itemId);
           message = `${name} is listed on the market for ${l.priceCoins} coins (your limit: ${num(c.maxPrice)}).`;

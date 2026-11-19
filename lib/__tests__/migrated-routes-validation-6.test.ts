@@ -19,7 +19,7 @@ vi.mock('@/lib/events.server', () => ({
   unrsvp: vi.fn(),
   EventError: class extends Error {},
 }));
-vi.mock('@/lib/market/market.server', () => ({
+vi.mock('@/lib/listings/cosmetic.server', () => ({
   listItem: vi.fn(),
   browse: vi.fn(async () => []),
   priceHistory: vi.fn(async () => null),

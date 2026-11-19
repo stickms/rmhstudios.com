@@ -18,6 +18,7 @@ import { getShopItem } from '@/lib/shop/catalog';
 import { featuredIdsForDate } from '@/lib/shop/daily-shop.server';
 import { utcDateKey } from '@/lib/shop/daily-shop';
 import { alertPreview, decideAlert } from '@/lib/wishlist/price-alerts';
+import { lowestCosmeticPrices } from '@/lib/listings/listings.server';
 
 const PAGE = 500;
 /** Per-run ceiling: 40 pages = 20,000 entries. The rest is picked up tomorrow. */
@@ -60,17 +61,7 @@ export async function runWishlistAlerts(now: Date = new Date()): Promise<AlertSw
     const marketIds = [
       ...new Set(entries.filter((e) => e.entityType === 'market_cosmetic').map((e) => e.entityId)),
     ];
-    const marketMin = new Map<string, number>();
-    if (marketIds.length > 0) {
-      const mins = await prisma.marketListing.groupBy({
-        by: ['itemId'],
-        where: { itemId: { in: marketIds }, status: 'ACTIVE' },
-        _min: { priceCoins: true },
-      });
-      for (const m of mins) {
-        if (m._min.priceCoins != null) marketMin.set(m.itemId, m._min.priceCoins);
-      }
-    }
+    const marketMin = await lowestCosmeticPrices(marketIds);
 
     // Ownership: one query over the page's (user, item) cross product.
     const inv = await prisma.userInventory.findMany({

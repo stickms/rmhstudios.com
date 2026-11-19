@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { buyStorefrontProductApi } from '@/lib/storefront/storefront.contract';
-import { buyProduct, StorefrontError } from '@/lib/storefront/storefront.server';
+import { buyProduct, StorefrontError } from '@/lib/listings/product.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
 
 /** POST /api/storefront/products/$id/buy — purchase a product with coins. */

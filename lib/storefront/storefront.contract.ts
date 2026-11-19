@@ -5,7 +5,7 @@
  * Client-safe.
  */
 import { endpoint } from '@/lib/contract/endpoint';
-import type { StorefrontResult } from '@/lib/storefront.server';
+import type { StorefrontResult } from '@/lib/listings/views';
 
 /** A creator's storefront, by handle or id. 404 when unknown. Deliverables only for the owner or buyers. */
 export const getStorefrontApi =

@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { getShopItem } from '@/lib/shop/catalog';
 import type { WatchKind, WatchLevel } from './schema';
+import { lowestCosmeticPrice } from '@/lib/listings/listings.server';
 
 const MAX_WATCHERS_PER_EVENT = 500;
 
@@ -161,12 +162,8 @@ export async function watchMarketListing(listing: {
     targetId: listing.itemId,
     actorId: listing.sellerId,
     important: async () => {
-      const lowest = await prisma.marketListing.findFirst({
-        where: { itemId: listing.itemId, status: 'ACTIVE', id: { not: listing.id } },
-        orderBy: { priceCoins: 'asc' },
-        select: { priceCoins: true },
-      });
-      return !lowest || listing.priceCoins < lowest.priceCoins;
+      const lowest = await lowestCosmeticPrice(listing.itemId, { excludeId: listing.id });
+      return lowest == null || listing.priceCoins < lowest;
     },
     preview: `New listing for ${name}: ${listing.priceCoins} coins`,
     link: '/market',

@@ -1,11 +1,14 @@
 /**
- * Player Marketplace (§8) — server transactions.
+ * Player Marketplace (§8) — server transactions. The COSMETIC kind of
+ * `Listing` (see `lib/listings/listings.server.ts`); was `lib/market/market.server.ts`
+ * over `MarketListing`, and moved here unchanged in what it debits, credits and
+ * writes to the ledger.
  *
  * This module handles **real coin movement + inventory transfer**, so
  * correctness of the escrow/transfer transaction is paramount. The invariants:
  *
  *  1. An inventory item can never be duplicated. The escrow lock is the
- *     `MarketListing.inventoryId @unique` column: at most one listing per
+ *     `Listing.inventoryId @unique` column: at most one listing per
  *     inventory row can exist, ever. `buyListing` re-parents that exact row to
  *     the buyer inside the same transaction that debits/credits coins — transfer
  *     and payment commit together or not at all.
@@ -24,8 +27,9 @@
  *     its "earned" derivation — closing the coins→cash redemption laundering path.
  */
 
-import type { Prisma, MarketListing } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { claimListing, closeListing, cosmeticFields } from '@/lib/listings/listings.server';
 import { EscrowError } from '@/lib/wager/escrow.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { getShopItem, type ShopItem } from '@/lib/shop/catalog';
@@ -80,6 +84,45 @@ export type MarketErrorCode =
 
 // ─── List ────────────────────────────────────────────────────────────────────
 
+/** A cosmetic listing in the shape the market has always answered with. */
+export interface MarketListingRow {
+  id: string;
+  sellerId: string;
+  inventoryId: string;
+  itemId: string;
+  priceCoins: number;
+  status: 'ACTIVE' | 'SOLD' | 'CANCELED' | 'HELD';
+  buyerId: string | null;
+  createdAt: Date;
+  closedAt: Date | null;
+  reviewedAt: Date | null;
+}
+
+function toMarketListingRow(row: {
+  id: string;
+  sellerId: string;
+  inventoryId: string | null;
+  itemId: string | null;
+  priceCoins: number;
+  status: MarketListingRow['status'];
+  buyerId: string | null;
+  createdAt: Date;
+  closedAt: Date | null;
+  reviewedAt?: Date | null;
+}): MarketListingRow {
+  return {
+    id: row.id,
+    sellerId: row.sellerId,
+    ...cosmeticFields(row),
+    priceCoins: row.priceCoins,
+    status: row.status,
+    buyerId: row.buyerId,
+    createdAt: row.createdAt,
+    closedAt: row.closedAt,
+    reviewedAt: row.reviewedAt ?? null,
+  };
+}
+
 export interface ListItemInput {
   sellerId: string;
   itemId: string;
@@ -100,7 +143,7 @@ export async function listItem({
   sellerId,
   itemId,
   priceCoins,
-}: ListItemInput): Promise<MarketListing> {
+}: ListItemInput): Promise<MarketListingRow> {
   if (!isTradable(itemId)) {
     throw new MarketError('NOT_TRADABLE', 'This item cannot be traded');
   }
@@ -137,7 +180,9 @@ export async function listItem({
     if (!inv) throw new MarketError('NOT_OWNED', "You don't own that item");
     if (inv.equipped) throw new MarketError('EQUIPPED', 'Unequip the item before listing it');
 
-    const activeCount = await tx.marketListing.count({ where: { sellerId, status: 'ACTIVE' } });
+    const activeCount = await tx.listing.count({
+      where: { sellerId, kind: 'COSMETIC', status: 'ACTIVE' },
+    });
     if (activeCount >= MAX_ACTIVE_LISTINGS) {
       throw new MarketError(
         'TOO_MANY_LISTINGS',
@@ -147,12 +192,12 @@ export async function listItem({
 
     // The inventory row can carry at most one listing (unique). A live one blocks
     // re-listing; a terminal one is recycled into the new listing.
-    const existing = await tx.marketListing.findUnique({ where: { inventoryId: inv.id } });
+    const existing = await tx.listing.findUnique({ where: { inventoryId: inv.id } });
     if (existing && (existing.status === 'ACTIVE' || existing.status === 'HELD')) {
       throw new MarketError('ALREADY_LISTED', 'That item is already listed');
     }
     if (existing) {
-      return tx.marketListing.update({
+      const recycled = await tx.listing.update({
         where: { inventoryId: inv.id },
         data: {
           sellerId,
@@ -166,10 +211,19 @@ export async function listItem({
           createdAt: new Date(),
         },
       });
+      return toMarketListingRow(recycled);
     }
-    return tx.marketListing.create({
-      data: { sellerId, inventoryId: inv.id, itemId, priceCoins, status: 'ACTIVE' },
+    const created = await tx.listing.create({
+      data: {
+        kind: 'COSMETIC',
+        sellerId,
+        inventoryId: inv.id,
+        itemId,
+        priceCoins,
+        status: 'ACTIVE',
+      },
     });
+    return toMarketListingRow(created);
   });
 }
 
@@ -206,8 +260,9 @@ export async function buyListing({
   listingId: string;
 }): Promise<BuyResult> {
   const result = await prisma.$transaction(async (tx) => {
-    const listing = await tx.marketListing.findUnique({ where: { id: listingId } });
-    if (!listing) throw new MarketError('NOT_FOUND', 'Listing not found', 404);
+    const row = await tx.listing.findUnique({ where: { id: listingId, kind: 'COSMETIC' } });
+    if (!row) throw new MarketError('NOT_FOUND', 'Listing not found', 404);
+    const listing = { ...row, ...cosmeticFields(row) };
     if (listing.status !== 'ACTIVE')
       throw new MarketError('NOT_AVAILABLE', 'This listing is no longer available', 409);
     if (listing.sellerId === buyerId)
@@ -225,8 +280,9 @@ export async function buyListing({
     // Skipped once an admin has reviewed and released this exact listing.
     const recentSold = listing.reviewedAt
       ? []
-      : await tx.marketListing.findMany({
+      : await tx.listing.findMany({
           where: {
+            kind: 'COSMETIC',
             itemId: listing.itemId,
             status: 'SOLD',
             closedAt: { gte: new Date(Date.now() - THIRTY_DAYS_MS) },
@@ -242,8 +298,8 @@ export async function buyListing({
         recentSold.map((r) => r.priceCoins),
       )
     ) {
-      const held = await tx.marketListing.updateMany({
-        where: { id: listingId, status: 'ACTIVE' },
+      const held = await tx.listing.updateMany({
+        where: { id: listingId, kind: 'COSMETIC', status: 'ACTIVE' },
         data: { status: 'HELD' },
       });
       if (held.count === 0)
@@ -261,11 +317,8 @@ export async function buyListing({
 
     // Atomic claim — the double-buy guard. A concurrent buyer that already flipped
     // the status sees count 0 here and is rejected.
-    const claim = await tx.marketListing.updateMany({
-      where: { id: listingId, status: 'ACTIVE' },
-      data: { status: 'SOLD', buyerId, closedAt: new Date() },
-    });
-    if (claim.count === 0)
+    const claimed = await claimListing(tx, { id: listingId, kind: 'COSMETIC', buyerId });
+    if (!claimed)
       throw new MarketError('NOT_AVAILABLE', 'This listing was just purchased', 409);
 
     const { fee, proceeds } = marketFee(listing.priceCoins);
@@ -336,12 +389,8 @@ export async function buyListing({
  * re-list it (`listItem` recycles the terminal row). Returns whether this call
  * won the CAS; a loser changes nothing, so the item is returned exactly once.
  */
-async function closeListingAsCanceled(where: Prisma.MarketListingWhereInput): Promise<boolean> {
-  const res = await prisma.marketListing.updateMany({
-    where,
-    data: { status: 'CANCELED', closedAt: new Date() },
-  });
-  return res.count > 0;
+function closeListingAsCanceled(where: Prisma.ListingWhereInput): Promise<boolean> {
+  return closeListing(prisma, 'COSMETIC', where);
 }
 
 /**
@@ -386,8 +435,8 @@ export interface HeldListing {
  * 30-day median it was measured against so the admin can judge the price.
  */
 export async function listHeldListings(limit = 100): Promise<HeldListing[]> {
-  const rows = await prisma.marketListing.findMany({
-    where: { status: 'HELD' },
+  const rows = await prisma.listing.findMany({
+    where: { kind: 'COSMETIC', status: 'HELD' },
     orderBy: { createdAt: 'asc' },
     take: Math.min(Math.max(limit, 1), 200),
     include: { seller: { select: userDisplaySelect } },
@@ -397,12 +446,12 @@ export async function listHeldListings(limit = 100): Promise<HeldListing[]> {
   // The same window and sample the hold was measured on in `buyListing`
   // (30 days, newest 500 sales), per item, so one busy item can't crowd out
   // another's baseline. Held listings are rare; the item set is small.
-  const itemIds = [...new Set(rows.map((r) => r.itemId))];
+  const itemIds = [...new Set(rows.map((r) => cosmeticFields(r).itemId))];
   const since = new Date(Date.now() - THIRTY_DAYS_MS);
   const samples = await Promise.all(
     itemIds.map((itemId) =>
-      prisma.marketListing.findMany({
-        where: { itemId, status: 'SOLD', closedAt: { gte: since } },
+      prisma.listing.findMany({
+        where: { kind: 'COSMETIC', itemId, status: 'SOLD', closedAt: { gte: since } },
         select: { priceCoins: true },
         orderBy: { closedAt: 'desc' },
         take: 500,
@@ -414,11 +463,12 @@ export async function listHeldListings(limit = 100): Promise<HeldListing[]> {
   );
 
   return rows.map((r) => {
-    const item = getShopItem(r.itemId);
-    const prices = pricesByItem.get(r.itemId) ?? [];
+    const { itemId } = cosmeticFields(r);
+    const item = getShopItem(itemId);
+    const prices = pricesByItem.get(itemId) ?? [];
     return {
       id: r.id,
-      itemId: r.itemId,
+      itemId,
       priceCoins: r.priceCoins,
       createdAt: r.createdAt.toISOString(),
       item: item ? { id: item.id, name: item.name, kind: item.kind, rarity: item.rarity } : null,
@@ -456,8 +506,8 @@ export async function resolveHeldListing({
 }): Promise<{ status: 'ACTIVE' | 'CANCELED' }> {
   let applied: boolean;
   if (action === 'release') {
-    const res = await prisma.marketListing.updateMany({
-      where: { id: listingId, status: 'HELD' },
+    const res = await prisma.listing.updateMany({
+      where: { id: listingId, kind: 'COSMETIC', status: 'HELD' },
       data: { status: 'ACTIVE', reviewedAt: new Date() },
     });
     applied = res.count > 0;
@@ -512,15 +562,16 @@ export async function browse({
   limit = 60,
   viewerId = null,
 }: BrowseInput = {}): Promise<BrowseListing[]> {
-  const orderBy: Prisma.MarketListingOrderByWithRelationInput =
+  const orderBy: Prisma.ListingOrderByWithRelationInput =
     sort === 'price_asc'
       ? { priceCoins: 'asc' }
       : sort === 'price_desc'
         ? { priceCoins: 'desc' }
         : { createdAt: 'desc' };
 
-  const rows = await prisma.marketListing.findMany({
+  const rows = await prisma.listing.findMany({
     where: {
+      kind: 'COSMETIC',
       ...(viewerId
         ? { OR: [{ status: 'ACTIVE' as const }, { status: 'HELD' as const, sellerId: viewerId }] }
         : { status: 'ACTIVE' as const }),
@@ -532,10 +583,11 @@ export async function browse({
   });
 
   return rows.map((r) => {
-    const item = getShopItem(r.itemId);
+    const { itemId } = cosmeticFields(r);
+    const item = getShopItem(itemId);
     return {
       id: r.id,
-      itemId: r.itemId,
+      itemId,
       priceCoins: r.priceCoins,
       status: r.status === 'HELD' ? ('HELD' as const) : ('ACTIVE' as const),
       createdAt: r.createdAt.toISOString(),
@@ -559,8 +611,8 @@ export interface PriceHistory {
 
 /** Recent SOLD-price history for an item — powers the detail sparkline. */
 export async function priceHistory(itemId: string, limit = 30): Promise<PriceHistory> {
-  const rows = await prisma.marketListing.findMany({
-    where: { itemId, status: 'SOLD' },
+  const rows = await prisma.listing.findMany({
+    where: { kind: 'COSMETIC', itemId, status: 'SOLD' },
     orderBy: { closedAt: 'desc' },
     take: Math.min(Math.max(limit, 1), 100),
     select: { priceCoins: true, closedAt: true },

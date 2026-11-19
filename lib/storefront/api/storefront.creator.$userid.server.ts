@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getStorefrontApi } from '@/lib/storefront/storefront.contract';
-import { listStorefront } from '@/lib/storefront.server';
+import { listStorefront } from '@/lib/listings/product.server';
 
 /**
  * GET /api/storefront/creator/$userid — a creator's storefront. Resolves by
