@@ -517,6 +517,7 @@ model User {
   // P03 discovery: A3 digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watches
   customFeeds                CustomFeed[]
   customFeedSubscriptions    CustomFeedSubscription[]
+  customFeedMemberships      CustomFeedMember[]
   memoriesOptIn              MemoriesOptIn?
   keywordAlerts              KeywordAlert[]
   keywordAlertHits           KeywordAlertHit[]

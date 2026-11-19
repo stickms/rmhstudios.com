@@ -17,7 +17,7 @@
 export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   // Folded into tabs of a hub page.
   '/bookmarks': '/saves?tab=saved',
-  '/lists': '/saves?tab=lists',
+  '/lists': '/feeds?tab=lists',
   '/wishlist': '/saves?tab=wishlist',
   '/shop': '/store?tab=shop',
   '/market': '/store?tab=market',

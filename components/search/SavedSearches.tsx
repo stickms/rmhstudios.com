@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useClipboard } from '@/hooks/useClipboard';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { SavedSearchView } from '@/lib/search/saved';
 import { api } from '@/lib/contract/client';
 import {
@@ -37,12 +38,16 @@ const OPERATOR_EXAMPLES =
 
 /**
  * SavedSearches (§18) — save the current query (operators included) and re-run
- * or alert on saved ones. Shown above the results on /search.
+ * or alert on saved ones. Shown above the results on /explore, and as the
+ * Searches tab of /feeds (`manage`: says so when there are none). A saved
+ * search is a Feed of kind 'search'.
  */
 export function SavedSearches({
   currentQuery,
+  manage = false,
 }: {
   currentQuery: string;
+  manage?: boolean;
 }) {
   const {
     t,
@@ -260,7 +265,24 @@ export function SavedSearches({
       0 &&
     !q
   )
-    return null;
+    return manage ? (
+      <EmptyState
+        title={t(
+          'saved-empty-title',
+          {
+            defaultValue:
+              'No saved searches',
+          },
+        )}
+        description={t(
+          'saved-empty-desc',
+          {
+            defaultValue:
+              'Search on Explore and choose Save to keep a search here.',
+          },
+        )}
+      />
+    ) : null;
 
   return (
     <div

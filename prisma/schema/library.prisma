@@ -357,6 +357,8 @@ model HistoryEntry {
 
 // Universal search v2 (§18): site-wide saved searches (promotes the
 // ladder-only pattern). Optional weekly new-result alerts.
+/// DEPRECATED (2026-11-19) — copied into CustomFeed (kind 'search', `alerts` → notify);
+/// nothing reads or writes this; drop next release (contract). Do not add callers.
 model SavedSearch {
   id        String    @id @default(cuid())
   userId    String

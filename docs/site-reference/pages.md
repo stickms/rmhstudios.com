@@ -83,7 +83,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/exchange` | — | public | `app/routes/_site/exchange.index.tsx` |
 | `/exchange/:id` | — | public | `app/routes/_site/exchange.$id.tsx` |
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
-| `/feeds` | Custom feeds | public | `app/routes/_site/feeds.index.tsx` |
+| `/feeds` | Feeds | public | `app/routes/_site/feeds.index.tsx` |
 | `/feeds/:id` | Feed | public | `app/routes/_site/feeds.$id.tsx` |
 | `/game-night` | Game Night | public | `app/routes/_site/game-night.tsx` |
 | `/groups` | Group Chats | public | `app/routes/_site/groups/index.tsx` |

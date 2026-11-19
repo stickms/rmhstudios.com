@@ -6,6 +6,8 @@
   "remove": "Remove",
   "save": "Save",
   "saved": "Search saved",
+  "saved-empty-desc": "Search on Explore and choose Save to keep a search here.",
+  "saved-empty-title": "No saved searches",
   "saved-searches": "Saved searches",
   "operator-copy": "Copy {{operator}}",
   "operator-copied": "Copied {{operator}}"
