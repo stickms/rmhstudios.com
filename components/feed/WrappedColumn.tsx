@@ -105,7 +105,7 @@ export function WrappedColumn({
  }
  subtitle={data.blurb}
  actions={
- <Link to="/recap">
+ <Link to="/progress" search={{ tab: 'week' }}>
  <Button variant="default"size="sm">
  {t('wrapped-recap-cta', { defaultValue:'This week'})}
  </Button>

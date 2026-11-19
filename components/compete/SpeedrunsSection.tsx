@@ -1,5 +1,6 @@
 /**
- * /speedruns — replay-verified speedrun boards (design K1).
+ * The Speedruns section of `/compete` — replay-verified speedrun boards (design
+ * K1). It was the `/speedruns` page until the 2026-11-19 consolidation.
  *
  * Three selections drive the page: game → category → game version. The version
  * selector defaults to `all`, which shows every version's board LABELLED rather
@@ -17,13 +18,10 @@
  * `defaultValue` is only consulted when the key is MISSING.
  */
 
-import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Timer } from 'lucide-react';
-import { buildCanonical, buildMeta } from '@/lib/seo';
-import { PageLayout } from '@/components/feed/PageLayout';
 import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
@@ -54,26 +52,13 @@ import {
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
-export const Route = createFileRoute('/_site/speedruns')({
-  head: () => ({
-    meta: buildMeta({
-      title: 'Speedruns | RMH Studios',
-      description:
-        'Replay-verified speedrun boards: every run is re-simulated from its own inputs.',
-      path: '/speedruns',
-    }),
-    links: [buildCanonical('/speedruns')],
-  }),
-  component: SpeedrunsPage,
-});
-
 interface BoardResponse {
   categories: SpeedrunCategoryView[];
   metric: SpeedrunMetric;
   entries: SpeedrunEntryView[];
 }
 
-function SpeedrunsPage() {
+export function SpeedrunsSection() {
   const { t } = useTranslation('c-tournaments');
   const { data: session } = useSession();
   const viewer = session?.user ?? null;
@@ -172,14 +157,13 @@ function SpeedrunsPage() {
   }
 
   return (
-    <PageLayout
-      title={t('speedrun-title', { defaultValue: 'Speedruns' })}
-      description={t('speedrun-description', {
-        defaultValue:
-          'Every run points at a replay, and the replay is re-simulated from its own inputs — so a record is proved, not vouched for.',
-      })}
-      wide
-    >
+    <div className="flex flex-col gap-4">
+      <p className="t-body text-site-text-muted">
+        {t('speedrun-description', {
+          defaultValue:
+            'Every run points at a replay, and the replay is re-simulated from its own inputs — so a record is proved, not vouched for.',
+        })}
+      </p>
       {loadingCategories ? (
         <div className="flex justify-center py-16">
           <Spinner />
@@ -280,6 +264,6 @@ function SpeedrunsPage() {
           )}
         </div>
       )}
-    </PageLayout>
+    </div>
   );
 }

@@ -137,7 +137,7 @@ export const HELP_SNIPPETS: Omit<
         'rewards',
       ],
       route:
-        '/achievements',
+        '/progress',
       text: 'Daily and weekly quests give you goals like playing a game or posting. Progress fills as you go; once a quest is complete you claim it for XP and coins. Unclaimed completed rewards wait for you.',
     },
     {
@@ -151,7 +151,7 @@ export const HELP_SNIPPETS: Omit<
         'xp',
       ],
       route:
-        '/achievements',
+        '/progress?tab=achievements',
       text: 'Achievements are one-time milestones across the whole platform (social, games, economy). Unlocking one grants XP and sometimes coins. See your progress on the achievements page.',
     },
     {

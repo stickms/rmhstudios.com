@@ -211,7 +211,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'achievements',
       title:
         'Achievements',
-      href: '/achievements',
+      href: '/progress?tab=achievements',
       iconName:
         'Trophy',
       keywords:
@@ -321,7 +321,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'ranked',
       title:
         'Ranked',
-      href: '/ranked',
+      href: '/compete?tab=ranked',
       iconName:
         'Trophy',
       keywords:
@@ -468,7 +468,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'tournaments',
       title:
         'Tournaments',
-      href: '/tournaments',
+      href: '/compete?tab=tournaments',
       iconName:
         'Trophy',
       keywords:
@@ -480,7 +480,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'speedruns',
       title:
         'Speedruns',
-      href: '/speedruns',
+      href: '/compete?tab=speedruns',
       iconName:
         'Timer',
       keywords:
@@ -492,7 +492,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'wagers',
       title:
         'Wagers',
-      href: '/wager',
+      href: '/compete?tab=wagers',
       iconName:
         'Coins',
       keywords:
@@ -675,7 +675,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'recap',
       title:
         'Weekly recap',
-      href: '/recap',
+      href: '/progress?tab=week',
       iconName:
         'Sparkles',
       keywords:

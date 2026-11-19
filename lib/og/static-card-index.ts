@@ -142,20 +142,20 @@ export const STATIC_CARD_INDEX: readonly (readonly [
       'site-history',
     ],
     [
-      '/achievements',
-      'achievements',
+      '/progress',
+      'progress',
     ],
     [
       '/arcade',
       'arcade',
     ],
     [
-      '/connections',
-      'connections',
+      '/compete',
+      'compete',
     ],
     [
-      '/daily-mutator',
-      'daily-mutator',
+      '/connections',
+      'connections',
     ],
     [
       '/quotes',
@@ -256,26 +256,6 @@ export const STATIC_CARD_INDEX: readonly (readonly [
     [
       '/predictions',
       'predictions',
-    ],
-    [
-      '/wager',
-      'wager',
-    ],
-    [
-      '/tournaments',
-      'tournaments',
-    ],
-    [
-      '/ranked',
-      'ranked',
-    ],
-    [
-      '/speedruns',
-      'speedruns',
-    ],
-    [
-      '/today',
-      'today',
     ],
     [
       '/qotd',

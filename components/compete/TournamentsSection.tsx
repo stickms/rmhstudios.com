@@ -1,6 +1,10 @@
+/**
+ * The Tournaments section of `/compete`: open, live and finished brackets, and
+ * the Host action. It was the `/tournaments` index page until the 2026-11-19
+ * consolidation; `/tournaments/$id` is still its own page.
+ */
 import { SwissLabel } from '@/components/competitive/SwissStandings';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -9,31 +13,15 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSession } from '@/components/Providers';
 import { CreateTournamentDialog } from '@/components/tournaments/CreateTournamentDialog';
-import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { tournamentsQuery, type TournamentStatus } from '@/lib/tournaments/tournaments.queries';
 
-export const Route = createFileRoute('/_site/tournaments/')({
-  head: () => ({
-    meta: buildMeta({
-      title: 'Tournaments | RMH Studios',
-      description: 'Compete in coin-prize bracket tournaments across RMH Studios games.',
-      path: '/tournaments',
-    }),
-    links: [buildCanonical('/tournaments')],
-  }),
-  // The first tab is fetched here (SSR + intent preload); the other tabs load on demand.
-  loader: ({ context }) => prefetchRouteQuery(context.queryClient, tournamentsQuery('REGISTRATION')),
-  component: TournamentsPage,
-});
-
-function TournamentsPage() {
+export function TournamentsSection() {
   const { t } = useTranslation('c-tournaments');
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
@@ -45,22 +33,21 @@ function TournamentsPage() {
   const arrival = useArrival(!loading);
 
   return (
-    <PageLayout
-      title={t('title', { defaultValue: 'Tournaments' })}
-      description={t('description', {
-        defaultValue: 'Join open brackets, follow live matches, or host your own competition.',
-      })}
-      wide
-      headerRight={
-        viewerId ? (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="t-body text-site-text-muted">
+          {t('description', {
+            defaultValue: 'Join open brackets, follow live matches, or host your own competition.',
+          })}
+        </p>
+        {viewerId ? (
           <Button size="sm" onClick={() => setCreating(true)}>
             <Plus className="size-4" aria-hidden />
             {t('host-tournaments-index', { defaultValue: 'Host' })}
           </Button>
-        ) : null
-      }
-    >
-      {/* §15.1: unified sheet + flowing-capsule tab strip below the page title. */}
+        ) : null}
+      </div>
+
       <div>
         <Tabs
           aria-label={t('title', { defaultValue: 'Tournaments' })}
@@ -135,6 +122,6 @@ function TournamentsPage() {
       )}
 
       {creating && <CreateTournamentDialog open={creating} onClose={() => setCreating(false)} />}
-    </PageLayout>
+    </div>
   );
 }

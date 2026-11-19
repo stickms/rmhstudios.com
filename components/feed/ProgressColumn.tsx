@@ -112,7 +112,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
  return (
  <div className={arrival}>
- {/* hideHeader === embedded in JourneyColumn, which supplies the page
+ {/* hideHeader === embedded in /progress, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (
  <ColumnHeader icon={Zap} title={t('progress-heading', { defaultValue:'Progress'})} />

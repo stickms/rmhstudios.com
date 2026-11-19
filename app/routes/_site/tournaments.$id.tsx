@@ -153,14 +153,14 @@ function TournamentDetailPage() {
 
   if (loading) {
     return (
-      <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
+      <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/compete?tab=tournaments" wide>
         <Skeleton className="h-64 rounded-site" />
       </PageLayout>
     );
   }
   if (!tourney) {
     return (
-      <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
+      <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/compete?tab=tournaments" wide>
         <EmptyState
           className={arrival}
           icon={Trophy}
@@ -179,7 +179,7 @@ function TournamentDetailPage() {
   return (
     <PageLayout
       title={tourney.name}
-      backTo="/tournaments"
+      backTo="/compete?tab=tournaments"
       backLabel={t('back', { defaultValue: 'Back to tournaments' })}
       wide
       headerRight={

@@ -31,7 +31,7 @@ async function rewardUnlock(userId: string, achievementId: string, name: string,
     entityType: 'achievement',
     entityId: achievementId,
     preview: `Achievement unlocked: ${name}${coinReward > 0 ? ` (+${coinReward} coins)` : ''}`,
-    link: '/achievements',
+    link: '/progress?tab=achievements',
   });
   // A first unlock marks a referred account as genuinely active — pay out the
   // mutual referral reward (no-op if the user wasn't referred / already paid).

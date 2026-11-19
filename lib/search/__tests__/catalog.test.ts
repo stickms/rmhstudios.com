@@ -454,7 +454,7 @@ describe('searchCatalog — 2026-10-09 audit regressions', () => {
     [
       [
         'tournament',
-        '/tournaments',
+        '/compete?tab=tournaments',
       ],
       [
         'rideshare',
