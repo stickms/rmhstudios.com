@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/http';
 import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from'lucide-react';
+import { AchievementMedal } from './AchievementMedal';
 import { useTranslation } from'react-i18next';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -49,9 +51,12 @@ export function AchievementsColumn({
  userId,
  hideHeader = false,
  initialData,
+ onLoaded,
 }: {
  userId: string;
  hideHeader?: boolean;
+ /** Called once the list has rendered with data (the profile scrolls its tab bar into view then). */
+ onLoaded?: () => void;
  /** Achievement payload prefetched by the route loader; `null`when signed out. */
  initialData?: Payload | null;
 }) {
@@ -64,6 +69,12 @@ export function AchievementsColumn({
  ...(initialData ? { initialData } : {}),
  staleTime: 15_000,
  });
+ const hasData = Boolean(data);
+ useEffect(() => {
+ if (hasData) onLoaded?.();
+ // Once per arrival of data; a new `onLoaded` identity each render must not re-fire it.
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [hasData]);
  // Steel M9: achievements fetched here replace the spinner; the loader's seed is there on first paint.
  const arrival = useArrival(!loading);
 
@@ -172,20 +183,7 @@ export function AchievementsColumn({
  <div className="min-w-0 flex-1">
  <div className="flex items-center gap-2">
  <p className="truncate text-sm font-semibold text-site-text">{a.name}</p>
- {/* The tier colours are metals — gold #ffd700, silver #c0c0c0, platinum
- #67e8f9 — and as INK on their own 13% tint they measured 1.28:1,
- 1.50:1 and 1.31:1 against the surface. The colour stays as the chip's
- fill and border, where it carries the tier perfectly well; the word
- takes the surface's own ink so it is actually readable. */}
- <span
- className="rounded-site-sm border px-2 py-0.5 text-xs font-semibold text-site-text"
- style={{
- background: `${TIER_COLORS[a.tier]}2e`,
- borderColor: `${TIER_COLORS[a.tier]}99`,
- }}
- >
- {a.tier}
- </span>
+ <AchievementMedal tier={a.tier} />
  </div>
  <p className="mt-1 text-xs text-site-text-muted">{a.description}</p>
  {incremental && (

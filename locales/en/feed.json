@@ -257,7 +257,6 @@
   "copy-embed-code": "Copy embed code",
   "copy-invite-link": "Copy invite link",
   "copy-link": "Copy link",
-  "copy-profile-link": "Copy profile link",
   "correct-answer": "Correct! It's\"{{title}}\"",
   "could-not-create": "Could not create",
   "could-not-delete": "Could not delete",
@@ -1865,5 +1864,14 @@
   "shop-site-theme-removed": "Back to your edition",
   "shop-site-theme-applied": "Theme applied",
   "shop-site-theme-remove": "Remove theme",
-  "shop-site-theme-apply": "Apply theme"
+  "shop-site-theme-apply": "Apply theme",
+  "presence-online": "Online",
+  "presence-in-game": "In a game",
+  "presence-away": "Away · active {{minutes}} min ago",
+  "presence-offline": "Offline",
+  "copy-profile-link-short": "Copy link",
+  "achievement-tier-bronze": "Bronze",
+  "achievement-tier-silver": "Silver",
+  "achievement-tier-gold": "Gold",
+  "achievement-tier-platinum": "Platinum"
 }
