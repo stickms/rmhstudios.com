@@ -1,8 +1,9 @@
-import { lazy, useState } from 'react';
+import { lazy, useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { TriangleAlert, Users } from 'lucide-react';
 import { useDiscordSdk, type DiscordContext } from '@/lib/discord-sdk';
+import { fetchChannelLaunch } from '@/lib/rmhvibe/vibe-activity-client';
 import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
 import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -209,9 +210,40 @@ function DiscordGatewayPage() {
   const { t } = useTranslation('r-discord');
   const discord = useDiscordSdk();
   const [gameId, setGameId] = useState<ActivityGameId | null>(null);
-  const arrival = useArrival(discord.status !== 'loading');
+  const channelId = discord.status === 'ready' ? discord.context.channelId : null;
+  // A bot "Play in Discord" button cannot pass a path to the Activity (Discord's
+  // LaunchActivity response carries none), so the bot records the launch per
+  // voice channel. Once connected, open RMH Vibes straight away if this channel
+  // has a recent one; VibeDiscordActivity then selects the vibe itself. Until
+  // the check answers, the connecting screen stays up so the picker never
+  // flashes. A failed check just shows the picker.
+  const [launchChecked, setLaunchChecked] = useState(false);
+  useEffect(() => {
+    if (discord.status === 'error') {
+      setLaunchChecked(true);
+      return;
+    }
+    if (discord.status !== 'ready' || launchChecked) return;
+    if (!channelId) {
+      setLaunchChecked(true);
+      return;
+    }
+    let cancelled = false;
+    fetchChannelLaunch(channelId)
+      .then((slug) => {
+        if (!cancelled && slug) setGameId((current) => current ?? 'vibes');
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLaunchChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [discord.status, channelId, launchChecked]);
+  const arrival = useArrival(discord.status !== 'loading' && launchChecked);
 
-  if (discord.status === 'loading') {
+  if (discord.status === 'loading' || (discord.status === 'ready' && !launchChecked)) {
     return (
       <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center">
         <div className="text-center">
