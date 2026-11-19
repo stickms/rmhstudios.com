@@ -448,7 +448,12 @@ export function buildHistoryWhere(
   return where;
 }
 
-/** Bookmark rows. */
+/**
+ * Bookmarked posts. A bookmark is a `SavedItem` with entityType 'rmhark' (the
+ * old `rmheet_bookmark` table was folded in by migration 20260803210000 and
+ * then dropped), so the predicate pins the entity type: clearing bookmarks must
+ * never reach a saved song, video or document.
+ */
 export function buildBookmarkWhere(
   userId: string,
   filter: BulkFilter,
@@ -457,6 +462,8 @@ export function buildBookmarkWhere(
   const where: WhereShape =
     {
       userId,
+      entityType:
+        'rmhark',
     };
   const before =
     createdBefore(

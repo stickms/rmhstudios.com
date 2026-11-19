@@ -69,6 +69,26 @@ export async function loadBoundedReactionSummaries(
 }
 
 /**
+ * Which of these posts the viewer has bookmarked, in one bounded query. A
+ * bookmark is a `SavedItem` with entityType 'rmhark' (migration 20260803210000
+ * folded the old per-post bookmark table in), and that table is polymorphic, so
+ * there is no relation to `include` on the post row: the bit is looked up for
+ * the whole page and attached after the query, like the reaction summaries.
+ */
+export async function loadBookmarkedPostIds(
+  postIds: string[],
+  viewerId: string | null,
+): Promise<Set<string>> {
+  const ids = [...new Set(postIds)];
+  if (!viewerId || ids.length === 0) return new Set();
+  const rows = await prisma.savedItem.findMany({
+    where: { userId: viewerId, entityType: 'rmhark', entityId: { in: ids } },
+    select: { entityId: true },
+  });
+  return new Set(rows.map((r) => r.entityId));
+}
+
+/**
  * Map a page of rmhark rows (fetched with rmharkIncludeLite — no reactions
  * include) to FeedItems, attaching bounded reaction summaries loaded in two
  * aggregate queries for the whole page instead of per-post reaction fan-outs.
@@ -77,14 +97,15 @@ export async function mapRmharksWithBoundedReactions(
   rows: { id: string }[],
   viewerId: string | null,
 ): Promise<FeedItem[]> {
-  const [summaries, blocked] = await Promise.all([
-    loadBoundedReactionSummaries(
-      rows.map((r) => r.id),
-      viewerId,
-    ),
+  const ids = rows.map((r) => r.id);
+  const [summaries, blocked, bookmarked] = await Promise.all([
+    loadBoundedReactionSummaries(ids, viewerId),
     getBlockedAuthorIds(viewerId),
+    loadBookmarkedPostIds(ids, viewerId),
   ]);
-  return rows.map((r) => mapRmharkToFeedItem(r, viewerId, summaries.get(r.id) ?? [], blocked));
+  return rows.map((r) =>
+    mapRmharkToFeedItem(r, viewerId, summaries.get(r.id) ?? [], blocked, bookmarked),
+  );
 }
 
 /**
@@ -128,7 +149,6 @@ export function rmharkInclude(viewerId: string | null) {
       ? {
           likes: { where: { userId: viewerId }, select: { id: true } },
           reposts: { where: { userId: viewerId }, select: { id: true } },
-          bookmarks: { where: { userId: viewerId }, select: { id: true } },
           unlocks: { where: { userId: viewerId }, select: { id: true } },
         }
       : {}),
@@ -179,6 +199,8 @@ export function mapRmharkToFeedItem(
   reactionsOverride?: ReactionSummary[],
   /** The viewer's block set; quote cards of a blocked author's post are withheld. */
   blockedAuthorIds: readonly string[] = [],
+  /** Post ids the viewer has bookmarked (`loadBookmarkedPostIds`). */
+  bookmarkedIds: ReadonlySet<string> = new Set(),
 ): FeedItem {
   const item: FeedItem = {
     id: r.id,
@@ -192,7 +214,7 @@ export function mapRmharkToFeedItem(
     viewCount: r.viewCount,
     liked: viewerId ? r.likes?.length > 0 : false,
     reposted: viewerId ? r.reposts?.length > 0 : false,
-    bookmarked: viewerId ? r.bookmarks?.length > 0 : false,
+    bookmarked: viewerId ? bookmarkedIds.has(r.id) : false,
     edited: !!r.editedAt,
     original: r.original
       ? mapQuotedOriginal(r.original, resolveUser(r.original.user), viewerId, blockedAuthorIds)

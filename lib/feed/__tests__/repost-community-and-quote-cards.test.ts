@@ -64,6 +64,13 @@ const db =
               async () => [],
             ),
         },
+      savedItem:
+        {
+          findMany:
+            vi.fn(
+              async () => [],
+            ),
+        },
       userProfile:
         {
           findUnique:
@@ -296,8 +303,6 @@ function post(
     likes:
       [],
     reposts:
-      [],
-    bookmarks:
       [],
     unlocks:
       [],

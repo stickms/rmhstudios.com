@@ -123,8 +123,7 @@ model User {
   notifications     Notification[] @relation("UserNotifications")
   notificationsSent Notification[] @relation("UserNotificationActor")
 
-  // Engagement: bookmarks, achievements, daily streak
-  bookmarks    RMHarkBookmark[]
+  // Engagement: achievements, daily streak (bookmarks are `SavedItem` rows)
   achievements UserAchievement[]
   dailyStreak  DailyStreak?
   postUnlocks  PostUnlock[]

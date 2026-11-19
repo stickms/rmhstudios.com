@@ -695,6 +695,8 @@ describe('the non-post predicates', () => {
       {
         userId:
           ME,
+        entityType:
+          'rmhark',
         createdAt:
           {
             lt: new Date(

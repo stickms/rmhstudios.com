@@ -329,9 +329,9 @@ model SavedItem {
   @@unique([userId, entityType, entityId])
   @@index([userId, folderId, createdAt(sort: Desc)])
   // Reverse lookup: "how many people saved this?" — the insights panel counts
-  // saves per post. `RMHarkBookmark` carried an equivalent `@@index([rmheetId])`
-  // and this table inherited its rows without inheriting the index, which would
-  // have turned that count into a full scan of every save on the site.
+  // saves per post. The old post-bookmark table (folded in by 20260803210000,
+  // dropped by 20261119200000) carried an equivalent index; without this one
+  // that count would be a full scan of every save on the site.
   @@index([entityType, entityId])
   @@map("saved_item")
 }

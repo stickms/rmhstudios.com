@@ -27,7 +27,6 @@ model RMHark {
   reposts   RMHarkRepost[]
   media     Media[]
   poll      RMHarkPoll?
-  bookmarks RMHarkBookmark[]
 
   // Paid unlock: coins required to view content (null/0 = free)
   unlockPrice Int?
@@ -384,27 +383,6 @@ model PostHashtag {
   @@index([hashtagId, createdAt(sort: Desc), rmheetId(sort: Desc)])
   @@index([rmheetId])
   @@map("post_hashtag")
-}
-
-// ─── Bookmarks ────────────────────────────────────────────────────────────
-/// DEPRECATED — folded into `SavedItem` (entityType 'rmhark') by migration
-/// 20260803210000. Nothing reads or writes this table; the rows are kept for one
-/// deploy so the change is reversible without a restore, then the table and this
-/// model should be dropped. Do not add callers.
-model RMHarkBookmark {
-  id        String   @id @default(cuid())
-  userId    String
-  rmheetId  String
-  createdAt DateTime @default(now())
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, rmheetId])
-  @@index([userId, createdAt(sort: Desc)])
-  // Reverse lookup: a post's bookmark rows (bookmark toggle / count by post).
-  @@index([rmheetId])
-  @@map("rmheet_bookmark")
 }
 
 // ─── Admin Feed Announcements ─────────────────────────────────────────────
