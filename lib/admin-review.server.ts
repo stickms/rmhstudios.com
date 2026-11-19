@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { countPendingPacks } from '@/lib/emoji/packs.server';
+import { countHeldCosmetics } from '@/lib/listings/listings.server';
 
 export interface AdminReviewCounts {
   /** Open moderation reports awaiting a decision. */
@@ -28,7 +29,7 @@ export async function getAdminReviewCounts(): Promise<AdminReviewCounts> {
     prisma.redemptionRequest.count({ where: { status: 'PENDING' } }),
     prisma.userStrike.count({ where: { appealStatus: 'PENDING' } }),
     countPendingPacks(),
-    prisma.marketListing.count({ where: { status: 'HELD' } }),
+    countHeldCosmetics(),
   ]);
   return {
     reports,

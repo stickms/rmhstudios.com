@@ -1,5 +1,10 @@
 /**
- * The trading-card market: list, buy, cancel, browse. Real coin movement and card
+ * The trading-card market: list, buy, cancel, browse, and the buy orders that
+ * fill against listings. The CARD kind of `Listing` (see
+ * `lib/listings/listings.server.ts`); was `lib/cards/market.server.ts` over
+ * `CardListing`, and moved here unchanged in what it debits, credits and writes
+ * to the ledger. Buy orders stay their own table (`CardBuyOrder`): they are
+ * bids, not things for sale. Real coin movement and card
  * transfer, so the invariants (docs/superpowers/specs/2026-10-30-card-market-design.md):
  *
  *  1. A card is in exactly one place: a stack, one ACTIVE listing (escrow), or the
@@ -13,6 +18,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { cardFields, claimListing, closeListing } from '@/lib/listings/listings.server';
 import { InsufficientFundsError, transferCoins, getBalance } from '@/lib/economy/ledger.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { isTrackableTitle } from '@/lib/games/route-match';
@@ -98,8 +104,9 @@ export async function listCard(input: CardRef & { sellerId: string; priceCoins: 
     throw new MarketError('LEVEL_TOO_LOW', `You must be level ${MIN_SELLER_LEVEL}+ to sell`, 403);
   }
 
-  const recent = await prisma.cardListing.findMany({
+  const recent = await prisma.listing.findMany({
     where: {
+      kind: 'CARD',
       gameId: input.gameId,
       cardIndex: input.cardIndex,
       foil: input.foil,
@@ -127,7 +134,7 @@ export async function listCard(input: CardRef & { sellerId: string; priceCoins: 
     });
     if (!stack) throw new MarketError('NOT_OWNED', "You don't hold that card");
 
-    const active = await tx.cardListing.count({ where: { sellerId, status: 'ACTIVE' } });
+    const active = await tx.listing.count({ where: { sellerId, kind: 'CARD', status: 'ACTIVE' } });
     if (active >= MAX_CARD_LISTINGS) {
       throw new MarketError('TOO_MANY_LISTINGS', `You can have at most ${MAX_CARD_LISTINGS} active listings`);
     }
@@ -136,8 +143,9 @@ export async function listCard(input: CardRef & { sellerId: string; priceCoins: 
     if (stack.count === 1) await tx.userCard.delete({ where: stackKey(sellerId, input) });
     else await tx.userCard.update({ where: stackKey(sellerId, input), data: { count: { decrement: 1 } } });
 
-    return tx.cardListing.create({
+    return tx.listing.create({
       data: {
+        kind: 'CARD',
         sellerId,
         gameId: input.gameId,
         cardIndex: input.cardIndex,
@@ -149,7 +157,7 @@ export async function listCard(input: CardRef & { sellerId: string; priceCoins: 
   // After the commit: an open bid that reaches this price buys it straight away. The
   // listing already exists, so a failure here only means it waits for a buyer.
   try {
-    await matchBidsForListing(listing);
+    await matchBidsForListing({ ...listing, ...cardFields(listing) });
   } catch (err) {
     console.error('[card-market] bid matching failed:', err);
   }
@@ -179,8 +187,9 @@ async function settleSale(
   listingId: string,
   maxPrice?: number,
 ): Promise<Settled> {
-  const listing = await tx.cardListing.findUnique({ where: { id: listingId } });
-  if (!listing) throw new MarketError('NOT_FOUND', 'Listing not found', 404);
+  const row = await tx.listing.findUnique({ where: { id: listingId, kind: 'CARD' } });
+  if (!row) throw new MarketError('NOT_FOUND', 'Listing not found', 404);
+  const listing = { ...row, ...cardFields(row) };
   if (listing.status !== 'ACTIVE') {
     throw new MarketError('NOT_AVAILABLE', 'This listing is no longer available', 409);
   }
@@ -190,11 +199,8 @@ async function settleSale(
   }
 
   // The double-buy guard: a concurrent buyer that already flipped the status sees 0.
-  const claim = await tx.cardListing.updateMany({
-    where: { id: listingId, status: 'ACTIVE' },
-    data: { status: 'SOLD', buyerId, closedAt: new Date() },
-  });
-  if (claim.count === 0) throw new MarketError('NOT_AVAILABLE', 'This listing was just purchased', 409);
+  const claimed = await claimListing(tx, { id: listingId, kind: 'CARD', buyerId });
+  if (!claimed) throw new MarketError('NOT_AVAILABLE', 'This listing was just purchased', 409);
 
   const { fee, proceeds } = marketFee(listing.priceCoins);
   try {
@@ -331,8 +337,9 @@ export async function placeBuyOrder(
   }
 
   // Fill straight away against the cheapest listing at or under the bid.
-  const listings = await prisma.cardListing.findMany({
+  const listings = await prisma.listing.findMany({
     where: {
+      kind: 'CARD',
       gameId: input.gameId,
       cardIndex: input.cardIndex,
       foil: input.foil,
@@ -395,15 +402,13 @@ export async function cancelCard({
 }): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await lockCards(tx, sellerId);
-    const claim = await tx.cardListing.updateMany({
-      where: { id: listingId, sellerId, status: 'ACTIVE' },
-      data: { status: 'CANCELED', closedAt: new Date() },
-    });
-    if (claim.count === 0) {
+    const closed = await closeListing(tx, 'CARD', { id: listingId, sellerId, status: 'ACTIVE' });
+    if (!closed) {
       throw new MarketError('NOT_AVAILABLE', 'That listing can no longer be canceled', 409);
     }
-    const listing = await tx.cardListing.findUnique({ where: { id: listingId } });
-    if (!listing) throw new MarketError('NOT_FOUND', 'Listing not found', 404);
+    const row = await tx.listing.findUnique({ where: { id: listingId, kind: 'CARD' } });
+    if (!row) throw new MarketError('NOT_FOUND', 'Listing not found', 404);
+    const listing = cardFields(row);
     await tx.userCard.upsert({
       where: stackKey(sellerId, listing),
       create: { userId: sellerId, gameId: listing.gameId, cardIndex: listing.cardIndex, foil: listing.foil, count: 1 },
@@ -415,8 +420,8 @@ export async function cancelCard({
 /** Everything on sale, grouped per card, plus the viewer's own listings. */
 export async function getMarket(viewerId: string | null, gameId?: string): Promise<MarketData> {
   const titles = new Map(listCuratedBuilds().map((b) => [b.id, b]));
-  const rows = await prisma.cardListing.findMany({
-    where: { status: 'ACTIVE', ...(gameId ? { gameId } : {}) },
+  const rows = await prisma.listing.findMany({
+    where: { kind: 'CARD', status: 'ACTIVE', ...(gameId ? { gameId } : {}) },
     orderBy: [{ priceCoins: 'asc' }, { createdAt: 'asc' }],
     take: BROWSE_LIMIT,
     select: {
@@ -432,7 +437,8 @@ export async function getMarket(viewerId: string | null, gameId?: string): Promi
 
   const groups = new Map<string, MarketGroup>();
   const mine: MyListing[] = [];
-  for (const r of rows) {
+  for (const row of rows) {
+    const r = { ...row, ...cardFields(row) };
     const title = titles.get(r.gameId);
     if (!title) continue;
     if (viewerId && r.sellerId === viewerId) {
@@ -483,8 +489,8 @@ export async function getCardMarket(viewerId: string | null, card: CardRef): Pro
   const since = new Date(Date.now() - THIRTY_DAYS_MS);
 
   const [listings, orders, sold, myOrder, held] = await Promise.all([
-    prisma.cardListing.findMany({
-      where: { ...key, status: 'ACTIVE' },
+    prisma.listing.findMany({
+      where: { kind: 'CARD', ...key, status: 'ACTIVE' },
       orderBy: [{ priceCoins: 'asc' }, { createdAt: 'asc' }],
       take: 20,
       select: { id: true, sellerId: true, priceCoins: true },
@@ -495,8 +501,8 @@ export async function getCardMarket(viewerId: string | null, card: CardRef): Pro
       take: 10,
       select: { buyerId: true, priceCoins: true },
     }),
-    prisma.cardListing.findMany({
-      where: { ...key, status: 'SOLD', closedAt: { gte: since } },
+    prisma.listing.findMany({
+      where: { kind: 'CARD', ...key, status: 'SOLD', closedAt: { gte: since } },
       select: { priceCoins: true, closedAt: true },
       take: 2000,
     }),

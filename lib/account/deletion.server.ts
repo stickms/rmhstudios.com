@@ -35,6 +35,7 @@ import {
   isDeletedAccount,
 } from '@/lib/account-lifecycle';
 import { DELETED_USER_ID } from '@/lib/account/deleted-user';
+import { deleteActiveCardListingsOf } from '@/lib/listings/listings.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -246,7 +247,7 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.gameBadge.deleteMany({ where: { userId } }),
     // Their live market listings (the escrowed card goes with the rest of the inventory);
     // finished sales stay as anonymous price history.
-    prisma.cardListing.deleteMany({ where: { sellerId: userId, status: 'ACTIVE' } }),
+    deleteActiveCardListingsOf(userId),
     // Gems and their entries.
     prisma.gemEntry.deleteMany({ where: { userId } }),
     prisma.userGems.deleteMany({ where: { userId } }),

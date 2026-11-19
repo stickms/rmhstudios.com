@@ -12,6 +12,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { exportVibeData } from '@/lib/rmhvibe/account-data.server';
 import { exportMusicData } from '@/lib/rmhmusic/learn/account-data.server';
+import { cardListingsForExport } from '@/lib/listings/listings.server';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -215,11 +216,7 @@ export const route = apiRoute('/api/account/export', {
         prisma.cardDrop.findMany({ where: { userId }, take: CAP }),
         prisma.gameBadge.findMany({ where: { userId }, take: CAP }),
         // Card market listings as seller or buyer.
-        prisma.cardListing.findMany({
-          where: { OR: [{ sellerId: userId }, { buyerId: userId }] },
-          take: CAP,
-          orderBy: { createdAt: 'desc' },
-        }),
+        cardListingsForExport(userId, CAP),
         // Card trade offers sent or received, with their items.
         prisma.cardTrade.findMany({
           where: { OR: [{ fromId: userId }, { toId: userId }] },

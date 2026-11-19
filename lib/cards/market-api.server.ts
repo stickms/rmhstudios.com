@@ -1,4 +1,4 @@
-import { MarketError } from '@/lib/cards/market.server';
+import { MarketError } from '@/lib/listings/card.server';
 
 /** Run a market action and turn a typed refusal into the response the client reads. */
 export async function marketResponse(run: () => Promise<unknown>): Promise<Response> {

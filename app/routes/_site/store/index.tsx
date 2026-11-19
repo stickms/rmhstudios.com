@@ -41,7 +41,7 @@ import { DailyTab } from '@/components/economy-plus/DailyTab';
 import type { TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { getShopData } from '@/lib/shop/list.server';
-import { browse } from '@/lib/market/market.server';
+import { browse } from '@/lib/listings/cosmetic.server';
 import type { MarketListingView } from '@/lib/market/market.contract';
 
 const STORE_TABS = ['membership', 'shop', 'daily', 'market'] as const;

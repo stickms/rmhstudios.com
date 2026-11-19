@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { cancelListingApi } from '@/lib/market/market.contract';
-import { cancelListing, MarketError } from '@/lib/market/market.server';
+import { cancelListing, MarketError } from '@/lib/listings/cosmetic.server';
 
 /**
  * DELETE /api/market/listings/$id — cancel your own active listing (release escrow).

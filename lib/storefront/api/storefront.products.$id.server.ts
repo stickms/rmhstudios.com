@@ -4,7 +4,7 @@ import {
   deleteStorefrontProductApi,
   updateStorefrontProductApi,
 } from '@/lib/storefront/storefront.contract';
-import { prisma } from '@/lib/prisma.server';
+import { deleteProduct, productCreator, updateProduct } from '@/lib/listings/product.server';
 import { z } from 'zod';
 
 const patchSchema = z.object({
@@ -21,40 +21,29 @@ export const route = apiRoute('/api/storefront/products/$id', {
     updateStorefrontProductApi,
     { body: patchSchema, allowEmptyBody: true, verboseValidationErrors: true },
     async ({ params, session, body }) => {
-      const existing = await prisma.storefrontProduct.findUnique({
-        where: { id: params.id },
-        select: { creatorId: true },
-      });
-      if (!existing || existing.creatorId !== session.user.id) {
+      if ((await productCreator(params.id)) !== session.user.id) {
         return Response.json({ error: 'Not found' }, { status: 404 });
       }
 
       const d = body;
 
-      const updated = await prisma.storefrontProduct.update({
-        where: { id: params.id },
-        data: {
-          ...(d.title !== undefined ? { title: d.title.trim() } : {}),
-          ...(d.description !== undefined ? { description: d.description?.trim() || null } : {}),
-          ...(d.price !== undefined ? { price: d.price } : {}),
-          ...(d.deliverable !== undefined ? { deliverable: d.deliverable?.trim() || null } : {}),
-          ...(d.active !== undefined ? { active: d.active } : {}),
-        },
+      const updated = await updateProduct(params.id, {
+        ...(d.title !== undefined ? { title: d.title.trim() } : {}),
+        ...(d.description !== undefined ? { description: d.description?.trim() || null } : {}),
+        ...(d.price !== undefined ? { price: d.price } : {}),
+        ...(d.deliverable !== undefined ? { deliverable: d.deliverable?.trim() || null } : {}),
+        ...(d.active !== undefined ? { active: d.active } : {}),
       });
       return Response.json(updated);
     },
   ),
 
   DELETE: implement(deleteStorefrontProductApi, {}, async ({ params, session }) => {
-    const existing = await prisma.storefrontProduct.findUnique({
-      where: { id: params.id },
-      select: { creatorId: true },
-    });
-    if (!existing || existing.creatorId !== session.user.id) {
+    if ((await productCreator(params.id)) !== session.user.id) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
 
-    await prisma.storefrontProduct.delete({ where: { id: params.id } });
+    await deleteProduct(params.id);
     return Response.json({ success: true });
   }),
 });

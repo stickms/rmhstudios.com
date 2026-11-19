@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { buyCard } from '@/lib/cards/market.server';
+import { buyCard } from '@/lib/listings/card.server';
 import { marketResponse } from '@/lib/cards/market-api.server';
 
 /** POST /api/games/market/buy — buy one listing; the card and the coins move together. */

@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/admin/admin-ops.contract';
-import { listHeldListings } from '@/lib/market/market.server';
+import { listHeldListings } from '@/lib/listings/cosmetic.server';
 
 /**
  * GET /api/admin/market — marketplace listings HELD for anomaly review (a buy

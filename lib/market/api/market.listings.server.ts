@@ -7,7 +7,7 @@ import {
   priceHistory,
   MarketError,
   type BrowseSort,
-} from '@/lib/market/market.server';
+} from '@/lib/listings/cosmetic.server';
 import { watchMarketListing } from '@/lib/discovery/watch.server';
 import { MIN_PRICE, MAX_PRICE } from '@/lib/market/tradable';
 

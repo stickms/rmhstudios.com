@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { buyListingApi } from '@/lib/market/market.contract';
-import { buyListing, MarketError, EscrowError } from '@/lib/market/market.server';
+import { buyListing, MarketError, EscrowError } from '@/lib/listings/cosmetic.server';
 
 /**
  * POST /api/market/listings/$id/buy — buy a listing with coins.

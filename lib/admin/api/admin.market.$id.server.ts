@@ -2,7 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/admin/admin-ops.contract';
-import { resolveHeldListing, MarketError } from '@/lib/market/market.server';
+import { resolveHeldListing, MarketError } from '@/lib/listings/cosmetic.server';
 
 const resolveHeldSchema = z.object({ action: z.enum(['release', 'cancel']) });
 

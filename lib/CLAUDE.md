@@ -248,6 +248,8 @@ module.
   `shop/`,
   `store/`,
   `storefront/`,
+  `listings/`
+  (the one `Listing` model behind the cosmetics market, the card market and storefront products; only it touches those tables),
   `wheel/`,
   `wrapped/`,
   `ranked/`

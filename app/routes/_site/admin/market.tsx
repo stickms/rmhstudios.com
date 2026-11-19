@@ -21,7 +21,7 @@ export const Route = createFileRoute('/_site/admin/market')({
   component: AdminMarketPage,
 });
 
-/** Mirrors `HeldListing` in lib/market/market.server.ts (server-only module). */
+/** Mirrors `HeldListing` in lib/listings/cosmetic.server.ts (server-only module). */
 interface HeldListingRow {
   id: string;
   itemId: string;

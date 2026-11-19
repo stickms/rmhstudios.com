@@ -38,7 +38,7 @@ vi.mock('@/lib/cards/trades.server', () => ({
 }));
 vi.mock('@/lib/cards/cards.server', () => ({ craftBadge: vi.fn() }));
 vi.mock('@/lib/cards/gems.server', () => ({ unpackCards: vi.fn() }));
-vi.mock('@/lib/cards/market.server', () => ({ listCard: vi.fn() }));
+vi.mock('@/lib/listings/card.server', () => ({ listCard: vi.fn() }));
 vi.mock('@/lib/games/hub.server', () => ({
   createThread: vi.fn(),
   HubError: class extends Error {},

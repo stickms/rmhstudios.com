@@ -324,7 +324,7 @@ const prismaMock =
                   );
                 },
             },
-          cardListing:
+          listing:
             {
               count:
                 async ({
@@ -873,7 +873,7 @@ import {
   listCard,
   MarketError,
   placeBuyOrder,
-} from '@/lib/cards/market.server';
+} from '@/lib/listings/card.server';
 
 const SELLER =
   'seller';

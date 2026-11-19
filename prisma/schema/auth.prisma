@@ -346,6 +346,9 @@ model User {
   gameReplays          GameReplay[]
   marketListingsSold   MarketListing[]  @relation("MarketSeller")
   marketListingsBought MarketListing[]  @relation("MarketBuyer")
+  listingsSold         Listing[]        @relation("ListingSeller")
+  listingsBought       Listing[]        @relation("ListingBuyer")
+  listingPurchases     ListingPurchase[] @relation("ListingPurchaseBuyer")
   sharedMoments        SharedMoment[]
   reminders            Reminder[]
   guestbookOwned       GuestbookEntry[] @relation("GuestbookOwner")

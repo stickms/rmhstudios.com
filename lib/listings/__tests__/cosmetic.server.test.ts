@@ -168,7 +168,7 @@ const db: any =
           throw e;
         }
       },
-    marketListing:
+    listing:
       {
         findUnique:
           async ({
@@ -705,7 +705,7 @@ const {
   cancelListing,
   resolveHeldListing,
 } =
-  await import('@/lib/market/market.server');
+  await import('@/lib/listings/cosmetic.server');
 const {
   isTradable,
   marketFee,
@@ -1373,9 +1373,9 @@ describe('buyListing', () => {
     // findUnique reports ACTIVE (stale) but the real row is already SOLD.
     const realFindUnique =
       db
-        .marketListing
+        .listing
         .findUnique;
-    db.marketListing.findUnique =
+    db.listing.findUnique =
       (async ({
         where,
       }: any) => {
@@ -1417,7 +1417,7 @@ describe('buyListing', () => {
         },
       );
     } finally {
-      db.marketListing.findUnique =
+      db.listing.findUnique =
         realFindUnique;
     }
     // No coins moved despite the stale read passing the first guard.
