@@ -1,6 +1,6 @@
 // ─── Direct Messages ──────────────────────────────────────────────
 
-/// DEPRECATED (2026-11-19) — copied into Chat (kind dm) + ChatMember; nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into Chat (kind dm) + ChatMember; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model Conversation {
   id               String   @id @default(cuid())
   participantOneId String
@@ -22,7 +22,7 @@ model Conversation {
   @@map("conversation")
 }
 
-/// DEPRECATED (2026-11-19) — copied into ChatMessage; nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into ChatMessage; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model DirectMessage {
   id              String    @id @default(cuid())
   conversationId  String
@@ -74,7 +74,7 @@ model DirectMessage {
   @@map("direct_message")
 }
 
-/// DEPRECATED (2026-11-19) — copied into ChatMessageReaction; nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into ChatMessageReaction; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model DirectMessageReaction {
   id        String   @id @default(cuid())
   messageId String
@@ -91,7 +91,7 @@ model DirectMessageReaction {
 }
 
 /// A group direct-message thread (#15). Distinct from 1-on-1 Conversations.
-/// DEPRECATED (2026-11-19) — copied into Chat (kind group); nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into Chat (kind group); nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupChat {
   id            String   @id @default(cuid())
   name          String   @db.VarChar(60)
@@ -110,7 +110,7 @@ model GroupChat {
   @@map("group_chat")
 }
 
-/// DEPRECATED (2026-11-19) — copied into ChatMember; nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into ChatMember; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupChatMember {
   id         String   @id @default(cuid())
   groupId    String
@@ -126,7 +126,7 @@ model GroupChatMember {
   @@map("group_chat_member")
 }
 
-/// DEPRECATED (2026-11-19) — copied into ChatMessage; nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into ChatMessage; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupMessage {
   id              String    @id @default(cuid())
   groupId         String
@@ -182,7 +182,7 @@ model GroupMessage {
   @@map("group_message")
 }
 
-/// DEPRECATED (2026-11-19) — copied into ChatMessageReaction; nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into ChatMessageReaction; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupMessageReaction {
   id        String   @id @default(cuid())
   messageId String
@@ -198,7 +198,7 @@ model GroupMessageReaction {
   @@map("group_message_reaction")
 }
 
-/// DEPRECATED (2026-11-19) — copied into ChatPollVote; nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into ChatPollVote; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupPollVote {
   id        String   @id @default(cuid())
   messageId String
@@ -219,7 +219,7 @@ model GroupPollVote {
 // Saved Messages, a chat with yourself); a group chat is kind 'group'. The
 // messages, reactions and poll votes of both live in one table each. Expand
 // step: the old Conversation/GroupChat family above is copied in (same ids) by
-// migration 20261120010000_chat_unify, whose triggers mirror every write the
+// migration 20261120040000_chat_unify, whose triggers mirror every write the
 // previous release makes to the old tables until the contract drops them.
 // The header of that migration is the design note.
 
@@ -253,7 +253,7 @@ model Chat {
 
 /// A person in a chat. Deleting either participant's account deletes a DM
 /// outright, as the old Conversation cascade did (trigger
-/// "chat_member_dm_cascade", migration 20261120010000_chat_unify).
+/// "chat_member_dm_cascade", migration 20261120040000_chat_unify).
 model ChatMember {
   id         String   @id @default(cuid())
   chatId     String
@@ -865,7 +865,7 @@ model ChatPin {
 
 /// P04 (/poll in a DM) — a vote on a `kind = "poll"` direct message. Group chats
 /// keep using GroupPollVote.
-/// DEPRECATED (2026-11-19) — copied into ChatPollVote; nothing reads or writes this (the migration 20261120010000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
+/// DEPRECATED (2026-11-19) — copied into ChatPollVote; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model DirectPollVote {
   id        String   @id @default(cuid())
   messageId String

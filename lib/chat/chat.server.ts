@@ -5,7 +5,7 @@
  * `ChatMember` rows; their messages, reactions and poll votes live in one table
  * each (`ChatMessage`, `ChatMessageReaction`, `ChatPollVote`). The old
  * Conversation/GroupChat family is copied in and mirrored by migration
- * 20261120010000_chat_unify and is not read or written any more.
+ * 20261120040000_chat_unify and is not read or written any more.
  *
  * The one rule this module exists to hold: **every lookup names the kind.** A
  * DM id and a group id are the same shape and live in the same table, so a
