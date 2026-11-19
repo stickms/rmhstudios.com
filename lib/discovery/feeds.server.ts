@@ -1,20 +1,28 @@
 /**
- * A4 · Custom feeds. A feed is tags + people + keywords. Each source is read
- * through an existing index (post_hashtag, rmheet(userId, createdAt), and a
- * 14-day window for keywords), merged on the same (createdAt, id) keyset, and
- * only then hydrated — so paging is exact and no source scans the posts table.
+ * A4 · Custom feeds — the /feeds surface over the one Feed model
+ * (`CustomFeed`, `lib/feeds/kinds.ts`). A custom feed is tags + people +
+ * keywords; lists, saved searches and keyword alerts are Feeds of other kinds
+ * and are read here too (`getFeedView` serves `/feeds/$id` for every kind).
+ * The post reader itself is `readFeedPage` in `lib/feeds/feeds.server.ts`,
+ * shared with the list timeline.
  */
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import {
+  feedMemberIds,
+  readFeedPage,
+  readableByOthers,
+  setFeedPeople,
+  toFeedSource,
+} from '@/lib/feeds/feeds.server';
+import type { FeedKind } from '@/lib/feeds/kinds';
 import { getMutedWords, applyMutedWords } from '@/lib/feed/timeline';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { FeedItem } from '@/lib/feed-types';
 import { MAX_FEEDS_PER_USER, type CustomFeedInput } from './schema';
 
 const PAGE = 20;
-const KEYWORD_WINDOW_MS = 14 * 86_400_000;
 
 type Fail = { ok: false; status: number; error: string };
 const fail = (status: number, error: string): Fail => ({ ok: false, status, error });
@@ -22,17 +30,23 @@ const fail = (status: number, error: string): Fail => ({ ok: false, status, erro
 const feedSelect = {
   id: true,
   ownerId: true,
+  kind: true,
   name: true,
   description: true,
   tags: true,
-  authorIds: true,
   keywords: true,
+  query: true,
   isPublic: true,
+  visibility: true,
   subscriberCount: true,
+  _count: { select: { members: true } },
 } as const;
 
 export interface FeedSummary {
   id: string;
+  kind: FeedKind;
+  /** A saved search's query or a keyword alert's terms; null for other kinds. */
+  query: string | null;
   name: string;
   description: string | null;
   tags: string[];
@@ -51,11 +65,13 @@ function summary(
 ): FeedSummary {
   return {
     id: f.id,
+    kind: f.kind as FeedKind,
+    query: f.query,
     name: f.name,
     description: f.description,
-    tags: f.tags,
-    keywords: f.keywords,
-    peopleCount: f.authorIds.length,
+    tags: f.tags ?? [],
+    keywords: f.keywords ?? [],
+    peopleCount: f._count.members,
     isPublic: f.isPublic,
     subscriberCount: f.subscriberCount,
     isOwner: f.ownerId === viewerId,
@@ -66,7 +82,7 @@ function summary(
 export async function listFeeds(userId: string) {
   const [mine, subs, popular] = await Promise.all([
     prisma.customFeed.findMany({
-      where: { ownerId: userId },
+      where: { ownerId: userId, kind: 'feed' },
       orderBy: { createdAt: 'desc' },
       take: MAX_FEEDS_PER_USER,
       select: feedSelect,
@@ -118,21 +134,28 @@ async function normalize(input: CustomFeedInput) {
       name: input.name,
       description: input.description || null,
       tags: [...new Set(input.tags)],
-      authorIds,
       keywords: [...new Set(input.keywords.map((k) => k.toLowerCase()))],
       isPublic: input.isPublic,
+      visibility: input.isPublic ? ('PUBLIC' as const) : ('PRIVATE' as const),
     },
+    people: authorIds,
   };
 }
 
 export async function createFeed(userId: string, input: CustomFeedInput) {
   const n = await normalize(input);
   if (!n.ok) return n;
-  if ((await prisma.customFeed.count({ where: { ownerId: userId } })) >= MAX_FEEDS_PER_USER) {
+  const count = await prisma.customFeed.count({ where: { ownerId: userId, kind: 'feed' } });
+  if (count >= MAX_FEEDS_PER_USER) {
     return fail(409, `You can have at most ${MAX_FEEDS_PER_USER} feeds`);
   }
-  const f = await prisma.customFeed.create({
-    data: { ownerId: userId, ...n.data },
+  const created = await prisma.customFeed.create({
+    data: { ownerId: userId, kind: 'feed', ...n.data, authorIds: n.people },
+    select: { id: true },
+  });
+  if (n.people.length) await setFeedPeople(created.id, n.people);
+  const f = await prisma.customFeed.findUniqueOrThrow({
+    where: { id: created.id },
     select: feedSelect,
   });
   return { ok: true as const, feed: summary(f, userId, false) };
@@ -141,8 +164,14 @@ export async function createFeed(userId: string, input: CustomFeedInput) {
 export async function updateFeed(userId: string, id: string, input: CustomFeedInput) {
   const n = await normalize(input);
   if (!n.ok) return n;
-  const res = await prisma.customFeed.updateMany({ where: { id, ownerId: userId }, data: n.data });
-  return res.count ? { ok: true as const } : fail(404, 'Not found');
+  // Only a custom feed is edited by this form; the other kinds have their own.
+  const res = await prisma.customFeed.updateMany({
+    where: { id, ownerId: userId, kind: 'feed' },
+    data: n.data,
+  });
+  if (!res.count) return fail(404, 'Not found');
+  await setFeedPeople(id, n.people);
+  return { ok: true as const };
 }
 
 export async function deleteFeed(userId: string, id: string) {
@@ -155,6 +184,7 @@ export async function setSubscribed(userId: string, id: string, on: boolean) {
     where: { id },
     select: { ownerId: true, isPublic: true },
   });
+  // Subscribing is to published feeds only; a link-shared one is read, not followed.
   if (!feed || !feed.isPublic || feed.ownerId === userId) return fail(404, 'Not found');
   await prisma.$transaction(async (tx) => {
     if (on) {
@@ -173,85 +203,17 @@ export async function setSubscribed(userId: string, id: string, on: boolean) {
   return { ok: true as const };
 }
 
-function parseCursor(cursor?: string): { at: Date; id: string } | null {
-  const [iso, id] = (cursor ?? '').split('|');
-  const at = iso ? new Date(iso) : null;
-  return at && !Number.isNaN(at.getTime()) && id ? { at, id } : null;
-}
-
 export async function getFeedView(feedId: string, viewerId: string | null, cursor?: string) {
   const feed = await prisma.customFeed.findUnique({
     where: { id: feedId },
     select: { ...feedSelect, owner: { select: userDisplaySelect } },
   });
-  if (!feed || (!feed.isPublic && feed.ownerId !== viewerId)) return null;
+  if (!feed || (feed.ownerId !== viewerId && !readableByOthers(feed))) return null;
 
-  const hidden = await getHiddenAuthorIds(viewerId);
-  const cur = parseCursor(cursor);
-  const base: Prisma.RMHarkWhereInput = {
-    deletedAt: null,
-    audience: 'PUBLIC',
-    communityId: null,
-    ...(hidden.length ? { userId: { notIn: hidden } } : {}),
-    ...(cur
-      ? { OR: [{ createdAt: { lt: cur.at } }, { createdAt: cur.at, id: { lt: cur.id } }] }
-      : {}),
-  };
-  const sel = { id: true, createdAt: true } as const;
-  const order = [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
-  const take = PAGE + 1;
-  const reads: Promise<{ id: string; createdAt: Date }[]>[] = [];
-  if (feed.tags.length) {
-    reads.push(
-      prisma.rMHark.findMany({
-        where: { ...base, hashtags: { some: { hashtag: { tag: { in: feed.tags } } } } },
-        orderBy: order,
-        take,
-        select: sel,
-      }),
-    );
-  }
-  if (feed.authorIds.length) {
-    const allowed = feed.authorIds.filter((a) => !hidden.includes(a));
-    if (allowed.length)
-      reads.push(
-        prisma.rMHark.findMany({
-          where: { ...base, userId: { in: allowed } },
-          orderBy: order,
-          take,
-          select: sel,
-        }),
-      );
-  }
-  if (feed.keywords.length) {
-    const recent = { createdAt: { gte: new Date(Date.now() - KEYWORD_WINDOW_MS) } };
-    reads.push(
-      prisma.rMHark.findMany({
-        where: {
-          AND: [
-            base,
-            recent,
-            {
-              OR: feed.keywords.map((k) => ({
-                content: { contains: k, mode: 'insensitive' as const },
-              })),
-            },
-          ],
-        },
-        orderBy: order,
-        take,
-        select: sel,
-      }),
-    );
-  }
-  const merged = new Map<string, { id: string; createdAt: Date }>();
-  for (const r of (await Promise.all(reads)).flat()) merged.set(r.id, r);
-  const ordered = [...merged.values()].sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : -1),
-  );
-  const page = ordered.slice(0, PAGE);
-  const last = page[page.length - 1];
-
+  const { page, nextCursor } = await readFeedPage(toFeedSource(feed), viewerId, {
+    cursor,
+    pageSize: PAGE,
+  });
   const rows = page.length
     ? await prisma.rMHark.findMany({
         where: { id: { in: page.map((p) => p.id) } },
@@ -273,24 +235,22 @@ export async function getFeedView(feedId: string, viewerId: string | null, curso
       }))
     : false;
   // Owners get their people back as @handles so the edit form round-trips them.
-  const people =
-    viewerId === feed.ownerId && feed.authorIds.length
-      ? (
-          await prisma.user.findMany({
-            where: { id: { in: feed.authorIds } },
-            select: { id: true, handle: true },
-          })
-        ).map((u) => (u.handle ? `@${u.handle}` : u.id))
-      : [];
+  const memberIds = viewerId === feed.ownerId ? await feedMemberIds(feedId) : [];
+  const people = memberIds.length
+    ? (
+        await prisma.user.findMany({
+          where: { id: { in: memberIds } },
+          select: { id: true, handle: true },
+        })
+      ).map((u) => (u.handle ? `@${u.handle}` : u.id))
+    : [];
   return {
     feed: {
       ...summary(feed, viewerId, subscribed),
-      tags: feed.tags,
-      keywords: feed.keywords,
       people,
       owner: resolveUser(feed.owner),
     },
     items,
-    nextCursor: ordered.length > PAGE && last ? `${last.createdAt.toISOString()}|${last.id}` : null,
+    nextCursor,
   };
 }

@@ -13,6 +13,11 @@
  * the page for its owner, with no way to fix it from the UI. Dropping the
  * unknown key degrades the view to "mostly what you saved", which is what a
  * person would want.
+ *
+ * Persistence: the `SavedSearch`-backed store (`saved-view.server.ts`) was
+ * never called by any surface and was deleted on 2026-11-19, when saved
+ * searches became Feeds (`lib/feeds/kinds.ts`). A surface that adopts saved
+ * views stores them anew; these schemas are what it validates with.
  */
 
 import { z } from 'zod';

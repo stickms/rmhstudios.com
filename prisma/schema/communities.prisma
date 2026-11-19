@@ -219,6 +219,8 @@ enum ListVisibility {
   PUBLIC
 }
 
+/// DEPRECATED (2026-11-19) — copied into CustomFeed (kind 'list'); nothing reads or
+/// writes this; drop next release (contract). Do not add callers.
 model UserList {
   id         String         @id @default(cuid())
   ownerId    String
@@ -235,6 +237,8 @@ model UserList {
   @@map("user_list")
 }
 
+/// DEPRECATED (2026-11-19) — copied into CustomFeedMember; nothing reads or writes
+/// this; drop next release (contract). Do not add callers.
 model UserListMember {
   listId  String
   userId  String

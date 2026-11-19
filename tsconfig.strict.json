@@ -43,7 +43,8 @@
     "lib/rmhmusic/learn/songs/*.ts",
     "lib/rmhmusic/learn/voice/*.ts",
     "lib/rmhmusic/learn/social/*.ts",
-    "lib/music-social/*.ts"
+    "lib/music-social/*.ts",
+    "lib/feeds/*.ts"
   ],
   "exclude": [
     "node_modules",

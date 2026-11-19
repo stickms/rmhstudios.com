@@ -30,8 +30,15 @@ import {
 } from '@/lib/settings/prefs.queries';
 import { cn } from '@/lib/utils';
 
-/** A6 keyword alerts and the A5 "On this day" opt-in, on the notification settings page. */
-export function DiscoverySettings() {
+/**
+ * A6 keyword alerts and the A5 "On this day" opt-in, on the notification settings page.
+ * The Alerts tab of /feeds shows the alerts half alone (`only="alerts"`): an alert is a Feed.
+ */
+export function DiscoverySettings({
+  only,
+}: {
+  only?: 'alerts';
+} = {}) {
   const {
     t,
   } =
@@ -53,9 +60,12 @@ export function DiscoverySettings() {
   const {
     data: memoriesData,
   } =
-    useQuery(
-      memoriesKey,
-    );
+    useQuery({
+      ...memoriesKey,
+      enabled:
+        only !==
+        'alerts',
+    });
   const alerts:
     | Alert[]
     | null =
@@ -417,6 +427,7 @@ export function DiscoverySettings() {
           )}
       </SettingsSection>
 
+      {only === 'alerts' ? null : (
       <SettingsSection
         title={t(
           'memories-title',
@@ -458,6 +469,7 @@ export function DiscoverySettings() {
           />
         }
       />
+      )}
     </>
   );
 }

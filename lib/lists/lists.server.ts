@@ -1,12 +1,17 @@
 /**
- * Lists & custom feeds — server logic (§3). List CRUD, membership, and a
- * lightweight list timeline (posts from the list's members, honoring audience).
- * The full PostCard-rendered timeline + pinned home tabs are the adoption
- * follow-up; this delivers the create->read vertical.
+ * Lists — server logic (§3). A list is a Feed of kind 'list' (`CustomFeed`,
+ * `lib/feeds/kinds.ts`) whose people are its `CustomFeedMember` rows. List
+ * CRUD, membership, and a lightweight list timeline, paged by the same
+ * `readFeedPage` every feed uses (posts from the members, honoring audience,
+ * blocks and mutes).
  */
 import { prisma } from '@/lib/prisma.server';
-import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import {
+  feedSourceSelect,
+  readFeedPage,
+  readableByOthers,
+  toFeedSource,
+} from '@/lib/feeds/feeds.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 import { MAX_LISTS, MAX_MEMBERS, MAX_PINNED, type ListView } from '@/lib/lists/constants';
 
@@ -16,23 +21,25 @@ export async function getUserLists(
   ownerId: string,
   targetUserId?: string,
 ): Promise<(ListView & { containsTarget?: boolean })[]> {
-  const lists = await prisma.userList.findMany({
-    where: { ownerId },
+  const lists = await prisma.customFeed.findMany({
+    where: { ownerId, kind: 'list' },
     orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
     select: {
       id: true,
       name: true,
-      bio: true,
+      description: true,
       visibility: true,
       pinned: true,
       _count: { select: { members: true } },
-      ...(targetUserId ? { members: { where: { userId: targetUserId }, select: { userId: true } } } : {}),
+      ...(targetUserId
+        ? { members: { where: { userId: targetUserId }, select: { userId: true } } }
+        : {}),
     },
   });
   return lists.map((l) => ({
     id: l.id,
     name: l.name,
-    bio: l.bio,
+    bio: l.description,
     visibility: String(l.visibility),
     pinned: l.pinned,
     memberCount: l._count.members,
@@ -47,51 +54,85 @@ export async function createList(
   ownerId: string,
   data: { name: string; bio?: string; visibility?: 'PRIVATE' | 'UNLISTED' },
 ): Promise<ListView> {
-  const count = await prisma.userList.count({ where: { ownerId } });
+  const count = await prisma.customFeed.count({ where: { ownerId, kind: 'list' } });
   if (count >= MAX_LISTS) throw new ListError('LIST_LIMIT');
-  const list = await prisma.userList.create({
-    data: { ownerId, name: data.name, bio: data.bio ?? null, visibility: data.visibility ?? 'PRIVATE' },
-    select: { id: true, name: true, bio: true, visibility: true, pinned: true },
+  const list = await prisma.customFeed.create({
+    data: {
+      ownerId,
+      kind: 'list',
+      name: data.name,
+      description: data.bio ?? null,
+      visibility: data.visibility ?? 'PRIVATE',
+      tags: [],
+      authorIds: [],
+      keywords: [],
+    },
+    select: { id: true, name: true, description: true, visibility: true, pinned: true },
   });
-  return { ...list, visibility: String(list.visibility), memberCount: 0, isOwner: true };
+  return {
+    id: list.id,
+    name: list.name,
+    bio: list.description,
+    visibility: String(list.visibility),
+    pinned: list.pinned,
+    memberCount: 0,
+    isOwner: true,
+  };
 }
 
 export async function updateList(
   ownerId: string,
   listId: string,
-  data: { name?: string; bio?: string | null; visibility?: 'PRIVATE' | 'UNLISTED'; pinned?: boolean },
+  data: {
+    name?: string;
+    bio?: string | null;
+    visibility?: 'PRIVATE' | 'UNLISTED';
+    pinned?: boolean;
+  },
 ): Promise<void> {
   if (data.pinned === true) {
-    const pinnedCount = await prisma.userList.count({ where: { ownerId, pinned: true, id: { not: listId } } });
+    const pinnedCount = await prisma.customFeed.count({
+      where: { ownerId, kind: 'list', pinned: true, id: { not: listId } },
+    });
     if (pinnedCount >= MAX_PINNED) throw new ListError('PIN_LIMIT');
   }
-  const res = await prisma.userList.updateMany({ where: { id: listId, ownerId }, data });
+  const { bio, ...rest } = data;
+  const res = await prisma.customFeed.updateMany({
+    where: { id: listId, ownerId, kind: 'list' },
+    data: { ...rest, ...(bio !== undefined ? { description: bio } : {}) },
+  });
   if (res.count === 0) throw new ListError('NOT_FOUND');
 }
 
 export async function deleteList(ownerId: string, listId: string): Promise<void> {
-  const res = await prisma.userList.deleteMany({ where: { id: listId, ownerId } });
+  const res = await prisma.customFeed.deleteMany({ where: { id: listId, ownerId, kind: 'list' } });
   if (res.count === 0) throw new ListError('NOT_FOUND');
 }
 
 export async function addMember(ownerId: string, listId: string, userId: string): Promise<void> {
-  const list = await prisma.userList.findFirst({ where: { id: listId, ownerId }, select: { id: true } });
+  const list = await prisma.customFeed.findFirst({
+    where: { id: listId, ownerId, kind: 'list' },
+    select: { id: true },
+  });
   if (!list) throw new ListError('NOT_FOUND');
-  const count = await prisma.userListMember.count({ where: { listId } });
+  const count = await prisma.customFeedMember.count({ where: { feedId: listId } });
   if (count >= MAX_MEMBERS) throw new ListError('MEMBER_LIMIT');
-  await prisma.userListMember.upsert({
-    where: { listId_userId: { listId, userId } },
-    create: { listId, userId },
+  await prisma.customFeedMember.upsert({
+    where: { feedId_userId: { feedId: listId, userId } },
+    create: { feedId: listId, userId },
     update: {},
   });
 }
 
 /** Remove a member. The list owner may remove anyone; a member may remove themselves. */
 export async function removeMember(actorId: string, listId: string, userId: string): Promise<void> {
-  const list = await prisma.userList.findUnique({ where: { id: listId }, select: { ownerId: true } });
+  const list = await prisma.customFeed.findFirst({
+    where: { id: listId, kind: 'list' },
+    select: { ownerId: true },
+  });
   if (!list) throw new ListError('NOT_FOUND');
   if (list.ownerId !== actorId && userId !== actorId) throw new ListError('FORBIDDEN');
-  await prisma.userListMember.deleteMany({ where: { listId, userId } });
+  await prisma.customFeedMember.deleteMany({ where: { feedId: listId, userId } });
 }
 
 export interface ListDetail {
@@ -100,25 +141,29 @@ export interface ListDetail {
 }
 
 /** Resolve a list for a viewer, honoring visibility. Returns null if not visible. */
-export async function getListDetail(listId: string, viewerId: string | null): Promise<ListDetail | null> {
-  const list = await prisma.userList.findUnique({
-    where: { id: listId },
+export async function getListDetail(
+  listId: string,
+  viewerId: string | null,
+): Promise<ListDetail | null> {
+  const list = await prisma.customFeed.findFirst({
+    where: { id: listId, kind: 'list' },
     select: {
       id: true,
       ownerId: true,
       name: true,
-      bio: true,
+      description: true,
       visibility: true,
+      isPublic: true,
       pinned: true,
       _count: { select: { members: true } },
     },
   });
   if (!list) return null;
   const isOwner = viewerId === list.ownerId;
-  if (!isOwner && list.visibility === 'PRIVATE') return null;
+  if (!isOwner && !readableByOthers(list)) return null;
 
-  const memberRows = await prisma.userListMember.findMany({
-    where: { listId },
+  const memberRows = await prisma.customFeedMember.findMany({
+    where: { feedId: listId },
     orderBy: { addedAt: 'desc' },
     take: 200,
     select: { user: { select: userDisplaySelect } },
@@ -127,7 +172,7 @@ export async function getListDetail(listId: string, viewerId: string | null): Pr
     list: {
       id: list.id,
       name: list.name,
-      bio: list.bio,
+      bio: list.description,
       visibility: String(list.visibility),
       pinned: list.pinned,
       memberCount: list._count.members,
@@ -137,13 +182,19 @@ export async function getListDetail(listId: string, viewerId: string | null): Pr
   };
 }
 
-export async function listsUserIsOn(userId: string): Promise<{ id: string; name: string; ownerHandle: string | null }[]> {
-  const rows = await prisma.userListMember.findMany({
-    where: { userId },
-    select: { list: { select: { id: true, name: true, owner: { select: { handle: true } } } } },
+export async function listsUserIsOn(
+  userId: string,
+): Promise<{ id: string; name: string; ownerHandle: string | null }[]> {
+  const rows = await prisma.customFeedMember.findMany({
+    where: { userId, feed: { kind: 'list' } },
+    select: { feed: { select: { id: true, name: true, owner: { select: { handle: true } } } } },
     take: 100,
   });
-  return rows.map((r) => ({ id: r.list.id, name: r.list.name, ownerHandle: r.list.owner?.handle ?? null }));
+  return rows.map((r) => ({
+    id: r.feed.id,
+    name: r.feed.name,
+    ownerHandle: r.feed.owner?.handle ?? null,
+  }));
 }
 
 export interface ListTimelinePost {
@@ -153,49 +204,39 @@ export interface ListTimelinePost {
   author: ResolvedUser;
 }
 
-/** Lightweight chronological timeline of the list's members' posts. */
+const TIMELINE_PAGE = 30;
+
+/** Lightweight chronological timeline of the list's members' posts (the shared feed reader). */
 export async function listTimeline(
   viewerId: string | null,
   listId: string,
   cursor?: string,
 ): Promise<{ items: ListTimelinePost[]; nextCursor: string | null }> {
-  const members = await prisma.userListMember.findMany({ where: { listId }, select: { userId: true } });
-  const memberIds = members.map((m) => m.userId);
-  if (memberIds.length === 0) return { items: [], nextCursor: null };
-
-  // A timeline is a feed: authors the viewer blocked or muted (or who blocked
-  // them) do not appear in it, even though they are on the list. The shared
-  // visibility predicate carries the audience / deleted / block rule and is
-  // nested under AND because it owns the `userId` key too.
-  const [visible, hidden] = await Promise.all([
-    viewerVisiblePostWhere(viewerId, { hideMuted: true }),
-    getHiddenAuthorIds(viewerId),
-  ]);
-  const shownIds = hidden.length ? memberIds.filter((id) => !hidden.includes(id)) : memberIds;
-  if (shownIds.length === 0) return { items: [], nextCursor: null };
-
-  const PAGE = 30;
+  const list = await prisma.customFeed.findUnique({
+    where: { id: listId },
+    select: feedSourceSelect,
+  });
+  if (!list) return { items: [], nextCursor: null };
+  const { page, nextCursor } = await readFeedPage(toFeedSource(list), viewerId, {
+    cursor,
+    pageSize: TIMELINE_PAGE,
+  });
+  if (!page.length) return { items: [], nextCursor: null };
   const rows = await prisma.rMHark.findMany({
-    where: {
-      userId: { in: shownIds },
-      threadRootId: null,
-      communityId: null,
-      AND: [visible],
-    },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    take: PAGE + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    where: { id: { in: page.map((p) => p.id) } },
     select: { id: true, content: true, createdAt: true, user: { select: userDisplaySelect } },
   });
-  const hasMore = rows.length > PAGE;
-  const page = hasMore ? rows.slice(0, PAGE) : rows;
+  const byId = new Map(rows.map((r) => [r.id, r]));
   return {
-    items: page.map((r) => ({
-      id: r.id,
-      content: r.content,
-      createdAt: r.createdAt.toISOString(),
-      author: resolveUser(r.user),
-    })),
-    nextCursor: hasMore ? page[page.length - 1].id : null,
+    items: page
+      .map((p) => byId.get(p.id))
+      .filter((r): r is NonNullable<typeof r> => !!r)
+      .map((r) => ({
+        id: r.id,
+        content: r.content,
+        createdAt: r.createdAt.toISOString(),
+        author: resolveUser(r.user),
+      })),
+    nextCursor,
   };
 }

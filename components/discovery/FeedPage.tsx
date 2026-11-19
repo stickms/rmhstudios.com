@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { BellOff, BellPlus, Pencil, Trash2 } from 'lucide-react';
+import { BellOff, BellPlus, Pencil, Search, Trash2 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { RMHarkCard } from '@/components/feed/RMHarkCard';
 import { Spine, SpineItem } from '@/components/ui/spine';
@@ -19,7 +19,10 @@ import { cn } from '@/lib/utils';
 import { getCustomFeedApi, type CustomFeedView } from '@/lib/discovery/discovery.contract';
 import { FeedForm, feedBody, type FeedFormValue } from './FeedForm';
 
-/** /feeds/$id - one custom feed: keyset-paginated posts, subscribe, and owner edit (A4). */
+/**
+ * /feeds/$id - one Feed of any kind: keyset-paginated posts, subscribe, and owner edit (A4).
+ * A list is managed on /lists/$id and a saved search runs on /explore; both open here too.
+ */
 export function FeedPage({ id }: { id: string }) {
   const { t } = useTranslation('f-discovery');
   const { data: session } = useSession();
@@ -115,7 +118,11 @@ export function FeedPage({ id }: { id: string }) {
       <Spine className={cn('pb-12', arrival)}>
         <SpineItem dot={false} className="flex flex-wrap items-center gap-3">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
-            {[...feed.tags.map((x) => `#${x}`), ...feed.keywords].join(' · ')}
+            {[
+              ...(feed.query ? [feed.query] : []),
+              ...feed.tags.map((x) => `#${x}`),
+              ...feed.keywords,
+            ].join(' · ')}
             {feed.peopleCount
               ? ` · ${t('feeds-people', { count: feed.peopleCount, defaultValue: '{{count}} people' })}`
               : ''}
@@ -145,9 +152,26 @@ export function FeedPage({ id }: { id: string }) {
           )}
           {feed.isOwner && (
             <div className="flex gap-2">
-              <Button variant="default" size="sm" onClick={() => setEditing((e) => !e)}>
-                <Pencil aria-hidden /> {t('feed-edit', { defaultValue: 'Edit' })}
-              </Button>
+              {feed.kind === 'feed' && (
+                <Button variant="default" size="sm" onClick={() => setEditing((e) => !e)}>
+                  <Pencil aria-hidden /> {t('feed-edit', { defaultValue: 'Edit' })}
+                </Button>
+              )}
+              {feed.kind === 'list' && (
+                <Link to="/lists/$id" params={{ id }}>
+                  <Button variant="default" size="sm">
+                    <Pencil aria-hidden />{' '}
+                    {t('feed-manage-list', { defaultValue: 'Manage members' })}
+                  </Button>
+                </Link>
+              )}
+              {feed.kind === 'search' && feed.query && (
+                <Link to="/explore" search={{ q: feed.query, tab: 'top' }}>
+                  <Button variant="default" size="sm">
+                    <Search aria-hidden /> {t('feed-run-search', { defaultValue: 'Run search' })}
+                  </Button>
+                </Link>
+              )}
               <Button
                 variant="default"
                 size="sm"
@@ -169,7 +193,7 @@ export function FeedPage({ id }: { id: string }) {
           )}
         </SpineItem>
 
-        {editing && feed.isOwner && (
+        {editing && feed.isOwner && feed.kind === 'feed' && (
           <SpineItem dot={false}>
             <FeedForm
               initial={initial}
@@ -186,7 +210,7 @@ export function FeedPage({ id }: { id: string }) {
           </SpineItem>
         )}
 
-        {items.length === 0 ? (
+        {feed.kind === 'search' ? null : items.length === 0 ? (
           <EmptyState title={t('feed-empty', { defaultValue: 'No matching posts yet' })} />
         ) : (
           items.map((item) =>

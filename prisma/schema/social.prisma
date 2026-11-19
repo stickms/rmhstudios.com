@@ -742,24 +742,57 @@ model DailyDigestSnapshot {
   @@map("daily_digest_snapshot")
 }
 
-/// A4 — a member-defined feed: tags + people + keywords. Public ones can be subscribed to.
+/// A Feed (2026-11-19) — the one "show / notify me about these people, tags or terms"
+/// object. A4 custom feeds, lists of accounts (was `UserList`), saved universal
+/// searches (was `SavedSearch`) and keyword alerts (was `KeywordAlert`) are all
+/// rows here, told apart by `kind`; every reader goes through
+/// `lib/feeds/feeds.server.ts`. Migration 20261119210000 copied the old rows in
+/// under their old ids, so `/lists/$id` and `/feeds/$id` name the same row.
 model CustomFeed {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   ownerId         String
-  name            String   @db.VarChar(60)
-  description     String?  @db.VarChar(200)
+  /// 'feed' (tags + people + keywords) | 'list' (a curated set of accounts) |
+  /// 'search' (a saved universal search: `query` + `types`) | 'alert' (a keyword
+  /// alert: `query` + `anchor`). Decides which management tab shows it and which
+  /// fields its form edits; the reader treats every kind the same way.
+  kind            String         @default("feed") @db.VarChar(12)
+  name            String         @db.VarChar(60)
+  description     String?        @db.VarChar(200)
   tags            String[]
+  /// DEPRECATED (2026-11-19) — people moved to `members` (CustomFeedMember);
+  /// nothing reads this. New code still mirrors a feed's people here so the
+  /// previous release reads them during the blue/green swap; drop next release
+  /// (contract). Do not add callers.
   authorIds       String[]
   keywords        String[]
-  isPublic        Boolean  @default(false)
-  subscriberCount Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  /// Listed in "Popular feeds" and subscribable. Kept equal to
+  /// `visibility == PUBLIC` by every write; readable-by-link is `visibility`.
+  isPublic        Boolean        @default(false)
+  visibility      ListVisibility @default(PRIVATE)
+  pinned          Boolean        @default(false)
+  /// A saved search's raw query (operators included), or a keyword alert's
+  /// query (`lib/search/keyword-alerts.ts` syntax).
+  query           String?        @db.VarChar(200)
+  /// A saved search's entity-type chips.
+  types           String[]       @default([])
+  /// Push a notification when a new post matches (keyword alerts; the saved
+  /// search "alerts" flag).
+  notify          Boolean        @default(false)
+  /// One required word of an alert `query`, indexed, so the post fan-out finds
+  /// candidate alerts with one IN query instead of scanning every feed.
+  anchor          String?        @db.VarChar(64)
+  lastRunAt       DateTime?
+  subscriberCount Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   owner         User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   subscriptions CustomFeedSubscription[]
+  members       CustomFeedMember[]
 
   @@index([ownerId])
+  @@index([ownerId, kind])
+  @@index([anchor])
   @@index([isPublic, subscriberCount(sort: Desc)])
   @@map("custom_feed")
 }
@@ -777,6 +810,20 @@ model CustomFeedSubscription {
   @@map("custom_feed_subscription")
 }
 
+/// The people a feed reads: a list's accounts, a custom feed's "people".
+model CustomFeedMember {
+  feedId  String
+  userId  String
+  addedAt DateTime @default(now())
+
+  feed CustomFeed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([feedId, userId])
+  @@index([userId]) // "lists you're on"
+  @@map("custom_feed_member")
+}
+
 /// A5 — a row means the member opted in to "On this day" notifications.
 model MemoriesOptIn {
   userId    String   @id
@@ -789,8 +836,8 @@ model MemoriesOptIn {
   @@map("memories_opt_in")
 }
 
-/// A6 — a keyword alert. `anchor` is one required word, indexed, so the fan-out job
-/// finds candidate alerts for a post with one IN query instead of scanning every alert.
+/// DEPRECATED (2026-11-19) — copied into CustomFeed (kind 'alert', notify true); nothing
+/// reads or writes this; drop next release (contract). Do not add callers.
 model KeywordAlert {
   id        String   @id @default(cuid())
   userId    String
