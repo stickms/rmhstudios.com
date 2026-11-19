@@ -535,12 +535,14 @@ function RootComponent() {
   );
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
-  // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
-  // query params (frame_id, instance_id, etc.) that the embedded app needs.
+  // Redirect any non-discord path to the /discord gateway (not straight to a
+  // game: a bot "Play in Discord" launch must reach the gateway so it can open
+  // the launched vibe), preserving the SDK query params (frame_id,
+  // instance_id, etc.) that the embedded app needs.
   useEffect(() => {
     if (isDiscordActivity() && !isDiscordRoute(pathname)) {
       navigate({
-        to: '/discord/rmhbox',
+        to: '/discord',
         search: Object.fromEntries(new URLSearchParams(window.location.search)),
         replace: true,
       });
