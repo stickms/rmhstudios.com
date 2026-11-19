@@ -1,6 +1,14 @@
 /**
  * Group gifting and pooled purchases (F20) — the escrow lifecycle.
  *
+ * **Retired (2026-11-19 consolidation audit).** Nothing in the UI ever created
+ * or showed a pool, and `CommunityGoal` (`lib/economy/community-goal.server.ts`)
+ * is the shipped version of the same idea, so the `/api/pools*` endpoints were
+ * removed. What stays is the hourly refund sweep, so any pool opened through
+ * the API before then still returns its coins; once `pool` holds no unrefunded
+ * rows, this file, `pools.ts`, the `Pool` / `PoolContribution` models and the
+ * maintenance call can be deleted together.
+ *
  * ── The accounting model ────────────────────────────────────────────────────
  *
  * A contribution is a **SINK** (`debitCoins`): the coins leave the contributor

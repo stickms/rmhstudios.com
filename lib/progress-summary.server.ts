@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma.server';
 import { levelInfo } from '@/lib/xp/levels';
 import { getActiveQuests } from '@/lib/quests/engine.server';
-import { CURRENT_SEASON, tierForXp } from '@/lib/battlepass/season';
+import { tierForXp } from '@/lib/battlepass/season';
+import { getActiveSeason } from '@/lib/battlepass/active.server';
 
 /**
  * The signed-in user's level, coins, active quests, and season summary. Shared
@@ -10,10 +11,11 @@ import { CURRENT_SEASON, tierForXp } from '@/lib/battlepass/season';
  * client-side on mount.
  */
 export async function getProgressSummary(userId: string) {
+  const season = await getActiveSeason();
   const [profile, seasonProgress, quests] = await Promise.all([
     prisma.userProfile.findUnique({ where: { userId }, select: { xp: true, coins: true } }),
     prisma.userSeasonProgress.findUnique({
-      where: { userId_seasonId: { userId, seasonId: CURRENT_SEASON.id } },
+      where: { userId_seasonId: { userId, seasonId: season.id } },
       select: { seasonXp: true, premium: true },
     }),
     getActiveQuests(userId),
@@ -25,12 +27,12 @@ export async function getProgressSummary(userId: string) {
     coins: profile?.coins ?? 0,
     quests,
     season: {
-      id: CURRENT_SEASON.id,
-      name: CURRENT_SEASON.name,
-      endsAt: CURRENT_SEASON.endsAt,
+      id: season.id,
+      name: season.name,
+      endsAt: season.endsAt,
       seasonXp,
-      tier: tierForXp(seasonXp),
-      maxTier: CURRENT_SEASON.tiers.length,
+      tier: tierForXp(season, seasonXp),
+      maxTier: season.tiers.length,
       premium: seasonProgress?.premium ?? false,
     },
   };

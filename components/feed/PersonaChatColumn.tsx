@@ -150,7 +150,7 @@ export function PersonaChatColumn({
  className={arrival}
  title={t('persona-not-found', { defaultValue:'Persona not found'})}
  action={
- <Link to="/personas">
+ <Link to="/create/personas">
  <Button variant="default">
  {t('browse-personas', { defaultValue:'Browse personas'})}
  </Button>
@@ -170,7 +170,7 @@ export function PersonaChatColumn({
  <NoGlobe />
  <div className="conversation__head">
  <Button asChild variant="ghost" size="icon" aria-label={t('back', { defaultValue: 'Back' })}>
- <Link to="/personas">
+ <Link to="/create/personas">
  <ArrowLeft className="rtl:-scale-x-100" aria-hidden />
  </Link>
  </Button>

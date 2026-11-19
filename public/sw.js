@@ -14,6 +14,10 @@
  * network on their next load.
  */
 
+// The POST/multipart share target (manifest `share_target`): stages shared files
+// and redirects to /share?pending=<id>. See the header of that file.
+importScripts('/sw-share-target.js');
+
 const VERSION = 'v1';
 const KILL = false;
 
@@ -491,6 +495,14 @@ async function trimCache(cacheName, limit) {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+
+  // A share from the OS share sheet is a multipart POST to /share. It must be
+  // caught before the outbox branch, which would let it reach the network as an
+  // unhandled POST and lose the shared files.
+  if (self.RMHShareTarget && self.RMHShareTarget.isShareTargetPost(request)) {
+    event.respondWith(self.RMHShareTarget.handle(request));
+    return;
+  }
 
   // Queueable writes are handled before the GET-only gate below; everything
   // else about the caching strategy is untouched.

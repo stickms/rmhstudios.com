@@ -319,7 +319,7 @@ export function SohumBumPage() {
               {t('bio-profile-link', { defaultValue: 'His profile' })}
             </Link>{' '}
             {t('bio-and', { defaultValue: 'and' })}{' '}
-            <Link to="/leaderboard">
+            <Link to="/arcade" search={{ sub: 'leaderboard' }}>
               {t('bio-leaderboard-link', { defaultValue: 'the standings' })}
             </Link>{' '}
             {t('bio-4', {

@@ -537,6 +537,9 @@ function loadWorker(
                 undefined,
               ),
         },
+      // sw.js pulls in the share-target handler; these tests drive the outbox,
+      // so a no-op loader leaves self.RMHShareTarget unset and that branch off.
+      importScripts: () => {},
       Response,
       Request,
       Headers,
@@ -1631,6 +1634,7 @@ describe('sw.js — build-asset pruning', () => {
                     undefined,
                   ),
             },
+          importScripts: () => {},
           URL,
           Date,
           Math,

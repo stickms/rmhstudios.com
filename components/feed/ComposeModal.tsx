@@ -50,13 +50,15 @@ interface ComposeModalProps {
  } | null;
  /** Seed the composer with text (e.g. content shared into the PWA via share_target). */
  initialContent?: string;
+ /** Images or videos to upload as soon as the composer opens (files shared into the PWA). */
+ initialFiles?: File[];
  /** A vibe to attach, pinned to a version (the viewer's Post button). */
  initialVibe?: { slug: string; versionId: string; title: string };
  /** Called once the post is published, before `onClose`. */
  onPosted?: () => void;
 }
 
-export function ComposeModal({ open, onClose, quoteItem, initialContent ='', initialVibe, onPosted}: ComposeModalProps) {
+export function ComposeModal({ open, onClose, quoteItem, initialContent ='', initialFiles, initialVibe, onPosted}: ComposeModalProps) {
  const { t } = useTranslation('feed');
  // Both `.glass-scrim` backdrops here are viewport-covering `backdrop-filter`
  // layers, and nothing may animate above one — Chromium re-blurs the whole
@@ -137,7 +139,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  !submitting &&
  uploadingCount === 0;
 
- const handleImageFiles = async (files: FileList | null) => {
+ const handleImageFiles = async (files: FileList | File[] | null | undefined) => {
  if (!files || files.length === 0) return;
  setImageError(null);
  const remainingSlots = MAX_IMAGES - imageUrls.length;
@@ -157,6 +159,15 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  setUploadingCount((n) => Math.max(0, n - 1));
  }
  };
+
+ // Upload seeded files once, the first time the composer is open with them.
+ const seededFilesRef = useRef<File[] | null>(null);
+ useEffect(() => {
+ if (!open || !initialFiles?.length || seededFilesRef.current === initialFiles) return;
+ seededFilesRef.current = initialFiles;
+ void handleImageFiles(initialFiles);
+ // eslint-disable-next-line react-hooks/exhaustive-deps -- one upload per seeded file list
+ }, [open, initialFiles]);
 
  const handleSubmit = async () => {
  if (!canSubmit) return;

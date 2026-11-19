@@ -234,7 +234,7 @@ thumb.
   is
   written
   down
-  (`docs/jelly-group-audit.md`)
+  (`docs/archive/2026/jelly-group-audit.md`)
   so
   it
   can
@@ -931,7 +931,7 @@ width).
 2. Classify
    each
    in
-   `docs/jelly-group-audit.md`:
+   `docs/archive/2026/jelly-group-audit.md`:
    **group**
    (convert),
    **standalone**

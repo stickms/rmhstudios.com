@@ -705,7 +705,7 @@ function VibeViewer() {
         {/* Floating toolbar — top-right */}
         <div className="vibe-toolbar fixed right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-40">
           <Link
-            to="/v"
+            to="/create"
             aria-label={t('back-to-pages', { defaultValue: 'Back to pages' })}
             className="vibe-toolbar__icon"
           >
@@ -1078,7 +1078,7 @@ function VibeGenerationFailed() {
           defaultValue: "Generation didn't complete. Give it another go.",
         })}
       </p>
-      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta">
+      <Link to="/create" className="vibe-rise-3 vibe-toolbar__cta">
         {t('back-to-pages', { defaultValue: 'Back to pages' })}
       </Link>
     </div>
@@ -1097,7 +1097,7 @@ function VibeRemoved({ pageId }: { pageId: string }) {
           defaultValue: 'It broke the site rules. If it is yours, the notice in your notifications says why.',
         })}
       </p>
-      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta">
+      <Link to="/create" className="vibe-rise-3 vibe-toolbar__cta">
         {t('back-to-pages', { defaultValue: 'Back to pages' })}
       </Link>
       <AdminModerateButton
@@ -1120,7 +1120,7 @@ function VibeNotFound() {
       <p className="vibe-rise-2 vibe-hint">
         {t('not-found-hint', { defaultValue: "This page doesn't exist (or never did)." })}
       </p>
-      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta">
+      <Link to="/create" className="vibe-rise-3 vibe-toolbar__cta">
         {t('make-your-own', { defaultValue: 'Make your own' })}
       </Link>
     </div>

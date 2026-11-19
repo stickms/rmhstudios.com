@@ -52,8 +52,6 @@ const CONTENT_PREFIXES =
     '/blog',
     '/news',
     '/library',
-    '/textbook',
-    '/indonesia-history',
   ];
 const REALTIME_PREFIXES =
   [

@@ -18,7 +18,6 @@ import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matte
 import { Route as BreachesRouteImport } from './routes/breaches'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CopyrightRouteImport } from './routes/copyright'
-import { Route as CovidRouteImport } from './routes/covid'
 import { Route as CsgoRouteImport } from './routes/csgo'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
@@ -35,12 +34,10 @@ import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as KaikaidebtcounterRouteImport } from './routes/kaikaidebtcounter'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
 import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
-import { Route as LightsOutRouteImport } from './routes/lights-out'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as NightrailRouteImport } from './routes/nightrail'
 import { Route as OfflineRouteImport } from './routes/offline'
-import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as Pf2ecalRouteImport } from './routes/pf2ecal'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -78,34 +75,25 @@ import { Route as SiteIndexRouteImport } from './routes/_site/index'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as SiteAdventRouteImport } from './routes/_site/advent'
-import { Route as SiteAlexdebtcounterRouteImport } from './routes/_site/alexdebtcounter'
 import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
 import { Route as SiteArcadeRouteImport } from './routes/_site/arcade'
-import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteCanvasRouteImport } from './routes/_site/canvas'
 import { Route as SiteChangelogRouteImport } from './routes/_site/changelog'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteCreateRouteRouteImport } from './routes/_site/create/route'
-import { Route as SiteCreatorStudioRouteImport } from './routes/_site/creator-studio'
 import { Route as SiteDailyMutatorRouteImport } from './routes/_site/daily-mutator'
 import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer/route'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteEmojiPacksRouteImport } from './routes/_site/emoji-packs'
-import { Route as SiteEventsRouteImport } from './routes/_site/events'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteGameNightRouteImport } from './routes/_site/game-night'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
 import { Route as SiteHistoryRouteImport } from './routes/_site/history'
 import { Route as SiteHuntRouteImport } from './routes/_site/hunt'
-import { Route as SiteLeaderboardRouteImport } from './routes/_site/leaderboard'
-import { Route as SiteMarketRouteImport } from './routes/_site/market'
 import { Route as SiteMuseumRouteImport } from './routes/_site/museum'
-import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
 import { Route as SiteOutRouteImport } from './routes/_site/out'
 import { Route as SitePhotoOfTheDayRouteImport } from './routes/_site/photo-of-the-day'
-import { Route as SitePlaylistsRouteImport } from './routes/_site/playlists'
 import { Route as SitePredictionsRouteImport } from './routes/_site/predictions'
-import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteProgressRouteImport } from './routes/_site/progress'
 import { Route as SitePsychologyRouteImport } from './routes/_site/psychology'
 import { Route as SiteQotdRouteImport } from './routes/_site/qotd'
@@ -120,7 +108,6 @@ import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteSectionsRouteImport } from './routes/_site/sections'
 import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
-import { Route as SiteShopRouteImport } from './routes/_site/shop'
 import { Route as SiteSiteHistoryRouteImport } from './routes/_site/site-history'
 import { Route as SiteSpeedrunsRouteImport } from './routes/_site/speedruns'
 import { Route as SiteTodayRouteImport } from './routes/_site/today'
@@ -128,7 +115,6 @@ import { Route as SiteTranslateRouteImport } from './routes/_site/translate'
 import { Route as SiteTrashRouteImport } from './routes/_site/trash'
 import { Route as SiteVenturesRouteImport } from './routes/_site/ventures'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
-import { Route as SiteWishlistRouteImport } from './routes/_site/wishlist'
 import { Route as SiteWrappedRouteImport } from './routes/_site/wrapped'
 import { Route as AltairIndexRouteImport } from './routes/altair/index'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
@@ -210,7 +196,6 @@ import { Route as SecretVegaRouteImport } from './routes/secret/vega'
 import { Route as ServicesRebarRutabagaRouteImport } from './routes/services.rebar-rutabaga'
 import { Route as SitemapsNameRouteImport } from './routes/sitemaps.$name'
 import { Route as SliceItIndexRouteImport } from './routes/slice-it/index'
-import { Route as Sohumbum2IndexRouteImport } from './routes/sohumbum2/index'
 import { Route as Sohumbum2DateRouteImport } from './routes/sohumbum2/$date'
 import { Route as SohumtrackerIndexRouteImport } from './routes/sohumtracker/index'
 import { Route as SohumtrackerDateRouteImport } from './routes/sohumtracker/$date'
@@ -242,8 +227,6 @@ import { Route as SiteAdminEmojiPacksRouteImport } from './routes/_site/admin/em
 import { Route as SiteAdminFlagsRouteImport } from './routes/_site/admin/flags'
 import { Route as SiteAdminInsightsRouteImport } from './routes/_site/admin/insights'
 import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/library'
-import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
-import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
 import { Route as SiteAdminMarketRouteImport } from './routes/_site/admin/market'
 import { Route as SiteAdminPatchNotesRouteImport } from './routes/_site/admin/patch-notes'
 import { Route as SiteAdminPerformanceRouteImport } from './routes/_site/admin/performance'
@@ -261,10 +244,7 @@ import { Route as SiteAdminSliceItContentRouteImport } from './routes/_site/admi
 import { Route as SiteAdminStudioChallengesRouteImport } from './routes/_site/admin/studio-challenges'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
-import { Route as SiteAppsIndexRouteImport } from './routes/_site/apps/index'
-import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
 import { Route as SiteBlogSlugRouteImport } from './routes/_site/blog/$slug'
-import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
 import { Route as SiteBuildsSlugRouteImport } from './routes/_site/builds/$slug'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
 import { Route as SiteConnectionsIndexRouteImport } from './routes/_site/connections.index'
@@ -284,13 +264,10 @@ import { Route as SiteGroupsIdRouteImport } from './routes/_site/groups/$id'
 import { Route as SiteHomesIndexRouteImport } from './routes/_site/homes/index'
 import { Route as SiteHomesManageRouteImport } from './routes/_site/homes/manage'
 import { Route as SiteHomesRentSplitRouteImport } from './routes/_site/homes/rent-split'
-import { Route as SiteHomesSavedRouteImport } from './routes/_site/homes/saved'
 import { Route as SiteHomesSubmitRouteImport } from './routes/_site/homes/submit'
-import { Route as SiteHomesWatchesRouteImport } from './routes/_site/homes/watches'
 import { Route as SiteJamsIndexRouteImport } from './routes/_site/jams.index'
 import { Route as SiteJamsSlugRouteImport } from './routes/_site/jams.$slug'
 import { Route as SiteLibraryIndexRouteImport } from './routes/_site/library/index'
-import { Route as SiteListsIndexRouteImport } from './routes/_site/lists/index'
 import { Route as SiteListsIdRouteImport } from './routes/_site/lists/$id'
 import { Route as SiteMarathonIndexRouteImport } from './routes/_site/marathon.index'
 import { Route as SiteMarathonShareIdRouteImport } from './routes/_site/marathon.$shareId'
@@ -301,7 +278,6 @@ import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteNewsSlugRouteImport } from './routes/_site/news/$slug'
 import { Route as SiteOfficeHoursIndexRouteImport } from './routes/_site/office-hours/index'
 import { Route as SiteOfficeHoursUserIdRouteImport } from './routes/_site/office-hours/$userId'
-import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
 import { Route as SitePersonasIdRouteImport } from './routes/_site/personas/$id'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SiteReadingIndexRouteImport } from './routes/_site/reading/index'
@@ -334,10 +310,7 @@ import { Route as SiteServicesIndexRouteImport } from './routes/_site/services/i
 import { Route as SiteServicesCarsRouteImport } from './routes/_site/services/cars'
 import { Route as SiteServicesFashionRouteImport } from './routes/_site/services/fashion'
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
-import { Route as SiteSettingsAccountStatusRouteImport } from './routes/_site/settings/account-status'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
-import { Route as SiteSettingsCalendarRouteImport } from './routes/_site/settings/calendar'
-import { Route as SiteSettingsCircleRouteImport } from './routes/_site/settings/circle'
 import { Route as SiteSettingsContentRouteImport } from './routes/_site/settings/content'
 import { Route as SiteSettingsLayoutRouteImport } from './routes/_site/settings/layout'
 import { Route as SiteSettingsNotificationsRouteImport } from './routes/_site/settings/notifications'
@@ -345,11 +318,9 @@ import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings
 import { Route as SiteSettingsProfileRouteImport } from './routes/_site/settings/profile'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
 import { Route as SiteSettingsThemesRouteImport } from './routes/_site/settings/themes'
-import { Route as SiteSpacesIndexRouteImport } from './routes/_site/spaces.index'
 import { Route as SiteSpacesIdRouteImport } from './routes/_site/spaces.$id'
 import { Route as SiteStoreIndexRouteImport } from './routes/_site/store/index'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
-import { Route as SiteStudioThemesRouteImport } from './routes/_site/studio/themes'
 import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse'
@@ -357,11 +328,9 @@ import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteThreadRootIdRouteImport } from './routes/_site/thread/$rootId'
 import { Route as SiteTournamentsIndexRouteImport } from './routes/_site/tournaments.index'
 import { Route as SiteTournamentsIdRouteImport } from './routes/_site/tournaments.$id'
-import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
 import { Route as SiteUserBuildsSlugRouteImport } from './routes/_site/user-builds/$slug'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
-import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteWagerIndexRouteImport } from './routes/_site/wager.index'
 import { Route as SiteWagerIdRouteImport } from './routes/_site/wager.$id'
 import { Route as SiteWhenIndexRouteImport } from './routes/_site/when/index'
@@ -586,11 +555,6 @@ const CopyrightRoute = CopyrightRouteImport.update({
   path: '/copyright',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CovidRoute = CovidRouteImport.update({
-  id: '/covid',
-  path: '/covid',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CsgoRoute = CsgoRouteImport.update({
   id: '/csgo',
   path: '/csgo',
@@ -671,11 +635,6 @@ const LaundrySortRoute = LaundrySortRouteImport.update({
   path: '/laundry-sort',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LightsOutRoute = LightsOutRouteImport.update({
-  id: '/lights-out',
-  path: '/lights-out',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -694,11 +653,6 @@ const NightrailRoute = NightrailRouteImport.update({
 const OfflineRoute = OfflineRouteImport.update({
   id: '/offline',
   path: '/offline',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OptimizationRoute = OptimizationRouteImport.update({
-  id: '/optimization',
-  path: '/optimization',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Pf2ecalRoute = Pf2ecalRouteImport.update({
@@ -888,11 +842,6 @@ const SiteAdventRoute = SiteAdventRouteImport.update({
   path: '/advent',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteAlexdebtcounterRoute = SiteAlexdebtcounterRouteImport.update({
-  id: '/alexdebtcounter',
-  path: '/alexdebtcounter',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteAnalyticsRoute = SiteAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -901,11 +850,6 @@ const SiteAnalyticsRoute = SiteAnalyticsRouteImport.update({
 const SiteArcadeRoute = SiteArcadeRouteImport.update({
   id: '/arcade',
   path: '/arcade',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteBookmarksRoute = SiteBookmarksRouteImport.update({
-  id: '/bookmarks',
-  path: '/bookmarks',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteCanvasRoute = SiteCanvasRouteImport.update({
@@ -928,11 +872,6 @@ const SiteCreateRouteRoute = SiteCreateRouteRouteImport.update({
   path: '/create',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteCreatorStudioRoute = SiteCreatorStudioRouteImport.update({
-  id: '/creator-studio',
-  path: '/creator-studio',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteDailyMutatorRoute = SiteDailyMutatorRouteImport.update({
   id: '/daily-mutator',
   path: '/daily-mutator',
@@ -951,11 +890,6 @@ const SiteDraftsRoute = SiteDraftsRouteImport.update({
 const SiteEmojiPacksRoute = SiteEmojiPacksRouteImport.update({
   id: '/emoji-packs',
   path: '/emoji-packs',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteEventsRoute = SiteEventsRouteImport.update({
-  id: '/events',
-  path: '/events',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteExploreRoute = SiteExploreRouteImport.update({
@@ -983,24 +917,9 @@ const SiteHuntRoute = SiteHuntRouteImport.update({
   path: '/hunt',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteLeaderboardRoute = SiteLeaderboardRouteImport.update({
-  id: '/leaderboard',
-  path: '/leaderboard',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteMarketRoute = SiteMarketRouteImport.update({
-  id: '/market',
-  path: '/market',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteMuseumRoute = SiteMuseumRouteImport.update({
   id: '/museum',
   path: '/museum',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteNotificationsRoute = SiteNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteOutRoute = SiteOutRouteImport.update({
@@ -1013,19 +932,9 @@ const SitePhotoOfTheDayRoute = SitePhotoOfTheDayRouteImport.update({
   path: '/photo-of-the-day',
   getParentRoute: () => SiteRoute,
 } as any)
-const SitePlaylistsRoute = SitePlaylistsRouteImport.update({
-  id: '/playlists',
-  path: '/playlists',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SitePredictionsRoute = SitePredictionsRouteImport.update({
   id: '/predictions',
   path: '/predictions',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SitePricingRoute = SitePricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteProgressRoute = SiteProgressRouteImport.update({
@@ -1098,11 +1007,6 @@ const SiteShareRoute = SiteShareRouteImport.update({
   path: '/share',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteShopRoute = SiteShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteSiteHistoryRoute = SiteSiteHistoryRouteImport.update({
   id: '/site-history',
   path: '/site-history',
@@ -1136,11 +1040,6 @@ const SiteVenturesRoute = SiteVenturesRouteImport.update({
 const SiteWalletRoute = SiteWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteWishlistRoute = SiteWishlistRouteImport.update({
-  id: '/wishlist',
-  path: '/wishlist',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteWrappedRoute = SiteWrappedRouteImport.update({
@@ -1547,11 +1446,6 @@ const SliceItIndexRoute = SliceItIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SliceItRoute,
 } as any)
-const Sohumbum2IndexRoute = Sohumbum2IndexRouteImport.update({
-  id: '/sohumbum2/',
-  path: '/sohumbum2/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const Sohumbum2DateRoute = Sohumbum2DateRouteImport.update({
   id: '/sohumbum2/$date',
   path: '/sohumbum2/$date',
@@ -1707,16 +1601,6 @@ const SiteAdminLibraryRoute = SiteAdminLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
-const SiteAdminLibraryQuotaRoute = SiteAdminLibraryQuotaRouteImport.update({
-  id: '/library-quota',
-  path: '/library-quota',
-  getParentRoute: () => SiteAdminRouteRoute,
-} as any)
-const SiteAdminLibraryStorageRoute = SiteAdminLibraryStorageRouteImport.update({
-  id: '/library-storage',
-  path: '/library-storage',
-  getParentRoute: () => SiteAdminRouteRoute,
-} as any)
 const SiteAdminMarketRoute = SiteAdminMarketRouteImport.update({
   id: '/market',
   path: '/market',
@@ -1804,24 +1688,9 @@ const SiteAdminUsersRoute = SiteAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
-const SiteAppsIndexRoute = SiteAppsIndexRouteImport.update({
-  id: '/apps/',
-  path: '/apps/',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteBlogIndexRoute = SiteBlogIndexRouteImport.update({
-  id: '/blog/',
-  path: '/blog/',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteBlogSlugRoute = SiteBlogSlugRouteImport.update({
   id: '/blog/$slug',
   path: '/blog/$slug',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteBuildsIndexRoute = SiteBuildsIndexRouteImport.update({
-  id: '/builds/',
-  path: '/builds/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteBuildsSlugRoute = SiteBuildsSlugRouteImport.update({
@@ -1920,19 +1789,9 @@ const SiteHomesRentSplitRoute = SiteHomesRentSplitRouteImport.update({
   path: '/homes/rent-split',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteHomesSavedRoute = SiteHomesSavedRouteImport.update({
-  id: '/homes/saved',
-  path: '/homes/saved',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteHomesSubmitRoute = SiteHomesSubmitRouteImport.update({
   id: '/homes/submit',
   path: '/homes/submit',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteHomesWatchesRoute = SiteHomesWatchesRouteImport.update({
-  id: '/homes/watches',
-  path: '/homes/watches',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteJamsIndexRoute = SiteJamsIndexRouteImport.update({
@@ -1948,11 +1807,6 @@ const SiteJamsSlugRoute = SiteJamsSlugRouteImport.update({
 const SiteLibraryIndexRoute = SiteLibraryIndexRouteImport.update({
   id: '/library/',
   path: '/library/',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteListsIndexRoute = SiteListsIndexRouteImport.update({
-  id: '/lists/',
-  path: '/lists/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteListsIdRoute = SiteListsIdRouteImport.update({
@@ -2004,11 +1858,6 @@ const SiteOfficeHoursIndexRoute = SiteOfficeHoursIndexRouteImport.update({
 const SiteOfficeHoursUserIdRoute = SiteOfficeHoursUserIdRouteImport.update({
   id: '/office-hours/$userId',
   path: '/office-hours/$userId',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SitePersonasIndexRoute = SitePersonasIndexRouteImport.update({
-  id: '/personas/',
-  path: '/personas/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SitePersonasIdRoute = SitePersonasIdRouteImport.update({
@@ -2175,25 +2024,9 @@ const SiteSettingsIndexRoute = SiteSettingsIndexRouteImport.update({
   path: '/settings/',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteSettingsAccountStatusRoute =
-  SiteSettingsAccountStatusRouteImport.update({
-    id: '/settings/account-status',
-    path: '/settings/account-status',
-    getParentRoute: () => SiteRoute,
-  } as any)
 const SiteSettingsAppearanceRoute = SiteSettingsAppearanceRouteImport.update({
   id: '/settings/appearance',
   path: '/settings/appearance',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteSettingsCalendarRoute = SiteSettingsCalendarRouteImport.update({
-  id: '/settings/calendar',
-  path: '/settings/calendar',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteSettingsCircleRoute = SiteSettingsCircleRouteImport.update({
-  id: '/settings/circle',
-  path: '/settings/circle',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSettingsContentRoute = SiteSettingsContentRouteImport.update({
@@ -2232,11 +2065,6 @@ const SiteSettingsThemesRoute = SiteSettingsThemesRouteImport.update({
   path: '/settings/themes',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteSpacesIndexRoute = SiteSpacesIndexRouteImport.update({
-  id: '/spaces/',
-  path: '/spaces/',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteSpacesIdRoute = SiteSpacesIdRouteImport.update({
   id: '/spaces/$id',
   path: '/spaces/$id',
@@ -2250,11 +2078,6 @@ const SiteStoreIndexRoute = SiteStoreIndexRouteImport.update({
 const SiteStoreUseridRoute = SiteStoreUseridRouteImport.update({
   id: '/store/$userid',
   path: '/store/$userid',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteStudioThemesRoute = SiteStudioThemesRouteImport.update({
-  id: '/studio/themes',
-  path: '/studio/themes',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteStudyIndexRoute = SiteStudyIndexRouteImport.update({
@@ -2292,11 +2115,6 @@ const SiteTournamentsIdRoute = SiteTournamentsIdRouteImport.update({
   path: '/tournaments/$id',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteUserBuildsIndexRoute = SiteUserBuildsIndexRouteImport.update({
-  id: '/user-builds/',
-  path: '/user-builds/',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteUserBuildsSlugRoute = SiteUserBuildsSlugRouteImport.update({
   id: '/user-builds/$slug',
   path: '/user-builds/$slug',
@@ -2310,11 +2128,6 @@ const SiteUserBuildsManageRoute = SiteUserBuildsManageRouteImport.update({
 const SiteUserBuildsSubmitRoute = SiteUserBuildsSubmitRouteImport.update({
   id: '/user-builds/submit',
   path: '/user-builds/submit',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteVIndexRoute = SiteVIndexRouteImport.update({
-  id: '/v/',
-  path: '/v/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteWagerIndexRoute = SiteWagerIndexRouteImport.update({
@@ -3253,7 +3066,6 @@ export interface FileRoutesByFullPath {
   '/breaches': typeof BreachesRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
-  '/covid': typeof CovidRoute
   '/csgo': typeof CsgoRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
@@ -3270,12 +3082,10 @@ export interface FileRoutesByFullPath {
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
-  '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
-  '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
@@ -3314,32 +3124,23 @@ export interface FileRoutesByFullPath {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
   '/advent': typeof SiteAdventRoute
-  '/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
-  '/bookmarks': typeof SiteBookmarksRoute
   '/canvas': typeof SiteCanvasRoute
   '/changelog': typeof SiteChangelogRoute
   '/communities': typeof SiteCommunitiesRoute
-  '/creator-studio': typeof SiteCreatorStudioRoute
   '/daily-mutator': typeof SiteDailyMutatorRoute
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
-  '/events': typeof SiteEventsRoute
   '/explore': typeof SiteExploreRoute
   '/game-night': typeof SiteGameNightRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
   '/hunt': typeof SiteHuntRoute
-  '/leaderboard': typeof SiteLeaderboardRoute
-  '/market': typeof SiteMarketRoute
   '/museum': typeof SiteMuseumRoute
-  '/notifications': typeof SiteNotificationsRoute
   '/out': typeof SiteOutRoute
   '/photo-of-the-day': typeof SitePhotoOfTheDayRoute
-  '/playlists': typeof SitePlaylistsRoute
   '/predictions': typeof SitePredictionsRoute
-  '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
   '/psychology': typeof SitePsychologyRoute
   '/qotd': typeof SiteQotdRoute
@@ -3354,7 +3155,6 @@ export interface FileRoutesByFullPath {
   '/sections': typeof SiteSectionsRoute
   '/services': typeof SiteServicesRouteWithChildren
   '/share': typeof SiteShareRoute
-  '/shop': typeof SiteShopRoute
   '/site-history': typeof SiteSiteHistoryRoute
   '/speedruns': typeof SiteSpeedrunsRoute
   '/today': typeof SiteTodayRoute
@@ -3362,7 +3162,6 @@ export interface FileRoutesByFullPath {
   '/trash': typeof SiteTrashRoute
   '/ventures': typeof SiteVenturesRoute
   '/wallet': typeof SiteWalletRoute
-  '/wishlist': typeof SiteWishlistRoute
   '/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/$': typeof ApiSplatRoute
@@ -3451,7 +3250,6 @@ export interface FileRoutesByFullPath {
   '/rmhtype/': typeof RmhtypeIndexRoute
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
-  '/sohumbum2/': typeof Sohumbum2IndexRoute
   '/sohumtracker/': typeof SohumtrackerIndexRoute
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
@@ -3474,8 +3272,6 @@ export interface FileRoutesByFullPath {
   '/admin/flags': typeof SiteAdminFlagsRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
-  '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
-  '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/market': typeof SiteAdminMarketRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/admin/performance': typeof SiteAdminPerformanceRoute
@@ -3506,9 +3302,7 @@ export interface FileRoutesByFullPath {
   '/groups/$id': typeof SiteGroupsIdRoute
   '/homes/manage': typeof SiteHomesManageRoute
   '/homes/rent-split': typeof SiteHomesRentSplitRoute
-  '/homes/saved': typeof SiteHomesSavedRoute
   '/homes/submit': typeof SiteHomesSubmitRoute
-  '/homes/watches': typeof SiteHomesWatchesRoute
   '/jams/$slug': typeof SiteJamsSlugRoute
   '/lists/$id': typeof SiteListsIdRoute
   '/marathon/$shareId': typeof SiteMarathonShareIdRoute
@@ -3539,10 +3333,7 @@ export interface FileRoutesByFullPath {
   '/series/$id': typeof SiteSeriesIdRoute
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
-  '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
-  '/settings/calendar': typeof SiteSettingsCalendarRoute
-  '/settings/circle': typeof SiteSettingsCircleRoute
   '/settings/content': typeof SiteSettingsContentRoute
   '/settings/layout': typeof SiteSettingsLayoutRoute
   '/settings/notifications': typeof SiteSettingsNotificationsRoute
@@ -3552,7 +3343,6 @@ export interface FileRoutesByFullPath {
   '/settings/themes': typeof SiteSettingsThemesRoute
   '/spaces/$id': typeof SiteSpacesIdRoute
   '/store/$userid': typeof SiteStoreUseridRoute
-  '/studio/themes': typeof SiteStudioThemesRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
@@ -3644,9 +3434,6 @@ export interface FileRoutesByFullPath {
   '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin/': typeof SiteAdminIndexRoute
-  '/apps/': typeof SiteAppsIndexRoute
-  '/blog/': typeof SiteBlogIndexRoute
-  '/builds/': typeof SiteBuildsIndexRoute
   '/connections/': typeof SiteConnectionsIndexRoute
   '/create/': typeof SiteCreateIndexRoute
   '/developer/': typeof SiteDeveloperIndexRoute
@@ -3656,12 +3443,10 @@ export interface FileRoutesByFullPath {
   '/homes/': typeof SiteHomesIndexRoute
   '/jams/': typeof SiteJamsIndexRoute
   '/library/': typeof SiteLibraryIndexRoute
-  '/lists/': typeof SiteListsIndexRoute
   '/marathon/': typeof SiteMarathonIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
   '/office-hours/': typeof SiteOfficeHoursIndexRoute
-  '/personas/': typeof SitePersonasIndexRoute
   '/reading/': typeof SiteReadingIndexRoute
   '/rideshare/': typeof SiteRideshareIndexRoute
   '/rings/': typeof SiteRingsIndexRoute
@@ -3671,12 +3456,9 @@ export interface FileRoutesByFullPath {
   '/series/': typeof SiteSeriesIndexRoute
   '/services/': typeof SiteServicesIndexRoute
   '/settings/': typeof SiteSettingsIndexRoute
-  '/spaces/': typeof SiteSpacesIndexRoute
   '/store/': typeof SiteStoreIndexRoute
   '/study/': typeof SiteStudyIndexRoute
   '/tournaments/': typeof SiteTournamentsIndexRoute
-  '/user-builds/': typeof SiteUserBuildsIndexRoute
-  '/v/': typeof SiteVIndexRoute
   '/wager/': typeof SiteWagerIndexRoute
   '/when/': typeof SiteWhenIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
@@ -3783,7 +3565,6 @@ export interface FileRoutesByTo {
   '/breaches': typeof BreachesRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
-  '/covid': typeof CovidRoute
   '/csgo': typeof CsgoRoute
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
@@ -3798,12 +3579,10 @@ export interface FileRoutesByTo {
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/laundry-sort': typeof LaundrySortRoute
-  '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
-  '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
@@ -3823,32 +3602,23 @@ export interface FileRoutesByTo {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
   '/advent': typeof SiteAdventRoute
-  '/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
-  '/bookmarks': typeof SiteBookmarksRoute
   '/canvas': typeof SiteCanvasRoute
   '/changelog': typeof SiteChangelogRoute
   '/communities': typeof SiteCommunitiesRoute
-  '/creator-studio': typeof SiteCreatorStudioRoute
   '/daily-mutator': typeof SiteDailyMutatorRoute
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
-  '/events': typeof SiteEventsRoute
   '/explore': typeof SiteExploreRoute
   '/game-night': typeof SiteGameNightRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
   '/hunt': typeof SiteHuntRoute
-  '/leaderboard': typeof SiteLeaderboardRoute
-  '/market': typeof SiteMarketRoute
   '/museum': typeof SiteMuseumRoute
-  '/notifications': typeof SiteNotificationsRoute
   '/out': typeof SiteOutRoute
   '/photo-of-the-day': typeof SitePhotoOfTheDayRoute
-  '/playlists': typeof SitePlaylistsRoute
   '/predictions': typeof SitePredictionsRoute
-  '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
   '/psychology': typeof SitePsychologyRoute
   '/qotd': typeof SiteQotdRoute
@@ -3861,7 +3631,6 @@ export interface FileRoutesByTo {
   '/search': typeof SiteSearchRoute
   '/sections': typeof SiteSectionsRoute
   '/share': typeof SiteShareRoute
-  '/shop': typeof SiteShopRoute
   '/site-history': typeof SiteSiteHistoryRoute
   '/speedruns': typeof SiteSpeedrunsRoute
   '/today': typeof SiteTodayRoute
@@ -3869,7 +3638,6 @@ export interface FileRoutesByTo {
   '/trash': typeof SiteTrashRoute
   '/ventures': typeof SiteVenturesRoute
   '/wallet': typeof SiteWalletRoute
-  '/wishlist': typeof SiteWishlistRoute
   '/wrapped': typeof SiteWrappedRoute
   '/api/$': typeof ApiSplatRoute
   '/api/client-error': typeof ApiClientErrorRoute
@@ -3957,7 +3725,6 @@ export interface FileRoutesByTo {
   '/rmhtype': typeof RmhtypeIndexRoute
   '/secret': typeof SecretIndexRoute
   '/slice-it': typeof SliceItIndexRoute
-  '/sohumbum2': typeof Sohumbum2IndexRoute
   '/sohumtracker': typeof SohumtrackerIndexRoute
   '/strategies': typeof StrategiesIndexRoute
   '/studio': typeof StudioIndexRoute
@@ -3980,8 +3747,6 @@ export interface FileRoutesByTo {
   '/admin/flags': typeof SiteAdminFlagsRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
-  '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
-  '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/market': typeof SiteAdminMarketRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/admin/performance': typeof SiteAdminPerformanceRoute
@@ -4012,9 +3777,7 @@ export interface FileRoutesByTo {
   '/groups/$id': typeof SiteGroupsIdRoute
   '/homes/manage': typeof SiteHomesManageRoute
   '/homes/rent-split': typeof SiteHomesRentSplitRoute
-  '/homes/saved': typeof SiteHomesSavedRoute
   '/homes/submit': typeof SiteHomesSubmitRoute
-  '/homes/watches': typeof SiteHomesWatchesRoute
   '/jams/$slug': typeof SiteJamsSlugRoute
   '/lists/$id': typeof SiteListsIdRoute
   '/marathon/$shareId': typeof SiteMarathonShareIdRoute
@@ -4045,10 +3808,7 @@ export interface FileRoutesByTo {
   '/series/$id': typeof SiteSeriesIdRoute
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
-  '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
-  '/settings/calendar': typeof SiteSettingsCalendarRoute
-  '/settings/circle': typeof SiteSettingsCircleRoute
   '/settings/content': typeof SiteSettingsContentRoute
   '/settings/layout': typeof SiteSettingsLayoutRoute
   '/settings/notifications': typeof SiteSettingsNotificationsRoute
@@ -4058,7 +3818,6 @@ export interface FileRoutesByTo {
   '/settings/themes': typeof SiteSettingsThemesRoute
   '/spaces/$id': typeof SiteSpacesIdRoute
   '/store/$userid': typeof SiteStoreUseridRoute
-  '/studio/themes': typeof SiteStudioThemesRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
@@ -4150,9 +3909,6 @@ export interface FileRoutesByTo {
   '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin': typeof SiteAdminIndexRoute
-  '/apps': typeof SiteAppsIndexRoute
-  '/blog': typeof SiteBlogIndexRoute
-  '/builds': typeof SiteBuildsIndexRoute
   '/connections': typeof SiteConnectionsIndexRoute
   '/create': typeof SiteCreateIndexRoute
   '/developer': typeof SiteDeveloperIndexRoute
@@ -4162,12 +3918,10 @@ export interface FileRoutesByTo {
   '/homes': typeof SiteHomesIndexRoute
   '/jams': typeof SiteJamsIndexRoute
   '/library': typeof SiteLibraryIndexRoute
-  '/lists': typeof SiteListsIndexRoute
   '/marathon': typeof SiteMarathonIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
   '/office-hours': typeof SiteOfficeHoursIndexRoute
-  '/personas': typeof SitePersonasIndexRoute
   '/reading': typeof SiteReadingIndexRoute
   '/rideshare': typeof SiteRideshareIndexRoute
   '/rings': typeof SiteRingsIndexRoute
@@ -4177,12 +3931,9 @@ export interface FileRoutesByTo {
   '/series': typeof SiteSeriesIndexRoute
   '/services': typeof SiteServicesIndexRoute
   '/settings': typeof SiteSettingsIndexRoute
-  '/spaces': typeof SiteSpacesIndexRoute
   '/store': typeof SiteStoreIndexRoute
   '/study': typeof SiteStudyIndexRoute
   '/tournaments': typeof SiteTournamentsIndexRoute
-  '/user-builds': typeof SiteUserBuildsIndexRoute
-  '/v': typeof SiteVIndexRoute
   '/wager': typeof SiteWagerIndexRoute
   '/when': typeof SiteWhenIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
@@ -4291,7 +4042,6 @@ export interface FileRoutesById {
   '/breaches': typeof BreachesRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
-  '/covid': typeof CovidRoute
   '/csgo': typeof CsgoRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
@@ -4308,12 +4058,10 @@ export interface FileRoutesById {
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
-  '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
-  '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
@@ -4352,32 +4100,23 @@ export interface FileRoutesById {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/advent': typeof SiteAdventRoute
-  '/_site/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/_site/analytics': typeof SiteAnalyticsRoute
   '/_site/arcade': typeof SiteArcadeRoute
-  '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/canvas': typeof SiteCanvasRoute
   '/_site/changelog': typeof SiteChangelogRoute
   '/_site/communities': typeof SiteCommunitiesRoute
-  '/_site/creator-studio': typeof SiteCreatorStudioRoute
   '/_site/daily-mutator': typeof SiteDailyMutatorRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/emoji-packs': typeof SiteEmojiPacksRoute
-  '/_site/events': typeof SiteEventsRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/game-night': typeof SiteGameNightRoute
   '/_site/help': typeof SiteHelpRoute
   '/_site/history': typeof SiteHistoryRoute
   '/_site/hunt': typeof SiteHuntRoute
-  '/_site/leaderboard': typeof SiteLeaderboardRoute
-  '/_site/market': typeof SiteMarketRoute
   '/_site/museum': typeof SiteMuseumRoute
-  '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/out': typeof SiteOutRoute
   '/_site/photo-of-the-day': typeof SitePhotoOfTheDayRoute
-  '/_site/playlists': typeof SitePlaylistsRoute
   '/_site/predictions': typeof SitePredictionsRoute
-  '/_site/pricing': typeof SitePricingRoute
   '/_site/progress': typeof SiteProgressRoute
   '/_site/psychology': typeof SitePsychologyRoute
   '/_site/qotd': typeof SiteQotdRoute
@@ -4392,7 +4131,6 @@ export interface FileRoutesById {
   '/_site/sections': typeof SiteSectionsRoute
   '/_site/services': typeof SiteServicesRouteWithChildren
   '/_site/share': typeof SiteShareRoute
-  '/_site/shop': typeof SiteShopRoute
   '/_site/site-history': typeof SiteSiteHistoryRoute
   '/_site/speedruns': typeof SiteSpeedrunsRoute
   '/_site/today': typeof SiteTodayRoute
@@ -4400,7 +4138,6 @@ export interface FileRoutesById {
   '/_site/trash': typeof SiteTrashRoute
   '/_site/ventures': typeof SiteVenturesRoute
   '/_site/wallet': typeof SiteWalletRoute
-  '/_site/wishlist': typeof SiteWishlistRoute
   '/_site/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/$': typeof ApiSplatRoute
@@ -4491,7 +4228,6 @@ export interface FileRoutesById {
   '/rmhtype/': typeof RmhtypeIndexRoute
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
-  '/sohumbum2/': typeof Sohumbum2IndexRoute
   '/sohumtracker/': typeof SohumtrackerIndexRoute
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
@@ -4514,8 +4250,6 @@ export interface FileRoutesById {
   '/_site/admin/flags': typeof SiteAdminFlagsRoute
   '/_site/admin/insights': typeof SiteAdminInsightsRoute
   '/_site/admin/library': typeof SiteAdminLibraryRoute
-  '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
-  '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/_site/admin/market': typeof SiteAdminMarketRoute
   '/_site/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/_site/admin/performance': typeof SiteAdminPerformanceRoute
@@ -4546,9 +4280,7 @@ export interface FileRoutesById {
   '/_site/groups/$id': typeof SiteGroupsIdRoute
   '/_site/homes/manage': typeof SiteHomesManageRoute
   '/_site/homes/rent-split': typeof SiteHomesRentSplitRoute
-  '/_site/homes/saved': typeof SiteHomesSavedRoute
   '/_site/homes/submit': typeof SiteHomesSubmitRoute
-  '/_site/homes/watches': typeof SiteHomesWatchesRoute
   '/_site/jams/$slug': typeof SiteJamsSlugRoute
   '/_site/lists/$id': typeof SiteListsIdRoute
   '/_site/marathon/$shareId': typeof SiteMarathonShareIdRoute
@@ -4579,10 +4311,7 @@ export interface FileRoutesById {
   '/_site/series/$id': typeof SiteSeriesIdRoute
   '/_site/services/cars': typeof SiteServicesCarsRoute
   '/_site/services/fashion': typeof SiteServicesFashionRoute
-  '/_site/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
-  '/_site/settings/calendar': typeof SiteSettingsCalendarRoute
-  '/_site/settings/circle': typeof SiteSettingsCircleRoute
   '/_site/settings/content': typeof SiteSettingsContentRoute
   '/_site/settings/layout': typeof SiteSettingsLayoutRoute
   '/_site/settings/notifications': typeof SiteSettingsNotificationsRoute
@@ -4592,7 +4321,6 @@ export interface FileRoutesById {
   '/_site/settings/themes': typeof SiteSettingsThemesRoute
   '/_site/spaces/$id': typeof SiteSpacesIdRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
-  '/_site/studio/themes': typeof SiteStudioThemesRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
   '/_site/study/browse': typeof SiteStudyBrowseRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
@@ -4684,9 +4412,6 @@ export interface FileRoutesById {
   '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
-  '/_site/apps/': typeof SiteAppsIndexRoute
-  '/_site/blog/': typeof SiteBlogIndexRoute
-  '/_site/builds/': typeof SiteBuildsIndexRoute
   '/_site/connections/': typeof SiteConnectionsIndexRoute
   '/_site/create/': typeof SiteCreateIndexRoute
   '/_site/developer/': typeof SiteDeveloperIndexRoute
@@ -4696,12 +4421,10 @@ export interface FileRoutesById {
   '/_site/homes/': typeof SiteHomesIndexRoute
   '/_site/jams/': typeof SiteJamsIndexRoute
   '/_site/library/': typeof SiteLibraryIndexRoute
-  '/_site/lists/': typeof SiteListsIndexRoute
   '/_site/marathon/': typeof SiteMarathonIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/office-hours/': typeof SiteOfficeHoursIndexRoute
-  '/_site/personas/': typeof SitePersonasIndexRoute
   '/_site/reading/': typeof SiteReadingIndexRoute
   '/_site/rideshare/': typeof SiteRideshareIndexRoute
   '/_site/rings/': typeof SiteRingsIndexRoute
@@ -4711,12 +4434,9 @@ export interface FileRoutesById {
   '/_site/series/': typeof SiteSeriesIndexRoute
   '/_site/services/': typeof SiteServicesIndexRoute
   '/_site/settings/': typeof SiteSettingsIndexRoute
-  '/_site/spaces/': typeof SiteSpacesIndexRoute
   '/_site/store/': typeof SiteStoreIndexRoute
   '/_site/study/': typeof SiteStudyIndexRoute
   '/_site/tournaments/': typeof SiteTournamentsIndexRoute
-  '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
-  '/_site/v/': typeof SiteVIndexRoute
   '/_site/wager/': typeof SiteWagerIndexRoute
   '/_site/when/': typeof SiteWhenIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
@@ -4827,7 +4547,6 @@ export interface FileRouteTypes {
     | '/breaches'
     | '/cookies'
     | '/copyright'
-    | '/covid'
     | '/csgo'
     | '/daily'
     | '/deeplink'
@@ -4844,12 +4563,10 @@ export interface FileRouteTypes {
     | '/kaikaidebtcounter'
     | '/kowloon-knockout'
     | '/laundry-sort'
-    | '/lights-out'
     | '/login'
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
-    | '/optimization'
     | '/pf2ecal'
     | '/portal'
     | '/privacy'
@@ -4888,32 +4605,23 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/achievements'
     | '/advent'
-    | '/alexdebtcounter'
     | '/analytics'
     | '/arcade'
-    | '/bookmarks'
     | '/canvas'
     | '/changelog'
     | '/communities'
-    | '/creator-studio'
     | '/daily-mutator'
     | '/drafts'
     | '/emoji-packs'
-    | '/events'
     | '/explore'
     | '/game-night'
     | '/help'
     | '/history'
     | '/hunt'
-    | '/leaderboard'
-    | '/market'
     | '/museum'
-    | '/notifications'
     | '/out'
     | '/photo-of-the-day'
-    | '/playlists'
     | '/predictions'
-    | '/pricing'
     | '/progress'
     | '/psychology'
     | '/qotd'
@@ -4928,7 +4636,6 @@ export interface FileRouteTypes {
     | '/sections'
     | '/services'
     | '/share'
-    | '/shop'
     | '/site-history'
     | '/speedruns'
     | '/today'
@@ -4936,7 +4643,6 @@ export interface FileRouteTypes {
     | '/trash'
     | '/ventures'
     | '/wallet'
-    | '/wishlist'
     | '/wrapped'
     | '/altair/multiplayer'
     | '/api/$'
@@ -5025,7 +4731,6 @@ export interface FileRouteTypes {
     | '/rmhtype/'
     | '/secret/'
     | '/slice-it/'
-    | '/sohumbum2/'
     | '/sohumtracker/'
     | '/strategies/'
     | '/studio/'
@@ -5048,8 +4753,6 @@ export interface FileRouteTypes {
     | '/admin/flags'
     | '/admin/insights'
     | '/admin/library'
-    | '/admin/library-quota'
-    | '/admin/library-storage'
     | '/admin/market'
     | '/admin/patch-notes'
     | '/admin/performance'
@@ -5080,9 +4783,7 @@ export interface FileRouteTypes {
     | '/groups/$id'
     | '/homes/manage'
     | '/homes/rent-split'
-    | '/homes/saved'
     | '/homes/submit'
-    | '/homes/watches'
     | '/jams/$slug'
     | '/lists/$id'
     | '/marathon/$shareId'
@@ -5113,10 +4814,7 @@ export interface FileRouteTypes {
     | '/series/$id'
     | '/services/cars'
     | '/services/fashion'
-    | '/settings/account-status'
     | '/settings/appearance'
-    | '/settings/calendar'
-    | '/settings/circle'
     | '/settings/content'
     | '/settings/layout'
     | '/settings/notifications'
@@ -5126,7 +4824,6 @@ export interface FileRouteTypes {
     | '/settings/themes'
     | '/spaces/$id'
     | '/store/$userid'
-    | '/studio/themes'
     | '/study/$deckId'
     | '/study/browse'
     | '/tag/$tag'
@@ -5218,9 +4915,6 @@ export interface FileRouteTypes {
     | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/admin/'
-    | '/apps/'
-    | '/blog/'
-    | '/builds/'
     | '/connections/'
     | '/create/'
     | '/developer/'
@@ -5230,12 +4924,10 @@ export interface FileRouteTypes {
     | '/homes/'
     | '/jams/'
     | '/library/'
-    | '/lists/'
     | '/marathon/'
     | '/messages/'
     | '/news/'
     | '/office-hours/'
-    | '/personas/'
     | '/reading/'
     | '/rideshare/'
     | '/rings/'
@@ -5245,12 +4937,9 @@ export interface FileRouteTypes {
     | '/series/'
     | '/services/'
     | '/settings/'
-    | '/spaces/'
     | '/store/'
     | '/study/'
     | '/tournaments/'
-    | '/user-builds/'
-    | '/v/'
     | '/wager/'
     | '/when/'
     | '/altair/multiplayer/'
@@ -5357,7 +5046,6 @@ export interface FileRouteTypes {
     | '/breaches'
     | '/cookies'
     | '/copyright'
-    | '/covid'
     | '/csgo'
     | '/deeplink'
     | '/design'
@@ -5372,12 +5060,10 @@ export interface FileRouteTypes {
     | '/house-always-wins'
     | '/kaikaidebtcounter'
     | '/laundry-sort'
-    | '/lights-out'
     | '/login'
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
-    | '/optimization'
     | '/pf2ecal'
     | '/portal'
     | '/privacy'
@@ -5397,32 +5083,23 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/achievements'
     | '/advent'
-    | '/alexdebtcounter'
     | '/analytics'
     | '/arcade'
-    | '/bookmarks'
     | '/canvas'
     | '/changelog'
     | '/communities'
-    | '/creator-studio'
     | '/daily-mutator'
     | '/drafts'
     | '/emoji-packs'
-    | '/events'
     | '/explore'
     | '/game-night'
     | '/help'
     | '/history'
     | '/hunt'
-    | '/leaderboard'
-    | '/market'
     | '/museum'
-    | '/notifications'
     | '/out'
     | '/photo-of-the-day'
-    | '/playlists'
     | '/predictions'
-    | '/pricing'
     | '/progress'
     | '/psychology'
     | '/qotd'
@@ -5435,7 +5112,6 @@ export interface FileRouteTypes {
     | '/search'
     | '/sections'
     | '/share'
-    | '/shop'
     | '/site-history'
     | '/speedruns'
     | '/today'
@@ -5443,7 +5119,6 @@ export interface FileRouteTypes {
     | '/trash'
     | '/ventures'
     | '/wallet'
-    | '/wishlist'
     | '/wrapped'
     | '/api/$'
     | '/api/client-error'
@@ -5531,7 +5206,6 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/secret'
     | '/slice-it'
-    | '/sohumbum2'
     | '/sohumtracker'
     | '/strategies'
     | '/studio'
@@ -5554,8 +5228,6 @@ export interface FileRouteTypes {
     | '/admin/flags'
     | '/admin/insights'
     | '/admin/library'
-    | '/admin/library-quota'
-    | '/admin/library-storage'
     | '/admin/market'
     | '/admin/patch-notes'
     | '/admin/performance'
@@ -5586,9 +5258,7 @@ export interface FileRouteTypes {
     | '/groups/$id'
     | '/homes/manage'
     | '/homes/rent-split'
-    | '/homes/saved'
     | '/homes/submit'
-    | '/homes/watches'
     | '/jams/$slug'
     | '/lists/$id'
     | '/marathon/$shareId'
@@ -5619,10 +5289,7 @@ export interface FileRouteTypes {
     | '/series/$id'
     | '/services/cars'
     | '/services/fashion'
-    | '/settings/account-status'
     | '/settings/appearance'
-    | '/settings/calendar'
-    | '/settings/circle'
     | '/settings/content'
     | '/settings/layout'
     | '/settings/notifications'
@@ -5632,7 +5299,6 @@ export interface FileRouteTypes {
     | '/settings/themes'
     | '/spaces/$id'
     | '/store/$userid'
-    | '/studio/themes'
     | '/study/$deckId'
     | '/study/browse'
     | '/tag/$tag'
@@ -5724,9 +5390,6 @@ export interface FileRouteTypes {
     | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/admin'
-    | '/apps'
-    | '/blog'
-    | '/builds'
     | '/connections'
     | '/create'
     | '/developer'
@@ -5736,12 +5399,10 @@ export interface FileRouteTypes {
     | '/homes'
     | '/jams'
     | '/library'
-    | '/lists'
     | '/marathon'
     | '/messages'
     | '/news'
     | '/office-hours'
-    | '/personas'
     | '/reading'
     | '/rideshare'
     | '/rings'
@@ -5751,12 +5412,9 @@ export interface FileRouteTypes {
     | '/series'
     | '/services'
     | '/settings'
-    | '/spaces'
     | '/store'
     | '/study'
     | '/tournaments'
-    | '/user-builds'
-    | '/v'
     | '/wager'
     | '/when'
     | '/altair/multiplayer'
@@ -5864,7 +5522,6 @@ export interface FileRouteTypes {
     | '/breaches'
     | '/cookies'
     | '/copyright'
-    | '/covid'
     | '/csgo'
     | '/daily'
     | '/deeplink'
@@ -5881,12 +5538,10 @@ export interface FileRouteTypes {
     | '/kaikaidebtcounter'
     | '/kowloon-knockout'
     | '/laundry-sort'
-    | '/lights-out'
     | '/login'
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
-    | '/optimization'
     | '/pf2ecal'
     | '/portal'
     | '/privacy'
@@ -5925,32 +5580,23 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/_site/achievements'
     | '/_site/advent'
-    | '/_site/alexdebtcounter'
     | '/_site/analytics'
     | '/_site/arcade'
-    | '/_site/bookmarks'
     | '/_site/canvas'
     | '/_site/changelog'
     | '/_site/communities'
-    | '/_site/creator-studio'
     | '/_site/daily-mutator'
     | '/_site/drafts'
     | '/_site/emoji-packs'
-    | '/_site/events'
     | '/_site/explore'
     | '/_site/game-night'
     | '/_site/help'
     | '/_site/history'
     | '/_site/hunt'
-    | '/_site/leaderboard'
-    | '/_site/market'
     | '/_site/museum'
-    | '/_site/notifications'
     | '/_site/out'
     | '/_site/photo-of-the-day'
-    | '/_site/playlists'
     | '/_site/predictions'
-    | '/_site/pricing'
     | '/_site/progress'
     | '/_site/psychology'
     | '/_site/qotd'
@@ -5965,7 +5611,6 @@ export interface FileRouteTypes {
     | '/_site/sections'
     | '/_site/services'
     | '/_site/share'
-    | '/_site/shop'
     | '/_site/site-history'
     | '/_site/speedruns'
     | '/_site/today'
@@ -5973,7 +5618,6 @@ export interface FileRouteTypes {
     | '/_site/trash'
     | '/_site/ventures'
     | '/_site/wallet'
-    | '/_site/wishlist'
     | '/_site/wrapped'
     | '/altair/multiplayer'
     | '/api/$'
@@ -6064,7 +5708,6 @@ export interface FileRouteTypes {
     | '/rmhtype/'
     | '/secret/'
     | '/slice-it/'
-    | '/sohumbum2/'
     | '/sohumtracker/'
     | '/strategies/'
     | '/studio/'
@@ -6087,8 +5730,6 @@ export interface FileRouteTypes {
     | '/_site/admin/flags'
     | '/_site/admin/insights'
     | '/_site/admin/library'
-    | '/_site/admin/library-quota'
-    | '/_site/admin/library-storage'
     | '/_site/admin/market'
     | '/_site/admin/patch-notes'
     | '/_site/admin/performance'
@@ -6119,9 +5760,7 @@ export interface FileRouteTypes {
     | '/_site/groups/$id'
     | '/_site/homes/manage'
     | '/_site/homes/rent-split'
-    | '/_site/homes/saved'
     | '/_site/homes/submit'
-    | '/_site/homes/watches'
     | '/_site/jams/$slug'
     | '/_site/lists/$id'
     | '/_site/marathon/$shareId'
@@ -6152,10 +5791,7 @@ export interface FileRouteTypes {
     | '/_site/series/$id'
     | '/_site/services/cars'
     | '/_site/services/fashion'
-    | '/_site/settings/account-status'
     | '/_site/settings/appearance'
-    | '/_site/settings/calendar'
-    | '/_site/settings/circle'
     | '/_site/settings/content'
     | '/_site/settings/layout'
     | '/_site/settings/notifications'
@@ -6165,7 +5801,6 @@ export interface FileRouteTypes {
     | '/_site/settings/themes'
     | '/_site/spaces/$id'
     | '/_site/store/$userid'
-    | '/_site/studio/themes'
     | '/_site/study/$deckId'
     | '/_site/study/browse'
     | '/_site/tag/$tag'
@@ -6257,9 +5892,6 @@ export interface FileRouteTypes {
     | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/_site/admin/'
-    | '/_site/apps/'
-    | '/_site/blog/'
-    | '/_site/builds/'
     | '/_site/connections/'
     | '/_site/create/'
     | '/_site/developer/'
@@ -6269,12 +5901,10 @@ export interface FileRouteTypes {
     | '/_site/homes/'
     | '/_site/jams/'
     | '/_site/library/'
-    | '/_site/lists/'
     | '/_site/marathon/'
     | '/_site/messages/'
     | '/_site/news/'
     | '/_site/office-hours/'
-    | '/_site/personas/'
     | '/_site/reading/'
     | '/_site/rideshare/'
     | '/_site/rings/'
@@ -6284,12 +5914,9 @@ export interface FileRouteTypes {
     | '/_site/series/'
     | '/_site/services/'
     | '/_site/settings/'
-    | '/_site/spaces/'
     | '/_site/store/'
     | '/_site/study/'
     | '/_site/tournaments/'
-    | '/_site/user-builds/'
-    | '/_site/v/'
     | '/_site/wager/'
     | '/_site/when/'
     | '/altair/multiplayer/'
@@ -6399,7 +6026,6 @@ export interface RootRouteChildren {
   BreachesRoute: typeof BreachesRoute
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
-  CovidRoute: typeof CovidRoute
   CsgoRoute: typeof CsgoRoute
   DailyRoute: typeof DailyRouteWithChildren
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
@@ -6416,12 +6042,10 @@ export interface RootRouteChildren {
   KaikaidebtcounterRoute: typeof KaikaidebtcounterRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
   LaundrySortRoute: typeof LaundrySortRoute
-  LightsOutRoute: typeof LightsOutRoute
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   NightrailRoute: typeof NightrailRoute
   OfflineRoute: typeof OfflineRoute
-  OptimizationRoute: typeof OptimizationRoute
   Pf2ecalRoute: typeof Pf2ecalRoute
   PortalRoute: typeof PortalRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -6475,7 +6099,6 @@ export interface RootRouteChildren {
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
   DiscordIndexRoute: typeof DiscordIndexRoute
-  Sohumbum2IndexRoute: typeof Sohumbum2IndexRoute
   SohumtrackerIndexRoute: typeof SohumtrackerIndexRoute
   ApiAiMessageSuggestRoute: typeof ApiAiMessageSuggestRoute
   ApiAiTransformRoute: typeof ApiAiTransformRoute
@@ -6643,13 +6266,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CopyrightRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/covid': {
-      id: '/covid'
-      path: '/covid'
-      fullPath: '/covid'
-      preLoaderRoute: typeof CovidRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/csgo': {
       id: '/csgo'
       path: '/csgo'
@@ -6762,13 +6378,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LaundrySortRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lights-out': {
-      id: '/lights-out'
-      path: '/lights-out'
-      fullPath: '/lights-out'
-      preLoaderRoute: typeof LightsOutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -6795,13 +6404,6 @@ declare module '@tanstack/react-router' {
       path: '/offline'
       fullPath: '/offline'
       preLoaderRoute: typeof OfflineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/optimization': {
-      id: '/optimization'
-      path: '/optimization'
-      fullPath: '/optimization'
-      preLoaderRoute: typeof OptimizationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pf2ecal': {
@@ -7063,13 +6665,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdventRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/alexdebtcounter': {
-      id: '/_site/alexdebtcounter'
-      path: '/alexdebtcounter'
-      fullPath: '/alexdebtcounter'
-      preLoaderRoute: typeof SiteAlexdebtcounterRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/analytics': {
       id: '/_site/analytics'
       path: '/analytics'
@@ -7082,13 +6677,6 @@ declare module '@tanstack/react-router' {
       path: '/arcade'
       fullPath: '/arcade'
       preLoaderRoute: typeof SiteArcadeRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/bookmarks': {
-      id: '/_site/bookmarks'
-      path: '/bookmarks'
-      fullPath: '/bookmarks'
-      preLoaderRoute: typeof SiteBookmarksRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/canvas': {
@@ -7119,13 +6707,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteCreateRouteRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/creator-studio': {
-      id: '/_site/creator-studio'
-      path: '/creator-studio'
-      fullPath: '/creator-studio'
-      preLoaderRoute: typeof SiteCreatorStudioRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/daily-mutator': {
       id: '/_site/daily-mutator'
       path: '/daily-mutator'
@@ -7152,13 +6733,6 @@ declare module '@tanstack/react-router' {
       path: '/emoji-packs'
       fullPath: '/emoji-packs'
       preLoaderRoute: typeof SiteEmojiPacksRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/events': {
-      id: '/_site/events'
-      path: '/events'
-      fullPath: '/events'
-      preLoaderRoute: typeof SiteEventsRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/explore': {
@@ -7196,32 +6770,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteHuntRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/leaderboard': {
-      id: '/_site/leaderboard'
-      path: '/leaderboard'
-      fullPath: '/leaderboard'
-      preLoaderRoute: typeof SiteLeaderboardRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/market': {
-      id: '/_site/market'
-      path: '/market'
-      fullPath: '/market'
-      preLoaderRoute: typeof SiteMarketRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/museum': {
       id: '/_site/museum'
       path: '/museum'
       fullPath: '/museum'
       preLoaderRoute: typeof SiteMuseumRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/notifications': {
-      id: '/_site/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof SiteNotificationsRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/out': {
@@ -7238,25 +6791,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitePhotoOfTheDayRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/playlists': {
-      id: '/_site/playlists'
-      path: '/playlists'
-      fullPath: '/playlists'
-      preLoaderRoute: typeof SitePlaylistsRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/predictions': {
       id: '/_site/predictions'
       path: '/predictions'
       fullPath: '/predictions'
       preLoaderRoute: typeof SitePredictionsRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/pricing': {
-      id: '/_site/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof SitePricingRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/progress': {
@@ -7357,13 +6896,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteShareRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/shop': {
-      id: '/_site/shop'
-      path: '/shop'
-      fullPath: '/shop'
-      preLoaderRoute: typeof SiteShopRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/site-history': {
       id: '/_site/site-history'
       path: '/site-history'
@@ -7411,13 +6943,6 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof SiteWalletRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/wishlist': {
-      id: '/_site/wishlist'
-      path: '/wishlist'
-      fullPath: '/wishlist'
-      preLoaderRoute: typeof SiteWishlistRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/wrapped': {
@@ -7987,13 +7512,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SliceItIndexRouteImport
       parentRoute: typeof SliceItRoute
     }
-    '/sohumbum2/': {
-      id: '/sohumbum2/'
-      path: '/sohumbum2'
-      fullPath: '/sohumbum2/'
-      preLoaderRoute: typeof Sohumbum2IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sohumbum2/$date': {
       id: '/sohumbum2/$date'
       path: '/sohumbum2/$date'
@@ -8211,20 +7729,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminLibraryRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
-    '/_site/admin/library-quota': {
-      id: '/_site/admin/library-quota'
-      path: '/library-quota'
-      fullPath: '/admin/library-quota'
-      preLoaderRoute: typeof SiteAdminLibraryQuotaRouteImport
-      parentRoute: typeof SiteAdminRouteRoute
-    }
-    '/_site/admin/library-storage': {
-      id: '/_site/admin/library-storage'
-      path: '/library-storage'
-      fullPath: '/admin/library-storage'
-      preLoaderRoute: typeof SiteAdminLibraryStorageRouteImport
-      parentRoute: typeof SiteAdminRouteRoute
-    }
     '/_site/admin/market': {
       id: '/_site/admin/market'
       path: '/market'
@@ -8344,32 +7848,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminUsersRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
-    '/_site/apps/': {
-      id: '/_site/apps/'
-      path: '/apps'
-      fullPath: '/apps/'
-      preLoaderRoute: typeof SiteAppsIndexRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/blog/': {
-      id: '/_site/blog/'
-      path: '/blog'
-      fullPath: '/blog/'
-      preLoaderRoute: typeof SiteBlogIndexRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/blog/$slug': {
       id: '/_site/blog/$slug'
       path: '/blog/$slug'
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof SiteBlogSlugRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/builds/': {
-      id: '/_site/builds/'
-      path: '/builds'
-      fullPath: '/builds/'
-      preLoaderRoute: typeof SiteBuildsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/builds/$slug': {
@@ -8505,25 +7988,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteHomesRentSplitRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/homes/saved': {
-      id: '/_site/homes/saved'
-      path: '/homes/saved'
-      fullPath: '/homes/saved'
-      preLoaderRoute: typeof SiteHomesSavedRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/homes/submit': {
       id: '/_site/homes/submit'
       path: '/homes/submit'
       fullPath: '/homes/submit'
       preLoaderRoute: typeof SiteHomesSubmitRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/homes/watches': {
-      id: '/_site/homes/watches'
-      path: '/homes/watches'
-      fullPath: '/homes/watches'
-      preLoaderRoute: typeof SiteHomesWatchesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/jams/': {
@@ -8545,13 +8014,6 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library/'
       preLoaderRoute: typeof SiteLibraryIndexRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/lists/': {
-      id: '/_site/lists/'
-      path: '/lists'
-      fullPath: '/lists/'
-      preLoaderRoute: typeof SiteListsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/lists/$id': {
@@ -8622,13 +8084,6 @@ declare module '@tanstack/react-router' {
       path: '/office-hours/$userId'
       fullPath: '/office-hours/$userId'
       preLoaderRoute: typeof SiteOfficeHoursUserIdRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/personas/': {
-      id: '/_site/personas/'
-      path: '/personas'
-      fullPath: '/personas/'
-      preLoaderRoute: typeof SitePersonasIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/personas/$id': {
@@ -8855,32 +8310,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSettingsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/settings/account-status': {
-      id: '/_site/settings/account-status'
-      path: '/settings/account-status'
-      fullPath: '/settings/account-status'
-      preLoaderRoute: typeof SiteSettingsAccountStatusRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/settings/appearance': {
       id: '/_site/settings/appearance'
       path: '/settings/appearance'
       fullPath: '/settings/appearance'
       preLoaderRoute: typeof SiteSettingsAppearanceRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/settings/calendar': {
-      id: '/_site/settings/calendar'
-      path: '/settings/calendar'
-      fullPath: '/settings/calendar'
-      preLoaderRoute: typeof SiteSettingsCalendarRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/settings/circle': {
-      id: '/_site/settings/circle'
-      path: '/settings/circle'
-      fullPath: '/settings/circle'
-      preLoaderRoute: typeof SiteSettingsCircleRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/settings/content': {
@@ -8932,13 +8366,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSettingsThemesRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/spaces/': {
-      id: '/_site/spaces/'
-      path: '/spaces'
-      fullPath: '/spaces/'
-      preLoaderRoute: typeof SiteSpacesIndexRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/spaces/$id': {
       id: '/_site/spaces/$id'
       path: '/spaces/$id'
@@ -8958,13 +8385,6 @@ declare module '@tanstack/react-router' {
       path: '/store/$userid'
       fullPath: '/store/$userid'
       preLoaderRoute: typeof SiteStoreUseridRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/studio/themes': {
-      id: '/_site/studio/themes'
-      path: '/studio/themes'
-      fullPath: '/studio/themes'
-      preLoaderRoute: typeof SiteStudioThemesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/study/': {
@@ -9016,13 +8436,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteTournamentsIdRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/user-builds/': {
-      id: '/_site/user-builds/'
-      path: '/user-builds'
-      fullPath: '/user-builds/'
-      preLoaderRoute: typeof SiteUserBuildsIndexRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/user-builds/$slug': {
       id: '/_site/user-builds/$slug'
       path: '/user-builds/$slug'
@@ -9042,13 +8455,6 @@ declare module '@tanstack/react-router' {
       path: '/user-builds/submit'
       fullPath: '/user-builds/submit'
       preLoaderRoute: typeof SiteUserBuildsSubmitRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/v/': {
-      id: '/_site/v/'
-      path: '/v'
-      fullPath: '/v/'
-      preLoaderRoute: typeof SiteVIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/wager/': {
@@ -10323,8 +9729,6 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminFlagsRoute: typeof SiteAdminFlagsRoute
   SiteAdminInsightsRoute: typeof SiteAdminInsightsRoute
   SiteAdminLibraryRoute: typeof SiteAdminLibraryRoute
-  SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
-  SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
   SiteAdminMarketRoute: typeof SiteAdminMarketRoute
   SiteAdminPatchNotesRoute: typeof SiteAdminPatchNotesRoute
   SiteAdminPerformanceRoute: typeof SiteAdminPerformanceRoute
@@ -10366,8 +9770,6 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminFlagsRoute: SiteAdminFlagsRoute,
   SiteAdminInsightsRoute: SiteAdminInsightsRoute,
   SiteAdminLibraryRoute: SiteAdminLibraryRoute,
-  SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,
-  SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
   SiteAdminMarketRoute: SiteAdminMarketRoute,
   SiteAdminPatchNotesRoute: SiteAdminPatchNotesRoute,
   SiteAdminPerformanceRoute: SiteAdminPerformanceRoute,
@@ -10491,32 +9893,23 @@ interface SiteRouteChildren {
   SiteDeveloperRouteRoute: typeof SiteDeveloperRouteRouteWithChildren
   SiteAchievementsRoute: typeof SiteAchievementsRoute
   SiteAdventRoute: typeof SiteAdventRoute
-  SiteAlexdebtcounterRoute: typeof SiteAlexdebtcounterRoute
   SiteAnalyticsRoute: typeof SiteAnalyticsRoute
   SiteArcadeRoute: typeof SiteArcadeRoute
-  SiteBookmarksRoute: typeof SiteBookmarksRoute
   SiteCanvasRoute: typeof SiteCanvasRoute
   SiteChangelogRoute: typeof SiteChangelogRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
-  SiteCreatorStudioRoute: typeof SiteCreatorStudioRoute
   SiteDailyMutatorRoute: typeof SiteDailyMutatorRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteEmojiPacksRoute: typeof SiteEmojiPacksRoute
-  SiteEventsRoute: typeof SiteEventsRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteGameNightRoute: typeof SiteGameNightRoute
   SiteHelpRoute: typeof SiteHelpRoute
   SiteHistoryRoute: typeof SiteHistoryRoute
   SiteHuntRoute: typeof SiteHuntRoute
-  SiteLeaderboardRoute: typeof SiteLeaderboardRoute
-  SiteMarketRoute: typeof SiteMarketRoute
   SiteMuseumRoute: typeof SiteMuseumRoute
-  SiteNotificationsRoute: typeof SiteNotificationsRoute
   SiteOutRoute: typeof SiteOutRoute
   SitePhotoOfTheDayRoute: typeof SitePhotoOfTheDayRoute
-  SitePlaylistsRoute: typeof SitePlaylistsRoute
   SitePredictionsRoute: typeof SitePredictionsRoute
-  SitePricingRoute: typeof SitePricingRoute
   SiteProgressRoute: typeof SiteProgressRoute
   SitePsychologyRoute: typeof SitePsychologyRoute
   SiteQotdRoute: typeof SiteQotdRoute
@@ -10531,7 +9924,6 @@ interface SiteRouteChildren {
   SiteSectionsRoute: typeof SiteSectionsRoute
   SiteServicesRoute: typeof SiteServicesRouteWithChildren
   SiteShareRoute: typeof SiteShareRoute
-  SiteShopRoute: typeof SiteShopRoute
   SiteSiteHistoryRoute: typeof SiteSiteHistoryRoute
   SiteSpeedrunsRoute: typeof SiteSpeedrunsRoute
   SiteTodayRoute: typeof SiteTodayRoute
@@ -10539,7 +9931,6 @@ interface SiteRouteChildren {
   SiteTrashRoute: typeof SiteTrashRoute
   SiteVenturesRoute: typeof SiteVenturesRoute
   SiteWalletRoute: typeof SiteWalletRoute
-  SiteWishlistRoute: typeof SiteWishlistRoute
   SiteWrappedRoute: typeof SiteWrappedRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteAccountConnectRoute: typeof SiteAccountConnectRoute
@@ -10552,9 +9943,7 @@ interface SiteRouteChildren {
   SiteGroupsIdRoute: typeof SiteGroupsIdRoute
   SiteHomesManageRoute: typeof SiteHomesManageRoute
   SiteHomesRentSplitRoute: typeof SiteHomesRentSplitRoute
-  SiteHomesSavedRoute: typeof SiteHomesSavedRoute
   SiteHomesSubmitRoute: typeof SiteHomesSubmitRoute
-  SiteHomesWatchesRoute: typeof SiteHomesWatchesRoute
   SiteJamsSlugRoute: typeof SiteJamsSlugRoute
   SiteListsIdRoute: typeof SiteListsIdRoute
   SiteMarathonShareIdRoute: typeof SiteMarathonShareIdRoute
@@ -10574,10 +9963,7 @@ interface SiteRouteChildren {
   SiteRmhDatacenterPowerRoute: typeof SiteRmhDatacenterPowerRoute
   SiteSafetyPileOnRoute: typeof SiteSafetyPileOnRoute
   SiteSeriesIdRoute: typeof SiteSeriesIdRoute
-  SiteSettingsAccountStatusRoute: typeof SiteSettingsAccountStatusRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
-  SiteSettingsCalendarRoute: typeof SiteSettingsCalendarRoute
-  SiteSettingsCircleRoute: typeof SiteSettingsCircleRoute
   SiteSettingsContentRoute: typeof SiteSettingsContentRoute
   SiteSettingsLayoutRoute: typeof SiteSettingsLayoutRoute
   SiteSettingsNotificationsRoute: typeof SiteSettingsNotificationsRoute
@@ -10587,7 +9973,6 @@ interface SiteRouteChildren {
   SiteSettingsThemesRoute: typeof SiteSettingsThemesRoute
   SiteSpacesIdRoute: typeof SiteSpacesIdRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
-  SiteStudioThemesRoute: typeof SiteStudioThemesRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
   SiteStudyBrowseRoute: typeof SiteStudyBrowseRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
@@ -10598,9 +9983,6 @@ interface SiteRouteChildren {
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteWagerIdRoute: typeof SiteWagerIdRoute
   SiteWhenIdRoute: typeof SiteWhenIdRoute
-  SiteAppsIndexRoute: typeof SiteAppsIndexRoute
-  SiteBlogIndexRoute: typeof SiteBlogIndexRoute
-  SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
   SiteConnectionsIndexRoute: typeof SiteConnectionsIndexRoute
   SiteExchangeIndexRoute: typeof SiteExchangeIndexRoute
   SiteFeedsIndexRoute: typeof SiteFeedsIndexRoute
@@ -10608,12 +9990,10 @@ interface SiteRouteChildren {
   SiteHomesIndexRoute: typeof SiteHomesIndexRoute
   SiteJamsIndexRoute: typeof SiteJamsIndexRoute
   SiteLibraryIndexRoute: typeof SiteLibraryIndexRoute
-  SiteListsIndexRoute: typeof SiteListsIndexRoute
   SiteMarathonIndexRoute: typeof SiteMarathonIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SiteOfficeHoursIndexRoute: typeof SiteOfficeHoursIndexRoute
-  SitePersonasIndexRoute: typeof SitePersonasIndexRoute
   SiteReadingIndexRoute: typeof SiteReadingIndexRoute
   SiteRideshareIndexRoute: typeof SiteRideshareIndexRoute
   SiteRingsIndexRoute: typeof SiteRingsIndexRoute
@@ -10621,12 +10001,9 @@ interface SiteRouteChildren {
   SiteSavesIndexRoute: typeof SiteSavesIndexRoute
   SiteSeriesIndexRoute: typeof SiteSeriesIndexRoute
   SiteSettingsIndexRoute: typeof SiteSettingsIndexRoute
-  SiteSpacesIndexRoute: typeof SiteSpacesIndexRoute
   SiteStoreIndexRoute: typeof SiteStoreIndexRoute
   SiteStudyIndexRoute: typeof SiteStudyIndexRoute
   SiteTournamentsIndexRoute: typeof SiteTournamentsIndexRoute
-  SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
-  SiteVIndexRoute: typeof SiteVIndexRoute
   SiteWagerIndexRoute: typeof SiteWagerIndexRoute
   SiteWhenIndexRoute: typeof SiteWhenIndexRoute
   SiteConnectionsUIdRoute: typeof SiteConnectionsUIdRoute
@@ -10643,32 +10020,23 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteDeveloperRouteRoute: SiteDeveloperRouteRouteWithChildren,
   SiteAchievementsRoute: SiteAchievementsRoute,
   SiteAdventRoute: SiteAdventRoute,
-  SiteAlexdebtcounterRoute: SiteAlexdebtcounterRoute,
   SiteAnalyticsRoute: SiteAnalyticsRoute,
   SiteArcadeRoute: SiteArcadeRoute,
-  SiteBookmarksRoute: SiteBookmarksRoute,
   SiteCanvasRoute: SiteCanvasRoute,
   SiteChangelogRoute: SiteChangelogRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
-  SiteCreatorStudioRoute: SiteCreatorStudioRoute,
   SiteDailyMutatorRoute: SiteDailyMutatorRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteEmojiPacksRoute: SiteEmojiPacksRoute,
-  SiteEventsRoute: SiteEventsRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteGameNightRoute: SiteGameNightRoute,
   SiteHelpRoute: SiteHelpRoute,
   SiteHistoryRoute: SiteHistoryRoute,
   SiteHuntRoute: SiteHuntRoute,
-  SiteLeaderboardRoute: SiteLeaderboardRoute,
-  SiteMarketRoute: SiteMarketRoute,
   SiteMuseumRoute: SiteMuseumRoute,
-  SiteNotificationsRoute: SiteNotificationsRoute,
   SiteOutRoute: SiteOutRoute,
   SitePhotoOfTheDayRoute: SitePhotoOfTheDayRoute,
-  SitePlaylistsRoute: SitePlaylistsRoute,
   SitePredictionsRoute: SitePredictionsRoute,
-  SitePricingRoute: SitePricingRoute,
   SiteProgressRoute: SiteProgressRoute,
   SitePsychologyRoute: SitePsychologyRoute,
   SiteQotdRoute: SiteQotdRoute,
@@ -10683,7 +10051,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSectionsRoute: SiteSectionsRoute,
   SiteServicesRoute: SiteServicesRouteWithChildren,
   SiteShareRoute: SiteShareRoute,
-  SiteShopRoute: SiteShopRoute,
   SiteSiteHistoryRoute: SiteSiteHistoryRoute,
   SiteSpeedrunsRoute: SiteSpeedrunsRoute,
   SiteTodayRoute: SiteTodayRoute,
@@ -10691,7 +10058,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteTrashRoute: SiteTrashRoute,
   SiteVenturesRoute: SiteVenturesRoute,
   SiteWalletRoute: SiteWalletRoute,
-  SiteWishlistRoute: SiteWishlistRoute,
   SiteWrappedRoute: SiteWrappedRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteAccountConnectRoute: SiteAccountConnectRoute,
@@ -10704,9 +10070,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteGroupsIdRoute: SiteGroupsIdRoute,
   SiteHomesManageRoute: SiteHomesManageRoute,
   SiteHomesRentSplitRoute: SiteHomesRentSplitRoute,
-  SiteHomesSavedRoute: SiteHomesSavedRoute,
   SiteHomesSubmitRoute: SiteHomesSubmitRoute,
-  SiteHomesWatchesRoute: SiteHomesWatchesRoute,
   SiteJamsSlugRoute: SiteJamsSlugRoute,
   SiteListsIdRoute: SiteListsIdRoute,
   SiteMarathonShareIdRoute: SiteMarathonShareIdRoute,
@@ -10726,10 +10090,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhDatacenterPowerRoute: SiteRmhDatacenterPowerRoute,
   SiteSafetyPileOnRoute: SiteSafetyPileOnRoute,
   SiteSeriesIdRoute: SiteSeriesIdRoute,
-  SiteSettingsAccountStatusRoute: SiteSettingsAccountStatusRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
-  SiteSettingsCalendarRoute: SiteSettingsCalendarRoute,
-  SiteSettingsCircleRoute: SiteSettingsCircleRoute,
   SiteSettingsContentRoute: SiteSettingsContentRoute,
   SiteSettingsLayoutRoute: SiteSettingsLayoutRoute,
   SiteSettingsNotificationsRoute: SiteSettingsNotificationsRoute,
@@ -10739,7 +10100,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsThemesRoute: SiteSettingsThemesRoute,
   SiteSpacesIdRoute: SiteSpacesIdRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
-  SiteStudioThemesRoute: SiteStudioThemesRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
   SiteStudyBrowseRoute: SiteStudyBrowseRoute,
   SiteTagTagRoute: SiteTagTagRoute,
@@ -10750,9 +10110,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteWagerIdRoute: SiteWagerIdRoute,
   SiteWhenIdRoute: SiteWhenIdRoute,
-  SiteAppsIndexRoute: SiteAppsIndexRoute,
-  SiteBlogIndexRoute: SiteBlogIndexRoute,
-  SiteBuildsIndexRoute: SiteBuildsIndexRoute,
   SiteConnectionsIndexRoute: SiteConnectionsIndexRoute,
   SiteExchangeIndexRoute: SiteExchangeIndexRoute,
   SiteFeedsIndexRoute: SiteFeedsIndexRoute,
@@ -10760,12 +10117,10 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteHomesIndexRoute: SiteHomesIndexRoute,
   SiteJamsIndexRoute: SiteJamsIndexRoute,
   SiteLibraryIndexRoute: SiteLibraryIndexRoute,
-  SiteListsIndexRoute: SiteListsIndexRoute,
   SiteMarathonIndexRoute: SiteMarathonIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SiteOfficeHoursIndexRoute: SiteOfficeHoursIndexRoute,
-  SitePersonasIndexRoute: SitePersonasIndexRoute,
   SiteReadingIndexRoute: SiteReadingIndexRoute,
   SiteRideshareIndexRoute: SiteRideshareIndexRoute,
   SiteRingsIndexRoute: SiteRingsIndexRoute,
@@ -10773,12 +10128,9 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSavesIndexRoute: SiteSavesIndexRoute,
   SiteSeriesIndexRoute: SiteSeriesIndexRoute,
   SiteSettingsIndexRoute: SiteSettingsIndexRoute,
-  SiteSpacesIndexRoute: SiteSpacesIndexRoute,
   SiteStoreIndexRoute: SiteStoreIndexRoute,
   SiteStudyIndexRoute: SiteStudyIndexRoute,
   SiteTournamentsIndexRoute: SiteTournamentsIndexRoute,
-  SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
-  SiteVIndexRoute: SiteVIndexRoute,
   SiteWagerIndexRoute: SiteWagerIndexRoute,
   SiteWhenIndexRoute: SiteWhenIndexRoute,
   SiteConnectionsUIdRoute: SiteConnectionsUIdRoute,
@@ -11394,7 +10746,6 @@ const rootRouteChildren: RootRouteChildren = {
   BreachesRoute: BreachesRoute,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
-  CovidRoute: CovidRoute,
   CsgoRoute: CsgoRoute,
   DailyRoute: DailyRouteWithChildren,
   DeeplinkRoute: DeeplinkRouteWithChildren,
@@ -11411,12 +10762,10 @@ const rootRouteChildren: RootRouteChildren = {
   KaikaidebtcounterRoute: KaikaidebtcounterRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
   LaundrySortRoute: LaundrySortRoute,
-  LightsOutRoute: LightsOutRoute,
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   NightrailRoute: NightrailRoute,
   OfflineRoute: OfflineRoute,
-  OptimizationRoute: OptimizationRoute,
   Pf2ecalRoute: Pf2ecalRoute,
   PortalRoute: PortalRoute,
   PrivacyRoute: PrivacyRoute,
@@ -11471,7 +10820,6 @@ const rootRouteChildren: RootRouteChildren = {
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
   DiscordIndexRoute: DiscordIndexRoute,
-  Sohumbum2IndexRoute: Sohumbum2IndexRoute,
   SohumtrackerIndexRoute: SohumtrackerIndexRoute,
   ApiAiMessageSuggestRoute: ApiAiMessageSuggestRoute,
   ApiAiTransformRoute: ApiAiTransformRoute,
@@ -11576,3 +10924,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

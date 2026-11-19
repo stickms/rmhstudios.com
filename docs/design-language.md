@@ -71,7 +71,7 @@
 > the
 > record
 > in
-> [`plasmatic-jelly-design-language.md`](./plasmatic-jelly-design-language.md);
+> [`archive/2026/plasmatic-jelly-design-language.md`](./archive/2026/plasmatic-jelly-design-language.md);
 > nothing
 > in
 > it

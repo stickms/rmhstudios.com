@@ -1,6 +1,6 @@
 /**
  * The globe's physics and rotation, with no DOM and no renderer: the same laws the liquid globe ran
- * (`components/radial/LiquidGlobe.tsx`), lifted out so the chrome globe obeys them too (owner, 2026-11-12: "the
+ * (the deleted `components/radial/LiquidGlobe.tsx`), lifted out so the chrome globe obeys them too (owner, 2026-11-12: "the
  * chrome globe needs to have the same physics and rotation logic as the liquid globe").
  *
  * Nothing here is a new formula. The primitives are the shared ones:

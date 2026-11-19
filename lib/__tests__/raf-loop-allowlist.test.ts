@@ -26,11 +26,8 @@ import { join, posix } from 'node:path';
  * The shared MOTION-TIER files below are the freeze-relevant ones; each is
  * verified idle-at-rest / one-shot:
  *   - components/ui/tabs.tsx   — one-shot rAF to move focus after a tab key.
- *   - hooks/useLiquidBackground.ts    — rAF used as a per-event THROTTLE
- *                                       (one-shot). `useGlassLight.ts`,
- *                                       `useCardSheen.ts` and `useParallax.ts` were
- *                                       here too; all were cursor-tracking effects
- *                                       and all are deleted (§5.1.1). So was
+ *   - (`useLiquidBackground.ts`, `useGlassLight.ts`, `useCardSheen.ts` and
+ *     `useParallax.ts` were here; all are deleted (§5.1.1). So was
  *                                       `lib/glass-lens.ts`, whose rAF belonged to
  *                                       a generator with no caller.
  *   - components/ui/anchored-menu.tsx — two one-shots, no loop: the same
@@ -276,7 +273,6 @@ const ALLOW = new Set<string>([
   'hooks/fluid-drag-settle.ts',
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
-  'hooks/useLiquidBackground.ts',
   'hooks/useScrollRestoration.ts',
   'hooks/useSpatialParallax.ts',
   'features/altair/engine/engine/game-loop.ts',

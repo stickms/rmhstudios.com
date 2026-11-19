@@ -72,8 +72,7 @@ export function useSpatialParallax(
     // is to publish a number to CSS, and the single largest cost this site ever
     // measured (design.md §4). Every selector that reads this variable is a
     // descendant of the element `CONSUMERS` just matched, so it inherits from
-    // here and nothing outside these pages is touched at all. `useLiquidBackground`
-    // was rewritten to write to `.site-aurora` for the same reason.
+    // here and nothing outside these pages is touched at all.
     const host =
       document.querySelector<HTMLElement>(
         CONSUMERS,

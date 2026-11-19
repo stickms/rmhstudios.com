@@ -8,7 +8,7 @@
  * no preferred axis at all, so its orientation is a unit quaternion and every
  * gesture composes a rotation onto it.
  *
- * Conventions (shared with `lib/eversion` — see `types.ts` there):
+ * Conventions (shared with the deleted `lib/eversion`):
  * - Body and view space are x right, y DOWN, z toward the viewer.
  * - Rotations are right-handed about their axis (Rodrigues), which in this frame
  *   is exactly the old `Ry(yaw)` (`x' = x·cos + z·sin`) and `Rx(pitch)`
@@ -595,7 +595,7 @@ export interface EulerPose {
 
 /**
  * Decompose `M = Rz(roll)·Rx(pitch)·Ry(yaw)` — the pose the eversion's sphere
- * takes (`lib/eversion/types.ts`, `GlobeStartState`). Any rotation has this
+ * took (`GlobeStartState` in the deleted `lib/eversion`). Any rotation has this
  * form; at `pitch = ±90°` yaw and roll are not separable and roll takes it all.
  */
 export function eulerOf(

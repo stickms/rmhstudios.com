@@ -688,8 +688,6 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/create/earnings':
       'personal', // the viewer's own coins, views and payouts
-    '/bookmarks':
-      'redirect', // → /saves
     '/drafts':
       'personal',
     '/connections/new':
@@ -734,15 +732,7 @@ export const EXCLUDED_ROUTES: Record<
       'auth-gated', // the tuner and note reader, inside the signed-in app
     '/rmhmusic/songs':
       'personal', // the songbook with the learner's own best scores, behind sign-in
-    '/alexdebtcounter':
-      'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
-    '/sohumbum2':
-      'redirect', // → /sohumtracker (renamed; the old link was already shared)
-    '/lists':
-      'redirect', // → /saves?tab=lists
     '/messages':
-      'personal',
-    '/notifications':
       'personal',
     '/progress':
       'personal',
@@ -764,20 +754,12 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/trash':
       'personal',
-    '/wishlist':
-      'redirect', // → /saves?tab=wishlist
     '/wrapped':
-      'personal',
-    '/creator-studio':
       'personal',
     '/homes/manage':
       'personal',
-    '/homes/saved':
-      'redirect', // → /homes/manage?tab=saved
     '/homes/submit':
       'auth-gated',
-    '/homes/watches':
-      'redirect', // → /homes/manage?tab=alerts
     '/rideshare/drive':
       'auth-gated',
     '/rideshare/ride':
@@ -800,13 +782,7 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // the account-merge step after a new sign-in; needs a session
     '/settings':
       'personal',
-    '/settings/account-status':
-      'personal',
     '/settings/appearance':
-      'personal',
-    '/settings/calendar':
-      'personal',
-    '/settings/circle':
       'personal',
     '/settings/content':
       'personal',
@@ -822,8 +798,6 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/settings/themes':
       'personal',
-    '/studio/themes':
-      'redirect', // → /settings/themes
     '/user-builds/manage':
       'personal',
     // P09 calendar: private scheduling tools, each page carries a `noindex` meta tag.
@@ -913,10 +887,6 @@ export const EXCLUDED_ROUTES: Record<
       'admin',
     '/admin/release-notes':
       'admin',
-    '/admin/library-quota':
-      'redirect', // → /admin/library?tab=appeals
-    '/admin/library-storage':
-      'redirect', // → /admin/library?tab=storage
     '/admin/predictions':
       'admin',
     '/admin/qotd':
@@ -947,39 +917,8 @@ export const EXCLUDED_ROUTES: Record<
     // first place: these read like destinations — they have nav entries, they
     // have names people use — but each is a `beforeLoad` redirect into a tab of
     // another page. Nothing about the route file's name says so.
-    '/blog':
-      'redirect', // → /library
-    '/user-builds':
-      'redirect', // → /builds → /games
-    '/builds':
-      'redirect', // → /games
-    '/lights-out':
-      'redirect', // → /daily/lights-out
-    '/apps':
-      'redirect', // → /games?kind=app (apps are in the library)
-    '/leaderboard':
-      'redirect', // → /arcade?sub=leaderboard
-    '/events':
-      'redirect', // → /communities?tab=events
-    '/market':
-      'redirect', // → /store?tab=market
-    '/shop':
-      'redirect', // → /store?tab=shop
     '/psychology':
       'redirect', // → /rmh-research/psychology
-    '/optimization':
-      'redirect', // → /rmh-research/reports/optimization
-    '/covid':
-      'redirect', // → /rmh-research/reports/feature-leak
-    '/pricing':
-      'redirect', // → /store?tab=membership
-    '/personas':
-      'redirect', // → /create/personas
-    '/playlists':
-      'redirect', // → /library?view=playlists
-    '/spaces':
-      'redirect', // → /communities?tab=spaces
-    '/v': 'redirect', // → /create
     '/search':
       'redirect', // → /explore (the two pages were merged)
     // Admin-gated: signed-in non-admins are redirected to /rmhladder.

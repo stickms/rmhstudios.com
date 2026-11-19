@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { LiquidGlassPage } from '@/components/design/LiquidGlassPage';
+import { DesignPage } from '@/components/design/DesignPage';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
 /**
@@ -22,5 +22,5 @@ export const Route = createFileRoute('/design')({
     }),
     links: [buildCanonical('/design')],
   }),
-  component: LiquidGlassPage,
+  component: DesignPage,
 });

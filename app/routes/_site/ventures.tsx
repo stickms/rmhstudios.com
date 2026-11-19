@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Atom, Brain, FlaskConical, Landmark, Server, Shield, type LucideIcon } from 'lucide-react';
+import { Atom, Brain, FlaskConical, Landmark, Server, Shield, Vote, type LucideIcon } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { HubLinkRow } from '@/components/feed/HubLinkRow';
 import { buildMeta, buildCanonical } from '@/lib/seo';
@@ -29,6 +29,7 @@ const VENTURE_TABS = [
   'rmh-research',
   'adaptive-intelligence',
   'deeplink',
+  'elections',
 ] as const;
 type VentureTab = (typeof VENTURE_TABS)[number];
 
@@ -105,6 +106,17 @@ const VENTURES: VentureDef[] = [
     descKey: 'ventures-deeplink-desc',
     desc: 'The neurotechnology arm of RMH Studios — the interface work between people and the systems the group builds.',
   },
+  {
+    // Not a brand microsite but the site's live election desk; it has no menu entry
+    // of its own, so it is reached from here. It stays out of `lib/verticals.ts`:
+    // its sitemap entry turns hourly while results are live (lib/sitemap.ts).
+    id: 'elections',
+    icon: Vote,
+    href: '/elections',
+    name: 'RMH Elections',
+    descKey: 'ventures-elections-desc',
+    desc: 'The election desk: live results and a map for each race, forecasts you can make yourself, and leagues to compare them with friends.',
+  },
 ];
 
 export const Route = createFileRoute('/_site/ventures')({
@@ -112,7 +124,7 @@ export const Route = createFileRoute('/_site/ventures')({
     meta: buildMeta({
       title: 'RMH Ventures | RMH Studios',
       description:
-        'RMH Capital, Datacenter, PMC, Research, Adaptive Intelligence and Deeplink: the brands around RMH Studios.',
+        'RMH Capital, Datacenter, PMC, Research, Adaptive Intelligence, Deeplink and Elections: the brands around RMH Studios.',
       path: '/ventures',
     }),
     links: [buildCanonical('/ventures')],

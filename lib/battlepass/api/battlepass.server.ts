@@ -1,18 +1,20 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { CURRENT_SEASON, tierForXp } from '@/lib/battlepass/season';
+import { tierForXp } from '@/lib/battlepass/season';
+import { getActiveSeason } from '@/lib/battlepass/active.server';
 
 /** GET /api/battlepass — the current season's tiers + the viewer's progress. */
 export const route = apiRoute('/api/battlepass', {
   GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
+    const season = await getActiveSeason();
     let seasonXp = 0;
     let premium = false;
     let claimedFree: number[] = [];
     let claimedPaid: number[] = [];
     if (session) {
       const sp = await prisma.userSeasonProgress.findUnique({
-        where: { userId_seasonId: { userId: session.user.id, seasonId: CURRENT_SEASON.id } },
+        where: { userId_seasonId: { userId: session.user.id, seasonId: season.id } },
         select: { seasonXp: true, premium: true, claimedFree: true, claimedPaid: true },
       });
       seasonXp = sp?.seasonXp ?? 0;
@@ -23,15 +25,15 @@ export const route = apiRoute('/api/battlepass', {
 
     return Response.json({
       season: {
-        id: CURRENT_SEASON.id,
-        name: CURRENT_SEASON.name,
-        endsAt: CURRENT_SEASON.endsAt,
-        premiumPrice: CURRENT_SEASON.premiumPrice,
-        xpPerTier: CURRENT_SEASON.xpPerTier,
+        id: season.id,
+        name: season.name,
+        endsAt: season.endsAt,
+        premiumPrice: season.premiumPrice,
+        xpPerTier: season.xpPerTier,
       },
-      tiers: CURRENT_SEASON.tiers,
+      tiers: season.tiers,
       seasonXp,
-      currentTier: tierForXp(seasonXp),
+      currentTier: tierForXp(season, seasonXp),
       premium,
       claimedFree,
       claimedPaid,

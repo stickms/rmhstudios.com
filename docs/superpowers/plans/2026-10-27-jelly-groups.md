@@ -97,13 +97,13 @@
 ### Task 5: Audit and convert shared-UI clusters
 
 **Files:**
-- Create: `docs/jelly-group-audit.md`
+- Create: `docs/archive/2026/jelly-group-audit.md`
 - Modify: files the audit classifies as "group", starting from the known candidates `components/ui/{pagination,selection-bar,horizontal-scroller,search-field,select,menu,anchored-menu}.tsx`, `components/feed/{RMHarkActions,ReactionChips?,ComposeBox,EngagementCount}.tsx`, `components/events/RsvpButton.tsx`, `components/homes/FiltersBar.tsx`, `components/news/NewsCategoryTabs.tsx`, `components/site/FriendsRail.tsx` (verify each exists; the list is a starting point, not the inventory)
 
 **Interfaces:**
 - Consumes: `JellyGroup`, `JellyGroup.Item`, `JellyGroup.Divider` (Task 1).
 
-- [ ] **Step 1: Inventory.** Grep the site tier for adjacent pill-styled siblings: `rg -n "rounded-full|--site-control-radius|rounded-site-sm" components/{ui,radial,feed,site,home,profile,settings,messages,news,events,homes,search,lists,communities,spaces,calendar,onboarding} app/routes/_site -g '*.tsx'`, excluding game/app dirs (`components/shared/` is the app tier; leave it). Write every cluster of two or more related controls into `docs/jelly-group-audit.md` as a table: `file:line | cluster | verdict (group / standalone / n-a) | reason`.
+- [ ] **Step 1: Inventory.** Grep the site tier for adjacent pill-styled siblings: `rg -n "rounded-full|--site-control-radius|rounded-site-sm" components/{ui,radial,feed,site,home,profile,settings,messages,news,events,homes,search,lists,communities,spaces,calendar,onboarding} app/routes/_site -g '*.tsx'`, excluding game/app dirs (`components/shared/` is the app tier; leave it). Write every cluster of two or more related controls into `docs/archive/2026/jelly-group-audit.md` as a table: `file:line | cluster | verdict (group / standalone / n-a) | reason`.
 - [ ] **Step 2: Apply the tiebreaker from the spec** (convert only if members sit on one row or scroll in one row, are the same kind of control, and are mutually related; wrapping or user-built chips, lone primary actions, avatars, badges and dots stay standalone). Menus/selects/search are verified against the "one slab, plain rows" rule; fix drift only.
 - [ ] **Step 3: Convert the shared-UI "group" rows** (`components/ui/*`) to `JellyGroup`. For each conversion keep the original outer size and touch targets, keep keyboard behavior and `aria-*`, route items through `JellyGroup.Item asChild` when they are links.
 - [ ] **Step 4: Run** `pnpm exec vitest run components/ui lib/__tests__/design-consistency.test.ts` and `pnpm exec tsc --noEmit`. Expected: PASS, no new type errors.
@@ -112,7 +112,7 @@
 ### Task 6: Convert page-level clusters
 
 **Files:**
-- Modify: the "group" rows of `docs/jelly-group-audit.md` outside `components/ui` (feed, profile, settings, messages, news, events, homes, search, routes under `app/routes/_site`)
+- Modify: the "group" rows of `docs/archive/2026/jelly-group-audit.md` outside `components/ui` (feed, profile, settings, messages, news, events, homes, search, routes under `app/routes/_site`)
 
 - [ ] **Step 1: For each remaining "group" row**, convert to `JellyGroup` (or to `LiquidTabs` if it is really a tab strip, as CLAUDE.md requires), one feature directory per commit. Update the row's verdict to `converted` with the commit short hash.
 - [ ] **Step 2: Per feature commit,** run `pnpm exec tsc --noEmit`, `pnpm lint` (no new warnings), `pnpm exec vitest run lib/__tests__/design-consistency.test.ts`, screenshot the affected page at two widths, then `pnpm check:consistency`.
@@ -121,7 +121,7 @@
 ### Task 7: Docs and final verification
 
 **Files:**
-- Modify: `docs/design-language.md` (the corner-scale/controls paragraph around line 112-125 and §13 pill wording), `CLAUDE.md` and `AGENTS.md` (the identical "controls pills" lines in the Design system section), `docs/plasmatic-jelly-system.md` (a short "groups" note beside the nested-bodies paragraph near line 520)
+- Modify: `docs/design-language.md` (the corner-scale/controls paragraph around line 112-125 and §13 pill wording), `CLAUDE.md` and `AGENTS.md` (the identical "controls pills" lines in the Design system section), `docs/archive/2026/plasmatic-jelly-system.md` (a short "groups" note beside the nested-bodies paragraph near line 520)
 
 - [ ] **Step 1: Rewrite the pill statements** to: a cluster of related controls is one jelly body with flat members; a lone control may still be a pill. Mention the app tier keeps its own thumb. Keep `CLAUDE.md` and `AGENTS.md` in sync.
 - [ ] **Step 2: Full local pass:** `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test`, `pnpm check:consistency --base main`.

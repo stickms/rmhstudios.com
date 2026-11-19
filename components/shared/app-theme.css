@@ -142,7 +142,7 @@
   }
 }
 
-/* ── Plasmatic Jelly palette (docs/plans/plasmatic-jelly/01-material.md §4.3) ──
+/* ── Plasmatic Jelly palette (docs/archive/2026/plans/plasmatic-jelly/01-material.md §4.3) ──
    The app tier's own haze and plasma tokens, derived from the
    one accent an app declares. `.app-glass` (§7) maps these onto the host knobs
    the shader engine and the CSS carrier read (`--jelly-*`), so one material
