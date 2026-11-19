@@ -6,6 +6,7 @@
  */
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { Mercury } from './Mercury';
 import {
   Arrow,
   CtaBand,
@@ -51,7 +52,8 @@ export default function HomePage() {
       {/* ══ HERO — lock on. A pinned scene on the stage. ══ */}
       <Scene len={2.2} className="stage hero" pinClassName="hero-pin">
         <div className="hero-obj sc-t" style={cssVars({ '--a': 0, '--b': 100 })} aria-hidden="true">
-          <Reticle className="hero-reticle" live />
+          <Reticle className="hero-reticle" hub={false} live />
+          <Mercury className="hero-mercury" />
         </div>
         <div className="hero-veil sc-out" style={cssVars({ '--a': 4, '--b': 30 })} aria-hidden="true" />
         <div className="hero-body">
@@ -80,6 +82,9 @@ export default function HomePage() {
         </div>
         <Hud cross />
       </Scene>
+
+      {/* The hero's liquid metal pours off the foot of the stage. */}
+      <Mercury mode="drip" seed={3} className="hero-drip" />
 
       {/* ══ TRANSMISSION LOG ══ */}
       <TransmissionLog />

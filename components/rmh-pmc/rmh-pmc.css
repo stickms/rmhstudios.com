@@ -63,6 +63,10 @@
        .obj-bars      a rank of bars read as a gauge: <i style="--h:62"/> children, --n not needed
        .obj-rail      a horizontal chrome cylinder (a rail glass pills ride on)
        .obj-slab      satin face text can sit on (text on it is always --ink)
+       .obj-mercury   LIQUID gallium (WebGL): --orb droplets that merge and part, used as the
+                      hero reticle's hub; --drip a full-width edge shedding droplets over the
+                      next section. Use <Mercury/> (Mercury.tsx). Stretches with scroll speed,
+                      a droplet springs to a fine pointer; frozen under Globe motion: Still.
      .well   a rounded wash panel (radius 40px, clipped) that hosts instruments on paper
    CONTROLS
      .btn           THE one solid pill per view: ink on paper, light-on-dark on a stage
@@ -167,6 +171,10 @@
   --st-2: color-mix(in srgb, var(--c3) 62%, var(--c4));
   --st-3: var(--c4);
   --st-4: var(--c5);
+  --st-sheen: rgba(255, 255, 255, 0.55);
+  /* The glass rim's chromatic split (red toward the key light, blue away). */
+  --rim-r: rgba(255, 96, 84, 0.42);
+  --rim-b: rgba(84, 140, 255, 0.4);
 
   --sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
   --mono: 'Geist Mono', ui-monospace, monospace;
@@ -259,9 +267,14 @@
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   background: linear-gradient(160deg, var(--c1), var(--c3) 48%, var(--c4) 52%, var(--c6));
 }
+/* Chrome lettering, poured: the four-stop steel plus one specular band that runs
+   across the glyphs with the scene's progress (--p), like light sliding over
+   liquid metal. Outside a scene --p rests at 0 and the band sits at the left. */
 .rmhp-root .steel {
   color: var(--ink);
-  background: linear-gradient(180deg, var(--st-1) 0%, var(--st-2) 50%, var(--st-3) 52%, var(--st-4) 100%);
+  background:
+    linear-gradient(105deg, transparent calc(-46% + var(--p) * 170%), var(--st-sheen) calc(-36% + var(--p) * 170%), transparent calc(-26% + var(--p) * 170%)),
+    linear-gradient(180deg, var(--st-1) 0%, var(--st-2) 50%, var(--st-3) 52%, var(--st-4) 100%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -465,6 +478,41 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .rmhp-root { --glass-a: color-mix(in srgb, var(--panel) 94%, transparent); --glass-b: color-mix(in srgb, var(--panel) 88%, transparent); }
 }
+/* The refracting rim: a 1px edge split red (toward the key light, top-left) to
+   blue (away from it). The split leads; the white rim-hi above is secondary.
+   The command capsule keeps its ::after for the scroll-progress line. */
+.rmhp-root :is(.glass, .btn-glass, .chip):not(.cmdbar-inner)::after {
+  content: ''; position: absolute; inset: -1px; z-index: 1; border-radius: inherit; corner-shape: inherit; pointer-events: none;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--rim-r) 0%, transparent 28%, transparent 72%, var(--rim-b) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* ════ LIQUID METAL ════ <Mercury/> (Mercury.tsx, mercury-renderer.ts): the stage's
+   liquid gallium. A WebGL body; these rules only size it and draw the static
+   fallback when WebGL is missing. Decorative, aria-hidden. */
+.rmhp-root .obj-mercury { position: relative; display: block; pointer-events: none; }
+.rmhp-root .obj-mercury canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.rmhp-root .obj-mercury--orb { --size: 200px; width: var(--size); aspect-ratio: 1; }
+.rmhp-root .obj-mercury--orb.is-fallback::before {
+  content: ''; position: absolute; inset: 22%; border-radius: 50%; corner-shape: round;
+  background:
+    radial-gradient(ellipse 16% 10% at 32% 24%, #fff 0 45%, transparent 100%),
+    radial-gradient(circle at 38% 30%, var(--c1) 0, var(--c2) 16%, var(--c3) 40%, var(--c4) 63%, var(--c5) 80%, var(--c6) 100%);
+}
+/* drip: a full-width edge laid over the foot of a stage, fading in from above
+   so the sheet rises out of the room; droplets fall over the next section. */
+.rmhp-root .obj-mercury--drip {
+  width: 100%; height: clamp(150px, 16vw, 210px); z-index: 2;
+  margin-block: calc(clamp(150px, 16vw, 210px) * -0.42) calc(clamp(150px, 16vw, 210px) * -0.58);
+  /* Fades in from above and off at both sides, so the sheet never pokes past the
+     stage's rounded corners. */
+  -webkit-mask: linear-gradient(180deg, transparent 0, #000 30%), linear-gradient(90deg, transparent var(--stage-inset), #000 calc(var(--stage-inset) + 7%), #000 calc(100% - var(--stage-inset) - 7%), transparent calc(100% - var(--stage-inset)));
+  -webkit-mask-composite: source-in;
+  mask: linear-gradient(180deg, transparent 0, #000 30%) intersect, linear-gradient(90deg, transparent var(--stage-inset), #000 calc(var(--stage-inset) + 7%), #000 calc(100% - var(--stage-inset) - 7%), transparent calc(100% - var(--stage-inset)));
+}
+.rmhp-root .obj-mercury--drip.is-fallback { display: none; }
 
 /* ════ STAGE ════ A dark room in BOTH editions. The tokens are re-pointed, so
    every component below works here unchanged: ink is light, the glass tint comes
