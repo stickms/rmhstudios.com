@@ -158,6 +158,8 @@ html.readable-font body {
   /* Guaranteed-legible ink for text/icons ON a --site-danger fill. Falls back to
      white for themes that predate the token; every built-in theme sets it. */
   --color-site-danger-fg: var(--site-danger-fg, #fff);
+  --color-site-notify: var(--site-notify);
+  --color-site-notify-fg: var(--site-notify-fg);
   --color-site-warning: var(--site-warning);
   /* Ink that tracks the --site-warning fill, same contract as -danger-fg above.
      Themes whose warning is a dark brown take white; the bright golds take

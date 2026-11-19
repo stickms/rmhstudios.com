@@ -653,11 +653,15 @@
   --site-border: #e3e6e9; /* every rule and control border */
   --site-text: #0b0d10; /* ink */
   --site-text-muted: #606873; /* secondary text, inactive tabs */
-  --site-accent: #0b0d10; /* same as ink: there is no accent colour */
-  --site-accent-fg: #fafafa; /* text on an ink fill */
+  --site-accent: #2563eb; /* the accent: Day blue (owner, 2026-11-19) */
+  --site-accent-fg: #ffffff; /* text on an accent fill */
   --site-accent-hover: color-mix(in srgb, var(--site-accent) 88%, var(--site-bg)); /* K2: 88% opacity */
   --site-danger: #c40016; /* errors, unread counts, destructive actions */
   --site-danger-fg: #ffffff;
+  /* Unread counts and dots: one light red-pink in every edition and theme, never the accent or a theme's danger
+     (owner, 2026-11-19). It is a fill; the dark ink on it is 6.5:1. Bought themes do not write it. */
+  --site-notify: #ff5c7a;
+  --site-notify-fg: #0b0d10;
   --site-success: #167d3a; /* confirmation only */
   --site-success-fg: #ffffff;
   --site-warning: #7a4a00;
@@ -705,7 +709,7 @@
   --site-border: #22272d;
   --site-text: #eef1f4;
   --site-text-muted: #8b949e;
-  --site-accent: #eef1f4;
+  --site-accent: #6ea8fe; /* Night blue: the Day accent lifted for a dark ground (owner, 2026-11-19) */
   --site-accent-fg: #0b0d10;
   --site-danger: #f2555a;
   --site-danger-fg: #0b0d10; /* white on #f2555a is 3.4:1; the dark ink is 5.8:1 (T1/A1) */
