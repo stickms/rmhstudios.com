@@ -4,8 +4,8 @@
  * An open room is not a ring: nobody is called, eligible members simply walk in.
  * So this is a *presence* surface first — "there is a conversation happening in
  * here, and these many people are in it" — and a control second. It follows the
- * shape `LiveNowRail` established for liveness: ask, render nothing until there
- * is an answer, and never leave empty chrome behind.
+ * shape the "Live now" listing uses for liveness: ask, render nothing until
+ * there is an answer, and never leave empty chrome behind.
  *
  * Three states, and the difference between the first two is the whole reason
  * `rooms` distinguishes `undefined` from `null`:
@@ -22,8 +22,10 @@
  * since it can only see this tab.
  *
  * Membership is the host surface's business — this renders wherever it is put.
- * `CommunityColumn` only mounts it for members and `PartyBar` only when a party
- * exists; the hub checks again with `canJoinOpenRoom` before admitting anyone.
+ * `CommunityColumn` only mounts it for members, `PartyBar` only when a party
+ * exists and `SpaceRoom` only while its room is live (a Space's voice is this
+ * same open room, on the Space's own row); the hub checks again with
+ * `canJoinOpenRoom` before admitting anyone.
  */
 
 import { useEffect } from 'react';

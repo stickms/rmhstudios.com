@@ -346,6 +346,7 @@ model User {
   creatorTiers         CreatorTier[]
   spacesHosted         Space[]          @relation("SpaceHost")
   spaceMessages        SpaceMessage[]
+  groupCallMessages    GroupCallMessage[]
   eventsHosted         CommunityEvent[] @relation("EventHost")
   eventRsvps           EventRsvp[]
   eventsHostedV2       Event[]          @relation("EventHosted")

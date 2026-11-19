@@ -48,6 +48,7 @@
   "muted": "muted",
   "origin-community": "Community voice room",
   "origin-party": "Party voice room",
+  "origin-profile": "Space voice room",
   "participants_one": "{{count}} person",
   "participants_other": "{{count}} people",
   "peer-failed": "Can't connect",

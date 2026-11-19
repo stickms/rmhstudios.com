@@ -23,6 +23,7 @@ import { isPartyMember } from '../party';
 import {
   GROUP_CALL_SEAT_GRACE_MS,
   __liveGroupCallCount,
+  closeAdoptedRoom,
   evictOriginMember,
   handleGroupCallDisconnect,
   sweepCommunityMembership,
@@ -75,6 +76,26 @@ const mocks =
                 vi.fn(),
               update:
                 vi.fn(),
+              // The live Space a community voice room would adopt; none here.
+              findFirst:
+                vi.fn(
+                  async (
+                    _args: {
+                      where: {
+                        origin?: string;
+                      };
+                    },
+                  ): Promise<{
+                    hostId: string;
+                  } | null> =>
+                    null,
+                ),
+              updateMany:
+                vi.fn(
+                  async () => ({
+                    count: 1,
+                  }),
+                ),
             },
           chat:
             {
@@ -2121,6 +2142,215 @@ describe('group-call admission races', () => {
           ),
         ),
     );
+  });
+
+  describe('a Space (titled live room) and its voice', () => {
+    const liveProfileRoom =
+      (
+        hostId: string,
+      ) =>
+        async (
+          args: {
+            where: {
+              origin?: string;
+            };
+          },
+        ) =>
+          args.where.origin ===
+          'PROFILE'
+            ? {
+                hostId,
+              }
+            : null;
+
+    it("runs the voice on the Space's own row and leaves the room live when the voice empties", async () => {
+      holdPeerRows(
+        new Map(),
+      );
+      blocksBetween(
+        [],
+      );
+      mocks.prisma.groupCall.findFirst.mockImplementation(
+        liveProfileRoom(
+          'space-host',
+        ),
+      );
+      const host =
+        connect(
+          'space-host',
+        );
+      await host.send(
+        GCALL_C2S.START,
+        {
+          origin:
+            'profile',
+          originId:
+            'space-1',
+        },
+      );
+      // One room, one row: the voice adopts the Space's id.
+      expect(
+        joinedCallId(
+          host,
+        ),
+      ).toBe(
+        'space-1',
+      );
+      await host.send(
+        GCALL_C2S.LEAVE,
+        {
+          callId:
+            'space-1',
+        },
+      );
+      expect(
+        __liveGroupCallCount(),
+      ).toBe(
+        0,
+      );
+      await vi.waitFor(
+        () =>
+          expect(
+            mocks
+              .prisma
+              .groupCall
+              .updateMany,
+          ).toHaveBeenCalled(),
+      );
+      // Never inserted, never ended: only its host ends a Space.
+      expect(
+        mocks
+          .prisma
+          .groupCall
+          .create,
+      ).not.toHaveBeenCalled();
+      expect(
+        mocks
+          .prisma
+          .groupCall
+          .update,
+      ).not.toHaveBeenCalled();
+      mocks.prisma.groupCall.findFirst.mockReset().mockResolvedValue(
+        null,
+      );
+    });
+
+    it("keeps someone the host has blocked out of a profile Space's voice", async () => {
+      holdPeerRows(
+        new Map(),
+      );
+      blocksBetween(
+        [
+          {
+            blockerId:
+              'space-host-2',
+            blockedId:
+              'blocked-guest',
+          },
+        ],
+      );
+      mocks.prisma.groupCall.findFirst.mockImplementation(
+        liveProfileRoom(
+          'space-host-2',
+        ),
+      );
+      const guest =
+        connect(
+          'blocked-guest',
+        );
+      await guest.send(
+        GCALL_C2S.START,
+        {
+          origin:
+            'profile',
+          originId:
+            'space-2',
+        },
+      );
+      expect(
+        joinedCallId(
+          guest,
+        ),
+      ).toBeUndefined();
+      expect(
+        guest.emitted.find(
+          (
+            e,
+          ) =>
+            e.event ===
+            GCALL_S2C.REJECTED,
+        )?.payload,
+      ).toEqual(
+        expect.objectContaining(
+          {
+            reason:
+              'not-member',
+          },
+        ),
+      );
+      expect(
+        __liveGroupCallCount(),
+      ).toBe(
+        0,
+      );
+      mocks.prisma.groupCall.findFirst.mockReset().mockResolvedValue(
+        null,
+      );
+      blocksBetween(
+        [],
+      );
+    });
+
+    it('closes the voice when the Space ends', async () => {
+      holdPeerRows(
+        new Map(),
+      );
+      blocksBetween(
+        [],
+      );
+      mocks.prisma.groupCall.findFirst.mockImplementation(
+        liveProfileRoom(
+          'space-host-3',
+        ),
+      );
+      const host =
+        connect(
+          'space-host-3',
+        );
+      await host.send(
+        GCALL_C2S.START,
+        {
+          origin:
+            'profile',
+          originId:
+            'space-3',
+        },
+      );
+      expect(
+        __liveGroupCallCount(),
+      ).toBe(
+        1,
+      );
+      closeAdoptedRoom(
+        io,
+        'space-3',
+      );
+      expect(
+        __liveGroupCallCount(),
+      ).toBe(
+        0,
+      );
+      // Ending the room's voice never writes the room's end: `space:end` does.
+      expect(
+        mocks
+          .prisma
+          .groupCall
+          .update,
+      ).not.toHaveBeenCalled();
+      mocks.prisma.groupCall.findFirst.mockReset().mockResolvedValue(
+        null,
+      );
+    });
   });
 
   it('does not name a live open room to a non-member who happens to be busy', async () => {

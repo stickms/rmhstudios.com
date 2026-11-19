@@ -7,6 +7,12 @@
  * and for the chat transcript when `recordChat` is set — chat is persisted
  * fire-and-forget (never blocks the broadcast, per server/CLAUDE.md §Gotchas 4).
  *
+ * Since 2026-11-19 a Space is a titled `GroupCall` row (the one live-room
+ * model) and its chat is `GroupCallMessage`; the room's voice is the group-call
+ * handler's open room on the same row, which this handler closes when the host
+ * ends the Space. Every load is scoped to `title: { not: null }` so an untitled
+ * voice call can never be opened here as a Space.
+ *
  * Auth: the hub soft-authenticates on handshake (socket.data.userId). Reading
  * broadcasts is allowed for anyone who joins the socket room; posting chat /
  * reactions and host controls require an authenticated userId.
@@ -41,6 +47,16 @@ import {
 } from '../../../lib/spaces/types';
 import { RoomSlowMode } from '../../shared/room-slow-mode';
 import { slowModeEvents } from '../../../lib/safety/slow-mode-events';
+import { closeAdoptedRoom } from './group-call';
+
+/** A room row's status in the Space vocabulary this handler and its clients speak. */
+function spaceStatus(
+  status: string,
+): 'SCHEDULED' | 'LIVE' | 'ENDED' {
+  if (status === 'SCHEDULED') return 'SCHEDULED';
+  if (status === 'ACTIVE' || status === 'RINGING') return 'LIVE';
+  return 'ENDED';
+}
 
 const SLOW =
   slowModeEvents(
@@ -177,12 +193,15 @@ async function ensureSpace(
   const prisma =
     getPrismaClient();
   const row =
-    await prisma.space
-      .findUnique(
+    await prisma.groupCall
+      .findFirst(
         {
           where:
             {
               id: spaceId,
+              title: {
+                not: null,
+              },
             },
           select:
             {
@@ -213,8 +232,9 @@ async function ensureSpace(
 
   if (
     !row ||
-    row.status ===
-      'ENDED'
+    spaceStatus(
+      row.status,
+    ) === 'ENDED'
   )
     return null;
 
@@ -224,7 +244,9 @@ async function ensureSpace(
       hostId:
         row.hostId,
       status:
-        row.status as LiveSpace['status'],
+        spaceStatus(
+          row.status,
+        ),
       recordChat:
         row.recordChat,
       pinned:
@@ -601,11 +623,12 @@ export function registerSpacesHandlers(
       ) {
         const prisma =
           getPrismaClient();
-        prisma.spaceMessage
+        prisma.groupCallMessage
           .create(
             {
               data: {
-                spaceId,
+                callId:
+                  spaceId,
                 userId,
                 body,
               },
@@ -847,7 +870,7 @@ export function registerSpacesHandlers(
       // on unpin so a hub restart doesn't reload a stale pin.
       const prisma =
         getPrismaClient();
-      prisma.space
+      prisma.groupCall
         .update(
           {
             where:
@@ -947,10 +970,15 @@ export function registerSpacesHandlers(
       spaces.delete(
         spaceId,
       );
+      // The room's voice ends with the room: one room, one end.
+      closeAdoptedRoom(
+        io,
+        spaceId,
+      );
 
       const prisma =
         getPrismaClient();
-      prisma.space
+      prisma.groupCall
         .update(
           {
             where:

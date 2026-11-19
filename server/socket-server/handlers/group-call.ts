@@ -277,6 +277,15 @@ interface LiveGroupCall {
    * them in turn means the second check sees the first person in the room.
    */
   admission: Promise<void>;
+  /**
+   * True when this voice room runs on a titled live room's existing row (a
+   * Space) rather than one it created. That row belongs to the room, not to
+   * its voice: it was created over HTTP, it is ended by the room's host, and
+   * it outlives any number of voice sessions. So an adopted room never inserts
+   * the row, never moves its status, and leaves it live when its voice
+   * empties; it only records the roster and the peak.
+   */
+  adopted: boolean;
 }
 
 /**
@@ -395,6 +404,24 @@ export async function reconcileOrphanedGroupCalls(
               {
                 lt: before,
               },
+            // A titled room (a Space) outlives the hub — its host ends it —
+            // so it is only swept for the voice seats the dead process left
+            // marked JOINED.
+            OR: [
+              {
+                title:
+                  null,
+              },
+              {
+                participants:
+                  {
+                    some: {
+                      status:
+                        'JOINED',
+                    },
+                  },
+              },
+            ],
           },
         // Bounded per boot; anything beyond it is swept on the next start.
         take: 200,
@@ -402,6 +429,7 @@ export async function reconcileOrphanedGroupCalls(
           {
             id: true,
             status: true,
+            title: true,
             participants:
               {
                 where:
@@ -494,7 +522,9 @@ export async function reconcileOrphanedGroupCalls(
             (
               call,
             ) =>
-              call.status ===
+              call.title ===
+              null &&
+            call.status ===
               'RINGING',
           )
           .map(
@@ -509,7 +539,9 @@ export async function reconcileOrphanedGroupCalls(
             (
               call,
             ) =>
-              call.status ===
+              call.title ===
+              null &&
+            call.status ===
               'ACTIVE',
           )
           .map(
@@ -1042,9 +1074,51 @@ function persist(
     );
 }
 
+/**
+ * An adopted room's only write to its row: the peak, and only upward (a later
+ * voice session on the same room starts counting from one again). It never
+ * touches the status, so a voice session that outlives its room (ended over
+ * HTTP) can never reopen it.
+ */
+function persistAdoptedPeak(
+  call: LiveGroupCall,
+  op: string,
+): void {
+  persist(
+    call,
+    op,
+    (
+      prisma,
+    ) =>
+      prisma.groupCall.updateMany(
+        {
+          where:
+            {
+              id: call.id,
+              peakParticipants:
+                {
+                  lt: call.peakParticipants,
+                },
+            },
+          data: {
+            peakParticipants:
+              call.peakParticipants,
+          },
+        },
+      ),
+  );
+}
+
 function persistRoomCreated(
   call: LiveGroupCall,
 ): void {
+  if (
+    call.adopted
+  )
+    return persistAdoptedPeak(
+      call,
+      'create',
+    );
   persist(
     call,
     'create',
@@ -1099,6 +1173,13 @@ function persistRoomCreated(
 function persistRoomProgress(
   call: LiveGroupCall,
 ): void {
+  if (
+    call.adopted
+  )
+    return persistAdoptedPeak(
+      call,
+      'progress',
+    );
   persist(
     call,
     'progress',
@@ -1127,6 +1208,15 @@ function persistRoomEnded(
   reason: GroupCallEndReason,
   at: number,
 ): void {
+  // The room (a Space) carries on with its text when its voice ends; only its
+  // host ends it (`space:end`, which also closes this voice room).
+  if (
+    call.adopted
+  )
+    return persistAdoptedPeak(
+      call,
+      'end',
+    );
   persist(
     call,
     'end',
@@ -1293,6 +1383,182 @@ function persistParticipant(
 /* -------------------------------------------------------------------------- */
 /* Admission                                                                  */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * The admission rule of a profile room (a profile-hosted Space): it is live,
+ * and nobody on either side of a block with its host. The same audience a
+ * Space's text has always had, which is anyone signed in; the mesh cap of
+ * {@link MAX_GROUP_CALL_PARTICIPANTS} still applies to the voice.
+ */
+async function isProfileRoomGuest(
+  roomId: string,
+  userId: string,
+): Promise<boolean> {
+  const prisma =
+    getPrismaClient();
+  const room =
+    await prisma.groupCall
+      .findFirst(
+        {
+          where:
+            {
+              id: roomId,
+              origin:
+                'PROFILE',
+              status:
+                'ACTIVE',
+              endedAt:
+                null,
+              title: {
+                not: null,
+              },
+            },
+          select:
+            {
+              hostId: true,
+            },
+        },
+      )
+      .catch(
+        () =>
+          null,
+      );
+  if (
+    !room
+  )
+    return false;
+  if (
+    room.hostId ===
+    userId
+  )
+    return true;
+  const block =
+    await prisma.userBlock
+      .findFirst(
+        {
+          where:
+            {
+              OR: [
+                {
+                  blockerId:
+                    room.hostId,
+                  blockedId:
+                    userId,
+                },
+                {
+                  blockerId:
+                    userId,
+                  blockedId:
+                    room.hostId,
+                },
+              ],
+            },
+          select:
+            {
+              blockerId: true,
+            },
+        },
+      )
+      .catch(
+        () =>
+          undefined,
+      );
+  // A failed read admits nobody, as a failed membership read does.
+  return (
+    block ===
+    null
+  );
+}
+
+/**
+ * The titled live room an open voice room should run on, if any: the profile
+ * room itself, or the newest live Space of the community that no voice room in
+ * this process is already running on. `null` means mint a new row, as before.
+ */
+async function adoptableRoom(
+  origin: OpenRoomOrigin,
+  originId: string,
+): Promise<
+  | string
+  | null
+> {
+  if (
+    origin ===
+    'profile'
+  )
+    return originId;
+  if (
+    origin !==
+    'community'
+  )
+    return null;
+  const room =
+    await getPrismaClient()
+      .groupCall.findFirst(
+        {
+          where:
+            {
+              communityId:
+                originId,
+              origin:
+                'COMMUNITY',
+              status:
+                'ACTIVE',
+              endedAt:
+                null,
+              title: {
+                not: null,
+              },
+            },
+          orderBy:
+            {
+              startedAt:
+                'desc',
+            },
+          select:
+            {
+              id: true,
+            },
+        },
+      )
+      .catch(
+        () =>
+          null,
+      );
+  if (
+    !room ||
+    calls.has(
+      room.id,
+    )
+  )
+    return null;
+  return room.id;
+}
+
+/**
+ * The titled room `roomId` was ended by its host: end its voice too. Called by
+ * the Spaces handler on `space:end`, so a room ends once, for its text and its
+ * voice alike. A no-op when nobody is in its voice.
+ */
+export function closeAdoptedRoom(
+  io: Server,
+  roomId: string,
+): void {
+  const call =
+    calls.get(
+      roomId,
+    );
+  if (
+    !call ||
+    !call.adopted
+  )
+    return;
+  endRoom(
+    io,
+    call,
+    'host-ended',
+  );
+}
 
 /**
  * Load a person's public identity for the roster.
@@ -2088,6 +2354,14 @@ async function isOriginMember(
     'party'
   )
     return isPartyMember(
+      originId,
+      userId,
+    );
+  if (
+    origin ===
+    'profile'
+  )
+    return isProfileRoomGuest(
       originId,
       userId,
     );
@@ -3811,6 +4085,15 @@ export function registerGroupCallHandlers(
           selfImage(),
         );
 
+      // A titled live room (a Space) already has its row: its voice runs on it.
+      // For `profile` there is nothing else it could be (membership above
+      // proved the room live); for a community it is the community's live
+      // Space, if one is open, else a plain voice room as before.
+      const adoptId =
+        await adoptableRoom(
+          origin,
+          originId,
+        );
       // Somebody may have opened it while we were reading the membership row or
       // our own. Checked after the last await, so nothing can open a second room
       // between this lookup and `openRoom` registering ours in `byOrigin`.
@@ -3867,6 +4150,7 @@ export function registerGroupCallHandlers(
             originId,
             conversationId:
               null,
+            adoptId,
           },
         );
       if (
@@ -4963,7 +5247,9 @@ export function registerGroupCallHandlers(
         origin !==
           'community' &&
         origin !==
-          'party'
+          'party' &&
+        origin !==
+          'profile'
       ) {
         return fail(
           'malformed',
@@ -5089,9 +5375,14 @@ function openRoom(
     conversationId:
       | string
       | null;
+    /** The titled room's row to run on, from {@link adoptableRoom}. */
+    adoptId?:
+      | string
+      | null;
   },
 ): LiveGroupCall | null {
   const id =
+    args.adoptId ??
     uuidV7();
   if (
     !claimBusy(
@@ -5180,6 +5471,10 @@ function openRoom(
         Promise.resolve(),
       admission:
         Promise.resolve(),
+      adopted:
+        Boolean(
+          args.adoptId,
+        ),
     };
 
   calls.set(
