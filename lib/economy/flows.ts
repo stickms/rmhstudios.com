@@ -149,7 +149,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       source:
         'lib/battlepass/api/battlepass.claim.server.ts',
       bounded: true,
-      note: 'Fixed tiers per season.',
+      note: '30 generated tiers per 8-week season (lib/battlepass/season.ts); a cosmetic the player already owns pays its shop price.',
     },
     {
       id: 'creator-earnings-payout',
