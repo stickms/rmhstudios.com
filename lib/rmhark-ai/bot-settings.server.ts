@@ -7,6 +7,7 @@
  */
 
 import { prisma, prismaRead } from '@/lib/prisma.server';
+import { DM_KIND } from '@/lib/chat/chat.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import {
   DEFAULT_BOT_SETTINGS,
@@ -105,7 +106,9 @@ export async function getBotActivityStats(settings: BotWorkerSettingsInput): Pro
     prismaRead.rMHark.count({ where: botPost }),
     prismaRead.rMHark.count({ where: { deletedAt: null, user: { isBot: false }, createdAt: { gte: since24h } } }),
     prismaRead.rMHarkComment.count({ where: { deletedAt: null, user: { isBot: true }, createdAt: { gte: since24h } } }),
-    prismaRead.directMessage.count({ where: { sender: { isBot: true }, createdAt: { gte: since24h } } }),
+    prismaRead.chatMessage.count({
+      where: { sender: { isBot: true }, chat: { kind: DM_KIND }, createdAt: { gte: since24h } },
+    }),
   ]);
 
   const basePerDay = basePostsPerDay(bots.map((b) => b.botPersona));

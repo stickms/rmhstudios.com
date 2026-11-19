@@ -76,7 +76,7 @@ const mocks =
               update:
                 vi.fn(),
             },
-          conversation:
+          chat:
             {
               findFirst:
                 vi.fn(),
@@ -509,7 +509,7 @@ describe('group-call admission races', () => {
         .mockResolvedValue(
           {},
         );
-      mocks.prisma.conversation.findFirst
+      mocks.prisma.chat.findFirst
         .mockReset()
         .mockResolvedValue(
           null,

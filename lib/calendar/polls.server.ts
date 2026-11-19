@@ -6,6 +6,7 @@
  * stores its parameters; a response stores one character per slot.
  */
 import { prisma } from '@/lib/prisma.server';
+import { GROUP_KIND } from '@/lib/chat/chat.server';
 import { SITE_URL } from '@/lib/seo';
 import { createNotification } from '@/lib/notifications.server';
 import { getRole, canModerate } from '@/lib/communities/access.server';
@@ -310,8 +311,8 @@ export async function lockPoll(
     ...poll.invitees.map((i) => i.userId),
   ]);
   if (poll.groupChatId) {
-    const members = await prisma.groupChatMember.findMany({
-      where: { groupId: poll.groupChatId },
+    const members = await prisma.chatMember.findMany({
+      where: { chatId: poll.groupChatId, chat: { kind: GROUP_KIND } },
       select: { userId: true },
       take: 100,
     });

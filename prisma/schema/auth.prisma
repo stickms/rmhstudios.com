@@ -255,6 +255,13 @@ model User {
   directMessages         DirectMessage[]
   directMessageReactions DirectMessageReaction[]
 
+  // Chats (DMs + group chats, one model — prisma/schema/messaging.prisma)
+  chatsOwned      Chat[]                @relation("ChatOwner")
+  chatMemberships ChatMember[]          @relation("ChatMembership")
+  chatMessages    ChatMessage[]         @relation("ChatMessageSender")
+  chatReactions   ChatMessageReaction[] @relation("ChatMessageReactor")
+  chatPollVotes   ChatPollVote[]        @relation("ChatPollVoter")
+
   // rmhcode & User Builds
   rmhCodeTokens RmhCodeToken[]
   userBuilds    UserBuild[]

@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { dmsOf } from '@/lib/chat/chat.server';
 import { isAITextConfigured, suggestSmartReplies } from '@/lib/ai/text.server';
 
 /**
@@ -27,11 +28,8 @@ export const route = apiRoute('/api/ai/smart-replies', {
   POST: defineHandler({ rateLimit: 'ai', body: schema }, async ({ userId, body }) => {
     if (!isAITextConfigured()) return Response.json({ replies: [] });
 
-    const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: body.conversationId,
-        OR: [{ participantOneId: userId }, { participantTwoId: userId }],
-      },
+    const conversation = await prisma.chat.findFirst({
+      where: { id: body.conversationId, ...dmsOf(userId) },
       select: {
         id: true,
         messages: {

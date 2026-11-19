@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { markConversationReadApi } from '@/lib/messages/message-actions.contract';
 import { prisma } from '@/lib/prisma.server';
+import { findDm } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
 import { redisDel } from '@/lib/redis.server';
 import { getPairPrivacy } from '@/lib/chat-plus/receipts.server';
@@ -14,10 +15,7 @@ export const route = apiRoute('/api/messages/$conversationId/read', {
     const userId = session.user.id;
 
     // Verify user is a participant
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      select: { participantOneId: true, participantTwoId: true },
-    });
+    const conversation = await findDm(conversationId);
 
     if (!conversation) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 });
@@ -27,9 +25,9 @@ export const route = apiRoute('/api/messages/$conversationId/read', {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const marked = await prisma.directMessage.updateMany({
+    const marked = await prisma.chatMessage.updateMany({
       where: {
-        conversationId,
+        chatId: conversationId,
         senderId: { not: userId },
         read: false,
       },

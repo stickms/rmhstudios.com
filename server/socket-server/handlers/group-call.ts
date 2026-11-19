@@ -3615,21 +3615,18 @@ export function registerGroupCallHandlers(
         const thread =
           conversationId
             ? await getPrismaClient()
-                .conversation.findFirst(
+                .chat.findFirst(
                   {
                     where:
                       {
                         id: conversationId,
-                        OR: [
+                        kind: 'dm',
+                        members:
                           {
-                            participantOneId:
+                            some: {
                               userId,
+                            },
                           },
-                          {
-                            participantTwoId:
-                              userId,
-                          },
-                        ],
                       },
                     select:
                       {

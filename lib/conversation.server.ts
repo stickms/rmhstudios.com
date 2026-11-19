@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { findDmFor } from '@/lib/chat/chat.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 export interface ConversationOtherUser {
@@ -31,19 +32,11 @@ export async function getConversationOtherUser(
   conversationId: string,
   viewerId: string
 ): Promise<ConversationOtherUser | null> {
-  const conv = await prisma.conversation.findUnique({
-    where: { id: conversationId },
-    select: {
-      participantOneId: true,
-      participantTwoId: true,
-      participantOne: { select: participantSelect },
-      participantTwo: { select: participantSelect },
-    },
-  });
-  if (!conv) return null;
-  if (conv.participantOneId !== viewerId && conv.participantTwoId !== viewerId) return null;
-
-  const other = conv.participantOneId === viewerId ? conv.participantTwo : conv.participantOne;
+  const dm = await findDmFor(conversationId, viewerId);
+  if (!dm) return null;
+  const otherId = dm.participantOneId === viewerId ? dm.participantTwoId : dm.participantOneId;
+  const other = await prisma.user.findUnique({ where: { id: otherId }, select: participantSelect });
+  if (!other) return null;
   const resolved = resolveUserDisplay(other);
   return {
     id: other.id,

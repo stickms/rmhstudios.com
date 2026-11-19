@@ -1,6 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { GROUP_KIND } from '@/lib/chat/chat.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { listGroupChats } from '@/lib/group-chats.server';
 import { z } from 'zod';
@@ -42,7 +43,7 @@ export const route = apiRoute('/api/group-chats', {
       });
       if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-      const count = await prisma.groupChatMember.count({ where: { userId } });
+      const count = await prisma.chatMember.count({ where: { userId, chat: { kind: GROUP_KIND } } });
       if (count >= MAX_GROUPS)
         return Response.json({ error: 'You are in too many groups' }, { status: 400 });
 
@@ -56,8 +57,9 @@ export const route = apiRoute('/api/group-chats', {
       if (memberIds.size === 0)
         return Response.json({ error: 'Add at least one other member' }, { status: 400 });
 
-      const group = await prisma.groupChat.create({
+      const group = await prisma.chat.create({
         data: {
+          kind: GROUP_KIND,
           name: body.name.trim(),
           ownerId: userId,
           members: {

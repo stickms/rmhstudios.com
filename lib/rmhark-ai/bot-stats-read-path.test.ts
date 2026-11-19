@@ -78,7 +78,7 @@ vi.mock(
             count:
               h.count,
           },
-        directMessage:
+        chatMessage:
           {
             count:
               h.count,

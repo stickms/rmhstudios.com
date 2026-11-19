@@ -21,6 +21,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { upsertDm } from '@/lib/chat/chat.server';
 import { aiChat, isAITextConfigured } from '@/lib/ai/text.server';
 import { getChatAccess } from '@/lib/chat-plus/access.server';
 import { postChatMessage } from '@/lib/chat-plus/post.server';
@@ -129,16 +130,11 @@ export async function sendCallAutoReply(input: {
 
     // Normalised pair order, as every other conversation writer does.
     const [one, two] = calleeId < callerId ? [calleeId, callerId] : [callerId, calleeId];
-    const conversation = await prisma.conversation.upsert({
-      where: { participantOneId_participantTwoId: { participantOneId: one, participantTwoId: two } },
-      create: { participantOneId: one, participantTwoId: two },
-      update: {},
-      select: { id: true },
-    });
+    const conversation = await upsertDm(one, two);
 
-    const recent = await prisma.directMessage.findFirst({
+    const recent = await prisma.chatMessage.findFirst({
       where: {
-        conversationId: conversation.id,
+        chatId: conversation.id,
         senderId: calleeId,
         createdAt: { gt: new Date(Date.now() - AUTO_REPLY_COOLDOWN_MS) },
         meta: { path: ['autoReply'], equals: true },

@@ -53,7 +53,7 @@ export async function serializeGroupMessages(
   const tallies = new Map<string, number[]>();
   const myVotes = new Map<string, number>();
   if (pollIds.length) {
-    const grouped = await prisma.groupPollVote.groupBy({
+    const grouped = await prisma.chatPollVote.groupBy({
       by: ['messageId', 'optionIdx'],
       where: { messageId: { in: pollIds } },
       _count: { _all: true },
@@ -64,7 +64,7 @@ export async function serializeGroupMessages(
       tallies.set(g.messageId, arr);
     }
     if (viewerId) {
-      const mine = await prisma.groupPollVote.findMany({
+      const mine = await prisma.chatPollVote.findMany({
         where: { messageId: { in: pollIds }, userId: viewerId },
         select: { messageId: true, optionIdx: true },
       });

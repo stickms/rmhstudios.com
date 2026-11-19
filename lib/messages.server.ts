@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { dmChatSelect, dmKeyOf, dmsOf, toDmRow } from '@/lib/chat/chat.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { conversationPreview, type ConversationPreview } from '@/lib/messages/message-view';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
@@ -42,12 +43,16 @@ export async function listConversations(
 ): Promise<{ conversations: ConversationListItem[]; nextCursor: string | null; hasMore: boolean }> {
   const limit = opts.limit ?? 20;
   const inFolder = opts.folderId ? await folderChatIds(userId, opts.folderId, 'dm') : undefined;
-  const conversations = await prisma.conversation.findMany({
+  const userSelect = {
+    id: true, name: true, image: true, username: true, isBot: true,
+    profile: { select: { displayName: true, customImage: true } },
+  } as const;
+  const rows = await prisma.chat.findMany({
     where: {
-      OR: [{ participantOneId: userId }, { participantTwoId: userId }],
+      ...dmsOf(userId),
       // M2: Saved Messages (a conversation with yourself) is pinned separately
       // at the top of the inbox, so it is not part of this paged list.
-      NOT: { participantOneId: userId, participantTwoId: userId },
+      NOT: { dmKey: dmKeyOf(userId, userId) },
       ...(inFolder ? { id: { in: inFolder } } : {}),
       ...(opts.unreadOnly
         ? {
@@ -60,19 +65,9 @@ export async function listConversations(
     orderBy: { lastMessageAt: 'desc' },
     take: limit + 1,
     ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
-    include: {
-      participantOne: {
-        select: {
-          id: true, name: true, image: true, username: true, isBot: true,
-          profile: { select: { displayName: true, customImage: true } },
-        },
-      },
-      participantTwo: {
-        select: {
-          id: true, name: true, image: true, username: true, isBot: true,
-          profile: { select: { displayName: true, customImage: true } },
-        },
-      },
+    select: {
+      ...dmChatSelect,
+      members: { select: { userId: true, slot: true, user: { select: userSelect } }, orderBy: { slot: 'asc' } },
       messages: {
         // M3: an expired disappearing message is never the "last message".
         where: { AND: [liveMessages()] },
@@ -82,14 +77,23 @@ export async function listConversations(
       },
     },
   });
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const items = pageRows.flatMap((chat) => {
+    const dm = toDmRow(chat);
+    if (!dm) return [];
+    const userOf = (id: string) => chat.members.find((m) => m.userId === id)?.user;
+    const participantOne = userOf(dm.participantOneId);
+    const participantTwo = userOf(dm.participantTwoId);
+    if (!participantOne || !participantTwo) return [];
+    return [{ ...dm, participantOne, participantTwo, messages: chat.messages }];
+  });
 
-  const hasMore = conversations.length > limit;
-  const items = hasMore ? conversations.slice(0, limit) : conversations;
 
-  const unreadCounts = await prisma.directMessage.groupBy({
-    by: ['conversationId'],
+  const unreadCounts = await prisma.chatMessage.groupBy({
+    by: ['chatId'],
     where: {
-      conversationId: { in: items.map((c) => c.id) },
+      chatId: { in: items.map((c) => c.id) },
       senderId: { not: userId },
       read: false,
       AND: [liveMessages()],
@@ -100,7 +104,7 @@ export async function listConversations(
   // reported as read. One batched query, and only when there is something to hide.
   const needsMask = items.some((c) => c.messages[0]?.senderId === userId && c.messages[0]?.read);
   const receiptsHidden = needsMask ? await receiptsHiddenFor(items) : new Set<string>();
-  const unreadMap = new Map(unreadCounts.map((u) => [u.conversationId, u._count.id]));
+  const unreadMap = new Map(unreadCounts.map((u) => [u.chatId, u._count.id]));
 
   const result: ConversationListItem[] = items.map((conv) => {
     const otherUser = conv.participantOneId === userId ? conv.participantTwo : conv.participantOne;
@@ -139,7 +143,7 @@ export async function listConversations(
 
   return {
     conversations: result,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
+    nextCursor: hasMore ? pageRows[pageRows.length - 1].id : null,
     hasMore,
   };
 }

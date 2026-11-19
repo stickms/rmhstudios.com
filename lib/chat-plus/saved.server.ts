@@ -1,8 +1,8 @@
 /**
  * M2 — Saved Messages: a conversation with yourself. Server-only.
  *
- * It is an ordinary `Conversation` whose two participants are the same user
- * (the `(participantOneId, participantTwoId)` unique key already allows it), so
+ * It is an ordinary DM chat whose one member is both participants (its
+ * `dmKey` is `<userId>:<userId>`), so
  * it gets text, links, images, GIFs, voice notes, pins, search, reactions and
  * the media panel for free. What differs is only what it must NOT do: no unread
  * count, no recipient notification, no DM-privacy check, no call button. It is
@@ -11,6 +11,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { DM_KIND, dmKeyOf, upsertDm } from '@/lib/chat/chat.server';
 import { conversationPreview } from '@/lib/messages/message-view';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 
@@ -23,10 +24,8 @@ export interface SavedSummary {
 }
 
 export async function getSavedSummary(userId: string): Promise<SavedSummary | null> {
-  const conv = await prisma.conversation.findUnique({
-    where: {
-      participantOneId_participantTwoId: { participantOneId: userId, participantTwoId: userId },
-    },
+  const conv = await prisma.chat.findFirst({
+    where: { dmKey: dmKeyOf(userId, userId), kind: DM_KIND },
     select: {
       id: true,
       lastMessageAt: true,
@@ -51,13 +50,6 @@ export async function getSavedSummary(userId: string): Promise<SavedSummary | nu
 
 /** The viewer's Saved Messages conversation id, creating it on first use. */
 export async function ensureSavedConversation(userId: string): Promise<string> {
-  const conv = await prisma.conversation.upsert({
-    where: {
-      participantOneId_participantTwoId: { participantOneId: userId, participantTwoId: userId },
-    },
-    create: { participantOneId: userId, participantTwoId: userId },
-    update: {},
-    select: { id: true },
-  });
+  const conv = await upsertDm(userId, userId);
   return conv.id;
 }

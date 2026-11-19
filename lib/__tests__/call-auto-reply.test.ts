@@ -31,17 +31,14 @@ const mocks =
               findFirst:
                 vi.fn(),
             },
-          conversation:
-            {
-              upsert:
-                vi.fn(),
-            },
-          directMessage:
+          chatMessage:
             {
               findFirst:
                 vi.fn(),
             },
         },
+      upsertDm:
+        vi.fn(),
       aiChat:
         vi.fn(),
       isAITextConfigured:
@@ -60,6 +57,13 @@ vi.mock(
   () => ({
     prisma:
       mocks.prisma,
+  }),
+);
+vi.mock(
+  '@/lib/chat/chat.server',
+  () => ({
+    upsertDm:
+      mocks.upsertDm,
   }),
 );
 vi.mock(
@@ -175,12 +179,12 @@ function arrange(
     over.dmAllowed ??
       true,
   );
-  mocks.prisma.conversation.upsert.mockResolvedValue(
+  mocks.upsertDm.mockResolvedValue(
     {
       id: 'conv-1',
     },
   );
-  mocks.prisma.directMessage.findFirst.mockResolvedValue(
+  mocks.prisma.chatMessage.findFirst.mockResolvedValue(
     over.recent
       ? {
           id: 'old',
@@ -294,10 +298,7 @@ describe('who gets an automatic reply', () => {
       mocks.postChatMessage,
     ).not.toHaveBeenCalled();
     expect(
-      mocks
-        .prisma
-        .conversation
-        .upsert,
+      mocks.upsertDm,
     ).not.toHaveBeenCalled();
     expect(
       mocks.aiChat,
@@ -343,10 +344,7 @@ describe('who gets an automatic reply', () => {
       mocks.aiChat,
     ).not.toHaveBeenCalled();
     expect(
-      mocks
-        .prisma
-        .conversation
-        .upsert,
+      mocks.upsertDm,
     ).not.toHaveBeenCalled();
     expect(
       mocks.postChatMessage,
@@ -478,7 +476,7 @@ describe('who gets an automatic reply', () => {
     expect(
       mocks
         .prisma
-        .directMessage
+        .chatMessage
         .findFirst,
     ).toHaveBeenCalledWith(
       expect.objectContaining(
@@ -587,19 +585,15 @@ describe('what is sent', () => {
   it('uses the normalised pair order for the conversation', async () => {
     arrange();
     await send();
-    const where =
+    const [participantOneId, participantTwoId] =
       mocks
-        .prisma
-        .conversation
-        .upsert
+        .upsertDm
         .mock
-        .calls[0][0]
-        .where
-        .participantOneId_participantTwoId;
+        .calls[0];
     expect(
       [
-        where.participantOneId,
-        where.participantTwoId,
+        participantOneId,
+        participantTwoId,
       ],
     ).toEqual(
       [

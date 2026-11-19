@@ -50,16 +50,12 @@ export async function forwardMessage(userId: string, input: ForwardInput): Promi
     deletedAt: true,
   } as const;
   const live = liveMessages();
-  const msg =
-    source.kind === 'dm'
-      ? await prisma.directMessage.findFirst({
-          where: { id: input.messageId, conversationId: source.id, AND: [live] },
-          select,
-        })
-      : await prisma.groupMessage.findFirst({
-          where: { id: input.messageId, groupId: source.id, AND: [live] },
-          select,
-        });
+  // `source` is a chat the viewer belongs to (getChatAccess), and the message
+  // is looked up inside it.
+  const msg = await prisma.chatMessage.findFirst({
+    where: { id: input.messageId, chatId: source.id, AND: [live] },
+    select,
+  });
   if (!msg || msg.deletedAt) return { ok: false, status: 404, error: 'Message not found' };
   if (source.kind === 'dm') {
     const hidden = await prisma.directMessageHide.findUnique({

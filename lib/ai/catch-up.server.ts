@@ -14,7 +14,7 @@
  *    "delete for me" redaction. Summarizing the raw rows would have quietly
  *    resurrected the text of unsent messages — the exact bug that read path
  *    exists to prevent.
- *  - `group-chat` → the `groupChatMember` lookup every
+ *  - `group-chat` → the `findGroupMembership` lookup every
  *    `/api/group-chats/$id/**` handler performs, then the shared
  *    `serializeGroupMessages()` projection.
  *  - `space` → `getSpace()`, the same public read the room page and
@@ -35,6 +35,7 @@ import { assertAiBudget } from '@/lib/ai/budget.server';
 import { isAiConfigured, runTask } from '@/lib/ai/provider.server';
 import { asData, systemFor, CATCH_UP } from '@/lib/ai/prompts';
 import { prisma } from '@/lib/prisma.server';
+import { findGroupMembership } from '@/lib/chat/chat.server';
 import { loadThreadPage } from '@/lib/messages/mutations.server';
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
 import { getSpace } from '@/lib/spaces.server';
@@ -120,15 +121,12 @@ async function gatherThread(id: string, userId: string, since: Date | null): Pro
 }
 
 async function gatherGroupChat(id: string, userId: string, since: Date | null): Promise<Gathered> {
-  const membership = await prisma.groupChatMember.findUnique({
-    where: { groupId_userId: { groupId: id, userId } },
-    select: { id: true },
-  });
+  const membership = await findGroupMembership(id, userId, { id: true });
   if (!membership) return { ok: false, reason: 'no-access' };
 
-  const rows = await prisma.groupMessage.findMany({
+  const rows = await prisma.chatMessage.findMany({
     where: {
-      groupId: id,
+      chatId: id,
       // Disappearing messages (M3) never reach the summarizer once expired.
       AND: [liveMessages()],
       ...(since ? { createdAt: { gt: since } } : {}),
