@@ -211,7 +211,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'achievements',
       title:
         'Achievements',
-      href: '/achievements',
+      href: '/progress?tab=achievements',
       iconName:
         'Trophy',
       keywords:
@@ -675,7 +675,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'recap',
       title:
         'Weekly recap',
-      href: '/recap',
+      href: '/progress?tab=week',
       iconName:
         'Sparkles',
       keywords:

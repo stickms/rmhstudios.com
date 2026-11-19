@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 358 routes. 176 render inside the standard site shell (sidebar, nav, context rail); 182 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 354 routes. 172 render inside the standard site shell (sidebar, nav, context rail); 182 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -20,7 +20,6 @@ Standard pages, rendered inside the sidebar shell.
 | --- | ----- | ------ | ------ |
 | `/` | RMH Studios | public | `app/routes/_site/index.tsx` |
 | `/account/connect` | — | public | `app/routes/_site/account/connect.tsx` |
-| `/achievements` | Achievements | public | `app/routes/_site/achievements.tsx` |
 | `/admin` | Admin Dashboard | admin | `app/routes/_site/admin/index.tsx` |
 | `/admin/alarms` | Alarms | admin | `app/routes/_site/admin/alarms.tsx` |
 | `/admin/albums` | Library Albums \| Admin | admin | `app/routes/_site/admin/albums/index.tsx` |
@@ -123,7 +122,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
 | `/reading` | My reading | public | `app/routes/_site/reading/index.tsx` |
-| `/recap` | Your Week | public | `app/routes/_site/recap.tsx` |
 | `/rideshare` | RMH Rideshare | public | `app/routes/_site/rideshare/index.tsx` |
 | `/rideshare/drive` | Drive with RMH Rideshare | public | `app/routes/_site/rideshare/drive.tsx` |
 | `/rideshare/ride` | Request a ride — RMH Rideshare | public | `app/routes/_site/rideshare/ride.tsx` |
@@ -177,7 +175,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/study/browse` | Browse decks | public | `app/routes/_site/study/browse.tsx` |
 | `/tag/:tag` | — | public | `app/routes/_site/tag.$tag.tsx` |
 | `/thread/:rootId` | — | public | `app/routes/_site/thread/$rootId.tsx` |
-| `/today` | Today on RMH | public | `app/routes/_site/today.tsx` |
 | `/tournaments` | Tournaments | public | `app/routes/_site/tournaments.index.tsx` |
 | `/tournaments/:id` | — | public | `app/routes/_site/tournaments.$id.tsx` |
 | `/translate` | — | public | `app/routes/_site/translate.tsx` |
@@ -193,7 +190,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/wallet` | Wallet | public | `app/routes/_site/wallet.tsx` |
 | `/when` | Find a time | public | `app/routes/_site/when/index.tsx` |
 | `/when/:id` | Availability poll | public | `app/routes/_site/when/$id.tsx` |
-| `/wrapped` | Wrapped | public | `app/routes/_site/wrapped.tsx` |
 
 ## Full-screen
 

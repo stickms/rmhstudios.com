@@ -32,6 +32,10 @@ export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   '/homes/watches': '/homes/manage?tab=alerts',
   '/admin/library-quota': '/admin/library?tab=appeals',
   '/admin/library-storage': '/admin/library?tab=storage',
+  '/achievements': '/progress?tab=achievements',
+  '/recap': '/progress?tab=week',
+  '/wrapped': '/progress?tab=year',
+  '/today': '/progress?tab=today',
   // Settings that became a section of another settings page.
   '/settings/account-status': '/settings/security#account-status',
   '/settings/calendar': '/settings/notifications#calendar',

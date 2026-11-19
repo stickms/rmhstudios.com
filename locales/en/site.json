@@ -925,5 +925,8 @@
   "plan-create-account": "Create an account",
   "first-week-step-account": "Create your account",
   "play-limits-exclude-final": "An exclusion cannot be shortened or undone once set.",
-  "presence-vis-my-followers": "People who follow me"
+  "presence-vis-my-followers": "People who follow me",
+  "progress-tab-today": "Today",
+  "progress-tab-week": "Week",
+  "progress-tab-year": "Year"
 }

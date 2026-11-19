@@ -142,8 +142,8 @@ export const STATIC_CARD_INDEX: readonly (readonly [
       'site-history',
     ],
     [
-      '/achievements',
-      'achievements',
+      '/progress',
+      'progress',
     ],
     [
       '/arcade',
@@ -272,10 +272,6 @@ export const STATIC_CARD_INDEX: readonly (readonly [
     [
       '/speedruns',
       'speedruns',
-    ],
-    [
-      '/today',
-      'today',
     ],
     [
       '/qotd',

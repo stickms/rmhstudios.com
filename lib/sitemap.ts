@@ -254,12 +254,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
     // instead. `/shop` and `/pricing` joined that list late — they were listed
     // here *and* self-canonical while `/store` was too, so one catalog and one
     // pricing table each claimed two canonical URLs.
-    {
-      loc: '/achievements',
-      changefreq:
-        'weekly',
-      priority: 0.5,
-    },
     // Community-made packs: a public browse surface, so it's indexable.
     {
       loc: '/emoji-packs',
@@ -324,13 +318,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
       changefreq:
         'daily',
       priority: 0.4,
-    },
-    // The generated daily front page (P03 A3): rebuilt once a day from one snapshot row.
-    {
-      loc: '/today',
-      changefreq:
-        'daily',
-      priority: 0.6,
     },
     // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
     // the log grows every time anyone adds a line or scrolls past the frontier,
@@ -738,8 +725,6 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/reading':
       'personal', // highlights, shelves and the reading challenge
-    '/recap':
-      'personal',
     '/saves':
       'personal',
     '/feeds':
@@ -753,8 +738,6 @@ export const EXCLUDED_ROUTES: Record<
     '/wallet':
       'personal',
     '/trash':
-      'personal',
-    '/wrapped':
       'personal',
     '/homes/manage':
       'personal',

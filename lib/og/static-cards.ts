@@ -397,14 +397,14 @@ export const STATIC_CARDS: StaticCard[] =
         'Each homepage redesign and each game and app as it arrived, from the first commit to today.',
     },
     {
-      path: '/achievements',
-      file: 'achievements',
+      path: '/progress',
+      file: 'progress',
       eyebrow:
-        'Achievements',
+        'Progress',
       title:
-        'What unlocks it, and who earned it.',
+        'Your level, your streak, your year.',
       subtitle:
-        'Every achievement on RMH Studios, what it is worth, and the players who have it.',
+        'Achievements, the weekly recap, Wrapped, and the last 24 hours on RMH Studios.',
     },
     {
       path: '/arcade',
@@ -725,16 +725,6 @@ export const STATIC_CARDS: StaticCard[] =
         'Verified by replay.',
       subtitle:
         'Every run is re-simulated from its own inputs.',
-    },
-    {
-      path: '/today',
-      file: 'today',
-      eyebrow:
-        'Today',
-      title:
-        'The last 24 hours.',
-      subtitle:
-        'Top posts, new builds, news and what is trending.',
     },
     {
       path: '/qotd',

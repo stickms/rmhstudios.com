@@ -1,6 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
-import { getYearlyWrapped } from '@/lib/wrapped.server';
+import { getYearlyWrapped } from '@/lib/wrapped/wrapped.server';
 
 /** GET /api/wrapped?year= — the signed-in user's year-in-review. */
 export const route = apiRoute('/api/wrapped', {

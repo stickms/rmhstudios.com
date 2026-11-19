@@ -72,7 +72,6 @@ import { Route as VoidBreakerRouteImport } from './routes/void-breaker'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known.apple-app-site-association'
 import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]well-known.assetlinks[.]json'
 import { Route as SiteIndexRouteImport } from './routes/_site/index'
-import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as SiteAdventRouteImport } from './routes/_site/advent'
 import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
@@ -99,7 +98,6 @@ import { Route as SitePsychologyRouteImport } from './routes/_site/psychology'
 import { Route as SiteQotdRouteImport } from './routes/_site/qotd'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SiteRankedRouteImport } from './routes/_site/ranked'
-import { Route as SiteRecapRouteImport } from './routes/_site/recap'
 import { Route as SiteRmhboxPacksRouteImport } from './routes/_site/rmhbox-packs'
 import { Route as SiteRmhladderRouteImport } from './routes/_site/rmhladder'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
@@ -110,12 +108,10 @@ import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
 import { Route as SiteSiteHistoryRouteImport } from './routes/_site/site-history'
 import { Route as SiteSpeedrunsRouteImport } from './routes/_site/speedruns'
-import { Route as SiteTodayRouteImport } from './routes/_site/today'
 import { Route as SiteTranslateRouteImport } from './routes/_site/translate'
 import { Route as SiteTrashRouteImport } from './routes/_site/trash'
 import { Route as SiteVenturesRouteImport } from './routes/_site/ventures'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
-import { Route as SiteWrappedRouteImport } from './routes/_site/wrapped'
 import { Route as AltairIndexRouteImport } from './routes/altair/index'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
@@ -827,11 +823,6 @@ const SiteIndexRoute = SiteIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteAchievementsRoute = SiteAchievementsRouteImport.update({
-  id: '/achievements',
-  path: '/achievements',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -962,11 +953,6 @@ const SiteRankedRoute = SiteRankedRouteImport.update({
   path: '/ranked',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteRecapRoute = SiteRecapRouteImport.update({
-  id: '/recap',
-  path: '/recap',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteRmhboxPacksRoute = SiteRmhboxPacksRouteImport.update({
   id: '/rmhbox-packs',
   path: '/rmhbox-packs',
@@ -1017,11 +1003,6 @@ const SiteSpeedrunsRoute = SiteSpeedrunsRouteImport.update({
   path: '/speedruns',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteTodayRoute = SiteTodayRouteImport.update({
-  id: '/today',
-  path: '/today',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteTranslateRoute = SiteTranslateRouteImport.update({
   id: '/translate',
   path: '/translate',
@@ -1040,11 +1021,6 @@ const SiteVenturesRoute = SiteVenturesRouteImport.update({
 const SiteWalletRoute = SiteWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteWrappedRoute = SiteWrappedRouteImport.update({
-  id: '/wrapped',
-  path: '/wrapped',
   getParentRoute: () => SiteRoute,
 } as any)
 const AltairIndexRoute = AltairIndexRouteImport.update({
@@ -3122,7 +3098,6 @@ export interface FileRoutesByFullPath {
   '/developer': typeof SiteDeveloperRouteRouteWithChildren
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
-  '/achievements': typeof SiteAchievementsRoute
   '/advent': typeof SiteAdventRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
@@ -3146,7 +3121,6 @@ export interface FileRoutesByFullPath {
   '/qotd': typeof SiteQotdRoute
   '/quotes': typeof SiteQuotesRoute
   '/ranked': typeof SiteRankedRoute
-  '/recap': typeof SiteRecapRoute
   '/rmhbox-packs': typeof SiteRmhboxPacksRoute
   '/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/roadmap': typeof SiteRoadmapRoute
@@ -3157,12 +3131,10 @@ export interface FileRoutesByFullPath {
   '/share': typeof SiteShareRoute
   '/site-history': typeof SiteSiteHistoryRoute
   '/speedruns': typeof SiteSpeedrunsRoute
-  '/today': typeof SiteTodayRoute
   '/translate': typeof SiteTranslateRoute
   '/trash': typeof SiteTrashRoute
   '/ventures': typeof SiteVenturesRoute
   '/wallet': typeof SiteWalletRoute
-  '/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/$': typeof ApiSplatRoute
   '/api/client-error': typeof ApiClientErrorRoute
@@ -3600,7 +3572,6 @@ export interface FileRoutesByTo {
   '/void-breaker': typeof VoidBreakerRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
-  '/achievements': typeof SiteAchievementsRoute
   '/advent': typeof SiteAdventRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
@@ -3624,7 +3595,6 @@ export interface FileRoutesByTo {
   '/qotd': typeof SiteQotdRoute
   '/quotes': typeof SiteQuotesRoute
   '/ranked': typeof SiteRankedRoute
-  '/recap': typeof SiteRecapRoute
   '/rmhbox-packs': typeof SiteRmhboxPacksRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/schedule': typeof SiteScheduleRoute
@@ -3633,12 +3603,10 @@ export interface FileRoutesByTo {
   '/share': typeof SiteShareRoute
   '/site-history': typeof SiteSiteHistoryRoute
   '/speedruns': typeof SiteSpeedrunsRoute
-  '/today': typeof SiteTodayRoute
   '/translate': typeof SiteTranslateRoute
   '/trash': typeof SiteTrashRoute
   '/ventures': typeof SiteVenturesRoute
   '/wallet': typeof SiteWalletRoute
-  '/wrapped': typeof SiteWrappedRoute
   '/api/$': typeof ApiSplatRoute
   '/api/client-error': typeof ApiClientErrorRoute
   '/api/health': typeof ApiHealthRoute
@@ -4098,7 +4066,6 @@ export interface FileRoutesById {
   '/_site/developer': typeof SiteDeveloperRouteRouteWithChildren
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
-  '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/advent': typeof SiteAdventRoute
   '/_site/analytics': typeof SiteAnalyticsRoute
   '/_site/arcade': typeof SiteArcadeRoute
@@ -4122,7 +4089,6 @@ export interface FileRoutesById {
   '/_site/qotd': typeof SiteQotdRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/ranked': typeof SiteRankedRoute
-  '/_site/recap': typeof SiteRecapRoute
   '/_site/rmhbox-packs': typeof SiteRmhboxPacksRoute
   '/_site/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/_site/roadmap': typeof SiteRoadmapRoute
@@ -4133,12 +4099,10 @@ export interface FileRoutesById {
   '/_site/share': typeof SiteShareRoute
   '/_site/site-history': typeof SiteSiteHistoryRoute
   '/_site/speedruns': typeof SiteSpeedrunsRoute
-  '/_site/today': typeof SiteTodayRoute
   '/_site/translate': typeof SiteTranslateRoute
   '/_site/trash': typeof SiteTrashRoute
   '/_site/ventures': typeof SiteVenturesRoute
   '/_site/wallet': typeof SiteWalletRoute
-  '/_site/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/$': typeof ApiSplatRoute
   '/api/client-error': typeof ApiClientErrorRoute
@@ -4603,7 +4567,6 @@ export interface FileRouteTypes {
     | '/developer'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
-    | '/achievements'
     | '/advent'
     | '/analytics'
     | '/arcade'
@@ -4627,7 +4590,6 @@ export interface FileRouteTypes {
     | '/qotd'
     | '/quotes'
     | '/ranked'
-    | '/recap'
     | '/rmhbox-packs'
     | '/rmhladder'
     | '/roadmap'
@@ -4638,12 +4600,10 @@ export interface FileRouteTypes {
     | '/share'
     | '/site-history'
     | '/speedruns'
-    | '/today'
     | '/translate'
     | '/trash'
     | '/ventures'
     | '/wallet'
-    | '/wrapped'
     | '/altair/multiplayer'
     | '/api/$'
     | '/api/client-error'
@@ -5081,7 +5041,6 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
-    | '/achievements'
     | '/advent'
     | '/analytics'
     | '/arcade'
@@ -5105,7 +5064,6 @@ export interface FileRouteTypes {
     | '/qotd'
     | '/quotes'
     | '/ranked'
-    | '/recap'
     | '/rmhbox-packs'
     | '/roadmap'
     | '/schedule'
@@ -5114,12 +5072,10 @@ export interface FileRouteTypes {
     | '/share'
     | '/site-history'
     | '/speedruns'
-    | '/today'
     | '/translate'
     | '/trash'
     | '/ventures'
     | '/wallet'
-    | '/wrapped'
     | '/api/$'
     | '/api/client-error'
     | '/api/health'
@@ -5578,7 +5534,6 @@ export interface FileRouteTypes {
     | '/_site/developer'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
-    | '/_site/achievements'
     | '/_site/advent'
     | '/_site/analytics'
     | '/_site/arcade'
@@ -5602,7 +5557,6 @@ export interface FileRouteTypes {
     | '/_site/qotd'
     | '/_site/quotes'
     | '/_site/ranked'
-    | '/_site/recap'
     | '/_site/rmhbox-packs'
     | '/_site/rmhladder'
     | '/_site/roadmap'
@@ -5613,12 +5567,10 @@ export interface FileRouteTypes {
     | '/_site/share'
     | '/_site/site-history'
     | '/_site/speedruns'
-    | '/_site/today'
     | '/_site/translate'
     | '/_site/trash'
     | '/_site/ventures'
     | '/_site/wallet'
-    | '/_site/wrapped'
     | '/altair/multiplayer'
     | '/api/$'
     | '/api/client-error'
@@ -6644,13 +6596,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteIndexRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/achievements': {
-      id: '/_site/achievements'
-      path: '/achievements'
-      fullPath: '/achievements'
-      preLoaderRoute: typeof SiteAchievementsRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/admin': {
       id: '/_site/admin'
       path: '/admin'
@@ -6833,13 +6778,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRankedRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/recap': {
-      id: '/_site/recap'
-      path: '/recap'
-      fullPath: '/recap'
-      preLoaderRoute: typeof SiteRecapRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/rmhbox-packs': {
       id: '/_site/rmhbox-packs'
       path: '/rmhbox-packs'
@@ -6910,13 +6848,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSpeedrunsRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/today': {
-      id: '/_site/today'
-      path: '/today'
-      fullPath: '/today'
-      preLoaderRoute: typeof SiteTodayRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/translate': {
       id: '/_site/translate'
       path: '/translate'
@@ -6943,13 +6874,6 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof SiteWalletRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/wrapped': {
-      id: '/_site/wrapped'
-      path: '/wrapped'
-      fullPath: '/wrapped'
-      preLoaderRoute: typeof SiteWrappedRouteImport
       parentRoute: typeof SiteRoute
     }
     '/altair/': {
@@ -9891,7 +9815,6 @@ interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteCreateRouteRoute: typeof SiteCreateRouteRouteWithChildren
   SiteDeveloperRouteRoute: typeof SiteDeveloperRouteRouteWithChildren
-  SiteAchievementsRoute: typeof SiteAchievementsRoute
   SiteAdventRoute: typeof SiteAdventRoute
   SiteAnalyticsRoute: typeof SiteAnalyticsRoute
   SiteArcadeRoute: typeof SiteArcadeRoute
@@ -9915,7 +9838,6 @@ interface SiteRouteChildren {
   SiteQotdRoute: typeof SiteQotdRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRankedRoute: typeof SiteRankedRoute
-  SiteRecapRoute: typeof SiteRecapRoute
   SiteRmhboxPacksRoute: typeof SiteRmhboxPacksRoute
   SiteRmhladderRoute: typeof SiteRmhladderRouteWithChildren
   SiteRoadmapRoute: typeof SiteRoadmapRoute
@@ -9926,12 +9848,10 @@ interface SiteRouteChildren {
   SiteShareRoute: typeof SiteShareRoute
   SiteSiteHistoryRoute: typeof SiteSiteHistoryRoute
   SiteSpeedrunsRoute: typeof SiteSpeedrunsRoute
-  SiteTodayRoute: typeof SiteTodayRoute
   SiteTranslateRoute: typeof SiteTranslateRoute
   SiteTrashRoute: typeof SiteTrashRoute
   SiteVenturesRoute: typeof SiteVenturesRoute
   SiteWalletRoute: typeof SiteWalletRoute
-  SiteWrappedRoute: typeof SiteWrappedRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteAccountConnectRoute: typeof SiteAccountConnectRoute
   SiteBlogSlugRoute: typeof SiteBlogSlugRoute
@@ -10018,7 +9938,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
   SiteCreateRouteRoute: SiteCreateRouteRouteWithChildren,
   SiteDeveloperRouteRoute: SiteDeveloperRouteRouteWithChildren,
-  SiteAchievementsRoute: SiteAchievementsRoute,
   SiteAdventRoute: SiteAdventRoute,
   SiteAnalyticsRoute: SiteAnalyticsRoute,
   SiteArcadeRoute: SiteArcadeRoute,
@@ -10042,7 +9961,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteQotdRoute: SiteQotdRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRankedRoute: SiteRankedRoute,
-  SiteRecapRoute: SiteRecapRoute,
   SiteRmhboxPacksRoute: SiteRmhboxPacksRoute,
   SiteRmhladderRoute: SiteRmhladderRouteWithChildren,
   SiteRoadmapRoute: SiteRoadmapRoute,
@@ -10053,12 +9971,10 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteShareRoute: SiteShareRoute,
   SiteSiteHistoryRoute: SiteSiteHistoryRoute,
   SiteSpeedrunsRoute: SiteSpeedrunsRoute,
-  SiteTodayRoute: SiteTodayRoute,
   SiteTranslateRoute: SiteTranslateRoute,
   SiteTrashRoute: SiteTrashRoute,
   SiteVenturesRoute: SiteVenturesRoute,
   SiteWalletRoute: SiteWalletRoute,
-  SiteWrappedRoute: SiteWrappedRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteAccountConnectRoute: SiteAccountConnectRoute,
   SiteBlogSlugRoute: SiteBlogSlugRoute,

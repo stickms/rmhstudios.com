@@ -78,7 +78,7 @@ export function RecapColumn({
  }
  subtitle={recap.blurb}
  actions={
- <Link to="/wrapped">
+ <Link to="/progress" search={{ tab: 'year' }}>
  <Button variant="default"size="sm">
  <Sparkles className="h-3.5 w-3.5"/>
  {t('recap-year-wrapped', { defaultValue:'Year Wrapped'})}
@@ -121,7 +121,8 @@ export function RecapColumn({
 
  <div>
  <Link
- to="/achievements"
+ to="/progress"
+ search={{ tab: 'achievements' }}
  className={`block rounded-site px-4 py-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover`}
  >
  {t('recap-view-achievements', { defaultValue:'View your achievements →'})}

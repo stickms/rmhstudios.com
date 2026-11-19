@@ -211,3 +211,22 @@ export function templatedBlurb(
     bits.push(`${s.achievementsUnlocked} achievement${s.achievementsUnlocked === 1 ? '' : 's'}`);
   return `What a year! In ${year} you racked up ${bits.join(', ')}. Thanks for being part of RMH Studios. 🎉`;
 }
+
+// ── Cached accessor ──────────────────────────────────────────────────────────
+// What `/api/wrapped` and the Year tab of `/progress` call. It lived in its own
+// module, `lib/wrapped.server.ts`, beside this directory until the 2026-11-19
+// consolidation folded it in. Cached per user+year so the route loader and a
+// later client fetch serve one summary without aggregating the year twice.
+
+const wrappedCache = new Map<string, { wrapped: YearlyWrapped; at: number }>();
+const WRAPPED_TTL_MS = 6 * 60 * 60 * 1000;
+
+export async function getYearlyWrapped(userId: string, year?: number): Promise<YearlyWrapped> {
+  const resolved = year ?? new Date().getUTCFullYear();
+  const key = `${userId}:${resolved}`;
+  const hit = wrappedCache.get(key);
+  if (hit && Date.now() - hit.at < WRAPPED_TTL_MS) return hit.wrapped;
+  const wrapped = await generateYearlyWrapped(userId, resolved);
+  wrappedCache.set(key, { wrapped, at: Date.now() });
+  return wrapped;
+}

@@ -127,7 +127,7 @@ export function AchievementsColumn({
 
  return (
  <div className={arrival}>
- {/* hideHeader === embedded in JourneyColumn/ProfileColumn, which supply
+ {/* hideHeader === embedded in /progress or ProfileColumn, which supply
  the page header (and the drawer button); only the stats survive. */}
  {hideHeader ? (
  <div className="pt-4">{Stats}</div>
