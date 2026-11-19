@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
+import { OverlaySignal } from './overlay-signal';
 
 import './sheet.css';
 
@@ -205,6 +206,7 @@ const SheetContent =
           )}
           {...props}
         >
+          <OverlaySignal />
           {/* Drag handle — mobile only; drives swipe-to-dismiss. */}
           {hideHandle ||
           mobileFullscreen ? null : (

@@ -3,6 +3,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from 'vitest';
 import {
   ENV_MAX_PX,
@@ -366,6 +367,7 @@ function fakeBrowser(
         },
     });
   let nextCanvasIndex = 0;
+  let envPaints = 0;
   const elements =
     thumbs.map(
       (
@@ -400,13 +402,17 @@ function fakeBrowser(
           false,
       ownerDocument:
         null as unknown,
+      // Read once at the start of every environment paint: the painter enters the root first.
       getBoundingClientRect:
-        () => ({
-          left: 0,
-          top: 0,
-          width: 1280,
-          height: 3000,
-        }),
+        () => {
+          envPaints++;
+          return {
+            left: 0,
+            top: 0,
+            width: 1280,
+            height: 3000,
+          };
+        },
     };
   const add =
     (
@@ -510,6 +516,22 @@ function fakeBrowser(
       addEventListener:
         add,
       removeEventListener() {},
+      setTimeout:
+        (
+          fn: () => void,
+          ms: number,
+        ) =>
+          globalThis.setTimeout(
+            fn,
+            ms,
+          ),
+      clearTimeout:
+        (
+          id: number,
+        ) =>
+          globalThis.clearTimeout(
+            id,
+          ),
     };
   document.defaultView =
     window;
@@ -549,6 +571,9 @@ function fakeBrowser(
     contexts:
       () =>
         contexts,
+    envPaints:
+      () =>
+        envPaints,
     fire: (
       type: string,
       event: object = {},
@@ -780,6 +805,102 @@ describe('the chrome renderer', () => {
     ).toBe(
       false,
     );
+  });
+});
+
+describe('overlays (V8: an overlay opening or closing is a content change)', () => {
+  it('repaints the environment once after an overlay signals, when its fade has ended, and then rests', () => {
+    vi.useFakeTimers();
+    try {
+      const b =
+        fakeBrowser(
+          [
+            {
+              c: 1,
+            },
+          ],
+        );
+      const r =
+        new ChromeRenderer(
+          b.host,
+        );
+      expect(
+        r.start(),
+      ).toBe(
+        true,
+      );
+      b.settle();
+      const painted =
+        b.envPaints();
+      expect(
+        painted,
+      ).toBeGreaterThan(
+        0,
+      );
+      expect(
+        r.pending,
+      ).toBe(
+        false,
+      );
+
+      // A dialog opens, and a menu inside it right after: one repaint for the burst.
+      b.fire(
+        'chrome:content',
+      );
+      b.fire(
+        'chrome:content',
+      );
+      vi.advanceTimersByTime(
+        150,
+      );
+      expect(
+        r.pending,
+      ).toBe(
+        false,
+      ); // still fading: nothing yet
+      vi.advanceTimersByTime(
+        100,
+      );
+      expect(
+        r.pending,
+      ).toBe(
+        true,
+      );
+      b.settle();
+      expect(
+        b.envPaints(),
+      ).toBe(
+        painted +
+          1,
+      );
+      expect(
+        r.pending,
+      ).toBe(
+        false,
+      );
+      expect(
+        vi.getTimerCount(),
+      ).toBe(
+        0,
+      );
+
+      // It closes.
+      b.fire(
+        'chrome:content',
+      );
+      vi.advanceTimersByTime(
+        250,
+      );
+      b.settle();
+      expect(
+        b.envPaints(),
+      ).toBe(
+        painted +
+          2,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

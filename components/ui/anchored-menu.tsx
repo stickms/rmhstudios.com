@@ -58,6 +58,7 @@ import {
 } from '@/lib/anchored-placement';
 import { cn } from '@/lib/utils';
 import { MENU_ITEM_ATTR } from './menu';
+import { useOverlaySignal } from './overlay-signal';
 import './anchored-menu.css';
 
 // useLayoutEffect warns during SSR; a menu only ever opens from a client
@@ -489,6 +490,12 @@ export function AnchoredMenu({
     usePopPresence(
       open,
     );
+  // V8: the chrome reflects the menu while it is on screen, and the page again once its close has played.
+  useOverlaySignal(
+    Boolean(
+      present,
+    ),
+  );
 
   // Roving focus, the half of `role="menu"` that is a keyboard contract rather
   // than a label. Bound to the PANEL rather than to the document: a menu is not

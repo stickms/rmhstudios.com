@@ -17,6 +17,7 @@ import {
   type EnvironmentPainter,
   type Viewport,
 } from './environment';
+import { CHROME_CONTENT_EVENT } from './signal';
 import {
   FRAGMENT_SHADER,
   ROOM,
@@ -106,6 +107,12 @@ const MAX_DPR = 2;
 const READY_RETRIES = 20;
 /** The longest one idle slice of the environment paint may run, in ms. */
 const ENV_SLICE_MS = 6;
+/**
+ * How long after an overlay says it opened or closed (lib/chrome/signal.ts) the environment is repainted: its M5 fade
+ * (160 ms) plus a margin, so the paint sees it at full opacity, or gone. Painted mid-fade, an overlay that still reads
+ * `opacity: 0` would be left out (V6).
+ */
+const OVERLAY_SETTLE_MS = 200;
 const UNIFORMS =
   [
     'u_viewport',
@@ -206,6 +213,7 @@ export class ChromeRenderer {
   private envWindow: EnvWindow | null =
     null;
   private envDirty = true;
+  private settleTimer = 0;
   private envNight:
     | boolean
     | null =
@@ -858,6 +866,23 @@ export class ChromeRenderer {
         passive: true,
       },
     );
+    // V8: an overlay opened or closed (lib/chrome/signal.ts). One timer per burst, not a loop: repaint once its fade ends.
+    on(
+      doc,
+      CHROME_CONTENT_EVENT,
+      () => {
+        win.clearTimeout(
+          this
+            .settleTimer,
+        );
+        this.settleTimer =
+          win.setTimeout(
+            () =>
+              this.invalidate(),
+            OVERLAY_SETTLE_MS,
+          );
+      },
+    );
     void doc.fonts?.ready.then(
       () =>
         this.invalidate(),
@@ -1191,6 +1216,9 @@ export class ChromeRenderer {
               () =>
                 win.performance.now(),
             );
+          // Clean from the moment the paint reads the page: an invalidate() that lands mid-paint stays dirty, and the
+          // redraw at the end queues another paint instead of dropping it.
+          this.envDirty = false;
         }
         const done =
           painter.step(
@@ -1234,7 +1262,6 @@ export class ChromeRenderer {
           region;
         this.envNight =
           night;
-        this.envDirty = false;
         this.envQueued = false;
         this.timings.environment =
           spent;
