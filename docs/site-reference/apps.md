@@ -25,6 +25,7 @@ Generated from `lib/catalog`, the single source of truth every card on the site 
 | **RMHHomes** | [`/homes`](https://rmhstudios.com/homes) | Beta | required | `Housing` `Search` `Maps` `Beta` |
 | **Dunesday** | [`/dunesday`](https://rmhstudios.com/dunesday) | New | — | `Planner` `Movies` `AI` |
 | **rmhOS** | [`/rmhos`](https://rmhstudios.com/rmhos) | Coming soon | required | `linux` `desktop` `terminal` |
+| **RMHCharacters** | [`/rmhcharacters`](https://rmhstudios.com/rmhcharacters) | Beta | — | `Tabletop` `D&D` `Pathfinder` `AI` `Beta` |
 
 ## Unlisted
 
@@ -114,6 +115,12 @@ Every MCU film and series plus Dune, scheduled night by night before 18 Dec 2026
 rmhOS boots a real Linux desktop inside your browser tab with an x86 emulator. It starts from a saved snapshot, so the desktop is ready in seconds, and it is signed in as your own account.
 
 **Route:** `/rmhos` · **Catalog id:** `rmhos` · **Status:** Coming soon · **Sign-in:** required
+
+### RMHCharacters
+
+RMHCharacters is a character creator and sheet for Dungeons & Dragons Fifth Edition (the 2024 rules) and Pathfinder Second Edition (Remaster). It computes every number from the rules, walks you through species or ancestry, background, class, abilities, feats and spells, tracks hit points, slots and conditions at the table, and levels you up with a preview of what each level grants. Ask the advisor what to take next. Characters import from and export to Foundry VTT, Pathbuilder 2e, D&D Beyond and Markdown, and print as a PDF sheet.
+
+**Route:** `/rmhcharacters` · **Catalog id:** `rmhcharacters` · **Status:** Beta · **Sign-in:** not required
 
 ### RMHdle
 

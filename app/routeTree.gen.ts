@@ -51,6 +51,7 @@ import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
 import { Route as RmhResearchRouteImport } from './routes/rmh-research'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhcalculatorRouteImport } from './routes/rmhcalculator'
+import { Route as RmhcharactersRouteImport } from './routes/rmhcharacters'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhosRouteImport } from './routes/rmhos'
@@ -749,6 +750,11 @@ const RmhboxRoute = RmhboxRouteImport.update({
 const RmhcalculatorRoute = RmhcalculatorRouteImport.update({
   id: '/rmhcalculator',
   path: '/rmhcalculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RmhcharactersRoute = RmhcharactersRouteImport.update({
+  id: '/rmhcharacters',
+  path: '/rmhcharacters',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhcodeRoute = RmhcodeRouteImport.update({
@@ -3286,6 +3292,7 @@ export interface FileRoutesByFullPath {
   '/rmh-research': typeof RmhResearchRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
+  '/rmhcharacters': typeof RmhcharactersRoute
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhos': typeof RmhosRoute
@@ -3810,6 +3817,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
+  '/rmhcharacters': typeof RmhcharactersRoute
   '/rmhos': typeof RmhosRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -4324,6 +4332,7 @@ export interface FileRoutesById {
   '/rmh-research': typeof RmhResearchRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
+  '/rmhcharacters': typeof RmhcharactersRoute
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhos': typeof RmhosRoute
@@ -4860,6 +4869,7 @@ export interface FileRouteTypes {
     | '/rmh-research'
     | '/rmhbox'
     | '/rmhcalculator'
+    | '/rmhcharacters'
     | '/rmhcode'
     | '/rmhmusic'
     | '/rmhos'
@@ -5384,6 +5394,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rmh-internal-affairs'
     | '/rmhcalculator'
+    | '/rmhcharacters'
     | '/rmhos'
     | '/security'
     | '/sitemap.xml'
@@ -5897,6 +5908,7 @@ export interface FileRouteTypes {
     | '/rmh-research'
     | '/rmhbox'
     | '/rmhcalculator'
+    | '/rmhcharacters'
     | '/rmhcode'
     | '/rmhmusic'
     | '/rmhos'
@@ -6432,6 +6444,7 @@ export interface RootRouteChildren {
   RmhResearchRoute: typeof RmhResearchRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcalculatorRoute: typeof RmhcalculatorRoute
+  RmhcharactersRoute: typeof RmhcharactersRoute
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
   RmhosRoute: typeof RmhosRoute
@@ -6872,6 +6885,13 @@ declare module '@tanstack/react-router' {
       path: '/rmhcalculator'
       fullPath: '/rmhcalculator'
       preLoaderRoute: typeof RmhcalculatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmhcharacters': {
+      id: '/rmhcharacters'
+      path: '/rmhcharacters'
+      fullPath: '/rmhcharacters'
+      preLoaderRoute: typeof RmhcharactersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmhcode': {
@@ -11427,6 +11447,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhResearchRoute: RmhResearchRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcalculatorRoute: RmhcalculatorRoute,
+  RmhcharactersRoute: RmhcharactersRoute,
   RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
   RmhosRoute: RmhosRoute,
@@ -11576,3 +11597,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
