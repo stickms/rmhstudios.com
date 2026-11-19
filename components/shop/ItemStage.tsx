@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/feed/UserAvatar';
 import { ProfileBanner } from '@/components/profile/ProfileBanner';
-import { Emoji } from '@/components/ui/emoji';
+import { BadgeMark } from './art/BadgeMark';
+import { PetMark } from './art/PetMark';
 import type { ShopItemKind } from '@/lib/shop/catalog';
 import { getPremiumTheme } from '@/lib/shop/themes';
 import { OFFICIAL_SITE_THEMES } from '@/lib/themes/official';
@@ -12,7 +13,7 @@ import {
   type ItemArt,
 } from './ItemPicture';
 
-/** The kinds a profile head shows. Pets and post flair are drawn nowhere on a profile, so they get the picture alone. */
+/** The kinds a profile head shows. Post flair is drawn on posts, not on a profile, so it gets the picture alone. */
 const ON_PROFILE: ReadonlySet<ShopItemKind> =
   new Set(
     [
@@ -21,6 +22,7 @@ const ON_PROFILE: ReadonlySet<ShopItemKind> =
       'NAME_COLOR',
       'AVATAR_FRAME',
       'BADGE',
+      'PET',
     ],
   );
 
@@ -182,6 +184,7 @@ export function ItemStage({
         />
       ) : null}
       <div className="flex min-w-0 items-center gap-3">
+        <span className="relative shrink-0">
         <UserAvatar
           user={{
             id:
@@ -216,6 +219,19 @@ export function ItemStage({
             false
           }
         />
+        {kind ===
+        'PET' ? (
+          <PetMark
+            pet={
+              art
+            }
+            size={
+              28
+            }
+            className="pointer-events-none absolute -start-3 -bottom-2"
+          />
+        ) : null}
+        </span>
         <div className="min-w-0 flex-1">
           <p className="flex min-w-0 items-center gap-1.5">
             <span
@@ -229,17 +245,15 @@ export function ItemStage({
               }
             </span>
             {kind ===
-              'BADGE' &&
-            art.emoji ? (
-              <Emoji
+            'BADGE' ? (
+              <BadgeMark
+                badge={
+                  art
+                }
                 size={
-                  18
+                  20
                 }
-              >
-                {
-                  art.emoji
-                }
-              </Emoji>
+              />
             ) : null}
           </p>
           {handle ? (
