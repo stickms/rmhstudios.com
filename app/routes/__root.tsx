@@ -3,6 +3,7 @@ import {
   Outlet,
   Scripts,
   createRootRouteWithContext,
+  redirect,
   useRouter,
   useRouterState,
   useNavigate,
@@ -28,6 +29,7 @@ import { installGlobalErrorHandlers } from '@/lib/client-errors';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
 // The site-wide document defaults, shared with the island document (redesign B1).
 import { ROOT_LINKS, ROOT_META } from '@/lib/root-head';
+import { legacyRedirectFor } from '@/lib/route/legacy-redirects';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
 import { cachedNullable } from '@/lib/cached.server';
@@ -282,6 +284,13 @@ function isDiscordRoute(pathname: string): boolean {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Old URLs that only forward (lib/route/legacy-redirects.ts). The root runs for
+  // every navigation, server and client, so one table covers shared links (a
+  // 301 from SSR) and in-app links alike.
+  beforeLoad: ({ location }) => {
+    const target = legacyRedirectFor(location.pathname);
+    if (target) throw redirect({ href: target, statusCode: 301, replace: true });
+  },
   // perf audit §4.1: without this the root loader default-stales at 0ms and
   // refires on EVERY client navigation — two server-fn round trips (a full
   // Better Auth session resolution + re-serializing the locale payload) per

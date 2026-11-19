@@ -766,7 +766,8 @@ export function LearnHome() {
             streak comes first, so its empty slot (no streak) sits inside, not at the edge. */}
         <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
-            to="/apps"
+            to="/games"
+            search={{ kind: 'app' }}
             onClick={
               goBack
             }
