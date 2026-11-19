@@ -3,7 +3,8 @@ import type { PrismaClient, WagerMatch } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { createNotification } from '@/lib/notifications.server';
-import { creditCoins, debitCoins, EscrowError, recordWagerTxn, type Tx } from './escrow.server';
+import { holdEscrow, settleEscrow, type EscrowCredit } from '@/lib/economy/escrow-core';
+import { EscrowError, wagerEscrow, type Tx, type WagerMovement } from './escrow.server';
 import { getWagerGame } from './eligible-games';
 import { rakeOf, WAGER_DEFAULT_EXPIRY_MS, WAGER_RAKE_BPS } from './constants';
 
@@ -114,8 +115,6 @@ export async function createWager(
 
   try {
     const row = await db.$transaction(async (tx) => {
-      // Escrow the challenger's stake up front so the pot is guaranteed.
-      await debitCoins(tx, opts.challengerId, opts.stakeCoins);
       const created = await tx.wagerMatch.create({
         data: {
           gameId: opts.gameId,
@@ -128,14 +127,14 @@ export async function createWager(
           expiresAt,
         },
       });
-      await recordWagerTxn(tx, {
-        senderId: opts.challengerId,
-        // Hold: the stake leaves the challenger's balance for escrow.
-        recipientId: null,
+      // Escrow the challenger's stake up front so the pot is guaranteed. The
+      // hold (balance guard + its SINK row) follows the match row because the
+      // row's id names the hold; an overdraft throws and the transaction
+      // takes the match row back with it.
+      await holdEscrow(tx, wagerEscrow, {
+        userId: opts.challengerId,
         amount: opts.stakeCoins,
-        entityType: 'wager',
-        entityId: created.id,
-        note: 'Wager stake escrowed',
+        movement: { entityType: 'wager', entityId: created.id, note: 'Wager stake escrowed' },
       });
       return created;
     });
@@ -185,7 +184,13 @@ export async function acceptWager(
         throw new WagerError('This challenge has expired', 'EXPIRED', 409);
       }
 
-      await debitCoins(tx, opts.userId, match.stakeCoins);
+      // Hold: the stake leaves the joining player's balance for escrow, with
+      // its SINK row.
+      await holdEscrow(tx, wagerEscrow, {
+        userId: opts.userId,
+        amount: match.stakeCoins,
+        movement: { entityType: 'wager', entityId: match.id, note: 'Wager stake escrowed' },
+      });
       // Guarded state transition: only flip if still OPEN (prevents a double
       // accept from two racing opponents on an open challenge).
       const updated = await tx.wagerMatch.updateMany({
@@ -200,15 +205,6 @@ export async function acceptWager(
       if (updated.count === 0) {
         throw new WagerError('This challenge was just taken', 'RACE_LOST', 409);
       }
-      await recordWagerTxn(tx, {
-        senderId: opts.userId,
-        // Hold: the stake leaves the joining player's balance for escrow.
-        recipientId: null,
-        amount: match.stakeCoins,
-        entityType: 'wager',
-        entityId: match.id,
-        note: 'Wager stake escrowed',
-      });
     });
   } catch (err) {
     if (err instanceof EscrowError && err.code === 'INSUFFICIENT_COINS') {
@@ -255,37 +251,35 @@ async function refundAndCloseTx(
   const match = await tx.wagerMatch.findUnique({ where: { id: matchId } });
   if (!match) throw new WagerError('Match not found', 'NOT_FOUND', 404);
   if (!from.includes(match.status)) return null; // idempotent
-  const claimed = await tx.wagerMatch.updateMany({
-    where: { id: matchId, status: match.status },
-    data: {
-      status: finalStatus,
-      potCoins: 0,
-      ...(extra.resultSource ? { resultSource: extra.resultSource } : {}),
-    },
-  });
-  if (claimed.count === 0) return null; // lost a race; the winner owns the pot
-
-  await creditCoins(tx, match.challengerId, match.stakeCoins);
-  await recordWagerTxn(tx, {
-    recipientId: match.challengerId,
+  const refund = (userId: string): EscrowCredit<WagerMovement> => ({
+    userId,
     amount: match.stakeCoins,
-    entityType: 'wager',
-    entityId: match.id,
-    note: extra.note,
-    idempotencyKey: `wager:${match.id}:refund:${match.challengerId}`,
-  });
-  const opponentEscrowed = match.status !== 'OPEN' && match.opponentId != null;
-  if (opponentEscrowed && match.opponentId) {
-    await creditCoins(tx, match.opponentId, match.stakeCoins);
-    await recordWagerTxn(tx, {
-      recipientId: match.opponentId,
-      amount: match.stakeCoins,
+    movement: {
       entityType: 'wager',
       entityId: match.id,
       note: extra.note,
-      idempotencyKey: `wager:${match.id}:refund:${match.opponentId}`,
-    });
-  }
+      idempotencyKey: `wager:${match.id}:refund:${userId}`,
+    },
+  });
+  const opponentEscrowed = match.status !== 'OPEN' && match.opponentId != null;
+  const closed = await settleEscrow(tx, wagerEscrow, {
+    claim: async () => {
+      const claimed = await tx.wagerMatch.updateMany({
+        where: { id: matchId, status: match.status },
+        data: {
+          status: finalStatus,
+          potCoins: 0,
+          ...(extra.resultSource ? { resultSource: extra.resultSource } : {}),
+        },
+      });
+      return claimed.count > 0;
+    },
+    credits: [
+      refund(match.challengerId),
+      ...(opponentEscrowed && match.opponentId ? [refund(match.opponentId)] : []),
+    ],
+  });
+  if (!closed) return null; // lost a race; the winner owns the pot
   return match.status;
 }
 
@@ -369,26 +363,34 @@ export async function settleWager(
     // Claim the transition first (CAS on the settleable states). A concurrent
     // settle, void or second agreement report sees count 0 and pays nothing.
     // potCoins is fixed once the match left OPEN, so the read value is the pot.
-    const claimed = await tx.wagerMatch.updateMany({
-      where: { id: match.id, status: { in: ['ACCEPTED', 'LIVE', 'DISPUTED'] } },
-      data: {
-        status: 'SETTLED',
-        winnerId: opts.winnerId,
-        resultSource: opts.source,
-        potCoins: 0,
-        settledAt: new Date(),
+    const settled = await settleEscrow(tx, wagerEscrow, {
+      claim: async () => {
+        const claimed = await tx.wagerMatch.updateMany({
+          where: { id: match.id, status: { in: ['ACCEPTED', 'LIVE', 'DISPUTED'] } },
+          data: {
+            status: 'SETTLED',
+            winnerId: opts.winnerId,
+            resultSource: opts.source,
+            potCoins: 0,
+            settledAt: new Date(),
+          },
+        });
+        return claimed.count > 0;
       },
+      credits: [
+        {
+          userId: opts.winnerId,
+          amount: payout,
+          movement: {
+            entityType: 'wager',
+            entityId: match.id,
+            note: `Wager won (${opts.source})`,
+            idempotencyKey: `wager:${match.id}:payout`,
+          },
+        },
+      ],
     });
-    if (claimed.count === 0) return { settled: false, payout: 0 };
-    await creditCoins(tx, opts.winnerId, payout);
-    await recordWagerTxn(tx, {
-      recipientId: opts.winnerId,
-      amount: payout,
-      entityType: 'wager',
-      entityId: match.id,
-      note: `Wager won (${opts.source})`,
-      idempotencyKey: `wager:${match.id}:payout`,
-    });
+    if (!settled) return { settled: false, payout: 0 };
     return { settled: true, payout };
   });
 
