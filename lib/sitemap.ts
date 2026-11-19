@@ -734,7 +734,7 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/settings/themes':
       'personal',
-    '/user-builds/manage':
+    '/create/builds/manage':
       'personal',
     // P09 calendar: private scheduling tools, each page carries a `noindex` meta tag.
     '/hunt':
@@ -751,8 +751,10 @@ export const EXCLUDED_ROUTES: Record<
       'noindex', // availability polls: a member's own list and the new-poll form
     '/office-hours':
       'noindex', // a member's own office-hours settings and bookings
-    '/user-builds/submit':
+    '/create/builds/submit':
       'auth-gated',
+    '/user-builds/submit':
+      'redirect', // → /create/builds/submit, carrying ?edit= and ?forGame=
     '/rmhstudy/planner':
       'auth-gated', // P21 F4: exam planner
     '/v/new':
@@ -1026,9 +1028,9 @@ export const DYNAMIC_ROUTES: Record<
     '/games/groups/$slug':
       null, // a second, noindex view of /c/$slug
     '/builds/$slug':
-      'pages', // curated builds mirror the catalog
+      'pages', // curated builds mirror the catalog; member builds are emitted by the `builds` section
     '/user-builds/$slug':
-      'builds',
+      null, // redirect → /builds/$slug (the one build detail page since 2026-11-19)
     '/v/$slug':
       'builds',
     '/u/$userid':

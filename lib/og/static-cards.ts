@@ -343,7 +343,7 @@ export const STATIC_CARDS: StaticCard[] =
         'Shareable pages, community builds and AI personas, in one place.',
     },
     {
-      path: '/user-builds',
+      path: '/create/builds',
       file: 'user-builds',
       eyebrow:
         'User builds',

@@ -47,8 +47,8 @@ Disallow: /wallet
 Disallow: /wishlist
 Disallow: /wrapped
 Disallow: /creator-studio
-Disallow: /user-builds/manage
-Disallow: /user-builds/submit
+Disallow: /create/builds/manage
+Disallow: /create/builds/submit
 Disallow: /homes/manage
 Disallow: /rmhladder/alerts
 Disallow: /rmhladder/health

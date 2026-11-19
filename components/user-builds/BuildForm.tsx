@@ -125,7 +125,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
       if (onSuccess) {
         onSuccess(savedBuild);
       } else {
-        navigate({ to: `/user-builds/${savedBuild.slug}` });
+        navigate({ to: `/builds/${savedBuild.slug}` });
       }
     } catch (e) {
       setError(

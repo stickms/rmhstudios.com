@@ -318,7 +318,6 @@ import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteThreadRootIdRouteImport } from './routes/_site/thread/$rootId'
 import { Route as SiteTournamentsIdRouteImport } from './routes/_site/tournaments.$id'
 import { Route as SiteUserBuildsSlugRouteImport } from './routes/_site/user-builds/$slug'
-import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteWagerIdRouteImport } from './routes/_site/wager.$id'
 import { Route as SiteWhenIndexRouteImport } from './routes/_site/when/index'
@@ -422,6 +421,8 @@ import { Route as SiteAdminAlbumsIdRouteImport } from './routes/_site/admin/albu
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
 import { Route as SiteConnectionsUIdRouteImport } from './routes/_site/connections.u.$id'
+import { Route as SiteCreateBuildsManageRouteImport } from './routes/_site/create_.builds.manage'
+import { Route as SiteCreateBuildsSubmitRouteImport } from './routes/_site/create_.builds.submit'
 import { Route as SiteHomesListingIdRouteImport } from './routes/_site/homes/listing.$id'
 import { Route as SiteNewsStoriesSlugRouteImport } from './routes/_site/news/stories/$slug'
 import { Route as SiteRmhladderJobsJobIdRouteImport } from './routes/_site/rmhladder/jobs/$jobId'
@@ -2053,11 +2054,6 @@ const SiteUserBuildsSlugRoute = SiteUserBuildsSlugRouteImport.update({
   path: '/user-builds/$slug',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteUserBuildsManageRoute = SiteUserBuildsManageRouteImport.update({
-  id: '/user-builds/manage',
-  path: '/user-builds/manage',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteUserBuildsSubmitRoute = SiteUserBuildsSubmitRouteImport.update({
   id: '/user-builds/submit',
   path: '/user-builds/submit',
@@ -2585,6 +2581,16 @@ const SiteAdminBlogNewRoute = SiteAdminBlogNewRouteImport.update({
 const SiteConnectionsUIdRoute = SiteConnectionsUIdRouteImport.update({
   id: '/connections/u/$id',
   path: '/connections/u/$id',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteCreateBuildsManageRoute = SiteCreateBuildsManageRouteImport.update({
+  id: '/create_/builds/manage',
+  path: '/create/builds/manage',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteCreateBuildsSubmitRoute = SiteCreateBuildsSubmitRouteImport.update({
+  id: '/create_/builds/submit',
+  path: '/create/builds/submit',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteHomesListingIdRoute = SiteHomesListingIdRouteImport.update({
@@ -3268,7 +3274,6 @@ export interface FileRoutesByFullPath {
   '/thread/$rootId': typeof SiteThreadRootIdRoute
   '/tournaments/$id': typeof SiteTournamentsIdRoute
   '/user-builds/$slug': typeof SiteUserBuildsSlugRoute
-  '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/wager/$id': typeof SiteWagerIdRoute
   '/when/$id': typeof SiteWhenIdRoute
@@ -3394,6 +3399,8 @@ export interface FileRoutesByFullPath {
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/connections/u/$id': typeof SiteConnectionsUIdRoute
+  '/create/builds/manage': typeof SiteCreateBuildsManageRoute
+  '/create/builds/submit': typeof SiteCreateBuildsSubmitRoute
   '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
@@ -3731,7 +3738,6 @@ export interface FileRoutesByTo {
   '/thread/$rootId': typeof SiteThreadRootIdRoute
   '/tournaments/$id': typeof SiteTournamentsIdRoute
   '/user-builds/$slug': typeof SiteUserBuildsSlugRoute
-  '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/wager/$id': typeof SiteWagerIdRoute
   '/when/$id': typeof SiteWhenIdRoute
@@ -3856,6 +3862,8 @@ export interface FileRoutesByTo {
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/connections/u/$id': typeof SiteConnectionsUIdRoute
+  '/create/builds/manage': typeof SiteCreateBuildsManageRoute
+  '/create/builds/submit': typeof SiteCreateBuildsSubmitRoute
   '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
@@ -4222,7 +4230,6 @@ export interface FileRoutesById {
   '/_site/thread/$rootId': typeof SiteThreadRootIdRoute
   '/_site/tournaments/$id': typeof SiteTournamentsIdRoute
   '/_site/user-builds/$slug': typeof SiteUserBuildsSlugRoute
-  '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/_site/wager/$id': typeof SiteWagerIdRoute
   '/_site/when/$id': typeof SiteWhenIdRoute
@@ -4348,6 +4355,8 @@ export interface FileRoutesById {
   '/_site/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/_site/connections/u/$id': typeof SiteConnectionsUIdRoute
+  '/_site/create_/builds/manage': typeof SiteCreateBuildsManageRoute
+  '/_site/create_/builds/submit': typeof SiteCreateBuildsSubmitRoute
   '/_site/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/_site/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/_site/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
@@ -4713,7 +4722,6 @@ export interface FileRouteTypes {
     | '/thread/$rootId'
     | '/tournaments/$id'
     | '/user-builds/$slug'
-    | '/user-builds/manage'
     | '/user-builds/submit'
     | '/wager/$id'
     | '/when/$id'
@@ -4839,6 +4847,8 @@ export interface FileRouteTypes {
     | '/admin/albums/$id'
     | '/admin/blog/new'
     | '/connections/u/$id'
+    | '/create/builds/manage'
+    | '/create/builds/submit'
     | '/homes/listing/$id'
     | '/news/stories/$slug'
     | '/rmhladder/jobs/$jobId'
@@ -5176,7 +5186,6 @@ export interface FileRouteTypes {
     | '/thread/$rootId'
     | '/tournaments/$id'
     | '/user-builds/$slug'
-    | '/user-builds/manage'
     | '/user-builds/submit'
     | '/wager/$id'
     | '/when/$id'
@@ -5301,6 +5310,8 @@ export interface FileRouteTypes {
     | '/admin/albums/$id'
     | '/admin/blog/new'
     | '/connections/u/$id'
+    | '/create/builds/manage'
+    | '/create/builds/submit'
     | '/homes/listing/$id'
     | '/news/stories/$slug'
     | '/rmhladder/jobs/$jobId'
@@ -5666,7 +5677,6 @@ export interface FileRouteTypes {
     | '/_site/thread/$rootId'
     | '/_site/tournaments/$id'
     | '/_site/user-builds/$slug'
-    | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
     | '/_site/wager/$id'
     | '/_site/when/$id'
@@ -5792,6 +5802,8 @@ export interface FileRouteTypes {
     | '/_site/admin/albums/$id'
     | '/_site/admin/blog/new'
     | '/_site/connections/u/$id'
+    | '/_site/create_/builds/manage'
+    | '/_site/create_/builds/submit'
     | '/_site/homes/listing/$id'
     | '/_site/news/stories/$slug'
     | '/_site/rmhladder/jobs/$jobId'
@@ -8221,13 +8233,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteUserBuildsSlugRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/user-builds/manage': {
-      id: '/_site/user-builds/manage'
-      path: '/user-builds/manage'
-      fullPath: '/user-builds/manage'
-      preLoaderRoute: typeof SiteUserBuildsManageRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/user-builds/submit': {
       id: '/_site/user-builds/submit'
       path: '/user-builds/submit'
@@ -8947,6 +8952,20 @@ declare module '@tanstack/react-router' {
       path: '/connections/u/$id'
       fullPath: '/connections/u/$id'
       preLoaderRoute: typeof SiteConnectionsUIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/create_/builds/manage': {
+      id: '/_site/create_/builds/manage'
+      path: '/create/builds/manage'
+      fullPath: '/create/builds/manage'
+      preLoaderRoute: typeof SiteCreateBuildsManageRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/create_/builds/submit': {
+      id: '/_site/create_/builds/submit'
+      path: '/create/builds/submit'
+      fullPath: '/create/builds/submit'
+      preLoaderRoute: typeof SiteCreateBuildsSubmitRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/homes/listing/$id': {
@@ -9743,7 +9762,6 @@ interface SiteRouteChildren {
   SiteThreadRootIdRoute: typeof SiteThreadRootIdRoute
   SiteTournamentsIdRoute: typeof SiteTournamentsIdRoute
   SiteUserBuildsSlugRoute: typeof SiteUserBuildsSlugRoute
-  SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteWagerIdRoute: typeof SiteWagerIdRoute
   SiteWhenIdRoute: typeof SiteWhenIdRoute
@@ -9768,6 +9786,8 @@ interface SiteRouteChildren {
   SiteStudyIndexRoute: typeof SiteStudyIndexRoute
   SiteWhenIndexRoute: typeof SiteWhenIndexRoute
   SiteConnectionsUIdRoute: typeof SiteConnectionsUIdRoute
+  SiteCreateBuildsManageRoute: typeof SiteCreateBuildsManageRoute
+  SiteCreateBuildsSubmitRoute: typeof SiteCreateBuildsSubmitRoute
   SiteHomesListingIdRoute: typeof SiteHomesListingIdRoute
   SiteNewsStoriesSlugRoute: typeof SiteNewsStoriesSlugRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
@@ -9860,7 +9880,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteThreadRootIdRoute: SiteThreadRootIdRoute,
   SiteTournamentsIdRoute: SiteTournamentsIdRoute,
   SiteUserBuildsSlugRoute: SiteUserBuildsSlugRoute,
-  SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteWagerIdRoute: SiteWagerIdRoute,
   SiteWhenIdRoute: SiteWhenIdRoute,
@@ -9885,6 +9904,8 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteStudyIndexRoute: SiteStudyIndexRoute,
   SiteWhenIndexRoute: SiteWhenIndexRoute,
   SiteConnectionsUIdRoute: SiteConnectionsUIdRoute,
+  SiteCreateBuildsManageRoute: SiteCreateBuildsManageRoute,
+  SiteCreateBuildsSubmitRoute: SiteCreateBuildsSubmitRoute,
   SiteHomesListingIdRoute: SiteHomesListingIdRoute,
   SiteNewsStoriesSlugRoute: SiteNewsStoriesSlugRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,

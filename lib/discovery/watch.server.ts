@@ -144,7 +144,7 @@ export async function watchBuildComment(
     actorId,
     important: () => actorId === build.userId,
     preview: `${build.title}: ${text.replace(/\s+/g, ' ').trim().slice(0, 120)}`,
-    link: `/user-builds/${build.slug}`,
+    link: `/builds/${build.slug}`,
   });
 }
 

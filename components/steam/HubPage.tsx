@@ -184,7 +184,7 @@ export function HubPage({ data }: { data: HubData }) {
               <ul className="stm-people">
                 {data.workshop.map((w) => (
                   <li key={w.slug}>
-                    <Link to="/user-builds/$slug" params={{ slug: w.slug }} className="stm-person">
+                    <Link to="/builds/$slug" params={{ slug: w.slug }} className="stm-person">
                       <span className="stm-person-body">
                         <span className="stm-person-name">{w.title}</span>
                         <span className="stm-person-sub">
@@ -198,7 +198,7 @@ export function HubPage({ data }: { data: HubData }) {
             )}
             {data.signedIn ? (
               <p className="stm-web-pad">
-                <a className="stm-link" href={`/user-builds/submit?forGame=${encodeURIComponent(data.gameId)}`}>
+                <a className="stm-link" href={`/create/builds/submit?forGame=${encodeURIComponent(data.gameId)}`}>
                   {t('steam-hub-workshop-submit', { defaultValue: 'Submit your own' })}
                 </a>
               </p>

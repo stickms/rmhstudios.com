@@ -411,9 +411,9 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     why: 'Not-found branch of a post permalink.',
   },
   '/user-builds/$slug': {
-    path: '/user-builds/fouc-audit',
+    path: null,
     fidelity: 'shell',
-    why: 'Not-found branch of a User Build page.',
+    why: 'Redirects to /builds/$slug before any paint of its own; that page is audited.',
   },
   '/v/$slug': {
     path: '/v/fouc-audit',

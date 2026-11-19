@@ -231,7 +231,7 @@ export function BuildFilters({
           asChild
           variant="default"
         >
-          <Link to="/user-builds/submit">
+          <Link to="/create/builds/submit">
             <Plus
               aria-hidden
             />

@@ -245,7 +245,7 @@ export function UserBuildsTab() {
           aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
         />
         <Button asChild variant="default">
-          <Link to="/user-builds/submit">
+          <Link to="/create/builds/submit">
             <Plus aria-hidden />
             {t('submit', { defaultValue: 'Submit' })}
           </Link>

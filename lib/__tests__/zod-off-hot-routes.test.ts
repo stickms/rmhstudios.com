@@ -72,8 +72,7 @@ const HOT_ROUTES = [
   'app/routes/_site/settings/profile.tsx',
   'app/routes/_site/settings/security.tsx',
   'app/routes/_site/trash.tsx',
-  'app/routes/_site/user-builds/$slug.tsx',
-  'app/routes/_site/user-builds/submit.tsx',
+  'app/routes/_site/create_.builds.submit.tsx',
 ];
 
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.mjs', '/index.ts', '/index.tsx'];

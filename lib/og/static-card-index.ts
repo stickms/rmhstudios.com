@@ -122,7 +122,7 @@ export const STATIC_CARD_INDEX: readonly (readonly [
       'create',
     ],
     [
-      '/user-builds',
+      '/create/builds',
       'user-builds',
     ],
     [

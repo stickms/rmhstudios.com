@@ -337,7 +337,7 @@ export function ExploreRecommendations({
               ))}
               {userBuilds.map((b) => (
                 <SpineItem key={b.id}>
-                  <Link to={`/user-builds/${b.slug}` as string} className="block">
+                  <Link to={`/builds/${b.slug}` as string} className="block">
                     <p className="t-body truncate font-semibold">{b.title}</p>
                     <p className="t-meta truncate">
                       {t('community-build', { defaultValue: 'Community build' })}

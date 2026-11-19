@@ -54,7 +54,7 @@ const STATUS_TABS: Status[] = ['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'];
 function entityLink(r: Report): string | null {
   if (r.entityType === 'rmhark' && r.targetUser?.handle) return `/u/${r.targetUser.handle}/post/${r.entityId}`;
   if (r.entityType === 'user' && r.targetUser?.handle) return `/u/${r.targetUser.handle}`;
-  if (r.entityType === 'build') return `/user-builds/${r.entityId}`;
+  if (r.entityType === 'build') return `/builds/${r.entityId}`;
   return null;
 }
 

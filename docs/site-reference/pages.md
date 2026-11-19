@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 356 routes. 175 render inside the standard site shell (sidebar, nav, context rail); 181 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 357 routes. 176 render inside the standard site shell (sidebar, nav, context rail); 181 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -73,6 +73,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/connections/u/:id` | Connections Grid | public | `app/routes/_site/connections.u.$id.tsx` |
 | `/create` | Create | public | `app/routes/_site/create/index.tsx` |
 | `/create/builds` | User Builds | public | `app/routes/_site/create/builds.tsx` |
+| `/create/builds/manage` | Manage builds | public | `app/routes/_site/create_.builds.manage.tsx` |
+| `/create/builds/submit` | Submit a build | public | `app/routes/_site/create_.builds.submit.tsx` |
 | `/create/earnings` | Earnings | public | `app/routes/_site/create/earnings.tsx` |
 | `/create/personas` | AI Personas | public | `app/routes/_site/create/personas.tsx` |
 | `/daily-mutator` | Daily Mutator | public | `app/routes/_site/daily-mutator.tsx` |
@@ -183,9 +185,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/trash` | Trash | public | `app/routes/_site/trash.tsx` |
 | `/u/:userid` | User Not Found \| RMH | public | `app/routes/_site/u/$userid/index.tsx` |
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
-| `/user-builds/:slug` | — | public | `app/routes/_site/user-builds/$slug.tsx` |
-| `/user-builds/manage` | Manage builds | public | `app/routes/_site/user-builds/manage.tsx` |
-| `/user-builds/submit` | Submit a build | public | `app/routes/_site/user-builds/submit.tsx` |
+| `/user-builds/:slug` | redirects to `/builds/$slug` | public | `app/routes/_site/user-builds/$slug.tsx` |
+| `/user-builds/submit` | redirects to `/create/builds/submit` | public | `app/routes/_site/user-builds/submit.tsx` |
 | `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |

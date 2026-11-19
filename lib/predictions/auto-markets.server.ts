@@ -80,7 +80,7 @@ export async function seedTrendingBuildMarkets(
     let created = 0;
     for (const b of builds) {
       if (openAuto + created >= cap) break;
-      const subjectUrl = `/user-builds/${b.slug}`;
+      const subjectUrl = `/builds/${b.slug}`;
       const existing = await db.prediction.findFirst({
         where: { subjectUrl, status: 'OPEN' },
         select: { id: true },

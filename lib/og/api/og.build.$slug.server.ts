@@ -44,7 +44,7 @@ export const route = apiRoute('/api/og/build/$slug', {
             image: build.user.image ?? null,
           }
         : null,
-      path: `/user-builds/${build.slug}`,
+      path: `/builds/${build.slug}`,
       stats: [
         build.price > 0
           ? { value: String(build.price), label: 'coins', lead: true }

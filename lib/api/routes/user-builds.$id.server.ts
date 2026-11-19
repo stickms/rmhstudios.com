@@ -67,8 +67,8 @@ export const route = apiRoute('/api/user-builds/$id', {
       });
       unlocked = !!u;
     }
-    // Shared with the `/builds/$slug` and `/user-builds/$slug` loaders, which
-    // read in-process rather than looping back through this endpoint — one
+    // Shared with the `/builds/$slug` loader, which
+    // reads in-process rather than looping back through this endpoint — one
     // projection so the two paths cannot drift apart.
     return Response.json(projectBuildDetail(build, { isOwner, liked, unlocked }));
   }),

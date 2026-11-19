@@ -132,7 +132,7 @@ function AdminUserBuildsPage() {
                   <div key={build.id} ref={isLast ? lastElementRef : null} className={cn('flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-4', isNewBuild(build.id) && ARRIVE)}>
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Link to={`/user-builds/${build.slug}` as string} className="t-heading min-w-0 break-words text-site-text hover:underline">{build.title}</Link>
+                        <Link to={`/builds/${build.slug}` as string} className="t-heading min-w-0 break-words text-site-text hover:underline">{build.title}</Link>
                         <Badge
                           variant={build.visibility === 'PUBLIC' ? 'success' : build.visibility === 'UNLISTED' ? 'warning' : 'default'}
                           icon={build.visibility === 'PRIVATE' ? <Lock aria-hidden /> : undefined}
@@ -160,10 +160,10 @@ function AdminUserBuildsPage() {
                         label={build.featured ? t("remove-curated-badge", { defaultValue: "Remove Curated badge" }) : t("add-curated-badge", { defaultValue: "Add Curated badge" })}
                       />
                       <IconButton asChild variant="default" label={t("view-build", { defaultValue: "View Build" })}>
-                        <Link to={`/user-builds/${build.slug}` as string}><ExternalLink aria-hidden /></Link>
+                        <Link to={`/builds/${build.slug}` as string}><ExternalLink aria-hidden /></Link>
                       </IconButton>
                       <IconButton asChild variant="default" label={t("edit-build-as-admin", { defaultValue: "Edit Build as Admin" })}>
-                        <Link to="/user-builds/submit" search={{ edit: build.id }}><Edit aria-hidden /></Link>
+                        <Link to="/create/builds/submit" search={{ edit: build.id }}><Edit aria-hidden /></Link>
                       </IconButton>
                     </div>
                   </div>
