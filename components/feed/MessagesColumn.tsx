@@ -1,5 +1,6 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -84,7 +85,6 @@ export function MessagesColumn({
   const sentinelRef = useRef<HTMLDivElement>(null);
   // Seeded from the route loader → treat the first page as already fetched.
   const initialFetched = useRef(initialData != null);
-  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
@@ -169,29 +169,28 @@ export function MessagesColumn({
   }, [session, fetchConversations]);
 
   // Debounced conversation/message search.
+  const searchConversations = useDebouncedCallback(async (q: string) => {
+    try {
+      const res = await api(searchConversationsApi, { query: { q } });
+      setSearchResults(res.conversations);
+    } catch {
+      /* ignore */
+    } finally {
+      setSearching(false);
+    }
+  }, 250);
   useEffect(() => {
     const q = query.trim();
-    if (searchDebounce.current) clearTimeout(searchDebounce.current);
     if (!q) {
+      searchConversations.cancel();
       setSearchResults([]);
       setSearching(false);
       return;
     }
     setSearching(true);
-    searchDebounce.current = setTimeout(async () => {
-      try {
-        const res = await api(searchConversationsApi, { query: { q } });
-        setSearchResults(res.conversations);
-      } catch {
-        /* ignore */
-      } finally {
-        setSearching(false);
-      }
-    }, 250);
-    return () => {
-      if (searchDebounce.current) clearTimeout(searchDebounce.current);
-    };
-  }, [query]);
+    searchConversations(q);
+    return searchConversations.cancel;
+  }, [query, searchConversations]);
 
   // Real-time conversation-list updates ride the ONE shared message stream
   // (see lib/useUnreadCount) instead of this view opening its own EventSource.
@@ -521,30 +520,28 @@ function NewChatDialog({
   const [users, setUsers] = useState<SearchUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState<string | null>(null);
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const searchUsers = useDebouncedCallback(async (term: string) => {
+    try {
+      const res = await api(searchUsersApi, { query: { q: term } });
+      setUsers(res.users);
+    } catch {
+      // typeahead: keep the previous results
+    } finally {
+      setLoading(false);
+    }
+  }, 250);
   useEffect(() => {
     const term = q.trim();
-    if (debounce.current) clearTimeout(debounce.current);
     if (!term) {
+      searchUsers.cancel();
       setUsers([]);
       return;
     }
     setLoading(true);
-    debounce.current = setTimeout(async () => {
-      try {
-        const res = await api(searchUsersApi, { query: { q: term } });
-        setUsers(res.users);
-      } catch {
-        // typeahead: keep the previous results
-      } finally {
-        setLoading(false);
-      }
-    }, 250);
-    return () => {
-      if (debounce.current) clearTimeout(debounce.current);
-    };
-  }, [q]);
+    searchUsers(term);
+    return searchUsers.cancel;
+  }, [q, searchUsers]);
 
   const start = async (userId: string) => {
     setStarting(userId);

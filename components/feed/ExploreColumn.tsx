@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
@@ -129,7 +130,6 @@ export function ExploreColumn({
   const [tab, setTabState] = useState<SearchTab>(initialTab);
   const [results, setResults] = useState<SearchResponse>(EMPTY);
   const [loading, setLoading] = useState(false);
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Guards the assist pass so a query is only ever expanded once.
   const assisted = useRef<string | null>(null);
   // Discards responses that arrive after a newer request was issued.
@@ -210,13 +210,14 @@ export function ExploreColumn({
     }
   }, []);
 
+  const searchLater = useDebouncedCallback(
+    (q: string, t: typeof tab) => run(q, t, false),
+    SEARCH_DEBOUNCE_MS,
+  );
   useEffect(() => {
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => run(query, tab, false), SEARCH_DEBOUNCE_MS);
-    return () => {
-      if (debounce.current) clearTimeout(debounce.current);
-    };
-  }, [query, tab, run]);
+    searchLater(query, tab);
+    return searchLater.cancel;
+  }, [query, tab, searchLater]);
 
   // Second pass: when the lexical search came back thin, give the server
   // permission to spend a model call widening the query. Only after the user has

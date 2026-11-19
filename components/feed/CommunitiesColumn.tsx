@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTranslation } from 'react-i18next';
 import { SearchField } from '@/components/ui/search-field';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -97,19 +98,16 @@ export function CommunitiesColumn({
   // the first run and only re-fetch when the query actually changes — otherwise
   // the search debounce would pointlessly delay (and re-request) the already-
   // seeded list on mount.
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadLater = useDebouncedCallback((q: string) => load(q), 250);
   const firstRun = useRef(true);
   useEffect(() => {
     if (firstRun.current) {
       firstRun.current = false;
       return;
     }
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => void load(query), 250);
-    return () => {
-      if (debounce.current) clearTimeout(debounce.current);
-    };
-  }, [query, load]);
+    loadLater(query);
+    return loadLater.cancel;
+  }, [query, loadLater]);
 
   const create = async () => {
     if (name.trim().length < 2) return;
