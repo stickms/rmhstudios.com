@@ -1,5 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+/**
+ * The Wagers section of `/compete`: open coin-staked challenges and the
+ * viewer's own matches. It was the `/wager` index page until the 2026-11-19
+ * consolidation; `/wager/$id` is still its own page. The "My matches" tab stays
+ * disabled (skipped by the roving nav) for guests.
+ */
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -8,31 +12,15 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
 import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
 import { CreateWagerDialog } from '@/components/wager/CreateWagerDialog';
 import type { SerializedWager } from '@/lib/wager/wager.server';
-import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { wagersQuery } from '@/lib/wager/wager.queries';
 
-export const Route = createFileRoute('/_site/wager/')({
-  head: () => ({
-    meta: buildMeta({
-      title: 'Wager Matches | RMH Studios',
-      description: 'Challenge anyone to a coin-staked head-to-head match on any skill game.',
-      path: '/wager',
-    }),
-    links: [buildCanonical('/wager')],
-  }),
-  // The open tab is public and fetched here (SSR + intent preload); "mine" loads on demand.
-  loader: ({ context }) => prefetchRouteQuery(context.queryClient, wagersQuery('open')),
-  component: WagerPage,
-});
-
-function WagerPage() {
+export function WagersSection() {
   const { t } = useTranslation('c-wager');
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
@@ -56,20 +44,21 @@ function WagerPage() {
   };
 
   return (
-    <PageLayout
-      title={t('title', { defaultValue: 'Wager Matches' })}
-      wide
-      headerRight={
-        viewerId ? (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="t-body text-site-text-muted">
+          {t('compete-description', {
+            defaultValue: 'Challenge anyone to a coin-staked head-to-head match on any skill game.',
+          })}
+        </p>
+        {viewerId ? (
           <Button size="sm" onClick={() => setCreating(true)}>
             <Plus className="size-4" aria-hidden />
             {t('new-challenge', { defaultValue: 'New challenge' })}
           </Button>
-        ) : null
-      }
-    >
-      {/* §15.1: unified sheet + flowing-capsule tab strip below the page title.
-          The "My matches" tab stays disabled (roving-nav-skipped) for guests. */}
+        ) : null}
+      </div>
+
       <div>
         <Tabs
           aria-label={t('title', { defaultValue: 'Wager Matches' })}
@@ -129,6 +118,6 @@ function WagerPage() {
           }}
         />
       )}
-    </PageLayout>
+    </div>
   );
 }

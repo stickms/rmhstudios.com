@@ -96,7 +96,7 @@ export async function createFriendly(
     entityType: 'friendly',
     entityId: c.id,
     preview: `${userName ?? 'Someone'} sent you a friendly challenge`,
-    link: '/ranked',
+    link: '/compete?tab=ranked',
   }).catch(() => {});
   return { ok: true as const, id: c.id };
 }

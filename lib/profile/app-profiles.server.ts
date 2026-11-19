@@ -287,7 +287,7 @@ const readElo: Reader = async (userId) => {
       { labelKey: 'app-profile.losses', labelDefault: 'Losses', value: top.losses },
       { labelKey: 'app-profile.draws', labelDefault: 'Draws', value: top.draws },
     ],
-    href: '/ranked',
+    href: '/compete',
     visible: PUBLIC,
   };
 };

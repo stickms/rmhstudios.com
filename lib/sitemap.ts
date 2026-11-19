@@ -136,17 +136,12 @@ export const STATIC_ROUTES: SitemapEntry[] =
         'daily',
       priority: 0.6,
     },
+    // Ranked, tournaments, speedruns, wagers and the player leaderboard, one tab each.
     {
-      loc: '/daily-mutator',
+      loc: '/compete',
       changefreq:
         'daily',
       priority: 0.6,
-    },
-    {
-      loc: '/connections',
-      changefreq:
-        'daily',
-      priority: 0.5,
     },
     {
       loc: '/rmhbox-packs',
@@ -254,24 +249,11 @@ export const STATIC_ROUTES: SitemapEntry[] =
     // instead. `/shop` and `/pricing` joined that list late — they were listed
     // here *and* self-canonical while `/store` was too, so one catalog and one
     // pricing table each claimed two canonical URLs.
-    {
-      loc: '/achievements',
-      changefreq:
-        'weekly',
-      priority: 0.5,
-    },
     // Community-made packs: a public browse surface, so it's indexable.
     {
       loc: '/emoji-packs',
       changefreq:
         'weekly',
-      priority: 0.5,
-    },
-    // Public per-game speedrun boards.
-    {
-      loc: '/speedruns',
-      changefreq:
-        'daily',
       priority: 0.5,
     },
     {
@@ -325,13 +307,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
         'daily',
       priority: 0.4,
     },
-    // The generated daily front page (P03 A3): rebuilt once a day from one snapshot row.
-    {
-      loc: '/today',
-      changefreq:
-        'daily',
-      priority: 0.6,
-    },
     // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
     // the log grows every time anyone adds a line or scrolls past the frontier,
     // so the page's content genuinely changes faster than most of this list.
@@ -358,12 +333,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
       changefreq:
         'weekly',
       priority: 0.4,
-    },
-    {
-      loc: '/ranked',
-      changefreq:
-        'daily',
-      priority: 0.5,
     },
     {
       loc: '/rideshare',
@@ -422,22 +391,10 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.5,
     },
     {
-      loc: '/tournaments',
-      changefreq:
-        'daily',
-      priority: 0.5,
-    },
-    {
       loc: '/ventures',
       changefreq:
         'monthly',
       priority: 0.6,
-    },
-    {
-      loc: '/wager',
-      changefreq:
-        'daily',
-      priority: 0.4,
     },
 
     {
@@ -696,8 +653,6 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // the viewer's own offers
     '/games/market':
       'noindex', // card listings change by the minute and are behind sign-in to act on
-    '/games/daily':
-      'noindex', // Steam-framed copy of the /store daily tab; /store is the indexed page
     '/games/marketplace':
       'noindex', // Steam-framed copy of the /store market tab; listings change by the minute
     '/games/membership':
@@ -738,8 +693,6 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/reading':
       'personal', // highlights, shelves and the reading challenge
-    '/recap':
-      'personal',
     '/saves':
       'personal',
     '/feeds':
@@ -753,8 +706,6 @@ export const EXCLUDED_ROUTES: Record<
     '/wallet':
       'personal',
     '/trash':
-      'personal',
-    '/wrapped':
       'personal',
     '/homes/manage':
       'personal',

@@ -94,7 +94,7 @@ export const FIRST_WEEK_STEPS: FirstWeekStep[] =
       description:
         'Check in to start your streak and cap off your first week.',
       coins: 50,
-      href: '/achievements',
+      href: '/progress?tab=streaks',
     },
   ];
 

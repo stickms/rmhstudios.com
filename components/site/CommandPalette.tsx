@@ -698,7 +698,7 @@ export function CommandPalette({
           requiresAuth: true,
           run: () =>
             go(
-              '/achievements',
+              '/progress?tab=streaks',
             ),
         },
       );

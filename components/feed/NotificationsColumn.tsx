@@ -212,7 +212,7 @@ export function NotificationsColumn({
         return `/u/${n.actor?.handle ?? n.entityId}`;
       // System notifications route to the relevant hub.
       case 'achievement':
-        return '/achievements';
+        return '/progress?tab=achievements';
       case 'level':
         return '/progress';
       case 'membership':

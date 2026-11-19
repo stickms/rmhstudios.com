@@ -65,7 +65,12 @@ function GridRow({ g, tag }: { g: GridSummary; tag?: string }) {
   );
 }
 
-export function ConnectionsHome() {
+/**
+ * The Connections section of `/daily`: today's pick, the top-rated and the
+ * newest member-made grids. It was the `/connections` index page until the
+ * 2026-11-19 consolidation; making and playing a grid are still their own pages.
+ */
+export function ConnectionsSection() {
   const { t } = useTranslation('f-party');
   const [data, setData] = useState<{
     daily: GridSummary | null;
@@ -90,22 +95,22 @@ export function ConnectionsHome() {
     ) : null;
 
   return (
-    <PageLayout
-      title={t('conn-title', { defaultValue: 'Connections grids' })}
-      description={t('conn-desc', {
-        defaultValue:
-          'Sort sixteen items into four hidden groups. Members make the grids; the best become the daily.',
-      })}
-      headerRight={
+    <div className="space-y-[var(--site-section-gap)] pb-12">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="t-body text-site-text-muted">
+          {t('conn-desc', {
+            defaultValue:
+              'Sort sixteen items into four hidden groups. Members make the grids; the best become the daily.',
+          })}
+        </p>
         <Button asChild variant="default" size="sm">
           <Link to="/connections/new">
             <Plus aria-hidden />
             {t('make-grid', { defaultValue: 'Make a grid' })}
           </Link>
         </Button>
-      }
-    >
-      <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', listArrival)}>
+      </div>
+      <div className={cn('space-y-[var(--site-section-gap)]', listArrival)}>
         {!data ? (
           <div className="flex justify-center py-20">
             <Spinner />
@@ -131,7 +136,7 @@ export function ConnectionsHome() {
           </>
         )}
       </div>
-    </PageLayout>
+    </div>
   );
 }
 
@@ -183,6 +188,7 @@ export function ConnectionsNew() {
   return (
     <PageLayout
       title={t('make-grid', { defaultValue: 'Make a grid' })}
+      backTo="/daily?tab=connections"
       description={t('make-desc', {
         defaultValue:
           'Four groups, four items each, sixteen different items. Each group needs a label.',
@@ -347,7 +353,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
     } catch {
       return;
     }
-    void navigate({ to: '/connections' });
+    void navigate({ to: '/daily', search: { tab: 'connections' } });
   }
 
   async function share() {
@@ -372,6 +378,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
   return (
     <PageLayout
       title={grid.title}
+      backTo="/daily?tab=connections"
       description={t('by-author', {
         defaultValue: 'By {{author}}',
         author: grid.author?.name ?? grid.author?.handle ?? '?',

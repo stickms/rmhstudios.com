@@ -71,7 +71,10 @@ function TierBadge({ tier }: { tier?: RankTier }) {
 
 export function RankedColumn({
  initialData,
+ hideHeader = false,
 }: {
+ /** Embedded in the Ranked tab of `/compete`, whose page title and tab strip are the header. */
+ hideHeader?: boolean;
  /** Primary Ranked payload prefetched by the route loader. */
  initialData?: {
  games: GameDef[];
@@ -210,7 +213,7 @@ export function RankedColumn({
 
  return (
  <div className={arrival}>
- <ColumnHeader icon={Swords} title={t('ranked', { defaultValue:'Ranked'})} />
+ {!hideHeader && <ColumnHeader icon={Swords} title={t('ranked', { defaultValue:'Ranked'})} />}
 
  <div className="space-y-6 py-4">
  {signedIn && (

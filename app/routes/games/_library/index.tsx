@@ -22,7 +22,11 @@ export const Route = createFileRoute('/games/_library/')({
   validateSearch: (search: Record<string, unknown>): { sub?: ArcadeSubTab } =>
     ARCADE_SUB_TABS.includes(search.sub as ArcadeSubTab) ? { sub: search.sub as ArcadeSubTab } : {},
   beforeLoad: ({ search }) => {
-    if (search.sub) throw redirect({ to: '/arcade', search: { sub: search.sub } });
+    // The leaderboard sub-tab moved to `/compete`; go straight there, not via `/arcade`.
+    if (search.sub === 'leaderboard') {
+      throw redirect({ to: '/compete', search: { tab: 'leaderboard' } });
+    }
+    if (search.sub) throw redirect({ to: '/arcade' });
   },
   head: definePage({
     path: '/games',

@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { PageLayout } from '@/components/feed/PageLayout';
 import type {
   DigestLink,
   DigestPayload,
@@ -61,8 +60,11 @@ function Block({
   );
 }
 
-/** /today - the daily front page, rendered from one snapshot row (A3). */
-export function TodayPage({
+/**
+ * The daily front page, rendered from one snapshot row (A3): the Today tab of
+ * `/progress` (it was its own page, `/today`, until the 2026-11-19 consolidation).
+ */
+export function TodaySection({
   digest,
 }: {
   digest: DigestPayload;
@@ -87,24 +89,17 @@ export function TodayPage({
       .news
       .length;
   return (
-    <PageLayout
-      title={t(
-        'today-title',
-        {
-          defaultValue:
-            'Today on RMH',
-        },
-      )}
-      description={t(
-        'today-desc',
-        {
-          day: digest.day,
-          defaultValue:
-            'The last 24 hours on RMH Studios, as of {{day}}.',
-        },
-      )}
-    >
-      <div className="space-y-6 px-4 pt-4 pb-12">
+    <div className="space-y-6 pt-4 pb-12">
+      <p className="t-meta">
+        {t(
+          'today-desc',
+          {
+            day: digest.day,
+            defaultValue:
+              'The last 24 hours on RMH Studios, as of {{day}}.',
+          },
+        )}
+      </p>
         {empty && (
           <p className="text-sm text-site-text-muted">
             {t(
@@ -176,7 +171,6 @@ export function TodayPage({
             digest.trendingTags
           }
         />
-      </div>
-    </PageLayout>
+    </div>
   );
 }

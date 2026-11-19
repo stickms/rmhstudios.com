@@ -33,7 +33,7 @@ Reachable by URL but deliberately absent from the browse pages — hidden games 
 | | Route | Status |
 | --- | ----- | ------ |
 | **RMHdle** | `https://discord.gg/ZdfhdAKVSf` | Discord Game |
-| **RMHConnections** | `https://discord.gg/ZdfhdAKVSf` | Discord Game |
+| **RMHConnections** | `/daily?tab=connections` | — |
 
 ## Detail
 
@@ -125,4 +125,4 @@ A daily 5-letter word game tailored for the RMH ecosystem. Join the community on
 
 Group sixteen community-themed items into four categories. A daily test of your RMH knowledge, featuring characters, memes, and historical events from across the community.
 
-**Route:** `https://discord.gg/ZdfhdAKVSf` · **Catalog id:** `rmh-connections` · **Status:** Discord Game · **Sign-in:** not required · **Unlisted**
+**Route:** `/daily?tab=connections` · **Catalog id:** `rmh-connections` · **Sign-in:** not required · **Unlisted**
