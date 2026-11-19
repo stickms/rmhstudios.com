@@ -2,6 +2,10 @@
 # nightly) and deploy (push to main). Callers choose which half runs:
 #   checks:   typecheck + lint + docs freshness, lint ratchets, unit shards, production audit
 #   frontend: build + integration suite against a throwaway Postgres
+# and two options for the integration job's build (web-ci sets both):
+#   bundle-checks: build with sourcemaps and run the bundle budget + entry-composition
+#                  gates on it, so a PR builds the frontend once, not twice
+#   retain-build:  upload that build as `checked-frontend` for web-ci's nightly browser jobs
 # `verdict` fails the call if a job that should have run was skipped, or any
 # job failed, so a caller only has to require this one result.
 name: ci-checks
@@ -15,6 +19,12 @@ on:
       frontend:
         type: boolean
         required: true
+      bundle-checks:
+        type: boolean
+        default: false
+      retain-build:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -87,13 +97,15 @@ jobs:
 
   test:
     if: inputs.checks
-    name: test (${{ matrix.shard }}/2)
+    # Three shards, not two: at two, vitest's file split left one shard at 92 s of tests and
+    # the other at 42 s (web-ci run 44451063929), so the slow one set the job's end.
+    name: test (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     env:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
@@ -104,7 +116,7 @@ jobs:
       - name: Pull translation catalogs
         run: bash scripts/i18n-pull.sh
       - name: Test
-        run: pnpm test --shard=${{ matrix.shard }}/2
+        run: pnpm test --shard=${{ matrix.shard }}/3
 
   audit:
     if: inputs.checks
@@ -155,8 +167,27 @@ jobs:
           key: image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-${{ hashFiles('public/images/**') }}
           restore-keys: |
             image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-
+      # One build feeds both gates (scripts/check-entry-composition.ts): the entry-composition
+      # guard needs sourcemaps, and the bundle budget strips the map comments before measuring.
       - name: Build
-        run: pnpm run build:frontend
+        run: pnpm run ${{ inputs.bundle-checks && 'build:frontend:sourcemap' || 'build:frontend' }}
+      - name: Bundle budget
+        if: inputs.bundle-checks
+        run: pnpm run check:bundle-budget
+      - name: Entry-chunk composition
+        if: inputs.bundle-checks
+        run: pnpm exec tsx scripts/check-entry-composition.ts --strict
+      - name: Archive checked frontend for nightly browser checks
+        if: inputs.retain-build
+        run: tar -cf checked-frontend.tar .output
+      - name: Retain checked frontend
+        if: inputs.retain-build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: checked-frontend
+          path: checked-frontend.tar
+          compression-level: 0
+          retention-days: 1
       - name: Wait for Postgres
         run: |
           for i in $(seq 1 60); do
