@@ -64,7 +64,7 @@ export const NAMESPACES = [
   "c-kowloon-knockout", "c-laundry-sort", "c-layout", "c-library",
   "c-lights-out", "c-lists", "c-lockdown", "c-moderation", "c-neon-driftway",
   "c-news", "c-nightrail", "c-predictions", "c-profile-modules", "c-rideshare",
-  "c-rmh-capital", "c-rmh-datacenter", "c-rmh-pmc", "c-rmh-research", "c-rmhbox", "c-rmhcalculator",
+  "c-rmh-capital", "c-rmh-datacenter", "c-rmh-pmc", "c-rmh-research", "c-rmhbox", "c-rmhcalculator", "c-rmhcharacters",
   "c-rmhcode",
   "c-rebar-rutabaga", "c-rmhcoins", "c-rmhfashion", "c-rmhmusic", "c-rmhos", "c-rmhstudy",
   "c-rmhtech", "c-rmhtube",

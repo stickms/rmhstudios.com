@@ -291,6 +291,12 @@ const BUDGETS = {
   // entry. Measured on a plain `vite build`: entry 710,273 B on the parent commit (27 B under the old line) ->
   // 710,525 B. Each raised line keeps the feature's bytes plus about 750 B of headroom.
   //
+  // RMHCharacters (2026-11-19): the image-variant manifest line (lib/__tests__/image-manifest-entry-cost.test.ts)
+  // RAISED 16,400 -> 16,700 B (OPT-01 line). The feature that bought the bytes is RMHCharacters, the D&D 5e and
+  // Pathfinder 2e character builder at /rmhcharacters: its catalog card, banner and logo are three manifest rows
+  // (about 280 B raw), the same three every listed app carries. The app itself, its rules data and its stylesheet are
+  // their own route chunks; the entry pays for the route record and those rows only.
+  //
   // Settings simplification (2026-11-18): critical path brotli RAISED 245,300 -> 245,700 B (OPT-01 line); raw lines and
   // site CSS unchanged. The feature that bought the bytes is bought themes' quiet gradients (R1 amendment): Providers
   // applies a user theme on every page, so the two derivation helpers that build `--site-theme-wash` and

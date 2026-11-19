@@ -71,7 +71,7 @@ export const STATIC_CARDS: StaticCard[] =
           },
           {
             value:
-              '15',
+              '16',
             label:
               'apps',
           },
@@ -116,7 +116,7 @@ export const STATIC_CARDS: StaticCard[] =
         [
           {
             value:
-              '15',
+              '16',
             label:
               'apps',
             lead: true,
