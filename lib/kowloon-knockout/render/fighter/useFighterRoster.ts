@@ -11,6 +11,7 @@ import {
   type FighterModelDef,
   type ModelAvailability,
 } from './models';
+import { fetchJson } from '@/lib/http';
 
 type MdlGame =
   | 'hl2'
@@ -91,20 +92,16 @@ export function buildAvailability(
   };
 }
 
-async function getJson(
+/** A JSON index, or `null` when it is missing or unreachable (the roster falls back). */
+function getJsonOrNull(
   url: string,
 ): Promise<unknown> {
-  try {
-    const res =
-      await fetch(
-        url,
-      );
-    return res.ok
-      ? await res.json()
-      : null;
-  } catch {
-    return null;
-  }
+  return fetchJson<unknown>(
+    url,
+  ).catch(
+    () =>
+      null,
+  );
 }
 
 let pending: Promise<
@@ -125,14 +122,14 @@ export function loadFighterRoster(): Promise<
       ] =
         await Promise.all(
           [
-            getJson(
+            getJsonOrNull(
               '/api/tf2-loadout/models',
             ),
             ...MDL_GAMES.map(
               (
                 g,
               ) =>
-                getJson(
+                getJsonOrNull(
                   `/api/${g}-game/assets/mdl/index.json`,
                 ),
             ),

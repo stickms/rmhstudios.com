@@ -5,35 +5,16 @@ import {
   useState,
 } from 'react';
 import type { PerfOverview } from '@/lib/perf/admin-types';
+import { fetchJson } from '@/lib/http';
 
 /** How often the overview refreshes while auto-refresh is on. */
 export const REFRESH_MS = 10_000;
 
-async function getJson<
-  T,
->(
-  url: string,
-): Promise<T> {
-  const res =
-    await fetch(
-      url,
-      {
-        credentials:
-          'include',
-        cache:
-          'no-store',
-      },
-    );
-  if (
-    !res.ok
-  )
-    throw new Error(
-      String(
-        res.status,
-      ),
-    );
-  return (await res.json()) as T;
-}
+/** Admin numbers are live: never answer from the HTTP cache. */
+const NO_STORE = {
+  cache:
+    'no-store',
+} as const;
 
 /**
  * The page's data: one payload, refetched every 10 s while `auto` is on and the
@@ -89,8 +70,9 @@ export function usePerfOverview(
       inFlight.current = true;
       try {
         setData(
-          await getJson<PerfOverview>(
+          await fetchJson<PerfOverview>(
             '/api/admin/perf',
+            NO_STORE,
           ),
         );
         setUpdatedAt(
@@ -199,8 +181,9 @@ export function useLazyJson<
       );
       try {
         setData(
-          await getJson<T>(
+          await fetchJson<T>(
             url,
+            NO_STORE,
           ),
         );
         setFailed(

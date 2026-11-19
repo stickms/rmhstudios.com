@@ -16,8 +16,10 @@ import {
   type ParticleManifest,
   type ParticleTexture,
 } from './types';
+import { fetchJson, HttpError } from '@/lib/http';
 
-async function fetchJson<
+/** A particle asset as JSON; `null` when R2 has no such file (404). */
+async function fetchParticleJson<
   T,
 >(
   path: string,
@@ -31,26 +33,28 @@ async function fetchJson<
     throw new Error(
       'Invalid particle asset path',
     );
-  const res =
-    await fetch(
+  try {
+    return await fetchJson<T>(
       PARTICLE_API +
         path,
       {
-        signal,
+        // Bundles can be large; the query's own retry owns failure, not a timer.
+        timeoutMs: 0,
+        ...(signal
+          ? { signal }
+          : {}),
       },
     );
-  if (
-    res.status ===
-    404
-  )
-    return null;
-  if (
-    !res.ok
-  )
-    throw new Error(
-      `Particle asset: HTTP ${res.status}`,
-    );
-  return res.json() as Promise<T>;
+  } catch (err) {
+    if (
+      err instanceof
+        HttpError &&
+      err.status ===
+        404
+    )
+      return null;
+    throw err;
+  }
 }
 
 export function useParticleBundle(
@@ -74,7 +78,7 @@ export function useParticleBundle(
           ({
             signal,
           }) =>
-            fetchJson<ParticleManifest>(
+            fetchParticleJson<ParticleManifest>(
               'manifest.json',
               signal,
             ),
@@ -111,7 +115,7 @@ export function useParticleBundle(
           ({
             signal,
           }) =>
-            fetchJson<ParticleBundle>(
+            fetchParticleJson<ParticleBundle>(
               path!,
               signal,
             ),
