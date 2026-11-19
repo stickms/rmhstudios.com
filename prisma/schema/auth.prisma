@@ -123,7 +123,8 @@ model User {
   notifications     Notification[] @relation("UserNotifications")
   notificationsSent Notification[] @relation("UserNotificationActor")
 
-  // Engagement: achievements, daily streak (bookmarks are `SavedItem` rows)
+  // Engagement: bookmarks, achievements, daily streak
+  bookmarks    RMHarkBookmark[]
   achievements UserAchievement[]
   dailyStreak  DailyStreak?
   postUnlocks  PostUnlock[]
@@ -422,6 +423,7 @@ model User {
 
   /// What this member agreed to give which builds (B1).
   buildGrants         BuildGrant[]
+  readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
   idempotencyKeys     SiteIdempotencyKey[]
