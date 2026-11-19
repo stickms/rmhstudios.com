@@ -215,8 +215,10 @@ const PUBLIC =
     ],
   );
 
+// `definePage<LoaderData>(` counts too: a page whose head reads typed loader
+// data names the type argument, and it is the same helper.
 const HEAD_HELPER =
-  /\b(buildMeta|definePage|gameRouteHead|appRouteHead|appHubHead)\(/;
+  /\b(buildMeta|definePage|gameRouteHead|appRouteHead|appHubHead)(<[\w, ]+>)?\(/;
 
 /**
  * A layout: `route.tsx`, or `x.tsx` next to an `x/` directory. Its page is the

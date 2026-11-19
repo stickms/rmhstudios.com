@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 354 routes. 172 render inside the standard site shell (sidebar, nav, context rail); 182 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 351 routes. 169 render inside the standard site shell (sidebar, nav, context rail); 182 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -60,7 +60,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
 | `/advent` | — | public | `app/routes/_site/advent.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
-| `/arcade` | Arcade | public | `app/routes/_site/arcade.tsx` |
+| `/arcade` | redirects to `/compete?tab=leaderboard` | public | `app/routes/_site/arcade.tsx` |
 | `/blog/:slug` | — | public | `app/routes/_site/blog/$slug.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
@@ -68,6 +68,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/canvas` | Community canvas | public | `app/routes/_site/canvas.tsx` |
 | `/changelog` | Changelog | public | `app/routes/_site/changelog.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
+| `/compete` | Compete | public | `app/routes/_site/compete.tsx` |
 | `/connections` | Connections Grids | public | `app/routes/_site/connections.index.tsx` |
 | `/connections/new` | Make a Connections Grid | public | `app/routes/_site/connections.new.tsx` |
 | `/connections/u/:id` | Connections Grid | public | `app/routes/_site/connections.u.$id.tsx` |
@@ -120,7 +121,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/psychology` | redirects to `/rmh-research/psychology` | public | `app/routes/_site/psychology.tsx` |
 | `/qotd` | Question of the Day | public | `app/routes/_site/qotd.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
-| `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
 | `/reading` | My reading | public | `app/routes/_site/reading/index.tsx` |
 | `/rideshare` | RMH Rideshare | public | `app/routes/_site/rideshare/index.tsx` |
 | `/rideshare/drive` | Drive with RMH Rideshare | public | `app/routes/_site/rideshare/drive.tsx` |
@@ -167,7 +167,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/share` | Share to RMH Studios | public | `app/routes/_site/share.tsx` |
 | `/site-history` | Site history | public | `app/routes/_site/site-history.tsx` |
 | `/spaces/:id` | — | public | `app/routes/_site/spaces.$id.tsx` |
-| `/speedruns` | Speedruns | public | `app/routes/_site/speedruns.tsx` |
 | `/store` | Store | public | `app/routes/_site/store/index.tsx` |
 | `/store/:userid` | Store | public | `app/routes/_site/store/$userid.tsx` |
 | `/study` | Flashcards | public | `app/routes/_site/study/index.tsx` |
@@ -175,7 +174,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/study/browse` | Browse decks | public | `app/routes/_site/study/browse.tsx` |
 | `/tag/:tag` | — | public | `app/routes/_site/tag.$tag.tsx` |
 | `/thread/:rootId` | — | public | `app/routes/_site/thread/$rootId.tsx` |
-| `/tournaments` | Tournaments | public | `app/routes/_site/tournaments.index.tsx` |
 | `/tournaments/:id` | — | public | `app/routes/_site/tournaments.$id.tsx` |
 | `/translate` | — | public | `app/routes/_site/translate.tsx` |
 | `/trash` | Trash | public | `app/routes/_site/trash.tsx` |
@@ -185,7 +183,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/user-builds/manage` | Manage builds | public | `app/routes/_site/user-builds/manage.tsx` |
 | `/user-builds/submit` | Submit a build | public | `app/routes/_site/user-builds/submit.tsx` |
 | `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
-| `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |
 | `/wallet` | Wallet | public | `app/routes/_site/wallet.tsx` |
 | `/when` | Find a time | public | `app/routes/_site/when/index.tsx` |
@@ -231,7 +228,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/embed/post/:id` | — | public | `app/routes/embed.post.$id.tsx` |
 | `/embed/replay/:id` | — | public | `app/routes/embed.replay.$id.tsx` |
 | `/gabriels-horn` | Gabriel | public | `app/routes/gabriels-horn.tsx` |
-| `/games` | redirects to `/arcade` | public | `app/routes/games/_library/index.tsx` |
+| `/games` | redirects to `/compete?tab=leaderboard` | public | `app/routes/games/_library/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/games/_library/$gameId_.guides.$guideId.tsx` |
 | `/games/communities` | — | public | `app/routes/games/communities.tsx` |

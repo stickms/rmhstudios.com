@@ -136,6 +136,13 @@ export const STATIC_ROUTES: SitemapEntry[] =
         'daily',
       priority: 0.6,
     },
+    // Ranked, tournaments, speedruns, wagers and the player leaderboard, one tab each.
+    {
+      loc: '/compete',
+      changefreq:
+        'daily',
+      priority: 0.6,
+    },
     {
       loc: '/daily-mutator',
       changefreq:
@@ -261,13 +268,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
         'weekly',
       priority: 0.5,
     },
-    // Public per-game speedrun boards.
-    {
-      loc: '/speedruns',
-      changefreq:
-        'daily',
-      priority: 0.5,
-    },
     {
       loc: '/groups',
       changefreq:
@@ -347,12 +347,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.4,
     },
     {
-      loc: '/ranked',
-      changefreq:
-        'daily',
-      priority: 0.5,
-    },
-    {
       loc: '/rideshare',
       changefreq:
         'weekly',
@@ -409,22 +403,10 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.5,
     },
     {
-      loc: '/tournaments',
-      changefreq:
-        'daily',
-      priority: 0.5,
-    },
-    {
       loc: '/ventures',
       changefreq:
         'monthly',
       priority: 0.6,
-    },
-    {
-      loc: '/wager',
-      changefreq:
-        'daily',
-      priority: 0.4,
     },
 
     {

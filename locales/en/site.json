@@ -928,5 +928,15 @@
   "presence-vis-my-followers": "People who follow me",
   "progress-tab-today": "Today",
   "progress-tab-week": "Week",
-  "progress-tab-year": "Year"
+  "progress-tab-year": "Year",
+  "arcade-open-compete": "Compete",
+  "arcade-page-subtitle-compete": "Daily challenges, your streak and your ranked standing.",
+  "arcade-summary-challenges": "Daily game challenges and your streak.",
+  "compete-description": "Ladders, brackets, records and stakes across every game.",
+  "compete-tab-leaderboard": "Leaderboard",
+  "compete-tab-ranked": "Ranked",
+  "compete-tab-speedruns": "Speedruns",
+  "compete-tab-tournaments": "Tournaments",
+  "compete-tab-wagers": "Wagers",
+  "compete-title": "Compete"
 }

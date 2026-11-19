@@ -414,7 +414,17 @@ export const STATIC_CARDS: StaticCard[] =
       title:
         "Today's challenges and the standings.",
       subtitle:
-        'Daily challenges, your streak, ranked standings and the player leaderboard.',
+        'Daily challenges, your streak and your ranked standing.',
+    },
+    {
+      path: '/compete',
+      file: 'compete',
+      eyebrow:
+        'Compete',
+      title:
+        'Ladders, brackets, records and stakes.',
+      subtitle:
+        'Ranked, tournaments, replay-verified speedruns, wager matches and the player leaderboard.',
     },
     {
       path: '/connections',
@@ -685,46 +695,6 @@ export const STATIC_CARDS: StaticCard[] =
         'Back your call.',
       subtitle:
         'Prediction markets, plus casino games, played with RMH Coins.',
-    },
-    {
-      path: '/wager',
-      file: 'wager',
-      eyebrow:
-        'Wager matches',
-      title:
-        'Put coins on it.',
-      subtitle:
-        'A staked head-to-head match on any skill game.',
-    },
-    {
-      path: '/tournaments',
-      file: 'tournaments',
-      eyebrow:
-        'Tournaments',
-      title:
-        'Brackets, with coin prizes.',
-      subtitle:
-        'Compete across the RMH Studios games.',
-    },
-    {
-      path: '/ranked',
-      file: 'ranked',
-      eyebrow:
-        'Ranked',
-      title:
-        'Climb the ladder.',
-      subtitle:
-        'Standings, your rating, and the seasons in progress.',
-    },
-    {
-      path: '/speedruns',
-      file: 'speedruns',
-      eyebrow:
-        'Speedruns',
-      title:
-        'Verified by replay.',
-      subtitle:
-        'Every run is re-simulated from its own inputs.',
     },
     {
       path: '/qotd',

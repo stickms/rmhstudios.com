@@ -150,6 +150,10 @@ export const STATIC_CARD_INDEX: readonly (readonly [
       'arcade',
     ],
     [
+      '/compete',
+      'compete',
+    ],
+    [
       '/connections',
       'connections',
     ],
@@ -256,22 +260,6 @@ export const STATIC_CARD_INDEX: readonly (readonly [
     [
       '/predictions',
       'predictions',
-    ],
-    [
-      '/wager',
-      'wager',
-    ],
-    [
-      '/tournaments',
-      'tournaments',
-    ],
-    [
-      '/ranked',
-      'ranked',
-    ],
-    [
-      '/speedruns',
-      'speedruns',
     ],
     [
       '/qotd',

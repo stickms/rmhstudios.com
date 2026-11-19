@@ -80,6 +80,11 @@ interface PageLayoutProps {
   rightSidebar?: React.ReactNode;
   headerRight?: React.ReactNode;
   wide?: boolean;
+  /**
+   * Where the back link goes. It may carry a query (`/compete?tab=wagers`) so a
+   * detail page returns to the tab of the hub it belongs to; the query is handed
+   * to the router as `search`, because a router `to` is a path only.
+   */
   backTo?: string;
   backLabel?: string;
   breadcrumbs?: BreadcrumbItem[];
@@ -136,7 +141,12 @@ export function PageLayout({
           {backTo && (
             <div className="page-heading__meta">
               <Link
-                to={backTo}
+                to={backTo.split('?')[0]}
+                search={
+                  backTo.includes('?')
+                    ? Object.fromEntries(new URLSearchParams(backTo.slice(backTo.indexOf('?') + 1)))
+                    : undefined
+                }
                 className="page-heading__back"
                 aria-label={backLabel ?? t('back', { defaultValue: 'Back' })}
               >

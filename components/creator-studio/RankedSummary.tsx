@@ -295,7 +295,7 @@ export function RankedSummary() {
             size="sm"
             className="flex-1 sm:flex-none"
           >
-            <Link to="/ranked">
+            <Link to="/compete" search={{ tab: 'ranked' }}>
               {t(
                 'ranked-summary-view-all',
                 {

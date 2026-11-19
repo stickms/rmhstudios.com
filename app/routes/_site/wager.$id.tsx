@@ -33,7 +33,7 @@ function WagerDetailPage() {
   return (
     <PageLayout
       title={t('detail-title', { defaultValue: 'Wager Match' })}
-      backTo="/wager"
+      backTo="/compete?tab=wagers"
       backLabel={t('back', { defaultValue: 'Back to wagers' })}
     >
       <div className={cn('max-w-xl', arrival)}>
