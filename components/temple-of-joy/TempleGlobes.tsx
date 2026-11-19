@@ -6,8 +6,8 @@
  * rocks; drag it and it spins and coasts; leave it alone and it drifts, because
  * a globe that stands perfectly still reads as a picture of a globe.
  *
- * It is the same material as the site's navigation globe
- * (`components/radial/LiquidGlobe.tsx`) and shares that component's physics
+ * It is the same material as the site's old navigation globe (the deleted
+ * radial `LiquidGlobe`) and shares that component's physics
  * through `lib/fluid` — the ripple's Ricker wavelet, the wobble's under-damped
  * spring, the sphere unprojection — so a press here and a press there behave
  * identically. What is *not* shared is the gesture: this globe is a thing you

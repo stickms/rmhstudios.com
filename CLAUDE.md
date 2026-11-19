@@ -211,7 +211,7 @@ workspace.
 | `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), the rmhOS relay hub rmhos-net (7009), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                                                                                                                                                                                                                      | [`server/CLAUDE.md`](server/CLAUDE.md)           |
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): `status` and `assets` run in prod; the gateway, Go hubs, workers and supervisor were removed (§5.2, D3).                                                                                                                                                                                                                                                              | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                                                                                                                                                                                                                                                                     | `lib/CLAUDE.md`                                  |
-| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                                                                                                                                                                                                                                                                                          | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLobbyLink`, …).                                                                                                                                                                                                                                                                                                      | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                                                                                                                                                                                                                                | `lib/CLAUDE.md`                                  |
 | `locales/`     | English only (`en`, authoritative; namespace count in `docs/_generated/facts.json`). The other 8 shipped locales and the parked ones live on the `i18n/catalogs` branch; `pnpm i18n:pull` copies them in (`docs/translations.md`).                                                                                                                                                                                 | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                                                                                                                                                                                                                                                              | —                                                |
@@ -1511,9 +1511,9 @@ _why_.
    than
    in
    CI.
-   `docs/plasmatic-jelly-design-language.md`
+   `docs/archive/2026/plasmatic-jelly-design-language.md`
    and
-   `docs/plasmatic-jelly-system.md`
+   `docs/archive/2026/plasmatic-jelly-system.md`
    describe
    the
    deleted

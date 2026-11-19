@@ -1,5 +1,5 @@
 /**
- * The handheld tier — one media query, three files, no drift.
+ * The handheld tier — one media query, every file, no drift.
  *
  * ## What this tier is, and why it needed to exist
  *
@@ -19,17 +19,12 @@
  *
  * ## Why a test and not just a comment
  *
- * The tier is enforced in CSS (which stops reading the offsets) and in JS
- * (which stops computing them), in three files that cannot import from each
- * other. Those two halves are one contract:
- *
- *   - JS query NARROWER than CSS → the hook computes offsets, writes them every
- *     frame, and CSS ignores them. Pure waste, invisible in review, on the
- *     devices least able to spare a frame.
- *   - JS query WIDER than CSS → the hook detaches on devices whose stylesheet
- *     still animates the aurora, and the parallax silently stops working.
- *
- * Neither shows up as a failing render, which is why it is pinned here.
+ * The tier is written in CSS and in JS (`PaperBackdrop`), in files that cannot
+ * import from each other, so the query is pinned here: a JS copy that drifts
+ * from the CSS one either does work the stylesheet ignores or stops on devices
+ * the stylesheet still serves. Neither shows up as a failing render.
+ * (`hooks/useLiquidBackground.ts`, the aurora parallax hook, was deleted with
+ * the aurora it fed.)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -48,12 +43,10 @@ const read = (path: string) => readCss(join(ROOT, path));
 const HANDHELD_QUERY = '(pointer: coarse) and (max-width: 1024px)';
 
 const GLOBALS = read('app/globals.css');
-const HOOK = read('hooks/useLiquidBackground.ts');
 /** The paper backdrop halves its frame rate on the same device class, so it carries this same query. */
 const PAPER = read('components/rmhmusic/learn/PaperBackdrop.tsx');
 describe('the handheld query is identical everywhere it appears', () => {
   it.each([
-    ['hooks/useLiquidBackground.ts', HOOK],
     ['components/rmhmusic/learn/PaperBackdrop.tsx', PAPER],
   ])('%s carries the exact query', (_file, source) => {
     expect(source).toContain(HANDHELD_QUERY);
@@ -82,35 +75,10 @@ describe('the handheld query is identical everywhere it appears', () => {
         }
       }
     }
-    // Same rule for the hook, where the query lives inside `matchMedia(...)`.
-    for (const [, query] of HOOK.matchAll(/matchMedia\(\s*['"]([^'"]+)['"]\s*\)/g)) {
-      if (!/pointer:\s*coarse/.test(query) || !/max-width/.test(query)) continue;
-      expect(query.replace(/\s+/g, ' ').trim()).toBe(HANDHELD_QUERY);
-    }
     // Every string literal that looks like a width-bounded coarse query is judged, not only `matchMedia(...)` arguments.
     for (const [, query] of PAPER.matchAll(/['"`]([^'"`\n]*pointer:\s*coarse[^'"`\n]*)['"`]/g)) {
       if (!/max-width/.test(query)) continue;
       expect(query.replace(/\s+/g, ' ').trim()).toBe(HANDHELD_QUERY);
-    }
-  });
-});
-
-describe('the JS half bails out before it computes anything', () => {
-  it('returns early on the handheld query', () => {
-    expect(HOOK).toMatch(
-      new RegExp(
-        `matchMedia\\(\\s*['"]\\(pointer: coarse\\) and \\(max-width: 1024px\\)['"]\\s*\\)[\\s\\S]{0,40}return`,
-      ),
-    );
-  });
-
-  it('bails before installing any listener or rAF', () => {
-    // The guard is worthless if it sits below the subscription it is meant to
-    // prevent, so assert on ORDER, not just presence.
-    const guard = HOOK.indexOf(HANDHELD_QUERY);
-    expect(guard).toBeGreaterThan(-1);
-    for (const later of ['addEventListener', 'requestAnimationFrame']) {
-      expect(HOOK.indexOf(later)).toBeGreaterThan(guard);
     }
   });
 });

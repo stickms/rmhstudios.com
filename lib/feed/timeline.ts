@@ -31,7 +31,7 @@ import { audienceWhere, circleOwnerIds } from './audience.server';
 import { mapQuotedOriginal } from './quoted-original';
 import { getSignals } from './signals.server';
 import { mutedTagWhere } from './signals';
-import { applyLock } from './map-feed-item.server';
+import { applyLock, loadBookmarkedPostIds } from './map-feed-item.server';
 import { deduplicateReposts } from './dedupe';
 import type { ReactionSummary } from '../social/reactions';
 import {
@@ -195,7 +195,6 @@ function rmharkInclude(userId: string | null) {
       ? {
           likes: { where: { userId }, select: { id: true } },
           reposts: { where: { userId }, select: { id: true } },
-          bookmarks: { where: { userId }, select: { id: true } },
           unlocks: { where: { userId }, select: { id: true } },
         }
       : {}),
@@ -301,6 +300,17 @@ function attachReactions(items: FeedItem[], summaries: Map<string, ReactionSumma
   }
 }
 
+/**
+ * Fill in each rmhark item's `bookmarked` bit from a pre-loaded id set (mutates).
+ * Bookmarks are `SavedItem` rows, which have no relation on the post to include.
+ */
+function attachBookmarks(items: FeedItem[], bookmarked: Set<string>): void {
+  for (const item of items) {
+    if (item.type !== 'rmhark') continue;
+    item.bookmarked = bookmarked.has(item.actualId ?? item.id);
+  }
+}
+
 function deletedMessageFor(record: { deletedByAdmin?: boolean }): string {
   return record.deletedByAdmin
     ? REMOVED_POST_TEXT
@@ -343,7 +353,7 @@ function mapOwn(
     viewCount: r.viewCount,
     liked: userId ? r.likes?.length > 0 : false,
     reposted: userId ? r.reposts?.length > 0 : false,
-    bookmarked: userId ? r.bookmarks?.length > 0 : false,
+    bookmarked: false, // filled in by attachBookmarks after the query
     edited: !!r.editedAt,
     original: mapOriginal(r.original, displayMap, qv),
     poll: isDeleted ? undefined : mapPoll(r.poll),
@@ -387,7 +397,7 @@ function mapRepost(
     viewCount: r.viewCount,
     liked: userId ? r.likes?.length > 0 : false,
     reposted: userId ? r.reposts?.length > 0 : false,
-    bookmarked: userId ? r.bookmarks?.length > 0 : false,
+    bookmarked: false, // filled in by attachBookmarks after the query
     repostedBy: displayUser(displayMap, rp.userId),
     original: mapOriginal(r.original, displayMap, qv),
     poll: isDeleted ? undefined : mapPoll(r.poll),
@@ -601,13 +611,13 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
 
   const items = deduplicateReposts(merged).slice(0, limit);
 
-  attachReactions(
-    items,
-    await loadReactionSummaries(
-      items.map((i) => i.actualId ?? i.id),
-      userId,
-    ),
-  );
+  const pagePostIds = items.map((i) => i.actualId ?? i.id);
+  const [summaries, bookmarked] = await Promise.all([
+    loadReactionSummaries(pagePostIds, userId),
+    loadBookmarkedPostIds(pagePostIds, userId),
+  ]);
+  attachReactions(items, summaries);
+  attachBookmarks(items, bookmarked);
 
   const nextCursor =
     items.length === limit
@@ -715,10 +725,12 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
     // Reaction summaries and author-display resolution both depend only on the
     // returned rows — kick both off concurrently (each its own query, or a cache
     // hit) so neither serializes behind the in-memory mapping.
-    const reactionsPromise = loadReactionSummaries(
-      [...rmharks.map((r) => r.id), ...repostRecords.map((rp) => rp.rmhark.id)],
-      userId,
-    );
+    const candidatePostIds = [
+      ...rmharks.map((r) => r.id),
+      ...repostRecords.map((rp) => rp.rmhark.id),
+    ];
+    const reactionsPromise = loadReactionSummaries(candidatePostIds, userId);
+    const bookmarksPromise = loadBookmarkedPostIds(candidatePostIds, userId);
     const displayMap = await getUserDisplayMap(collectAuthorIds(rmharks, repostRecords));
 
     dbItems = deduplicateReposts(
@@ -738,6 +750,7 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
     dbItems = rankCandidates(dbItems, rankCtx);
 
     attachReactions(dbItems, await reactionsPromise);
+    attachBookmarks(dbItems, await bookmarksPromise);
   }
 
   // Announcements were kicked off before the feed query (skipped when searching

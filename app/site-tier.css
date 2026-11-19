@@ -169,7 +169,6 @@
 @source not "./routes/breaches.tsx";
 @source not "./routes/cookies.tsx";
 @source not "./routes/copyright.tsx";
-@source not "./routes/covid.tsx";
 @source not "./routes/elections.tsx";
 @source not "./routes/daily.tsx";
 @source not "./routes/daily";
@@ -187,7 +186,6 @@
 @source not "./routes/laundry-sort.tsx";
 @source not "./routes/neon-driftway.tsx";
 @source not "./routes/nightrail.tsx";
-@source not "./routes/optimization.tsx";
 @source not "./routes/pf2ecal.tsx";
 @source not "./routes/privacy.tsx";
 @source not "./routes/replays.$id.tsx";

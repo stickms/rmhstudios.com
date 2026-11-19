@@ -165,7 +165,7 @@ system:
 Plasmatic
 Jelly"
 and
-`docs/plasmatic-jelly-system.md`
+`docs/archive/2026/plasmatic-jelly-system.md`
 (the
 contract;
 it
@@ -1069,7 +1069,7 @@ from
   with
   `pnpm fonts:generate`
 - Modify:
-  `docs/plasmatic-jelly-system.md`
+  `docs/archive/2026/plasmatic-jelly-system.md`
   §10
   status
   note

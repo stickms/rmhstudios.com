@@ -129,8 +129,8 @@ documents
 that
 describe
 those
-([`docs/plasmatic-jelly-design-language.md`](docs/plasmatic-jelly-design-language.md),
-[`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md))
+([`docs/archive/2026/plasmatic-jelly-design-language.md`](docs/archive/2026/plasmatic-jelly-design-language.md),
+[`docs/archive/2026/plasmatic-jelly-system.md`](docs/archive/2026/plasmatic-jelly-system.md))
 are
 historical.
 [`docs/design-language.md`](docs/design-language.md)

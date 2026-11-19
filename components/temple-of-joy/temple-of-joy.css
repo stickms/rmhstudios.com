@@ -16,7 +16,7 @@
  * and material* — bigger radii, cards instead of hairline-separated rows, a
  * floating counter, a pill rail — and the centrepiece, which used to be an SVG
  * temple and is now the **liquid globe** the rest of the site navigates with
- * (`components/radial/LiquidGlobe.tsx`): a wireframe sphere suspended in glass,
+ * (the deleted radial `LiquidGlobe`, whose physics `lib/globe/` keeps): a wireframe sphere suspended in glass,
  * with every source you own orbiting it, drawn on one canvas by
  * `TempleGlobes.tsx`. Buy more globes and the field makes room for them.
  *
@@ -1148,8 +1148,8 @@
 
    Nothing here may take a `backdrop-filter`. The canvas above it animates
    continuously, and a backdrop-filtered layer under an animating element is
-   re-blurred in full every frame (see `components/radial/README.md` for the
-   measurements that killed the same idea on the navigation globe). */
+   re-blurred in full every frame (the measurements that killed the same idea
+   on the old navigation globe are in docs/archive). */
 
 .toj-globes {
   position: relative;

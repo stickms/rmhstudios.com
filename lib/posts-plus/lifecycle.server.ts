@@ -124,9 +124,6 @@ export async function findAutoDeleteCandidates(
         SELECT 1 FROM "saved_item" s
         WHERE s."userId" = ${userId} AND s."entityType" = 'rmhark' AND s."entityId" = p."id")
       AND NOT EXISTS (
-        SELECT 1 FROM "rmheet_bookmark" b
-        WHERE b."userId" = ${userId} AND b."rmheetId" = p."id")
-      AND NOT EXISTS (
         SELECT 1 FROM "post_lifecycle" l
         WHERE l."postId" = p."id" AND l."keepForever")
     ORDER BY p."createdAt" ASC
@@ -145,9 +142,6 @@ export async function countAutoDeleteCandidates(userId: string, months: number):
         AND NOT EXISTS (
           SELECT 1 FROM "saved_item" s
           WHERE s."userId" = ${userId} AND s."entityType" = 'rmhark' AND s."entityId" = p."id")
-        AND NOT EXISTS (
-          SELECT 1 FROM "rmheet_bookmark" b
-          WHERE b."userId" = ${userId} AND b."rmheetId" = p."id")
         AND NOT EXISTS (
           SELECT 1 FROM "post_lifecycle" l WHERE l."postId" = p."id" AND l."keepForever")
       LIMIT 1000) c`;

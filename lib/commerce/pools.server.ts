@@ -1,6 +1,14 @@
 /**
  * Group gifting and pooled purchases (F20) — the escrow lifecycle.
  *
+ * **Retired (2026-11-19 consolidation audit).** Nothing in the UI ever created
+ * or showed a pool, and `CommunityGoal` (`lib/economy/community-goal.server.ts`)
+ * is the shipped version of the same idea, so the `/api/pools*` endpoints were
+ * removed. What stays is the hourly refund sweep, so any pool opened through
+ * the API before then still returns its coins; once `pool` holds no unrefunded
+ * rows, this file, `pools.ts`, the `Pool` / `PoolContribution` models and the
+ * maintenance call can be deleted together.
+ *
  * ── The accounting model ────────────────────────────────────────────────────
  *
  * A contribution is a **SINK** (`debitCoins`): the coins leave the contributor
@@ -35,10 +43,22 @@
  * loses the race by matching zero rows) and the ledger idempotency key
  * `pool-refund:<contributionId>` (which is unique per contribution forever).
  * Either alone would be sufficient; both are cheap.
+ *
+ * The hold / settle / refund steps themselves are the shared escrow primitive
+ * (`lib/economy/escrow-core.ts`, bound to the ledger by
+ * `lib/economy/escrow.server.ts`); this module supplies the pool's claims and
+ * its ledger keys.
  */
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { creditCoins, debitCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
+import { InsufficientFundsError } from '@/lib/economy/ledger.server';
+import {
+  holdEscrow,
+  ledgerEscrow,
+  refundEscrow,
+  settleEscrow,
+  type LedgerMovement,
+} from '@/lib/economy/escrow.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import {
   POOL_MAX_OPEN_PER_USER,
@@ -147,74 +167,29 @@ interface SinglePoolRefund {
  * "cancel my pool" path and for tests; the sweep is the normal driver.
  */
 export async function refundPool(poolId: string, now: Date = new Date()): Promise<SinglePoolRefund> {
-  const out: SinglePoolRefund = {
-    contributionsRefunded: 0,
-    coinsReturned: 0,
-    skipped: 0,
-    poolMarked: false,
-  };
-
-  // Page through unrefunded contributions. The filter is the resume point: a
-  // contribution already paid is invisible to the next pass.
-  for (;;) {
-    const batch = await prisma.poolContribution.findMany({
-      where: { poolId, refundedAt: null },
-      select: { id: true, userId: true, coins: true },
-      orderBy: { id: 'asc' },
-      take: REFUND_BATCH,
-    });
-    if (batch.length === 0) break;
-
-    for (const c of batch) {
-      const refunded = await refundContribution(c, poolId, now);
-      if (refunded) {
-        out.contributionsRefunded += 1;
-        out.coinsReturned += c.coins;
-      } else {
-        out.skipped += 1;
-      }
-    }
-
-    if (batch.length < REFUND_BATCH) break;
-  }
-
-  // Only now — with nothing left owing — is it safe to call the pool refunded.
-  // Conditional so a concurrent sweep marking the same pool is a no-op rather
-  // than an overwrite of someone else's timestamp.
-  const remaining = await prisma.poolContribution.count({ where: { poolId, refundedAt: null } });
-  if (remaining === 0) {
-    const marked = await prisma.pool.updateMany({
-      where: { id: poolId, settledAt: null, refundedAt: null },
-      data: { refundedAt: now, raised: 0 },
-    });
-    out.poolMarked = marked.count > 0;
-  }
-
-  return out;
-}
-
-/**
- * Return one contribution. Returns false when another run already claimed it —
- * which is a normal outcome under concurrency, not an error.
- */
-async function refundContribution(
-  c: { id: bigint; userId: string; coins: number },
-  poolId: string,
-  now: Date,
-): Promise<boolean> {
-  return prisma.$transaction(async (tx) => {
+  const r = await refundEscrow(prisma, ledgerEscrow, {
+    batchSize: REFUND_BATCH,
+    // Page through unrefunded contributions. The filter is the resume point: a
+    // contribution already paid is invisible to the next pass.
+    outstanding: (take) =>
+      prisma.poolContribution.findMany({
+        where: { poolId, refundedAt: null },
+        select: { id: true, userId: true, coins: true },
+        orderBy: { id: 'asc' },
+        take,
+      }),
     // The claim. Conditional on `refundedAt IS NULL`, so exactly one runner can
     // ever move this row out of the unrefunded set, and it happens in the same
     // transaction as the credit — if the credit throws, the claim unwinds and
     // the contribution is retried rather than silently marked as paid.
-    const claim = await tx.poolContribution.updateMany({
-      where: { id: c.id, refundedAt: null },
-      data: { refundedAt: now },
-    });
-    if (claim.count === 0) return false;
-
-    await creditCoins(c.userId, c.coins, {
-      tx,
+    claim: async (tx, c) => {
+      const claim = await tx.poolContribution.updateMany({
+        where: { id: c.id, refundedAt: null },
+        data: { refundedAt: now },
+      });
+      return claim.count > 0;
+    },
+    movement: (c): LedgerMovement => ({
       type: 'GIFT',
       note: 'Pool refund — goal not met',
       entityType: 'pool',
@@ -222,10 +197,26 @@ async function refundContribution(
       // Belt and braces: unique per contribution for all time, so even a
       // resurrected row or a re-run against a restored backup cannot double-pay.
       idempotencyKey: poolRefundRefId(c.id),
-    });
-
-    return true;
+    }),
+    remaining: () => prisma.poolContribution.count({ where: { poolId, refundedAt: null } }),
+    // Only with nothing left owing is it safe to call the pool refunded.
+    // Conditional so a concurrent sweep marking the same pool is a no-op rather
+    // than an overwrite of someone else's timestamp.
+    markRefunded: async () => {
+      const marked = await prisma.pool.updateMany({
+        where: { id: poolId, settledAt: null, refundedAt: null },
+        data: { refundedAt: now, raised: 0 },
+      });
+      return marked.count > 0;
+    },
   });
+
+  return {
+    contributionsRefunded: r.refunded,
+    coinsReturned: r.coinsReturned,
+    skipped: r.skipped,
+    poolMarked: r.marked,
+  };
 }
 
 // ── create / contribute / settle ─────────────────────────────────────────────
@@ -332,13 +323,16 @@ export async function contribute(
         select: { id: true },
       });
 
-      await debitCoins(userId, coins, {
-        tx,
-        type: 'GIFT',
-        note: 'Pool contribution',
-        entityType: 'pool',
-        entityId: poolId,
-        idempotencyKey: poolContributeRefId(row.id),
+      await holdEscrow(tx, ledgerEscrow, {
+        userId,
+        amount: coins,
+        movement: {
+          type: 'GIFT',
+          note: 'Pool contribution',
+          entityType: 'pool',
+          entityId: poolId,
+          idempotencyKey: poolContributeRefId(row.id),
+        },
       });
 
       const updated = await tx.pool.findUnique({
@@ -390,22 +384,30 @@ async function settlePool(
 ): Promise<boolean> {
   if (!pool.targetId) return false;
 
-  const claim = await tx.pool.updateMany({
-    where: { id: pool.id, settledAt: null, refundedAt: null, expiresAt: { gt: new Date() } },
-    data: { settledAt: new Date() },
-  });
-  if (claim.count === 0) return false;
+  const targetId = pool.targetId;
 
-  await creditCoins(pool.targetId, pool.raised, {
-    tx,
-    type: 'GIFT',
-    note: `Pool settled — ${pool.purpose}`,
-    entityType: 'pool',
-    entityId: pool.id,
-    idempotencyKey: poolSettleRefId(pool.id),
+  return settleEscrow(tx, ledgerEscrow, {
+    claim: async () => {
+      const claim = await tx.pool.updateMany({
+        where: { id: pool.id, settledAt: null, refundedAt: null, expiresAt: { gt: new Date() } },
+        data: { settledAt: new Date() },
+      });
+      return claim.count > 0;
+    },
+    credits: [
+      {
+        userId: targetId,
+        amount: pool.raised,
+        movement: {
+          type: 'GIFT',
+          note: `Pool settled — ${pool.purpose}`,
+          entityType: 'pool',
+          entityId: pool.id,
+          idempotencyKey: poolSettleRefId(pool.id),
+        },
+      },
+    ],
   });
-
-  return true;
 }
 
 // ── reads ────────────────────────────────────────────────────────────────────

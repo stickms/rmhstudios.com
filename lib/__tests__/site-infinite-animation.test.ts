@@ -281,7 +281,7 @@ function perpetual(
  * The frozen debt, 2026-10-23: `file :: keyframe` → why it may loop. Each is a transient or tiny element (a loader
  * that exists only while something loads, a skeleton that exists only until content lands, a live dot) — none is a
  * surface or a backdrop. Remove an entry when its loop goes; never add one. New ambient motion goes through the jelly
- * services (docs/plasmatic-jelly-system.md).
+ * services (docs/archive/2026/plasmatic-jelly-system.md).
  *
  * Removed 2026-10-23 (H1): `dock-globe-shimmer` and `dock-globe-glint` (now one sweep per hover) and
  * `globe-current-halo` (now three breaths when a pin becomes current). The entries had called them "icon-sized" and

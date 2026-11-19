@@ -182,7 +182,7 @@ export function JamDetail({ slug }: { slug: string }) {
                 defaultValue:
                   'Publish a public User Build during the jam, then come back to enter it.',
               })}{' '}
-              <Link to="/user-builds" className="underline">
+              <Link to="/create/builds" className="underline">
                 {t('jam-builds-link', { defaultValue: 'Your builds' })}
               </Link>
             </p>

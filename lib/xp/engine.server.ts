@@ -6,13 +6,14 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { levelFromXp } from '@/lib/xp/levels';
-import { CURRENT_SEASON } from '@/lib/battlepass/season';
+import { currentSeasonId } from '@/lib/battlepass/season';
 import { createNotification } from '@/lib/notifications.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
 
 /** Award XP to a user. Returns the new lifetime XP, or null on failure. */
 export async function awardXp(userId: string, amount: number): Promise<number | null> {
   if (amount <= 0) return null;
+  const seasonId = currentSeasonId();
   try {
     // The lifetime-XP upsert and the season-XP upsert touch different rows in
     // different tables with no data dependency, so run them together. The upsert
@@ -28,8 +29,8 @@ export async function awardXp(userId: string, amount: number): Promise<number | 
       }),
       // Mirror into the current season's progress for the battle pass.
       prisma.userSeasonProgress.upsert({
-        where: { userId_seasonId: { userId, seasonId: CURRENT_SEASON.id } },
-        create: { userId, seasonId: CURRENT_SEASON.id, seasonXp: amount },
+        where: { userId_seasonId: { userId, seasonId } },
+        create: { userId, seasonId, seasonXp: amount },
         update: { seasonXp: { increment: amount } },
       }),
     ]);

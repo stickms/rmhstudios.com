@@ -385,7 +385,7 @@ export default tseslint.config(
         // silently cancels the split for every page that loads it, and the 121
         // files that correctly use `m` get nothing.
         //
-        // Fifteen modules had regressed to `motion` (including `radial/Parallax`,
+        // Fifteen modules had regressed to `motion` (including the since-deleted `radial/Parallax`,
         // which is in the site shell and therefore on every `_site` route's
         // critical path); all fixed 2026-08-12. See
         // docs/archive/2026/performance-audit-2026-08-12.md §1.3.

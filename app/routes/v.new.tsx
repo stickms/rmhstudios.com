@@ -34,7 +34,7 @@ export const Route = createFileRoute('/v/new')({
     kind: search.kind === 'widget' ? ('widget' as const) : ('page' as const),
   }),
   beforeLoad: ({ search }) => {
-    if (!search.prompt.trim()) throw redirect({ to: '/v' });
+    if (!search.prompt.trim()) throw redirect({ to: '/create' });
   },
   component: VibeNew,
 });
@@ -229,7 +229,7 @@ function VibeError({ message }: { message: string }) {
     <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-6 text-center">
       <p className="vibe-rise text-2xl font-bold tracking-tight">{t("couldnt-create-that-vibe", { defaultValue: "Couldn't create that vibe" })}</p>
       <p className="vibe-rise-2 vibe-hint max-w-md">{message}</p>
-      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta">
+      <Link to="/create" className="vibe-rise-3 vibe-toolbar__cta">
         {t("back-to-pages", { defaultValue: "Back to pages" })}
       </Link>
     </div>

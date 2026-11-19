@@ -206,8 +206,8 @@ export type WindowFilterResult =
  * Answering it properly needs an append-only run table (one row per submitted
  * run, `MAX(score)` grouped by player over the window). When that exists, this
  * function grows the other branches and nothing above it changes. `season` is
- * blocked for the same reason plus a second one: `lib/battlepass/season.ts`
- * declares `endsAt` and no start date, so there is no boundary to filter on.
+ * blocked for the same reason; the boundary itself now exists
+ * (`buildSeason(n).startsAt` / `endsAt` in `lib/battlepass/season.ts`).
  */
 export function windowFilter(window: LeaderboardWindow): WindowFilterResult {
   if (window === 'all') return { supported: true, where: {} };

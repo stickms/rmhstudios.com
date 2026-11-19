@@ -190,7 +190,8 @@ export function RmhCalculatorApp() {
             }
           />
           <Link
-            to="/apps"
+            to="/games"
+            search={{ kind: 'app' }}
             onClick={
               goBack
             }

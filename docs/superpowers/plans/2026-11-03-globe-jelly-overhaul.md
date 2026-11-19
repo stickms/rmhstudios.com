@@ -98,7 +98,7 @@ Post cards, panels, dialogs, sheets, fields, menus use `--site-radius` 32px→44
 
 ### Task 7: Docs
 
-Update `CLAUDE.md`, `components/CLAUDE.md`, `docs/plasmatic-jelly-system.md`, `design.md`, `docs/page-consistency.md` (silhouette vs host bounds, 24 nodes, flat controls, room guarantee, clipping gate). Commit with Task 6's final PR.
+Update `CLAUDE.md`, `components/CLAUDE.md`, `docs/archive/2026/plasmatic-jelly-system.md`, `design.md`, `docs/page-consistency.md` (silhouette vs host bounds, 24 nodes, flat controls, room guarantee, clipping gate). Commit with Task 6's final PR.
 
 ---
 

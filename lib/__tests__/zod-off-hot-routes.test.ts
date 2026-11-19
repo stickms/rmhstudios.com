@@ -42,7 +42,6 @@ const HOT_ROUTES = [
   'app/routes/_site/communities.tsx',
   'app/routes/_site/messages/index.tsx',
   'app/routes/_site/messages/$conversationId.tsx',
-  'app/routes/_site/notifications.tsx',
   // Second tier — same fix, same day. (`rmhladder/jobs/$jobId` is absent on
   // purpose: its loader imports `lib/rmhladder/server/actions.ts`, which is zod
   // but runs only in a server function, so the bundler drops it from the

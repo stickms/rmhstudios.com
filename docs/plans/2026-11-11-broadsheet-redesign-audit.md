@@ -767,7 +767,7 @@ pass:
 | Site colour utilities      | 6,502 uses in 706 files (these keep working: the names are roles)                                                                                                        |
 | Material code              | `lib/jelly` 13,205 lines · `lib/eversion` 27,773 · `lib/liquid` 1,685 · `components/radial` 20,957 · material CSS 2,836 · wasm 564 · hooks 632                           |
 | Tests pinning the material | ≈45 files in `lib/__tests__` plus 30 in `lib/jelly`, 28 in `lib/eversion`, 8 in `lib/liquid`, 10 in `components/radial`                                                  |
-| Docs describing it         | ≈13,000 lines across `design.md`, `docs/design-language.md`, `docs/plasmatic-jelly-system.md`, plans and specs                                                           |
+| Docs describing it         | ≈13,000 lines across `design.md`, `docs/design-language.md`, `docs/archive/2026/plasmatic-jelly-system.md`, plans and specs                                                           |
 | Exempt from the system     | 40 component directories, 29 route segments                                                                                                                              |
 
 ### 2.5 Backend, deploy, CI (unchanged by the redesign, listed for Part B)
@@ -3650,10 +3650,10 @@ Archive
 to
 `docs/archive/2026/`:
 `docs/design-language.md`,
-`docs/plasmatic-jelly-system.md`,
-`docs/liquid-glass-system.md`,
-`docs/jelly-group-audit.md`,
-`docs/plans/plasmatic-jelly/`,
+`docs/archive/2026/plasmatic-jelly-system.md`,
+`docs/archive/2026/liquid-glass-system.md`,
+`docs/archive/2026/jelly-group-audit.md`,
+`docs/archive/2026/plans/plasmatic-jelly/`,
 the
 liquid-glass
 and

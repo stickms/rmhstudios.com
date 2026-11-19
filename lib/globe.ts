@@ -4,7 +4,7 @@
  *
  * ## Why this is one module and not three
  *
- * The site navigates by a **liquid globe** (`components/radial/`): a wireframe
+ * The site navigates by a globe (`lib/globe/`, `components/shell/`): a wireframe
  * sphere you turn with a finger, with things pinned to its surface and a wave
  * that travels over the glass when you poke it. That object is this site's idiom
  * for "a set of things laid out on a surface you explore", and it is now read by

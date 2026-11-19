@@ -110,7 +110,7 @@ function RmhCodePage() {
     <div className="app-ground relative bg-site-bg">
       {/* Back Button */}
       <div className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-50">
-        <Link to="/apps" onClick={goBack}>
+        <Link to="/games" search={{ kind: 'app' }} onClick={goBack}>
           <Button variant="default" size="sm" className="surface-card text-xs sm:text-sm">
             <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">{t("back-to-builds", { defaultValue: "Back to Builds" })}</span>
@@ -274,7 +274,7 @@ function RmhCodePage() {
         <motion.div {...inViewProps}>
           <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Package className="w-5 h-5 text-site-accent" />{t("rmh-builds-heading", { defaultValue: "RMH Builds Integration" })}</h2>
-            <p className="text-sm text-site-text-muted mb-6">{t("rmh-builds-desc-prefix", { defaultValue: "Publish and manage projects on the" })}{' '}<Link to="/user-builds" className="text-site-accent hover:text-site-accent">{t("user-builds-link", { defaultValue: "User Builds" })}</Link>{' '}{t("rmh-builds-desc-suffix", { defaultValue: "showcase directly from the terminal." })}</p>
+            <p className="text-sm text-site-text-muted mb-6">{t("rmh-builds-desc-prefix", { defaultValue: "Publish and manage projects on the" })}{' '}<Link to="/create/builds" className="text-site-accent hover:text-site-accent">{t("user-builds-link", { defaultValue: "User Builds" })}</Link>{' '}{t("rmh-builds-desc-suffix", { defaultValue: "showcase directly from the terminal." })}</p>
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-site-text mb-2">{t("auth-subheading", { defaultValue: "Authentication" })}</h3>
               <p className="text-sm text-site-text-muted mb-3">{t("auth-subheading-desc", { defaultValue: "Generate a token above, then use it with the CLI. Or use the browser-based flow:" })}</p>
@@ -338,7 +338,7 @@ function RmhCodePage() {
         </motion.div>
 
         <motion.div {...inViewProps}>
-          <Link to="/user-builds">
+          <Link to="/create/builds">
             <div className="surface-card rounded-site p-6 hover:border-site-text hover:border-site-text transition-colors group">
               <div className="flex items-center justify-between">
                 <div>

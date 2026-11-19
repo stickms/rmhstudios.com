@@ -20,7 +20,7 @@ const DEG =
 
 /**
  * Perspective, as a multiple of the stage width — the same constant the nav
- * globe uses (`components/radial/LiquidGlobe.tsx`), and for the same reason:
+ * globe uses (`lib/globe/`, inherited from the deleted radial globe), and for the same reason:
  * the CSS `perspective` on the stage and the projection in JS have to read one
  * number or the pins slide off the wireframe they are standing on.
  */

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 390 routes. 203 render inside the standard site shell (sidebar, nav, context rail); 187 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 359 routes. 176 render inside the standard site shell (sidebar, nav, context rail); 183 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -42,8 +42,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/flags` | Feature Flags | admin | `app/routes/_site/admin/flags.tsx` |
 | `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
 | `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |
-| `/admin/library-quota` | redirects to `/admin/library?tab=appeals` | admin | `app/routes/_site/admin/library-quota.tsx` |
-| `/admin/library-storage` | redirects to `/admin/library?tab=storage` | admin | `app/routes/_site/admin/library-storage.tsx` |
 | `/admin/market` | Marketplace Review | admin | `app/routes/_site/admin/market.tsx` |
 | `/admin/patch-notes` | Patch Notes \| Admin | admin | `app/routes/_site/admin/patch-notes.tsx` |
 | `/admin/performance` | Performance | admin | `app/routes/_site/admin/performance.tsx` |
@@ -62,14 +60,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/user-builds` | All User Builds \| Admin | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
 | `/advent` | — | public | `app/routes/_site/advent.tsx` |
-| `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
-| `/apps` | redirects to `/games?kind=app` | public | `app/routes/_site/apps/index.tsx` |
 | `/arcade` | Arcade | public | `app/routes/_site/arcade.tsx` |
-| `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
 | `/blog/:slug` | — | public | `app/routes/_site/blog/$slug.tsx` |
-| `/bookmarks` | redirects to `/saves?tab=saved` | public | `app/routes/_site/bookmarks.tsx` |
-| `/builds` | redirects to `/games` | public | `app/routes/_site/builds/index.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/c/:slug/invite/:code` | Community invite | public | `app/routes/_site/c.$slug_.invite.$code.tsx` |
@@ -83,13 +76,11 @@ Standard pages, rendered inside the sidebar shell.
 | `/create/builds` | User Builds | public | `app/routes/_site/create/builds.tsx` |
 | `/create/earnings` | Earnings | public | `app/routes/_site/create/earnings.tsx` |
 | `/create/personas` | AI Personas | public | `app/routes/_site/create/personas.tsx` |
-| `/creator-studio` | redirects to `/create/earnings` | public | `app/routes/_site/creator-studio.tsx` |
 | `/daily-mutator` | Daily Mutator | public | `app/routes/_site/daily-mutator.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/developer/ai-practices` | Coding with AI \| RMH Studios Developer | public | `app/routes/_site/developer/ai-practices.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
 | `/emoji-packs` | Emoji & sticker packs | public | `app/routes/_site/emoji-packs.tsx` |
-| `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |
 | `/exchange` | — | public | `app/routes/_site/exchange.index.tsx` |
 | `/exchange/:id` | — | public | `app/routes/_site/exchange.$id.tsx` |
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
@@ -104,19 +95,14 @@ Standard pages, rendered inside the sidebar shell.
 | `/homes/listing/:id` | Listing \| RMHHomes | public | `app/routes/_site/homes/listing.$id.tsx` |
 | `/homes/manage` | RMHHomes — Your homes | public | `app/routes/_site/homes/manage.tsx` |
 | `/homes/rent-split` | Fair Rent Split Calculator \| RMHHomes | public | `app/routes/_site/homes/rent-split.tsx` |
-| `/homes/saved` | redirects to `/homes/manage?tab=saved` | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
-| `/homes/watches` | redirects to `/homes/manage?tab=alerts` | public | `app/routes/_site/homes/watches.tsx` |
 | `/hunt` | — | public | `app/routes/_site/hunt.tsx` |
 | `/jams` | Game Jams | public | `app/routes/_site/jams.index.tsx` |
 | `/jams/:slug` | Game Jam | public | `app/routes/_site/jams.$slug.tsx` |
-| `/leaderboard` | redirects to `/arcade?sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
-| `/lists` | redirects to `/saves?tab=lists` | public | `app/routes/_site/lists/index.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
 | `/marathon` | — | public | `app/routes/_site/marathon.index.tsx` |
 | `/marathon/:shareId` | — | public | `app/routes/_site/marathon.$shareId.tsx` |
-| `/market` | redirects to `/store?tab=market` | public | `app/routes/_site/market.tsx` |
 | `/messages` | Inbox | public | `app/routes/_site/messages/index.tsx` |
 | `/messages/:conversationId` | Conversation | public | `app/routes/_site/messages/$conversationId.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
@@ -124,16 +110,12 @@ Standard pages, rendered inside the sidebar shell.
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
 | `/news/:slug` | — | public | `app/routes/_site/news/$slug.tsx` |
 | `/news/stories/:slug` | — | public | `app/routes/_site/news/stories/$slug.tsx` |
-| `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
 | `/office-hours` | Office hours | public | `app/routes/_site/office-hours/index.tsx` |
 | `/office-hours/:userId` | Book office hours | public | `app/routes/_site/office-hours/$userId.tsx` |
 | `/out` | — | public | `app/routes/_site/out.tsx` |
-| `/personas` | redirects to `/create/personas` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Persona | public | `app/routes/_site/personas/$id.tsx` |
 | `/photo-of-the-day` | Photo of the day | public | `app/routes/_site/photo-of-the-day.tsx` |
-| `/playlists` | redirects to `/library?view=playlists` | public | `app/routes/_site/playlists.tsx` |
 | `/predictions` | Predictions | public | `app/routes/_site/predictions.tsx` |
-| `/pricing` | redirects to `/store?tab=membership` | public | `app/routes/_site/pricing.tsx` |
 | `/profile/:id` | redirects to `/u/$userid` | public | `app/routes/_site/profile/$id.tsx` |
 | `/progress` | Progress | public | `app/routes/_site/progress.tsx` |
 | `/psychology` | redirects to `/rmh-research/psychology` | public | `app/routes/_site/psychology.tsx` |
@@ -176,10 +158,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/services/cars` | RMH Cars | public | `app/routes/_site/services/cars.tsx` |
 | `/services/fashion` | RMH Fashion | public | `app/routes/_site/services/fashion.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
-| `/settings/account-status` | redirects to `/settings/security` | public | `app/routes/_site/settings/account-status.tsx` |
 | `/settings/appearance` | Appearance | public | `app/routes/_site/settings/appearance.tsx` |
-| `/settings/calendar` | redirects to `/settings/notifications` | public | `app/routes/_site/settings/calendar.tsx` |
-| `/settings/circle` | redirects to `/settings/privacy` | public | `app/routes/_site/settings/circle.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
 | `/settings/layout` | Sidebar | public | `app/routes/_site/settings/layout.tsx` |
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |
@@ -188,14 +167,11 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/security` | Security | public | `app/routes/_site/settings/security.tsx` |
 | `/settings/themes` | Theme Studio | public | `app/routes/_site/settings/themes.tsx` |
 | `/share` | Share to RMH Studios | public | `app/routes/_site/share.tsx` |
-| `/shop` | redirects to `/store?tab=shop` | public | `app/routes/_site/shop.tsx` |
 | `/site-history` | Site history | public | `app/routes/_site/site-history.tsx` |
-| `/spaces` | redirects to `/communities?tab=spaces` | public | `app/routes/_site/spaces.index.tsx` |
 | `/spaces/:id` | — | public | `app/routes/_site/spaces.$id.tsx` |
 | `/speedruns` | Speedruns | public | `app/routes/_site/speedruns.tsx` |
 | `/store` | Store | public | `app/routes/_site/store/index.tsx` |
 | `/store/:userid` | Store | public | `app/routes/_site/store/$userid.tsx` |
-| `/studio/themes` | redirects to `/settings/themes` | public | `app/routes/_site/studio/themes.tsx` |
 | `/study` | Flashcards | public | `app/routes/_site/study/index.tsx` |
 | `/study/:deckId` | Deck \| RMHStudy | public | `app/routes/_site/study/$deckId.tsx` |
 | `/study/browse` | Browse decks | public | `app/routes/_site/study/browse.tsx` |
@@ -208,18 +184,15 @@ Standard pages, rendered inside the sidebar shell.
 | `/trash` | Trash | public | `app/routes/_site/trash.tsx` |
 | `/u/:userid` | User Not Found \| RMH | public | `app/routes/_site/u/$userid/index.tsx` |
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
-| `/user-builds` | redirects to `/games` | public | `app/routes/_site/user-builds/index.tsx` |
 | `/user-builds/:slug` | — | public | `app/routes/_site/user-builds/$slug.tsx` |
 | `/user-builds/manage` | Manage builds | public | `app/routes/_site/user-builds/manage.tsx` |
 | `/user-builds/submit` | Submit a build | public | `app/routes/_site/user-builds/submit.tsx` |
-| `/v` | redirects to `/create` | public | `app/routes/_site/v/index.tsx` |
 | `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |
 | `/wallet` | Wallet | public | `app/routes/_site/wallet.tsx` |
 | `/when` | Find a time | public | `app/routes/_site/when/index.tsx` |
 | `/when/:id` | Availability poll | public | `app/routes/_site/when/$id.tsx` |
-| `/wishlist` | redirects to `/saves?tab=wishlist` | public | `app/routes/_site/wishlist.tsx` |
 | `/wrapped` | Wrapped | public | `app/routes/_site/wrapped.tsx` |
 
 ## Full-screen
@@ -241,7 +214,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/controller/:code` | Phone Controller | public | `app/routes/controller.$code.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
-| `/covid` | — | public | `app/routes/covid.tsx` |
 | `/csgo` | — | public | `app/routes/csgo.tsx` |
 | `/daily` | Daily Puzzles | public | `app/routes/daily/index.tsx` |
 | `/daily/alibi` | Alibi \| Daily Puzzles | public | `app/routes/daily/alibi.tsx` |
@@ -292,13 +264,11 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/laundry-sort` | Laundry Sort | public | `app/routes/laundry-sort.tsx` |
 | `/library/:slug` | — | public | `app/routes/library.$slug.tsx` |
 | `/library/albums/:albumId` | — | public | `app/routes/library.albums.$albumId.tsx` |
-| `/lights-out` | redirects to `/daily/lights-out` | public | `app/routes/lights-out.tsx` |
 | `/login` | Login \| RMH | public | `app/routes/login.tsx` |
 | `/neon-driftway` | — | public | `app/routes/neon-driftway.tsx` |
 | `/news/rss.xml` | RMH Studios — News | public | `app/routes/news.rss[.]xml.ts` |
 | `/nightrail` | — | public | `app/routes/nightrail.tsx` |
 | `/offline` | Offline | public | `app/routes/offline.tsx` |
-| `/optimization` | — | public | `app/routes/optimization.tsx` |
 | `/pf2ecal` | PF2e Calendar | public | `app/routes/pf2ecal.tsx` |
 | `/portal` | — | public | `app/routes/portal.tsx` |
 | `/privacy` | Privacy Policy | public | `app/routes/privacy.tsx` |
@@ -373,7 +343,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/slice-it/edit/:songId` | Chart editor — Slice It! | public | `app/routes/slice-it/edit.$songId.tsx` |
 | `/slice-it/player/:handle` | — | public | `app/routes/slice-it/player.$handle.tsx` |
 | `/sohumbum` | Is Sohum Joshi A Bum Yet? | public | `app/routes/sohumbum.tsx` |
-| `/sohumbum2` | redirects to `/sohumtracker` | public | `app/routes/sohumbum2/index.tsx` |
 | `/sohumbum2/:date` | redirects to `/sohumtracker/$date` | public | `app/routes/sohumbum2/$date.tsx` |
 | `/sohumtracker` | What Is Sohum Doing Right Now? | public | `app/routes/sohumtracker/index.tsx` |
 | `/sohumtracker/:date` | — | public | `app/routes/sohumtracker/$date.tsx` |
@@ -410,7 +379,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/tf2/workshop` | TF2 Workshop | public | `app/routes/tf2/workshop.tsx` |
 | `/u/:handle/rss.xml` | — | public | `app/routes/u.$handle.rss[.]xml.ts` |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |
-| `/v/new` | redirects to `/v` | public | `app/routes/v.new.tsx` |
+| `/v/new` | redirects to `/create` | public | `app/routes/v.new.tsx` |
 | `/velum2099` | — | public | `app/routes/velum2099.tsx` |
 | `/versecraft` | — | public | `app/routes/versecraft/index.tsx` |
 | `/vibe-frame` | — | public | `app/routes/vibe-frame.ts` |

@@ -51,10 +51,10 @@ describe('rankResumeCards — ordering', () => {
   it('orders across sources, not within them', () => {
     const ranked = rankResumeCards([
       makeCard({ kind: 'deck', href: '/study/d1', updatedAt: '2026-08-02T00:00:00.000Z' }),
-      makeCard({ kind: 'read', href: '/library/x', updatedAt: '2026-08-04T00:00:00.000Z' }),
+      makeCard({ kind: 'watch', href: '/library/x', updatedAt: '2026-08-04T00:00:00.000Z' }),
       makeCard({ kind: 'game', href: '/hearthworks', updatedAt: '2026-08-03T00:00:00.000Z' }),
     ]);
-    expect(ranked.map((c) => c.kind)).toEqual(['read', 'game', 'deck']);
+    expect(ranked.map((c) => c.kind)).toEqual(['watch', 'game', 'deck']);
   });
 });
 
@@ -94,8 +94,8 @@ describe('rankResumeCards — limiting', () => {
 describe('rankResumeCards — de-duplication and unusable cards', () => {
   it('shows one card per destination, keeping the most recent', () => {
     const ranked = rankResumeCards([
-      makeCard({ kind: 'read', href: '/library/x', updatedAt: '2026-08-01T00:00:00.000Z' }),
-      makeCard({ kind: 'read', href: '/library/x', updatedAt: '2026-08-05T00:00:00.000Z' }),
+      makeCard({ kind: 'watch', href: '/library/x', updatedAt: '2026-08-01T00:00:00.000Z' }),
+      makeCard({ kind: 'watch', href: '/library/x', updatedAt: '2026-08-05T00:00:00.000Z' }),
     ]);
     expect(ranked).toHaveLength(1);
     expect(ranked[0].updatedAt).toBe('2026-08-05T00:00:00.000Z');
@@ -103,7 +103,7 @@ describe('rankResumeCards — de-duplication and unusable cards', () => {
 
   it('treats the same path under different kinds as different cards', () => {
     const ranked = rankResumeCards([
-      makeCard({ kind: 'read', href: '/library/x', updatedAt: '2026-08-01T00:00:00.000Z' }),
+      makeCard({ kind: 'draft', href: '/library/x', updatedAt: '2026-08-01T00:00:00.000Z' }),
       makeCard({ kind: 'watch', href: '/library/x', updatedAt: '2026-08-02T00:00:00.000Z' }),
     ]);
     expect(ranked).toHaveLength(2);

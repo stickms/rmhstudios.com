@@ -69,14 +69,14 @@
 
 **Files:**
 - (Note, 2026-11-08: Task 5 deleted `testing/e2e/{liquid-glass,liquid-glass-engine,jelly-theme-navigation}.mjs` and `pnpm audit:jelly-clip`; skip those and use `pnpm audit:pages` for the browser sweep.)
-- Modify: `app/{jelly-material,globals,liquid-glass,jelly-coverage,jelly-arcs}.css`, `components/radial/radial.css`, `components/radial/eversion/eversion.css`, `components/shared/app-theme.css`, `features/slice-it/ui/slice-it.css`, `components/kaikai-debt/kaikai-debt.css`, `components/Providers.tsx`, `app/routes/__root.tsx`, `testing/e2e/*.mjs` (jelly-interaction, liquid-glass, liquid-glass-engine, jelly-theme-navigation), `CLAUDE.md`, `lib/CLAUDE.md`, `components/CLAUDE.md`, `docs/plasmatic-jelly-system.md`, `docs/design-language.md`
+- Modify: `app/{jelly-material,globals,liquid-glass,jelly-coverage,jelly-arcs}.css`, `components/radial/radial.css`, `components/radial/eversion/eversion.css`, `components/shared/app-theme.css`, `features/slice-it/ui/slice-it.css`, `components/kaikai-debt/kaikai-debt.css`, `components/Providers.tsx`, `app/routes/__root.tsx`, `testing/e2e/*.mjs` (jelly-interaction, liquid-glass, liquid-glass-engine, jelly-theme-navigation), `CLAUDE.md`, `lib/CLAUDE.md`, `components/CLAUDE.md`, `docs/archive/2026/plasmatic-jelly-system.md`, `docs/design-language.md`
 - Delete: `lib/perf-tier.ts`, `lib/performance-tier.ts`, `lib/__tests__/performance-tier.test.ts`, `lib/__tests__/perf-tier-script.test.ts`
 - Test: `lib/__tests__/{site-infinite-animation,jelly-woken-haze,jelly-contract,fouc-contract,native-material-routes}.test.ts`, `lib/eversion/__tests__/eversion-css.test.ts`
 
 **Interfaces:** Consumes Task 1 and 2. Produces: no `.perf-lite` selector and no `perf-lite` string in `app/`, `components/`, `lib/` outside tests that assert its absence.
 
 - [ ] **Step 1: Add the guard test** `lib/__tests__/no-perf-lite.test.ts`: walks `app/**/*.css`, `components/**/*.css`, `lib/**/*.ts(x)`, `hooks/**`, `app/routes/__root.tsx` and fails on the string `perf-lite` (allowlist: this test file). Run — expect FAIL listing every file.
-- [ ] **Step 2: Remove** the rules and the pre-paint stamping script; where a rule had a `:not(.perf-lite)` prefix, drop only the prefix; where a block existed only for `.perf-lite`, delete the block. Keep print and `.app-high-contrast` blocks. Update the four docs: the Plasmatic Jelly sections of `CLAUDE.md`/`lib/CLAUDE.md`/`components/CLAUDE.md`, the degradation tables in `docs/plasmatic-jelly-system.md` and `docs/design-language.md`.
+- [ ] **Step 2: Remove** the rules and the pre-paint stamping script; where a rule had a `:not(.perf-lite)` prefix, drop only the prefix; where a block existed only for `.perf-lite`, delete the block. Keep print and `.app-high-contrast` blocks. Update the four docs: the Plasmatic Jelly sections of `CLAUDE.md`/`lib/CLAUDE.md`/`components/CLAUDE.md`, the degradation tables in `docs/archive/2026/plasmatic-jelly-system.md` and `docs/design-language.md`.
 - [ ] **Step 3: Run** `pnpm exec vitest run lib/__tests__ lib/eversion lib/jelly` and `pnpm check:consistency --base origin/main` — expect PASS.
 - [ ] **Step 4: Commit** `refactor: remove perf-lite from the material, the document and the docs`.
 
@@ -147,10 +147,10 @@
 
 ### Task 8: Measure, look, decide, document
 
-**Files:** `.superpowers/sdd/2026-11-08-refractive-glass/` (reports and screenshots), `docs/plasmatic-jelly-system.md` (§1.2 now describes the SVG-filter rim), `CLAUDE.md` / `lib/CLAUDE.md` / `components/CLAUDE.md` Plasmatic Jelly sections, `lib/jelly/tiers.ts` (`refractHosts` values from measurement), `lib/liquid/glass/scene.ts` (handheld policy)
+**Files:** `.superpowers/sdd/2026-11-08-refractive-glass/` (reports and screenshots), `docs/archive/2026/plasmatic-jelly-system.md` (§1.2 now describes the SVG-filter rim), `CLAUDE.md` / `lib/CLAUDE.md` / `components/CLAUDE.md` Plasmatic Jelly sections, `lib/jelly/tiers.ts` (`refractHosts` values from measurement), `lib/liquid/glass/scene.ts` (handheld policy)
 
 - [ ] **Step 1: Visual acceptance.** Playwright screenshots (deviceScaleFactor 2) in Chromium, Firefox, WebKit: top bar over a feed image, a menu over cards, a dialog, an overlapping-glass case, in Daylight and Midnight at 390 and 1280 px; confirm the RGB split and that a card's own edge does not double (Spec call 4; if it does, hide the host from the picture for that surface and note it).
 - [ ] **Step 2: Performance bar.** Re-run Task 4's harness for PR B against baseline B; Firefox/WebKit/Chromium per the Global Constraints. Include a long-feed fast-scroll run.
 - [ ] **Step 3: Decide.** If any bar metric is more than 10% worse: lower `refractHosts`, then try `chrome/overlay/pane` only (Approach 2) behind the same code path, and report. If handheld fits the WebKit bar, set its policy and cap; otherwise leave 0 and say so.
-- [ ] **Step 4: Docs.** Rewrite the refraction/rim passages in the three CLAUDE.md files and `docs/plasmatic-jelly-system.md` to the shipped design; `pnpm check:consistency --base origin/main` passes.
+- [ ] **Step 4: Docs.** Rewrite the refraction/rim passages in the three CLAUDE.md files and `docs/archive/2026/plasmatic-jelly-system.md` to the shipped design; `pnpm check:consistency --base origin/main` passes.
 - [ ] **Step 5: Commit** `docs+perf(refract): measured budget, handheld decision and the shipped contract`; controller opens PR B, merges on green CI.

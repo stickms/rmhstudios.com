@@ -3,7 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { unlockBattlePassApi } from '@/lib/battlepass/battlepass.contract';
 import { prisma } from '@/lib/prisma.server';
 import { debitCoins } from '@/lib/economy/ledger.server';
-import { CURRENT_SEASON } from '@/lib/battlepass/season';
+import { getActiveSeason } from '@/lib/battlepass/active.server';
 
 /** POST /api/battlepass/unlock — unlock the premium track by spending RMH coins. */
 export const route = apiRoute('/api/battlepass/unlock', {
@@ -13,19 +13,20 @@ export const route = apiRoute('/api/battlepass/unlock', {
     async ({ session }) => {
       try {
         const userId = session.user.id;
-        const price = CURRENT_SEASON.premiumPrice;
+        const season = await getActiveSeason();
+        const price = season.premiumPrice;
 
         await prisma.$transaction(async (tx) => {
           await tx.userSeasonProgress.upsert({
-            where: { userId_seasonId: { userId, seasonId: CURRENT_SEASON.id } },
-            create: { userId, seasonId: CURRENT_SEASON.id },
+            where: { userId_seasonId: { userId, seasonId: season.id } },
+            create: { userId, seasonId: season.id },
             update: {},
           });
           // Atomically claim the premium flag (false→true). Concurrent unlocks
           // race here; only the one that actually flips it proceeds to charge,
           // so premium can never be bought twice.
           const flip = await tx.userSeasonProgress.updateMany({
-            where: { userId, seasonId: CURRENT_SEASON.id, premium: false },
+            where: { userId, seasonId: season.id, premium: false },
             data: { premium: true },
           });
           if (flip.count === 0) throw new Error('ALREADY_PREMIUM');
@@ -35,11 +36,11 @@ export const route = apiRoute('/api/battlepass/unlock', {
             tx,
             type: 'PURCHASE',
             entityType: 'battlepass',
-            entityId: CURRENT_SEASON.id,
+            entityId: season.id,
             note: 'Premium pass',
             // One premium pass per user per season — a stable dedupe key, so
             // a retried unlock cannot charge twice.
-            idempotencyKey: `battlepass:${userId}:${CURRENT_SEASON.id}`,
+            idempotencyKey: `battlepass:${userId}:${season.id}`,
           });
         });
 

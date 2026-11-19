@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1021 endpoints across 201 groups: 110 route files under `app/routes/api` and 911 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1014 endpoints across 198 groups: 110 route files under `app/routes/api` and 904 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -279,14 +279,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/blog/:slug/comments` | `GET` `POST` | `lib/blog/api/blog.$slug.comments.server.ts` |
 | `/api/blog/comments/:id` | `DELETE` | `lib/blog/api/blog.comments.$id.server.ts` |
 | `/api/blog/media/:filename` | `GET` | `lib/media/api/blog.media.$filename.server.ts` |
-
-## `/api/bookmarks`
-
-1 route.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/bookmarks` | `GET` | `lib/api/routes/bookmarks.server.ts` |
 
 ## `/api/builds`
 
@@ -991,14 +983,13 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/history`
 
-5 routes.
+4 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/history` | `DELETE` `GET` `PUT` | `lib/shop/api/history.server.ts` |
 | `/api/history/:id` | `DELETE` | `lib/shop/api/history.$id.server.ts` |
 | `/api/history/beat` | `POST` | `lib/history/api/history.beat.server.ts` |
-| `/api/history/position` | `GET` `POST` | `lib/history/api/history.position.server.ts` |
 | `/api/history/resume` | `GET` | `lib/history/api/history.resume.server.ts` |
 
 ## `/api/hl2-game`
@@ -1378,16 +1369,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/playlists/:id/items` | `POST` | `lib/playlists/api/playlists.$id.items.server.ts` |
 | `/api/playlists/:id/items/:itemId` | `DELETE` | `lib/playlists/api/playlists.$id.items.$itemId.server.ts` |
 
-## `/api/pools`
-
-3 routes.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/pools` | `GET` `POST` | `lib/commerce/api/pools.server.ts` |
-| `/api/pools/:id` | `GET` | `lib/commerce/api/pools.$id.server.ts` |
-| `/api/pools/:id/contribute` | `POST` | `lib/commerce/api/pools.$id.contribute.server.ts` |
-
 ## `/api/portal-game`
 
 1 route.
@@ -1578,15 +1559,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | ----- | ------- | ------ |
 | `/api/recipes` | `GET` `POST` | `lib/devplatform/api/recipes.server.ts` |
 | `/api/recipes/:id` | `DELETE` `PATCH` | `lib/devplatform/api/recipes.$id.server.ts` |
-
-## `/api/recommend`
-
-2 routes.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/recommend` | `GET` | `lib/recommend/api/recommend.server.ts` |
-| `/api/recommend/feedback` | `POST` | `lib/recommend/api/recommend.feedback.server.ts` |
 
 ## `/api/referrals`
 

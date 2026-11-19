@@ -61,7 +61,7 @@ opaque slabs with press feedback, text keeps 4.5:1 on gel in every theme (test D
 - Lattice outward/inward caps (2px / 10px) and the 8-node lattice → denser lattice; `LATTICE_GLSL` assumes exactly 8
   nodes.
 - "Layout never changes: hosts squash within 4px/3%" in `CLAUDE.md`, `components/CLAUDE.md`,
-  `docs/plasmatic-jelly-system.md`, `design.md`, and the tests that pin them (`jelly-contract`, `jelly-tokens`,
+  `docs/archive/2026/plasmatic-jelly-system.md`, `design.md`, and the tests that pin them (`jelly-contract`, `jelly-tokens`,
   `soft-policy`, `lattice`, `envelope`, `tiers`).
 - `--jelly-margin` (16px) becomes the *guaranteed* unclipped room, not a hope.
 

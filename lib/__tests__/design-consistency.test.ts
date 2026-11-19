@@ -777,7 +777,7 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
           'CARDS: a lighter tint and a moving jelly haze, so a menu built on it ' +
           'sits translucent over whatever it opened on top of and the labels ghost. ' +
           '`.surface-overlay` carries the ≥78% opaque legibility floor shared by every ' +
-          'user, and is first in line for the calm haze (docs/plasmatic-jelly-system.md).',
+          'user, and is first in line for the calm haze (docs/archive/2026/plasmatic-jelly-system.md).',
       ),
     ).toEqual(
       [],

@@ -149,7 +149,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       source:
         'lib/battlepass/api/battlepass.claim.server.ts',
       bounded: true,
-      note: 'Fixed tiers per season.',
+      note: '30 generated tiers per 8-week season (lib/battlepass/season.ts); a cosmetic the player already owns pays its shop price.',
     },
     {
       id: 'creator-earnings-payout',
@@ -189,7 +189,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         '/wager — a settled match',
       source:
-        'lib/wager/wager.server.ts',
+        'lib/wager/wager.server.ts, lib/wager/escrow.server.ts',
       bounded: false,
       note: 'Payouts and stake refunds. Net-negative against the stakes by WAGER_RAKE_BPS.',
       pairsWith:
@@ -213,7 +213,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         'A funding pool settling or refunding',
       source:
-        'lib/commerce/pools.server.ts',
+        'lib/commerce/pools.server.ts, lib/economy/escrow.server.ts',
       bounded: false,
       note: 'Returns what was contributed; supply-neutral across the pair.',
       pairsWith:
@@ -258,7 +258,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         '/wallet?tab=community — a goal that missed its deadline or was cancelled',
       source:
-        'lib/economy/community-goal.server.ts',
+        'lib/economy/community-goal.server.ts, lib/economy/escrow.server.ts',
       bounded: false,
       note: 'Returns exactly what was pledged, once per pledge (claimed refundedAt + ledger key); supply-neutral across the pair.',
       pairsWith:
@@ -294,7 +294,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         '/wallet?tab=community',
       source:
-        'lib/economy/community-goal.server.ts',
+        'lib/economy/community-goal.server.ts, lib/economy/escrow.server.ts',
       bounded: false,
       note: 'Escrowed against a site-wide goal; funded goals keep it (a true sink), missed ones refund it.',
     },
@@ -394,7 +394,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         'Contributing to a pool',
       source:
-        'lib/commerce/pools.server.ts',
+        'lib/commerce/pools.server.ts, lib/economy/escrow.server.ts',
       bounded: false,
       note: 'Held until the pool settles or refunds — escrow, not destruction, across the pair.',
     },
@@ -424,7 +424,7 @@ export const COIN_FLOWS: readonly CoinFlow[] =
       surface:
         '/wager — staking a match',
       source:
-        'lib/wager/wager.server.ts',
+        'lib/wager/wager.server.ts, lib/wager/escrow.server.ts',
       bounded: false,
       note: 'WAGER, via escrow. Gated by W8.',
     },
