@@ -46,7 +46,7 @@ export default function ShelvesPanel() {
       <SignedOutPrompt
         icon={BookMarked}
         title={t('shelves-signed-out', { defaultValue: 'Sign in to keep shelves' })}
-        callbackURL="/reading?tab=shelves"
+        callbackURL="/library?view=reading&tab=shelves"
       />
     );
   }

@@ -38,7 +38,7 @@ function BuildMiniCard({
   return (
     <Link
       to={
-        `/user-builds/${build.slug}` as string
+        `/builds/${build.slug}` as string
       }
     >
       <div className="flex gap-3 rounded-site-sm px-3 py-2 transition-colors hover:bg-site-surface-hover">
@@ -326,7 +326,7 @@ export function BuildSidebar({
           variant="default"
           className="w-full"
         >
-          <Link to="/user-builds/submit">
+          <Link to="/create/builds/submit">
             {t(
               'submit-a-build',
               {

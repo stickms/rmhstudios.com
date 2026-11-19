@@ -228,7 +228,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       iconName:
         'Wallet',
       keywords:
-        'coins balance transactions ledger staking',
+        'coins balance transactions ledger staking vault daily wheel spin',
       requiresAuth: true,
       description:
         'Your coin balance and transactions.',

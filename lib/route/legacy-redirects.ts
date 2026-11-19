@@ -62,6 +62,10 @@ export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   '/lights-out': '/daily/lights-out',
   '/covid': '/rmh-research/reports/feature-leak',
   '/optimization': '/rmh-research/reports/optimization',
+  // Small pages folded into the page that already covered them (2026-11-19).
+  '/changelog': '/site-history#changes',
+  '/breaches': '/security#breaches',
+  '/user-builds/manage': '/create/builds/manage',
 };
 
 /** The target for a legacy pathname, or null when the path is current. */

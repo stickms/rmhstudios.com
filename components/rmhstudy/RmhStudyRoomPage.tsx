@@ -8,14 +8,13 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock, MessageCircle, Users, Timer, Settings, Info, X, Layers } from 'lucide-react';
+import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock, MessageCircle, Users, Timer, Settings, Info, X, Layers, ExternalLink } from 'lucide-react';
 import { connectToRmhStudy, emit, getSocket } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S } from '@/lib/rmhstudy/events';
 import { toast } from '@/lib/shared/app-toast';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
 import BanListModal from '@/components/shared/BanListModal';
-import RmhStudyFlashcards from '@/components/rmhstudy/RmhStudyFlashcards';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { TimerPhase } from '@/lib/rmhstudy/types';
@@ -48,7 +47,7 @@ function phaseColor(phase: TimerPhase): string {
   }
 }
 
-type MobileTab = 'session' | 'flashcards' | 'members' | 'chat';
+type MobileTab = 'session' | 'members' | 'chat';
 
 export default function RmhStudyRoom() {
   const { t } = useTranslation("c-rmhstudy");
@@ -62,7 +61,6 @@ export default function RmhStudyRoom() {
 
   const [newTask, setNewTask] = useState('');
   const [mobileTab, setMobileTab] = useState<MobileTab>('session');
-  const [desktopView, setDesktopView] = useState<'session' | 'flashcards'>('session');
   const [unreadChat, setUnreadChat] = useState(0);
   const prevChatLenRef = useRef(0);
 
@@ -427,26 +425,24 @@ export default function RmhStudyRoom() {
 
       {/* ─── Desktop Layout ─────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden hidden md:flex md:flex-row">
-        {/* Main content — Timer + Tasks / Flashcards */}
+        {/* Main content — Timer + Tasks */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6" style={{ scrollbarGutter: 'stable' }}>
           <div className="max-w-2xl mx-auto">
-            <div className="mb-4 flex gap-1 rounded-app bg-app-surface p-1 text-sm">
-              {(['session', 'flashcards'] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setDesktopView(v)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-app-sm py-1.5 font-medium transition-colors ${
-                    desktopView === v
-                      ? 'bg-app-accent text-app-accent-fg'
-                      : 'text-app-text-muted hover:text-app-text'
-                  }`}
-                >
-                  {v === 'session' ? <Timer className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
-                  {v === 'session' ? t('tab-session', { defaultValue: 'Session' }) : t('tab-flashcards', { defaultValue: 'Flashcards' })}
-                </button>
-              ))}
+            {/* Flashcards are one experience, /study (2026-11-19): the room links
+                to it in a new tab, so you keep your seat while you drill. */}
+            <div className="mb-4 flex justify-end">
+              <a
+                href="/study"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-app-text-muted hover:text-app-text"
+              >
+                <Layers className="h-4 w-4" aria-hidden="true" />
+                {t('open-flashcards', { defaultValue: 'Open flashcards' })}
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              </a>
             </div>
-            {desktopView === 'session' ? timerAndTasks : <RmhStudyFlashcards />}
+            {timerAndTasks}
           </div>
         </div>
 
@@ -478,7 +474,6 @@ export default function RmhStudyRoom() {
               {timerAndTasks}
             </div>
           )}
-          {mobileTab === 'flashcards' && <RmhStudyFlashcards />}
           {mobileTab === 'members' && membersSection}
           {mobileTab === 'chat' && (
             <ChatPanel
@@ -508,15 +503,15 @@ export default function RmhStudyRoom() {
             <Timer className="h-4 w-4" />
             {t('tab-session', { defaultValue: 'Session' })}
           </button>
-          <button
-            onClick={() => setMobileTab('flashcards')}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
-              mobileTab === 'flashcards' ? 'text-app-accent' : 'text-app-text-muted'
-            }`}
+          <a
+            href="/study"
+            target="_blank"
+            rel="noreferrer"
+            className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors text-app-text-muted"
           >
-            <Layers className="h-4 w-4" />
+            <Layers className="h-4 w-4" aria-hidden="true" />
             {t('tab-cards', { defaultValue: 'Cards' })}
-          </button>
+          </a>
           <button
             onClick={() => setMobileTab('members')}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${

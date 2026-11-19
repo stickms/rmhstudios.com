@@ -114,7 +114,7 @@ const NEWS: DocCorpus = {
 
 const BUILDS: DocCorpus = {
   kind: 'build',
-  href: (slug) => `/user-builds/${slug}`,
+  href: (slug) => `/builds/${slug}`,
   table: 'user_build',
   visible: Prisma.sql`visibility = 'PUBLIC'`,
   query: (terms) => Prisma.sql`

@@ -24,6 +24,7 @@ import './security.css';
 import { Button } from '@/components/ui/button';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 import { BugBountyForm } from './BugBountyForm';
+import { BreachesSection } from './BreachesSection';
 import { REWARD_TIERS, CATEGORY_BOUNTIES } from '@/lib/security-report-schema';
 
 /**
@@ -300,6 +301,10 @@ export function SecurityPage() {
         <p className="text-lg leading-relaxed text-site-text-muted">
           You trust us with your account, your work, and sometimes your payment details. We treat
           that trust as the product itself — and engineer for it on every request, in every layer.
+          When something does go wrong, it goes in our{' '}
+          <a href="#breaches" className="text-site-text underline">
+            incident log
+          </a>.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="default" size="lg">
@@ -622,6 +627,9 @@ export function SecurityPage() {
           </div>
         </div>
       </section>
+      {/* ─── Breaches: the incident log (was /breaches) ──────────────── */}
+      <BreachesSection />
+
       {/* ─── FAQ ──────────────────────────────────────────────────────── */}
       <section aria-labelledby="sec-faq-title">
         <h2 id="sec-faq-title">The things people ask.</h2>

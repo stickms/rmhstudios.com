@@ -282,7 +282,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
         });
         entries.push(
           ...rows.map((b) => ({
-            loc: `/user-builds/${b.slug}`,
+            loc: `/builds/${b.slug}`,
             lastmod: b.updatedAt,
             changefreq: 'weekly' as const,
             priority: 0.5,

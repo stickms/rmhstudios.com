@@ -1,13 +1,13 @@
 /**
- * /wallet — the member's coin home (C1 goals, C4 statement, C5 community goals,
- * C7 gifts). The balance header is the only thing that renders eagerly; every
+ * /wallet — the member's coin home (C1 goals, the daily wheel and coin vault,
+ * C4 statement, C5 community goals, C7 gifts). The balance header is the only thing that renders eagerly; every
  * tab body is a lazy chunk fetched when that tab is opened.
  */
 import { lazy } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Flag, Gift, Receipt, Store, Target, TrendingUp, Wallet } from 'lucide-react';
+import { Flag, Gift, Receipt, Sparkles, Store, Target, TrendingUp, Wallet } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { useSession } from '@/components/Providers';
@@ -23,6 +23,7 @@ import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
 export { WALLET_TABS, type WalletTab };
 
 const SavingsGoalsPanel = lazy(() => import('./SavingsGoalsPanel'));
+const EarnPanel = lazy(() => import('./EarnPanel'));
 const StatementPanel = lazy(() => import('./StatementPanel'));
 const CommunityGoalsPanel = lazy(() => import('./CommunityGoalsPanel'));
 const ScheduledGiftsPanel = lazy(() => import('./ScheduledGiftsPanel'));
@@ -54,6 +55,7 @@ export function WalletPage({
 
   const tabs: TabItem[] = [
     { id: 'goals', label: t('wallet-tab-goals', { defaultValue: 'Goals' }), icon: Target },
+    { id: 'earn', label: t('wallet-tab-earn', { defaultValue: 'Earn' }), icon: Sparkles },
     {
       id: 'statement',
       label: t('wallet-tab-statement', { defaultValue: 'Statement' }),
@@ -122,6 +124,7 @@ export function WalletPage({
           <div role="tabpanel" id={`wallet-panel-${tab}`} aria-labelledby={`wallet-tab-${tab}`}>
             <ArrivalSuspense fallback={<PanelFallback />}>
               {tab === 'goals' && <SavingsGoalsPanel />}
+              {tab === 'earn' && <EarnPanel />}
               {tab === 'statement' && <StatementPanel />}
               {tab === 'community' && <CommunityGoalsPanel />}
               {tab === 'gifts' && <ScheduledGiftsPanel />}

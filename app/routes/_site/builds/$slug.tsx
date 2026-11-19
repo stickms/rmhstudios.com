@@ -1,8 +1,11 @@
 /**
  * Build Detail Route — /builds/$slug
  *
- * Official builds (code-defined in games.ts / apps.ts) are checked first; user-
- * submitted builds fall through to the DB.
+ * The one detail page for every build. Official builds (code-defined in the
+ * catalog) are checked first; member builds fall through to the DB. Member
+ * builds used to have a second detail route, `/user-builds/$slug`, rendering the
+ * same `BuildDetail` body; it redirects here now (2026-11-19 consolidation), and
+ * the sitemap, OG cards, notifications and `rmhcode push` all name this path.
  *
  * Lives under `_site/` so it renders inside the standard radial shell with
  * `PageLayout` owning the title/lede/back link. It used to be a top-level
@@ -18,6 +21,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BuildDetail } from '@/components/user-builds';
+import { WatchControl } from '@/components/discovery/WatchControl';
 import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
 import { games, apps } from '@/lib/catalog';
 import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
@@ -99,12 +103,15 @@ function BuildPage() {
       <PageLayout
         title={build.title}
         description={build.description}
-        backTo="/create"
+        backTo="/create/builds"
         backLabel={backLabel}
         wide
       >
         <div className="px-4 pt-4 pb-12">
           <BuildDetail build={build} />
+          <div className="mt-[var(--site-section-gap)] flex justify-end">
+            <WatchControl kind="build" targetId={build.id} />
+          </div>
         </div>
       </PageLayout>
     );
@@ -117,8 +124,8 @@ function BuildPage() {
     <PageLayout
       title={build.title}
       description={build.longDescription}
-      backTo="/create"
-      backLabel={backLabel}
+      backTo="/games"
+      backLabel={t('back-to-games', { defaultValue: 'Back to games' })}
       wide
     >
       <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">

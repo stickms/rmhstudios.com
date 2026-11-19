@@ -215,7 +215,7 @@ export function BuildCard({
     <div className="h-full">
       <Link
         to={
-          `/user-builds/${build.slug}` as string
+          `/builds/${build.slug}` as string
         }
         onClick={(
           e,
@@ -239,7 +239,7 @@ export function BuildCard({
             () =>
               navigate(
                 {
-                  to: `/user-builds/${build.slug}`,
+                  to: `/builds/${build.slug}`,
                 } as never,
               ),
           );

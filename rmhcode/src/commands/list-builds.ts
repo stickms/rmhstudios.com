@@ -155,7 +155,7 @@ export async function listBuilds(): Promise<void> {
     ) {
       console.log(
         color.dim(
-          `\n  ... and more. View all at rmhstudios.com/user-builds`,
+          `\n  ... and more. View all at rmhstudios.com/create/builds`,
         ),
       );
     }
