@@ -219,39 +219,6 @@ enum ListVisibility {
   PUBLIC
 }
 
-/// DEPRECATED (2026-11-19) — copied into CustomFeed (kind 'list'); nothing reads or
-/// writes this; drop next release (contract). Do not add callers.
-model UserList {
-  id         String         @id @default(cuid())
-  ownerId    String
-  name       String         @db.VarChar(50)
-  bio        String?        @db.VarChar(200)
-  visibility ListVisibility @default(PRIVATE)
-  pinned     Boolean        @default(false)
-  createdAt  DateTime       @default(now())
-
-  owner   User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  members UserListMember[]
-
-  @@index([ownerId])
-  @@map("user_list")
-}
-
-/// DEPRECATED (2026-11-19) — copied into CustomFeedMember; nothing reads or writes
-/// this; drop next release (contract). Do not add callers.
-model UserListMember {
-  listId  String
-  userId  String
-  addedAt DateTime @default(now())
-
-  list UserList @relation(fields: [listId], references: [id], onDelete: Cascade)
-  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([listId, userId])
-  @@index([userId]) // "lists you're on"
-  @@map("user_list_member")
-}
-
 /// Collaboratively edited community pages (F21).
 ///
 /// Deliberately shaped like `GameGuide`/`GameGuideRevision` rather than as a

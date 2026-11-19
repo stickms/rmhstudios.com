@@ -150,7 +150,7 @@ export async function createFeed(userId: string, input: CustomFeedInput) {
     return fail(409, `You can have at most ${MAX_FEEDS_PER_USER} feeds`);
   }
   const created = await prisma.customFeed.create({
-    data: { ownerId: userId, kind: 'feed', ...n.data, authorIds: n.people },
+    data: { ownerId: userId, kind: 'feed', ...n.data },
     select: { id: true },
   });
   if (n.people.length) await setFeedPeople(created.id, n.people);

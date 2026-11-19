@@ -356,15 +356,12 @@ model User {
   wishlistEntries     WishlistEntry[]
   closeFriendsOwned   CloseFriend[]    @relation("CircleOwner")
   closeFriendOf       CloseFriend[]    @relation("CircleMember")
-  userLists           UserList[]
-  userListMemberships UserListMember[]
   feedSignals         FeedSignal[]
   gameReviews         GameReview[]
   gameReviewVotes     GameReviewVote[]
   gameGuides          GameGuide[]
   userThemes          UserTheme[]
   profileLayout       ProfileLayout?
-  savedSearches       SavedSearch[]
 
   // ─── Emoji & sticker packs (2026-08-04) ──────────────────────────────────
   emojiPacks       EmojiPack[]
@@ -519,7 +516,6 @@ model User {
   customFeedSubscriptions    CustomFeedSubscription[]
   customFeedMemberships      CustomFeedMember[]
   memoriesOptIn              MemoriesOptIn?
-  keywordAlerts              KeywordAlert[]
   keywordAlertHits           KeywordAlertHit[]
   watches                    Watch[]
   // P06 communities-plus: N3 onboarding answers, N4 mod items, N5 challenge, N6 census, N7 scores
