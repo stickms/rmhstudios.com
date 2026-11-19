@@ -35,7 +35,7 @@
  *
  * Expand/contract: the old tables (`market_listing`, `card_listing`,
  * `storefront_product`, `storefront_purchase`) stay until the contract
- * release. The expand migration (20261120000000_listings_one_model) copied
+ * release. The expand migration (20261120030000_listings_one_model) copied
  * them and installed triggers that mirror every write between them and
  * `listing` in both directions, so the release on the other side of a
  * blue/green swap, or a rollback, sees the same open listings: a listing
