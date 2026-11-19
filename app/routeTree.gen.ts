@@ -15,7 +15,6 @@ import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as BalatroRouteImport } from './routes/balatro'
 import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
-import { Route as BreachesRouteImport } from './routes/breaches'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CopyrightRouteImport } from './routes/copyright'
 import { Route as CsgoRouteImport } from './routes/csgo'
@@ -77,7 +76,6 @@ import { Route as SiteAdventRouteImport } from './routes/_site/advent'
 import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
 import { Route as SiteArcadeRouteImport } from './routes/_site/arcade'
 import { Route as SiteCanvasRouteImport } from './routes/_site/canvas'
-import { Route as SiteChangelogRouteImport } from './routes/_site/changelog'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteCompeteRouteImport } from './routes/_site/compete'
 import { Route as SiteCreateRouteRouteImport } from './routes/_site/create/route'
@@ -530,11 +528,6 @@ const BlackLivesMatterRoute = BlackLivesMatterRouteImport.update({
   path: '/black-lives-matter',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BreachesRoute = BreachesRouteImport.update({
-  id: '/breaches',
-  path: '/breaches',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CookiesRoute = CookiesRouteImport.update({
   id: '/cookies',
   path: '/cookies',
@@ -840,11 +833,6 @@ const SiteArcadeRoute = SiteArcadeRouteImport.update({
 const SiteCanvasRoute = SiteCanvasRouteImport.update({
   id: '/canvas',
   path: '/canvas',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteChangelogRoute = SiteChangelogRouteImport.update({
-  id: '/changelog',
-  path: '/changelog',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteCommunitiesRoute = SiteCommunitiesRouteImport.update({
@@ -3003,7 +2991,6 @@ export interface FileRoutesByFullPath {
   '/altair': typeof AltairRouteWithChildren
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
-  '/breaches': typeof BreachesRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/csgo': typeof CsgoRoute
@@ -3066,7 +3053,6 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
   '/canvas': typeof SiteCanvasRoute
-  '/changelog': typeof SiteChangelogRoute
   '/communities': typeof SiteCommunitiesRoute
   '/compete': typeof SiteCompeteRoute
   '/drafts': typeof SiteDraftsRoute
@@ -3492,7 +3478,6 @@ export interface FileRoutesByTo {
   '/ads.txt': typeof AdsDottxtRoute
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
-  '/breaches': typeof BreachesRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/csgo': typeof CsgoRoute
@@ -3534,7 +3519,6 @@ export interface FileRoutesByTo {
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
   '/canvas': typeof SiteCanvasRoute
-  '/changelog': typeof SiteChangelogRoute
   '/communities': typeof SiteCommunitiesRoute
   '/compete': typeof SiteCompeteRoute
   '/drafts': typeof SiteDraftsRoute
@@ -3959,7 +3943,6 @@ export interface FileRoutesById {
   '/altair': typeof AltairRouteWithChildren
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
-  '/breaches': typeof BreachesRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/csgo': typeof CsgoRoute
@@ -4022,7 +4005,6 @@ export interface FileRoutesById {
   '/_site/analytics': typeof SiteAnalyticsRoute
   '/_site/arcade': typeof SiteArcadeRoute
   '/_site/canvas': typeof SiteCanvasRoute
-  '/_site/changelog': typeof SiteChangelogRoute
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/compete': typeof SiteCompeteRoute
   '/_site/drafts': typeof SiteDraftsRoute
@@ -4454,7 +4436,6 @@ export interface FileRouteTypes {
     | '/altair'
     | '/balatro'
     | '/black-lives-matter'
-    | '/breaches'
     | '/cookies'
     | '/copyright'
     | '/csgo'
@@ -4517,7 +4498,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/arcade'
     | '/canvas'
-    | '/changelog'
     | '/communities'
     | '/compete'
     | '/drafts'
@@ -4943,7 +4923,6 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/balatro'
     | '/black-lives-matter'
-    | '/breaches'
     | '/cookies'
     | '/copyright'
     | '/csgo'
@@ -4985,7 +4964,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/arcade'
     | '/canvas'
-    | '/changelog'
     | '/communities'
     | '/compete'
     | '/drafts'
@@ -5409,7 +5387,6 @@ export interface FileRouteTypes {
     | '/altair'
     | '/balatro'
     | '/black-lives-matter'
-    | '/breaches'
     | '/cookies'
     | '/copyright'
     | '/csgo'
@@ -5472,7 +5449,6 @@ export interface FileRouteTypes {
     | '/_site/analytics'
     | '/_site/arcade'
     | '/_site/canvas'
-    | '/_site/changelog'
     | '/_site/communities'
     | '/_site/compete'
     | '/_site/drafts'
@@ -5903,7 +5879,6 @@ export interface RootRouteChildren {
   AltairRoute: typeof AltairRouteWithChildren
   BalatroRoute: typeof BalatroRoute
   BlackLivesMatterRoute: typeof BlackLivesMatterRoute
-  BreachesRoute: typeof BreachesRoute
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
   CsgoRoute: typeof CsgoRoute
@@ -6123,13 +6098,6 @@ declare module '@tanstack/react-router' {
       path: '/black-lives-matter'
       fullPath: '/black-lives-matter'
       preLoaderRoute: typeof BlackLivesMatterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/breaches': {
-      id: '/breaches'
-      path: '/breaches'
-      fullPath: '/breaches'
-      preLoaderRoute: typeof BreachesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cookies': {
@@ -6557,13 +6525,6 @@ declare module '@tanstack/react-router' {
       path: '/canvas'
       fullPath: '/canvas'
       preLoaderRoute: typeof SiteCanvasRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/changelog': {
-      id: '/_site/changelog'
-      path: '/changelog'
-      fullPath: '/changelog'
-      preLoaderRoute: typeof SiteChangelogRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/communities': {
@@ -9705,7 +9666,6 @@ interface SiteRouteChildren {
   SiteAnalyticsRoute: typeof SiteAnalyticsRoute
   SiteArcadeRoute: typeof SiteArcadeRoute
   SiteCanvasRoute: typeof SiteCanvasRoute
-  SiteChangelogRoute: typeof SiteChangelogRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteCompeteRoute: typeof SiteCompeteRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
@@ -9823,7 +9783,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAnalyticsRoute: SiteAnalyticsRoute,
   SiteArcadeRoute: SiteArcadeRoute,
   SiteCanvasRoute: SiteCanvasRoute,
-  SiteChangelogRoute: SiteChangelogRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteCompeteRoute: SiteCompeteRoute,
   SiteDraftsRoute: SiteDraftsRoute,
@@ -10533,7 +10492,6 @@ const rootRouteChildren: RootRouteChildren = {
   AltairRoute: AltairRouteWithChildren,
   BalatroRoute: BalatroRoute,
   BlackLivesMatterRoute: BlackLivesMatterRoute,
-  BreachesRoute: BreachesRoute,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
   CsgoRoute: CsgoRoute,

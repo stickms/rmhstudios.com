@@ -517,16 +517,6 @@ export const STATIC_CARDS: StaticCard[] =
         'Games, apps, coins, settings, and where to find them.',
     },
     {
-      path: '/changelog',
-      file: 'changelog',
-      eyebrow:
-        'Changelog',
-      title:
-        'Every fix, as it ships.',
-      subtitle:
-        'New features, fixes and improvements on RMH Studios.',
-    },
-    {
       path: '/roadmap',
       file: 'roadmap',
       eyebrow:
@@ -828,16 +818,6 @@ export const STATIC_CARDS: StaticCard[] =
         'Spatial minimalism.',
       subtitle:
         'Simple color, editorial hierarchy, purposeful motion.',
-    },
-    {
-      path: '/breaches',
-      file: 'breaches',
-      eyebrow:
-        'Breaches',
-      title:
-        'Our public incident log.',
-      subtitle:
-        'What happened, how, and why deleting the line did not undo it.',
     },
     {
       path: '/adaptive-intelligence',

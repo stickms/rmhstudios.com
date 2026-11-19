@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
-/** Footer link from the What's new dialog to the full changelog. */
+/** Footer link from the What's new dialog to the release notes on /site-history. */
 export function ChangelogLink() {
   const {
     t,
@@ -11,7 +11,8 @@ export function ChangelogLink() {
     );
   return (
     <Link
-      to="/changelog"
+      to="/site-history"
+      hash="changes"
       className="text-sm text-site-accent hover:underline"
     >
       {t(

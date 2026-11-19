@@ -397,12 +397,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.6,
     },
 
-    {
-      loc: '/changelog',
-      changefreq:
-        'weekly',
-      priority: 0.4,
-    },
 
     // Developer platform — the API is a promotable product surface.
     {
@@ -461,15 +455,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
     },
     {
       loc: '/security',
-      changefreq:
-        'monthly',
-      priority: 0.4,
-    },
-    // The public incident log. `app/routes/breaches.tsx` calls itself "sibling to
-    // /security" and ships a canonical and a public description, so it is
-    // classified the way its sibling is.
-    {
-      loc: '/breaches',
       changefreq:
         'monthly',
       priority: 0.4,

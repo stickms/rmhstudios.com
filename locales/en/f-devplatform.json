@@ -26,6 +26,8 @@
   "badges-title": "Stat badges",
   "changelog-empty": "No release notes yet.",
   "changelog-link": "Full changelog",
+  "changelog-show-all_one": "Show {{count}} older note",
+  "changelog-show-all_other": "Show {{count}} older notes",
   "hideBots-hint": "Leave posts from bot accounts out of your feed on this device. They stay labelled Automated wherever you do see them.",
   "hideBots-title": "Hide automated accounts",
   "howToPlay-ask": "Ask about this game",

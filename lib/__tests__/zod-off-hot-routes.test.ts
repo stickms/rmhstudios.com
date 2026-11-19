@@ -48,7 +48,7 @@ const HOT_ROUTES = [
   // client chunk while this source-level walk cannot tell.)
   'app/routes/_site/builds/$slug.tsx',
   'app/routes/_site/canvas.tsx',
-  'app/routes/_site/changelog.tsx',
+  'app/routes/_site/site-history.tsx',
   'app/routes/daily/index.tsx', // the Connections tab took over /connections
   'app/routes/_site/connections.new.tsx',
   'app/routes/_site/connections.u.$id.tsx',

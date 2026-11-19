@@ -190,10 +190,6 @@ export const STATIC_CARD_INDEX: readonly (readonly [
       'help',
     ],
     [
-      '/changelog',
-      'changelog',
-    ],
-    [
       '/roadmap',
       'roadmap',
     ],
@@ -312,10 +308,6 @@ export const STATIC_CARD_INDEX: readonly (readonly [
     [
       '/design',
       'design',
-    ],
-    [
-      '/breaches',
-      'breaches',
     ],
     [
       '/adaptive-intelligence',
