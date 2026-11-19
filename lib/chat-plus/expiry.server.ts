@@ -13,7 +13,7 @@
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 
-/** `AND` this into any `directMessage` / `groupMessage` where-clause. */
+/** `AND` this into any `chatMessage` where-clause. */
 export function liveMessages(now: Date = new Date()) {
   return { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] };
 }
@@ -42,10 +42,13 @@ export async function sweepExpiredMessages(now: Date = new Date()): Promise<Expi
   const result: ExpirySweepResult = { directDeleted: 0, groupDeleted: 0, pinsDeleted: 0 };
   const ids: string[] = [];
 
+  // DMs: a message with a pending report is kept (see above). Groups never
+  // had that exemption and still do not.
   for (let i = 0; i < MAX_BATCHES; i++) {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
-      DELETE FROM "direct_message" WHERE "id" IN (
-        SELECT m."id" FROM "direct_message" m
+      DELETE FROM "chat_message" WHERE "id" IN (
+        SELECT m."id" FROM "chat_message" m
+        JOIN "chat" c ON c."id" = m."chatId" AND c."kind" = 'dm'
         WHERE m."expiresAt" IS NOT NULL AND m."expiresAt" <= ${now}
           AND NOT EXISTS (
             SELECT 1 FROM "content_report" r
@@ -58,8 +61,9 @@ export async function sweepExpiredMessages(now: Date = new Date()): Promise<Expi
   }
   for (let i = 0; i < MAX_BATCHES; i++) {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
-      DELETE FROM "group_message" WHERE "id" IN (
-        SELECT m."id" FROM "group_message" m
+      DELETE FROM "chat_message" WHERE "id" IN (
+        SELECT m."id" FROM "chat_message" m
+        JOIN "chat" c ON c."id" = m."chatId" AND c."kind" = 'group'
         WHERE m."expiresAt" IS NOT NULL AND m."expiresAt" <= ${now}
         LIMIT ${BATCH})
       RETURNING "id"`;
@@ -68,7 +72,22 @@ export async function sweepExpiredMessages(now: Date = new Date()): Promise<Expi
     if (rows.length < BATCH) break;
   }
 
-  // Pins have no FK to the message (it can live in either table).
+  // TRANSITIONAL (chat unify expand, 2026-11-19; the contract deletes this):
+  // the deprecated "direct_message" / "group_message" still hold a copy of
+  // every message until the contract drops them. A disappearing message is a
+  // promise that its text is gone, so that copy is deleted on the same rule
+  // (with the same report exemption). Nothing else touches those tables.
+  await prisma.$executeRaw`
+    DELETE FROM "direct_message" m
+    WHERE m."expiresAt" IS NOT NULL AND m."expiresAt" <= ${now}
+      AND NOT EXISTS (
+        SELECT 1 FROM "content_report" r
+        WHERE r."entityType" = 'dm' AND r."entityId" = m."id" AND r."status" = 'PENDING')`;
+  await prisma.$executeRaw`
+    DELETE FROM "group_message" m
+    WHERE m."expiresAt" IS NOT NULL AND m."expiresAt" <= ${now}`;
+
+  // Pins have no FK to the message (they predate the one message table).
   for (let i = 0; i < ids.length; i += 1000) {
     const res = await prisma.chatPin.deleteMany({
       where: { messageId: { in: ids.slice(i, i + 1000) } },

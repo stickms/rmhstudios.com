@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { findGroupMembership } from '@/lib/chat/chat.server';
 import { subscribeGroup, type GroupEventPayload } from '@/lib/group-events';
 
 /**
@@ -15,10 +16,7 @@ export const Route = createFileRoute('/api/group-chats/$id/stream')({
         const userId = session.user.id;
 
         // Members only.
-        const membership = await prisma.groupChatMember.findUnique({
-          where: { groupId_userId: { groupId: params.id, userId } },
-          select: { id: true },
-        });
+        const membership = await findGroupMembership(params.id, userId, { id: true });
         if (!membership) return Response.json({ error: 'Not found' }, { status: 404 });
 
         let cleanup: (() => void) | null = null;

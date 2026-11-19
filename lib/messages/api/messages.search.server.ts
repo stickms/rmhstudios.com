@@ -3,6 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { searchConversationsApi } from '@/lib/messages/messages.contract';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { dmChatSelect, dmKeyOf, dmsOf, toDmRow } from '@/lib/chat/chat.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
@@ -29,16 +30,25 @@ export const route = apiRoute('/api/messages/search', {
           { handle: { contains: q, mode: 'insensitive' as const } },
         ],
       };
-      const mine = [{ participantOneId: userId }, { participantTwoId: userId }];
+      const userSelect = {
+        id: true,
+        name: true,
+        image: true,
+        username: true,
+        isBot: true,
+        profile: { select: { displayName: true, customImage: true } },
+      } as const;
 
-      const conversations = await prisma.conversation.findMany({
+      const rows = await prisma.chat.findMany({
         where: {
-          OR: [
-            { participantOneId: userId, participantTwo: nameMatch },
-            { participantTwoId: userId, participantOne: nameMatch },
+          AND: [
+            dmsOf(userId),
             {
-              AND: [
-                { OR: mine },
+              OR: [
+                // The other participant's name, or your own in Saved Messages
+                // (a chat with yourself), as the participant-pair query matched.
+                { members: { some: { userId: { not: userId }, user: nameMatch } } },
+                { dmKey: dmKeyOf(userId, userId), members: { some: { user: nameMatch } } },
                 {
                   messages: {
                     some: {
@@ -53,26 +63,11 @@ export const route = apiRoute('/api/messages/search', {
         },
         orderBy: { lastMessageAt: 'desc' },
         take: 30,
-        include: {
-          participantOne: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-              username: true,
-              isBot: true,
-              profile: { select: { displayName: true, customImage: true } },
-            },
-          },
-          participantTwo: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-              username: true,
-              isBot: true,
-              profile: { select: { displayName: true, customImage: true } },
-            },
+        select: {
+          ...dmChatSelect,
+          members: {
+            select: { userId: true, slot: true, user: { select: userSelect } },
+            orderBy: { slot: 'asc' },
           },
           messages: {
             where: { AND: [liveMessages()] },
@@ -90,6 +85,15 @@ export const route = apiRoute('/api/messages/search', {
           },
         },
       });
+      const conversations = rows.flatMap((chat) => {
+        const dm = toDmRow(chat);
+        if (!dm) return [];
+        const userOf = (id: string) => chat.members.find((m) => m.userId === id)?.user;
+        const participantOne = userOf(dm.participantOneId);
+        const participantTwo = userOf(dm.participantTwoId);
+        if (!participantOne || !participantTwo) return [];
+        return [{ ...dm, participantOne, participantTwo, messages: chat.messages }];
+      });
 
       // Latest content-matching message per conversation, for a snippet.
       const ids = conversations.map((c) => c.id);
@@ -100,15 +104,15 @@ export const route = apiRoute('/api/messages/search', {
       // not escape LIKE metacharacters either (verified on the seeded dataset).
       const like = `%${q}%`;
       const matches = ids.length
-        ? await prisma.$queryRaw<{ conversationId: string; content: string }[]>`
-                SELECT DISTINCT ON ("conversationId") "conversationId", "content"
-                FROM "direct_message"
-                WHERE "conversationId" IN (${Prisma.join(ids)})
+        ? await prisma.$queryRaw<{ chatId: string; content: string }[]>`
+                SELECT DISTINCT ON ("chatId") "chatId", "content"
+                FROM "chat_message"
+                WHERE "chatId" IN (${Prisma.join(ids)})
                   AND "content" ILIKE ${like}
                   AND ("expiresAt" IS NULL OR "expiresAt" > ${new Date()})
-                ORDER BY "conversationId", "createdAt" DESC`
+                ORDER BY "chatId", "createdAt" DESC`
         : [];
-      const snippetMap = new Map(matches.map((m) => [m.conversationId, m.content]));
+      const snippetMap = new Map(matches.map((m) => [m.chatId, m.content]));
 
       const result = conversations.map((conv) => {
         const otherUser =

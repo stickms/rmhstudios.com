@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { GROUP_KIND } from '@/lib/chat/chat.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { folderChatIds } from '@/lib/chat-plus/folders.server';
 
@@ -22,11 +23,15 @@ export async function listGroupChats(
 ): Promise<{ groups: GroupChatRow[]; signedIn: true }> {
   // M1: a folder narrows the (already complete, unpaginated) list server-side.
   const inFolder = opts.folderId ? await folderChatIds(userId, opts.folderId, 'group') : undefined;
-  const memberships = await prisma.groupChatMember.findMany({
-    where: { userId, ...(inFolder ? { groupId: { in: inFolder } } : {}) },
+  const memberships = await prisma.chatMember.findMany({
+    where: {
+      userId,
+      chat: { kind: GROUP_KIND },
+      ...(inFolder ? { chatId: { in: inFolder } } : {}),
+    },
     select: {
       lastReadAt: true,
-      group: {
+      chat: {
         select: {
           id: true,
           name: true,
@@ -47,14 +52,14 @@ export async function listGroupChats(
 
   const groups: GroupChatRow[] = memberships
     .map((m) => {
-      const last = m.group.messages[0];
+      const last = m.chat.messages[0];
       const unread = last ? last.createdAt > m.lastReadAt && last.senderId !== userId : false;
       return {
-        id: m.group.id,
-        name: m.group.name,
-        memberCount: m.group._count.members,
+        id: m.chat.id,
+        name: m.chat.name ?? '',
+        memberCount: m.chat._count.members,
         lastMessage: last?.content ?? null,
-        lastMessageAt: m.group.lastMessageAt.toISOString(),
+        lastMessageAt: m.chat.lastMessageAt.toISOString(),
         unread,
       };
     })

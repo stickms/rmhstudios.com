@@ -7,6 +7,7 @@
 import type { ShopItemKind } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { streakKey } from '@/lib/streaks/kinds';
+import { DM_KIND } from '@/lib/chat/chat.server';
 import { awardCoins } from '@/lib/coins.server';
 import { createNotification } from '@/lib/notifications.server';
 import { QUESTS } from '@/lib/quests/catalog';
@@ -217,7 +218,7 @@ export async function getFirstWeekStatus(userId: string): Promise<FirstWeekStatu
       prisma.dailyWheelSpin.count({ where: { userId } }),
       prisma.communityMember.count({ where: { userId } }),
       prisma.dailyPuzzleScore.count({ where: { userId } }),
-      prisma.directMessage.count({ where: { senderId: userId } }),
+      prisma.chatMessage.count({ where: { senderId: userId, chat: { kind: DM_KIND } } }),
       prisma.streak.findUnique({ where: streakKey(userId, 'daily'), select: { totalDays: true } }),
     ]);
   if (!user) return null;

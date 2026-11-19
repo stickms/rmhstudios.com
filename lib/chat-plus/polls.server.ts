@@ -64,12 +64,12 @@ export async function loadDmPolls(
   if (polls.length === 0) return out;
   const ids = polls.map((p) => p.id);
   const [grouped, mine] = await Promise.all([
-    prisma.directPollVote.groupBy({
+    prisma.chatPollVote.groupBy({
       by: ['messageId', 'optionIdx'],
       where: { messageId: { in: ids } },
       _count: { _all: true },
     }),
-    prisma.directPollVote.findMany({
+    prisma.chatPollVote.findMany({
       where: { messageId: { in: ids }, userId: viewerId },
       select: { messageId: true, optionIdx: true },
     }),
@@ -97,8 +97,8 @@ export async function voteDmPoll(
   optionIdx: number,
 ): Promise<VoteResult> {
   if (access.kind !== 'dm') return { ok: false, status: 400, error: 'Not a DM poll' };
-  const msg = await prisma.directMessage.findFirst({
-    where: { id: messageId, conversationId: access.id, kind: 'poll', deletedAt: null },
+  const msg = await prisma.chatMessage.findFirst({
+    where: { id: messageId, chatId: access.id, kind: 'poll', deletedAt: null },
     select: { id: true, kind: true, meta: true, expiresAt: true },
   });
   if (!msg || (msg.expiresAt && msg.expiresAt.getTime() <= Date.now())) {
@@ -107,7 +107,7 @@ export async function voteDmPoll(
   const meta = msg.meta as unknown as PollMeta;
   if (optionIdx >= meta.options.length) return { ok: false, status: 400, error: 'Invalid option' };
 
-  await prisma.directPollVote.upsert({
+  await prisma.chatPollVote.upsert({
     where: { messageId_userId: { messageId, userId: access.viewerId } },
     create: { messageId, userId: access.viewerId, optionIdx },
     update: { optionIdx },

@@ -1,6 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { findGroupMembership } from '@/lib/chat/chat.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
@@ -20,17 +21,14 @@ export const route = apiRoute('/api/group-chats/$id/messages/$messageId/vote', {
     });
     if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-    const membership = await prisma.groupChatMember.findUnique({
-      where: { groupId_userId: { groupId: params.id, userId } },
-      select: { id: true },
-    });
+    const membership = await findGroupMembership(params.id, userId, { id: true });
     if (!membership) return Response.json({ error: 'Not found' }, { status: 404 });
 
     const parsed = schema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) return Response.json({ error: 'Invalid vote' }, { status: 400 });
 
-    const message = await prisma.groupMessage.findFirst({
-      where: { id: params.messageId, groupId: params.id },
+    const message = await prisma.chatMessage.findFirst({
+      where: { id: params.messageId, chatId: params.id },
       select: { id: true, pollOptions: true, pollQuestion: true },
     });
     if (!message || !message.pollQuestion)
@@ -39,13 +37,13 @@ export const route = apiRoute('/api/group-chats/$id/messages/$messageId/vote', {
       return Response.json({ error: 'Invalid option' }, { status: 400 });
     }
 
-    await prisma.groupPollVote.upsert({
+    await prisma.chatPollVote.upsert({
       where: { messageId_userId: { messageId: message.id, userId } },
       create: { messageId: message.id, userId, optionIdx: parsed.data.optionIdx },
       update: { optionIdx: parsed.data.optionIdx },
     });
 
-    const fresh = await prisma.groupMessage.findUnique({
+    const fresh = await prisma.chatMessage.findUnique({
       where: { id: message.id },
       select: groupMessageSelect,
     });

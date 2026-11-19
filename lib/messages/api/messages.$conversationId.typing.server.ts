@@ -3,6 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { typingApi } from '@/lib/messages/message-actions.contract';
 import { typingBody } from '@/lib/messages/message-actions-schema';
 import { prisma } from '@/lib/prisma.server';
+import { findDm } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
 import { getPairPrivacy } from '@/lib/chat-plus/receipts.server';
 
@@ -13,10 +14,7 @@ export const route = apiRoute('/api/messages/$conversationId/typing', {
     const { conversationId } = params;
     const userId = session.user.id;
 
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      select: { participantOneId: true, participantTwoId: true },
-    });
+    const conversation = await findDm(conversationId);
 
     if (!conversation) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 });

@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { markAllMessagesReadApi } from '@/lib/messages/messages.contract';
 import { prisma } from '@/lib/prisma.server';
+import { dmsOf } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
 import { redisDel } from '@/lib/redis.server';
 
@@ -13,11 +14,11 @@ export const route = apiRoute('/api/messages/read-all', {
 
     // One statement: Postgres joins through the conversation relation instead
     // of reading every conversation id first and shipping them back as an IN list.
-    const marked = await prisma.directMessage.updateMany({
+    const marked = await prisma.chatMessage.updateMany({
       where: {
         senderId: { not: userId },
         read: false,
-        conversation: { OR: [{ participantOneId: userId }, { participantTwoId: userId }] },
+        chat: dmsOf(userId),
       },
       data: { read: true },
     });

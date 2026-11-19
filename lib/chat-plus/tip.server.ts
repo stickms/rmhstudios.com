@@ -34,9 +34,9 @@ async function resolveRecipient(
     return u ?? { error: 'Recipient not found' };
   }
   if (!handle) return { error: 'Say who to tip: /tip 50 @name' };
-  const member = await prisma.groupChatMember.findFirst({
+  const member = await prisma.chatMember.findFirst({
     where: {
-      groupId: access.id,
+      chatId: access.id,
       user: {
         OR: [
           { handle: { equals: handle, mode: 'insensitive' } },

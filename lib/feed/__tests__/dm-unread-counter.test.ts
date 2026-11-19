@@ -92,19 +92,35 @@ vi.mock(
   () => ({
     prisma:
       {
-        conversation:
+        chat:
           {
-            findUnique:
+            findFirst:
               async () => ({
-                participantOneId:
-                  'me',
-                participantTwoId:
-                  'other',
+                id: 'c1',
+                disappearAfterSec:
+                  null,
+                themeKey: null,
+                lastMessageAt:
+                  new Date(),
+                createdAt:
+                  new Date(),
+                members: [
+                  {
+                    userId:
+                      'me',
+                    slot: 1,
+                  },
+                  {
+                    userId:
+                      'other',
+                    slot: 2,
+                  },
+                ],
               }),
             findMany:
               h.conversationFindMany,
           },
-        directMessage:
+        chatMessage:
           {
             updateMany:
               h.updateMany,

@@ -1,11 +1,12 @@
 /**
  * Who may touch a chat, and how to reach everyone in it. Server-only.
  *
- * DMs and group chats are separate models, so every P04 feature goes through
- * this one adapter instead of branching on `kind` at each call site.
+ * DMs and group chats are one model (`Chat`, `lib/chat/chat.server.ts`), told
+ * apart by `kind`; every P04 feature goes through this one adapter so the kind
+ * is checked once, here, instead of at each call site.
  */
 
-import { prisma } from '@/lib/prisma.server';
+import { findDmFor, findGroupMembership } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
 import { publishGroupEvent } from '@/lib/group-events';
 import { scopeKeyOf, type ChatKind, type ChatUpdate } from '@/lib/chat-plus/types';
@@ -33,16 +34,8 @@ export async function getChatAccess(
   userId: string,
 ): Promise<ChatAccess | null> {
   if (kind === 'dm') {
-    const c = await prisma.conversation.findUnique({
-      where: { id },
-      select: {
-        participantOneId: true,
-        participantTwoId: true,
-        disappearAfterSec: true,
-        themeKey: true,
-      },
-    });
-    if (!c || (c.participantOneId !== userId && c.participantTwoId !== userId)) return null;
+    const c = await findDmFor(id, userId);
+    if (!c) return null;
     const otherId = c.participantOneId === userId ? c.participantTwoId : c.participantOneId;
     return {
       kind,
@@ -56,9 +49,8 @@ export async function getChatAccess(
       themeKey: c.themeKey,
     };
   }
-  const m = await prisma.groupChatMember.findUnique({
-    where: { groupId_userId: { groupId: id, userId } },
-    select: { group: { select: { disappearAfterSec: true, themeKey: true } } },
+  const m = await findGroupMembership(id, userId, {
+    chat: { select: { disappearAfterSec: true, themeKey: true } },
   });
   if (!m) return null;
   return {
@@ -69,8 +61,8 @@ export async function getChatAccess(
     participants: null,
     otherId: null,
     isSelf: false,
-    disappearAfterSec: m.group.disappearAfterSec,
-    themeKey: m.group.themeKey,
+    disappearAfterSec: m.chat.disappearAfterSec,
+    themeKey: m.chat.themeKey,
   };
 }
 

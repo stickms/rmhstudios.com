@@ -26,10 +26,10 @@ export interface ThreadPage {
 }
 
 async function loadParent(access: ChatAccess, parentId: string) {
-  return prisma.groupMessage.findFirst({
+  return prisma.chatMessage.findFirst({
     where: {
       id: parentId,
-      groupId: access.id,
+      chatId: access.id,
       threadParentId: null,
       deletedAt: null,
       kind: { notIn: ['system', 'tip'] },
@@ -43,7 +43,7 @@ export async function loadThread(access: ChatAccess, parentId: string): Promise<
   if (access.kind !== 'group') return null;
   const parent = await loadParent(access, parentId);
   if (!parent) return null;
-  const replies = await prisma.groupMessage.findMany({
+  const replies = await prisma.chatMessage.findMany({
     where: { threadParentId: parentId, deletedAt: null, AND: [liveMessages()] },
     orderBy: { createdAt: 'asc' },
     take: REPLY_LIMIT,

@@ -1,5 +1,6 @@
 // ─── Direct Messages ──────────────────────────────────────────────
 
+/// DEPRECATED (2026-11-19) — copied into Chat (kind dm) + ChatMember; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model Conversation {
   id               String   @id @default(cuid())
   participantOneId String
@@ -21,6 +22,7 @@ model Conversation {
   @@map("conversation")
 }
 
+/// DEPRECATED (2026-11-19) — copied into ChatMessage; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model DirectMessage {
   id              String    @id @default(cuid())
   conversationId  String
@@ -72,6 +74,7 @@ model DirectMessage {
   @@map("direct_message")
 }
 
+/// DEPRECATED (2026-11-19) — copied into ChatMessageReaction; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model DirectMessageReaction {
   id        String   @id @default(cuid())
   messageId String
@@ -88,6 +91,7 @@ model DirectMessageReaction {
 }
 
 /// A group direct-message thread (#15). Distinct from 1-on-1 Conversations.
+/// DEPRECATED (2026-11-19) — copied into Chat (kind group); nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupChat {
   id            String   @id @default(cuid())
   name          String   @db.VarChar(60)
@@ -106,6 +110,7 @@ model GroupChat {
   @@map("group_chat")
 }
 
+/// DEPRECATED (2026-11-19) — copied into ChatMember; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupChatMember {
   id         String   @id @default(cuid())
   groupId    String
@@ -121,6 +126,7 @@ model GroupChatMember {
   @@map("group_chat_member")
 }
 
+/// DEPRECATED (2026-11-19) — copied into ChatMessage; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupMessage {
   id              String    @id @default(cuid())
   groupId         String
@@ -176,6 +182,7 @@ model GroupMessage {
   @@map("group_message")
 }
 
+/// DEPRECATED (2026-11-19) — copied into ChatMessageReaction; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupMessageReaction {
   id        String   @id @default(cuid())
   messageId String
@@ -191,6 +198,7 @@ model GroupMessageReaction {
   @@map("group_message_reaction")
 }
 
+/// DEPRECATED (2026-11-19) — copied into ChatPollVote; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model GroupPollVote {
   id        String   @id @default(cuid())
   messageId String
@@ -204,6 +212,154 @@ model GroupPollVote {
   @@unique([messageId, userId])
   @@index([messageId])
   @@map("group_poll_vote")
+}
+
+// ─── Chats (one model for DMs and group chats, 2026-11-19) ─────────────────
+// A DM is a chat of kind 'dm' with its participants as members (one member in
+// Saved Messages, a chat with yourself); a group chat is kind 'group'. The
+// messages, reactions and poll votes of both live in one table each. Expand
+// step: the old Conversation/GroupChat family above is copied in (same ids) by
+// migration 20261120040000_chat_unify, whose triggers mirror every write the
+// previous release makes to the old tables until the contract drops them.
+// The header of that migration is the design note.
+
+/// One conversation: a DM (`kind = 'dm'`) or a group chat (`kind = 'group'`).
+model Chat {
+  id                String   @id @default(cuid())
+  /// 'dm' | 'group'. A two-member group is still a group: DM privacy, blocks
+  /// and receipts apply only to kind 'dm'.
+  kind              String   @db.VarChar(8)
+  /// DM only: "<participantOneId>:<participantTwoId>", the ordered pair the old
+  /// Conversation was unique on (callers sort the pair). Null for groups.
+  dmKey             String?  @unique @db.VarChar(80)
+  /// Group only.
+  name              String?  @db.VarChar(60)
+  /// Group only: the owner (deleting the owner deletes the group, as before).
+  ownerId           String?
+  lastMessageAt     DateTime @default(now())
+  createdAt         DateTime @default(now())
+  /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
+  disappearAfterSec Int?
+  /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
+  themeKey          String?  @db.VarChar(24)
+
+  owner    User?         @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members  ChatMember[]
+  messages ChatMessage[]
+
+  @@index([ownerId])
+  @@map("chat")
+}
+
+/// A person in a chat. Deleting either participant's account deletes a DM
+/// outright, as the old Conversation cascade did (trigger
+/// "chat_member_dm_cascade", migration 20261120040000_chat_unify).
+model ChatMember {
+  id         String   @id @default(cuid())
+  chatId     String
+  userId     String
+  /// DM only: 1 = the old participantOne, 2 = participantTwo. Null for groups.
+  slot       Int?     @db.SmallInt
+  /// Groups: everything after this is unread. DMs keep per-message read state
+  /// (ChatMessage.read); for a DM this is informational.
+  lastReadAt DateTime @default(now())
+  joinedAt   DateTime @default(now())
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation("ChatMembership", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([userId])
+  @@map("chat_member")
+}
+
+/// A message in a DM or a group chat.
+model ChatMessage {
+  id              String    @id @default(cuid())
+  chatId          String
+  senderId        String
+  content         String    @db.VarChar(2000)
+  // Optional rich media: a single GIF and/or up to 4 feed images the sender owns.
+  gifUrl          String?   @db.Text
+  imageUrls       String[]  @default([])
+  /// Group inline poll: a question + 2–6 option labels (votes in ChatPollVote).
+  pollQuestion    String?   @db.VarChar(300)
+  pollOptions     String[]  @default([])
+  /// DM only: the other participant has read it. Group read state is
+  /// ChatMember.lastReadAt.
+  read            Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  /// Edited within a short window; renders an "edited" marker.
+  editedAt        DateTime?
+  /// Unsent. Tombstoned rather than removed so the thread still shows that
+  /// something was there and a report survives the deletion.
+  deletedAt       DateTime?
+  deletedBy       String?   @db.VarChar(12)
+  /// Voice note; peaks are a downsampled waveform.
+  audioUrl        String?   @db.VarChar(500)
+  audioDurationMs Int?
+  audioPeaks      Float[]   @default([])
+  /// P04 — text | system | tip | dice | coin | checklist | poll.
+  kind            String    @default("text") @db.VarChar(16)
+  /// P04 — kind-specific payload.
+  meta            Json?
+  /// M3 — set at send time from the chat's timer; hidden at read time once past.
+  expiresAt       DateTime?
+  /// M6 — bit 1 = has image/GIF/voice, bit 2 = has a link.
+  attachFlags     Int       @default(0)
+  /// M10 — how many times this message has been forwarded to reach here.
+  forwardCount    Int       @default(0)
+  /// M7 — set on a reply posted in a side thread; null on top-level messages.
+  threadParentId  String?
+  /// M7 — denormalised reply count on the parent.
+  replyCount      Int       @default(0)
+
+  chat          Chat                  @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender        User                  @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  reactions     ChatMessageReaction[]
+  pollVotes     ChatPollVote[]
+  threadParent  ChatMessage?          @relation("ChatMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
+  threadReplies ChatMessage[]         @relation("ChatMessageThread")
+
+  @@index([chatId, createdAt])
+  @@index([senderId])
+  @@index([chatId, attachFlags, createdAt])
+  @@index([threadParentId, createdAt])
+  @@index([expiresAt])
+  // DM unread badge: chatId IN (...) AND read = false AND senderId <> me.
+  @@index([chatId, read, senderId])
+  @@map("chat_message")
+}
+
+model ChatMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation("ChatMessageReactor", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("chat_message_reaction")
+}
+
+/// A vote on a poll message (a group inline poll or a `kind = "poll"` DM).
+model ChatPollVote {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation("ChatPollVoter", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("chat_poll_vote")
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────
@@ -709,6 +865,7 @@ model ChatPin {
 
 /// P04 (/poll in a DM) — a vote on a `kind = "poll"` direct message. Group chats
 /// keep using GroupPollVote.
+/// DEPRECATED (2026-11-19) — copied into ChatPollVote; nothing reads or writes this (the migration 20261120040000_chat_unify triggers mirror the previous release's writes; the expiry sweep also deletes expired rows here); drop next release (contract). Do not add callers.
 model DirectPollVote {
   id        String   @id @default(cuid())
   messageId String

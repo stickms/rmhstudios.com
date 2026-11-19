@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { messagesSidebarApi } from '@/lib/messages/messages-sidebar.contract';
 import { prisma } from '@/lib/prisma.server';
+import { dmKeyOf, dmsOf } from '@/lib/chat/chat.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 /** GET /api/messages/sidebar — previously messaged + suggested users */
@@ -14,47 +15,47 @@ export const route = apiRoute('/api/messages/sidebar', {
       }
 
       // Previously messaged: users from recent conversations
-      const conversations = await prisma.conversation.findMany({
+      const conversations = await prisma.chat.findMany({
         where: {
-          OR: [{ participantOneId: userId }, { participantTwoId: userId }],
+          ...dmsOf(userId),
           // Saved Messages (a conversation with yourself) is not a person to message.
-          NOT: { participantOneId: userId, participantTwoId: userId },
+          NOT: { dmKey: dmKeyOf(userId, userId) },
         },
         orderBy: { lastMessageAt: 'desc' },
         take: 5,
-        include: {
-          participantOne: {
+        select: {
+          members: {
+            where: { userId: { not: userId } },
+            take: 1,
             select: {
-              id: true,
-              name: true,
-              image: true,
-              username: true,
-              profile: { select: { displayName: true, customImage: true } },
-            },
-          },
-          participantTwo: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-              username: true,
-              profile: { select: { displayName: true, customImage: true } },
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  username: true,
+                  profile: { select: { displayName: true, customImage: true } },
+                },
+              },
             },
           },
         },
       });
 
       const recentUserIds = new Set<string>();
-      const recent = conversations.map((conv) => {
-        const other = conv.participantOneId === userId ? conv.participantTwo : conv.participantOne;
+      const recent = conversations.flatMap((conv) => {
+        const other = conv.members[0]?.user;
+        if (!other) return [];
         recentUserIds.add(other.id);
         const resolved = resolveUserDisplay(other);
-        return {
-          id: other.id,
-          name: resolved.name,
-          image: resolved.image,
-          username: other.username,
-        };
+        return [
+          {
+            id: other.id,
+            name: resolved.name,
+            image: resolved.image,
+            username: other.username,
+          },
+        ];
       });
 
       // Suggested: users the current user follows but hasn't messaged

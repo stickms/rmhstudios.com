@@ -89,9 +89,9 @@ export async function postChatMessage(
     const silent = input.silent || access.isSelf;
     const row = await prisma
       .$transaction([
-        prisma.directMessage.create({
+        prisma.chatMessage.create({
           data: {
-            conversationId: access.id,
+            chatId: access.id,
             senderId: input.senderId,
             content: input.content,
             gifUrl: input.gifUrl ?? null,
@@ -104,7 +104,7 @@ export async function postChatMessage(
           },
           select: dmSelect,
         }),
-        prisma.conversation.update({
+        prisma.chat.update({
           where: { id: access.id },
           data: { lastMessageAt: new Date() },
         }),
@@ -145,9 +145,9 @@ export async function postChatMessage(
   }
 
   const ops: Prisma.PrismaPromise<unknown>[] = [
-    prisma.groupMessage.create({
+    prisma.chatMessage.create({
       data: {
-        groupId: access.id,
+        chatId: access.id,
         senderId: input.senderId,
         content: input.content,
         gifUrl: input.gifUrl ?? null,
@@ -162,15 +162,15 @@ export async function postChatMessage(
       },
       select: groupMessageSelect,
     }),
-    prisma.groupChat.update({ where: { id: access.id }, data: { lastMessageAt: new Date() } }),
-    prisma.groupChatMember.update({
-      where: { groupId_userId: { groupId: access.id, userId: input.senderId } },
+    prisma.chat.update({ where: { id: access.id }, data: { lastMessageAt: new Date() } }),
+    prisma.chatMember.update({
+      where: { chatId_userId: { chatId: access.id, userId: input.senderId } },
       data: { lastReadAt: new Date() },
     }),
   ];
   if (input.threadParentId) {
     ops.push(
-      prisma.groupMessage.update({
+      prisma.chatMessage.update({
         where: { id: input.threadParentId },
         data: { replyCount: { increment: 1 } },
         select: { replyCount: true },

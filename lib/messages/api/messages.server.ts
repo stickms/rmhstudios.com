@@ -4,6 +4,7 @@ import { implement } from '@/lib/api/implement.server';
 import { listConversationsApi, sendMessageApi } from '@/lib/messages/messages.contract';
 import { sendMessageSchema } from '@/lib/messages/messages-schema';
 import { prisma } from '@/lib/prisma.server';
+import { upsertDm } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listConversations } from '@/lib/messages.server';
@@ -97,26 +98,14 @@ export const route = apiRoute('/api/messages', {
         senderId < recipientId ? [senderId, recipientId] : [recipientId, senderId];
 
       // Find or create conversation
-      const conversation = await prisma.conversation.upsert({
-        where: {
-          participantOneId_participantTwoId: {
-            participantOneId: pOne,
-            participantTwoId: pTwo,
-          },
-        },
-        create: {
-          participantOneId: pOne,
-          participantTwoId: pTwo,
-        },
-        update: {},
-      });
+      const conversation = await upsertDm(pOne, pTwo);
 
       // If content or media provided, create the message and bump lastMessageAt.
       if (content || hasMedia) {
         const [message] = await prisma.$transaction([
-          prisma.directMessage.create({
+          prisma.chatMessage.create({
             data: {
-              conversationId: conversation.id,
+              chatId: conversation.id,
               senderId,
               content: content ?? '',
               gifUrl: gifUrl ?? null,
@@ -124,7 +113,7 @@ export const route = apiRoute('/api/messages', {
               ...messageStamp(conversation.disappearAfterSec, { content, gifUrl, imageUrls }),
             },
           }),
-          prisma.conversation.update({
+          prisma.chat.update({
             where: { id: conversation.id },
             data: { lastMessageAt: new Date() },
           }),

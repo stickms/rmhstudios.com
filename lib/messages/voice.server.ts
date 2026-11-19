@@ -158,9 +158,9 @@ export async function sendVoiceMessage(args: {
   await putObject(key, args.buffer, args.contentType.split(';')[0].trim());
 
   const [message] = await prisma.$transaction([
-    prisma.directMessage.create({
+    prisma.chatMessage.create({
       data: {
-        conversationId: args.conversationId,
+        chatId: args.conversationId,
         senderId: args.userId,
         content: note,
         audioUrl: voicePlaybackUrl(filename),
@@ -190,7 +190,7 @@ export async function sendVoiceMessage(args: {
         expiresAt: true,
       },
     }),
-    prisma.conversation.update({
+    prisma.chat.update({
       where: { id: args.conversationId },
       data: { lastMessageAt: now },
     }),
@@ -246,8 +246,8 @@ export async function readVoiceObject(
   if (!conversation) return { ok: false, status: 404 };
 
   const url = voicePlaybackUrl(filename);
-  const message = await prisma.directMessage.findFirst({
-    where: { conversationId: parsed.conversationId, audioUrl: url },
+  const message = await prisma.chatMessage.findFirst({
+    where: { chatId: parsed.conversationId, audioUrl: url },
     select: { deletedAt: true },
   });
   if (!message) return { ok: false, status: 404 };

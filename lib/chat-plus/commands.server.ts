@@ -94,8 +94,8 @@ export async function runChatCommand(
       const { allowed } = rateLimit(access.id, { limit: 6, windowMs: 60_000, prefix: 'chat-gm' });
       if (!allowed) return bad('The Game Master needs a moment. Try again shortly.', 429);
       if (!aiAvailable()) return bad('The Game Master is not available right now.', 503);
-      const recent = await prisma.groupMessage.findMany({
-        where: { groupId: access.id, deletedAt: null },
+      const recent = await prisma.chatMessage.findMany({
+        where: { chatId: access.id, deletedAt: null },
         orderBy: { createdAt: 'desc' },
         take: 8,
         select: { content: true },

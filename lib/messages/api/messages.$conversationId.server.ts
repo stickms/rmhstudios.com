@@ -5,6 +5,7 @@ import { implement } from '@/lib/api/implement.server';
 import { sendToConversationApi } from '@/lib/messages/message-actions.contract';
 import { sendToConversationBody } from '@/lib/messages/message-actions-schema';
 import { prisma } from '@/lib/prisma.server';
+import { findDm } from '@/lib/chat/chat.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { redisEnabled, redisGetJSON, redisIncrBy } from '@/lib/redis.server';
 import { readJsonLimited, RequestTooLargeError } from '@/lib/request-limits';
@@ -51,10 +52,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
     const userId = session.user.id;
 
     // Verify user is a participant
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      select: { participantOneId: true, participantTwoId: true },
-    });
+    const conversation = await findDm(conversationId);
 
     if (!conversation) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 });
@@ -68,8 +66,8 @@ export const route = apiRoute('/api/messages/$conversationId', {
     const cursor = url.searchParams.get('cursor');
     const limit = 50;
 
-    const messages = await prisma.directMessage.findMany({
-      where: { conversationId, AND: [liveMessages()] },
+    const messages = await prisma.chatMessage.findMany({
+      where: { chatId: conversationId, AND: [liveMessages()] },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -99,10 +97,10 @@ export const route = apiRoute('/api/messages/$conversationId', {
     // or re-opening a read thread). Same predicate as the updateMany below.
     const hasUnreadFromOther = items.some((m) => !m.read && m.senderId !== userId);
     if (hasUnreadFromOther)
-      void prisma.directMessage
+      void prisma.chatMessage
         .updateMany({
           where: {
-            conversationId,
+            chatId: conversationId,
             senderId: { not: userId },
             read: false,
             id: { in: items.map((m) => m.id) },
@@ -175,10 +173,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
     }
 
     // Verify user is a participant
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      select: { participantOneId: true, participantTwoId: true, disappearAfterSec: true },
-    });
+    const conversation = await findDm(conversationId);
 
     if (!conversation) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 });
@@ -271,9 +266,9 @@ export const route = apiRoute('/api/messages/$conversationId', {
     }
 
     const [message] = await prisma.$transaction([
-      prisma.directMessage.create({
+      prisma.chatMessage.create({
         data: {
-          conversationId,
+          chatId: conversationId,
           senderId: userId,
           content: parsed.data.content,
           gifUrl: parsed.data.gifUrl ?? null,
@@ -283,7 +278,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
           ...messageStamp(conversation.disappearAfterSec, parsed.data),
         },
       }),
-      prisma.conversation.update({
+      prisma.chat.update({
         where: { id: conversationId },
         data: { lastMessageAt: new Date() },
       }),

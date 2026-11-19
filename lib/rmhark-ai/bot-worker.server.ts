@@ -36,6 +36,7 @@
  * counters are structured log lines (`bot_worker.*`) instead of Prometheus.
  */
 import { prisma } from '@/lib/prisma.server';
+import { findDmByPair, upsertDm } from '@/lib/chat/chat.server';
 import { Prisma } from '@prisma/client';
 import { decideInitiation, canBotMessage, formatDmHistory, type DmPrivacy } from './dm-policy';
 import {
@@ -519,18 +520,21 @@ export const prismaBotRepo: BotRepo = {
         last_sender_id: string;
       }[]
     >(Prisma.sql`
-      SELECT c.id, c."participantOneId", c."participantTwoId",
+      SELECT c.id, m1."userId" AS "participantOneId", m2."userId" AS "participantTwoId",
              p1."isBot" AS one_is_bot, p2."isBot" AS two_is_bot,
              COALESCE(lm."senderId", '') AS last_sender_id
-        FROM "conversation" c
-        JOIN "user" p1 ON p1.id = c."participantOneId"
-        JOIN "user" p2 ON p2.id = c."participantTwoId"
+        FROM "chat" c
+        JOIN "chat_member" m1 ON m1."chatId" = c.id AND m1."slot" = 1
+        JOIN "chat_member" m2 ON m2."chatId" = c.id AND m2."slot" = 2
+        JOIN "user" p1 ON p1.id = m1."userId"
+        JOIN "user" p2 ON p2.id = m2."userId"
         LEFT JOIN LATERAL (
-              SELECT dm."senderId" FROM "direct_message" dm
-               WHERE dm."conversationId" = c.id
+              SELECT dm."senderId" FROM "chat_message" dm
+               WHERE dm."chatId" = c.id
                ORDER BY dm."createdAt" DESC LIMIT 1
              ) lm ON true
-       WHERE c."lastMessageAt" >= ${since} AND (p1."isBot" = true OR p2."isBot" = true)
+       WHERE c."kind" = 'dm' AND c."lastMessageAt" >= ${since}
+         AND (p1."isBot" = true OR p2."isBot" = true)
        ORDER BY c."lastMessageAt" DESC
        LIMIT 60`);
     return rows.map((r) => ({
@@ -543,8 +547,8 @@ export const prismaBotRepo: BotRepo = {
     }));
   },
   async recentDmHistory(conversationId) {
-    return prisma.directMessage.findMany({
-      where: { conversationId },
+    return prisma.chatMessage.findMany({
+      where: { chatId: conversationId },
       orderBy: { createdAt: 'desc' },
       take: 20,
       select: { senderId: true, content: true },
@@ -552,11 +556,11 @@ export const prismaBotRepo: BotRepo = {
   },
   async sendBotDm(conversationId, botId, content) {
     const [msg] = await prisma.$transaction([
-      prisma.directMessage.create({
-        data: { conversationId, senderId: botId, content },
+      prisma.chatMessage.create({
+        data: { chatId: conversationId, senderId: botId, content },
         select: { id: true, read: true, createdAt: true },
       }),
-      prisma.conversation.update({
+      prisma.chat.update({
         where: { id: conversationId },
         data: { lastMessageAt: new Date() },
       }),
@@ -586,29 +590,17 @@ export const prismaBotRepo: BotRepo = {
     );
   },
   async conversationOpenerMessages(pOne, pTwo) {
-    const convo = await prisma.conversation.findUnique({
-      where: {
-        participantOneId_participantTwoId: { participantOneId: pOne, participantTwoId: pTwo },
-      },
-      select: { id: true },
-    });
+    const convo = await findDmByPair(pOne, pTwo);
     if (!convo) return null;
-    return prisma.directMessage.findMany({
-      where: { conversationId: convo.id },
+    return prisma.chatMessage.findMany({
+      where: { chatId: convo.id },
       orderBy: { createdAt: 'asc' },
       take: 10,
       select: { senderId: true, createdAt: true },
     });
   },
   async upsertConversation(pOne, pTwo) {
-    const row = await prisma.conversation.upsert({
-      where: {
-        participantOneId_participantTwoId: { participantOneId: pOne, participantTwoId: pTwo },
-      },
-      create: { participantOneId: pOne, participantTwoId: pTwo },
-      update: {},
-      select: { id: true },
-    });
+    const row = await upsertDm(pOne, pTwo);
     return row.id;
   },
   async recentActiveHumans(since) {

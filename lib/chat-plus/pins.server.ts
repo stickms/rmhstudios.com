@@ -35,8 +35,8 @@ async function loadPinnedMessages(
   if (ids.length === 0) return out;
   const live = liveMessages();
   if (access.kind === 'dm') {
-    const rows = await prisma.directMessage.findMany({
-      where: { id: { in: ids }, conversationId: access.id, deletedAt: null, AND: [live] },
+    const rows = await prisma.chatMessage.findMany({
+      where: { id: { in: ids }, chatId: access.id, deletedAt: null, AND: [live] },
       select: {
         id: true,
         senderId: true,
@@ -50,8 +50,8 @@ async function loadPinnedMessages(
     });
     for (const r of rows) out.set(r.id, { ...r, senderName: null });
   } else {
-    const rows = await prisma.groupMessage.findMany({
-      where: { id: { in: ids }, groupId: access.id, deletedAt: null, AND: [live] },
+    const rows = await prisma.chatMessage.findMany({
+      where: { id: { in: ids }, chatId: access.id, deletedAt: null, AND: [live] },
       select: {
         id: true,
         senderId: true,

@@ -3,6 +3,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { pollGroupMessagesApi, sendGroupMessageApi } from '@/lib/group-chat/group-chat.contract';
 import { prisma } from '@/lib/prisma.server';
+import { findGroupMembership } from '@/lib/chat/chat.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { getActiveBan } from '@/lib/admin-audit.server';
@@ -34,16 +35,13 @@ export const route = apiRoute('/api/group-chats/$id/messages', {
   GET: implement(pollGroupMessagesApi, {}, async ({ request, params, session }) => {
     const userId = session.user.id;
 
-    const membership = await prisma.groupChatMember.findUnique({
-      where: { groupId_userId: { groupId: params.id, userId } },
-      select: { id: true },
-    });
+    const membership = await findGroupMembership(params.id, userId, { id: true });
     if (!membership) return Response.json({ error: 'Not found' }, { status: 404 });
 
     const after = new URL(request.url).searchParams.get('after');
-    const messages = await prisma.groupMessage.findMany({
+    const messages = await prisma.chatMessage.findMany({
       where: {
-        groupId: params.id,
+        chatId: params.id,
         threadParentId: null,
         AND: [liveMessages()],
         ...(after ? { createdAt: { gt: new Date(after) } } : {}),
@@ -53,8 +51,8 @@ export const route = apiRoute('/api/group-chats/$id/messages', {
       select: groupMessageSelect,
     });
 
-    await prisma.groupChatMember.update({
-      where: { groupId_userId: { groupId: params.id, userId } },
+    await prisma.chatMember.update({
+      where: { chatId_userId: { chatId: params.id, userId } },
       data: { lastReadAt: new Date() },
     });
 
@@ -73,10 +71,7 @@ export const route = apiRoute('/api/group-chats/$id/messages', {
     const { allowed } = rateLimit(ip, { limit: 40, windowMs: 60_000, prefix: 'group-msg' });
     if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-    const membership = await prisma.groupChatMember.findUnique({
-      where: { groupId_userId: { groupId: params.id, userId } },
-      select: { id: true, group: { select: { disappearAfterSec: true } } },
-    });
+    const membership = await findGroupMembership(params.id, userId, { id: true, chat: { select: { disappearAfterSec: true } } });
     if (!membership) return Response.json({ error: 'Not found' }, { status: 404 });
 
     const parsed = schema.safeParse(await request.json().catch(() => ({})));
@@ -94,9 +89,9 @@ export const route = apiRoute('/api/group-chats/$id/messages', {
     }
 
     const [message] = await prisma.$transaction([
-      prisma.groupMessage.create({
+      prisma.chatMessage.create({
         data: {
-          groupId: params.id,
+          chatId: params.id,
           senderId: userId,
           content: text,
           gifUrl: gifUrl ?? null,
@@ -104,7 +99,7 @@ export const route = apiRoute('/api/group-chats/$id/messages', {
           pollQuestion: poll?.question ?? null,
           pollOptions: poll?.options ?? [],
           // M3 + M6: expiry from the group's timer, and the shared-media flags.
-          ...messageStamp(membership.group.disappearAfterSec, {
+          ...messageStamp(membership.chat.disappearAfterSec, {
             content: text,
             gifUrl,
             imageUrls,
@@ -112,12 +107,12 @@ export const route = apiRoute('/api/group-chats/$id/messages', {
         },
         select: groupMessageSelect,
       }),
-      prisma.groupChat.update({
+      prisma.chat.update({
         where: { id: params.id },
         data: { lastMessageAt: new Date() },
       }),
-      prisma.groupChatMember.update({
-        where: { groupId_userId: { groupId: params.id, userId } },
+      prisma.chatMember.update({
+        where: { chatId_userId: { chatId: params.id, userId } },
         data: { lastReadAt: new Date() },
       }),
     ]);

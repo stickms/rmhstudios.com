@@ -63,9 +63,9 @@ async function fetchRows(
   };
   const flags = { in: flagsForTab(tab) };
   if (access.kind === 'dm') {
-    const rows = await prisma.directMessage.findMany({
+    const rows = await prisma.chatMessage.findMany({
       where: {
-        conversationId: access.id,
+        chatId: access.id,
         attachFlags: flags,
         deletedAt: null,
         AND: [liveMessages()],
@@ -81,8 +81,8 @@ async function fetchRows(
     const hidden = new Set(hides.map((h) => h.messageId));
     return hidden.size ? rows.filter((r) => !hidden.has(r.id)) : rows;
   }
-  return prisma.groupMessage.findMany({
-    where: { groupId: access.id, attachFlags: flags, deletedAt: null, AND: [liveMessages()] },
+  return prisma.chatMessage.findMany({
+    where: { chatId: access.id, attachFlags: flags, deletedAt: null, AND: [liveMessages()] },
     ...common,
   });
 }

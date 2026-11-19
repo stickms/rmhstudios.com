@@ -58,20 +58,18 @@ export async function toggleChecklistItem(
   messageId: string,
   index: number,
 ): Promise<TickResult> {
-  const table = access.kind === 'dm' ? 'direct_message' : 'group_message';
-  const scopeCol = access.kind === 'dm' ? 'conversationId' : 'groupId';
   const path = ['items', String(index)];
   const now = new Date().toISOString();
 
   const rows = await prisma.$queryRaw<{ meta: ChecklistMeta }[]>(Prisma.sql`
-    UPDATE ${Prisma.raw(`"${table}"`)}
+    UPDATE "chat_message"
     SET "meta" = jsonb_set(
       "meta", ${path}::text[],
       CASE WHEN ("meta" #>> ${[...path, 'doneBy']}::text[]) IS NULL
         THEN ("meta" #> ${path}::text[]) || jsonb_build_object('doneBy', ${access.viewerId}::text, 'doneAt', ${now}::text)
         ELSE ("meta" #> ${path}::text[]) || jsonb_build_object('doneBy', NULL::text, 'doneAt', NULL::text)
       END)
-    WHERE "id" = ${messageId} AND ${Prisma.raw(`"${scopeCol}"`)} = ${access.id}
+    WHERE "id" = ${messageId} AND "chatId" = ${access.id}
       AND "kind" = 'checklist' AND "deletedAt" IS NULL
       AND ("expiresAt" IS NULL OR "expiresAt" > now())
       AND jsonb_array_length("meta" -> 'items') > ${index}

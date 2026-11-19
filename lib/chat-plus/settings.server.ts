@@ -84,9 +84,9 @@ export async function updateChatSettings(
   }
 
   if (access.kind === 'dm') {
-    await prisma.conversation.update({ where: { id: access.id }, data });
+    await prisma.chat.update({ where: { id: access.id }, data });
   } else {
-    await prisma.groupChat.update({ where: { id: access.id }, data });
+    await prisma.chat.update({ where: { id: access.id }, data });
   }
   const next = {
     disappearAfterSec:

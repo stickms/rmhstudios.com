@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { dmsOf } from '@/lib/chat/chat.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 import { subscribeUser, type MessageNotification } from '@/lib/message-events';
@@ -11,15 +12,13 @@ const DM_UNREAD_TTL_MS = 60_000;
 /** Single-query unread count (Postgres joins through the conversation relation
  * instead of shipping every conversation id back in an IN(...) list). */
 function countUnreadFromDb(userId: string): Promise<number> {
-  return prisma.directMessage.count({
+  return prisma.chatMessage.count({
     where: {
       senderId: { not: userId },
       read: false,
       // M3: an expired disappearing message is not unread, it is gone.
       AND: [liveMessages()],
-      conversation: {
-        OR: [{ participantOneId: userId }, { participantTwoId: userId }],
-      },
+      chat: dmsOf(userId),
     },
   });
 }

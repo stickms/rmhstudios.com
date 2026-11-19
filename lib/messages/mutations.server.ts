@@ -20,6 +20,7 @@ import { pageSize } from '@/lib/pagination';
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { findDmFor } from '@/lib/chat/chat.server';
 import { notifyUser, type MessageMutationPayload } from '@/lib/message-events';
 import {
   DELETED_BY_SENDER,
@@ -101,15 +102,7 @@ export async function loadParticipantConversation(
   conversationId: string,
   userId: string,
 ): Promise<Participants | null> {
-  const conversation = await prisma.conversation.findUnique({
-    where: { id: conversationId },
-    select: { participantOneId: true, participantTwoId: true, disappearAfterSec: true },
-  });
-  if (!conversation) return null;
-  if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
-    return null;
-  }
-  return conversation;
+  return findDmFor(conversationId, userId);
 }
 
 export function otherParticipant(conversation: Participants, userId: string): string {
@@ -159,10 +152,10 @@ export async function loadThreadPage(args: {
   if (!conversation) return null;
 
   const limit = pageSize(args.limit, 50, 100);
-  const rows = await prisma.directMessage.findMany({
+  const rows = await prisma.chatMessage.findMany({
     // Expired disappearing messages do not exist (M3) — enforced here at read
     // time, so they vanish on the dot whether or not the sweep has run.
-    where: { conversationId: args.conversationId, AND: [liveMessages()] },
+    where: { chatId: args.conversationId, AND: [liveMessages()] },
     orderBy: { createdAt: 'desc' },
     take: limit + 1,
     ...(args.cursor ? { cursor: { id: args.cursor }, skip: 1 } : {}),
@@ -221,9 +214,9 @@ export async function listMutationsSince(args: {
   const conversation = await loadParticipantConversation(args.conversationId, args.userId);
   if (!conversation) return null;
 
-  const rows = await prisma.directMessage.findMany({
+  const rows = await prisma.chatMessage.findMany({
     where: {
-      conversationId: args.conversationId,
+      chatId: args.conversationId,
       AND: [liveMessages()],
       OR: [{ editedAt: { gt: args.since } }, { deletedAt: { gt: args.since } }],
     },
@@ -250,8 +243,8 @@ export async function listMutationsSince(args: {
 
 /** Is this the newest message in the conversation? Decides preview patching. */
 async function isLatestMessage(conversationId: string, messageId: string): Promise<boolean> {
-  const latest = await prisma.directMessage.findFirst({
-    where: { conversationId },
+  const latest = await prisma.chatMessage.findFirst({
+    where: { chatId: conversationId },
     orderBy: { createdAt: 'desc' },
     select: { id: true },
   });
@@ -323,8 +316,8 @@ export async function editDirectMessage(args: {
   const conversation = await loadParticipantConversation(args.conversationId, args.userId);
   if (!conversation) return failure('not-found', 404, 'Conversation not found');
 
-  const existing = await prisma.directMessage.findFirst({
-    where: { id: args.messageId, conversationId: args.conversationId },
+  const existing = await prisma.chatMessage.findFirst({
+    where: { id: args.messageId, chatId: args.conversationId },
     select: messageSelect,
   });
   if (!existing) return failure('not-found');
@@ -354,10 +347,10 @@ export async function editDirectMessage(args: {
   // captured; it degrades to a no-op rather than throwing.
   await recordPriorRevision(existing.id, existing.content, now).catch(() => {});
 
-  const updated = await prisma.directMessage.update({
+  const updated = await prisma.chatMessage.update({
     where: { id: existing.id },
     data: { content, editedAt: now },
-    select: { ...messageSelect, conversationId: true },
+    select: messageSelect,
   });
 
   const mutation = await publishMutation('message-edited', {
@@ -392,8 +385,8 @@ export async function unsendDirectMessage(args: {
   const conversation = await loadParticipantConversation(args.conversationId, args.userId);
   if (!conversation) return failure('not-found', 404, 'Conversation not found');
 
-  const existing = await prisma.directMessage.findFirst({
-    where: { id: args.messageId, conversationId: args.conversationId },
+  const existing = await prisma.chatMessage.findFirst({
+    where: { id: args.messageId, chatId: args.conversationId },
     select: messageSelect,
   });
   if (!existing) return failure('not-found');
@@ -401,7 +394,7 @@ export async function unsendDirectMessage(args: {
   const eligible = unsendEligibility(existing, args.userId);
   if (!eligible.ok) return failure(eligible.reason);
 
-  const updated = await prisma.directMessage.update({
+  const updated = await prisma.chatMessage.update({
     where: { id: existing.id },
     data: { deletedAt: now, deletedBy: DELETED_BY_SENDER },
     select: messageSelect,
@@ -410,7 +403,7 @@ export async function unsendDirectMessage(args: {
   // Reactions point at content that is gone; they would render as a response to
   // a tombstone. Removed here rather than filtered on read so the rows do not
   // accumulate against a message nobody can see.
-  await prisma.directMessageReaction
+  await prisma.chatMessageReaction
     .deleteMany({ where: { messageId: existing.id } })
     .catch(() => ({ count: 0 }));
 
@@ -440,8 +433,8 @@ export async function setMessageHidden(args: {
   const conversation = await loadParticipantConversation(args.conversationId, args.userId);
   if (!conversation) return failure('not-found', 404, 'Conversation not found');
 
-  const exists = await prisma.directMessage.findFirst({
-    where: { id: args.messageId, conversationId: args.conversationId },
+  const exists = await prisma.chatMessage.findFirst({
+    where: { id: args.messageId, chatId: args.conversationId },
     select: { id: true },
   });
   if (!exists) return failure('not-found');

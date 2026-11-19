@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { findGroupMembership } from '@/lib/chat/chat.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { publishGroupEvent } from '@/lib/group-events';
 import { isValidReactionEmoji } from '@/lib/social/reactions';
@@ -30,10 +31,7 @@ export const route = apiRoute('/api/group-chats/$id/react', {
       );
     }
 
-    const membership = await prisma.groupChatMember.findUnique({
-      where: { groupId_userId: { groupId: params.id, userId } },
-      select: { id: true },
-    });
+    const membership = await findGroupMembership(params.id, userId, { id: true });
     if (!membership) return Response.json({ error: 'Not found' }, { status: 404 });
 
     const parsed = reactSchema.safeParse(await request.json().catch(() => null));

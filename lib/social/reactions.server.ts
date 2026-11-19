@@ -124,38 +124,48 @@ export async function toggleCommentReaction(
   return { found: true, reacted: !existing, rows };
 }
 
+/**
+ * Toggle a reaction on a message of chat `chatId` (a DM or a group chat — one
+ * table since the chat model was unified). The caller has already checked that
+ * `userId` belongs to that chat; the message is looked up inside it, so a
+ * message id from another chat is "not found".
+ */
+async function toggleChatMessageReaction(
+  userId: string,
+  chatId: string,
+  messageId: string,
+  emoji: string,
+): Promise<ToggleResult & { senderId?: string }> {
+  const [message, existing] = await Promise.all([
+    prisma.chatMessage.findFirst({
+      where: { id: messageId, chatId },
+      select: { id: true, senderId: true },
+    }),
+    prisma.chatMessageReaction.findUnique({
+      where: { messageId_userId_emoji: { messageId, userId, emoji } },
+    }),
+  ]);
+  if (!message) return { found: false, reacted: false, rows: [] };
+  if (existing) {
+    await prisma.chatMessageReaction.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.chatMessageReaction.create({ data: { messageId, userId, emoji } });
+  }
+  const rows = await prisma.chatMessageReaction.findMany({
+    where: { messageId },
+    select: ROW_SELECT,
+  });
+  return { found: true, reacted: !existing, rows, senderId: message.senderId };
+}
+
 export async function toggleDmReaction(
   userId: string,
   conversationId: string,
   messageId: string,
   emoji: string,
 ): Promise<ToggleResult & { conversationId?: string; senderId?: string }> {
-  const [message, existing] = await Promise.all([
-    prisma.directMessage.findFirst({
-      where: { id: messageId, conversationId },
-      select: { id: true, conversationId: true, senderId: true },
-    }),
-    prisma.directMessageReaction.findUnique({
-      where: { messageId_userId_emoji: { messageId, userId, emoji } },
-    }),
-  ]);
-  if (!message) return { found: false, reacted: false, rows: [] };
-  if (existing) {
-    await prisma.directMessageReaction.delete({ where: { id: existing.id } });
-  } else {
-    await prisma.directMessageReaction.create({ data: { messageId, userId, emoji } });
-  }
-  const rows = await prisma.directMessageReaction.findMany({
-    where: { messageId },
-    select: ROW_SELECT,
-  });
-  return {
-    found: true,
-    reacted: !existing,
-    rows,
-    conversationId: message.conversationId,
-    senderId: message.senderId,
-  };
+  const result = await toggleChatMessageReaction(userId, conversationId, messageId, emoji);
+  return result.found ? { ...result, conversationId } : result;
 }
 
 export async function toggleGroupMessageReaction(
@@ -164,24 +174,6 @@ export async function toggleGroupMessageReaction(
   messageId: string,
   emoji: string,
 ): Promise<ToggleResult & { groupId?: string }> {
-  const [message, existing] = await Promise.all([
-    prisma.groupMessage.findFirst({
-      where: { id: messageId, groupId },
-      select: { id: true, groupId: true },
-    }),
-    prisma.groupMessageReaction.findUnique({
-      where: { messageId_userId_emoji: { messageId, userId, emoji } },
-    }),
-  ]);
-  if (!message) return { found: false, reacted: false, rows: [] };
-  if (existing) {
-    await prisma.groupMessageReaction.delete({ where: { id: existing.id } });
-  } else {
-    await prisma.groupMessageReaction.create({ data: { messageId, userId, emoji } });
-  }
-  const rows = await prisma.groupMessageReaction.findMany({
-    where: { messageId },
-    select: ROW_SELECT,
-  });
-  return { found: true, reacted: !existing, rows, groupId: message.groupId };
+  const { found, reacted, rows } = await toggleChatMessageReaction(userId, groupId, messageId, emoji);
+  return found ? { found, reacted, rows, groupId } : { found, reacted, rows };
 }
