@@ -22,6 +22,7 @@ import {
   Disc3,
   FileText,
   LayoutGrid,
+  Highlighter,
   ListVideo,
   Newspaper,
   Rotate3d,
@@ -44,6 +45,8 @@ import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
 import { BookLeaves } from '@/components/library/BookLeaves';
 import { LibraryReadingMount } from '@/components/reading/LibraryReadingMount';
+import { MyReadingView } from '@/components/reading/MyReadingView';
+import { parseReadingTab, type ReadingTab } from '@/lib/reading/tabs';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdSlot } from '@/components/ads/AdSlot';
@@ -110,7 +113,10 @@ const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
 // the /playlists redirect → /library?view=playlists) land on the right section.
 // The section used to be "Music" (`?view=music`), named for the retired
 // listening-party app; that old link still lands on the playlists.
-const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'books', 'playlists'] as const;
+// `reading` is "My reading" (highlights, shelves, the reading challenge), which
+// was the standalone /reading page; it is the reader's own, so "Everything"
+// leaves it out, and its sub-tab rides along as `&tab=`.
+const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'books', 'playlists', 'reading'] as const;
 type LibraryView = (typeof LIBRARY_VIEWS)[number];
 
 // useLayoutEffect warns during SSR; the scroll settle below only ever has work
@@ -127,7 +133,9 @@ export const Route = createFileRoute('/_site/library/')({
     }),
     links: [buildCanonical('/library')],
   }),
-  validateSearch: (search: Record<string, unknown>): { view?: LibraryView } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { view?: LibraryView; tab?: ReadingTab } => {
     // Retired names: `music` became the playlists; `collections` now lives at the top of Books.
     const view =
       search.view === 'music'
@@ -135,7 +143,11 @@ export const Route = createFileRoute('/_site/library/')({
         : search.view === 'collections'
           ? 'books'
           : search.view;
-    return LIBRARY_VIEWS.includes(view as LibraryView) ? { view: view as LibraryView } : {};
+    if (!LIBRARY_VIEWS.includes(view as LibraryView)) return {};
+    if (view === 'reading' && search.tab !== undefined) {
+      return { view: 'reading', tab: parseReadingTab(search.tab) };
+    }
+    return { view: view as LibraryView };
   },
   // perf audit §4.2: the server fns were awaited sequentially — serial HTTP
   // round trips on client nav / serial DB reads on SSR. They're independent, so
@@ -162,7 +174,7 @@ function Library() {
     albums,
     playlists,
   } = Route.useLoaderData();
-  const { view: routeView = 'all' } = Route.useSearch();
+  const { view: routeView = 'all', tab: readingTab = 'highlights' } = Route.useSearch();
   const navigate = useNavigate();
   const [view, setActiveView] = useState<LibraryView>(routeView);
   const [hasFiltered, setHasFiltered] = useState(false);
@@ -293,7 +305,7 @@ function Library() {
   }, [view, reducedMotion]);
 
   // A section renders when we're on "All" or on its own category.
-  const shows = (id: LibraryView) => view === 'all' || view === id;
+  const shows = (id: LibraryView) => view === id || (view === 'all' && id !== 'reading');
   const session = useSession();
   const sessionUser = session.data?.user as
     { isAdmin?: boolean; handle?: string | null } | undefined;
@@ -503,12 +515,18 @@ function Library() {
                   label: t('cat-reads', { defaultValue: 'Reads' }),
                   icon: Newspaper,
                 },
+                {
+                  id: 'reading',
+                  label: t('cat-reading', { defaultValue: 'My reading' }),
+                  icon: Highlighter,
+                },
               ] as TabItem[]
             }
             value={view}
             onChange={(next) => setView(next as LibraryView)}
             aria-label={t('sections-label', { defaultValue: 'Library sections' })}
             search={
+              view === 'reading' ? undefined : (
               <SearchField
                 value={query}
                 onValueChange={setQuery}
@@ -517,10 +535,13 @@ function Library() {
                   defaultValue: 'Search books, albums, playlists, and reads…',
                 })}
               />
+              )
             }
           />
 
           {shows('books') ? <LibraryReadingMount /> : null}
+
+          {shows('reading') ? <MyReadingView tab={readingTab} /> : null}
 
           <div className="lib-playground" data-library-layout="shelves" ref={playgroundRef}>
             <LibraryRevealProvider instant={hasFiltered}>

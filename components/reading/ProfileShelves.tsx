@@ -23,8 +23,8 @@ export default function ProfileShelvesPanel({ ownerId }: { ownerId: string }) {
           <>
             {t('profile-shelves-owner-empty', { defaultValue: 'Nothing on your shelves yet.' })}{' '}
             <Link
-              to="/reading"
-              search={{ tab: 'shelves' }}
+              to="/library"
+              search={{ view: 'reading', tab: 'shelves' }}
               className="text-site-accent underline-offset-4 hover:underline"
             >
               {t('manage-shelves', { defaultValue: 'Manage shelves' })}

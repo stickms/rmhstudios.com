@@ -2,7 +2,7 @@
  * L3 — the yearly reading challenge. Progress is derived from the member's
  * `read` shelf (finished-this-year books and their pages), so there is nothing
  * to log by hand: finish a book in the library reader, or shelve it as read.
- * `compact` is the library-page widget; the full panel lives under /reading.
+ * `compact` is the library-page widget; the full panel is the library's My reading view (/library?view=reading).
  */
 
 import { useState } from 'react';
@@ -38,7 +38,7 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
       <SignedOutPrompt
         icon={Target}
         title={t('challenge-signed-out', { defaultValue: 'Sign in to set a reading goal' })}
-        callbackURL="/reading?tab=challenge"
+        callbackURL="/library?view=reading&tab=challenge"
       />
     );
   }
@@ -145,8 +145,8 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
           </Button>
           {compact ? (
             <Link
-              to="/reading"
-              search={{ tab: 'challenge' }}
+              to="/library"
+              search={{ view: 'reading', tab: 'challenge' }}
               className="ms-auto text-sm text-site-accent underline-offset-4 hover:underline"
             >
               {t('challenge-open', { defaultValue: 'My reading' })}

@@ -121,7 +121,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/qotd` | Question of the Day | public | `app/routes/_site/qotd.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
-| `/reading` | My reading | public | `app/routes/_site/reading/index.tsx` |
+| `/reading` | redirects to `/library?view=reading` | public | `app/routes/_site/reading/index.tsx` |
 | `/recap` | Your Week | public | `app/routes/_site/recap.tsx` |
 | `/rideshare` | RMH Rideshare | public | `app/routes/_site/rideshare/index.tsx` |
 | `/rideshare/drive` | Drive with RMH Rideshare | public | `app/routes/_site/rideshare/drive.tsx` |

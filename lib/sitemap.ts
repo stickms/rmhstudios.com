@@ -677,7 +677,7 @@ export const EXCLUDED_ROUTES: Record<
     '/progress':
       'personal',
     '/reading':
-      'personal', // highlights, shelves and the reading challenge
+      'redirect', // → /library?view=reading (My reading became a library view; ?tab= carried across)
     '/saves':
       'personal',
     '/feeds':
