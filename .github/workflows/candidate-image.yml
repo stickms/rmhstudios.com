@@ -9,7 +9,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   candidate-image:
-    runs-on: ubuntu-24.04-arm
+    # The same runner as deploy's image build (vars.ARM64_BUILD_RUNNER), so a larger ARM runner
+    # speeds up this PR check, the slowest one, as well as the release build.
+    runs-on: ${{ vars.ARM64_BUILD_RUNNER || 'ubuntu-24.04-arm' }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

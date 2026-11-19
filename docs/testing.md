@@ -3418,26 +3418,26 @@ on
 a
 miss):
 
-| Workflow                                  | Runs                                                                                                  | Gate?                                                                                                                                 |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `web-ci.yml` (`typecheck`)                | `tsc -b` (`pnpm typecheck`) → `eslint` → docs freshness                                               | **all block**                                                                                                                         |
-| `web-ci.yml` (`ratchets`)                 | `pnpm lint:ratchet` (import cycles, layer boundaries) → `pnpm a11y:ratchet`, beside `typecheck`       | **both block**                                                                                                                        |
-| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs                               | **blocks**, tests included (as of 2026-08-08)                                                                                         |
-| `web-ci.yml` (`build` job)                | `build:frontend:sourcemap` → bundle budget → entry composition                                        | build + both size gates block                                                                                                         |
-| `web-ci.yml` (`audit` job)                | `pnpm audit --prod --audit-level=high`                                                                | blocks on high-severity prod advisories                                                                                               |
-| `web-ci.yml` (`integration`)              | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`                  | **blocks**; see §8                                                                                                                    |
-| `epic-tests.yml`                          | `playwright install chromium` → `pnpm test:epic`                                                      | blocks; **path-filtered** to `scripts/epic/**`                                                                                        |
-| `deploy.yml` (`ci` job)                   | typecheck → lint → production dependency audit                                                        | all block the deployment                                                                                                              |
-| `deploy.yml` (`integration`)              | same as web-ci's `integration`, on the **merged** commit                                              | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
-| `web-ci.yml` (`steel-rest`)               | checked build → serve → `testing/e2e/steel-rest.mjs` (zero frames at rest, one GL context, the globe) | non-blocking; **nightly + manual dispatch only** (not on PRs); see §6                                                                 |
-| `go-microservices.yml`                    | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`               | blocks                                                                                                                                |
+| Workflow                                   | Runs                                                                                                     | Gate?                                                                                                                                 |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `web-ci.yml` (`typecheck`)                 | `tsc -b` (`pnpm typecheck`) → `eslint` → docs freshness                                                  | **all block**                                                                                                                         |
+| `web-ci.yml` (`ratchets`)                  | `pnpm lint:ratchet` (import cycles, layer boundaries) → `pnpm a11y:ratchet`, beside `typecheck`          | **both block**                                                                                                                        |
+| `web-ci.yml` (`test (1/3)` … `test (3/3)`) | `pnpm test --shard=N/3` — the unit suite split across three parallel jobs                                | **blocks**, tests included (as of 2026-08-08)                                                                                         |
+| `web-ci.yml` (`integration` job)           | `build:frontend:sourcemap` → bundle budget → entry composition, then the integration suite on that build | build + both size gates block                                                                                                         |
+| `web-ci.yml` (`audit` job)                 | `pnpm audit --prod --audit-level=high`                                                                   | blocks on high-severity prod advisories                                                                                               |
+| `web-ci.yml` (`integration`)               | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`                     | **blocks**; see §8                                                                                                                    |
+| `epic-tests.yml`                           | `playwright install chromium` → `pnpm test:epic`                                                         | blocks; **path-filtered** to `scripts/epic/**`                                                                                        |
+| `deploy.yml` (`ci` job)                    | typecheck → lint → production dependency audit                                                           | all block the deployment                                                                                                              |
+| `deploy.yml` (`integration`)               | same as web-ci's `integration`, on the **merged** commit                                                 | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
+| `web-ci.yml` (`steel-rest`)                | checked build → serve → `testing/e2e/steel-rest.mjs` (zero frames at rest, one GL context, the globe)    | non-blocking; **nightly + manual dispatch only** (not on PRs); see §6                                                                 |
+| `go-microservices.yml`                     | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`                  | blocks                                                                                                                                |
 
 The
 deploy
 `test`
 job
 runs
-two
+three
 isolated
 unit-suite
 shards
