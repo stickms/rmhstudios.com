@@ -2494,7 +2494,6 @@ lib/prepaint/generated.ts
 /lib/handles/lookup.server.ts
 /lib/hash-ip.server.ts
 /lib/history/api/history.beat.server.ts
-/lib/history/api/history.position.server.ts
 /lib/history/api/history.resume.server.ts
 /lib/history/history.server.ts
 /lib/history/resume.server.ts
