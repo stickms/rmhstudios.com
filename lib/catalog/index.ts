@@ -80,6 +80,7 @@ import type { AppInfo, GameInfo } from './types';
 import altair from '@features/altair/catalog';
 import doctrine from '@features/doctrine/catalog';
 import rmhos from '@features/rmhos/catalog';
+import rmhcharacters from '@features/rmhcharacters/catalog';
 import dreamRift from '@features/dream-rift/catalog';
 import gabrielsHorn from '@features/gabriels-horn/catalog';
 import hearthworks from '@features/hearthworks/catalog';
@@ -146,6 +147,7 @@ const APP_MODULES: readonly AppInfo[] = [
   // feature-owned
   doctrine,
   rmhos,
+  rmhcharacters,
   // hand-kept
   dunesday,
   rmhConnections,

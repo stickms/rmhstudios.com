@@ -77,6 +77,8 @@
 @source not "../features/nightrail/ui";
 @source not "../features/rmhos/engine";
 @source not "../features/rmhos/ui";
+@source not "../features/rmhcharacters/engine";
+@source not "../features/rmhcharacters/ui";
 @source not "../components/optimization";
 @source not "../components/pf2ecal";
 @source not "../components/rebar-rutabaga";

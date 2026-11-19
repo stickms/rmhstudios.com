@@ -1,0 +1,194 @@
+/**
+ * RMHCharacters: palette and the few layout rules utilities cannot say (the
+ * stat grid, the print sheet). Structure comes from the shared app chrome
+ * (components/shared/app-theme.css). The palette is parchment-and-ink in light,
+ * warm graphite in dark; the accent is a deep oxblood that holds 4.5:1 on both.
+ */
+
+@import '../../../components/shared/app-theme.css';
+
+.rmhc-app {
+  --app-bg: #15130f;
+  --app-bg-subtle: #1c1914;
+  --app-surface: #24201a;
+  --app-surface-hover: #2c2820;
+  --app-surface-active: #353027;
+  --app-border: #3a342a;
+  --app-border-bright: #544b3c;
+  --app-text: #ede6d8;
+  --app-text-muted: #b3a892;
+  --app-text-dim: #8c8270;
+  --app-accent: #e0806a;
+  --app-accent-fg: #1a0c08;
+  --app-accent-hover: #ea9381;
+  --app-success: #8fcf9a;
+  --app-danger: #f08a7e;
+  --app-warning: #e6c06b;
+  --app-info: #8fb8e8;
+  --app-radius: 10px;
+  --app-radius-sm: 6px;
+  --app-radius-lg: 14px;
+  --app-glass-bg: var(--app-surface);
+}
+
+.rmhc-app.app-light {
+  --app-bg: #f6f1e7;
+  --app-bg-subtle: #efe8da;
+  --app-surface: #fffdf8;
+  --app-surface-hover: #f4eee2;
+  --app-surface-active: #ebe3d3;
+  --app-border: #d9cfbc;
+  --app-border-bright: #bfb299;
+  --app-text: #231d14;
+  --app-text-muted: #5c5141;
+  --app-text-dim: #7a6e5c;
+  --app-accent: #8f2a1c;
+  --app-accent-fg: #ffffff;
+  --app-accent-hover: #7a2216;
+  --app-success: #2f6b3a;
+  --app-danger: #a3261a;
+  --app-warning: #7a5600;
+  --app-info: #1f4f86;
+}
+
+/* The shared primitives (Button, Select, Dialog) read --site-*; inside the app they wear the app palette. */
+.rmhc-app {
+  --site-bg: var(--app-bg);
+  --site-bg-subtle: var(--app-bg-subtle);
+  --site-surface: var(--app-surface);
+  --site-surface-hover: var(--app-surface-hover);
+  --site-border: var(--app-border);
+  --site-text: var(--app-text);
+  --site-text-muted: var(--app-text-muted);
+  --site-accent: var(--app-accent);
+  --site-accent-fg: var(--app-accent-fg);
+  --site-accent-hover: var(--app-accent-hover);
+  --site-danger: var(--app-danger);
+  --site-success: var(--app-success);
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+.rmhc-app .rmhc-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  width: 100%;
+  padding: calc(var(--safe-top, 0px) + 16px) max(16px, var(--safe-right, 0px)) 32px
+    max(16px, var(--safe-left, 0px));
+}
+
+/* Six ability blocks: three across on a phone, six on a desktop. */
+.rmhc-app .rmhc-abilities {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .rmhc-app .rmhc-abilities {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.rmhc-app .rmhc-stat {
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  background: var(--app-surface);
+  padding: 8px;
+  text-align: center;
+}
+
+.rmhc-app .rmhc-columns {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 960px) {
+  .rmhc-app .rmhc-columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.rmhc-app .rmhc-list {
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.rmhc-app .rmhc-prose {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rmhc-app .rmhc-prose h1,
+.rmhc-app .rmhc-prose h2,
+.rmhc-app .rmhc-prose h3 {
+  font-weight: 600;
+  margin: 12px 0 4px;
+}
+
+.rmhc-app .rmhc-drop[data-over='true'] {
+  border-color: var(--app-accent);
+  background: var(--app-surface-hover);
+}
+
+/* Advisor answers: Markdown from the model. */
+.rmhc-app .rmhc-markdown :is(h1, h2, h3, h4) {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 12px 0 4px;
+}
+
+.rmhc-app .rmhc-markdown p {
+  margin: 6px 0;
+}
+
+.rmhc-app .rmhc-markdown ul,
+.rmhc-app .rmhc-markdown ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.rmhc-app .rmhc-markdown ul {
+  list-style: disc;
+}
+
+.rmhc-app .rmhc-markdown ol {
+  list-style: decimal;
+}
+
+.rmhc-app .rmhc-markdown strong {
+  font-weight: 600;
+}
+
+/* Print: the sheet alone, black on white, no chrome. */
+@media print {
+  .rmhc-app {
+    --app-bg: #ffffff;
+    --app-bg-subtle: #ffffff;
+    --app-surface: #ffffff;
+    --app-border: #999999;
+    --app-text: #000000;
+    --app-text-muted: #333333;
+    --app-accent: #000000;
+  }
+
+  .rmhc-app .rmhc-noprint {
+    display: none;
+  }
+
+  .rmhc-app .rmhc-page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .rmhc-app .rmhc-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .rmhc-app .rmhc-stat,
+  .rmhc-app section {
+    break-inside: avoid;
+  }
+}
