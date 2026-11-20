@@ -267,6 +267,8 @@
   "s5.successes": "Death save successes",
   "s5.temp": "Temporary HP",
   "s5.tracker": "Hit point tracker",
+  "signin.body": "RMHCharacters builds and runs D&D 5e (2024) and Pathfinder 2e (Remaster) characters, with a rules advisor you can ask anything. Characters are saved to your account, so they open on any device.",
+  "signin.title": "Sign in to build your characters",
   "sp.armorPenalty": "armor {{n}}",
   "sp.bulk": "Bulk",
   "sp.bulkMax": "Encumbered above {{e}}, maximum {{m}}",

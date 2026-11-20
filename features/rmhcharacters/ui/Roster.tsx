@@ -109,7 +109,7 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
         <ul className="flex flex-col">
           {characters.map((c) => (
             <li key={c.id} className="flex items-center gap-3 border-b border-app-border py-3">
-              <button type="button" onClick={() => onOpen(c.id)} className="flex min-w-0 flex-1 items-center gap-3 rounded-app-sm text-left hover:bg-app-surface-hover">
+              <button type="button" onClick={() => onOpen(c.id)} className="-my-1 -ml-2 flex min-w-0 flex-1 items-center gap-3 rounded-app py-1 pl-2 pr-3 text-left transition-[background-color] duration-100 hover:bg-app-surface-hover">
                 {c.portrait ? (
                   <img src={c.portrait} alt="" className="size-12 shrink-0 rounded-app-sm border border-app-border object-cover" />
                 ) : (

@@ -178,7 +178,7 @@ export function Picker({
                 </button>
                 <button
                   type="button"
-                  className="flex min-w-0 flex-1 flex-col items-start rounded-app-sm px-1 py-0.5 text-left hover:bg-app-surface-hover"
+                  className="flex min-w-0 flex-1 flex-col items-start gap-0.5 rounded-app-sm px-2.5 py-1.5 text-left transition-[background-color] duration-100 hover:bg-app-surface-hover"
                   aria-expanded={open === item.id}
                   onClick={() => setOpen(open === item.id ? null : item.id)}
                 >
