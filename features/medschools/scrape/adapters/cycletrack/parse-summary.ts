@@ -4,6 +4,7 @@ import type {
   MedProgram,
 } from '../../../engine/types';
 import { cycleYearFromLabel } from '../../../engine/cycle';
+import { normalizeSchoolKey } from '../../../engine/names';
 import {
   cycleTrackCount,
   UnexpectedPageError,
@@ -90,14 +91,22 @@ const EVENT_KEYS: [
     ],
   ];
 
+const PROGRAM_BY_QUERY: Record<string, MedProgram> = { reg: 'REG', phd: 'PHD' };
+
 /**
  * summary.json?program=reg|phd: the same daily counts as the school-page tables, for one program and cycle.
  * Returns one table, or none when the endpoint says the data is unavailable (missing is not zero).
- * `program` "MD"/"DO" is the regular program; anything containing "phd" is PHD. The schoolKey is the one in the payload.
+ * `requestedProgram` is the `program=` query value the caller sent: exactly `reg` or `phd` (any case), else it throws.
+ * The payload's own `program` label ("MD", "DO", ...) is a display label, not a program id, and is not used.
+ * The schoolKey is the payload's, normalized.
  */
 export function parseSummaryJson(
   json: unknown,
+  requestedProgram: string,
 ): ParsedTable[] {
+  const program = PROGRAM_BY_QUERY[requestedProgram.toLowerCase()];
+  if (program === undefined)
+    throw new UnexpectedPageError(`unknown summary program: ${JSON.stringify(requestedProgram)}`);
   const parsed =
     summarySchema.safeParse(
       json,
@@ -129,12 +138,7 @@ export function parseSummaryJson(
         .message,
     );
   }
-  const program: MedProgram =
-    /phd/i.test(
-      s.program,
-    )
-      ? 'PHD'
-      : 'REG';
+  const schoolKey = normalizeSchoolKey(s.school.key);
   const counts =
     s.daily.flatMap(
       (
@@ -152,9 +156,7 @@ export function parseSummaryJson(
             0
               ? [
                   cycleTrackCount(
-                    s
-                      .school
-                      .key,
+                    schoolKey,
                     program,
                     cycleYear,
                     d.date,

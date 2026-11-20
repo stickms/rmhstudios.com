@@ -17,6 +17,7 @@ import {
   type PoliteHost,
 } from './http';
 import { ingestSchoolPage } from './ingest-page';
+import { brief } from './run-support';
 import type {
   Logger,
   MedPrisma,
@@ -60,21 +61,6 @@ const toDbDate =
       : new Date(
           `${date}T00:00:00.000Z`,
         );
-const brief =
-  (
-    e: unknown,
-  ): string =>
-    (e instanceof
-    Error
-      ? e.message
-      : String(
-          e,
-        )
-    ).slice(
-      0,
-      150,
-    );
-
 export async function runCycletrack(
   deps: CycletrackDeps,
   opts: {

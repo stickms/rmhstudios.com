@@ -13,4 +13,4 @@ export type {
   FirstRow,
 } from './parse-first';
 export { parseSitemap } from './parse-sitemap';
-export { schoolUrl } from './urls';
+export { schoolUrl, summaryUrl } from './urls';

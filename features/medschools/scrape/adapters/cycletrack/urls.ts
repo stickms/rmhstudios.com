@@ -11,3 +11,8 @@ export function schoolUrl(
     ? `${base}?view=historical`
     : base;
 }
+
+/** Daily-count JSON for one program (`reg` or `phd`) of one school. */
+export function summaryUrl(key: string, program: 'reg' | 'phd'): string {
+  return `${SOURCES.CYCLETRACK.origin}/explorer/school/${encodeURIComponent(key)}/summary.json?program=${program}`;
+}

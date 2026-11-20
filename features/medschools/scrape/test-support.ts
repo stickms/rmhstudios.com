@@ -668,11 +668,13 @@ export function assertNoLeak(
 export function createFakeHost(
   routes: Record<string, string | null> | ((path: string) => string | null),
   maxFailures = 3,
-): { host: PoliteHost; requested: string[] } {
+): { host: PoliteHost; requested: string[]; sessions: Array<{ spacingMs?: number } | undefined> } {
   const requested: string[] = [];
+  const sessions: Array<{ spacingMs?: number } | undefined> = [];
   const lookup = typeof routes === 'function' ? routes : (p: string) => routes[p] ?? null;
   const host: PoliteHost = {
-    session(): PoliteClient {
+    session(opts?: { spacingMs?: number }): PoliteClient {
+      sessions.push(opts);
       let failures = 0;
       let last: string | null = null;
       return {
@@ -701,5 +703,5 @@ export function createFakeHost(
       };
     },
   };
-  return { host, requested };
+  return { host, requested, sessions };
 }

@@ -25,6 +25,7 @@ describe('parseSummaryJson', () => {
     ] =
       parseSummaryJson(
         yaleJson,
+        'reg',
       );
     expect(
       rest,
@@ -75,6 +76,7 @@ describe('parseSummaryJson', () => {
           daily:
             [],
         },
+        'reg',
       ),
     ).toEqual(
       [],
@@ -86,6 +88,7 @@ describe('parseSummaryJson', () => {
       () =>
         parseSummaryJson(
           {},
+          'reg',
         ),
     ).toThrow(
       UnexpectedPageError,
@@ -94,6 +97,7 @@ describe('parseSummaryJson', () => {
       () =>
         parseSummaryJson(
           null,
+          'reg',
         ),
     ).toThrow(
       UnexpectedPageError,
@@ -117,9 +121,29 @@ describe('parseSummaryJson', () => {
       () =>
         parseSummaryJson(
           bad,
+          'reg',
         ),
     ).toThrow(
       UnexpectedPageError,
     );
+  });
+  it('maps the requested program exactly: reg to REG, phd to PHD, any case', () => {
+    expect(parseSummaryJson(yaleJson, 'REG')[0]!.program).toBe('REG');
+    const phd = parseSummaryJson({ ...(yaleJson as object), program: 'MD/PhD' }, 'phd')[0]!;
+    expect(phd.program).toBe('PHD');
+    expect(phd.counts.every((c) => c.program === 'PHD')).toBe(true);
+  });
+
+  it('any other program value throws UnexpectedPageError', () => {
+    for (const bad of ['MD', 'regular', 'phd2', 'xphd', '']) {
+      expect(() => parseSummaryJson(yaleJson, bad)).toThrow(UnexpectedPageError);
+    }
+  });
+
+  it('emits the normalized school key', () => {
+    const json = { ...(yaleJson as object), school: { key: 'Texas A&amp;M', name: 'x' } };
+    const [table] = parseSummaryJson(json, 'reg');
+    expect(table!.counts.length).toBeGreaterThan(0);
+    expect(new Set(table!.counts.map((c) => c.schoolKey))).toEqual(new Set(['Texas A&M']));
   });
 });

@@ -15,7 +15,7 @@
  * (c) /explorer/school/<key>?view=historical does NOT use the "daily milestone observations" tables. It is the embedded
  *     MDApplicants archive: a per-AMCAS-submission-year report-count table (class `timeline-table`, caption "Reported
  *     AMCAS submission year...", rows `<th scope=row>YYYY</th><td><span class=timeline-count>N</span>...`) plus
- *     aggregates. => Task 8 writes parseHistoricalPage; it must NOT reuse parseSchoolPage. Years with <3 reporters are
+ *     aggregates. => SUPERSEDED by R14: no parseHistoricalPage; Task 8 backfills from school pages + summary.json instead. Years with <3 reporters are
  *     omitted, so the table is not gap-free.
  * (d) JSON endpoints:
  *     USE  /explorer/school/<key>/summary.json?program=reg|phd  Documented shape (schemaVersion 1):
@@ -38,7 +38,7 @@
  *     as `<a href=.../schools/N>Name</a> MD|DO`. A school page carries a per-AMCAS-year report-count table (same shape
  *     as (c)), total report count, outcome totals, median GPA/MCAT and aggregate demographics (groups <3 hidden).
  *     It carries NO per-event dates (only year buckets plus one "Profile snapshot" date) and NO usernames or
- *     per-applicant profiles. Task 9 proceeds, storing yearly counts only (ruling R4). Fixture: mdapplicants-school.html
+ *     per-applicant profiles. SUPERSEDED by R13: Task 9 is dropped from phase 1 (yearly totals only; R4 forbids placeholder dates). Fixture: mdapplicants-school.html
  *     (school 146, A.T. Still Kirksville, DO).
  * (g) Validators: HTML pages send no ETag or Last-Modified (cache-control: private, no-store, Vary: Cookie); only the
  *     static graph JSON has ETag/Last-Modified. Conditional GET is unavailable for pages; use the page's "Hourly update
