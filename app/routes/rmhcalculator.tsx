@@ -24,7 +24,7 @@ export const Route = createFileRoute('/rmhcalculator')({
     meta: buildMeta({
       title: 'RMHCalculator',
       description:
-        'A graphing and scientific calculator where DeepSeek does the math, graphs included.',
+        'A graphing and scientific calculator with live reasoning, graphs included.',
       path: '/rmhcalculator',
     }),
     links: [buildCanonical('/rmhcalculator'), { rel: 'stylesheet', href: rmhcalculatorCss }],

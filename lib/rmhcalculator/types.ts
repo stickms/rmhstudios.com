@@ -41,12 +41,12 @@ export const CALC_MODEL_META: Record<
     reasoner:
       {
         label:
-          'DeepSeek Reasoner',
+          'Reasoner',
         hint: 'Most accurate · shows its work',
       },
     chat: {
       label:
-        'DeepSeek Chat',
+        'Chat',
       hint: 'Faster · lighter reasoning',
     },
   };
