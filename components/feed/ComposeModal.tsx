@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from'react';
 import { useTranslation } from'react-i18next';
 import { VibeComposeChip } from '@/components/rmhvibe/VibeComposeChip';
-import { X, Plus, BarChart3, ImagePlus } from'lucide-react';
+import { X, BarChart3, ImagePlay, ImagePlus, MoreHorizontal, Smile } from'lucide-react';
 import { GifAttachment, GifPopover } from './compose/GifAttachment';
+import { counterToneClass } from './compose/compose-state';
 import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
-import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
+import { EmojiPickerPopover } from'@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
 import { useResolvedUser, useSession } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
@@ -84,7 +85,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  const [vibe, setVibe] = useState(initialVibe ?? null);
  // The GIF picker is a popover off the GIF button; the chosen GIF is the attachment.
  const [gifOpen, setGifOpen] = useState(false);
- const gifBtnRef = useRef<HTMLButtonElement>(null);
+ const [emojiOpen, setEmojiOpen] = useState(false);
  const [imageUrls, setImageUrls] = useState<string[]>([]);
  // Per-image alt text (accessibility), aligned by index with imageUrls.
  const [imageAlts, setImageAlts] = useState<string[]>([]);
@@ -287,47 +288,20 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  <ImagePlus className="w-4.5 h-4.5"/>
  </button>
 
- {/* GIF button */}
- <button
- ref={gifBtnRef}
- type="button"
- onClick={() => setGifOpen((v) => !v)}
- aria-haspopup="dialog"
- aria-expanded={gifOpen}
- title={t('attach-gif-title', { defaultValue:'Add a GIF'})}
- className={`px-1.5 py-1 rounded-full text-xs font-bold leading-none border transition-colors ${
- hasGif
- ?'border-site-accent text-site-accent bg-site-accent/10'
- :'border-site-border text-site-text-muted hover:text-site-accent hover:bg-site-accent/10'
- }`}
- >
- {t('gif-heading', { defaultValue:'GIF'})}
- </button>
- <GifPopover
- open={gifOpen}
- onClose={() => setGifOpen(false)}
- anchorRef={gifBtnRef}
- onSelect={(url) => {
- setAttachment('gif');
- setGifUrl(url);
- setPoll({ question:'', options: ['',''], multiSelect: false });
- }}
- />
-
- {/* Emoji picker */}
- <EmojiPickerButton direction="down"onSelect={insertEmoji} />
-
- {/* Plus button */}
- <div className="relative"ref={menuRef}>
+ {/* More: GIF, emoji and poll, so the header stays one line on a phone (owner, 2026-11-20). The GIF and
+ emoji pickers hang off this button once a row is chosen. */}
+ <div className="relative" ref={menuRef}>
  <button
  ref={menuBtnRef}
+ type="button"
  onClick={() => setMenuOpen((v) => !v)}
- aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
+ aria-label={t('compose-post-options', { defaultValue: 'Post options' })}
+ title={t('compose-post-options', { defaultValue: 'Post options' })}
  aria-haspopup="menu"
  aria-expanded={menuOpen}
  className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
  >
- <Plus className="w-4.5 h-4.5"/>
+ <MoreHorizontal className="w-4.5 h-4.5" aria-hidden />
  </button>
 
  {/* The ROW is the shared `MenuItem` primitive; the PANEL deliberately
@@ -343,9 +317,27 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  data-motion="pop"
  data-state={menuState}
  role="menu"
- aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
+ aria-label={t('compose-post-options', { defaultValue: 'Post options' })}
  className="absolute top-full right-0 mt-1 w-52 origin-top-right surface-overlay overflow-hidden py-1.5 z-50"
  >
+ <MenuItem
+ icon={ImagePlay}
+ onSelect={() => {
+ setMenuOpen(false);
+ setGifOpen(true);
+ }}
+ >
+ {t('attach-gif-title', { defaultValue: 'Add a GIF' })}
+ </MenuItem>
+ <MenuItem
+ icon={Smile}
+ onSelect={() => {
+ setMenuOpen(false);
+ setEmojiOpen(true);
+ }}
+ >
+ {t('emoji-picker-open', { defaultValue: 'Add emoji' })}
+ </MenuItem>
  <MenuItem
  icon={BarChart3}
  onSelect={() => {
@@ -354,17 +346,28 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  setMenuOpen(false);
  }}
  >
- {t('create-poll', { defaultValue:'Create Poll'})}
+ {t('create-poll', { defaultValue: 'Create Poll' })}
  </MenuItem>
  </div>
  )}
+ <GifPopover
+ open={gifOpen}
+ onClose={() => setGifOpen(false)}
+ anchorRef={menuBtnRef}
+ onSelect={(url) => {
+ setAttachment('gif');
+ setGifUrl(url);
+ setPoll({ question: '', options: ['', ''], multiSelect: false });
+ }}
+ />
+ <EmojiPickerPopover
+ open={emojiOpen}
+ onClose={() => setEmojiOpen(false)}
+ anchorRef={menuBtnRef}
+ side="bottom"
+ onSelect={insertEmoji}
+ />
  </div>
-
- <Button variant="default"size="sm"disabled={!canSubmit} onClick={handleSubmit}>
- {submitting
- ? t('posting', { defaultValue:'Posting…'})
- : t('post', { defaultValue:'Post'})}
- </Button>
  </div>
  </div>
 
@@ -593,19 +596,14 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  </div>
  </div>
 
- {/* Footer */}
- <div className="px-4 py-3 border-t border-site-border flex items-center justify-end">
- <span
- className={`text-xs font-mono ${
- remaining <= 0
- ?'text-site-danger'
- : remaining <= 20
- ?'text-site-warning'
- :'text-site-text-muted'
- }`}
- >
- {remaining}
- </span>
+ {/* Footer: the count on the leading side, Post on the trailing side, so the header holds only the tools. */}
+ <div className="px-4 py-3 border-t border-site-border flex items-center justify-between gap-3">
+ <span className={`t-meta ${counterToneClass(remaining)}`}>{remaining}</span>
+ <Button variant="primary" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
+ {submitting
+ ? t('posting', { defaultValue:'Posting…'})
+ : t('post', { defaultValue:'Post'})}
+ </Button>
  </div>
   </DialogContent>
  </Dialog>
