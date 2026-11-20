@@ -2050,7 +2050,7 @@ describe('registerBotWorkerJobs', () => {
     );
   });
 
-  it('with a key: five exclusive queues, crons from the tick env, a boot top-up', async () => {
+  it('with a key: six exclusive queues, crons from the tick env, a boot top-up', async () => {
     const boss =
       fakeBoss();
     await registerBotWorkerJobs(
@@ -2090,6 +2090,8 @@ describe('registerBotWorkerJobs', () => {
           '* * * * *',
         'bot-worker.refresh':
           '23 * * * *',
+        'bot-worker.fill':
+          '41 * * * *',
       },
     );
     expect(
@@ -2107,7 +2109,7 @@ describe('registerBotWorkerJobs', () => {
     expect(
       boss.work,
     ).toHaveBeenCalledTimes(
-      5,
+      6,
     );
     expect(
       boss.send,
