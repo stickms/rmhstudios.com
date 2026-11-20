@@ -223,6 +223,10 @@ export const schoolStatsData =
                 num,
               mcat: num,
               gpa: num,
+              residence_type:
+                z
+                  .string()
+                  .nullish(),
               research_hours:
                 num,
               clinical_hours:

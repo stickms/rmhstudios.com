@@ -76,6 +76,10 @@ export interface NormalizedAdmitQuestion {
 export interface NormalizedAdmitStats {
   schoolKey: string;
   residence: MedResidence;
+  /** The row's own lowercase `residence_type` as published; the run maps it explicitly and skips a mismatch. */
+  residenceType:
+    | string
+    | null;
   applicationCount: number;
   interviewCount: number;
   admittedCount:

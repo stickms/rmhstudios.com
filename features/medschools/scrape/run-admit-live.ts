@@ -14,7 +14,11 @@ import {
   SourceHaltedError,
   type PoliteHost,
 } from './http';
-import { brief } from './run-support';
+import {
+  brief,
+  closeStaleRuns,
+  recordAliasMiss,
+} from './run-support';
 import {
   rollupEventCounts,
   type TouchedCell,
@@ -121,53 +125,7 @@ export async function runAdmitLive(
     return finish();
   }
 
-  try {
-    // The queue is exclusive and the tick guarded, so an older RUNNING row is a killed predecessor.
-    for (
-      let n = 0;
-      n <
-      50;
-      n++
-    ) {
-      const stale =
-        await prisma.medSourceRun.findFirst(
-          {
-            where:
-              {
-                source:
-                  'ADMIT',
-                job: 'admit-live',
-                status:
-                  'RUNNING',
-              },
-          },
-        );
-      if (
-        !stale
-      )
-        break;
-      await prisma.medSourceRun.update(
-        {
-          where:
-            {
-              id: stale.id,
-            },
-          data: {
-            status:
-              'FAILED',
-            finishedAt:
-              now(),
-            error:
-              'interrupted',
-          },
-        },
-      );
-    }
-  } catch (e) {
-    log.warn(
-      `admit-live: could not close stale runs: ${brief(e)}`,
-    );
-  }
+  await closeStaleRuns(prisma, 'ADMIT', 'admit-live', now, log);
 
   let run: {
     id: string;
@@ -297,54 +255,7 @@ export async function runAdmitLive(
           missed.add(
             slug,
           );
-          const miss =
-            await prisma.medSchoolAliasMiss.findFirst(
-              {
-                where:
-                  {
-                    source:
-                      'ADMIT',
-                    sourceKey:
-                      slug,
-                  },
-              },
-            );
-          if (
-            !miss?.ignored
-          ) {
-            await prisma.medSchoolAliasMiss.upsert(
-              {
-                where:
-                  {
-                    source_sourceKey:
-                      {
-                        source:
-                          'ADMIT',
-                        sourceKey:
-                          slug,
-                      },
-                  },
-                create:
-                  {
-                    source:
-                      'ADMIT',
-                    sourceKey:
-                      slug,
-                    seenCount: 1,
-                  },
-                update:
-                  {
-                    lastSeenAt:
-                      now(),
-                    seenCount:
-                      {
-                        increment: 1,
-                      },
-                  },
-              },
-            );
-            summary.misses++;
-          }
+          if (await recordAliasMiss(prisma, 'ADMIT', slug, now)) summary.misses++;
         }
         continue;
       }

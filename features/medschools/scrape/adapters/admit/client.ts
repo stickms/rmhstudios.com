@@ -671,6 +671,9 @@ export function createAdmitClient(
                 slug,
               residence:
                 filter,
+              residenceType:
+                r.residence_type ??
+                null,
               applicationCount:
                 r.application_number,
               interviewCount:
