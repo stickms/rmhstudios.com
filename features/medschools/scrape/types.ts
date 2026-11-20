@@ -369,6 +369,11 @@ export interface MedPrisma {
       where?: Where;
       orderBy?: unknown;
     }): Promise<MedSourceRunRow | null>;
+    findMany(args?: {
+      where?: Where;
+      orderBy?: unknown;
+      take?: number;
+    }): Promise<MedSourceRunRow[]>;
   };
   /** Runs `fn` against a transaction client; the fake rolls its tables back if `fn` throws. */
   $transaction<T>(
