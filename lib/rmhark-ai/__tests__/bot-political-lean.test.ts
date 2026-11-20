@@ -62,7 +62,6 @@ vi.mock(
 
 import { loadBotConfig } from '@/lib/rmhark-ai/bot-worker-config';
 import {
-  initiateDirectMessages,
   postAsBot,
   replyToComment,
   resetBotWorkerState,
@@ -586,77 +585,6 @@ describe('the worker hands the AI a persona with a POLITICS line', () => {
         .mock
         .calls[0]?.[0],
       'b5',
-    );
-  });
-
-  it('DM openers', async () => {
-    const dmOpener =
-      vi.fn<
-        BotAi['dmOpener']
-      >(
-        async () =>
-          'hey',
-      );
-    const d =
-      deps(
-        {
-          repo: {
-            recentActiveHumans:
-              async () => [
-                'h1',
-              ],
-            botsExcept:
-              async () => [
-                legacyBot(
-                  'b6',
-                ),
-              ],
-            dmPrivacy:
-              async () =>
-                'EVERYONE',
-            followExists:
-              async () =>
-                false,
-            conversationOpenerMessages:
-              async () => [],
-            upsertConversation:
-              async () =>
-                'conv2',
-            sendBotDm:
-              async (
-                conversationId: string,
-                botId: string,
-                content: string,
-              ) =>
-                ({
-                  id: 'm2',
-                  conversationId,
-                  senderId:
-                    botId,
-                  content,
-                  read: false,
-                  createdAt:
-                    'x',
-                }) as never,
-          } as Partial<BotRepo>,
-          ai: {
-            dmOpener,
-          },
-        },
-      );
-    await initiateDirectMessages(
-      d,
-    );
-    expect(
-      dmOpener,
-    ).toHaveBeenCalledTimes(
-      1,
-    );
-    expectLean(
-      dmOpener
-        .mock
-        .calls[0]?.[0],
-      'b6',
     );
   });
 });

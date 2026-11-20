@@ -38,7 +38,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { findDmByPair, upsertDm } from '@/lib/chat/chat.server';
 import { Prisma } from '@prisma/client';
-import { decideInitiation, canBotMessage, formatDmHistory, type DmPrivacy } from './dm-policy';
+import { formatDmHistory, type DmPrivacy } from './dm-policy';
 import {
   botPromptPersona,
   composePersona,
@@ -77,7 +77,6 @@ import {
   effectiveTickMs,
   loadBotConfig,
   maintenanceDue,
-  orderPair,
   sanitizeHandle,
   scaledCount,
   shouldPost,
@@ -1753,6 +1752,8 @@ export async function runReplyTick(d: BotDeps): Promise<void> {
 
 // ─── DM tick ────────────────────────────────────────────────────────────────
 
+const MAX_DM_BURST = 3;
+
 /** Bots reply when a human spoke last in a 1:1 conversation with exactly one bot participant. */
 export async function answerDirectMessages(d: BotDeps): Promise<void> {
   const convos = await d.repo.recentBotConversations(new Date(d.now() - d.cfg.dmLookbackMs));
@@ -1778,70 +1779,32 @@ export async function answerDirectMessages(d: BotDeps): Promise<void> {
       // History is newest-first; reverse to oldest-first for the prompt.
       const history = (await d.repo.recentDmHistory(c.conversationId)).reverse();
       const turns = formatDmHistory(history, c.botId);
+      // A reply is a short burst of 1-3 messages, like a person texting. Bots only ever answer
+      // a human who wrote first; they never open a conversation (no unsolicited DMs).
+      const burst = 1 + Math.floor(d.random() * MAX_DM_BURST);
       const typing = { conversationId: c.conversationId, senderId: c.botId, isTyping: true };
-      await d.notify.typing(c.humanId, typing);
-      let content: string;
-      try {
-        content = await d.ai.dmReply(aiPersona(c.botId, persona), turns);
-      } finally {
-        await d.notify.typing(c.humanId, { ...typing, isTyping: false });
+      let turnsSoFar = turns;
+      for (let i = 0; i < Math.min(burst, MAX_DM_BURST); i++) {
+        await d.notify.typing(c.humanId, typing);
+        let content: string;
+        try {
+          content = await d.ai.dmReply(aiPersona(c.botId, persona), turnsSoFar);
+        } finally {
+          await d.notify.typing(c.humanId, { ...typing, isTyping: false });
+        }
+        if (content.trim() === '') break;
+        const msg = await d.repo.sendBotDm(c.conversationId, c.botId, content);
+        await d.notify.messageDelivered(c.humanId, msg);
+        turnsSoFar = [...turnsSoFar, { from: 'you', text: content }];
       }
-      if (content.trim() === '') return;
-      const msg = await d.repo.sendBotDm(c.conversationId, c.botId, content);
-      await d.notify.messageDelivered(c.humanId, msg);
       made++;
       d.log.info('bot_worker.dm_answered', { bot: c.botId, human: c.humanId });
     });
   }
 }
 
-/** Rarely open (or gently follow up) a DM with a recently-active human, respecting privacy and anti-pester rules. */
-export async function initiateDirectMessages(d: BotDeps): Promise<void> {
-  if (d.random() > d.cfg.dmInitiateProb) return;
-  const humanIds = await d.repo.recentActiveHumans(
-    new Date(d.now() - d.cfg.dmActiveHumanLookbackMs),
-  );
-  if (humanIds.length === 0) return;
-  const bots = await d.repo.botsExcept(''); // all bots
-  if (bots.length === 0) return;
-
-  let opened = 0;
-  for (const humanId of shuffled(humanIds, d.random)) {
-    if (opened >= d.cfg.maxDmOpenersPerTick) break;
-    const bot = pickOne(bots, d.random);
-    if (bot.botPersona === '' || bot.id === humanId) continue;
-    await isolated(d, 'bot_worker.dm_open_failed', async () => {
-      // Privacy gate.
-      const privacy = await d.repo.dmPrivacy(humanId);
-      const humanFollowsBot =
-        privacy === 'FOLLOWERS'
-          ? await d.repo.followExists(humanId, bot.id).catch(() => false)
-          : false;
-      if (!canBotMessage({ dmPrivacy: privacy, humanFollowsBot })) return;
-      // Anti-pester gate from the existing conversation (if any).
-      const [pOne, pTwo] = orderPair(bot.id, humanId);
-      const messages = await d.repo.conversationOpenerMessages(pOne, pTwo);
-      const decision = decideInitiation({
-        botId: bot.id,
-        now: d.now(),
-        followupSilenceMs: d.cfg.dmFollowupSilenceMs,
-        messages,
-      });
-      if (decision === 'skip') return;
-      const content = await d.ai.dmOpener(aiPersona(bot.id, bot.botPersona));
-      if (content.trim() === '') return;
-      const conversationId = await d.repo.upsertConversation(pOne, pTwo);
-      const msg = await d.repo.sendBotDm(conversationId, bot.id, content);
-      await d.notify.messageDelivered(humanId, msg);
-      opened++;
-      d.log.info('bot_worker.dm_opened', { bot: bot.id, human: humanId, decision });
-    });
-  }
-}
-
 export async function runDmTick(d: BotDeps): Promise<void> {
   await isolated(d, 'bot_worker.dm_answer_failed', () => answerDirectMessages(d));
-  await isolated(d, 'bot_worker.dm_initiate_failed', () => initiateDirectMessages(d));
 }
 
 // ─── registration ───────────────────────────────────────────────────────────
