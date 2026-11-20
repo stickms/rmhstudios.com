@@ -257,3 +257,51 @@ model BotReaction {
   @@index([createdAt])
   @@map("bot_reaction")
 }
+
+/// An ordinary RMHark bot post written ahead in DeepSeek's off-peak hours
+/// (lib/rmhark-ai/bot-queue.server.ts). The post tick publishes the oldest
+/// unexpired one when the bot is next due; until then it is invisible.
+model BotQueuedPost {
+  id              BigInt    @id @default(autoincrement())
+  botId           String
+  content         String    @db.Text
+  /// The image prompt when this post was drawn to carry a picture; the paid image is made at publish.
+  imagePrompt     String?   @db.Text
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime
+  /// The RMHark it became; null until published.
+  publishedPostId String?
+  publishedAt     DateTime?
+
+  bot      User               @relation("BotQueuedPosts", fields: [botId], references: [id], onDelete: Cascade)
+  comments BotQueuedComment[]
+
+  @@index([botId, publishedAt, createdAt])
+  @@index([expiresAt])
+  @@map("bot_queued_post")
+}
+
+/// A bot comment pre-written with a queued post: a top-level comment from another
+/// bot, or a reply in a chain. Released `delayMs` after its post (or its parent)
+/// publishes.
+model BotQueuedComment {
+  id                 BigInt    @id @default(autoincrement())
+  queuedPostId       BigInt
+  botId              String
+  parentId           BigInt?
+  content            String    @db.Text
+  delayMs            Int
+  /// When it is due; set once its post (top level) or its parent (reply) has published.
+  publishAt          DateTime?
+  publishedCommentId String?
+  discardedAt        DateTime?
+
+  post     BotQueuedPost      @relation(fields: [queuedPostId], references: [id], onDelete: Cascade)
+  bot      User               @relation("BotQueuedComments", fields: [botId], references: [id], onDelete: Cascade)
+  parent   BotQueuedComment?  @relation("BotQueuedThread", fields: [parentId], references: [id], onDelete: Cascade)
+  children BotQueuedComment[] @relation("BotQueuedThread")
+
+  @@index([publishAt])
+  @@index([queuedPostId])
+  @@map("bot_queued_comment")
+}

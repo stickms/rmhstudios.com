@@ -301,10 +301,11 @@ describe('settings and config (Go settings_test.go)', () => {
     ).toBe(
       1,
     );
+    // The bots' model is the site-wide flash model; BOT_AI_MODEL is no longer read.
     expect(
       o.model,
     ).toBe(
-      'm',
+      'deepseek-flash',
     );
     // The reply tick follows the post tick unless set on its own.
     expect(
@@ -1063,11 +1064,13 @@ describe('pool maintenance', () => {
   });
 
   it('runs on the first pass, then waits out the interval unless settings were saved', async () => {
+    // Midday Tuesday: off-peak for the whole hour the test walks through.
     let now =
       Date.UTC(
         2026,
         10,
         10,
+        12,
       );
     let updatedAt: Date | null =
       null;
@@ -1137,6 +1140,130 @@ describe('pool maintenance', () => {
     ).toBe(
       true,
     );
+  });
+});
+
+describe('DeepSeek peak hours', () => {
+  // 07:00 UTC on Tuesday 2026-11-10 is inside DeepSeek's 06:00-10:00 peak window.
+  const PEAK =
+    Date.UTC(
+      2026,
+      10,
+      10,
+      7,
+    );
+
+  it('skips pool maintenance during peak, without spending the interval', async () => {
+    const create =
+      vi.fn(
+        async () =>
+          'id',
+      );
+    let now =
+      PEAK;
+    const d =
+      deps(
+        {
+          now: () =>
+            now,
+          repo: {
+            countBots:
+              async () =>
+                0,
+            createBotUser:
+              create,
+          },
+        },
+      );
+    expect(
+      await runMaintainTick(
+        d,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      create,
+    ).not.toHaveBeenCalled();
+    now =
+      Date.UTC(
+        2026,
+        10,
+        10,
+        10,
+        1,
+      );
+    expect(
+      await runMaintainTick(
+        d,
+      ),
+    ).toBe(
+      true,
+    );
+  });
+
+  it('skips the profile refresh run during peak', async () => {
+    const profiles =
+      vi.fn(
+        async () => [],
+      );
+    const look =
+      {
+        avatar:
+          vi.fn(),
+        banner:
+          vi.fn(),
+        removeAvatar:
+          vi.fn(),
+      };
+    const changed =
+      await runRefreshTick(
+        deps(
+          {
+            now: () =>
+              PEAK,
+            look: look as unknown as NonNullable<
+              BotDeps['look']
+            >,
+            repo: {
+              botProfiles:
+                profiles,
+            },
+          },
+        ),
+      );
+    expect(
+      changed,
+    ).toBe(
+      0,
+    );
+    expect(
+      profiles,
+    ).not.toHaveBeenCalled();
+    // Off-peak the same run reads the profiles.
+    await runRefreshTick(
+      deps(
+        {
+          now: () =>
+            Date.UTC(
+              2026,
+              10,
+              10,
+              12,
+            ),
+          look: look as unknown as NonNullable<
+            BotDeps['look']
+          >,
+          repo: {
+            botProfiles:
+              profiles,
+          },
+        },
+      ),
+    );
+    expect(
+      profiles,
+    ).toHaveBeenCalledOnce();
   });
 });
 
@@ -1923,7 +2050,7 @@ describe('registerBotWorkerJobs', () => {
     );
   });
 
-  it('with a key: five exclusive queues, crons from the tick env, a boot top-up', async () => {
+  it('with a key: six exclusive queues, crons from the tick env, a boot top-up', async () => {
     const boss =
       fakeBoss();
     await registerBotWorkerJobs(
@@ -1963,6 +2090,8 @@ describe('registerBotWorkerJobs', () => {
           '* * * * *',
         'bot-worker.refresh':
           '23 * * * *',
+        'bot-worker.fill':
+          '41 * * * *',
       },
     );
     expect(
@@ -1980,7 +2109,7 @@ describe('registerBotWorkerJobs', () => {
     expect(
       boss.work,
     ).toHaveBeenCalledTimes(
-      5,
+      6,
     );
     expect(
       boss.send,

@@ -278,10 +278,16 @@ not
 ## Scrape schedule
 
 - Default:
-  **every
-  12
-  hours**
-  (`0 */12 * * *`).
+  **11:00
+  and
+  23:00
+  UTC**
+  (`0 11,23 * * *`),
+  both
+  in
+  DeepSeek's
+  off-peak
+  hours.
 - Override
   without
   a

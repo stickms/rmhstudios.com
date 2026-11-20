@@ -69,8 +69,8 @@ export const WRAPPED_NARRATIVE_QUEUE = 'wrapped.narrative';
  */
 export const WRAPPED_NARRATIVE_FANOUT_QUEUE = 'wrapped.narrative.fanout';
 
-/** Daily at 03:10 UTC — off the hour so it does not stack with the other crons. */
-export const WRAPPED_NARRATIVE_CRON = '10 3 * * *';
+/** Daily at 04:10 UTC: off the hour, and in DeepSeek's off-peak gap between 04:00 and 06:00. */
+export const WRAPPED_NARRATIVE_CRON = '10 4 * * *';
 
 export interface WrappedNarrativeJob {
   userId: string;

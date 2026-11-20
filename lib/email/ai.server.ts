@@ -22,7 +22,8 @@ import {
   runTask,
   runTaskJson,
 } from '@/lib/ai/provider.server';
-import { timedAiFetch } from '@/lib/ai/timed-fetch.server';
+import { DEEPSEEK_REASONING } from '@/lib/ai/deepseek-models';
+import { meteredAiFetch } from '@/lib/ai/metered-fetch.server';
 import { AppError } from '@/lib/errors/codes';
 import { SITE_URL } from '@/lib/seo';
 import { brandBrief } from '@/lib/email/brand';
@@ -309,20 +310,14 @@ const KIMI_EMAIL_MODEL =
   'kimi-k2.7-code';
 
 /**
- * `deepseek` is the fast chat model; `deepseek-reasoning` is DeepSeek's
- * reasoning model, slower and dearer, for a more considered, more detailed
- * layout. `DEEPSEEK_EMAIL_REASONING_MODEL` swaps the reasoning model id.
+ * `deepseek` is the fast chat model; `deepseek-reasoning` is DeepSeek with
+ * thinking on (`DEEPSEEK_REASONING`, lib/ai/deepseek-models.ts), slower and
+ * dearer, for a more considered, more detailed layout.
  */
 export type DesignModel =
   | 'deepseek'
   | 'deepseek-reasoning'
   | 'kimi';
-
-const DEEPSEEK_REASONING_MODEL =
-  process
-    .env
-    .DEEPSEEK_EMAIL_REASONING_MODEL ||
-  'deepseek-reasoner';
 
 /** Extra brief for the reasoning tier: it is chosen when the admin wants depth. */
 const DETAILED_BRIEF =
@@ -364,7 +359,7 @@ async function askKimi(
     new OpenAI(
       {
         fetch:
-          timedAiFetch,
+          meteredAiFetch('email-ai'),
         baseURL:
           KIMI_BASE_URL,
         apiKey,
@@ -493,7 +488,7 @@ export async function designEmail(input: {
         ? jsonFromModelText(
             await runReasoningTask(
               EMAIL_DESIGN.task,
-              DEEPSEEK_REASONING_MODEL,
+              DEEPSEEK_REASONING.model,
               system,
               user,
               {

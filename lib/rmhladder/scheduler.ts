@@ -25,8 +25,9 @@ function validateCron(
   );
 }
 
+/** 11:00 and 23:00 UTC: twice a day, both in DeepSeek's off-peak hours (lib/ai/deepseek-peak.ts). */
 export const DEFAULT_LADDER_CRON =
-  '0 */12 * * *';
+  '0 11,23 * * *';
 export const DEFAULT_STALE_AFTER_MS =
   12 *
   60 *

@@ -9,6 +9,7 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { z } from 'zod';
 import { fallbackWorld, fallbackChapter } from './fallback';
 import { renderBible } from './bible';
@@ -25,7 +26,7 @@ import {
   type Pronouns, type Environment, type TimeOfDay, type ChoiceTone, type Attraction,
   type ArcOutline, type ChapterBeat, type LedgerEntry,
 } from './world-types';
-import { timedAiFetch } from '../../ai/timed-fetch.server';
+import { meteredAiFetch } from '../../ai/metered-fetch.server';
 
 /** Speaker tokens that mean "the player is talking aloud". */
 const MC_TOKENS = new Set(['mc', 'you', 'player', '{mc}', MC_SPEAKER]);
@@ -50,12 +51,11 @@ function attractionNote(a: Attraction | undefined): string {
   }
 }
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('versecraft'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
-const MODEL = process.env.VERSECRAFT_AI_MODEL || process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 
 export function isVersecraftAIConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);
@@ -63,7 +63,7 @@ export function isVersecraftAIConfigured(): boolean {
 
 async function chatJson(system: string, user: string, maxTokens: number): Promise<unknown> {
   const res = await deepseek.chat.completions.create({
-    model: MODEL,
+    ...DEEPSEEK_FLASH,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
