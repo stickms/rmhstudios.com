@@ -22,7 +22,7 @@ import {
   runTask,
   runTaskJson,
 } from '@/lib/ai/provider.server';
-import { timedAiFetch } from '@/lib/ai/timed-fetch.server';
+import { meteredAiFetch } from '@/lib/ai/metered-fetch.server';
 import { AppError } from '@/lib/errors/codes';
 import { SITE_URL } from '@/lib/seo';
 import { brandBrief } from '@/lib/email/brand';
@@ -364,7 +364,7 @@ async function askKimi(
     new OpenAI(
       {
         fetch:
-          timedAiFetch,
+          meteredAiFetch('email-ai'),
         baseURL:
           KIMI_BASE_URL,
         apiKey,

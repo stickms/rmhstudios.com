@@ -4,10 +4,11 @@
  * A plain fetch against the OpenAI-compatible endpoint rather than the `openai` SDK the web tier
  * uses, because the bot needs exactly the Go client's behaviour: the shared retry policy (429/5xx
  * retried with Retry-After honoured, other 4xx permanent), sampling knobs omitted when unset, and
- * a hard per-attempt timeout. It goes through `timedAiFetch` so the calls land in the same
- * `llm.latency|deepseek:chat` metric as every other model call on the site.
+ * a hard per-attempt timeout. It goes through `meteredAiFetch` so the calls land in the same
+ * `llm.latency|deepseek:chat` metric as every other model call on the site, and in the
+ * `AiUsage` ledger as `discord-bot`.
  */
-import { timedAiFetch } from '../../lib/ai/timed-fetch.server';
+import { meteredAiFetch } from '../../lib/ai/metered-fetch.server';
 import {
   RETRY_API,
   parseRetryAfter,
@@ -52,9 +53,9 @@ export class DeepSeekClient {
     private readonly apiKey: string,
     model: string,
     private readonly logger: RetryLogger | null = null,
-    private readonly fetchImpl: typeof fetch = timedAiFetch,
+    private readonly fetchImpl: typeof fetch = meteredAiFetch('discord-bot'),
   ) {
-    this.model = model || 'deepseek-chat';
+    this.model = model || 'deepseek-v4-flash';
     // Same override the web tier honours, so a dev/CI stand-in can replace the real API.
     this.baseURL = (process.env.DEEPSEEK_BASE_URL || DEEPSEEK_BASE_URL).replace(/\/v1\/?$/, '').replace(/\/$/, '');
   }

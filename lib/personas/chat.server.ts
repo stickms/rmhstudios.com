@@ -6,14 +6,14 @@
 
 import OpenAI from 'openai';
 import { prisma } from '@/lib/prisma.server';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('persona-chat'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export function isPersonaChatConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);

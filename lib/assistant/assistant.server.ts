@@ -19,16 +19,16 @@ import { redisIncrBy } from '@/lib/redis.server';
 import { runTaskJson } from '@/lib/ai/provider.server';
 import { asData, systemFor, TOOL_SELECT } from '@/lib/ai/prompts';
 import { describeTools, runTool, type ToolOutcome } from '@/lib/assistant/tools.server';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
 
 // Reuse the configured DeepSeek key — identical client to lib/ai/text.server.ts.
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('assistant'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
   timeout: 20_000,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 /** Per-day message budget by tier. Free gets a small allowance. */
 const DAILY_BUDGET: Record<Tier, number> = { free: 10, starter: 50, pro: 200, enterprise: 1000 };

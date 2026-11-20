@@ -9,14 +9,14 @@
 import OpenAI from 'openai';
 import { prisma } from '@/lib/prisma.server';
 import { getStreak } from '@/lib/streak.server';
-import { timedAiFetch } from './timed-fetch.server';
+import { meteredAiFetch } from './metered-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('recap'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export interface WeeklyRecap {
   rangeStart: string;

@@ -29,20 +29,22 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-schema';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('rmhark-bot'),
   // `|| 'missing'` rather than `!` — see the note in `lib/rmhvibe/vibe-ai.server.ts`:
   // the SDK throws on an absent key at construction, and `loadEntries()` imports
   // this module before serving any page, so `!` turned one unset env var into a
   // site-wide first-request 500.
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
-  maxRetries: 2,
+  // One retry: a failed bot post is simply skipped this tick, and each retry of
+  // a request that reached the model can be billed.
+  maxRetries: 1,
 });
 
 // Cheap, fast chat model. Override only if DeepSeek's id changes.
-const RMHARK_AI_MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const RMHARK_AI_MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export class RmharkAIError extends Error {}
 
@@ -120,6 +122,14 @@ export const HUMAN_TEXT_RULES = [
   '- Follow your VOICE and TYPING lines over correct grammar: their capitals, punctuation and slang win.',
 ].join('\n');
 
+/**
+ * CACHE_ORDER_NOTE. DeepSeek bills prompt tokens it has already seen as a prefix
+ * at a fraction of the price. The bot prompts for posts, replies and DMs put the
+ * rules every bot shares first and the persona after them, so the shared block
+ * is one cached prefix across every bot instead of a fresh miss behind each
+ * persona; anything chosen per call (a reply's length) comes last of all.
+ */
+
 /** How long a bot's post is, rotated so the feed is not all tidy one-to-two-sentence posts. */
 const POST_LENGTHS = [
   'just a few words',
@@ -161,14 +171,14 @@ export async function generatePost(
     ? [
         'You are roleplaying as a specific person posting on social media. Stay completely in character.',
         'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
-        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
-        '',
-        opts.persona,
-        '',
+        // Shared rules before the persona (PERSONA_LAST): see CACHE_ORDER_NOTE.
         POLITICS_BACKGROUND_RULES,
         NEWS_HARD_LIMITS,
         BASE_POST_RULES,
         HUMAN_TEXT_RULES,
+        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+        '',
+        opts.persona,
       ].join('\n')
     : [
         'You help a user draft a post for their social feed. Aim for one or two sentences.',
@@ -647,14 +657,15 @@ export async function generateReply(opts: {
     ? [
         'You are roleplaying as a specific person replying on social media. Stay completely in character.',
         'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
-        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
-        '',
-        opts.persona,
-        '',
+        // Shared rules before the persona, the per-call length last: see CACHE_ORDER_NOTE.
         POLITICS_REACTIVE_RULES,
         NEWS_HARD_LIMITS,
         BASE_REPLY_RULES,
         HUMAN_TEXT_RULES,
+        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+        '',
+        opts.persona,
+        '',
         `This time keep it to ${randomItem(REPLY_LENGTHS)}.`,
       ].join('\n')
     : [
@@ -1040,14 +1051,14 @@ function dmPersonaSystem(persona: string): string {
   return [
     'You are roleplaying as a specific person chatting in private DMs. Stay completely in character.',
     'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
-    'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
-    '',
-    persona,
-    '',
+    // Shared rules before the persona: see CACHE_ORDER_NOTE.
     POLITICS_BACKGROUND_RULES,
     NEWS_HARD_LIMITS,
     BASE_DM_RULES,
     HUMAN_TEXT_RULES,
+    'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+    '',
+    persona,
   ].join('\n');
 }
 

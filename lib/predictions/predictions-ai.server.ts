@@ -22,14 +22,14 @@ import type { PrismaClient } from '@prisma/client';
 import { creditCoinsOn } from '@/lib/economy/ledger-core';
 import { placeTrade, resolvePrediction } from './predictions.server';
 import type { Side } from './lmsr';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
 
-const MODEL = process.env.PREDICTION_AI_MODEL || process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const MODEL = process.env.PREDICTION_AI_MODEL || process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 let _client: OpenAI | null = null;
 function client(): OpenAI {
   if (!_client) {
-    _client = new OpenAI({ fetch: timedAiFetch,
+    _client = new OpenAI({ fetch: meteredAiFetch('predictions'),
       apiKey: process.env.DEEPSEEK_API_KEY!,
       baseURL: 'https://api.deepseek.com/v1',
       maxRetries: 2,

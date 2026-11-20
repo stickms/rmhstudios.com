@@ -686,21 +686,23 @@ model WishlistEntry {
 
 /// Per-call AI metering (A2). One row per model call, append-only.
 model AiUsage {
-  id         BigInt   @id @default(autoincrement())
-  userId     String?
+  id             BigInt   @id @default(autoincrement())
+  userId         String?
   /// An `AiTask` from lib/ai/provider.server.ts.
-  task       String   @db.VarChar(40)
-  provider   String   @db.VarChar(20)
-  model      String   @db.VarChar(60)
+  task           String   @db.VarChar(40)
+  provider       String   @db.VarChar(20)
+  model          String   @db.VarChar(60)
   /// Prompt id + version from the registry, so a quality regression is a query.
-  promptId   String?  @db.VarChar(60)
-  promptVer  Int?
-  inTokens   Int      @default(0)
-  outTokens  Int      @default(0)
+  promptId       String?  @db.VarChar(60)
+  promptVer      Int?
+  inTokens       Int      @default(0)
+  outTokens      Int      @default(0)
+  /// The part of `inTokens` DeepSeek served from its context cache (billed at a fraction).
+  cacheHitTokens Int      @default(0)
   /// Micro-dollars — integer, so a month's SUM has no float drift.
-  costMicros Int      @default(0)
-  ok         Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  costMicros     Int      @default(0)
+  ok             Boolean  @default(true)
+  createdAt      DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 

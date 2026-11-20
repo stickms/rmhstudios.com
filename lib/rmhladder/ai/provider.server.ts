@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { timedAiFetch } from '../../ai/timed-fetch.server';
+import { meteredAiFetch } from '../../ai/metered-fetch.server';
 
 export type LadderAiProviderName = 'deepseek' | 'openai' | 'anthropic';
 
@@ -36,7 +36,7 @@ function openAiCompatibleProvider(args: {
   model: string;
 }): LadderAiProvider {
   if (!args.apiKey) throw new LadderAiConfigurationError(args.name);
-  const client = new OpenAI({ fetch: timedAiFetch,
+  const client = new OpenAI({ fetch: meteredAiFetch('ladder'),
     apiKey: args.apiKey,
     baseURL: args.baseURL,
     maxRetries: 1,
@@ -93,7 +93,7 @@ export function configuredLadderAiProvider(
       name: 'deepseek',
       apiKey: process.env.DEEPSEEK_API_KEY,
       baseURL: 'https://api.deepseek.com/v1',
-      model: process.env.LADDER_DEEPSEEK_MODEL ?? 'deepseek-chat',
+      model: process.env.LADDER_DEEPSEEK_MODEL ?? 'deepseek-v4-flash',
     });
   }
   if (requested === 'openai') {

@@ -75,7 +75,7 @@ export function loadBotConfig(env: Record<string, string | undefined> = process.
     devGuildId: getString('DISCORD_DEV_GUILD_ID', '', env),
     ownerId: getString('OWNER_ID', '', env),
     deepseekKey: getString('DEEPSEEK_API_KEY', '', env),
-    deepseekModel: getString('DEEPSEEK_MODEL', 'deepseek-chat', env),
+    deepseekModel: getString('DEEPSEEK_MODEL', 'deepseek-v4-flash', env),
     messageContent: getBool('ALEX_MESSAGE_CONTENT', false, env),
     imageBaseURL: getString('ALEX_PUBLIC_BASE_URL', 'https://rmhstudios.com', env),
     // Inside the jobs container's stop_grace_period (90s), beside pg-boss's own 30s drain.

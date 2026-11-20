@@ -34,6 +34,7 @@ import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { timedAiFetch } from './timed-fetch.server';
 import type { VibeLedgerTask } from './vibe-tasks';
+import type { MeteredFeature } from './metered-fetch.server';
 
 /* -------------------------------------------------------------------------- */
 /* Tasks + routing                                                            */
@@ -78,9 +79,14 @@ interface Route {
 
 type ProviderName = 'deepseek';
 
-const DEEPSEEK_CHAT = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+/**
+ * DeepSeek's fast tier. `deepseek-chat` / `deepseek-reasoner` were deprecated on
+ * 2026-07-24 and only alias V4 Flash's two modes, so the id is named directly.
+ */
+export const DEEPSEEK_DEFAULT_MODEL = 'deepseek-v4-flash';
+const DEEPSEEK_CHAT = process.env.RMHARK_AI_MODEL || DEEPSEEK_DEFAULT_MODEL;
 /** DeepSeek's reasoning tier. Only worth its latency where quality dominates. */
-const DEEPSEEK_REASONER = process.env.RMHARK_AI_MODEL_QUALITY || 'deepseek-chat';
+const DEEPSEEK_REASONER = process.env.RMHARK_AI_MODEL_QUALITY || DEEPSEEK_DEFAULT_MODEL;
 
 const ROUTES: Record<AiTask, Route> = {
   'compose-assist': {
@@ -137,9 +143,10 @@ const ROUTES: Record<AiTask, Route> = {
  * pricing changes; an unknown model falls back to the default rather than
  * recording zero, because a silent zero is how a budget stops working.
  */
-const COST_PER_MTOK: Record<string, { in: number; out: number }> = {
-  'deepseek-chat': { in: 270_000, out: 1_100_000 },
-  'deepseek-reasoner': { in: 550_000, out: 2_190_000 },
+const COST_PER_MTOK: Record<string, { in: number; out: number; hit?: number }> = {
+  // The deprecated aliases resolve to V4 Flash, so they cost what it costs.
+  'deepseek-chat': { in: 280_000, out: 420_000 },
+  'deepseek-reasoner': { in: 280_000, out: 420_000 },
   // RMHVibe generation models (lib/rmhvibe/vibe.server.ts VIBE_MODEL_IDS and
   // fallbacks, lib/rmhvibe/vibe-ai.server.ts). These are the providers'
   // published list prices as the author knew them, NOT confirmed against the
@@ -155,10 +162,31 @@ const COST_PER_MTOK: Record<string, { in: number; out: number }> = {
   'deepseek-v4-pro': { in: 840_000, out: 1_260_000 },
 };
 const DEFAULT_COST = { in: 500_000, out: 2_000_000 };
+/**
+ * DeepSeek bills prompt tokens served from its context cache at a fraction of
+ * the miss price (about a tenth when this was written). A model without its own
+ * `hit` rate is charged that tenth for cache hits.
+ */
+const CACHE_HIT_FRACTION = 0.1;
 
-export function costMicros(model: string, inTokens: number, outTokens: number): number {
+/** `cacheHitTokens` is the part of `inTokens` DeepSeek served from its context cache. */
+export function costMicros(
+  model: string,
+  inTokens: number,
+  outTokens: number,
+  cacheHitTokens = 0,
+): number {
   const rate = COST_PER_MTOK[model] ?? DEFAULT_COST;
-  return Math.ceil((inTokens * rate.in + outTokens * rate.out) / 1_000_000);
+  const hits = Math.min(Math.max(0, cacheHitTokens), inTokens);
+  const hitRate = rate.hit ?? rate.in * CACHE_HIT_FRACTION;
+  return Math.ceil(((inTokens - hits) * rate.in + hits * hitRate + outTokens * rate.out) / 1_000_000);
+}
+
+/** DeepSeek's cache-hit count from a usage block (an extension the SDK types omit). */
+function cacheHits(usage: unknown): number {
+  const n = (usage as { prompt_cache_hit_tokens?: unknown } | null | undefined)
+    ?.prompt_cache_hit_tokens;
+  return typeof n === 'number' && n > 0 ? n : 0;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -235,7 +263,8 @@ export interface RunOptions {
  */
 async function meter(row: {
   userId?: string | null;
-  task: AiTask | VibeLedgerTask;
+  /** An `AiTask`, a vibe task, or a `MeteredFeature` label from metered-fetch.server.ts. */
+  task: AiTask | VibeLedgerTask | MeteredFeature;
   /** The backend that served the call; every `runTask` route is DeepSeek. */
   provider?: string;
   model: string;
@@ -243,6 +272,7 @@ async function meter(row: {
   promptVer?: number;
   inTokens: number;
   outTokens: number;
+  cacheHitTokens?: number;
   ok: boolean;
 }): Promise<void> {
   try {
@@ -256,7 +286,8 @@ async function meter(row: {
         promptVer: row.promptVer ?? null,
         inTokens: row.inTokens,
         outTokens: row.outTokens,
-        costMicros: costMicros(row.model, row.inTokens, row.outTokens),
+        cacheHitTokens: row.cacheHitTokens ?? 0,
+        costMicros: costMicros(row.model, row.inTokens, row.outTokens, row.cacheHitTokens),
         ok: row.ok,
       },
     });
@@ -284,6 +315,29 @@ export function meterVibe(row: {
     ...row,
     inTokens: Math.max(0, Math.round(row.inTokens) || 0),
     outTokens: Math.max(0, Math.round(row.outTokens) || 0),
+  });
+}
+
+/**
+ * Record a call made outside `runTask` (the metered fetch in
+ * `metered-fetch.server.ts`). Never throws, like `meter`.
+ */
+export function recordAiUsage(row: {
+  userId: string | null;
+  task: MeteredFeature;
+  provider: string;
+  model: string;
+  inTokens: number;
+  outTokens: number;
+  cacheHitTokens: number;
+  ok: boolean;
+}): Promise<void> {
+  return meter({
+    ...row,
+    provider: row.provider.slice(0, 20),
+    inTokens: Math.max(0, Math.round(row.inTokens) || 0),
+    outTokens: Math.max(0, Math.round(row.outTokens) || 0),
+    cacheHitTokens: Math.max(0, Math.round(row.cacheHitTokens) || 0),
   });
 }
 
@@ -323,6 +377,7 @@ async function invoke(
     promptVer: opts.promptVer,
     inTokens: res.usage?.prompt_tokens ?? 0,
     outTokens: res.usage?.completion_tokens ?? 0,
+    cacheHitTokens: cacheHits(res.usage),
     ok: true,
   });
 
@@ -428,6 +483,7 @@ export async function runReasoningTask(
       promptVer: opts.promptVer,
       inTokens: res.usage?.prompt_tokens ?? 0,
       outTokens: res.usage?.completion_tokens ?? 0,
+      cacheHitTokens: cacheHits(res.usage),
       ok: true,
     });
     return res.choices[0]?.message?.content?.trim() ?? '';

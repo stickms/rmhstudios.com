@@ -32,20 +32,20 @@ import {
     type AnyPuzzle,
     type DailyPuzzleMode,
 } from './generate-core';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
 
 export { AI_PUZZLE_MODES, isAIPuzzleMode };
 export type { DailyPuzzleMode };
 
 // maxRetries: 0 so there is no automatic retry loop — reliability comes from the
 // deterministic fallback, not from retrying a slow/failing upstream.
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('daily-puzzle'),
     apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
     baseURL: 'https://api.deepseek.com/v1',
     maxRetries: 0,
     timeout: 30_000,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 function isConfigured(): boolean {
     return Boolean(process.env.DEEPSEEK_API_KEY);

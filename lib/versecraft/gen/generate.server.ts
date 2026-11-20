@@ -25,7 +25,7 @@ import {
   type Pronouns, type Environment, type TimeOfDay, type ChoiceTone, type Attraction,
   type ArcOutline, type ChapterBeat, type LedgerEntry,
 } from './world-types';
-import { timedAiFetch } from '../../ai/timed-fetch.server';
+import { meteredAiFetch } from '../../ai/metered-fetch.server';
 
 /** Speaker tokens that mean "the player is talking aloud". */
 const MC_TOKENS = new Set(['mc', 'you', 'player', '{mc}', MC_SPEAKER]);
@@ -50,12 +50,12 @@ function attractionNote(a: Attraction | undefined): string {
   }
 }
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('versecraft'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
-const MODEL = process.env.VERSECRAFT_AI_MODEL || process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const MODEL = process.env.VERSECRAFT_AI_MODEL || process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export function isVersecraftAIConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);

@@ -4,9 +4,9 @@
  */
 
 import OpenAI from 'openai';
-import { timedAiFetch } from './timed-fetch.server';
+import { meteredAiFetch } from './metered-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('text-assist'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   // Overridable so the endpoint can be pointed at a local stand-in (an
   // OpenAI-compatible proxy, or a stub in a dev/CI environment that must not
@@ -18,7 +18,7 @@ const deepseek = new OpenAI({ fetch: timedAiFetch,
   // on a hung DeepSeek connection. 20s is well above normal completion latency.
   timeout: 20_000,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export function isAITextConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);
