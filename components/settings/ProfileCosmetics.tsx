@@ -53,17 +53,18 @@ interface CosmeticItem {
     gradient?: string;
     emoji?: string;
     themeId?: string;
+    art?: string;
   };
   owned: boolean;
   equipped: boolean;
 }
 
 /**
- * Kinds that can be bought but that equipping here changes nothing (settings audit, 2026-11-19): no surface renders a
- * pet or a post flair, and a site theme is applied from the theme picker in Appearance, which `applyItem` leaves to it.
- * They stay in the store and the inventory; they are just not offered as profile equips that do nothing.
+ * Kinds that are not equipped from here: a site theme is applied from the theme picker in Appearance, which `applyItem`
+ * leaves to it. (Pets and post flair were here while nothing drew them; a pet now sits beside the profile avatar and
+ * flair is the edge on the owner's posts, so both are equipped like any other cosmetic.)
  */
-const NOT_EQUIPPABLE_HERE: ReadonlySet<ShopItemKind> = new Set<ShopItemKind>(['PET', 'POST_FLAIR', 'SITE_THEME']);
+const NOT_EQUIPPABLE_HERE: ReadonlySet<ShopItemKind> = new Set<ShopItemKind>(['SITE_THEME']);
 
 /** THEME first — it's the most visible change to a profile. */
 const SECTION_ORDER: ShopItemKind[] =

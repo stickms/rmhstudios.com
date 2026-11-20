@@ -25,6 +25,8 @@ import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
 import { ProfileIdentityExtras, ProfileShareCardButton } from './plus/ProfileIdentityExtras';
 import { PresenceDot } from './PresenceDot';
+import { BadgeMark } from '@/components/shop/art/BadgeMark';
+import { PetMark } from '@/components/shop/art/PetMark';
 import type { ProfileData } from './profile-types';
 import { ProfileBanner } from './ProfileBanner';
 import './profile.css';
@@ -78,11 +80,12 @@ function IdentityBadges({ profile }: { profile: ProfileData }) {
   const { t } = useTranslation('feed');
   return (
     <>
-      {profile.cosmetics?.badge?.emoji ? (
-        <span className="text-xl" title={t('equipped-badge', { defaultValue: 'Equipped badge' })}>
-          {profile.cosmetics.badge.emoji}
-        </span>
-      ) : null}
+      <BadgeMark
+        badge={profile.cosmetics?.badge}
+        size={24}
+        title={t('equipped-badge', { defaultValue: 'Equipped badge' })}
+        className="shrink-0"
+      />
       {profile.isVerified ? (
         <BadgeCheck
           className="size-5 shrink-0 text-site-success"
@@ -199,6 +202,13 @@ export function ProfileHero({
           {profile.presence ? (
             <PresenceDot presence={profile.presence} className="absolute end-0 bottom-0" />
           ) : null}
+          {/* The equipped pet keeps the avatar company at its lower start corner; the presence dot has the other one. */}
+          <PetMark
+            pet={profile.cosmetics?.pet}
+            size={36}
+            title={t('equipped-pet', { defaultValue: 'Equipped pet' })}
+            className="pointer-events-none absolute -start-4 -bottom-3"
+          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">

@@ -61,6 +61,7 @@ export interface MarketListingView {
       color?: string;
       gradient?: string;
       emoji?: string;
+      art?: string;
     };
   } | null;
   seller: {

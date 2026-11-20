@@ -139,12 +139,12 @@ const TABLE: Record<
       ],
     '--site-accent':
       [
-        '#0b0d10',
-        '#eef1f4',
+        '#2563eb',
+        '#6ea8fe',
       ],
     '--site-accent-fg':
       [
-        '#fafafa',
+        '#ffffff',
         '#0b0d10',
       ],
     '--site-danger':

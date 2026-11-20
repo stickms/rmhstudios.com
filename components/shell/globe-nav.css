@@ -215,7 +215,7 @@ html.ios-webkit .globe-nav__fade {
   touch-action: none;
 }
 
-/* G8: 8px danger dot at the docked globe's upper right; the number lives on the pin once open. */
+/* G8: 8px notify dot at the docked globe's upper right; the number lives on the pin once open. */
 .globe-nav__dot {
   position: absolute;
   inset-block-start: 2px;
@@ -224,7 +224,7 @@ html.ios-webkit .globe-nav__fade {
   block-size: 8px;
   border-radius: 50%;
   corner-shape: round;
-  background: var(--site-danger);
+  background: var(--site-notify);
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
@@ -388,8 +388,8 @@ html.ios-webkit .globe-nav__fade {
   font-family: var(--site-font-mono);
   font-size: 12px;
   font-weight: 600;
-  color: var(--site-danger);
-  background: var(--site-bg);
+  color: var(--site-notify-fg);
+  background: var(--site-notify);
   border-radius: var(--site-radius-sm);
   padding: 0 4px;
 }

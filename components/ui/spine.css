@@ -85,3 +85,22 @@
   border-block-end: 0;
   padding-block-end: 0;
 }
+
+/* Bought post flair (the shop's POST_FLAIR): the author's colour as a 3px edge laid over the spine line along the post's
+   stretch of it, under the post's dot. The colour is the catalog's, set inline by RMHarkCard. It exists only on a
+   spine; a post shown anywhere else has no line for the edge to sit on, so it carries none. */
+.post-flair {
+  display: none;
+}
+.spine .spine-item > .post-flair {
+  display: block;
+  position: absolute;
+  inset-inline-start: -17px;
+  inset-block: var(--spine-pad);
+  inline-size: 3px;
+  border-radius: var(--site-radius-sm);
+  pointer-events: none;
+}
+.spine .spine-item:has(> .post-flair)::before {
+  z-index: 1;
+}

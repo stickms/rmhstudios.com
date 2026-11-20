@@ -347,9 +347,11 @@ by
 | `--site-border`        | `#e3e6e9` | `#22272d` | Every rule and control border              |
 | `--site-text`          | `#0b0d10` | `#eef1f4` | Ink                                        |
 | `--site-text-muted`    | `#606873` | `#8b949e` | Secondary text, inactive tabs              |
-| `--site-accent`        | `#0b0d10` | `#eef1f4` | The ink. There is no accent colour.        |
-| `--site-accent-fg`     | `#fafafa` | `#0b0d10` | Text on an ink fill                        |
-| `--site-danger`        | `#c40016` | `#f2555a` | Errors, unread counts, destructive actions |
+| `--site-accent`        | `#2563eb` | `#6ea8fe` | The accent: blue (owner, 2026-11-19)       |
+| `--site-accent-fg`     | `#ffffff` | `#0b0d10` | Text on an accent fill                     |
+| `--site-danger`        | `#c40016` | `#f2555a` | Errors, destructive actions                |
+| `--site-notify`        | `#ff5c7a` | `#ff5c7a` | Unread counts and dots, in every theme     |
+| `--site-notify-fg`     | `#0b0d10` | `#0b0d10` | Text on a notify fill                      |
 | `--site-success`       | `#167d3a` | `#3fb26b` | Confirmation only                          |
 | `--site-radius`        | `8px`     | `8px`     | Controls, pictures                         |
 | `--site-radius-sm`     | `4px`     | `4px`     | Tags, small chips                          |
