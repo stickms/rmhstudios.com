@@ -1,0 +1,12 @@
+{
+  "data": {
+    "getMedicalInterviewOverview": {
+      "avg_interview_difficulty": 4.565217391304348,
+      "interview_count": 467,
+      "interview_format": "STANDARD",
+      "interview_type": "OPEN_FILE",
+      "most_common_interview_sessions": 1,
+      "total_interview_count": 757
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "data": {
+    "getRecentSchoolCycleUpdates": [
+      {
+        "cycle_update_id": "00000000-0000-4000-8000-0000000000a1",
+        "school": { "slug": "harvard-medical-school" },
+        "user_id": "user-hostile-9931",
+        "user_display_name": "drsmith42",
+        "user_profile_image_url": "https://cdn.example/avatars/jd.png",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T04:00:05.573Z"
+      },
+      {
+        "cycle_update_id": "00000000-0000-4000-8000-0000000000a2",
+        "school": { "slug": "yale-school-of-medicine" },
+        "user_id": "user-hostile-9931",
+        "user_display_name": "jane_doe_md",
+        "user_profile_image_url": "https://cdn.example/avatars/jd.png",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T04:00:05.573Z"
+      }
+    ]
+  }
+}

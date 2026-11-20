@@ -1,0 +1,477 @@
+{
+  "data": {
+    "getMedicalInterviewSchoolsOverview": {
+      "totalCount": 239,
+      "schools": [
+        {
+          "avg_interview_difficulty": 3.9411764705882355,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "a-t-still-university-of-health-sciences-mesa",
+            "name": "A.T. Still University of Health Sciences--Mesa",
+            "shorthand_name": "ATSU (Mesa)",
+            "city": "Mesa",
+            "state": "AZ"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 164,
+          "total_interview_count": 265,
+          "school": {
+            "slug": "san-juan-bautista-school-of-medicine",
+            "name": "San Juan Bautista School of Medicine",
+            "shorthand_name": "San Juan Bautista",
+            "city": "Caguas",
+            "state": "PR"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 2,
+          "total_interview_count": 153,
+          "school": {
+            "slug": "university-of-puerto-rico-school-of-medicine",
+            "name": "University of Puerto Rico School of Medicine",
+            "shorthand_name": "University of Puerto Rico",
+            "city": "San Juan",
+            "state": "PR"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 0,
+          "total_interview_count": 199,
+          "school": {
+            "slug": "universidad-central-del-caribe",
+            "name": "Universidad Central del Caribe",
+            "shorthand_name": "Universidad Central del Caribe",
+            "city": "Bayamon",
+            "state": "PR"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 216,
+          "total_interview_count": 540,
+          "school": {
+            "slug": "ponce-health-sciences-university",
+            "name": "Ponce Health Sciences University",
+            "shorthand_name": "Ponce Health Sciences",
+            "city": "Ponce",
+            "state": "PR"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "edward-via-college-of-osteopathic-medicine-louisiana",
+            "name": "Edward Via College of Osteopathic Medicine--Louisiana",
+            "shorthand_name": "VCOM (Louisiana)",
+            "city": "Monroe",
+            "state": "LA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.5,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "lincoln-memorial-university-debusk-knoxville",
+            "name": "Lincoln Memorial University (DeBusk)--Knoxville",
+            "shorthand_name": "Lincoln Memorial (Knoxville)",
+            "city": "Knoxville",
+            "state": "TN"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.333333333333333,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "nova-southeastern-university-patel-clearwater",
+            "name": "Nova Southeastern (Patel - DO)--Clearwater",
+            "shorthand_name": "Nova Southeastern (Patel - Clearwater)",
+            "city": "Clearwater",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 6.5,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "asu-john-shufeldt-school-of-medicine-and-medical-engineering",
+            "name": "ASU John Shufeldt School of Medicine and Medical Engineering",
+            "shorthand_name": "ASU (John Shufeldt)",
+            "city": "Tempe",
+            "state": "AZ"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "alice-walton-school-of-medicine",
+            "name": "Alice Walton School of Medicine",
+            "shorthand_name": "Alice Walton",
+            "city": "Bentonville",
+            "state": "AR"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.125,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "baptist-health-sciences-university-college-of-osteopathic-medicine",
+            "name": "Baptist Health Sciences University College of Osteopathic Medicine ",
+            "shorthand_name": "Baptist Health Sciences",
+            "city": "Memphis",
+            "state": "TN"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.4285714285714284,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "burrell-college-of-osteopathic-medicine-florida",
+            "name": "Burrell College of Osteopathic Medicine--Florida",
+            "shorthand_name": "Burrell COM (Florida)",
+            "city": "Melbourne",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.333333333333333,
+          "interview_count": 365,
+          "total_interview_count": 554,
+          "school": {
+            "slug": "california-university-of-science-and-medicine",
+            "name": "California University of Science and Medicine",
+            "shorthand_name": "California University",
+            "city": "Colton",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.4,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "dyouville-university-college-of-osteopathic-medicine",
+            "name": "D'Youville University College of Osteopathic Medicine",
+            "shorthand_name": "D'Youville",
+            "city": "Buffalo",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.8333333333333335,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "duquesne-university-college-of-osteopathic-medicine",
+            "name": "Duquesne University College of Osteopathic Medicine",
+            "shorthand_name": "Duquesne University",
+            "city": "Pittsburgh",
+            "state": "PA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.176470588235294,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "illinois-college-of-osteopathic-medicine",
+            "name": "Illinois College of Osteopathic Medicine",
+            "shorthand_name": "Illinois COM",
+            "city": "Chicago",
+            "state": "IL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "lake-erie-college-of-osteopathic-medicine-elmira",
+            "name": "Lake Erie College of Osteopathic Medicine--Elmira",
+            "shorthand_name": "LECOM (Elmira)",
+            "city": "Elmira",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.666666666666667,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "lake-erie-college-of-osteopathic-medicine-seton-hill",
+            "name": "Lake Erie College of Osteopathic Medicine--Seton Hill",
+            "shorthand_name": "LECOM (Seton Hill)",
+            "city": "Greensburg",
+            "state": "PA"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "lincoln-memorial-university-debusk-orange-park",
+            "name": "Lincoln Memorial University (DeBusk)--Orange Park",
+            "shorthand_name": "Lincoln Memorial (Orange Park)",
+            "city": "Orange Park",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "mayo-clinic-school-of-medicine-arizona",
+            "name": "Mayo Clinic School of Medicine--Arizona",
+            "shorthand_name": "Mayo Clinic (Arizona)",
+            "city": "Phoenix",
+            "state": "AZ"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "mayo-clinic-school-of-medicine-florida",
+            "name": "Mayo Clinic School of Medicine--Florida",
+            "shorthand_name": "Mayo Clinic (Florida)",
+            "city": "Jacksonville",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.2,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "meritus-school-of-osteopathic-medicine",
+            "name": "Meritus School of Osteopathic Medicine",
+            "shorthand_name": "Meritus (MSOM)",
+            "city": "Hagerstown",
+            "state": "MD"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.5,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "methodist-university-cape-fear-valley-health-school-of-medicine",
+            "name": "Methodist University Cape Fear Valley Health School of Medicine",
+            "shorthand_name": "Methodist University",
+            "city": "Fayetteville",
+            "state": "NC"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.75,
+          "interview_count": 783,
+          "total_interview_count": 783,
+          "school": {
+            "slug": "nyu-grossman-long-island-school-of-medicine",
+            "name": "NYU Grossman Long Island School of Medicine",
+            "shorthand_name": "NYU Long Island",
+            "city": "Mineola",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 1.75,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "new-york-institute-of-technology-arkansas-state",
+            "name": "New York Institute of Technology--Arkansas State",
+            "shorthand_name": "NYIT-COM (Arkansas)",
+            "city": "State University",
+            "state": "AR"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "ohio-university-heritage-cleveland",
+            "name": "Ohio University (Heritage)--Cleveland",
+            "shorthand_name": "OHU-HCOM (Cleveland)",
+            "city": "Warrensville Heights",
+            "state": "OH"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "ohio-university-heritage-dublin",
+            "name": "Ohio University (Heritage)--Dublin",
+            "shorthand_name": "OHU-HCOM (Dublin)",
+            "city": "Dublin",
+            "state": "OH"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "oklahoma-state-university-tahlequah",
+            "name": "Oklahoma State University--Tahlequah",
+            "shorthand_name": "Oklahoma State (Tahlequah)",
+            "city": "Tahlequah",
+            "state": "OK"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "philadelphia-college-of-osteopathic-medicine-south-georgia",
+            "name": "Philadelphia College of Osteopathic Medicine--South Georgia",
+            "shorthand_name": "PCOM (South Georgia)",
+            "city": "Moultrie",
+            "state": "GA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.5,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "rocky-vista-university-montana",
+            "name": "Rocky Vista University--Montana",
+            "shorthand_name": "RVUCOM (Montana)",
+            "city": "Billings",
+            "state": "MT"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "rocky-vista-university-utah",
+            "name": "Rocky Vista University--Utah",
+            "shorthand_name": "RVUCOM (Utah)",
+            "city": "Ivins",
+            "state": "UT"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "rowan-university-school-of-osteopathic-medicine-sewell",
+            "name": "Rowan University School of Osteopathic Medicine--Sewell",
+            "shorthand_name": "Rowan COM (Sewell)",
+            "city": "Sewell",
+            "state": "NJ"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.4,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "the-valley-college-of-osteopathic-medicine",
+            "name": "The Valley College of Osteopathic Medicine",
+            "shorthand_name": "The Valley COM",
+            "city": "Phoenix",
+            "state": "AZ"
+          }
+        },
+        {
+          "avg_interview_difficulty": 6.25,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "touro-college-of-osteopathic-medicine-great-falls",
+            "name": "Touro College of Osteopathic Medicine--Great Falls",
+            "shorthand_name": "Touro COM (Great Falls)",
+            "city": "Great Falls",
+            "state": "MT"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.3846153846153846,
+          "interview_count": 548,
+          "total_interview_count": 619,
+          "school": {
+            "slug": "uniformed-services-university-of-the-health-sciences-hebert",
+            "name": "Uniformed Services University of the Health Sciences (Hebert)",
+            "shorthand_name": "Uniformed Services",
+            "city": "Bethesda",
+            "state": "MD"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.75,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "university-of-georgia-school-of-medicine",
+            "name": "University of Georgia School of Medicine",
+            "shorthand_name": "University of Georgia",
+            "city": "Athens",
+            "state": "GA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "university-of-northern-colorado-college-of-osteopathic-medicine",
+            "name": "University of Northern Colorado College of Osteopathic Medicine",
+            "shorthand_name": "Northern Colorado COM",
+            "city": "Greely",
+            "state": "CO"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.142857142857143,
+          "interview_count": 241,
+          "total_interview_count": 355,
+          "school": {
+            "slug": "university-of-south-carolina-greenville",
+            "name": "University of South Carolina--Greenville",
+            "shorthand_name": "South Carolina (Greenville)",
+            "city": "Greenville",
+            "state": "SC"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "western-university-of-health-sciences-northwest",
+            "name": "Western University of Health Sciences--Northwest",
+            "shorthand_name": "Western University (Northwest)",
+            "city": "Lebanon",
+            "state": "OR"
+          }
+        }
+      ]
+    }
+  }
+}

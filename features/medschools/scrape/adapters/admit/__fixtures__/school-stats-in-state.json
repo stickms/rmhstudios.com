@@ -1,0 +1,91 @@
+{
+  "data": {
+    "getSchoolStats": [
+      {
+        "id": 5101,
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "application_number": 605,
+        "application_to_interview_pct": 0.15206611570247933,
+        "interview_number": 92,
+        "interview_to_admitted_pct": 0.18478260869565216,
+        "admitted_number": 17,
+        "mcat": 522,
+        "gpa": 3.95,
+        "residence_type": "in_state",
+        "research_hours": null,
+        "clinical_hours": null,
+        "non_clinical_hours": null
+      },
+      {
+        "id": 5104,
+        "school": {
+          "slug": "johns-hopkins-university-school-of-medicine"
+        },
+        "application_number": 416,
+        "application_to_interview_pct": 0.1201923076923077,
+        "interview_number": 50,
+        "interview_to_admitted_pct": 0.46,
+        "admitted_number": 23,
+        "mcat": 520,
+        "gpa": 3.99,
+        "residence_type": "in_state",
+        "research_hours": null,
+        "clinical_hours": null,
+        "non_clinical_hours": null
+      },
+      {
+        "id": 4919,
+        "school": {
+          "slug": "university-of-california-san-francisco-school-of-medicine"
+        },
+        "application_number": 4262,
+        "application_to_interview_pct": 0.08024401689347724,
+        "interview_number": 342,
+        "interview_to_admitted_pct": 0.5233918128654971,
+        "admitted_number": 179,
+        "mcat": 515,
+        "gpa": 3.91,
+        "residence_type": "in_state",
+        "research_hours": null,
+        "clinical_hours": null,
+        "non_clinical_hours": null
+      },
+      {
+        "id": 5099,
+        "school": {
+          "slug": "duke-university-school-of-medicine"
+        },
+        "application_number": 642,
+        "application_to_interview_pct": 0.03115264797507788,
+        "interview_number": 20,
+        "interview_to_admitted_pct": 0.35,
+        "admitted_number": 7,
+        "mcat": 518,
+        "gpa": 3.83,
+        "residence_type": "in_state",
+        "research_hours": null,
+        "clinical_hours": null,
+        "non_clinical_hours": null
+      },
+      {
+        "id": 5118,
+        "school": {
+          "slug": "university-of-pennsylvania-perelman"
+        },
+        "application_number": 519,
+        "application_to_interview_pct": 0.12716763005780346,
+        "interview_number": 66,
+        "interview_to_admitted_pct": 0.3484848484848485,
+        "admitted_number": 23,
+        "mcat": 521,
+        "gpa": 3.96,
+        "residence_type": "in_state",
+        "research_hours": null,
+        "clinical_hours": null,
+        "non_clinical_hours": null
+      }
+    ]
+  }
+}

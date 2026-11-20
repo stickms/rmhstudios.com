@@ -1,0 +1,123 @@
+{
+  "data": {
+    "getRecentSchoolCycleUpdates": [
+      {
+        "cycle_update_id": "5cdce394-51cf-4ca0-b33a-9bea08e4c768",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-092",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T20:06:25.274Z"
+      },
+      {
+        "cycle_update_id": "eb7bace0-3ce0-41b8-95ec-b7b947719463",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-093",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-18T17:46:31.632Z"
+      },
+      {
+        "cycle_update_id": "b03713b7-06a3-4b17-9233-f8f817533597",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-094",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-18T17:14:15.651Z"
+      },
+      {
+        "cycle_update_id": "e0d995bf-7027-43d3-b867-d6de7616dc9c",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-095",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-18T15:06:15.027Z"
+      },
+      {
+        "cycle_update_id": "c5f3f3a3-8c0a-469c-891e-0c810b5769b7",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-096",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-17T18:49:34.500Z"
+      },
+      {
+        "cycle_update_id": "3767be3b-10b3-4c29-810f-a15e80493121",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-097",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-17T16:09:36.749Z"
+      },
+      {
+        "cycle_update_id": "af1cb5f8-03ac-483f-a6b1-f8192a9822f1",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-098",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-16T21:22:00.931Z"
+      },
+      {
+        "cycle_update_id": "292d16de-d5f5-44a7-bdb4-3a91dc06004e",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-099",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-16T17:18:13.642Z"
+      },
+      {
+        "cycle_update_id": "606c1d91-0263-4f6f-a147-50f10e27074a",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-100",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-16T16:30:09.282Z"
+      },
+      {
+        "cycle_update_id": "ef5a462c-48a3-4cf2-a82e-47b603448419",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-101",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-16T15:30:02.401Z"
+      },
+      {
+        "cycle_update_id": "8633687d-2072-4575-8a30-f6d30d70abe4",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-102",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-16T15:26:16.748Z"
+      },
+      {
+        "cycle_update_id": "ca0742ba-8f2f-418b-a769-dfec8c975c08",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-103",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-13T21:04:15.052Z"
+      },
+      {
+        "cycle_update_id": "105fc5bb-821d-46f6-a017-23c01c3ac88b",
+        "school": {
+          "slug": "harvard-medical-school"
+        },
+        "user_id": "user-104",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-13T14:44:39.328Z"
+      }
+    ]
+  }
+}

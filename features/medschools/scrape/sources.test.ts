@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MEDSCHOOLS_USER_AGENT, SOURCES } from './sources';
+import { ADMIT_GRAPHQL_PATH, MEDSCHOOLS_USER_AGENT, SOURCES } from './sources';
 
 describe('medschools sources', () => {
   it('identifies itself with the agreed user agent', () => {
@@ -17,5 +17,19 @@ describe('medschools sources', () => {
       retryAfterCapMs: 120_000,
       timeoutMs: 15_000,
     });
+  });
+
+  it('ADMIT politeness matches spec §8', () => {
+    expect(SOURCES.ADMIT.origin).toBe('https://api.admit.org');
+    expect(SOURCES.ADMIT.spacingMs).toBe(1000);
+    expect(SOURCES.ADMIT.backfillSpacingMs).toBe(2000);
+    expect(SOURCES.ADMIT.maxConsecutiveFailures).toBe(3);
+    expect(SOURCES.ADMIT.userAgent).toBe(MEDSCHOOLS_USER_AGENT);
+    expect(SOURCES.ADMIT.headers?.origin).toBe('https://med.admit.org');
+    expect(ADMIT_GRAPHQL_PATH).toBe('/graphql');
+  });
+
+  it('CYCLETRACK has no extra headers', () => {
+    expect(SOURCES.CYCLETRACK.headers).toBeUndefined();
   });
 });
