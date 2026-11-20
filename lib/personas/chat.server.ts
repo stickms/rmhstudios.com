@@ -5,15 +5,15 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { prisma } from '@/lib/prisma.server';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('persona-chat'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 
 export function isPersonaChatConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);
@@ -61,7 +61,7 @@ export async function generatePersonaReply(params: {
 
     try {
       const res = await deepseek.chat.completions.create({
-        model: MODEL,
+        ...DEEPSEEK_FLASH,
         messages: [
           { role: 'system', content: system },
           ...history.map((m) => ({

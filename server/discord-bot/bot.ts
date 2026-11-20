@@ -15,6 +15,7 @@
 import { REST, type RESTOptions } from '@discordjs/rest';
 import { WebSocketManager, WebSocketShardEvents } from '@discordjs/ws';
 import { GatewayIntentBits } from '@discordjs/core';
+import { DEEPSEEK_FLASH } from '../../lib/ai/deepseek-models';
 import { createLogger } from '../shared/logger';
 import { prisma } from '../../lib/prisma.server';
 import { getBool, getDuration, getString } from './config';
@@ -75,7 +76,7 @@ export function loadBotConfig(env: Record<string, string | undefined> = process.
     devGuildId: getString('DISCORD_DEV_GUILD_ID', '', env),
     ownerId: getString('OWNER_ID', '', env),
     deepseekKey: getString('DEEPSEEK_API_KEY', '', env),
-    deepseekModel: getString('DEEPSEEK_MODEL', 'deepseek-chat', env),
+    deepseekModel: DEEPSEEK_FLASH.model,
     messageContent: getBool('ALEX_MESSAGE_CONTENT', false, env),
     imageBaseURL: getString('ALEX_PUBLIC_BASE_URL', 'https://rmhstudios.com', env),
     // Inside the jobs container's stop_grace_period (90s), beside pg-boss's own 30s drain.

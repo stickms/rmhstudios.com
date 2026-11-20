@@ -7,16 +7,16 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { prisma } from '@/lib/prisma.server';
 import { getStreak } from '@/lib/streak.server';
-import { timedAiFetch } from './timed-fetch.server';
+import { meteredAiFetch } from './metered-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('recap'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 
 export interface WeeklyRecap {
   rangeStart: string;
@@ -65,7 +65,7 @@ export async function generateWeeklyRecap(userId: string): Promise<WeeklyRecap> 
   if (process.env.DEEPSEEK_API_KEY) {
     try {
       const res = await deepseek.chat.completions.create({
-        model: MODEL,
+        ...DEEPSEEK_FLASH,
         messages: [
           {
             role: 'system',

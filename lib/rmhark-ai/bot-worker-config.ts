@@ -12,6 +12,7 @@
  *     `bot-stats.ts` (`BOT_SETTINGS_BOUNDS`) and are applied by `clampSettings`.
  */
 
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { RESERVED_HANDLES } from '@/lib/handle';
 import {
   BOT_SETTINGS_BOUNDS,
@@ -62,9 +63,9 @@ export const DM_FOLLOWUP_SILENCE_MS =
 export const DM_ACTIVE_HUMAN_LOOKBACK_MS =
   7 *
   DAY;
-/** The model the bots use unless BOT_AI_MODEL says otherwise (not RMHARK_AI_MODEL / DEEPSEEK_MODEL). */
+/** The model the bots use: the site-wide flash model (`DEEPSEEK_FLASH_MODEL`, lib/ai/deepseek-models.ts). */
 export const DEFAULT_BOT_MODEL =
-  'deepseek-flash';
+  DEEPSEEK_FLASH.model;
 export const AVATAR_CHANGE_DAYS = 60;
 export const BANNER_CHANGE_DAYS = 90;
 export const BIO_CHANGE_DAYS = 45;
@@ -100,7 +101,7 @@ export interface BotConfig {
   maxDmOpenersPerTick: number;
   dmFollowupSilenceMs: number;
   dmActiveHumanLookbackMs: number;
-  /** BOT_AI_MODEL. */
+  /** The flash model id (DEEPSEEK_FLASH_MODEL); thinking is always off for the bots. */
   model: string;
   /**
    * BOT_REACTIONS_ENABLED (default on): the kill switch for bots reacting to the live sitewide
@@ -529,7 +530,6 @@ export function loadBotConfig(
         DM_ACTIVE_HUMAN_LOOKBACK_MS,
       ),
     model:
-      env.BOT_AI_MODEL ||
       DEFAULT_BOT_MODEL,
     reactionsEnabled:
       envBool(
