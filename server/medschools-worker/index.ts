@@ -10,8 +10,12 @@
  *                          backfill records an OK no-op; the real backfill is queued by the bootstrap
  *                          below, and resumes from its own cursor after any interruption.
  *
- * Both jobs share ONE polite host (`createPoliteHost(SOURCES.CYCLETRACK)`), which is what makes them
+ *   medschools.admit-live   every 5 min — the Admit.org live decisions feed (needs the dedupe secret).
+ *   medschools.interviews   daily — Admit interview profiles, questions and school stats (same).
+ *
+ * The two CycleTrack jobs share ONE polite host (`createPoliteHost(SOURCES.CYCLETRACK)`), which is what makes them
  * mutually exclusive against CycleTrack: one request at a time at the configured rate, one halt flag.
+ * The two Admit jobs share their own host (`createPoliteHost(SOURCES.ADMIT)`), independent of CycleTrack.
  *
  * Runs as a separate Docker service or dev process, alongside the ladder-worker and homes-worker.
  */
@@ -28,6 +32,9 @@ import {
 import schoolsJson from '../../data/medschools/schools.json';
 import cyclesJson from '../../data/medschools/cycles.json';
 import { createPoliteHost } from '../../features/medschools/scrape/http';
+import { runAdmitLive } from '../../features/medschools/scrape/run-admit-live';
+import { runAdmitInterviews } from '../../features/medschools/scrape/run-admit-interviews';
+import admitAliasesJson from '../../data/medschools/admit-aliases.json';
 import { SOURCES } from '../../features/medschools/scrape/sources';
 import { runCycletrack } from '../../features/medschools/scrape/run-cycletrack';
 import {
@@ -35,6 +42,8 @@ import {
   runBackfill,
 } from '../../features/medschools/scrape/run-backfill';
 import {
+  seedAdmitAliases,
+  type AdmitAliasFile,
   seedCycles,
   seedRegistryIfEmpty,
   type CycleSeed,
@@ -103,6 +112,14 @@ const CYCLETRACK_ENABLED =
     .MEDSCHOOLS_CYCLETRACK_ENABLED !==
   'false';
 
+// R12-style flag for both Admit crons. Only an explicit manual runNow({ manual: true }) bypasses it.
+const ADMIT_ENABLED =
+  process.env.MEDSCHOOLS_ADMIT_ENABLED !== 'false';
+
+/** The dedupe hashes are keyed with this; an Admit job without it would store unkeyed, guessable hashes. */
+const secretOk = () =>
+  (process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '').length >= 16;
+
 /** Docker's default stop grace is 10s; give up waiting on a run well inside it. */
 const SHUTDOWN_DEADLINE_MS =
   (() => {
@@ -159,6 +176,14 @@ const inFlight =
 const cycletrackHost =
   createPoliteHost(
     SOURCES.CYCLETRACK,
+  );
+
+// One host for both Admit jobs, separate from CycleTrack's. FIFO: while the daily interviews walk
+// (~600 requests) runs, live requests interleave one-for-one, so a live tick can run long and the
+// inFlight guard may drop the next one. Accepted; the live feed's 6 h window absorbs it.
+const admitHost =
+  createPoliteHost(
+    SOURCES.ADMIT,
   );
 
 /** Wraps a job so a second concurrent call is skipped, and so shutdown can await it. */
@@ -315,6 +340,63 @@ const backfillTick =
     },
   );
 
+/** Shared gate for both Admit ticks: the flag first (manual bypasses), then the secret (never bypassed). */
+function admitGate(
+  name: string,
+  data: Record<string, unknown>,
+): boolean {
+  if (!ADMIT_ENABLED && data.manual !== true) return false;
+  if (!secretOk()) {
+    log.error(
+      `${name}: MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — run refused`,
+    );
+    return false;
+  }
+  return true;
+}
+
+const admitLiveTick =
+  guarded(
+    'admit-live',
+    async (data) => {
+      if (!admitGate('admit-live', data)) return;
+      const r = await runAdmitLive(
+        {
+          prisma: medPrisma,
+          host: admitHost,
+          secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
+          shouldStop: () => stopping,
+          log,
+        },
+        { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
+      );
+      log.info(
+        `admit-live run complete [${r.runId}] — status=${r.status} fetched=${r.fetched} created=${r.created} alreadyStored=${r.alreadyStored} deferred=${r.deferred} programNull=${r.programNull} misses=${r.misses} lookups=${r.lookups} rolledUp=${r.rolledUp} requests=${r.requests}`,
+      );
+    },
+  );
+
+const interviewsTick =
+  guarded(
+    'interviews',
+    async (data) => {
+      if (!admitGate('interviews', data)) return;
+      const r = await runAdmitInterviews(
+        {
+          prisma: medPrisma,
+          host: admitHost,
+          secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
+          shouldStop: () => stopping,
+          log,
+        },
+        { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
+      );
+      log.info(
+        `interviews run complete [${r.runId}] — status=${r.status} statsRows=${r.statsRows} schoolsFetched=${r.schoolsFetched} schoolsSkipped=${r.schoolsSkipped} schoolsFailed=${r.schoolsFailed} schoolsUnavailable=${r.schoolsUnavailable} questionsCreated=${r.questionsCreated} questionsUpdated=${r.questionsUpdated} questionsDeleted=${r.questionsDeleted} misses=${r.misses} requests=${r.requests}`,
+      );
+    },
+  );
+
 // ─── Startup bootstrap ──────────────────────────────────────────
 // A fresh database has no schools and no history, and the first hourly tick can be most of an hour
 // away. Seed the registry and cycle dates (both idempotent and converging, from JSON that esbuild
@@ -336,6 +418,18 @@ async function bootstrap(): Promise<boolean> {
     log.info(
       `Bootstrap: seeded ${seeded.schools} schools, ${seeded.aliases} aliases, ${cycles} cycles`,
     );
+    // The reviewed Admit slugs attach through the CycleTrack aliases seeded above. A conflicting pair
+    // is skipped, never moved, and named here so an operator can resolve it. Bootstrap queues no
+    // Admit run, so ADMIT_ENABLED has nothing to gate here.
+    const admit = await seedAdmitAliases(seedPrisma, admitAliasesJson as AdmitAliasFile);
+    log.info(
+      `Bootstrap: seeded ${admit.created} Admit aliases (${admit.unmatched.length} unmatched)`,
+    );
+    if (admit.skipped.length > 0) {
+      log.warn(
+        `Bootstrap: ${admit.skipped.length} Admit alias pairs skipped (conflict): ${admit.skipped.map((p) => `${p.cycletrackKey} -> ${p.admitSlug}`).join('; ')}`,
+      );
+    }
     return (
       CYCLETRACK_ENABLED &&
       !stopping &&
@@ -362,6 +456,12 @@ const BACKFILL_QUEUE =
 const cycletrackCron =
   process.env.MEDSCHOOLS_CYCLETRACK_CRON?.trim() ||
   '20 * * * *';
+const ADMIT_LIVE_QUEUE = 'medschools.admit-live';
+const INTERVIEWS_QUEUE = 'medschools.interviews';
+const admitLiveCron =
+  process.env.MEDSCHOOLS_ADMIT_LIVE_CRON?.trim() || '*/5 * * * *';
+const interviewsCron =
+  process.env.MEDSCHOOLS_INTERVIEWS_CRON?.trim() || '35 4 * * *';
 // Yearly no-op safety net: a finished backfill records an OK no-op, an unfinished one resumes.
 const BACKFILL_CRON =
   '0 0 1 1 *';
@@ -370,20 +470,16 @@ let cycletrackConsumer: ScheduledConsumer | null =
   null;
 let backfillConsumer: ScheduledConsumer | null =
   null;
+let admitLiveConsumer: ScheduledConsumer | null =
+  null;
+let interviewsConsumer: ScheduledConsumer | null =
+  null;
 
 async function main() {
-  // Phase 2 adapters hash dedupe keys with this; phase 1 does not read it, so it only warns.
-  const secret =
-    process
-      .env
-      .MEDSCHOOLS_DEDUPE_SECRET;
-  if (
-    !secret ||
-    secret.length <
-      16
-  ) {
-    log.warn(
-      'MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — set it (openssl rand -hex 32) before the phase 2 adapters ship',
+  // The Admit jobs hash dedupe keys with this and refuse to run without it; CycleTrack never reads it.
+  if (!secretOk()) {
+    log.error(
+      'MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — the Admit jobs (admit-live, interviews) are disabled; CycleTrack is unaffected. Set it with: openssl rand -hex 32',
     );
   }
 
@@ -467,13 +563,41 @@ async function main() {
       1,
     );
   }
+  admitLiveConsumer = await startScheduledConsumer({
+    queue: ADMIT_LIVE_QUEUE,
+    cron: admitLiveCron,
+    expireInSeconds: 20 * 60,
+    retryLimit: 0,
+    handler: admitLiveTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!admitLiveConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
+  interviewsConsumer = await startScheduledConsumer({
+    queue: INTERVIEWS_QUEUE,
+    cron: interviewsCron,
+    expireInSeconds: 3 * 60 * 60,
+    retryLimit: 0,
+    handler: interviewsTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!interviewsConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
   if (
     stopping
   )
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE}" enabled=${CYCLETRACK_ENABLED}`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admitEnabled=${ADMIT_ENABLED}`,
   );
   if (
     backfillDue
@@ -519,6 +643,8 @@ async function shutdown(
     [
       cycletrackConsumer?.pause(),
       backfillConsumer?.pause(),
+      admitLiveConsumer?.pause(),
+      interviewsConsumer?.pause(),
     ],
   );
 
@@ -571,7 +697,7 @@ async function shutdown(
     }
   }
 
-  // The pg-boss instance is shared by both consumers, so stopping it once is enough.
+  // The pg-boss instance is shared by all four consumers, so stopping it once is enough.
   await (
     cycletrackConsumer ??
     backfillConsumer

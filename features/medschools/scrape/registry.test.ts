@@ -912,6 +912,21 @@ describe('stable-key seeding', () => {
           [
             'nowhere-slug',
           ],
+        skipped:
+          [
+            {
+              cycletrackKey:
+                'Yale',
+              admitSlug:
+                'yale-second',
+            },
+            {
+              cycletrackKey:
+                'Texas A&M',
+              admitSlug:
+                'yale-university',
+            },
+          ],
       },
     );
     const admitRows =
@@ -952,6 +967,21 @@ describe('stable-key seeding', () => {
         unmatched:
           [
             'nowhere-slug',
+          ],
+        skipped:
+          [
+            {
+              cycletrackKey:
+                'Yale',
+              admitSlug:
+                'yale-second',
+            },
+            {
+              cycletrackKey:
+                'Texas A&M',
+              admitSlug:
+                'yale-university',
+            },
           ],
       },
     );

@@ -607,8 +607,9 @@ export interface AdmitAliasFile {
 /**
  * Attaches the reviewed Admit slugs to schools through their CYCLETRACK alias.
  * `unmatched` lists the Admit slugs whose CycleTrack key has no school here.
- * A pair that would break the one-key-per-source rule is skipped, never moved:
- * an existing alias is not touched, so a second call creates nothing.
+ * A pair that would break the one-key-per-source rule is skipped, never moved,
+ * and reported in `skipped` for the caller to log: an existing alias is not
+ * touched, so a second call creates nothing.
  */
 export async function seedAdmitAliases(
   prisma: SeedPrisma,
@@ -616,6 +617,10 @@ export async function seedAdmitAliases(
 ): Promise<{
   created: number;
   unmatched: string[];
+  skipped: Array<{
+    cycletrackKey: string;
+    admitSlug: string;
+  }>;
 }> {
   const existing =
     await prisma.medSchoolAlias.findMany();
@@ -663,6 +668,10 @@ export async function seedAdmitAliases(
   let created = 0;
   const unmatched: string[] =
     [];
+  const skipped: Array<{
+    cycletrackKey: string;
+    admitSlug: string;
+  }> = [];
   for (const pair of file.aliases) {
     const schoolId =
       ownerOf.get(
@@ -711,10 +720,18 @@ export async function seedAdmitAliases(
                 },
         },
       );
+    if (!plan.ok) {
+      skipped.push({
+        cycletrackKey:
+          pair.cycletrackKey,
+        admitSlug:
+          pair.admitSlug,
+      });
+      continue;
+    }
     if (
-      !plan.ok ||
       owner !==
-        undefined
+      undefined
     )
       continue;
     await prisma.medSchoolAlias.upsert(
@@ -765,6 +782,7 @@ export async function seedAdmitAliases(
   return {
     created,
     unmatched,
+    skipped,
   };
 }
 
