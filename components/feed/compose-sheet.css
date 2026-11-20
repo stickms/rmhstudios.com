@@ -1,0 +1,45 @@
+/* The composer opened from the phone's floating "Write a post" (components/shell/FabLane.tsx; plan L1a, owner
+   2026-11-20: "animate in/out ... maybe a near full screen width modal"). It is the ordinary dialog card, nearly the
+   width of the screen, and this sheet adds two things. It loads with the composer's own chunk, never on first paint.
+
+   1. On a phone the card hangs from the top of the screen instead of its middle, so the keyboard, which takes the
+      lower half, never covers the field. It keeps the dialog's own width and its height cap.
+   2. It rises 12px into place as it fades in, and sinks as it fades out: 160 ms, the dialog's own fade (M5). The rise
+      is `transform`, separate from the `translate` that centres the card, so the two never fight. */
+@media (max-width: 639.98px) {
+  [data-slot='dialog-content'][data-compose-sheet] {
+    top: calc(
+      var(
+          --safe-top
+        ) +
+        0.75rem
+    );
+    translate: -50%
+      0;
+  }
+}
+[data-slot='dialog-content'][data-compose-sheet] {
+  transition:
+    opacity
+      var(
+        --m5
+      )
+      ease,
+    transform
+      var(
+        --m5
+      )
+      ease;
+}
+[data-slot='dialog-content'][data-compose-sheet][data-state='closed'] {
+  transform: translateY(
+    12px
+  );
+}
+@starting-style {
+  [data-slot='dialog-content'][data-compose-sheet][data-state='open'] {
+    transform: translateY(
+      12px
+    );
+  }
+}
