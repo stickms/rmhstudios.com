@@ -104,6 +104,58 @@ describe('sdn-rules', () => {
       false,
     );
   });
+  it('redacts a 1-character handle only as a standalone token', () => {
+    expect(
+      redactForModel(
+        'x-ray, x2, ax and x said',
+        [
+          'x',
+        ],
+      ),
+    ).toBe(
+      'x-ray, x2, ax and [user] said',
+    );
+    expect(
+      containsHandle(
+        'x-ray x2',
+        [
+          'x',
+        ],
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      containsHandle(
+        'thanks x!',
+        [
+          'x',
+        ],
+      ),
+    ).toBe(
+      true,
+    );
+  });
+  it('never matches filler words as short handles', () => {
+    expect(
+      redactForModel(
+        'um uh ha ya yo ex ah ok oh',
+        [
+          'um',
+          'uh',
+          'ha',
+          'ya',
+          'yo',
+          'ex',
+          'ah',
+          'ok',
+          'oh',
+        ],
+      ),
+    ).toBe(
+      'um uh ha ya yo ex ah ok oh',
+    );
+  });
   it('never matches short handles that are common words', () => {
     expect(
       redactForModel(

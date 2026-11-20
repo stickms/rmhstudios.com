@@ -1,7 +1,7 @@
 /** The production model seam for SDN extraction; parsing is the strict schema in `extract.ts`, not here. */
 import {
   isAiConfigured,
-  runTaskJson,
+  runTask,
 } from '@/lib/ai/provider.server';
 import { MEDSCHOOLS_EXTRACT } from '@/lib/ai/prompts';
 import type { SdnAi } from './extract';
@@ -10,19 +10,17 @@ export function createSdnAi(): SdnAi {
   return {
     configured:
       isAiConfigured,
+    // Raw text: a reply that is not JSON is a bad answer for extractBatch to count, not an outage.
     run: (
       system,
       user,
     ) =>
-      runTaskJson(
+      runTask(
         'medschools-extract',
         system,
         user,
-        (
-          v,
-        ) =>
-          v,
         {
+          json: true,
           userId:
             null,
           promptId:

@@ -113,7 +113,12 @@ function fakeAi(
         Error
       )
         throw a;
-      return a;
+      return typeof a ===
+        'string'
+        ? a
+        : JSON.stringify(
+            a,
+          );
     },
   };
 }
@@ -657,6 +662,8 @@ describe('extractBatch', () => {
     ).toEqual(
       {
         ok: false,
+        reason:
+          'schema',
       },
     );
     expect(
@@ -745,6 +752,8 @@ describe('extractBatch', () => {
     ).toEqual(
       {
         ok: false,
+        reason:
+          'schema',
       },
     );
     expect(
@@ -786,19 +795,174 @@ describe('extractBatch', () => {
       2,
     );
   });
-  it('propagates an ai.run throw', async () => {
-    await expect(
-      extractBatch(
+  it('treats prose and malformed JSON as schema failures, not outages', async () => {
+    for (const text of [
+      'I cannot help with that.',
+      '{"posts": [{"postRef": 0,',
+    ]) {
+      const ai =
         fakeAi(
-          new Error(
-            'outage',
-          ),
+          text,
+        );
+      expect(
+        await extractBatch(
+          ai,
+          posts,
+          ctx,
         ),
+      ).toEqual(
+        {
+          ok: false,
+          reason:
+            'schema',
+        },
+      );
+      expect(
+        ai.calls,
+      ).toHaveLength(
+        2,
+      );
+    }
+  });
+  it('accepts a fenced JSON reply', async () => {
+    const ai =
+      fakeAi(
+        '```json\n' +
+          JSON.stringify(
+            answer(
+              {
+                postRef: 0,
+                events:
+                  [
+                    ev(),
+                  ],
+              },
+            ),
+          ) +
+          '\n```',
+      );
+    expect(
+      (
+        await extractBatch(
+          ai,
+          posts,
+          ctx,
+        )
+      )
+        .ok,
+    ).toBe(
+      true,
+    );
+  });
+  it('reports a provider error as an outage without retrying', async () => {
+    const ai =
+      fakeAi(
+        new Error(
+          'boom',
+        ),
+      );
+    expect(
+      await extractBatch(
+        ai,
         posts,
         ctx,
       ),
-    ).rejects.toThrow(
-      'outage',
+    ).toEqual(
+      {
+        ok: false,
+        reason:
+          'outage',
+      },
+    );
+    expect(
+      ai.calls,
+    ).toHaveLength(
+      1,
+    );
+  });
+  it('reports AI not configured as an outage without calling', async () => {
+    const ai =
+      {
+        ...fakeAi(
+          answer(),
+        ),
+        configured:
+          () =>
+            false,
+      };
+    expect(
+      await extractBatch(
+        ai,
+        posts,
+        ctx,
+      ),
+    ).toEqual(
+      {
+        ok: false,
+        reason:
+          'outage',
+      },
+    );
+    expect(
+      ai.calls,
+    ).toHaveLength(
+      0,
+    );
+  });
+  it('checks the budget before every call, retry included', async () => {
+    const ai =
+      fakeAi(
+        {
+          nope: true,
+        },
+      );
+    let n = 0;
+    const res =
+      await extractBatch(
+        ai,
+        posts,
+        ctx,
+        async () =>
+          ++n <=
+          1,
+      );
+    expect(
+      res,
+    ).toEqual(
+      {
+        ok: false,
+        reason:
+          'budget',
+      },
+    );
+    expect(
+      ai.calls,
+    ).toHaveLength(
+      1,
+    );
+    const none =
+      fakeAi(
+        answer(),
+      );
+    expect(
+      await extractBatch(
+        none,
+        posts,
+        ctx,
+        async () =>
+          false,
+      ),
+    ).toEqual(
+      {
+        ok: false,
+        reason:
+          'budget',
+      },
+    );
+    expect(
+      none.calls,
+    ).toHaveLength(
+      0,
     );
   });
 });

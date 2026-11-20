@@ -53,6 +53,13 @@ const SHORT_HANDLE_STOPLIST: ReadonlySet<string> =
       'us',
       'wl',
       'we',
+      'um',
+      'uh',
+      'ha',
+      'ya',
+      'yo',
+      'ex',
+      'ah',
     ],
   );
 
@@ -158,12 +165,38 @@ function handleMatchers(
         'gi',
       ),
     );
+  // A single character is a handle only as a standalone token: "x-ray" and "x2" stay untouched.
+  const one =
+    short.filter(
+      (
+        h,
+      ) =>
+        h.length ===
+        1,
+    );
+  const two =
+    short.filter(
+      (
+        h,
+      ) =>
+        h.length ===
+        2,
+    );
   if (
-    short.length
+    two.length
   )
     out.push(
       new RegExp(
-        `(?<![\\w])(?:${alternation(short)})(?![\\w])`,
+        `(?<![\\w])(?:${alternation(two)})(?![\\w])`,
+        'g',
+      ),
+    );
+  if (
+    one.length
+  )
+    out.push(
+      new RegExp(
+        `(?<![\\w-])(?:${alternation(one)})(?![\\w-])`,
         'g',
       ),
     );

@@ -26,12 +26,13 @@ export const EXTRACT_POST_MAX_CHARS = 1_200;
 export const EXTRACT_BATCH_MAX_CHARS = 6_000;
 
 /** The model seam: tests fake it, production binds it to the `medschools-extract` task. */
+/** run() returns the model's raw text; a throw is a provider or transport error (an outage), never a bad answer. */
 export interface SdnAi {
   configured(): boolean;
   run(
     system: string,
     user: string,
-  ): Promise<unknown>;
+  ): Promise<string>;
 }
 
 export interface ExtractPost {
@@ -415,14 +416,71 @@ export function validateExtraction(
   };
 }
 
+export type ExtractFailure =
+  {
+    ok: false;
+    reason:
+      | 'schema'
+      | 'outage'
+      | 'budget';
+  };
+
+/** Slices a model reply to its outer braces and parses it; undefined for prose or malformed JSON. */
+function parseModelText(
+  raw: string,
+): unknown {
+  const t =
+    raw
+      .trim()
+      .replace(
+        /^```(?:json)?\s*/i,
+        '',
+      )
+      .replace(
+        /\s*```$/,
+        '',
+      );
+  const first =
+    t.indexOf(
+      '{',
+    );
+  const last =
+    t.lastIndexOf(
+      '}',
+    );
+  if (
+    first <
+      0 ||
+    last <=
+      first
+  )
+    return undefined;
+  try {
+    return JSON.parse(
+      t.slice(
+        first,
+        last +
+          1,
+      ),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 /**
- * One model call per chunk, retried once on a schema failure. A throw from `ai.run` propagates: it is an outage,
- * not a bad batch. `ok: false` means the chunk produced nothing usable and should be left for the next run.
+ * One model call per chunk. Prose, malformed JSON and schema failures are one kind of failure: retried once, then
+ * `{ ok: false, reason: 'schema' }`. A provider or transport error, or AI not configured, is
+ * `reason: 'outage'`; an exhausted budget (`beforeCall` returning false, checked before every call including the
+ * retry) is `reason: 'budget'`. To isolate a poisoned post, call again with a single-post chunk (the caller's
+ * per-post retry, Q22); `postRef` is then 0.
  */
 export async function extractBatch(
   ai: SdnAi,
   posts: ExtractPost[],
   ctx: ExtractContext,
+  beforeCall: () => Promise<boolean> = async () =>
+    true,
 ): Promise<
   | {
       ok: true;
@@ -432,10 +490,16 @@ export async function extractBatch(
       >;
       rejected: ExtractRejected;
     }
-  | {
-      ok: false;
-    }
+  | ExtractFailure
 > {
+  if (
+    !ai.configured()
+  )
+    return {
+      ok: false,
+      reason:
+        'outage',
+    };
   const system =
     systemFor(
       MEDSCHOOLS_EXTRACT,
@@ -450,14 +514,33 @@ export async function extractBatch(
     2;
     attempt++
   ) {
-    const raw =
-      await ai.run(
-        system,
-        user,
-      );
+    if (
+      !(await beforeCall())
+    )
+      return {
+        ok: false,
+        reason:
+          'budget',
+      };
+    let raw: string;
+    try {
+      raw =
+        await ai.run(
+          system,
+          user,
+        );
+    } catch {
+      return {
+        ok: false,
+        reason:
+          'outage',
+      };
+    }
     const parsed =
       extractionSchema.safeParse(
-        raw,
+        parseModelText(
+          raw,
+        ),
       );
     if (
       !parsed.success
@@ -484,5 +567,7 @@ export async function extractBatch(
   }
   return {
     ok: false,
+    reason:
+      'schema',
   };
 }
