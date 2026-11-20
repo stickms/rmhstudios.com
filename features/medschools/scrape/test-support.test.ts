@@ -5,9 +5,11 @@ import {
 } from 'vitest';
 import {
   assertNoLeak,
+  createFakeHost,
   createFakePrisma,
   loadFixture,
   NEEDLES,
+  gqlKey,
 } from './test-support';
 
 const count =
@@ -385,5 +387,21 @@ describe('fake Admit tables', () => {
 
   it('NEEDLES folds the hostile Admit strings in with the CycleTrack ones', () => {
     expect(NEEDLES).toEqual(expect.arrayContaining(['drsmith42', 'user_id=9931', 'user-hostile-9931']));
+  });
+
+  it('createFakeHost serves POSTs by gqlKey with sorted variables and records them', async () => {
+    const { host, requestedPosts } = createFakeHost({
+      [gqlKey('/graphql', 'op', { a: 1, b: 2 })]: '{"ok":true}',
+    });
+    const s = host.session();
+    const hit = await s.post('/graphql', JSON.stringify({ operationName: 'op', query: 'q', variables: { b: 2, a: 1 } }));
+    expect(hit).toMatchObject({ ok: true, status: 200, body: '{"ok":true}' });
+    const miss = await s.post('/graphql', JSON.stringify({ operationName: 'other', query: 'q', variables: {} }));
+    expect(miss).toMatchObject({ ok: false, status: 404 });
+    expect(requestedPosts).toEqual([
+      { op: 'op', variables: { b: 2, a: 1 } },
+      { op: 'other', variables: {} },
+    ]);
+    expect(gqlKey('/graphql', 'op', { b: 2, a: 1 })).toBe('POST /graphql op {"a":1,"b":2}');
   });
 });

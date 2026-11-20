@@ -7,14 +7,20 @@ type Handler = (url: string, init: RequestInit, n: number) => Response | Promise
 function harness(handler: Handler, config = SOURCES.CYCLETRACK) {
   let t = 1_000_000;
   const sleeps: number[] = [];
-  const calls: { url: string; at: number; headers: Record<string, string> }[] = [];
+  const calls: { url: string; at: number; headers: Record<string, string>; method: string; body: string | undefined }[] = [];
   let inFlight = 0;
   let maxInFlight = 0;
   const fetchImpl = (async (input: string | URL | Request, init: RequestInit = {}) => {
     const url = String(input);
     inFlight++;
     maxInFlight = Math.max(maxInFlight, inFlight);
-    calls.push({ url, at: t, headers: { ...(init.headers as Record<string, string>) } });
+    calls.push({
+      url,
+      at: t,
+      headers: { ...(init.headers as Record<string, string>) },
+      method: init.method ?? 'GET',
+      body: init.body as string | undefined,
+    });
     try {
       // yield so overlapping callers would be observed
       await Promise.resolve();
@@ -248,6 +254,69 @@ describe('createPoliteHost', () => {
       await h.sleepFor(HOUR + 1000);
       await s.get('/c');
       expect(robots(h)).toHaveLength(2);
+    });
+  });
+
+  describe('post', () => {
+    const GQL = '/graphql';
+    const BODY = '{"operationName":"x","query":"query x { a }","variables":{}}';
+    const admit = (handler: Handler) => harness(handler, SOURCES.ADMIT);
+
+    it('post sends POST, the body, content-type, the Origin header from config and the UA', async () => {
+      const h = admit((url) => robotsOpen(url) ?? ok('{}'));
+      const res = await h.host.session().post(GQL, BODY);
+      expect(res.ok).toBe(true);
+      const c = h.calls.find((x) => x.url.endsWith(GQL))!;
+      expect(c.method).toBe('POST');
+      expect(c.body).toBe(BODY);
+      expect(c.headers['content-type']).toBe('application/json');
+      expect(c.headers['accept']).toBe('application/json');
+      expect(c.headers['origin']).toBe('https://med.admit.org');
+      expect(c.headers['user-agent']).toBe(MEDSCHOOLS_USER_AGENT);
+    });
+
+    it('post and get are serialized and spaced on one host', async () => {
+      const h = admit((url) => robotsOpen(url) ?? ok());
+      const a = h.host.session();
+      const b = h.host.session();
+      await Promise.all([a.post(GQL, BODY), b.get('/x'), a.post(GQL, BODY)]);
+      expect(h.maxInFlight()).toBe(1);
+      const pages = h.calls.filter((c) => !c.url.endsWith('/robots.txt'));
+      expect(pages.length).toBe(3);
+      for (let i = 1; i < pages.length; i++) {
+        expect(pages[i]!.at - pages[i - 1]!.at).toBeGreaterThanOrEqual(1000);
+      }
+    });
+
+    it('post 429 with Retry-After retries the same body', async () => {
+      let n = 0;
+      const h = admit((url) => {
+        const r = robotsOpen(url);
+        if (r) return r;
+        n++;
+        return n === 1 ? new Response('', { status: 429, headers: { 'retry-after': '3' } }) : ok('{}');
+      });
+      const res = await h.host.session().post(GQL, BODY);
+      expect(res.ok).toBe(true);
+      expect(h.sleeps).toContain(3000);
+      const posts = h.calls.filter((c) => c.method === 'POST');
+      expect(posts.map((p) => p.body)).toEqual([BODY, BODY]);
+    });
+
+    it('post to a robots-disallowed path resolves { ok:false, status:0 } without fetching', async () => {
+      const h = admit((url) => (url.endsWith('/robots.txt') ? ok('User-agent: *\nDisallow: /graphql') : ok()));
+      const s = h.host.session();
+      expect(await s.post(GQL, BODY)).toMatchObject({ ok: false, status: 0 });
+      expect(h.calls.some((c) => c.method === 'POST')).toBe(false);
+      expect(s.halted).toBe(false);
+    });
+
+    it('post counts toward the 3-strike halt', async () => {
+      const h = admit((url) => robotsOpen(url) ?? new Response('', { status: 500 }));
+      const s = h.host.session();
+      for (let i = 0; i < 3; i++) expect((await s.post(GQL, BODY)).ok).toBe(false);
+      expect(s.halted).toBe(true);
+      await expect(s.post(GQL, BODY)).rejects.toBeInstanceOf(SourceHaltedError);
     });
   });
 });
