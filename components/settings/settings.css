@@ -90,6 +90,8 @@ a.settings-row {
 .theme-picker__rail {
   gap: 12px;
   padding: 4px;
+  /* Room under the card labels so the rail's scrollbar sits below them, not across the meta line. */
+  padding-block-end: 16px;
   scroll-snap-type: x mandatory;
 }
 .theme-picker__grid {

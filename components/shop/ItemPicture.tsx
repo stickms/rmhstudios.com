@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { Emoji } from '@/components/ui/emoji';
 import { cn } from '@/lib/utils';
 import type { ShopItemKind } from '@/lib/shop/catalog';
 import { getPremiumTheme } from '@/lib/shop/themes';
 import { OFFICIAL_SITE_THEMES } from '@/lib/themes/official';
 import { ThemeMiniShell } from '@/components/themes/ThemeMiniShell';
+import { BadgeMark } from './art/BadgeMark';
+import { PetMark } from './art/PetMark';
 
 /** The render data a catalog item carries (`ShopItem['data']`, as the shop and market payloads send it). */
 export interface ItemArt {
@@ -14,6 +15,8 @@ export interface ItemArt {
   themeId?: string;
   /** SITE_THEME: the official site theme (lib/themes/official.ts). */
   siteThemeId?: string;
+  /** BADGE / PET: the key of its drawn art (`components/shop/art/`). */
+  art?: string;
 }
 
 /**
@@ -161,19 +164,30 @@ export function ItemPicture({
           box
         }
       >
-        {art.emoji ? (
-          <Emoji
+        {kind ===
+        'BADGE' ? (
+          <BadgeMark
+            badge={
+              art
+            }
             size={
               thumb
-                ? 24
-                : 40
+                ? 28
+                : 56
             }
-          >
-            {
-              art.emoji
+          />
+        ) : (
+          <PetMark
+            pet={
+              art
             }
-          </Emoji>
-        ) : null}
+            size={
+              thumb
+                ? 32
+                : 64
+            }
+          />
+        )}
       </span>
     );
   }

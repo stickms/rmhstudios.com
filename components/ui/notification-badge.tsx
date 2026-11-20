@@ -8,8 +8,8 @@ interface NotificationBadgeProps {
 }
 
 /**
- * Canonical unread-count mark (Steel G8: a small `--site-danger` number). A count is text, so it is Geist Mono, 500,
- * on a solid danger fill with `--site-danger-fg` (4.5:1 in both editions). It is a tag-radius box, not a pill.
+ * Canonical unread-count mark (Steel G8: a small number). A count is text, so it is Geist Mono, 500,
+ * on the fixed light red-pink `--site-notify` fill with `--site-notify-fg` (6.5:1), whatever the accent or theme. It is a tag-radius box, not a pill.
  */
 export function NotificationBadge({
   count,
@@ -33,7 +33,7 @@ export function NotificationBadge({
     <span
       data-slot="notification-badge"
       className={cn(
-        'inline-flex h-4 min-w-4 items-center justify-center rounded-site-sm bg-site-danger px-1 font-mono text-caption leading-none font-medium text-site-danger-fg',
+        'inline-flex h-4 min-w-4 items-center justify-center rounded-site-sm bg-site-notify px-1 font-mono text-caption leading-none font-medium text-site-notify-fg',
         className,
       )}
     >
