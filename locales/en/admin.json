@@ -637,6 +637,7 @@
   "email-design-failed": "The design could not be made",
   "email-design-model": "Designer",
   "email-design-plain": "Use the plain layout",
+  "email-design-reasoning-hint": "Reasoning plans the layout before it writes it: more detail, and it can take a minute or two.",
   "email-design-run": "Design with AI",
   "email-design-stale": "The message changed after it was designed. The design still has the old words: design again, or use the plain layout.",
   "email-design-unavailable": "This designer is not configured.",

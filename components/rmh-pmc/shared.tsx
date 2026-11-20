@@ -1,30 +1,29 @@
 /**
- * RMH PMC — shared primitives for "the sight" design system (rmh-pmc.css).
+ * RMH PMC — shared primitives for the quiet liquid-metal system (rmh-pmc.css).
  *
- * Chrome of the site: the glass command capsule, the left document spine, the
- * Zulu clock, the decrypt helper, the transmission log, the brand mark and the
- * footer. Plus the small typed helpers that scenes and pages are written with:
- * `Words`, `Arrow`, `Reticle`, `Hud`, `Scene`/`Step`/`SceneDots`, `PageHead`,
- * `SecHead`, `CtaBand`, `MetaLine`.
+ * The site's furniture: the glass command capsule, the brand mark, the footer.
+ * The page helpers: `Words` (headline words rising on load), `Decrypt`,
+ * `MetaLine`, `SecHead`, `PageHead` (the one dark stage, holding one mercury),
+ * `CtaBand` (the closing call to action, on paper) and `Arrow`.
  *
- * Motion is CSS. The scripts are `useVerticalNav`, `Decrypt` and `ZuluClock`
- * here, and the pointer and scene-focus hooks in Layout.tsx.
+ * Motion is CSS. The scripts are `useVerticalNav` (the mobile menu) and
+ * `Decrypt` here, and the mercury renderer behind <Mercury/>.
  */
 import { useEffect, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useVerticalNav } from '@/hooks/useVerticalNav';
 import { cssVars } from '@/components/shared/scroll-scene';
+import { Mercury } from './Mercury';
 
-// The pinned-scene markup is shared with RMH Research; pages import it from here.
-export { cssVars, Scene, SceneDots, sceneGeometry, Step, stepWindow } from '@/components/shared/scroll-scene';
+export { cssVars };
 
 /* ── marks and icons ─────────────────────────────────────────────────────── */
 
-/* Reticle-in-hex mark, drawn in chrome stops. The hex keeps lineage with the
-   RMH holding mark; the crosshair and chevron make it PMC. */
+/* Reticle-in-hex mark, drawn in the liquid lettering stops. The hex keeps
+   lineage with the RMH holding mark; the crosshair and chevron make it PMC. */
 export function BrandMark() {
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true">
@@ -54,8 +53,8 @@ export function Arrow({ className = 'arw' }: { className?: string }) {
 
 /**
  * Decrypt — a string that scrambles through monospace glyphs on mount before
- * settling into its real text. Renders the final text on the server and when
- * reduced motion is requested, so it's accessible and SEO-safe. Use sparingly.
+ * settling into its real text. Renders the final text on the server, so it's
+ * accessible and SEO-safe. Use sparingly: the meta lines only.
  */
 const GLYPHS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789/#%<>*·';
 export function Decrypt({ text, className }: { text: string; className?: string }) {
@@ -81,49 +80,18 @@ export function Decrypt({ text, className }: { text: string; className?: string 
   return <span className={className}>{out}</span>;
 }
 
-/** Live Zulu (UTC) clock for the command bar. */
-function ZuluClock() {
-  const [now, setNow] = useState<string>('--:--');
-  useEffect(() => {
-    const fmt = () => {
-      const d = new Date();
-      const p = (n: number) => String(n).padStart(2, '0');
-      setNow(`${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`);
-    };
-    fmt();
-    const id = setInterval(fmt, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <span className="clock">
-      OPS // <b>{now}</b>Z
-    </span>
-  );
-}
-
 /* ── headline and page primitives ────────────────────────────────────────── */
 
 /**
  * A headline whose words rise out of masks, one after another, on load.
  * Pass the translated string; it stays ordinary text for a screen reader.
- * `delay` (seconds) is when the first word starts, `start` offsets the stagger
- * so several `Words` in one heading continue each other, and `steel` lists the
- * word indices set in chrome lettering (use for ONE emphasised word).
+ * `start` offsets the stagger so several `Words` in one heading continue each
+ * other, and `steel` lists the word indices set in liquid lettering (ONE word).
  */
-export function Words({
-  text,
-  delay,
-  start = 0,
-  steel,
-}: {
-  text: string;
-  delay?: number;
-  start?: number;
-  steel?: number[];
-}) {
+export function Words({ text, start = 0, steel }: { text: string; start?: number; steel?: number[] }) {
   const words = text.split(' ');
   return (
-    <span className="words" style={delay === undefined ? undefined : cssVars({ '--d': `${delay}s` })}>
+    <span className="words">
       {words.map((word, i) => (
         <span key={i}>
           <span className="w">
@@ -138,177 +106,23 @@ export function Words({
   );
 }
 
-/** File / Class / Status line. Labels are translated, values print as written. */
-export function MetaLine({
-  file,
-  cls,
-  status,
-  decrypt = true,
-}: {
-  file: string;
-  cls: string;
-  status: string;
-  decrypt?: boolean;
-}) {
-  const { t } = useTranslation('c-rmh-pmc');
-  const v = (s: string) => (decrypt ? <Decrypt text={s} /> : s);
+/** A mono line of `Label ▸ VALUE` fields; values decrypt in on load and print as written. */
+export function MetaLine({ fields }: { fields: [ReactNode, string][] }) {
   return (
     <div className="metaline">
-      <span className="field">
-        <b>{t('meta-file-label', { defaultValue: 'File' })}</b> ▸ <span className="v">{v(file)}</span>
-      </span>
-      <span className="field">
-        <b>{t('meta-class-label', { defaultValue: 'Class' })}</b> ▸ <span className="v">{v(cls)}</span>
-      </span>
-      <span className="field">
-        <b>{t('meta-status-label', { defaultValue: 'Status' })}</b> ▸ <span className="v">{v(status)}</span>
-      </span>
+      {fields.map(([label, value], i) => (
+        <span className="field" key={i}>
+          <b>{label}</b> ▸ <span className="v"><Decrypt text={value} /></span>
+        </span>
+      ))}
     </div>
   );
 }
 
-/**
- * The signature instrument: three counter-rotatable rings, tick marks, a
- * crosshair and a ball-bearing hub. Decorative. `size` is any CSS length; rotate
- * the rings from a page sheet with `--rot1`…`--rot4` (or `.rv-lock`).
- */
-export function Reticle({
-  size,
-  className = '',
-  style,
-  hub = true,
-  live = false,
-}: {
-  size?: string | number;
-  className?: string;
-  style?: CSSProperties;
-  hub?: boolean;
-  /** Let the pointer move the reflection (`data-chrome-live`). */
-  live?: boolean;
-}) {
+/** A section header: designator, h2, optional lede. Left-aligned. */
+export function SecHead({ desig, title, lede, className = '' }: { desig: ReactNode; title: ReactNode; lede?: ReactNode; className?: string }) {
   return (
-    <div
-      className={`obj-reticle ${className}`.trim()}
-      style={size === undefined ? style : cssVars({ '--size': typeof size === 'number' ? `${size}px` : size }, style)}
-      data-chrome-live={live ? '' : undefined}
-      aria-hidden="true"
-    >
-      <span className="rt-ring rt-r1" />
-      <span className="rt-ticks" />
-      <span className="rt-ring rt-r2" />
-      <span className="rt-ring rt-r3" />
-      <span className="rt-cross" />
-      {hub ? <span className="rt-hub" /> : null}
-    </div>
-  );
-}
-
-/**
- * The heads-up-display frame of a stage: corner crosshairs, a ranging scale and
- * four glass telemetry readouts (bearing, range, grid, step). Decoration, so
- * `aria-hidden`; the values are CSS counters driven by `--p`. Pass `steps` in a
- * scene to show the live step; without it the fourth readout shows elevation.
- */
-export function Hud({ steps, cross = false }: { steps?: number; cross?: boolean }) {
-  const { t } = useTranslation('c-rmh-pmc');
-  return (
-    <div className="hud" aria-hidden="true">
-      <i className="hud-tick tl" />
-      <i className="hud-tick tr" />
-      <i className="hud-tick bl" />
-      <i className="hud-tick br" />
-      {cross ? <i className="hud-cross" /> : null}
-      <i className="hud-scale" />
-      <span className="hud-readout glass glass--pill tl">
-        <b>{t('hud-brg', { defaultValue: 'BRG' })}</b>
-        <i className="hud-v hud-v--3" style={cssVars({ '--mul': 312, '--add': 24 })} />°
-      </span>
-      <span className="hud-readout glass glass--pill tr">
-        <b>{t('hud-rng', { defaultValue: 'RNG' })}</b>
-        <i className="hud-v" style={cssVars({ '--mul': 3600, '--add': 1200 })} /> m
-      </span>
-      <span className="hud-readout glass glass--pill bl">
-        <b>{t('hud-grid', { defaultValue: 'GRID' })}</b>
-        <i className="hud-v hud-v--3" style={cssVars({ '--mul': 87, '--add': 410 })} />
-      </span>
-      <span className="hud-readout glass glass--pill br">
-        {steps ? (
-          <>
-            <b>{t('hud-step', { defaultValue: 'STEP' })}</b>
-            <i className="hud-v hud-v--step" />/{String(steps).padStart(2, '0')}
-          </>
-        ) : (
-          <>
-            <b>{t('hud-elev', { defaultValue: 'ELEV' })}</b>
-            <i className="hud-v" style={cssVars({ '--mul': 44, '--add': 3 })} />°
-          </>
-        )}
-      </span>
-    </div>
-  );
-}
-
-/* ── page structure ──────────────────────────────────────────────────────── */
-
-/**
- * The stage that opens every interior page: meta line, designator, a heavy
- * centred headline, a lede, then `children` (actions). `object` replaces the
- * default reticle rising from the foot of the stage.
- */
-export function PageHead({
-  file,
-  cls,
-  status,
-  desig,
-  title,
-  lede,
-  children,
-  object,
-}: {
-  file?: string;
-  cls?: string;
-  status?: string;
-  desig?: string;
-  title: string;
-  lede?: string;
-  children?: ReactNode;
-  object?: ReactNode;
-}) {
-  return (
-    <section className="pagehead stage">
-      <Hud />
-      <div className="pagehead-obj" aria-hidden="true">
-        {object ?? <Reticle size="min(150vw, 1000px)" style={{ translate: '0 62%' }} />}
-      </div>
-      <div className="wrap">
-        {file && cls && status ? <MetaLine file={file} cls={cls} status={status} /> : null}
-        {desig ? <span className="desig">{desig}</span> : null}
-        <h1 className="display">
-          <Words text={title} />
-        </h1>
-        {lede ? <p className="lede ld">{lede}</p> : null}
-        {children ? <div className="actions ld" style={cssVars({ '--i': 1 })}>{children}</div> : null}
-      </div>
-    </section>
-  );
-}
-
-/** A centred section header: designator, h2, optional lede. `left` hangs it left. */
-export function SecHead({
-  desig,
-  title,
-  lede,
-  left = false,
-  className = '',
-}: {
-  desig: string;
-  title: ReactNode;
-  lede?: ReactNode;
-  left?: boolean;
-  className?: string;
-}) {
-  return (
-    <header className={`sechead${left ? ' sechead--left' : ''} ${className}`.trim()}>
+    <header className={`sechead ${className}`.trim()}>
       <span className="desig">{desig}</span>
       <h2 className="h2">{title}</h2>
       {lede ? <p className="lede">{lede}</p> : null}
@@ -317,40 +131,61 @@ export function SecHead({
 }
 
 /**
- * The closing call to action: a stage with the reticle locking on. `children`
- * are the actions (one `.btn`, optionally a `.btn-glass`).
+ * The stage that opens every interior page: meta line, designator, a heavy
+ * headline and a lede on the left; one mercury body on the right. `seed`
+ * varies the mercury's droplets so each page's body is its own.
  */
-export function CtaBand({
+export function PageHead({
+  meta,
   desig,
   title,
-  body,
+  lede,
+  seed,
   children,
 }: {
-  desig: string;
-  title: ReactNode;
-  body?: ReactNode;
-  children: ReactNode;
+  meta?: [ReactNode, string][];
+  desig?: ReactNode;
+  title: string;
+  lede?: ReactNode;
+  seed?: number;
+  children?: ReactNode;
 }) {
   return (
-    <section className="cta-band stage">
-      <Hud />
-      <div className="cta-obj rv-lock" aria-hidden="true">
-        <Reticle size="clamp(900px, 150vw, 1500px)" hub={false} />
-      </div>
+    <section className="pagehead stage">
       <div className="wrap">
-        <span className="desig">{desig}</span>
-        <h2 className="h2">{title}</h2>
-        {body ? <p className="body">{body}</p> : null}
-        <div className="actions">{children}</div>
+        <div className="ph-copy">
+          {meta ? <MetaLine fields={meta} /> : null}
+          {desig ? <span className="desig">{desig}</span> : null}
+          <h1 className="display">
+            <Words text={title} />
+          </h1>
+          {lede ? <p className="lede ld">{lede}</p> : null}
+          {children ? <div className="actions ld" style={cssVars({ '--i': 1 })}>{children}</div> : null}
+        </div>
+        <Mercury className="ph-orb" seed={seed} blobs={4} />
       </div>
     </section>
   );
 }
 
-/* ── the site's chrome ───────────────────────────────────────────────────── */
+/** The closing call to action, on paper: designator, headline, a line of body, the action(s). */
+export function CtaBand({ desig, title, body, children }: { desig: ReactNode; title: ReactNode; body?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="cta">
+      <div className="wrap">
+        <span className="desig rv">{desig}</span>
+        <h2 className="h2 rv">{title}</h2>
+        {body ? <p className="body rv">{body}</p> : null}
+        <div className="actions rv">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+/* ── the site's furniture ────────────────────────────────────────────────── */
 
 export function CommandBar() {
-  const { t } = useTranslation("c-rmh-pmc");
+  const { t } = useTranslation('c-rmh-pmc');
   const NAV = [
     { to: '/rmh-pmc/command', label: t('nav-command', { defaultValue: 'Command' }) },
     { to: '/rmh-pmc/capabilities', label: t('nav-capabilities', { defaultValue: 'Capabilities' }) },
@@ -366,18 +201,12 @@ export function CommandBar() {
 
   return (
     <header className="cmdbar">
-      <div className="cmdbar-inner glass glass--pill" data-chrome-live="">
-        <div className="cmdbar-left">
-          <a className="backlink" href="/" aria-label={t("back-to-rmh-studios", { defaultValue: "Back to RMH Studios" })}>
-            <span aria-hidden="true">←</span>
-            <span className="backlink-label">RMH Studios</span>
-          </a>
-          <Link className="brand" to="/rmh-pmc" aria-label={t("rmh-pmc-home", { defaultValue: "RMH PMC home" })}>
-            <BrandMark />
-            <span className="brand-text">RMH&nbsp;PMC</span>
-          </Link>
-        </div>
-        <nav className="navlinks" aria-label={t("nav-primary-label", { defaultValue: "Primary" })}>
+      <div className="cmdbar-inner">
+        <Link className="brand" to="/rmh-pmc" aria-label={t('rmh-pmc-home', { defaultValue: 'RMH PMC home' })}>
+          <BrandMark />
+          <span className="brand-text">RMH&nbsp;PMC</span>
+        </Link>
+        <nav className="navlinks" aria-label={t('nav-primary-label', { defaultValue: 'Primary' })}>
           {NAV.map((item) => (
             <Link key={item.to} to={item.to} aria-current={current(item.to)}>
               {item.label}
@@ -385,141 +214,78 @@ export function CommandBar() {
           ))}
         </nav>
         <div className="nav-right">
-          <ZuluClock />
           <Link className="btn nav-cta" to="/rmh-pmc/contact">
-            {t("request-briefing", { defaultValue: "Request a briefing" })}
+            {t('request-briefing', { defaultValue: 'Request a briefing' })}
           </Link>
-          <button className="nav-toggle" aria-label={t("open-menu", { defaultValue: "Open menu" })} aria-expanded="false" aria-controls="m-menu" onClick={toggleMenu}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <line x1="4" y1="8" x2="20" y2="8" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="16" x2="20" y2="16" />
+          <button className="nav-toggle" aria-label={t('open-menu', { defaultValue: 'Open menu' })} aria-expanded="false" aria-controls="m-menu" onClick={toggleMenu}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <line x1="4" y1="8" x2="20" y2="8" /><line x1="4" y1="16" x2="20" y2="16" />
             </svg>
           </button>
         </div>
       </div>
-      <nav className="mobile-menu glass" id="m-menu" aria-label={t("nav-mobile-label", { defaultValue: "Mobile" })}>
-        {NAV.map((item, i) => (
-          <Link key={item.to} to={item.to} style={cssVars({ '--i': i })} aria-current={current(item.to)} onClick={closeMenu}>
+      <nav className="mobile-menu" id="m-menu" aria-label={t('nav-mobile-label', { defaultValue: 'Mobile' })}>
+        {NAV.map((item) => (
+          <Link key={item.to} to={item.to} aria-current={current(item.to)} onClick={closeMenu}>
             {item.label}
           </Link>
         ))}
-        <Link className="btn mm-cta" to="/rmh-pmc/contact" onClick={closeMenu}>
-          {t("request-briefing", { defaultValue: "Request a briefing" })}
+        <Link className="btn" to="/rmh-pmc/contact" onClick={closeMenu}>
+          {t('request-briefing', { defaultValue: 'Request a briefing' })}
         </Link>
       </nav>
     </header>
   );
 }
 
-/** Fixed left document spine — classification, file code, scroll progress (a root scroll timeline in CSS). Decorative. */
-export function Gutter() {
-  return (
-    <aside className="gutter" aria-hidden="true">
-      <span className="g-class">Restricted</span>
-      <div className="g-tick" />
-      <div className="g-prog" />
-      <div className="g-tick" />
-      <span className="g-code">DOC·RMH-PMC·2026</span>
-    </aside>
-  );
-}
-
-/* Deployment-status transmission log: glass readouts riding a chrome rail. Its
-   track travels horizontally with scroll (CSS view timeline); with motion off it
-   wraps as a static grid. */
-export function TransmissionLog() {
-  const rows = [
-    ['THEATER', 'SAHEL', 'ACTIVE', false],
-    ['THEATER', 'LEVANT', 'STANDBY', false],
-    ['CONVOY', 'GULF OF ADEN', 'ROLLING', false],
-    ['POSTURE', 'EASTERN EUROPE', 'HOLD', true],
-    ['OPS CENTER', 'GLOBAL', 'MANNED 24/7', false],
-    ['LIAISON', 'PARTNER SVCS', 'NOMINAL', false],
-    ['EXFIL', 'SECTOR 7', 'COMPLETE', false],
-  ] as const;
-  return (
-    <div className="transmit" aria-hidden="true">
-      <div className="wrap">
-        <div className="transmit-stage">
-          <span className="obj-rail transmit-rail" />
-          <div className="transmit-tag glass glass--pill">
-            <span className="led" /> LIVE
-          </div>
-          <div className="sx transmit-sx">
-            <div className="sx-track transmit-track">
-              {rows.map(([k, label, val, hold], i) => (
-                <span className="transmit-item glass glass--pill" key={i}>
-                  <em className={hold ? 'led hold' : 'led'} />
-                  <b>{k}: {label}</b>
-                  <i className={hold ? 'hold' : undefined}>{val}</i>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function SiteFooter() {
-  const { t } = useTranslation("c-rmh-pmc");
+  const { t } = useTranslation('c-rmh-pmc');
   return (
     <footer className="footer">
       <div className="wrap">
         <div className="footer-top">
           <div className="footer-brand">
-            <Link className="brand" to="/rmh-pmc" aria-label={t("rmh-pmc-home", { defaultValue: "RMH PMC home" })}>
+            <Link className="brand" to="/rmh-pmc" aria-label={t('rmh-pmc-home', { defaultValue: 'RMH PMC home' })}>
               <BrandMark />
               <span className="brand-text">RMH&nbsp;PMC</span>
             </Link>
-            <p>{t("footer-tagline", { defaultValue: "The private military arm of RMH Studios. Protective, intelligence, logistics, and advisory operations for clients who cannot afford to be wrong." })}</p>
+            <p>{t('footer-tagline', { defaultValue: 'The private military arm of RMH Studios. Protective, intelligence, logistics, and advisory operations for clients who cannot afford to be wrong.' })}</p>
           </div>
           <div className="footer-col">
-            <h4>{t("footer-capabilities-heading", { defaultValue: "Capabilities" })}</h4>
-            <Link to="/rmh-pmc/capabilities" hash="protective">{t("footer-protective-services", { defaultValue: "Protective Services" })}</Link>
-            <Link to="/rmh-pmc/capabilities" hash="guarding">{t("footer-static-guarding", { defaultValue: "Static Guarding" })}</Link>
-            <Link to="/rmh-pmc/capabilities" hash="intelligence">{t("footer-intelligence-isr", { defaultValue: "Intelligence & ISR" })}</Link>
-            <Link to="/rmh-pmc/capabilities" hash="logistics">{t("footer-logistics", { defaultValue: "Logistics" })}</Link>
-            <Link to="/rmh-pmc/capabilities" hash="sovereign">{t("footer-sovereign-solutions", { defaultValue: "Sovereign Solutions" })}</Link>
+            <h4>{t('footer-capabilities-heading', { defaultValue: 'Capabilities' })}</h4>
+            <Link to="/rmh-pmc/capabilities" hash="protective">{t('footer-protective-services', { defaultValue: 'Protective Services' })}</Link>
+            <Link to="/rmh-pmc/capabilities" hash="guarding">{t('footer-static-guarding', { defaultValue: 'Static Guarding' })}</Link>
+            <Link to="/rmh-pmc/capabilities" hash="intelligence">{t('footer-intelligence-isr', { defaultValue: 'Intelligence & ISR' })}</Link>
+            <Link to="/rmh-pmc/capabilities" hash="logistics">{t('footer-logistics', { defaultValue: 'Logistics' })}</Link>
+            <Link to="/rmh-pmc/capabilities" hash="sovereign">{t('footer-sovereign-solutions', { defaultValue: 'Sovereign Solutions' })}</Link>
           </div>
           <div className="footer-col">
-            <h4>{t("footer-company-heading", { defaultValue: "Company" })}</h4>
-            <Link to="/rmh-pmc/command">{t("footer-command", { defaultValue: "Command" })}</Link>
-            <Link to="/rmh-pmc/intelligence">{t("footer-intelligence", { defaultValue: "Intelligence" })}</Link>
-            <Link to="/rmh-pmc/operators">{t("footer-operators", { defaultValue: "Operators" })}</Link>
-            <Link to="/rmh-pmc/contact">{t("footer-contact", { defaultValue: "Contact" })}</Link>
+            <h4>{t('footer-company-heading', { defaultValue: 'Company' })}</h4>
+            <Link to="/rmh-pmc/command">{t('footer-command', { defaultValue: 'Command' })}</Link>
+            <Link to="/rmh-pmc/intelligence">{t('footer-intelligence', { defaultValue: 'Intelligence' })}</Link>
+            <Link to="/rmh-pmc/operators">{t('footer-operators', { defaultValue: 'Operators' })}</Link>
+            <Link to="/rmh-pmc/contact">{t('footer-contact', { defaultValue: 'Contact' })}</Link>
           </div>
           <div className="footer-col">
-            <h4>{t("footer-engage-heading", { defaultValue: "Engage" })}</h4>
-            <Link to="/rmh-pmc/contact" search={{ type: 'Protective Services' }}>{t("footer-protective-inquiries", { defaultValue: "Protective inquiries" })}</Link>
-            <Link to="/rmh-pmc/contact" search={{ type: 'Sovereign Solutions' }}>{t("footer-sovereign-desk", { defaultValue: "Sovereign desk" })}</Link>
-            <Link to="/rmh-pmc/operators">{t("footer-selection-recruiting", { defaultValue: "Selection & recruiting" })}</Link>
+            <h4>{t('footer-engage-heading', { defaultValue: 'Engage' })}</h4>
+            <Link to="/rmh-pmc/contact" search={{ type: 'Protective Services' }}>{t('footer-protective-inquiries', { defaultValue: 'Protective inquiries' })}</Link>
+            <Link to="/rmh-pmc/contact" search={{ type: 'Sovereign Solutions' }}>{t('footer-sovereign-desk', { defaultValue: 'Sovereign desk' })}</Link>
+            <Link to="/rmh-pmc/operators">{t('footer-selection-recruiting', { defaultValue: 'Selection & recruiting' })}</Link>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <span className="copy">{t("copyright", { defaultValue: "© 2026 RMH PMC LLC · An RMH Studios company" })}</span>
+          <span className="copy">{t('copyright', { defaultValue: '© 2026 RMH PMC LLC · An RMH Studios company' })}</span>
           <div className="footer-legal">
-            <a href="#">{t("footer-vetting", { defaultValue: "Vetting" })}</a>
-            <a href="#">{t("footer-compliance", { defaultValue: "Compliance" })}</a>
-            <a href="#">{t("footer-rules-of-engagement", { defaultValue: "Rules of Engagement" })}</a>
-            <a href="#">{t("footer-accessibility", { defaultValue: "Accessibility" })}</a>
-          </div>
-          <div className="footer-social">
-            <a className="glass glass--pill" href="#" aria-label={t("linkedin", { defaultValue: "LinkedIn" })}>
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21H21.4v-5.3c0-1.27-.02-2.9-1.77-2.9s-2.04 1.38-2.04 2.8V21H13.8z" /></svg>
-            </a>
-            <a className="glass glass--pill" href="#" aria-label={t("x", { defaultValue: "X" })}>
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5-6.6L5.3 22H2l8-9.2L1.5 2h7l4.5 6zM17 20h1.7L7.1 3.8H5.3z" /></svg>
-            </a>
-            <a className="glass glass--pill" href="#" aria-label={t("youtube", { defaultValue: "YouTube" })}>
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.4-.4-5c-.2-.9-.9-1.6-1.8-1.8C19.2 5 12 5 12 5s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 8.6 1 12 1 12s0 3.4.4 5c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-5 .4-5zM9.8 15.2V8.8l6 3.2z" /></svg>
-            </a>
+            <a href="#">{t('footer-vetting', { defaultValue: 'Vetting' })}</a>
+            <a href="#">{t('footer-compliance', { defaultValue: 'Compliance' })}</a>
+            <a href="#">{t('footer-rules-of-engagement', { defaultValue: 'Rules of Engagement' })}</a>
+            <a href="#">{t('footer-accessibility', { defaultValue: 'Accessibility' })}</a>
           </div>
         </div>
 
         <p className="disclaimer">
-          {t("footer-disclaimer", { defaultValue: "This website is for informational purposes only and does not constitute an offer of services, a solicitation, or a representation of present operational capability. RMH PMC provides services only to vetted, lawful clients, subject to applicable export controls, sanctions regimes, the laws of armed conflict, and the jurisdictions in which it operates. Unit affiliations, theaters, partner relationships, and personnel histories described herein are illustrative. RMH PMC and the RMH reticle mark are trademarks of RMH PMC LLC, an RMH Studios company." })}
+          {t('footer-disclaimer', { defaultValue: 'This website is for informational purposes only and does not constitute an offer of services, a solicitation, or a representation of present operational capability. RMH PMC provides services only to vetted, lawful clients, subject to applicable export controls, sanctions regimes, the laws of armed conflict, and the jurisdictions in which it operates. Unit affiliations, theaters, partner relationships, and personnel histories described herein are illustrative. RMH PMC and the RMH reticle mark are trademarks of RMH PMC LLC, an RMH Studios company.' })}
         </p>
       </div>
     </footer>

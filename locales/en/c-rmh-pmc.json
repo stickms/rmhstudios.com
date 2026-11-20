@@ -115,6 +115,7 @@
   "field-class": "Class",
   "field-feed": "Feed",
   "field-file": "File",
+  "field-process": "Process",
   "field-status": "Status",
   "file-label": "File",
   "filters-aria-label": "Filter dispatches by category",

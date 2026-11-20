@@ -196,6 +196,36 @@ export function DealTombstones() {
   const { t } = useTranslation('c-rmh-capital');
   return (
     <div className="tombs">
+      <Link className="tomb chrome" data-chrome-live="" to="/rmh-capital/deals" hash="rmh-studios">
+        <div className="tomb-face">
+          <p className="tomb-record">
+            {t('tomb-record', {
+              defaultValue: 'This announcement appears as a matter of record only.',
+            })}
+          </p>
+          <p className="tomb-date">
+            {t('tomb-rmhs-date', { defaultValue: 'November 19, 2026' })}
+          </p>
+          <h3 className="tomb-parties">
+            {t('tomb-rmhs-parties', { defaultValue: 'RMH Studios' })}
+          </h3>
+          <p className="tomb-amount steel">
+            <Amount value="$50" />
+          </p>
+          <p className="tomb-what">
+            {t('tomb-rmhs-terms-pipe', { defaultValue: "Private investment in public equity" })}
+          </p>
+          <span className="tomb-rule" />
+          <p className="tomb-role">
+            <b>RMHCombinator</b>
+            {t('tomb-rmhs-role', { defaultValue: 'Lead investor' })}
+          </p>
+          <span className="go">
+            {t('tomb-read', { defaultValue: 'Read the transaction' })} <CornerArrow className="" />
+          </span>
+        </div>
+      </Link>
+
       <Link className="tomb chrome" data-chrome-live="" to="/rmh-capital/deals" hash="nvidiamd">
         <div className="tomb-face">
           <p className="tomb-record">

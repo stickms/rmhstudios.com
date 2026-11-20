@@ -410,14 +410,22 @@ export const emailDesignSchema =
             'dark',
           ],
         ),
+      // "purple" was the old logo's colour; designs saved with it, and models
+      // that still offer it, read as the ink.
       accent:
-        z.enum(
-          [
-            'ink',
-            'purple',
-            'success',
-            'danger',
-          ],
+        z.preprocess(
+          (v) =>
+            v ===
+            'purple'
+              ? 'ink'
+              : v,
+          z.enum(
+            [
+              'ink',
+              'success',
+              'danger',
+            ],
+          ),
         ),
       /** Show the logo in the header. */
       logo: z.boolean(),
@@ -583,6 +591,7 @@ export const aiDesignBodySchema =
         z.enum(
           [
             'deepseek',
+            'deepseek-reasoning',
             'kimi',
           ],
         ),

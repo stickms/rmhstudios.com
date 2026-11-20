@@ -3737,3 +3737,7 @@ lib/prepaint/generated.ts
 /components/shared/scroll-scene.tsx
 /hooks/useSceneFocus.ts
 /lib/rmh-research/
+
+# Paste-ready announcement posts: one paragraph per line, so they paste
+# cleanly into the admin blog editor.
+docs/announcements/

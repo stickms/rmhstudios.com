@@ -7,16 +7,22 @@
  * from these values. The model chooses among them; it never supplies markup.
  *
  * The colours are the site's Steel tokens (`app/globals/tokens-themes.css`,
- * Day and Night) and the logo's own purple. Email clients cannot read CSS
- * variables, so the values are written out here.
+ * Day and Night); there is no brand colour beyond ink. The same brief, in
+ * prose for people, is `docs/email-brand.md`: change the two together. Email
+ * clients cannot read CSS variables, so the values are written out here.
  */
 
 export const BRAND =
   {
     name: 'RMH Studios',
-    /** The app icon: a purple rounded square with an ink "R". PNG, because most email clients do not render SVG. */
+    /**
+     * The site's mark (`public/favicon.svg`): a black six-petal line rosette on
+     * a white disc. PNG, because most email clients do not render SVG; 144px,
+     * shown at 36px so it is sharp on high-density screens. There is no other
+     * logo: the purple "R" tile the PWA icons use is not the brand.
+     */
     logoPath:
-      '/images/icons/icon-192.png',
+      '/brand/rmh-studios-mark.png',
     logoAlt:
       'RMH Studios',
     /** Geist is the site's face; email clients fall back to the system sans. */
@@ -24,9 +30,6 @@ export const BRAND =
       "Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     monoStack:
       "'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-    /** The logo's purple: the one brand colour beyond ink and neutrals. */
-    logoPurple:
-      '#9b7ad8',
     themes:
       {
         /** Steel Day. */
@@ -57,7 +60,7 @@ export const BRAND =
       },
     /**
      * The accents a design may use. Ink is the site's own accent ("the accent is
-     * the ink"); the logo purple is the brand's one colour; the rest are the
+     * the ink"), and there is no brand colour beyond it; the other two are the
      * Steel status colours, for a notice that should read as good or urgent news.
      */
     accents:
@@ -67,12 +70,6 @@ export const BRAND =
             '#0b0d10',
           dark: '#eef1f4',
         },
-        purple:
-          {
-            light:
-              '#9b7ad8',
-            dark: '#9b7ad8',
-          },
         success:
           {
             light:
@@ -106,16 +103,15 @@ export const BRAND_THEMES =
 
 /** The brand as the AI designer reads it. */
 export function brandBrief(): string {
+  const { light, dark } = BRAND.themes;
   return [
     `Brand: ${BRAND.name}, a website of browser games and apps with a social feed.`,
-    'Logo: a purple (#9b7ad8) rounded square with a black "R". The template places it in the header; you choose whether to show it.',
-    'Look ("Steel"): flat, neutral and quiet. One typeface (Geist). Content separated by thin rules and space, not boxes. No gradients, glows or shadows. The accent is the ink; the logo purple is the one brand colour.',
-    'Themes: "light" (white card on a pale grey page, near-black ink) or "dark" (near-black card, light ink).',
-    'Accents: "ink" (default, black or white buttons), "purple" (the logo colour, for something special: a launch, an event), "success" (good news), "danger" (a security or breach notice).',
+    'Logo: a black six-petal line rosette on a white disc (the site favicon). The template draws it in the header; you only choose whether to show it. Never describe, recolour or replace it, and never mention a purple "R" tile: that is not our logo.',
+    'Look ("Steel"): flat, neutral and quiet. One typeface (Geist). Content separated by thin rules and space, not boxes. No gradients, glows, shadows or translucency. There is no brand colour: the accent is the ink (black on light, white on dark). Corners are 8px.',
+    `Light theme: page ${light.page}, card ${light.card}, ink ${light.ink}, muted ${light.muted}. Dark theme: page ${dark.page}, card ${dark.card}, ink ${dark.ink}, muted ${dark.muted}.`,
+    'Accents: "ink" (default: black or white buttons), "success" (good news about the reader\'s account), "danger" (a security or breach notice). Nothing else; do not ask for purple, gradients or custom colours.',
     'Voice: short and literal. Say the specific thing. No exclamation marks, no emoji, no hype words like "seamless", "powerful" or "unleash". A button label is a verb, or a verb and a noun, in sentence case.',
-  ].join(
-    '\n',
-  );
+  ].join('\n');
 }
 
 /** WCAG relative luminance of a #rrggbb colour. */

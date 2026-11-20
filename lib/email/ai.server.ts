@@ -18,6 +18,7 @@ import OpenAI from 'openai';
 import {
   isAiConfigured,
   jsonFromModelText,
+  runReasoningTask,
   runTask,
   runTaskJson,
 } from '@/lib/ai/provider.server';
@@ -307,9 +308,25 @@ const KIMI_EMAIL_MODEL =
     .KIMI_EMAIL_MODEL ||
   'kimi-k2.7-code';
 
+/**
+ * `deepseek` is the fast chat model; `deepseek-reasoning` is DeepSeek's
+ * reasoning model, slower and dearer, for a more considered, more detailed
+ * layout. `DEEPSEEK_EMAIL_REASONING_MODEL` swaps the reasoning model id.
+ */
 export type DesignModel =
   | 'deepseek'
+  | 'deepseek-reasoning'
   | 'kimi';
+
+const DEEPSEEK_REASONING_MODEL =
+  process
+    .env
+    .DEEPSEEK_EMAIL_REASONING_MODEL ||
+  'deepseek-reasoner';
+
+/** Extra brief for the reasoning tier: it is chosen when the admin wants depth. */
+const DETAILED_BRIEF =
+  'Work in detail. Decide the reading order first, group related facts under short headings, and use lists and callouts where they make the message easier to scan. Use every block you need (up to 12) but none as filler. Still keep every fact, invent none, and return only the JSON.';
 
 /** Which designers are configured, so the composer can offer only those. */
 export function designModels(): Record<
@@ -318,6 +335,8 @@ export function designModels(): Record<
 > {
   return {
     deepseek:
+      isAiConfigured(),
+    'deepseek-reasoning':
       isAiConfigured(),
     kimi: Boolean(
       process
@@ -439,6 +458,10 @@ export async function designEmail(input: {
         ? `Art direction from the admin:\n${asData(input.direction.trim())}`
         : '',
       '',
+      input.model ===
+      'deepseek-reasoning'
+        ? DETAILED_BRIEF
+        : '',
       'Return the JSON design.',
     ]
       .filter(
@@ -465,7 +488,27 @@ export async function designEmail(input: {
             user,
           ),
         )
-      : await runTaskJson(
+      : input.model ===
+          'deepseek-reasoning'
+        ? jsonFromModelText(
+            await runReasoningTask(
+              EMAIL_DESIGN.task,
+              DEEPSEEK_REASONING_MODEL,
+              system,
+              user,
+              {
+                userId:
+                  null,
+                promptId:
+                  EMAIL_DESIGN.id,
+                promptVer:
+                  EMAIL_DESIGN.version,
+                // Thinking tokens count against this, so it is generous.
+                maxTokens: 12_000,
+              },
+            ),
+          )
+        : await runTaskJson(
           EMAIL_DESIGN.task,
           system,
           user,

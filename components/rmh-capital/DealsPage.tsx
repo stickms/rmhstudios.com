@@ -55,6 +55,318 @@ export default function DealsPage() {
 
       <section
         className="sec"
+        id="rmh-studios"
+        aria-labelledby="deals-rmhs-heading"
+      >
+        <div className="wrap">
+          <div className="offset">
+            <div className="o-lead">
+              <div className="rv-wipe deal-plate">
+                <Plate
+                  kind="disc"
+                  className="plate--sq"
+                />
+              </div>
+            </div>
+            <div className="o-wide stack">
+              <p className="meta rv">
+                {t(
+                  'deals-rmhs-byline',
+                  {
+                    defaultValue:
+                      'Announced November 19, 2026 · Mahmoud Said, General Managing Partner, RMHCombinator',
+                  },
+                )}
+              </p>
+              <h2
+                className="h2 rv"
+                id="deals-rmhs-heading"
+              >
+                {t(
+                  'deals-rmhs-heading',
+                  {
+                    defaultValue:
+                      'Investing in RMH Studios',
+                  },
+                )}
+              </h2>
+              <p className="lede rv d1">
+                {t(
+                  'deals-rmhs-lede-pipe',
+                  {
+                    defaultValue:
+                      "Today we're excited to announce that RMHCombinator is leading a $50 private investment in public equity (PIPE) in RMH Studios. We're thrilled to partner with the team as they build the consumer internet platform of the next decade.",
+                  },
+                )}
+              </p>
+              <p className="body rv d2">
+                {t(
+                  'deals-rmhs-body-1-pipe',
+                  {
+                    defaultValue:
+                      'When we first met the RMH Studios team, they had already shipped a social feed, eighteen browser games, thirteen full apps, a coin economy and a developer API, and taken the company public, all on no venture capital. We usually meet founders at the very beginning. This time we were a little late, so we did what any disciplined early-stage investor would do and wrote a check anyway.',
+                  },
+                )}
+              </p>
+              <p className="body rv d2">
+                {t(
+                  'deals-rmhs-body-2-pipe',
+                  {
+                    defaultValue:
+                      'We believe the next great consumer company will not be one app. It will be a place: somewhere people post, play, watch, listen, study and build, signed in once. RMH Studios is building that place, with a capital efficiency we have rarely seen. It reached the public markets without raising a venture round, and until today no venture firm owned a single share.',
+                  },
+                )}
+              </p>
+              <p className="body rv d2">
+                {t(
+                  'deals-rmhs-body-3-pipe',
+                  {
+                    defaultValue:
+                      'The investment extends the company’s runway by about one month of hosting. RMH Studios becomes the first public company in the RMHCombinator Fall 2026 batch, and with it gets the whole firm behind it. We could not be more excited to be on this journey with them.',
+                  },
+                )}
+              </p>
+            </div>
+
+            <div
+              className="o-full figs"
+              style={cssVars(
+                {
+                  '--n': 3,
+                },
+              )}
+            >
+              <div className="fig rv">
+                <Amount
+                  className="fig-n ink"
+                  value="$50"
+                />
+                <span className="fig-k">
+                  {t(
+                    'deals-rmhs-fig-pipe',
+                    {
+                      defaultValue:
+                        'Private investment in public equity, led by RMHCombinator',
+                    },
+                  )}
+                </span>
+              </div>
+              <div className="fig rv d1">
+                <Amount
+                  className="fig-n ink"
+                  value="$5"
+                  unit={t(
+                    'tomb-unit-billion',
+                    {
+                      defaultValue:
+                        'billion',
+                    },
+                  )}
+                />
+                <span className="fig-k">
+                  {t(
+                    'deals-rmhs-fig-market-cap',
+                    {
+                      defaultValue:
+                        'Market capitalization at pricing',
+                    },
+                  )}
+                </span>
+              </div>
+              <div className="fig rv d2">
+                <span className="fig-n deal-fig-term ink">
+                  {t(
+                    'deals-rmhs-fig-stake',
+                    {
+                      defaultValue:
+                        '0.000001%',
+                    },
+                  )}
+                </span>
+                <span className="fig-k">
+                  {t(
+                    'deals-rmhs-fig-stake-k',
+                    {
+                      defaultValue:
+                        'Of RMH Studios owned by RMHCombinator',
+                    },
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <dl className="o-full deal-terms">
+              <div className="rv">
+                <dt>
+                  {t(
+                    'deals-rmhs-term-company',
+                    {
+                      defaultValue:
+                        'Company',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-rmhs-term-company-v',
+                    {
+                      defaultValue:
+                        'RMH Studios',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv d1">
+                <dt>
+                  {t(
+                    'deals-rmhs-term-transaction',
+                    {
+                      defaultValue:
+                        'Transaction',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-rmhs-term-transaction-v',
+                    {
+                      defaultValue:
+                        'PIPE, $50, settled in full at signing',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv d2">
+                <dt>
+                  {t(
+                    'deals-rmhs-term-instrument',
+                    {
+                      defaultValue:
+                        'Instrument',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-rmhs-term-instrument-common',
+                    {
+                      defaultValue:
+                        'Common stock, bought from the company at the market price with no discount',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv">
+                <dt>
+                  {t(
+                    'deals-rmhs-term-lead',
+                    {
+                      defaultValue:
+                        'Lead investor',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-rmhs-term-lead-v',
+                    {
+                      defaultValue:
+                        'RMHCombinator, the venture capital business of RMH Capital',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv d1">
+                <dt>
+                  {t(
+                    'deals-rmhs-term-use',
+                    {
+                      defaultValue:
+                        'Use of proceeds',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-rmhs-term-use-v',
+                    {
+                      defaultValue:
+                        'About one month of servers, and the domain renewal',
+                    },
+                  )}
+                </dd>
+              </div>
+              <div className="rv d2">
+                <dt>
+                  {t(
+                    'deals-rmhs-term-board',
+                    {
+                      defaultValue:
+                        'Board',
+                    },
+                  )}
+                </dt>
+                <dd>
+                  {t(
+                    'deals-rmhs-term-board-observer',
+                    {
+                      defaultValue:
+                        'No board seat. Mahmoud Said joins as an observer',
+                    },
+                  )}
+                </dd>
+              </div>
+            </dl>
+
+            <figure className="o-wide">
+              <blockquote className="quote rv">
+                {t(
+                  'deals-rmhs-quote-public',
+                  {
+                    defaultValue:
+                      'We back founders who build first and raise later. RMH Studios built everything first, then went public.',
+                  },
+                )}
+              </blockquote>
+              <figcaption className="quote-by rv d1">
+                {t(
+                  'deals-rmhs-quote-attribution',
+                  {
+                    defaultValue:
+                      'Mahmoud Said, General Managing Partner, RMHCombinator',
+                  },
+                )}
+              </figcaption>
+            </figure>
+
+            <p className="o-wide meta rv">
+              {t(
+                'deals-rmhs-record',
+                {
+                  defaultValue:
+                    'RMHCombinator. Back and build.',
+                },
+              )}
+            </p>
+            <p className="o-wide notice rv">
+              {t(
+                'deals-rmhs-disclosure',
+                {
+                  defaultValue:
+                    'The views expressed here are those of the RMHCombinator personnel quoted and are not the views of RMH Capital or its affiliates. This post is not an offer to sell, or a solicitation of an offer to buy, any security. Past performance is not indicative of future results. A $50 check is indicative of very little.',
+                },
+              )}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="wrap">
+        <hr className="rule rv-rule" />
+      </div>
+
+      <section
+        className="sec"
         id="nvidiamd"
         aria-labelledby="deals-nv-heading"
       >
