@@ -26,22 +26,25 @@ import {
   type ComputeResult,
   type GraphResult,
 } from '@/lib/rmhcalculator/types';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { DEEPSEEK_FLASH, DEEPSEEK_REASONING, type DeepseekProfile } from '@/lib/ai/deepseek-models';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
+import { createHash } from 'node:crypto';
+import { peekL1, putL1 } from '@/lib/cached.server';
+import { redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('calculator'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
 
 /**
- * Concrete DeepSeek model IDs for each mode. `deepseek-reasoner` and
- * `deepseek-chat` are the canonical DeepSeek API names; both are overridable via
- * env so ops can retarget if the IDs change without a code deploy.
+ * The DeepSeek profile for each mode (lib/ai/deepseek-models.ts): Reasoner is
+ * thinking on, so its `reasoning_content` streams to the UI; Chat is thinking off.
  */
-const MODEL_IDS: Record<CalcModel, string> = {
-  reasoner: process.env.RMHCALC_REASONER_MODEL || 'deepseek-reasoner',
-  chat: process.env.RMHCALC_CHAT_MODEL || 'deepseek-chat',
+const MODEL_PROFILES: Record<CalcModel, DeepseekProfile> = {
+  reasoner: DEEPSEEK_REASONING,
+  chat: DEEPSEEK_FLASH,
 };
 
 // Streaming guards. Reasoner can take a while to think before the first answer
@@ -98,7 +101,7 @@ async function* streamJSON(
     armIdle();
     const stream = await deepseek.chat.completions.create(
       {
-        model: MODEL_IDS[model],
+        ...MODEL_PROFILES[model],
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },
@@ -184,11 +187,63 @@ function computeSystemPrompt(angleMode: AngleMode): string {
   ].join('\n');
 }
 
+/* ─── Result cache ────────────────────────────────────────────────── */
+
+/**
+ * How long a computed answer or graph is reused for an identical request. The
+ * engine is deterministic in intent (the same expression, mode and angle unit
+ * has one right answer), and a graph costs up to 32k output tokens, so a repeat
+ * (sin(x), the expression a class is all typing) is served without a model call.
+ * Only parsed, validated results are stored; a failure is never cached.
+ */
+const RESULT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** L1 is kept short: Redis is the shared copy, L1 only spares it a round trip. */
+const RESULT_L1_TTL_MS = 10 * 60 * 1000;
+
+function resultKey(kind: 'compute' | 'graph', args: unknown): string {
+  return `rmhcalc:${kind}:v1:${createHash('sha256').update(JSON.stringify(args)).digest('hex')}`;
+}
+
+/**
+ * Serve `run`'s result from the cache when the same request was answered
+ * before (no reasoning is streamed then: the answer arrives at once), and
+ * store it when it was not.
+ */
+async function* withResultCache<T>(
+  key: string,
+  run: () => AsyncGenerator<ThinkingEvent, T>,
+): AsyncGenerator<ThinkingEvent, T> {
+  const local = peekL1<T>(key);
+  if (local !== undefined) return local;
+  const shared = await redisGetJSON<T>(key);
+  if (shared !== null) {
+    putL1(key, shared, RESULT_L1_TTL_MS);
+    return shared;
+  }
+  const result = yield* run();
+  putL1(key, result, RESULT_L1_TTL_MS);
+  void redisSetJSON(key, result, RESULT_TTL_MS);
+  return result;
+}
+
 /**
  * Evaluate a scientific expression. Yields the model's reasoning as it streams
- * and returns the parsed, validated result.
+ * and returns the parsed, validated result (cached per identical request).
  */
-export async function* streamCompute(args: {
+export function streamCompute(args: {
+  expression: string;
+  model: CalcModel;
+  angleMode: AngleMode;
+}): AsyncGenerator<ThinkingEvent, ComputeResult> {
+  const key = resultKey('compute', {
+    expression: args.expression.trim(),
+    model: args.model,
+    angleMode: args.angleMode,
+  });
+  return withResultCache(key, () => computeUncached(args));
+}
+
+async function* computeUncached(args: {
   expression: string;
   model: CalcModel;
   angleMode: AngleMode;
@@ -271,9 +326,25 @@ function normalizeGraph(parsed: unknown): unknown {
 
 /**
  * Compute plottable series for one or more functions of x. Yields the model's
- * reasoning as it streams and returns the parsed, validated graph payload.
+ * reasoning as it streams and returns the parsed, validated graph payload
+ * (cached per identical request).
  */
-export async function* streamGraph(args: {
+export function streamGraph(args: {
+  functions: string[];
+  model: CalcModel;
+  angleMode: AngleMode;
+  domain?: { min: number; max: number };
+}): AsyncGenerator<ThinkingEvent, GraphResult> {
+  const key = resultKey('graph', {
+    functions: args.functions.map((f) => f.trim()),
+    model: args.model,
+    angleMode: args.angleMode,
+    domain: args.domain ?? null,
+  });
+  return withResultCache(key, () => graphUncached(args));
+}
+
+async function* graphUncached(args: {
   functions: string[];
   model: CalcModel;
   angleMode: AngleMode;

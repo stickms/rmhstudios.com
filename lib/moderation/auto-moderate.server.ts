@@ -21,11 +21,14 @@
  */
 
 import type OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { redisRateLimit } from '@/lib/redis.server';
 import type { ReportReason } from '@prisma/client';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
+import { cached } from '@/lib/cached.server';
+import { createHash } from 'node:crypto';
 
 // Built on the first screening, not at import: the OpenAI SDK is ~230 modules and ~12 MB RSS, and
 // processes that import this file (the `jobs` worker, through the engagement effects) mostly never screen.
@@ -34,7 +37,7 @@ async function getDeepseek(): Promise<OpenAI> {
   if (!deepseekClient) {
     const { default: OpenAIClient } = await import('openai');
     deepseekClient ??= new OpenAIClient({
-      fetch: timedAiFetch,
+      fetch: meteredAiFetch('automod'),
       apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
       baseURL: 'https://api.deepseek.com/v1',
       maxRetries: 1,
@@ -42,7 +45,6 @@ async function getDeepseek(): Promise<OpenAI> {
   }
   return deepseekClient;
 }
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 
 /** Per-request timeout on the classifier call (ms) — a stalled provider must not
  * hang the fire-and-forget screen, and repeated timeouts trip the breaker. */
@@ -135,8 +137,17 @@ const CONFIDENCE_THRESHOLD = 0.8;
 
 /** Screen too-short content is noise; skip it. */
 const MIN_CHARS = 12;
-/** Cap what we send to the model (cost + latency); the start is enough signal. */
-const MAX_CHARS = 4000;
+/**
+ * Cap what we send to the model (cost + latency); the start is enough signal.
+ * Was 4000: abusive content shows itself well inside the first 1500 characters,
+ * and the tail of a long post was most of the classifier's input bill.
+ */
+const MAX_CHARS = 1500;
+/**
+ * How long a verdict for identical text is reused. Copy-pasted spam and repeated
+ * short replies ("lol", "same") then cost one classification, not one each.
+ */
+const VERDICT_TTL_MS = 6 * 60 * 60 * 1000;
 
 const SYSTEM_PROMPT =
   'You are a content-moderation classifier for a social platform. ' +
@@ -165,10 +176,10 @@ async function classify(text: string): Promise<Classification | null> {
   try {
     const res = await (await getDeepseek()).chat.completions.create(
       {
-        model: MODEL,
+        ...DEEPSEEK_FLASH,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: text.slice(0, MAX_CHARS) },
+          { role: 'user', content: text },
         ],
         max_tokens: 80,
         temperature: 0,
@@ -200,6 +211,29 @@ async function classify(text: string): Promise<Classification | null> {
   }
 }
 
+/** A verdict per distinct (trimmed, capped) text, reused for `VERDICT_TTL_MS`. Failures are not cached. */
+function classifyCached(text: string): Promise<Classification | null> {
+  const capped = text.slice(0, MAX_CHARS);
+  const key = `automod:verdict:${createHash('sha256').update(capped).digest('hex')}`;
+  return cached(key, VERDICT_TTL_MS, () => classify(capped), {
+    shouldCache: (v) => v != null,
+  });
+}
+
+/**
+ * Bot-worker accounts are not screened: their text is generated under the
+ * persona prompts' own hard limits (`NEWS_HARD_LIMITS` in
+ * `lib/rmhark-ai/generate.server.ts`), so screening it paid for every bot
+ * post twice. Human reports on bot posts still reach the queue as usual.
+ */
+async function isBotAuthor(authorId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: authorId },
+    select: { isBot: true },
+  });
+  return user?.isBot === true;
+}
+
 export interface ScreenArgs {
   /** Matches ContentReport.entityType: "rmhark" | "comment" | "build" | ... */
   entityType: string;
@@ -219,13 +253,14 @@ export async function screenNewContent(args: ScreenArgs): Promise<void> {
     if (!process.env.DEEPSEEK_API_KEY) return;
     const text = args.text?.trim() ?? '';
     if (text.length < MIN_CHARS) return;
+    if (await isBotAuthor(args.authorId)) return;
 
     // Cost/backpressure gate: skip the LLM call (leave content unscreened) when a
     // global cap is exhausted or the circuit breaker is open. Screening is
     // best-effort — never block or fail the post because we chose not to screen.
     if (!(await screeningAllowed())) return;
 
-    const verdict = await classify(text);
+    const verdict = await classifyCached(text);
     if (!verdict || verdict.category === 'NONE') return;
     if (verdict.confidence < CONFIDENCE_THRESHOLD) return;
 

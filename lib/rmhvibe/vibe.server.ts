@@ -20,6 +20,7 @@
 
 import { VIBE_REMOVED_STATUS } from '@/lib/rmhvibe/vibe-status';
 import OpenAI from 'openai';
+import { DEEPSEEK_PRO_MODEL, DEEPSEEK_REASONING } from '@/lib/ai/deepseek-models';
 import { userChipSelect } from '@/lib/user-display';
 import { planVibeWrite } from '@/lib/rmhvibe/ownership';
 import type { VibeSelection } from '@/lib/rmhvibe/bridge';
@@ -89,8 +90,10 @@ function getClient(provider: VibeProvider): OpenAI {
 const VIBE_MODEL_IDS: Record<VibeModel, string> = {
   'kimi-k2': 'kimi-k2.7-code',
   'kimi-k2-turbo': 'kimi-k2.7-code-highspeed',
-  'deepseek-flash': 'deepseek-v4-flash',
-  'deepseek-pro': 'deepseek-v4-pro',
+  // DeepSeek ids from lib/ai/deepseek-models.ts. Builds leave thinking at the
+  // API default (on): the build prompt plans in its reasoning before writing.
+  'deepseek-flash': DEEPSEEK_REASONING.model,
+  'deepseek-pro': DEEPSEEK_PRO_MODEL,
 };
 
 // When a selected model isn't available on the configured account (e.g. Kimi's
@@ -100,7 +103,7 @@ const VIBE_MODEL_IDS: Record<VibeModel, string> = {
 // here have no fallback (they're already the safe, GA option).
 const MODEL_FALLBACK_IDS: Partial<Record<VibeModel, string>> = {
   'kimi-k2-turbo': 'kimi-k2.7-code', // HighSpeed → base K2.7 Code
-  'deepseek-pro': 'deepseek-v4-flash', // Pro → Flash
+  'deepseek-pro': DEEPSEEK_REASONING.model, // Pro → Flash
 };
 
 const VIBE_SYSTEM_PROMPT = `You are a world-class creative web developer and designer. Given a user's prompt, build a COMPLETE, polished, INTERACTIVE web app that captures the vibe of their request, written as a small multi-file React + TypeScript project. The result must look finished and shippable, never a rough draft.

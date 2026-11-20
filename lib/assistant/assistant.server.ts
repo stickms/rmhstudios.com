@@ -12,6 +12,7 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { isAITextConfigured } from '@/lib/ai/text.server';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { searchKnowledge, type KnowledgeEntry } from '@/lib/assistant/knowledge.server';
@@ -19,16 +20,15 @@ import { redisIncrBy } from '@/lib/redis.server';
 import { runTaskJson } from '@/lib/ai/provider.server';
 import { asData, systemFor, TOOL_SELECT } from '@/lib/ai/prompts';
 import { describeTools, runTool, type ToolOutcome } from '@/lib/assistant/tools.server';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
 
 // Reuse the configured DeepSeek key — identical client to lib/ai/text.server.ts.
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('assistant'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
   timeout: 20_000,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 
 /** Per-day message budget by tier. Free gets a small allowance. */
 const DAILY_BUDGET: Record<Tier, number> = { free: 10, starter: 50, pro: 200, enterprise: 1000 };
@@ -269,7 +269,7 @@ export async function answerQuestion(params: {
 
   try {
     const res = await deepseek.chat.completions.create({
-      model: MODEL,
+      ...DEEPSEEK_FLASH,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...trimHistory(params.history),

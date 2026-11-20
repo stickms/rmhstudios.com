@@ -26,7 +26,7 @@
  * is the old per-tick reentrancy guard: a tick that is still running is not stacked.
  *
  * Reused rather than re-implemented: persona tables (`./persona`), the prompts and
- * DeepSeek calls (`./generate.server`, model overridden with BOT_AI_MODEL), post
+ * DeepSeek calls (`./generate.server`, model from DEEPSEEK_FLASH), post
  * images (`./image.server`: xAI, shared daily budget, S3), DM policy (`./dm-policy`),
  * the per-bot posting rate (`./bot-stats`) and the handle rules (`@/lib/handle`).
  *

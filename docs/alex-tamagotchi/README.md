@@ -904,30 +904,7 @@ less
 surrounding
 context.
 
-The
-model
-is
-`DEEPSEEK_MODEL`
-(default
-`deepseek-chat`,
-DeepSeek's
-latest
-flagship
-chat
-model
-with
-large
-context)
-—
-pin
-a
-specific/newer
-model
-id
-there
-if
-you
-want.
+The model is the site-wide `DEEPSEEK_FLASH_MODEL` (default `deepseek-flash`, sent with thinking off; see `lib/ai/deepseek-models.ts`).
 
 If
 a
@@ -1330,8 +1307,7 @@ overrides
 `ALEX_AMBIENT_INTERVAL`,
 `ALEX_PROMPT_DURATION`,
 `ALEX_MENTION_CONTEXT`,
-`ALEX_MENTION_COOLDOWN`,
-`DEEPSEEK_MODEL`.
+`ALEX_MENTION_COOLDOWN`.
 
 ## Data model
 

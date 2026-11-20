@@ -13,10 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
-import {
-  DURATION,
-  EASE,
-} from '@/lib/motion';
+import { fade } from '@/lib/motion';
 
 /** Jump the page (or its opted-in scroller, `[data-scroll-root]`) to the top. */
 export function scrollPageToTop() {
@@ -54,6 +51,8 @@ export function scrollPageToTop() {
  * Floating "back to top" button. Appears once the page is scrolled past
  * `threshold`, and jumps the active scroller to the top on click. Mounted once
  * in the `_site` shell, so every standard page gets it without opting in.
+ * Phone only (`lg:hidden`): the owner's exception to L1 of 2026-11-20 (plan
+ * section 9, L1a) covers the phone, and a desktop page keeps nothing fixed.
  *
  * Scrolls the window, unless a page has opted into an inner scroller by marking
  * it `[data-scroll-root]` — the same opt-in `useScrollRestoration` honours. No
@@ -211,32 +210,19 @@ export function BackToTop({
                   'Back to top',
               },
             )}
-            initial={{
-              opacity: 0,
-              scale: 0.8,
-              y: 8,
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.8,
-              y: 8,
-            }}
-            transition={{
-              duration:
-                DURATION.fast,
-              ease: EASE.standard,
-            }}
+            // Steel M5: a floating control comes and goes by opacity alone, in 160 ms (no scale, no slide).
+            variants={
+              fade
+            }
+            initial="initial"
+            animate="animate"
+            exit="exit"
             className={cn(
               // Shares the bottom-right lane with the compose FAB (globals.css
               // §5.5x A.1) instead of floating in the band above it, where it sat
               // on top of page content. The lane carries the safe-area inset, so
               // this still clears the home indicator and iOS Safari's tab bar.
-              'floating-fab-lane fixed z-40',
+              'floating-fab-lane fixed z-40 lg:hidden',
               'flex size-11 items-center justify-center rounded-full',
               // A floating disc: the overlay surface (fill, 1px border, shadow).
               'surface-overlay text-site-text',

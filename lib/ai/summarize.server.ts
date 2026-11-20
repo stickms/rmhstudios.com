@@ -6,15 +6,15 @@
  */
 
 import OpenAI from 'openai';
-import { timedAiFetch } from './timed-fetch.server';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
+import { meteredAiFetch } from './metered-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('summarize-legacy'),
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
 
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 
 export function isSummarizerConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);
@@ -39,7 +39,7 @@ export async function summarizeThread(thread: ThreadForSummary): Promise<string 
   ].join('\n');
 
   const res = await deepseek.chat.completions.create({
-    model: MODEL,
+    ...DEEPSEEK_FLASH,
     messages: [
       {
         role: 'system',

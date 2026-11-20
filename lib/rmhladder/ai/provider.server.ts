@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { timedAiFetch } from '../../ai/timed-fetch.server';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
+import { meteredAiFetch } from '../../ai/metered-fetch.server';
 
 export type LadderAiProviderName = 'deepseek' | 'openai' | 'anthropic';
 
@@ -34,9 +35,11 @@ function openAiCompatibleProvider(args: {
   apiKey: string | undefined;
   baseURL?: string;
   model: string;
+  /** Provider-specific request fields (DeepSeek's `thinking` switch). */
+  extraBody?: Record<string, unknown>;
 }): LadderAiProvider {
   if (!args.apiKey) throw new LadderAiConfigurationError(args.name);
-  const client = new OpenAI({ fetch: timedAiFetch,
+  const client = new OpenAI({ fetch: meteredAiFetch('ladder'),
     apiKey: args.apiKey,
     baseURL: args.baseURL,
     maxRetries: 1,
@@ -48,6 +51,7 @@ function openAiCompatibleProvider(args: {
     async completeJson({ system, prompt, maxTokens = 2600 }) {
       const response = await client.chat.completions.create({
         model: args.model,
+        ...args.extraBody,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: prompt },
@@ -93,7 +97,8 @@ export function configuredLadderAiProvider(
       name: 'deepseek',
       apiKey: process.env.DEEPSEEK_API_KEY,
       baseURL: 'https://api.deepseek.com/v1',
-      model: process.env.LADDER_DEEPSEEK_MODEL ?? 'deepseek-chat',
+      model: DEEPSEEK_FLASH.model,
+      extraBody: { thinking: DEEPSEEK_FLASH.thinking },
     });
   }
   if (requested === 'openai') {

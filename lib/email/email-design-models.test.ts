@@ -53,7 +53,7 @@ describe('DeepSeek flash and reasoning designers', () => {
     expect(await designEmail({ ...input, model: 'deepseek-reasoning' })).not.toBeNull();
     expect(h.flash).not.toHaveBeenCalled();
     const [, model, , user, opts] = h.reasoning.mock.calls[0]!;
-    expect(model).toBe('deepseek-reasoner');
+    expect(model).toBe('deepseek-flash');
     expect(user).toContain('Work in detail');
     expect(opts.maxTokens).toBeGreaterThanOrEqual(8_000);
   });

@@ -29,20 +29,21 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-schema';
-import { timedAiFetch } from '../ai/timed-fetch.server';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
+import { meteredAiFetch } from '../ai/metered-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
+const deepseek = new OpenAI({ fetch: meteredAiFetch('rmhark-bot'),
   // `|| 'missing'` rather than `!` — see the note in `lib/rmhvibe/vibe-ai.server.ts`:
   // the SDK throws on an absent key at construction, and `loadEntries()` imports
   // this module before serving any page, so `!` turned one unset env var into a
   // site-wide first-request 500.
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
-  maxRetries: 2,
+  // One retry: a failed bot post is simply skipped this tick, and each retry of
+  // a request that reached the model can be billed.
+  maxRetries: 1,
 });
 
-// Cheap, fast chat model. Override only if DeepSeek's id changes.
-const RMHARK_AI_MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 
 export class RmharkAIError extends Error {}
 
@@ -59,8 +60,9 @@ async function chat(
     throw new RmharkAIError('DEEPSEEK_API_KEY is not configured');
   }
   const res = await deepseek.chat.completions.create({
-    // `opts.model`: the bot-worker's own knob (BOT_AI_MODEL), so retuning RMHARK_AI_MODEL never moves the bots.
-    model: opts.model ?? RMHARK_AI_MODEL,
+    // Thinking off (DEEPSEEK_FLASH). `opts.model`: the bot-worker passes its configured model id.
+    ...DEEPSEEK_FLASH,
+    ...(opts.model ? { model: opts.model } : {}),
     messages,
     max_tokens: opts.maxTokens,
     temperature: opts.temperature ?? 1.0,
@@ -120,6 +122,14 @@ export const HUMAN_TEXT_RULES = [
   '- Follow your VOICE and TYPING lines over correct grammar: their capitals, punctuation and slang win.',
 ].join('\n');
 
+/**
+ * CACHE_ORDER_NOTE. DeepSeek bills prompt tokens it has already seen as a prefix
+ * at a fraction of the price. The bot prompts for posts, replies and DMs put the
+ * rules every bot shares first and the persona after them, so the shared block
+ * is one cached prefix across every bot instead of a fresh miss behind each
+ * persona; anything chosen per call (a reply's length) comes last of all.
+ */
+
 /** How long a bot's post is, rotated so the feed is not all tidy one-to-two-sentence posts. */
 const POST_LENGTHS = [
   'just a few words',
@@ -150,7 +160,7 @@ export async function generatePost(
   opts: {
     persona?: string;
     draft?: string;
-    /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+    /** Override the chat model (the bot-worker passes its configured flash model). */
     model?: string;
   } = {},
 ): Promise<string> {
@@ -161,14 +171,14 @@ export async function generatePost(
     ? [
         'You are roleplaying as a specific person posting on social media. Stay completely in character.',
         'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
-        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
-        '',
-        opts.persona,
-        '',
+        // Shared rules before the persona (PERSONA_LAST): see CACHE_ORDER_NOTE.
         POLITICS_BACKGROUND_RULES,
         NEWS_HARD_LIMITS,
         BASE_POST_RULES,
         HUMAN_TEXT_RULES,
+        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+        '',
+        opts.persona,
       ].join('\n')
     : [
         'You help a user draft a post for their social feed. Aim for one or two sentences.',
@@ -247,7 +257,7 @@ export async function generateReactionPost(opts: {
   title: string;
   summary: string;
   source: string;
-  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  /** Override the chat model (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string> {
   const shape = randomItem(REACTION_SHAPES);
@@ -637,7 +647,7 @@ export async function generateReply(opts: {
   thread?: string[];
   persona?: string;
   draft?: string;
-  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  /** Override the chat model (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string> {
   const draft = opts.draft?.trim();
@@ -647,14 +657,15 @@ export async function generateReply(opts: {
     ? [
         'You are roleplaying as a specific person replying on social media. Stay completely in character.',
         'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
-        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
-        '',
-        opts.persona,
-        '',
+        // Shared rules before the persona, the per-call length last: see CACHE_ORDER_NOTE.
         POLITICS_REACTIVE_RULES,
         NEWS_HARD_LIMITS,
         BASE_REPLY_RULES,
         HUMAN_TEXT_RULES,
+        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+        '',
+        opts.persona,
+        '',
         `This time keep it to ${randomItem(REPLY_LENGTHS)}.`,
       ].join('\n')
     : [
@@ -810,7 +821,7 @@ function sanitizeHandle(raw: string): string {
 export async function generateBotProfile(
   spec: BotPersonaSpec,
   /**
-   * `model`: the bot-worker's BOT_AI_MODEL. `strict`: throw when the model call or its JSON fails instead of
+   * `model`: the bot-worker's configured flash model. `strict`: throw when the model call or its JSON fails instead of
    * falling back to a random first name, so the bot-worker mints no bot rather than a placeholder one.
    */
   opts: { model?: string; strict?: boolean } = {},
@@ -1040,14 +1051,14 @@ function dmPersonaSystem(persona: string): string {
   return [
     'You are roleplaying as a specific person chatting in private DMs. Stay completely in character.',
     'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
-    'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
-    '',
-    persona,
-    '',
+    // Shared rules before the persona: see CACHE_ORDER_NOTE.
     POLITICS_BACKGROUND_RULES,
     NEWS_HARD_LIMITS,
     BASE_DM_RULES,
     HUMAN_TEXT_RULES,
+    'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+    '',
+    persona,
   ].join('\n');
 }
 
@@ -1059,7 +1070,7 @@ function dmPersonaSystem(persona: string): string {
 export async function generateDirectMessageReply(opts: {
   persona: string;
   history: { from: 'them' | 'you'; text: string }[];
-  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  /** Override the chat model (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string> {
   const transcript = opts.history
@@ -1085,7 +1096,7 @@ export async function generateDirectMessageReply(opts: {
 /** Generate a short, natural opening DM in the bot's voice (no prior context). */
 export async function generateDirectMessageOpener(opts: {
   persona: string;
-  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  /** Override the chat model (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string> {
   const user = [
