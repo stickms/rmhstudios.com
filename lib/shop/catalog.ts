@@ -47,6 +47,8 @@ export interface ShopItem {
     themeId?: string;
     /** SITE_THEME: the official site theme it unlocks (lib/themes/official.ts). */
     siteThemeId?: string;
+    /** BADGE / PET: the key of its drawn art (`components/shop/art/`); stamped from the id below, never written by hand. */
+    art?: string;
   };
   /** Requires this subscription tier or higher to purchase (optional). */
   requiresTier?:
@@ -2047,12 +2049,17 @@ const SITE_THEME_ITEMS: ShopItem[] =
     }),
   );
 
+/** Badges and pets carry their art key in `data`, so every payload that already sends `item.data` (the shop, the market,
+ *  the equipped cosmetics) can draw the art; the emoji stays as the fallback for anything that cannot. */
+const withArt = (item: ShopItem): ShopItem =>
+  item.kind === 'BADGE' || item.kind === 'PET' ? { ...item, data: { ...item.data, art: item.id } } : item;
+
 export const SHOP_ITEMS: ShopItem[] =
   [
     ...LEGACY_SHOP_ITEMS,
     ...GENERATED_ITEMS,
     ...SITE_THEME_ITEMS,
-  ];
+  ].map(withArt);
 
 const BY_ID =
   new Map(

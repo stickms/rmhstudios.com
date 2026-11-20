@@ -54,6 +54,8 @@ export interface UserCosmetics {
   };
   badge?: {
     emoji?: string;
+    /** The drawn art's key (`components/shop/art/BadgeArt`); the emoji is the fallback. */
+    art?: string;
   };
   banner?: {
     gradient?: string;
@@ -65,6 +67,8 @@ export interface UserCosmetics {
   };
   pet?: {
     emoji?: string;
+    /** The drawn art's key (`components/shop/art/PetArt`); the emoji is the fallback. */
+    art?: string;
   };
 }
 

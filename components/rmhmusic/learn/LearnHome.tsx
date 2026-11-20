@@ -1,5 +1,5 @@
 /**
- * LearnHome — RMH Music's landing: the catalog card's art as a hero, the heading, the instrument
+ * LearnHome — RMH Music's landing: the catalog card's art as a hero, the heading, the practice tools (ToolCards), the instrument
  * toggle, the input in use, and the learning path on one sheet of manuscript paper (units →
  * lessons). A document
  * (`.app-page`), so the page scrolls and mobile Safari's bars collapse.
@@ -51,6 +51,7 @@ import {
 import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
+import { ToolCards } from './ToolCards';
 import { useInputRelease } from './useLearnInput';
 import { useLearnerShape } from './useLearnerShape';
 import { useArrival } from '@/components/ui/arrive';
@@ -696,48 +697,6 @@ export function LearnHome() {
             className={`${INPUT_ROW} flex-wrap`}
           >
             <Link
-              to="/rmhmusic/sprint"
-              className={
-                TEXT_BUTTON
-              }
-            >
-              {t(
-                'sprint-home-link',
-                {
-                  defaultValue:
-                    'Sight reading',
-                },
-              )}
-            </Link>
-            <Link
-              to="/rmhmusic/tuner"
-              className={
-                TEXT_BUTTON
-              }
-            >
-              {t(
-                'tuner-home-link',
-                {
-                  defaultValue:
-                    'Tuner',
-                },
-              )}
-            </Link>
-            <Link
-              to="/rmhmusic/songs"
-              className={
-                TEXT_BUTTON
-              }
-            >
-              {t(
-                'songs-home-link',
-                {
-                  defaultValue:
-                    'Songs',
-                },
-              )}
-            </Link>
-            <Link
               to="/rmhmusic/friends"
               className={
                 TEXT_BUTTON
@@ -850,6 +809,7 @@ export function LearnHome() {
                   },
                 )}
           </h1>
+          <ToolCards />
           {
             body
           }

@@ -378,7 +378,16 @@
   border-radius: var(--rmm-paper-radius);
 }
 
-/* ── The learning path (PathUnit) ─────────────────────────────────────────────
+/* A tool card on the home (ToolCards): a sheet that takes the hover fill. Written here because
+   `.rmm-sheet` is unlayered and would win over a Tailwind `hover:` utility. */
+.rmm-tool {
+  transition: background-color 90ms ease;
+}
+.rmm-tool:hover {
+  background-color: var(--app-surface-hover);
+}
+
+/* ── The learning path (PathUnit)─────────────────────────────────────────────
    One sheet of manuscript paper for the whole path. Each unit is a section of the score: its
    title written large above a five-line staff, the staff closed by a double bar line (a final
    bar, thin then thick, after the last unit), then its lessons on the page's ruled lines. */

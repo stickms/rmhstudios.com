@@ -43,6 +43,7 @@ import { reactToPostApi, viewPostApi } from '@/lib/feed/rmhark-actions.contract'
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { translatePostApi } from '@/lib/ai/ai.contract';
 import { ARRIVE } from '@/components/ui/arrive';
+import { BadgeMark } from '@/components/shop/art/BadgeMark';
 
 interface RMHarkCardProps {
   item: FeedItem;
@@ -92,6 +93,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     }
     return cachedUser;
   }, [cachedUser, item.user, isAuthor, resolvedUser]);
+  const postFlair =
+    displayUser?.cosmetics?.postFlair?.gradient ?? displayUser?.cosmetics?.postFlair?.color ?? null;
   const freshRepostedBy = useFreshUser(item.repostedBy);
   const freshOriginalUser = useFreshUser(item.original?.user);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
@@ -258,6 +261,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       onPointerDown={item.pending ? undefined : warmDetailOnPress}
       aria-busy={item.pending || undefined}
     >
+      {postFlair ? (
+        // Bought post flair: the author's colour as an edge along this post's stretch of the spine (feed.css).
+        <span aria-hidden className="post-flair" style={{ background: postFlair }} />
+      ) : null}
       {/* Pinned and reposted-by labels: plain `t-meta` lines above the author. */}
       {item.pinned && <p className="t-meta mb-2">{t('pinned', { defaultValue: 'Pinned' })}</p>}
       {freshRepostedBy && (
@@ -311,11 +318,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   >
                     {displayUser?.name || t('unknown-user', { defaultValue: 'Unknown' })}
                   </span>
-                  {displayUser?.cosmetics?.badge?.emoji && (
-                    <span className="shrink-0" title="Equipped badge">
-                      {displayUser.cosmetics.badge.emoji}
-                    </span>
-                  )}
+                  <BadgeMark
+                    badge={displayUser?.cosmetics?.badge}
+                    size={16}
+                    title={t('equipped-badge', { defaultValue: 'Equipped badge' })}
+                    className="shrink-0"
+                  />
                   {item.user.isVerified && (
                     <>
                       <BadgeCheck className="size-3.5 shrink-0" aria-hidden />

@@ -23,6 +23,8 @@ export interface EquippedCosmetics {
   };
   badge?: {
     emoji?: string;
+    /** The drawn art's key (`components/shop/art/BadgeArt`); the emoji is the fallback. */
+    art?: string;
   };
   banner?: {
     gradient?: string;
@@ -34,6 +36,8 @@ export interface EquippedCosmetics {
   };
   pet?: {
     emoji?: string;
+    /** The drawn art's key (`components/shop/art/PetArt`); the emoji is the fallback. */
+    art?: string;
   };
   theme?: {
     id: string;
@@ -85,6 +89,7 @@ export function applyItem(
             item
               .data
               .emoji,
+          art: item.data.art,
         };
       break;
     case 'BANNER':
@@ -120,6 +125,7 @@ export function applyItem(
             item
               .data
               .emoji,
+          art: item.data.art,
         };
       break;
     case 'THEME': {

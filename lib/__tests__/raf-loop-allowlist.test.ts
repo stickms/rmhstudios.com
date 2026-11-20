@@ -251,6 +251,13 @@ const ALLOW = new Set<string>([
   // See docs/archive/2026/performance-audit-2026-08-12.md §1.4.
   'components/rmh-pmc/ContactPage.tsx',
   'components/rmh-pmc/shared.tsx',
+  // The PMC hero's liquid mercury. IDLE-AT-REST, not idle-when-unseen: the
+  // droplets' clock only runs on input energy (a scroll, a nearby fine pointer,
+  // arriving on screen) that decays over ~1.5s, and `tick` stops rescheduling
+  // once that energy, the scroll-stretch spring and the pointer probe have all
+  // settled. Also stops off screen, in a hidden tab and under Globe motion:
+  // Still (one still frame); the unmount cleanup cancels the frame.
+  'components/rmh-pmc/mercury-renderer.ts',
   'components/rmhcalculator/ScientificCalculator.tsx',
   'components/rmhcoins/PlinkoGame.tsx',
   'components/rmhtech/RmhtechLanding.tsx',

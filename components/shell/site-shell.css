@@ -228,7 +228,10 @@ html.ios-webkit .site-shell {
   font-weight: 600;
 }
 .site-sidebar__count {
-  color: var(--site-danger);
+  padding: 0 4px;
+  border-radius: var(--site-radius-sm);
+  color: var(--site-notify-fg);
+  background: var(--site-notify);
   font-family: var(--site-font-mono);
   font-size: 12px;
   font-weight: 600;

@@ -5,6 +5,7 @@ import { BadgeCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { SpineItem } from '@/components/ui/spine';
+import { BadgeMark } from '@/components/shop/art/BadgeMark';
 import { RMHarkActions } from '@/components/feed/RMHarkActions';
 import { PostMenuTrigger } from '@/components/feed/PostMenuTrigger';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
@@ -77,6 +78,20 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
 
   const displayName =
     item.user?.name || item.user?.handle || t('someone', { defaultValue: 'Someone' });
+  // The author's bought cosmetics: a name colour, a badge after the name, post flair as the edge on the spine.
+  const cosmetics = item.user?.cosmetics;
+  const nameColor = cosmetics?.nameColor;
+  const nameStyle = nameColor?.gradient
+    ? {
+        backgroundImage: nameColor.gradient,
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        color: 'transparent',
+      }
+    : nameColor?.color
+      ? { color: nameColor.color }
+      : undefined;
+  const postFlair = cosmetics?.postFlair?.gradient ?? cosmetics?.postFlair?.color ?? null;
 
   const body = isRmhark ? (
     <>
@@ -89,7 +104,15 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
         />
         <div className="min-w-0">
           <span className="t-body flex items-center gap-1 font-semibold text-site-text">
-            <span className="truncate">{displayName}</span>
+            <span className="truncate" style={nameStyle}>
+              {displayName}
+            </span>
+            <BadgeMark
+              badge={cosmetics?.badge}
+              size={16}
+              title={t('equipped-badge', { defaultValue: 'Equipped badge' })}
+              className="shrink-0"
+            />
             {item.user?.isVerified ? (
               <>
                 <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
@@ -165,6 +188,7 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
       className={pending ? 'opacity-60' : undefined}
       aria-busy={pending || undefined}
     >
+      {postFlair ? <span aria-hidden className="post-flair" style={{ background: postFlair }} /> : null}
       {pending ? (
         <div>{body}</div>
       ) : external ? (
