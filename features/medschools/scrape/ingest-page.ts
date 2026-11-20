@@ -133,6 +133,8 @@ export async function ingestSchoolPage(
                 null,
             }),
           ),
+          // Defence in depth: two runs racing on the same keys must not fail on a unique violation.
+          skipDuplicates: true,
         },
       );
       created +=

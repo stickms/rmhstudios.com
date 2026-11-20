@@ -1069,4 +1069,83 @@ describe('runCycletrack', () => {
       0,
     );
   });
+  const deps = (
+    s: ReturnType<typeof setup>,
+    host: ReturnType<typeof createFakeHost>['host'],
+  ) => ({
+    prisma: s.prisma,
+    host,
+    shouldStop: () => false,
+    log,
+  });
+
+  it('a 404 on the first school still stores the stamp, and the next same-stamp run short-circuits (R17)', async () => {
+    const s = setup();
+    const first = [...s.all].sort((a, b) => (a.key < b.key ? -1 : 1))[0]!;
+    s.routes[schoolUrl(first.key)] = null;
+    const h1 = createFakeHost(s.routes);
+    const r1 = await runCycletrack(deps(s, h1.host), { trigger: 'CRON' });
+    expect(r1.status).toBe('PARTIAL');
+    expect(typeof runRows(s.tables)[0]!.stats.completedStamp).toBe('string');
+    const h2 = createFakeHost(s.routes);
+    const r2 = await runCycletrack(deps(s, h2.host), { trigger: 'CRON' });
+    expect(r2.skippedUnchanged).toBe(true);
+    // The 404 first school, then the next target that parses: a bounded probe, not a full walk.
+    expect(h2.requested).toEqual([schoolUrl(first.key), schoolUrl(s.all.map((a) => a.key).sort()[1]!)]);
+  });
+
+  it('gives up probing for a stamp after a few targets and falls back to the full walk', async () => {
+    const s = setup([
+      { id: 'sch_d', key: 'Zzz Four', fixture: 'yale.html' },
+      { id: 'sch_e', key: 'Zzz Five', fixture: 'yale.html' },
+    ]);
+    const sorted = s.all.map((a) => a.key).sort();
+    for (const key of sorted.slice(0, 4)) s.routes[schoolUrl(key)] = null;
+    const h = createFakeHost(s.routes);
+    const r = await runCycletrack(deps(s, h.host), { trigger: 'CRON' });
+    expect(r.status).toBe('PARTIAL');
+    expect(h.requested.filter((p) => p !== '/explorer/first')).toHaveLength(5);
+    expect(runRows(s.tables)[0]!.stats.completedStamp).toBeUndefined();
+  });
+
+  it('a full walk where no page yields a table is PARTIAL, says so, and stores no stamp', async () => {
+    const s = setup();
+    for (const a of s.all) {
+      const key = schoolUrl(a.key);
+      s.routes[key] = s.routes[key]!.replace(/daily milestone observations/gi, 'daily milestone figures');
+    }
+    const r = await runCycletrack(deps(s, createFakeHost(s.routes).host), { trigger: 'CRON' });
+    expect(r.status).toBe('PARTIAL');
+    const row = runRows(s.tables)[0]!;
+    expect(row.error).toBe('no tables parsed');
+    expect(row.stats.zeroTablePages).toBe(3);
+    expect(row.stats.completedStamp).toBeUndefined();
+    expect(counts(s.tables)).toBe(0);
+  });
+
+  it('closes a stale RUNNING hourly row as interrupted at the start of a run', async () => {
+    const s = setup();
+    s.tables.medSourceRun!.push({
+      id: 'old',
+      source: 'CYCLETRACK',
+      job: 'cycletrack',
+      status: 'RUNNING',
+      stats: null,
+      error: null,
+    });
+    s.tables.medSourceRun!.push({
+      id: 'other',
+      source: 'CYCLETRACK',
+      job: 'backfill',
+      status: 'RUNNING',
+      stats: null,
+      error: null,
+    });
+    await runCycletrack(deps(s, createFakeHost(s.routes).host), { trigger: 'CRON' });
+    const rows = s.tables.medSourceRun as Array<{ id: string; status: string; error: string | null }>;
+    const old = rows.find((r) => r.id === 'old')!;
+    expect(old.status).toBe('FAILED');
+    expect(old.error).toBe('interrupted');
+    expect(rows.find((r) => r.id === 'other')!.status).toBe('RUNNING');
+  });
 });

@@ -351,6 +351,8 @@ export async function runBackfill(
   let client: PoliteClient | null =
     null;
 
+  const aliasGone =
+    new Set<string>();
   const statsNow =
     (): Record<
       string,
@@ -370,6 +372,10 @@ export async function runBackfill(
       missing:
         [
           ...missing,
+        ],
+      aliasGone:
+        [
+          ...aliasGone,
         ],
       attempted:
         [
@@ -937,13 +943,30 @@ export async function runBackfill(
             halted = true;
             break;
           }
+          const schoolId =
+            schoolIdByKey.get(
+              key,
+            );
+          if (
+            schoolId ===
+            undefined
+          ) {
+            // The alias was removed since the first attempt; an ingest would only fail its FK.
+            aliasGone.add(
+              key,
+            );
+            retried.add(
+              key,
+            );
+            skipped.delete(
+              key,
+            );
+            continue;
+          }
           const outcome =
             await processSchool(
               key,
-              schoolIdByKey.get(
-                key,
-              ) ??
-                '',
+              schoolId,
             );
           if (
             outcome ===

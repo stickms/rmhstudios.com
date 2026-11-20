@@ -49,6 +49,9 @@ export interface PoliteHostDeps {
   now?: () => number;
 }
 
+const ROBOTS_TTL_OK_MS = 24 * 60 * 60 * 1000;
+const ROBOTS_TTL_FAILED_MS = 60 * 60 * 1000;
+
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}): PoliteHost {
@@ -59,6 +62,7 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
   let tail: Promise<unknown> = Promise.resolve();
   let lastAt = Number.NEGATIVE_INFINITY;
   let robotsTxt: Promise<string | null> | null = null;
+  let robotsExpiresAt = 0;
 
   async function transport(url: string, headers: Record<string, string>): Promise<Response> {
     if (deps.fetchImpl) {
@@ -124,14 +128,16 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
     return { result: last, transportFailure: true };
   }
 
-  /** robots.txt body, fetched once per host; null when unreachable (treated as allowed). */
+  /** robots.txt body, cached per host with a TTL (a failed fetch is retried sooner); null when unreachable (allowed). */
   function loadRobots(spacingMs: number): Promise<string | null> {
+    if (robotsTxt !== null && now() >= robotsExpiresAt) robotsTxt = null;
     robotsTxt ??= serialized(async () => {
       const { result } = await fetchWithRetries(
         `${config.origin}/robots.txt`,
         { 'user-agent': config.userAgent, accept: 'text/plain, */*;q=0.5' },
         spacingMs,
       );
+      robotsExpiresAt = now() + (result.ok ? ROBOTS_TTL_OK_MS : ROBOTS_TTL_FAILED_MS);
       return result.ok ? result.body : null;
     });
     return robotsTxt;

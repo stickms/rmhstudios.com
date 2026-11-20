@@ -47,6 +47,8 @@ export interface RunSummary {
   durationMs: number;
 }
 
+/** Targets fetched at most while looking for the first parseable page (1 + 3 extra requests). */
+const MAX_STAMP_PROBES = 4;
 const FIRST_PATH =
   '/explorer/first';
 const toDbDate =
@@ -82,6 +84,54 @@ export async function runCycletrack(
       new Date());
   const t0 =
     now().getTime();
+
+  try {
+    // The queue is exclusive and the tick guarded, so an older RUNNING row is a killed predecessor.
+    for (
+      let n = 0;
+      n <
+      50;
+      n++
+    ) {
+      const stale =
+        await prisma.medSourceRun.findFirst(
+          {
+            where:
+              {
+                source:
+                  'CYCLETRACK',
+                job: 'cycletrack',
+                status:
+                  'RUNNING',
+              },
+          },
+        );
+      if (
+        !stale
+      )
+        break;
+      await prisma.medSourceRun.update(
+        {
+          where:
+            {
+              id: stale.id,
+            },
+          data: {
+            status:
+              'FAILED',
+            finishedAt:
+              now(),
+            error:
+              'interrupted',
+          },
+        },
+      );
+    }
+  } catch (e) {
+    log.warn(
+      `cycletrack: could not close stale runs: ${brief(e)}`,
+    );
+  }
 
   let run: {
     id: string;
@@ -261,11 +311,17 @@ export async function runCycletrack(
       | string
       | null =
       null;
-    let cachedFirstPage: ParsedSchoolPage | null =
-      null;
     const skippedKeys: string[] =
       [];
     let lastHttpFailed = false;
+    let zeroTablePages = 0;
+    let parsedPages = 0;
+    /** Pages fetched while looking for a stamp, by target index (null = skipped). */
+    const probed =
+      new Map<
+        number,
+        ParsedSchoolPage | null
+      >();
 
     /** Fetch and parse one school page. `null` means skipped (already counted). */
     const fetchPage =
@@ -293,10 +349,22 @@ export async function runCycletrack(
           return null;
         }
         try {
-          return parseSchoolPage(
-            res.body,
-            key,
-          );
+          const parsed =
+            parseSchoolPage(
+              res.body,
+              normalizeSchoolKey(
+                key,
+              ),
+            );
+          parsedPages++;
+          if (
+            parsed
+              .tables
+              .length ===
+            0
+          )
+            zeroTablePages++;
+          return parsed;
         } catch (e) {
           if (
             e instanceof
@@ -320,19 +388,41 @@ export async function runCycletrack(
         targets.length >
         0
       ) {
-        const first =
-          targets[0]!;
-        cachedFirstPage =
-          await fetchPage(
-            first.sourceKey,
+        // The stamp comes from the first page that parses. A 404 or a robots refusal on the
+        // alphabetically first school must not leave the run stampless (it would then re-walk every
+        // page each hour), so probe a few more targets, bounded, before giving up.
+        for (
+          let i = 0;
+          i <
+          Math.min(
+            targets.length,
+            MAX_STAMP_PROBES,
           );
-        firstRequestFailed =
-          lastHttpFailed;
-        firstStamp =
-          cachedFirstPage?.sourceStamp ??
-          null;
+          i++
+        ) {
+          const page =
+            await fetchPage(
+              targets[
+                i
+              ]!
+                .sourceKey,
+            );
+          probed.set(
+            i,
+            page,
+          );
+          firstRequestFailed =
+            lastHttpFailed;
+          if (
+            page !==
+            null
+          ) {
+            firstStamp =
+              page.sourceStamp;
+            break;
+          }
+        }
         if (
-          cachedFirstPage &&
           firstStamp !==
             null &&
           firstStamp ===
@@ -500,9 +590,12 @@ export async function runCycletrack(
               i
             ]!;
           const page =
-            i ===
-            0
-              ? cachedFirstPage
+            probed.has(
+              i,
+            )
+              ? probed.get(
+                  i,
+                )!
               : await fetchPage(
                   target.sourceKey,
                 );
@@ -571,7 +664,26 @@ export async function runCycletrack(
       complete &&
       failed ===
         skippedKeys.length;
+    // A reworded caption would otherwise parse every page "successfully" and write nothing.
+    const noTables =
+      !summary.skippedUnchanged &&
+      complete &&
+      parsedPages >
+        0 &&
+      zeroTablePages ===
+        parsedPages;
     if (
+      noTables
+    ) {
+      summary.status =
+        'PARTIAL';
+      if (
+        error ===
+        null
+      )
+        error =
+          'no tables parsed';
+    } else if (
       summary.skippedUnchanged
     ) {
       summary.status =
@@ -600,6 +712,7 @@ export async function runCycletrack(
         'PARTIAL';
     }
     if (
+      !noTables &&
       !clean &&
       walkedAll &&
       firstStamp !==
@@ -618,6 +731,8 @@ export async function runCycletrack(
           0,
           50,
         );
+    stats.zeroTablePages =
+      zeroTablePages;
     stats.ingested =
       ingested;
     stats.failed =

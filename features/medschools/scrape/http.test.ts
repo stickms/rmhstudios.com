@@ -34,7 +34,16 @@ function harness(handler: Handler, config = SOURCES.CYCLETRACK) {
     },
     now: () => t,
   });
-  return { host, calls, sleeps, maxInFlight: () => maxInFlight };
+  return {
+    host,
+    calls,
+    sleeps,
+    maxInFlight: () => maxInFlight,
+    /** Advance the injected clock. */
+    sleepFor: async (ms: number) => {
+      t += ms;
+    },
+  };
 }
 
 const ok = (body = 'ok') => new Response(body, { status: 200 });
@@ -211,5 +220,34 @@ describe('createPoliteHost', () => {
   it('rejects absolute URLs on another origin', async () => {
     const h = harness((url) => robotsOpen(url) ?? ok());
     await expect(h.host.session().get('https://evil.example/x')).rejects.toThrow(/origin/);
+  });
+  describe('robots.txt cache', () => {
+    const robots = (h: ReturnType<typeof harness>) => h.calls.filter((c) => c.url.endsWith('/robots.txt'));
+    const HOUR = 60 * 60 * 1000;
+
+    it('refetches a successful robots.txt after 24 h, not before', async () => {
+      const h = harness((url) => robotsOpen(url) ?? ok());
+      const s = h.host.session();
+      await s.get('/a');
+      await s.get('/b');
+      expect(robots(h)).toHaveLength(1);
+      await h.sleepFor(23 * HOUR);
+      await s.get('/c');
+      expect(robots(h)).toHaveLength(1);
+      await h.sleepFor(2 * HOUR);
+      await s.get('/d');
+      expect(robots(h)).toHaveLength(2);
+    });
+
+    it('retries a failed robots.txt fetch after 1 h instead of treating it as allow-all for the process lifetime', async () => {
+      const h = harness((url) => (url.endsWith('/robots.txt') ? new Response('', { status: 404 }) : ok()));
+      const s = h.host.session();
+      await s.get('/a');
+      await s.get('/b');
+      expect(robots(h)).toHaveLength(1);
+      await h.sleepFor(HOUR + 1000);
+      await s.get('/c');
+      expect(robots(h)).toHaveLength(2);
+    });
   });
 });

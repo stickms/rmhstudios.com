@@ -548,4 +548,15 @@ describe('ingestSchoolPage', () => {
       ),
     ).resolves.toBeDefined();
   });
+  it('a stale read of the existing rows (a concurrent run got there first) does not fail on the unique key', async () => {
+    const { prisma, tables } = createFakePrisma();
+    const page = yale();
+    await ingestSchoolPage(prisma, 's1', page);
+    const before = rows(tables).length;
+    const real = prisma.medCycleCount.findMany;
+    prisma.medCycleCount.findMany = (async () => []) as typeof real;
+    await expect(ingestSchoolPage(prisma, 's1', page)).resolves.toBeDefined();
+    prisma.medCycleCount.findMany = real;
+    expect(rows(tables)).toHaveLength(before);
+  });
 });

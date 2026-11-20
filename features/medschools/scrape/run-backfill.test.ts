@@ -1257,4 +1257,26 @@ describe('runBackfill', () => {
       0,
     );
   });
+  it('a skipped school whose alias was removed is recorded, not retried against an empty school id', async () => {
+    const s = setup({
+      'A.T. Still - Arizona': 'atsu-arizona.html',
+      'Alabama COM': 'CHALLENGE',
+      Yale: 'yale.html',
+    });
+    await run(s, createFakeHost(s.routes).host, stopAfter(2));
+    expect((s.runs()[0]!.stats!.skipped as string[]) ?? []).toContain('Alabama COM');
+    // The alias goes away between runs (an admin merged the school).
+    s.tables.medSchoolAlias!.splice(
+      s.tables.medSchoolAlias!.findIndex((a) => (a as { sourceKey: string }).sourceKey === 'Alabama COM'),
+      1,
+    );
+    const second = createFakeHost(s.routes);
+    const r2 = await run(s, second.host);
+    expect(r2.status).toBe('OK');
+    expect(second.requested).not.toContain(schoolUrl('Alabama COM'));
+    const stats = s.runs()[s.runs().length - 1]!.stats!;
+    expect(stats.aliasGone).toEqual(['Alabama COM']);
+    expect(stats.skipped).toEqual([]);
+    expect((s.tables.medCycleCount as Array<{ schoolId: string }>).some((c) => c.schoolId === '')).toBe(false);
+  });
 });
