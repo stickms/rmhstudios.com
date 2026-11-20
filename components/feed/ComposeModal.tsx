@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { MenuItem } from '@/components/ui/menu';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { api } from '@/lib/contract/client';
+import { cn } from '@/lib/utils';
+import './compose-sheet.css';
 import { serverError } from '@/lib/http';
 import { createRMHarkApi } from '@/lib/feed/compose-assist.contract';
 import type { CreateRMHarkInput } from '@/lib/rmhark-schema';
@@ -56,9 +58,14 @@ interface ComposeModalProps {
  initialVibe?: { slug: string; versionId: string; title: string };
  /** Called once the post is published, before `onClose`. */
  onPosted?: () => void;
+ /**
+ * Full screen on a phone (the default). False: a card nearly the width of the screen that fades and rises into
+ * place (compose-sheet.css; the phone's floating "Write a post", plan L1a).
+ */
+ mobileFullscreen?: boolean;
 }
 
-export function ComposeModal({ open, onClose, quoteItem, initialContent ='', initialFiles, initialVibe, onPosted}: ComposeModalProps) {
+export function ComposeModal({ open, onClose, quoteItem, initialContent ='', initialFiles, initialVibe, onPosted, mobileFullscreen = true}: ComposeModalProps) {
  const { t } = useTranslation('feed');
  // Both `.glass-scrim` backdrops here are viewport-covering `backdrop-filter`
  // layers, and nothing may animate above one — Chromium re-blurs the whole
@@ -219,20 +226,23 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  }
  };
 
- if (!open || !session || !mounted) return null;
+ // Closed, the Dialog stays mounted for a caller that keeps this mounted, so Radix plays the close (M5) instead of the
+ // node vanishing; a caller that unmounts it on close is unchanged.
+ if (!session || !mounted) return null;
 
  return (
  <>
  <Dialog
- open
+ open={open}
  onOpenChange={(o) => {
  if (!o) onClose();
  }}
  >
  <DialogContent
- mobileFullscreen
+ mobileFullscreen={mobileFullscreen}
  aria-describedby={undefined}
  data-motion="rise"
+ data-compose-sheet={mobileFullscreen ? undefined : ''}
  onInteractOutside={(e) => {
  // Menus and pickers portal to <body> outside this Radix layer; a press on one is not "outside".
  if ((e.target as HTMLElement | null)?.closest?.('[data-slot="anchored-menu"]')) e.preventDefault();
@@ -243,7 +253,11 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  setMenuOpen(false);
  }
  }}
- className="gap-0 overflow-y-auto overscroll-contain p-0 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:top-[10vh] sm:max-h-[80dvh] sm:translate-y-0 sm:p-0"
+ className={cn(
+ 'gap-0 overflow-y-auto overscroll-contain p-0 text-site-text sm:top-[10vh] sm:max-h-[80dvh] sm:translate-y-0 sm:p-0',
+ // Full screen, the content clears the notch and the home indicator itself; as a card it sits inside them.
+ mobileFullscreen && 'pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]',
+ )}
  >
  {/* Header */}
  <div className="flex items-center justify-between border-b border-site-border py-3 pl-4 pr-14">

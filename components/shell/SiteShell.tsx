@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ShellLayoutContext } from '@/components/feed/shell-context';
-import { BackToTop } from '@/components/ui/back-to-top';
+import { FabLane } from './FabLane';
 import { GlobeNav } from './GlobeNav';
 import { MarginColumn } from './MarginColumn';
 import { MarginSlotProvider } from './margin-slot';
@@ -19,7 +19,7 @@ interface SiteShellProps {
  * The frame every standard route sits in (Steel section 9, L1 to L7).
  *
  * Phone: one column, the page title scrolls, the globe is the only fixed element apart from the owner's exception
- * (L1a, 2026-11-20): back-to-top, and on the feed the compose disc, in the bottom-right lane. Desktop: a sidebar of the
+ * (L1a, 2026-11-20): one floating-actions pill in the bottom-right lane. Desktop: a sidebar of the
  * sections, the content, and a margin; the frame is capped at 1240px (site-shell.css), and the globe is in the
  * sidebar's own sticky box, so it moves with the sidebar and nothing on a desktop page is fixed.
  *
@@ -45,7 +45,7 @@ export function SiteShell({ children, overlays }: SiteShellProps) {
             <GlobeNav />
           </div>
           <ShellEffects />
-          <BackToTop />
+          <FabLane />
           {overlays}
         </div>
       </MarginSlotProvider>
