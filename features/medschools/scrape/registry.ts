@@ -362,8 +362,10 @@ export function buildRegistry(input: {
 }
 
 /**
- * Seeds the registry once. A populated table is left alone, and the upserts
- * carry an empty `update` so an admin-edited school is never overwritten.
+ * Seeds the registry and converges: every call creates whichever schools and
+ * aliases are missing and leaves existing rows alone (an admin-edited school is
+ * never overwritten), so a crash partway through is completed by the next call.
+ * Returns the number of rows actually created.
  */
 export async function seedRegistryIfEmpty(
   prisma: SeedPrisma,
@@ -372,46 +374,79 @@ export async function seedRegistryIfEmpty(
   schools: number;
   aliases: number;
 }> {
-  if (
-    (await prisma.medSchool.count()) >
-    0
-  )
-    return {
-      schools: 0,
-      aliases: 0,
-    };
+  const idBySlug =
+    new Map(
+      (
+        await prisma.medSchool.findMany()
+      ).map(
+        (
+          r,
+        ) => [
+          r.slug,
+          r.id,
+        ],
+      ),
+    );
+  const haveAlias =
+    new Set(
+      (
+        await prisma.medSchoolAlias.findMany()
+      ).map(
+        (
+          a,
+        ) =>
+          `${a.source}\u0000${a.sourceKey}`,
+      ),
+    );
   let schools = 0;
   let aliases = 0;
   for (const s of file.schools) {
-    const row =
-      await prisma.medSchool.upsert(
-        {
-          where:
-            {
-              slug: s.slug,
-            },
-          create:
-            {
-              slug: s.slug,
-              name: s.name,
-              shortName:
-                s.shortName,
-              degree:
-                s.degree,
-              city: s.city,
-              state:
-                s.state,
-              country:
-                s.country,
-              website:
-                s.website,
-            },
-          update:
-            {},
-        },
+    let id =
+      idBySlug.get(
+        s.slug,
       );
-    schools++;
+    if (
+      id ===
+      undefined
+    ) {
+      const row =
+        await prisma.medSchool.upsert(
+          {
+            where:
+              {
+                slug: s.slug,
+              },
+            create:
+              {
+                slug: s.slug,
+                name: s.name,
+                shortName:
+                  s.shortName,
+                degree:
+                  s.degree,
+                city: s.city,
+                state:
+                  s.state,
+                country:
+                  s.country,
+                website:
+                  s.website,
+              },
+            update:
+              {},
+          },
+        );
+      id =
+        row.id;
+      schools++;
+    }
     for (const a of s.aliases) {
+      if (
+        haveAlias.has(
+          `${a.source}\u0000${a.sourceKey}`,
+        )
+      )
+        continue;
       await prisma.medSchoolAlias.upsert(
         {
           where:
@@ -427,7 +462,7 @@ export async function seedRegistryIfEmpty(
           create:
             {
               schoolId:
-                row.id,
+                id,
               source:
                 a.source,
               sourceKey:

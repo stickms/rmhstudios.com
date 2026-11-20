@@ -574,7 +574,7 @@ describe('seedRegistryIfEmpty', () => {
     );
   });
 
-  it('never overwrites an admin-edited school', async () => {
+  it('never overwrites an admin-edited school and creates the rest', async () => {
     const {
       prisma,
       tables,
@@ -602,20 +602,109 @@ describe('seedRegistryIfEmpty', () => {
       ),
     ).toEqual(
       {
-        schools: 0,
-        aliases: 0,
+        schools: 1,
+        aliases: 2,
+      },
+    );
+    const yale =
+      tables.medSchool!.find(
+        (
+          r,
+        ) =>
+          (
+            r as {
+              slug: string;
+            }
+          )
+            .slug ===
+          'yale',
+      ) as {
+        name: string;
+      };
+    expect(
+      yale.name,
+    ).toBe(
+      'Edited by admin',
+    );
+    expect(
+      tables.medSchool,
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      tables.medSchoolAlias,
+    ).toHaveLength(
+      2,
+    );
+  });
+
+  it('completes a partial registry left by an interrupted run', async () => {
+    const {
+      prisma,
+      tables,
+    } =
+      createFakePrisma();
+    const first =
+      await prisma.medSchool.upsert(
+        {
+          where:
+            {
+              slug: 'yale',
+            },
+          create:
+            {
+              slug: 'yale',
+              name: 'Yale School of Medicine',
+            },
+          update:
+            {},
+        },
+      );
+    await prisma.medSchoolAlias.upsert(
+      {
+        where:
+          {
+            source_sourceKey:
+              {
+                source:
+                  'CYCLETRACK',
+                sourceKey:
+                  'Yale',
+              },
+          },
+        create:
+          {
+            schoolId:
+              first.id,
+            source:
+              'CYCLETRACK',
+            sourceKey:
+              'Yale',
+          },
+        update:
+          {},
       },
     );
     expect(
-      (
-        tables
-          .medSchool![0] as {
-          name: string;
-        }
-      )
-        .name,
-    ).toBe(
-      'Edited by admin',
+      await seedRegistryIfEmpty(
+        prisma,
+        file,
+      ),
+    ).toEqual(
+      {
+        schools: 1,
+        aliases: 1,
+      },
+    );
+    expect(
+      tables.medSchool,
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      tables.medSchoolAlias,
+    ).toHaveLength(
+      2,
     );
   });
 });
