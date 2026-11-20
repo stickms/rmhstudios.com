@@ -67,7 +67,11 @@ export function isCloudflareChallenge(res: {
   );
 }
 
-/** Returns the body of a good page. A challenge or a bad status is noted on the session and thrown; a 404 only throws. */
+/**
+ * Returns the body of a good page. A challenge is noted on the session (the host saw a 200, so only we know) and
+ * thrown. A bad status is only thrown: the polite client already counted 429, 5xx and transport failures, and a
+ * second count would halve the halt threshold (Q21). A 404 only throws.
+ */
 export function assertPage(
   res: PoliteResult,
   session: PoliteClient,
@@ -97,9 +101,6 @@ export function assertPage(
   if (
     !res.ok
   ) {
-    session.noteFailure(
-      `${what}: http ${res.status}`,
-    );
     throw new SdnPageError(
       `${what}: http ${res.status}`,
       res.status,

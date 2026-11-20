@@ -121,7 +121,7 @@ describe('SDN guard', () => {
       1,
     );
   });
-  it('assertPage counts a bad status and returns the body of a good page', () => {
+  it('assertPage throws on a bad status without counting it again (the host already did) and returns the body of a good page', () => {
     const s =
       session();
     expect(
@@ -140,9 +140,7 @@ describe('SDN guard', () => {
     );
     expect(
       s.noteFailure,
-    ).toHaveBeenCalledTimes(
-      1,
-    );
+    ).not.toHaveBeenCalled();
     expect(
       assertPage(
         {
