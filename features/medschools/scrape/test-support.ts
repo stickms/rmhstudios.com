@@ -707,6 +707,23 @@ export function createFakePrisma(): {
         ],
       ),
     ) as unknown as MedPrisma;
+  // A transaction runs against the same fake; a throw restores every table and the write log.
+  (prisma as unknown as Record<string, unknown>).$transaction = async (
+    fn: (tx: MedPrisma) => Promise<unknown>,
+  ) => {
+    const snapshot = Object.fromEntries(
+      Object.entries(tables).map(([k, rows]) => [k, rows.map((r) => ({ ...r }))]),
+    );
+    const writeCount = writes.length;
+    try {
+      return await fn(prisma);
+    } catch (err) {
+      for (const k of Object.keys(tables)) delete tables[k];
+      Object.assign(tables, snapshot);
+      writes.length = writeCount;
+      throw err;
+    }
+  };
   const view =
     new Proxy(
       tables,

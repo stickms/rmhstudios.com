@@ -324,4 +324,9 @@ export interface MedPrisma {
       orderBy?: unknown;
     }): Promise<MedSourceRunRow | null>;
   };
+  /** Runs `fn` against a transaction client; the fake rolls its tables back if `fn` throws. */
+  $transaction<T>(
+    fn: (tx: MedPrisma) => Promise<T>,
+    options?: { isolationLevel?: 'Serializable' },
+  ): Promise<T>;
 }

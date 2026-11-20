@@ -125,33 +125,62 @@ export async function listAliasMisses(
   };
 }
 
+function errCode(
+  err: unknown,
+): {
+  code?: string;
+  message?: string;
+} {
+  return (
+    (err as {
+      code?: string;
+      message?: string;
+    } | null) ??
+    {}
+  );
+}
+
 function isUniqueViolation(
   err: unknown,
 ): boolean {
   const e =
-    err as {
-      code?: string;
-      message?: string;
-    } | null;
+    errCode(
+      err,
+    );
   return (
-    e?.code ===
+    e.code ===
       'P2002' ||
     /unique constraint/i.test(
-      e?.message ??
+      e.message ??
         '',
     )
   );
 }
 
-export async function mapAliasMiss(
-  prisma: MedPrisma,
+function isSerializationFailure(
+  err: unknown,
+): boolean {
+  const e =
+    errCode(
+      err,
+    );
+  return (
+    e.code ===
+      'P2034' ||
+    e.code ===
+      '40001'
+  );
+}
+
+async function mapInTransaction(
+  tx: MedPrisma,
   input: {
     missId: string;
     schoolId: string;
   },
 ): Promise<MapAliasMissResult> {
   const miss =
-    await prisma.medSchoolAliasMiss.findFirst(
+    await tx.medSchoolAliasMiss.findFirst(
       {
         where:
           {
@@ -170,7 +199,7 @@ export async function mapAliasMiss(
         'alias miss not found',
     };
   const school =
-    await prisma.medSchool.findUnique(
+    await tx.medSchool.findUnique(
       {
         where:
           {
@@ -190,7 +219,7 @@ export async function mapAliasMiss(
     };
 
   const schoolAliases =
-    await prisma.medSchoolAlias.findMany(
+    await tx.medSchoolAlias.findMany(
       {
         where:
           {
@@ -200,7 +229,7 @@ export async function mapAliasMiss(
       },
     );
   const owners =
-    await prisma.medSchoolAlias.findMany(
+    await tx.medSchoolAlias.findMany(
       {
         where:
           {
@@ -244,45 +273,26 @@ export async function mapAliasMiss(
         plan.message,
     };
 
-  let aliasId: string;
-  if (
+  // Already mapped to this school: idempotent, nothing moves.
+  const aliasId =
     owner
-  ) {
-    aliasId =
-      owner.id; // already mapped to this school: idempotent, nothing moves
-  } else {
-    try {
-      const created =
-        await prisma.medSchoolAlias.create(
-          {
-            data: {
-              schoolId:
-                school.id,
-              source:
-                miss.source,
-              sourceKey:
-                miss.sourceKey,
+      ? owner.id
+      : (
+          await tx.medSchoolAlias.create(
+            {
+              data: {
+                schoolId:
+                  school.id,
+                source:
+                  miss.source,
+                sourceKey:
+                  miss.sourceKey,
+              },
             },
-          },
-        );
-      aliasId =
-        created.id;
-    } catch (err) {
-      if (
-        !isUniqueViolation(
-          err,
+          )
         )
-      )
-        throw err;
-      return {
-        ok: false,
-        status: 409,
-        code: 'KEY_MAPPED_ELSEWHERE',
-        message: `${miss.source} key "${miss.sourceKey}" is already mapped`,
-      };
-    }
-  }
-  await prisma.medSchoolAliasMiss.update(
+          .id;
+  await tx.medSchoolAliasMiss.update(
     {
       where:
         {
@@ -291,6 +301,7 @@ export async function mapAliasMiss(
       data: {
         resolvedSchoolId:
           school.id,
+        ignored: false,
       },
     },
   );
@@ -298,6 +309,77 @@ export async function mapAliasMiss(
     ok: true,
     aliasId,
   };
+}
+
+/**
+ * Alias create and miss resolve are one transaction. Serializable (the repo's
+ * precedent, battlepass claim) rather than an advisory lock: there is no unique
+ * constraint on (schoolId, source), so two admins mapping different CYCLETRACK
+ * keys to one school would both pass the check; Postgres aborts one of them with
+ * a serialization failure, reported as 409 CONFLICT_RETRY. A lost unique race on
+ * the key itself is retried once, so it then resolves as idempotent or as
+ * KEY_MAPPED_ELSEWHERE from the fresh read.
+ */
+export async function mapAliasMiss(
+  prisma: MedPrisma,
+  input: {
+    missId: string;
+    schoolId: string;
+  },
+): Promise<MapAliasMissResult> {
+  for (
+    let attempt = 0;
+    ;
+    attempt++
+  ) {
+    try {
+      return await prisma.$transaction(
+        (
+          tx,
+        ) =>
+          mapInTransaction(
+            tx,
+            input,
+          ),
+        {
+          isolationLevel:
+            'Serializable',
+        },
+      );
+    } catch (err) {
+      if (
+        isSerializationFailure(
+          err,
+        )
+      ) {
+        return {
+          ok: false,
+          status: 409,
+          code: 'CONFLICT_RETRY',
+          message:
+            'another change touched this school at the same time; retry',
+        };
+      }
+      if (
+        !isUniqueViolation(
+          err,
+        )
+      )
+        throw err;
+      if (
+        attempt >
+        0
+      ) {
+        return {
+          ok: false,
+          status: 409,
+          code: 'ALREADY_MAPPED',
+          message:
+            'this key was mapped by another request',
+        };
+      }
+    }
+  }
 }
 
 export async function ignoreAliasMiss(

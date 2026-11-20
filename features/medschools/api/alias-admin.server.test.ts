@@ -508,7 +508,61 @@ describe('alias-admin', () => {
     ).toBeNull();
   });
 
-  it('a unique violation on create is a 409 KEY_MAPPED_ELSEWHERE', async () => {
+  it('maps a serialization failure to 409 CONFLICT_RETRY', async () => {
+    const fake =
+      createFakePrisma();
+    const {
+      a,
+      miss,
+    } =
+      await seed(
+        fake,
+      );
+    const m =
+      await miss(
+        'CYCLETRACK',
+        'racer',
+      );
+    for (const code of [
+      'P2034',
+      '40001',
+    ]) {
+      const prisma =
+        {
+          ...fake.prisma,
+          $transaction:
+            async () => {
+              throw Object.assign(
+                new Error(
+                  'could not serialize',
+                ),
+                {
+                  code,
+                },
+              );
+            },
+        } as unknown as typeof fake.prisma;
+      expect(
+        await mapAliasMiss(
+          prisma,
+          {
+            missId:
+              m.id,
+            schoolId:
+              a.id,
+          },
+        ),
+      ).toMatchObject(
+        {
+          ok: false,
+          status: 409,
+          code: 'CONFLICT_RETRY',
+        },
+      );
+    }
+  });
+
+  it('runs serializable, and a lost key race retries into an idempotent success', async () => {
     const fake =
       createFakePrisma();
     const {
@@ -523,25 +577,120 @@ describe('alias-admin', () => {
         'SDN',
         'race',
       );
+    const seen: unknown[] =
+      [];
+    let calls = 0;
     const prisma =
       {
         ...fake.prisma,
-        medSchoolAlias:
-          {
-            ...fake
-              .prisma
-              .medSchoolAlias,
-            create:
-              async () => {
-                throw Object.assign(
-                  new Error(
-                    'boom',
-                  ),
-                  {
-                    code: 'P2002',
+        $transaction:
+          async (
+            fn: never,
+            opts: unknown,
+          ) => {
+            seen.push(
+              opts,
+            );
+            if (
+              ++calls ===
+              1
+            ) {
+              // the other admin's request lands the same alias first
+              await fake.prisma.medSchoolAlias.create(
+                {
+                  data: {
+                    schoolId:
+                      a.id,
+                    source:
+                      'SDN',
+                    sourceKey:
+                      'race',
                   },
-                );
+                },
+              );
+              throw Object.assign(
+                new Error(
+                  'x',
+                ),
+                {
+                  code: 'P2002',
+                },
+              );
+            }
+            return fake.prisma.$transaction(
+              fn,
+              opts as never,
+            );
+          },
+      } as unknown as typeof fake.prisma;
+    const r =
+      await mapAliasMiss(
+        prisma,
+        {
+          missId:
+            m.id,
+          schoolId:
+            a.id,
+        },
+      );
+    expect(
+      r,
+    ).toMatchObject(
+      {
+        ok: true,
+      },
+    );
+    expect(
+      seen,
+    ).toEqual(
+      [
+        {
+          isolationLevel:
+            'Serializable',
+        },
+        {
+          isolationLevel:
+            'Serializable',
+        },
+      ],
+    );
+    expect(
+      fake
+        .tables
+        .medSchoolAlias,
+    ).toHaveLength(
+      1,
+    );
+  });
+
+  it('a repeated unique violation is 409 ALREADY_MAPPED', async () => {
+    const fake =
+      createFakePrisma();
+    const {
+      a,
+      miss,
+    } =
+      await seed(
+        fake,
+      );
+    const m =
+      await miss(
+        'SDN',
+        'again',
+      );
+    const prisma =
+      {
+        ...fake.prisma,
+        $transaction:
+          async () => {
+            throw Object.assign(
+              new Error(
+                'x',
+              ),
+              {
+                code: 'P2002',
               },
+            );
           },
       } as unknown as typeof fake.prisma;
     expect(
@@ -558,7 +707,106 @@ describe('alias-admin', () => {
       {
         ok: false,
         status: 409,
-        code: 'KEY_MAPPED_ELSEWHERE',
+        code: 'ALREADY_MAPPED',
+      },
+    );
+  });
+
+  it('rolls the alias back when resolving the miss fails (one transaction)', async () => {
+    const fake =
+      createFakePrisma();
+    const {
+      a,
+      miss,
+    } =
+      await seed(
+        fake,
+      );
+    const m =
+      await miss(
+        'SDN',
+        'atomic',
+      );
+    const real =
+      fake
+        .prisma
+        .medSchoolAliasMiss
+        .update;
+    fake.prisma.medSchoolAliasMiss.update =
+      async () => {
+        throw new Error(
+          'db down',
+        );
+      };
+    await expect(
+      mapAliasMiss(
+        fake.prisma,
+        {
+          missId:
+            m.id,
+          schoolId:
+            a.id,
+        },
+      ),
+    ).rejects.toThrow(
+      'db down',
+    );
+    fake.prisma.medSchoolAliasMiss.update =
+      real;
+    expect(
+      fake
+        .tables
+        .medSchoolAlias ??
+        [],
+    ).toHaveLength(
+      0,
+    );
+  });
+
+  it('mapping an ignored miss clears ignored', async () => {
+    const fake =
+      createFakePrisma();
+    const {
+      a,
+      miss,
+    } =
+      await seed(
+        fake,
+      );
+    const m =
+      await miss(
+        'SDN',
+        'was-ignored',
+      );
+    await ignoreAliasMiss(
+      fake.prisma,
+      m.id,
+    );
+    expect(
+      await mapAliasMiss(
+        fake.prisma,
+        {
+          missId:
+            m.id,
+          schoolId:
+            a.id,
+        },
+      ),
+    ).toMatchObject(
+      {
+        ok: true,
+      },
+    );
+    expect(
+      missRow(
+        fake,
+        m.id,
+      ),
+    ).toMatchObject(
+      {
+        ignored: false,
+        resolvedSchoolId:
+          a.id,
       },
     );
   });
@@ -669,27 +917,85 @@ describe('alias-admin', () => {
   });
 });
 
-const src = (f: string) => readFileSync(join(__dirname, f), 'utf8').replace(/\s+/g, '');
+const src =
+  (
+    f: string,
+  ) =>
+    readFileSync(
+      join(
+        __dirname,
+        f,
+      ),
+      'utf8',
+    ).replace(
+      /\s+/g,
+      '',
+    );
 
 describe('route modules', () => {
-  const files = [
-    'admin.medschools.alias-misses.server.ts',
-    'admin.medschools.alias-misses.map.server.ts',
-    'admin.medschools.alias-misses.ignore.server.ts',
-  ];
+  const files =
+    [
+      'admin.medschools.alias-misses.server.ts',
+      'admin.medschools.alias-misses.map.server.ts',
+      'admin.medschools.alias-misses.ignore.server.ts',
+    ];
   it("declare auth: 'admin' (anon 401 / non-admin 403 come from the wrapper); writes are rate-limited and validated", () => {
-    for (const f of files) expect(src(f), f).toContain("auth:'admin'");
-    for (const f of files.slice(1)) {
-      expect(src(f), f).toContain("rateLimit:'write'");
-      expect(src(f), f).toContain('body:z.object');
+    for (const f of files)
+      expect(
+        src(
+          f,
+        ),
+        f,
+      ).toContain(
+        "auth:'admin'",
+      );
+    for (const f of files.slice(
+      1,
+    )) {
+      expect(
+        src(
+          f,
+        ),
+        f,
+      ).toContain(
+        "rateLimit:'write'",
+      );
+      expect(
+        src(
+          f,
+        ),
+        f,
+      ).toContain(
+        'body:z.object',
+      );
     }
   });
   it('registrations use the contract paths', () => {
-    const paths: Record<string, string> = {
-      'admin.medschools.alias-misses.server.ts': '/api/admin/medschools/alias-misses',
-      'admin.medschools.alias-misses.map.server.ts': '/api/admin/medschools/alias-misses/map',
-      'admin.medschools.alias-misses.ignore.server.ts': '/api/admin/medschools/alias-misses/ignore',
-    };
-    for (const [f, p] of Object.entries(paths)) expect(src(f), f).toContain(`apiRoute('${p}'`);
+    const paths: Record<
+      string,
+      string
+    > =
+      {
+        'admin.medschools.alias-misses.server.ts':
+          '/api/admin/medschools/alias-misses',
+        'admin.medschools.alias-misses.map.server.ts':
+          '/api/admin/medschools/alias-misses/map',
+        'admin.medschools.alias-misses.ignore.server.ts':
+          '/api/admin/medschools/alias-misses/ignore',
+      };
+    for (const [
+      f,
+      p,
+    ] of Object.entries(
+      paths,
+    ))
+      expect(
+        src(
+          f,
+        ),
+        f,
+      ).toContain(
+        `apiRoute('${p}'`,
+      );
   });
 });
