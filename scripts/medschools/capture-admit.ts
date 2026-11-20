@@ -23,8 +23,9 @@
  *     works (the web client's own profile query is `getUserMedicalProfile`, which is auth-scoped to the viewer; use the
  *     brief's op). Shapes observed over 4 real feed users + 1 nonexistent id: `md_phd: true` (1), `md_phd: null` (3;
  *     profile object exists, flag unset), profile `null` (nonexistent uuid, no `errors`). `md_phd: false` and GraphQL
- *     `errors` were NOT observed for these (the capture is 5 lookups; false may exist). Treat null / false / profile-null
- *     identically as "not MD/PhD (unknown)"; only `=== true` flags the MD/PhD program.
+ *     `errors` were NOT observed for these (the capture is 5 lookups; false may exist). Ruling P12 governs the
+ *     mapping: `md_phd === true` -> program PHD; any other value on an EXISTING profile (null or false) -> program REG;
+ *     profile `null` (unknown user) -> program null.
  * (d) getSchoolStats takes no cycle/year argument and its rows carry no year field. total_interview_count on the
  *     interview overview equals interview_number in stats (Harvard 757 on both), so stats look CUMULATIVE across cycles
  *     (not the current cycle): treat the rows as an undated aggregate, not a per-cycle figure. Percent scale is 0-1

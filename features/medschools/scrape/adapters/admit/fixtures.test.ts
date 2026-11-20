@@ -44,10 +44,8 @@ describe('admit fixtures', () => {
   });
 
   it.each(files.filter((f) => !HOSTILE.has(f)))('%s contains no uuid-shaped string except cycle_update_id', (f) => {
-    // cycle_update_id values are opaque update ids (spec); P3 also exempts anonymous question/stats ids.
-    const stripped = read(f)
-      .replace(/"cycle_update_id":\s*"[^"]*"/g, '"cycle_update_id":"x"')
-      .replace(/"id":\s*"[^"]*"/g, '"id":"x"');
+    // cycle_update_id values are opaque update ids (spec); P3's anonymous question/stats ids are numeric, not uuids.
+    const stripped = read(f).replace(/"cycle_update_id":\s*"[^"]*"/g, '"cycle_update_id":"x"');
     expect(stripped).not.toMatch(UUID);
   });
 
@@ -66,6 +64,14 @@ describe('admit fixtures', () => {
   it('non-hostile fixtures carry no person fields', () => {
     for (const f of files.filter((x) => !HOSTILE.has(x))) {
       expect(read(f), f).not.toMatch(/display_name|profile_image|avatar|username/i);
+    }
+  });
+
+  it('non-hostile fixture user_ids are synthetic placeholders', () => {
+    for (const f of files.filter((x) => !HOSTILE.has(x))) {
+      for (const m of read(f).matchAll(/"user_id":\s*("[^"]*"|null)/g)) {
+        expect(m[1], f).toMatch(/^"user-\d{3}"$/);
+      }
     }
   });
 });
