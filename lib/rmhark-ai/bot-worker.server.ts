@@ -35,6 +35,7 @@
  * one-minute granular; BOT_AI_BASE_URL (a test stand-in hook) is gone; JobRuns
  * counters are structured log lines (`bot_worker.*`) instead of Prometheus.
  */
+import { isDeepseekPeak } from '@/lib/ai/deepseek-peak';
 import { prisma } from '@/lib/prisma.server';
 import { findDmByPair, upsertDm } from '@/lib/chat/chat.server';
 import { Prisma } from '@prisma/client';
@@ -65,12 +66,23 @@ import {
   generateBotStyledName,
   generateDirectMessageOpener,
   generateDirectMessageReply,
+  generateImagePrompt,
   generatePost,
   generateReactionPost,
   generateReply,
   isRmharkAIConfigured,
 } from './generate.server';
 import { generatePostImage, isImageGenConfigured } from './image.server';
+import { prismaBotQueueRepo, type BotQueueRepo, type QueuedCommentInput } from './bot-queue.server';
+import {
+  FILL_CAP,
+  QUEUE_TTL_MS,
+  bufferTarget,
+  commentDelayMs,
+  commentMean,
+  replyDelayMs,
+} from './bot-queue-plan';
+import { habitPostsPerDay } from './bot-stats';
 import {
   clampSettings,
   cronForInterval,
@@ -112,12 +124,16 @@ export const BOT_POST_QUEUE = 'bot-worker.post';
 export const BOT_REPLY_QUEUE = 'bot-worker.reply';
 export const BOT_DM_QUEUE = 'bot-worker.dm';
 export const BOT_REFRESH_QUEUE = 'bot-worker.refresh';
+export const BOT_FILL_QUEUE = 'bot-worker.fill';
+/** Hourly at :41, away from the other bot crons; returns at once during DeepSeek peak hours. */
+export const BOT_FILL_CRON = '41 * * * *';
 export const BOT_QUEUES = [
   BOT_MAINTAIN_QUEUE,
   BOT_POST_QUEUE,
   BOT_REPLY_QUEUE,
   BOT_DM_QUEUE,
   BOT_REFRESH_QUEUE,
+  BOT_FILL_QUEUE,
 ] as const;
 
 /** Maintenance is checked every minute (the Go pool loop's settings poll). */
@@ -773,8 +789,13 @@ export interface BotAi {
     summary: string;
     source: string;
   }): Promise<string>;
-  /** A hosted feed image URL for the post, or null on any failure. */
-  image(text: string, userId: string): Promise<string | null>;
+  /**
+   * A hosted feed image URL for the post, or null on any failure. `prompt`: a visual prompt
+   * written earlier (the off-peak queue), so only the paid image call happens now.
+   */
+  image(text: string, userId: string, prompt?: string): Promise<string | null>;
+  /** The visual prompt for a post's picture, written ahead by the off-peak queue. Absent: no queued pictures. */
+  imagePrompt?(text: string): Promise<string>;
   imageConfigured(): boolean;
   /** Stock-photo searches for the bot's avatar and banner; empty lists on failure. */
   imageQueries(persona: string): Promise<{ avatar: string[]; banner: string[] }>;
@@ -825,7 +846,9 @@ export function deepseekAi(model: string): BotAi {
     dmReply: (persona, history) => generateDirectMessageReply({ persona, history, model }),
     dmOpener: (persona) => generateDirectMessageOpener({ persona, model }),
     reactionPost: (o) => generateReactionPost({ ...o, model }),
-    image: (text, userId) => generatePostImage({ text, userId, model }),
+    image: (text, userId, prompt) =>
+      generatePostImage({ text, userId, model, ...(prompt ? { prompt } : {}) }),
+    imagePrompt: (text) => generateImagePrompt(text, { model }),
     imageConfigured: isImageGenConfigured,
     imageQueries: (persona) => generateBotImageQueries(persona, { model }),
     bio: (persona, currentBio) => generateBotBio(persona, currentBio, { model }),
@@ -851,6 +874,11 @@ export interface BotDeps {
   announcement?: () => Promise<LiveAnnouncement | null>;
   /** Where pictures come from. Absent means bots keep the avatar they were minted with. */
   look?: BotLook;
+  /**
+   * The off-peak queue of pre-written usual posts (`./bot-queue.server`). Absent means every
+   * post is generated live, as before the queue existed.
+   */
+  queue?: BotQueueRepo;
 }
 
 /**
@@ -904,6 +932,7 @@ export function defaultDeps(overrides: Partial<BotDeps> = {}): BotDeps {
     headlines: () => freshHeadlines(log),
     announcement: liveAnnouncement,
     look: stockLook(random),
+    queue: prismaBotQueueRepo,
     ...overrides,
   };
 }
@@ -1194,6 +1223,8 @@ async function restyleNames(d: BotDeps, pending: BotProfileRow[]): Promise<numbe
 export async function runRefreshTick(d: BotDeps): Promise<number> {
   const look = d.look;
   if (!look || !d.cfg.profileRefresh) return 0;
+  // Bio, name and picture drift is never urgent: it waits for DeepSeek's off-peak hours.
+  if (isDeepseekPeak(d.now())) return 0;
   const bots = shuffled(await d.repo.botProfiles(), d.random);
   const pendingLooks = bots.filter((b) => needsFirstUpdate(b.image));
   const pendingNames = bots.filter((b) => b.botPersona !== '' && !hasNameStyle(b.botPersona));
@@ -1261,8 +1292,11 @@ let lastMaintainSave: number | null = null;
 
 /** The maintenance job body: a top-up when one is due under the current settings. */
 export async function runMaintainTick(d: BotDeps): Promise<boolean> {
-  const s = await currentSettings(d);
   const now = d.now();
+  // Minting bots (profile + picture queries) waits for DeepSeek's off-peak hours; the next
+  // off-peak tick tops the pool up, since `lastMaintain` is not advanced here.
+  if (isDeepseekPeak(now)) return false;
+  const s = await currentSettings(d);
   if (!maintenanceDue(now, lastMaintain, lastMaintainSave, s)) return false;
   lastMaintain = now;
   lastMaintainSave = s.updatedAt?.getTime() ?? null;
@@ -1488,6 +1522,206 @@ async function postReaction(
   }
 }
 
+// ─── off-peak queue ─────────────────────────────────────────────────────────
+
+/** One fill run's shared state: model calls left, the bots who may comment, the comment mean. */
+interface FillBudget {
+  left: number;
+  /** Bots with a persona, the pool commenters are drawn from. */
+  bots: BotUserRow[];
+  /** Mean pre-written top-level comments per queued post (`commentMean`). */
+  commentMean: number;
+}
+
+/** Draw `n` distinct items (fewer if there are not enough). */
+function pickDistinct<T>(items: readonly T[], n: number, random: () => number): T[] {
+  return shuffled(items, random).slice(0, Math.max(0, n));
+}
+
+/**
+ * The reply chain under one pre-written comment: while `botToBotProb` lands and the thread is
+ * under `maxReplyDepth`, the other party answers (author, then commenter, then author...), each
+ * reply written with the thread so far as context, as `replyToComment` writes a live one.
+ * A failed or empty generation ends the chain there.
+ */
+async function writeChain(
+  d: BotDeps,
+  content: string,
+  speakers: readonly [BotUserRow, BotUserRow],
+  thread: string[],
+  budget: FillBudget,
+): Promise<QueuedCommentInput[]> {
+  if (budget.left <= 0 || thread.length >= d.cfg.maxReplyDepth) return [];
+  if (d.random() >= d.cfg.botToBotProb) return [];
+  const speaker = speakers[(thread.length - 1) % 2 === 0 ? 0 : 1];
+  budget.left--;
+  const text = await d.ai
+    .reply({
+      persona: aiPersona(speaker.id, speaker.botPersona),
+      postContent: content,
+      quotedPostContent: '',
+      thread,
+    })
+    .catch(() => '');
+  if (text.trim() === '') return [];
+  const replies = await writeChain(d, content, speakers, [...thread, text], budget);
+  return [{ botId: speaker.id, content: text, delayMs: replyDelayMs(d.random()), replies }];
+}
+
+/**
+ * The bot conversation pre-written with a queued post: `scaledCount(commentMean)` top-level
+ * comments from distinct bots other than the author (written as `seedOnPost` writes a live one),
+ * each followed by its reply chain. A failed generation drops only that comment's subtree.
+ */
+async function writeConversation(
+  d: BotDeps,
+  author: BotUserRow,
+  content: string,
+  budget: FillBudget,
+): Promise<QueuedCommentInput[]> {
+  const n = scaledCount(budget.commentMean, d.random());
+  if (n === 0) return [];
+  const commenters = pickDistinct(
+    budget.bots.filter((b) => b.id !== author.id),
+    n,
+    d.random,
+  );
+  const out: QueuedCommentInput[] = [];
+  for (const c of commenters) {
+    if (budget.left <= 0) break;
+    budget.left--;
+    const text = await d.ai
+      .reply({
+        persona: aiPersona(c.id, c.botPersona),
+        postContent: content,
+        quotedPostContent: '',
+        thread: [],
+      })
+      .catch(() => '');
+    if (text.trim() === '') continue;
+    // In the chain the author answers first (speakers[0]), then the commenter.
+    const replies = await writeChain(d, content, [author, c], [text], budget);
+    out.push({ botId: c.id, content: text, delayMs: commentDelayMs(d.random()), replies });
+  }
+  return out;
+}
+
+/** Write one usual post (and its conversation) for `b` into the queue. */
+async function queueOnePost(d: BotDeps, q: BotQueueRepo, b: BotUserRow, budget: FillBudget): Promise<boolean> {
+  budget.left--;
+  const content = await d.ai.post(aiPersona(b.id, b.botPersona));
+  if (content.trim().length === 0) return false;
+  // The picture draw happens now, as it would at live posting time; only the DeepSeek half (the
+  // visual prompt) is written ahead. The paid image is made at publish, inside the daily image cap.
+  let imagePrompt: string | null = null;
+  if (d.ai.imagePrompt && d.ai.imageConfigured() && d.random() < d.cfg.imageProb && budget.left > 0) {
+    budget.left--;
+    imagePrompt = (await d.ai.imagePrompt(content).catch(() => '')).trim() || null;
+  }
+  const comments = await writeConversation(d, b, content, budget);
+  await q.enqueue({
+    botId: b.id,
+    content,
+    imagePrompt,
+    expiresAt: new Date(d.now() + QUEUE_TTL_MS),
+    comments,
+  });
+  return true;
+}
+
+/**
+ * The off-peak fill run: tops each bot's queue of usual posts up to `bufferTarget` (enough for
+ * the longest stretch without a fill run), round-robin across bots so a capped run is shared,
+ * at most `FILL_CAP` model calls. Does nothing during DeepSeek's peak hours, while posting is
+ * paused from /admin/bots, or without a queue. Returns the posts queued.
+ */
+export async function runFillTick(d: BotDeps): Promise<number> {
+  const q = d.queue;
+  if (!q) return 0;
+  const now = d.now();
+  if (isDeepseekPeak(now)) return 0;
+  const s = await currentSettings(d);
+  if (s.postRateMultiplier <= 0) return 0;
+  await q.deleteExpired(new Date(now));
+  const bots = (await d.repo.loadBots()).filter((b) => b.botPersona !== '');
+  const pending = await q.pendingCounts(new Date(now));
+  const wants = new Map<string, number>();
+  for (const b of bots) {
+    const want = bufferTarget(habitPostsPerDay(b.botPersona) * s.postRateMultiplier) - (pending.get(b.id) ?? 0);
+    if (want > 0) wants.set(b.id, want);
+  }
+  const botPostsPerHour =
+    bots.reduce((sum, b) => sum + habitPostsPerDay(b.botPersona) * s.postRateMultiplier, 0) / 24;
+  const budget: FillBudget = {
+    left: FILL_CAP,
+    bots,
+    commentMean: commentMean(
+      d.cfg.proactiveProb,
+      s.postRateMultiplier,
+      effectiveTickMs(d.cfg.replyTickMs),
+      botPostsPerHour,
+    ),
+  };
+  let queued = 0;
+  let order = shuffled(bots.filter((b) => wants.has(b.id)), d.random);
+  while (order.length > 0 && budget.left > 0) {
+    const next: BotUserRow[] = [];
+    for (const b of order) {
+      if (budget.left <= 0) break;
+      try {
+        if (await queueOnePost(d, q, b, budget)) queued++;
+      } catch (e) {
+        d.log.error('bot_worker.queue_failed', { bot: b.id, err: (e as Error)?.message });
+      }
+      const left = (wants.get(b.id) ?? 0) - 1;
+      wants.set(b.id, left);
+      if (left > 0) next.push(b);
+    }
+    order = next;
+  }
+  if (queued > 0) d.log.info('bot_worker.queue_filled', { queued, calls: FILL_CAP - budget.left });
+  return queued;
+}
+
+/**
+ * Publish the bot's oldest queued usual post, if it has one. A publish that fails hands the row
+ * back (`unclaim`) and rethrows, so the post is not lost. Returns whether a queued post went out.
+ */
+async function postFromQueue(d: BotDeps, b: BotUserRow): Promise<boolean> {
+  const q = d.queue;
+  if (!q) return false;
+  const at = new Date(d.now());
+  const claimed = await q.claimNext(b.id, at).catch((e) => {
+    d.log.warn('bot_worker.queue_claim_failed', { bot: b.id, err: (e as Error)?.message });
+    return null;
+  });
+  if (!claimed) return false;
+  let postId: string;
+  try {
+    let imageUrls: string[] = [];
+    if (claimed.imagePrompt && d.ai.imageConfigured()) {
+      const url = await d.ai.image(claimed.content, b.id, claimed.imagePrompt).catch(() => null);
+      if (url) imageUrls = [url];
+    }
+    postId = await d.repo.insertPost(b.id, claimed.content, imageUrls);
+  } catch (e) {
+    await q.unclaim(claimed.id).catch(() => undefined);
+    throw e;
+  }
+  await q
+    .markPublished(claimed.id, postId, at)
+    .catch((e) => d.log.warn('bot_worker.queue_mark_failed', { bot: b.id, err: (e as Error)?.message }));
+  await d.repo
+    .touchBot(b.id)
+    .catch((e) => d.log.warn('bot_worker.touch_failed', { bot: b.id, err: e?.message }));
+  d.log.info('bot_worker.posted', {
+    bot: b.id,
+    queued: true,
+    preview: [...claimed.content].slice(0, 60).join(''),
+  });
+  return true;
+}
+
 /**
  * Generate and insert one post for a bot. With a reaction context, what it writes about is drawn
  * from `reactionPmf`: the live announcement, a headline, or its usual post. Failure-isolated: one
@@ -1501,6 +1735,8 @@ export async function postAsBot(
   try {
     const kind: PostKind = ctx ? sampleKind(reactionPmf(ctx, b.id), d.random()) : 'usual';
     if (kind !== 'usual' && ctx && (await postReaction(d, b, ctx, kind))) return;
+    // A usual post comes from the off-peak queue when the bot has one written; live otherwise.
+    if (await postFromQueue(d, b)) return;
     const content = await d.ai.post(aiPersona(b.id, b.botPersona));
     if (content.trim().length === 0) return;
     // Occasionally attach an AI image. A failed image never blocks the post: it goes out text-only.
@@ -1592,12 +1828,25 @@ export async function reactToComments(d: BotDeps): Promise<void> {
     candidates.push({ comment: c, targetId, authorIsBot: c.authorIsBot });
   }
 
+  // Bot-to-bot replies pause during DeepSeek's peak hours, and never touch a post published from
+  // the queue with a pre-written conversation (its bot chatter is the script). Replies to humans
+  // are unaffected.
+  const peak = isDeepseekPeak(d.now());
+  const botCandidatePosts = [
+    ...new Set(candidates.filter((c) => c.authorIsBot).map((c) => c.comment.rmheetId)),
+  ];
+  const scripted =
+    d.queue && !peak && botCandidatePosts.length > 0
+      ? await d.queue.scriptedPostIds(botCandidatePosts).catch(() => new Set<string>())
+      : new Set<string>();
+  const live = candidates.filter((c) => !c.authorIsBot || (!peak && !scripted.has(c.comment.rmheetId)));
+
   // Replies scale up with the posting-rate multiplier so a busier feed doesn't leave bots
   // ignoring their threads; they never scale below the configured cap.
   const s = await currentSettings(d);
   const maxReplies = Math.ceil(d.cfg.maxRepliesPerTick * Math.max(1, s.postRateMultiplier));
   let made = 0;
-  for (const cand of shuffled(candidates, d.random)) {
+  for (const cand of shuffled(live, d.random)) {
     if (made >= maxReplies) break;
     const prob = cand.authorIsBot ? d.cfg.botToBotProb : d.cfg.reactiveHumanProb;
     if (d.random() > prob) continue;
@@ -1635,10 +1884,18 @@ export async function seedOnPost(d: BotDeps, post: BotPostRow): Promise<void> {
 /** Bots reply to other bots' recent posts. The expected count scales with the posting-rate multiplier. */
 export async function seedBotConversation(d: BotDeps): Promise<void> {
   const s = await currentSettings(d);
-  const n = scaledCount(d.cfg.proactiveProb * s.postRateMultiplier, d.random());
-  if (n === 0) return;
-  const posts = await d.repo.recentBotPosts(new Date(d.now() - d.cfg.proactiveLookbackMs));
+  const expected = d.cfg.proactiveProb * s.postRateMultiplier;
+  if (expected <= 0) return;
+  const recent = await d.repo.recentBotPosts(new Date(d.now() - d.cfg.proactiveLookbackMs));
+  if (recent.length === 0) return;
+  // Posts published from the queue already carry their pre-written comments: they are left out,
+  // and the live count shrinks by their share so total bot comments per post stay where they were.
+  const scripted = d.queue
+    ? await d.queue.scriptedPostIds(recent.map((p) => p.id)).catch(() => new Set<string>())
+    : new Set<string>();
+  const posts = recent.filter((p) => !scripted.has(p.id));
   if (posts.length === 0) return;
+  const n = scaledCount(expected * (posts.length / recent.length), d.random());
   for (let i = 0; i < n; i++) await seedOnPost(d, pickOne(posts, d.random));
 }
 
@@ -1742,9 +1999,49 @@ export async function seedAnnouncementThread(d: BotDeps): Promise<number> {
   return made;
 }
 
+/** Queued comments released per reply tick. */
+const RELEASE_BATCH = 50;
+
+/**
+ * Publish the pre-written comments that are due. A comment whose post is gone (deleted) is
+ * discarded with everything under it; so is a reply under a comment a human has answered, since
+ * it was written without seeing the human (who gets a live reply instead). Releasing makes no
+ * model call, so it runs at all hours, but not while posting is paused from /admin/bots.
+ */
+export async function releaseQueuedComments(d: BotDeps): Promise<number> {
+  const q = d.queue;
+  if (!q) return 0;
+  const s = await currentSettings(d);
+  if (s.postRateMultiplier <= 0) return 0;
+  const at = new Date(d.now());
+  const due = await q.dueComments(at, RELEASE_BATCH);
+  let made = 0;
+  for (const c of due) {
+    try {
+      const post = await d.repo.postForReply(c.postId);
+      const humanJoined =
+        c.isReply && (c.parentCommentId === null || (await q.humanRepliedTo(c.parentCommentId)));
+      if (!post || humanJoined) {
+        await q.discardSubtree(c.id, at);
+        continue;
+      }
+      await q.publishComment(c, at);
+      made++;
+    } catch (e) {
+      d.log.error('bot_worker.queue_release_failed', { comment: String(c.id), err: (e as Error)?.message });
+    }
+  }
+  if (made > 0) d.log.info('bot_worker.queue_released', { comments: made });
+  return made;
+}
+
 export async function runReplyTick(d: BotDeps): Promise<void> {
+  await isolated(d, 'bot_worker.queue_release_failed', async () => {
+    await releaseQueuedComments(d);
+  });
   await isolated(d, 'bot_worker.react_failed', () => reactToComments(d));
-  await isolated(d, 'bot_worker.seed_failed', () => seedBotConversation(d));
+  // Live bot-to-bot chatter is never urgent: it pauses during DeepSeek's peak hours.
+  if (!isDeepseekPeak(d.now())) await isolated(d, 'bot_worker.seed_failed', () => seedBotConversation(d));
   await isolated(d, 'bot_worker.announcement_thread_failed', async () => {
     await seedAnnouncementThread(d);
   });
@@ -1846,6 +2143,7 @@ export async function registerBotWorkerJobs(
     { name: BOT_REPLY_QUEUE, cron: cronForInterval(d.cfg.replyTickMs), run: () => runReplyTick(d) },
     { name: BOT_DM_QUEUE, cron: cronForInterval(d.cfg.dmTickMs), run: () => runDmTick(d) },
     { name: BOT_REFRESH_QUEUE, cron: BOT_REFRESH_CRON, run: () => runRefreshTick(d) },
+    { name: BOT_FILL_QUEUE, cron: BOT_FILL_CRON, run: () => runFillTick(d) },
   ];
   for (const job of jobs) {
     await boss.createQueue(job.name, queue);

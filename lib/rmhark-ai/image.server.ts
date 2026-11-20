@@ -51,11 +51,13 @@ export async function generatePostImage(opts: {
   userId: string;
   /** Chat model for the visual prompt (the bot-worker passes its configured flash model). */
   model?: string;
+  /** A visual prompt written earlier (the off-peak bot queue): the prompt call is skipped. */
+  prompt?: string;
 }): Promise<string | null> {
   if (!isImageGenConfigured()) return null;
 
   try {
-    const prompt = await generateImagePrompt(opts.text, { model: opts.model });
+    const prompt = opts.prompt?.trim() || (await generateImagePrompt(opts.text, { model: opts.model }));
     if (!prompt.trim()) return null;
 
     // Reserve budget right before the paid call. If we're at the cap, stop.

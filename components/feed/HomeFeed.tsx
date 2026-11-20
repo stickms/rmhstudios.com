@@ -17,7 +17,6 @@ import { FortuneCardLazy } from '@/components/delight/FortuneCardLazy';
 import type { FeedItem } from '@/lib/feed-types';
 import type { SitewideAnnouncementResponse } from '@/lib/sitewide-announcement';
 import { CaughtUpDivider } from './CaughtUpDivider';
-import { ComposeFab } from './ComposeFab';
 import { FeedRow } from './FeedRow';
 import { HomeComposer } from './HomeComposer';
 import { ResumeRail } from './ResumeRail';
@@ -332,7 +331,6 @@ export function HomeFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed> |
           <FeedSkeleton />
         )}
       </div>
-      <ComposeFab />
     </section>
   );
 }

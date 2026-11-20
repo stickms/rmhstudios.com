@@ -2,6 +2,7 @@
  * The summarizer pass and the weekly digest (the I/O half of watch_summary.go / watch_digest.go).
  * Runs every 30 minutes as a pg-boss cron; the pure rules are in summary.ts.
  */
+import { isDeepseekPeak } from '../../../lib/ai/deepseek-peak';
 import type { DeepSeekClient } from '../deepseek';
 import {
   ROLE_SYSTEM,
@@ -226,6 +227,17 @@ export class WatchSummarizer {
     if (
       action ===
       'sealed'
+    )
+      return;
+    // An open period is re-summarised on every pass while its data changes; during DeepSeek's
+    // peak hours that refresh waits for the next off-peak pass. A sealed period that was never
+    // written ('backfill') still runs, so a finished week always gets its summary.
+    if (
+      action ===
+        'refresh' &&
+      isDeepseekPeak(
+        now,
+      )
     )
       return;
 

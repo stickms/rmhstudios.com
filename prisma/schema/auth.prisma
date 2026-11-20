@@ -209,6 +209,8 @@ model User {
   blogAnnouncementsSeen BlogAnnouncementSeen[]
   blogComments          BlogComment[]
   botReactions          BotReaction[]
+  botQueuedPosts        BotQueuedPost[]    @relation("BotQueuedPosts")
+  botQueuedComments     BotQueuedComment[] @relation("BotQueuedComments")
 
   // Admin moderation: audit log entries authored, strikes received/issued
   auditLogs      AdminAuditLog[] @relation("AuditAdmin")

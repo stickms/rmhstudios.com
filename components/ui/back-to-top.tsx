@@ -1,19 +1,10 @@
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
 } from 'react';
-import { ArrowUp } from 'lucide-react';
-import {
-  AnimatePresence,
-  m as motion,
-} from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 
-import { cn } from '@/lib/utils';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
-import { fade } from '@/lib/motion';
 
 /** Jump the page (or its opted-in scroller, `[data-scroll-root]`) to the top. */
 export function scrollPageToTop() {
@@ -48,11 +39,9 @@ export function scrollPageToTop() {
 }
 
 /**
- * Floating "back to top" button. Appears once the page is scrolled past
- * `threshold`, and jumps the active scroller to the top on click. Mounted once
- * in the `_site` shell, so every standard page gets it without opting in.
- * Phone only (`lg:hidden`): the owner's exception to L1 of 2026-11-20 (plan
- * section 9, L1a) covers the phone, and a desktop page keeps nothing fixed.
+ * Whether the page is scrolled past `threshold`: what the phone's back-to-top
+ * button (`components/shell/FabLane.tsx`, owner exception L1a) shows on.
+ * `scrollPageToTop` above is what it does when pressed.
  *
  * Scrolls the window, unless a page has opted into an inner scroller by marking
  * it `[data-scroll-root]` — the same opt-in `useScrollRestoration` honours. No
@@ -62,7 +51,7 @@ export function scrollPageToTop() {
  *
  * ## "Am I scrolled down?" is answered without a scroll listener
  *
- * This component used to run a scroll listener over the whole session that
+ * The button used to run a scroll listener over the whole session that
  * asked "which box is scrolling?" with `document.querySelector` plus an
  * `offsetParent` read, then asked "how far?" with `window.scrollY`. Sampled
  * during a feed scroll, that handler was **41% of all JavaScript time on the
@@ -81,40 +70,28 @@ export function scrollPageToTop() {
  * observers run off the main thread's critical path, deliver the geometry they
  * already computed (`boundingClientRect`, so `top < 0` distinguishes "scrolled
  * past it" from "the viewport is shorter than the threshold"), and read
- * nothing. Scrolling now costs this component exactly nothing until the
+ * nothing. Scrolling now costs this hook exactly nothing until the
  * threshold is actually crossed.
  *
  * This also keeps the escape hatch working, and for free: the default root is
  * the VIEWPORT, and intersection accounts for every clipping ancestor along the
  * way — so a shell nested inside an opted-in `[data-scroll-root]` reports
- * correctly without this component having to know the scroller exists. Only the
+ * correctly without this hook having to know the scroller exists. Only the
  * click target still needs to, and that is resolved once, on click.
  */
 
-export function BackToTop({
+export function useScrolledPast(
   threshold = 600,
-}: {
-  threshold?: number;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-ui',
-    );
+) {
   const [
-    visible,
-    setVisible,
+    past,
+    setPast,
   ] =
     useState(
       false,
     );
   const sentinelRef =
     useRef<HTMLDivElement | null>(
-      null,
-    );
-  const buttonRef =
-    useRef<HTMLButtonElement | null>(
       null,
     );
 
@@ -140,14 +117,12 @@ export function BackToTop({
           // Gone off the TOP, not merely out of view: on a viewport shorter than the
           // threshold the sentinel starts out below the fold, and "not intersecting"
           // there would show the button on an unscrolled page.
-          const next =
+          setPast(
             !entry.isIntersecting &&
-            entry
-              .boundingClientRect
-              .top <
-              0;
-          setVisible(
-            next,
+              entry
+                .boundingClientRect
+                .top <
+                0,
           );
         },
       );
@@ -161,81 +136,9 @@ export function BackToTop({
     threshold,
   ]);
 
-  const scrollToTop =
-    useCallback(
-      () =>
-        scrollPageToTop(),
-      [],
-    );
-
-  return (
-    <>
-      <div
-        ref={
-          sentinelRef
-        }
-        className="back-to-top-sentinel"
-        style={{
-          top: `${threshold}px`,
-        }}
-        aria-hidden
-      />
-      <AnimatePresence>
-        {visible && (
-          <motion.button
-            ref={
-              buttonRef
-            }
-            type="button"
-            onClick={
-              scrollToTop
-            }
-            // §5.5x A.1: part of the floating-bottom stack. globals.css lifts this
-            // clear of the mini-player / cookie bar when either is present, and
-            // `.floating-fab-lane` seats it in the compose FAB's row.
-            data-floating="backtotop"
-            // A FAB-like disc (04 §1, tier C): `.surface-overlay` alone resolves to a
-            // pane-mode body, which never moves; this one presses like a control.
-            aria-label={t(
-              'back-to-top',
-              {
-                defaultValue:
-                  'Back to top',
-              },
-            )}
-            title={t(
-              'back-to-top',
-              {
-                defaultValue:
-                  'Back to top',
-              },
-            )}
-            // Steel M5: a floating control comes and goes by opacity alone, in 160 ms (no scale, no slide).
-            variants={
-              fade
-            }
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className={cn(
-              // Shares the bottom-right lane with the compose FAB (globals.css
-              // §5.5x A.1) instead of floating in the band above it, where it sat
-              // on top of page content. The lane carries the safe-area inset, so
-              // this still clears the home indicator and iOS Safari's tab bar.
-              'floating-fab-lane fixed z-40 lg:hidden',
-              'flex size-11 items-center justify-center rounded-full',
-              // A floating disc: the overlay surface (fill, 1px border, shadow).
-              'surface-overlay text-site-text',
-              'hover:border-site-accent',
-            )}
-          >
-            <ArrowUp
-              className="h-5 w-5"
-              aria-hidden
-            />
-          </motion.button>
-        )}
-      </AnimatePresence>
-    </>
-  );
+  return {
+    past,
+    /** Render as `<div ref={sentinelRef} className="back-to-top-sentinel" style={{ top: threshold }} aria-hidden />`. */
+    sentinelRef,
+  };
 }

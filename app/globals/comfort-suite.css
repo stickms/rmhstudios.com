@@ -665,27 +665,36 @@ html.readable-font body {
      bottom row is where floating chrome belongs, and it is already the row the
      orb's own legibility scrim fades content into.
 
-     So both controls sit on this row, side by side, and back-to-top steps left
-     by exactly the width the compose button occupies. That width cannot be
-     written here: the FAB is icon-only below 560px, carries a label above it,
-     and the label is translated — "Compose" is not the same width as
-     "Verfassen". Since Steel (owner exception L1a, 2026-11-20) the compose
-     button is an icon-only 44px disc (`components/feed/ComposeFab.tsx`, the
-     feed only, phones only), so its width is a constant and the step is set
-     below whenever it is present; it is absent everywhere the disc is not
-     rendered, so the `0px` fallback leaves back-to-top on the right edge by
-     itself, which is exactly right on every non-feed page. */
+     So both controls sit on this row, in one pill (`components/shell/FabLane.tsx`,
+     owner exception L1a, 2026-11-20). */
   .floating-fab-lane {
-    right: calc(var(--site-fab-row-right) + var(--float-fab-lane, 0px));
+    right: var(--site-fab-row-right);
     bottom: calc(
       var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px) + var(--float-lane-lift, 0px)
     );
   }
-  /* Not gated to phones: on desktop both discs are `lg:hidden`, so the step
-     only moves a button nobody sees. */
-  .vibe-app:has([data-floating='compose']) {
-    --float-fab-lane: calc(2.75rem + var(--site-fab-row-gap));
+  /* The pill is always mounted; showing it, and back-to-top growing out of
+     the compose icon, are transitions on `data-shown`. The slot widens on the
+     pill's leading side (the pill is anchored right) in M3's 280 ms while its
+     icon fades in M5's 160 ms. Alone on the pill (`data-solo`) it keeps its
+     width and the pill fades instead. */
+  .fab-lane {
+    transition: opacity var(--m5) ease;
   }
+  .fab-lane:not([data-shown]) {
+    opacity: 0;
+  }
+  .fab-lane__top {
+    overflow: hidden;
+    transition:
+      width var(--m3) ease,
+      opacity var(--m5) ease;
+  }
+  .fab-lane__top:not([data-shown], [data-solo]) {
+    width: 0;
+    opacity: 0;
+  }
+
   /* No rule hides the lane while the globe is open: the open globe's veil
      (--z-hub-overlay, 90) already covers it (z-40). */
 
@@ -772,7 +781,7 @@ html.readable-font body {
         var(--float-lift-cookie)
     );
   }
-  /* The bottom-right lane (back-to-top and the compose disc) rides above the
+  /* The bottom-right lane (the floating-actions pill) rides above the
      cookie bar, through `--float-lane-lift`, which `.floating-fab-lane` adds. It is not lifted by the orb DIRECTLY: the orb is bottom-CENTRE
      and this is the right lane, so there is nothing to clear there, and that
      lift is what used to push the button up into the reading column.
