@@ -31,8 +31,12 @@ export interface ScheduledConsumerOptions {
   retryLimit: number;
   /** How often to poll for a due run. The cadence is hours, so 30 s costs nothing. */
   pollingIntervalSeconds?: number;
-  /** The run. Must not throw for expected failures (log and return). */
-  handler: () => Promise<void>;
+  /**
+   * The run. Must not throw for expected failures (log and return). `data` is the payload the job
+   * was queued with: `{}` for a cron fire, whatever `runNow(data)` was given otherwise. Handlers
+   * that take no argument are unaffected.
+   */
+  handler: (data: Record<string, unknown>) => Promise<void>;
   /** Return true to abandon boot (a shutdown signal arrived while waiting for Postgres). */
   shouldStop?: () => boolean;
   log: { warn(line: string): void; error(line: string): void };
@@ -41,7 +45,7 @@ export interface ScheduledConsumerOptions {
 export interface ScheduledConsumer {
   boss: PgBoss;
   /** Enqueue a run now (a no-op while one is already queued or active: the queue is `exclusive`). */
-  runNow(): Promise<void>;
+  runNow(data?: Record<string, unknown>): Promise<void>;
   /** Stop taking new runs. Does not wait for the one in flight. */
   pause(): Promise<void>;
   /** Stop pg-boss itself (call after the in-flight run has drained). */
@@ -76,9 +80,9 @@ export async function startScheduledConsumer(
   await started.work(
     opts.queue,
     { pollingIntervalSeconds: opts.pollingIntervalSeconds ?? 30 },
-    async () => {
+    async (jobs) => {
       try {
-        await opts.handler();
+        await opts.handler((jobs[0]?.data ?? {}) as Record<string, unknown>);
       } catch (error) {
         // A tick owns its errors; this is the backstop so a bug never turns into a retry storm.
         opts.log.error(
@@ -90,8 +94,8 @@ export async function startScheduledConsumer(
 
   return {
     boss: started,
-    runNow: async () => {
-      await started.send(opts.queue, {}).catch(() => undefined);
+    runNow: async (data) => {
+      await started.send(opts.queue, data ?? {}).catch(() => undefined);
     },
     pause: async () => {
       await started.offWork(opts.queue, { wait: false }).catch(() => undefined);

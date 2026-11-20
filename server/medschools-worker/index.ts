@@ -164,10 +164,22 @@ const cycletrackHost =
 /** Wraps a job so a second concurrent call is skipped, and so shutdown can await it. */
 function guarded(
   name: string,
-  run: () => Promise<void>,
-): () => Promise<void> {
+  run: (
+    data: Record<
+      string,
+      unknown
+    >,
+  ) => Promise<void>,
+): (
+  data?: Record<
+    string,
+    unknown
+  >,
+) => Promise<void> {
   let running = false;
-  return async () => {
+  return async (
+    data = {},
+  ) => {
     if (
       stopping
     )
@@ -184,7 +196,7 @@ function guarded(
     const p =
       (async () => {
         try {
-          await run();
+          await run(data);
         } catch (e) {
           log.error(
             `${name} run failed: ${e instanceof Error ? e.message : String(e)}`,
@@ -204,6 +216,9 @@ function guarded(
     }
   };
 }
+
+/** True while a backfill run is executing in this process (the hourly tick must not queue another). */
+let backfillInFlight = false;
 
 const cycletrackTick =
   guarded(
@@ -232,34 +247,71 @@ const cycletrackTick =
       log.info(
         `cycletrack run complete [${r.runId}] — status=${r.status} schools=${r.schools} created=${r.created} updated=${r.updated} deleted=${r.deleted} misses=${r.misses} requests=${r.requests}`,
       );
+      // A halted or partial backfill resumes here, without waiting for a restart or the yearly cron.
+      // The queue is exclusive and the backfill tick guarded, so a second queueing is a no-op.
+      if (
+        !stopping &&
+        !backfillInFlight
+      ) {
+        try {
+          if (
+            await needsBackfill(
+              medPrisma,
+            )
+          ) {
+            log.info(
+              'cycletrack: backfill not complete — queueing it',
+            );
+            await backfillConsumer?.runNow();
+          }
+        } catch (e) {
+          log.warn(
+            `cycletrack: backfill check failed: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
+      }
     },
   );
 
 const backfillTick =
   guarded(
     'backfill',
-    async () => {
-      // R12: the flag disables the hourly queue and the bootstrap only; a manual runNow still runs.
-      const r =
-        await runBackfill(
-          {
-            prisma:
-              medPrisma,
-            cycletrack:
-              cycletrackHost,
-            shouldStop:
-              () =>
-                stopping,
-            log,
-          },
-          {
-            trigger:
-              'CRON',
-          },
+    async (
+      data,
+    ) => {
+      // R12: the flag disables the hourly run, the bootstrap and the yearly cron backfill; only an
+      // explicit manual runNow ({ manual: true }) bypasses it.
+      if (
+        !CYCLETRACK_ENABLED &&
+        data.manual !==
+          true
+      )
+        return;
+      backfillInFlight = true;
+      try {
+        const r =
+          await runBackfill(
+            {
+              prisma:
+                medPrisma,
+              cycletrack:
+                cycletrackHost,
+              shouldStop:
+                () =>
+                  stopping,
+              log,
+            },
+            {
+              trigger:
+                'CRON',
+            },
+          );
+        log.info(
+          `backfill run complete [${r.runId}] — status=${r.status} stage=${r.cursor.stage} schools=${r.schools} created=${r.created} updated=${r.updated} requests=${r.requests}`,
         );
-      log.info(
-        `backfill run complete [${r.runId}] — status=${r.status} stage=${r.cursor.stage} schools=${r.schools} created=${r.created} updated=${r.updated} requests=${r.requests}`,
-      );
+      } finally {
+        backfillInFlight = false;
+      }
     },
   );
 
@@ -268,7 +320,7 @@ const backfillTick =
 // away. Seed the registry and cycle dates (both idempotent and converging, from JSON that esbuild
 // inlines so the runtime image needs no data lookup), then say whether the backfill is still owed.
 
-/** Resolves true when the backfill has not completed and both runs should be queued now. */
+/** Resolves true when the backfill has not completed, so the hourly run should be queued now. */
 async function bootstrap(): Promise<boolean> {
   try {
     const cycles =
@@ -426,12 +478,12 @@ async function main() {
   if (
     backfillDue
   ) {
-    // Hourly counts first (small, and they seed the diff baseline), then the long backfill.
+    // Only the hourly run is queued: it seeds the diff baseline, and its last step queues the
+    // backfill once the counts are in, so the two never walk the same pages at the same time.
     log.info(
-      'Bootstrap: backfill not complete — queueing cycletrack then backfill',
+      'Bootstrap: backfill not complete — queueing cycletrack (it queues the backfill after)',
     );
     await cycletrackConsumer.runNow();
-    await backfillConsumer.runNow();
   }
 }
 

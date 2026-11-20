@@ -238,16 +238,29 @@ describe('medschools-worker wiring', () => {
     );
   });
 
-  it('the enabled flag gates the hourly tick and the bootstrap, not the backfill consumer (R12)', () => {
+  it('the enabled flag gates the hourly tick, the bootstrap and the cron backfill; only a manual run bypasses it (R12)', () => {
     const src = read('server/medschools-worker/index.ts').replace(/\s+/g, ' ');
     const backfill = src.slice(
       src.indexOf('const backfillTick'),
       src.indexOf('// ─── Startup bootstrap'),
     );
     expect(backfill).toContain('runBackfill');
-    expect(backfill).not.toContain('CYCLETRACK_ENABLED');
+    expect(backfill).toContain('!CYCLETRACK_ENABLED && data.manual !== true ) return;');
     const hourly = src.slice(src.indexOf('const cycletrackTick'), src.indexOf('const backfillTick'));
     expect(hourly).toContain('!CYCLETRACK_ENABLED');
     expect(src).toContain('CYCLETRACK_ENABLED && !stopping && (await needsBackfill');
+  });
+
+  it('the hourly tick queues a due backfill itself, and bootstrap queues only the hourly run', () => {
+    const src = read('server/medschools-worker/index.ts').replace(/\s+/g, ' ');
+    const hourly = src.slice(src.indexOf('const cycletrackTick'), src.indexOf('const backfillTick'));
+    expect(hourly).toContain('!stopping && !backfillInFlight');
+    expect(hourly).toContain('await needsBackfill( medPrisma, )');
+    expect(hourly).toContain('backfillConsumer?.runNow()');
+    // Order matters: the check comes after the run, and only when the flag let the run happen.
+    expect(hourly.indexOf('runCycletrack')).toBeLessThan(hourly.indexOf('needsBackfill'));
+    const main = src.slice(src.indexOf('if ( backfillDue )'));
+    expect(main).toContain('cycletrackConsumer.runNow()');
+    expect(main).not.toContain('backfillConsumer.runNow()');
   });
 });
