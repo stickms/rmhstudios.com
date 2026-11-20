@@ -8,6 +8,7 @@ import {
   buildRegistry,
   parsePageTitle,
   seedAdmitAliases,
+  seedAdmitIgnoredMisses,
   seedCycles,
   seedRegistryIfEmpty,
   type RegistryFile,
@@ -855,6 +856,99 @@ describe('stable-key seeding', () => {
       alias.schoolId,
     ).toBe(
       bare.id,
+    );
+  });
+
+  it('seedAdmitIgnoredMisses pre-ignores the unmapped slugs, is idempotent and never overwrites an existing miss', async () => {
+    const {
+      prisma,
+      tables,
+    } =
+      createFakePrisma();
+    const file =
+      {
+        generatedAt:
+          '2026-11-20T00:00:00.000Z',
+        ignoredSlugs:
+          [
+            'extra-campus-a',
+            'extra-campus-b',
+          ],
+        aliases:
+          [],
+      };
+    // An admin already mapped one of them: that row must stay exactly as it is.
+    tables.medSchoolAliasMiss!.push(
+      {
+        id: 'm1',
+        source:
+          'ADMIT',
+        sourceKey:
+          'extra-campus-b',
+        ignored: false,
+        resolvedSchoolId:
+          's9',
+        seenCount: 4,
+      },
+    );
+    expect(
+      await seedAdmitIgnoredMisses(
+        prisma,
+        file,
+      ),
+    ).toBe(
+      1,
+    );
+    expect(
+      await seedAdmitIgnoredMisses(
+        prisma,
+        file,
+      ),
+    ).toBe(
+      0,
+    );
+    const rows =
+      tables.medSchoolAliasMiss as Array<
+        Record<
+          string,
+          unknown
+        >
+      >;
+    expect(
+      rows,
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      rows.find(
+        (
+          r,
+        ) =>
+          r.sourceKey ===
+          'extra-campus-a',
+      ),
+    ).toMatchObject(
+      {
+        source:
+          'ADMIT',
+        ignored: true,
+      },
+    );
+    expect(
+      rows.find(
+        (
+          r,
+        ) =>
+          r.sourceKey ===
+          'extra-campus-b',
+      ),
+    ).toMatchObject(
+      {
+        ignored: false,
+        resolvedSchoolId:
+          's9',
+        seenCount: 4,
+      },
     );
   });
 

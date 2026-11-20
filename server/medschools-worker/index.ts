@@ -43,6 +43,7 @@ import {
 } from '../../features/medschools/scrape/run-backfill';
 import {
   seedAdmitAliases,
+  seedAdmitIgnoredMisses,
   type AdmitAliasFile,
   seedCycles,
   seedRegistryIfEmpty,
@@ -426,6 +427,8 @@ async function bootstrap(): Promise<boolean> {
       log.info(
         `Bootstrap: seeded ${admit.created} Admit aliases (${admit.unmatched.length} unmatched)`,
       );
+      const ignoredMisses = await seedAdmitIgnoredMisses(seedPrisma, admitAliasesJson as AdmitAliasFile);
+      if (ignoredMisses > 0) log.info(`Bootstrap: pre-ignored ${ignoredMisses} unmapped Admit slugs`);
       if (admit.skipped.length > 0) {
         log.warn(
           `Bootstrap: ${admit.skipped.length} Admit alias pairs skipped (conflict): ${admit.skipped.map((p) => `${p.cycletrackKey} -> ${p.admitSlug}`).join('; ')}`,

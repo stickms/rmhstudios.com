@@ -873,5 +873,28 @@
       "cycletrackKey": "Yale",
       "admitSlug": "yale-school-of-medicine"
     }
+  ],
+  "ignoredSlugs": [
+    "burrell-college-of-osteopathic-medicine-florida",
+    "dyouville-university-college-of-osteopathic-medicine",
+    "kansas-city-university-of-medicine-and-biosciences-joplin",
+    "lake-erie-college-of-osteopathic-medicine-elmira",
+    "lake-erie-college-of-osteopathic-medicine-seton-hill",
+    "lincoln-memorial-university-debusk-knoxville",
+    "lincoln-memorial-university-debusk-orange-park",
+    "mayo-clinic-school-of-medicine-arizona",
+    "mayo-clinic-school-of-medicine-florida",
+    "michigan-state-university-college-of-osteopathic-medicine-dmc",
+    "michigan-state-university-college-of-osteopathic-medicine-muc",
+    "new-york-institute-of-technology-arkansas-state",
+    "nova-southeastern-university-patel-clearwater",
+    "ohio-university-heritage-cleveland",
+    "ohio-university-heritage-dublin",
+    "oklahoma-state-university-tahlequah",
+    "ponce-health-sciences-university-st-louis",
+    "rocky-vista-university-utah",
+    "rowan-university-school-of-osteopathic-medicine-sewell",
+    "touro-college-of-osteopathic-medicine-great-falls",
+    "touro-college-of-osteopathic-medicine-middletown"
   ]
 }

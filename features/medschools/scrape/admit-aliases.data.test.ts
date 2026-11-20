@@ -49,6 +49,42 @@ const overrides =
 /** Reviewed count 218, rounded down to the nearest 10. */
 const FLOOR = 210;
 
+describe('admit-aliases.json ignoredSlugs', () => {
+  it('lists exactly the slugs the overrides leave unmapped', () => {
+    const file =
+      read<AdmitAliasFile>(
+        'admit-aliases.json',
+      );
+    const nulls =
+      Object.entries(
+        overrides,
+      )
+        .filter(
+          ([
+            ,
+            v,
+          ]) =>
+            v ===
+            null,
+        )
+        .map(
+          ([
+            k,
+          ]) =>
+            k,
+        )
+        .sort();
+    expect(
+      [
+        ...(file.ignoredSlugs ??
+          []),
+      ].sort(),
+    ).toEqual(
+      nulls,
+    );
+  });
+});
+
 describe('admit-aliases.json', () => {
   it('maps to registry schools that exist', () => {
     const keys =

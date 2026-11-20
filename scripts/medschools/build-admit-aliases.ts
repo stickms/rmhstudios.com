@@ -178,6 +178,10 @@ async function main() {
     {
       generatedAt:
         new Date().toISOString(),
+      ignoredSlugs:
+        [
+          ...excluded,
+        ].sort(),
       aliases:
         matched.sort(
           (

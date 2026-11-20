@@ -21,6 +21,7 @@ type SeedPrisma =
     MedPrisma,
     | 'medSchool'
     | 'medSchoolAlias'
+    | 'medSchoolAliasMiss'
     | 'medCycle'
   >;
 
@@ -598,6 +599,8 @@ export async function seedRegistryIfEmpty(
 
 export interface AdmitAliasFile {
   generatedAt: string;
+  /** Admit slugs deliberately left unmapped (extra campuses, non-registry schools); seeded as ignored misses. */
+  ignoredSlugs?: string[];
   aliases: Array<{
     cycletrackKey: string;
     admitSlug: string;
@@ -671,7 +674,8 @@ export async function seedAdmitAliases(
   const skipped: Array<{
     cycletrackKey: string;
     admitSlug: string;
-  }> = [];
+  }> =
+    [];
   for (const pair of file.aliases) {
     const schoolId =
       ownerOf.get(
@@ -720,13 +724,17 @@ export async function seedAdmitAliases(
                 },
         },
       );
-    if (!plan.ok) {
-      skipped.push({
-        cycletrackKey:
-          pair.cycletrackKey,
-        admitSlug:
-          pair.admitSlug,
-      });
+    if (
+      !plan.ok
+    ) {
+      skipped.push(
+        {
+          cycletrackKey:
+            pair.cycletrackKey,
+          admitSlug:
+            pair.admitSlug,
+        },
+      );
       continue;
     }
     if (
@@ -784,6 +792,43 @@ export async function seedAdmitAliases(
     unmatched,
     skipped,
   };
+}
+
+/**
+ * Pre-ignores the Admit slugs the reviewed data deliberately leaves unmapped, so they do not land in the admin
+ * queue on day one. A miss row that already exists is never touched (an admin's resolution or ignore stays).
+ * Returns the number of rows created.
+ */
+export async function seedAdmitIgnoredMisses(
+  prisma: SeedPrisma,
+  file: AdmitAliasFile,
+): Promise<number> {
+  let created = 0;
+  for (const sourceKey of file.ignoredSlugs ??
+    []) {
+    const existing =
+      await prisma.medSchoolAliasMiss.findFirst(
+        {
+          where:
+            {
+              source:
+                'ADMIT',
+              sourceKey,
+            },
+        },
+      );
+    if (
+      existing
+    )
+      continue;
+    await prisma.medSchoolAliasMiss.upsert({
+      where: { source_sourceKey: { source: 'ADMIT', sourceKey } },
+      create: { source: 'ADMIT', sourceKey, seenCount: 0, ignored: true },
+      update: {},
+    });
+    created++;
+  }
+  return created;
 }
 
 const dateOnly =
