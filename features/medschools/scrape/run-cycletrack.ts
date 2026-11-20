@@ -17,7 +17,10 @@ import {
   type PoliteHost,
 } from './http';
 import { ingestSchoolPage } from './ingest-page';
-import { brief } from './run-support';
+import {
+  brief,
+  pickWalkTargets,
+} from './run-support';
 import type {
   Logger,
   MedPrisma,
@@ -276,29 +279,24 @@ export async function runCycletrack(
           ],
         ),
       );
-    const targets =
-      aliases
-        .filter(
-          (
-            a,
-          ) =>
-            activeIds.has(
-              a.schoolId,
-            ),
-        )
-        .sort(
-          (
-            a,
-            b,
-          ) =>
-            a.sourceKey <
-            b.sourceKey
-              ? -1
-              : a.sourceKey >
-                  b.sourceKey
-                ? 1
-                : 0,
-        );
+    const {
+      targets,
+      duplicates,
+    } =
+      pickWalkTargets(
+        aliases,
+        activeIds,
+      );
+    if (
+      duplicates.length >
+      0
+    ) {
+      stats.duplicateAliases =
+        duplicates;
+      log.warn(
+        `cycletrack: skipped ${duplicates.length} duplicate CYCLETRACK alias key(s) (a school keeps its first key): ${duplicates.join(', ')}`,
+      );
+    }
     summary.schools =
       targets.length;
 

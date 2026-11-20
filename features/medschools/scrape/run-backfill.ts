@@ -29,7 +29,10 @@ import {
 } from './http';
 import { ingestSchoolPage } from './ingest-page';
 import type { RunSummary } from './run-cycletrack';
-import { brief } from './run-support';
+import {
+  brief,
+  pickWalkTargets,
+} from './run-support';
 import { SOURCES } from './sources';
 import type {
   Logger,
@@ -353,6 +356,8 @@ export async function runBackfill(
 
   const aliasGone =
     new Set<string>();
+  let duplicateAliases: string[] =
+    [];
   const statsNow =
     (): Record<
       string,
@@ -377,6 +382,7 @@ export async function runBackfill(
         [
           ...aliasGone,
         ],
+      duplicateAliases,
       attempted:
         [
           ...attempted,
@@ -486,29 +492,24 @@ export async function runBackfill(
             s.id,
         ),
       );
-    const targets =
-      aliases
-        .filter(
-          (
-            a,
-          ) =>
-            activeIds.has(
-              a.schoolId,
-            ),
-        )
-        .sort(
-          (
-            a,
-            b,
-          ) =>
-            a.sourceKey <
-            b.sourceKey
-              ? -1
-              : a.sourceKey >
-                  b.sourceKey
-                ? 1
-                : 0,
-        );
+    const {
+      targets,
+      duplicates,
+    } =
+      pickWalkTargets(
+        aliases,
+        activeIds,
+      );
+    if (
+      duplicates.length >
+      0
+    ) {
+      duplicateAliases =
+        duplicates;
+      log.warn(
+        `backfill: skipped ${duplicates.length} duplicate CYCLETRACK alias key(s) (a school keeps its first key): ${duplicates.join(', ')}`,
+      );
+    }
     summary.schools =
       targets.length;
     const schoolIdByKey =

@@ -12,6 +12,8 @@ import {
   slugify,
 } from '../engine/names';
 import type { FirstRow } from './adapters/cycletrack';
+import { planAliasMapping } from '../engine/alias-rules';
+import type { MedSource } from '../engine/types';
 import type { MedPrisma } from './types';
 
 type SeedPrisma =
@@ -361,11 +363,20 @@ export function buildRegistry(input: {
   };
 }
 
+const aliasId =
+  (
+    source: string,
+    key: string,
+  ) =>
+    `${source}\u0000${key}`;
+
 /**
  * Seeds the registry and converges: every call creates whichever schools and
  * aliases are missing and leaves existing rows alone (an admin-edited school is
  * never overwritten), so a crash partway through is completed by the next call.
- * Returns the number of rows actually created.
+ * A school is identified by its CYCLETRACK alias key first and by slug only
+ * when no alias owns that key (D5), so an admin who renamed a slug does not get
+ * the school recreated. Returns the number of rows actually created.
  */
 export async function seedRegistryIfEmpty(
   prisma: SeedPrisma,
@@ -387,21 +398,70 @@ export async function seedRegistryIfEmpty(
         ],
       ),
     );
-  const haveAlias =
-    new Set(
-      (
-        await prisma.medSchoolAlias.findMany()
-      ).map(
+  const existing =
+    await prisma.medSchoolAlias.findMany();
+  const ownerOf =
+    new Map(
+      existing.map(
         (
           a,
-        ) =>
-          `${a.source}\u0000${a.sourceKey}`,
+        ) => [
+          aliasId(
+            a.source,
+            a.sourceKey,
+          ),
+          a.schoolId,
+        ],
       ),
     );
+  const aliasesOf =
+    new Map<
+      string,
+      Array<{
+        source: MedSource;
+        sourceKey: string;
+      }>
+    >();
+  for (const a of existing) {
+    const list =
+      aliasesOf.get(
+        a.schoolId,
+      ) ??
+      [];
+    list.push(
+      {
+        source:
+          a.source,
+        sourceKey:
+          a.sourceKey,
+      },
+    );
+    aliasesOf.set(
+      a.schoolId,
+      list,
+    );
+  }
   let schools = 0;
   let aliases = 0;
   for (const s of file.schools) {
+    const stableKey =
+      s.aliases.find(
+        (
+          a,
+        ) =>
+          a.source ===
+          'CYCLETRACK',
+      )?.sourceKey;
     let id =
+      (stableKey ===
+      undefined
+        ? undefined
+        : ownerOf.get(
+            aliasId(
+              'CYCLETRACK',
+              stableKey,
+            ),
+          )) ??
       idBySlug.get(
         s.slug,
       );
@@ -438,13 +498,49 @@ export async function seedRegistryIfEmpty(
         );
       id =
         row.id;
+      idBySlug.set(
+        s.slug,
+        id,
+      );
       schools++;
     }
     for (const a of s.aliases) {
+      const owner =
+        ownerOf.get(
+          aliasId(
+            a.source,
+            a.sourceKey,
+          ),
+        );
+      const schoolAliases =
+        aliasesOf.get(
+          id,
+        ) ??
+        [];
+      const plan =
+        planAliasMapping(
+          {
+            source:
+              a.source,
+            sourceKey:
+              a.sourceKey,
+            schoolId:
+              id,
+            schoolAliases,
+            keyOwner:
+              owner ===
+              undefined
+                ? null
+                : {
+                    schoolId:
+                      owner,
+                  },
+          },
+        );
       if (
-        haveAlias.has(
-          `${a.source}\u0000${a.sourceKey}`,
-        )
+        !plan.ok ||
+        owner !==
+          undefined
       )
         continue;
       await prisma.medSchoolAlias.upsert(
@@ -472,12 +568,203 @@ export async function seedRegistryIfEmpty(
             {},
         },
       );
+      ownerOf.set(
+        aliasId(
+          a.source,
+          a.sourceKey,
+        ),
+        id,
+      );
+      aliasesOf.set(
+        id,
+        [
+          ...schoolAliases,
+          {
+            source:
+              a.source,
+            sourceKey:
+              a.sourceKey,
+          },
+        ],
+      );
       aliases++;
     }
   }
   return {
     schools,
     aliases,
+  };
+}
+
+export interface AdmitAliasFile {
+  generatedAt: string;
+  aliases: Array<{
+    cycletrackKey: string;
+    admitSlug: string;
+  }>;
+}
+
+/**
+ * Attaches the reviewed Admit slugs to schools through their CYCLETRACK alias.
+ * `unmatched` lists the Admit slugs whose CycleTrack key has no school here.
+ * A pair that would break the one-key-per-source rule is skipped, never moved:
+ * an existing alias is not touched, so a second call creates nothing.
+ */
+export async function seedAdmitAliases(
+  prisma: SeedPrisma,
+  file: AdmitAliasFile,
+): Promise<{
+  created: number;
+  unmatched: string[];
+}> {
+  const existing =
+    await prisma.medSchoolAlias.findMany();
+  const ownerOf =
+    new Map(
+      existing.map(
+        (
+          a,
+        ) => [
+          aliasId(
+            a.source,
+            a.sourceKey,
+          ),
+          a.schoolId,
+        ],
+      ),
+    );
+  const aliasesOf =
+    new Map<
+      string,
+      Array<{
+        source: MedSource;
+        sourceKey: string;
+      }>
+    >();
+  for (const a of existing) {
+    const list =
+      aliasesOf.get(
+        a.schoolId,
+      ) ??
+      [];
+    list.push(
+      {
+        source:
+          a.source,
+        sourceKey:
+          a.sourceKey,
+      },
+    );
+    aliasesOf.set(
+      a.schoolId,
+      list,
+    );
+  }
+  let created = 0;
+  const unmatched: string[] =
+    [];
+  for (const pair of file.aliases) {
+    const schoolId =
+      ownerOf.get(
+        aliasId(
+          'CYCLETRACK',
+          pair.cycletrackKey,
+        ),
+      );
+    if (
+      schoolId ===
+      undefined
+    ) {
+      unmatched.push(
+        pair.admitSlug,
+      );
+      continue;
+    }
+    const owner =
+      ownerOf.get(
+        aliasId(
+          'ADMIT',
+          pair.admitSlug,
+        ),
+      );
+    const schoolAliases =
+      aliasesOf.get(
+        schoolId,
+      ) ??
+      [];
+    const plan =
+      planAliasMapping(
+        {
+          source:
+            'ADMIT',
+          sourceKey:
+            pair.admitSlug,
+          schoolId,
+          schoolAliases,
+          keyOwner:
+            owner ===
+            undefined
+              ? null
+              : {
+                  schoolId:
+                    owner,
+                },
+        },
+      );
+    if (
+      !plan.ok ||
+      owner !==
+        undefined
+    )
+      continue;
+    await prisma.medSchoolAlias.upsert(
+      {
+        where:
+          {
+            source_sourceKey:
+              {
+                source:
+                  'ADMIT',
+                sourceKey:
+                  pair.admitSlug,
+              },
+          },
+        create:
+          {
+            schoolId,
+            source:
+              'ADMIT',
+            sourceKey:
+              pair.admitSlug,
+          },
+        update:
+          {},
+      },
+    );
+    ownerOf.set(
+      aliasId(
+        'ADMIT',
+        pair.admitSlug,
+      ),
+      schoolId,
+    );
+    aliasesOf.set(
+      schoolId,
+      [
+        ...schoolAliases,
+        {
+          source:
+            'ADMIT',
+          sourceKey:
+            pair.admitSlug,
+        },
+      ],
+    );
+    created++;
+  }
+  return {
+    created,
+    unmatched,
   };
 }
 

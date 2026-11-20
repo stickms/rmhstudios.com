@@ -1,0 +1,877 @@
+{
+  "generatedAt": "2026-11-20T13:38:23.052Z",
+  "aliases": [
+    {
+      "cycletrackKey": "A.T. Still - Arizona",
+      "admitSlug": "a-t-still-university-of-health-sciences-mesa"
+    },
+    {
+      "cycletrackKey": "A.T. Still - Kirksville",
+      "admitSlug": "a-t-still-university-of-health-sciences-kirksville-kirksville"
+    },
+    {
+      "cycletrackKey": "Alabama",
+      "admitSlug": "university-of-alabama-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Alabama COM",
+      "admitSlug": "alabama-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Albany",
+      "admitSlug": "albany-medical-college"
+    },
+    {
+      "cycletrackKey": "Albert Einstein",
+      "admitSlug": "albert-einstein-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Alice Walton",
+      "admitSlug": "alice-walton-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Arizona - Phoenix",
+      "admitSlug": "university-of-arizona-phoenix"
+    },
+    {
+      "cycletrackKey": "Arizona - Tucson",
+      "admitSlug": "university-of-arizona-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Arizona State",
+      "admitSlug": "asu-john-shufeldt-school-of-medicine-and-medical-engineering"
+    },
+    {
+      "cycletrackKey": "Arkansas",
+      "admitSlug": "university-of-arkansas-for-medical-sciences-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Arkansas COM",
+      "admitSlug": "arkansas-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Baptist Health Sciences University COM",
+      "admitSlug": "baptist-health-sciences-university-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Baylor",
+      "admitSlug": "baylor-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Belmont University",
+      "admitSlug": "belmont-university"
+    },
+    {
+      "cycletrackKey": "Boston",
+      "admitSlug": "boston-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Brown",
+      "admitSlug": "the-warren-alpert-medical-school-of-brown-university"
+    },
+    {
+      "cycletrackKey": "Buffalo",
+      "admitSlug": "jacobs-school-of-medicine-and-biomedical-sciences-at-the-university-at-buffalo"
+    },
+    {
+      "cycletrackKey": "Burrell COM",
+      "admitSlug": "burrell-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "California Health Sciences",
+      "admitSlug": "california-health-sciences-university-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "California Northstate",
+      "admitSlug": "california-northstate-university"
+    },
+    {
+      "cycletrackKey": "California University of Science and Medicine",
+      "admitSlug": "california-university-of-science-and-medicine"
+    },
+    {
+      "cycletrackKey": "Campbell",
+      "admitSlug": "campbell-university-wallace"
+    },
+    {
+      "cycletrackKey": "Caribe",
+      "admitSlug": "universidad-central-del-caribe"
+    },
+    {
+      "cycletrackKey": "Carle Illinois",
+      "admitSlug": "carle-illinois-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Case Western",
+      "admitSlug": "case-western-reserve-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Central Michigan",
+      "admitSlug": "central-michigan-university"
+    },
+    {
+      "cycletrackKey": "Charles R. Drew",
+      "admitSlug": "charles-drew"
+    },
+    {
+      "cycletrackKey": "Chicago",
+      "admitSlug": "university-of-chicago-division-of-the-biological-sciences-the-pritzker-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Cincinnati",
+      "admitSlug": "university-of-cincinnati-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "City University of New York",
+      "admitSlug": "cuny-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Cleveland Clinic Lerner",
+      "admitSlug": "cleveland-clinic-lerner-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Colorado",
+      "admitSlug": "university-of-colorado-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Columbia",
+      "admitSlug": "columbia-university-vagelos-college-of-physicians-and-surgeons"
+    },
+    {
+      "cycletrackKey": "Connecticut",
+      "admitSlug": "university-of-connecticut-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Cooper Rowan",
+      "admitSlug": "cooper-medical-school-of-rowan-university"
+    },
+    {
+      "cycletrackKey": "Cornell",
+      "admitSlug": "weill-cornell-medicine"
+    },
+    {
+      "cycletrackKey": "Creighton",
+      "admitSlug": "creighton-university"
+    },
+    {
+      "cycletrackKey": "Dartmouth",
+      "admitSlug": "geisel-school-of-medicine-at-dartmouth"
+    },
+    {
+      "cycletrackKey": "Des Moines",
+      "admitSlug": "des-moines-university"
+    },
+    {
+      "cycletrackKey": "Drexel",
+      "admitSlug": "drexel-university-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Duke",
+      "admitSlug": "duke-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Duquesne University COM",
+      "admitSlug": "duquesne-university-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "East Carolina",
+      "admitSlug": "the-brody-school-of-medicine-at-east-carolina-university"
+    },
+    {
+      "cycletrackKey": "East Tennessee",
+      "admitSlug": "east-tennessee-state-university-james-h-quillen-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Eastern Virginia",
+      "admitSlug": "eastern-virginia-medical-school"
+    },
+    {
+      "cycletrackKey": "Edward Via - Auburn",
+      "admitSlug": "edward-via-college-of-osteopathic-medicine-auburn"
+    },
+    {
+      "cycletrackKey": "Edward Via - Carolinas",
+      "admitSlug": "edward-via-college-of-osteopathic-medicine-carolinas"
+    },
+    {
+      "cycletrackKey": "Edward Via - Louisiana",
+      "admitSlug": "edward-via-college-of-osteopathic-medicine-louisiana"
+    },
+    {
+      "cycletrackKey": "Edward Via - Virginia",
+      "admitSlug": "edward-via-college-of-osteopathic-medicine-virginia"
+    },
+    {
+      "cycletrackKey": "Emory",
+      "admitSlug": "emory-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Florida",
+      "admitSlug": "university-of-florida-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Florida Atlantic",
+      "admitSlug": "charles-e-schmidt-college-of-medicine-at-florida-atlantic-university"
+    },
+    {
+      "cycletrackKey": "Florida International",
+      "admitSlug": "florida-international-university-herbert-wertheim-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Florida State",
+      "admitSlug": "florida-state-university-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Geisinger Commonwealth",
+      "admitSlug": "geisinger-commonwealth-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "George Washington",
+      "admitSlug": "george-washington-university-school-of-medicine-and-health-sciences"
+    },
+    {
+      "cycletrackKey": "Georgetown",
+      "admitSlug": "georgetown-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Georgia",
+      "admitSlug": "university-of-georgia-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Hackensack Meridian",
+      "admitSlug": "seton-hall-hackensack-meridian-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Harvard",
+      "admitSlug": "harvard-medical-school"
+    },
+    {
+      "cycletrackKey": "Hawaii",
+      "admitSlug": "university-of-hawaii-john-a-burns-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Hofstra",
+      "admitSlug": "donald-and-barbara-zucker-school-of-medicine-at-hofstra-northwell"
+    },
+    {
+      "cycletrackKey": "Houston",
+      "admitSlug": "university-of-houston-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Howard",
+      "admitSlug": "howard-university-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Idaho COM",
+      "admitSlug": "idaho-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Illinois",
+      "admitSlug": "university-of-illinois-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Illinois COM",
+      "admitSlug": "illinois-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Incarnate Word",
+      "admitSlug": "university-of-the-incarnate-word"
+    },
+    {
+      "cycletrackKey": "Indiana",
+      "admitSlug": "indiana-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Iowa",
+      "admitSlug": "university-of-iowa-roy-j-and-lucille-a-carver-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Jefferson",
+      "admitSlug": "sidney-kimmel-medical-college-at-thomas-jefferson-university"
+    },
+    {
+      "cycletrackKey": "Johns Hopkins",
+      "admitSlug": "johns-hopkins-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Kaiser Permanente",
+      "admitSlug": "kaiser-permanente-tyson"
+    },
+    {
+      "cycletrackKey": "Kansas",
+      "admitSlug": "university-of-kansas-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Kansas City University COM",
+      "admitSlug": "kansas-city-university-of-medicine-and-biosciences-kansas-city"
+    },
+    {
+      "cycletrackKey": "Kansas COM",
+      "admitSlug": "kansas-health-science-center"
+    },
+    {
+      "cycletrackKey": "Kentucky",
+      "admitSlug": "university-of-kentucky-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Kentucky COM",
+      "admitSlug": "university-of-pikeville"
+    },
+    {
+      "cycletrackKey": "Lake Erie",
+      "admitSlug": "lake-erie-college-of-osteopathic-medicine-erie"
+    },
+    {
+      "cycletrackKey": "Lake Erie - Bradenton",
+      "admitSlug": "lecom-bradenton"
+    },
+    {
+      "cycletrackKey": "Liberty",
+      "admitSlug": "liberty-university-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Lincoln Memorial",
+      "admitSlug": "lincoln-memorial-university-debusk"
+    },
+    {
+      "cycletrackKey": "Loma Linda",
+      "admitSlug": "loma-linda-university"
+    },
+    {
+      "cycletrackKey": "Louisville",
+      "admitSlug": "university-of-louisville-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Loyola",
+      "admitSlug": "loyola-university-chicago-stritch"
+    },
+    {
+      "cycletrackKey": "LSU - New Orleans",
+      "admitSlug": "louisiana-state-university-health-sciences-center-new-orleans"
+    },
+    {
+      "cycletrackKey": "LSU - Shreveport",
+      "admitSlug": "louisiana-state-university-health-sciences-center-shreveport"
+    },
+    {
+      "cycletrackKey": "Marian",
+      "admitSlug": "marian-university-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Marshall",
+      "admitSlug": "marshall-university-joan-c-edwards-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Maryland",
+      "admitSlug": "university-of-maryland-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Massachussetts",
+      "admitSlug": "university-of-massachusetts-medical-school"
+    },
+    {
+      "cycletrackKey": "Mayo",
+      "admitSlug": "mayo-clinic-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Medical College of Georgia",
+      "admitSlug": "medical-college-of-georgia-at-augusta-university"
+    },
+    {
+      "cycletrackKey": "Medical College of Wisconsin",
+      "admitSlug": "medical-college-of-wisconsin"
+    },
+    {
+      "cycletrackKey": "Medical University of South Carolina",
+      "admitSlug": "medical-university-of-south-carolina-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Meharry",
+      "admitSlug": "meharry-medical-college"
+    },
+    {
+      "cycletrackKey": "Mercer",
+      "admitSlug": "mercer-university"
+    },
+    {
+      "cycletrackKey": "Meritus SOM",
+      "admitSlug": "meritus-school-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Methodist University",
+      "admitSlug": "methodist-university-cape-fear-valley-health-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Miami",
+      "admitSlug": "university-of-miami-leonard-m-miller-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Michigan",
+      "admitSlug": "university-of-michigan-medical-school"
+    },
+    {
+      "cycletrackKey": "Michigan State",
+      "admitSlug": "michigan-state-university-college-of-human-medicine"
+    },
+    {
+      "cycletrackKey": "Michigan State COM",
+      "admitSlug": "michigan-state-university-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Midwestern - Arizona",
+      "admitSlug": "midwestern-university-arizona-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Midwestern - Chicago",
+      "admitSlug": "midwestern-university-chicago-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Minnesota",
+      "admitSlug": "university-of-minnesota-medical-school"
+    },
+    {
+      "cycletrackKey": "Mississippi",
+      "admitSlug": "university-of-mississippi"
+    },
+    {
+      "cycletrackKey": "Missouri - Columbia",
+      "admitSlug": "university-of-missouri-columbia-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Missouri - Kansas City",
+      "admitSlug": "university-of-missouri-kansas-city-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Morehouse",
+      "admitSlug": "morehouse-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Mount Sinai",
+      "admitSlug": "icahn-school-of-medicine-at-mount-sinai"
+    },
+    {
+      "cycletrackKey": "Nebraska",
+      "admitSlug": "university-of-nebraska-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Nevada Reno",
+      "admitSlug": "university-of-nevada-reno-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "New England",
+      "admitSlug": "university-of-new-england"
+    },
+    {
+      "cycletrackKey": "New Mexico",
+      "admitSlug": "university-of-new-mexico-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "New York Institute of Technology",
+      "admitSlug": "new-york-institute-of-technology"
+    },
+    {
+      "cycletrackKey": "New York Medical College",
+      "admitSlug": "new-york-medical-college"
+    },
+    {
+      "cycletrackKey": "New York University - Grossman",
+      "admitSlug": "new-york-university-grossman-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "New York University - Long Island",
+      "admitSlug": "nyu-grossman-long-island-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Noorda",
+      "admitSlug": "noorda-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "North Carolina",
+      "admitSlug": "university-of-north-carolina-at-chapel-hill-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "North Dakota",
+      "admitSlug": "university-of-north-dakota"
+    },
+    {
+      "cycletrackKey": "North Texas",
+      "admitSlug": "university-of-north-texas-health-science-center"
+    },
+    {
+      "cycletrackKey": "Northeast Ohio",
+      "admitSlug": "northeast-ohio-medical-university"
+    },
+    {
+      "cycletrackKey": "Northern Colorado",
+      "admitSlug": "university-of-northern-colorado-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Northwestern",
+      "admitSlug": "northwestern-university-the-feinberg-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Nova Southeastern",
+      "admitSlug": "nova-southeastern-university-patel"
+    },
+    {
+      "cycletrackKey": "Nova Southeastern COM",
+      "admitSlug": "nova-southeastern-patel-do"
+    },
+    {
+      "cycletrackKey": "Oakland",
+      "admitSlug": "oakland-university-beaumont"
+    },
+    {
+      "cycletrackKey": "Ohio State",
+      "admitSlug": "ohio-state-university-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Ohio University",
+      "admitSlug": "ohio-university-heritage"
+    },
+    {
+      "cycletrackKey": "Oklahoma",
+      "admitSlug": "university-of-oklahoma-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Oklahoma State",
+      "admitSlug": "oklahoma-state-university"
+    },
+    {
+      "cycletrackKey": "Oregon Health and Science",
+      "admitSlug": "oregon-health-science-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Orlando COM",
+      "admitSlug": "orlando-com"
+    },
+    {
+      "cycletrackKey": "Pacific Northwest",
+      "admitSlug": "pacific-northwest-university-of-health-sciences"
+    },
+    {
+      "cycletrackKey": "Penn State",
+      "admitSlug": "pennsylvania-state-university-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Pennsylvania",
+      "admitSlug": "university-of-pennsylvania-perelman"
+    },
+    {
+      "cycletrackKey": "Philadelphia COM",
+      "admitSlug": "philadelphia-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Philadelphia COM - Georgia",
+      "admitSlug": "philadelphia-college-of-osteopathic-medicine-georgia"
+    },
+    {
+      "cycletrackKey": "Philadelphia COM - South Georgia",
+      "admitSlug": "philadelphia-college-of-osteopathic-medicine-south-georgia"
+    },
+    {
+      "cycletrackKey": "Pittsburgh",
+      "admitSlug": "university-of-pittsburgh-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Ponce Health Sciences",
+      "admitSlug": "ponce-health-sciences-university"
+    },
+    {
+      "cycletrackKey": "Quinnipiac",
+      "admitSlug": "quinnipiac-university"
+    },
+    {
+      "cycletrackKey": "Rochester",
+      "admitSlug": "university-of-rochester-school-of-medicine-and-dentistry"
+    },
+    {
+      "cycletrackKey": "Rocky Vista",
+      "admitSlug": "rocky-vista-university"
+    },
+    {
+      "cycletrackKey": "Rocky Vista - Montana",
+      "admitSlug": "rocky-vista-university-montana"
+    },
+    {
+      "cycletrackKey": "Rosalind Franklin",
+      "admitSlug": "rosalind-franklin-university-of-medicine-and-science-chicago"
+    },
+    {
+      "cycletrackKey": "Roseman",
+      "admitSlug": "roseman-university-of-health-sciences"
+    },
+    {
+      "cycletrackKey": "Rowan",
+      "admitSlug": "rowan-university-school-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Rush",
+      "admitSlug": "rush-medical-college-of-rush-university-medical-center"
+    },
+    {
+      "cycletrackKey": "Rutgers - New Jersey",
+      "admitSlug": "rutgers-new-jersey-medical-school"
+    },
+    {
+      "cycletrackKey": "Rutgers - Robert Wood Johnson",
+      "admitSlug": "rutgers-robert-wood-johnson-medical-school"
+    },
+    {
+      "cycletrackKey": "Saint Louis",
+      "admitSlug": "saint-louis-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Sam Houston",
+      "admitSlug": "sam-houston-state-university-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "San Juan Bautista",
+      "admitSlug": "san-juan-bautista-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "South Alabama",
+      "admitSlug": "university-of-south-alabama"
+    },
+    {
+      "cycletrackKey": "South Carolina - Columbia",
+      "admitSlug": "university-of-south-carolina-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "South Carolina - Greenville",
+      "admitSlug": "university-of-south-carolina-greenville"
+    },
+    {
+      "cycletrackKey": "South Dakota",
+      "admitSlug": "university-of-south-dakota-sanford"
+    },
+    {
+      "cycletrackKey": "Southern Illinois",
+      "admitSlug": "southern-illinois-university-springfield"
+    },
+    {
+      "cycletrackKey": "Stanford",
+      "admitSlug": "stanford-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Stony Brook",
+      "admitSlug": "stony-brook-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "SUNY Downstate",
+      "admitSlug": "suny-downstate-health-sciences-university"
+    },
+    {
+      "cycletrackKey": "SUNY Upstate",
+      "admitSlug": "state-university-of-new-york-upstate-medical-university"
+    },
+    {
+      "cycletrackKey": "Temple",
+      "admitSlug": "lewis-katz-school-of-medicine-at-temple-university"
+    },
+    {
+      "cycletrackKey": "Tennessee",
+      "admitSlug": "university-of-tennessee-health-science-center-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Texas A&M",
+      "admitSlug": "texas-a-m-health-science-center-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Texas Christian University",
+      "admitSlug": "texas-christian-university"
+    },
+    {
+      "cycletrackKey": "Texas Tech - Foster",
+      "admitSlug": "texas-tech-university-health-sciences-center-el-paso"
+    },
+    {
+      "cycletrackKey": "Texas Tech - Lubbock",
+      "admitSlug": "texas-tech-university-health-sciences-center-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Toledo",
+      "admitSlug": "the-university-of-toledo-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Touro - California",
+      "admitSlug": "touro-university-california"
+    },
+    {
+      "cycletrackKey": "Touro - Nevada",
+      "admitSlug": "touro-college-of-osteopathic-medicine-nevada"
+    },
+    {
+      "cycletrackKey": "Touro - New York",
+      "admitSlug": "touro-college-of-osteopathic-medicine-harlem"
+    },
+    {
+      "cycletrackKey": "Tufts",
+      "admitSlug": "tufts-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Tulane",
+      "admitSlug": "tulane-university"
+    },
+    {
+      "cycletrackKey": "Uniformed Services",
+      "admitSlug": "uniformed-services-university-of-the-health-sciences-hebert"
+    },
+    {
+      "cycletrackKey": "University of California Davis",
+      "admitSlug": "university-of-california-davis-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of California Irvine",
+      "admitSlug": "university-of-california-irvine-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of California Los Angeles",
+      "admitSlug": "university-of-california-los-angeles-david-geffen-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of California Riverside",
+      "admitSlug": "university-of-california-riverside-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of California San Diego",
+      "admitSlug": "university-of-california-san-diego-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of California San Francisco",
+      "admitSlug": "university-of-california-san-francisco-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of Central Florida",
+      "admitSlug": "university-of-central-florida-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of Nevada Las Vegas",
+      "admitSlug": "university-of-nevada-las-vegas"
+    },
+    {
+      "cycletrackKey": "University of Puerto Rico",
+      "admitSlug": "university-of-puerto-rico-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of South Florida",
+      "admitSlug": "usf-health-morsani-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "University of Southern California",
+      "admitSlug": "keck-school-of-medicine-of-the-university-of-southern-california"
+    },
+    {
+      "cycletrackKey": "University of Texas - Austin",
+      "admitSlug": "university-of-texas-austin-dell"
+    },
+    {
+      "cycletrackKey": "University of Texas - Houston",
+      "admitSlug": "mcgovern-medical-school-at-the-university-of-texas-health-science-center-at-houston"
+    },
+    {
+      "cycletrackKey": "University of Texas - Medical Branch",
+      "admitSlug": "university-of-texas-medical-branch-galveston"
+    },
+    {
+      "cycletrackKey": "University of Texas - Rio Grande",
+      "admitSlug": "university-of-texas-rio-grande-valley"
+    },
+    {
+      "cycletrackKey": "University of Texas - San Antonio",
+      "admitSlug": "ut-san-antonio-long"
+    },
+    {
+      "cycletrackKey": "University of Texas - Southwestern",
+      "admitSlug": "university-of-texas-southwestern-medical-center-southwestern-medical-school"
+    },
+    {
+      "cycletrackKey": "University of Texas - Tyler",
+      "admitSlug": "the-university-of-texas-at-tyler-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Utah",
+      "admitSlug": "university-of-utah-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Valley COM",
+      "admitSlug": "the-valley-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Vanderbilt",
+      "admitSlug": "vanderbilt-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Vermont",
+      "admitSlug": "university-of-vermont-college-of-medicine"
+    },
+    {
+      "cycletrackKey": "Virginia",
+      "admitSlug": "university-of-virginia-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Virginia Commonwealth",
+      "admitSlug": "virginia-commonwealth-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Virginia Tech",
+      "admitSlug": "virginia-tech-carilion-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Wake Forest",
+      "admitSlug": "wake-forest-school-of-medicine-of-wake-forest-baptist-medical-center"
+    },
+    {
+      "cycletrackKey": "Washington",
+      "admitSlug": "university-of-washington-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Washington State",
+      "admitSlug": "washington-state-university-floyd"
+    },
+    {
+      "cycletrackKey": "Washington University Saint Louis",
+      "admitSlug": "washington-university-in-st-louis-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Wayne State",
+      "admitSlug": "wayne-state-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "West Virginia",
+      "admitSlug": "west-virginia-university-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "West Virginia SOM",
+      "admitSlug": "west-virginia-school-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Western Michigan",
+      "admitSlug": "western-michigan-university"
+    },
+    {
+      "cycletrackKey": "Western University - California",
+      "admitSlug": "western-university-of-health-sciences"
+    },
+    {
+      "cycletrackKey": "Western University - Oregon",
+      "admitSlug": "western-university-of-health-sciences-northwest"
+    },
+    {
+      "cycletrackKey": "William Carey",
+      "admitSlug": "william-carey-university-college-of-osteopathic-medicine"
+    },
+    {
+      "cycletrackKey": "Wisconsin",
+      "admitSlug": "university-of-wisconsin-school-of-medicine-and-public-health"
+    },
+    {
+      "cycletrackKey": "Wright State",
+      "admitSlug": "wright-state-university-boonshoft-school-of-medicine"
+    },
+    {
+      "cycletrackKey": "Yale",
+      "admitSlug": "yale-school-of-medicine"
+    }
+  ]
+}
