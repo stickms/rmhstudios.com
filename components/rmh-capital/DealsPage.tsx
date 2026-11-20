@@ -71,10 +71,10 @@ export default function DealsPage() {
             <div className="o-wide stack">
               <p className="meta rv">
                 {t(
-                  'deals-rmhs-date',
+                  'deals-rmhs-byline',
                   {
                     defaultValue:
-                      'Announced November 19, 2026 · Chidi Nwosu, Managing Partner, RMHCombinator',
+                      'Announced November 19, 2026 · Mahmoud Said, General Managing Partner, RMHCombinator',
                   },
                 )}
               </p>
@@ -308,10 +308,10 @@ export default function DealsPage() {
                 </dt>
                 <dd>
                   {t(
-                    'deals-rmhs-term-board-v',
+                    'deals-rmhs-term-board-observer',
                     {
                       defaultValue:
-                        'No board seat. Chidi Nwosu joins as an observer',
+                        'No board seat. Mahmoud Said joins as an observer',
                     },
                   )}
                 </dd>
@@ -330,10 +330,10 @@ export default function DealsPage() {
               </blockquote>
               <figcaption className="quote-by rv d1">
                 {t(
-                  'deals-rmhs-quote-by',
+                  'deals-rmhs-quote-attribution',
                   {
                     defaultValue:
-                      'Chidi Nwosu, Managing Partner, RMHCombinator',
+                      'Mahmoud Said, General Managing Partner, RMHCombinator',
                   },
                 )}
               </figcaption>

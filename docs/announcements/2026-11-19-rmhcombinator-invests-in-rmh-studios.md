@@ -13,7 +13,7 @@ announcementExpiresAt:
 
 # Investing in RMH Studios
 
-_November 19, 2026 · Chidi Nwosu, Managing Partner, RMHCombinator_
+_November 19, 2026 · Mahmoud Said, General Managing Partner, RMHCombinator_
 
 Today we're excited to announce that RMHCombinator is leading RMH Studios' **$50 pre-seed round**. We're thrilled to partner with the team as they build the consumer internet platform of the next decade.
 
@@ -33,13 +33,13 @@ We believe the next great consumer company will not be one app. It will be a pla
 | Lead investor   | RMHCombinator, the venture capital business of RMH Capital      |
 | Ownership       | 0.000001%                                                       |
 | Use of proceeds | About one month of servers, and the domain renewal              |
-| Board           | No board seat. Chidi Nwosu joins as an observer                 |
+| Board           | No board seat. Mahmoud Said joins as an observer                 |
 
 The round extends the company's runway by about one month of hosting. RMH Studios joins the RMHCombinator Fall 2026 batch, and with it gets the whole firm behind it, from its first coin to, one day, the public markets.
 
 > We back founders who build first and raise later. RMH Studios built everything first.
 >
-> — Chidi Nwosu, Managing Partner, RMHCombinator
+> — Mahmoud Said, General Managing Partner, RMHCombinator
 
 We could not be more excited to be on this journey with them.
 
