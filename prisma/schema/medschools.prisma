@@ -265,6 +265,7 @@ model MedInterviewProfile {
   interviewStyle   String?
   interviewLength  String?
   avgStress        Float?
+  /// SDN only: mean of Positively = +1, No change = 0, Negatively = -1 over a school's reports.
   avgImpression    Float?
   inStateCount     Int?
   outOfStateCount  Int?
