@@ -84,6 +84,29 @@ Considered for the ingest/compute tier:
   backfills and source outages; the cost is one more service to wire (checklist §11).
 - C. A Go service. Ruled out: the repo ported Go workers back to Node (D3).
 
+## 4a. MD and MD-PhD are separate admissions (owner, 2026-11-20)
+
+MD (or DO) and MD-PhD (or DO-PhD) are different admissions processes with different
+timelines, and the product never mixes them. Every count, stat, forecast, interview figure
+and tracker application carries `program` (`REG` = MD/DO, `PHD` = MD-PhD/DO-PhD). Pages
+show the two side by side as separate series or a program switch, defaulting to `REG`;
+forecasts and the personal conditional chance are fitted per program; the live feed labels
+each event's program. A per-event source that does not say which program an event belongs
+to stores `program = null`, and those events are shown as "program not reported" — never
+assigned to MD by default and never counted in either program's curves or forecasts.
+
+**Admit.org program (owner, 2026-11-20).** Admit's feed rows do not name the program
+directly; the program is whether the posting applicant is marked as MD/PhD on Admit. The
+Admit adapter therefore derives `program` from that applicant-type flag — from the feed
+row if the API exposes it there, otherwise from the applicant's public profile — and the
+flag is the only thing taken from it. The lookup is anonymization-safe only under these
+rules: the flag is read in memory and mapped straight to `REG`/`PHD`; no username, user id
+or profile field is stored, logged or hashed; profile lookups are cached in memory for the
+current run only (so one applicant costs one request per run, under §8's politeness
+limits) and the cache is discarded when the run ends. If the flag cannot be read,
+`program = null`. Phase 2's feasibility spike finds where the flag lives before the adapter
+is planned.
+
 ## 5. Architecture
 
 ```
@@ -155,7 +178,8 @@ The single rule: **no identifier of a person crosses the adapter boundary.**
   sources' rows from `MedCycleEvent`. **Sources are never summed** (they overlap — an
   applicant may report on all three); see §10.
 - `MedCycleEvent` — individual anonymous events from per-event sources (Admit feed, SDN
-  extraction, opted-in tracker): schoolId, cycleYear, eventType, occurredAt, source,
+  extraction, opted-in tracker): schoolId, cycleYear, program (`REG`|`PHD`, null when the
+  source does not say), eventType, occurredAt, source,
   dedupeHash (unique), inState?, ingestedAt. Feeds the live view; rolled up into
   `MedCycleCount`. No person fields.
 - `MedInterviewQuestion` — schoolId, text, source, votes?, cycleYear?, dedupeHash.

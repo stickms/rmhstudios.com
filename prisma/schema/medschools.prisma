@@ -1,0 +1,211 @@
+// ─── RMH Med Schools: anonymized US med school admissions-cycle data ──────────
+//
+// ANONYMIZATION RULE: no identifier of a person is stored in this file's public
+// models. No username, display name, avatar, source user id, author or post text.
+// Source dedupe keys are stored only as an HMAC (`MedCycleEvent.dedupeHash`).
+// `features/medschools/engine/schema.test.ts` fails on any column named like
+// `user*name|author|avatar|display`. (Private tracker models, added in a later
+// phase, may carry their owner's `userId`; public endpoints never read them.)
+//
+// CYCLE YEAR is the ENTRY year, CycleTrack's convention: the 2026-2027 cycle is 2027.
+
+enum MedDegree {
+  MD
+  DO
+}
+
+enum MedProgram {
+  REG
+  PHD
+}
+
+enum MedEventType {
+  SECONDARY
+  INTERVIEW
+  WAITLIST
+  REJECTION
+  ACCEPTANCE
+}
+
+/// Where a figure came from. Alias rows never use `RMH`.
+enum MedSource {
+  CYCLETRACK
+  ADMIT
+  SDN
+  MDAPPLICANTS
+  RMH
+}
+
+enum MedRunStatus {
+  RUNNING
+  OK
+  PARTIAL
+  FAILED
+}
+
+enum MedRunTrigger {
+  CRON
+  MANUAL
+  BOOTSTRAP
+}
+
+/// A US medical school (MD or DO). Rows are curated, never auto-created from a
+/// source name; unmatched names go to `MedSchoolAliasMiss`.
+model MedSchool {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  name            String
+  shortName       String
+  degree          MedDegree
+  city            String
+  /// Two-letter state code.
+  state           String
+  country         String    @default("US")
+  website         String?
+  interviewFormat String?
+  interviewType   String?
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  aliases MedSchoolAlias[]
+  counts  MedCycleCount[]
+  events  MedCycleEvent[]
+  stats   MedSchoolStats[]
+
+  @@index([degree, state])
+  @@map("med_school")
+}
+
+/// How a source names a school (CycleTrack name, Admit slug, SDN thread stem or
+/// thread id). Unique per (source, sourceKey).
+model MedSchoolAlias {
+  id        String    @id @default(cuid())
+  schoolId  String
+  source    MedSource
+  sourceKey String
+  createdAt DateTime  @default(now())
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([source, sourceKey])
+  @@index([schoolId])
+  @@map("med_school_alias")
+}
+
+/// A source name that matched no alias. Surfaced to the admin, never auto-created.
+model MedSchoolAliasMiss {
+  id               String    @id @default(cuid())
+  source           MedSource
+  sourceKey        String
+  firstSeenAt      DateTime  @default(now())
+  lastSeenAt       DateTime  @default(now())
+  seenCount        Int       @default(1)
+  resolvedSchoolId String?
+
+  @@unique([source, sourceKey])
+  @@map("med_school_alias_miss")
+}
+
+/// One application cycle's calendar. `dayZeroOn` is the start of day-of-cycle `d`;
+/// for archive years without a known date it is June 1 of the application year
+/// and `dateEstimated` is true.
+model MedCycle {
+  /// Entry year (2026-2027 → 2027).
+  cycleYear      Int       @id
+  amcasOpensOn   DateTime? @db.Date
+  amcasSubmitOn  DateTime? @db.Date
+  aacomasOpensOn DateTime? @db.Date
+  dayZeroOn      DateTime  @db.Date
+  dateEstimated  Boolean
+
+  @@map("med_cycle")
+}
+
+/// The canonical activity fact: how many `eventType` events a school had on a
+/// date, per source. Sources overlap and are NEVER summed.
+/// `cycleYear` is deliberately not a foreign key: archive years (1998+) have no
+/// `MedCycle` row.
+model MedCycleCount {
+  id           String       @id @default(cuid())
+  schoolId     String
+  program      MedProgram
+  /// Entry year (2026-2027 → 2027).
+  cycleYear    Int
+  date         DateTime     @db.Date
+  eventType    MedEventType
+  source       MedSource
+  count        Int
+  /// Distinct-reporter count where known; null for CycleTrack (suppressed upstream).
+  contributors Int?
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, program, cycleYear, date, eventType, source])
+  @@index([schoolId, cycleYear])
+  @@index([cycleYear, date])
+  @@map("med_cycle_count")
+}
+
+/// One anonymous event from a per-event source. No person fields.
+model MedCycleEvent {
+  id         String       @id @default(cuid())
+  schoolId   String
+  cycleYear  Int
+  /// null = the source did not report the program; never defaulted to REG.
+  program    MedProgram?
+  eventType  MedEventType
+  occurredAt DateTime
+  source     MedSource
+  /// HMAC-SHA256 of source + ':' + source id. Never the raw id.
+  dedupeHash String       @unique
+  inState    Boolean?
+  ingestedAt DateTime     @default(now())
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([occurredAt])
+  @@index([schoolId, cycleYear, program])
+  @@map("med_cycle_event")
+}
+
+/// Published GPA/MCAT medians and ranges per school per cycle per program
+/// (already suppressed upstream).
+model MedSchoolStats {
+  id                       String     @id @default(cuid())
+  schoolId                 String
+  program                  MedProgram
+  cycleYear                Int
+  gpaMedian                Float?
+  gpaLow                   Float?
+  gpaHigh                  Float?
+  mcatMedian               Int?
+  mcatLow                  Int?
+  mcatHigh                 Int?
+  interviewToAcceptancePct Float?
+  firstSecondaryOn         DateTime?  @db.Date
+  firstInterviewOn         DateTime?  @db.Date
+  firstAcceptanceOn        DateTime?  @db.Date
+  sourceUpdatedAt          DateTime?
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, program, cycleYear])
+  @@map("med_school_stats")
+}
+
+/// Observability for the med schools worker's jobs, like `HomeScrapeRun`.
+model MedSourceRun {
+  id         String        @id @default(cuid())
+  source     MedSource
+  job        String
+  trigger    MedRunTrigger
+  startedAt  DateTime      @default(now())
+  finishedAt DateTime?
+  status     MedRunStatus
+  stats      Json?
+  error      String?
+
+  @@index([source, job, startedAt])
+  @@map("med_source_run")
+}

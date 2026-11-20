@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /amcas/account/
+Disallow: /_internal/
+Sitemap: https://cycletrack.org/sitemap.xml

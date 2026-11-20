@@ -3344,6 +3344,7 @@ lib/prepaint/generated.ts
 /server/discord-bot/pet-image.ts
 /server/discord-bot/state.ts
 /server/homes-worker/index.ts
+/server/medschools-worker/index.ts
 /server/jobs/index.ts
 /server/ladder-worker/index.ts
 /server/nitro/keepalive.ts

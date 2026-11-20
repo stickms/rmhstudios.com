@@ -1,0 +1,16 @@
+{
+  "Arizona - Tucson": { "city": "Tucson" },
+  "Johns Hopkins": { "city": "Baltimore" },
+  "SUNY Upstate": { "city": "Syracuse" },
+  "Methodist University": { "city": "Fayetteville" },
+  "Wake Forest": { "city": "Winston-Salem" },
+  "Edward Via - Carolinas": { "city": "Spartanburg" },
+  "Nova Southeastern COM": { "city": "Fort Lauderdale" },
+  "Central Michigan": { "city": "Mount Pleasant" },
+  "Washington University Saint Louis": { "city": "Saint Louis" },
+  "Baylor": { "name": "Baylor College of Medicine" },
+  "Kaiser Permanente": { "name": "Kaiser Permanente Bernard J. Tyson School of Medicine" },
+  "Mayo": { "name": "Mayo Clinic Alix School of Medicine" },
+  "Carle Illinois": { "name": "Carle Illinois College of Medicine" },
+  "Penn State": { "name": "Penn State College of Medicine" }
+}

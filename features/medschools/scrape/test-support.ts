@@ -1,0 +1,707 @@
+/** In-memory MedPrisma fake and helpers for the med schools pipeline tests. */
+import { readFileSync } from 'node:fs';
+import {
+  dirname,
+  join,
+} from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { SourceHaltedError, type PoliteClient, type PoliteHost } from './http';
+import type { MedPrisma } from './types';
+
+type Row =
+  Record<
+    string,
+    unknown
+  >;
+
+const UNIQUE_KEYS: Record<
+  string,
+  string[]
+> =
+  {
+    medCycleCount:
+      [
+        'schoolId',
+        'program',
+        'cycleYear',
+        'date',
+        'eventType',
+        'source',
+      ],
+    medSchoolAlias:
+      [
+        'source',
+        'sourceKey',
+      ],
+  };
+
+const eq =
+  (
+    a: unknown,
+    b: unknown,
+  ): boolean =>
+    a instanceof
+      Date &&
+    b instanceof
+      Date
+      ? a.getTime() ===
+        b.getTime()
+      : a ===
+        b;
+
+/** Flatten compound-unique selectors like `{ source_sourceKey: { source, sourceKey } }` into scalar equality. */
+function flatten(
+  where: Row,
+): Row {
+  const out: Row =
+    {};
+  for (const [
+    k,
+    v,
+  ] of Object.entries(
+    where,
+  )) {
+    if (
+      v !==
+        null &&
+      typeof v ===
+        'object' &&
+      !(
+        v instanceof
+        Date
+      ) &&
+      !Array.isArray(
+        v,
+      ) &&
+      k.includes(
+        '_',
+      )
+    ) {
+      Object.assign(
+        out,
+        v,
+      );
+    } else
+      out[
+        k
+      ] =
+        v;
+  }
+  return out;
+}
+
+/** Apply a Prisma-style update payload, including `{ increment: n }`. */
+function applyUpdate(
+  row: Row,
+  data: Row,
+): void {
+  for (const [
+    k,
+    v,
+  ] of Object.entries(
+    data,
+  )) {
+    row[
+      k
+    ] =
+      v !==
+        null &&
+      typeof v ===
+        'object' &&
+      'increment' in
+        v
+        ? (Number(
+            row[
+              k
+            ] ??
+              0,
+          ) +
+          Number(
+            (
+              v as {
+                increment: number;
+              }
+            )
+              .increment,
+          ))
+        : v;
+  }
+}
+
+function matches(
+  row: Row,
+  where:
+    | Row
+    | undefined,
+): boolean {
+  if (
+    !where
+  )
+    return true;
+  return Object.entries(
+    flatten(
+      where,
+    ),
+  ).every(
+    ([
+      k,
+      v,
+    ]) => {
+      if (
+        v !==
+          null &&
+        typeof v ===
+          'object' &&
+        !(
+          v instanceof
+          Date
+        ) &&
+        'in' in
+          v
+      ) {
+        return (
+          v as {
+            in: unknown[];
+          }
+        ).in.some(
+          (
+            x,
+          ) =>
+            eq(
+              row[
+                k
+              ],
+              x,
+            ),
+        );
+      }
+      return eq(
+        row[
+          k
+        ],
+        v,
+      );
+    },
+  );
+}
+
+export function createFakePrisma(): {
+  prisma: MedPrisma;
+  writes: unknown[];
+  tables: Record<
+    string,
+    unknown[]
+  >;
+} {
+  const writes: unknown[] =
+    [];
+  const tables: Record<
+    string,
+    Row[]
+  > =
+    {};
+  let seq = 0;
+
+  const table =
+    (
+      name: string,
+    ): Row[] =>
+      (tables[
+        name
+      ] ??=
+        []);
+
+  function insert(
+    name: string,
+    data: Row,
+  ): Row {
+    const t =
+      table(
+        name,
+      );
+    const keys =
+      UNIQUE_KEYS[
+        name
+      ];
+    if (
+      keys &&
+      t.some(
+        (
+          r,
+        ) =>
+          keys.every(
+            (
+              k,
+            ) =>
+              eq(
+                r[
+                  k
+                ],
+                data[
+                  k
+                ],
+              ),
+          ),
+      )
+    ) {
+      throw new Error(
+        `Unique constraint failed on ${name} (${keys.join(', ')})`,
+      );
+    }
+    const row: Row =
+      {
+        id: `fake_${++seq}`,
+        ...data,
+      };
+    t.push(
+      row,
+    );
+    return row;
+  }
+
+  function delegate(
+    name: string,
+  ): Record<
+    string,
+    (
+      args?: never,
+    ) => Promise<unknown>
+  > {
+    const t =
+      () =>
+        table(
+          name,
+        );
+    const api =
+      {
+        async count(args?: {
+          where?: Row;
+        }) {
+          return t().filter(
+            (
+              r,
+            ) =>
+              matches(
+                r,
+                args?.where,
+              ),
+          )
+            .length;
+        },
+        async findMany(args?: {
+          where?: Row;
+        }) {
+          return t()
+            .filter(
+              (
+                r,
+              ) =>
+                matches(
+                  r,
+                  args?.where,
+                ),
+            )
+            .map(
+              (
+                r,
+              ) => ({
+                ...r,
+              }),
+            );
+        },
+        async findFirst(args?: {
+          where?: Row;
+          orderBy?: unknown;
+        }) {
+          const all =
+            t().filter(
+              (
+                r,
+              ) =>
+                matches(
+                  r,
+                  args?.where,
+                ),
+            );
+          const desc =
+            Object.values(
+              (args as {
+                orderBy?: Row;
+              })
+                ?.orderBy ??
+                {},
+            ).includes(
+              'desc',
+            );
+          const hit =
+            desc
+              ? all[
+                  all.length -
+                    1
+                ]
+              : all[0];
+          return hit
+            ? {
+                ...hit,
+              }
+            : null;
+        },
+        async create(args: {
+          data: Row;
+        }) {
+          writes.push(
+            args,
+          );
+          return {
+            ...insert(
+              name,
+              args.data,
+            ),
+          };
+        },
+        async createMany(args: {
+          data: Row[];
+          skipDuplicates?: boolean;
+        }) {
+          writes.push(
+            args,
+          );
+          const keys =
+            UNIQUE_KEYS[
+              name
+            ];
+          const batch: Row[] =
+            [];
+          const clash =
+            (
+              d: Row,
+              rows: Row[],
+            ) =>
+              keys !==
+                undefined &&
+              rows.some(
+                (
+                  r,
+                ) =>
+                  keys.every(
+                    (
+                      k,
+                    ) =>
+                      eq(
+                        r[
+                          k
+                        ],
+                        d[
+                          k
+                        ],
+                      ),
+                  ),
+              );
+          for (const d of args.data) {
+            if (
+              clash(
+                d,
+                t(),
+              ) ||
+              clash(
+                d,
+                batch,
+              )
+            ) {
+              if (
+                !args.skipDuplicates
+              )
+                throw new Error(
+                  `Unique constraint failed on ${name} (${keys?.join(', ')})`,
+                );
+              continue;
+            }
+            batch.push(
+              d,
+            );
+          }
+          for (const d of batch)
+            insert(
+              name,
+              d,
+            );
+          const count =
+            batch.length;
+          return {
+            count,
+          };
+        },
+        async update(args: {
+          where: Row;
+          data: Row;
+        }) {
+          writes.push(
+            args,
+          );
+          const hit =
+            t().find(
+              (
+                r,
+              ) =>
+                matches(
+                  r,
+                  args.where,
+                ),
+            );
+          if (
+            !hit
+          )
+            throw new Error(
+              `Record not found in ${name}`,
+            );
+          applyUpdate(
+            hit,
+            args.data,
+          );
+          return {
+            ...hit,
+          };
+        },
+        async upsert(args: {
+          where: Row;
+          create: Row;
+          update: Row;
+        }) {
+          writes.push(
+            args,
+          );
+          const hit =
+            t().find(
+              (
+                r,
+              ) =>
+                matches(
+                  r,
+                  args.where,
+                ),
+            );
+          if (
+            hit
+          ) {
+            applyUpdate(
+              hit,
+              args.update,
+            );
+            return {
+              ...hit,
+            };
+          }
+          return {
+            ...insert(
+              name,
+              args.create,
+            ),
+          };
+        },
+        async delete(args: {
+          where: Row;
+        }) {
+          writes.push(
+            args,
+          );
+          const i =
+            t().findIndex(
+              (
+                r,
+              ) =>
+                matches(
+                  r,
+                  args.where,
+                ),
+            );
+          if (
+            i <
+            0
+          )
+            throw new Error(
+              `Record not found in ${name}`,
+            );
+          return t().splice(
+            i,
+            1,
+          )[0];
+        },
+        async deleteMany(args: {
+          where: Row;
+        }) {
+          writes.push(
+            args,
+          );
+          const keep =
+            t().filter(
+              (
+                r,
+              ) =>
+                !matches(
+                  r,
+                  args.where,
+                ),
+            );
+          const count =
+            t()
+              .length -
+            keep.length;
+          tables[
+            name
+          ] =
+            keep;
+          return {
+            count,
+          };
+        },
+      };
+    return api as unknown as Record<
+      string,
+      (
+        args?: never,
+      ) => Promise<unknown>
+    >;
+  }
+
+  const names =
+    [
+      'medSchool',
+      'medSchoolAlias',
+      'medSchoolAliasMiss',
+      'medCycle',
+      'medCycleCount',
+      'medSchoolStats',
+      'medSourceRun',
+    ];
+  const prisma =
+    Object.fromEntries(
+      names.map(
+        (
+          n,
+        ) => [
+          n,
+          delegate(
+            n,
+          ),
+        ],
+      ),
+    ) as unknown as MedPrisma;
+  const view =
+    new Proxy(
+      tables,
+      {
+        get: (
+          target,
+          p: string,
+        ) =>
+          target[
+            p
+          ] ??
+          (target[
+            p
+          ] =
+            []),
+      },
+    );
+  return {
+    prisma,
+    writes,
+    tables:
+      view as unknown as Record<
+        string,
+        unknown[]
+      >,
+  };
+}
+
+const FIXTURE_DIR =
+  join(
+    dirname(
+      fileURLToPath(
+        import.meta
+          .url,
+      ),
+    ),
+    'adapters',
+    'cycletrack',
+    '__fixtures__',
+  );
+
+export function loadFixture(
+  name: string,
+): string {
+  return readFileSync(
+    join(
+      FIXTURE_DIR,
+      name,
+    ),
+    'utf8',
+  );
+}
+
+/** Throws naming the needle if anything written contains it (e.g. a raw source id that must be hashed). */
+export function assertNoLeak(
+  writes: unknown[],
+  needles: string[],
+): void {
+  const dump =
+    JSON.stringify(
+      writes,
+    );
+  for (const needle of needles) {
+    if (
+      dump.includes(
+        needle,
+      )
+    )
+      throw new Error(
+        `Leak: written data contains "${needle}"`,
+      );
+  }
+}
+
+/**
+ * Fake PoliteHost serving canned bodies by path. A path mapped to `null` is a
+ * 404. Mirrors the real gate: the session halts after three noted failures
+ * and `get` then throws `SourceHaltedError`.
+ */
+export function createFakeHost(
+  routes: Record<string, string | null> | ((path: string) => string | null),
+  maxFailures = 3,
+): { host: PoliteHost; requested: string[]; sessions: Array<{ spacingMs?: number } | undefined> } {
+  const requested: string[] = [];
+  const sessions: Array<{ spacingMs?: number } | undefined> = [];
+  const lookup = typeof routes === 'function' ? routes : (p: string) => routes[p] ?? null;
+  const host: PoliteHost = {
+    session(opts?: { spacingMs?: number }): PoliteClient {
+      sessions.push(opts);
+      let failures = 0;
+      let last: string | null = null;
+      return {
+        async get(path) {
+          if (failures >= maxFailures) throw new SourceHaltedError(last ?? undefined);
+          requested.push(path);
+          const body = lookup(path);
+          return body === null ? { ok: false, status: 404, body: '' } : { ok: true, status: 200, body };
+        },
+        noteSuccess() {
+          failures = 0;
+        },
+        noteFailure(reason) {
+          failures++;
+          last = reason;
+        },
+        get halted() {
+          return failures >= maxFailures;
+        },
+        get requests() {
+          return requested.length;
+        },
+        get lastFailure() {
+          return last;
+        },
+      };
+    },
+  };
+  return { host, requested, sessions };
+}

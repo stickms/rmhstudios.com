@@ -156,6 +156,10 @@
 @source not "../lib/temple-of-joy";
 @source not "../lib/trick-week";
 @source not "../features/vega/engine";
+/* RMH Med Schools: the data pipeline and its captured CycleTrack HTML fixtures (Bootstrap class names) never
+   render. Only features/medschools/ui will, so it stays scanned. */
+@source not "../features/medschools/engine";
+@source not "../features/medschools/scrape";
 @source not "../lib/velum2099";
 @source not "../lib/versecraft";
 

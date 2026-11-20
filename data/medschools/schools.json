@@ -1,0 +1,3541 @@
+{
+  "generatedAt": "2026-11-20T03:41:29.678Z",
+  "schools": [
+    {
+      "slug": "a-t-still-arizona",
+      "name": "A.T. Still University of Health Sciences (Arizona)",
+      "shortName": "A.T. Still - Arizona",
+      "degree": "DO",
+      "city": "Mesa",
+      "state": "AZ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "A.T. Still - Arizona"
+        }
+      ]
+    },
+    {
+      "slug": "a-t-still-kirksville",
+      "name": "A.T. Still University of Health Sciences (Kirksville)",
+      "shortName": "A.T. Still - Kirksville",
+      "degree": "DO",
+      "city": "Kirksville",
+      "state": "MO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "A.T. Still - Kirksville"
+        }
+      ]
+    },
+    {
+      "slug": "alabama",
+      "name": "University of Alabama at Birmingham",
+      "shortName": "Alabama",
+      "degree": "MD",
+      "city": "Birmingham",
+      "state": "AL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Alabama"
+        }
+      ]
+    },
+    {
+      "slug": "alabama-com",
+      "name": "Alabama College of Osteopathic Medicine",
+      "shortName": "Alabama COM",
+      "degree": "DO",
+      "city": "Dothan",
+      "state": "AL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Alabama COM"
+        }
+      ]
+    },
+    {
+      "slug": "albany",
+      "name": "Albany Medical College",
+      "shortName": "Albany",
+      "degree": "MD",
+      "city": "Albany",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Albany"
+        }
+      ]
+    },
+    {
+      "slug": "albert-einstein",
+      "name": "Albert Einstein College of Medicine",
+      "shortName": "Albert Einstein",
+      "degree": "MD",
+      "city": "Bronx",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Albert Einstein"
+        }
+      ]
+    },
+    {
+      "slug": "alice-walton",
+      "name": "Alice L. Walton School of Medicine",
+      "shortName": "Alice Walton",
+      "degree": "MD",
+      "city": "Bentonville",
+      "state": "AR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Alice Walton"
+        }
+      ]
+    },
+    {
+      "slug": "arizona-phoenix",
+      "name": "University of Arizona (Phoenix)",
+      "shortName": "Arizona - Phoenix",
+      "degree": "MD",
+      "city": "Phoenix",
+      "state": "AZ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Arizona - Phoenix"
+        }
+      ]
+    },
+    {
+      "slug": "arizona-state",
+      "name": "Arizona State University",
+      "shortName": "Arizona State",
+      "degree": "MD",
+      "city": "Phoenix",
+      "state": "AZ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Arizona State"
+        }
+      ]
+    },
+    {
+      "slug": "arizona-tucson",
+      "name": "University of Arizona (Tucson)",
+      "shortName": "Arizona - Tucson",
+      "degree": "MD",
+      "city": "Tucson",
+      "state": "AZ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Arizona - Tucson"
+        }
+      ]
+    },
+    {
+      "slug": "arkansas",
+      "name": "University of Arkansas",
+      "shortName": "Arkansas",
+      "degree": "MD",
+      "city": "Little Rock",
+      "state": "AR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Arkansas"
+        }
+      ]
+    },
+    {
+      "slug": "arkansas-com",
+      "name": "Arkansas College of Osteopathic Medicine",
+      "shortName": "Arkansas COM",
+      "degree": "DO",
+      "city": "Fort Smith",
+      "state": "AR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Arkansas COM"
+        }
+      ]
+    },
+    {
+      "slug": "baptist-health-sciences-university-com",
+      "name": "Baptist Health Sciences University",
+      "shortName": "Baptist Health Sciences University COM",
+      "degree": "DO",
+      "city": "Memphis",
+      "state": "TN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Baptist Health Sciences University COM"
+        }
+      ]
+    },
+    {
+      "slug": "baylor",
+      "name": "Baylor College of Medicine",
+      "shortName": "Baylor",
+      "degree": "MD",
+      "city": "Houston",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Baylor"
+        }
+      ]
+    },
+    {
+      "slug": "belmont-university",
+      "name": "Belmont University",
+      "shortName": "Belmont University",
+      "degree": "MD",
+      "city": "Nashville",
+      "state": "TN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Belmont University"
+        }
+      ]
+    },
+    {
+      "slug": "boston",
+      "name": "Boston University",
+      "shortName": "Boston",
+      "degree": "MD",
+      "city": "Boston",
+      "state": "MA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Boston"
+        }
+      ]
+    },
+    {
+      "slug": "brown",
+      "name": "Brown University",
+      "shortName": "Brown",
+      "degree": "MD",
+      "city": "Providence",
+      "state": "RI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Brown"
+        }
+      ]
+    },
+    {
+      "slug": "buffalo",
+      "name": "University at Buffalo",
+      "shortName": "Buffalo",
+      "degree": "MD",
+      "city": "Buffalo",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Buffalo"
+        }
+      ]
+    },
+    {
+      "slug": "burrell-com",
+      "name": "Burrell College of Osteopathic Medicine",
+      "shortName": "Burrell COM",
+      "degree": "DO",
+      "city": "Las Cruces",
+      "state": "NM",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Burrell COM"
+        }
+      ]
+    },
+    {
+      "slug": "california-health-sciences",
+      "name": "California Health Sciences University",
+      "shortName": "California Health Sciences",
+      "degree": "DO",
+      "city": "Clovis",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "California Health Sciences"
+        }
+      ]
+    },
+    {
+      "slug": "california-northstate",
+      "name": "California Northstate University",
+      "shortName": "California Northstate",
+      "degree": "MD",
+      "city": "Elk Grove",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "California Northstate"
+        }
+      ]
+    },
+    {
+      "slug": "california-university-of-science-and-medicine",
+      "name": "California University of Science and Medicine",
+      "shortName": "California University of Science and Medicine",
+      "degree": "MD",
+      "city": "Colton",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "California University of Science and Medicine"
+        }
+      ]
+    },
+    {
+      "slug": "campbell",
+      "name": "Campbell University",
+      "shortName": "Campbell",
+      "degree": "DO",
+      "city": "Lillington",
+      "state": "NC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Campbell"
+        }
+      ]
+    },
+    {
+      "slug": "caribe",
+      "name": "Universidad Central del Caribe",
+      "shortName": "Caribe",
+      "degree": "MD",
+      "city": "Bayamon",
+      "state": "PR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Caribe"
+        }
+      ]
+    },
+    {
+      "slug": "carle-illinois",
+      "name": "Carle Illinois College of Medicine",
+      "shortName": "Carle Illinois",
+      "degree": "MD",
+      "city": "Urbana",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Carle Illinois"
+        }
+      ]
+    },
+    {
+      "slug": "case-western",
+      "name": "Case Western Reserve",
+      "shortName": "Case Western",
+      "degree": "MD",
+      "city": "Cleveland",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Case Western"
+        }
+      ]
+    },
+    {
+      "slug": "central-michigan",
+      "name": "Central Michigan University",
+      "shortName": "Central Michigan",
+      "degree": "MD",
+      "city": "Mount Pleasant",
+      "state": "MI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Central Michigan"
+        }
+      ]
+    },
+    {
+      "slug": "charles-r-drew",
+      "name": "Charles R. Drew University of Medicine and Science",
+      "shortName": "Charles R. Drew",
+      "degree": "MD",
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Charles R. Drew"
+        }
+      ]
+    },
+    {
+      "slug": "charles-r-drew-ucla",
+      "name": "Charles R. Drew/UCLA Medical Education Program",
+      "shortName": "Charles R. Drew-UCLA",
+      "degree": "MD",
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Charles R. Drew-UCLA"
+        }
+      ]
+    },
+    {
+      "slug": "chicago",
+      "name": "University of Chicago",
+      "shortName": "Chicago",
+      "degree": "MD",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Chicago"
+        }
+      ]
+    },
+    {
+      "slug": "cincinnati",
+      "name": "University of Cincinnati",
+      "shortName": "Cincinnati",
+      "degree": "MD",
+      "city": "Cincinnati",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Cincinnati"
+        }
+      ]
+    },
+    {
+      "slug": "city-university-of-new-york",
+      "name": "City University of New York",
+      "shortName": "City University of New York",
+      "degree": "MD",
+      "city": "New York",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "City University of New York"
+        }
+      ]
+    },
+    {
+      "slug": "cleveland-clinic-lerner",
+      "name": "Cleveland Clinic Lerner",
+      "shortName": "Cleveland Clinic Lerner",
+      "degree": "MD",
+      "city": "Cleveland",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Cleveland Clinic Lerner"
+        }
+      ]
+    },
+    {
+      "slug": "colorado",
+      "name": "University of Colorado",
+      "shortName": "Colorado",
+      "degree": "MD",
+      "city": "Aurora",
+      "state": "CO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Colorado"
+        }
+      ]
+    },
+    {
+      "slug": "columbia",
+      "name": "Columbia University",
+      "shortName": "Columbia",
+      "degree": "MD",
+      "city": "New York",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Columbia"
+        }
+      ]
+    },
+    {
+      "slug": "connecticut",
+      "name": "University of Connecticut",
+      "shortName": "Connecticut",
+      "degree": "MD",
+      "city": "Farmington",
+      "state": "CT",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Connecticut"
+        }
+      ]
+    },
+    {
+      "slug": "cooper-rowan",
+      "name": "Rowan University",
+      "shortName": "Cooper Rowan",
+      "degree": "MD",
+      "city": "Camden",
+      "state": "NJ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Cooper Rowan"
+        }
+      ]
+    },
+    {
+      "slug": "cornell",
+      "name": "Cornell University",
+      "shortName": "Cornell",
+      "degree": "MD",
+      "city": "New York",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Cornell"
+        }
+      ]
+    },
+    {
+      "slug": "creighton",
+      "name": "Creighton University",
+      "shortName": "Creighton",
+      "degree": "MD",
+      "city": "Omaha",
+      "state": "NE",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Creighton"
+        }
+      ]
+    },
+    {
+      "slug": "dartmouth",
+      "name": "Dartmouth College",
+      "shortName": "Dartmouth",
+      "degree": "MD",
+      "city": "Hanover",
+      "state": "NH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Dartmouth"
+        }
+      ]
+    },
+    {
+      "slug": "des-moines",
+      "name": "Des Moines University",
+      "shortName": "Des Moines",
+      "degree": "DO",
+      "city": "Des Moines",
+      "state": "IA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Des Moines"
+        }
+      ]
+    },
+    {
+      "slug": "drexel",
+      "name": "Drexel University",
+      "shortName": "Drexel",
+      "degree": "MD",
+      "city": "Philadelphia",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Drexel"
+        }
+      ]
+    },
+    {
+      "slug": "duke",
+      "name": "Duke University",
+      "shortName": "Duke",
+      "degree": "MD",
+      "city": "Durham",
+      "state": "NC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Duke"
+        }
+      ]
+    },
+    {
+      "slug": "duquesne-university-com",
+      "name": "Duquesne University",
+      "shortName": "Duquesne University COM",
+      "degree": "DO",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Duquesne University COM"
+        }
+      ]
+    },
+    {
+      "slug": "east-carolina",
+      "name": "East Carolina University",
+      "shortName": "East Carolina",
+      "degree": "MD",
+      "city": "Greenville",
+      "state": "NC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "East Carolina"
+        }
+      ]
+    },
+    {
+      "slug": "east-tennessee",
+      "name": "East Tennessee State University",
+      "shortName": "East Tennessee",
+      "degree": "MD",
+      "city": "Johnson City",
+      "state": "TN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "East Tennessee"
+        }
+      ]
+    },
+    {
+      "slug": "eastern-virginia",
+      "name": "Eastern Virginia Medical School",
+      "shortName": "Eastern Virginia",
+      "degree": "MD",
+      "city": "Norfolk",
+      "state": "VA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Eastern Virginia"
+        }
+      ]
+    },
+    {
+      "slug": "edward-via-auburn",
+      "name": "Edward Via College of Osteopathic Medicine (Auburn)",
+      "shortName": "Edward Via - Auburn",
+      "degree": "DO",
+      "city": "Auburn",
+      "state": "AL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Edward Via - Auburn"
+        }
+      ]
+    },
+    {
+      "slug": "edward-via-carolinas",
+      "name": "Edward Via College of Osteopathic Medicine (Carolinas)",
+      "shortName": "Edward Via - Carolinas",
+      "degree": "DO",
+      "city": "Spartanburg",
+      "state": "SC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Edward Via - Carolinas"
+        }
+      ]
+    },
+    {
+      "slug": "edward-via-louisiana",
+      "name": "Edward Via College of Osteopathic Medicine (Louisiana)",
+      "shortName": "Edward Via - Louisiana",
+      "degree": "DO",
+      "city": "Monroe",
+      "state": "LA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Edward Via - Louisiana"
+        }
+      ]
+    },
+    {
+      "slug": "edward-via-virginia",
+      "name": "Edward Via College of Osteopathic Medicine (Virginia)",
+      "shortName": "Edward Via - Virginia",
+      "degree": "DO",
+      "city": "Blacksburg",
+      "state": "VA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Edward Via - Virginia"
+        }
+      ]
+    },
+    {
+      "slug": "emory",
+      "name": "Emory University",
+      "shortName": "Emory",
+      "degree": "MD",
+      "city": "Atlanta",
+      "state": "GA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Emory"
+        }
+      ]
+    },
+    {
+      "slug": "florida",
+      "name": "University of Florida",
+      "shortName": "Florida",
+      "degree": "MD",
+      "city": "Gainesville",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Florida"
+        }
+      ]
+    },
+    {
+      "slug": "florida-atlantic",
+      "name": "Florida Atlantic University",
+      "shortName": "Florida Atlantic",
+      "degree": "MD",
+      "city": "Boca Raton",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Florida Atlantic"
+        }
+      ]
+    },
+    {
+      "slug": "florida-international",
+      "name": "Florida International University",
+      "shortName": "Florida International",
+      "degree": "MD",
+      "city": "Miami",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Florida International"
+        }
+      ]
+    },
+    {
+      "slug": "florida-state",
+      "name": "Florida State University",
+      "shortName": "Florida State",
+      "degree": "MD",
+      "city": "Tallahassee",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Florida State"
+        }
+      ]
+    },
+    {
+      "slug": "geisinger-commonwealth",
+      "name": "Geisinger Commonwealth School of Medicine",
+      "shortName": "Geisinger Commonwealth",
+      "degree": "MD",
+      "city": "Scranton",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Geisinger Commonwealth"
+        }
+      ]
+    },
+    {
+      "slug": "george-washington",
+      "name": "George Washington University",
+      "shortName": "George Washington",
+      "degree": "MD",
+      "city": "Washington",
+      "state": "DC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "George Washington"
+        }
+      ]
+    },
+    {
+      "slug": "georgetown",
+      "name": "Georgetown University",
+      "shortName": "Georgetown",
+      "degree": "MD",
+      "city": "Washington",
+      "state": "DC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Georgetown"
+        }
+      ]
+    },
+    {
+      "slug": "georgia",
+      "name": "University of Georgia",
+      "shortName": "Georgia",
+      "degree": "MD",
+      "city": "Athens",
+      "state": "GA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Georgia"
+        }
+      ]
+    },
+    {
+      "slug": "hackensack-meridian",
+      "name": "Hackensack Meridian School of Medicine",
+      "shortName": "Hackensack Meridian",
+      "degree": "MD",
+      "city": "Nutley",
+      "state": "NJ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Hackensack Meridian"
+        }
+      ]
+    },
+    {
+      "slug": "harvard",
+      "name": "Harvard Medical School",
+      "shortName": "Harvard",
+      "degree": "MD",
+      "city": "Boston",
+      "state": "MA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Harvard"
+        }
+      ]
+    },
+    {
+      "slug": "hawaii",
+      "name": "University of Hawaii",
+      "shortName": "Hawaii",
+      "degree": "MD",
+      "city": "Honolulu",
+      "state": "HI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Hawaii"
+        }
+      ]
+    },
+    {
+      "slug": "hofstra",
+      "name": "Hofstra University",
+      "shortName": "Hofstra",
+      "degree": "MD",
+      "city": "Hempstead",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Hofstra"
+        }
+      ]
+    },
+    {
+      "slug": "houston",
+      "name": "University of Houston",
+      "shortName": "Houston",
+      "degree": "MD",
+      "city": "Houston",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Houston"
+        }
+      ]
+    },
+    {
+      "slug": "howard",
+      "name": "Howard University",
+      "shortName": "Howard",
+      "degree": "MD",
+      "city": "Washington",
+      "state": "DC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Howard"
+        }
+      ]
+    },
+    {
+      "slug": "idaho-com",
+      "name": "Idaho College of Osteopathic Medicine",
+      "shortName": "Idaho COM",
+      "degree": "DO",
+      "city": "Meridian",
+      "state": "ID",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Idaho COM"
+        }
+      ]
+    },
+    {
+      "slug": "illinois",
+      "name": "University of Illinois",
+      "shortName": "Illinois",
+      "degree": "MD",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Illinois"
+        }
+      ]
+    },
+    {
+      "slug": "illinois-com",
+      "name": "Illinois College of Osteopathic Medicine",
+      "shortName": "Illinois COM",
+      "degree": "DO",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Illinois COM"
+        }
+      ]
+    },
+    {
+      "slug": "incarnate-word",
+      "name": "University of the Incarnate Word",
+      "shortName": "Incarnate Word",
+      "degree": "DO",
+      "city": "San Antonio",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Incarnate Word"
+        }
+      ]
+    },
+    {
+      "slug": "indiana",
+      "name": "Indiana University",
+      "shortName": "Indiana",
+      "degree": "MD",
+      "city": "Indianapolis",
+      "state": "IN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Indiana"
+        }
+      ]
+    },
+    {
+      "slug": "indiana-university-of-pennsylvania-com",
+      "name": "Indiana University of Pennsylvania College of Osteopathic Medicine",
+      "shortName": "Indiana University of Pennsylvania COM",
+      "degree": "DO",
+      "city": "Indiana",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Indiana University of Pennsylvania COM"
+        }
+      ]
+    },
+    {
+      "slug": "iowa",
+      "name": "University of Iowa",
+      "shortName": "Iowa",
+      "degree": "MD",
+      "city": "Iowa City",
+      "state": "IA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Iowa"
+        }
+      ]
+    },
+    {
+      "slug": "jefferson",
+      "name": "Thomas Jefferson University",
+      "shortName": "Jefferson",
+      "degree": "MD",
+      "city": "Philadelphia",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Jefferson"
+        }
+      ]
+    },
+    {
+      "slug": "johns-hopkins",
+      "name": "Johns Hopkins University",
+      "shortName": "Johns Hopkins",
+      "degree": "MD",
+      "city": "Baltimore",
+      "state": "MD",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Johns Hopkins"
+        }
+      ]
+    },
+    {
+      "slug": "kaiser-permanente",
+      "name": "Kaiser Permanente Bernard J. Tyson School of Medicine",
+      "shortName": "Kaiser Permanente",
+      "degree": "MD",
+      "city": "Pasadena",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Kaiser Permanente"
+        }
+      ]
+    },
+    {
+      "slug": "kansas",
+      "name": "University of Kansas",
+      "shortName": "Kansas",
+      "degree": "MD",
+      "city": "Kansas City",
+      "state": "KS",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Kansas"
+        }
+      ]
+    },
+    {
+      "slug": "kansas-city-university-com",
+      "name": "Kansas City University",
+      "shortName": "Kansas City University COM",
+      "degree": "DO",
+      "city": "Kansas City",
+      "state": "MO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Kansas City University COM"
+        }
+      ]
+    },
+    {
+      "slug": "kansas-com",
+      "name": "Kansas College of Osteopathic Medicine",
+      "shortName": "Kansas COM",
+      "degree": "DO",
+      "city": "Wichita",
+      "state": "KS",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Kansas COM"
+        }
+      ]
+    },
+    {
+      "slug": "kentucky",
+      "name": "University of Kentucky",
+      "shortName": "Kentucky",
+      "degree": "MD",
+      "city": "Lexington",
+      "state": "KY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Kentucky"
+        }
+      ]
+    },
+    {
+      "slug": "kentucky-com",
+      "name": "Kentucky College of Osteopathic Medicine",
+      "shortName": "Kentucky COM",
+      "degree": "DO",
+      "city": "Pikeville",
+      "state": "KY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Kentucky COM"
+        }
+      ]
+    },
+    {
+      "slug": "lake-erie",
+      "name": "Lake Erie College of Osteopathic Medicine (Erie)",
+      "shortName": "Lake Erie",
+      "degree": "DO",
+      "city": "Erie",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Lake Erie"
+        }
+      ]
+    },
+    {
+      "slug": "lake-erie-bradenton",
+      "name": "Lake Erie College of Osteopathic Medicine (Bradenton)",
+      "shortName": "Lake Erie - Bradenton",
+      "degree": "DO",
+      "city": "Bradenton",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Lake Erie - Bradenton"
+        }
+      ]
+    },
+    {
+      "slug": "liberty",
+      "name": "Liberty University",
+      "shortName": "Liberty",
+      "degree": "DO",
+      "city": "Lynchburg",
+      "state": "VA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Liberty"
+        }
+      ]
+    },
+    {
+      "slug": "lincoln-memorial",
+      "name": "Lincoln Memorial University",
+      "shortName": "Lincoln Memorial",
+      "degree": "DO",
+      "city": "Harrogate",
+      "state": "TN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Lincoln Memorial"
+        }
+      ]
+    },
+    {
+      "slug": "loma-linda",
+      "name": "Loma Linda University",
+      "shortName": "Loma Linda",
+      "degree": "MD",
+      "city": "Loma Linda",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Loma Linda"
+        }
+      ]
+    },
+    {
+      "slug": "louisville",
+      "name": "University of Louisville",
+      "shortName": "Louisville",
+      "degree": "MD",
+      "city": "Louisville",
+      "state": "KY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Louisville"
+        }
+      ]
+    },
+    {
+      "slug": "loyola",
+      "name": "Loyola University",
+      "shortName": "Loyola",
+      "degree": "MD",
+      "city": "Maywood",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Loyola"
+        }
+      ]
+    },
+    {
+      "slug": "lsu-new-orleans",
+      "name": "Louisiana State University (New Orleans)",
+      "shortName": "LSU - New Orleans",
+      "degree": "MD",
+      "city": "New Orleans",
+      "state": "LA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "LSU - New Orleans"
+        }
+      ]
+    },
+    {
+      "slug": "lsu-shreveport",
+      "name": "Louisiana State University (Shreveport)",
+      "shortName": "LSU - Shreveport",
+      "degree": "MD",
+      "city": "Shreveport",
+      "state": "LA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "LSU - Shreveport"
+        }
+      ]
+    },
+    {
+      "slug": "marian",
+      "name": "Marian University",
+      "shortName": "Marian",
+      "degree": "DO",
+      "city": "Indianapolis",
+      "state": "IN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Marian"
+        }
+      ]
+    },
+    {
+      "slug": "marshall",
+      "name": "Marshall University",
+      "shortName": "Marshall",
+      "degree": "MD",
+      "city": "Huntington",
+      "state": "WV",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Marshall"
+        }
+      ]
+    },
+    {
+      "slug": "maryland",
+      "name": "University of Maryland",
+      "shortName": "Maryland",
+      "degree": "MD",
+      "city": "Baltimore",
+      "state": "MD",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Maryland"
+        }
+      ]
+    },
+    {
+      "slug": "massachussetts",
+      "name": "University of Massachusetts",
+      "shortName": "Massachussetts",
+      "degree": "MD",
+      "city": "Worcester",
+      "state": "MA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Massachussetts"
+        }
+      ]
+    },
+    {
+      "slug": "mayo",
+      "name": "Mayo Clinic Alix School of Medicine",
+      "shortName": "Mayo",
+      "degree": "MD",
+      "city": "Rochester",
+      "state": "MN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Mayo"
+        }
+      ]
+    },
+    {
+      "slug": "medical-college-of-georgia",
+      "name": "Medical College of Georgia",
+      "shortName": "Medical College of Georgia",
+      "degree": "MD",
+      "city": "Augusta",
+      "state": "GA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Medical College of Georgia"
+        }
+      ]
+    },
+    {
+      "slug": "medical-college-of-wisconsin",
+      "name": "Medical College of Wisconsin",
+      "shortName": "Medical College of Wisconsin",
+      "degree": "MD",
+      "city": "Milwaukee",
+      "state": "WI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Medical College of Wisconsin"
+        }
+      ]
+    },
+    {
+      "slug": "medical-university-of-south-carolina",
+      "name": "Medical University of South Carolina",
+      "shortName": "Medical University of South Carolina",
+      "degree": "MD",
+      "city": "Charleston",
+      "state": "SC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Medical University of South Carolina"
+        }
+      ]
+    },
+    {
+      "slug": "meharry",
+      "name": "Meharry Medical College",
+      "shortName": "Meharry",
+      "degree": "MD",
+      "city": "Nashville",
+      "state": "TN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Meharry"
+        }
+      ]
+    },
+    {
+      "slug": "mercer",
+      "name": "Mercer University",
+      "shortName": "Mercer",
+      "degree": "MD",
+      "city": "Macon",
+      "state": "GA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Mercer"
+        }
+      ]
+    },
+    {
+      "slug": "meritus-som",
+      "name": "Meritus School of Osteopathic Medicine",
+      "shortName": "Meritus SOM",
+      "degree": "DO",
+      "city": "Hagerstown",
+      "state": "MD",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Meritus SOM"
+        }
+      ]
+    },
+    {
+      "slug": "methodist-university",
+      "name": "Methodist University",
+      "shortName": "Methodist University",
+      "degree": "MD",
+      "city": "Fayetteville",
+      "state": "NC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Methodist University"
+        }
+      ]
+    },
+    {
+      "slug": "miami",
+      "name": "University of Miami",
+      "shortName": "Miami",
+      "degree": "MD",
+      "city": "Miami",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Miami"
+        }
+      ]
+    },
+    {
+      "slug": "michigan",
+      "name": "University of Michigan",
+      "shortName": "Michigan",
+      "degree": "MD",
+      "city": "Ann Arbor",
+      "state": "MI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Michigan"
+        }
+      ]
+    },
+    {
+      "slug": "michigan-state",
+      "name": "Michigan State University",
+      "shortName": "Michigan State",
+      "degree": "MD",
+      "city": "East Lansing",
+      "state": "MI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Michigan State"
+        }
+      ]
+    },
+    {
+      "slug": "michigan-state-com",
+      "name": "Michigan State University",
+      "shortName": "Michigan State COM",
+      "degree": "DO",
+      "city": "East Lansing",
+      "state": "MI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Michigan State COM"
+        }
+      ]
+    },
+    {
+      "slug": "midwestern-arizona",
+      "name": "Arizona College of Osteopathic Medicine",
+      "shortName": "Midwestern - Arizona",
+      "degree": "DO",
+      "city": "Glendale",
+      "state": "AZ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Midwestern - Arizona"
+        }
+      ]
+    },
+    {
+      "slug": "midwestern-chicago",
+      "name": "Midwestern University",
+      "shortName": "Midwestern - Chicago",
+      "degree": "DO",
+      "city": "Downers Grove",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Midwestern - Chicago"
+        }
+      ]
+    },
+    {
+      "slug": "minnesota",
+      "name": "University of Minnesota",
+      "shortName": "Minnesota",
+      "degree": "MD",
+      "city": "Minneapolis",
+      "state": "MN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Minnesota"
+        }
+      ]
+    },
+    {
+      "slug": "mississippi",
+      "name": "University of Mississippi",
+      "shortName": "Mississippi",
+      "degree": "MD",
+      "city": "Jackson",
+      "state": "MS",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Mississippi"
+        }
+      ]
+    },
+    {
+      "slug": "missouri-columbia",
+      "name": "University of Missouri (Columbia)",
+      "shortName": "Missouri - Columbia",
+      "degree": "MD",
+      "city": "Columbia",
+      "state": "MO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Missouri - Columbia"
+        }
+      ]
+    },
+    {
+      "slug": "missouri-kansas-city",
+      "name": "University of Missouri (Kansas City)",
+      "shortName": "Missouri - Kansas City",
+      "degree": "MD",
+      "city": "Kansas City",
+      "state": "MO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Missouri - Kansas City"
+        }
+      ]
+    },
+    {
+      "slug": "morehouse",
+      "name": "Morehouse School of Medicine",
+      "shortName": "Morehouse",
+      "degree": "MD",
+      "city": "Atlanta",
+      "state": "GA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Morehouse"
+        }
+      ]
+    },
+    {
+      "slug": "mount-sinai",
+      "name": "Icahn School of Medicine",
+      "shortName": "Mount Sinai",
+      "degree": "MD",
+      "city": "New York",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Mount Sinai"
+        }
+      ]
+    },
+    {
+      "slug": "nebraska",
+      "name": "University of Nebraska",
+      "shortName": "Nebraska",
+      "degree": "MD",
+      "city": "Omaha",
+      "state": "NE",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Nebraska"
+        }
+      ]
+    },
+    {
+      "slug": "nevada-reno",
+      "name": "University of Nevada",
+      "shortName": "Nevada Reno",
+      "degree": "MD",
+      "city": "Reno",
+      "state": "NV",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Nevada Reno"
+        }
+      ]
+    },
+    {
+      "slug": "new-england",
+      "name": "University of New England",
+      "shortName": "New England",
+      "degree": "DO",
+      "city": "Biddeford",
+      "state": "ME",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "New England"
+        }
+      ]
+    },
+    {
+      "slug": "new-mexico",
+      "name": "University of New Mexico",
+      "shortName": "New Mexico",
+      "degree": "MD",
+      "city": "Albuquerque",
+      "state": "NM",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "New Mexico"
+        }
+      ]
+    },
+    {
+      "slug": "new-york-institute-of-technology",
+      "name": "New York Institute of Technology",
+      "shortName": "New York Institute of Technology",
+      "degree": "DO",
+      "city": "Old Westbury",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "New York Institute of Technology"
+        }
+      ]
+    },
+    {
+      "slug": "new-york-medical-college",
+      "name": "New York Medical College",
+      "shortName": "New York Medical College",
+      "degree": "MD",
+      "city": "Valhalla",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "New York Medical College"
+        }
+      ]
+    },
+    {
+      "slug": "new-york-university-grossman",
+      "name": "NYU Grossman",
+      "shortName": "New York University - Grossman",
+      "degree": "MD",
+      "city": "New York",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "New York University - Grossman"
+        }
+      ]
+    },
+    {
+      "slug": "new-york-university-long-island",
+      "name": "NYU Grossman (Long Island)",
+      "shortName": "New York University - Long Island",
+      "degree": "MD",
+      "city": "Mineola",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "New York University - Long Island"
+        }
+      ]
+    },
+    {
+      "slug": "noorda",
+      "name": "Noorda College of Osteopathic Medicine",
+      "shortName": "Noorda",
+      "degree": "DO",
+      "city": "Provo",
+      "state": "UT",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Noorda"
+        }
+      ]
+    },
+    {
+      "slug": "north-carolina",
+      "name": "University of North Carolina Chapel Hill",
+      "shortName": "North Carolina",
+      "degree": "MD",
+      "city": "Chapel Hill",
+      "state": "NC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "North Carolina"
+        }
+      ]
+    },
+    {
+      "slug": "north-dakota",
+      "name": "University of North Dakota",
+      "shortName": "North Dakota",
+      "degree": "MD",
+      "city": "Grand Forks",
+      "state": "ND",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "North Dakota"
+        }
+      ]
+    },
+    {
+      "slug": "north-texas",
+      "name": "Texas College of Osteopathic Medicine",
+      "shortName": "North Texas",
+      "degree": "DO",
+      "city": "Fort Worth",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "North Texas"
+        }
+      ]
+    },
+    {
+      "slug": "northeast-ohio",
+      "name": "Northeast Ohio Medical University",
+      "shortName": "Northeast Ohio",
+      "degree": "MD",
+      "city": "Rootstown",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Northeast Ohio"
+        }
+      ]
+    },
+    {
+      "slug": "northern-colorado",
+      "name": "Northern Colorado",
+      "shortName": "Northern Colorado",
+      "degree": "DO",
+      "city": "Greeley",
+      "state": "CO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Northern Colorado"
+        }
+      ]
+    },
+    {
+      "slug": "northwestern",
+      "name": "Northwestern University",
+      "shortName": "Northwestern",
+      "degree": "MD",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Northwestern"
+        }
+      ]
+    },
+    {
+      "slug": "nova-southeastern",
+      "name": "Nova Southeastern University",
+      "shortName": "Nova Southeastern",
+      "degree": "MD",
+      "city": "Davie",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Nova Southeastern"
+        }
+      ]
+    },
+    {
+      "slug": "nova-southeastern-com",
+      "name": "Nova Southeastern University",
+      "shortName": "Nova Southeastern COM",
+      "degree": "DO",
+      "city": "Fort Lauderdale",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Nova Southeastern COM"
+        }
+      ]
+    },
+    {
+      "slug": "oakland",
+      "name": "Oakland University",
+      "shortName": "Oakland",
+      "degree": "MD",
+      "city": "Rochester",
+      "state": "MI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Oakland"
+        }
+      ]
+    },
+    {
+      "slug": "ohio-state",
+      "name": "Ohio State University",
+      "shortName": "Ohio State",
+      "degree": "MD",
+      "city": "Columbus",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Ohio State"
+        }
+      ]
+    },
+    {
+      "slug": "ohio-university",
+      "name": "Ohio University",
+      "shortName": "Ohio University",
+      "degree": "DO",
+      "city": "Athens",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Ohio University"
+        }
+      ]
+    },
+    {
+      "slug": "oklahoma",
+      "name": "University of Oklahoma",
+      "shortName": "Oklahoma",
+      "degree": "MD",
+      "city": "Oklahoma City",
+      "state": "OK",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Oklahoma"
+        }
+      ]
+    },
+    {
+      "slug": "oklahoma-state",
+      "name": "Oklahoma State University",
+      "shortName": "Oklahoma State",
+      "degree": "DO",
+      "city": "Tulsa",
+      "state": "OK",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Oklahoma State"
+        }
+      ]
+    },
+    {
+      "slug": "oregon-health-and-science",
+      "name": "Oregon Health & Science University",
+      "shortName": "Oregon Health and Science",
+      "degree": "MD",
+      "city": "Portland",
+      "state": "OR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Oregon Health and Science"
+        }
+      ]
+    },
+    {
+      "slug": "orlando-com",
+      "name": "Orlando College of Osteopathic Medicine",
+      "shortName": "Orlando COM",
+      "degree": "DO",
+      "city": "Winter Garden",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Orlando COM"
+        }
+      ]
+    },
+    {
+      "slug": "pacific-northwest",
+      "name": "Pacific Northwest University",
+      "shortName": "Pacific Northwest",
+      "degree": "DO",
+      "city": "Yakima",
+      "state": "WA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Pacific Northwest"
+        }
+      ]
+    },
+    {
+      "slug": "penn-state",
+      "name": "Penn State College of Medicine",
+      "shortName": "Penn State",
+      "degree": "MD",
+      "city": "Hershey",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Penn State"
+        }
+      ]
+    },
+    {
+      "slug": "pennsylvania",
+      "name": "University of Pennsylvania",
+      "shortName": "Pennsylvania",
+      "degree": "MD",
+      "city": "Philadelphia",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Pennsylvania"
+        }
+      ]
+    },
+    {
+      "slug": "philadelphia-com",
+      "name": "Philadelphia College of Osteopathic Medicine",
+      "shortName": "Philadelphia COM",
+      "degree": "DO",
+      "city": "Philadelphia",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Philadelphia COM"
+        }
+      ]
+    },
+    {
+      "slug": "philadelphia-com-georgia",
+      "name": "Philadelphia College of Osteopathic Medicine (Georgia)",
+      "shortName": "Philadelphia COM - Georgia",
+      "degree": "DO",
+      "city": "Suwanee",
+      "state": "GA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Philadelphia COM - Georgia"
+        }
+      ]
+    },
+    {
+      "slug": "philadelphia-com-south-georgia",
+      "name": "Philadelphia College of Osteopathic Medicine (South Georgia)",
+      "shortName": "Philadelphia COM - South Georgia",
+      "degree": "DO",
+      "city": "Moultrie",
+      "state": "GA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Philadelphia COM - South Georgia"
+        }
+      ]
+    },
+    {
+      "slug": "pittsburgh",
+      "name": "University of Pittsburgh",
+      "shortName": "Pittsburgh",
+      "degree": "MD",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Pittsburgh"
+        }
+      ]
+    },
+    {
+      "slug": "ponce-health-sciences",
+      "name": "Ponce Health Sciences University",
+      "shortName": "Ponce Health Sciences",
+      "degree": "MD",
+      "city": "Ponce",
+      "state": "PR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Ponce Health Sciences"
+        }
+      ]
+    },
+    {
+      "slug": "quinnipiac",
+      "name": "Quinnipiac University",
+      "shortName": "Quinnipiac",
+      "degree": "MD",
+      "city": "Hamden",
+      "state": "CT",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Quinnipiac"
+        }
+      ]
+    },
+    {
+      "slug": "rochester",
+      "name": "University of Rochester",
+      "shortName": "Rochester",
+      "degree": "MD",
+      "city": "Rochester",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Rochester"
+        }
+      ]
+    },
+    {
+      "slug": "rocky-vista",
+      "name": "Rocky Vista University",
+      "shortName": "Rocky Vista",
+      "degree": "DO",
+      "city": "Englewood",
+      "state": "CO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Rocky Vista"
+        }
+      ]
+    },
+    {
+      "slug": "rocky-vista-montana",
+      "name": "Rocky Vista University (Montana)",
+      "shortName": "Rocky Vista - Montana",
+      "degree": "DO",
+      "city": "Billings",
+      "state": "MT",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Rocky Vista - Montana"
+        }
+      ]
+    },
+    {
+      "slug": "rosalind-franklin",
+      "name": "Rosalind Franklin University",
+      "shortName": "Rosalind Franklin",
+      "degree": "MD",
+      "city": "North Chicago",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Rosalind Franklin"
+        }
+      ]
+    },
+    {
+      "slug": "roseman",
+      "name": "Roseman University College of Medicine",
+      "shortName": "Roseman",
+      "degree": "MD",
+      "city": "Henderson",
+      "state": "NV",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Roseman"
+        }
+      ]
+    },
+    {
+      "slug": "rowan",
+      "name": "Rowan-Virtua School of Osteopathic Medicine",
+      "shortName": "Rowan",
+      "degree": "DO",
+      "city": "Stratford",
+      "state": "NJ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Rowan"
+        }
+      ]
+    },
+    {
+      "slug": "rush",
+      "name": "Rush University",
+      "shortName": "Rush",
+      "degree": "MD",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Rush"
+        }
+      ]
+    },
+    {
+      "slug": "rutgers-new-jersey",
+      "name": "Rutgers University (New Jersey)",
+      "shortName": "Rutgers - New Jersey",
+      "degree": "MD",
+      "city": "Newark",
+      "state": "NJ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Rutgers - New Jersey"
+        }
+      ]
+    },
+    {
+      "slug": "rutgers-robert-wood-johnson",
+      "name": "Rutgers University (Robert Wood Johnson)",
+      "shortName": "Rutgers - Robert Wood Johnson",
+      "degree": "MD",
+      "city": "Piscataway",
+      "state": "NJ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Rutgers - Robert Wood Johnson"
+        }
+      ]
+    },
+    {
+      "slug": "saint-louis",
+      "name": "Saint Louis University",
+      "shortName": "Saint Louis",
+      "degree": "MD",
+      "city": "Saint Louis",
+      "state": "MO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Saint Louis"
+        }
+      ]
+    },
+    {
+      "slug": "sam-houston",
+      "name": "Sam Houston State University",
+      "shortName": "Sam Houston",
+      "degree": "DO",
+      "city": "Conroe",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Sam Houston"
+        }
+      ]
+    },
+    {
+      "slug": "san-juan-bautista",
+      "name": "San Juan Bautista School of Medicine",
+      "shortName": "San Juan Bautista",
+      "degree": "MD",
+      "city": "Caguas",
+      "state": "PR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "San Juan Bautista"
+        }
+      ]
+    },
+    {
+      "slug": "south-alabama",
+      "name": "University of South Alabama",
+      "shortName": "South Alabama",
+      "degree": "MD",
+      "city": "Mobile",
+      "state": "AL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "South Alabama"
+        }
+      ]
+    },
+    {
+      "slug": "south-carolina-columbia",
+      "name": "University of South Carolina",
+      "shortName": "South Carolina - Columbia",
+      "degree": "MD",
+      "city": "Columbia",
+      "state": "SC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "South Carolina - Columbia"
+        }
+      ]
+    },
+    {
+      "slug": "south-carolina-greenville",
+      "name": "University of South Carolina",
+      "shortName": "South Carolina - Greenville",
+      "degree": "MD",
+      "city": "Greenville",
+      "state": "SC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "South Carolina - Greenville"
+        }
+      ]
+    },
+    {
+      "slug": "south-dakota",
+      "name": "University of South Dakota",
+      "shortName": "South Dakota",
+      "degree": "MD",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "South Dakota"
+        }
+      ]
+    },
+    {
+      "slug": "southern-illinois",
+      "name": "Southern Illinois University",
+      "shortName": "Southern Illinois",
+      "degree": "MD",
+      "city": "Springfield",
+      "state": "IL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Southern Illinois"
+        }
+      ]
+    },
+    {
+      "slug": "stanford",
+      "name": "Stanford University",
+      "shortName": "Stanford",
+      "degree": "MD",
+      "city": "Stanford",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Stanford"
+        }
+      ]
+    },
+    {
+      "slug": "stony-brook",
+      "name": "Stony Brook University",
+      "shortName": "Stony Brook",
+      "degree": "MD",
+      "city": "Stony Brook",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Stony Brook"
+        }
+      ]
+    },
+    {
+      "slug": "suny-downstate",
+      "name": "State University of New York Downstate Health Sciences University",
+      "shortName": "SUNY Downstate",
+      "degree": "MD",
+      "city": "Brooklyn",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "SUNY Downstate"
+        }
+      ]
+    },
+    {
+      "slug": "suny-upstate",
+      "name": "State University of New York Upstate Medical University",
+      "shortName": "SUNY Upstate",
+      "degree": "MD",
+      "city": "Syracuse",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "SUNY Upstate"
+        }
+      ]
+    },
+    {
+      "slug": "temple",
+      "name": "Temple University",
+      "shortName": "Temple",
+      "degree": "MD",
+      "city": "Philadelphia",
+      "state": "PA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Temple"
+        }
+      ]
+    },
+    {
+      "slug": "tennessee",
+      "name": "University of Tennessee",
+      "shortName": "Tennessee",
+      "degree": "MD",
+      "city": "Memphis",
+      "state": "TN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Tennessee"
+        }
+      ]
+    },
+    {
+      "slug": "texas-a-m",
+      "name": "Texas A&M University",
+      "shortName": "Texas A&M",
+      "degree": "MD",
+      "city": "Bryan",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Texas A&M"
+        }
+      ]
+    },
+    {
+      "slug": "texas-christian-university",
+      "name": "Texas Christian University",
+      "shortName": "Texas Christian University",
+      "degree": "MD",
+      "city": "Fort Worth",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Texas Christian University"
+        }
+      ]
+    },
+    {
+      "slug": "texas-tech-foster",
+      "name": "Texas Tech University (Foster)",
+      "shortName": "Texas Tech - Foster",
+      "degree": "MD",
+      "city": "El Paso",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Texas Tech - Foster"
+        }
+      ]
+    },
+    {
+      "slug": "texas-tech-lubbock",
+      "name": "Texas Tech University (Lubbock)",
+      "shortName": "Texas Tech - Lubbock",
+      "degree": "MD",
+      "city": "Lubbock",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Texas Tech - Lubbock"
+        }
+      ]
+    },
+    {
+      "slug": "toledo",
+      "name": "University of Toledo",
+      "shortName": "Toledo",
+      "degree": "MD",
+      "city": "Toledo",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Toledo"
+        }
+      ]
+    },
+    {
+      "slug": "touro-california",
+      "name": "Touro University (California)",
+      "shortName": "Touro - California",
+      "degree": "DO",
+      "city": "Vallejo",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Touro - California"
+        }
+      ]
+    },
+    {
+      "slug": "touro-nevada",
+      "name": "Touro University (Nevada)",
+      "shortName": "Touro - Nevada",
+      "degree": "DO",
+      "city": "Henderson",
+      "state": "NV",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Touro - Nevada"
+        }
+      ]
+    },
+    {
+      "slug": "touro-new-york",
+      "name": "Touro College of Osteopathic Medicine",
+      "shortName": "Touro - New York",
+      "degree": "DO",
+      "city": "New York",
+      "state": "NY",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Touro - New York"
+        }
+      ]
+    },
+    {
+      "slug": "tufts",
+      "name": "Tufts University",
+      "shortName": "Tufts",
+      "degree": "MD",
+      "city": "Boston",
+      "state": "MA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Tufts"
+        }
+      ]
+    },
+    {
+      "slug": "tulane",
+      "name": "Tulane University",
+      "shortName": "Tulane",
+      "degree": "MD",
+      "city": "New Orleans",
+      "state": "LA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Tulane"
+        }
+      ]
+    },
+    {
+      "slug": "uniformed-services",
+      "name": "Uniformed Services University",
+      "shortName": "Uniformed Services",
+      "degree": "MD",
+      "city": "Bethesda",
+      "state": "MD",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Uniformed Services"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-davis",
+      "name": "University of California (Davis)",
+      "shortName": "University of California Davis",
+      "degree": "MD",
+      "city": "Sacramento",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of California Davis"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-irvine",
+      "name": "University of California (Irvine)",
+      "shortName": "University of California Irvine",
+      "degree": "MD",
+      "city": "Irvine",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of California Irvine"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-los-angeles",
+      "name": "University of California (Los Angeles)",
+      "shortName": "University of California Los Angeles",
+      "degree": "MD",
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of California Los Angeles"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-riverside",
+      "name": "University of California (Riverside)",
+      "shortName": "University of California Riverside",
+      "degree": "MD",
+      "city": "Riverside",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of California Riverside"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-san-diego",
+      "name": "University of California (San Diego)",
+      "shortName": "University of California San Diego",
+      "degree": "MD",
+      "city": "La Jolla",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of California San Diego"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-san-francisco",
+      "name": "University of California (San Francisco)",
+      "shortName": "University of California San Francisco",
+      "degree": "MD",
+      "city": "San Francisco",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of California San Francisco"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-central-florida",
+      "name": "University of Central Florida",
+      "shortName": "University of Central Florida",
+      "degree": "MD",
+      "city": "Orlando",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Central Florida"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-nevada-las-vegas",
+      "name": "University of Nevada Las Vegas",
+      "shortName": "University of Nevada Las Vegas",
+      "degree": "MD",
+      "city": "Las Vegas",
+      "state": "NV",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Nevada Las Vegas"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-puerto-rico",
+      "name": "University of Puerto Rico",
+      "shortName": "University of Puerto Rico",
+      "degree": "MD",
+      "city": "San Juan",
+      "state": "PR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Puerto Rico"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-south-florida",
+      "name": "University of South Florida",
+      "shortName": "University of South Florida",
+      "degree": "MD",
+      "city": "Tampa",
+      "state": "FL",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of South Florida"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-southern-california",
+      "name": "University of Southern California",
+      "shortName": "University of Southern California",
+      "degree": "MD",
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Southern California"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-austin",
+      "name": "University of Texas (Austin)",
+      "shortName": "University of Texas - Austin",
+      "degree": "MD",
+      "city": "Austin",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Texas - Austin"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-houston",
+      "name": "University of Texas (Houston)",
+      "shortName": "University of Texas - Houston",
+      "degree": "MD",
+      "city": "Houston",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Texas - Houston"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-medical-branch",
+      "name": "University of Texas (Medical Branch)",
+      "shortName": "University of Texas - Medical Branch",
+      "degree": "MD",
+      "city": "Galveston",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Texas - Medical Branch"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-rio-grande",
+      "name": "University of Texas (Rio Grande)",
+      "shortName": "University of Texas - Rio Grande",
+      "degree": "MD",
+      "city": "Edinburg",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Texas - Rio Grande"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-san-antonio",
+      "name": "University of Texas (San Antonio)",
+      "shortName": "University of Texas - San Antonio",
+      "degree": "MD",
+      "city": "San Antonio",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Texas - San Antonio"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-southwestern",
+      "name": "University of Texas (Southwestern)",
+      "shortName": "University of Texas - Southwestern",
+      "degree": "MD",
+      "city": "Dallas",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Texas - Southwestern"
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-tyler",
+      "name": "University of Texas (Tyler)",
+      "shortName": "University of Texas - Tyler",
+      "degree": "MD",
+      "city": "Tyler",
+      "state": "TX",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "University of Texas - Tyler"
+        }
+      ]
+    },
+    {
+      "slug": "utah",
+      "name": "University of Utah",
+      "shortName": "Utah",
+      "degree": "MD",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Utah"
+        }
+      ]
+    },
+    {
+      "slug": "valley-com",
+      "name": "The Valley College of Osteopathic Medicine",
+      "shortName": "Valley COM",
+      "degree": "DO",
+      "city": "Phoenix",
+      "state": "AZ",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Valley COM"
+        }
+      ]
+    },
+    {
+      "slug": "vanderbilt",
+      "name": "Vanderbilt University",
+      "shortName": "Vanderbilt",
+      "degree": "MD",
+      "city": "Nashville",
+      "state": "TN",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Vanderbilt"
+        }
+      ]
+    },
+    {
+      "slug": "vermont",
+      "name": "University of Vermont",
+      "shortName": "Vermont",
+      "degree": "MD",
+      "city": "Burlington",
+      "state": "VT",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Vermont"
+        }
+      ]
+    },
+    {
+      "slug": "virginia",
+      "name": "University of Virginia",
+      "shortName": "Virginia",
+      "degree": "MD",
+      "city": "Charlottesville",
+      "state": "VA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Virginia"
+        }
+      ]
+    },
+    {
+      "slug": "virginia-commonwealth",
+      "name": "Virginia Commonwealth University",
+      "shortName": "Virginia Commonwealth",
+      "degree": "MD",
+      "city": "Richmond",
+      "state": "VA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Virginia Commonwealth"
+        }
+      ]
+    },
+    {
+      "slug": "virginia-tech",
+      "name": "Virginia Tech",
+      "shortName": "Virginia Tech",
+      "degree": "MD",
+      "city": "Roanoke",
+      "state": "VA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Virginia Tech"
+        }
+      ]
+    },
+    {
+      "slug": "wake-forest",
+      "name": "Wake Forest University",
+      "shortName": "Wake Forest",
+      "degree": "MD",
+      "city": "Winston-Salem",
+      "state": "NC",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Wake Forest"
+        }
+      ]
+    },
+    {
+      "slug": "washington",
+      "name": "University of Washington",
+      "shortName": "Washington",
+      "degree": "MD",
+      "city": "Seattle",
+      "state": "WA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Washington"
+        }
+      ]
+    },
+    {
+      "slug": "washington-state",
+      "name": "Washington State University",
+      "shortName": "Washington State",
+      "degree": "MD",
+      "city": "Spokane",
+      "state": "WA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Washington State"
+        }
+      ]
+    },
+    {
+      "slug": "washington-university-saint-louis",
+      "name": "Washington University Saint Louis",
+      "shortName": "Washington University Saint Louis",
+      "degree": "MD",
+      "city": "Saint Louis",
+      "state": "MO",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Washington University Saint Louis"
+        }
+      ]
+    },
+    {
+      "slug": "wayne-state",
+      "name": "Wayne State University",
+      "shortName": "Wayne State",
+      "degree": "MD",
+      "city": "Detroit",
+      "state": "MI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Wayne State"
+        }
+      ]
+    },
+    {
+      "slug": "west-virginia",
+      "name": "West Virginia University",
+      "shortName": "West Virginia",
+      "degree": "MD",
+      "city": "Morgantown",
+      "state": "WV",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "West Virginia"
+        }
+      ]
+    },
+    {
+      "slug": "west-virginia-som",
+      "name": "West Virginia School of Osteopathic Medicine",
+      "shortName": "West Virginia SOM",
+      "degree": "DO",
+      "city": "Lewisburg",
+      "state": "WV",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "West Virginia SOM"
+        }
+      ]
+    },
+    {
+      "slug": "western-michigan",
+      "name": "Western Michigan University",
+      "shortName": "Western Michigan",
+      "degree": "MD",
+      "city": "Kalamazoo",
+      "state": "MI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Western Michigan"
+        }
+      ]
+    },
+    {
+      "slug": "western-university-california",
+      "name": "Western University of Health Sciences",
+      "shortName": "Western University - California",
+      "degree": "DO",
+      "city": "Pomona",
+      "state": "CA",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Western University - California"
+        }
+      ]
+    },
+    {
+      "slug": "western-university-oregon",
+      "name": "Western University of Health Sciences",
+      "shortName": "Western University - Oregon",
+      "degree": "DO",
+      "city": "Lebanon",
+      "state": "OR",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Western University - Oregon"
+        }
+      ]
+    },
+    {
+      "slug": "william-carey",
+      "name": "William Carey University",
+      "shortName": "William Carey",
+      "degree": "DO",
+      "city": "Hattiesburg",
+      "state": "MS",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "William Carey"
+        }
+      ]
+    },
+    {
+      "slug": "wisconsin",
+      "name": "University of Wisconsin",
+      "shortName": "Wisconsin",
+      "degree": "MD",
+      "city": "Madison",
+      "state": "WI",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Wisconsin"
+        }
+      ]
+    },
+    {
+      "slug": "wright-state",
+      "name": "Wright State University",
+      "shortName": "Wright State",
+      "degree": "MD",
+      "city": "Dayton",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Wright State"
+        }
+      ]
+    },
+    {
+      "slug": "xavier-com",
+      "name": "Xavier College of Osteopathic Medicine",
+      "shortName": "Xavier COM",
+      "degree": "DO",
+      "city": "Cincinnati",
+      "state": "OH",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Xavier COM"
+        }
+      ]
+    },
+    {
+      "slug": "yale",
+      "name": "Yale School of Medicine",
+      "shortName": "Yale",
+      "degree": "MD",
+      "city": "New Haven",
+      "state": "CT",
+      "country": "US",
+      "website": null,
+      "aliases": [
+        {
+          "source": "CYCLETRACK",
+          "sourceKey": "Yale"
+        }
+      ]
+    }
+  ]
+}

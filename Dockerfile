@@ -112,9 +112,12 @@ COPY server ./server/
 COPY lib ./lib/
 # Feature-sliced code (redesign A1): socket handlers and engines live in features/<id>/.
 COPY features ./features/
+# medschools-worker imports its seed JSON statically; esbuild inlines it, so only these two files
+# are needed here (the runtime image carries no data lookup for it).
+COPY data/medschools/schools.json data/medschools/cycles.json ./data/medschools/
 
 # Only the Node services still served by compose (socket/rmhbox/rmhtube/rmhos-net +
-# ladder-worker + homes-worker + jobs) are bundled here.
+# ladder-worker + homes-worker + medschools-worker + jobs) are bundled here.
 # status is the Go status binary (built in the go-builder stage); recap, doctrine, the
 # streak-saver, the bot-worker, the vibe thumbnail worker and the Discord bot live in the jobs
 # bundle (D3).
@@ -125,6 +128,7 @@ RUN pnpm exec esbuild \
     server/rmhos-net/index.ts \
     server/ladder-worker/index.ts \
     server/homes-worker/index.ts \
+    server/medschools-worker/index.ts \
     server/jobs/index.ts \
     --bundle --platform=node --target=node26 \
     --outdir=dist-server --outbase=. \
@@ -137,6 +141,7 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhos-net/index.cjs && \
     test -f dist-server/server/ladder-worker/index.cjs && \
     test -f dist-server/server/homes-worker/index.cjs && \
+    test -f dist-server/server/medschools-worker/index.cjs && \
     test -f dist-server/server/jobs/index.cjs
 
 # ── Stage 2b: Pre-build the hosted vibe packages (cached as a layer) ──────────
