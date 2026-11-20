@@ -227,8 +227,9 @@ model MedSchoolStats {
   @@map("med_school_stats")
 }
 
-/// An interview question reported anonymously. No author; `dedupeHash` is an
-/// HMAC of source + text so re-ingest never duplicates.
+/// An interview question reported anonymously. No author; `dedupeHash` is a keyed
+/// HMAC of the source and the source's own question id (Admit: 'ADMIT:question:'+id)
+/// so re-ingest never duplicates.
 model MedInterviewQuestion {
   id         String    @id @default(cuid())
   schoolId   String
