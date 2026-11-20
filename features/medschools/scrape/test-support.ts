@@ -5,6 +5,7 @@ import {
   join,
 } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SourceHaltedError, type PoliteClient, type PoliteHost } from './http';
 import type { MedPrisma } from './types';
 
 type Row =
@@ -87,6 +88,44 @@ function flatten(
         v;
   }
   return out;
+}
+
+/** Apply a Prisma-style update payload, including `{ increment: n }`. */
+function applyUpdate(
+  row: Row,
+  data: Row,
+): void {
+  for (const [
+    k,
+    v,
+  ] of Object.entries(
+    data,
+  )) {
+    row[
+      k
+    ] =
+      v !==
+        null &&
+      typeof v ===
+        'object' &&
+      'increment' in
+        v
+        ? (Number(
+            row[
+              k
+            ] ??
+              0,
+          ) +
+          Number(
+            (
+              v as {
+                increment: number;
+              }
+            )
+              .increment,
+          ))
+        : v;
+  }
 }
 
 function matches(
@@ -272,9 +311,10 @@ export function createFakePrisma(): {
         },
         async findFirst(args?: {
           where?: Row;
+          orderBy?: unknown;
         }) {
-          const hit =
-            t().find(
+          const all =
+            t().filter(
               (
                 r,
               ) =>
@@ -283,6 +323,23 @@ export function createFakePrisma(): {
                   args?.where,
                 ),
             );
+          const desc =
+            Object.values(
+              (args as {
+                orderBy?: Row;
+              })
+                ?.orderBy ??
+                {},
+            ).includes(
+              'desc',
+            );
+          const hit =
+            desc
+              ? all[
+                  all.length -
+                    1
+                ]
+              : all[0];
           return hit
             ? {
                 ...hit,
@@ -309,21 +366,67 @@ export function createFakePrisma(): {
           writes.push(
             args,
           );
-          let count = 0;
-          for (const d of args.data) {
-            try {
-              insert(
-                name,
-                d,
+          const keys =
+            UNIQUE_KEYS[
+              name
+            ];
+          const batch: Row[] =
+            [];
+          const clash =
+            (
+              d: Row,
+              rows: Row[],
+            ) =>
+              keys !==
+                undefined &&
+              rows.some(
+                (
+                  r,
+                ) =>
+                  keys.every(
+                    (
+                      k,
+                    ) =>
+                      eq(
+                        r[
+                          k
+                        ],
+                        d[
+                          k
+                        ],
+                      ),
+                  ),
               );
-              count++;
-            } catch (e) {
+          for (const d of args.data) {
+            if (
+              clash(
+                d,
+                t(),
+              ) ||
+              clash(
+                d,
+                batch,
+              )
+            ) {
               if (
                 !args.skipDuplicates
               )
-                throw e;
+                throw new Error(
+                  `Unique constraint failed on ${name} (${keys?.join(', ')})`,
+                );
+              continue;
             }
+            batch.push(
+              d,
+            );
           }
+          for (const d of batch)
+            insert(
+              name,
+              d,
+            );
+          const count =
+            batch.length;
           return {
             count,
           };
@@ -351,7 +454,7 @@ export function createFakePrisma(): {
             throw new Error(
               `Record not found in ${name}`,
             );
-          Object.assign(
+          applyUpdate(
             hit,
             args.data,
           );
@@ -380,7 +483,7 @@ export function createFakePrisma(): {
           if (
             hit
           ) {
-            Object.assign(
+            applyUpdate(
               hit,
               args.update,
             );
@@ -555,4 +658,48 @@ export function assertNoLeak(
         `Leak: written data contains "${needle}"`,
       );
   }
+}
+
+/**
+ * Fake PoliteHost serving canned bodies by path. A path mapped to `null` is a
+ * 404. Mirrors the real gate: the session halts after three noted failures
+ * and `get` then throws `SourceHaltedError`.
+ */
+export function createFakeHost(
+  routes: Record<string, string | null> | ((path: string) => string | null),
+  maxFailures = 3,
+): { host: PoliteHost; requested: string[] } {
+  const requested: string[] = [];
+  const lookup = typeof routes === 'function' ? routes : (p: string) => routes[p] ?? null;
+  const host: PoliteHost = {
+    session(): PoliteClient {
+      let failures = 0;
+      let last: string | null = null;
+      return {
+        async get(path) {
+          if (failures >= maxFailures) throw new SourceHaltedError(last ?? undefined);
+          requested.push(path);
+          const body = lookup(path);
+          return body === null ? { ok: false, status: 404, body: '' } : { ok: true, status: 200, body };
+        },
+        noteSuccess() {
+          failures = 0;
+        },
+        noteFailure(reason) {
+          failures++;
+          last = reason;
+        },
+        get halted() {
+          return failures >= maxFailures;
+        },
+        get requests() {
+          return requested.length;
+        },
+        get lastFailure() {
+          return last;
+        },
+      };
+    },
+  };
+  return { host, requested };
 }
