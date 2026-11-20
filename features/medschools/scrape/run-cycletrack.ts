@@ -97,20 +97,45 @@ export async function runCycletrack(
   const t0 =
     now().getTime();
 
-  const run =
-    await prisma.medSourceRun.create(
-      {
-        data: {
-          source:
-            'CYCLETRACK',
-          job: 'cycletrack',
-          trigger:
-            opts.trigger,
-          status:
-            'RUNNING',
+  let run: {
+    id: string;
+  };
+  try {
+    run =
+      await prisma.medSourceRun.create(
+        {
+          data: {
+            source:
+              'CYCLETRACK',
+            job: 'cycletrack',
+            trigger:
+              opts.trigger,
+            status:
+              'RUNNING',
+          },
         },
-      },
+      );
+  } catch (e) {
+    log.error(
+      `cycletrack: could not open run: ${brief(e)}`,
     );
+    return {
+      runId:
+        '',
+      status:
+        'FAILED',
+      schools: 0,
+      skippedUnchanged: false,
+      created: 0,
+      updated: 0,
+      deleted: 0,
+      misses: 0,
+      requests: 0,
+      durationMs:
+        now().getTime() -
+        t0,
+    };
+  }
   const client =
     host.session();
 
@@ -149,7 +174,12 @@ export async function runCycletrack(
                 'CYCLETRACK',
               job: 'cycletrack',
               status:
-                'OK',
+                {
+                  in: [
+                    'OK',
+                    'PARTIAL',
+                  ],
+                },
             },
           orderBy:
             {
@@ -247,6 +277,8 @@ export async function runCycletrack(
       null;
     let cachedFirstPage: ParsedSchoolPage | null =
       null;
+    const skippedKeys: string[] =
+      [];
     let lastHttpFailed = false;
 
     /** Fetch and parse one school page. `null` means skipped (already counted). */
@@ -266,6 +298,9 @@ export async function runCycletrack(
           !res.ok
         ) {
           failed++;
+          skippedKeys.push(
+            key,
+          );
           log.warn(
             `cycletrack: ${key} unavailable (HTTP ${res.status})`,
           );
@@ -538,11 +573,18 @@ export async function runCycletrack(
           client.lastFailure ??
             'source halted',
         );
-    const clean =
+    const complete =
       !stopped &&
-      !halted &&
+      !halted;
+    // 404/robots skips leave the walk complete: the stamp is still stored so an unchanged hour short-circuits.
+    const clean =
+      complete &&
       failed ===
         0;
+    const walkedAll =
+      complete &&
+      failed ===
+        skippedKeys.length;
     if (
       summary.skippedUnchanged
     ) {
@@ -571,6 +613,25 @@ export async function runCycletrack(
       summary.status =
         'PARTIAL';
     }
+    if (
+      !clean &&
+      walkedAll &&
+      firstStamp !==
+        null &&
+      summary.status ===
+        'PARTIAL'
+    )
+      stats.completedStamp =
+        firstStamp;
+    if (
+      skippedKeys.length >
+      0
+    )
+      stats.skipped =
+        skippedKeys.slice(
+          0,
+          50,
+        );
     stats.ingested =
       ingested;
     stats.failed =

@@ -866,4 +866,207 @@ describe('runCycletrack', () => {
       0,
     );
   });
+
+  it('a permanently 404 school with an otherwise full walk stores completedStamp, so the next unchanged run makes one request', async () => {
+    const s =
+      setup(
+        [
+          {
+            id: 'sch_d',
+            key: 'Zzz Fourth',
+            fixture:
+              'yale.html',
+          },
+        ],
+      );
+    s.routes[
+      schoolUrl(
+        'Zzz Fourth',
+      )
+    ] =
+      null;
+    const deps =
+      (
+        host: ReturnType<
+          typeof createFakeHost
+        >['host'],
+      ) => ({
+        prisma:
+          s.prisma,
+        host,
+        shouldStop:
+          () =>
+            false,
+        log,
+      });
+    const r1 =
+      await runCycletrack(
+        deps(
+          createFakeHost(
+            s.routes,
+          )
+            .host,
+        ),
+        {
+          trigger:
+            'CRON',
+        },
+      );
+    expect(
+      r1.status,
+    ).toBe(
+      'PARTIAL',
+    );
+    const run1 =
+      runRows(
+        s.tables,
+      )[0]!;
+    expect(
+      typeof run1
+        .stats
+        .completedStamp,
+    ).toBe(
+      'string',
+    );
+    expect(
+      run1
+        .stats
+        .skipped,
+    ).toEqual(
+      [
+        'Zzz Fourth',
+      ],
+    );
+    const second =
+      createFakeHost(
+        s.routes,
+      );
+    const r2 =
+      await runCycletrack(
+        deps(
+          second.host,
+        ),
+        {
+          trigger:
+            'CRON',
+        },
+      );
+    expect(
+      r2.skippedUnchanged,
+    ).toBe(
+      true,
+    );
+    expect(
+      second.requested,
+    ).toHaveLength(
+      1,
+    );
+  });
+
+  it('a halted run does not store completedStamp even with 404 skips', async () => {
+    const s =
+      setup(
+        [
+          {
+            id: 'sch_d',
+            key: 'Zzz Fourth',
+            fixture:
+              'yale.html',
+          },
+        ],
+      );
+    s.routes[
+      schoolUrl(
+        'Alabama COM',
+      )
+    ] =
+      CHALLENGE;
+    s.routes[
+      schoolUrl(
+        'Yale',
+      )
+    ] =
+      CHALLENGE;
+    s.routes[
+      schoolUrl(
+        'Zzz Fourth',
+      )
+    ] =
+      null;
+    const r =
+      await runCycletrack(
+        {
+          prisma:
+            s.prisma,
+          host: createFakeHost(
+            s.routes,
+          )
+            .host,
+          shouldStop:
+            () =>
+              false,
+          log,
+        },
+        {
+          trigger:
+            'CRON',
+        },
+      );
+    expect(
+      r.status,
+    ).toBe(
+      'PARTIAL',
+    );
+    expect(
+      runRows(
+        s.tables,
+      )[0]!
+        .stats
+        .completedStamp,
+    ).toBeUndefined();
+  });
+
+  it('returns a FAILED summary instead of throwing when the run row cannot be created', async () => {
+    const s =
+      setup();
+    s.prisma.medSourceRun.create =
+      async () => {
+        throw new Error(
+          'db down',
+        );
+      };
+    const {
+      host,
+      requested,
+    } =
+      createFakeHost(
+        s.routes,
+      );
+    const r =
+      await runCycletrack(
+        {
+          prisma:
+            s.prisma,
+          host,
+          shouldStop:
+            () =>
+              false,
+          log,
+        },
+        {
+          trigger:
+            'CRON',
+        },
+      );
+    expect(
+      r.status,
+    ).toBe(
+      'FAILED',
+    );
+    expect(
+      requested,
+    ).toHaveLength(
+      0,
+    );
+  });
 });
