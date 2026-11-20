@@ -27,6 +27,16 @@
   --size: var(--rs); --hub: 17%;
   --rot1: calc(var(--p) * 80deg); --rot2: calc(var(--p) * -130deg); --rot3: calc(var(--p) * 190deg); --rot4: calc(var(--p) * -40deg);
 }
+/* The hub is liquid: a mercury body centred in the rings, sized past the old
+   bearing (17%) because its droplets orbit out from the core. */
+.rmhp-root .pg-home .hero-mercury {
+  --size: calc(var(--rs) * 0.32);
+  position: absolute; inset-inline-start: 50%; top: 50%; translate: -50% -50%;
+  /* The reticle flies at the viewer at the end of the scene (scale up to 14x);
+     the metal leaves before it is magnified past its own resolution. */
+  opacity: clamp(0, calc(1 - (var(--t, 0) - 0.45) * 4), 1);
+}
+[dir='rtl'] .rmhp-root .pg-home .hero-mercury { translate: 50% -50%; }
 /* The stage's own colour, laid over the top of the reticle so the rings rise from below the headline. */
 .rmhp-root .pg-home .hero-veil {
   position: absolute; z-index: 1; inset-inline: 0; top: 0; height: 66%; pointer-events: none;
