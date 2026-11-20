@@ -290,6 +290,8 @@ model MedSdnThread {
   cursorPage     Int       @default(1)
   cursorPostHash String?
   postsProcessed Int       @default(0)
+  parkedAt       DateTime?
+  failCount      Int       @default(0)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

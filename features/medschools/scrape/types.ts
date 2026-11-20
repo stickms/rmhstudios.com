@@ -78,7 +78,9 @@ export interface MedCycleEventRow {
   occurredAt: Date;
   source: MedSource;
   dedupeHash: string;
-  inState: boolean | null;
+  inState:
+    | boolean
+    | null;
 }
 
 export interface MedInterviewQuestionRow {
@@ -86,8 +88,12 @@ export interface MedInterviewQuestionRow {
   schoolId: string;
   text: string;
   source: MedSource;
-  votes: number | null;
-  cycleYear: number | null;
+  votes:
+    | number
+    | null;
+  cycleYear:
+    | number
+    | null;
   dedupeHash: string;
 }
 
@@ -95,20 +101,40 @@ export interface MedInterviewProfileRow {
   id: string;
   schoolId: string;
   source: MedSource;
-  format: string | null;
-  fileType: string | null;
-  avgDifficulty: number | null;
-  interviewCount: number | null;
+  format:
+    | string
+    | null;
+  fileType:
+    | string
+    | null;
+  avgDifficulty:
+    | number
+    | null;
+  interviewCount:
+    | number
+    | null;
   feedbackPositive: string[];
   feedbackNegative: string[];
   feedbackBefore: string[];
   fetchedAt: Date;
-  interviewStyle: string | null;
-  interviewLength: string | null;
-  avgStress: number | null;
-  avgImpression: number | null;
-  inStateCount: number | null;
-  outOfStateCount: number | null;
+  interviewStyle:
+    | string
+    | null;
+  interviewLength:
+    | string
+    | null;
+  avgStress:
+    | number
+    | null;
+  avgImpression:
+    | number
+    | null;
+  inStateCount:
+    | number
+    | null;
+  outOfStateCount:
+    | number
+    | null;
 }
 
 /** A public thread id and slug, not a person; `cursorPostHash` is an HMAC, never a raw post id. */
@@ -123,8 +149,14 @@ export interface MedSdnThreadRow {
   repliesDone: number;
   lastActivityAt: Date | null;
   cursorPage: number;
-  cursorPostHash: string | null;
+  cursorPostHash:
+    | string
+    | null;
   postsProcessed: number;
+  /** Set while the thread is parked (gone, or failing repeatedly); retried on the discovery tick after 24 h. */
+  parkedAt: Date | null;
+  /** Consecutive failed walks across runs; reset on success. */
+  failCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -145,7 +177,9 @@ export interface MedAliasMissRow {
   firstSeenAt: Date;
   lastSeenAt: Date;
   seenCount: number;
-  resolvedSchoolId: string | null;
+  resolvedSchoolId:
+    | string
+    | null;
   ignored: boolean;
 }
 
@@ -210,7 +244,9 @@ export interface MedPrisma {
     findMany(args?: {
       where?: Where;
       orderBy?: unknown;
-    }): Promise<MedAliasMissRow[]>;
+    }): Promise<
+      MedAliasMissRow[]
+    >;
     findFirst(args?: {
       where?: Where;
     }): Promise<MedAliasMissRow | null>;
@@ -275,30 +311,46 @@ export interface MedPrisma {
   medCycleEvent: {
     findMany(args?: {
       where?: Where;
-      select?: Record<string, boolean>;
+      select?: Record<
+        string,
+        boolean
+      >;
       orderBy?: unknown;
-    }): Promise<MedCycleEventRow[]>;
+    }): Promise<
+      MedCycleEventRow[]
+    >;
     createMany(args: {
       data: Data[];
       skipDuplicates?: boolean;
-    }): Promise<{ count: number }>;
+    }): Promise<{
+      count: number;
+    }>;
   };
   medInterviewQuestion: {
     findMany(args?: {
       where?: Where;
-      select?: Record<string, boolean>;
-    }): Promise<MedInterviewQuestionRow[]>;
+      select?: Record<
+        string,
+        boolean
+      >;
+    }): Promise<
+      MedInterviewQuestionRow[]
+    >;
     createMany(args: {
       data: Data[];
       skipDuplicates?: boolean;
-    }): Promise<{ count: number }>;
+    }): Promise<{
+      count: number;
+    }>;
     update(args: {
       where: Where;
       data: Data;
     }): Promise<MedInterviewQuestionRow>;
     deleteMany(args: {
       where: Where;
-    }): Promise<{ count: number }>;
+    }): Promise<{
+      count: number;
+    }>;
   };
   medInterviewProfile: {
     findFirst(args?: {
@@ -308,7 +360,9 @@ export interface MedPrisma {
       where: Where;
       create: Data;
       update: Data;
-    }): Promise<{ id: string }>;
+    }): Promise<{
+      id: string;
+    }>;
   };
   medSchoolStats: {
     findFirst(args?: {
@@ -316,11 +370,15 @@ export interface MedPrisma {
     }): Promise<MedSchoolStatsRow | null>;
     create(args: {
       data: Data;
-    }): Promise<{ id: string }>;
+    }): Promise<{
+      id: string;
+    }>;
     update(args: {
       where: Where;
       data: Data;
-    }): Promise<{ id: string }>;
+    }): Promise<{
+      id: string;
+    }>;
     upsert(args: {
       where: Where;
       create: Data;
@@ -332,9 +390,14 @@ export interface MedPrisma {
   medSdnThread: {
     findMany(args?: {
       where?: Where;
-      select?: Record<string, boolean>;
+      select?: Record<
+        string,
+        boolean
+      >;
       orderBy?: unknown;
-    }): Promise<MedSdnThreadRow[]>;
+    }): Promise<
+      MedSdnThreadRow[]
+    >;
     upsert(args: {
       where: Where;
       create: Data;
@@ -348,8 +411,16 @@ export interface MedPrisma {
   aiUsage: {
     aggregate(args: {
       where: Where;
-      _sum: { costMicros: true };
-    }): Promise<{ _sum: { costMicros: number | null } }>;
+      _sum: {
+        costMicros: true;
+      };
+    }): Promise<{
+      _sum: {
+        costMicros:
+          | number
+          | null;
+      };
+    }>;
   };
   medSourceRun: {
     create(args: {
@@ -373,11 +444,19 @@ export interface MedPrisma {
       where?: Where;
       orderBy?: unknown;
       take?: number;
-    }): Promise<MedSourceRunRow[]>;
+    }): Promise<
+      MedSourceRunRow[]
+    >;
   };
   /** Runs `fn` against a transaction client; the fake rolls its tables back if `fn` throws. */
-  $transaction<T>(
-    fn: (tx: MedPrisma) => Promise<T>,
-    options?: { isolationLevel?: 'Serializable' },
+  $transaction<
+    T,
+  >(
+    fn: (
+      tx: MedPrisma,
+    ) => Promise<T>,
+    options?: {
+      isolationLevel?: 'Serializable';
+    },
   ): Promise<T>;
 }

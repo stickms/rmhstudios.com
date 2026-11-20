@@ -2,6 +2,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from 'vitest';
 import { parseThreadTitle } from '../engine/sdn-title';
 import {
@@ -316,6 +317,10 @@ function setup(
             l,
           ),
     };
+  const clock =
+    {
+      t: NOW,
+    };
   const calls =
     {
       n: 0,
@@ -367,7 +372,7 @@ function setup(
               false,
           log,
           now: () =>
-            NOW,
+            clock.t,
           ...over,
         },
         {
@@ -393,6 +398,7 @@ function setup(
     logs,
     calls,
     flags,
+    clock,
     run,
   };
 }
@@ -987,7 +993,7 @@ describe('runSdnLive', () => {
     );
   });
 
-  it('a thread that 404s is parked, counted and makes the run PARTIAL once', async () => {
+  it('a thread that 404s mid-walk is parked, then retried after 24 h and resumes from its cursor', async () => {
     const s =
       setup(
         feedRoutes(
@@ -998,6 +1004,16 @@ describe('runSdnLive', () => {
       );
     s.live.routes[
       `/threads/${A.slug}.${A.id}/`
+    ] =
+      threadPage(
+        [
+          1,
+          2,
+        ],
+        2,
+      );
+    s.live.routes[
+      `/threads/${A.slug}.${A.id}/page-2`
     ] =
       null;
     const r =
@@ -1012,8 +1028,16 @@ describe('runSdnLive', () => {
     ).toBe(
       'PARTIAL',
     );
+    expect(
+      s
+        .tables
+        .medSdnThread![0]!
+        .parkedAt,
+    ).toEqual(
+      NOW,
+    );
     s.requested.length = 0;
-    const r2 =
+    const quiet =
       await s.run();
     expect(
       s.requested.filter(
@@ -1028,9 +1052,365 @@ describe('runSdnLive', () => {
       [],
     );
     expect(
+      quiet.status,
+    ).toBe(
+      'OK',
+    );
+    // 25 h later (a discovery tick) the thread is back and the walk resumes.
+    s.clock.t =
+      new Date(
+        NOW.getTime() +
+          25 *
+            3_600_000,
+      );
+    s.live.routes[
+      `/threads/${A.slug}.${A.id}/page-2`
+    ] =
+      threadPage(
+        [
+          3,
+        ],
+        2,
+      );
+    const r3 =
+      await s.run();
+    expect(
+      r3.processed,
+    ).toBe(
+      1,
+    );
+    expect(
+      s
+        .tables
+        .medSdnThread![0]!
+        .parkedAt,
+    ).toBeNull();
+    expect(
+      s
+        .tables
+        .medSdnThread![0]!
+        .repliesDone,
+    ).toBe(
+      2,
+    );
+    expect(
+      s
+        .calls
+        .n,
+    ).toBe(
+      2,
+    ); // page 1 was not asked of the model twice
+  });
+
+  it('a parked thread is not retried before 24 h even on a discovery tick', async () => {
+    const s =
+      setup(
+        feedRoutes(
+          [
+            A,
+          ],
+        ),
+      );
+    s.live.routes[
+      `/threads/${A.slug}.${A.id}/`
+    ] =
+      null;
+    await s.run();
+    s.clock.t =
+      new Date(
+        NOW.getTime() +
+          25 *
+            3_600_000 -
+          60_000 *
+            61,
+      );
+    s.requested.length = 0;
+    await s.run();
+    expect(
+      s.requested.filter(
+        (
+          p,
+        ) =>
+          p.startsWith(
+            '/threads/',
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
+  });
+
+  it('a thread that keeps failing is parked after 3 runs and retried only after 24 h', async () => {
+    const s =
+      setup(
+        feedRoutes(
+          [
+            A,
+          ],
+        ),
+      );
+    s.live.routes[
+      `/threads/${A.slug}.${A.id}/`
+    ] =
+      '<html>nothing here</html>';
+    for (
+      let i = 0;
+      i <
+      3;
+      i++
+    ) {
+      const r =
+        await s.run();
+      expect(
+        r.threadsFailed,
+      ).toBe(
+        1,
+      );
+    }
+    const row =
+      s
+        .tables
+        .medSdnThread![0]!;
+    expect(
+      row.failCount,
+    ).toBe(
+      3,
+    );
+    expect(
+      row.parkedAt,
+    ).toEqual(
+      NOW,
+    );
+    s.requested.length = 0;
+    await s.run();
+    expect(
+      s.requested.filter(
+        (
+          p,
+        ) =>
+          p.startsWith(
+            '/threads/',
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
+    s.clock.t =
+      new Date(
+        NOW.getTime() +
+          25 *
+            3_600_000,
+      );
+    s.live.routes[
+      `/threads/${A.slug}.${A.id}/`
+    ] =
+      threadPage(
+        [
+          1,
+          2,
+        ],
+        1,
+      );
+    const r =
+      await s.run();
+    expect(
+      r.processed,
+    ).toBe(
+      1,
+    );
+    expect(
+      row.failCount,
+    ).toBe(
+      0,
+    );
+    expect(
+      row.parkedAt,
+    ).toBeNull();
+  });
+
+  it('with no aliases mapped, two ticks make exactly one discovery walk', async () => {
+    const s =
+      setup(
+        feedRoutes(
+          [
+            A,
+          ],
+        ),
+      );
+    s.tables.medSchoolAlias!.length = 0;
+    await s.run();
+    await s.run();
+    expect(
+      s.requested.filter(
+        (
+          p,
+        ) =>
+          p ===
+          '/forums/1198/',
+      ),
+    ).toHaveLength(
+      1,
+    );
+    s.clock.t =
+      new Date(
+        NOW.getTime() +
+          25 *
+            3_600_000,
+      );
+    await s.run();
+    expect(
+      s.requested.filter(
+        (
+          p,
+        ) =>
+          p ===
+          '/forums/1198/',
+      ),
+    ).toHaveLength(
+      2,
+    );
+  });
+
+  it('a failed discovery is not retried on the next tick and leaves the run PARTIAL', async () => {
+    const s =
+      setup(
+        feedRoutes(
+          [
+            A,
+          ],
+        ),
+      );
+    s.live.routes[
+      '/forums/1198/'
+    ] =
+      '<html>broken</html>';
+    const r =
+      await s.run();
+    expect(
+      r.status,
+    ).toBe(
+      'PARTIAL',
+    );
+    expect(
+      r.discovered,
+    ).toBe(
+      false,
+    );
+    s.requested.length = 0;
+    const r2 =
+      await s.run();
+    expect(
+      s.requested.filter(
+        (
+          p,
+        ) =>
+          p.startsWith(
+            '/forums/1198/',
+          ) &&
+          !p.endsWith(
+            '.rss',
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
       r2.status,
     ).toBe(
       'OK',
+    );
+  });
+
+  it('a quiet tick does no repair read of stored events', async () => {
+    const s =
+      setup(
+        feedRoutes(
+          [
+            A,
+          ],
+        ),
+      );
+    await s.run();
+    const spy =
+      vi.spyOn(
+        s
+          .prisma
+          .medCycleEvent,
+        'findMany',
+      );
+    const r =
+      await s.run();
+    expect(
+      r.status,
+    ).toBe(
+      'OK',
+    );
+    expect(
+      spy,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('a challenge on both RSS feeds alone fails the run with no thread or listing request and no writes', async () => {
+    const s =
+      setup(
+        {
+          ...feedRoutes(
+            [
+              A,
+              B,
+            ],
+          ),
+          '/forums/1198/index.rss':
+            CHALLENGE,
+          '/forums/1199/index.rss':
+            CHALLENGE,
+        },
+      );
+    const r =
+      await s.run();
+    expect(
+      r.status,
+    ).toBe(
+      'FAILED',
+    );
+    expect(
+      s.requested.filter(
+        (
+          p,
+        ) =>
+          p.startsWith(
+            '/threads/',
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
+      s.requested.filter(
+        (
+          p,
+        ) =>
+          !p.endsWith(
+            '.rss',
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
+      s
+        .writes
+        .length,
+    ).toBe(
+      2,
+    );
+    expect(
+      s
+        .tables
+        .medSdnThread ??
+        [],
+    ).toEqual(
+      [],
     );
   });
 
@@ -1237,6 +1617,12 @@ describe('runSdnLive', () => {
       );
     await s.run();
     s.tables.medCycleCount!.length = 0;
+    s.clock.t =
+      new Date(
+        NOW.getTime() +
+          25 *
+            3_600_000,
+      );
     const r =
       await s.run();
     expect(

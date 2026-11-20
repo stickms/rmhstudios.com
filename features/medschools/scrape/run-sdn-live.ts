@@ -100,6 +100,9 @@ export interface SdnLiveSummary {
   requests: number;
   durationMs: number;
   discovered: boolean;
+  discoveryAttemptedAt:
+    | string
+    | null;
   halted: boolean;
   unlabelled: number;
   aliasMissErrors: number;
@@ -116,6 +119,8 @@ export interface SdnLiveSummary {
 const DEFAULT_MAX_PAGES = 30;
 const DEFAULT_MAX_LLM_CALLS = 40;
 const MAX_LISTING_PAGES = 12;
+/** Consecutive per-thread failures (across runs) before the thread is parked for 24 h. */
+const MAX_THREAD_FAILURES = 3;
 const DAY_MS = 86_400_000;
 
 interface Seen {
@@ -174,6 +179,8 @@ export async function runSdnLive(
       requests: 0,
       durationMs: 0,
       discovered: false,
+      discoveryAttemptedAt:
+        null,
       halted: false,
       unlabelled: 0,
       aliasMissErrors: 0,
@@ -539,8 +546,11 @@ export async function runSdnLive(
       }
       if (
         item.lastActivityAt &&
-        prior.lastActivityAt?.getTime() !==
-          item.lastActivityAt.getTime()
+        // The feed owns the activity time (listing and feed stamps differ); a listing only fills a gap.
+        (fromFeed
+          ? prior.lastActivityAt?.getTime() !==
+            item.lastActivityAt.getTime()
+          : !prior.lastActivityAt)
       )
         data.lastActivityAt =
           item.lastActivityAt;
@@ -621,7 +631,8 @@ export async function runSdnLive(
         return null;
       };
 
-    // 1. Discovery (at most daily): the listing finds quiet threads RSS never lists.
+    // The discovery window: one attempt per 24 h, counted from the last ATTEMPT (success or not), so a
+    // failing listing is never retried every tick.
     const since =
       new Date(
         now().getTime() -
@@ -648,31 +659,133 @@ export async function runSdnLive(
           take: 200,
         },
       );
-    const discoveredRecently =
+    const attemptedRecently =
       recent.some(
         (
           r,
-        ) =>
-          r.stats !==
-            null &&
-          typeof r.stats ===
-            'object' &&
-          (
-            r.stats as Record<
-              string,
-              unknown
-            >
-          )
-            .discovered ===
-            true,
+        ) => {
+          const at =
+            r.stats !==
+              null &&
+            typeof r.stats ===
+              'object'
+              ? (
+                  r.stats as Record<
+                    string,
+                    unknown
+                  >
+                )
+                  .discoveryAttemptedAt
+              : null;
+          return (
+            typeof at ===
+              'string' &&
+            new Date(
+              at,
+            ).getTime() >=
+              since.getTime()
+          );
+        },
       );
-    let discoveryOk = false;
+    const discoveryTick =
+      !attemptedRecently;
+
+    // 1. Poll both RSS feeds.
+    for (const forum of deps
+      .forums
+      .current) {
+      if (
+        deps.shouldStop()
+      ) {
+        incomplete = true;
+        break;
+      }
+      const body =
+        await fetchBody(
+          session,
+          forumRssUrl(
+            forum.node,
+          ),
+          'sdn rss',
+        );
+      if (
+        body ===
+        null
+      ) {
+        incomplete = true;
+        if (
+          summary.halted ||
+          session.halted
+        )
+          break;
+        continue;
+      }
+      let items;
+      try {
+        items =
+          parseForumRss(
+            body,
+          );
+      } catch {
+        unparseable(
+          'sdn rss',
+        );
+        incomplete = true;
+        continue;
+      }
+      session.noteSuccess();
+      summary.feedsPolled++;
+      for (const it of items)
+        await resolveAndUpsert(
+          {
+            threadId:
+              it.threadId,
+            slug: it.slug,
+            title:
+              it.title,
+            replies:
+              it.comments,
+            lastActivityAt:
+              it.lastActivityAt,
+          },
+          forum,
+          true,
+        );
+    }
     if (
-      !discoveredRecently ||
-      known.size ===
-        0
+      session.halted
+    )
+      summary.halted = true;
+
+    // Nothing was polled: the source is unhealthy, stop before any listing or thread request.
+    const unhealthy =
+      (): boolean =>
+        summary.halted ||
+        summary.feedsPolled ===
+          0;
+    const failUnhealthy =
+      async (): Promise<SdnLiveSummary> => {
+        error =
+          brief(
+            session.lastFailure ??
+              'no feed could be polled',
+          );
+        return await close(
+          'FAILED',
+        );
+      };
+    if (
+      unhealthy()
+    )
+      return await failUnhealthy();
+
+    // 2. Discovery (at most one attempt per 24 h): the listing finds quiet threads RSS never lists.
+    if (
+      discoveryTick
     ) {
-      discoveryOk = true;
+      summary.discoveryAttemptedAt =
+        now().toISOString();
+      let discoveryOk = true;
       for (const forum of deps
         .forums
         .current) {
@@ -756,79 +869,15 @@ export async function runSdnLive(
         !discoveryOk
       )
         incomplete = true;
+      if (
+        session.halted
+      )
+        summary.halted = true;
+      if (
+        summary.halted
+      )
+        return await failUnhealthy();
     }
-
-    // 2. Poll both RSS feeds.
-    if (
-      !summary.halted &&
-      !session.halted
-    ) {
-      for (const forum of deps
-        .forums
-        .current) {
-        if (
-          deps.shouldStop()
-        ) {
-          incomplete = true;
-          break;
-        }
-        const body =
-          await fetchBody(
-            session,
-            forumRssUrl(
-              forum.node,
-            ),
-            'sdn rss',
-          );
-        if (
-          body ===
-          null
-        ) {
-          incomplete = true;
-          if (
-            summary.halted ||
-            session.halted
-          )
-            break;
-          continue;
-        }
-        let items;
-        try {
-          items =
-            parseForumRss(
-              body,
-            );
-        } catch {
-          unparseable(
-            'sdn rss',
-          );
-          incomplete = true;
-          continue;
-        }
-        session.noteSuccess();
-        summary.feedsPolled++;
-        for (const it of items)
-          await resolveAndUpsert(
-            {
-              threadId:
-                it.threadId,
-              slug: it.slug,
-              title:
-                it.title,
-              replies:
-                it.comments,
-              lastActivityAt:
-                it.lastActivityAt,
-            },
-            forum,
-            true,
-          );
-      }
-    }
-    if (
-      session.halted
-    )
-      summary.halted = true;
 
     summary.threadsKnown =
       known.size;
@@ -856,22 +905,6 @@ export async function runSdnLive(
         'sdn-live: every thread title is from an earlier cycle; sdn-forums.json is probably stale',
       );
 
-    // Nothing was polled: the source is unhealthy, stop before any thread request.
-    if (
-      summary.halted ||
-      summary.feedsPolled ===
-        0
-    ) {
-      error =
-        brief(
-          session.lastFailure ??
-            'no feed could be polled',
-        );
-      return await close(
-        'FAILED',
-      );
-    }
-
     // 3. Select pending (non-archive, cursor behind the count), changed first, then most recent activity.
     const pending =
       [
@@ -886,7 +919,11 @@ export async function runSdnLive(
               t.repliesSeen ||
               forced.has(
                 t.threadId,
-              )),
+              )) &&
+            (!t.parkedAt ||
+              (discoveryTick &&
+                t.parkedAt.getTime() <=
+                  since.getTime())),
         )
         .sort(
           (
@@ -1029,11 +1066,48 @@ export async function runSdnLive(
         await rollup(
           res.touched,
         );
+        const mark =
+          async (
+            data: Record<
+              string,
+              unknown
+            >,
+          ): Promise<void> => {
+            try {
+              await prisma.medSdnThread.update(
+                {
+                  where:
+                    {
+                      threadId:
+                        thread.threadId,
+                    },
+                  data,
+                },
+              );
+            } catch (e) {
+              log.warn(
+                `sdn-live: could not update thread state: ${brief(e)}`,
+              );
+            }
+          };
         if (
           res.outcome ===
           'caught-up'
         ) {
           summary.processed++;
+          if (
+            thread.parkedAt ||
+            (thread.failCount ??
+              0) >
+              0
+          )
+            await mark(
+              {
+                parkedAt:
+                  null,
+                failCount: 0,
+              },
+            );
           continue;
         }
         incomplete = true;
@@ -1041,27 +1115,15 @@ export async function runSdnLive(
           res.outcome ===
           'skipped'
         ) {
-          // The thread is gone. Park it until RSS reports a different count instead of retrying every tick.
+          // The thread is gone. Park it (cursor and counts untouched, so it resumes from its cursor); the
+          // discovery tick retries it once the park is over 24 h old.
           summary.threadsSkipped++;
-          try {
-            await prisma.medSdnThread.update(
-              {
-                where:
-                  {
-                    threadId:
-                      thread.threadId,
-                  },
-                data: {
-                  repliesDone:
-                    thread.repliesSeen,
-                },
-              },
-            );
-          } catch (e) {
-            log.warn(
-              `sdn-live: could not park skipped thread: ${brief(e)}`,
-            );
-          }
+          await mark(
+            {
+              parkedAt:
+                now(),
+            },
+          );
           continue;
         }
         if (
@@ -1069,6 +1131,23 @@ export async function runSdnLive(
           'failed'
         ) {
           summary.threadsFailed++;
+          const fails =
+            (thread.failCount ??
+              0) +
+            1;
+          await mark(
+            {
+              failCount:
+                fails,
+              ...(fails >=
+              MAX_THREAD_FAILURES
+                ? {
+                    parkedAt:
+                      now(),
+                  }
+                : {}),
+            },
+          );
           continue;
         }
         if (
@@ -1098,8 +1177,9 @@ export async function runSdnLive(
     // 5. Self-healing roll-up: cells of events already stored for the threads seen this run, so a roll-up that
     // failed after an earlier insert is repaired. Diffing against stored counts makes unchanged cells a no-op.
     if (
+      discoveryTick &&
       seenThreads.size >
-      0
+        0
     ) {
       try {
         const schoolIds =
