@@ -220,6 +220,14 @@ function MissRow({
                 'This name already belongs to another school.',
             },
           );
+        case 'SCHOOL_INACTIVE':
+          return t(
+            'school-inactive',
+            {
+              defaultValue:
+                'That school is inactive and cannot be mapped to.',
+            },
+          );
         case 'SCHOOL_ALREADY_HAS_KEY':
           return t(
             'school-has-key',

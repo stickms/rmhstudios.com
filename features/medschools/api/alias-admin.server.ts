@@ -217,6 +217,16 @@ async function mapInTransaction(
       message:
         'school not found',
     };
+  if (
+    !school.active
+  )
+    return {
+      ok: false,
+      status: 409,
+      code: 'SCHOOL_INACTIVE',
+      message:
+        'school is inactive',
+    };
 
   const schoolAliases =
     await tx.medSchoolAlias.findMany(

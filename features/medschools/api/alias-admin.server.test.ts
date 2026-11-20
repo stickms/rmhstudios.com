@@ -440,6 +440,58 @@ describe('alias-admin', () => {
     );
   });
 
+  it('mapping to an inactive school → 409 SCHOOL_INACTIVE and nothing written', async () => {
+    const fake =
+      createFakePrisma();
+    const {
+      a,
+      miss,
+    } =
+      await seed(
+        fake,
+      );
+    (fake.tables.medSchool as Array<{ id: string; active: boolean }>).find((r) => r.id === a.id)!.active = false;
+    const m =
+      await miss(
+        'ADMIT',
+        'some-slug',
+      );
+    const r =
+      await mapAliasMiss(
+        fake.prisma,
+        {
+          missId:
+            m.id,
+          schoolId:
+            a.id,
+        },
+      );
+    expect(
+      r,
+    ).toMatchObject(
+      {
+        ok: false,
+        status: 409,
+        code: 'SCHOOL_INACTIVE',
+      },
+    );
+    expect(
+      fake
+        .tables
+        .medSchoolAlias ??
+        [],
+    ).toHaveLength(
+      0,
+    );
+    expect(
+      missRow(
+        fake,
+        m.id,
+      )
+        .resolvedSchoolId,
+    ).toBeNull();
+  });
+
   it('key already owned by another school → 409 KEY_MAPPED_ELSEWHERE, alias not moved', async () => {
     const fake =
       createFakePrisma();
