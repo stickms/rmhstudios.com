@@ -269,14 +269,14 @@ never
 becomes
 isolation".
 
-| Name                 | Title                               | Business                                     | Stage in the client arc |
-| -------------------- | ----------------------------------- | -------------------------------------------- | ----------------------- |
-| **Beatriz Quintero** | **Head of Investment Banking**      | Investment Banking — _RMHan Stanley_ (01/06) | Advise & raise          |
-| **Daniel Halvorsen** | **Head of Markets**                 | Markets — _RMH Street_ (02/06)               | Execute & access        |
-| **Ingrid Bergström** | **Head of Corporate Banking**       | Corporate Banking (03/06)                    | Fund & grow             |
-| **Chidi Nwosu**      | **Managing Partner, RMHCombinator** | Venture Capital — _RMHCombinator_ (04/06)    | Back & build            |
-| **Anouk Achterberg** | **Managing Partner, RMHcKinsey**    | Management Consulting — _RMHcKinsey_ (05/06) | Strategize & transform  |
-| **Marco Sandoval**   | **Managing Partner, RMHstone**      | Private Equity — _RMHstone_ (06/06)          | Own & compound          |
+| Name                 | Title                                       | Business                                     | Stage in the client arc |
+| -------------------- | ------------------------------------------- | -------------------------------------------- | ----------------------- |
+| **Beatriz Quintero** | **Head of Investment Banking**              | Investment Banking — _RMHan Stanley_ (01/06) | Advise & raise          |
+| **Daniel Halvorsen** | **Head of Markets**                         | Markets — _RMH Street_ (02/06)               | Execute & access        |
+| **Ingrid Bergström** | **Head of Corporate Banking**               | Corporate Banking (03/06)                    | Fund & grow             |
+| **Mahmoud Said**     | **General Managing Partner, RMHCombinator** | Venture Capital — _RMHCombinator_ (04/06)    | Back & build            |
+| **Anouk Achterberg** | **Managing Partner, RMHcKinsey**            | Management Consulting — _RMHcKinsey_ (05/06) | Strategize & transform  |
+| **Marco Sandoval**   | **Managing Partner, RMHstone**              | Private Equity — _RMHstone_ (06/06)          | Own & compound          |
 
 The
 venture,

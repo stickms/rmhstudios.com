@@ -71,10 +71,10 @@ export default function DealsPage() {
             <div className="o-wide stack">
               <p className="meta rv">
                 {t(
-                  'deals-rmhs-date',
+                  'deals-rmhs-byline',
                   {
                     defaultValue:
-                      'Announced November 19, 2026 · Chidi Nwosu, Managing Partner, RMHCombinator',
+                      'Announced November 19, 2026 · Mahmoud Said, General Managing Partner, RMHCombinator',
                   },
                 )}
               </p>
@@ -92,37 +92,37 @@ export default function DealsPage() {
               </h2>
               <p className="lede rv d1">
                 {t(
-                  'deals-rmhs-lede',
+                  'deals-rmhs-lede-pipe',
                   {
                     defaultValue:
-                      "Today we're excited to announce that RMHCombinator is leading RMH Studios' $50 pre-seed round. We're thrilled to partner with the team as they build the consumer internet platform of the next decade.",
+                      "Today we're excited to announce that RMHCombinator is leading a $50 private investment in public equity (PIPE) in RMH Studios. We're thrilled to partner with the team as they build the consumer internet platform of the next decade.",
                   },
                 )}
               </p>
               <p className="body rv d2">
                 {t(
-                  'deals-rmhs-body-1',
+                  'deals-rmhs-body-1-pipe',
                   {
                     defaultValue:
-                      'When we first met the RMH Studios team, they had already shipped a social feed, eighteen browser games, thirteen full apps, a coin economy and a developer API, on no outside capital. We have backed many founders who promised a platform. Very few arrived with one already in production.',
+                      'When we first met the RMH Studios team, they had already shipped a social feed, eighteen browser games, thirteen full apps, a coin economy and a developer API, and taken the company public, all on no venture capital. We usually meet founders at the very beginning. This time we were a little late, so we did what any disciplined early-stage investor would do and wrote a check anyway.',
                   },
                 )}
               </p>
               <p className="body rv d2">
                 {t(
-                  'deals-rmhs-body-2',
+                  'deals-rmhs-body-2-pipe',
                   {
                     defaultValue:
-                      'We believe the next great consumer company will not be one app. It will be a place: somewhere people post, play, watch, listen, study and build, signed in once. RMH Studios is building that place, with a capital efficiency we have rarely seen. Until today, its total outside funding was zero dollars.',
+                      'We believe the next great consumer company will not be one app. It will be a place: somewhere people post, play, watch, listen, study and build, signed in once. RMH Studios is building that place, with a capital efficiency we have rarely seen. It reached the public markets without raising a venture round, and until today no venture firm owned a single share.',
                   },
                 )}
               </p>
               <p className="body rv d2">
                 {t(
-                  'deals-rmhs-body-3',
+                  'deals-rmhs-body-3-pipe',
                   {
                     defaultValue:
-                      'The round extends the company’s runway by about one month of hosting. RMH Studios joins the RMHCombinator Fall 2026 batch, and with it gets the whole firm behind it, from its first coin to, one day, the public markets. We could not be more excited to be on this journey with them.',
+                      'The investment extends the company’s runway by about one month of hosting. RMH Studios becomes the first public company in the RMHCombinator Fall 2026 batch, and with it gets the whole firm behind it. We could not be more excited to be on this journey with them.',
                   },
                 )}
               </p>
@@ -143,10 +143,10 @@ export default function DealsPage() {
                 />
                 <span className="fig-k">
                   {t(
-                    'deals-rmhs-fig-round',
+                    'deals-rmhs-fig-pipe',
                     {
                       defaultValue:
-                        'Pre-seed round, led by RMHCombinator',
+                        'Private investment in public equity, led by RMHCombinator',
                     },
                   )}
                 </span>
@@ -165,10 +165,10 @@ export default function DealsPage() {
                 />
                 <span className="fig-k">
                   {t(
-                    'deals-rmhs-fig-valuation',
+                    'deals-rmhs-fig-market-cap',
                     {
                       defaultValue:
-                        'Post-money valuation cap',
+                        'Market capitalization at pricing',
                     },
                   )}
                 </span>
@@ -219,19 +219,19 @@ export default function DealsPage() {
               <div className="rv d1">
                 <dt>
                   {t(
-                    'deals-rmhs-term-round',
+                    'deals-rmhs-term-transaction',
                     {
                       defaultValue:
-                        'Round',
+                        'Transaction',
                     },
                   )}
                 </dt>
                 <dd>
                   {t(
-                    'deals-rmhs-term-round-v',
+                    'deals-rmhs-term-transaction-v',
                     {
                       defaultValue:
-                        'Pre-seed, $50, paid in full at signing',
+                        'PIPE, $50, settled in full at signing',
                     },
                   )}
                 </dd>
@@ -248,10 +248,10 @@ export default function DealsPage() {
                 </dt>
                 <dd>
                   {t(
-                    'deals-rmhs-term-instrument-v',
+                    'deals-rmhs-term-instrument-common',
                     {
                       defaultValue:
-                        'Post-money SAFE with a $5 billion valuation cap and no discount',
+                        'Common stock, bought from the company at the market price with no discount',
                     },
                   )}
                 </dd>
@@ -308,10 +308,10 @@ export default function DealsPage() {
                 </dt>
                 <dd>
                   {t(
-                    'deals-rmhs-term-board-v',
+                    'deals-rmhs-term-board-observer',
                     {
                       defaultValue:
-                        'No board seat. Chidi Nwosu joins as an observer',
+                        'No board seat. Mahmoud Said joins as an observer',
                     },
                   )}
                 </dd>
@@ -321,19 +321,19 @@ export default function DealsPage() {
             <figure className="o-wide">
               <blockquote className="quote rv">
                 {t(
-                  'deals-rmhs-quote',
+                  'deals-rmhs-quote-public',
                   {
                     defaultValue:
-                      'We back founders who build first and raise later. RMH Studios built everything first.',
+                      'We back founders who build first and raise later. RMH Studios built everything first, then went public.',
                   },
                 )}
               </blockquote>
               <figcaption className="quote-by rv d1">
                 {t(
-                  'deals-rmhs-quote-by',
+                  'deals-rmhs-quote-attribution',
                   {
                     defaultValue:
-                      'Chidi Nwosu, Managing Partner, RMHCombinator',
+                      'Mahmoud Said, General Managing Partner, RMHCombinator',
                   },
                 )}
               </figcaption>
