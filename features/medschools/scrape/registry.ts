@@ -13,6 +13,7 @@ import {
 } from '../engine/names';
 import type { FirstRow } from './adapters/cycletrack';
 import { planAliasMapping } from '../engine/alias-rules';
+import { summaryKey } from '../engine/sdn-title';
 import type { MedSource } from '../engine/types';
 import type { MedPrisma } from './types';
 
@@ -824,6 +825,114 @@ export async function seedAdmitIgnoredMisses(
     await prisma.medSchoolAliasMiss.upsert({
       where: { source_sourceKey: { source: 'ADMIT', sourceKey } },
       create: { source: 'ADMIT', sourceKey, seenCount: 0, ignored: true },
+      update: {},
+    });
+    created++;
+  }
+  return created;
+}
+
+export interface SdnAliasFile {
+  generatedAt: string;
+  /** Thread stems and summary keys deliberately left unmapped; seeded as ignored misses. */
+  ignoredStems?: string[];
+  aliases: Array<{
+    cycletrackKey: string;
+    threadStems: string[];
+    summary?: { code: string; slug: string };
+  }>;
+}
+
+/**
+ * Attaches the reviewed SDN keys (each thread stem and the summary key) to schools through their CYCLETRACK
+ * alias. SDN is a multi-key source, so a school may hold several; a key owned by another school is skipped and
+ * reported, never moved, and a second call creates nothing. `unmatched` lists the keys whose CycleTrack key has no
+ * school here.
+ */
+export async function seedSdnAliases(
+  prisma: SeedPrisma,
+  file: SdnAliasFile,
+): Promise<{
+  created: number;
+  unmatched: string[];
+  skipped: Array<{ cycletrackKey: string; key: string }>;
+}> {
+  const existing = await prisma.medSchoolAlias.findMany();
+  const ownerOf = new Map(
+    existing.map((a) => [aliasId(a.source, a.sourceKey), a.schoolId]),
+  );
+  const aliasesOf = new Map<
+    string,
+    Array<{ source: MedSource; sourceKey: string }>
+  >();
+  for (const a of existing) {
+    const list = aliasesOf.get(a.schoolId) ?? [];
+    list.push({ source: a.source, sourceKey: a.sourceKey });
+    aliasesOf.set(a.schoolId, list);
+  }
+  let created = 0;
+  const unmatched: string[] = [];
+  const skipped: Array<{ cycletrackKey: string; key: string }> = [];
+  for (const entry of file.aliases) {
+    const keys = [
+      ...entry.threadStems,
+      ...(entry.summary
+        ? [summaryKey(entry.summary.code, entry.summary.slug)]
+        : []),
+    ];
+    const schoolId = ownerOf.get(aliasId('CYCLETRACK', entry.cycletrackKey));
+    if (schoolId === undefined) {
+      unmatched.push(...keys);
+      continue;
+    }
+    for (const key of keys) {
+      const owner = ownerOf.get(aliasId('SDN', key));
+      const schoolAliases = aliasesOf.get(schoolId) ?? [];
+      const plan = planAliasMapping({
+        source: 'SDN',
+        sourceKey: key,
+        schoolId,
+        schoolAliases,
+        keyOwner: owner === undefined ? null : { schoolId: owner },
+      });
+      if (!plan.ok) {
+        skipped.push({ cycletrackKey: entry.cycletrackKey, key });
+        continue;
+      }
+      if (owner !== undefined) continue;
+      await prisma.medSchoolAlias.upsert({
+        where: { source_sourceKey: { source: 'SDN', sourceKey: key } },
+        create: { schoolId, source: 'SDN', sourceKey: key },
+        update: {},
+      });
+      ownerOf.set(aliasId('SDN', key), schoolId);
+      aliasesOf.set(schoolId, [
+        ...schoolAliases,
+        { source: 'SDN', sourceKey: key },
+      ]);
+      created++;
+    }
+  }
+  return { created, unmatched, skipped };
+}
+
+/**
+ * Pre-ignores the SDN stems the reviewed data deliberately leaves unmapped, so they do not land in the admin
+ * queue on day one. A miss row that already exists is never touched. Returns the number of rows created.
+ */
+export async function seedSdnIgnoredMisses(
+  prisma: SeedPrisma,
+  file: SdnAliasFile,
+): Promise<number> {
+  let created = 0;
+  for (const sourceKey of file.ignoredStems ?? []) {
+    const existing = await prisma.medSchoolAliasMiss.findFirst({
+      where: { source: 'SDN', sourceKey },
+    });
+    if (existing) continue;
+    await prisma.medSchoolAliasMiss.upsert({
+      where: { source_sourceKey: { source: 'SDN', sourceKey } },
+      create: { source: 'SDN', sourceKey, seenCount: 0, ignored: true },
       update: {},
     });
     created++;

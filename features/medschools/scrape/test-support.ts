@@ -355,6 +355,15 @@ export function createFakePrisma(): {
     const row: Row =
       {
         id: `fake_${++seq}`,
+        // The schema's column defaults for a miss, so rows made by recordAliasMiss list like real ones.
+        ...(name === 'medSchoolAliasMiss'
+          ? {
+              resolvedSchoolId: null,
+              ignored: false,
+              firstSeenAt: new Date(0),
+              lastSeenAt: new Date(0),
+            }
+          : {}),
         ...data,
       };
     t.push(
