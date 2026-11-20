@@ -12,41 +12,44 @@ const strList =
     )
     .nullable();
 
+/** One feed row, validated on its own so a single malformed row cannot fail the whole feed. */
+export const feedRow =
+  z.object(
+    {
+      cycle_update_id:
+        z
+          .string()
+          .min(
+            1,
+          ),
+      school:
+        z.object(
+          {
+            slug: z
+              .string()
+              .min(
+                1,
+              ),
+          },
+        ),
+      /** A null or empty author is a valid row whose program is simply not readable (no lookup). */
+      user_id:
+        z
+          .string()
+          .nullish(),
+      current_status:
+        z.string(),
+      current_status_date:
+        z.string(),
+    },
+  );
+
 export const feedData =
   z.object(
     {
       getRecentSchoolCycleUpdates:
         z.array(
-          z.object(
-            {
-              cycle_update_id:
-                z
-                  .string()
-                  .min(
-                    1,
-                  ),
-              school:
-                z.object(
-                  {
-                    slug: z
-                      .string()
-                      .min(
-                        1,
-                      ),
-                  },
-                ),
-              user_id:
-                z
-                  .string()
-                  .min(
-                    1,
-                  ),
-              current_status:
-                z.string(),
-              current_status_date:
-                z.string(),
-            },
-          ),
+          z.unknown(),
         ),
     },
   );

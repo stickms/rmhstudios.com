@@ -48,6 +48,8 @@ export interface AdmitInterviewsSummary {
   statsRows: number;
   /** Stats rows skipped for an unrecognised or mismatched `residence_type`. */
   statsSkipped: number;
+  /** Stats rows whose write failed; the run carried on and ends PARTIAL. */
+  statsFailed: number;
   schoolsFetched: number;
   schoolsSkipped: number;
   schoolsFailed: number;
@@ -84,6 +86,7 @@ export async function runAdmitInterviews(
     status: 'FAILED',
     statsRows: 0,
     statsSkipped: 0,
+    statsFailed: 0,
     schoolsFetched: 0,
     schoolsSkipped: 0,
     schoolsFailed: 0,
@@ -170,7 +173,13 @@ export async function runAdmitInterviews(
         const schoolId = await resolve(r.schoolKey);
         if (schoolId === null || seen.has(schoolId)) continue;
         seen.add(schoolId);
-        if (await writeStats(prisma, schoolId, cycleYear, now(), r)) summary.statsRows++;
+        try {
+          if (await writeStats(prisma, schoolId, cycleYear, now(), r)) summary.statsRows++;
+        } catch (e) {
+          summary.statsFailed++;
+          incomplete = true;
+          log.warn(`interviews: stats row write failed: ${brief(e)}`);
+        }
       }
     }
 
@@ -184,7 +193,7 @@ export async function runAdmitInterviews(
         listed = [];
         if (!(e instanceof SourceHaltedError)) log.warn(`interviews: school list failed: ${brief(e)}`);
       }
-      const targets: Array<{ slug: string; schoolId: string; interviewCount: number; total: number }> = [];
+      const targets: Array<{ slug: string; schoolId: string; interviewCount: number; total: number | null }> = [];
       const picked = new Set<string>();
       for (const s of [...listed].sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0))) {
         const schoolId = await resolve(s.slug);
@@ -197,6 +206,7 @@ export async function runAdmitInterviews(
           incomplete = true;
           break;
         }
+        // Only a published 0 means "no interviews"; a missing total is unknown, so the school is fetched.
         if (t.total === 0) {
           summary.schoolsSkipped++;
           continue;
@@ -205,11 +215,11 @@ export async function runAdmitInterviews(
           const stored = await prisma.medInterviewProfile.findFirst({
             where: { schoolId: t.schoolId, source: 'ADMIT' },
           });
-          if (
-            stored &&
-            stored.interviewCount === t.interviewCount &&
-            now().getTime() - stored.fetchedAt.getTime() < FRESH_MS
-          ) {
+          // The listed count is compared only when Admit published a total; with none, the stored profile is
+          // trusted for FRESH_MS and then refetched.
+          const withinWindow = stored !== null && now().getTime() - stored.fetchedAt.getTime() < FRESH_MS;
+          const unchanged = stored !== null && (t.total === null || stored.interviewCount === t.interviewCount);
+          if (stored && withinWindow && unchanged) {
             summary.schoolsSkipped++;
             continue;
           }
@@ -326,7 +336,8 @@ async function writeStats(
 ): Promise<boolean> {
   const figures: Row = {
     gpaMedian: r.gpaMedian,
-    mcatMedian: r.mcatMedian,
+    // Admit publishes a fractional median; the column is an Int.
+    mcatMedian: r.mcatMedian === null ? null : Math.round(r.mcatMedian),
     interviewToAcceptancePct: r.interviewToAdmittedPct,
     applicationToInterviewPct: r.applicationToInterviewPct,
     applicationCount: r.applicationCount,

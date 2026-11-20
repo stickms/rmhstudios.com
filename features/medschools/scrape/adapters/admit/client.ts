@@ -21,6 +21,7 @@ import {
 } from './queries';
 import {
   feedData,
+  feedRow,
   interviewFeedbackData,
   interviewOverviewData,
   interviewSchoolsData,
@@ -53,6 +54,12 @@ export class AdmitResponseError extends Error {
   }
 }
 
+/** A GraphQL `errors` reply to a per-user lookup (P16): that user's failure, not the source's. */
+export class AdmitLookupErrorsReply extends AdmitResponseError {}
+
+/** Consecutive per-user `errors` replies after which the rest of the run makes no more lookups. */
+export const LOOKUP_ERROR_STREAK_LIMIT = 10;
+
 export interface AdmitClient {
   fetchFeed(
     slug?: string,
@@ -61,11 +68,13 @@ export interface AdmitClient {
     skipped: {
       unknownStatus: number;
       badDate: number;
+      /** Rows failing validation (e.g. a null school slug): dropped and counted, never fatal to the feed. */
+      malformedRows: number;
     };
   }>;
   /** One request per distinct user per client, cached for the client's life. */
   programOf(
-    token: LookupToken,
+    token: LookupToken | null,
   ): Promise<
     | ProgramFlag
     | 'FAILED'
@@ -73,8 +82,10 @@ export interface AdmitClient {
   readonly lookups: number;
   /** True when this token's user already has a flag this run, so `programOf` costs no request. */
   isCached(
-    token: LookupToken,
+    token: LookupToken | null,
   ): boolean;
+  /** True once LOOKUP_ERROR_STREAK_LIMIT consecutive lookups got GraphQL `errors`: no further requests this run. */
+  readonly lookupsStopped: boolean;
   listInterviewSchools(): Promise<
     AdmitSchoolRef[]
   >;
@@ -86,7 +97,8 @@ export interface AdmitClient {
   fetchQuestions(
     slug: string,
   ): Promise<
-    NormalizedAdmitQuestion[] | null
+    | NormalizedAdmitQuestion[]
+    | null
   >;
   fetchSchoolStats(
     filter: MedResidence,
@@ -152,6 +164,8 @@ export function createAdmitClient(
       >
     >();
   let lookups = 0;
+  let errorStreak = 0;
+  let lookupsStopped = false;
 
   async function run<
     S extends
@@ -239,7 +253,7 @@ export function createAdmitClient(
       if (
         !errorsAreSourceFailures
       )
-        throw new AdmitResponseError(
+        throw new AdmitLookupErrorsReply(
           `${op.operationName}: GraphQL errors`,
         );
       return fail(
@@ -292,13 +306,34 @@ export function createAdmitClient(
       if (
         profile ===
         null
-      )
+      ) {
+        errorStreak = 0;
         return 'UNREADABLE';
+      }
+      errorStreak = 0;
       return profile.md_phd ===
         true
         ? 'PHD'
         : 'REG';
     } catch (e) {
+      if (
+        e instanceof
+        AdmitLookupErrorsReply
+      ) {
+        // A few hidden profiles are normal, but a streak means the lookup endpoint itself is broken: stop asking
+        // for the rest of this run and let the source's failure count see it once.
+        if (
+          ++errorStreak >=
+            LOOKUP_ERROR_STREAK_LIMIT &&
+          !lookupsStopped
+        ) {
+          lookupsStopped = true;
+          session.noteFailure(
+            `${PROFILE_FLAG.operationName}: ${errorStreak} consecutive GraphQL errors`,
+          );
+        }
+        return 'FAILED';
+      }
       if (
         e instanceof
         AdmitResponseError
@@ -329,13 +364,26 @@ export function createAdmitClient(
         {
           unknownStatus: 0,
           badDate: 0,
+          malformedRows: 0,
         };
       const items: FeedItem[] =
         [];
       const latest =
         now().getTime() +
         DAY_MS;
-      for (const row of data.getRecentSchoolCycleUpdates) {
+      for (const raw of data.getRecentSchoolCycleUpdates) {
+        const parsedRow =
+          feedRow.safeParse(
+            raw,
+          );
+        if (
+          !parsedRow.success
+        ) {
+          skipped.malformedRows++;
+          continue;
+        }
+        const row =
+          parsedRow.data;
         const eventType =
           mapStatus(
             row.current_status,
@@ -390,9 +438,11 @@ export function createAdmitClient(
                   null,
               },
             lookup:
-              mintLookupToken(
-                row.user_id,
-              ),
+              row.user_id
+                ? mintLookupToken(
+                    row.user_id,
+                  )
+                : null,
           },
         );
       }
@@ -402,9 +452,18 @@ export function createAdmitClient(
       };
     },
 
+    get lookupsStopped() {
+      return lookupsStopped;
+    },
+
     isCached(
       token,
     ) {
+      if (
+        token ===
+        null
+      )
+        return true;
       return flags.has(
         redeemLookupToken(
           token,
@@ -415,6 +474,13 @@ export function createAdmitClient(
     programOf(
       token,
     ) {
+      if (
+        token ===
+        null
+      )
+        return Promise.resolve(
+          'UNREADABLE',
+        );
       const userId =
         redeemLookupToken(
           token,
@@ -426,6 +492,12 @@ export function createAdmitClient(
       if (
         !flag
       ) {
+        if (
+          lookupsStopped
+        )
+          return Promise.resolve(
+            'FAILED',
+          );
         lookups++;
         flag =
           lookupFlag(
@@ -496,8 +568,7 @@ export function createAdmitClient(
                 s.interview_count ??
                 0,
               totalInterviewCount:
-                s.total_interview_count ??
-                0,
+                s.total_interview_count,
             },
           );
         }

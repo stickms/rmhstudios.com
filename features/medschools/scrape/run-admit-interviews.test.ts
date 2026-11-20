@@ -41,7 +41,7 @@ const statRow = (slug: string, type: string, over: Record<string, unknown> = {})
   ...over,
 });
 const statsBody = (rows: unknown[]) => JSON.stringify({ data: { getSchoolStats: rows } });
-const schoolEntry = (slug: string, count: number, total: number) => ({
+const schoolEntry = (slug: string, count: number, total: number | null) => ({
   avg_interview_difficulty: 4.5,
   interview_count: count,
   total_interview_count: total,
@@ -407,6 +407,45 @@ describe('runAdmitInterviews', () => {
     expect(s.questionsCreated).toBe(0);
     expect(t.table('medInterviewQuestion')).toHaveLength(2);
     expect(t.table('medInterviewQuestion').find((q) => q.id === id)!.votes).toBe(9);
+  });
+
+  it('a school with no published total is fetched (unknown is not zero) and not refetched within 6 days', async () => {
+    const t = setup(baseRoutes({ [schoolsKey]: schoolsBody([schoolEntry(HARVARD, 10, null)]) }));
+    const first = await t.run();
+    expect(first.schoolsFetched).toBe(1);
+    expect(first.schoolsSkipped).toBe(0);
+    expect(t.table('medInterviewProfile')).toHaveLength(1);
+    const before = t.requestedPosts.length;
+    const second = await t.run();
+    expect(second.schoolsSkipped).toBe(1);
+    expect(second.schoolsFetched).toBe(0);
+    expect(t.requestedPosts.slice(before).map((p) => p.op)).not.toContain('GetInterviewsForSchool');
+    // Past the 6 days it is refetched even though there is still no total to compare.
+    t.table('medInterviewProfile')[0]!.fetchedAt = new Date(NOW.getTime() - 7 * 86_400_000);
+    expect((await t.run()).schoolsFetched).toBe(1);
+  });
+
+  it('rounds a fractional Admit MCAT median to the Int column', async () => {
+    const t = setup(baseRoutes({ [statsKey('GLOBAL')]: statsBody([statRow(HARVARD, 'global', { mcat: 521.6 })]) }));
+    await t.run();
+    const global = t.table('medSchoolStats').find((r) => r.residence === 'GLOBAL' && r.schoolId === 's1')!;
+    expect(global.mcatMedian).toBe(522);
+  });
+
+  it('one stats row write failing is counted, the rest are written, and the run is PARTIAL', async () => {
+    const t = setup(baseRoutes());
+    const stats = t.prisma.medSchoolStats as unknown as { create: (a: unknown) => Promise<unknown> };
+    const create = stats.create.bind(stats);
+    let calls = 0;
+    stats.create = (a) => {
+      if (++calls === 1) return Promise.reject(new Error('db down'));
+      return create(a);
+    };
+    const s = await t.run();
+    expect(s.statsFailed).toBe(1);
+    expect(s.status).toBe('PARTIAL');
+    expect(s.statsRows).toBeGreaterThan(0);
+    expect(s.schoolsFetched).toBe(1);
   });
 
   it('school with zero interviews is skipped', async () => {

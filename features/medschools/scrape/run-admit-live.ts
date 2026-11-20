@@ -54,6 +54,10 @@ export interface AdmitLiveSummary {
   misses: number;
   unknownStatus: number;
   badDate: number;
+  /** Feed rows dropped for failing validation (e.g. a null school slug). */
+  malformedRows: number;
+  /** Alias-miss writes that failed; the run carried on. */
+  aliasMissErrors: number;
   lookups: number;
   rolledUp: number;
   requests: number;
@@ -100,6 +104,8 @@ export async function runAdmitLive(
       misses: 0,
       unknownStatus: 0,
       badDate: 0,
+      malformedRows: 0,
+      aliasMissErrors: 0,
       lookups: 0,
       rolledUp: 0,
       requests: 0,
@@ -125,7 +131,13 @@ export async function runAdmitLive(
     return finish();
   }
 
-  await closeStaleRuns(prisma, 'ADMIT', 'admit-live', now, log);
+  await closeStaleRuns(
+    prisma,
+    'ADMIT',
+    'admit-live',
+    now,
+    log,
+  );
 
   let run: {
     id: string;
@@ -183,6 +195,8 @@ export async function runAdmitLive(
       skipped.unknownStatus;
     summary.badDate =
       skipped.badDate;
+    summary.malformedRows =
+      skipped.malformedRows;
 
     const aliases =
       await prisma.medSchoolAlias.findMany(
@@ -255,7 +269,23 @@ export async function runAdmitLive(
           missed.add(
             slug,
           );
-          if (await recordAliasMiss(prisma, 'ADMIT', slug, now)) summary.misses++;
+          try {
+            if (
+              await recordAliasMiss(
+                prisma,
+                'ADMIT',
+                slug,
+                now,
+              )
+            )
+              summary.misses++;
+          } catch (e) {
+            // A failed miss write must not abort the feed: the event is skipped as before.
+            summary.aliasMissErrors++;
+            log.warn(
+              `admit-live: alias miss write failed: ${brief(e)}`,
+            );
+          }
         }
         continue;
       }
@@ -478,7 +508,8 @@ export async function runAdmitLive(
       client.lookups;
     if (
       summary.deferred >
-      0
+        0 ||
+      client.lookupsStopped
     )
       incomplete = true;
 

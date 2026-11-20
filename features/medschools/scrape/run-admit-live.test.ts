@@ -924,6 +924,276 @@ describe('runAdmitLive', () => {
     );
   });
 
+  it('ten consecutive profile-errors replies stop further lookups: the rest are deferred and the run is PARTIAL', async () => {
+    const users =
+      Array.from(
+        {
+          length: 14,
+        },
+        (
+          _,
+          i,
+        ) =>
+          `u${i}`,
+      );
+    const routes: Record<
+      string,
+      | string
+      | null
+    > =
+      {
+        [FEED_KEY]:
+          feedBody(
+            users.map(
+              (
+                u,
+                i,
+              ) =>
+                row(
+                  `c${i}`,
+                  u,
+                ),
+            ),
+          ),
+      };
+    for (const u of users)
+      routes[
+        flagKey(
+          u,
+        )
+      ] =
+        ERRORS;
+    const t =
+      setup(
+        routes,
+      );
+    const s =
+      await t.run();
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        status:
+          'PARTIAL',
+        deferred: 14,
+        created: 0,
+        lookups: 10,
+      },
+    );
+    expect(
+      t.requestedPosts.filter(
+        (
+          p,
+        ) =>
+          p.op ===
+          PROFILE_FLAG.operationName,
+      ),
+    ).toHaveLength(
+      10,
+    );
+  });
+
+  it('a successful lookup resets the error streak', async () => {
+    const users =
+      Array.from(
+        {
+          length: 20,
+        },
+        (
+          _,
+          i,
+        ) =>
+          `u${i}`,
+      );
+    const routes: Record<
+      string,
+      | string
+      | null
+    > =
+      {
+        [FEED_KEY]:
+          feedBody(
+            users.map(
+              (
+                u,
+                i,
+              ) =>
+                row(
+                  `c${i}`,
+                  u,
+                ),
+            ),
+          ),
+      };
+    users.forEach(
+      (
+        u,
+        i,
+      ) => {
+        routes[
+          flagKey(
+            u,
+          )
+        ] =
+          i %
+            10 ===
+          9
+            ? flagBody(
+                false,
+              )
+            : ERRORS;
+      },
+    );
+    const t =
+      setup(
+        routes,
+      );
+    const s =
+      await t.run();
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        lookups: 20,
+        created: 2,
+        deferred: 18,
+      },
+    );
+  });
+
+  it('a malformed feed row is dropped and counted; a null author is stored with program null and no lookup', async () => {
+    const rows =
+      [
+        row(
+          'c1',
+          'u1',
+        ),
+        {
+          ...row(
+            'c2',
+            'u2',
+          ),
+          school:
+            {
+              slug: null,
+            },
+        },
+        {
+          ...row(
+            'c3',
+            'u3',
+          ),
+          user_id:
+            null,
+        },
+      ];
+    const t =
+      setup(
+        {
+          [FEED_KEY]:
+            feedBody(
+              rows as Row[],
+            ),
+          [flagKey(
+            'u1',
+          )]:
+            flagBody(
+              true,
+            ),
+        },
+      );
+    const s =
+      await t.run();
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        status:
+          'OK',
+        fetched: 2,
+        malformedRows: 1,
+        created: 2,
+        programNull: 1,
+        lookups: 1,
+      },
+    );
+    expect(
+      t
+        .events()
+        .map(
+          (
+            e,
+          ) =>
+            e.program,
+        )
+        .sort(),
+    ).toEqual(
+      [
+        'PHD',
+        null,
+      ],
+    );
+  });
+
+  it('an alias-miss write failing is counted and the run carries on', async () => {
+    const t =
+      setup(
+        {
+          [FEED_KEY]:
+            feedBody(
+              [
+                row(
+                  'c1',
+                  'u1',
+                ),
+                row(
+                  'c2',
+                  'u2',
+                  {
+                    school:
+                      {
+                        slug: 'unknown-school',
+                      },
+                  },
+                ),
+              ],
+            ),
+          [flagKey(
+            'u1',
+          )]:
+            flagBody(
+              false,
+            ),
+        },
+      );
+    (
+      t
+        .prisma
+        .medSchoolAliasMiss as unknown as {
+        findFirst: () => Promise<never>;
+      }
+    ).findFirst =
+      () =>
+        Promise.reject(
+          new Error(
+            'db down',
+          ),
+        );
+    const s =
+      await t.run();
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        status:
+          'OK',
+        created: 1,
+        aliasMissErrors: 1,
+        misses: 0,
+      },
+    );
+  });
+
   it('lookup cap defers the remainder and the run is PARTIAL', async () => {
     const t =
       setup(
@@ -1579,6 +1849,8 @@ describe('runAdmitLive', () => {
         'durationMs',
         'fetched',
         'lookups',
+        'malformedRows',
+        'aliasMissErrors',
         'misses',
         'programNull',
         'requests',

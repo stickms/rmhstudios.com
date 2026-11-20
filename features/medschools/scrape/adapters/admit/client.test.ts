@@ -406,6 +406,74 @@ describe('fetchFeed', () => {
     );
   });
 
+  it('a row with a null slug is dropped and counted without failing the feed; a null user_id has no lookup', async () => {
+    const {
+      client,
+    } =
+      setup(
+        feedRoute(
+          [
+            row(
+              {
+                cycle_update_id:
+                  'ok-1',
+              },
+            ),
+            row(
+              {
+                cycle_update_id:
+                  'bad',
+                school:
+                  {
+                    slug: null,
+                  },
+              },
+            ),
+            row(
+              {
+                cycle_update_id:
+                  'no-author',
+                user_id:
+                  null,
+              },
+            ),
+          ],
+        ),
+      );
+    const {
+      items,
+      skipped,
+    } =
+      await client.fetchFeed();
+    expect(
+      items,
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      skipped.malformedRows,
+    ).toBe(
+      1,
+    );
+    expect(
+      items[1]!
+        .lookup,
+    ).toBeNull();
+    expect(
+      await client.programOf(
+        items[1]!
+          .lookup,
+      ),
+    ).toBe(
+      'UNREADABLE',
+    );
+    expect(
+      client.lookups,
+    ).toBe(
+      0,
+    );
+  });
+
   it('unknown status is skipped and counted', async () => {
     const {
       client,
@@ -449,6 +517,7 @@ describe('fetchFeed', () => {
       {
         unknownStatus: 2,
         badDate: 0,
+        malformedRows: 0,
       },
     );
   });
@@ -506,6 +575,7 @@ describe('fetchFeed', () => {
       {
         unknownStatus: 0,
         badDate: 2,
+        malformedRows: 0,
       },
     );
     expect(
@@ -779,6 +849,184 @@ describe('programOf', () => {
     ).toBe(
       true,
     );
+  });
+
+  const ERRORS_BODY =
+    JSON.stringify(
+      {
+        errors:
+          [
+            {
+              message:
+                'hidden',
+            },
+          ],
+        data: null,
+      },
+    );
+  const manyUsers =
+    (
+      n: number,
+      bodyOf: (
+        i: number,
+      ) => string,
+    ) => ({
+      ...feedRoute(
+        Array.from(
+          {
+            length:
+              n,
+          },
+          (
+            _,
+            i,
+          ) =>
+            row(
+              {
+                cycle_update_id: `c${i}`,
+                user_id: `user-${i}`,
+              },
+            ),
+        ),
+      ),
+      ...Object.fromEntries(
+        Array.from(
+          {
+            length:
+              n,
+          },
+          (
+            _,
+            i,
+          ) => [
+            flagKey(
+              `user-${i}`,
+            ),
+            bodyOf(
+              i,
+            ),
+          ],
+        ),
+      ),
+    });
+
+  it('ten consecutive errors replies stop lookups, noting one source failure; further users cost no request', async () => {
+    const {
+      client,
+      session,
+      requestedPosts,
+    } =
+      setup(
+        manyUsers(
+          12,
+          () =>
+            ERRORS_BODY,
+        ),
+      );
+    const {
+      items,
+    } =
+      await client.fetchFeed();
+    const flags =
+      [];
+    for (const it of items)
+      flags.push(
+        await client.programOf(
+          it.lookup,
+        ),
+      );
+    expect(
+      flags.every(
+        (
+          f,
+        ) =>
+          f ===
+          'FAILED',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      client.lookups,
+    ).toBe(
+      10,
+    );
+    expect(
+      client.lookupsStopped,
+    ).toBe(
+      true,
+    );
+    expect(
+      requestedPosts.filter(
+        (
+          p,
+        ) =>
+          p.op ===
+          PROFILE_FLAG.operationName,
+      ),
+    ).toHaveLength(
+      10,
+    );
+    expect(
+      session.lastFailure,
+    ).not.toBeNull();
+    expect(
+      session.halted,
+    ).toBe(
+      false,
+    );
+  });
+
+  it('a success between errors resets the streak', async () => {
+    const ok =
+      JSON.stringify(
+        {
+          data: {
+            getCycleTrackProfileByUserId:
+              {
+                md_phd: false,
+              },
+          },
+        },
+      );
+    const {
+      client,
+      session,
+    } =
+      setup(
+        manyUsers(
+          20,
+          (
+            i,
+          ) =>
+            i %
+              10 ===
+            9
+              ? ok
+              : ERRORS_BODY,
+        ),
+      );
+    const {
+      items,
+    } =
+      await client.fetchFeed();
+    for (const it of items)
+      await client.programOf(
+        it.lookup,
+      );
+    expect(
+      client.lookups,
+    ).toBe(
+      20,
+    );
+    expect(
+      client.lookupsStopped,
+    ).toBe(
+      false,
+    );
+    expect(
+      session.lastFailure,
+    ).toBeNull();
   });
 
   it('asks once per distinct user (lookups === 1 for two tokens of one user)', async () => {
@@ -1767,24 +2015,136 @@ describe('interviews', () => {
   });
 
   it('a null op or a null question list is unavailable (null), an explicit empty list stays empty', async () => {
-    const q = (body: unknown) =>
-      setup({ [key(INTERVIEW_QUESTIONS, { schoolSlug: slug })]: JSON.stringify(body) }).client.fetchQuestions(slug);
-    expect(await q({ data: { getInterviewsForSchool: null } })).toBeNull();
-    expect(await q({ data: { getInterviewsForSchool: { questions: null } } })).toBeNull();
-    expect(await q({ data: { getInterviewsForSchool: { questions: [] } } })).toEqual([]);
+    const q =
+      (
+        body: unknown,
+      ) =>
+        setup(
+          {
+            [key(
+              INTERVIEW_QUESTIONS,
+              {
+                schoolSlug:
+                  slug,
+              },
+            )]:
+              JSON.stringify(
+                body,
+              ),
+          },
+        ).client.fetchQuestions(
+          slug,
+        );
+    expect(
+      await q(
+        {
+          data: {
+            getInterviewsForSchool:
+              null,
+          },
+        },
+      ),
+    ).toBeNull();
+    expect(
+      await q(
+        {
+          data: {
+            getInterviewsForSchool:
+              {
+                questions:
+                  null,
+              },
+          },
+        },
+      ),
+    ).toBeNull();
+    expect(
+      await q(
+        {
+          data: {
+            getInterviewsForSchool:
+              {
+                questions:
+                  [],
+              },
+          },
+        },
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('a null overview or null feedback makes the profile unavailable (null)', async () => {
-    const ok = {
-      getMedicalInterviewOverview: { avg_interview_difficulty: 4, interview_count: 3, interview_format: 'A', interview_type: 'B' },
-      getInterviewFeedbackForSchool: { positive: [], negative: [], before_interview: [] },
-    };
-    for (const bad of ['getMedicalInterviewOverview', 'getInterviewFeedbackForSchool']) {
-      const { client } = setup({
-        [key(INTERVIEW_OVERVIEW, { schoolSlug: slug })]: JSON.stringify({ data: { ...ok, [bad]: null } }),
-        [key(INTERVIEW_FEEDBACK, { schoolSlug: slug })]: JSON.stringify({ data: { ...ok, [bad]: null } }),
-      });
-      expect(await client.fetchInterviewProfile(slug)).toBeNull();
+    const ok =
+      {
+        getMedicalInterviewOverview:
+          {
+            avg_interview_difficulty: 4,
+            interview_count: 3,
+            interview_format:
+              'A',
+            interview_type:
+              'B',
+          },
+        getInterviewFeedbackForSchool:
+          {
+            positive:
+              [],
+            negative:
+              [],
+            before_interview:
+              [],
+          },
+      };
+    for (const bad of [
+      'getMedicalInterviewOverview',
+      'getInterviewFeedbackForSchool',
+    ]) {
+      const {
+        client,
+      } =
+        setup(
+          {
+            [key(
+              INTERVIEW_OVERVIEW,
+              {
+                schoolSlug:
+                  slug,
+              },
+            )]:
+              JSON.stringify(
+                {
+                  data: {
+                    ...ok,
+                    [bad]:
+                      null,
+                  },
+                },
+              ),
+            [key(
+              INTERVIEW_FEEDBACK,
+              {
+                schoolSlug:
+                  slug,
+              },
+            )]:
+              JSON.stringify(
+                {
+                  data: {
+                    ...ok,
+                    [bad]:
+                      null,
+                  },
+                },
+              ),
+          },
+        );
+      expect(
+        await client.fetchInterviewProfile(
+          slug,
+        ),
+      ).toBeNull();
     }
   });
 
@@ -1811,7 +2171,8 @@ describe('interviews', () => {
         slug,
       );
     expect(
-      qs!.length,
+      qs!
+        .length,
     ).toBeGreaterThan(
       0,
     );

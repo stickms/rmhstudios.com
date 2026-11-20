@@ -29,7 +29,8 @@ export type ProgramFlag =
 
 export interface FeedItem {
   event: NormalizedEvent;
-  lookup: LookupToken;
+  /** `null` when the row carries no author: its program is unreadable and no lookup is made. */
+  lookup: LookupToken | null;
 }
 
 export interface AdmitSchoolRef {
@@ -42,7 +43,10 @@ export interface AdmitSchoolRef {
     | number
     | null;
   interviewCount: number;
-  totalInterviewCount: number;
+  /** `null` = Admit published no total (unknown, not zero). */
+  totalInterviewCount:
+    | number
+    | null;
 }
 
 export interface NormalizedAdmitProfile {
