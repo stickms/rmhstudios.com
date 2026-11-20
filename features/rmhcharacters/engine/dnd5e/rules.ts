@@ -538,7 +538,13 @@ export function asiSlots(c: Dnd5eCharacter, data: Dnd5eData): string[] {
 export function validate(c: Dnd5eCharacter, data: Dnd5eData): string[] {
   const issues: string[] = [];
   if (!c.name.trim()) issues.push('The character has no name.');
-  if (!byId(data.species, c.speciesId)) issues.push('Choose a species.');
+  const species = byId(data.species, c.speciesId);
+  if (!species) issues.push('Choose a species.');
+  if (species?.options && !c.speciesOption) issues.push(`Choose a ${species.options.label}.`);
+  if (species?.extraOriginFeat) {
+    const bgFeat = byId(data.backgrounds, c.backgroundId)?.featId;
+    if (!c.originFeats.some((f) => f !== bgFeat)) issues.push('Choose your extra Origin feat (Versatile).');
+  }
   if (!byId(data.backgrounds, c.backgroundId) && !c.custom.some((e) => e.kind === 'Background'))
     issues.push('Choose a background.');
   if (!c.classes.length) issues.push('Choose a class.');
@@ -567,8 +573,20 @@ export function validate(c: Dnd5eCharacter, data: Dnd5eData): string[] {
     if (!klass) continue;
     if (k.level >= klass.subclassLevel && !k.subclassId && !k.customSubclass) issues.push(`${klass.name} ${k.level}: choose a subclass.`);
   }
+  for (const k of c.classes) {
+    const klass = classOf(data, k.classId);
+    const style = klass?.features.some((f) => f.name.toLowerCase().startsWith('fighting style') && f.level <= k.level);
+    if (style && !c.choices[`${k.classId}:fighting-style`]) issues.push(`${klass?.name}: choose a Fighting Style.`);
+  }
+  const masteries = c.classes.reduce((n, k) => n + (classOf(data, k.classId)?.weaponMastery?.[k.level - 1] ?? 0), 0);
+  if (c.weaponMasteries.length < masteries) issues.push(`Choose ${masteries - c.weaponMasteries.length} more Weapon Mastery weapon(s).`);
   const filled = new Set(c.asi.map((a) => a.slot));
   for (const slot of asiSlots(c, data)) if (!filled.has(slot)) issues.push(`Unspent feat or ability improvement (${slot.replace(':', ' level ')}).`);
+  for (const a of c.asi) {
+    if (a.kind === 'asi' && (a.abilities?.length ?? 0) < 2) issues.push(`Pick both ability increases (${a.slot.replace(':', ' level ')}).`);
+    const f = a.kind === 'feat' ? featById(data, a.featId) : undefined;
+    if (f?.abilityIncrease?.length && !a.featAbilities?.length) issues.push(`${f.name}: choose its ability increase.`);
+  }
   const scores = abilityScores(c, data);
   for (const a of ABILITIES) if (scores[a] > 20 && !c.asi.some((x) => featById(data, x.featId)?.category === 'epic-boon')) issues.push(`${ABILITY_NAMES[a]} is above 20.`);
   const first = c.classes[0] && classOf(data, c.classes[0].classId);

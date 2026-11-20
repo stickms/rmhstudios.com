@@ -1,0 +1,24 @@
+// ─── RMHCharacters ─────────────────────────────────────────
+//
+// One row per character sheet (D&D 5e or Pathfinder 2e), owned by one account.
+// The sheet itself is `data`: the client's normalised Character JSON
+// (features/rmhcharacters/engine/types.ts), validated again on the server by
+// normalizeCharacter before every write. `system` and `name` are copied out of
+// it only so the roster can be listed and sorted without reading every sheet.
+// The id is the character's own id (a UUID the client mints), so a sheet keeps
+// one identity across export, import and devices; ownership is checked on every
+// write, never assumed from the id.
+
+model RmhCharacter {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  system    String
+  name      String   @default("")
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("rmh_character")
+}

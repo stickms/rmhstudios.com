@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1001 endpoints across 197 groups: 110 route files under `app/routes/api` and 891 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1003 endpoints across 197 groups: 110 route files under `app/routes/api` and 893 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1673,11 +1673,13 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/rmhcharacters`
 
-1 route.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/rmhcharacters/advisor` | `POST` | `features/rmhcharacters/api/rmhcharacters.advisor.server.ts` |
+| `/api/rmhcharacters/characters` | `GET` | `features/rmhcharacters/api/rmhcharacters.characters.server.ts` |
+| `/api/rmhcharacters/characters/:id` | `DELETE` `PUT` | `features/rmhcharacters/api/rmhcharacters.characters.$id.server.ts` |
 
 ## `/api/rmhcode`
 

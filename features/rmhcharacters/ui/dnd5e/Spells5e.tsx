@@ -2,6 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import * as R from '@features/rmhcharacters/engine/dnd5e/rules';
 import { ABILITY_NAMES, type Dnd5eCharacter, type Dnd5eData } from '@features/rmhcharacters/engine/types';
+import { pending } from '@features/rmhcharacters/engine/pending';
 import { Muted, Picker, Section, StatRow } from '../controls';
 
 type Set5e = (fn: (c: Dnd5eCharacter) => Dnd5eCharacter) => void;
@@ -54,7 +55,7 @@ export function Spells5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: 
 
   return (
     <div className="flex flex-col gap-2">
-      <Section title={t('sp5.title', { defaultValue: 'Spellcasting' })}>
+      <Section title={t('sp5.title', { defaultValue: 'Spellcasting' })} needs={pending(c, d).spells}>
         {casters.map((k) => {
           const cantrips = c.spells.prepared.filter((id) => d.spells.find((s) => s.id === id && s.level === 0 && s.classes.includes(k.casting.list))).length;
           const prepared = c.spells.prepared.filter((id) => d.spells.find((s) => s.id === id && s.level > 0 && s.classes.includes(k.casting.list))).length;

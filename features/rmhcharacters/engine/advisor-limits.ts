@@ -4,4 +4,5 @@ export const ADVISOR_LIMITS = {
   sheet: 12_000,
   turns: 6,
   turn: 4_000,
+  recommendations: 8,
 } as const;

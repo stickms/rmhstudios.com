@@ -291,7 +291,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhbox/minigames` | RMHbox minigames | sign-in | `app/routes/rmhbox/minigames/index.tsx` |
 | `/rmhbox/minigames/:minigameId/history` | — | sign-in | `app/routes/rmhbox/minigames/$minigameId/history.tsx` |
 | `/rmhcalculator` | RMHCalculator | sign-in | `app/routes/rmhcalculator.tsx` |
-| `/rmhcharacters` | — | public | `app/routes/rmhcharacters.tsx` |
+| `/rmhcharacters` | — | sign-in | `app/routes/rmhcharacters.tsx` |
 | `/rmhcode` | — | public | `app/routes/rmhcode/index.tsx` |
 | `/rmhcode/auth` | — | public | `app/routes/rmhcode/auth.tsx` |
 | `/rmhmusic` | — | sign-in | `app/routes/rmhmusic/index.tsx` |

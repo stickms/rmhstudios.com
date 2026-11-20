@@ -4,7 +4,7 @@
  * number stepper and a toggle chip.
  */
 import { useMemo, useState, type ReactNode } from 'react';
-import { Check, Minus, Plus } from 'lucide-react';
+import { AlertTriangle, Check, Minus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -14,16 +14,22 @@ export function Section({
   action,
   children,
   className,
+  needs = 0,
 }: {
   title: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Unmade choices in this section; shown as a warning count beside the title. */
+  needs?: number;
 }) {
   return (
-    <section className={cn('border-b border-app-border py-4', className)}>
+    <section className={cn('border-b border-app-border py-4', needs > 0 && 'rmhc-needs-section', className)}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-app-text">{title}</h2>
+        <h2 className="flex items-center gap-2 text-base font-semibold text-app-text">
+          {title}
+          <NeedsCount n={needs} />
+        </h2>
         {action}
       </div>
       {children}
@@ -218,3 +224,34 @@ export function Issues({ issues }: { issues: string[] }) {
 
 export const nativeSelectClass =
   'h-9 w-full min-w-0 rounded-app-sm border border-app-border bg-app-surface px-2 text-sm text-app-text pointer-coarse:h-11';
+
+/* -------------------------------------------------------------------------- */
+/* Unfinished-choice indicators                                               */
+/* -------------------------------------------------------------------------- */
+
+/** "3 to choose", in the warning colour, next to a section title. Nothing when n is 0. */
+export function NeedsCount({ n }: { n: number }) {
+  const { t } = useTranslation('c-rmhcharacters');
+  if (n <= 0) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-app-sm border border-app-warning px-1.5 py-0.5 text-xs font-medium text-app-warning">
+      <AlertTriangle className="size-3" aria-hidden />
+      {t('needs.count', { defaultValue: '{{count}} to choose', count: n })}
+    </span>
+  );
+}
+
+/** A "Choose" marker beside one unfilled field. */
+export function Needs({ show, label }: { show: boolean; label?: string }) {
+  const { t } = useTranslation('c-rmhcharacters');
+  if (!show) return null;
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-app-warning">
+      <AlertTriangle className="size-3.5" aria-hidden />
+      {label ?? t('needs.choose', { defaultValue: 'Choose' })}
+    </span>
+  );
+}
+
+/** Classes for a select (or input) that still needs a choice: a warning edge, plus aria-invalid by the caller. */
+export const warnIf = (on: boolean) => (on ? ' rmhc-needs' : '');

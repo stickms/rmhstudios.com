@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as R from '@features/rmhcharacters/engine/dnd5e/rules';
 import { useAdvisor } from '@features/rmhcharacters/engine/advisor-store';
+import { pending } from '@features/rmhcharacters/engine/pending';
 import { useRoster } from '@features/rmhcharacters/engine/store';
 import type { Dnd5eCharacter, InventoryItem } from '@features/rmhcharacters/engine/types';
 import { Advisor } from '../Advisor';
@@ -62,13 +63,14 @@ export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void 
         onTab={setTab}
         onBack={onBack}
         onLevelUp={c.classes.length && level < 20 ? () => setLevelling(true) : null}
+        pending={pending(c, d)}
         panels={{
           build: <Build5e c={c} d={d} set={set} />,
           sheet: <Sheet5e c={c} d={d} set={set} />,
           spells: <Spells5e c={c} d={d} set={set} />,
           inventory: <Inventory c={c} set={set} catalog={catalog} onEquip={onEquip} load={t('e5.carry', { defaultValue: '{{w}} / {{max}} lb', w: Math.round(carried * 10) / 10, max: scores.str * 15 })} />,
           story: <Story c={c} set={set} />,
-          advisor: <Advisor c={c} />,
+          advisor: <Advisor c={c} data={d} onApply={(fn) => update(c.id, fn)} />,
         }}
       />
       {levelling ? (

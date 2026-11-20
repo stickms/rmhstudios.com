@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import * as R from '@features/rmhcharacters/engine/pf2e/rules';
 import { ABILITIES, ABILITY_NAMES, PF2E_SKILLS, type Ability, type Pf2eCharacter, type Pf2eData } from '@features/rmhcharacters/engine/types';
-import { Chip, Field, Muted, nativeSelectClass, Section, Stepper } from '../controls';
+import { Chip, Field, Muted, nativeSelectClass, Needs, Section, Stepper, warnIf } from '../controls';
 
 type SetPf = (fn: (c: Pf2eCharacter) => Pf2eCharacter) => void;
 const cap = (s: string) => s[0]!.toUpperCase() + s.slice(1);
@@ -82,6 +82,15 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
       return { ...x, boosts: { ...x.boosts, levels: { ...x.boosts.levels, [String(lvl)]: next } } };
     });
 
+  const freeSlots = ancestrySlots.filter((x) => x === 'free').length;
+  const needAncestry = Number(!c.ancestryId) + Number(!c.heritageId) + Math.max(0, freeSlots - freeChosen.length);
+  const needBackground = Number(!c.backgroundId) + Number(Boolean(c.backgroundId) && c.boosts.background.length < 2);
+  const needClass =
+    Number(!c.classId) +
+    Number(Boolean(klass) && !c.boosts.class) +
+    Number(Boolean(klass?.subclasses?.length) && !c.subclassId) +
+    Number(klass?.spellcasting?.tradition === 'choice' && !c.spells.tradition);
+  const needBoosts = R.BOOST_LEVELS.filter((l) => l <= c.level && (c.boosts.levels[String(l)] ?? []).length < 4).length;
   const skillAllowance = klass ? klass.trainedSkills.length + klass.additionalSkills + Math.max(0, mods.int) + (bg?.skills.length ?? 0) : 0;
   const slots = R.featSlots(c, d);
   const incLevels = R.skillIncreaseLevels(c, d);
@@ -89,9 +98,9 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
   return (
     <div className="rmhc-columns">
       <div>
-        <Section title={t('bp.ancestry', { defaultValue: 'Ancestry and heritage' })}>
+        <Section title={t('bp.ancestry', { defaultValue: 'Ancestry and heritage' })} needs={needAncestry}>
           <div className="flex flex-col gap-3">
-            <select className={nativeSelectClass} value={c.ancestryId} aria-label={t('bp.ancestryLabel', { defaultValue: 'Ancestry' })} onChange={(e) => setAncestry(e.target.value)}>
+            <select className={nativeSelectClass + warnIf(!c.ancestryId)} aria-invalid={!c.ancestryId} value={c.ancestryId} aria-label={t('bp.ancestryLabel', { defaultValue: 'Ancestry' })} onChange={(e) => setAncestry(e.target.value)}>
               <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
               {d.ancestries.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -105,7 +114,7 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
                   {t('bp.ancestryStats', { defaultValue: '{{hp}} HP · {{size}} · {{speed}} ft · {{senses}}', hp: ancestry.hp, size: ancestry.size, speed: ancestry.speed, senses: ancestry.senses ?? '' })}
                 </Muted>
                 <Field label={t('bp.heritage', { defaultValue: 'Heritage' })}>
-                  <select className={nativeSelectClass} value={c.heritageId} onChange={(e) => set((x) => ({ ...x, heritageId: e.target.value }))}>
+                  <select className={nativeSelectClass + warnIf(!c.heritageId)} aria-invalid={!c.heritageId} value={c.heritageId} onChange={(e) => set((x) => ({ ...x, heritageId: e.target.value }))}>
                     <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
                     <optgroup label={ancestry.name}>
                       {ancestry.heritages.map((h) => (
@@ -130,7 +139,7 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
                     <span key={a} className="rounded-app-sm border border-app-border px-2 py-1 text-sm">+ {ABILITY_NAMES[a]}</span>
                   ))}
                   {ancestrySlots.filter((s) => s === 'free').map((_, i) => (
-                    <select key={i} className={`${nativeSelectClass} w-auto`} aria-label={t('bp.freeBoost', { defaultValue: 'Free boost {{n}}', n: i + 1 })} value={freeChosen[i] ?? ''} onChange={(e) => setFreeAncestry(i, e.target.value as Ability | '')}>
+                    <select key={i} className={`${nativeSelectClass} w-auto${warnIf(!freeChosen[i])}`} aria-invalid={!freeChosen[i]} aria-label={t('bp.freeBoost', { defaultValue: 'Free boost {{n}}', n: i + 1 })} value={freeChosen[i] ?? ''} onChange={(e) => setFreeAncestry(i, e.target.value as Ability | '')}>
                       <option value="">{t('bp.free', { defaultValue: 'Free…' })}</option>
                       {ABILITIES.filter((a) => !fixed.includes(a) && (a === freeChosen[i] || !freeChosen.includes(a))).map((a) => (
                         <option key={a} value={a}>
@@ -151,9 +160,9 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
           </div>
         </Section>
 
-        <Section title={t('bp.background', { defaultValue: 'Background' })}>
+        <Section title={t('bp.background', { defaultValue: 'Background' })} needs={needBackground}>
           <div className="flex flex-col gap-3">
-            <select className={nativeSelectClass} value={c.backgroundId} aria-label={t('bp.background', { defaultValue: 'Background' })} onChange={(e) => setBackground(e.target.value)}>
+            <select className={nativeSelectClass + warnIf(!c.backgroundId)} aria-invalid={!c.backgroundId} value={c.backgroundId} aria-label={t('bp.background', { defaultValue: 'Background' })} onChange={(e) => setBackground(e.target.value)}>
               <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
               {d.backgrounds.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -179,7 +188,7 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
                     </select>
                   </Field>
                   <Field label={t('bp.bgBoost2', { defaultValue: 'Free boost' })}>
-                    <select className={nativeSelectClass} value={c.boosts.background[1] ?? ''} onChange={(e) => {
+                    <select className={nativeSelectClass + warnIf(!c.boosts.background[1])} aria-invalid={!c.boosts.background[1]} value={c.boosts.background[1] ?? ''} onChange={(e) => {
                       const a = e.target.value as Ability;
                       set((x) => ({ ...x, boosts: { ...x.boosts, background: [x.boosts.background[0]!, ...(a ? [a] : [])] } }));
                     }}>
@@ -197,9 +206,9 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
           </div>
         </Section>
 
-        <Section title={t('bp.class', { defaultValue: 'Class' })} action={<Stepper label={t('bp.level', { defaultValue: 'Level' })} value={c.level} min={1} max={20} onChange={(n) => set((x) => ({ ...x, level: n }))} />}>
+        <Section title={t('bp.class', { defaultValue: 'Class' })} needs={needClass} action={<Stepper label={t('bp.level', { defaultValue: 'Level' })} value={c.level} min={1} max={20} onChange={(n) => set((x) => ({ ...x, level: n }))} />}>
           <div className="flex flex-col gap-3">
-            <select className={nativeSelectClass} value={c.classId} aria-label={t('bp.class', { defaultValue: 'Class' })} onChange={(e) => setClass(e.target.value)}>
+            <select className={nativeSelectClass + warnIf(!c.classId)} aria-invalid={!c.classId} value={c.classId} aria-label={t('bp.class', { defaultValue: 'Class' })} onChange={(e) => setClass(e.target.value)}>
               <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
               {d.classes.map((k) => (
                 <option key={k.id} value={k.id}>
@@ -212,7 +221,7 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
                 <Muted>{t('bp.classStats', { defaultValue: '{{hp}} + Con HP per level · key attribute {{key}}', hp: klass.hp, key: klass.keyAbility.map((a) => ABILITY_NAMES[a]).join(' or ') })}</Muted>
                 {klass.keyAbility.length > 1 ? (
                   <Field label={t('bp.key', { defaultValue: 'Key attribute (class boost)' })}>
-                    <select className={nativeSelectClass} value={c.boosts.class ?? ''} onChange={(e) => set((x) => ({ ...x, boosts: { ...x.boosts, class: (e.target.value || null) as Ability | null } }))}>
+                    <select className={nativeSelectClass + warnIf(!c.boosts.class)} aria-invalid={!c.boosts.class} value={c.boosts.class ?? ''} onChange={(e) => set((x) => ({ ...x, boosts: { ...x.boosts, class: (e.target.value || null) as Ability | null } }))}>
                       <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
                       {klass.keyAbility.map((a) => (
                         <option key={a} value={a}>
@@ -224,7 +233,7 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
                 ) : null}
                 {klass.subclasses?.length ? (
                   <Field label={klass.subclassLabel ?? t('bp.option', { defaultValue: 'Class option' })}>
-                    <select className={nativeSelectClass} value={c.subclassId ?? ''} onChange={(e) => {
+                    <select className={nativeSelectClass + warnIf(!c.subclassId)} aria-invalid={!c.subclassId} value={c.subclassId ?? ''} onChange={(e) => {
                       const v = e.target.value;
                       set((x) => {
                         const oldSkill = klass.subclasses?.find((s) => s.id === x.subclassId)?.skill;
@@ -248,7 +257,7 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
                 {klass.subclasses?.find((s) => s.id === c.subclassId) ? <Muted>{klass.subclasses.find((s) => s.id === c.subclassId)?.text}</Muted> : null}
                 {klass.spellcasting?.tradition === 'choice' ? (
                   <Field label={t('bp.tradition', { defaultValue: 'Tradition' })}>
-                    <select className={nativeSelectClass} value={c.spells.tradition ?? ''} onChange={(e) => set((x) => ({ ...x, spells: { ...x.spells, tradition: (e.target.value || undefined) as Pf2eCharacter['spells']['tradition'] } }))}>
+                    <select className={nativeSelectClass + warnIf(!c.spells.tradition)} aria-invalid={!c.spells.tradition} value={c.spells.tradition ?? ''} onChange={(e) => set((x) => ({ ...x, spells: { ...x.spells, tradition: (e.target.value || undefined) as Pf2eCharacter['spells']['tradition'] } }))}>
                       <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
                       {['arcane', 'divine', 'occult', 'primal'].map((tr) => (
                         <option key={tr} value={tr}>
@@ -266,7 +275,7 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
       </div>
 
       <div>
-        <Section title={t('bp.attributes', { defaultValue: 'Attribute boosts' })}>
+        <Section title={t('bp.attributes', { defaultValue: 'Attribute boosts' })} needs={needBoosts}>
           <div className="mb-3 grid grid-cols-6 gap-1 text-center">
             {ABILITIES.map((a) => (
               <div key={a} className="rmhc-stat">
@@ -282,7 +291,10 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
             const set4 = c.boosts.levels[String(lvl)] ?? [];
             return (
               <div key={lvl} className="border-b border-app-border py-2 last:border-b-0">
-                <p className="mb-2 text-sm text-app-text-muted">{t('bp.boostsAt', { defaultValue: 'Level {{lvl}}: four boosts ({{n}}/4)', lvl, n: set4.length })}</p>
+                <p className="mb-2 flex items-center gap-2 text-sm text-app-text-muted">
+                  {t('bp.boostsAt', { defaultValue: 'Level {{lvl}}: four boosts ({{n}}/4)', lvl, n: set4.length })}
+                  <Needs show={set4.length < 4} />
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {ABILITIES.map((a) => (
                     <Chip key={a} on={set4.includes(a)} disabled={!set4.includes(a) && set4.length >= 4} onToggle={() => toggleLevelBoost(lvl, a)}>
@@ -296,7 +308,10 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
           <Muted className="mt-2">{t('bp.partialRule', { defaultValue: 'After 1st level a boost to a +4 or higher modifier is a partial boost (½); two make +1.' })}</Muted>
         </Section>
 
-        <Section title={t('bp.skills', { defaultValue: 'Skills' })} action={<span className="font-mono text-xs text-app-text-muted">{t('b5.picks', { defaultValue: '{{used}} / {{max}} chosen', used: c.trainedSkills.length, max: skillAllowance })}</span>}>
+        <Section
+          title={t('bp.skills', { defaultValue: 'Skills' })}
+          needs={Math.max(0, skillAllowance - c.trainedSkills.length) + incLevels.filter((l) => !c.skillIncreases[String(l)]).length}
+          action={<span className="font-mono text-xs text-app-text-muted">{t('b5.picks', { defaultValue: '{{used}} / {{max}} chosen', used: c.trainedSkills.length, max: skillAllowance })}</span>}>
           {klass ? <Muted className="mb-2">{t('bp.skillHint', { defaultValue: '{{name}}: {{fixed}} plus {{n}} + Int modifier more.', name: klass.name, fixed: klass.trainedSkills.map(cap).join(', ') || '—', n: klass.additionalSkills })}</Muted> : null}
           <div className="flex flex-wrap gap-2">
             {PF2E_SKILLS.map((s) => (
@@ -312,7 +327,7 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
               {incLevels.map((lvl) => (
                 <div key={lvl} className="flex items-center gap-3 border-b border-app-border py-1.5 last:border-b-0">
                   <span className="w-16 font-mono text-xs text-app-text-muted">{t('bp.lvl', { defaultValue: 'Lvl {{n}}', n: lvl })}</span>
-                  <select className={nativeSelectClass} value={c.skillIncreases[String(lvl)] ?? ''} aria-label={t('bp.increaseAt', { defaultValue: 'Skill increase at level {{n}}', n: lvl })} onChange={(e) => set((x) => ({ ...x, skillIncreases: { ...x.skillIncreases, [String(lvl)]: e.target.value } }))}>
+                  <select className={nativeSelectClass + warnIf(!c.skillIncreases[String(lvl)])} aria-invalid={!c.skillIncreases[String(lvl)]} value={c.skillIncreases[String(lvl)] ?? ''} aria-label={t('bp.increaseAt', { defaultValue: 'Skill increase at level {{n}}', n: lvl })} onChange={(e) => set((x) => ({ ...x, skillIncreases: { ...x.skillIncreases, [String(lvl)]: e.target.value } }))}>
                     <option value="">{t('common.choose', { defaultValue: 'Choose…' })}</option>
                     {[...PF2E_SKILLS, ...c.lores].map((s) => (
                       <option key={s} value={s}>
@@ -327,7 +342,10 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
           ) : null}
         </Section>
 
-        <Section title={t('bp.feats', { defaultValue: 'Feats' })}>
+        <Section
+          title={t('bp.feats', { defaultValue: 'Feats' })}
+          needs={slots.filter((sl) => !c.feats.some((f) => f.slot === sl.slot && (f.featId || f.customName))).length}
+        >
           <ul className="flex flex-col">
             {slots.map((slot) => {
               const choice = c.feats.find((f) => f.slot === slot.slot);
@@ -338,10 +356,12 @@ export function BuildPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
               return (
                 <li key={slot.slot} className="flex flex-col gap-1.5 border-b border-app-border py-2.5 last:border-b-0">
                   <span className="text-sm text-app-text-muted">
-                    <span className="font-mono text-xs">{t('bp.lvl', { defaultValue: 'Lvl {{n}}', n: slot.level })}</span> · {slot.label}
+                    <span className="font-mono text-xs">{t('bp.lvl', { defaultValue: 'Lvl {{n}}', n: slot.level })}</span> · {slot.label}{' '}
+                    <Needs show={!choice?.featId && !choice?.customName} />
                   </span>
                   <select
-                    className={nativeSelectClass}
+                    className={nativeSelectClass + warnIf(!choice?.featId && !choice?.customName)}
+                    aria-invalid={!choice?.featId && !choice?.customName}
                     aria-label={`${slot.label} ${slot.level}`}
                     value={choice?.featId ?? (choice?.customName !== undefined ? '__custom' : '')}
                     onChange={(e) => {
