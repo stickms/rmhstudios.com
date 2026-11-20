@@ -9,6 +9,7 @@ import {
   createFakePrisma,
   loadFixture,
   NEEDLES,
+  SDN_HOSTILE_NEEDLES,
   gqlKey,
 } from './test-support';
 
@@ -387,6 +388,7 @@ describe('fake Admit tables', () => {
 
   it('NEEDLES folds the hostile Admit strings in with the CycleTrack ones', () => {
     expect(NEEDLES).toEqual(expect.arrayContaining(['drsmith42', 'user_id=9931', 'user-hostile-9931']));
+    expect(NEEDLES).toEqual(expect.arrayContaining([...SDN_HOSTILE_NEEDLES]));
   });
 
   it('createFakeHost serves POSTs by gqlKey with sorted variables and records them', async () => {

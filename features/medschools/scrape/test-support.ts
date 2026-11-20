@@ -793,8 +793,23 @@ export const ADMIT_HOSTILE_NEEDLES = [
   'user-hostile-9931',
 ] as const;
 
+/**
+ * Person-shaped strings that only the synthetic hostile SDN fixtures may contain (a data-author, a username
+ * mention, an @handle, an email in a post body, an avatar URL and a signature line).
+ */
+export const SDN_HOSTILE_NEEDLES = [
+  'hostile_author_zq',
+  'MentionedUserZQ',
+  '@handle_zq77',
+  'zq.person@example.com',
+  'https://forums.example/data/avatars/zq.jpg',
+  'sigzq-contact-line',
+] as const;
+
 /** Every person-shaped string any anonymization test hunts for; pass to `assertNoLeak`. */
-export const NEEDLES: string[] = [...new Set<string>([...CYCLETRACK_NEEDLES, ...ADMIT_HOSTILE_NEEDLES])];
+export const NEEDLES: string[] = [
+  ...new Set<string>([...CYCLETRACK_NEEDLES, ...ADMIT_HOSTILE_NEEDLES, ...SDN_HOSTILE_NEEDLES]),
+];
 
 /** Throws naming the needle if anything written contains it (e.g. a raw source id that must be hashed). */
 export function assertNoLeak(
