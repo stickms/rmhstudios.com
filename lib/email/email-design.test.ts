@@ -359,7 +359,7 @@ describe('renderDesignedEmail', () => {
           theme:
             'dark',
           accent:
-            'purple',
+            'success',
           blocks:
             [
               {
@@ -387,13 +387,13 @@ describe('renderDesignedEmail', () => {
     expect(
       out.html,
     ).toContain(
-      `bgcolor="${BRAND.logoPurple}"`,
+      `bgcolor="${BRAND.accents.success.dark}"`,
     );
     expect(
       contrast(
-        BRAND.logoPurple,
+        BRAND.accents.success.dark,
         inkOn(
-          BRAND.logoPurple,
+          BRAND.accents.success.dark,
         ),
       ),
     ).toBeGreaterThanOrEqual(
@@ -475,7 +475,17 @@ describe('the brand brief', () => {
     expect(
       brief,
     ).toContain(
-      BRAND.logoPurple,
+      'six-petal',
+    );
+    expect(
+      brief,
+    ).toContain(
+      BRAND.themes.dark.card,
+    );
+    expect(
+      brief,
+    ).not.toMatch(
+      /#9b7ad8/i,
     );
     expect(
       brief,
