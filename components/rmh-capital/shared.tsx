@@ -213,7 +213,7 @@ export function DealTombstones() {
             <Amount value="$50" />
           </p>
           <p className="tomb-what">
-            {t('tomb-rmhs-terms', { defaultValue: 'Pre-seed round' })}
+            {t('tomb-rmhs-terms-pipe', { defaultValue: "Private investment in public equity" })}
           </p>
           <span className="tomb-rule" />
           <p className="tomb-role">

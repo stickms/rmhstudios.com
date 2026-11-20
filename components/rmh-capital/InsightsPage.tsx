@@ -31,7 +31,7 @@ const ARTICLES: Article[] = [
     read: '3 min',
     title: 'Investing in RMH Studios',
     blurb:
-      "RMHCombinator leads RMH Studios' $50 pre-seed round. Why we backed a platform that shipped everything before it raised anything.",
+      "RMHCombinator leads a $50 PIPE in RMH Studios. Why we backed a public company that never raised a venture round.",
     hash: 'rmh-studios',
   },
   {

@@ -5,7 +5,7 @@ import { buildMeta, buildCanonical } from '@/lib/seo';
 const PATH = '/rmh-capital/deals';
 const TITLE = 'Deals — RMH Capital';
 const DESC =
-  "Transactions RMH Capital has announced: RMHCombinator's $50 pre-seed investment in RMH Studios, the all-stock combination of AMD and Nvidia to form NvidiAMD, and Bain Capital's acquisition of Tibetan Buddhism, financed by the Senior Secured Enlightenment Facility. RMH Capital is a work of satire; the transactions are fictional.";
+  "Transactions RMH Capital has announced: RMHCombinator's $50 private investment in public equity in RMH Studios, the all-stock combination of AMD and Nvidia to form NvidiAMD, and Bain Capital's acquisition of Tibetan Buddhism, financed by the Senior Secured Enlightenment Facility. RMH Capital is a work of satire; the transactions are fictional.";
 
 export const Route = createFileRoute('/rmh-capital/deals')({
   head: () => ({
