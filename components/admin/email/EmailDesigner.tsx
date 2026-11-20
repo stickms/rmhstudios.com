@@ -24,6 +24,7 @@ import type { CampaignCategory } from '@/lib/email/preferences';
 
 type DesignModel =
   | 'deepseek'
+  | 'deepseek-reasoning'
   | 'kimi';
 
 interface Draft {
@@ -129,6 +130,7 @@ export function EmailDesigner({
           setModels(
             {
               deepseek: false,
+              'deepseek-reasoning': false,
               kimi: false,
             },
           ),
@@ -185,9 +187,13 @@ export function EmailDesigner({
                   }
                 : {}),
             },
+            // The reasoning model thinks first: allow it the longer wait.
             timeoutMs:
               AI_TIMEOUT_MS *
-              2,
+              (model ===
+              'deepseek-reasoning'
+                ? 3
+                : 2),
           },
         );
       onDesign(
@@ -260,10 +266,19 @@ export function EmailDesigner({
           {
             id: 'deepseek',
             label:
-              'DeepSeek',
+              'DeepSeek Flash',
             disabled:
               models
                 ? !models.deepseek
+                : false,
+          },
+          {
+            id: 'deepseek-reasoning',
+            label:
+              'DeepSeek Reasoning',
+            disabled:
+              models
+                ? !models['deepseek-reasoning']
                 : false,
           },
           {
@@ -277,6 +292,18 @@ export function EmailDesigner({
           },
         ]}
       />
+      {model ===
+      'deepseek-reasoning' ? (
+        <p className="t-meta">
+          {t(
+            'email-design-reasoning-hint',
+            {
+              defaultValue:
+                'Reasoning plans the layout before it writes it: more detail, and it can take a minute or two.',
+            },
+          )}
+        </p>
+      ) : null}
       <Input
         value={
           direction

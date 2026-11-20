@@ -382,6 +382,71 @@ export async function runTask(
   }
 }
 
+/**
+ * A reasoning-tier DeepSeek call for a task that is worth the wait (the admin
+ * email designer's "detailed" mode). It is not a route: the caller names the
+ * model, so the task's cheap default stays cheap. Reasoning models take
+ * minutes' worth of thinking tokens inside `max_tokens`, ignore temperature and
+ * JSON mode, and need a longer timeout than `client()`'s, so this builds its own
+ * client. Metered like any other call; failures become `AI_UNAVAILABLE`.
+ */
+let deepseekSlow: OpenAI | null = null;
+const REASONING_TIMEOUT_MS = 95_000;
+
+export async function runReasoningTask(
+  task: AiTask,
+  model: string,
+  system: string,
+  user: string,
+  opts: RunOptions = {},
+): Promise<string> {
+  if (!process.env.DEEPSEEK_API_KEY) throw new AppError('AI_UNAVAILABLE');
+  deepseekSlow ??= new OpenAI({
+    fetch: timedAiFetch,
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
+    maxRetries: 0,
+    // Under the 100 s a Cloudflare-fronted request is allowed, so a slow
+    // answer fails as a clean error rather than a 524 the admin cannot read.
+    timeout: REASONING_TIMEOUT_MS,
+  });
+  try {
+    const res = await deepseekSlow.chat.completions.create({
+      model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      max_tokens: opts.maxTokens ?? ROUTES[task].maxTokens,
+      stream: false,
+    });
+    void meter({
+      userId: opts.userId,
+      task,
+      model,
+      promptId: opts.promptId,
+      promptVer: opts.promptVer,
+      inTokens: res.usage?.prompt_tokens ?? 0,
+      outTokens: res.usage?.completion_tokens ?? 0,
+      ok: true,
+    });
+    return res.choices[0]?.message?.content?.trim() ?? '';
+  } catch (err) {
+    void meter({
+      userId: opts.userId,
+      task,
+      model,
+      promptId: opts.promptId,
+      promptVer: opts.promptVer,
+      inTokens: 0,
+      outTokens: 0,
+      ok: false,
+    });
+    console.error(`[ai] ${task} (${model}) failed:`, (err as Error)?.message);
+    throw new AppError('AI_UNAVAILABLE');
+  }
+}
+
 /** `runTask` for JSON-mode calls: asks for an object and parses it. */
 export async function runTaskJson<T>(
   task: AiTask,

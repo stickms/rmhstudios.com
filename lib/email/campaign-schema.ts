@@ -591,6 +591,7 @@ export const aiDesignBodySchema =
         z.enum(
           [
             'deepseek',
+            'deepseek-reasoning',
             'kimi',
           ],
         ),
