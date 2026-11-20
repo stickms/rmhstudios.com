@@ -669,14 +669,25 @@ html.readable-font body {
      by exactly the width the compose button occupies. That width cannot be
      written here: the FAB is icon-only below 560px, carries a label above it,
      and the label is translated — "Compose" is not the same width as
-     "Verfassen". `RadialFeed` measures the rendered button and publishes
-     `--float-fab-lane` (its width plus the gap); it is absent everywhere the
-     FAB is not rendered, so the `0px` fallback leaves back-to-top on the right
-     edge by itself, which is exactly right on every non-feed page. */
+     "Verfassen". Since Steel (owner exception L1a, 2026-11-20) the compose
+     button is an icon-only 44px disc (`components/feed/ComposeFab.tsx`, the
+     feed only, phones only), so its width is a constant and the step is set
+     below whenever it is present; it is absent everywhere the disc is not
+     rendered, so the `0px` fallback leaves back-to-top on the right edge by
+     itself, which is exactly right on every non-feed page. */
   .floating-fab-lane {
     right: calc(var(--site-fab-row-right) + var(--float-fab-lane, 0px));
-    bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px));
+    bottom: calc(
+      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px) + var(--float-lane-lift, 0px)
+    );
   }
+  /* Not gated to phones: on desktop both discs are `lg:hidden`, so the step
+     only moves a button nobody sees. */
+  .vibe-app:has([data-floating='compose']) {
+    --float-fab-lane: calc(2.75rem + var(--site-fab-row-gap));
+  }
+  /* No rule hides the lane while the globe is open: the open globe's veil
+     (--z-hub-overlay, 90) already covers it (z-40). */
 
   /* The tripwire back-to-top watches instead of a scroll listener: a 1px marker
      parked `threshold` pixels down the page, whose leaving the top of the
@@ -722,7 +733,6 @@ html.readable-font body {
   .vibe-app {
     --float-lift-hub: 0px;
     --float-lift-cookie: 0px;
-    --float-lift-miniplayer: 0px;
   }
   .vibe-app:has([data-floating='hub']) {
     --float-lift-hub: calc(
@@ -731,6 +741,8 @@ html.readable-font body {
   }
   .vibe-app:has([data-floating='cookie']) {
     --float-lift-cookie: 156px;
+    /* The bottom-right lane's lift; see the note on the lane at the end of this stack. */
+    --float-lane-lift: calc(var(--float-lift-hub) + 156px);
   }
   /* The notice is server-rendered for everyone (lib/cookie-consent.ts) and
      hidden pre-paint for a visitor who already answered. Until hydration
@@ -740,12 +752,10 @@ html.readable-font body {
      (0,2,0) above. */
   html.cookie-consented .vibe-app {
     --float-lift-cookie: 0px;
+    --float-lane-lift: 0px;
   }
   html.cookie-consented [data-floating='cookie'] {
     display: none;
-  }
-  .vibe-app:has([data-floating='miniplayer']) {
-    --float-lift-miniplayer: 68px;
   }
   /* Cookie bar rides above the hub orb. */
   .vibe-app:has([data-floating='hub']) [data-floating='cookie'] {
@@ -762,55 +772,19 @@ html.readable-font body {
         var(--float-lift-cookie)
     );
   }
-  /* Mini-player rides above the hub orb and the cookie bar. */
-  .vibe-app:has([data-floating='hub']) [data-floating='miniplayer'],
-  .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
-    bottom: calc(
-      var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px) + var(--float-lift-hub) +
-        var(--float-lift-cookie)
-    );
-  }
-  /* Back-to-top rides above the cookie bar and the mini-player (the vars add;
-     an absent one is 0). It is not lifted by the orb DIRECTLY: the orb is
-     bottom-CENTRE and this is the right lane, so there is nothing to clear
-     there — and that lift is what used to push the button up into the reading
-     column. It shares the compose FAB's row instead (`.floating-fab-lane`),
-     stepping sideways rather than upwards.
+  /* The bottom-right lane (back-to-top and the compose disc) rides above the
+     cookie bar, through `--float-lane-lift`, which `.floating-fab-lane` adds. It is not lifted by the orb DIRECTLY: the orb is bottom-CENTRE
+     and this is the right lane, so there is nothing to clear there, and that
+     lift is what used to push the button up into the reading column.
 
-     But it must inherit the orb's lift TRANSITIVELY, and that is what the first
-     rule below is for. The two members it stacks on are themselves hub-lifted,
-     and on a phone both span the full width — the cookie bar is
-     `inset-x-3 mx-auto max-w-2xl` and the mini-player is
-     `left-2 right-2 mx-auto max-w-sm` — so both DO occupy the right lane there.
-     Without the hub term the sum is one member short and the button lands
-     inside them: at 390px with the orb up, back-to-top sat at safe+172→safe+216
-     while the cookie card spanned safe+88→safe+244, i.e. directly on top of
-     "Essential only" / "Accept all"; against the mini-player it covered
-     play/close. Above `md` the mini-player moves to the right lane with its own
-     `md:bottom-4` (a utilities-layer class, which outranks this rule) and the
-     centred cookie card no longer reaches the right lane, so the extra term is
-     mobile-shaped in practice even though it is written width-independently —
-     the same reasoning the stack above uses. */
-  .vibe-app:has([data-floating='hub']):is(
-      :has([data-floating='cookie']),
-      :has([data-floating='miniplayer'])
-    )
-    [data-floating='backtotop'] {
-    bottom: calc(
-      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px) + var(--float-lift-hub) +
-        var(--float-lift-cookie) + var(--float-lift-miniplayer)
-    );
-  }
-  .vibe-app:not(:has([data-floating='hub'])):is(
-      :has([data-floating='cookie']),
-      :has([data-floating='miniplayer'])
-    )
-    [data-floating='backtotop'] {
-    bottom: calc(
-      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px) + var(--float-lift-cookie) +
-        var(--float-lift-miniplayer)
-    );
-  }
+     But it inherits the orb's lift TRANSITIVELY: the cookie bar is itself
+     hub-lifted, and on a phone it spans the full width (`inset-x-3 mx-auto
+     max-w-2xl`), so it DOES occupy the right lane. Without the hub term the
+     button landed inside it: at 390px with the orb up, back-to-top sat at
+     safe+172→safe+216 while the cookie card spanned safe+88→safe+244, directly
+     on "Essential only" / "Accept all". `--float-lift-hub` is 0px when there is
+     no orb, so one variable covers both cases. (The mini-player that also used
+     to share this stack no longer exists, and its rules went with it.) */
 
   /* §5.5x B — touch target: the 16px slider thumb (volume, playback and other
      slider) needs a ≥44px hit area on coarse pointers (WCAG 2.5.8) without growing
