@@ -7,9 +7,9 @@ const entry: AppInfo =
     title:
       'RMHCalculator',
     description:
-      'A graphing and scientific calculator where DeepSeek does the math, graphs included.',
+      'A graphing and scientific calculator with live reasoning, graphs included.',
     longDescription:
-      'RMHCalculator is a graphing and scientific calculator powered entirely by the DeepSeek API — it performs no arithmetic of its own. Every scientific evaluation and every plotted graph point is computed by the model, which also decides how to frame and plot each curve for good accuracy. Watch its reasoning stream live, and switch between DeepSeek Reasoner for maximum accuracy and DeepSeek Chat for faster answers.',
+      'RMHCalculator is a graphing and scientific calculator. Every scientific evaluation and every plotted graph point is computed by the model, which also decides how to frame and plot each curve for good accuracy. Watch its reasoning stream live, and switch between Reasoner for maximum accuracy and Chat for faster answers.',
     href: '/rmhcalculator',
     status:
       'Beta',
@@ -25,7 +25,6 @@ const entry: AppInfo =
       'Calculator',
       'Graphing',
       'AI',
-      'DeepSeek',
       'Beta',
     ],
     imagePath:

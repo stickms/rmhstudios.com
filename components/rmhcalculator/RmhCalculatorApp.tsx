@@ -169,15 +169,6 @@ export function RmhCalculatorApp() {
             <h1 className="rmhcalc__brand-name">
               RMHCalculator
             </h1>
-            <span className="rmhcalc__brand-sub">
-              {t(
-                'tagline',
-                {
-                  defaultValue:
-                    'Powered by DeepSeek',
-                },
-              )}
-            </span>
           </span>
         </div>
         <div className="rmhcalc__header-actions">

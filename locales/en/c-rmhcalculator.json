@@ -4,7 +4,7 @@
   "auto-domain": "Auto domain",
   "back-to-builds": "Builds",
   "bad-domain": "Enter a valid domain (min < max).",
-  "computing": "DeepSeek is calculating…",
+  "computing-2": "Calculating…",
   "copied": "Copied to clipboard",
   "copy": "Copy result",
   "deg": "DEG",
@@ -14,7 +14,7 @@
   "fn-aria": "Function {{n}}",
   "fn-placeholder": "function of x",
   "graph-aria": "Graph of {{fns}}",
-  "graph-computing": "DeepSeek is plotting your graph…",
+  "graph-computing-2": "Plotting your graph…",
   "graph-empty": "Enter a function and press Plot.",
   "history": "History",
   "history-empty": "Your calculations will appear here.",
@@ -32,7 +32,6 @@
   "remove-fn": "Remove function",
   "tab-graphing": "Graphing",
   "tab-scientific": "Scientific",
-  "tagline": "Powered by DeepSeek",
   "x-max": "x max",
   "x-min": "x min"
 }

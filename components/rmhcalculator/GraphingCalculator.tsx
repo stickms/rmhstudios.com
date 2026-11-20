@@ -708,10 +708,10 @@ export function GraphingCalculator({
             <p>
               {computing
                 ? t(
-                    'graph-computing',
+                    'graph-computing-2',
                     {
                       defaultValue:
-                        'DeepSeek is plotting your graph…',
+                        'Plotting your graph…',
                     },
                   )
                 : t(

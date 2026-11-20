@@ -274,7 +274,7 @@ export function ScientificCalculator({ model }: { model: CalcModel }) {
             inputMode="text"
             autoComplete="off"
             spellCheck={false}
-            className="rmhcalc-display__input"
+            className="rmhcalc-display__input field-bare"
             placeholder={t('expr-placeholder', { defaultValue: 'Enter an expression…' })}
             aria-label={t('expr-label', { defaultValue: 'Expression' })}
             value={expression}
@@ -303,7 +303,7 @@ export function ScientificCalculator({ model }: { model: CalcModel }) {
               </button>
             ) : computing ? (
               <span className="rmhcalc-display__hint">
-                {t('computing', { defaultValue: 'DeepSeek is calculating…' })}
+                {t('computing-2', { defaultValue: 'Calculating…' })}
               </span>
             ) : (
               <span className="rmhcalc-display__hint">
