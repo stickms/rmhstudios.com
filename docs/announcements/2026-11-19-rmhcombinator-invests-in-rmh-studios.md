@@ -25,15 +25,13 @@ We believe the next great consumer company will not be one app. It will be a pla
 
 ## The round
 
-| Term            | Detail                                                          |
-| --------------- | --------------------------------------------------------------- |
-| Company         | RMH Studios                                                     |
-| Round           | Pre-seed, $50, paid in full at signing                          |
-| Instrument      | Post-money SAFE with a $5 billion valuation cap and no discount |
-| Lead investor   | RMHCombinator, the venture capital business of RMH Capital      |
-| Ownership       | 0.000001%                                                       |
-| Use of proceeds | About one month of servers, and the domain renewal              |
-| Board           | No board seat. Mahmoud Said joins as an observer                 |
+- **Company:** RMH Studios
+- **Round:** Pre-seed, $50, paid in full at signing
+- **Instrument:** Post-money SAFE with a $5 billion valuation cap and no discount
+- **Lead investor:** RMHCombinator, the venture capital business of RMH Capital
+- **Ownership:** 0.000001%
+- **Use of proceeds:** About one month of servers, and the domain renewal
+- **Board:** No board seat. Mahmoud Said joins as an observer
 
 The round extends the company's runway by about one month of hosting. RMH Studios joins the RMHCombinator Fall 2026 batch, and with it gets the whole firm behind it, from its first coin to, one day, the public markets.
 
