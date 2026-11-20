@@ -193,7 +193,7 @@ concurrently.
 | rmhbox           | 7676 | Party-game hub                                                                |
 | ladder-worker    | —    | RMHLadder job-discovery cron (`lib/rmhladder` pipeline)                       |
 | homes-worker     | —    | RMHHomes listings-scraper cron (`lib/homes`)                                  |
-| medschools-worker | —   | RMH Med Schools CycleTrack ingest (`features/medschools`)                     |
+| medschools-worker | —   | RMH Med Schools CycleTrack + Admit ingest (`features/medschools`)             |
 | jobs             | —    | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
 
 In
