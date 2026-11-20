@@ -46,6 +46,7 @@ import { registerAltairSoloWorker } from '@features/altair/engine/solo/queue.ser
 import { VERIFY_SOLO_QUEUE } from '@features/altair/engine/solo/job';
 import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
+import { DAILY_PUZZLE_PREWARM_QUEUE, registerDailyPuzzlePrewarmCron } from '@/lib/daily-puzzles/prewarm.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/developer/recipes.server';
 import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
@@ -178,6 +179,8 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: STUDY_BUDDY_QUEUE, register: registerStudyBuddyCron },
   // posts-plus: expiry sweep + daily auto-delete, dead-link rescue, due scheduled posts / time capsules.
   { queue: 'posts-plus', register: registerPostsPlusCrons },
+  // The coming day's AI daily puzzles, written at 04:45 UTC (DeepSeek off-peak) before the first visitor asks.
+  { queue: DAILY_PUZZLE_PREWARM_QUEUE, register: registerDailyPuzzlePrewarmCron },
   // P03 discovery: post-created fan-out, the daily "On this day" run, the /today digest snapshot.
   { queue: 'discovery', register: registerDiscoveryJobs },
   // P16 D5: "when X then Y" recipes: polled triggers + personal-best events.
