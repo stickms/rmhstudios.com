@@ -30,8 +30,11 @@ const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
  *    the reticle is locked and names itself; hold and its ring fills; let go with the ring full and you go there. A
  *    plain tap on a pin is a link, and Tab turns the globe to each one. A press ripples and dents the ball.
  *  - Accessibility (G7): a `<button aria-expanded aria-controls>`; the pins are a `<nav>` of real links; while open,
- *    Tab stays inside and focus returns to the button on close; Escape, the veil or the globe closes it. With
- *    scripting off the same place is a link to `/sections`.
+ *    Tab stays inside and focus returns to the button on close; Escape, the veil (a press off the globe) or a pin closes
+ *    it. A tap or click on the open globe itself keeps it open (owner, 2026-11-20): the ball is where you turn it, so
+ *    a press that does not travel far enough to count as a drag must not throw the menu away. The button is still a
+ *    toggle from the keyboard (Enter or Space, a click with `detail` 0), so its "Close navigation" name stays true.
+ *    With scripting off the same place is a link to `/sections`.
  *  - UNDER IT, WHILE OPEN, is the account bar (GlobeBar, G3a): the profile or Sign in, search, settings, the edition,
  *    every section as a list, and Sign out. It replaced the "Write a post" and "All sections" text links.
  *  - It has no canvas, worker or simulation of its own: the one shared renderer (lib/chrome) draws the ball, and the
@@ -194,7 +197,11 @@ export function GlobeNav() {
               ? t('shell-globe-close', { defaultValue: 'Close navigation' })
               : t('shell-globe-open', { defaultValue: 'Open navigation' })
           }
-          onClick={() => setOpenAnd(!open)}
+          onClick={(event) => {
+            // A pointer press on the open globe is a touch of the ball, not a close; the keyboard still toggles.
+            if (open && event.detail > 0) return;
+            setOpenAnd(!open);
+          }}
         >
           <GlobeFirstPaint points={nodes.length} />
         </button>
