@@ -1364,10 +1364,20 @@ export async function runSdnLive(
   }
 }
 
+/** First back-off after a failed backfill run; doubles per consecutive failure, capped at 24 h (Q23). */
+const BACKFILL_BACKOFF_BASE_MS = 3_600_000;
+const BACKFILL_BACKOFF_CAP_MS =
+  24 *
+  3_600_000;
+
 /**
- * Whether the SDN backfill should be queued by the live tick (ruling Q7/Q8). False when AI is off, when the
- * newest backfill run finished the walk, when it paused for this UTC month's budget, or when it paused for
- * DeepSeek peak hours and it is still peak. True otherwise, including before any run.
+ * Whether the SDN backfill should be queued by the live tick (rulings Q7, Q8, Q23). Signature for Task 11:
+ * `sdnBackfillOwed(prisma, now, aiConfigured = true)` (positional, `now` a Date). False when AI is off, when the
+ * newest backfill run finished the walk, when any recent run paused for this UTC month's budget, when it paused
+ * for DeepSeek peak hours and it is still peak, or when the newest run failed (FAILED, or PARTIAL with real
+ * failures) and is inside its back-off window (1 h, doubling per consecutive failed run, capped at 24 h; the
+ * count is `stats.failStreak`). Cap, peak, budget and AI-off pauses are benign and never back off. True
+ * otherwise, including before any run.
  */
 export async function sdnBackfillOwed(
   prisma: MedPrisma,
@@ -1378,8 +1388,8 @@ export async function sdnBackfillOwed(
     !aiConfigured
   )
     return false;
-  const latest =
-    await prisma.medSourceRun.findFirst(
+  const recent =
+    await prisma.medSourceRun.findMany(
       {
         where:
           {
@@ -1392,22 +1402,44 @@ export async function sdnBackfillOwed(
             startedAt:
               'desc',
           },
+        take: 20,
       },
     );
+  // Newest first (the query asks for it; sorting here keeps the answer independent of the store).
+  recent.sort(
+    (
+      a,
+      b,
+    ) =>
+      b.startedAt.getTime() -
+      a.startedAt.getTime(),
+  );
+  const latest =
+    recent[0];
   if (
     !latest
   )
     return true;
+  const statsOf =
+    (r: {
+      stats: unknown;
+    }): Record<
+      string,
+      unknown
+    > =>
+      r.stats !==
+        null &&
+      typeof r.stats ===
+        'object'
+        ? (r.stats as Record<
+            string,
+            unknown
+          >)
+        : {};
   const stats =
-    latest.stats !==
-      null &&
-    typeof latest.stats ===
-      'object'
-      ? (latest.stats as Record<
-          string,
-          unknown
-        >)
-      : {};
+    statsOf(
+      latest,
+    );
   const cursor =
     stats.cursor as
       | {
@@ -1420,14 +1452,29 @@ export async function sdnBackfillOwed(
     'done'
   )
     return false;
-  if (
-    stats.pausedMonth ===
+  // The newest run that carries a pausedMonth, so a later manual or failed run does not lose the pause.
+  const month =
     now
       .toISOString()
       .slice(
         0,
         7,
+      );
+  const paused =
+    recent
+      .map(
+        statsOf,
       )
+      .find(
+        (
+          st,
+        ) =>
+          typeof st.pausedMonth ===
+          'string',
+      );
+  if (
+    paused?.pausedMonth ===
+    month
   )
     return false;
   if (
@@ -1438,5 +1485,46 @@ export async function sdnBackfillOwed(
     )
   )
     return false;
+  const failed =
+    latest.status ===
+      'FAILED' ||
+    (latest.status ===
+      'PARTIAL' &&
+      typeof stats.failStreak ===
+        'number' &&
+      stats.failStreak >
+        0);
+  if (
+    failed
+  ) {
+    const streak =
+      typeof stats.failStreak ===
+        'number' &&
+      stats.failStreak >
+        0
+        ? stats.failStreak
+        : 1;
+    const window =
+      Math.min(
+        BACKFILL_BACKOFF_BASE_MS *
+          2 **
+            (streak -
+              1),
+        BACKFILL_BACKOFF_CAP_MS,
+      );
+    const at =
+      (latest.finishedAt ??
+        latest.startedAt) as
+        | Date
+        | null
+        | undefined;
+    if (
+      at &&
+      now.getTime() <
+        at.getTime() +
+          window
+    )
+      return false;
+  }
   return true;
 }

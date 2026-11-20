@@ -1227,8 +1227,13 @@ describe('runSdnBackfill', () => {
       stats,
     ))
       if (
-        k !==
-        'cursor'
+        ![
+          'cursor',
+          'listingFail',
+          'skippedListingPages',
+        ].includes(
+          k,
+        )
       )
         expect(
           v ===
@@ -1256,6 +1261,399 @@ describe('runSdnBackfill', () => {
       ),
     ).not.toContain(
       'authorzz',
+    );
+  });
+});
+
+describe('backfill back-off and listing skip (Q23)', () => {
+  const minutes =
+    (
+      n: number,
+    ) =>
+      n *
+      60_000;
+  const challengeAll =
+    (
+      s: ReturnType<
+        typeof setup
+      >,
+    ) => {
+      for (const x of [
+        Y25,
+        Y24,
+        Y26,
+        Y23,
+      ])
+        s.live.routes[
+          `/threads/${x.slug}.${x.id}/`
+        ] =
+          '<html><head><title>Just a moment...</title></head></html>';
+    };
+  const failingRun =
+    async (
+      s: ReturnType<
+        typeof setup
+      >,
+    ) => {
+      challengeAll(
+        s,
+      );
+      const r =
+        await s.run();
+      expect(
+        r.status,
+      ).toBe(
+        'FAILED',
+      );
+      return r;
+    };
+
+  it('a FAILED run is not owed at +30 min and owed at +61 min', async () => {
+    const s =
+      setup(
+        archiveRoutes(),
+      );
+    await failingRun(
+      s,
+    );
+    expect(
+      await sdnBackfillOwed(
+        s.prisma,
+        new Date(
+          NOW.getTime() +
+            minutes(
+              30,
+            ),
+        ),
+        true,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      await sdnBackfillOwed(
+        s.prisma,
+        new Date(
+          NOW.getTime() +
+            minutes(
+              61,
+            ),
+        ),
+        true,
+      ),
+    ).toBe(
+      true,
+    );
+  });
+
+  it('two consecutive failures give a 2 h window', async () => {
+    const s =
+      setup(
+        archiveRoutes(),
+      );
+    await failingRun(
+      s,
+    );
+    s.clock.t =
+      new Date(
+        NOW.getTime() +
+          minutes(
+            61,
+          ),
+      );
+    await failingRun(
+      s,
+    );
+    const second =
+      s.clock.t.getTime();
+    expect(
+      (
+        s.tables.medSourceRun!.at(
+          -1,
+        )!
+          .stats as {
+          failStreak: number;
+        }
+      )
+        .failStreak,
+    ).toBe(
+      2,
+    );
+    expect(
+      await sdnBackfillOwed(
+        s.prisma,
+        new Date(
+          second +
+            minutes(
+              90,
+            ),
+        ),
+        true,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      await sdnBackfillOwed(
+        s.prisma,
+        new Date(
+          second +
+            minutes(
+              121,
+            ),
+        ),
+        true,
+      ),
+    ).toBe(
+      true,
+    );
+  });
+
+  it('a cap-pause PARTIAL is owed on the next tick and a success resets the count', async () => {
+    const s =
+      setup(
+        archiveRoutes(),
+        {
+          maxLlmCalls: 2,
+        },
+      );
+    await failingRun(
+      setup(
+        archiveRoutes(),
+      ),
+    ); // unrelated store: failures do not leak
+    const r =
+      await s.run();
+    expect(
+      r.status,
+    ).toBe(
+      'PARTIAL',
+    );
+    expect(
+      await sdnBackfillOwed(
+        s.prisma,
+        new Date(
+          NOW.getTime() +
+            minutes(
+              1,
+            ),
+        ),
+        true,
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      (
+        s.tables.medSourceRun!.at(
+          -1,
+        )!
+          .stats as {
+          failStreak: number;
+        }
+      )
+        .failStreak,
+    ).toBe(
+      0,
+    );
+  });
+
+  it('a success after failures resets failStreak', async () => {
+    const s =
+      setup(
+        archiveRoutes(),
+      );
+    await failingRun(
+      s,
+    );
+    for (const x of [
+      Y25,
+      Y24,
+      Y26,
+      Y23,
+    ])
+      s.live.routes[
+        `/threads/${x.slug}.${x.id}/`
+      ] =
+        threadPage(
+          [
+            x.id *
+              10,
+          ],
+        );
+    s.clock.t =
+      new Date(
+        NOW.getTime() +
+          minutes(
+            61,
+          ),
+      );
+    const r =
+      await s.run();
+    expect(
+      r.status,
+    ).toBe(
+      'OK',
+    );
+    expect(
+      (
+        s.tables.medSourceRun!.at(
+          -1,
+        )!
+          .stats as {
+          failStreak: number;
+        }
+      )
+        .failStreak,
+    ).toBe(
+      0,
+    );
+  });
+
+  it('a listing page that fails in 3 runs is skipped and recorded', async () => {
+    const routes =
+      archiveRoutes();
+    routes[
+      '/forums/962/'
+    ] =
+      listing(
+        [
+          Y25,
+        ],
+        true,
+      );
+    delete routes[
+      '/forums/962/page-2'
+    ]; // 404
+    routes[
+      '/forums/962/page-3'
+    ] =
+      listing(
+        [
+          Y24,
+        ],
+      );
+    const s =
+      setup(
+        routes,
+      );
+    for (
+      let i = 0;
+      i <
+      2;
+      i++
+    ) {
+      const r =
+        await s.run();
+      expect(
+        r.status,
+      ).toBe(
+        'PARTIAL',
+      );
+      expect(
+        r.cursor,
+      ).toMatchObject(
+        {
+          stage:
+            'discover',
+          page: 2,
+        },
+      );
+      s.clock.t =
+        new Date(
+          s.clock.t.getTime() +
+            minutes(
+              1500,
+            ),
+        );
+    }
+    const r3 =
+      await s.run();
+    expect(
+      (
+        s.tables.medSourceRun!.at(
+          -1,
+        )!
+          .stats as {
+          skippedListingPages: string[];
+        }
+      )
+        .skippedListingPages,
+    ).toEqual(
+      [
+        '962:2',
+      ],
+    );
+    expect(
+      r3.listingPages,
+    ).toBeGreaterThanOrEqual(
+      2,
+    );
+    expect(
+      s.requested,
+    ).toContain(
+      '/forums/962/page-3',
+    );
+  });
+
+  it('pausedMonth survives a later run that does not carry it', async () => {
+    const {
+      prisma,
+      tables,
+    } =
+      createFakePrisma();
+    tables.medSourceRun!.push(
+      {
+        source:
+          'SDN',
+        job: 'sdn-backfill',
+        status:
+          'PARTIAL',
+        stats:
+          {
+            pausedMonth:
+              '2026-11',
+          },
+        startedAt:
+          new Date(
+            '2026-11-10T00:00:00Z',
+          ),
+      },
+      {
+        source:
+          'SDN',
+        job: 'sdn-backfill',
+        status:
+          'PARTIAL',
+        stats:
+          {
+            listingFailed: 0,
+          },
+        startedAt:
+          new Date(
+            '2026-11-12T00:00:00Z',
+          ),
+      },
+    );
+    expect(
+      await sdnBackfillOwed(
+        prisma,
+        NOW,
+        true,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      await sdnBackfillOwed(
+        prisma,
+        new Date(
+          '2026-12-02T12:00:00Z',
+        ),
+        true,
+      ),
+    ).toBe(
+      true,
     );
   });
 });

@@ -125,6 +125,8 @@ const DEFAULT_MAX_PAGES = 200;
 const DEFAULT_MAX_LLM_CALLS = 150;
 /** Safety bound on one forum's listing walk (the run page cap bounds each run anyway). */
 const MAX_LISTING_PAGES = 5000;
+/** Runs that may fail on one listing page before it is skipped. */
+const MAX_LISTING_FAILURES = 3;
 const MAX_THREAD_FAILURES = 3;
 const DAY_MS = 86_400_000;
 const JOB =
@@ -324,6 +326,15 @@ export async function runSdnBackfill(
     {
       ...FRESH_CURSOR,
     };
+  let prevStreak = 0;
+  let listingFail: {
+    node: number;
+    page: number;
+    count: number;
+  } | null =
+    null;
+  let skippedListingPages: string[] =
+    [];
   try {
     const recent =
       await prisma.medSourceRun.findMany(
@@ -342,6 +353,30 @@ export async function runSdnBackfill(
           take: 20,
         },
       );
+    recent.sort(
+      (
+        a,
+        b,
+      ) =>
+        b.startedAt.getTime() -
+        a.startedAt.getTime(),
+    );
+    const newest =
+      recent[0]
+        ?.stats as
+        | Record<
+            string,
+            unknown
+          >
+        | null
+        | undefined;
+    if (
+      newest &&
+      typeof newest.failStreak ===
+        'number'
+    )
+      prevStreak =
+        newest.failStreak;
     for (const r of recent) {
       const c =
         readCursor(
@@ -352,6 +387,48 @@ export async function runSdnBackfill(
       ) {
         cursor =
           c;
+        const st =
+          r.stats as Record<
+            string,
+            unknown
+          >;
+        const lf =
+          st.listingFail as
+            | Record<
+                string,
+                unknown
+              >
+            | null
+            | undefined;
+        if (
+          lf &&
+          typeof lf.node ===
+            'number' &&
+          typeof lf.page ===
+            'number' &&
+          typeof lf.count ===
+            'number'
+        )
+          listingFail =
+            {
+              node: lf.node,
+              page: lf.page,
+              count:
+                lf.count,
+            };
+        if (
+          Array.isArray(
+            st.skippedListingPages,
+          )
+        )
+          skippedListingPages =
+            st.skippedListingPages.filter(
+              (
+                x,
+              ): x is string =>
+                typeof x ===
+                'string',
+            );
         break;
       }
     }
@@ -365,11 +442,17 @@ export async function runSdnBackfill(
     opts.rediscover &&
     opts.trigger ===
       'MANUAL'
-  )
+  ) {
     cursor =
       {
         ...FRESH_CURSOR,
       };
+    // A rediscover retries the pages an earlier walk gave up on.
+    listingFail =
+      null;
+    skippedListingPages =
+      [];
+  }
   summary.cursor =
     cursor;
 
@@ -428,6 +511,10 @@ export async function runSdnBackfill(
     deps.maxLlmCalls ??
     DEFAULT_MAX_LLM_CALLS;
 
+  // Mid-run the streak is pessimistic (a crash leaves a FAILED run); close() sets the real value.
+  let failStreak =
+    prevStreak +
+    1;
   const statsNow =
     (): Record<
       string,
@@ -445,6 +532,9 @@ export async function runSdnBackfill(
       return {
         ...counters,
         cursor,
+        failStreak,
+        listingFail,
+        skippedListingPages,
       };
     };
   const persistStats =
@@ -489,6 +579,22 @@ export async function runSdnBackfill(
       summary.requests =
         session.requests;
       finish();
+      // Benign stops (caps, peak, budget, AI off) reset the streak; only real failures extend it.
+      failStreak =
+        status ===
+          'FAILED' ||
+        (status ===
+          'PARTIAL' &&
+          (summary.halted ||
+            summary.listingFailed >
+              0 ||
+            summary.threadsFailed >
+              0 ||
+            summary.rollupErrors >
+              0))
+          ? prevStreak +
+            1
+          : 0;
       try {
         await prisma.medSourceRun.update(
           {
@@ -766,11 +872,53 @@ export async function runSdnBackfill(
                 'FAILED',
               );
             }
-            // The cursor stays on this page, so the next run retries it.
             summary.listingFailed++;
             log.warn(
               `sdn-backfill: listing page failed (${e instanceof SdnPageError ? 'page' : 'error'})`,
             );
+            const count =
+              (listingFail &&
+              listingFail.node ===
+                forum.node &&
+              listingFail.page ===
+                page
+                ? listingFail.count
+                : 0) +
+              1;
+            if (
+              count >=
+              MAX_LISTING_FAILURES
+            ) {
+              // Three runs failed on this page: give it up (a rediscover retries it) so it stops pinning the cursor.
+              skippedListingPages.push(
+                `${forum.node}:${page}`,
+              );
+              listingFail =
+                null;
+              incomplete = true;
+              cursor =
+                {
+                  ...cursor,
+                  stage:
+                    'discover',
+                  forumIndex:
+                    index,
+                  forumNode:
+                    forum.node,
+                  page:
+                    page +
+                    1,
+                };
+              await persistStats();
+              continue;
+            }
+            // Otherwise the cursor stays on this page, so the next run retries it.
+            listingFail =
+              {
+                node: forum.node,
+                page,
+                count,
+              };
             incomplete = true;
             return await close(
               'PARTIAL',
