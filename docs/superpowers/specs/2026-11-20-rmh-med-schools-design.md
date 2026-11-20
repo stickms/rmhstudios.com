@@ -1,6 +1,6 @@
 # RMH Med Schools — design
 
-Date: 2026-11-20 · Status: awaiting owner approval
+Date: 2026-11-20 · Status: approved by owner 2026-11-20
 
 ## 1. Intent
 
@@ -88,19 +88,19 @@ Considered for the ingest/compute tier:
 
 ```
  CycleTrack ─┐             medschools-worker (pg-boss queues)            web (SSR + API)
- Admit.org  ─┼─ adapters ─► normalize ─► anonymize ─► upsert ─► Postgres ◄─ /med-schools pages
+ Admit.org  ─┼─ adapters ─► normalize ─► anonymize ─► upsert ─► Postgres ◄─ /rmh-medschool pages
  SDN        ─┘   (per source)                         │                  ◄─ contracts/api
                                        aggregate + forecast (nightly/hourly) ◄─ AI Q&A (RAG)
 ```
 
 Code layout (copying RMHHomes, using the feature-folder form of redesign A1):
-- `features/medschools/` — `feature.ts`, `catalog.ts` (AppInfo, `href: '/med-schools'`,
+- `features/medschools/` — `feature.ts`, `catalog.ts` (AppInfo, `href: '/rmh-medschool'`,
   `usesSiteTheme: true`, `authGate: false` because the public pages need no account),
   `engine/` (pure logic: normalize, anonymize, stats, forecast — unit-tested, no I/O),
   `ui/` (components), `api/` (`*.server.ts` endpoint modules), `scrape/adapters/`.
 - `server/medschools-worker/index.ts` — the process.
 - `prisma/schema/medschools.prisma` — the models.
-- `app/routes/_site/med-schools/` — thin pages.
+- `app/routes/_site/rmh-medschool/` — thin pages.
 - i18n namespace `medschools`, added to `NAMESPACES` in `lib/i18n/config.ts`.
 
 ## 6. Anonymization invariant
@@ -268,7 +268,7 @@ Every chart labels its unit as "reported events" and names its sources.
 
 ## 11. Web
 
-Pages (`app/routes/_site/med-schools/`, Steel, `PageLayout`, per-route `head()` with
+Pages (`app/routes/_site/rmh-medschool/`, Steel, `PageLayout`, per-route `head()` with
 `buildMeta`, OG cards via `ogCardPath('med-school', slug)` plus a section card in
 `lib/og/static-cards.ts`):
 - `index.tsx` — search/filter the school list (MD/DO, state), today's live activity at
@@ -331,7 +331,7 @@ entries, `start`), `Dockerfile` esbuild list + `test -f`, `docker-compose.yml` s
 
 ## 15. Calls made by the designer (owner may override)
 
-- App lives in the `_site` shell (Steel) at `/med-schools`, not a full-screen app.
+- App lives in the `_site` shell (Steel) at `/rmh-medschool`, not a full-screen app.
 - US MD + DO only; MD-PhD/DO-PhD kept as `program = PHD`.
 - AI Q&A needs sign-in; public pages don't.
 - Source attribution links point at threads/school pages, never posts.
