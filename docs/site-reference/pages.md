@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 344 routes. 166 render inside the standard site shell (sidebar, nav, context rail); 178 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 345 routes. 167 render inside the standard site shell (sidebar, nav, context rail); 178 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -42,6 +42,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
 | `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |
 | `/admin/market` | Marketplace Review | admin | `app/routes/_site/admin/market.tsx` |
+| `/admin/medschools` | Med Schools aliases \| Admin | admin | `app/routes/_site/admin/medschools.tsx` |
 | `/admin/patch-notes` | Patch Notes \| Admin | admin | `app/routes/_site/admin/patch-notes.tsx` |
 | `/admin/performance` | Performance | admin | `app/routes/_site/admin/performance.tsx` |
 | `/admin/predictions` | Prediction Markets \| Admin | admin | `app/routes/_site/admin/predictions.tsx` |

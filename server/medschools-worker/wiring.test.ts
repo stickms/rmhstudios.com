@@ -191,6 +191,9 @@ describe('medschools-worker wiring', () => {
       'MEDSCHOOLS_CYCLETRACK_CRON',
       'MEDSCHOOLS_DEDUPE_SECRET',
       'MEDSCHOOLS_SHUTDOWN_DEADLINE_MS',
+      'MEDSCHOOLS_ADMIT_ENABLED',
+      'MEDSCHOOLS_ADMIT_LIVE_CRON',
+      'MEDSCHOOLS_INTERVIEWS_CRON',
     ]) {
       expect(
         env,
@@ -262,5 +265,98 @@ describe('medschools-worker wiring', () => {
     const main = src.slice(src.indexOf('if ( backfillDue )'));
     expect(main).toContain('cycletrackConsumer.runNow()');
     expect(main).not.toContain('backfillConsumer.runNow()');
+  });
+
+  const flat = () => read('server/medschools-worker/index.ts').replace(/\s+/g, ' ');
+  const slice = (src: string, from: string, to: string) =>
+    src.slice(src.indexOf(from), src.indexOf(to, src.indexOf(from)));
+
+  it('registers medschools.admit-live and medschools.interviews through startScheduledConsumer with their default crons', () => {
+    const src = flat();
+    expect(src).toContain("const ADMIT_LIVE_QUEUE = 'medschools.admit-live'");
+    expect(src).toContain("const INTERVIEWS_QUEUE = 'medschools.interviews'");
+    expect(src).toContain("process.env.MEDSCHOOLS_ADMIT_LIVE_CRON?.trim() || '*/5 * * * *'");
+    expect(src).toContain("process.env.MEDSCHOOLS_INTERVIEWS_CRON?.trim() || '35 4 * * *'");
+    const live = slice(src, 'admitLiveConsumer = await startScheduledConsumer', 'interviewsConsumer = await');
+    expect(live).toContain('queue: ADMIT_LIVE_QUEUE');
+    expect(live).toContain('expireInSeconds: 20 * 60');
+    expect(live).toContain('retryLimit: 0');
+    expect(live).toContain('handler: admitLiveTick');
+    const iv = slice(src, 'interviewsConsumer = await startScheduledConsumer', 'Started');
+    expect(iv).toContain('queue: INTERVIEWS_QUEUE');
+    expect(iv).toContain('expireInSeconds: 3 * 60 * 60');
+    expect(iv).toContain('retryLimit: 0');
+    expect(iv).toContain('handler: interviewsTick');
+  });
+
+  it('both Admit ticks are guarded() and check ADMIT_ENABLED, then the secret, before running; only manual bypasses the flag', () => {
+    const src = flat();
+    expect(src).toContain("const ADMIT_ENABLED = process.env.MEDSCHOOLS_ADMIT_ENABLED !== 'false'");
+    expect(src).toContain("(process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '').length >= 16");
+    const gate = slice(src, 'function admitGate', 'const admitLiveTick');
+    expect(gate).toContain('!ADMIT_ENABLED && data.manual !== true');
+    expect(gate.indexOf('ADMIT_ENABLED')).toBeLessThan(gate.indexOf('secretOk()'));
+    // The secret is never bypassed, manual or not.
+    expect(gate).not.toMatch(/secretOk\(\)[^}]*manual/);
+    expect(gate).toContain('log.error(');
+    const live = slice(src, 'const admitLiveTick', 'const interviewsTick');
+    const iv = slice(src, 'const interviewsTick', '// ─── Startup bootstrap');
+    expect(live).toContain("guarded( 'admit-live'");
+    expect(iv).toContain("guarded( 'interviews'");
+    expect(live.indexOf('admitGate(')).toBeLessThan(live.indexOf('runAdmitLive('));
+    expect(iv.indexOf('admitGate(')).toBeLessThan(iv.indexOf('runAdmitInterviews('));
+  });
+
+  it('a missing secret logs an error and the CycleTrack tick still runs', () => {
+    const src = flat();
+    const cycletrack = slice(src, 'const cycletrackTick', 'const backfillTick');
+    const backfill = slice(src, 'const backfillTick', 'function admitGate');
+    expect(cycletrack).not.toContain('secretOk');
+    expect(backfill).not.toContain('secretOk');
+    const main = src.slice(src.indexOf('async function main()'));
+    const startup = main.slice(0, main.indexOf('const backfillDue'));
+    expect(startup).toContain('if (!secretOk())');
+    expect(startup).toContain('log.error(');
+    expect(startup).toContain('CycleTrack is unaffected');
+    expect(startup).not.toContain('process.exit');
+  });
+
+  it('one admitHost, separate from the CycleTrack host, serves both Admit ticks', () => {
+    const src = flat();
+    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
+    const live = slice(src, 'const admitLiveTick', 'const interviewsTick');
+    const iv = slice(src, 'const interviewsTick', '// ─── Startup bootstrap');
+    expect(live).toContain('host: admitHost');
+    expect(iv).toContain('host: admitHost');
+    expect(live).not.toContain('cycletrackHost');
+    expect(iv).not.toContain('cycletrackHost');
+  });
+
+  it('bootstrap seeds Admit aliases and warns with the skipped pairs; it queues no Admit run', () => {
+    const src = flat();
+    const boot = slice(src, 'async function bootstrap()', '// ─── Scheduler');
+    expect(boot).toContain('seedAdmitAliases(');
+    expect(boot).toContain('admit.skipped.length > 0');
+    expect(boot).toContain('log.warn(');
+    expect(boot).toContain('admit.skipped.map');
+    expect(boot).not.toContain('admitLiveConsumer');
+    // The Admit seed sits in its own try/catch, before and apart from the backfill-due return.
+    const seedAt = boot.indexOf('seedAdmitAliases(');
+    const tryAt = boot.lastIndexOf('try {', seedAt);
+    const catchAt = boot.indexOf('} catch (e) {', seedAt);
+    expect(tryAt).toBeGreaterThan(boot.indexOf('seedRegistryIfEmpty('));
+    expect(catchAt).toBeGreaterThan(seedAt);
+    expect(boot.slice(catchAt, catchAt + 120)).toContain('log.error(');
+    expect(boot.indexOf('return ( CYCLETRACK_ENABLED')).toBeGreaterThan(catchAt);
+    expect(boot).not.toContain('interviewsConsumer');
+  });
+
+  it('shutdown pauses all four consumers and waits on the shared in-flight set', () => {
+    const src = flat();
+    const sd = src.slice(src.indexOf('async function shutdown'));
+    for (const c of ['cycletrackConsumer', 'backfillConsumer', 'admitLiveConsumer', 'interviewsConsumer']) {
+      expect(sd, c).toContain(`${c}?.pause()`);
+    }
+    expect(sd).toContain('Promise.allSettled( [ ...inFlight');
   });
 });

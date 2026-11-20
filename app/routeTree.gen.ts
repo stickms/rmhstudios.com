@@ -216,6 +216,7 @@ import { Route as SiteAdminFlagsRouteImport } from './routes/_site/admin/flags'
 import { Route as SiteAdminInsightsRouteImport } from './routes/_site/admin/insights'
 import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/library'
 import { Route as SiteAdminMarketRouteImport } from './routes/_site/admin/market'
+import { Route as SiteAdminMedschoolsRouteImport } from './routes/_site/admin/medschools'
 import { Route as SiteAdminPatchNotesRouteImport } from './routes/_site/admin/patch-notes'
 import { Route as SiteAdminPerformanceRouteImport } from './routes/_site/admin/performance'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
@@ -1530,6 +1531,11 @@ const SiteAdminLibraryRoute = SiteAdminLibraryRouteImport.update({
 const SiteAdminMarketRoute = SiteAdminMarketRouteImport.update({
   id: '/market',
   path: '/market',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminMedschoolsRoute = SiteAdminMedschoolsRouteImport.update({
+  id: '/medschools',
+  path: '/medschools',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminPatchNotesRoute = SiteAdminPatchNotesRouteImport.update({
@@ -3177,6 +3183,7 @@ export interface FileRoutesByFullPath {
   '/admin/insights': typeof SiteAdminInsightsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/market': typeof SiteAdminMarketRoute
+  '/admin/medschools': typeof SiteAdminMedschoolsRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/admin/performance': typeof SiteAdminPerformanceRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -3638,6 +3645,7 @@ export interface FileRoutesByTo {
   '/admin/insights': typeof SiteAdminInsightsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/market': typeof SiteAdminMarketRoute
+  '/admin/medschools': typeof SiteAdminMedschoolsRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/admin/performance': typeof SiteAdminPerformanceRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -4127,6 +4135,7 @@ export interface FileRoutesById {
   '/_site/admin/insights': typeof SiteAdminInsightsRoute
   '/_site/admin/library': typeof SiteAdminLibraryRoute
   '/_site/admin/market': typeof SiteAdminMarketRoute
+  '/_site/admin/medschools': typeof SiteAdminMedschoolsRoute
   '/_site/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/_site/admin/performance': typeof SiteAdminPerformanceRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -4616,6 +4625,7 @@ export interface FileRouteTypes {
     | '/admin/insights'
     | '/admin/library'
     | '/admin/market'
+    | '/admin/medschools'
     | '/admin/patch-notes'
     | '/admin/performance'
     | '/admin/predictions'
@@ -5077,6 +5087,7 @@ export interface FileRouteTypes {
     | '/admin/insights'
     | '/admin/library'
     | '/admin/market'
+    | '/admin/medschools'
     | '/admin/patch-notes'
     | '/admin/performance'
     | '/admin/predictions'
@@ -5565,6 +5576,7 @@ export interface FileRouteTypes {
     | '/_site/admin/insights'
     | '/_site/admin/library'
     | '/_site/admin/market'
+    | '/_site/admin/medschools'
     | '/_site/admin/patch-notes'
     | '/_site/admin/performance'
     | '/_site/admin/predictions'
@@ -7481,6 +7493,13 @@ declare module '@tanstack/react-router' {
       path: '/market'
       fullPath: '/admin/market'
       preLoaderRoute: typeof SiteAdminMarketRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/medschools': {
+      id: '/_site/admin/medschools'
+      path: '/medschools'
+      fullPath: '/admin/medschools'
+      preLoaderRoute: typeof SiteAdminMedschoolsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/patch-notes': {
@@ -9463,6 +9482,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminInsightsRoute: typeof SiteAdminInsightsRoute
   SiteAdminLibraryRoute: typeof SiteAdminLibraryRoute
   SiteAdminMarketRoute: typeof SiteAdminMarketRoute
+  SiteAdminMedschoolsRoute: typeof SiteAdminMedschoolsRoute
   SiteAdminPatchNotesRoute: typeof SiteAdminPatchNotesRoute
   SiteAdminPerformanceRoute: typeof SiteAdminPerformanceRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
@@ -9504,6 +9524,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminInsightsRoute: SiteAdminInsightsRoute,
   SiteAdminLibraryRoute: SiteAdminLibraryRoute,
   SiteAdminMarketRoute: SiteAdminMarketRoute,
+  SiteAdminMedschoolsRoute: SiteAdminMedschoolsRoute,
   SiteAdminPatchNotesRoute: SiteAdminPatchNotesRoute,
   SiteAdminPerformanceRoute: SiteAdminPerformanceRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,

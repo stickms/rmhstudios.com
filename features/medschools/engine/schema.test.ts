@@ -96,4 +96,34 @@ model MedTrackerCycle {
     const fields = /\[([^\]]+)\]/.exec(line ?? '')?.[1]?.split(',').map((s) => s.trim());
     expect(fields).toEqual(['schoolId', 'program', 'cycleYear', 'date', 'eventType', 'source']);
   });
+
+  it('new Admit columns pass the person-like check', () => {
+    const text = schema();
+    expect(text).toContain('model MedInterviewQuestion');
+    expect(text).toContain('model MedInterviewProfile');
+    expect(forbiddenColumns(text)).toEqual([]);
+  });
+
+  it('MedSchoolStats unique includes source and residence', () => {
+    const m = parseModels(schema()).find((x) => x.model === 'MedSchoolStats');
+    const line = m?.body.split('\n').find((l) => l.includes('@@unique'));
+    const fields = /\[([^\]]+)\]/.exec(line ?? '')?.[1]?.split(',').map((s) => s.trim());
+    expect(fields).toEqual(['schoolId', 'program', 'cycleYear', 'source', 'residence']);
+    expect(m?.body).toMatch(/\bprogram\s+MedProgram\?/);
+  });
+
+  it('MedEventType has WITHDRAWN and HOLD', () => {
+    const body = /enum MedEventType \{([\s\S]*?)\}/.exec(schema())?.[1] ?? '';
+    const values = body.split('\n').map((l) => l.trim()).filter(Boolean);
+    expect(values).toEqual(expect.arrayContaining(['WITHDRAWN', 'HOLD']));
+  });
+
+  it('MedInterviewQuestion.dedupeHash is unique', () => {
+    const m = parseModels(schema()).find((x) => x.model === 'MedInterviewQuestion');
+    expect(m?.body).toMatch(/dedupeHash\s+String\s+@unique/);
+  });
+
+  it('no MedInterviewDate model exists', () => {
+    expect(schema()).not.toMatch(/model\s+MedInterviewDate\b/);
+  });
 });

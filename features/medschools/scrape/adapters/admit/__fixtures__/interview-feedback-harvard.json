@@ -1,0 +1,28 @@
+{
+  "data": {
+    "getInterviewFeedbackForSchool": {
+      "positive": [
+        "Interviewers thoroughly read and knew applications",
+        "Warm, friendly, and genuine interviewers and staff",
+        "Well organized with clear schedules and extra events",
+        "Opportunities to meet admitted students and other applicants",
+        "Informative pre-interview materials to understand school alignment"
+      ],
+      "negative": [
+        "Student housing prices have increased significantly",
+        "Some faculty maintain stoic expressions, limiting ease",
+        "Orientation repeated readily available information",
+        "Late agenda release on interview day",
+        "Pressure to ask questions during multiple events",
+        "Subpar housing options"
+      ],
+      "before_interview": [
+        "Thoroughly review and know your application details",
+        "Prepare to elaborate on experiences and research",
+        "Be ready for unconventional and specific questions",
+        "Articulate your medical interests and contributions clearly",
+        "Practice explaining research for HST pathway"
+      ]
+    }
+  }
+}

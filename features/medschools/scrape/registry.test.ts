@@ -7,6 +7,8 @@ import type { FirstRow } from './adapters/cycletrack';
 import {
   buildRegistry,
   parsePageTitle,
+  seedAdmitAliases,
+  seedAdmitIgnoredMisses,
   seedCycles,
   seedRegistryIfEmpty,
   type RegistryFile,
@@ -705,6 +707,377 @@ describe('seedRegistryIfEmpty', () => {
       tables.medSchoolAlias,
     ).toHaveLength(
       2,
+    );
+  });
+});
+
+describe('stable-key seeding', () => {
+  const seedAlias =
+    (
+      prisma: ReturnType<
+        typeof createFakePrisma
+      >['prisma'],
+      schoolId: string,
+      source:
+        | 'CYCLETRACK'
+        | 'ADMIT',
+      sourceKey: string,
+    ) =>
+      prisma.medSchoolAlias.upsert(
+        {
+          where:
+            {
+              source_sourceKey:
+                {
+                  source,
+                  sourceKey,
+                },
+            },
+          create:
+            {
+              schoolId,
+              source,
+              sourceKey,
+            },
+          update:
+            {},
+        },
+      );
+
+  it('a school whose slug an admin changed is not recreated (alias found by CYCLETRACK key)', async () => {
+    const {
+      prisma,
+      tables,
+    } =
+      createFakePrisma();
+    const renamed =
+      await prisma.medSchool.upsert(
+        {
+          where:
+            {
+              slug: 'yale-renamed',
+            },
+          create:
+            {
+              slug: 'yale-renamed',
+              name: 'Yale',
+            },
+          update:
+            {},
+        },
+      );
+    await seedAlias(
+      prisma,
+      renamed.id,
+      'CYCLETRACK',
+      'Yale',
+    );
+    expect(
+      await seedRegistryIfEmpty(
+        prisma,
+        file,
+      ),
+    ).toEqual(
+      {
+        schools: 1,
+        aliases: 1,
+      },
+    );
+    expect(
+      tables.medSchool,
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      tables.medSchool!.some(
+        (
+          r,
+        ) =>
+          (
+            r as {
+              slug: string;
+            }
+          )
+            .slug ===
+          'yale',
+      ),
+    ).toBe(
+      false,
+    );
+  });
+
+  it('no-alias school falls back to slug', async () => {
+    const {
+      prisma,
+      tables,
+    } =
+      createFakePrisma();
+    const bare =
+      await prisma.medSchool.upsert(
+        {
+          where:
+            {
+              slug: 'yale',
+            },
+          create:
+            {
+              slug: 'yale',
+              name: 'Yale',
+            },
+          update:
+            {},
+        },
+      );
+    await seedRegistryIfEmpty(
+      prisma,
+      file,
+    );
+    expect(
+      tables.medSchool,
+    ).toHaveLength(
+      2,
+    );
+    const alias =
+      tables.medSchoolAlias!.find(
+        (
+          r,
+        ) =>
+          (
+            r as {
+              sourceKey: string;
+            }
+          )
+            .sourceKey ===
+          'Yale',
+      ) as {
+        schoolId: string;
+      };
+    expect(
+      alias.schoolId,
+    ).toBe(
+      bare.id,
+    );
+  });
+
+  it('seedAdmitIgnoredMisses pre-ignores the unmapped slugs, is idempotent and never overwrites an existing miss', async () => {
+    const {
+      prisma,
+      tables,
+    } =
+      createFakePrisma();
+    const file =
+      {
+        generatedAt:
+          '2026-11-20T00:00:00.000Z',
+        ignoredSlugs:
+          [
+            'extra-campus-a',
+            'extra-campus-b',
+          ],
+        aliases:
+          [],
+      };
+    // An admin already mapped one of them: that row must stay exactly as it is.
+    tables.medSchoolAliasMiss!.push(
+      {
+        id: 'm1',
+        source:
+          'ADMIT',
+        sourceKey:
+          'extra-campus-b',
+        ignored: false,
+        resolvedSchoolId:
+          's9',
+        seenCount: 4,
+      },
+    );
+    expect(
+      await seedAdmitIgnoredMisses(
+        prisma,
+        file,
+      ),
+    ).toBe(
+      1,
+    );
+    expect(
+      await seedAdmitIgnoredMisses(
+        prisma,
+        file,
+      ),
+    ).toBe(
+      0,
+    );
+    const rows =
+      tables.medSchoolAliasMiss as Array<
+        Record<
+          string,
+          unknown
+        >
+      >;
+    expect(
+      rows,
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      rows.find(
+        (
+          r,
+        ) =>
+          r.sourceKey ===
+          'extra-campus-a',
+      ),
+    ).toMatchObject(
+      {
+        source:
+          'ADMIT',
+        ignored: true,
+      },
+    );
+    expect(
+      rows.find(
+        (
+          r,
+        ) =>
+          r.sourceKey ===
+          'extra-campus-b',
+      ),
+    ).toMatchObject(
+      {
+        ignored: false,
+        resolvedSchoolId:
+          's9',
+        seenCount: 4,
+      },
+    );
+  });
+
+  it('seedAdmitAliases attaches by CYCLETRACK key, reports unmatched, never adds a second ADMIT alias, second call creates nothing', async () => {
+    const {
+      prisma,
+      tables,
+    } =
+      createFakePrisma();
+    await seedRegistryIfEmpty(
+      prisma,
+      file,
+    );
+    const admit =
+      {
+        generatedAt:
+          '2026-11-20T00:00:00.000Z',
+        aliases:
+          [
+            {
+              cycletrackKey:
+                'Yale',
+              admitSlug:
+                'yale-university',
+            },
+            {
+              cycletrackKey:
+                'Yale',
+              admitSlug:
+                'yale-second',
+            },
+            {
+              cycletrackKey:
+                'Texas A&M',
+              admitSlug:
+                'yale-university',
+            },
+            {
+              cycletrackKey:
+                'Nowhere',
+              admitSlug:
+                'nowhere-slug',
+            },
+          ],
+      };
+    expect(
+      await seedAdmitAliases(
+        prisma,
+        admit,
+      ),
+    ).toEqual(
+      {
+        created: 1,
+        unmatched:
+          [
+            'nowhere-slug',
+          ],
+        skipped:
+          [
+            {
+              cycletrackKey:
+                'Yale',
+              admitSlug:
+                'yale-second',
+            },
+            {
+              cycletrackKey:
+                'Texas A&M',
+              admitSlug:
+                'yale-university',
+            },
+          ],
+      },
+    );
+    const admitRows =
+      tables.medSchoolAlias!.filter(
+        (
+          r,
+        ) =>
+          (
+            r as {
+              source: string;
+            }
+          )
+            .source ===
+          'ADMIT',
+      ) as Array<{
+        sourceKey: string;
+      }>;
+    expect(
+      admitRows.map(
+        (
+          r,
+        ) =>
+          r.sourceKey,
+      ),
+    ).toEqual(
+      [
+        'yale-university',
+      ],
+    );
+    expect(
+      await seedAdmitAliases(
+        prisma,
+        admit,
+      ),
+    ).toEqual(
+      {
+        created: 0,
+        unmatched:
+          [
+            'nowhere-slug',
+          ],
+        skipped:
+          [
+            {
+              cycletrackKey:
+                'Yale',
+              admitSlug:
+                'yale-second',
+            },
+            {
+              cycletrackKey:
+                'Texas A&M',
+              admitSlug:
+                'yale-university',
+            },
+          ],
+      },
     );
   });
 });

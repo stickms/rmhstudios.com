@@ -778,6 +778,8 @@ export const EXCLUDED_ROUTES: Record<
       'admin',
     '/admin/deepseek':
       'admin',
+    '/admin/medschools':
+      'admin',
     '/admin/census':
       'admin',
     '/admin/alarms':

@@ -1,0 +1,1209 @@
+{
+  "data": {
+    "getMedicalInterviewSchoolsOverview": {
+      "totalCount": 239,
+      "schools": [
+        {
+          "avg_interview_difficulty": 4.565217391304348,
+          "interview_count": 467,
+          "total_interview_count": 757,
+          "school": {
+            "slug": "harvard-medical-school",
+            "name": "Harvard Medical School",
+            "shorthand_name": "Harvard Medical School",
+            "city": "Boston",
+            "state": "MA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.7857142857142856,
+          "interview_count": 319,
+          "total_interview_count": 589,
+          "school": {
+            "slug": "johns-hopkins-university-school-of-medicine",
+            "name": "Johns Hopkins University School of Medicine",
+            "shorthand_name": "Johns Hopkins",
+            "city": "Baltimore",
+            "state": "MD"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.5454545454545454,
+          "interview_count": 275,
+          "total_interview_count": 583,
+          "school": {
+            "slug": "university-of-california-san-francisco-school-of-medicine",
+            "name": "University of California, San Francisco, School of Medicine",
+            "shorthand_name": "UCSF",
+            "city": "San Francisco",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.588235294117647,
+          "interview_count": 359,
+          "total_interview_count": 643,
+          "school": {
+            "slug": "duke-university-school-of-medicine",
+            "name": "Duke University School of Medicine",
+            "shorthand_name": "Duke University",
+            "city": "Durham",
+            "state": "NC"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.6666666666666665,
+          "interview_count": 784,
+          "total_interview_count": 800,
+          "school": {
+            "slug": "university-of-pennsylvania-perelman",
+            "name": "University of Pennsylvania (Perelman)",
+            "shorthand_name": "UPenn (Perelman)",
+            "city": "Philadelphia",
+            "state": "PA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 6.888888888888889,
+          "interview_count": 336,
+          "total_interview_count": 499,
+          "school": {
+            "slug": "stanford-university-school-of-medicine",
+            "name": "Stanford University School of Medicine",
+            "shorthand_name": "Stanford University",
+            "city": "Stanford",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.3333333333333335,
+          "interview_count": 491,
+          "total_interview_count": 724,
+          "school": {
+            "slug": "columbia-university-vagelos-college-of-physicians-and-surgeons",
+            "name": "Columbia University Vagelos College of Physicians and Surgeons",
+            "shorthand_name": "Columbia University",
+            "city": "New York",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.696969696969697,
+          "interview_count": 690,
+          "total_interview_count": 783,
+          "school": {
+            "slug": "new-york-university-grossman-school-of-medicine",
+            "name": "New York University Grossman School of Medicine",
+            "shorthand_name": "NYU Grossman",
+            "city": "New York",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.8947368421052633,
+          "interview_count": 393,
+          "total_interview_count": 750,
+          "school": {
+            "slug": "vanderbilt-university-school-of-medicine",
+            "name": "Vanderbilt University School of Medicine",
+            "shorthand_name": "Vanderbilt University",
+            "city": "Nashville",
+            "state": "TN"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.108108108108108,
+          "interview_count": 830,
+          "total_interview_count": 1026,
+          "school": {
+            "slug": "washington-university-in-st-louis-school-of-medicine",
+            "name": "Washington University in St. Louis School of Medicine",
+            "shorthand_name": "WashU St. Louis",
+            "city": "Saint Louis",
+            "state": "MO"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.230769230769231,
+          "interview_count": 461,
+          "total_interview_count": 649,
+          "school": {
+            "slug": "yale-school-of-medicine",
+            "name": "Yale School of Medicine",
+            "shorthand_name": "Yale School of Medicine",
+            "city": "New Haven",
+            "state": "CT"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.8,
+          "interview_count": 328,
+          "total_interview_count": 443,
+          "school": {
+            "slug": "university-of-michigan-medical-school",
+            "name": "University of Michigan Medical School",
+            "shorthand_name": "University of Michigan",
+            "city": "Ann Arbor",
+            "state": "MI"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.083333333333333,
+          "interview_count": 0,
+          "total_interview_count": null,
+          "school": {
+            "slug": "cleveland-clinic-lerner-college-of-medicine",
+            "name": "Cleveland Clinic Lerner College of Medicine",
+            "shorthand_name": "Cleveland Clinic Lerner",
+            "city": "Cleveland",
+            "state": "OH"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.0625,
+          "interview_count": 767,
+          "total_interview_count": 783,
+          "school": {
+            "slug": "mayo-clinic-school-of-medicine",
+            "name": "Mayo Clinic School of Medicine",
+            "shorthand_name": "Mayo Clinic",
+            "city": "Rochester",
+            "state": "MN"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.53125,
+          "interview_count": 555,
+          "total_interview_count": 783,
+          "school": {
+            "slug": "weill-cornell-medicine",
+            "name": "Weill Cornell Medicine",
+            "shorthand_name": "Weill Cornell Medicine",
+            "city": "New York",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.5714285714285716,
+          "interview_count": 267,
+          "total_interview_count": 648,
+          "school": {
+            "slug": "northwestern-university-the-feinberg-school-of-medicine",
+            "name": "Northwestern University The Feinberg School of Medicine",
+            "shorthand_name": "Northwestern University",
+            "city": "Chicago",
+            "state": "IL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.0277777777777777,
+          "interview_count": 625,
+          "total_interview_count": 864,
+          "school": {
+            "slug": "university-of-pittsburgh-school-of-medicine",
+            "name": "University of Pittsburgh School of Medicine",
+            "shorthand_name": "University of Pittsburgh",
+            "city": "Pittsburgh",
+            "state": "PA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.066666666666667,
+          "interview_count": 436,
+          "total_interview_count": 628,
+          "school": {
+            "slug": "university-of-chicago-division-of-the-biological-sciences-the-pritzker-school-of-medicine",
+            "name": "University of Chicago Division of the Biological Sciences The Pritzker School of Medicine",
+            "shorthand_name": "UChicago (Pritzker)",
+            "city": "Chicago",
+            "state": "IL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.857142857142857,
+          "interview_count": 500,
+          "total_interview_count": 857,
+          "school": {
+            "slug": "icahn-school-of-medicine-at-mount-sinai",
+            "name": "Icahn School of Medicine at Mount Sinai",
+            "shorthand_name": "Icahn at Mount Sinai",
+            "city": "New York",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.666666666666667,
+          "interview_count": 285,
+          "total_interview_count": 669,
+          "school": {
+            "slug": "emory-university-school-of-medicine",
+            "name": "Emory University School of Medicine",
+            "shorthand_name": "Emory University",
+            "city": "Atlanta",
+            "state": "GA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.03125,
+          "interview_count": 982,
+          "total_interview_count": 1061,
+          "school": {
+            "slug": "baylor-college-of-medicine",
+            "name": "Baylor College of Medicine",
+            "shorthand_name": "Baylor",
+            "city": "Houston",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.5588235294117645,
+          "interview_count": 767,
+          "total_interview_count": 785,
+          "school": {
+            "slug": "university-of-texas-southwestern-medical-center-southwestern-medical-school",
+            "name": "University of Texas Southwestern Medical Center Southwestern Medical School",
+            "shorthand_name": "UTSW",
+            "city": "Dallas",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.972972972972973,
+          "interview_count": 590,
+          "total_interview_count": 772,
+          "school": {
+            "slug": "case-western-reserve-university-school-of-medicine",
+            "name": "Case Western Reserve University School of Medicine",
+            "shorthand_name": "Case Western Reserve",
+            "city": "Cleveland",
+            "state": "OH"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.44,
+          "interview_count": 457,
+          "total_interview_count": 646,
+          "school": {
+            "slug": "university-of-california-los-angeles-david-geffen-school-of-medicine",
+            "name": "University of California, Los Angeles David Geffen School of Medicine",
+            "shorthand_name": "UCLA",
+            "city": "Los Angeles",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.7419354838709675,
+          "interview_count": 627,
+          "total_interview_count": 1143,
+          "school": {
+            "slug": "albert-einstein-college-of-medicine",
+            "name": "Albert Einstein College of Medicine",
+            "shorthand_name": "Albert Einstein",
+            "city": "Bronx",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.6923076923076925,
+          "interview_count": 501,
+          "total_interview_count": 594,
+          "school": {
+            "slug": "university-of-north-carolina-at-chapel-hill-school-of-medicine",
+            "name": "University of North Carolina at Chapel Hill School of Medicine",
+            "shorthand_name": "UNC",
+            "city": "Chapel Hill",
+            "state": "NC"
+          }
+        },
+        {
+          "avg_interview_difficulty": 6.518518518518518,
+          "interview_count": 433,
+          "total_interview_count": 1027,
+          "school": {
+            "slug": "university-of-california-san-diego-school-of-medicine",
+            "name": "University of California, San Diego School of Medicine",
+            "shorthand_name": "UCSD",
+            "city": "La Jolla",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.1315789473684212,
+          "interview_count": 443,
+          "total_interview_count": 614,
+          "school": {
+            "slug": "university-of-virginia-school-of-medicine",
+            "name": "University of Virginia School of Medicine",
+            "shorthand_name": "University of Virginia",
+            "city": "Charlottesville",
+            "state": "VA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.208333333333333,
+          "interview_count": 364,
+          "total_interview_count": 601,
+          "school": {
+            "slug": "ohio-state-university-college-of-medicine",
+            "name": "Ohio State University College of Medicine",
+            "shorthand_name": "Ohio State University",
+            "city": "Columbus",
+            "state": "OH"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.6470588235294117,
+          "interview_count": 144,
+          "total_interview_count": 390,
+          "school": {
+            "slug": "keck-school-of-medicine-of-the-university-of-southern-california",
+            "name": "Keck School of Medicine of the University of Southern California",
+            "shorthand_name": "USC (Keck)",
+            "city": "Los Angeles",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3,
+          "interview_count": 229,
+          "total_interview_count": 392,
+          "school": {
+            "slug": "the-warren-alpert-medical-school-of-brown-university",
+            "name": "The Warren Alpert Medical School of Brown University",
+            "shorthand_name": "Brown University",
+            "city": "Providence",
+            "state": "RI"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.071428571428571,
+          "interview_count": 560,
+          "total_interview_count": 677,
+          "school": {
+            "slug": "university-of-washington-school-of-medicine",
+            "name": "University of Washington School of Medicine",
+            "shorthand_name": "University of Washington",
+            "city": "Seattle",
+            "state": "WA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.9705882352941178,
+          "interview_count": 522,
+          "total_interview_count": 700,
+          "school": {
+            "slug": "university-of-miami-leonard-m-miller-school-of-medicine",
+            "name": "University of Miami Leonard M. Miller School of Medicine",
+            "shorthand_name": "University of Miami",
+            "city": "Miami",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.9642857142857144,
+          "interview_count": 806,
+          "total_interview_count": 1078,
+          "school": {
+            "slug": "boston-university-school-of-medicine",
+            "name": "Boston University School of Medicine",
+            "shorthand_name": "Boston University",
+            "city": "Boston",
+            "state": "MA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.24,
+          "interview_count": 344,
+          "total_interview_count": 611,
+          "school": {
+            "slug": "geisel-school-of-medicine-at-dartmouth",
+            "name": "Geisel School of Medicine at Dartmouth",
+            "shorthand_name": "Dartmouth (Geisel)",
+            "city": "Hanover",
+            "state": "NH"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.4722222222222223,
+          "interview_count": 383,
+          "total_interview_count": 600,
+          "school": {
+            "slug": "university-of-rochester-school-of-medicine-and-dentistry",
+            "name": "University of Rochester School of Medicine and Dentistry",
+            "shorthand_name": "University of Rochester",
+            "city": "Rochester",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.75,
+          "interview_count": 346,
+          "total_interview_count": 481,
+          "school": {
+            "slug": "university-of-alabama-school-of-medicine",
+            "name": "University of Alabama School of Medicine",
+            "shorthand_name": "University of Alabama",
+            "city": "Birmingham",
+            "state": "AL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.357142857142857,
+          "interview_count": 419,
+          "total_interview_count": 697,
+          "school": {
+            "slug": "university-of-colorado-school-of-medicine",
+            "name": "University of Colorado School of Medicine",
+            "shorthand_name": "Colorado",
+            "city": "Aurora",
+            "state": "CO"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3,
+          "interview_count": 272,
+          "total_interview_count": 361,
+          "school": {
+            "slug": "university-of-florida-college-of-medicine",
+            "name": "University of Florida College of Medicine",
+            "shorthand_name": "University of Florida",
+            "city": "Gainesville",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.6153846153846154,
+          "interview_count": 528,
+          "total_interview_count": 593,
+          "school": {
+            "slug": "university-of-wisconsin-school-of-medicine-and-public-health",
+            "name": "University of Wisconsin School of Medicine and Public Health",
+            "shorthand_name": "University of Wisconsin",
+            "city": "Madison",
+            "state": "WI"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.7142857142857144,
+          "interview_count": 284,
+          "total_interview_count": 522,
+          "school": {
+            "slug": "university-of-california-irvine-school-of-medicine",
+            "name": "University of California, Irvine, School of Medicine",
+            "shorthand_name": "UC Irvine",
+            "city": "Irvine",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.9375,
+          "interview_count": 389,
+          "total_interview_count": 808,
+          "school": {
+            "slug": "tufts-university-school-of-medicine",
+            "name": "Tufts University School of Medicine",
+            "shorthand_name": "Tufts University",
+            "city": "Boston",
+            "state": "MA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.72,
+          "interview_count": 902,
+          "total_interview_count": 1056,
+          "school": {
+            "slug": "georgetown-university-school-of-medicine",
+            "name": "Georgetown University School of Medicine",
+            "shorthand_name": "Georgetown University",
+            "city": "Washington",
+            "state": "DC"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.688888888888889,
+          "interview_count": 689,
+          "total_interview_count": 850,
+          "school": {
+            "slug": "usf-health-morsani-college-of-medicine",
+            "name": "USF Health Morsani College of Medicine",
+            "shorthand_name": "USF (Morsani)",
+            "city": "Tampa",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.75,
+          "interview_count": 772,
+          "total_interview_count": 1180,
+          "school": {
+            "slug": "mcgovern-medical-school-at-the-university-of-texas-health-science-center-at-houston",
+            "name": "McGovern Medical School at the University of Texas Health Science Center at Houston",
+            "shorthand_name": "McGovern (Houston)",
+            "city": "Houston",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.3333333333333335,
+          "interview_count": 406,
+          "total_interview_count": 608,
+          "school": {
+            "slug": "university-of-cincinnati-college-of-medicine",
+            "name": "University of Cincinnati College of Medicine",
+            "shorthand_name": "University of Cincinnati",
+            "city": "Cincinnati",
+            "state": "OH"
+          }
+        },
+        {
+          "avg_interview_difficulty": 6,
+          "interview_count": 174,
+          "total_interview_count": 558,
+          "school": {
+            "slug": "university-of-california-davis-school-of-medicine",
+            "name": "University of California, Davis, School of Medicine",
+            "shorthand_name": "UC Davis",
+            "city": "Sacramento",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.777777777777778,
+          "interview_count": 376,
+          "total_interview_count": 384,
+          "school": {
+            "slug": "university-of-texas-austin-dell",
+            "name": "University of Texas--Austin (Dell)",
+            "shorthand_name": "UT Austin (Dell)",
+            "city": "Austin",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.578947368421052,
+          "interview_count": 783,
+          "total_interview_count": 1221,
+          "school": {
+            "slug": "university-of-massachusetts-medical-school",
+            "name": "University of Massachusetts Medical School",
+            "shorthand_name": "UMass",
+            "city": "Worcester",
+            "state": "MA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.5,
+          "interview_count": 512,
+          "total_interview_count": 523,
+          "school": {
+            "slug": "oregon-health-science-university-school-of-medicine",
+            "name": "Oregon Health & Science University School of Medicine",
+            "shorthand_name": "Oregon University",
+            "city": "Portland",
+            "state": "OR"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.5714285714285716,
+          "interview_count": 822,
+          "total_interview_count": 969,
+          "school": {
+            "slug": "university-of-texas-medical-branch-galveston",
+            "name": "University of Texas Medical Branch--Galveston",
+            "shorthand_name": "UT Medical Branch",
+            "city": "Galveston",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 1.8636363636363635,
+          "interview_count": 341,
+          "total_interview_count": 586,
+          "school": {
+            "slug": "sidney-kimmel-medical-college-at-thomas-jefferson-university",
+            "name": "Sidney Kimmel Medical College at Thomas Jefferson University",
+            "shorthand_name": "Jefferson (Kimmel)",
+            "city": "Philadelphia",
+            "state": "PA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.9523809523809526,
+          "interview_count": 329,
+          "total_interview_count": 498,
+          "school": {
+            "slug": "wake-forest-school-of-medicine-of-wake-forest-baptist-medical-center",
+            "name": "Wake Forest School of Medicine of Wake Forest Baptist Medical Center",
+            "shorthand_name": "Wake Forest",
+            "city": "Winston Salem",
+            "state": "NC"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.3,
+          "interview_count": 275,
+          "total_interview_count": 340,
+          "school": {
+            "slug": "university-of-utah-school-of-medicine",
+            "name": "University of Utah School of Medicine",
+            "shorthand_name": "University of Utah",
+            "city": "Salt Lake City",
+            "state": "UT"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.8125,
+          "interview_count": 692,
+          "total_interview_count": 796,
+          "school": {
+            "slug": "donald-and-barbara-zucker-school-of-medicine-at-hofstra-northwell",
+            "name": "Donald and Barbara Zucker School of Medicine at Hofstra/Northwell",
+            "shorthand_name": "Hofstra",
+            "city": "Hempstead",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.1666666666666665,
+          "interview_count": 156,
+          "total_interview_count": 719,
+          "school": {
+            "slug": "rutgers-new-jersey-medical-school",
+            "name": "Rutgers New Jersey Medical School",
+            "shorthand_name": "Rutgers New Jersey",
+            "city": "Newark",
+            "state": "NJ"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.8823529411764706,
+          "interview_count": 701,
+          "total_interview_count": 737,
+          "school": {
+            "slug": "university-of-iowa-roy-j-and-lucille-a-carver-college-of-medicine",
+            "name": "University of Iowa Roy J. and Lucille A. Carver College of Medicine",
+            "shorthand_name": "University of Iowa",
+            "city": "Iowa City",
+            "state": "IA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 1.5,
+          "interview_count": 280,
+          "total_interview_count": 286,
+          "school": {
+            "slug": "university-of-hawaii-john-a-burns-school-of-medicine",
+            "name": "University of Hawaii, John A. Burns School of Medicine",
+            "shorthand_name": "University of Hawaii",
+            "city": "Honolulu",
+            "state": "HI"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.857142857142857,
+          "interview_count": 444,
+          "total_interview_count": 619,
+          "school": {
+            "slug": "university-of-maryland-school-of-medicine",
+            "name": "University of Maryland School of Medicine",
+            "shorthand_name": "University of Maryland",
+            "city": "Baltimore",
+            "state": "MD"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.733333333333333,
+          "interview_count": 952,
+          "total_interview_count": 994,
+          "school": {
+            "slug": "university-of-minnesota-medical-school",
+            "name": "University of Minnesota Medical School",
+            "shorthand_name": "University of Minnesota",
+            "city": "Minneapolis",
+            "state": "MN"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.875,
+          "interview_count": 318,
+          "total_interview_count": 709,
+          "school": {
+            "slug": "kaiser-permanente-tyson",
+            "name": "Kaiser Permanente (Tyson)",
+            "shorthand_name": "Kaiser Permanente (Tyson)",
+            "city": "Pasadena",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.444444444444445,
+          "interview_count": 871,
+          "total_interview_count": 889,
+          "school": {
+            "slug": "indiana-university-school-of-medicine",
+            "name": "Indiana University School of Medicine",
+            "shorthand_name": "Indiana University",
+            "city": "Indianapolis",
+            "state": "IN"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.2,
+          "interview_count": 573,
+          "total_interview_count": 866,
+          "school": {
+            "slug": "stony-brook-university-school-of-medicine",
+            "name": "Stony Brook University School of Medicine",
+            "shorthand_name": "Stony Brook University",
+            "city": "Stony Brook",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.8333333333333335,
+          "interview_count": 350,
+          "total_interview_count": 457,
+          "school": {
+            "slug": "university-of-arizona-phoenix",
+            "name": "University of Arizona--Phoenix",
+            "shorthand_name": "University of Arizona (Phoenix)",
+            "city": "Phoenix",
+            "state": "AZ"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.111111111111111,
+          "interview_count": 1019,
+          "total_interview_count": 1040,
+          "school": {
+            "slug": "ut-san-antonio-long",
+            "name": "UT San Antonio (Long)",
+            "shorthand_name": "UT San Antonio (Long)",
+            "city": "San Antonio",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.5,
+          "interview_count": 328,
+          "total_interview_count": 490,
+          "school": {
+            "slug": "rutgers-robert-wood-johnson-medical-school",
+            "name": "Rutgers, Robert Wood Johnson Medical School",
+            "shorthand_name": "Rutgers (Robert Johnson)",
+            "city": "Piscataway",
+            "state": "NJ"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.148148148148148,
+          "interview_count": 629,
+          "total_interview_count": 776,
+          "school": {
+            "slug": "texas-a-m-health-science-center-college-of-medicine",
+            "name": "Texas A&M Health Science Center College of Medicine",
+            "shorthand_name": "Texas A&M",
+            "city": "Bryan",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.909090909090909,
+          "interview_count": 889,
+          "total_interview_count": 1075,
+          "school": {
+            "slug": "suny-downstate-health-sciences-university",
+            "name": "SUNY Downstate Health Sciences University",
+            "shorthand_name": "SUNY Downstate",
+            "city": "Brooklyn",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.0833333333333335,
+          "interview_count": 450,
+          "total_interview_count": 661,
+          "school": {
+            "slug": "university-of-illinois-college-of-medicine",
+            "name": "University of Illinois College of Medicine",
+            "shorthand_name": "University of Illinois",
+            "city": "Chicago",
+            "state": "IL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.857142857142857,
+          "interview_count": 576,
+          "total_interview_count": 646,
+          "school": {
+            "slug": "medical-college-of-georgia-at-augusta-university",
+            "name": "Medical College of Georgia at Augusta University",
+            "shorthand_name": "Augusta University (MCG)",
+            "city": "Augusta",
+            "state": "GA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.5,
+          "interview_count": 506,
+          "total_interview_count": 656,
+          "school": {
+            "slug": "texas-tech-university-health-sciences-center-el-paso",
+            "name": "Texas Tech University Health Sciences Center--El Paso",
+            "shorthand_name": "Texas Tech (El Paso)",
+            "city": "El Paso",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.6,
+          "interview_count": 402,
+          "total_interview_count": 562,
+          "school": {
+            "slug": "jacobs-school-of-medicine-and-biomedical-sciences-at-the-university-at-buffalo",
+            "name": "Jacobs School of Medicine and Biomedical Sciences at the University at Buffalo",
+            "shorthand_name": "Buffalo (Jacobs)",
+            "city": "Buffalo",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.619047619047619,
+          "interview_count": 580,
+          "total_interview_count": 986,
+          "school": {
+            "slug": "creighton-university",
+            "name": "Creighton University",
+            "shorthand_name": "Creighton University",
+            "city": "Omaha",
+            "state": "NE"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4,
+          "interview_count": 291,
+          "total_interview_count": 333,
+          "school": {
+            "slug": "medical-university-of-south-carolina-college-of-medicine",
+            "name": "Medical University of South Carolina College of Medicine",
+            "shorthand_name": "Medical University of South Carolina",
+            "city": "Charleston",
+            "state": "SC"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.3,
+          "interview_count": 339,
+          "total_interview_count": 576,
+          "school": {
+            "slug": "state-university-of-new-york-upstate-medical-university",
+            "name": "State University of New York Upstate Medical University",
+            "shorthand_name": "SUNY Upstate",
+            "city": "Syracuse",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.9,
+          "interview_count": 409,
+          "total_interview_count": 418,
+          "school": {
+            "slug": "university-of-nebraska-college-of-medicine",
+            "name": "University of Nebraska College of Medicine",
+            "shorthand_name": "University of Nebraska",
+            "city": "Omaha",
+            "state": "NE"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.173913043478261,
+          "interview_count": 477,
+          "total_interview_count": 791,
+          "school": {
+            "slug": "virginia-commonwealth-university-school-of-medicine",
+            "name": "Virginia Commonwealth University School of Medicine",
+            "shorthand_name": "Virginia Commonwealth",
+            "city": "Richmond",
+            "state": "VA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.375,
+          "interview_count": 258,
+          "total_interview_count": 510,
+          "school": {
+            "slug": "university-of-central-florida-college-of-medicine",
+            "name": "University of Central Florida College of Medicine",
+            "shorthand_name": "University of Central Florida",
+            "city": "Orlando",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.3,
+          "interview_count": 399,
+          "total_interview_count": 424,
+          "school": {
+            "slug": "charles-e-schmidt-college-of-medicine-at-florida-atlantic-university",
+            "name": "Charles E. Schmidt College of Medicine at Florida Atlantic University",
+            "shorthand_name": "Florida Atlantic University",
+            "city": "Boca Raton",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 5.714285714285714,
+          "interview_count": 176,
+          "total_interview_count": 313,
+          "school": {
+            "slug": "university-of-california-riverside-school-of-medicine",
+            "name": "University of California, Riverside School of Medicine",
+            "shorthand_name": "UC Riverside",
+            "city": "Riverside",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.5,
+          "interview_count": 261,
+          "total_interview_count": 416,
+          "school": {
+            "slug": "university-of-tennessee-health-science-center-college-of-medicine",
+            "name": "University of Tennessee Health Science Center College of Medicine",
+            "shorthand_name": "University of Tennessee",
+            "city": "Memphis",
+            "state": "TN"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.923076923076923,
+          "interview_count": 249,
+          "total_interview_count": 321,
+          "school": {
+            "slug": "university-of-connecticut-school-of-medicine",
+            "name": "University of Connecticut School of Medicine",
+            "shorthand_name": "University of Connecticut",
+            "city": "Farmington",
+            "state": "CT"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.4074074074074074,
+          "interview_count": 226,
+          "total_interview_count": 585,
+          "school": {
+            "slug": "tulane-university",
+            "name": "Tulane University",
+            "shorthand_name": "Tulane University",
+            "city": "New Orleans",
+            "state": "LA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.611111111111111,
+          "interview_count": 421,
+          "total_interview_count": 823,
+          "school": {
+            "slug": "medical-college-of-wisconsin",
+            "name": "Medical College of Wisconsin",
+            "shorthand_name": "Medical College of Wisconsin",
+            "city": "Milwaukee",
+            "state": "WI"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.944444444444444,
+          "interview_count": 234,
+          "total_interview_count": 463,
+          "school": {
+            "slug": "rush-medical-college-of-rush-university-medical-center",
+            "name": "Rush Medical College of Rush University Medical Center",
+            "shorthand_name": "Rush University",
+            "city": "Chicago",
+            "state": "IL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.092105263157895,
+          "interview_count": 1120,
+          "total_interview_count": 1297,
+          "school": {
+            "slug": "wayne-state-university-school-of-medicine",
+            "name": "Wayne State University School of Medicine",
+            "shorthand_name": "Wayne State University",
+            "city": "Detroit",
+            "state": "MI"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.0416666666666665,
+          "interview_count": 820,
+          "total_interview_count": 928,
+          "school": {
+            "slug": "texas-tech-university-health-sciences-center-school-of-medicine",
+            "name": "Texas Tech University Health Sciences Center School of Medicine",
+            "shorthand_name": "Texas Tech University",
+            "city": "Lubbock",
+            "state": "TX"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.5,
+          "interview_count": 114,
+          "total_interview_count": 211,
+          "school": {
+            "slug": "pennsylvania-state-university-college-of-medicine",
+            "name": "Pennsylvania State University College of Medicine",
+            "shorthand_name": "Penn State University",
+            "city": "State College",
+            "state": "PA"
+          }
+        },
+        {
+          "avg_interview_difficulty": null,
+          "interview_count": 21,
+          "total_interview_count": 92,
+          "school": {
+            "slug": "carle-illinois-college-of-medicine",
+            "name": "Carle Illinois College of Medicine",
+            "shorthand_name": "Carle Illinois",
+            "city": "Urbana",
+            "state": "IL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.214285714285714,
+          "interview_count": 424,
+          "total_interview_count": 992,
+          "school": {
+            "slug": "new-york-medical-college",
+            "name": "New York Medical College",
+            "shorthand_name": "New York Medical College",
+            "city": "Valhalla",
+            "state": "NY"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.444444444444444,
+          "interview_count": 296,
+          "total_interview_count": 522,
+          "school": {
+            "slug": "michigan-state-university-college-of-human-medicine",
+            "name": "Michigan State University College of Human Medicine",
+            "shorthand_name": "Michigan State University",
+            "city": "East Lansing",
+            "state": "MI"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.538461538461538,
+          "interview_count": 368,
+          "total_interview_count": 627,
+          "school": {
+            "slug": "university-of-oklahoma-college-of-medicine",
+            "name": "University of Oklahoma College of Medicine",
+            "shorthand_name": "University of Oklahoma",
+            "city": "Oklahoma City",
+            "state": "OK"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3,
+          "interview_count": 118,
+          "total_interview_count": 337,
+          "school": {
+            "slug": "loma-linda-university",
+            "name": "Loma Linda University",
+            "shorthand_name": "Loma Linda University",
+            "city": "Loma Linda",
+            "state": "CA"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.444444444444445,
+          "interview_count": 404,
+          "total_interview_count": 472,
+          "school": {
+            "slug": "university-of-kansas-school-of-medicine",
+            "name": "University of Kansas School of Medicine",
+            "shorthand_name": "University of Kansas",
+            "city": "Kansas City",
+            "state": "KS"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.9166666666666665,
+          "interview_count": 277,
+          "total_interview_count": 404,
+          "school": {
+            "slug": "cooper-medical-school-of-rowan-university",
+            "name": "Cooper Medical School of Rowan University",
+            "shorthand_name": "Cooper (Rowan)",
+            "city": "Camden",
+            "state": "NJ"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.642857142857143,
+          "interview_count": 268,
+          "total_interview_count": 604,
+          "school": {
+            "slug": "university-of-vermont-college-of-medicine",
+            "name": "University of Vermont College of Medicine",
+            "shorthand_name": "University of Vermont",
+            "city": "Burlington",
+            "state": "VT"
+          }
+        },
+        {
+          "avg_interview_difficulty": 4.666666666666667,
+          "interview_count": 101,
+          "total_interview_count": 272,
+          "school": {
+            "slug": "florida-state-university-college-of-medicine",
+            "name": "Florida State University College of Medicine",
+            "shorthand_name": "Florida State University",
+            "city": "Tallahassee",
+            "state": "FL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 2.823529411764706,
+          "interview_count": 452,
+          "total_interview_count": 732,
+          "school": {
+            "slug": "saint-louis-university-school-of-medicine",
+            "name": "Saint Louis University School of Medicine",
+            "shorthand_name": "Saint Louis University",
+            "city": "Saint Louis",
+            "state": "MO"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.75,
+          "interview_count": 393,
+          "total_interview_count": 785,
+          "school": {
+            "slug": "rosalind-franklin-university-of-medicine-and-science-chicago",
+            "name": "Rosalind Franklin University of Medicine and Science (Chicago)",
+            "shorthand_name": "Rosalind Franklin",
+            "city": "Chicago",
+            "state": "IL"
+          }
+        },
+        {
+          "avg_interview_difficulty": 3.5,
+          "interview_count": 444,
+          "total_interview_count": 1201,
+          "school": {
+            "slug": "lewis-katz-school-of-medicine-at-temple-university",
+            "name": "Lewis Katz School of Medicine at Temple University",
+            "shorthand_name": "Temple University",
+            "city": "Philadelphia",
+            "state": "PA"
+          }
+        }
+      ]
+    }
+  }
+}

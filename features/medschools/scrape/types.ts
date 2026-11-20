@@ -69,6 +69,62 @@ export interface MedCycleCountRow {
     | null;
 }
 
+export interface MedCycleEventRow {
+  id: string;
+  schoolId: string;
+  cycleYear: number;
+  program: MedProgram | null;
+  eventType: MedEventType;
+  occurredAt: Date;
+  source: MedSource;
+  dedupeHash: string;
+  inState: boolean | null;
+}
+
+export interface MedInterviewQuestionRow {
+  id: string;
+  schoolId: string;
+  text: string;
+  source: MedSource;
+  votes: number | null;
+  cycleYear: number | null;
+  dedupeHash: string;
+}
+
+export interface MedInterviewProfileRow {
+  id: string;
+  schoolId: string;
+  source: MedSource;
+  format: string | null;
+  fileType: string | null;
+  avgDifficulty: number | null;
+  interviewCount: number | null;
+  feedbackPositive: string[];
+  feedbackNegative: string[];
+  feedbackBefore: string[];
+  fetchedAt: Date;
+}
+
+export interface MedSchoolStatsRow {
+  id: string;
+  schoolId: string;
+  source: MedSource;
+  residence: string;
+  program: MedProgram | null;
+  cycleYear: number;
+}
+
+export interface MedAliasMissRow {
+  id: string;
+  source: MedSource;
+  sourceKey: string;
+  firstSeenAt: Date;
+  lastSeenAt: Date;
+  seenCount: number;
+  resolvedSchoolId: string | null;
+  ignored: boolean;
+}
+
 export interface MedSourceRunRow {
   id: string;
   source: MedSource;
@@ -103,6 +159,9 @@ export interface MedPrisma {
       create: Data;
       update: Data;
     }): Promise<MedSchoolRow>;
+    findUnique(args: {
+      where: Where;
+    }): Promise<MedSchoolRow | null>;
   };
   medSchoolAlias: {
     findMany(args?: {
@@ -119,8 +178,22 @@ export interface MedPrisma {
       create: Data;
       update: Data;
     }): Promise<MedSchoolAliasRow>;
+    create(args: {
+      data: Data;
+    }): Promise<MedSchoolAliasRow>;
   };
   medSchoolAliasMiss: {
+    findMany(args?: {
+      where?: Where;
+      orderBy?: unknown;
+    }): Promise<MedAliasMissRow[]>;
+    findFirst(args?: {
+      where?: Where;
+    }): Promise<MedAliasMissRow | null>;
+    update(args: {
+      where: Where;
+      data: Data;
+    }): Promise<MedAliasMissRow>;
     upsert(args: {
       where: Where;
       create: Data;
@@ -175,7 +248,55 @@ export interface MedPrisma {
       count: number;
     }>;
   };
+  medCycleEvent: {
+    findMany(args?: {
+      where?: Where;
+      select?: Record<string, boolean>;
+      orderBy?: unknown;
+    }): Promise<MedCycleEventRow[]>;
+    createMany(args: {
+      data: Data[];
+      skipDuplicates?: boolean;
+    }): Promise<{ count: number }>;
+  };
+  medInterviewQuestion: {
+    findMany(args?: {
+      where?: Where;
+      select?: Record<string, boolean>;
+    }): Promise<MedInterviewQuestionRow[]>;
+    createMany(args: {
+      data: Data[];
+      skipDuplicates?: boolean;
+    }): Promise<{ count: number }>;
+    update(args: {
+      where: Where;
+      data: Data;
+    }): Promise<MedInterviewQuestionRow>;
+    deleteMany(args: {
+      where: Where;
+    }): Promise<{ count: number }>;
+  };
+  medInterviewProfile: {
+    findFirst(args?: {
+      where?: Where;
+    }): Promise<MedInterviewProfileRow | null>;
+    upsert(args: {
+      where: Where;
+      create: Data;
+      update: Data;
+    }): Promise<{ id: string }>;
+  };
   medSchoolStats: {
+    findFirst(args?: {
+      where?: Where;
+    }): Promise<MedSchoolStatsRow | null>;
+    create(args: {
+      data: Data;
+    }): Promise<{ id: string }>;
+    update(args: {
+      where: Where;
+      data: Data;
+    }): Promise<{ id: string }>;
     upsert(args: {
       where: Where;
       create: Data;
@@ -203,4 +324,9 @@ export interface MedPrisma {
       orderBy?: unknown;
     }): Promise<MedSourceRunRow | null>;
   };
+  /** Runs `fn` against a transaction client; the fake rolls its tables back if `fn` throws. */
+  $transaction<T>(
+    fn: (tx: MedPrisma) => Promise<T>,
+    options?: { isolationLevel?: 'Serializable' },
+  ): Promise<T>;
 }

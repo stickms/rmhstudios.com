@@ -1,0 +1,906 @@
+{
+  "data": {
+    "getRecentSchoolCycleUpdates": [
+      {
+        "cycle_update_id": "2adb3c5f-20ee-4fd0-b8c7-337f37ac2d79",
+        "school": {
+          "slug": "mercer-university"
+        },
+        "user_id": "user-001",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T12:38:16.103Z"
+      },
+      {
+        "cycle_update_id": "28c345c6-aea6-4e6f-9ba4-b4db55a217e2",
+        "school": {
+          "slug": "alice-walton-school-of-medicine"
+        },
+        "user_id": "user-002",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T12:16:37.472Z"
+      },
+      {
+        "cycle_update_id": "18dcb29c-f13b-4b5c-91f4-e128ba7354fb",
+        "school": {
+          "slug": "university-of-california-los-angeles-david-geffen-school-of-medicine"
+        },
+        "user_id": "user-003",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T10:46:30.257Z"
+      },
+      {
+        "cycle_update_id": "7d5ee69e-ae67-4c85-9c1d-93037406ebcf",
+        "school": {
+          "slug": "university-of-alabama-school-of-medicine"
+        },
+        "user_id": "user-004",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T10:26:33.412Z"
+      },
+      {
+        "cycle_update_id": "dc4a9bf2-c81f-46f3-9928-6dee5a57a97a",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-005",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T10:24:50.203Z"
+      },
+      {
+        "cycle_update_id": "f9b08453-9275-4cbe-8dd8-e450e28374ce",
+        "school": {
+          "slug": "michigan-state-university-college-of-human-medicine"
+        },
+        "user_id": "user-006",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T09:30:57.887Z"
+      },
+      {
+        "cycle_update_id": "c1938f7c-1188-4309-9e48-c872728d0120",
+        "school": {
+          "slug": "icahn-school-of-medicine-at-mount-sinai"
+        },
+        "user_id": "user-007",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T09:19:56.731Z"
+      },
+      {
+        "cycle_update_id": "6670ddfe-19bd-417a-a419-be495ca24e7e",
+        "school": {
+          "slug": "icahn-school-of-medicine-at-mount-sinai"
+        },
+        "user_id": "user-008",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T09:15:31.126Z"
+      },
+      {
+        "cycle_update_id": "e8028b63-f9a7-4e16-8f84-53507e0593ab",
+        "school": {
+          "slug": "boston-university-school-of-medicine"
+        },
+        "user_id": "user-009",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T09:13:20.526Z"
+      },
+      {
+        "cycle_update_id": "ceb582ae-4af4-475a-8dde-560399e33646",
+        "school": {
+          "slug": "columbia-university-vagelos-college-of-physicians-and-surgeons"
+        },
+        "user_id": "user-009",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T09:13:00.335Z"
+      },
+      {
+        "cycle_update_id": "243fdbe0-907b-420b-84b1-d68551c4bcf2",
+        "school": {
+          "slug": "loma-linda-university"
+        },
+        "user_id": "user-010",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T08:48:11.390Z"
+      },
+      {
+        "cycle_update_id": "f9ce337a-b9bd-472a-9582-b9e01f4bac56",
+        "school": {
+          "slug": "tulane-university"
+        },
+        "user_id": "user-011",
+        "current_status": "HOLD",
+        "current_status_date": "2026-11-20T08:13:09.770Z"
+      },
+      {
+        "cycle_update_id": "122400cf-7667-4481-bfea-5d7595fd81d4",
+        "school": {
+          "slug": "alabama-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-012",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T07:33:48.581Z"
+      },
+      {
+        "cycle_update_id": "8770eabe-f8ea-404a-927b-d2ec943e953d",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-013",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T07:31:29.946Z"
+      },
+      {
+        "cycle_update_id": "0b002d2b-35f2-4d00-957f-4347f0a7c642",
+        "school": {
+          "slug": "the-valley-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-014",
+        "current_status": "WAITLISTED",
+        "current_status_date": "2026-11-20T07:16:01.922Z"
+      },
+      {
+        "cycle_update_id": "ca333630-0c13-40fe-980e-fae0b02ad298",
+        "school": {
+          "slug": "virginia-tech-carilion-school-of-medicine"
+        },
+        "user_id": "user-015",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T06:59:28.778Z"
+      },
+      {
+        "cycle_update_id": "5738f6a4-d315-458f-8bd4-0e0df28ff8d6",
+        "school": {
+          "slug": "charles-drew"
+        },
+        "user_id": "user-015",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T06:59:08.943Z"
+      },
+      {
+        "cycle_update_id": "defa32fe-94bf-4021-a809-702c8911a838",
+        "school": {
+          "slug": "indiana-university-school-of-medicine"
+        },
+        "user_id": "user-016",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T06:49:32.825Z"
+      },
+      {
+        "cycle_update_id": "1963a60d-ee6c-49b0-b91e-47b58167280f",
+        "school": {
+          "slug": "medical-college-of-georgia-at-augusta-university"
+        },
+        "user_id": "user-017",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T06:30:37.391Z"
+      },
+      {
+        "cycle_update_id": "3fd14edd-6314-4580-8e03-46d6190ac691",
+        "school": {
+          "slug": "rocky-vista-university-utah"
+        },
+        "user_id": "user-018",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T06:30:07.721Z"
+      },
+      {
+        "cycle_update_id": "a5b64450-78c0-456a-a23f-100a03c547b3",
+        "school": {
+          "slug": "icahn-school-of-medicine-at-mount-sinai"
+        },
+        "user_id": "user-019",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T06:25:37.889Z"
+      },
+      {
+        "cycle_update_id": "7343af9f-aafe-4117-9a1e-91667bcb4fbb",
+        "school": {
+          "slug": "icahn-school-of-medicine-at-mount-sinai"
+        },
+        "user_id": "user-019",
+        "current_status": "WAITLISTED",
+        "current_status_date": "2026-11-20T06:25:26.284Z"
+      },
+      {
+        "cycle_update_id": "2f490f52-671f-4e08-a3b0-5e698f49da47",
+        "school": {
+          "slug": "university-of-south-carolina-greenville"
+        },
+        "user_id": "user-019",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T06:22:29.650Z"
+      },
+      {
+        "cycle_update_id": "afa9191e-0460-4a9c-88be-94d9213a179f",
+        "school": {
+          "slug": "jacobs-school-of-medicine-and-biomedical-sciences-at-the-university-at-buffalo"
+        },
+        "user_id": "user-020",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T05:58:58.391Z"
+      },
+      {
+        "cycle_update_id": "d6d2e04a-6c06-477e-811c-a16ae06737f4",
+        "school": {
+          "slug": "university-of-pittsburgh-school-of-medicine"
+        },
+        "user_id": "user-021",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T05:21:34.446Z"
+      },
+      {
+        "cycle_update_id": "270cbbd0-3853-457d-93ee-d4db30c6bb50",
+        "school": {
+          "slug": "washington-state-university-floyd"
+        },
+        "user_id": "user-022",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T05:18:09.113Z"
+      },
+      {
+        "cycle_update_id": "65e75584-fc6c-4265-bf34-08d0fd73555e",
+        "school": {
+          "slug": "mayo-clinic-school-of-medicine"
+        },
+        "user_id": "user-023",
+        "current_status": "WAITLISTED",
+        "current_status_date": "2026-11-20T04:57:42.183Z"
+      },
+      {
+        "cycle_update_id": "20524625-3da1-4f86-957b-dbc2c49439dc",
+        "school": {
+          "slug": "noorda-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-024",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T04:43:02.487Z"
+      },
+      {
+        "cycle_update_id": "720b43d1-a6ef-4db1-ad1f-cbda46178607",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-025",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T04:41:18.541Z"
+      },
+      {
+        "cycle_update_id": "18fcc5d3-99ea-4b07-aa8a-00361e36351c",
+        "school": {
+          "slug": "kansas-city-university-of-medicine-and-biosciences-kansas-city"
+        },
+        "user_id": "user-026",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T04:19:11.889Z"
+      },
+      {
+        "cycle_update_id": "f5d3eb0a-bcc5-4b19-818a-3c3b9e1e9110",
+        "school": {
+          "slug": "creighton-university"
+        },
+        "user_id": "user-026",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T04:17:39.215Z"
+      },
+      {
+        "cycle_update_id": "e90f6533-68c5-476f-b349-9119df4ab200",
+        "school": {
+          "slug": "cleveland-clinic-lerner-college-of-medicine"
+        },
+        "user_id": "user-027",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T04:00:05.573Z"
+      },
+      {
+        "cycle_update_id": "ca1b21eb-3e6a-44aa-810d-ad6f76a944b6",
+        "school": {
+          "slug": "drexel-university-college-of-medicine"
+        },
+        "user_id": "user-028",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T03:50:06.196Z"
+      },
+      {
+        "cycle_update_id": "f0b9c4d5-0c0a-4221-b9b1-b13d91dc9487",
+        "school": {
+          "slug": "university-of-cincinnati-college-of-medicine"
+        },
+        "user_id": "user-029",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T03:46:51.652Z"
+      },
+      {
+        "cycle_update_id": "3744794d-43f1-43db-9d4b-ce50e860ce55",
+        "school": {
+          "slug": "touro-college-of-osteopathic-medicine-nevada"
+        },
+        "user_id": "user-030",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T03:36:15.765Z"
+      },
+      {
+        "cycle_update_id": "2e1e8844-84e6-4869-9d82-7d89c25c3533",
+        "school": {
+          "slug": "university-of-california-riverside-school-of-medicine"
+        },
+        "user_id": "user-031",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T03:17:48.052Z"
+      },
+      {
+        "cycle_update_id": "122d09f8-6c83-4c9a-aba4-d59a7eea4dbc",
+        "school": {
+          "slug": "virginia-tech-carilion-school-of-medicine"
+        },
+        "user_id": "user-032",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T03:17:36.074Z"
+      },
+      {
+        "cycle_update_id": "40bbcffc-25ba-4ac9-a47b-3cc616667cdc",
+        "school": {
+          "slug": "mayo-clinic-school-of-medicine"
+        },
+        "user_id": "user-033",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T03:17:18.348Z"
+      },
+      {
+        "cycle_update_id": "a4987988-3942-4e76-8ae2-ae8c82e2c740",
+        "school": {
+          "slug": "boston-university-school-of-medicine"
+        },
+        "user_id": "user-031",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T03:16:46.068Z"
+      },
+      {
+        "cycle_update_id": "90dbe8de-5fca-4697-ba46-2b67a4250276",
+        "school": {
+          "slug": "university-of-north-texas-health-science-center"
+        },
+        "user_id": "user-034",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T03:13:27.400Z"
+      },
+      {
+        "cycle_update_id": "3a6989b1-7672-4540-a00c-5a7b2e345f22",
+        "school": {
+          "slug": "tulane-university"
+        },
+        "user_id": "user-035",
+        "current_status": "HOLD",
+        "current_status_date": "2026-11-20T03:04:51.409Z"
+      },
+      {
+        "cycle_update_id": "d02480c0-1469-428b-81fc-9249d9aef7c3",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-036",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T02:53:02.653Z"
+      },
+      {
+        "cycle_update_id": "6c420cb1-567d-46c5-ad03-af9ccbc0d827",
+        "school": {
+          "slug": "noorda-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-037",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T02:44:48.818Z"
+      },
+      {
+        "cycle_update_id": "022ce4b5-39f3-4fea-a71d-965aba2643e6",
+        "school": {
+          "slug": "noorda-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-038",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T02:42:14.883Z"
+      },
+      {
+        "cycle_update_id": "4f2f6d2a-9d48-4649-a327-1d47737c5f0f",
+        "school": {
+          "slug": "university-of-california-los-angeles-david-geffen-school-of-medicine"
+        },
+        "user_id": "user-039",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T02:40:02.104Z"
+      },
+      {
+        "cycle_update_id": "67e6dd4a-e145-43ca-9cfe-92ad11949466",
+        "school": {
+          "slug": "university-of-cincinnati-college-of-medicine"
+        },
+        "user_id": "user-040",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T02:35:20.525Z"
+      },
+      {
+        "cycle_update_id": "ca73f586-00b1-4b6a-9634-b35a788b2e56",
+        "school": {
+          "slug": "university-of-michigan-medical-school"
+        },
+        "user_id": "user-041",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T02:24:03.555Z"
+      },
+      {
+        "cycle_update_id": "aad5af42-bce1-4592-9279-e14aa5385718",
+        "school": {
+          "slug": "creighton-university"
+        },
+        "user_id": "user-042",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T02:14:56.384Z"
+      },
+      {
+        "cycle_update_id": "cffe9ac0-7a5f-48a6-843d-bd2638c7b564",
+        "school": {
+          "slug": "university-of-kentucky-college-of-medicine"
+        },
+        "user_id": "user-043",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T02:10:43.126Z"
+      },
+      {
+        "cycle_update_id": "07c88f41-11b2-4d9c-84be-2dccc707cd37",
+        "school": {
+          "slug": "virginia-tech-carilion-school-of-medicine"
+        },
+        "user_id": "user-044",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T02:04:35.724Z"
+      },
+      {
+        "cycle_update_id": "4483376f-a503-45e0-97f5-b9a69bb907c3",
+        "school": {
+          "slug": "noorda-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-045",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:55:39.859Z"
+      },
+      {
+        "cycle_update_id": "90d7b30f-d875-49f3-bbef-5dd79f95a9e5",
+        "school": {
+          "slug": "loma-linda-university"
+        },
+        "user_id": "user-046",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T01:53:32.195Z"
+      },
+      {
+        "cycle_update_id": "4b5ae7de-5c27-4159-b33e-1a515f402d81",
+        "school": {
+          "slug": "kaiser-permanente-tyson"
+        },
+        "user_id": "user-047",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:52:40.755Z"
+      },
+      {
+        "cycle_update_id": "1e5bf559-ca50-4fa0-b400-5b1574c9f8f5",
+        "school": {
+          "slug": "touro-college-of-osteopathic-medicine-nevada"
+        },
+        "user_id": "user-048",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:49:48.013Z"
+      },
+      {
+        "cycle_update_id": "09673d32-dd08-4d7e-b924-de23bdcbfe61",
+        "school": {
+          "slug": "a-t-still-university-of-health-sciences-mesa"
+        },
+        "user_id": "user-049",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T01:49:05.906Z"
+      },
+      {
+        "cycle_update_id": "ffd4cdb4-5e13-45e0-9b4d-aa4423c2711c",
+        "school": {
+          "slug": "texas-christian-university"
+        },
+        "user_id": "user-050",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T01:40:15.846Z"
+      },
+      {
+        "cycle_update_id": "6cc09656-e0d8-4f7b-8279-045df27756b6",
+        "school": {
+          "slug": "case-western-reserve-university-school-of-medicine"
+        },
+        "user_id": "user-050",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T01:39:55.932Z"
+      },
+      {
+        "cycle_update_id": "18590373-b2f1-4318-8f24-580e40c19e71",
+        "school": {
+          "slug": "noorda-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-050",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:39:31.963Z"
+      },
+      {
+        "cycle_update_id": "9236efc6-3521-4b71-8165-26cf889f7a8d",
+        "school": {
+          "slug": "noorda-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-051",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:37:08.733Z"
+      },
+      {
+        "cycle_update_id": "1b4fa4b9-db60-4169-897d-08f79339acaa",
+        "school": {
+          "slug": "tulane-university"
+        },
+        "user_id": "user-052",
+        "current_status": "HOLD",
+        "current_status_date": "2026-11-20T01:31:37.315Z"
+      },
+      {
+        "cycle_update_id": "d4a2867f-f92b-45e2-8886-28c8be3fe3ac",
+        "school": {
+          "slug": "noorda-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-053",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:28:48.946Z"
+      },
+      {
+        "cycle_update_id": "96602aab-949b-4475-b341-72a46585a9d2",
+        "school": {
+          "slug": "noorda-college-of-osteopathic-medicine"
+        },
+        "user_id": "user-054",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:27:28.500Z"
+      },
+      {
+        "cycle_update_id": "80f29951-3f3a-429d-826b-d069a6817e35",
+        "school": {
+          "slug": "wayne-state-university-school-of-medicine"
+        },
+        "user_id": "user-055",
+        "current_status": "WAITLISTED",
+        "current_status_date": "2026-11-20T01:12:17.234Z"
+      },
+      {
+        "cycle_update_id": "a4497e3b-2d20-4451-b9af-5c7511910565",
+        "school": {
+          "slug": "saint-louis-university-school-of-medicine"
+        },
+        "user_id": "user-056",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:07:43.612Z"
+      },
+      {
+        "cycle_update_id": "033ddcff-1ed2-4166-bbbf-84a3adbe99b3",
+        "school": {
+          "slug": "loma-linda-university"
+        },
+        "user_id": "user-057",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T01:07:22.235Z"
+      },
+      {
+        "cycle_update_id": "4b758756-dafc-4a99-87f3-bb00b49db4ea",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-058",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T01:03:24.399Z"
+      },
+      {
+        "cycle_update_id": "183c1691-3e35-4949-900a-dcb94f749962",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-059",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-20T00:58:58.359Z"
+      },
+      {
+        "cycle_update_id": "b05ec485-1e66-4d6d-8133-d7e760638f1d",
+        "school": {
+          "slug": "washington-state-university-floyd"
+        },
+        "user_id": "user-060",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T00:43:47.811Z"
+      },
+      {
+        "cycle_update_id": "79c2b013-9fcd-4e34-bd6a-d3a46541c6e5",
+        "school": {
+          "slug": "rocky-vista-university-utah"
+        },
+        "user_id": "user-053",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T00:37:38.315Z"
+      },
+      {
+        "cycle_update_id": "96a3c987-780c-4ff8-9951-b22ff3153552",
+        "school": {
+          "slug": "lincoln-memorial-university-debusk-orange-park"
+        },
+        "user_id": "user-061",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T00:36:19.877Z"
+      },
+      {
+        "cycle_update_id": "cdb35662-f794-4f96-874b-1ad40b41656f",
+        "school": {
+          "slug": "morehouse-school-of-medicine"
+        },
+        "user_id": "user-062",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T00:30:37.914Z"
+      },
+      {
+        "cycle_update_id": "25416697-f8bf-4dde-9e8c-9576732c22d5",
+        "school": {
+          "slug": "tulane-university"
+        },
+        "user_id": "user-063",
+        "current_status": "HOLD",
+        "current_status_date": "2026-11-20T00:19:22.476Z"
+      },
+      {
+        "cycle_update_id": "258730ca-4eae-4692-b600-bc7dc31dff16",
+        "school": {
+          "slug": "lincoln-memorial-university-debusk"
+        },
+        "user_id": "user-064",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-20T00:17:29.558Z"
+      },
+      {
+        "cycle_update_id": "f2be43d1-d291-4089-9b7b-e5c5c7e9f5e2",
+        "school": {
+          "slug": "virginia-tech-carilion-school-of-medicine"
+        },
+        "user_id": "user-065",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-20T00:02:26.977Z"
+      },
+      {
+        "cycle_update_id": "a27af56a-5011-4b6d-bfb4-dd0e2e9f1ded",
+        "school": {
+          "slug": "wayne-state-university-school-of-medicine"
+        },
+        "user_id": "user-066",
+        "current_status": "WAITLISTED",
+        "current_status_date": "2026-11-19T23:58:04.333Z"
+      },
+      {
+        "cycle_update_id": "e952a288-58bc-47f8-9b2d-37a8da619c78",
+        "school": {
+          "slug": "oregon-health-science-university-school-of-medicine"
+        },
+        "user_id": "user-067",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-19T23:57:09.156Z"
+      },
+      {
+        "cycle_update_id": "e67073f1-238a-40a2-b7dc-5f28924fee4f",
+        "school": {
+          "slug": "wayne-state-university-school-of-medicine"
+        },
+        "user_id": "user-068",
+        "current_status": "WAITLISTED",
+        "current_status_date": "2026-11-19T23:56:24.261Z"
+      },
+      {
+        "cycle_update_id": "d5ec41af-11f0-4ec6-a2c3-76d6ce34c350",
+        "school": {
+          "slug": "university-of-california-los-angeles-david-geffen-school-of-medicine"
+        },
+        "user_id": "user-069",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:53:58.140Z"
+      },
+      {
+        "cycle_update_id": "99149058-65d5-47df-879f-8a1d14248e60",
+        "school": {
+          "slug": "washington-state-university-floyd"
+        },
+        "user_id": "user-070",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-19T23:46:38.985Z"
+      },
+      {
+        "cycle_update_id": "831faa1a-7197-4682-af2a-045a178233ce",
+        "school": {
+          "slug": "tulane-university"
+        },
+        "user_id": "user-071",
+        "current_status": "HOLD",
+        "current_status_date": "2026-11-19T23:45:45.874Z"
+      },
+      {
+        "cycle_update_id": "e8dea696-b4ea-4c0e-bd48-7a03a1902025",
+        "school": {
+          "slug": "tulane-university"
+        },
+        "user_id": "user-072",
+        "current_status": "HOLD",
+        "current_status_date": "2026-11-19T23:45:16.332Z"
+      },
+      {
+        "cycle_update_id": "866d6dc1-f2e0-4bef-ac29-13bec344d38b",
+        "school": {
+          "slug": "belmont-university"
+        },
+        "user_id": "user-073",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:40:10.246Z"
+      },
+      {
+        "cycle_update_id": "eb6c11ec-cec9-447c-b2b0-f464105ef0f1",
+        "school": {
+          "slug": "emory-university-school-of-medicine"
+        },
+        "user_id": "user-074",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:37:43.601Z"
+      },
+      {
+        "cycle_update_id": "f2789d23-772e-41c2-a854-e5a2fa6635d2",
+        "school": {
+          "slug": "tulane-university"
+        },
+        "user_id": "user-075",
+        "current_status": "HOLD",
+        "current_status_date": "2026-11-19T23:37:19.446Z"
+      },
+      {
+        "cycle_update_id": "52a3b519-7b85-4b94-9716-63a7273a62ee",
+        "school": {
+          "slug": "university-of-california-los-angeles-david-geffen-school-of-medicine"
+        },
+        "user_id": "user-076",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:37:00.051Z"
+      },
+      {
+        "cycle_update_id": "65b46fb2-0c61-47aa-a81a-84fbab323895",
+        "school": {
+          "slug": "lincoln-memorial-university-debusk-orange-park"
+        },
+        "user_id": "user-077",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-19T23:36:54.584Z"
+      },
+      {
+        "cycle_update_id": "c49014b4-1a48-4f44-a5da-7d8d5ce56e28",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-078",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-19T23:33:51.186Z"
+      },
+      {
+        "cycle_update_id": "b2159cef-c533-4bb4-9dfb-1bb5337ab702",
+        "school": {
+          "slug": "university-of-iowa-roy-j-and-lucille-a-carver-college-of-medicine"
+        },
+        "user_id": "user-079",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:31:02.820Z"
+      },
+      {
+        "cycle_update_id": "8d94438b-5387-4aae-93cc-1825fd1189f4",
+        "school": {
+          "slug": "usf-health-morsani-college-of-medicine"
+        },
+        "user_id": "user-080",
+        "current_status": "WAITLISTED",
+        "current_status_date": "2026-11-19T23:27:59.304Z"
+      },
+      {
+        "cycle_update_id": "cf86d8c7-73b9-4505-b4d2-9a813c16a1b2",
+        "school": {
+          "slug": "university-of-cincinnati-college-of-medicine"
+        },
+        "user_id": "user-081",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-19T23:27:00.595Z"
+      },
+      {
+        "cycle_update_id": "d8d2be4b-f8d8-4c13-83b4-37016c905a9e",
+        "school": {
+          "slug": "university-of-massachusetts-medical-school"
+        },
+        "user_id": "user-082",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-19T23:19:36.445Z"
+      },
+      {
+        "cycle_update_id": "05035dd3-3c5a-4a4a-a4c3-022bd0365a74",
+        "school": {
+          "slug": "virginia-tech-carilion-school-of-medicine"
+        },
+        "user_id": "user-083",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:18:51.860Z"
+      },
+      {
+        "cycle_update_id": "cd68af92-783d-4810-a9f4-b38e8c6d5958",
+        "school": {
+          "slug": "michigan-state-university-college-of-human-medicine"
+        },
+        "user_id": "user-084",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-19T23:18:12.753Z"
+      },
+      {
+        "cycle_update_id": "3e87eb1e-6708-4d60-9f68-84399e6a2bf0",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-085",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:13:50.490Z"
+      },
+      {
+        "cycle_update_id": "e06eb6ae-4b1b-47ae-9288-eafef6af919f",
+        "school": {
+          "slug": "washington-state-university-floyd"
+        },
+        "user_id": "user-086",
+        "current_status": "ACCEPTED",
+        "current_status_date": "2026-11-19T23:13:16.383Z"
+      },
+      {
+        "cycle_update_id": "4f12ceb7-b932-42ff-8aea-e559562d66a4",
+        "school": {
+          "slug": "university-of-wisconsin-school-of-medicine-and-public-health"
+        },
+        "user_id": "user-087",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:08:30.106Z"
+      },
+      {
+        "cycle_update_id": "b7c87409-959f-4ec3-ba91-951fcc1930ec",
+        "school": {
+          "slug": "university-of-texas-medical-branch-galveston"
+        },
+        "user_id": "user-088",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:07:30.909Z"
+      },
+      {
+        "cycle_update_id": "e154835e-1234-49de-8aba-0c590caf9e1e",
+        "school": {
+          "slug": "charles-drew"
+        },
+        "user_id": "user-089",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-19T23:05:56.949Z"
+      },
+      {
+        "cycle_update_id": "055950e5-ccf7-4891-984d-386468202d13",
+        "school": {
+          "slug": "des-moines-university"
+        },
+        "user_id": "user-090",
+        "current_status": "INTERVIEW",
+        "current_status_date": "2026-11-19T23:05:55.910Z"
+      },
+      {
+        "cycle_update_id": "9ca433b1-a849-4cc5-a839-5eefb41608b8",
+        "school": {
+          "slug": "georgetown-university-school-of-medicine"
+        },
+        "user_id": "user-091",
+        "current_status": "REJECTED",
+        "current_status_date": "2026-11-19T23:04:53.800Z"
+      }
+    ]
+  }
+}

@@ -30,6 +30,11 @@ export interface PoliteResult {
 export interface PoliteClient {
   /** `path` is a path or an absolute URL on the source origin. */
   get(path: string, opts?: { etag?: string }): Promise<PoliteResult>;
+  /**
+   * POST a JSON body. Same gate as `get`: serialized, spaced, robots-checked, retried with backoff and counted.
+   * Retrying is safe because every operation sent through it is a read-only query.
+   */
+  post(path: string, body: string, opts?: { headers?: Record<string, string> }): Promise<PoliteResult>;
   /** Resets the consecutive-failure counter. */
   noteSuccess(): void;
   /** Pipelines call this for an unparseable page. */
@@ -64,16 +69,29 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
   let robotsTxt: Promise<string | null> | null = null;
   let robotsExpiresAt = 0;
 
-  async function transport(url: string, headers: Record<string, string>): Promise<Response> {
+  async function transport(
+    url: string,
+    headers: Record<string, string>,
+    method: 'GET' | 'POST',
+    body: string | undefined,
+  ): Promise<Response> {
     if (deps.fetchImpl) {
       return deps.fetchImpl(url, {
+        method,
+        ...(body === undefined ? {} : { body }),
         headers,
         signal: AbortSignal.timeout(config.timeoutMs),
         redirect: 'follow',
       });
     }
     const { safeFetch } = await import('@/lib/ssrf-guard.server');
-    return safeFetch(url, { headers, timeoutMs: config.timeoutMs, allowedProtocols: ['https:'] });
+    return safeFetch(url, {
+      method,
+      ...(body === undefined ? {} : { body }),
+      headers,
+      timeoutMs: config.timeoutMs,
+      allowedProtocols: ['https:'],
+    });
   }
 
   /** Run `task` alone on the host, after the spacing gap has elapsed. */
@@ -103,20 +121,22 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
     url: string,
     headers: Record<string, string>,
     spacingMs: number,
+    method: 'GET' | 'POST' = 'GET',
+    body?: string,
   ): Promise<{ result: PoliteResult; transportFailure: boolean }> {
     let last: PoliteResult = { ok: false, status: 0, body: '' };
     for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
       await waitSlot(spacingMs);
       let res: Response | null = null;
       try {
-        res = await transport(url, headers);
+        res = await transport(url, headers, method, body);
       } catch {
         last = { ok: false, status: 0, body: '' };
       }
       if (res) {
         if (res.status === 304) return { result: { ok: true, status: 304, body: '', notModified: true }, transportFailure: false };
-        const body = await res.text().catch(() => '');
-        last = { ok: res.ok, status: res.status, body };
+        const text = await res.text().catch(() => '');
+        last = { ok: res.ok, status: res.status, body: text };
         const retryable = res.status === 429 || res.status >= 500;
         if (!retryable) return { result: last, transportFailure: false };
       }
@@ -154,33 +174,48 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
       lastFailure = reason;
     };
 
+    /** The one request path for GET and POST: halt check, origin check, robots, then a serialized retried fetch. */
+    async function request(
+      method: 'GET' | 'POST',
+      path: string,
+      body: string | undefined,
+      extra: Record<string, string>,
+    ): Promise<PoliteResult> {
+      if (failures >= config.maxConsecutiveFailures) throw new SourceHaltedError(lastFailure ?? undefined);
+      const url = new URL(path, config.origin);
+      if (url.origin !== config.origin) {
+        throw new Error(`refusing to fetch ${url.origin}: not the source origin ${config.origin}`);
+      }
+
+      const robots = await loadRobots(spacingMs);
+      if (robots !== null && !isPathAllowed(robots, config.userAgent, url.pathname)) {
+        return { ok: false, status: 0, body: '' };
+      }
+
+      const headers: Record<string, string> = {
+        ...config.headers,
+        'user-agent': config.userAgent,
+        accept: method === 'POST' ? 'application/json' : 'text/html, application/json;q=0.9, */*;q=0.5',
+        ...(method === 'POST' ? { 'content-type': 'application/json' } : {}),
+        ...extra,
+      };
+
+      requests++;
+      const { result, transportFailure } = await serialized(() =>
+        fetchWithRetries(url.toString(), headers, spacingMs, method, body),
+      );
+      if (transportFailure) {
+        fail(`${url.pathname}: ${result.status ? `HTTP ${result.status}` : 'network error'}`);
+      }
+      return result;
+    }
+
     return {
-      async get(path, getOpts = {}) {
-        if (failures >= config.maxConsecutiveFailures) throw new SourceHaltedError(lastFailure ?? undefined);
-        const url = new URL(path, config.origin);
-        if (url.origin !== config.origin) {
-          throw new Error(`refusing to fetch ${url.origin}: not the source origin ${config.origin}`);
-        }
-
-        const robots = await loadRobots(spacingMs);
-        if (robots !== null && !isPathAllowed(robots, config.userAgent, url.pathname)) {
-          return { ok: false, status: 0, body: '' };
-        }
-
-        const headers: Record<string, string> = {
-          'user-agent': config.userAgent,
-          accept: 'text/html, application/json;q=0.9, */*;q=0.5',
-        };
-        if (getOpts.etag) headers['if-none-match'] = getOpts.etag;
-
-        requests++;
-        const { result, transportFailure } = await serialized(() =>
-          fetchWithRetries(url.toString(), headers, spacingMs),
-        );
-        if (transportFailure) {
-          fail(`${url.pathname}: ${result.status ? `HTTP ${result.status}` : 'network error'}`);
-        }
-        return result;
+      get(path, getOpts = {}) {
+        return request('GET', path, undefined, getOpts.etag ? { 'if-none-match': getOpts.etag } : {});
+      },
+      post(path, body, postOpts = {}) {
+        return request('POST', path, body, postOpts.headers ?? {});
       },
       noteSuccess() {
         failures = 0;

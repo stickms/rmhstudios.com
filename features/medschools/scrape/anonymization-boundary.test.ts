@@ -7,18 +7,13 @@ import { schoolUrl } from './adapters/cycletrack';
 import { runCycletrack } from './run-cycletrack';
 import {
   assertNoLeak,
+  CYCLETRACK_NEEDLES,
   createFakeHost,
   createFakePrisma,
   loadFixture,
 } from './test-support';
 
-const NEEDLES =
-  [
-    'drsmith42',
-    'jane_doe_md',
-    'https://cdn.example/avatars/jd.png',
-    'user_id=9931',
-  ];
+const NEEDLES = CYCLETRACK_NEEDLES;
 const CREATED_KEYS =
   [
     'contributors',

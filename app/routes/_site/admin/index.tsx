@@ -20,6 +20,7 @@ import { InsightsLink } from '@/components/admin/InsightsLink';
 import { PerformanceLink } from '@/components/admin/PerformanceLink';
 import { DeepseekLink } from '@/components/admin/DeepseekLink';
 import { OncallLink } from '@/components/admin/OncallLink';
+import { AdminMedSchoolsLink } from '@features/medschools/ui/AdminMedSchoolsLink';
 
 export const Route = createFileRoute('/_site/admin/')({
   head: () => ({
@@ -297,6 +298,7 @@ function AdminDashboardPage() {
           <AdminCanvasLink />
           <AdminChallengeLink />
           <AdminReadingLink />
+          <AdminMedSchoolsLink />
         </div>
       </AdminBody>
     </PageLayout>

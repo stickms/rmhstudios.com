@@ -6,6 +6,7 @@ import {
 import {
   cycleYearFromLabel,
   dayOfCycle,
+  cycleYearOf,
   defaultDayZero,
 } from './cycle';
 
@@ -123,4 +124,24 @@ describe('cycle math', () => {
       }
     },
   );
+});
+
+describe('cycleYearOf', () => {
+  it.each([
+    ['ACCEPTANCE', '2026-07-10', 2026],
+    ['ACCEPTANCE', '2026-08-31T23:59:59Z', 2026],
+    ['ACCEPTANCE', '2026-09-01', 2027],
+    ['WAITLIST', '2026-06-15', 2026],
+    ['REJECTION', '2027-01-10', 2027],
+    ['WITHDRAWN', '2026-08-15', 2026],
+    ['WITHDRAWN', '2026-10-15', 2027],
+    ['HOLD', '2026-12-01', 2027],
+    ['INTERVIEW', '2026-06-30', 2026],
+    ['INTERVIEW', '2026-07-01', 2027],
+    ['INTERVIEW', '2026-11-20', 2027],
+    ['SECONDARY', '2026-06-01', 2027],
+    ['SECONDARY', '2026-05-31', 2026],
+  ] as const)('%s on %s is cycle %i', (type, iso, year) => {
+    expect(cycleYearOf(new Date(iso), type)).toBe(year);
+  });
 });

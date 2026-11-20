@@ -33,6 +33,20 @@ const UNIQUE_KEYS: Record<
         'source',
         'sourceKey',
       ],
+    medSchoolAliasMiss:
+      [
+        'source',
+        'sourceKey',
+      ],
+    medCycleEvent:
+      ['dedupeHash'],
+    medInterviewQuestion:
+      ['dedupeHash'],
+    medInterviewProfile:
+      [
+        'schoolId',
+        'source',
+      ],
   };
 
 const eq =
@@ -175,6 +189,91 @@ function matches(
             ),
         );
       }
+      if (
+        v !==
+          null &&
+        typeof v ===
+          'object' &&
+        !(
+          v instanceof
+          Date
+        ) &&
+        !Array.isArray(
+          v,
+        )
+      ) {
+        const op =
+          v as {
+            gte?: Date | number;
+            lt?: Date | number;
+            not?: unknown;
+          };
+        const cell =
+          row[
+            k
+          ];
+        const n =
+          (
+            x: unknown,
+          ) =>
+            x instanceof
+            Date
+              ? x.getTime()
+              : (x as number);
+        if (
+          'gte' in
+            op &&
+          !(
+            cell !==
+              null &&
+            cell !==
+              undefined &&
+            n(
+              cell,
+            ) >=
+              n(
+                op.gte,
+              )
+          )
+        )
+          return false;
+        if (
+          'lt' in
+            op &&
+          !(
+            cell !==
+              null &&
+            cell !==
+              undefined &&
+            n(
+              cell,
+            ) <
+              n(
+                op.lt,
+              )
+          )
+        )
+          return false;
+        if (
+          'not' in
+          op
+        ) {
+          // `{ not: null }` means "has a value"; absent columns read as null.
+          const val =
+            cell ===
+            undefined
+              ? null
+              : cell;
+          if (
+            eq(
+              val,
+              op.not,
+            )
+          )
+            return false;
+        }
+        return true;
+      }
       return eq(
         row[
           k
@@ -308,6 +407,25 @@ export function createFakePrisma(): {
                 ...r,
               }),
             );
+        },
+        async findUnique(args: {
+          where: Row;
+        }) {
+          const hit =
+            t().find(
+              (
+                r,
+              ) =>
+                matches(
+                  r,
+                  args.where,
+                ),
+            );
+          return hit
+            ? {
+                ...hit,
+              }
+            : null;
         },
         async findFirst(args?: {
           where?: Row;
@@ -570,6 +688,9 @@ export function createFakePrisma(): {
       'medSchoolAliasMiss',
       'medCycle',
       'medCycleCount',
+      'medCycleEvent',
+      'medInterviewQuestion',
+      'medInterviewProfile',
       'medSchoolStats',
       'medSourceRun',
     ];
@@ -586,6 +707,23 @@ export function createFakePrisma(): {
         ],
       ),
     ) as unknown as MedPrisma;
+  // A transaction runs against the same fake; a throw restores every table and the write log.
+  (prisma as unknown as Record<string, unknown>).$transaction = async (
+    fn: (tx: MedPrisma) => Promise<unknown>,
+  ) => {
+    const snapshot = Object.fromEntries(
+      Object.entries(tables).map(([k, rows]) => [k, rows.map((r) => ({ ...r }))]),
+    );
+    const writeCount = writes.length;
+    try {
+      return await fn(prisma);
+    } catch (err) {
+      for (const k of Object.keys(tables)) delete tables[k];
+      Object.assign(tables, snapshot);
+      writes.length = writeCount;
+      throw err;
+    }
+  };
   const view =
     new Proxy(
       tables,
@@ -639,6 +777,25 @@ export function loadFixture(
   );
 }
 
+/** Person-shaped strings the CycleTrack anonymization-boundary test injects into its fixtures. */
+export const CYCLETRACK_NEEDLES = [
+  'drsmith42',
+  'jane_doe_md',
+  'https://cdn.example/avatars/jd.png',
+  'user_id=9931',
+] as const;
+
+/** Person-shaped strings that only the synthetic hostile Admit fixtures may contain. */
+export const ADMIT_HOSTILE_NEEDLES = [
+  'drsmith42',
+  'jane_doe_md',
+  'https://cdn.example/avatars/jd.png',
+  'user-hostile-9931',
+] as const;
+
+/** Every person-shaped string any anonymization test hunts for; pass to `assertNoLeak`. */
+export const NEEDLES: string[] = [...new Set<string>([...CYCLETRACK_NEEDLES, ...ADMIT_HOSTILE_NEEDLES])];
+
 /** Throws naming the needle if anything written contains it (e.g. a raw source id that must be hashed). */
 export function assertNoLeak(
   writes: unknown[],
@@ -660,16 +817,39 @@ export function assertNoLeak(
   }
 }
 
+function sortKeys(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(sortKeys);
+  if (v !== null && typeof v === 'object') {
+    return Object.fromEntries(
+      Object.entries(v as Record<string, unknown>)
+        .sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))
+        .map(([k, x]) => [k, sortKeys(x)]),
+    );
+  }
+  return v;
+}
+
+/** Route key the fake host uses for a GraphQL POST: operation name plus its variables with sorted keys. */
+export function gqlKey(path: string, operationName: string, variables: unknown): string {
+  return `POST ${path} ${operationName} ${JSON.stringify(sortKeys(variables ?? {}))}`;
+}
+
 /**
- * Fake PoliteHost serving canned bodies by path. A path mapped to `null` is a
+ * Fake PoliteHost serving canned bodies by path (GET) or by `gqlKey` (POST). A key mapped to `null` is a
  * 404. Mirrors the real gate: the session halts after three noted failures
- * and `get` then throws `SourceHaltedError`.
+ * and `get`/`post` then throw `SourceHaltedError`.
  */
 export function createFakeHost(
   routes: Record<string, string | null> | ((path: string) => string | null),
   maxFailures = 3,
-): { host: PoliteHost; requested: string[]; sessions: Array<{ spacingMs?: number } | undefined> } {
+): {
+  host: PoliteHost;
+  requested: string[];
+  requestedPosts: Array<{ op: string; variables: unknown }>;
+  sessions: Array<{ spacingMs?: number } | undefined>;
+} {
   const requested: string[] = [];
+  const requestedPosts: Array<{ op: string; variables: unknown }> = [];
   const sessions: Array<{ spacingMs?: number } | undefined> = [];
   const lookup = typeof routes === 'function' ? routes : (p: string) => routes[p] ?? null;
   const host: PoliteHost = {
@@ -677,12 +857,20 @@ export function createFakeHost(
       sessions.push(opts);
       let failures = 0;
       let last: string | null = null;
+      const total = () => requested.length + requestedPosts.length;
       return {
         async get(path) {
           if (failures >= maxFailures) throw new SourceHaltedError(last ?? undefined);
           requested.push(path);
           const body = lookup(path);
           return body === null ? { ok: false, status: 404, body: '' } : { ok: true, status: 200, body };
+        },
+        async post(path, body) {
+          if (failures >= maxFailures) throw new SourceHaltedError(last ?? undefined);
+          const parsed = JSON.parse(body) as { operationName: string; variables?: unknown };
+          requestedPosts.push({ op: parsed.operationName, variables: parsed.variables ?? {} });
+          const out = lookup(gqlKey(path, parsed.operationName, parsed.variables));
+          return out === null ? { ok: false, status: 404, body: '' } : { ok: true, status: 200, body: out };
         },
         noteSuccess() {
           failures = 0;
@@ -695,7 +883,7 @@ export function createFakeHost(
           return failures >= maxFailures;
         },
         get requests() {
-          return requested.length;
+          return total();
         },
         get lastFailure() {
           return last;
@@ -703,5 +891,5 @@ export function createFakeHost(
       };
     },
   };
-  return { host, requested, sessions };
+  return { host, requested, requestedPosts, sessions };
 }

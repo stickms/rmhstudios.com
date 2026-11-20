@@ -345,7 +345,7 @@ entries, `start`), `Dockerfile` esbuild list + `test -f`, `docker-compose.yml` s
 
 1. Foundation: schema, registry + aliases seed, worker skeleton and wiring, CycleTrack
    adapter + historical backfill, anonymization tests.
-2. Admit.org adapter (live + backfill + interviews) and SDN adapter (RSS live, prior-year
+2. Admit.org adapter (live + backfill + interviews; phase 2a, shipped with the alias-miss admin page) and SDN adapter (RSS live, prior-year
    backfill, LLM extraction).
 3. Public pages: index, live, school page Activity/History/Interviews, OG, i18n.
 4. Private tracker with anonymous sharing.
