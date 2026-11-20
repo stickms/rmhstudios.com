@@ -292,7 +292,7 @@ export function renderDesignedEmail(
   const header =
     [
       design.logo
-        ? `<img src="${escapeHtml(input.logoUrl)}" width="36" height="36" alt="${escapeHtml(BRAND.logoAlt)}" style="display:block;border:0;border-radius:${BRAND.radius}px">`
+        ? `<img src="${escapeHtml(input.logoUrl)}" width="36" height="36" alt="${escapeHtml(BRAND.logoAlt)}" style="display:block;border:0;border-radius:18px">`
         : '',
       design.eyebrow
         ? `<p style="margin:${design.logo ? '16px' : '0'} 0 0;font-family:${font};font-size:13px;font-weight:600;line-height:1.3;color:${accent === theme.ink ? theme.muted : accent}">${escapeHtml(say(design.eyebrow))}</p>`
