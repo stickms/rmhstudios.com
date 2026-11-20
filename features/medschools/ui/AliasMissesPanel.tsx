@@ -403,10 +403,11 @@ function MissRow({
             )
           }
           aria-label={t(
-            'school',
+            'school-for',
             {
               defaultValue:
-                'School',
+                'School for {{name}}',
+              name: miss.sourceKey,
             },
           )}
           containerClassName="w-full"
@@ -451,6 +452,14 @@ function MissRow({
         <div className="flex gap-2">
           <Button
             size="sm"
+            aria-label={t(
+              'map-key',
+              {
+                defaultValue:
+                  'Map {{name}}',
+                name: miss.sourceKey,
+              },
+            )}
             disabled={
               !schoolId ||
               busy
@@ -472,6 +481,14 @@ function MissRow({
           </Button>
           <Button
             size="sm"
+            aria-label={t(
+              'ignore-key',
+              {
+                defaultValue:
+                  'Ignore {{name}}',
+                name: miss.sourceKey,
+              },
+            )}
             disabled={
               busy
             }
