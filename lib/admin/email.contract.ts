@@ -197,6 +197,7 @@ export const adminEmailDesignModels =
   endpoint<{
     res: {
       deepseek: boolean;
+      'deepseek-reasoning': boolean;
       kimi: boolean;
     };
   }>()(
