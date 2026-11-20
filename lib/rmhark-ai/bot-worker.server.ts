@@ -35,6 +35,7 @@
  * one-minute granular; BOT_AI_BASE_URL (a test stand-in hook) is gone; JobRuns
  * counters are structured log lines (`bot_worker.*`) instead of Prometheus.
  */
+import { isDeepseekPeak } from '@/lib/ai/deepseek-peak';
 import { prisma } from '@/lib/prisma.server';
 import { findDmByPair, upsertDm } from '@/lib/chat/chat.server';
 import { Prisma } from '@prisma/client';
@@ -1194,6 +1195,8 @@ async function restyleNames(d: BotDeps, pending: BotProfileRow[]): Promise<numbe
 export async function runRefreshTick(d: BotDeps): Promise<number> {
   const look = d.look;
   if (!look || !d.cfg.profileRefresh) return 0;
+  // Bio, name and picture drift is never urgent: it waits for DeepSeek's off-peak hours.
+  if (isDeepseekPeak(d.now())) return 0;
   const bots = shuffled(await d.repo.botProfiles(), d.random);
   const pendingLooks = bots.filter((b) => needsFirstUpdate(b.image));
   const pendingNames = bots.filter((b) => b.botPersona !== '' && !hasNameStyle(b.botPersona));
@@ -1261,8 +1264,11 @@ let lastMaintainSave: number | null = null;
 
 /** The maintenance job body: a top-up when one is due under the current settings. */
 export async function runMaintainTick(d: BotDeps): Promise<boolean> {
-  const s = await currentSettings(d);
   const now = d.now();
+  // Minting bots (profile + picture queries) waits for DeepSeek's off-peak hours; the next
+  // off-peak tick tops the pool up, since `lastMaintain` is not advanced here.
+  if (isDeepseekPeak(now)) return false;
+  const s = await currentSettings(d);
   if (!maintenanceDue(now, lastMaintain, lastMaintainSave, s)) return false;
   lastMaintain = now;
   lastMaintainSave = s.updatedAt?.getTime() ?? null;

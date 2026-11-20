@@ -17,12 +17,12 @@ describe('resolveLadderCron', () => {
         undefined,
       ),
     ).toBe(
-      '0 */12 * * *',
+      '0 11,23 * * *',
     );
     expect(
       DEFAULT_LADDER_CRON,
     ).toBe(
-      '0 */12 * * *',
+      '0 11,23 * * *',
     );
   });
 

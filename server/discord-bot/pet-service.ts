@@ -8,6 +8,7 @@
  * on a snapshot, so a slow model never blocks other caretakers. Per-guild data (last channel,
  * intro flag, message level, persona prompt) lives in discord_alex_guild.
  */
+import { isDeepseekPeak } from '../../lib/ai/deepseek-peak';
 import {
   ERR_MISSING_ACCESS,
   ERR_MISSING_PERMISSIONS,
@@ -2844,6 +2845,11 @@ export class PetService {
             }
           } else if (
             pet.alive &&
+            // The ambient slot (an ambient post or a prompt, both written by DeepSeek) is never
+            // urgent: during DeepSeek's peak hours it stays due and rolls on the first off-peak tick.
+            !isDeepseekPeak(
+              now,
+            ) &&
             ambientDue(
               pet.lastAmbientAt,
               now,
