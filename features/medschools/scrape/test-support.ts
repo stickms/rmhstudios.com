@@ -40,6 +40,8 @@ const UNIQUE_KEYS: Record<
       ],
     medCycleEvent:
       ['dedupeHash'],
+    medSdnThread:
+      ['threadId'],
     medInterviewQuestion:
       ['dedupeHash'],
     medInterviewProfile:
@@ -207,6 +209,7 @@ function matches(
             gte?: Date | number;
             lt?: Date | number;
             not?: unknown;
+            startsWith?: string;
           };
         const cell =
           row[
@@ -253,6 +256,8 @@ function matches(
               )
           )
         )
+          return false;
+        if ('startsWith' in op && !(typeof cell === 'string' && cell.startsWith(op.startsWith ?? '')))
           return false;
         if (
           'not' in
@@ -616,6 +621,20 @@ export function createFakePrisma(): {
             ),
           };
         },
+        async aggregate(args: {
+          where?: Row;
+          _sum: Record<string, true>;
+        }) {
+          const hits = t().filter((r) => matches(r, args.where));
+          const sum: Record<string, number | null> = {};
+          for (const col of Object.keys(args._sum)) {
+            const vals = hits
+              .map((r) => r[col])
+              .filter((v): v is number => typeof v === 'number');
+            sum[col] = vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+          }
+          return { _sum: sum };
+        },
         async delete(args: {
           where: Row;
         }) {
@@ -693,6 +712,8 @@ export function createFakePrisma(): {
       'medInterviewProfile',
       'medSchoolStats',
       'medSourceRun',
+      'medSdnThread',
+      'aiUsage',
     ];
   const prisma =
     Object.fromEntries(

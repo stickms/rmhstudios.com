@@ -103,6 +103,30 @@ export interface MedInterviewProfileRow {
   feedbackNegative: string[];
   feedbackBefore: string[];
   fetchedAt: Date;
+  interviewStyle: string | null;
+  interviewLength: string | null;
+  avgStress: number | null;
+  avgImpression: number | null;
+  inStateCount: number | null;
+  outOfStateCount: number | null;
+}
+
+/** A public thread id and slug, not a person; `cursorPostHash` is an HMAC, never a raw post id. */
+export interface MedSdnThreadRow {
+  threadId: number;
+  slug: string;
+  schoolId: string;
+  cycleYear: number;
+  degree: string;
+  archive: boolean;
+  repliesSeen: number;
+  repliesDone: number;
+  lastActivityAt: Date | null;
+  cursorPage: number;
+  cursorPostHash: string | null;
+  postsProcessed: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface MedSchoolStatsRow {
@@ -304,6 +328,28 @@ export interface MedPrisma {
     }): Promise<{
       id: string;
     }>;
+  };
+  medSdnThread: {
+    findMany(args?: {
+      where?: Where;
+      select?: Record<string, boolean>;
+      orderBy?: unknown;
+    }): Promise<MedSdnThreadRow[]>;
+    upsert(args: {
+      where: Where;
+      create: Data;
+      update: Data;
+    }): Promise<MedSdnThreadRow>;
+    update(args: {
+      where: Where;
+      data: Data;
+    }): Promise<MedSdnThreadRow>;
+  };
+  aiUsage: {
+    aggregate(args: {
+      where: Where;
+      _sum: { costMicros: true };
+    }): Promise<{ _sum: { costMicros: number | null } }>;
   };
   medSourceRun: {
     create(args: {

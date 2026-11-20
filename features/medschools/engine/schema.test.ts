@@ -123,6 +123,55 @@ model MedTrackerCycle {
     expect(m?.body).toMatch(/dedupeHash\s+String\s+@unique/);
   });
 
+  it('MedSdnThread exists with no person-like column', () => {
+    const m = parseModels(schema()).find((x) => x.model === 'MedSdnThread');
+    expect(m).toBeDefined();
+    expect(m?.fields).toEqual([
+      'threadId',
+      'slug',
+      'schoolId',
+      'cycleYear',
+      'degree',
+      'archive',
+      'repliesSeen',
+      'repliesDone',
+      'lastActivityAt',
+      'cursorPage',
+      'cursorPostHash',
+      'postsProcessed',
+      'createdAt',
+      'updatedAt',
+    ]);
+    expect(forbiddenColumns(schema())).toEqual([]);
+  });
+
+  it('MedSdnThread has cursorPostHash and no postId column', () => {
+    const m = parseModels(schema()).find((x) => x.model === 'MedSdnThread');
+    expect(m?.fields).toContain('cursorPostHash');
+    expect(m?.fields.some((f) => /^post(Id)?$|postId/i.test(f))).toBe(false);
+  });
+
+  it('MedInterviewProfile has the SDN columns', () => {
+    const m = parseModels(schema()).find((x) => x.model === 'MedInterviewProfile');
+    expect(m?.fields).toEqual([
+      'id',
+      'schoolId',
+      'source',
+      'format',
+      'fileType',
+      'avgDifficulty',
+      'interviewCount',
+      // feedback* are String[] columns; parseModels skips list fields
+      'fetchedAt',
+      'interviewStyle',
+      'interviewLength',
+      'avgStress',
+      'avgImpression',
+      'inStateCount',
+      'outOfStateCount',
+    ]);
+  });
+
   it('no MedInterviewDate model exists', () => {
     expect(schema()).not.toMatch(/model\s+MedInterviewDate\b/);
   });
