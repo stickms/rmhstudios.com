@@ -21,7 +21,7 @@ Generated from `lib/catalog`, the single source of truth every card on the site 
 | **rmhcode** | [`/rmhcode`](https://rmhstudios.com/rmhcode) | Beta | required | `AI` `CLI` `Developer Tools` `Beta` |
 | **RMH Strategies** | [`/strategies`](https://rmhstudios.com/strategies) | Beta | required | `Puzzles` `Community` `Reputation` `Beta` |
 | **RMH Ladder** | [`/rmhladder`](https://rmhstudios.com/rmhladder) | Beta | — | `Careers` `Jobs` `Early Career` `AI` `Beta` |
-| **RMHCalculator** | [`/rmhcalculator`](https://rmhstudios.com/rmhcalculator) | Beta | required | `Calculator` `Graphing` `AI` `DeepSeek` `Beta` |
+| **RMHCalculator** | [`/rmhcalculator`](https://rmhstudios.com/rmhcalculator) | Beta | required | `Calculator` `Graphing` `AI` `Beta` |
 | **RMHHomes** | [`/homes`](https://rmhstudios.com/homes) | Beta | required | `Housing` `Search` `Maps` `Beta` |
 | **Dunesday** | [`/dunesday`](https://rmhstudios.com/dunesday) | New | — | `Planner` `Movies` `AI` |
 | **rmhOS** | [`/rmhos`](https://rmhstudios.com/rmhos) | Coming soon | required | `linux` `desktop` `terminal` |
@@ -94,7 +94,7 @@ RMH Ladder automatically checks official company job boards every four hours, fi
 
 ### RMHCalculator
 
-RMHCalculator is a graphing and scientific calculator powered entirely by the DeepSeek API — it performs no arithmetic of its own. Every scientific evaluation and every plotted graph point is computed by the model, which also decides how to frame and plot each curve for good accuracy. Watch its reasoning stream live, and switch between DeepSeek Reasoner for maximum accuracy and DeepSeek Chat for faster answers.
+RMHCalculator is a graphing and scientific calculator. Every scientific evaluation and every plotted graph point is computed by the model, which also decides how to frame and plot each curve for good accuracy. Watch its reasoning stream live, and switch between Reasoner for maximum accuracy and Chat for faster answers.
 
 **Route:** `/rmhcalculator` · **Catalog id:** `rmhcalculator` · **Status:** Beta · **Sign-in:** required
 
