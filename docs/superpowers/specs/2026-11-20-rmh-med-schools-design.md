@@ -107,6 +107,8 @@ limits) and the cache is discarded when the run ends. If the flag cannot be read
 `program = null`. Phase 2's feasibility spike finds where the flag lives before the adapter
 is planned.
 
+**SDN program (2026-11-20, by analogy with the owner's Admit.org rule).** SDN threads are per school, not per program. A post counts as MD-PhD/DO-PhD only when the extractor reports it and the post text itself says MD-PhD, DO-PhD, MSTP or "PhD track"; every other SDN post counts as MD/DO, as an unflagged Admit.org applicant does.
+
 ## 5. Architecture
 
 ```
@@ -245,7 +247,7 @@ phase 2) where an admin maps a miss to a school.
 
 New posts only (post id hash not yet seen). Strip `blockquote` (quoted replies) before
 anything else. A cheap regex prefilter (`\bII\b|interview|accept|\bA\b|waitlist|\bWL\b|
-reject|\bR\b|question`) skips chatter. Survivors go to `runTaskJson` (new `AiTask`
+reject|\bR\b|question|secondary|2ndary`, secondary terms added 2026-11-20) skips chatter. Survivors go to `runTaskJson` (new `AiTask`
 `medschools-extract`) with a strict zod schema:
 `{ events: [{ type, date (ISO, resolved against post date), inState? }], questions: [string] }`.
 The prompt instructs: report only the poster's own event, resolve relative dates
