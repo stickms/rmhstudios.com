@@ -13,7 +13,13 @@ export type MedEventType =
   | 'INTERVIEW'
   | 'WAITLIST'
   | 'REJECTION'
-  | 'ACCEPTANCE';
+  | 'ACCEPTANCE'
+  | 'WITHDRAWN'
+  | 'HOLD';
+export type MedResidence =
+  | 'GLOBAL'
+  | 'IN_STATE'
+  | 'OUT_OF_STATE';
 
 export interface NormalizedCount {
   source: MedSource;

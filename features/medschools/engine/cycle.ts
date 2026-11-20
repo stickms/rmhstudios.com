@@ -1,3 +1,5 @@
+import type { MedEventType } from './types';
+
 const DAY_MS = 86_400_000;
 
 /** Entry year from a label: '2026-2027' -> 2027. */
@@ -82,4 +84,24 @@ export function dayOfCycle(
       dayZeroOn,
     )
   );
+}
+
+/** UTC month (0-based) at which an event type starts belonging to the NEXT entry year. */
+const NEXT_CYCLE_FROM_MONTH: Record<MedEventType, number> = {
+  SECONDARY: 5, // June 1: secondaries open for the next cycle
+  INTERVIEW: 6, // July 1
+  ACCEPTANCE: 8, // September 1: summer decisions still belong to that August's class
+  WAITLIST: 8,
+  REJECTION: 8,
+  WITHDRAWN: 8,
+  HOLD: 8,
+};
+
+/**
+ * Entry year an event belongs to, by its type (ruling R0): decisions roll over on
+ * September 1, interviews on July 1, secondaries on June 1, all in UTC.
+ */
+export function cycleYearOf(date: Date, type: MedEventType): number {
+  const year = date.getUTCFullYear();
+  return date.getUTCMonth() < NEXT_CYCLE_FROM_MONTH[type] ? year : year + 1;
 }

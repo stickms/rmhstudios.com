@@ -25,6 +25,15 @@ enum MedEventType {
   WAITLIST
   REJECTION
   ACCEPTANCE
+  WITHDRAWN
+  HOLD
+}
+
+/// Which applicant population a stats row describes. GLOBAL = all applicants.
+enum MedResidence {
+  GLOBAL
+  IN_STATE
+  OUT_OF_STATE
 }
 
 /// Where a figure came from. Alias rows never use `RMH`.
@@ -68,10 +77,12 @@ model MedSchool {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  aliases MedSchoolAlias[]
-  counts  MedCycleCount[]
-  events  MedCycleEvent[]
-  stats   MedSchoolStats[]
+  aliases            MedSchoolAlias[]
+  counts             MedCycleCount[]
+  events             MedCycleEvent[]
+  stats              MedSchoolStats[]
+  interviewQuestions MedInterviewQuestion[]
+  interviewProfiles  MedInterviewProfile[]
 
   @@index([degree, state])
   @@map("med_school")
@@ -102,6 +113,8 @@ model MedSchoolAliasMiss {
   lastSeenAt       DateTime  @default(now())
   seenCount        Int       @default(1)
   resolvedSchoolId String?
+  /// Admin dismissed this name (not a US MD/DO school); it stays listed as ignored, never re-prompted.
+  ignored          Boolean   @default(false)
 
   @@unique([source, sourceKey])
   @@map("med_school_alias_miss")
@@ -171,27 +184,87 @@ model MedCycleEvent {
 
 /// Published GPA/MCAT medians and ranges per school per cycle per program
 /// (already suppressed upstream).
+///
+/// CYCLETRACK rows are per cycle. ADMIT rows are different: Admit's school stats
+/// are cumulative across all reported cycles, refreshed daily, and stored under
+/// the cycle current at fetch time as a snapshot. Readers must label them
+/// "Admit.org, all reported cycles", never as a single-cycle figure. Admit rows
+/// carry `program = null` (the source does not report it) and `contributors`
+/// from the published count the figures rest on (null when absent).
 model MedSchoolStats {
-  id                       String     @id @default(cuid())
-  schoolId                 String
-  program                  MedProgram
-  cycleYear                Int
-  gpaMedian                Float?
-  gpaLow                   Float?
-  gpaHigh                  Float?
-  mcatMedian               Int?
-  mcatLow                  Int?
-  mcatHigh                 Int?
-  interviewToAcceptancePct Float?
-  firstSecondaryOn         DateTime?  @db.Date
-  firstInterviewOn         DateTime?  @db.Date
-  firstAcceptanceOn        DateTime?  @db.Date
-  sourceUpdatedAt          DateTime?
+  id                        String       @id @default(cuid())
+  schoolId                  String
+  source                    MedSource    @default(CYCLETRACK)
+  residence                 MedResidence @default(GLOBAL)
+  /// null = the source did not report the program; never defaulted to REG.
+  program                   MedProgram?
+  cycleYear                 Int
+  gpaMedian                 Float?
+  gpaLow                    Float?
+  gpaHigh                   Float?
+  mcatMedian                Int?
+  mcatLow                   Int?
+  mcatHigh                  Int?
+  interviewToAcceptancePct  Float?
+  applicationToInterviewPct Float?
+  applicationCount          Int?
+  interviewCount            Int?
+  admittedCount             Int?
+  /// Published count the medians rest on; the read-time k>=3 floor applies to splits.
+  contributors              Int?
+  researchHours             Float?
+  clinicalHours             Float?
+  nonClinicalHours          Float?
+  firstSecondaryOn          DateTime?    @db.Date
+  firstInterviewOn          DateTime?    @db.Date
+  firstAcceptanceOn         DateTime?    @db.Date
+  sourceUpdatedAt           DateTime?
 
   school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  @@unique([schoolId, program, cycleYear])
+  @@unique([schoolId, program, cycleYear, source, residence])
+  @@index([schoolId, cycleYear, source])
   @@map("med_school_stats")
+}
+
+/// An interview question reported anonymously. No author; `dedupeHash` is an
+/// HMAC of source + text so re-ingest never duplicates.
+model MedInterviewQuestion {
+  id         String    @id @default(cuid())
+  schoolId   String
+  text       String
+  source     MedSource
+  votes      Int?
+  cycleYear  Int?
+  dedupeHash String    @unique
+  ingestedAt DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, source])
+  @@map("med_interview_question")
+}
+
+/// One source's aggregate interview profile for a school (format, difficulty,
+/// anonymous feedback lines).
+model MedInterviewProfile {
+  id               String    @id @default(cuid())
+  schoolId         String
+  source           MedSource
+  format           String?
+  fileType         String?
+  avgDifficulty    Float?
+  interviewCount   Int?
+  feedbackPositive String[]
+  feedbackNegative String[]
+  feedbackBefore   String[]
+  fetchedAt        DateTime
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, source])
+  @@map("med_interview_profile")
 }
 
 /// Observability for the med schools worker's jobs, like `HomeScrapeRun`.

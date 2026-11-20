@@ -4,6 +4,8 @@ import {
   expectTypeOf,
 } from 'vitest';
 import type {
+  MedEventType,
+  MedResidence,
   NormalizedCount,
   NormalizedEvent,
 } from './types';
@@ -39,5 +41,13 @@ describe('anonymization type pin', () => {
       | 'count'
       | 'contributors'
     >();
+  });
+
+  it('MedEventType accepts WITHDRAWN and HOLD', () => {
+    expectTypeOf<'WITHDRAWN'>().toExtend<MedEventType>();
+    expectTypeOf<'HOLD'>().toExtend<MedEventType>();
+  });
+  it('MedResidence is the three populations', () => {
+    expectTypeOf<MedResidence>().toEqualTypeOf<'GLOBAL' | 'IN_STATE' | 'OUT_OF_STATE'>();
   });
 });

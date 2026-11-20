@@ -535,12 +535,16 @@ export async function runCycletrack(
                 {
                   where:
                     {
-                      schoolId_program_cycleYear:
+                      schoolId_program_cycleYear_source_residence:
                         {
                           schoolId,
                           program,
                           cycleYear:
                             parsed.cycleYear,
+                          source:
+                            'CYCLETRACK',
+                          residence:
+                            'GLOBAL',
                         },
                     },
                   create:
@@ -549,6 +553,10 @@ export async function runCycletrack(
                       program,
                       cycleYear:
                         parsed.cycleYear,
+                      source:
+                        'CYCLETRACK',
+                      residence:
+                        'GLOBAL',
                       ...dates,
                     },
                   update:

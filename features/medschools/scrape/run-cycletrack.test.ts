@@ -467,6 +467,19 @@ describe('runCycletrack', () => {
     ).toBe(
       2027,
     );
+    expect(
+      stats.every(
+        (
+          x,
+        ) =>
+          x.source ===
+            'CYCLETRACK' &&
+          x.residence ===
+            'GLOBAL',
+      ),
+    ).toBe(
+      true,
+    );
   });
 
   it('Toronto lands in MedSchoolAliasMiss and no MedSchool is created', async () => {

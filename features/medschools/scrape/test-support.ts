@@ -33,6 +33,20 @@ const UNIQUE_KEYS: Record<
         'source',
         'sourceKey',
       ],
+    medSchoolAliasMiss:
+      [
+        'source',
+        'sourceKey',
+      ],
+    medCycleEvent:
+      ['dedupeHash'],
+    medInterviewQuestion:
+      ['dedupeHash'],
+    medInterviewProfile:
+      [
+        'schoolId',
+        'source',
+      ],
   };
 
 const eq =
@@ -175,6 +189,91 @@ function matches(
             ),
         );
       }
+      if (
+        v !==
+          null &&
+        typeof v ===
+          'object' &&
+        !(
+          v instanceof
+          Date
+        ) &&
+        !Array.isArray(
+          v,
+        )
+      ) {
+        const op =
+          v as {
+            gte?: Date | number;
+            lt?: Date | number;
+            not?: unknown;
+          };
+        const cell =
+          row[
+            k
+          ];
+        const n =
+          (
+            x: unknown,
+          ) =>
+            x instanceof
+            Date
+              ? x.getTime()
+              : (x as number);
+        if (
+          'gte' in
+            op &&
+          !(
+            cell !==
+              null &&
+            cell !==
+              undefined &&
+            n(
+              cell,
+            ) >=
+              n(
+                op.gte,
+              )
+          )
+        )
+          return false;
+        if (
+          'lt' in
+            op &&
+          !(
+            cell !==
+              null &&
+            cell !==
+              undefined &&
+            n(
+              cell,
+            ) <
+              n(
+                op.lt,
+              )
+          )
+        )
+          return false;
+        if (
+          'not' in
+          op
+        ) {
+          // `{ not: null }` means "has a value"; absent columns read as null.
+          const val =
+            cell ===
+            undefined
+              ? null
+              : cell;
+          if (
+            eq(
+              val,
+              op.not,
+            )
+          )
+            return false;
+        }
+        return true;
+      }
       return eq(
         row[
           k
@@ -308,6 +407,25 @@ export function createFakePrisma(): {
                 ...r,
               }),
             );
+        },
+        async findUnique(args: {
+          where: Row;
+        }) {
+          const hit =
+            t().find(
+              (
+                r,
+              ) =>
+                matches(
+                  r,
+                  args.where,
+                ),
+            );
+          return hit
+            ? {
+                ...hit,
+              }
+            : null;
         },
         async findFirst(args?: {
           where?: Row;
@@ -570,6 +688,9 @@ export function createFakePrisma(): {
       'medSchoolAliasMiss',
       'medCycle',
       'medCycleCount',
+      'medCycleEvent',
+      'medInterviewQuestion',
+      'medInterviewProfile',
       'medSchoolStats',
       'medSourceRun',
     ];
@@ -638,6 +759,25 @@ export function loadFixture(
     'utf8',
   );
 }
+
+/** Person-shaped strings the CycleTrack anonymization-boundary test injects into its fixtures. */
+export const CYCLETRACK_NEEDLES = [
+  'drsmith42',
+  'jane_doe_md',
+  'https://cdn.example/avatars/jd.png',
+  'user_id=9931',
+] as const;
+
+/** Person-shaped strings that only the synthetic hostile Admit fixtures may contain. */
+export const ADMIT_HOSTILE_NEEDLES = [
+  'drsmith42',
+  'jane_doe_md',
+  'https://cdn.example/avatars/jd.png',
+  'user-hostile-9931',
+] as const;
+
+/** Every person-shaped string any anonymization test hunts for; pass to `assertNoLeak`. */
+export const NEEDLES: string[] = [...new Set<string>([...CYCLETRACK_NEEDLES, ...ADMIT_HOSTILE_NEEDLES])];
 
 /** Throws naming the needle if anything written contains it (e.g. a raw source id that must be hashed). */
 export function assertNoLeak(
