@@ -18,6 +18,7 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { prisma } from '@/lib/prisma.server';
 import { getPuzzleNumber } from './seed';
 import {
@@ -45,7 +46,6 @@ const deepseek = new OpenAI({ fetch: meteredAiFetch('daily-puzzle'),
     maxRetries: 0,
     timeout: 30_000,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 function isConfigured(): boolean {
     return Boolean(process.env.DEEPSEEK_API_KEY);
@@ -53,7 +53,7 @@ function isConfigured(): boolean {
 
 async function callDeepSeek(system: string, user: string, maxTokens: number): Promise<string> {
     const res = await deepseek.chat.completions.create({
-        model: MODEL,
+        ...DEEPSEEK_FLASH,
         messages: [
             { role: 'system', content: system },
             { role: 'user', content: user },

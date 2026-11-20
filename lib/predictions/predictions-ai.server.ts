@@ -18,13 +18,13 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import type { PrismaClient } from '@prisma/client';
 import { creditCoinsOn } from '@/lib/economy/ledger-core';
 import { placeTrade, resolvePrediction } from './predictions.server';
 import type { Side } from './lmsr';
 import { meteredAiFetch } from '../ai/metered-fetch.server';
 
-const MODEL = process.env.PREDICTION_AI_MODEL || process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 let _client: OpenAI | null = null;
 function client(): OpenAI {
@@ -47,7 +47,7 @@ async function chat(
   opts: { maxTokens: number; temperature?: number },
 ): Promise<string> {
   const res = await client().chat.completions.create({
-    model: MODEL,
+    ...DEEPSEEK_FLASH,
     messages,
     max_tokens: opts.maxTokens,
     temperature: opts.temperature ?? 1.0,

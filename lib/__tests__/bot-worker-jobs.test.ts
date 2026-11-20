@@ -301,10 +301,11 @@ describe('settings and config (Go settings_test.go)', () => {
     ).toBe(
       1,
     );
+    // The bots' model is the site-wide flash model; BOT_AI_MODEL is no longer read.
     expect(
       o.model,
     ).toBe(
-      'm',
+      'deepseek-flash',
     );
     // The reply tick follows the post tick unless set on its own.
     expect(

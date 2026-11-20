@@ -129,22 +129,43 @@ describe('usageFromStream', () => {
 });
 
 describe('costMicros with cache hits', () => {
-  it('prices cache-hit prompt tokens at a tenth of the miss rate', () => {
+  it('prices DeepSeek Flash cache hits at the listed hit rate', () => {
+    // $0.30 per 1M on a miss, $0.006 per 1M on a hit (peak list price).
+    expect(
+      costMicros(
+        'deepseek-flash',
+        1_000_000,
+        0,
+      ),
+    ).toBe(
+      300_000,
+    );
+    expect(
+      costMicros(
+        'deepseek-flash',
+        1_000_000,
+        0,
+        1_000_000,
+      ),
+    ).toBe(
+      6_000,
+    );
+  });
+
+  it('falls back to a tenth of the miss rate for a model without a hit rate', () => {
     const miss =
       costMicros(
-        'deepseek-v4-flash',
+        'kimi-k2.7-code',
         1_000_000,
         0,
-      );
-    const allHit =
-      costMicros(
-        'deepseek-v4-flash',
-        1_000_000,
-        0,
-        1_000_000,
       );
     expect(
-      allHit,
+      costMicros(
+        'kimi-k2.7-code',
+        1_000_000,
+        0,
+        1_000_000,
+      ),
     ).toBe(
       Math.ceil(
         miss /

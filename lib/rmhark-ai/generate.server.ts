@@ -29,6 +29,7 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-schema';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { meteredAiFetch } from '../ai/metered-fetch.server';
 
 const deepseek = new OpenAI({ fetch: meteredAiFetch('rmhark-bot'),
@@ -43,8 +44,6 @@ const deepseek = new OpenAI({ fetch: meteredAiFetch('rmhark-bot'),
   maxRetries: 1,
 });
 
-// Cheap, fast chat model. Override only if DeepSeek's id changes.
-const RMHARK_AI_MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export class RmharkAIError extends Error {}
 
@@ -61,8 +60,9 @@ async function chat(
     throw new RmharkAIError('DEEPSEEK_API_KEY is not configured');
   }
   const res = await deepseek.chat.completions.create({
-    // `opts.model`: the bot-worker's own knob (BOT_AI_MODEL), so retuning RMHARK_AI_MODEL never moves the bots.
-    model: opts.model ?? RMHARK_AI_MODEL,
+    // Thinking off (DEEPSEEK_FLASH). `opts.model`: the bot-worker passes its configured model id.
+    ...DEEPSEEK_FLASH,
+    ...(opts.model ? { model: opts.model } : {}),
     messages,
     max_tokens: opts.maxTokens,
     temperature: opts.temperature ?? 1.0,
@@ -160,7 +160,7 @@ export async function generatePost(
   opts: {
     persona?: string;
     draft?: string;
-    /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+    /** Override the chat model (the bot-worker passes its configured flash model). */
     model?: string;
   } = {},
 ): Promise<string> {
@@ -257,7 +257,7 @@ export async function generateReactionPost(opts: {
   title: string;
   summary: string;
   source: string;
-  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  /** Override the chat model (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string> {
   const shape = randomItem(REACTION_SHAPES);
@@ -647,7 +647,7 @@ export async function generateReply(opts: {
   thread?: string[];
   persona?: string;
   draft?: string;
-  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  /** Override the chat model (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string> {
   const draft = opts.draft?.trim();
@@ -821,7 +821,7 @@ function sanitizeHandle(raw: string): string {
 export async function generateBotProfile(
   spec: BotPersonaSpec,
   /**
-   * `model`: the bot-worker's BOT_AI_MODEL. `strict`: throw when the model call or its JSON fails instead of
+   * `model`: the bot-worker's configured flash model. `strict`: throw when the model call or its JSON fails instead of
    * falling back to a random first name, so the bot-worker mints no bot rather than a placeholder one.
    */
   opts: { model?: string; strict?: boolean } = {},
@@ -1070,7 +1070,7 @@ function dmPersonaSystem(persona: string): string {
 export async function generateDirectMessageReply(opts: {
   persona: string;
   history: { from: 'them' | 'you'; text: string }[];
-  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  /** Override the chat model (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string> {
   const transcript = opts.history
@@ -1096,7 +1096,7 @@ export async function generateDirectMessageReply(opts: {
 /** Generate a short, natural opening DM in the bot's voice (no prior context). */
 export async function generateDirectMessageOpener(opts: {
   persona: string;
-  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  /** Override the chat model (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string> {
   const user = [

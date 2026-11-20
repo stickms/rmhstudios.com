@@ -12,6 +12,7 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { isAITextConfigured } from '@/lib/ai/text.server';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { searchKnowledge, type KnowledgeEntry } from '@/lib/assistant/knowledge.server';
@@ -28,7 +29,6 @@ const deepseek = new OpenAI({ fetch: meteredAiFetch('assistant'),
   maxRetries: 1,
   timeout: 20_000,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 /** Per-day message budget by tier. Free gets a small allowance. */
 const DAILY_BUDGET: Record<Tier, number> = { free: 10, starter: 50, pro: 200, enterprise: 1000 };
@@ -269,7 +269,7 @@ export async function answerQuestion(params: {
 
   try {
     const res = await deepseek.chat.completions.create({
-      model: MODEL,
+      ...DEEPSEEK_FLASH,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...trimHistory(params.history),

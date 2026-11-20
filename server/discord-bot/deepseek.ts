@@ -8,6 +8,7 @@
  * `llm.latency|deepseek:chat` metric as every other model call on the site, and in the
  * `AiUsage` ledger as `discord-bot`.
  */
+import { DEEPSEEK_FLASH } from '../../lib/ai/deepseek-models';
 import { meteredAiFetch } from '../../lib/ai/metered-fetch.server';
 import {
   RETRY_API,
@@ -55,7 +56,7 @@ export class DeepSeekClient {
     private readonly logger: RetryLogger | null = null,
     private readonly fetchImpl: typeof fetch = meteredAiFetch('discord-bot'),
   ) {
-    this.model = model || 'deepseek-v4-flash';
+    this.model = model || DEEPSEEK_FLASH.model;
     // Same override the web tier honours, so a dev/CI stand-in can replace the real API.
     this.baseURL = (process.env.DEEPSEEK_BASE_URL || DEEPSEEK_BASE_URL).replace(/\/v1\/?$/, '').replace(/\/$/, '');
   }
@@ -86,6 +87,9 @@ export class DeepSeekClient {
       messages,
       stream: false,
       temperature: opts.temperature ?? CONVERSATIONAL_TEMPERATURE,
+      // Thinking off: it is on by default, bills hidden reasoning tokens and
+      // ignores the temperature Alex's voice depends on.
+      thinking: DEEPSEEK_FLASH.thinking,
     };
     if (opts.presencePenalty !== undefined) body.presence_penalty = opts.presencePenalty;
     if (opts.frequencyPenalty !== undefined) body.frequency_penalty = opts.frequencyPenalty;

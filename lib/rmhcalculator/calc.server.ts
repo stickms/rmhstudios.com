@@ -26,6 +26,7 @@ import {
   type ComputeResult,
   type GraphResult,
 } from '@/lib/rmhcalculator/types';
+import { DEEPSEEK_FLASH, DEEPSEEK_REASONING, type DeepseekProfile } from '@/lib/ai/deepseek-models';
 import { meteredAiFetch } from '../ai/metered-fetch.server';
 import { createHash } from 'node:crypto';
 import { peekL1, putL1 } from '@/lib/cached.server';
@@ -38,13 +39,12 @@ const deepseek = new OpenAI({ fetch: meteredAiFetch('calculator'),
 });
 
 /**
- * Concrete DeepSeek model IDs for each mode. `deepseek-reasoner` and
- * `deepseek-chat` are the canonical DeepSeek API names; both are overridable via
- * env so ops can retarget if the IDs change without a code deploy.
+ * The DeepSeek profile for each mode (lib/ai/deepseek-models.ts): Reasoner is
+ * thinking on, so its `reasoning_content` streams to the UI; Chat is thinking off.
  */
-const MODEL_IDS: Record<CalcModel, string> = {
-  reasoner: process.env.RMHCALC_REASONER_MODEL || 'deepseek-reasoner',
-  chat: process.env.RMHCALC_CHAT_MODEL || 'deepseek-v4-flash',
+const MODEL_PROFILES: Record<CalcModel, DeepseekProfile> = {
+  reasoner: DEEPSEEK_REASONING,
+  chat: DEEPSEEK_FLASH,
 };
 
 // Streaming guards. Reasoner can take a while to think before the first answer
@@ -101,7 +101,7 @@ async function* streamJSON(
     armIdle();
     const stream = await deepseek.chat.completions.create(
       {
-        model: MODEL_IDS[model],
+        ...MODEL_PROFILES[model],
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },

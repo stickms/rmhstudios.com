@@ -9,6 +9,7 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { z } from 'zod';
 import { fallbackWorld, fallbackChapter } from './fallback';
 import { renderBible } from './bible';
@@ -55,7 +56,6 @@ const deepseek = new OpenAI({ fetch: meteredAiFetch('versecraft'),
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
-const MODEL = process.env.VERSECRAFT_AI_MODEL || process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export function isVersecraftAIConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);
@@ -63,7 +63,7 @@ export function isVersecraftAIConfigured(): boolean {
 
 async function chatJson(system: string, user: string, maxTokens: number): Promise<unknown> {
   const res = await deepseek.chat.completions.create({
-    model: MODEL,
+    ...DEEPSEEK_FLASH,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },

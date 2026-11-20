@@ -4,6 +4,7 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { meteredAiFetch } from '../ai/metered-fetch.server';
 
 const deepseek = new OpenAI({ fetch: meteredAiFetch('tutor'),
@@ -11,7 +12,6 @@ const deepseek = new OpenAI({ fetch: meteredAiFetch('tutor'),
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export function isTutorConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);
@@ -27,7 +27,7 @@ export async function generateCards(topic: string, count = 8): Promise<Generated
   if (!isTutorConfigured()) return [];
   try {
     const res = await deepseek.chat.completions.create({
-      model: MODEL,
+      ...DEEPSEEK_FLASH,
       messages: [
         {
           role: 'system',
@@ -59,7 +59,7 @@ export async function tutorAnswer(question: string): Promise<string> {
   if (!isTutorConfigured()) return 'The AI tutor is not configured right now.';
   try {
     const res = await deepseek.chat.completions.create({
-      model: MODEL,
+      ...DEEPSEEK_FLASH,
       messages: [
         {
           role: 'system',

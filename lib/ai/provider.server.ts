@@ -34,6 +34,7 @@ import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { timedAiFetch } from './timed-fetch.server';
 import type { VibeLedgerTask } from './vibe-tasks';
+import { DEEPSEEK_FLASH, DEEPSEEK_PRO_MODEL, DEEPSEEK_REASONING, deepseekThinking } from './deepseek-models';
 import type { MeteredFeature } from './metered-fetch.server';
 
 /* -------------------------------------------------------------------------- */
@@ -79,14 +80,8 @@ interface Route {
 
 type ProviderName = 'deepseek';
 
-/**
- * DeepSeek's fast tier. `deepseek-chat` / `deepseek-reasoner` were deprecated on
- * 2026-07-24 and only alias V4 Flash's two modes, so the id is named directly.
- */
-export const DEEPSEEK_DEFAULT_MODEL = 'deepseek-v4-flash';
-const DEEPSEEK_CHAT = process.env.RMHARK_AI_MODEL || DEEPSEEK_DEFAULT_MODEL;
-/** DeepSeek's reasoning tier. Only worth its latency where quality dominates. */
-const DEEPSEEK_REASONER = process.env.RMHARK_AI_MODEL_QUALITY || DEEPSEEK_DEFAULT_MODEL;
+/** Every route runs thinking-off flash (lib/ai/deepseek-models.ts); reasoning is `runReasoningTask`. */
+const DEEPSEEK_CHAT = DEEPSEEK_FLASH.model;
 
 const ROUTES: Record<AiTask, Route> = {
   'compose-assist': {
@@ -97,7 +92,7 @@ const ROUTES: Record<AiTask, Route> = {
   },
   summarize: {
     provider: 'deepseek',
-    model: DEEPSEEK_REASONER,
+    model: DEEPSEEK_CHAT,
     maxTokens: 900,
     temperature: 0.3,
     fallback: { provider: 'deepseek', model: DEEPSEEK_CHAT, maxTokens: 700, temperature: 0.3 },
@@ -144,22 +139,24 @@ const ROUTES: Record<AiTask, Route> = {
  * recording zero, because a silent zero is how a budget stops working.
  */
 const COST_PER_MTOK: Record<string, { in: number; out: number; hit?: number }> = {
-  // The deprecated aliases resolve to V4 Flash, so they cost what it costs.
-  'deepseek-chat': { in: 280_000, out: 420_000 },
-  'deepseek-reasoner': { in: 280_000, out: 420_000 },
-  // RMHVibe generation models (lib/rmhvibe/vibe.server.ts VIBE_MODEL_IDS and
-  // fallbacks, lib/rmhvibe/vibe-ai.server.ts). These are the providers'
-  // published list prices as the author knew them, NOT confirmed against the
-  // live pricing pages: the owner should check them. Cache-hit input discounts
-  // are ignored (a cache miss is the safe overestimate for a ceiling).
+  // DeepSeek's list prices (api-docs.deepseek.com, 2026-11-20), at the PEAK rate:
+  // off-peak is half, and the ledger is a ceiling, so peak is the safe figure.
+  //   deepseek-flash (V4.1-Flash): $0.30 miss / $0.006 hit in, $1.20 out per 1M.
+  //   deepseek-v4-pro:             $1.32 miss / $0.044 hit in, $3.96 out per 1M.
+  // Thinking tokens are billed as output.
+  'deepseek-flash': { in: 300_000, out: 1_200_000, hit: 6_000 },
+  [DEEPSEEK_PRO_MODEL]: { in: 1_320_000, out: 3_960_000, hit: 44_000 },
+  // Retired names DeepSeek still accepts and serves (and bills) as Flash.
+  'deepseek-v4-flash': { in: 300_000, out: 1_200_000, hit: 6_000 },
+  'deepseek-chat': { in: 300_000, out: 1_200_000, hit: 6_000 },
+  'deepseek-reasoner': { in: 300_000, out: 1_200_000, hit: 6_000 },
+  // RMHVibe's Kimi models (lib/rmhvibe/vibe.server.ts). The providers' published
+  // list prices as the author knew them, NOT confirmed against the live pricing
+  // pages: the owner should check them.
   //   Moonshot Kimi K2 family: $0.60 in / $2.50 out per 1M tokens. The
   //   high-speed tier is listed at roughly 4x that.
   'kimi-k2.7-code': { in: 600_000, out: 2_500_000 },
   'kimi-k2.7-code-highspeed': { in: 2_400_000, out: 10_000_000 },
-  //   DeepSeek V4 (the generation after V3.2's $0.28 in / $0.42 out): Flash at
-  //   the V3.2 price level, Pro at roughly 3x.
-  'deepseek-v4-flash': { in: 280_000, out: 420_000 },
-  'deepseek-v4-pro': { in: 840_000, out: 1_260_000 },
 };
 const DEFAULT_COST = { in: 500_000, out: 2_000_000 };
 /**
@@ -365,6 +362,7 @@ async function invoke(
     ],
     max_tokens: opts.maxTokens ?? route.maxTokens,
     temperature: opts.temperature ?? route.temperature,
+    ...deepseekThinking(DEEPSEEK_FLASH),
     stream: false,
     ...(opts.json ? { response_format: { type: 'json_object' as const } } : {}),
   });
@@ -440,7 +438,8 @@ export async function runTask(
 /**
  * A reasoning-tier DeepSeek call for a task that is worth the wait (the admin
  * email designer's "detailed" mode). It is not a route: the caller names the
- * model, so the task's cheap default stays cheap. Reasoning models take
+ * model (normally `DEEPSEEK_REASONING.model`) and thinking is switched on, so
+ * the task's cheap default stays cheap. Thinking takes
  * minutes' worth of thinking tokens inside `max_tokens`, ignore temperature and
  * JSON mode, and need a longer timeout than `client()`'s, so this builds its own
  * client. Metered like any other call; failures become `AI_UNAVAILABLE`.
@@ -468,6 +467,7 @@ export async function runReasoningTask(
   try {
     const res = await deepseekSlow.chat.completions.create({
       model,
+      ...deepseekThinking(DEEPSEEK_REASONING),
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -547,6 +547,7 @@ export async function* streamTask(
     ],
     max_tokens: opts.maxTokens ?? route.maxTokens,
     temperature: opts.temperature ?? route.temperature,
+    ...deepseekThinking(DEEPSEEK_FLASH),
     stream: true,
   });
 

@@ -49,7 +49,7 @@ export function isImageGenConfigured(): boolean {
 export async function generatePostImage(opts: {
   text: string;
   userId: string;
-  /** Chat model for the visual prompt (the bot-worker passes BOT_AI_MODEL). */
+  /** Chat model for the visual prompt (the bot-worker passes its configured flash model). */
   model?: string;
 }): Promise<string | null> {
   if (!isImageGenConfigured()) return null;

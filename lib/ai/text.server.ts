@@ -4,6 +4,7 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { meteredAiFetch } from './metered-fetch.server';
 
 const deepseek = new OpenAI({ fetch: meteredAiFetch('text-assist'),
@@ -18,7 +19,6 @@ const deepseek = new OpenAI({ fetch: meteredAiFetch('text-assist'),
   // on a hung DeepSeek connection. 20s is well above normal completion latency.
   timeout: 20_000,
 });
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 export function isAITextConfigured(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY);
@@ -31,7 +31,7 @@ async function chat(
   temperature = 0.6,
 ): Promise<string> {
   const res = await deepseek.chat.completions.create({
-    model: MODEL,
+    ...DEEPSEEK_FLASH,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
@@ -695,7 +695,7 @@ export async function askDunesdayAssistant(input: {
   }));
 
   const res = await deepseek.chat.completions.create({
-    model: MODEL,
+    ...DEEPSEEK_FLASH,
     messages: [
       { role: 'system', content: system },
       ...turns,

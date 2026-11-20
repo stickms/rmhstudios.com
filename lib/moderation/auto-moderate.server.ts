@@ -21,6 +21,7 @@
  */
 
 import type OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { redisRateLimit } from '@/lib/redis.server';
@@ -44,7 +45,6 @@ async function getDeepseek(): Promise<OpenAI> {
   }
   return deepseekClient;
 }
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-v4-flash';
 
 /** Per-request timeout on the classifier call (ms) — a stalled provider must not
  * hang the fire-and-forget screen, and repeated timeouts trip the breaker. */
@@ -176,7 +176,7 @@ async function classify(text: string): Promise<Classification | null> {
   try {
     const res = await (await getDeepseek()).chat.completions.create(
       {
-        model: MODEL,
+        ...DEEPSEEK_FLASH,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: text },

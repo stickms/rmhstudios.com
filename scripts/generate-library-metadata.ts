@@ -23,6 +23,7 @@ import 'dotenv/config';
 import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { DEEPSEEK_FLASH } from '../lib/ai/deepseek-models.ts';
 import { fileURLToPath } from 'node:url';
 import OpenAI from 'openai';
 import { createCanvas, type Canvas, DOMMatrix, ImageData, Path2D } from '@napi-rs/canvas';
@@ -175,7 +176,7 @@ Respond with ONLY a JSON object, no markdown fences, in this exact shape:
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await deepseek.chat.completions.create({
-        model: 'deepseek-v4-flash',
+        ...DEEPSEEK_FLASH,
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 400,
         temperature: 0.4,

@@ -19,6 +19,7 @@
  */
 
 import OpenAI from 'openai';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { timedAiFetch } from '../ai/timed-fetch.server';
 import { estimateTokens, meterVibe } from '../ai/provider.server';
 
@@ -35,11 +36,9 @@ const deepseek = new OpenAI({ fetch: timedAiFetch,
   maxRetries: 1,
 });
 
-// Fixed, cheap, fast chat model. Locked server-side so a page can't pin an
-// expensive model. `deepseek-v4-flash` is DeepSeek's current GA fast model; the
-// older `deepseek-chat` alias is retiring (2026-07-24), so we default to V4 Flash.
-// Override via env if DeepSeek's model id changes again.
-const VIBE_AI_MODEL = process.env.VIBE_AI_MODEL || 'deepseek-v4-flash';
+// Fixed, cheap, fast chat model with thinking off (DEEPSEEK_FLASH in
+// lib/ai/deepseek-models.ts). Locked server-side so a page can't pin an
+// expensive model or switch reasoning on.
 
 // Hard limits — the proxy is public-facing (any page visitor can hit it), so a
 // single request can never run away. Tune conservatively.
@@ -123,7 +122,7 @@ function meterProxy(
     userId: null,
     task: 'vibe-ai',
     provider: 'deepseek',
-    model: VIBE_AI_MODEL,
+    model: DEEPSEEK_FLASH.model,
     inTokens: usage?.prompt_tokens ?? estimateTokens(charsOf(messages)),
     outTokens: usage?.completion_tokens ?? estimateTokens(reply.length),
     ok,
@@ -136,7 +135,7 @@ export async function vibeChat(messages: VibeChatMessage[]): Promise<string> {
   let usage: { prompt_tokens?: number; completion_tokens?: number } | undefined;
   try {
     const res = await deepseek.chat.completions.create({
-      model: VIBE_AI_MODEL,
+      ...DEEPSEEK_FLASH,
       messages,
       max_tokens: MAX_OUTPUT_TOKENS,
       stream: false,
@@ -160,7 +159,7 @@ export async function* vibeChatStream(
   let ok = false;
   try {
     const stream = await deepseek.chat.completions.create({
-      model: VIBE_AI_MODEL,
+      ...DEEPSEEK_FLASH,
       messages,
       max_tokens: MAX_OUTPUT_TOKENS,
       stream: true,

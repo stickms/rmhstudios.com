@@ -426,7 +426,7 @@ describe('gateway setup', () => {
     expect(
       cfg.deepseekModel,
     ).toBe(
-      'deepseek-v4-flash',
+      'deepseek-flash',
     );
     expect(
       cfg.imageBaseURL,

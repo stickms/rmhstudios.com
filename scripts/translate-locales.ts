@@ -22,7 +22,7 @@
  *
  * Env:
  *   DEEPSEEK_API_KEY   required unless I18N_DRY_RUN or I18N_REUSE_ONLY
- *   RMHARK_AI_MODEL    model id (default "deepseek-chat")
+ *   DEEPSEEK_FLASH_MODEL  model id (default "deepseek-flash"; thinking is off)
  *   I18N_BATCH         keys per request (default 40)
  *   I18N_CONCURRENCY   requests in flight (default 8)
  *   I18N_LOCALES       comma-separated locales to run (default: every shipped
@@ -58,6 +58,7 @@ import {
   type Catalog,
   type CatalogPlan,
 } from '../lib/i18n/diff.ts';
+import { DEEPSEEK_FLASH } from '../lib/ai/deepseek-models.ts';
 
 const ROOT = join(process.cwd(), 'locales');
 const REUSE = (process.env.I18N_REUSE_DIR ?? '')
@@ -66,7 +67,7 @@ const REUSE = (process.env.I18N_REUSE_DIR ?? '')
   .filter(Boolean);
 const DRY_RUN = process.env.I18N_DRY_RUN === '1';
 const REUSE_ONLY = process.env.I18N_REUSE_ONLY === '1';
-const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+const MODEL = DEEPSEEK_FLASH.model;
 const BATCH = Math.max(1, Number(process.env.I18N_BATCH || 40));
 // How many batch requests to keep in flight at once. DeepSeek tolerates several
 // concurrent requests; raise it to go faster, lower it if you hit rate limits.
@@ -116,7 +117,7 @@ async function translateBatch(entries: Catalog, target: string): Promise<Catalog
   const keys = Object.keys(entries);
   if (keys.length === 0) return {};
   const res = await client.chat.completions.create({
-    model: MODEL,
+    ...DEEPSEEK_FLASH,
     messages: [
       { role: 'system', content: systemPrompt(target) },
       { role: 'user', content: JSON.stringify(entries) },
