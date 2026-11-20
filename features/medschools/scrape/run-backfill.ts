@@ -42,6 +42,9 @@ export type BackfillStage =
 export interface BackfillCursor {
   stage: BackfillStage;
   index: number;
+  /** Last completed CYCLETRACK alias key; resume starts at the first key sorting after it, so a changed school list cannot skip or repeat. */ lastKey:
+    | string
+    | null;
 }
 
 export interface BackfillDeps {
@@ -71,6 +74,7 @@ const readStats =
         cursor?: Partial<BackfillCursor>;
         skipped?: unknown;
         retried?: unknown;
+        missing?: unknown;
       };
     const strings =
       (
@@ -110,6 +114,15 @@ const readStats =
             ? 'done'
             : 'cycletrack',
         index,
+        lastKey:
+          typeof s
+            .cursor
+            ?.lastKey ===
+          'string'
+            ? s
+                .cursor
+                .lastKey
+            : null,
       };
     return {
       cursor,
@@ -120,6 +133,10 @@ const readStats =
       retried:
         strings(
           s.retried,
+        ),
+      missing:
+        strings(
+          s.missing,
         ),
     };
   };
@@ -201,6 +218,8 @@ export async function runBackfill(
           stage:
             'cycletrack',
           index: 0,
+          lastKey:
+            null,
         },
     };
   const finish =
@@ -304,6 +323,10 @@ export async function runBackfill(
     new Set(
       resumed.retried,
     );
+  const missing =
+    new Set(
+      resumed.missing,
+    ); // 404 pages: skipped, never retried
   let ingested = 0;
   let failed = 0;
   let stopped = false;
@@ -333,6 +356,10 @@ export async function runBackfill(
       retried:
         [
           ...retried,
+        ],
+      missing:
+        [
+          ...missing,
         ],
       schools:
         summary.schools,
@@ -664,9 +691,23 @@ export async function runBackfill(
       };
 
     try {
+      const start =
+        cursor.lastKey ===
+        null
+          ? 0
+          : targets.findIndex(
+              (
+                t,
+              ) =>
+                t.sourceKey >
+                cursor.lastKey!,
+            );
       for (
         let i =
-          cursor.index;
+          start ===
+          -1
+            ? targets.length
+            : start;
         i <
         targets.length;
         i++
@@ -712,6 +753,13 @@ export async function runBackfill(
           skipped.add(
             target.sourceKey,
           );
+        if (
+          outcome ===
+          'missing'
+        )
+          missing.add(
+            target.sourceKey,
+          );
         cursor =
           {
             stage:
@@ -719,6 +767,8 @@ export async function runBackfill(
             index:
               i +
               1,
+            lastKey:
+              target.sourceKey,
           };
         await persist(
           {
@@ -732,7 +782,7 @@ export async function runBackfill(
         !stopped &&
         !halted
       ) {
-        // Retry each skipped school once (R5).
+        // Retry each failed school once (R5); a 404 is not a failure.
         for (const key of [
           ...skipped,
         ].filter(
@@ -740,6 +790,9 @@ export async function runBackfill(
             k,
           ) =>
             !retried.has(
+              k,
+            ) &&
+            !missing.has(
               k,
             ),
         )) {
@@ -824,6 +877,8 @@ export async function runBackfill(
             'done',
           index:
             targets.length,
+          lastKey:
+            cursor.lastKey,
         };
       summary.status =
         'OK';

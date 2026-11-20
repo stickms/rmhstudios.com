@@ -202,6 +202,8 @@ describe('runBackfill', () => {
         stage:
           'done',
         index: 3,
+        lastKey:
+          'Yale',
       },
     );
     expect(
@@ -450,6 +452,8 @@ describe('runBackfill', () => {
         stage:
           'cycletrack',
         index: 1,
+        lastKey:
+          'A.T. Still - Arizona',
       },
     );
 
@@ -538,6 +542,8 @@ describe('runBackfill', () => {
                 stage:
                   'cycletrack',
                 index: 2,
+                lastKey:
+                  'Alabama COM',
               },
           },
         error:
@@ -749,6 +755,8 @@ describe('runBackfill', () => {
         stage:
           'cycletrack',
         index: 2,
+        lastKey:
+          'Alabama COM',
       },
     );
     expect(
@@ -993,6 +1001,132 @@ describe('runBackfill', () => {
       dataWrites,
     ).toEqual(
       [],
+    );
+  });
+  it('does not retry a 404 school at the end of the stage', async () => {
+    const s =
+      setup();
+    const {
+      host,
+      requested,
+    } =
+      createFakeHost(
+        s.routes,
+      );
+    await run(
+      s,
+      host,
+    );
+    expect(
+      requested.filter(
+        (
+          p,
+        ) =>
+          p ===
+          schoolUrl(
+            'Alabama COM',
+          ),
+      ),
+    ).toHaveLength(
+      1,
+    );
+    expect(
+      requested.filter(
+        (
+          p,
+        ) =>
+          p ===
+          schoolUrl(
+            'A.T. Still - Arizona',
+          ),
+      ),
+    ).toHaveLength(
+      1,
+    );
+  });
+
+  it('resumes by key, so a school added before the cursor is neither skipped nor repeated', async () => {
+    const s =
+      setup(
+        {
+          'A.T. Still - Arizona':
+            'atsu-arizona.html',
+          'Alabama COM':
+            'alabama-com.html',
+          Yale: 'yale.html',
+        },
+      );
+    const r1 =
+      await run(
+        s,
+        createFakeHost(
+          s.routes,
+        )
+          .host,
+        stopAfter(
+          2,
+        ),
+      );
+    expect(
+      r1.cursor,
+    ).toEqual(
+      {
+        stage:
+          'cycletrack',
+        index: 2,
+        lastKey:
+          'Alabama COM',
+      },
+    );
+    // A new school that sorts before the cursor appears between runs.
+    s.tables.medSchool!.push(
+      {
+        id: 'sch_new',
+        slug: 'sch_new',
+        name: 'A Early',
+        active: true,
+      },
+    );
+    s.tables.medSchoolAlias!.push(
+      {
+        id: 'al_new',
+        schoolId:
+          'sch_new',
+        source:
+          'CYCLETRACK',
+        sourceKey:
+          'A Early',
+      },
+    );
+    const second =
+      createFakeHost(
+        s.routes,
+      );
+    const r2 =
+      await run(
+        s,
+        second.host,
+      );
+    expect(
+      r2.status,
+    ).toBe(
+      'OK',
+    );
+    expect(
+      second.requested.filter(
+        (
+          p,
+        ) =>
+          !p.includes(
+            'summary.json',
+          ),
+      ),
+    ).toEqual(
+      [
+        schoolUrl(
+          'Yale',
+        ),
+      ],
     );
   });
 });

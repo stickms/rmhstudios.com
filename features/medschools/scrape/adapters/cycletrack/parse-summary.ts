@@ -91,22 +91,37 @@ const EVENT_KEYS: [
     ],
   ];
 
-const PROGRAM_BY_QUERY: Record<string, MedProgram> = { reg: 'REG', phd: 'PHD' };
+const PROGRAM_BY_QUERY: Record<
+  string,
+  MedProgram
+> =
+  {
+    reg: 'REG',
+    phd: 'PHD',
+  };
 
 /**
  * summary.json?program=reg|phd: the same daily counts as the school-page tables, for one program and cycle.
  * Returns one table, or none when the endpoint says the data is unavailable (missing is not zero).
  * `requestedProgram` is the `program=` query value the caller sent: exactly `reg` or `phd` (any case), else it throws.
- * The payload's own `program` label ("MD", "DO", ...) is a display label, not a program id, and is not used.
+ * The payload label ("MD", "DO", "MD-PhD") is only cross-checked: it must contain "phd" exactly when PHD was requested.
  * The schoolKey is the payload's, normalized.
  */
 export function parseSummaryJson(
   json: unknown,
   requestedProgram: string,
 ): ParsedTable[] {
-  const program = PROGRAM_BY_QUERY[requestedProgram.toLowerCase()];
-  if (program === undefined)
-    throw new UnexpectedPageError(`unknown summary program: ${JSON.stringify(requestedProgram)}`);
+  const program =
+    PROGRAM_BY_QUERY[
+      requestedProgram.toLowerCase()
+    ];
+  if (
+    program ===
+    undefined
+  )
+    throw new UnexpectedPageError(
+      `unknown summary program: ${JSON.stringify(requestedProgram)}`,
+    );
   const parsed =
     summarySchema.safeParse(
       json,
@@ -138,7 +153,23 @@ export function parseSummaryJson(
         .message,
     );
   }
-  const schoolKey = normalizeSchoolKey(s.school.key);
+  // The requested program is the authority; the label only has to agree (a PhD payload must never be stored as REG).
+  if (
+    /phd/i.test(
+      s.program,
+    ) !==
+    (program ===
+      'PHD')
+  )
+    throw new UnexpectedPageError(
+      `summary.json program label ${JSON.stringify(s.program)} does not match requested ${requestedProgram}`,
+    );
+  const schoolKey =
+    normalizeSchoolKey(
+      s
+        .school
+        .key,
+    );
   const counts =
     s.daily.flatMap(
       (

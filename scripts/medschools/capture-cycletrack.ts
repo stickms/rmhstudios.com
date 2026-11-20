@@ -95,6 +95,7 @@ function targets(): Target[] {
     { path: '/explorer/school/Texas%20A%26M', file: 'texas-am-encoded.html' },
     { path: '/explorer/school/Texas%20A&M', file: 'texas-am-raw.html' },
     { path: '/explorer/school/Yale/summary.json?program=reg', file: 'yale-summary.json' },
+    { path: '/explorer/school/Yale/summary.json?program=phd', file: 'yale-summary-phd.json' },
     { path: `/static/explorer_graphs/mcat_gpa_155_reg.JSON?v=${v}`, file: 'yale-mcat-gpa-reg.json' },
     { path: `/static/explorer_graphs/status_155_reg_curr.JSON?v=${v}`, file: 'yale-status-reg-curr.json' },
     { path: firstMdApplicantsSchool(), file: 'mdapplicants-school.html' },

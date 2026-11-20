@@ -10,6 +10,13 @@ import {
 } from './parse-school';
 import { parseSummaryJson } from './parse-summary';
 
+const yalePhdJson =
+  JSON.parse(
+    loadFixture(
+      'yale-summary-phd.json',
+    ),
+  ) as unknown;
+
 const yaleJson =
   JSON.parse(
     loadFixture(
@@ -128,22 +135,125 @@ describe('parseSummaryJson', () => {
     );
   });
   it('maps the requested program exactly: reg to REG, phd to PHD, any case', () => {
-    expect(parseSummaryJson(yaleJson, 'REG')[0]!.program).toBe('REG');
-    const phd = parseSummaryJson({ ...(yaleJson as object), program: 'MD/PhD' }, 'phd')[0]!;
-    expect(phd.program).toBe('PHD');
-    expect(phd.counts.every((c) => c.program === 'PHD')).toBe(true);
+    expect(
+      parseSummaryJson(
+        yaleJson,
+        'REG',
+      )[0]!
+        .program,
+    ).toBe(
+      'REG',
+    );
+    const phd =
+      parseSummaryJson(
+        yalePhdJson,
+        'phd',
+      )[0]!;
+    expect(
+      phd.program,
+    ).toBe(
+      'PHD',
+    );
+    expect(
+      phd
+        .counts
+        .length,
+    ).toBeGreaterThan(
+      0,
+    );
+    expect(
+      phd.counts.every(
+        (
+          c,
+        ) =>
+          c.program ===
+          'PHD',
+      ),
+    ).toBe(
+      true,
+    );
+  });
+
+  it('a PhD-labelled payload requested as reg throws, and a regular payload requested as phd throws', () => {
+    expect(
+      () =>
+        parseSummaryJson(
+          yalePhdJson,
+          'reg',
+        ),
+    ).toThrow(
+      UnexpectedPageError,
+    );
+    expect(
+      () =>
+        parseSummaryJson(
+          yaleJson,
+          'phd',
+        ),
+    ).toThrow(
+      UnexpectedPageError,
+    );
   });
 
   it('any other program value throws UnexpectedPageError', () => {
-    for (const bad of ['MD', 'regular', 'phd2', 'xphd', '']) {
-      expect(() => parseSummaryJson(yaleJson, bad)).toThrow(UnexpectedPageError);
+    for (const bad of [
+      'MD',
+      'regular',
+      'phd2',
+      'xphd',
+      '',
+    ]) {
+      expect(
+        () =>
+          parseSummaryJson(
+            yaleJson,
+            bad,
+          ),
+      ).toThrow(
+        UnexpectedPageError,
+      );
     }
   });
 
   it('emits the normalized school key', () => {
-    const json = { ...(yaleJson as object), school: { key: 'Texas A&amp;M', name: 'x' } };
-    const [table] = parseSummaryJson(json, 'reg');
-    expect(table!.counts.length).toBeGreaterThan(0);
-    expect(new Set(table!.counts.map((c) => c.schoolKey))).toEqual(new Set(['Texas A&M']));
+    const json =
+      {
+        ...(yaleJson as object),
+        school:
+          {
+            key: 'Texas A&amp;M',
+            name: 'x',
+          },
+      };
+    const [
+      table,
+    ] =
+      parseSummaryJson(
+        json,
+        'reg',
+      );
+    expect(
+      table!
+        .counts
+        .length,
+    ).toBeGreaterThan(
+      0,
+    );
+    expect(
+      new Set(
+        table!.counts.map(
+          (
+            c,
+          ) =>
+            c.schoolKey,
+        ),
+      ),
+    ).toEqual(
+      new Set(
+        [
+          'Texas A&M',
+        ],
+      ),
+    );
   });
 });
