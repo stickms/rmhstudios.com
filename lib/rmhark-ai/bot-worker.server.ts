@@ -74,7 +74,14 @@ import {
 } from './generate.server';
 import { generatePostImage, isImageGenConfigured } from './image.server';
 import { prismaBotQueueRepo, type BotQueueRepo, type QueuedCommentInput } from './bot-queue.server';
-import { FILL_CAP, QUEUE_TTL_MS, bufferTarget } from './bot-queue-plan';
+import {
+  FILL_CAP,
+  QUEUE_TTL_MS,
+  bufferTarget,
+  commentDelayMs,
+  commentMean,
+  replyDelayMs,
+} from './bot-queue-plan';
 import { habitPostsPerDay } from './bot-stats';
 import {
   clampSettings,
@@ -1517,23 +1524,86 @@ async function postReaction(
 
 // ─── off-peak queue ─────────────────────────────────────────────────────────
 
-/** Model calls left in one fill run, shared by every generation it makes. */
+/** One fill run's shared state: model calls left, the bots who may comment, the comment mean. */
 interface FillBudget {
   left: number;
+  /** Bots with a persona, the pool commenters are drawn from. */
+  bots: BotUserRow[];
+  /** Mean pre-written top-level comments per queued post (`commentMean`). */
+  commentMean: number;
+}
+
+/** Draw `n` distinct items (fewer if there are not enough). */
+function pickDistinct<T>(items: readonly T[], n: number, random: () => number): T[] {
+  return shuffled(items, random).slice(0, Math.max(0, n));
 }
 
 /**
- * The bot conversation to pre-write with a queued post. Empty for now: the release side
- * (pre-written comments) is added separately, and an empty list leaves the post's bot chatter to
- * the live reply tick, exactly as before.
+ * The reply chain under one pre-written comment: while `botToBotProb` lands and the thread is
+ * under `maxReplyDepth`, the other party answers (author, then commenter, then author...), each
+ * reply written with the thread so far as context, as `replyToComment` writes a live one.
+ * A failed or empty generation ends the chain there.
+ */
+async function writeChain(
+  d: BotDeps,
+  content: string,
+  speakers: readonly [BotUserRow, BotUserRow],
+  thread: string[],
+  budget: FillBudget,
+): Promise<QueuedCommentInput[]> {
+  if (budget.left <= 0 || thread.length >= d.cfg.maxReplyDepth) return [];
+  if (d.random() >= d.cfg.botToBotProb) return [];
+  const speaker = speakers[(thread.length - 1) % 2 === 0 ? 0 : 1];
+  budget.left--;
+  const text = await d.ai
+    .reply({
+      persona: aiPersona(speaker.id, speaker.botPersona),
+      postContent: content,
+      quotedPostContent: '',
+      thread,
+    })
+    .catch(() => '');
+  if (text.trim() === '') return [];
+  const replies = await writeChain(d, content, speakers, [...thread, text], budget);
+  return [{ botId: speaker.id, content: text, delayMs: replyDelayMs(d.random()), replies }];
+}
+
+/**
+ * The bot conversation pre-written with a queued post: `scaledCount(commentMean)` top-level
+ * comments from distinct bots other than the author (written as `seedOnPost` writes a live one),
+ * each followed by its reply chain. A failed generation drops only that comment's subtree.
  */
 async function writeConversation(
-  _d: BotDeps,
-  _author: BotUserRow,
-  _content: string,
-  _budget: FillBudget,
+  d: BotDeps,
+  author: BotUserRow,
+  content: string,
+  budget: FillBudget,
 ): Promise<QueuedCommentInput[]> {
-  return [];
+  const n = scaledCount(budget.commentMean, d.random());
+  if (n === 0) return [];
+  const commenters = pickDistinct(
+    budget.bots.filter((b) => b.id !== author.id),
+    n,
+    d.random,
+  );
+  const out: QueuedCommentInput[] = [];
+  for (const c of commenters) {
+    if (budget.left <= 0) break;
+    budget.left--;
+    const text = await d.ai
+      .reply({
+        persona: aiPersona(c.id, c.botPersona),
+        postContent: content,
+        quotedPostContent: '',
+        thread: [],
+      })
+      .catch(() => '');
+    if (text.trim() === '') continue;
+    // In the chain the author answers first (speakers[0]), then the commenter.
+    const replies = await writeChain(d, content, [author, c], [text], budget);
+    out.push({ botId: c.id, content: text, delayMs: commentDelayMs(d.random()), replies });
+  }
+  return out;
 }
 
 /** Write one usual post (and its conversation) for `b` into the queue. */
@@ -1580,7 +1650,18 @@ export async function runFillTick(d: BotDeps): Promise<number> {
     const want = bufferTarget(habitPostsPerDay(b.botPersona) * s.postRateMultiplier) - (pending.get(b.id) ?? 0);
     if (want > 0) wants.set(b.id, want);
   }
-  const budget: FillBudget = { left: FILL_CAP };
+  const botPostsPerHour =
+    bots.reduce((sum, b) => sum + habitPostsPerDay(b.botPersona) * s.postRateMultiplier, 0) / 24;
+  const budget: FillBudget = {
+    left: FILL_CAP,
+    bots,
+    commentMean: commentMean(
+      d.cfg.proactiveProb,
+      s.postRateMultiplier,
+      effectiveTickMs(d.cfg.replyTickMs),
+      botPostsPerHour,
+    ),
+  };
   let queued = 0;
   let order = shuffled(bots.filter((b) => wants.has(b.id)), d.random);
   while (order.length > 0 && budget.left > 0) {
@@ -1747,12 +1828,25 @@ export async function reactToComments(d: BotDeps): Promise<void> {
     candidates.push({ comment: c, targetId, authorIsBot: c.authorIsBot });
   }
 
+  // Bot-to-bot replies pause during DeepSeek's peak hours, and never touch a post published from
+  // the queue with a pre-written conversation (its bot chatter is the script). Replies to humans
+  // are unaffected.
+  const peak = isDeepseekPeak(d.now());
+  const botCandidatePosts = [
+    ...new Set(candidates.filter((c) => c.authorIsBot).map((c) => c.comment.rmheetId)),
+  ];
+  const scripted =
+    d.queue && !peak && botCandidatePosts.length > 0
+      ? await d.queue.scriptedPostIds(botCandidatePosts).catch(() => new Set<string>())
+      : new Set<string>();
+  const live = candidates.filter((c) => !c.authorIsBot || (!peak && !scripted.has(c.comment.rmheetId)));
+
   // Replies scale up with the posting-rate multiplier so a busier feed doesn't leave bots
   // ignoring their threads; they never scale below the configured cap.
   const s = await currentSettings(d);
   const maxReplies = Math.ceil(d.cfg.maxRepliesPerTick * Math.max(1, s.postRateMultiplier));
   let made = 0;
-  for (const cand of shuffled(candidates, d.random)) {
+  for (const cand of shuffled(live, d.random)) {
     if (made >= maxReplies) break;
     const prob = cand.authorIsBot ? d.cfg.botToBotProb : d.cfg.reactiveHumanProb;
     if (d.random() > prob) continue;
@@ -1790,10 +1884,18 @@ export async function seedOnPost(d: BotDeps, post: BotPostRow): Promise<void> {
 /** Bots reply to other bots' recent posts. The expected count scales with the posting-rate multiplier. */
 export async function seedBotConversation(d: BotDeps): Promise<void> {
   const s = await currentSettings(d);
-  const n = scaledCount(d.cfg.proactiveProb * s.postRateMultiplier, d.random());
-  if (n === 0) return;
-  const posts = await d.repo.recentBotPosts(new Date(d.now() - d.cfg.proactiveLookbackMs));
+  const expected = d.cfg.proactiveProb * s.postRateMultiplier;
+  if (expected <= 0) return;
+  const recent = await d.repo.recentBotPosts(new Date(d.now() - d.cfg.proactiveLookbackMs));
+  if (recent.length === 0) return;
+  // Posts published from the queue already carry their pre-written comments: they are left out,
+  // and the live count shrinks by their share so total bot comments per post stay where they were.
+  const scripted = d.queue
+    ? await d.queue.scriptedPostIds(recent.map((p) => p.id)).catch(() => new Set<string>())
+    : new Set<string>();
+  const posts = recent.filter((p) => !scripted.has(p.id));
   if (posts.length === 0) return;
+  const n = scaledCount(expected * (posts.length / recent.length), d.random());
   for (let i = 0; i < n; i++) await seedOnPost(d, pickOne(posts, d.random));
 }
 
@@ -1897,9 +1999,49 @@ export async function seedAnnouncementThread(d: BotDeps): Promise<number> {
   return made;
 }
 
+/** Queued comments released per reply tick. */
+const RELEASE_BATCH = 50;
+
+/**
+ * Publish the pre-written comments that are due. A comment whose post is gone (deleted) is
+ * discarded with everything under it; so is a reply under a comment a human has answered, since
+ * it was written without seeing the human (who gets a live reply instead). Releasing makes no
+ * model call, so it runs at all hours, but not while posting is paused from /admin/bots.
+ */
+export async function releaseQueuedComments(d: BotDeps): Promise<number> {
+  const q = d.queue;
+  if (!q) return 0;
+  const s = await currentSettings(d);
+  if (s.postRateMultiplier <= 0) return 0;
+  const at = new Date(d.now());
+  const due = await q.dueComments(at, RELEASE_BATCH);
+  let made = 0;
+  for (const c of due) {
+    try {
+      const post = await d.repo.postForReply(c.postId);
+      const humanJoined =
+        c.isReply && (c.parentCommentId === null || (await q.humanRepliedTo(c.parentCommentId)));
+      if (!post || humanJoined) {
+        await q.discardSubtree(c.id, at);
+        continue;
+      }
+      await q.publishComment(c, at);
+      made++;
+    } catch (e) {
+      d.log.error('bot_worker.queue_release_failed', { comment: String(c.id), err: (e as Error)?.message });
+    }
+  }
+  if (made > 0) d.log.info('bot_worker.queue_released', { comments: made });
+  return made;
+}
+
 export async function runReplyTick(d: BotDeps): Promise<void> {
+  await isolated(d, 'bot_worker.queue_release_failed', async () => {
+    await releaseQueuedComments(d);
+  });
   await isolated(d, 'bot_worker.react_failed', () => reactToComments(d));
-  await isolated(d, 'bot_worker.seed_failed', () => seedBotConversation(d));
+  // Live bot-to-bot chatter is never urgent: it pauses during DeepSeek's peak hours.
+  if (!isDeepseekPeak(d.now())) await isolated(d, 'bot_worker.seed_failed', () => seedBotConversation(d));
   await isolated(d, 'bot_worker.announcement_thread_failed', async () => {
     await seedAnnouncementThread(d);
   });

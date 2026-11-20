@@ -304,6 +304,10 @@ function deps(over: {
         async () =>
           'a queued thought',
       ),
+      reply: vi.fn(
+        async () =>
+          'a pre-written reply',
+      ),
       imageConfigured:
         () =>
           false,
