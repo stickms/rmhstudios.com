@@ -14,9 +14,26 @@ const CATEGORIES = [
   { id: 'risk', label: 'Risk & Regulation' },
 ] as const;
 
-type Article = { cat: string; meta: string; read: string; title: string; blurb: string };
+/** `hash` links the row to a section of the Deals page. */
+type Article = {
+  cat: string;
+  meta: string;
+  read: string;
+  title: string;
+  blurb: string;
+  hash?: string;
+};
 
 const ARTICLES: Article[] = [
+  {
+    cat: 'venture-capital',
+    meta: 'Venture Capital',
+    read: '3 min',
+    title: 'Investing in RMH Studios',
+    blurb:
+      "RMHCombinator leads RMH Studios' $50 pre-seed round. Why we backed a platform that shipped everything before it raised anything.",
+    hash: 'rmh-studios',
+  },
   {
     cat: 'investment-banking',
     meta: 'Investment Banking',
@@ -188,7 +205,15 @@ export default function InsightsPage() {
                     <span>{a.meta}</span>
                     <span>{a.read}</span>
                   </p>
-                  <h3 className="row-title">{a.title}</h3>
+                  <h3 className="row-title">
+                    {a.hash ? (
+                      <Link to="/rmh-capital/deals" hash={a.hash}>
+                        {a.title}
+                      </Link>
+                    ) : (
+                      a.title
+                    )}
+                  </h3>
                 </div>
                 <p className="row-text">{a.blurb}</p>
               </article>
