@@ -19,6 +19,7 @@ import {
   rollupEventCounts,
   type TouchedCell,
 } from './rollup-events';
+import type { MedProgram } from '../engine/types';
 import type {
   Logger,
   MedPrisma,
@@ -374,42 +375,56 @@ export async function runAdmitLive(
       );
     }
 
+    // Stored events are read back with their labels: their cells are rolled up again, so a roll-up that failed
+    // after an earlier insert is repaired by the next run.
     const stored =
-      new Set(
-        resolved.length ===
-          0
-          ? []
-          : (
-              await prisma.medCycleEvent.findMany(
-                {
-                  where:
-                    {
-                      dedupeHash:
-                        {
-                          in: resolved.map(
-                            (
-                              r,
-                            ) =>
-                              r
-                                .item
-                                .event
-                                .dedupeHash,
-                          ),
-                        },
-                    },
-                  select:
-                    {
-                      dedupeHash: true,
-                    },
-                },
-              )
-            ).map(
-              (
-                e,
-              ) =>
-                e.dedupeHash,
-            ),
-      );
+      new Map<
+        string,
+        {
+          schoolId: string;
+          program: MedProgram | null;
+          cycleYear: number;
+          occurredAt: Date;
+        }
+      >();
+    if (
+      resolved.length >
+      0
+    ) {
+      const found =
+        await prisma.medCycleEvent.findMany(
+          {
+            where:
+              {
+                dedupeHash:
+                  {
+                    in: resolved.map(
+                      (
+                        r,
+                      ) =>
+                        r
+                          .item
+                          .event
+                          .dedupeHash,
+                    ),
+                  },
+              },
+            select:
+              {
+                dedupeHash: true,
+                schoolId: true,
+                program: true,
+                cycleYear: true,
+                occurredAt: true,
+              },
+          },
+        );
+      for (const e of found)
+        stored.set(
+          e.dedupeHash,
+          e,
+        );
+    }
 
     const rows: Array<
       Record<
@@ -427,12 +442,34 @@ export async function runAdmitLive(
     } of resolved) {
       const ev =
         item.event;
-      if (
-        stored.has(
+      const prior =
+        stored.get(
           ev.dedupeHash,
-        )
+        );
+      if (
+        prior
       ) {
         summary.alreadyStored++;
+        if (
+          prior.program !==
+          null
+        )
+          touched.push(
+            {
+              schoolId:
+                prior.schoolId,
+              program:
+                prior.program,
+              cycleYear:
+                prior.cycleYear,
+              date: prior.occurredAt
+                .toISOString()
+                .slice(
+                  0,
+                  10,
+                ),
+            },
+          );
         continue;
       }
       if (
@@ -547,21 +584,21 @@ export async function runAdmitLive(
         );
       summary.created =
         res.count;
-      if (
-        touched.length >
-        0
-      ) {
-        summary.rolledUp =
-          await rollupEventCounts(
-            prisma,
-            {
-              source:
-                'ADMIT',
-              touched,
-            },
-          );
-      }
     }
+    // Diffing against the stored counts makes unchanged cells a no-op, so this is safe on every run.
+    if (
+      touched.length >
+      0
+    )
+      summary.rolledUp =
+        await rollupEventCounts(
+          prisma,
+          {
+            source:
+              'ADMIT',
+            touched,
+          },
+        );
     if (
       stop &&
       session.halted

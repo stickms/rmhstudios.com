@@ -757,6 +757,97 @@ describe('runAdmitLive', () => {
     );
   });
 
+  it('a roll-up that throws on run 1 is repaired by run 2 from the stored events', async () => {
+    const t =
+      setup(
+        {
+          [FEED_KEY]:
+            feedBody(
+              [
+                row(
+                  'c1',
+                  'u1',
+                ),
+                row(
+                  'c2',
+                  'u2',
+                ),
+              ],
+            ),
+          [flagKey(
+            'u1',
+          )]:
+            flagBody(
+              true,
+            ),
+          [flagKey(
+            'u2',
+          )]:
+            flagBody(
+              true,
+            ),
+        },
+      );
+    const real =
+      t
+        .prisma
+        .medCycleCount
+        .createMany;
+    t.prisma.medCycleCount.createMany =
+      async () => {
+        throw new Error(
+          'db down',
+        );
+      };
+    const first =
+      await t.run();
+    expect(
+      first.status,
+    ).toBe(
+      'FAILED',
+    );
+    expect(
+      t.events(),
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      t.counts(),
+    ).toHaveLength(
+      0,
+    );
+    t.prisma.medCycleCount.createMany =
+      real;
+    const second =
+      await t.run();
+    expect(
+      second,
+    ).toMatchObject(
+      {
+        status:
+          'OK',
+        created: 0,
+        alreadyStored: 2,
+        lookups: 0,
+        rolledUp: 1,
+      },
+    );
+    expect(
+      t.counts(),
+    ).toHaveLength(
+      1,
+    );
+    expect(
+      t.counts()[0],
+    ).toMatchObject(
+      {
+        program:
+          'PHD',
+        count: 2,
+      },
+    );
+  });
+
   it('three profile-errors replies do not halt the run (P16)', async () => {
     const users =
       [
