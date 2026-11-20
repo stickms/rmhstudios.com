@@ -55,6 +55,8 @@ export type AiTask =
   | 'summarize'
   /** Structured output, must be cheap and fast; never user-visible prose. */
   | 'moderate'
+  /** Background classifier: structured extraction from forum posts (RMH Med Schools, no user watching). */
+  | 'medschools-extract'
   /** Conversational, may carry a tool contract. */
   | 'concierge'
   /** Long-form generation (recaps, narrative Wrapped). */
@@ -102,6 +104,13 @@ const ROUTES: Record<AiTask, Route> = {
     model: DEEPSEEK_CHAT,
     maxTokens: 300,
     // Near-zero: a classifier that varies run to run is not a classifier.
+    temperature: 0,
+  },
+  'medschools-extract': {
+    provider: 'deepseek',
+    model: DEEPSEEK_CHAT,
+    maxTokens: 1_500,
+    // A classifier, like `moderate`: the same post must give the same events.
     temperature: 0,
   },
   concierge: {

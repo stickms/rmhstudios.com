@@ -777,6 +777,31 @@ export const CHARACTER_ADVISOR: PromptSpec =
       ],
   };
 
+/**
+ * RMH Med Schools: structured extraction from public forum posts. The user turn is a JSON array of
+ * `{ ref, postedOn, text }` (no author, no id); output is parsed by a strict zod schema in
+ * `features/medschools/scrape/sdn/extract.ts`, which also re-checks every field, so this wording is
+ * guidance and not the only guard. `maxChars` covers the worst case (12 posts x 5 events + 3 questions).
+ */
+export const MEDSCHOOLS_EXTRACT: PromptSpec = {
+  id: 'medschools-extract',
+  version: 1,
+  task: 'medschools-extract',
+  instructions: [
+    'The input is a JSON array of forum posts: [{ "ref": number, "postedOn": "YYYY-MM-DD", "text": string }].',
+    'Return ONLY a JSON object, no prose and no markdown:',
+    '{"posts":[{"postRef":<ref>,"events":[{"type":"SECONDARY|INTERVIEW|WAITLIST|REJECTION|ACCEPTANCE","date":"YYYY-MM-DD","program":"REG|PHD","inState":true}],"questions":["..."]}]}',
+    'Report only the poster\'s own events: never an event the poster describes about someone else, and never one they congratulate.',
+    'Resolve "today", "yesterday", "this morning" and dates written without a year against that post\'s postedOn.',
+    '"program" only if the post explicitly states MD-PhD or MSTP (PHD) or explicitly says regular MD or DO (REG); otherwise omit it.',
+    '"inState" only if the post states in-state or out-of-state; otherwise omit it.',
+    'Questions are interview questions the poster says they were asked, rewritten as a generic question with no names, schools, places, dates or first-person detail.',
+    'Omit any post with nothing to report.',
+    '[user], [email] and [link] are redactions, not content.',
+  ].join('\n'),
+  maxChars: 8_000,
+};
+
 export const ALL_PROMPTS: readonly PromptSpec[] =
   [
     TOOL_SELECT,
@@ -802,4 +827,5 @@ export const ALL_PROMPTS: readonly PromptSpec[] =
     EMAIL_REWRITE,
     EMAIL_DESIGN,
     CHARACTER_ADVISOR,
+    MEDSCHOOLS_EXTRACT,
   ] as const;

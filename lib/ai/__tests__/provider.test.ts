@@ -37,6 +37,7 @@ const ALL_TASKS = [
   'compose-assist',
   'summarize',
   'moderate',
+  'medschools-extract',
   'concierge',
   'narrative',
   'document',
@@ -80,6 +81,11 @@ describe('AI_ROUTES', () => {
     // that varies run to run is not a classifier — this is the one route whose
     // temperature is a correctness property rather than a taste one.
     expect(AI_ROUTES.moderate.temperature).toBe(0);
+  });
+
+  it('medschools-extract is a deterministic classifier route', () => {
+    expect(AI_ROUTES['medschools-extract'].temperature).toBe(0);
+    expect(AI_ROUTES['medschools-extract'].provider).toBe('deepseek');
   });
 });
 
