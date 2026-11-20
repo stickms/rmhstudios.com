@@ -92,6 +92,7 @@ VPS):
 | `rmhos-net` (rmhOS relay hub)   | **Node** | 7009 (profile `rmhos-net`)    | `dist-server/server/rmhos-net/index.cjs`               |
 | `ladder-worker` (job cron)      | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs`           |
 | `homes-worker` (listings cron)  | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`            |
+| `medschools-worker` (CycleTrack) | **Node** | —                            | `dist-server/server/medschools-worker/index.cjs`       |
 | `jobs` (pg-boss async backbone) | **Node** | —                             | `dist-server/server/jobs/index.cjs`                    |
 | `status`                        | **Go**   | 7008                          | `/app/bin/status`                                      |
 | `assets`                        | **Go**   | 7007                          | `/app/bin/assets`                                      |
@@ -2242,6 +2243,7 @@ Consequences:
   own
   compose
   service.
+- **`medschools-worker/`** — RMH Med Schools CycleTrack ingest consumer. No port. Two pg-boss crons (queues `medschools.cycletrack`, hourly at :20, `MEDSCHOOLS_CYCLETRACK_CRON`; and `medschools.backfill`, a yearly no-op safety net because a cron is mandatory), both `exclusive`, UTC, same `scheduled-consumer` pattern as the homes worker. Both jobs share one `createPoliteHost(SOURCES.CYCLETRACK)`, so they never overlap on CycleTrack. Bootstraps by seeding the registry and cycles from `data/medschools/*.json` (inlined by esbuild), then queues the cycletrack run and the resumable backfill until a backfill has finished (`needsBackfill`). `MEDSCHOOLS_CYCLETRACK_ENABLED=false` disables the hourly queue and the bootstrap; `MEDSCHOOLS_DEDUPE_SECRET` is only warned about (phase 2 needs it). Shutdown pauses both consumers, waits up to `MEDSCHOOLS_SHUTDOWN_DEADLINE_MS` (8 s) for runs in flight, then stops the shared pg-boss. Built by `pnpm build` and run as its own compose service.
 - **`jobs/`**
   —
   the
@@ -3167,6 +3169,7 @@ it.
   rmhos-net +
   ladder-worker +
   homes-worker +
+  medschools-worker +
   jobs,
   each
   under
@@ -3234,6 +3237,7 @@ it.
   rmhos-net,
   ladder-worker,
   homes-worker,
+  medschools-worker,
   jobs)
   into
   `dist-server/**/*.cjs`
@@ -3713,6 +3717,7 @@ it.
    rmhos-net,
    ladder-worker,
    homes-worker,
+   medschools-worker,
    jobs)
    are
    the

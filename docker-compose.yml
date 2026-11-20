@@ -102,7 +102,7 @@ services:
   #
   # WHY: Postgres allocates a backend process (~10 MB) per connection, and this
   # fleet opens seven independent Prisma pools — web, socket, rmhbox, rmhtube,
-  # ladder-worker, homes-worker, jobs — plus pg-boss's own. Blue/green runs TWO
+  # ladder-worker, homes-worker, medschools-worker, jobs — plus pg-boss's own. Blue/green runs TWO
   # web containers at once during every hotswap, so the largest pool doubles
   # exactly when traffic is being cut over. Transaction pooling multiplexes all
   # of that onto DEFAULT_POOL_SIZE real backends.
@@ -243,9 +243,9 @@ services:
       # containers at once = 88. Everything else, worst case: socket/rmhbox/rmhtube
       # hubs 3 x (SERVER_DB_POOL_SIZE 5 + AUTH_DB_POOL_SIZE 4) = 27, jobs 16 + pg-boss
       # 8 = 24 (the Discord bot runs in jobs and shares its Prisma pool), ladder-worker 3
-      # (own client) + 3 (alerts pool) = 6, homes-worker 3, status probe 2 (+2 slack),
+      # (own client) + 3 (alerts pool) = 6, homes-worker 3, medschools-worker 3, status probe 2 (+2 slack),
       # admin/psql/migrate ~10, the wiki's 8 Apache workers (deploy/mediawiki):
-      # 88 + 27 + 24 + 6 + 3 + 4 + 10 + 8 = 170 < 197 usable at 200.
+      # 88 + 27 + 24 + 6 + 3 + 3 + 4 + 10 + 8 = 173 < 197 usable at 200.
       # (The Go supervisor's GO_DB_POOL_SIZE 3 left with it.)
       #
       # A STOCK host (100) cannot hold that, and applying the tuning is a root
@@ -547,6 +547,28 @@ services:
     cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
     command: ['node', 'dist-server/server/homes-worker/index.cjs']
+
+  # ─── Med Schools Worker (RMH Med Schools CycleTrack ingest) ────────────────
+  # Node pg-boss consumer: seeds the school registry, then hourly CycleTrack count diffs
+  # (queue medschools.cycletrack) and a resumable one-time historical backfill
+  # (medschools.backfill). Both share one polite host, so they never overlap on CycleTrack.
+  # No port. Disable the scraping with MEDSCHOOLS_CYCLETRACK_ENABLED=false.
+  medschools-worker:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-medschools-worker
+    # Resource limits — mirrors homes-worker with more room: a backfill parses ~170 school pages.
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: 0.5
+    # Batch scraper cron — deprioritized below web (initial-load audit).
+    cpu_shares: 256
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      # Own Prisma pool of 3 (counted in scripts/db-connection-budget.mjs).
+      - DATABASE_POOL_SIZE=3
+      # 75% of mem_limit, the repo's heap rule (see the ladder-worker block).
+      - NODE_OPTIONS=--max-old-space-size=384
+    command: ['node', 'dist-server/server/medschools-worker/index.cjs']
 
   # ─── Jobs Worker (pg-boss async backbone — rewrite R2) ─────────────────────
   # Drains the Postgres-backed job queues (engagement progression today). Owns

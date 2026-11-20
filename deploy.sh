@@ -1253,7 +1253,7 @@ check_http() {
 # (2026-11-09, `jobs`). Up to WORKER_RESTARTS_TOLERATED restarts since the baseline are logged as a warning;
 # more than that, or a worker that is not running, fails the release. 1 is the default; 0 restores the strict rule.
 WORKER_RESTARTS_TOLERATED="${WORKER_RESTARTS_TOLERATED:-1}"
-WORKER_SERVICES="jobs ladder-worker homes-worker"
+WORKER_SERVICES="jobs ladder-worker homes-worker medschools-worker"
 worker_state() { # → "<running> <restartCount>" or "missing"
     local id
     id=$(dc ps -q "$1" 2>/dev/null | head -n1)
@@ -1410,7 +1410,7 @@ step_done
 # proved the new web container serves traffic before flipping Apache to it, and
 # web now listens on the blue/green port, not the fixed $PORT_WEB.
 # The cron/queue workers (jobs — which also holds the Discord bot — ladder-worker,
-# homes-worker) have no port: check_workers watches them for a crash-loop over the
+# homes-worker, medschools-worker) have no port: check_workers watches them for a crash-loop over the
 # same window. (The Go supervisor's in-container /health + /metrics gate went
 # with the supervisor, D3.)
 stage health

@@ -1,0 +1,554 @@
+/* eslint-disable no-console */
+/**
+ * Med Schools Worker — CycleTrack ingest consumer
+ *
+ * Long-lived Node.js process that keeps RMH Med Schools' admissions-cycle counts current. Two pg-boss
+ * crons are fired by the `jobs` worker's timekeeper and consumed here (D4: one scheduler):
+ *
+ *   medschools.cycletrack  hourly at :20 — diff every school's current counts, write what changed.
+ *   medschools.backfill    a yearly no-op safety net. A cron is mandatory for a queue, and a finished
+ *                          backfill records an OK no-op; the real backfill is queued by the bootstrap
+ *                          below, and resumes from its own cursor after any interruption.
+ *
+ * Both jobs share ONE polite host (`createPoliteHost(SOURCES.CYCLETRACK)`), which is what makes them
+ * mutually exclusive against CycleTrack: one request at a time at the configured rate, one halt flag.
+ *
+ * Runs as a separate Docker service or dev process, alongside the ladder-worker and homes-worker.
+ */
+
+import 'dotenv/config';
+import { installProcessGuards } from '../../lib/perf/process-guards';
+
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import {
+  startScheduledConsumer,
+  type ScheduledConsumer,
+} from '../../lib/jobs/scheduled-consumer.server';
+import schoolsJson from '../../data/medschools/schools.json';
+import cyclesJson from '../../data/medschools/cycles.json';
+import { createPoliteHost } from '../../features/medschools/scrape/http';
+import { SOURCES } from '../../features/medschools/scrape/sources';
+import { runCycletrack } from '../../features/medschools/scrape/run-cycletrack';
+import {
+  needsBackfill,
+  runBackfill,
+} from '../../features/medschools/scrape/run-backfill';
+import {
+  seedCycles,
+  seedRegistryIfEmpty,
+  type CycleSeed,
+  type RegistryFile,
+} from '../../features/medschools/scrape/registry';
+import type {
+  Logger,
+  MedPrisma,
+} from '../../features/medschools/scrape/types';
+
+const TAG =
+  'medschools-worker';
+
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards(
+  {
+    service:
+      TAG,
+  },
+);
+
+// ─── Prisma Client (standalone for worker process) ──────────────
+
+function createPrisma() {
+  const connectionString =
+    process
+      .env
+      .DATABASE_URL;
+  if (
+    !connectionString
+  )
+    throw new Error(
+      'DATABASE_URL required',
+    );
+  const adapter =
+    new PrismaPg(
+      {
+        connectionString,
+        max: 3,
+      },
+    );
+  return new PrismaClient(
+    {
+      adapter,
+    },
+  );
+}
+
+const prisma =
+  createPrisma();
+// Structural cast, same idiom as the ladder-worker and homes-worker: MedPrisma narrows the generated
+// Prisma signatures to the shapes the pipeline actually uses.
+const medPrisma =
+  prisma as unknown as MedPrisma;
+type SeedClient =
+  Parameters<
+    typeof seedRegistryIfEmpty
+  >[0];
+const seedPrisma =
+  prisma as unknown as SeedClient;
+
+// Operators can turn the hourly queue and the bootstrap backfill off with env.
+const CYCLETRACK_ENABLED =
+  process
+    .env
+    .MEDSCHOOLS_CYCLETRACK_ENABLED !==
+  'false';
+
+/** Docker's default stop grace is 10s; give up waiting on a run well inside it. */
+const SHUTDOWN_DEADLINE_MS =
+  (() => {
+    const n =
+      Number(
+        process
+          .env
+          .MEDSCHOOLS_SHUTDOWN_DEADLINE_MS,
+      );
+    return Number.isInteger(
+      n,
+    ) &&
+      n >
+        0
+      ? n
+      : 8_000;
+  })();
+
+const log: Logger =
+  {
+    info: (
+      l,
+    ) =>
+      console.log(
+        `[${TAG}] ${l}`,
+      ),
+    warn: (
+      l,
+    ) =>
+      console.warn(
+        `[${TAG}] ${l}`,
+      ),
+    error:
+      (
+        l,
+      ) =>
+        console.error(
+          `[${TAG}] ${l}`,
+        ),
+  };
+
+// ─── Run state ──────────────────────────────────────────────────
+
+/** Set once shutdown begins: no new run (cron or bootstrap) starts, and a run in flight winds down. */
+let stopping = false;
+
+/** Every run in flight; shutdown waits on these (bounded) before stopping pg-boss. */
+const inFlight =
+  new Set<
+    Promise<void>
+  >();
+
+// One host for both jobs: they take turns on CycleTrack's rate budget instead of doubling it.
+const cycletrackHost =
+  createPoliteHost(
+    SOURCES.CYCLETRACK,
+  );
+
+/** Wraps a job so a second concurrent call is skipped, and so shutdown can await it. */
+function guarded(
+  name: string,
+  run: () => Promise<void>,
+): () => Promise<void> {
+  let running = false;
+  return async () => {
+    if (
+      stopping
+    )
+      return;
+    if (
+      running
+    ) {
+      log.info(
+        `${name} tick skipped — previous run still in flight`,
+      );
+      return;
+    }
+    running = true;
+    const p =
+      (async () => {
+        try {
+          await run();
+        } catch (e) {
+          log.error(
+            `${name} run failed: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
+      })();
+    inFlight.add(
+      p,
+    );
+    try {
+      await p;
+    } finally {
+      inFlight.delete(
+        p,
+      );
+      running = false;
+    }
+  };
+}
+
+const cycletrackTick =
+  guarded(
+    'cycletrack',
+    async () => {
+      if (
+        !CYCLETRACK_ENABLED
+      )
+        return;
+      const r =
+        await runCycletrack(
+          {
+            prisma:
+              medPrisma,
+            host: cycletrackHost,
+            shouldStop:
+              () =>
+                stopping,
+            log,
+          },
+          {
+            trigger:
+              'CRON',
+          },
+        );
+      log.info(
+        `cycletrack run complete [${r.runId}] — status=${r.status} schools=${r.schools} created=${r.created} updated=${r.updated} deleted=${r.deleted} misses=${r.misses} requests=${r.requests}`,
+      );
+    },
+  );
+
+const backfillTick =
+  guarded(
+    'backfill',
+    async () => {
+      if (
+        !CYCLETRACK_ENABLED
+      )
+        return;
+      const r =
+        await runBackfill(
+          {
+            prisma:
+              medPrisma,
+            cycletrack:
+              cycletrackHost,
+            shouldStop:
+              () =>
+                stopping,
+            log,
+          },
+          {
+            trigger:
+              'CRON',
+          },
+        );
+      log.info(
+        `backfill run complete [${r.runId}] — status=${r.status} stage=${r.cursor.stage} schools=${r.schools} created=${r.created} updated=${r.updated} requests=${r.requests}`,
+      );
+    },
+  );
+
+// ─── Startup bootstrap ──────────────────────────────────────────
+// A fresh database has no schools and no history, and the first hourly tick can be most of an hour
+// away. Seed the registry and cycle dates (both idempotent and converging, from JSON that esbuild
+// inlines so the runtime image needs no data lookup), then say whether the backfill is still owed.
+
+/** Resolves true when the backfill has not completed and both runs should be queued now. */
+async function bootstrap(): Promise<boolean> {
+  try {
+    const cycles =
+      await seedCycles(
+        seedPrisma,
+        cyclesJson as CycleSeed[],
+      );
+    const seeded =
+      await seedRegistryIfEmpty(
+        seedPrisma,
+        schoolsJson as RegistryFile,
+      );
+    log.info(
+      `Bootstrap: seeded ${seeded.schools} schools, ${seeded.aliases} aliases, ${cycles} cycles`,
+    );
+    return (
+      CYCLETRACK_ENABLED &&
+      !stopping &&
+      (await needsBackfill(
+        medPrisma,
+      ))
+    );
+  } catch (e) {
+    log.error(
+      `Bootstrap failed: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    return false;
+  }
+}
+
+// ─── Scheduler ──────────────────────────────────────────────────
+// The crons live in pg-boss (evaluated in UTC); this process consumes them. Each queue is
+// `exclusive`, so one run is queued or active at a time across processes.
+
+const CYCLETRACK_QUEUE =
+  'medschools.cycletrack';
+const BACKFILL_QUEUE =
+  'medschools.backfill';
+const cycletrackCron =
+  process.env.MEDSCHOOLS_CYCLETRACK_CRON?.trim() ||
+  '20 * * * *';
+// Yearly no-op safety net: a finished backfill records an OK no-op, an unfinished one resumes.
+const BACKFILL_CRON =
+  '0 0 1 1 *';
+
+let cycletrackConsumer: ScheduledConsumer | null =
+  null;
+let backfillConsumer: ScheduledConsumer | null =
+  null;
+
+async function main() {
+  // Phase 2 adapters hash dedupe keys with this; phase 1 does not read it, so it only warns.
+  const secret =
+    process
+      .env
+      .MEDSCHOOLS_DEDUPE_SECRET;
+  if (
+    !secret ||
+    secret.length <
+      16
+  ) {
+    log.warn(
+      'MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — set it (openssl rand -hex 32) before the phase 2 adapters ship',
+    );
+  }
+
+  const backfillDue =
+    await bootstrap();
+  if (
+    stopping
+  )
+    return;
+
+  const consumerLog =
+    {
+      warn: log.warn,
+      error:
+        log.error,
+    };
+  cycletrackConsumer =
+    await startScheduledConsumer(
+      {
+        queue:
+          CYCLETRACK_QUEUE,
+        cron: cycletrackCron,
+        expireInSeconds:
+          2 *
+          60 *
+          60,
+        // The tick catches everything, so a throw is a bug and a retry would only repeat it.
+        retryLimit: 0,
+        handler:
+          cycletrackTick,
+        shouldStop:
+          () =>
+            stopping,
+        log: consumerLog,
+      },
+    );
+  if (
+    !cycletrackConsumer
+  ) {
+    if (
+      stopping
+    )
+      return;
+    log.error(
+      'pg-boss unavailable — exiting so the container restarts',
+    );
+    process.exit(
+      1,
+    );
+  }
+  backfillConsumer =
+    await startScheduledConsumer(
+      {
+        queue:
+          BACKFILL_QUEUE,
+        cron: BACKFILL_CRON,
+        expireInSeconds:
+          6 *
+          60 *
+          60,
+        retryLimit: 0,
+        handler:
+          backfillTick,
+        shouldStop:
+          () =>
+            stopping,
+        log: consumerLog,
+      },
+    );
+  if (
+    !backfillConsumer
+  ) {
+    if (
+      stopping
+    )
+      return;
+    log.error(
+      'pg-boss unavailable — exiting so the container restarts',
+    );
+    process.exit(
+      1,
+    );
+  }
+  if (
+    stopping
+  )
+    return;
+
+  log.info(
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE}" enabled=${CYCLETRACK_ENABLED}`,
+  );
+  if (
+    backfillDue
+  ) {
+    // Hourly counts first (small, and they seed the diff baseline), then the long backfill.
+    log.info(
+      'Bootstrap: backfill not complete — queueing cycletrack then backfill',
+    );
+    await cycletrackConsumer.runNow();
+    await backfillConsumer.runNow();
+  }
+}
+
+main().catch(
+  (
+    e,
+  ) => {
+    log.error(
+      `fatal: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    process.exit(
+      1,
+    );
+  },
+);
+
+// ─── Graceful shutdown ──────────────────────────────────────────
+
+async function shutdown(
+  signal: string,
+) {
+  // Re-entrant: a second signal must not start a second wait.
+  if (
+    stopping
+  )
+    return;
+  stopping = true;
+  log.info(
+    `${signal} received, shutting down...`,
+  );
+
+  await Promise.all(
+    [
+      cycletrackConsumer?.pause(),
+      backfillConsumer?.pause(),
+    ],
+  );
+
+  if (
+    inFlight.size >
+    0
+  ) {
+    log.info(
+      'Waiting for in-flight run to complete...',
+    );
+    let timer:
+      | NodeJS.Timeout
+      | undefined;
+    const drained =
+      await Promise.race(
+        [
+          Promise.allSettled(
+            [
+              ...inFlight,
+            ],
+          ).then(
+            () =>
+              true,
+          ),
+          new Promise<boolean>(
+            (
+              resolve,
+            ) => {
+              timer =
+                setTimeout(
+                  () =>
+                    resolve(
+                      false,
+                    ),
+                  SHUTDOWN_DEADLINE_MS,
+                );
+            },
+          ),
+        ],
+      );
+    clearTimeout(
+      timer,
+    );
+    if (
+      !drained
+    ) {
+      log.error(
+        `In-flight run did not finish within ${SHUTDOWN_DEADLINE_MS}ms — exiting anyway`,
+      );
+    }
+  }
+
+  // The pg-boss instance is shared by both consumers, so stopping it once is enough.
+  await (
+    cycletrackConsumer ??
+    backfillConsumer
+  )?.stop();
+  await prisma
+    .$disconnect()
+    .catch(
+      () =>
+        undefined,
+    );
+  process.exit(
+    0,
+  );
+}
+
+process.on(
+  'SIGINT',
+  () =>
+    void shutdown(
+      'SIGINT',
+    ),
+);
+process.on(
+  'SIGTERM',
+  () =>
+    void shutdown(
+      'SIGTERM',
+    ),
+);

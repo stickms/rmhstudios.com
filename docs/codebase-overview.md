@@ -154,7 +154,7 @@ components/          React components by feature (~860 files); ui/ holds shared 
 lib/                Utilities, schemas, server helpers (~950 files); seo.ts, schema.ts, rum.ts,
                     client-errors.ts, rate-limit.ts, auth.ts, prisma.server.ts, i18n/
 server/             Node service tier (socket-server, rmhbox, rmhtube, ladder-worker,
-                    homes-worker, jobs, nitro/ plugins, shared/) — see §3
+                    homes-worker, medschools-worker, jobs, nitro/ plugins, shared/) — see §3
 go-services/        Go services: status + assets (Bazel + gazelle) — see §4
 stores/             Zustand stores (theme, locale, feed, …)
 hooks/              Custom hooks (useReducedMotion, useCelebration, useIsMobile, …)
@@ -193,6 +193,7 @@ concurrently.
 | rmhbox           | 7676 | Party-game hub                                                                |
 | ladder-worker    | —    | RMHLadder job-discovery cron (`lib/rmhladder` pipeline)                       |
 | homes-worker     | —    | RMHHomes listings-scraper cron (`lib/homes`)                                  |
+| medschools-worker | —   | RMH Med Schools CycleTrack ingest (`features/medschools`)                     |
 | jobs             | —    | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
 
 In

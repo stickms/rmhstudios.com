@@ -54,7 +54,7 @@
  web:7005   socket:7001  rmhbox:7676  rmhtube:7003     │   ← Node containers
  (Nitro SSR) (Socket.IO) (Socket.IO)  (Socket.IO)      │
    │                                                   │
-   │  ladder-worker · homes-worker · jobs              │
+   │  ladder-worker · homes-worker · medschools · jobs │
    │     (Node crons + pg-boss backbone, no port)      │
    │                                                   │
    │    (jobs also holds the Discord bot's gateway)    │
@@ -618,6 +618,7 @@ flowchart LR
       JOBS["jobs<br/>pg-boss queues<br/>+ Discord bot gateway"]
       LAD["ladder-worker<br/>pg-boss consumer"]
       HOM["homes-worker<br/>pg-boss consumer"]
+      MED["medschools-worker<br/>pg-boss consumer"]
     end
 
     subgraph Go["Go tier (Bazel)"]
@@ -667,6 +668,7 @@ flowchart LR
   JOBS --> PG
   LAD --> PG
   HOM --> PG
+  MED --> PG
   ASSET --> R2
   WEB --> R2
 
@@ -1373,6 +1375,7 @@ them:
 (The
 `ladder-worker`,
 `homes-worker`,
+`medschools-worker`,
 and
 `jobs`
 Node

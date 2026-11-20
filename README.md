@@ -60,6 +60,7 @@ bot); **Go** runs the status dashboard and the asset streamer. All container por
 | `rmhtube` | 7003 | Watch-together hub (Socket.IO) |
 | `ladder-worker` | — | RMHLadder job-discovery cron (pg-boss queue `ladder.pipeline`) |
 | `homes-worker` | — | RMHHomes listings-scraper cron (pg-boss queue `homes.scrape`) |
+| `medschools-worker` | — | RMH Med Schools CycleTrack ingest (pg-boss queues `medschools.cycletrack`, `medschools.backfill`) |
 | `jobs` | — | Durable async backbone (pg-boss): progression, event reminders, weekly digest, the ported Go workers and the Discord bot |
 
 **Go services** (`go-services/`)
