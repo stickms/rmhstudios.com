@@ -95,6 +95,18 @@ each event's program. A per-event source that does not say which program an even
 to stores `program = null`, and those events are shown as "program not reported" — never
 assigned to MD by default and never counted in either program's curves or forecasts.
 
+**Admit.org program (owner, 2026-11-20).** Admit's feed rows do not name the program
+directly; the program is whether the posting applicant is marked as MD/PhD on Admit. The
+Admit adapter therefore derives `program` from that applicant-type flag — from the feed
+row if the API exposes it there, otherwise from the applicant's public profile — and the
+flag is the only thing taken from it. The lookup is anonymization-safe only under these
+rules: the flag is read in memory and mapped straight to `REG`/`PHD`; no username, user id
+or profile field is stored, logged or hashed; profile lookups are cached in memory for the
+current run only (so one applicant costs one request per run, under §8's politeness
+limits) and the cache is discarded when the run ends. If the flag cannot be read,
+`program = null`. Phase 2's feasibility spike finds where the flag lives before the adapter
+is planned.
+
 ## 5. Architecture
 
 ```
