@@ -2,8 +2,8 @@
 orphan: true
 # Sitewide announcement. Paste into /admin/blog as a new post and tick
 # "Announcement". Fields map to the blog editor (lib/sitewide-announcement-schema.ts).
-title: Investing in RMH Studios
-slug: investing-in-rmh-studios
+title: RMHCombinator leads $50 PIPE in RMH Studios
+slug: rmhcombinator-leads-50-pipe-in-rmh-studios
 description: RMHCombinator leads a $50 PIPE in RMH Studios. Why we backed a public company that never raised a venture round.
 business: rmh-capital
 announcement: true
@@ -11,7 +11,7 @@ announcement: true
 announcementExpiresAt:
 ---
 
-# Investing in RMH Studios
+# RMHCombinator leads $50 PIPE in RMH Studios
 
 _November 19, 2026 · Mahmoud Said, General Managing Partner, RMHCombinator_
 

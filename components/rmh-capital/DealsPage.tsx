@@ -83,10 +83,10 @@ export default function DealsPage() {
                 id="deals-rmhs-heading"
               >
                 {t(
-                  'deals-rmhs-heading',
+                  'deals-rmhs-heading-leads',
                   {
                     defaultValue:
-                      'Investing in RMH Studios',
+                      'RMHCombinator leads $50 PIPE in RMH Studios',
                   },
                 )}
               </h2>
