@@ -12,7 +12,7 @@ export default defineFeature(
     routes:
       [],
     namespaces:
-      [],
+      ['medschools'],
     listed: false,
   },
 );
