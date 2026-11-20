@@ -305,6 +305,94 @@ describe('runAdmitInterviews', () => {
     expect(t.table('medInterviewQuestion').map((q) => q.dedupeHash)).toEqual([hashOf(987654321)]);
   });
 
+  describe('missing data is not zero', () => {
+    const changed = (t: ReturnType<typeof setup>) => {
+      t.live.routes[schoolsKey] = schoolsBody([schoolEntry(HARVARD, 11, 758)]);
+    };
+    const snapshot = (t: ReturnType<typeof setup>) =>
+      JSON.stringify([t.table('medInterviewProfile'), t.table('medInterviewQuestion')]);
+    it.each([
+      ['getInterviewsForSchool null', JSON.stringify({ data: { getInterviewsForSchool: null } })],
+      ['questions null', JSON.stringify({ data: { getInterviewsForSchool: { questions: null } } })],
+      ['an empty list over stored questions', questionsBody([])],
+    ])('%s leaves stored rows untouched and the run PARTIAL', async (_n, body) => {
+      const t = setup(baseRoutes());
+      await t.run();
+      const before = snapshot(t);
+      changed(t);
+      t.live.routes[slugKey(INTERVIEW_QUESTIONS, HARVARD)] = body;
+      const s = await t.run();
+      expect(snapshot(t)).toBe(before);
+      expect(s.schoolsUnavailable).toBe(1);
+      expect(s.questionsDeleted).toBe(0);
+      expect(s.status).toBe('PARTIAL');
+      expect(t.table('medSourceRun').at(-1)!.error).toBeNull();
+    });
+
+    it('a null overview leaves the stored profile untouched', async () => {
+      const t = setup(baseRoutes());
+      await t.run();
+      const before = snapshot(t);
+      changed(t);
+      t.live.routes[slugKey(INTERVIEW_OVERVIEW, HARVARD)] = JSON.stringify({
+        data: { getMedicalInterviewOverview: null },
+      });
+      const s = await t.run();
+      expect(snapshot(t)).toBe(before);
+      expect(s.schoolsUnavailable).toBe(1);
+      expect(s.status).toBe('PARTIAL');
+    });
+
+    it('a null feedback leaves the stored profile untouched', async () => {
+      const t = setup(baseRoutes());
+      await t.run();
+      const before = snapshot(t);
+      changed(t);
+      t.live.routes[slugKey(INTERVIEW_FEEDBACK, HARVARD)] = JSON.stringify({
+        data: { getInterviewFeedbackForSchool: null },
+      });
+      const s = await t.run();
+      expect(snapshot(t)).toBe(before);
+      expect(s.schoolsUnavailable).toBe(1);
+    });
+
+    it('an unavailable answer is not a transport failure and does not halt the walk', async () => {
+      const t = setup(
+        baseRoutes({
+          [schoolsKey]: schoolsBody([schoolEntry(HARVARD, 10, 757), schoolEntry(YALE, 5, 50)]),
+          [slugKey(INTERVIEW_QUESTIONS, HARVARD)]: JSON.stringify({ data: { getInterviewsForSchool: null } }),
+          [slugKey(INTERVIEW_OVERVIEW, YALE)]: overviewBody(5),
+          [slugKey(INTERVIEW_FEEDBACK, YALE)]: feedbackBody,
+          [slugKey(INTERVIEW_QUESTIONS, YALE)]: questionsBody([[1, 'Q', 1]]),
+        }),
+        {},
+        1,
+      );
+      const s = await t.run();
+      expect(s.schoolsUnavailable).toBe(1);
+      expect(s.schoolsFetched).toBe(1);
+      expect(t.table('medInterviewProfile').map((p) => p.schoolId)).toEqual(['s2']);
+    });
+  });
+
+  it('a failed question write leaves no profile, so the next run retries the school', async () => {
+    const t = setup(baseRoutes());
+    const real = t.prisma.medInterviewQuestion.createMany;
+    t.prisma.medInterviewQuestion.createMany = async () => {
+      throw new Error('db down');
+    };
+    const failed = await t.run();
+    expect(failed.schoolsFailed).toBe(1);
+    expect(failed.status).toBe('PARTIAL');
+    expect(t.table('medInterviewProfile')).toHaveLength(0);
+    t.prisma.medInterviewQuestion.createMany = real;
+    const ok = await t.run();
+    expect(ok.schoolsFetched).toBe(1);
+    expect(ok.status).toBe('OK');
+    expect(t.table('medInterviewProfile')).toHaveLength(1);
+    expect(t.table('medInterviewQuestion')).toHaveLength(2);
+  });
+
   it('votes change updates in place', async () => {
     const t = setup(baseRoutes());
     await t.run();

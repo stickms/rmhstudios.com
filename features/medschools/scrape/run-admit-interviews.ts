@@ -51,6 +51,8 @@ export interface AdmitInterviewsSummary {
   schoolsFetched: number;
   schoolsSkipped: number;
   schoolsFailed: number;
+  /** Schools Admit answered without profile or question data (or with an empty list over stored questions). */
+  schoolsUnavailable: number;
   questionsCreated: number;
   questionsUpdated: number;
   questionsDeleted: number;
@@ -85,6 +87,7 @@ export async function runAdmitInterviews(
     schoolsFetched: 0,
     schoolsSkipped: 0,
     schoolsFailed: 0,
+    schoolsUnavailable: 0,
     questionsCreated: 0,
     questionsUpdated: 0,
     questionsDeleted: 0,
@@ -214,24 +217,16 @@ export async function runAdmitInterviews(
           // (and, being unstored, it is retried next run).
           const profile = await client.fetchInterviewProfile(t.slug);
           const questions = await client.fetchQuestions(t.slug);
-          const fields = {
-            format: profile.format,
-            fileType: profile.fileType,
-            avgDifficulty: profile.avgDifficulty,
-            interviewCount: profile.interviewCount,
-            feedbackPositive: profile.positive,
-            feedbackNegative: profile.negative,
-            feedbackBefore: profile.before,
-            fetchedAt: now(),
-          };
-          await prisma.medInterviewProfile.upsert({
-            where: { schoolId_source: { schoolId: t.schoolId, source: 'ADMIT' } },
-            create: { schoolId: t.schoolId, source: 'ADMIT', ...fields },
-            update: fields,
-          });
+          // Missing data is not zero: an absent profile or list, or an empty list over stored questions,
+          // leaves the school's stored rows as they are.
           const existing = await prisma.medInterviewQuestion.findMany({
             where: { schoolId: t.schoolId, source: 'ADMIT' },
           });
+          if (profile === null || questions === null || (questions.length === 0 && existing.length > 0)) {
+            summary.schoolsUnavailable++;
+            incomplete = true;
+            continue;
+          }
           const byHash = new Map(existing.map((q) => [q.dedupeHash, q]));
           const fresh = new Set(questions.map((q) => q.dedupeHash));
           const toCreate = questions.filter((q) => !byHash.has(q.dedupeHash));
@@ -261,6 +256,22 @@ export async function runAdmitInterviews(
             const res = await prisma.medInterviewQuestion.deleteMany({ where: { id: { in: gone } } });
             summary.questionsDeleted += res.count;
           }
+          // The profile goes last: it is what the 6-day skip reads, so a failed question write retries tomorrow.
+          const fields = {
+            format: profile.format,
+            fileType: profile.fileType,
+            avgDifficulty: profile.avgDifficulty,
+            interviewCount: profile.interviewCount,
+            feedbackPositive: profile.positive,
+            feedbackNegative: profile.negative,
+            feedbackBefore: profile.before,
+            fetchedAt: now(),
+          };
+          await prisma.medInterviewProfile.upsert({
+            where: { schoolId_source: { schoolId: t.schoolId, source: 'ADMIT' } },
+            create: { schoolId: t.schoolId, source: 'ADMIT', ...fields },
+            update: fields,
+          });
           summary.schoolsFetched++;
         } catch (e) {
           incomplete = true;

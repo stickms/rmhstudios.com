@@ -191,10 +191,6 @@ model MedCycleEvent {
 /// "Admit.org, all reported cycles", never as a single-cycle figure. Admit rows
 /// carry `program = null` (the source does not report it) and `contributors`
 /// from the published count the figures rest on (null when absent).
-/// Admit rows (source ADMIT) are a CUMULATIVE snapshot over all reported cycles, refreshed daily and stored under
-/// the cycle current at fetch time: readers must label them "Admit.org, all reported cycles". Percentages keep
-/// Admit's published 0-1 scale. Admit rows have program = null, which defeats the unique key, so the job writes
-/// them by findFirst + create/update.
 model MedSchoolStats {
   id                        String       @id @default(cuid())
   schoolId                  String

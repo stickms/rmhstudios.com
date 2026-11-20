@@ -1651,21 +1651,21 @@ describe('interviews', () => {
       },
     );
     expect(
-      p
+      p!
         .positive
         .length,
     ).toBeGreaterThan(
       0,
     );
     expect(
-      p
+      p!
         .negative
         .length,
     ).toBeGreaterThan(
       0,
     );
     expect(
-      p
+      p!
         .before
         .length,
     ).toBeGreaterThan(
@@ -1766,6 +1766,28 @@ describe('interviews', () => {
     );
   });
 
+  it('a null op or a null question list is unavailable (null), an explicit empty list stays empty', async () => {
+    const q = (body: unknown) =>
+      setup({ [key(INTERVIEW_QUESTIONS, { schoolSlug: slug })]: JSON.stringify(body) }).client.fetchQuestions(slug);
+    expect(await q({ data: { getInterviewsForSchool: null } })).toBeNull();
+    expect(await q({ data: { getInterviewsForSchool: { questions: null } } })).toBeNull();
+    expect(await q({ data: { getInterviewsForSchool: { questions: [] } } })).toEqual([]);
+  });
+
+  it('a null overview or null feedback makes the profile unavailable (null)', async () => {
+    const ok = {
+      getMedicalInterviewOverview: { avg_interview_difficulty: 4, interview_count: 3, interview_format: 'A', interview_type: 'B' },
+      getInterviewFeedbackForSchool: { positive: [], negative: [], before_interview: [] },
+    };
+    for (const bad of ['getMedicalInterviewOverview', 'getInterviewFeedbackForSchool']) {
+      const { client } = setup({
+        [key(INTERVIEW_OVERVIEW, { schoolSlug: slug })]: JSON.stringify({ data: { ...ok, [bad]: null } }),
+        [key(INTERVIEW_FEEDBACK, { schoolSlug: slug })]: JSON.stringify({ data: { ...ok, [bad]: null } }),
+      });
+      expect(await client.fetchInterviewProfile(slug)).toBeNull();
+    }
+  });
+
   it('question fixture never exposes the raw id', async () => {
     const {
       client,
@@ -1789,7 +1811,7 @@ describe('interviews', () => {
         slug,
       );
     expect(
-      qs.length,
+      qs!.length,
     ).toBeGreaterThan(
       0,
     );

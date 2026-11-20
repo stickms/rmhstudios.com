@@ -78,13 +78,15 @@ export interface AdmitClient {
   listInterviewSchools(): Promise<
     AdmitSchoolRef[]
   >;
+  /** `null` = Admit answered without the overview or the feedback (unavailable, not empty). */
   fetchInterviewProfile(
     slug: string,
-  ): Promise<NormalizedAdmitProfile>;
+  ): Promise<NormalizedAdmitProfile | null>;
+  /** `null` = Admit answered without the question list (unavailable); `[]` is an explicit empty list. */
   fetchQuestions(
     slug: string,
   ): Promise<
-    NormalizedAdmitQuestion[]
+    NormalizedAdmitQuestion[] | null
   >;
   fetchSchoolStats(
     filter: MedResidence,
@@ -537,35 +539,35 @@ export function createAdmitClient(
           )
         )
           .getInterviewFeedbackForSchool;
+      if (
+        overview ===
+          null ||
+        feedback ===
+          null
+      )
+        return null;
       return {
         schoolKey:
           slug,
         format:
-          overview?.interview_format ??
-          null,
+          overview.interview_format,
         fileType:
-          overview?.interview_type ??
-          null,
+          overview.interview_type,
         avgDifficulty:
-          overview?.avg_interview_difficulty ??
-          null,
+          overview.avg_interview_difficulty,
         interviewCount:
-          overview?.interview_count ??
-          null,
+          overview.interview_count,
         positive:
           cleanList(
-            feedback?.positive ??
-              null,
+            feedback.positive,
           ),
         negative:
           cleanList(
-            feedback?.negative ??
-              null,
+            feedback.negative,
           ),
         before:
           cleanList(
-            feedback?.before_interview ??
-              null,
+            feedback.before_interview,
           ),
       };
     },
@@ -582,14 +584,19 @@ export function createAdmitClient(
           },
           questionsData,
         );
+      const list =
+        data
+          .getInterviewsForSchool
+          ?.questions;
+      if (
+        !list
+      )
+        return null;
       const seen =
         new Set<string>();
       const out: NormalizedAdmitQuestion[] =
         [];
-      for (const q of data
-        .getInterviewsForSchool
-        ?.questions ??
-        []) {
+      for (const q of list) {
         const text =
           cleanText(
             q.body ??
