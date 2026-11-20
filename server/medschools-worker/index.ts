@@ -239,10 +239,7 @@ const backfillTick =
   guarded(
     'backfill',
     async () => {
-      if (
-        !CYCLETRACK_ENABLED
-      )
-        return;
+      // R12: the flag disables the hourly queue and the bootstrap only; a manual runNow still runs.
       const r =
         await runBackfill(
           {

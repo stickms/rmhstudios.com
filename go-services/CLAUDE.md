@@ -20,7 +20,7 @@ Production is a **hybrid** (see `docker-compose.yml` at repo root):
   (7007, off the main user path under Compose). Nothing else.
 - **Node is authoritative for:** web SSR (7005), the realtime hubs —
   socket-server (7001), rmhbox (7676), rmhtube (7003) — and every background
-  worker: ladder-worker, homes-worker and `jobs`, which also hosts the Discord
+  worker: ladder-worker, homes-worker, medschools-worker and `jobs`, which also hosts the Discord
   bot (`server/discord-bot/`). Apache routes all user traffic to Node ports.
 - **The Go workers are gone (D3).** Every one (streak-saver, recap, doctrine,
   bot-worker, vibe-worker, and last the Discord bot) was ported to the Node

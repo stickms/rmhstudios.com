@@ -237,4 +237,17 @@ describe('medschools-worker wiring', () => {
       'node-cron',
     );
   });
+
+  it('the enabled flag gates the hourly tick and the bootstrap, not the backfill consumer (R12)', () => {
+    const src = read('server/medschools-worker/index.ts').replace(/\s+/g, ' ');
+    const backfill = src.slice(
+      src.indexOf('const backfillTick'),
+      src.indexOf('// ─── Startup bootstrap'),
+    );
+    expect(backfill).toContain('runBackfill');
+    expect(backfill).not.toContain('CYCLETRACK_ENABLED');
+    const hourly = src.slice(src.indexOf('const cycletrackTick'), src.indexOf('const backfillTick'));
+    expect(hourly).toContain('!CYCLETRACK_ENABLED');
+    expect(src).toContain('CYCLETRACK_ENABLED && !stopping && (await needsBackfill');
+  });
 });
