@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1003 endpoints across 197 groups: 110 route files under `app/routes/api` and 893 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1006 endpoints across 197 groups: 110 route files under `app/routes/api` and 896 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -39,7 +39,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-106 routes.
+109 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -106,6 +106,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/link-rules` | `DELETE` `GET` `POST` | `lib/admin/api/admin.link-rules.server.ts` |
 | `/api/admin/market` | `GET` | `lib/admin/api/admin.market.server.ts` |
 | `/api/admin/market/:id` | `POST` | `lib/admin/api/admin.market.$id.server.ts` |
+| `/api/admin/medschools/alias-misses` | `GET` | `features/medschools/api/admin.medschools.alias-misses.server.ts` |
+| `/api/admin/medschools/alias-misses/ignore` | `POST` | `features/medschools/api/admin.medschools.alias-misses.ignore.server.ts` |
+| `/api/admin/medschools/alias-misses/map` | `POST` | `features/medschools/api/admin.medschools.alias-misses.map.server.ts` |
 | `/api/admin/mod-macros` | `DELETE` `GET` `POST` | `lib/admin/api/admin.mod-macros.server.ts` |
 | `/api/admin/moderation/content` | `POST` | `lib/moderation/api/admin.moderation.content.server.ts` |
 | `/api/admin/oncall` | `GET` | `lib/admin/api/admin.oncall.server.ts` |
