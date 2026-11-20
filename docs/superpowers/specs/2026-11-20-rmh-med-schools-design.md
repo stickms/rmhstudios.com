@@ -1,6 +1,6 @@
 # RMH Med Schools — design
 
-Date: 2026-11-20 · Status: draft for owner approval
+Date: 2026-11-20 · Status: awaiting owner approval
 
 ## 1. Intent
 
@@ -20,6 +20,13 @@ applicant's own timeline beside it.
 **Data permission.** The owner obtained written permission from CycleTrack, Admit.org and
 SDN for this service, conditional on anonymization (no usernames etc.). That condition is
 a hard invariant of this design (§6), not a preference.
+
+Scope of that permission, as the owner reported it on 2026-11-20: **all data from all
+three sources is fine, as long as it is anonymized.** That includes the archives
+(MDApplicants, SDN prior-year forums), AI processing of SDN post text, and storing
+reworded interview questions. No source set a rate limit, User-Agent or attribution
+wording, so the defaults in §8 (≥1 s per request, descriptive User-Agent, thread-level
+attribution) apply; a term that arrives later goes in `sources.ts`.
 
 ## 2. Goals, non-goals, anti-goals
 
@@ -220,7 +227,12 @@ reject|\bR\b|question`) skips chatter. Survivors go to `runTaskJson` (new `AiTas
 The prompt instructs: report only the poster's own event, resolve relative dates
 ("today") against the post timestamp, rewrite questions without names. The post's school
 and cycle come from the thread, not the model. Batched per thread page; costed into
-`AiUsage` under a system budget; a per-run cap on LLM calls.
+`AiUsage` under a system budget (`MEDSCHOOLS_AI_MONTHLY_USD`, default 20) with a per-run
+cap on LLM calls; when the month's budget is spent, extraction pauses and resumes next
+month from its cursor. Estimate: ~500 school threads per cycle × a few hundred posts,
+~40% surviving the prefilter, a few hundred tokens each — tens of millions of tokens for
+the full prior-year backfill, a few dollars at DeepSeek prices — so the full backfill is in
+scope, newest cycles first.
 
 ## 10. Statistics and forecasting
 
@@ -330,6 +342,7 @@ entries, `start`), `Dockerfile` esbuild list + `test -f`, `docker-compose.yml` s
 - Interview dates: admin-entered from school calendars plus reported dates; no scraping
   of school websites.
 - Alias-miss admin page is in phase 2.
+- AI extraction budget: $20/month default, full SDN backfill newest-first.
 - SVG/d3 charts, not chart.js.
 
 ## 16. Left to the builder
