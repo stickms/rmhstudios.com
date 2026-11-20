@@ -307,7 +307,16 @@ const BUDGETS = {
   // Measured on a plain `vite build`: main at cd58353f 245,137 B -> this branch merged with main at b49e51c9 245,331 B
   // brotli; entry 710,820 B raw. The line keeps the feature's bytes plus about 0.3 KB brotli of headroom, as the
   // lines above did.
-  siteCssBrotli: 32_600,
+  //
+  // Phone back-to-top and compose disc (owner exception L1a, 2026-11-20): site CSS brotli RAISED 32,600 -> 32,800 B
+  // (OPT-01 line). The feature that bought the bytes is those two buttons, back on phones: the lane step for the
+  // compose disc and `lg:hidden` on two fixed controls. The same change deleted the dead mini-player stack and folded the
+  // lane's cookie lift into one variable, so the raw sheet SHRANK (main at a3842378 250,592 B -> 249,999 B), but brotli
+  // moved the other way (32,577 -> 32,614 B), and main had sat 23 B under the old line. Measured on a plain
+  // `vite build`. The Docker image build measures about 0.2% more than a plain build (it measured 32,698 B on this
+  // branch's first push, where the plain build gave 32,610), so the line keeps about 0.2 KB brotli of headroom over
+  // that, as the lines above did.
+  siteCssBrotli: 32_800,
   entryRaw: 711_300,
   criticalPathRaw: 933_500,
   criticalPathBrotli: 245_700,

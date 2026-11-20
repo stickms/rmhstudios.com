@@ -118,6 +118,20 @@ export const ROOT_LINKS =
       type: 'image/svg+xml',
       href: '/favicon.svg',
     },
+    // iOS and iPadOS Safari ignore SVG favicons and the manifest's icons: tabs, bookmarks, Favorites and Add to Home
+    // Screen read only an apple-touch-icon (180px, opaque: iOS paints transparency black and rounds the corners
+    // itself), and other raster-only clients take the 32px PNG. The SVG stays first, where tab-badge finds it.
+    {
+      rel: 'icon',
+      type: 'image/png',
+      sizes: '32x32',
+      href: '/favicon-32.png',
+    },
+    {
+      rel: 'apple-touch-icon',
+      sizes: '180x180',
+      href: '/apple-touch-icon.png',
+    },
     {
       rel: 'manifest',
       href: '/manifest.webmanifest',
