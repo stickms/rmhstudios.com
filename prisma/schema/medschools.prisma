@@ -147,11 +147,13 @@ model MedCycleCount {
   @@map("med_cycle_count")
 }
 
-/// One anonymous event from a per-event source. No program, no person fields.
+/// One anonymous event from a per-event source. No person fields.
 model MedCycleEvent {
   id         String       @id @default(cuid())
   schoolId   String
   cycleYear  Int
+  /// null = the source did not report the program; never defaulted to REG.
+  program    MedProgram?
   eventType  MedEventType
   occurredAt DateTime
   source     MedSource
@@ -163,7 +165,7 @@ model MedCycleEvent {
   school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([occurredAt])
-  @@index([schoolId, cycleYear])
+  @@index([schoolId, cycleYear, program])
   @@map("med_cycle_event")
 }
 

@@ -33,6 +33,9 @@ export interface NormalizedEvent {
   source: MedSource;
   schoolKey: string;
   cycleYear: number;
+  program:
+    | MedProgram
+    | null;
   eventType: MedEventType;
   occurredAt: Date;
   dedupeHash: string;

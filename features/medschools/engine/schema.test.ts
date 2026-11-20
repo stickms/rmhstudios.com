@@ -79,6 +79,7 @@ model MedTrackerCycle {
       'id',
       'schoolId',
       'cycleYear',
+      'program',
       'eventType',
       'occurredAt',
       'source',

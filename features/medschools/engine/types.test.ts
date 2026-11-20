@@ -19,6 +19,7 @@ describe('anonymization type pin', () => {
       | 'source'
       | 'schoolKey'
       | 'cycleYear'
+      | 'program'
       | 'eventType'
       | 'occurredAt'
       | 'dedupeHash'

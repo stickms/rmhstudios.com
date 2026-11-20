@@ -95,6 +95,7 @@ CREATE TABLE "med_cycle_event" (
     "id" TEXT NOT NULL,
     "schoolId" TEXT NOT NULL,
     "cycleYear" INTEGER NOT NULL,
+    "program" "MedProgram",
     "eventType" "MedEventType" NOT NULL,
     "occurredAt" TIMESTAMP(3) NOT NULL,
     "source" "MedSource" NOT NULL,
@@ -172,7 +173,7 @@ CREATE UNIQUE INDEX "med_cycle_event_dedupeHash_key" ON "med_cycle_event"("dedup
 CREATE INDEX "med_cycle_event_occurredAt_idx" ON "med_cycle_event"("occurredAt");
 
 -- CreateIndex
-CREATE INDEX "med_cycle_event_schoolId_cycleYear_idx" ON "med_cycle_event"("schoolId", "cycleYear");
+CREATE INDEX "med_cycle_event_schoolId_cycleYear_program_idx" ON "med_cycle_event"("schoolId", "cycleYear", "program");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "med_school_stats_schoolId_program_cycleYear_key" ON "med_school_stats"("schoolId", "program", "cycleYear");
