@@ -340,6 +340,14 @@ describe('medschools-worker wiring', () => {
     expect(boot).toContain('log.warn(');
     expect(boot).toContain('admit.skipped.map');
     expect(boot).not.toContain('admitLiveConsumer');
+    // The Admit seed sits in its own try/catch, before and apart from the backfill-due return.
+    const seedAt = boot.indexOf('seedAdmitAliases(');
+    const tryAt = boot.lastIndexOf('try {', seedAt);
+    const catchAt = boot.indexOf('} catch (e) {', seedAt);
+    expect(tryAt).toBeGreaterThan(boot.indexOf('seedRegistryIfEmpty('));
+    expect(catchAt).toBeGreaterThan(seedAt);
+    expect(boot.slice(catchAt, catchAt + 120)).toContain('log.error(');
+    expect(boot.indexOf('return ( CYCLETRACK_ENABLED')).toBeGreaterThan(catchAt);
     expect(boot).not.toContain('interviewsConsumer');
   });
 

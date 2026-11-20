@@ -418,16 +418,22 @@ async function bootstrap(): Promise<boolean> {
     log.info(
       `Bootstrap: seeded ${seeded.schools} schools, ${seeded.aliases} aliases, ${cycles} cycles`,
     );
-    // The reviewed Admit slugs attach through the CycleTrack aliases seeded above. A conflicting pair
-    // is skipped, never moved, and named here so an operator can resolve it. Bootstrap queues no
-    // Admit run, so ADMIT_ENABLED has nothing to gate here.
-    const admit = await seedAdmitAliases(seedPrisma, admitAliasesJson as AdmitAliasFile);
-    log.info(
-      `Bootstrap: seeded ${admit.created} Admit aliases (${admit.unmatched.length} unmatched)`,
-    );
-    if (admit.skipped.length > 0) {
-      log.warn(
-        `Bootstrap: ${admit.skipped.length} Admit alias pairs skipped (conflict): ${admit.skipped.map((p) => `${p.cycletrackKey} -> ${p.admitSlug}`).join('; ')}`,
+    // Own try/catch: an Admit seed failure must never stop CycleTrack's backfill-due result below.
+    // Alias seeding is deliberately not gated by ADMIT_ENABLED: it is idempotent, queues no request,
+    // and the admin page needs the aliases. A conflicting pair is skipped, never moved, and named here.
+    try {
+      const admit = await seedAdmitAliases(seedPrisma, admitAliasesJson as AdmitAliasFile);
+      log.info(
+        `Bootstrap: seeded ${admit.created} Admit aliases (${admit.unmatched.length} unmatched)`,
+      );
+      if (admit.skipped.length > 0) {
+        log.warn(
+          `Bootstrap: ${admit.skipped.length} Admit alias pairs skipped (conflict): ${admit.skipped.map((p) => `${p.cycletrackKey} -> ${p.admitSlug}`).join('; ')}`,
+        );
+      }
+    } catch (e) {
+      log.error(
+        `Bootstrap: Admit alias seed failed: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
     return (
