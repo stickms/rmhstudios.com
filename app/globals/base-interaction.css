@@ -100,6 +100,26 @@ html:not(.app-route) {
   scrollbar-gutter: stable;
 }
 
+/* A bought theme's glow wash (R1 amendment, `themeWash` in lib/themes/tokens.ts) lives on the ROOT, not on the shell.
+   The root's background is the browser canvas: it paints edge to edge under `viewport-fit=cover`, including behind the
+   iOS status bar, the floating tab bar, the home-indicator strip and rubber-band overscroll, which a box inside <body>
+   never reaches. It is still a BACKGROUND, not a layer: no element sits at an edge for Safari to read into a flat band
+   (the iOS bar contract), and with no user theme the image is `none`. Held to the viewport on desktop; iOS ignores
+   `fixed` and scrolls it, so the image is stretched over the whole document there, as the shell's copy used to be.
+   Body and shell paint nothing of their own on the site tier, or they would cover it. */
+html:not(.app-route) {
+  background-image: var(--site-theme-wash, none);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+html.ios-webkit:not(.app-route) {
+  background-attachment: scroll;
+}
+html:not(.app-route) body {
+  background: transparent;
+}
+
 /* App/game routes are excluded above because they do not scroll the document —
    reserving a gutter there would just take a scrollbar's width off a game for
    nothing. `.app-page` is the exception: it is a full-screen screen that IS a
