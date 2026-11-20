@@ -18,7 +18,7 @@ import {
  * inside the server's real `max_connections`. The committed budget assumes the
  * tuned host (200), but applying that tuning is a manual root action the
  * sandboxed deploy cannot perform, so a stock host (100) runs a fleet whose
- * blue/green peak is 170 connections. Past the limit Postgres refuses new
+ * blue/green peak is 173 connections. Past the limit Postgres refuses new
  * connections outright ("sorry, too many clients already") and every service —
  * web, hubs, auth lookups — fails at once. This takes a deploy down in the most
  * literal sense, so the arithmetic is pinned here:
@@ -47,14 +47,14 @@ const stock =
 
 describe('documented compose sum', () => {
   it('matches the arithmetic in docker-compose.yml (no Go supervisor pool since D3; the wiki since its MediaWiki move)', () => {
-    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + (2 + 2 slack) + 10 + 8 (wiki)
+    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + 3 (medschools) + (2 + 2 slack) + 10 + 8 (wiki)
     expect(
       peakConnections(
         DEFAULTS,
         2,
       ),
     ).toBe(
-      170,
+      173,
     );
   });
 
@@ -70,7 +70,7 @@ describe('documented compose sum', () => {
     expect(
       compose,
     ).toContain(
-      '88 + 27 + 24 + 6 + 3 + 4 + 10 + 8 = 170',
+      '88 + 27 + 24 + 6 + 3 + 3 + 4 + 10 + 8 = 173',
     );
     expect(
       compose,
