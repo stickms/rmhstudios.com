@@ -71,6 +71,10 @@ export interface AdmitClient {
     | 'FAILED'
   >;
   readonly lookups: number;
+  /** True when this token's user already has a flag this run, so `programOf` costs no request. */
+  isCached(
+    token: LookupToken,
+  ): boolean;
   listInterviewSchools(): Promise<
     AdmitSchoolRef[]
   >;
@@ -157,6 +161,8 @@ export function createAdmitClient(
       unknown
     >,
     schema: S,
+    /** A GraphQL `errors` reply to a per-user lookup is that user's failure, not the source's (ruling P16). */
+    errorsAreSourceFailures = true,
   ): Promise<
     z.output<S>
   > {
@@ -227,10 +233,17 @@ export function createAdmitClient(
       ) &&
       errors.length >
         0
-    )
+    ) {
+      if (
+        !errorsAreSourceFailures
+      )
+        throw new AdmitResponseError(
+          `${op.operationName}: GraphQL errors`,
+        );
       return fail(
         'GraphQL errors',
       );
+    }
     const parsed =
       z
         .object(
@@ -270,6 +283,7 @@ export function createAdmitClient(
             userId,
           },
           profileFlagData,
+          false,
         );
       const profile =
         data.getCycleTrackProfileByUserId;
@@ -384,6 +398,16 @@ export function createAdmitClient(
         items,
         skipped,
       };
+    },
+
+    isCached(
+      token,
+    ) {
+      return flags.has(
+        redeemLookupToken(
+          token,
+        ),
+      );
     },
 
     programOf(

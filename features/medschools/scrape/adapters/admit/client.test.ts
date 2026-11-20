@@ -688,7 +688,7 @@ describe('programOf', () => {
     }
   });
 
-  it('GraphQL errors or HTTP failure → FAILED and the failure counts toward the halt', async () => {
+  it('a GraphQL errors reply is FAILED without counting toward the halt; an HTTP failure is FAILED and counts (P16)', async () => {
     const {
       client,
       session,
@@ -749,6 +749,9 @@ describe('programOf', () => {
       'FAILED',
     );
     expect(
+      session.lastFailure,
+    ).toBeNull();
+    expect(
       await client.programOf(
         items[1]!
           .lookup,
@@ -759,9 +762,17 @@ describe('programOf', () => {
     expect(
       session.lastFailure,
     ).not.toBeNull();
-    // fetchFeed succeeded (reset), then two failures: one more halts the session
+    // fetchFeed succeeded (reset), then one counted failure (the 404): two more halt the session
     session.noteFailure(
       'x',
+    );
+    expect(
+      session.halted,
+    ).toBe(
+      false,
+    );
+    session.noteFailure(
+      'y',
     );
     expect(
       session.halted,
@@ -1788,6 +1799,66 @@ describe('interviews', () => {
       ),
     ).not.toContain(
       '8368',
+    );
+  });
+
+  it('isCached is false before a lookup and true after, without a request', async () => {
+    const {
+      client,
+      requestedPosts,
+    } =
+      setup(
+        {
+          ...feedRoute(
+            [
+              row(
+                {
+                  cycle_update_id:
+                    'u1',
+                  user_id:
+                    'user-a',
+                },
+              ),
+            ],
+          ),
+          [flagKey(
+            'user-a',
+          )]:
+            fx(
+              'profile-flag-true',
+            ),
+        },
+      );
+    const {
+      items,
+    } =
+      await client.fetchFeed();
+    expect(
+      client.isCached(
+        items[0]!
+          .lookup,
+      ),
+    ).toBe(
+      false,
+    );
+    await client.programOf(
+      items[0]!
+        .lookup,
+    );
+    const posts =
+      requestedPosts.length;
+    expect(
+      client.isCached(
+        items[0]!
+          .lookup,
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      requestedPosts.length,
+    ).toBe(
+      posts,
     );
   });
 });
