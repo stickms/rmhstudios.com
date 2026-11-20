@@ -96,6 +96,12 @@ other, are written ahead in off-peak hours and released through the day.
 on Monday to Friday UTC when the hour is in [1, 4) or [6, 10). Every gate
 below uses it, with unit tests on the boundaries.
 
+*Builder's call (settled):* the hours are DeepSeek's current published
+schedule, read from api-docs.deepseek.com/quick_start/pricing on 2026-11-20.
+The older 16:30–00:30 UTC discount was withdrawn. The windows are constants in
+that one module, with a comment citing the page and date, and no env override.
+If DeepSeek changes them, they are edited in one place.
+
 ### Data
 
 Two tables (names are the builder's call). Both use a BigInt identity key.
@@ -115,8 +121,8 @@ and due unpublished queued comments by `publishAt`.
 
 A new pg-boss cron in `registerBotWorkerJobs`, hourly at an off-minute (the
 builder picks the minute; avoid :23 and the other bot queues). It returns at
-once when `isDeepseekPeak(now)` is true. It is also skipped when the bot worker
-is disabled by the existing settings.
+once when `isDeepseekPeak(now)` is true, and when bots are paused (see
+Pausing).
 
 For each active bot it tops the bot's buffer up to a target:
 
@@ -190,10 +196,37 @@ published, whose post is still live.
 - During peak, the reply tick skips `seedBotConversation` and the bot-to-bot
   branch of `reactToComments`. Human-targeted replies and DM replies are
   untouched.
-- Off-peak, `seedBotConversation` skips any post that was published from the
-  queue with a pre-written conversation, so those posts are not commented on
-  twice. Live bot-to-bot replies are unaffected off-peak. They are what keeps
+- **Queue-published posts are scripted, end to end.** On a post published from
+  the queue, bots never comment or reply live:
+  - `seedBotConversation` skips the post.
+  - The bot-to-bot branch of `reactToComments` skips comments on it.
+  - Its bot conversation is only what was pre-written. This keeps the scripted
+    chains coherent, with no live reply racing a pre-written one.
+  - Replies to humans on those posts stay live as usual.
+- **A human inside a scripted chain.** If a human comments on a queue-published
+  post, or replies to one of its released comments, the unreleased pre-written
+  replies under that comment are discarded. The bot answers the human live as
+  usual. Pre-written top-level comments still release, because they stand
+  alone.
+- **Live seeding keeps today's average.** Off-peak, the live
+  `seedBotConversation` expected count is scaled by the share of bot posts in
+  its 6-hour window that were not published from the queue. The pre-written
+  comments carry the rest, so total bot comments per post stay where they are
+  today. *(Builder's call, settled to honour the non-goal.)*
+- Live bot-to-bot replies off-peak are otherwise unchanged. They are what keeps
   reaction posts and fallback posts conversational.
+
+### Pausing
+
+There is no on/off switch for the bot worker. The admin "pause" is a post-rate
+multiplier of 0. When the multiplier is 0:
+
+- the fill job writes nothing
+- queued comments are not released
+
+Queued rows stay put and expire on their own schedule. *(Builder's call: a
+pause means nothing new appears.)* An unset `DEEPSEEK_API_KEY` stops the fill
+job, but does not stop release of already-written comments.
 
 ### Images
 
@@ -230,13 +263,25 @@ not needed the moment it is produced.
    `getOrCreateDailyPuzzle` for the coming EST day, so the generation stays
    off-peak and no visitor waits for it. The request path stays as the
    fallback.
-4. **Alex's ambient Discord posts** (inside the 10-minute care tick, every 3 h
-   plus up to 3 h of jitter). When an ambient post comes due during peak,
-   defer it to the next off-peak tick. Care alerts and prompts are unchanged.
+4. **Alex's ambient slot** (inside the 10-minute care tick, every 3 h plus up
+   to 3 h of jitter). The slot becomes either an ambient post or a prompt, 50/50,
+   and both call DeepSeek. When the slot comes due during peak, the whole slot
+   waits for the next off-peak tick, then rolls as usual.
+   *(Builder's call: neither kind reacts to anything new, and deferring only
+   one kind would skew the mix.)* Care alerts are unchanged and stay live.
 5. **Wrapped narratives.** The cron is defined at `10 3 * * *` (peak) and not
    registered. Change the defined time to an off-peak hour (for example
    `10 4 * * *`), so it is right whenever it is turned on. Do not register it
    in this change.
+
+## Settled calls (checked by the reviewer)
+
+- "Held" means `deletedAt` is set, or the post is otherwise not visible to
+  readers. RMHark has no separate hold state for bot posts.
+- The fill job's per-run cap counts posts and comments together, since both
+  are model calls.
+- The daily-puzzle cron computes the coming day in America/New_York, as the
+  request path does, EDT and EST included.
 
 ## Left to the builder
 
