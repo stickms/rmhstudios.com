@@ -32,40 +32,44 @@ const summarySchema =
             key: z.string(),
           },
         ),
+      // Unavailable data carries daily: null (or nothing useful); the array is only validated when available.
       daily:
-        z.array(
+        z.unknown().optional(),
+    },
+  );
+
+const dailySchema =
+  z.array(
+    z.object(
+      {
+        date: z
+          .string()
+          .regex(
+            /^\d{4}-\d{2}-\d{2}$/,
+          ),
+        observationCounts:
           z.object(
             {
-              date: z
-                .string()
-                .regex(
-                  /^\d{4}-\d{2}-\d{2}$/,
-                ),
-              observationCounts:
-                z.object(
-                  {
-                    Acceptance:
-                      countField,
-                    Interview:
-                      countField,
-                    Rejection:
-                      countField,
-                    Secondary:
-                      countField,
-                    Waitlist:
-                      countField,
-                  },
-                ),
+              Acceptance:
+                countField,
+              Interview:
+                countField,
+              Rejection:
+                countField,
+              Secondary:
+                countField,
+              Waitlist:
+                countField,
             },
           ),
-        ),
-    },
+      },
+    ),
   );
 
 const EVENT_KEYS: [
   keyof z.infer<
-    typeof summarySchema
-  >['daily'][number]['observationCounts'],
+    typeof dailySchema
+  >[number]['observationCounts'],
   MedEventType,
 ][] =
   [
@@ -170,8 +174,18 @@ export function parseSummaryJson(
         .school
         .key,
     );
+  const daily =
+    dailySchema.safeParse(
+      s.daily,
+    );
+  if (
+    !daily.success
+  )
+    throw new UnexpectedPageError(
+      `summary.json shape: ${daily.error.message}`,
+    );
   const counts =
-    s.daily.flatMap(
+    daily.data.flatMap(
       (
         d,
       ) =>

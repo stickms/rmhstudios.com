@@ -1138,4 +1138,123 @@ describe('runBackfill', () => {
       ],
     );
   });
+  it('a summary.json that throws never discards the school page tables', async () => {
+    const s =
+      setup();
+    const plain =
+      setup();
+    await run(
+      plain,
+      createFakeHost(
+        plain.routes,
+      )
+        .host,
+    );
+    s.routes[
+      summaryUrl(
+        'Yale',
+        'reg',
+      )
+    ] =
+      '{"availability":"available","daily":"nope"}';
+    s.routes[
+      summaryUrl(
+        'Yale',
+        'phd',
+      )
+    ] =
+      'not json at all';
+    const r =
+      await run(
+        s,
+        createFakeHost(
+          s.routes,
+        )
+          .host,
+      );
+    expect(
+      r.status,
+    ).toBe(
+      'OK',
+    );
+    expect(
+      s
+        .tables
+        .medCycleCount!
+        .length,
+    ).toBe(
+      plain
+        .tables
+        .medCycleCount!
+        .length,
+    );
+    expect(
+      s.runs()[0]!
+        .stats!
+        .skipped,
+    ).toEqual(
+      [
+        'A.T. Still - Arizona',
+        'Alabama COM',
+      ],
+    );
+    expect(
+      s.runs()[0]!
+        .stats!
+        .summaryFailed,
+    ).toBe(
+      2,
+    );
+  });
+
+  it('a summary.json with daily null (unavailable) leaves the page tables ingested and is not a failure', async () => {
+    const s =
+      setup();
+    s.routes[
+      summaryUrl(
+        'Yale',
+        'reg',
+      )
+    ] =
+      loadFixture(
+        'arkansas-summary-phd-unavailable.json',
+      );
+    s.routes[
+      summaryUrl(
+        'Yale',
+        'phd',
+      )
+    ] =
+      loadFixture(
+        'arkansas-summary-phd-unavailable.json',
+      );
+    const r =
+      await run(
+        s,
+        createFakeHost(
+          s.routes,
+        )
+          .host,
+      );
+    expect(
+      r.status,
+    ).toBe(
+      'OK',
+    );
+    expect(
+      s
+        .tables
+        .medCycleCount!
+        .length,
+    ).toBeGreaterThan(
+      0,
+    );
+    expect(
+      s.runs()[0]!
+        .stats!
+        .summaryFailed,
+    ).toBe(
+      0,
+    );
+  });
 });

@@ -256,4 +256,109 @@ describe('parseSummaryJson', () => {
       ),
     );
   });
+  it('real Arkansas payloads: a reg table when data exists, no table (not an error) when unavailable with daily null', () => {
+    const reg =
+      parseSummaryJson(
+        JSON.parse(
+          loadFixture(
+            'arkansas-summary-reg.json',
+          ),
+        ),
+        'reg',
+      );
+    expect(
+      reg,
+    ).toHaveLength(
+      1,
+    );
+    expect(
+      reg[0]!
+        .program,
+    ).toBe(
+      'REG',
+    );
+    expect(
+      reg[0]!
+        .counts
+        .length,
+    ).toBeGreaterThan(
+      0,
+    );
+    expect(
+      parseSummaryJson(
+        JSON.parse(
+          loadFixture(
+            'arkansas-summary-phd-unavailable.json',
+          ),
+        ),
+        'phd',
+      ),
+    ).toEqual(
+      [],
+    );
+  });
+
+  it('unavailable with daily absent or an object is also no table; available with a non-array daily still throws', () => {
+    const base =
+      JSON.parse(
+        loadFixture(
+          'arkansas-summary-phd-unavailable.json',
+        ),
+      ) as Record<
+        string,
+        unknown
+      >;
+    const {
+      daily:
+        _omit,
+      ...noDaily
+    } =
+      base;
+    expect(
+      parseSummaryJson(
+        noDaily,
+        'phd',
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
+      parseSummaryJson(
+        {
+          ...base,
+          daily:
+            {},
+        },
+        'phd',
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
+      () =>
+        parseSummaryJson(
+          {
+            ...(yaleJson as object),
+            daily:
+              null,
+          },
+          'reg',
+        ),
+    ).toThrow(
+      UnexpectedPageError,
+    );
+    expect(
+      () =>
+        parseSummaryJson(
+          {
+            ...(yaleJson as object),
+            daily:
+              {},
+          },
+          'reg',
+        ),
+    ).toThrow(
+      UnexpectedPageError,
+    );
+  });
 });

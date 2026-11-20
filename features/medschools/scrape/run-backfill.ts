@@ -341,6 +341,7 @@ export async function runBackfill(
     ); // 404 pages: skipped, never retried
   let ingested = 0;
   let failed = 0;
+  let summaryFailed = 0;
   let stopped = false;
   let halted = false;
   let error:
@@ -378,6 +379,7 @@ export async function runBackfill(
         summary.schools,
       ingested,
       failed,
+      summaryFailed,
       created:
         summary.created,
       updated:
@@ -571,6 +573,42 @@ export async function runBackfill(
         return tables;
       };
 
+    /** A bad summary.json costs only its own contribution: the school page's tables are still ingested. */
+    const safeSummary =
+      async (
+        key: string,
+        program:
+          | 'reg'
+          | 'phd',
+      ): Promise<
+        ParsedTable[]
+      > => {
+        try {
+          return await getSummary(
+            key,
+            program,
+          );
+        } catch (e) {
+          if (
+            e instanceof
+            SourceHaltedError
+          )
+            throw e;
+          if (
+            e instanceof
+            UnexpectedPageError
+          )
+            session.noteFailure(
+              'unexpected summary',
+            );
+          summaryFailed++;
+          log.warn(
+            `backfill: ${key} summary ${program} ignored: ${brief(e)}`,
+          );
+          return [];
+        }
+      };
+
     const processSchool =
       async (
         key: string,
@@ -606,7 +644,7 @@ export async function runBackfill(
           session.noteSuccess();
           const extra: ParsedTable[] =
             [
-              ...(await getSummary(
+              ...(await safeSummary(
                 key,
                 'reg',
               )),
@@ -621,7 +659,7 @@ export async function runBackfill(
             )
           )
             extra.push(
-              ...(await getSummary(
+              ...(await safeSummary(
                 key,
                 'phd',
               )),
