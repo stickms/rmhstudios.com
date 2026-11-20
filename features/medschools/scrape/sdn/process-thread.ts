@@ -386,17 +386,22 @@ export async function processThread(
       );
   }
 
-  /** One chunk through the model. A poisoned chunk is retried per post (Q22); outage/budget abort it. */
+  /**
+   * One chunk through the model. A poisoned chunk is retried per post (Q22). An outage or budget stop partway
+   * through the per-post retry returns `stop` together with the contiguous prefix already extracted
+   * (`completed`, in order), so the caller can commit what was paid for.
+   */
   async function extractChunk(
     chunk: SdnPost[],
     parsed: ParsedThreadPage,
-  ): Promise<
-    | Map<
-        SdnPost,
-        ExtractedPost
-      >
-    | ChunkStop
-  > {
+  ): Promise<{
+    results: Map<
+      SdnPost,
+      ExtractedPost
+    >;
+    completed: SdnPost[];
+    stop?: ChunkStop;
+  }> {
     const ctx =
       {
         cycleYear:
@@ -448,14 +453,25 @@ export async function processThread(
             r,
           );
       }
-      return results;
+      return {
+        results,
+        completed:
+          chunk,
+      };
     }
     if (
       whole.reason !==
       'schema'
     )
-      return whole.reason;
+      return {
+        results,
+        completed:
+          [],
+        stop: whole.reason,
+      };
     counters.batchesDropped++;
+    const completed: SdnPost[] =
+      [];
     for (const post of chunk) {
       const one =
         await extractBatch(
@@ -489,10 +505,20 @@ export async function processThread(
       ) {
         counters.extractFailed++;
       } else {
-        return one.reason;
+        return {
+          results,
+          completed,
+          stop: one.reason,
+        };
       }
+      completed.push(
+        post,
+      );
     }
-    return results;
+    return {
+      results,
+      completed,
+    };
   }
 
   let page =
@@ -608,8 +634,20 @@ export async function processThread(
       hash &&
       idx <
         0
-    )
+    ) {
+      // The cursor post is gone. Deleting earlier posts can pull the cursor's neighbours back onto the previous
+      // page, so reprocess from one page earlier (event and question hashes keep the repeat harmless).
       counters.cursorLost++;
+      if (
+        page >
+        1
+      ) {
+        page--;
+        hash =
+          null;
+        continue;
+      }
+    }
     const fresh =
       idx >=
       0
@@ -703,12 +741,48 @@ export async function processThread(
             chunk,
             parsed,
           );
+        results =
+          out.results;
         if (
-          typeof out ===
-          'string'
+          out.stop
         ) {
+          // Commit the contiguous prefix already paid for before pausing.
+          const lastDone =
+            out
+              .completed[
+              out
+                .completed
+                .length -
+                1
+            ];
           if (
-            out ===
+            lastDone
+          ) {
+            const prefix =
+              span.slice(
+                0,
+                span.indexOf(
+                  lastDone,
+                ) +
+                  1,
+              );
+            try {
+              await commit(
+                page,
+                prefix,
+                results,
+              );
+            } catch {
+              log.error(
+                'sdn thread: chunk write failed; cursor kept',
+              );
+              return finish(
+                'failed',
+              );
+            }
+          }
+          if (
+            out.stop ===
             'outage'
           )
             return finish(
@@ -720,8 +794,6 @@ export async function processThread(
               : 'paused-budget',
           );
         }
-        results =
-          out;
       }
       try {
         await commit(

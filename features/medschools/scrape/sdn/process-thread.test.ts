@@ -1919,6 +1919,197 @@ describe('processThread', () => {
     );
   });
 
+  it('a lost cursor on page N reprocesses page N-1 too, so deleted earlier posts cannot hide its tail', async () => {
+    // cursor post 200 was first on page 2; two posts before it were deleted, so 200 and its successors
+    // slid back onto page 1's tail, and 200 itself is now gone from page 2 as seen below
+    const body =
+      {
+        [path(
+          1,
+        )]:
+          page(
+            [
+              ...posts(
+                100,
+                1,
+              ),
+              {
+                id: 150,
+                text: 'interview NEWTAILPOST',
+              },
+            ],
+            2,
+          ),
+        [path(
+          2,
+        )]:
+          page(
+            posts(
+              201,
+              2,
+            ),
+            2,
+          ),
+      };
+    const s =
+      setup(
+        {
+          routes:
+            body,
+        },
+      );
+    const seeded =
+      await s.seed(
+        {
+          cursorPage: 2,
+          cursorPostHash:
+            'hash-of-a-deleted-post',
+        },
+      );
+    const r =
+      await processThread(
+        s.deps,
+        seeded,
+      );
+    expect(
+      r.outcome,
+    ).toBe(
+      'caught-up',
+    );
+    expect(
+      r
+        .counters
+        .cursorLost,
+    ).toBe(
+      1,
+    );
+    expect(
+      s.requested,
+    ).toEqual(
+      [
+        path(
+          2,
+        ),
+        path(
+          1,
+        ),
+        path(
+          2,
+        ),
+      ],
+    );
+    expect(
+      r.eventsCreated,
+    ).toBe(
+      4,
+    );
+    const texts =
+      s.payloads.join(
+        ' ',
+      );
+    expect(
+      texts,
+    ).toContain(
+      'NEWTAILPOST',
+    );
+  });
+
+  it('an outage partway through the per-post retry commits the prefix already extracted', async () => {
+    const mixed =
+      [
+        {
+          id: 100,
+          text: 'interview one',
+        },
+        {
+          id: 101,
+          text: 'interview two',
+        },
+        {
+          id: 102,
+          text: 'interview THIRD',
+        },
+      ];
+    const s =
+      setup(
+        {
+          routes:
+            {
+              [path(
+                1,
+              )]:
+                page(
+                  mixed,
+                  1,
+                ),
+            },
+          answer:
+            (
+              reqs,
+            ) => {
+              if (
+                reqs.length >
+                1
+              )
+                return 'not json'; // poison the whole chunk
+              if (
+                reqs[0]!.text.includes(
+                  'THIRD',
+                )
+              )
+                throw new Error(
+                  'provider down',
+                );
+              return eventFor(
+                reqs,
+              );
+            },
+        },
+      );
+    const r =
+      await processThread(
+        s.deps,
+        await s.seed(),
+      );
+    expect(
+      r.outcome,
+    ).toBe(
+      'ai-unavailable',
+    );
+    expect(
+      r.eventsCreated,
+    ).toBe(
+      2,
+    );
+    expect(
+      eventRows(
+        s.tables,
+      ),
+    ).toHaveLength(
+      2,
+    );
+    const t =
+      await s.fresh();
+    expect(
+      t.postsProcessed,
+    ).toBe(
+      2,
+    );
+    expect(
+      t.cursorPostHash,
+    ).not.toBeNull();
+    expect(
+      t.repliesDone,
+    ).toBe(
+      0,
+    );
+    expect(
+      r.touched,
+    ).toHaveLength(
+      1,
+    );
+  });
+
   it('counters and touched cells are numbers and plain cells only; the hostile thread leaks nothing', async () => {
     const hostileIds =
       [
