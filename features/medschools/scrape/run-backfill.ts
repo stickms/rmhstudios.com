@@ -62,7 +62,6 @@ type Outcome =
 
 const JOB =
   'backfill';
-const MAX_LISTED = 50;
 
 const readStats =
   (
@@ -75,6 +74,7 @@ const readStats =
         skipped?: unknown;
         retried?: unknown;
         missing?: unknown;
+        attempted?: unknown;
       };
     const strings =
       (
@@ -137,6 +137,10 @@ const readStats =
       missing:
         strings(
           s.missing,
+        ),
+      attempted:
+        strings(
+          s.attempted,
         ),
     };
   };
@@ -323,6 +327,14 @@ export async function runBackfill(
     new Set(
       resumed.retried,
     );
+  const attempted =
+    new Set(
+      resumed.attempted,
+    ); // every key tried so far (completed, skipped or missing); keys only
+  const resumeKey =
+    resumed
+      .cursor
+      .lastKey;
   const missing =
     new Set(
       resumed.missing,
@@ -347,10 +359,7 @@ export async function runBackfill(
       skipped:
         [
           ...skipped,
-        ].slice(
-          0,
-          MAX_LISTED,
-        ),
+        ],
       skippedCount:
         skipped.size,
       retried:
@@ -360,6 +369,10 @@ export async function runBackfill(
       missing:
         [
           ...missing,
+        ],
+      attempted:
+        [
+          ...attempted,
         ],
       schools:
         summary.schools,
@@ -746,6 +759,9 @@ export async function runBackfill(
           halted = true; // the cursor stays on the failing school, so the next run resumes there
           break;
         }
+        attempted.add(
+          target.sourceKey,
+        );
         if (
           outcome !==
           'ok'
@@ -776,6 +792,81 @@ export async function runBackfill(
               statsNow(),
           },
         );
+      }
+
+      if (
+        !stopped &&
+        !halted
+      ) {
+        // Schools added before the cursor since the last run were never attempted: fetch each once, in key order.
+        const stragglers =
+          targets.filter(
+            (
+              t,
+            ) =>
+              resumeKey !==
+                null &&
+              t.sourceKey <=
+                resumeKey &&
+              !attempted.has(
+                t.sourceKey,
+              ),
+          );
+        for (const t of stragglers) {
+          if (
+            deps.shouldStop()
+          ) {
+            stopped = true;
+            break;
+          }
+          if (
+            session.halted
+          ) {
+            halted = true;
+            break;
+          }
+          const outcome =
+            await processSchool(
+              t.sourceKey,
+              t.schoolId,
+            );
+          if (
+            outcome ===
+            'failed'
+          )
+            failed++;
+          if (
+            outcome ===
+              'failed' &&
+            session.halted
+          ) {
+            halted = true;
+            break;
+          }
+          attempted.add(
+            t.sourceKey,
+          );
+          if (
+            outcome !==
+            'ok'
+          )
+            skipped.add(
+              t.sourceKey,
+            );
+          if (
+            outcome ===
+            'missing'
+          )
+            missing.add(
+              t.sourceKey,
+            );
+          await persist(
+            {
+              stats:
+                statsNow(),
+            },
+          );
+        }
       }
 
       if (

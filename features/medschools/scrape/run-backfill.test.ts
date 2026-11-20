@@ -545,6 +545,11 @@ describe('runBackfill', () => {
                 lastKey:
                   'Alabama COM',
               },
+            attempted:
+              [
+                'A.T. Still - Arizona',
+                'Alabama COM',
+              ],
           },
         error:
           null,
@@ -1045,7 +1050,7 @@ describe('runBackfill', () => {
     );
   });
 
-  it('resumes by key, so a school added before the cursor is neither skipped nor repeated', async () => {
+  it('resumes by key, so a school added before the cursor is fetched once at the end of the stage and nothing is repeated', async () => {
     const s =
       setup(
         {
@@ -1122,9 +1127,13 @@ describe('runBackfill', () => {
           ),
       ),
     ).toEqual(
+      // Yale is the unfinished school; 'A Early' (added before the cursor) is fetched once at the end; nothing repeats.
       [
         schoolUrl(
           'Yale',
+        ),
+        schoolUrl(
+          'A Early',
         ),
       ],
     );
