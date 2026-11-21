@@ -110,6 +110,19 @@ html.ios-webkit .globe-nav__fade {
     opacity 0.2s ease,
     visibility 0s linear 0.2s;
 }
+/* iOS: Safari fills the strip behind its floating tab bar from a painted fixed layer at the edge, and the open veil is one,
+   so a flat band showed there while the globe was open. The veil keeps its job as the press target but paints nothing,
+   and the page behind it is dimmed itself: .site-main at 20% over the ground is the same picture as the veil's
+   `--site-bg` at 80% over the page, with no layer at an edge. */
+html.ios-webkit .globe-nav__veil {
+  background: transparent;
+}
+html.ios-webkit .site-main {
+  transition: opacity 0.2s ease;
+}
+html.ios-webkit .site-main:has(~ .globe-nav[data-open]) {
+  opacity: 0.2;
+}
 .globe-nav[data-open] .globe-nav__veil {
   opacity: 0.8;
   visibility: visible;
