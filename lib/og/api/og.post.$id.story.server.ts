@@ -2,7 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { renderPostStoryImage } from '@/lib/og/post-story.server';
-import { postCardShowsContent } from '@/lib/og/post-visibility';
+import { postCardContentWarning, postCardShowsContent } from '@/lib/og/post-visibility';
+import { contentWarningNotice } from '@/lib/feed/content-warning';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 
 /**
@@ -20,6 +21,7 @@ export const route = apiRoute('/api/og/post/$id/story', {
         audience: true,
         unlockPrice: true,
         isSensitive: true,
+        contentWarning: true,
         community: { select: { isPrivate: true } },
         // The display shape, so the story card names the author the same
         // way every other surface does (see @/lib/user-display).
@@ -28,11 +30,13 @@ export const route = apiRoute('/api/og/post/$id/story', {
     });
 
     const showContent = postCardShowsContent(post);
+    // The reason stands in for the text of a warned post (sprint 06 #16).
+    const warning = postCardContentWarning(post);
     const author = post?.user ? resolveUser(post.user) : null;
 
     const png = await renderPostStoryImage({
       id: params.id,
-      content: showContent ? (post?.content ?? '') : '',
+      content: showContent ? (post?.content ?? '') : warning ? contentWarningNotice(warning) : '',
       authorName: author?.name ?? 'RMH Studios',
       authorHandle: author?.handle ?? null,
       authorImage: author?.image ?? null,

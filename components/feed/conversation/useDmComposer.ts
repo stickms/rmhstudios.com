@@ -19,6 +19,7 @@ import { useMessageImageAlts } from '@/components/feed/useMessageImageAlts';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { sendToConversationApi } from '@/lib/messages/message-actions.contract';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import type { SenderRequestState } from '@/lib/messages/requests';
 import type { SentVoiceMessage } from '@/lib/messages/voice.contract';
 import {
@@ -165,6 +166,15 @@ export function useDmComposer({
     useMessageImageAlts(
       imageUrls,
     );
+  // The pending GIF's description (sprint 06 #15), prefilled from the picker. Declared after the hook the
+  // characterization suite counts up to, so its ordinals do not move.
+  const [
+    gifAlt,
+    setGifAlt,
+  ] =
+    useState(
+      '',
+    );
 
   const inputRef =
     useRef<HTMLTextAreaElement>(
@@ -291,11 +301,15 @@ export function useDmComposer({
         onPosted:
           appendPosted,
         onPickGif:
-          (
+          ({
             url,
-          ) => {
+            description,
+          }) => {
             setGifUrl(
               url,
+            );
+            setGifAlt(
+              description,
             );
             setTimeout(
               () =>
@@ -444,6 +458,8 @@ export function useDmComposer({
         input.trim();
       const pendingGif =
         gifUrl;
+      const pendingGifAlt =
+        gifAlt;
       const pendingImages =
         imageUrls;
       const pendingAlts =
@@ -502,6 +518,13 @@ export function useDmComposer({
             new Date().toISOString(),
           gifUrl:
             pendingGif,
+          gifAlt:
+            pendingGif
+              ? normalizeGifAlt(
+                  pendingGif,
+                  pendingGifAlt,
+                )
+              : null,
           imageUrls:
             pendingImages,
           imageAlts:
@@ -521,6 +544,9 @@ export function useDmComposer({
       shortcodes.dismiss();
       setGifUrl(
         null,
+      );
+      setGifAlt(
+        '',
       );
       setImageUrls(
         [],
@@ -558,6 +584,12 @@ export function useDmComposer({
                   ? {
                       gifUrl:
                         pendingGif,
+                      ...(pendingGifAlt.trim()
+                        ? {
+                            gifAlt:
+                              pendingGifAlt.trim(),
+                          }
+                        : {}),
                     }
                   : {}),
                 ...(pendingImages.length
@@ -637,6 +669,9 @@ export function useDmComposer({
         setGifUrl(
           pendingGif,
         );
+        setGifAlt(
+          pendingGifAlt,
+        );
         setImageUrls(
           pendingImages,
         );
@@ -673,6 +708,8 @@ export function useDmComposer({
     setAttachOpen,
     gifUrl,
     setGifUrl,
+    gifAlt,
+    setGifAlt,
     imageUrls,
     setImageUrls,
     imageAlts,

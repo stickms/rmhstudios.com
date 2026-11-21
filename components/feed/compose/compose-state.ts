@@ -6,6 +6,7 @@
  */
 import type { FeedItem } from '@/lib/feed-types';
 import { MIN_POLL_OPTIONS } from '@/lib/rmhark-limits';
+import { rankedPollIssues } from '@/lib/feed/ranked-poll';
 
 export const MAX_IMAGES = 4;
 
@@ -27,6 +28,8 @@ export interface PollDraft {
   question: string;
   options: string[];
   multiSelect: boolean;
+  /** s06-19: a ranked-choice poll (3 to 6 options, a required length). Absent means false. */
+  ranked?: boolean;
 }
 
 /** A fresh, empty poll. A new object each call — state must never share one. */
@@ -47,19 +50,38 @@ export function emptyPoll(): PollDraft {
 export function isPollPostable(
   attachment: Attachment,
   poll: PollDraft,
+  /** The poll's length in hours (0 = no limit); a ranked poll needs one. Omitted when the caller has none. */
+  pollDuration?: number,
 ): boolean {
-  return (
-    attachment ===
-      'poll' &&
-    !!poll.question.trim() &&
+  const filled =
     poll.options.filter(
       (
         o,
       ) =>
         o.trim(),
-    )
-      .length >=
-      MIN_POLL_OPTIONS
+    ).length;
+  const rankedOk =
+    !poll.ranked ||
+    (rankedPollIssues(
+      {
+        ranked: true,
+        multiSelect:
+          poll.multiSelect,
+        optionCount:
+          filled,
+        durationHours:
+          pollDuration ??
+          1,
+      },
+    ).length ===
+      0);
+  return (
+    attachment ===
+      'poll' &&
+    !!poll.question.trim() &&
+    filled >=
+      MIN_POLL_OPTIONS &&
+    rankedOk
   );
 }
 
@@ -163,11 +185,15 @@ export interface ComposeBodyInput {
   pollDuration: number;
   hasGif: boolean;
   gifUrl: string;
+  /** The GIF's description (s06-15); sent only beside a GIF, and only when it is not blank. */
+  gifAlt?: string;
   hasImages: boolean;
   imageUrls: string[];
   imageAlts: string[];
   audience: AudienceValue;
   isSensitive: boolean;
+  /** Why the post is warned (s06-16); sent only while the warning is on, and only when not blank. */
+  contentWarning?: string;
   isTake: boolean;
   replyControl: ReplyControlValue;
   unlockPrice: string;
@@ -227,6 +253,12 @@ export function buildComposeBody(
           i
             .poll
             .multiSelect,
+        ...(i.poll
+          .ranked
+          ? {
+              ranked: true,
+            }
+          : {}),
         ...(i.pollDuration >
         0
           ? {
@@ -238,9 +270,15 @@ export function buildComposeBody(
   }
   if (
     i.hasGif
-  )
+  ) {
     body.gifUrl =
       i.gifUrl.trim();
+    if (
+      i.gifAlt?.trim()
+    )
+      body.gifAlt =
+        i.gifAlt.trim();
+  }
   if (
     i.hasImages
   ) {
@@ -279,6 +317,8 @@ export function buildComposeBody(
     i.isSensitive
   )
     body.isSensitive = true;
+  if (i.isSensitive && i.contentWarning?.trim())
+    body.contentWarning = i.contentWarning.trim();
   if (
     i.isTake
   )
@@ -356,10 +396,12 @@ export interface OptimisticItemInput {
   imageUrls: string[];
   imageAlts: string[];
   isSensitive: boolean;
+  contentWarning?: string;
   isTake: boolean;
   replyControl: ReplyControlValue;
   hasGif: boolean;
   gifUrl: string;
+  gifAlt?: string;
   hasPoll: boolean;
   poll: PollDraft;
   unlockPrice: string;
@@ -433,6 +475,8 @@ export function buildOptimisticItem(
         : undefined,
     isSensitive:
       i.isSensitive,
+    contentWarning:
+      (i.isSensitive && i.contentWarning?.trim()) || undefined,
     isTake:
       i.isTake ||
       undefined,
@@ -441,6 +485,11 @@ export function buildOptimisticItem(
     gifUrl:
       i.hasGif
         ? i.gifUrl.trim()
+        : undefined,
+    gifAlt:
+      i.hasGif &&
+      i.gifAlt?.trim()
+        ? i.gifAlt.trim()
         : undefined,
     poll: i.hasPoll
       ? {
@@ -451,6 +500,13 @@ export function buildOptimisticItem(
             i
               .poll
               .multiSelect,
+          ...(i.poll
+            .ranked
+            ? {
+                ranked:
+                  true as const,
+              }
+            : {}),
           totalVotes: 0,
           options:
             i.poll.options

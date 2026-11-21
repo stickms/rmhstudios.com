@@ -28,6 +28,7 @@ import {
   imageAltsAligned,
   normalizeImageAlts,
 } from '@/lib/messages/image-alts';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { notifyUser } from '@/lib/message-events';
 import {
   publishGroupMessage,
@@ -40,6 +41,7 @@ import {
   serializeGroupMessages,
 } from '@/lib/group-chat/serialize.server';
 import type { SentDirectMessage } from '@/lib/messages/messages.contract';
+import { afterDirectMessage } from '@/lib/messages/away.server';
 import { clearStaleDraft, openRequest, requestGate } from '@/lib/messages/requests.server';
 import {
   gateRefusalCopy,
@@ -155,6 +157,10 @@ export async function guardImageAlts(
 export interface DirectMessageInput {
   content: string;
   gifUrl?:
+    | string
+    | undefined;
+  /** The GIF's description (sprint 06 #15); stored only beside a GIF, cleaned by `normalizeGifAlt`. */
+  gifAlt?:
     | string
     | undefined;
   imageUrls?:
@@ -389,6 +395,11 @@ export async function sendDirectMessage(
               gifUrl:
                 input.gifUrl ??
                 null,
+              gifAlt:
+                normalizeGifAlt(
+                  input.gifUrl,
+                  input.gifAlt,
+                ),
               imageUrls:
                 input.imageUrls ??
                 [],
@@ -437,6 +448,8 @@ export async function sendDirectMessage(
         message.createdAt.toISOString(),
       gifUrl:
         message.gifUrl,
+      gifAlt:
+        message.gifAlt,
       imageUrls:
         message.imageUrls,
       imageAlts:
@@ -467,6 +480,8 @@ export async function sendDirectMessage(
           messagePayload,
       },
     );
+    // s06-18: an active away message answers once per conversation per period (best-effort, never throws).
+    void afterDirectMessage({ senderId: userId, recipientId, chatId: conversationId });
   }
 
   return {
@@ -551,6 +566,9 @@ export interface GroupMessageInput {
   gifUrl?:
     | string
     | undefined;
+  gifAlt?:
+    | string
+    | undefined;
   imageUrls?:
     | string[]
     | undefined;
@@ -624,6 +642,7 @@ export async function sendGroupMessage(
   const {
     content,
     gifUrl,
+    gifAlt,
     imageUrls,
     imageAlts,
     poll,
@@ -701,6 +720,11 @@ export async function sendGroupMessage(
               gifUrl:
                 gifUrl ??
                 null,
+              gifAlt:
+                normalizeGifAlt(
+                  gifUrl,
+                  gifAlt,
+                ),
               imageUrls:
                 imageUrls ??
                 [],

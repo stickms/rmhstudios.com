@@ -32,6 +32,8 @@ import { registerArcadeCrons } from '@/lib/arcade/jobs.server';
 import { GAME_UPDATE_FANOUT_QUEUE, registerGameUpdateFanoutWorker } from '@/lib/arcade/updates-jobs.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
 import { registerCommunityCrons } from '@/lib/communities/jobs.server';
+import { UPDATE_FANOUT_QUEUE } from '@/lib/events/updates';
+import { registerEventUpdateWorker } from '@/lib/events/updates.server';
 import { POST_ALERT_QUEUE, registerCommunityPostAlertWorker } from '@/lib/communities/post-alerts.server';
 import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
 import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
@@ -52,6 +54,7 @@ import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { SEND_SCHEDULED_QUEUE, registerSendScheduledMessagesCron } from '@/lib/messages/scheduled-jobs.server';
 import { PARTY_REMINDERS_QUEUE, registerPartyRemindersCron } from '@/lib/rmhtube/parties-jobs.server';
 import { DAILY_PUZZLE_PREWARM_QUEUE, registerDailyPuzzlePrewarmCron } from '@/lib/daily-puzzles/prewarm.server';
+import { MATCH_CLAIM_QUEUE, registerMatchClaimCron } from '@/lib/tournaments/match-results.server';
 import { CHECKIN_OPEN_QUEUE, registerCheckInOpenCron } from '@/lib/tournaments/checkin-jobs.server';
 import { POLL_ENDED_QUEUE, registerPollEndedCron } from '@/lib/feed/poll-lifecycle-jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
@@ -230,6 +233,15 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // s05-20 flashcard-reminders
   // s05-20: every minute, send the daily "flashcards are due" reminder to members whose chosen local time has come (once a day).
   { queue: STUDY_REMINDER_QUEUE, register: registerStudyReminderCron },
+
+  // Sprint 06 (docs/autonomous/sprint-06/plan.md §Anchors)
+  // s06-11 event-updates
+  // s06-11: a work queue fed by an event update being posted; tells the people going, maybe or waitlisted (once).
+  { queue: UPDATE_FANOUT_QUEUE, register: registerEventUpdateWorker },
+
+  // s06-20 match-results
+  // s06-20: every minute, settle result claims the opponent left unanswered for 15 minutes (never one that would finish the tournament).
+  { queue: MATCH_CLAIM_QUEUE, register: registerMatchClaimCron },
 
 ];
 

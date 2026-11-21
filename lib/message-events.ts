@@ -27,6 +27,10 @@ export type MessagePayload =
     gifUrl?:
       | string
       | null;
+    /** The GIF's description (sprint 06 #15). */
+    gifAlt?:
+      | string
+      | null;
     imageUrls?: string[];
     /** Image descriptions, index-aligned with `imageUrls`. */
     imageAlts?: string[];

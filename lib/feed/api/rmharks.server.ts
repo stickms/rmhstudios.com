@@ -34,6 +34,8 @@ import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
 import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
 import { derivePostKind } from '@/lib/communities/automod';
 import { listFlairs } from '@/lib/communities/flairs.server';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
+import { normalizeContentWarning, previewTextFor } from '@/lib/feed/content-warning';
 import { challengeEntryError } from '@/lib/communities/challenge.server';
 import { enqueuePostDiscovery } from '@/lib/discovery/jobs.server';
 import { planPostsPlus, recordPostsPlusTx, afterPostsPlus } from '@/lib/posts-plus/compose.server';
@@ -145,11 +147,13 @@ export const route = apiRoute('/api/rmharks', {
         content,
         poll,
         gifUrl,
+        gifAlt,
         imageUrls,
         imageAlts,
         originalId,
         audience,
         isSensitive,
+        contentWarning,
         replyControl,
         unlockPrice,
         communityId,
@@ -189,7 +193,10 @@ export const route = apiRoute('/api/rmharks', {
 
       // Require-alt-text mode (X12): the author's own setting, enforced here
       // as well as in the composer. Only looked up when the post has images.
-      const altError = await altTextViolation(session.user.id, imageUrls, imageAlts);
+      const altError = await altTextViolation(session.user.id, imageUrls, imageAlts, {
+        url: gifUrl,
+        alt: gifAlt,
+      });
       if (altError) {
         return Response.json({ error: altError }, { status: 400 });
       }
@@ -246,7 +253,10 @@ export const route = apiRoute('/api/rmharks', {
           flairId,
         });
         if (gate.kind === 'deny') {
-          return Response.json({ error: gate.error, code: gate.code }, { status: gate.status });
+          return Response.json(
+            { error: gate.error, code: gate.code, ...(gate.endsAt !== undefined ? { endsAt: gate.endsAt } : {}) },
+            { status: gate.status },
+          );
         }
         if (gate.kind === 'remove') {
           await logRemoved({
@@ -334,12 +344,13 @@ export const route = apiRoute('/api/rmharks', {
           data: {
             content: content.trim(),
             gifUrl: gifUrl ?? null,
+            gifAlt: normalizeGifAlt(gifUrl, gifAlt),
             imageUrls: imageUrls ?? [],
             imageAlts: cleanImageAlts,
             userId: session.user.id,
             originalId: quotedOriginalId,
             audience: audience ?? 'PUBLIC',
-            isSensitive: isSensitive ?? false,
+            ...normalizeContentWarning({ isSensitive, contentWarning }),
             replyControl: replyControl ?? 'EVERYONE',
             unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
             communityId: communityId ?? null,
@@ -409,6 +420,7 @@ export const route = apiRoute('/api/rmharks', {
               rmheetId: created.id,
               question: poll.question.trim(),
               multiSelect: poll.multiSelect,
+              ranked: poll.ranked,
               closesAt: poll.durationHours
                 ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000)
                 : null,
@@ -481,6 +493,7 @@ export const route = apiRoute('/api/rmharks', {
             id: createdPoll.id,
             question: createdPoll.question,
             multiSelect: createdPoll.multiSelect,
+            ...(createdPoll.ranked ? { ranked: true as const } : {}),
             totalVotes: 0,
             options: createdPoll.options.map((o) => ({
               id: o.id,
@@ -506,9 +519,11 @@ export const route = apiRoute('/api/rmharks', {
         reposted: false,
         poll: pollData,
         gifUrl: rmhark.gifUrl ?? undefined,
+        gifAlt: rmhark.gifAlt ?? undefined,
         imageUrls: rmhark.imageUrls,
         imageAlts: rmhark.imageAlts,
         isSensitive: rmhark.isSensitive,
+        contentWarning: rmhark.contentWarning ?? undefined,
         replyControl: rmhark.replyControl,
         isTake: rmhark.isTake || undefined,
         hasEmbed: rmhark.hasEmbed || undefined,
@@ -537,11 +552,13 @@ export const route = apiRoute('/api/rmharks', {
             repostCount: true,
             viewCount: true,
             gifUrl: true,
+            gifAlt: true,
             imageUrls: true,
             imageAlts: true,
             unlockPrice: true,
             audience: true,
             isSensitive: true,
+            contentWarning: true,
             deletedAt: true,
             deletedByAdmin: true,
             userId: true,
@@ -569,7 +586,7 @@ export const route = apiRoute('/api/rmharks', {
             type: 'REPOST',
             entityType: 'rmhark',
             entityId: item.id,
-            preview: content.trim().slice(0, 140) || null,
+            preview: previewTextFor({ content: content.trim(), contentWarning: rmhark.contentWarning })?.slice(0, 140) || null,
             link: `/u/${item.user?.handle ?? '_'}/post/${item.id}`,
             conversationKey: postConversationKey(orig),
           });
@@ -590,6 +607,7 @@ export const route = apiRoute('/api/rmharks', {
               imageUrls: undefined,
               imageAlts: undefined,
               gifUrl: undefined,
+              gifAlt: undefined,
               poll: undefined,
               locked: true,
               unlockPrice,
@@ -613,6 +631,7 @@ export const route = apiRoute('/api/rmharks', {
       if (mentionAuthor) {
         void notifyMentions({
           content: rmhark.content,
+          contentWarning: rmhark.contentWarning,
           author: {
             id: mentionAuthor.id,
             name: mentionAuthor.name ?? null,

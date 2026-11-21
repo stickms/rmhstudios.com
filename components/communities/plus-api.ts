@@ -8,6 +8,8 @@ export interface ApiResult<
   error:
     | string
     | null;
+  /** The parsed JSON body of a failed call (its `code` and other fields), `null` on success. */
+  errorBody?: unknown;
 }
 
 export async function plusFetch<
@@ -71,6 +73,10 @@ export async function plusFetch<
           ? null
           : (data?.error ??
             null),
+      errorBody:
+        res.ok
+          ? null
+          : data,
     };
   } catch {
     return {

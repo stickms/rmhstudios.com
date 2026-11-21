@@ -37,6 +37,7 @@ export function GroupComposerBar({
     sending,
     gifUrl,
     setGifUrl,
+    gifAlt,
     imageUrls,
     setImageUrls,
     imageAlts,
@@ -189,7 +190,7 @@ export function GroupComposerBar({
         <SendLaterMenu
           chatId={group.id}
           disabled={!canSchedule}
-          getDraft={() => ({ content: input, gifUrl, imageUrls, imageAlts: imageAlts.alts })}
+          getDraft={() => ({ content: input, gifUrl, gifAlt, imageUrls, imageAlts: imageAlts.alts })}
           onScheduled={() => {
             setInput('');
             setGifUrl(null);

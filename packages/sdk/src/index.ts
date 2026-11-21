@@ -50,7 +50,7 @@ export interface ListMyBookmarksArgs {
   cursor?: string;
 }
 
-export type ListMyBookmarksResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string }; bookmarkedAt: string }[]; nextCursor: string | null };
+export type ListMyBookmarksResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string }; bookmarkedAt: string }[]; nextCursor: string | null };
 
 export interface ListMyFollowingArgs {
   /** Page size, 1–50 (default 20). */
@@ -77,7 +77,7 @@ export interface ListMyPostsArgs {
   cursor?: string;
 }
 
-export type ListMyPostsResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null }[]; nextCursor: string };
+export type ListMyPostsResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null }[]; nextCursor: string };
 
 export interface CreatePostBody {
   /** 1–280 characters. Optional if at least one `media_ids` entry is supplied. */
@@ -101,7 +101,7 @@ export interface GetPostArgs {
   id: string;
 }
 
-export type GetPostResponse = { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null; author: { id: string; name: string; handle: string; image: string } };
+export type GetPostResponse = { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null; poll: { id: string; question: string; multiSelect: boolean; ranked: boolean; ended: boolean; closesAt: string | null; options: { id: string; text: string }[]; result: { winnerOptionId: string | null; percentOnly: boolean; rounds: { tally: Record<string, number>; eliminatedOptionId: string | null }[] } | null } | null; author: { id: string; name: string; handle: string; image: string } };
 
 export interface DeletePostArgs {
   /** The post id. */
@@ -181,7 +181,7 @@ export interface GetFeedArgs {
   cursor?: string;
 }
 
-export type GetFeedResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string };
+export type GetFeedResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string };
 
 export interface GetUserArgs {
   /** The user’s handle (without @). */
@@ -199,7 +199,7 @@ export interface ListUserPostsArgs {
   cursor?: string;
 }
 
-export type ListUserPostsResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string | null };
+export type ListUserPostsResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string | null };
 
 export interface ListUserFollowersArgs {
   /** The user’s handle. */
@@ -392,6 +392,162 @@ export interface DeleteWebhookArgs {
 }
 
 export type GetOpenApiResponse = { openapi: string; info: { title: string; version: string } };
+
+export interface ListMyPersonalBestsArgs {
+  /** Only this game. */
+  gameId?: string;
+  /** ISO 8601 time; only games whose current best was set at or after it. */
+  since?: string;
+  /** Page size, 1–100 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyPersonalBestsResponse = { data: { gameId: string; gameTitle: string; score: number; previousScore: number | null; achievedAt: string }[]; nextCursor: string | null };
+
+export interface ListMyDecksArgs {
+  /** Page size, 1–100 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyDecksResponse = { data: { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; updatedAt: string }[]; nextCursor: string | null };
+
+export interface CreateMyDeckBody {
+  /** 1–100 characters. */
+  title?: string;
+  /** Up to 500 characters. */
+  description?: string;
+  /** List the deck in the public marketplace (default false). */
+  isPublic?: boolean;
+}
+
+export interface CreateMyDeckArgs {
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateMyDeckBody;
+}
+
+export type CreateMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; updatedAt: string };
+
+export interface GetMyDeckArgs {
+  /** The deck id. */
+  id: string;
+}
+
+export type GetMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; updatedAt: string };
+
+export interface UpdateMyDeckBody {
+  /** 1–100 characters. */
+  title?: string;
+  /** Up to 500 characters; empty clears it. */
+  description?: string;
+  /** Public in the marketplace. */
+  isPublic?: boolean;
+}
+
+export interface UpdateMyDeckArgs {
+  /** The deck id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyDeckBody;
+}
+
+export type UpdateMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; updatedAt: string };
+
+export interface DeleteMyDeckArgs {
+  /** The deck id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface ListMyDeckCardsArgs {
+  /** The deck id. */
+  id: string;
+  /** Page size, 1–100 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null }[]; nextCursor: string | null };
+
+export interface CreateMyDeckCardsBody {
+  /** 1–100 cards: `{ kind?, front, back?, externalId? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. */
+  cards?: string[];
+}
+
+export interface CreateMyDeckCardsArgs {
+  /** The deck id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateMyDeckCardsBody;
+}
+
+export type CreateMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null }[]; cardCount: number };
+
+export interface UpdateMyDeckCardBody {
+  /** `basic`, `reversible` or `cloze`. */
+  kind?: string;
+  /** The front (a cloze card’s whole text). */
+  front?: string;
+  /** The back. */
+  back?: string;
+}
+
+export interface UpdateMyDeckCardArgs {
+  /** The deck id. */
+  id: string;
+  /** The card id. */
+  cardId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyDeckCardBody;
+}
+
+export type UpdateMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string | null };
+
+export interface DeleteMyDeckCardArgs {
+  /** The deck id. */
+  id: string;
+  /** The card id. */
+  cardId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface UpsertMyDeckCardBody {
+  /** `basic` (default), `reversible` or `cloze`. */
+  kind?: string;
+  /** The front. */
+  front?: string;
+  /** The back (not used by cloze cards). */
+  back?: string;
+}
+
+export interface UpsertMyDeckCardArgs {
+  /** The deck id. */
+  id: string;
+  /** Your own id for the card, up to 100 characters, unique in the deck. */
+  externalId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpsertMyDeckCardBody;
+}
+
+export type UpsertMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string };
+
+export interface GetMyDeckDueArgs {
+  /** The deck id. */
+  id: string;
+}
+
+export type GetMyDeckDueResponse = { deckId: string; dueNow: number; dueNext24h: number; asOf: string };
 
 export class RmhClient {
   private apiKey: string;
@@ -632,5 +788,65 @@ export class RmhClient {
   /** OpenAPI document (scope: none) */
   getOpenApi(): Promise<GetOpenApiResponse> {
     return this.request<GetOpenApiResponse>("GET", { path: "/api/v1/openapi.json" });
+  }
+
+  /** List your personal bests (scope: read:games) */
+  listMyPersonalBests(args: ListMyPersonalBestsArgs = {}): Promise<ListMyPersonalBestsResponse> {
+    return this.request<ListMyPersonalBestsResponse>("GET", { path: "/api/v1/me/personal-bests", query: { gameId: args.gameId, since: args.since, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List your decks (scope: read:study) */
+  listMyDecks(args: ListMyDecksArgs = {}): Promise<ListMyDecksResponse> {
+    return this.request<ListMyDecksResponse>("GET", { path: "/api/v1/me/decks", query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Create a deck (scope: write:study) */
+  createMyDeck(args: CreateMyDeckArgs): Promise<CreateMyDeckResponse> {
+    return this.request<CreateMyDeckResponse>("POST", { path: "/api/v1/me/decks", body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Get a deck (scope: read:study) */
+  getMyDeck(args: GetMyDeckArgs): Promise<GetMyDeckResponse> {
+    return this.request<GetMyDeckResponse>("GET", { path: "/api/v1/me/decks/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Update a deck (scope: write:study) */
+  updateMyDeck(args: UpdateMyDeckArgs): Promise<UpdateMyDeckResponse> {
+    return this.request<UpdateMyDeckResponse>("PATCH", { path: "/api/v1/me/decks/{id}", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Delete a deck (scope: write:study) */
+  deleteMyDeck(args: DeleteMyDeckArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/decks/{id}", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List a deck’s cards (scope: read:study) */
+  listMyDeckCards(args: ListMyDeckCardsArgs): Promise<ListMyDeckCardsResponse> {
+    return this.request<ListMyDeckCardsResponse>("GET", { path: "/api/v1/me/decks/{id}/cards", pathParams: { id: args.id }, query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Add cards (scope: write:study) */
+  createMyDeckCards(args: CreateMyDeckCardsArgs): Promise<CreateMyDeckCardsResponse> {
+    return this.request<CreateMyDeckCardsResponse>("POST", { path: "/api/v1/me/decks/{id}/cards", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Update a card (scope: write:study) */
+  updateMyDeckCard(args: UpdateMyDeckCardArgs): Promise<UpdateMyDeckCardResponse> {
+    return this.request<UpdateMyDeckCardResponse>("PATCH", { path: "/api/v1/me/decks/{id}/cards/{cardId}", pathParams: { id: args.id, cardId: args.cardId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Delete a card (scope: write:study) */
+  deleteMyDeckCard(args: DeleteMyDeckCardArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/decks/{id}/cards/{cardId}", pathParams: { id: args.id, cardId: args.cardId }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Create or update a card by external id (scope: write:study) */
+  upsertMyDeckCard(args: UpsertMyDeckCardArgs): Promise<UpsertMyDeckCardResponse> {
+    return this.request<UpsertMyDeckCardResponse>("PUT", { path: "/api/v1/me/decks/{id}/cards/by-external-id/{externalId}", pathParams: { id: args.id, externalId: args.externalId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Get due counts (scope: read:study) */
+  getMyDeckDue(args: GetMyDeckDueArgs): Promise<GetMyDeckDueResponse> {
+    return this.request<GetMyDeckDueResponse>("GET", { path: "/api/v1/me/decks/{id}/due", pathParams: { id: args.id } });
   }
 }

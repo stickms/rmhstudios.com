@@ -67,6 +67,12 @@ export function settingsNavText(t: TFunction): Record<string, SettingsNavText> {
       label: t('settings-nav-blocked', { ns: 'feed', defaultValue: 'Blocked and muted' }),
       hint: t('settings-nav-blocked-hint', { ns: 'feed', defaultValue: 'Everyone you blocked or muted, with the date, and unblock or unmute them' }),
     },
+    // Sprint 06
+    // s06-05 feedback-inbox
+    'feedback': {
+      label: t('settings-nav-feedback', { ns: 'feed', defaultValue: 'Your feedback' }),
+      hint: t('settings-nav-feedback-hint', { ns: 'feed', defaultValue: 'What you sent us, where it stands, and any reply' }),
+    },
     'privacy': {
       label: t('settings-nav-privacy', { ns: 'feed', defaultValue: 'Privacy & data' }),
       hint: t('settings-nav-privacy-hint', { ns: 'feed', defaultValue: 'Who sees you, close friends, calls, muted words, and your data' }),

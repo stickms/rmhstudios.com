@@ -25,4 +25,12 @@ describe('settings hub labels', () => {
     expect(d).toMatchObject({ to: '/settings/blocked', group: 'account', requiresAuth: true, label: 'Blocked and muted' });
     expect(settingsNavText(echoDefault)['blocked']).toEqual({ label: d!.label, hint: d!.hint });
   });
+
+  // Sprint 06
+  // s06-05 feedback-inbox
+  it('lists Your feedback under account, signed-in only', () => {
+    const d = SETTINGS_DESTINATIONS.find((x) => x.id === 'feedback');
+    expect(d).toMatchObject({ to: '/settings/feedback', group: 'account', requiresAuth: true, label: 'Your feedback' });
+    expect(settingsNavText(echoDefault)['feedback']).toEqual({ label: d!.label, hint: d!.hint });
+  });
 });

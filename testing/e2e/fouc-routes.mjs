@@ -193,6 +193,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'A 301 to `/c/$slug`; the audited paint is the community page it lands on.',
   },
+  '/groups/join/$code': {
+    path: '/groups/join/fouc-audit-no-such-code',
+    fidelity: 'shell',
+    why: 'Invalid-link branch of the group invite page (the same generic state every bad code renders).',
+  },
   '/groups/$id': {
     path: '/groups/fouc-audit',
     fidelity: 'shell',

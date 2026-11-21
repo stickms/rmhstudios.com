@@ -5,6 +5,7 @@ import {
   Tabs,
   type TabItem,
 } from '@/components/ui/tabs';
+import { ModBans } from '@/components/communities/ModBans';
 import { ModAutomod } from '@/components/communities/ModAutomod';
 import { ModFlairs } from '@/components/communities/ModFlairs';
 import { ModLog } from '@/components/communities/ModLog';
@@ -41,7 +42,10 @@ export default function ModPanel({
     t,
   } =
     useTranslation(
-      'f-communities-plus',
+      [
+        'f-communities-plus',
+        'community-bans',
+      ],
     );
   const {
     t: tr,
@@ -85,6 +89,18 @@ export default function ModPanel({
             {
               defaultValue:
                 'Log',
+            },
+          ),
+      },
+      {
+        id: 'bans',
+        label:
+          t(
+            'mod-tab',
+            {
+              ns: 'community-bans',
+              defaultValue:
+                'Bans',
             },
           ),
       },
@@ -226,6 +242,14 @@ export default function ModPanel({
       {sub ===
         'log' && (
         <ModLog
+          slug={
+            slug
+          }
+        />
+      )}
+      {sub ===
+        'bans' && (
+        <ModBans
           slug={
             slug
           }

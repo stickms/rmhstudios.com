@@ -39,6 +39,8 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `read:leaderboards` | Content | Read public game leaderboards. |
 | `read:slice-it` | Content | Read Slice It! charts, leaderboards and public player stats. |
 | `read:games` | Games | Read your game playtime and achievements, and the playtime other members share with you. |
+| `read:study` | Study | Read your flashcard decks, authored cards and due counts. |
+| `write:study` | Study | Create, edit and delete your flashcard decks and cards. Reviews cannot be written. |
 | `manage:webhooks` | Webhooks | Create and manage webhook subscriptions. |
 
 <!-- END GENERATED: scopes -->

@@ -41,7 +41,7 @@ export const Route = createFileRoute('/api/v1/feed')({
                 commentCount: true,
                 repostCount: true,
                 viewCount: true,
-                imageUrls: true, imageAlts: true, pinnedCommentId: true,
+                imageUrls: true, imageAlts: true, gifUrl: true, gifAlt: true, isSensitive: true, contentWarning: true, pinnedCommentId: true,
                 user: { select: apiAuthorSelect },
               },
             });

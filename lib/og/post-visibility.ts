@@ -38,6 +38,10 @@ export interface PostCardSubject {
   isSensitive?:
     | boolean
     | null;
+  /** Why the post is warned (sprint 06 #16): when set, the card names the reason instead of drawing the text. */
+  contentWarning?:
+    | string
+    | null;
   /** The post's community, when it has one (select `isPrivate`). */
   community?: {
     isPrivate?:
@@ -128,4 +132,24 @@ export function postCardCommunityName(
     community.name ??
     null
   );
+}
+
+/**
+ * The reason a card may print in place of a warned post's text, or null.
+ *
+ * A post with a content warning reason is public, free and live like any other card subject, but its card cannot be
+ * revealed: it names the reason and draws nothing else (no text, poll, or media), through the same gate as the rest. A
+ * warning with no reason has nothing to print and stays a generic card, as it always was.
+ */
+export function postCardContentWarning(
+  post:
+    | PostCardSubject
+    | null
+    | undefined,
+): string | null {
+  if (!post) return null;
+  const reason = typeof post.contentWarning === 'string' ? post.contentWarning.trim() : '';
+  if (!reason) return null;
+  // The same conditions as `postCardShowsContent`, without the sensitive one (a reason is the sensitive post's text).
+  return postCardShowsContent({ ...post, isSensitive: false }) ? reason : null;
 }

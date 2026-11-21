@@ -15,6 +15,8 @@ const reminderRow = {
 };
 const findReminder = vi.fn(async (_a: unknown) => reminderRow);
 
+const findDecks = vi.fn(async (_a: unknown) => []);
+
 const emptyModel = new Proxy(
   {},
   {
@@ -28,7 +30,11 @@ vi.mock('@/lib/prisma.server', () => ({
     {},
     {
       get: (_t, model: string) =>
-        model === 'flashcardReminder' ? { findUnique: findReminder } : emptyModel,
+        model === 'flashcardReminder'
+          ? { findUnique: findReminder }
+          : model === 'flashcardDeck'
+            ? { findMany: findDecks }
+            : emptyModel,
     },
   ),
 }));
@@ -58,5 +64,18 @@ describe('account export: flashcard reminder', () => {
       updatedAt: '2026-11-21T12:00:00.000Z',
     });
     expect(findReminder).toHaveBeenCalledWith({ where: { userId: 'u1' } });
+  });
+
+  it('exports each authored card with its externalId', async () => {
+    findDecks.mockClear();
+    const request = new Request('https://rmhstudios.com/api/account/export', {
+      headers: { cookie: 'better-auth.session_token=t', 'x-forwarded-for': '203.0.113.9' },
+    });
+    await route.handlers.GET!({ request, params: {} });
+    const args = findDecks.mock.calls[0]?.[0] as {
+      include: { cards: { where: unknown; select: Record<string, boolean> } };
+    };
+    expect(args.include.cards.where).toEqual({ sourceId: null });
+    expect(args.include.cards.select.externalId).toBe(true);
   });
 });

@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import { BracketView } from '@/components/tournaments/BracketView';
+import { DisputesPanel } from '@/components/tournaments/DisputesPanel';
 import { CheckInPanel, EntrantCheckIn, useStartRefusal } from '@/components/tournaments/CheckInPanel';
 import { SeedingPanel } from '@/components/tournaments/SeedingPanel';
 import { SwissStandings } from '@/components/competitive/SwissStandings';
@@ -339,11 +340,14 @@ function TournamentDetailPage() {
             <h2 className="site-section-label mb-3">
               {t('bracket-tournaments-id', { defaultValue: 'Bracket' })}
             </h2>
+            {canReport && <DisputesPanel tournament={tourney} onChanged={load} />}
             <BracketView
               tournament={tourney}
               canReport={canReport}
               reportingId={reportingId}
               onReport={report}
+              viewerId={viewerId}
+              onChanged={load}
             />
             {canReport && (
               <p className="mt-3 text-xs text-site-text-muted">

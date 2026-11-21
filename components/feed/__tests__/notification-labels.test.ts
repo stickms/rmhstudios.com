@@ -79,6 +79,29 @@ describe('system notification labels', () => {
       // s05-20 flashcard-reminders
       study_due: 'Study',
 
+      // Sprint 06 system labels (docs/autonomous/sprint-06/plan.md §Anchors)
+      // s06-01 community-bans
+      community_ban: 'Communities',
+
+      // s06-05 feedback-inbox
+      feedback_reply: 'Feedback',
+
+      // s06-06 admin-secure-account
+      account_secured: 'Account security',
+
+      // s06-07 jam-feedback
+      jam_feedback: 'Game jams',
+
+      // s06-10 event-occurrences
+      event_occurrence: 'Events',
+
+      // s06-11 event-updates
+      event_update: 'Event updates',
+
+      // s06-20 match-results
+      tournament_result: 'Tournaments',
+
+
       default: 'RMH Studios',
     });
   });

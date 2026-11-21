@@ -49,6 +49,8 @@ model Community {
   modActions           CommunityModAction[]
   memberEvents         CommunityMemberEvent[]
   handovers            CommunityHandover[]
+  bans                 CommunityBan[]
+  memberNotes          CommunityMemberNote[]
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -617,4 +619,52 @@ model CommunityHandover {
   @@index([communityId, status])
   @@index([toId, status])
   @@map("community_handover")
+}
+
+/// s06-01 — a ban or a timeout of one member of one community. At most one is active per member (a new one lifts the
+/// old in the same transaction); expiry is read-time (`endsAt <= now()`), no job. `reason` is the moderators' private
+/// note and is never sent to the member. `createdById` / `liftedById` are plain columns: erasure nulls them.
+model CommunityBan {
+  id          String    @id @default(cuid())
+  communityId String
+  userId      String
+  /// 'ban' | 'timeout'
+  kind        String    @db.VarChar(8)
+  /// Null = until a moderator lifts it (bans only).
+  endsAt      DateTime?
+  ruleId      String?
+  reason      String?   @db.VarChar(300)
+  createdById String?
+  createdAt   DateTime  @default(now())
+  liftedAt    DateTime?
+  liftedById  String?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation("CommunityBanSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, userId, liftedAt])
+  @@index([communityId, createdAt(sort: Desc)])
+  @@map("community_ban")
+}
+
+/// s06-02 — a private moderator note on a member, scoped to one community. Ids are plain columns (no `User`
+/// relation, like `CommunityModAction`); account deletion removes the notes about a member and nulls the author.
+model CommunityMemberNote {
+  id          String    @id @default(cuid())
+  communityId String
+  subjectId   String
+  authorId    String?
+  body        String    @db.VarChar(500)
+  /// The sanction (`CommunityBan.id`) or mod-queue item it was written with.
+  banId       String?
+  modItemId   String?
+  createdAt   DateTime  @default(now())
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  deletedById String?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, subjectId, createdAt(sort: Desc)])
+  @@map("community_member_note")
 }

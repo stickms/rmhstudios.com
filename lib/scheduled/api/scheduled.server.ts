@@ -7,7 +7,11 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listScheduled } from '@/lib/scheduled/list.server';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
+import { activeSanction } from '@/lib/communities/bans.server';
+import { denyCode, denyText } from '@/lib/communities/bans';
 import { capsuleDateError } from '@/lib/posts-plus/constants';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
+import { normalizeContentWarning } from '@/lib/feed/content-warning';
 
 const MAX_PENDING = 50;
 
@@ -44,7 +48,10 @@ export const route = apiRoute('/api/scheduled', {
         return Response.json({ error: 'Invalid image reference' }, { status: 400 });
       }
 
-      const altError = await altTextViolation(userId, d.imageUrls, d.imageAlts);
+      const altError = await altTextViolation(userId, d.imageUrls, d.imageAlts, {
+        url: d.gifUrl,
+        alt: d.gifAlt,
+      });
       if (altError) {
         return Response.json({ error: altError }, { status: 400 });
       }
@@ -75,15 +82,31 @@ export const route = apiRoute('/api/scheduled', {
         );
       }
 
+      // s06-01: no scheduling into a community the member is banned or timed out of.
+      if (d.communityId) {
+        const sanction = await activeSanction(d.communityId, userId);
+        if (sanction) {
+          return Response.json(
+            {
+              error: denyText(sanction.kind, sanction.endsAt),
+              code: denyCode(sanction.kind),
+              endsAt: sanction.endsAt ? sanction.endsAt.toISOString() : null,
+            },
+            { status: 403 },
+          );
+        }
+      }
+
       const sp = await prisma.scheduledPost.create({
         data: {
           userId,
           content: d.content.trim(),
           gifUrl: d.gifUrl ?? null,
+          gifAlt: normalizeGifAlt(d.gifUrl, d.gifAlt),
           imageUrls: d.imageUrls ?? [],
           imageAlts: (d.imageAlts ?? []).slice(0, d.imageUrls?.length ?? 0).map((a) => a.trim()),
           audience: d.audience ?? 'PUBLIC',
-          isSensitive: d.isSensitive ?? false,
+          ...normalizeContentWarning({ isSensitive: d.isSensitive, contentWarning: d.contentWarning }),
           replyControl: d.replyControl ?? 'EVERYONE',
           unlockPrice: d.unlockPrice && d.unlockPrice > 0 ? d.unlockPrice : null,
           communityId: d.communityId ?? null,

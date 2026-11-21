@@ -5,6 +5,7 @@
  */
 
 import { useMemo, useState } from 'react';
+import { SendFeedback } from '@/components/feedback/SendFeedback';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { fetchOwnedThemes } from '@/lib/themes/owned-themes.functions';
 import { useTranslation } from 'react-i18next';
@@ -164,6 +165,20 @@ function SettingsPage() {
           {!isPending && !signedIn && signInPrompt}
           <div>
             {accountItems.map(row)}
+            {signedIn && !query && (
+              <SendFeedback className="settings-row w-full text-start">
+                <span className="settings-row__text">
+                  <span className="settings-row__name block">
+                    {t('settings-send-feedback', { ns: 'feedback-inbox', defaultValue: 'Send feedback' })}
+                  </span>
+                  <span className="settings-row__hint block">
+                    {t('settings-send-feedback-hint', { ns: 'feedback-inbox',
+                      defaultValue: 'Report a bug or an accessibility barrier, with the page attached',
+                    })}
+                  </span>
+                </span>
+              </SendFeedback>
+            )}
             {signedIn && handle && !query && (
               <DestinationRow
                 to={`/u/${handle}`}

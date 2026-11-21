@@ -9,8 +9,9 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { groupReactions } from '@/lib/social/reactions';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { mapQuotedOriginal } from '@/lib/feed/quoted-original';
-import { redactCounts } from '@/lib/feed/quiet-counts';
+import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { pollOptionCount, rankedPollFields } from '@/lib/feed/ranked-poll';
 
 /** One per-emoji reaction summary entry, as it appears on a FeedItem. */
 type ReactionSummary = NonNullable<FeedItem['reactions']>[number];
@@ -137,6 +138,7 @@ export function applyLock(item: FeedItem, raw: any, viewerId: string | null): Fe
     imageUrls: undefined,
     imageAlts: undefined,
     gifUrl: undefined,
+    gifAlt: undefined,
     poll: undefined,
     locked: true,
     unlockPrice: raw.unlockPrice ?? undefined,
@@ -161,7 +163,7 @@ export function rmharkInclude(viewerId: string | null) {
           include: {
             _count: { select: { votes: true } },
             ...(viewerId
-              ? { votes: { where: { userId: viewerId }, select: { id: true, optionId: true } } }
+              ? { votes: { where: { userId: viewerId }, select: { id: true, optionId: true, rank: true } } }
               : {}),
           },
         },
@@ -177,19 +179,21 @@ export function rmharkInclude(viewerId: string | null) {
   };
 }
 
-function mapPoll(poll: any): FeedPoll | undefined {
+function mapPoll(poll: any, countsHidden = false): FeedPoll | undefined {
   if (!poll) return undefined;
-  const totalVotes = poll.options.reduce((s: number, o: any) => s + (o._count?.votes ?? 0), 0);
+  const lifecycle = pollLifecycleView(poll);
+  const totalVotes = poll.options.reduce((s: number, o: any) => s + pollOptionCount(poll, o), 0);
   return {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
-    ...pollLifecycleView(poll),
+    ...lifecycle,
+    ...rankedPollFields(poll, { ended: lifecycle.ended, countsHidden }),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
       text: o.text,
-      voteCount: o._count?.votes ?? 0,
+      voteCount: pollOptionCount(poll, o),
     })),
     myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
   };
@@ -221,11 +225,13 @@ export function mapRmharkToFeedItem(
     original: r.original
       ? mapQuotedOriginal(r.original, resolveUser(r.original.user), viewerId, blockedAuthorIds)
       : undefined,
-    poll: mapPoll(r.poll),
+    poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId)),
     gifUrl: r.gifUrl ?? undefined,
+    gifAlt: r.gifAlt ?? undefined,
     imageUrls: r.imageUrls ?? undefined,
     imageAlts: r.imageAlts ?? undefined,
     isSensitive: r.isSensitive ?? false,
+    contentWarning: r.contentWarning ?? undefined,
     replyControl: r.replyControl ?? 'EVERYONE',
     isTake: r.isTake || undefined,
     hasNote: r.hasNote || undefined,

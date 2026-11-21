@@ -46,6 +46,9 @@ export interface GroupMessagePayload {
   gifUrl?:
     | string
     | null;
+  gifAlt?:
+    | string
+    | null;
   imageUrls?: string[];
   /** Image descriptions, index-aligned with `imageUrls`. */
   imageAlts?: string[];

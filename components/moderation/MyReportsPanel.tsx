@@ -93,12 +93,15 @@ export function MyReportsPanel() {
     'ladder-interview': t('kind-ladder-interview', { defaultValue: 'Interview report' }),
     'music-score': t('kind-music-score', { defaultValue: 'Music score' }),
     'music-share': t('kind-music-share', { defaultValue: 'Shared music result' }),
+    'jam-feedback': t('kind-jam-feedback', { defaultValue: 'Jam feedback' }),
+    'build-comment': t('kind-build-comment', { defaultValue: 'Build comment' }),
   };
   const GONE: Partial<Record<ReportEntityType, string>> = {
     rmhark: t('gone-rmhark', { defaultValue: 'A post that is no longer available' }),
     comment: t('gone-comment', { defaultValue: 'A reply that is no longer available' }),
     user: t('gone-user', { defaultValue: 'A profile that is no longer available' }),
     build: t('gone-build', { defaultValue: 'A build that is no longer available' }),
+    'build-comment': t('gone-build-comment', { defaultValue: 'A build comment that is no longer available' }),
   };
 
   const whatOf = (r: MyReport): string =>

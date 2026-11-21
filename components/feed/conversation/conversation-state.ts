@@ -17,6 +17,10 @@ export interface Message {
   gifUrl?:
     | string
     | null;
+  /** The GIF's description (sprint 06 #15); absent or null = undescribed. */
+  gifAlt?:
+    | string
+    | null;
   imageUrls?: string[];
   /** Descriptions, index-aligned with `imageUrls` ('' = none). */
   imageAlts?: string[];
@@ -142,6 +146,8 @@ export function applyMutationTo(
           ? {
               gifUrl:
                 null,
+              gifAlt:
+                null,
               imageUrls:
                 [],
               imageAlts:
@@ -175,6 +181,9 @@ export interface SyncPatch {
     | string
     | null;
   gifUrl?:
+    | string
+    | null;
+  gifAlt?:
     | string
     | null;
   imageUrls?:
@@ -239,6 +248,9 @@ export function applySyncPatches(
             null,
           gifUrl:
             patch.gifUrl ??
+            null,
+          gifAlt:
+            patch.gifAlt ??
             null,
           imageUrls:
             patch.imageUrls ??
@@ -490,6 +502,8 @@ export function fromStreamMessage(
       msg.createdAt,
     gifUrl:
       msg.gifUrl,
+    gifAlt:
+      msg.gifAlt,
     imageUrls:
       msg.imageUrls,
     imageAlts:

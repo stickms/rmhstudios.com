@@ -305,7 +305,10 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
           postKind: derivePostKind({ content: input.content }),
         });
         if (gate.kind === 'deny') {
-          return Response.json({ error: gate.error, code: gate.code }, { status: gate.status });
+          return Response.json(
+            { error: gate.error, code: gate.code, ...(gate.endsAt !== undefined ? { endsAt: gate.endsAt } : {}) },
+            { status: gate.status },
+          );
         }
         if (gate.kind === 'remove') {
           await logRemoved({

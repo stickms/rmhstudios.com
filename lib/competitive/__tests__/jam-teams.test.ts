@@ -225,7 +225,16 @@ vi.mock('@/lib/prisma.server', () => {
       return [];
     },
   };
-  const models = { gameJamTeamMember, gameJamEntry, gameJamRating, gameJam, user, userBlock, userBuild };
+  // s06-07: the jam page also reads feedback (the viewer's own, and the team's count); this suite writes none.
+  const gameJamFeedback = {
+    async findMany() {
+      return [];
+    },
+    async groupBy() {
+      return [];
+    },
+  };
+  const models = { gameJamTeamMember, gameJamEntry, gameJamRating, gameJam, user, userBlock, userBuild, gameJamFeedback };
   const db = {
     ...models,
     async $transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T> {

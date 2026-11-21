@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
+import { ExportMenuItems } from '@/components/studio/ExportMenuItems';
 import type { ProjectSession } from '@/components/studio/useProjectSession';
 
 export function ProjectsMenu({ session }: { session: ProjectSession }) {
@@ -92,6 +93,10 @@ export function ProjectsMenu({ session }: { session: ProjectSession }) {
         <MenuItem icon={Trash2} tone="danger" disabled={!session.hasId} onSelect={run(session.deleteCurrent)}>
           {t('menu-delete', { defaultValue: 'Delete…' })}
         </MenuItem>
+
+        <MenuSeparator />
+
+        <ExportMenuItems close={close} />
 
         <MenuSeparator />
 

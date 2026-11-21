@@ -15,6 +15,10 @@ import { RsvpButton } from './RsvpButton';
 import { CohostsPanel } from './CohostsPanel';
 import { EventComposer } from './EventComposer';
 import { WaitlistPanel } from './WaitlistPanel';
+import { UpcomingDates } from './OccurrenceMenu';
+import { EventUpdates } from './EventUpdates';
+import { formatDate } from '@/lib/core/format';
+import type { OccurrencesRes } from '@/lib/events/occurrences.contract';
 import { EventRecurrenceInfo } from '@/components/calendar/EventRecurrenceInfo';
 import { canManage, cohostLabels, type CohostEntryDTO, type CohostPersonDTO, type EventViewerRole } from '@/lib/events/cohosts';
 
@@ -33,6 +37,7 @@ export function EventCard({ event: initial, className }: { event: EventDTO; clas
   const { t } = useTranslation('site');
   const { t: tr } = useTranslation('event-waitlist');
   const { t: tc, i18n } = useTranslation('event-cohosts');
+  const { t: to } = useTranslation('event-occurrences');
   // An edit made here (by the host or a co-host) replaces what the list handed down.
   const [edited, setEdited] = useState<EventDTO | null>(null);
   const event = edited ?? initial;
@@ -91,6 +96,29 @@ export function EventCard({ event: initial, className }: { event: EventDTO; clas
       setCohosts((list) => list.filter((c) => c.id !== session.user.id));
     }
   };
+  // s06-10 — the host changed a date: refresh the list and, when the shown date itself moved or was
+  // skipped, the time in the header.
+  const onOccurrences = ({ upcoming, summary }: OccurrencesRes) => {
+    const rec = event.recurrence;
+    if (!rec) return;
+    const live = upcoming.find((u) => u.state !== 'skipped');
+    // The counts and the viewer's answer belong to the date shown: when that date changed, take the new one's.
+    if (summary && summary.occurrenceAt !== rec.occurrenceAt) {
+      setGoing(summary.goingCount);
+      setMaybe(summary.maybeCount);
+      setViewerRsvp(summary.viewerRsvp);
+      setWaiting(0);
+      setPlace(null);
+    }
+    setEdited({
+      ...event,
+      ...(live ? { startsAt: live.startsAt, endsAt: live.endsAt } : {}),
+      recurrence: { ...rec, ...(live ? { occurrenceAt: live.occurrenceAt } : {}), upcoming },
+    });
+  };
+  const movedFrom = event.recurrence?.upcoming?.find(
+    (u) => u.occurrenceAt === event.recurrence?.occurrenceAt && u.state === 'moved',
+  );
   const onEntries = (entries: CohostEntryDTO[]) => setCohosts(entries.filter((c) => c.status === 'accepted'));
   const waitlistLine =
     viewerRsvp === 'waitlist' && place != null
@@ -147,6 +175,20 @@ export function EventCard({ event: initial, className }: { event: EventDTO; clas
               }}
             />
           </p>
+          {movedFrom && event.recurrence && (
+            <p className="t-meta mt-1">
+              {to('moved-from', {
+                date: formatDate(movedFrom.occurrenceAt, i18n.language, {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                  timeZone: event.recurrence.tz,
+                }),
+                defaultValue: 'Moved from {{date}}',
+              })}
+              {movedFrom.note ? ` · ${movedFrom.note}` : ''}
+            </p>
+          )}
         </div>
       </div>
 
@@ -155,6 +197,13 @@ export function EventCard({ event: initial, className }: { event: EventDTO; clas
           {event.description}
         </p>
       )}
+
+      <EventUpdates
+        eventId={event.id}
+        manager={manager || !!(session?.user as { isAdmin?: boolean } | undefined)?.isAdmin}
+        canceled={canceled}
+        repeating={event.recurrence?.upcoming ? { tz: event.recurrence.tz, dates: event.recurrence.upcoming } : undefined}
+      />
 
       {event.venueKind === 'URL' && event.venueRef && !canceled && (
         <a
@@ -275,6 +324,15 @@ export function EventCard({ event: initial, className }: { event: EventDTO; clas
       )}
       {event.recurrence && !canceled && !past && (
         <EventRecurrenceInfo event={{ ...event, viewerRsvp }} onChange={onChange} />
+      )}
+      {event.recurrence?.upcoming && !canceled && !past && (
+        <UpcomingDates
+          eventId={event.id}
+          tz={event.recurrence.tz}
+          dates={event.recurrence.upcoming}
+          canManage={manager}
+          onChanged={onOccurrences}
+        />
       )}
     </li>
   );

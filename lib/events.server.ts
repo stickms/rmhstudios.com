@@ -37,12 +37,14 @@ import {
   decorateRecurring,
   isGoingToOccurrence,
   notifyRotation,
-  occurrenceAfter,
+  nextLiveOccurrenceAfter,
   rsvpRecurring,
   unrsvpRecurring,
   upcomingOccurrenceEventIds,
   type RecurrenceInput,
 } from '@/lib/calendar/recurring-events.server';
+import { overridesFor } from '@/lib/events/occurrences.server';
+import { effectiveStart } from '@/lib/events/occurrences';
 import type { EventRecurrenceDTO } from '@/lib/calendar/types';
 import { EVENT_KIND, WHOLE_EVENT } from '@/lib/calendar/event-model';
 import { SITE_URL } from '@/lib/seo';
@@ -191,6 +193,12 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
     // "every time" RSVP chains the next occurrence's reminders once this one fires.
     if (!job.occurrenceAt) return;
     const at = new Date(job.occurrenceAt);
+    // s06-10 — a skipped date sends nothing, and a job scheduled for a time the date no longer has
+    // (it was moved after the job was queued) is stale: the move scheduled a fresh one.
+    const overrides = await overridesFor(event.id);
+    const shown = effectiveStart(at, overrides);
+    if (!shown) return;
+    if (new Date(job.startsAt ?? job.occurrenceAt).getTime() !== shown.getTime()) return;
     if (!(await isGoingToOccurrence(job.eventId, job.userId, at))) return;
     const whenRecurring = job.offset === '24h' ? 'tomorrow' : 'in 15 minutes';
     await createNotification({
@@ -206,8 +214,12 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
         where: { eventId: event.id, userId: job.userId, occurrenceAt: WHOLE_EVENT, everyTime: true },
         select: { id: true },
       });
-      const next = standing ? occurrenceAfter(event, at) : null;
-      if (next) await scheduleEventReminders({ id: event.id, startsAt: next }, job.userId, true);
+      const next = standing ? nextLiveOccurrenceAfter(event, at, overrides) : null;
+      if (next) {
+        await scheduleEventReminders({ id: event.id, startsAt: next.startsAt }, job.userId, true, {
+          occurrenceAt: next.occurrenceAt,
+        });
+      }
     }
     return;
   }
@@ -892,12 +904,25 @@ export async function rsvp(
         everyTime: !!opts.everyTime,
         occurrenceAt: opts.occurrenceAt,
       });
-      if (status === 'going') await scheduleEventReminders({ id: event.id, startsAt: done.at }, userId, true);
-      else await cancelEventReminders(event.id, userId, done.at);
+      if (status === 'going') {
+        await scheduleEventReminders({ id: event.id, startsAt: done.effectiveAt }, userId, true, {
+          occurrenceAt: done.at,
+        });
+      } else await cancelEventReminders(event.id, userId, done.at, [done.effectiveAt]);
       return done.summary;
     } catch (e) {
       if (e instanceof OccurrenceError) {
-        throw new EventError(e.code === 'CAPACITY_FULL' ? 'CAPACITY_FULL' : e.code === 'CANCELED' ? 'CANCELED' : e.code === 'NOT_FOUND' ? 'NOT_FOUND' : 'INVALID_DATES');
+        throw new EventError(
+          e.code === 'CAPACITY_FULL'
+            ? 'CAPACITY_FULL'
+            : e.code === 'CANCELED'
+              ? 'CANCELED'
+              : e.code === 'NOT_FOUND'
+                ? 'NOT_FOUND'
+                : e.code === 'SKIPPED'
+                  ? 'OCCURRENCE_SKIPPED'
+                  : 'INVALID_DATES',
+        );
       }
       throw e;
     }
@@ -990,7 +1015,7 @@ export async function unrsvp(
   if (series?.recurrence) {
     try {
       const done = await unrsvpRecurring(series, userId, opts.scope ?? 'occurrence', opts.occurrenceAt);
-      await cancelEventReminders(eventId, userId, done.at);
+      await cancelEventReminders(eventId, userId, done.at, [done.effectiveAt]);
       return done.summary;
     } catch (e) {
       if (e instanceof OccurrenceError) throw new EventError(e.code === 'NOT_FOUND' ? 'NOT_FOUND' : 'INVALID_DATES');

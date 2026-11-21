@@ -10,6 +10,7 @@ import {
   ALTS_MISMATCH_ISSUE,
   altsMatchImages,
   messageImageAltsField,
+  messageGifAltField,
 } from '@/lib/messages/image-alts-schema';
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
 import { guardGroupAccount, guardGroupMembership, sendGroupMessage } from '@/lib/messages/send.server';
@@ -19,6 +20,7 @@ const schema = z
   .object({
     content: z.string().max(2000).optional(),
     gifUrl: gifUrlSchema.optional(),
+    gifAlt: messageGifAltField,
     imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
     imageAlts: messageImageAltsField,
     poll: z

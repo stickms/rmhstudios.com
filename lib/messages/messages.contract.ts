@@ -31,6 +31,10 @@ export interface SentDirectMessage {
   gifUrl:
     | string
     | null;
+  /** The GIF's description; absent or null = undescribed. */
+  gifAlt?:
+    | string
+    | null;
   imageUrls: string[];
   /** One description per image ('' = none); absent on rows from before descriptions. */
   imageAlts?: string[];

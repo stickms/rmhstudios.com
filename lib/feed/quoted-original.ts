@@ -92,9 +92,15 @@ export interface QuotedOriginalRow extends QuotedOriginalSubject {
   gifUrl?:
     | string
     | null;
+  gifAlt?:
+    | string
+    | null;
   imageUrls?: string[];
   imageAlts?: string[];
   deletedByAdmin?: boolean;
+  /** The original's content warning (sprint 06 #16): the card is covered like the post itself. */
+  isSensitive?: boolean | null;
+  contentWarning?: string | null;
 }
 
 /** The FeedItem fields the three states of a quote card share. */
@@ -241,6 +247,8 @@ export function mapQuotedOriginal(
     ),
     content:
       o.content,
+    isSensitive: o.isSensitive ?? false,
+    contentWarning: o.contentWarning ?? undefined,
     likeCount:
       o.likeCount,
     commentCount:
@@ -252,6 +260,11 @@ export function mapQuotedOriginal(
     gifUrl:
       showMedia
         ? (o.gifUrl ??
+          undefined)
+        : undefined,
+    gifAlt:
+      showMedia
+        ? (o.gifAlt ??
           undefined)
         : undefined,
     imageUrls:
@@ -289,6 +302,8 @@ export function withholdQuotedOriginal(
     repostCount: 0,
     viewCount: 0,
     gifUrl:
+      undefined,
+    gifAlt:
       undefined,
     imageUrls:
       undefined,

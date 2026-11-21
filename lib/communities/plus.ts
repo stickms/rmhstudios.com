@@ -252,6 +252,9 @@ export interface ChallengeEntryDTO {
   gifUrl:
     | string
     | null;
+  gifAlt?:
+    | string
+    | null;
   /** Only revealed once voting has ended, so the tally doesn't steer the vote. */
   voteCount:
     | number

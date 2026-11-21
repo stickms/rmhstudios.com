@@ -255,7 +255,6 @@ const KNOWN_BYPASSES_WRAPPER: readonly string[] =
     'features/doctrine/api/doctrine.sahur.status.server.ts',
     'features/signal-forge/api/signal-forge.save.server.ts',
     'lib/ai/api/rmharks.$id.translate.server.ts',
-    'lib/api/routes/user-builds.$id.comments.server.ts',
     'lib/api/routes/user-builds.$id.like.server.ts',
     'lib/api/routes/user-builds.$id.server.ts',
     'lib/api/routes/user-builds.server.ts',

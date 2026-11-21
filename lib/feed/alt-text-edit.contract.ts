@@ -20,6 +20,8 @@ export const editPostAltsApi =
     res: {
       success: true;
       imageAlts: string[];
+      /** The GIF's description after the write (null = none); absent when the post has no GIF. */
+      gifAlt?: string | null;
     };
   }>()(
     {

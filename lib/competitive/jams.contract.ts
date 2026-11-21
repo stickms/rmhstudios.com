@@ -109,9 +109,15 @@ export const rateJamEntryApi =
       creativity: number;
       theme: number;
       polish: number;
+      /** s06-07: optional written feedback for the team (20 to 1 000 characters; empty withdraws it). */
+      feedback?: string;
+      /** s06-07: "Leave my name off". */
+      anonymous?: boolean;
     };
     res: {
       ok: true;
+      /** s06-07: what became of the feedback ('blocked' and 'banned' mean the scores saved but the words did not). */
+      feedback?: 'unchanged' | 'created' | 'edited' | 'cleared' | 'blocked' | 'banned' | 'invalid';
     };
   }>()(
     {

@@ -38,6 +38,7 @@ import { exportPersonalBests } from '@/lib/game/personal-bests.server';
 import { exportSavedReplies } from '@/lib/messages/saved-replies.server';
 import { exportStudioProjects } from '@/lib/studio/cloud-projects.server';
 import { exportPostAlerts } from '@/lib/communities/post-alerts.server';
+import { exportSprint06 } from '@/lib/account/export-sprint-06.server';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -92,6 +93,7 @@ export const route = apiRoute('/api/account/export', {
         vibes,
         sprint02,
         sprint03,
+        sprint06,
       ] = await Promise.all([
         prisma.user.findUnique({
           where: { id: userId },
@@ -288,7 +290,15 @@ export const route = apiRoute('/api/account/export', {
               cards: {
                 where: { sourceId: null },
                 orderBy: { position: 'asc' },
-                select: { id: true, kind: true, front: true, back: true, position: true, createdAt: true },
+                select: {
+                  id: true,
+                  kind: true,
+                  front: true,
+                  back: true,
+                  position: true,
+                  externalId: true,
+                  createdAt: true,
+                },
               },
             },
           }),
@@ -349,6 +359,8 @@ export const route = apiRoute('/api/account/export', {
           // RMH Studio projects saved to the account, with their project data (s05-06).
           exportStudioProjects(userId),
         ]),
+        // The sprint 06 sections, each added under its own anchor (s06).
+        exportSprint06(userId),
       ]);
 
       const [
@@ -475,6 +487,7 @@ export const route = apiRoute('/api/account/export', {
         blocksMutes,
         postAlerts,
         studioProjects,
+        sprint06,
         rmhLadder: {
           preferences: ladderPrefs,
           // Salary expectations, work authorization and EEO answers — the

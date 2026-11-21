@@ -1603,9 +1603,9 @@ export default function ChatPanel() {
                 false,
               )
             }
-            onSelect={(
-              u,
-            ) => {
+            onSelect={({
+              url: u,
+            }) => {
               setMessage(
                 (
                   m,

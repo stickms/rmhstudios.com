@@ -13,6 +13,7 @@
  * and a decision only applies to a PENDING row (`updateMany … status: PENDING`),
  * so two moderators approving at once cannot double-count the member.
  */
+import { activeSanction } from '@/lib/communities/bans.server';
 import { prisma } from '@/lib/prisma.server';
 import { logModAction } from '@/lib/communities/modlog.server';
 import { recordMemberEvent } from '@/lib/communities/member-events.server';
@@ -69,8 +70,16 @@ export async function requestToJoin(
     select: { status: true, decidedAt: true },
   });
   if (existing?.status === 'PENDING') return { ok: true, status: 'PENDING' };
-  const cooldownMs =
-    existing?.status === 'DENIED' || existing?.status === 'REMOVED'
+  // A removal that was a ban's (s06-01) ends with the ban: the ban's length is the
+  // moderators' decision, so a member whose ban lapsed or was lifted may ask at once.
+  // (The caller has already refused anyone with an active sanction.)
+  const removalEnded =
+    existing?.status === 'REMOVED' && existing.decidedAt
+      ? await removalWasEndedBan(community.id, userId, existing.decidedAt)
+      : false;
+  const cooldownMs = removalEnded
+    ? 0
+    : existing?.status === 'DENIED' || existing?.status === 'REMOVED'
       ? DENIED_COOLDOWN_MS
       : existing?.status === 'CANCELLED'
         ? CANCELLED_COOLDOWN_MS
@@ -89,6 +98,35 @@ export async function requestToJoin(
 
   await notifyModerators(community, userId, userName);
   return { ok: true, status: 'PENDING' };
+}
+
+/** How far apart a ban's row and the REMOVED row it wrote may be stamped (database vs application clock). */
+const BAN_REMOVAL_SKEW_MS = 60_000;
+
+/**
+ * Whether the REMOVED row decided at `decidedAt` was written by a ban (same transaction,
+ * `createSanction` in bans.server.ts) that has since expired or been lifted.
+ */
+async function removalWasEndedBan(
+  communityId: string,
+  userId: string,
+  decidedAt: Date,
+): Promise<boolean> {
+  const ban = await prisma.communityBan.findFirst({
+    where: {
+      communityId,
+      userId,
+      kind: 'ban',
+      createdAt: {
+        gte: new Date(decidedAt.getTime() - BAN_REMOVAL_SKEW_MS),
+        lte: new Date(decidedAt.getTime() + BAN_REMOVAL_SKEW_MS),
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { endsAt: true, liftedAt: true },
+  });
+  if (!ban) return false;
+  return ban.liftedAt !== null || (ban.endsAt !== null && ban.endsAt.getTime() <= Date.now());
 }
 
 async function notifyModerators(
@@ -186,6 +224,9 @@ export async function decideRequest(
     select: { userId: true },
   });
   if (!requester) return { ok: false };
+  // s06-01: a request made before the ban is not approvable into membership.
+  if (decision === 'approve' && (await activeSanction(community.id, requester.userId)))
+    return { ok: false };
 
   const applied = await prisma.$transaction(async (tx) => {
     const res = await tx.communityJoinRequest.updateMany({

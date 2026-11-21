@@ -311,10 +311,11 @@ function SettingsForm({
 }: {
   deckId: string;
   meta: DeckDetail['deck'];
-  onSaved: (next: { title: string; description: string | null; isPublic: boolean }) => void;
+  onSaved: (next: { title: string; description: string | null; isPublic: boolean; notifyUpdates: boolean }) => void;
 }) {
   const { t } = useTranslation('study-editor');
   const uid = useId();
+  const [notifyUpdates, setNotifyUpdates] = useState(meta.notifyUpdates);
   const [title, setTitle] = useState(meta.title);
   const [description, setDescription] = useState(meta.description ?? '');
   const [isPublic, setIsPublic] = useState(meta.isPublic);
@@ -323,7 +324,8 @@ function SettingsForm({
   const dirty =
     title.trim() !== meta.title ||
     description.trim() !== (meta.description ?? '') ||
-    isPublic !== meta.isPublic;
+    isPublic !== meta.isPublic ||
+    (meta.isCopy && notifyUpdates !== meta.notifyUpdates);
 
   async function save() {
     if (!title.trim() || busy) return;
@@ -331,9 +333,14 @@ function SettingsForm({
     try {
       await api(updateDeckApi, {
         params: { id: deckId },
-        body: { title: title.trim(), description: description.trim(), isPublic },
+        body: {
+          title: title.trim(),
+          description: description.trim(),
+          isPublic,
+          ...(meta.isCopy ? { notifyUpdates } : {}),
+        },
       });
-      onSaved({ title: title.trim(), description: description.trim() || null, isPublic });
+      onSaved({ title: title.trim(), description: description.trim() || null, isPublic, notifyUpdates });
       toast.success(t('settings-saved', { defaultValue: 'Deck saved' }));
     } catch {
       toast.error(t('settings-failed', { defaultValue: 'Could not save the deck' }));
@@ -385,11 +392,38 @@ function SettingsForm({
           aria-describedby={`${uid}-public-hint`}
         />
       </div>
+      {meta.isCopy && <NotifyUpdatesRow checked={notifyUpdates} onChange={setNotifyUpdates} />}
       <div>
         <Button variant="primary" disabled={!dirty || !title.trim()} loading={busy} onClick={save}>
           {t('save-deck', { defaultValue: 'Save deck' })}
         </Button>
       </div>
+    </div>
+  );
+}
+
+/** "Tell me about updates" on a copied deck. */
+function NotifyUpdatesRow({ checked, onChange }: { checked: boolean; onChange: (next: boolean) => void }) {
+  const { t } = useTranslation('deck-updates');
+  const uid = useId();
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-site-border pb-3">
+      <div className="min-w-0">
+        <p id={`${uid}-notify`} className="t-body font-medium">
+          {t('notify-updates', { defaultValue: 'Tell me about updates' })}
+        </p>
+        <p id={`${uid}-notify-hint`} className="t-meta">
+          {t('notify-updates-hint', {
+            defaultValue: 'Show on the deck page when the author changes or adds cards.',
+          })}
+        </p>
+      </div>
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        aria-labelledby={`${uid}-notify`}
+        aria-describedby={`${uid}-notify-hint`}
+      />
     </div>
   );
 }

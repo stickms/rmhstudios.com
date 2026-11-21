@@ -11,6 +11,7 @@
  * never breaks the originating write.
  */
 
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from "@/lib/prisma.server";
 import { findUsersByHandles } from "@/lib/handles/lookup.server";
 import { feedEventBus } from "@/lib/feed-sse";
@@ -29,6 +30,8 @@ export interface MentionAuthor {
 
 export interface NotifyMentionsInput {
   content: string;
+  /** The post's content warning reason (sprint 06 #16): the notification shows it instead of the text. */
+  contentWarning?: string | null;
   author: MentionAuthor;
   postId: string;
   entityType: "rmhark" | "comment";
@@ -82,7 +85,7 @@ export async function notifyMentions(input: NotifyMentionsInput): Promise<void> 
     targetUserIds: recipients.map((m) => m.id),
     notification: {
       rmharkId: input.postId,
-      preview: input.content.slice(0, 120),
+      preview: (previewTextFor(input) ?? '').slice(0, 120),
       author: {
         id: input.author.id,
         name: input.author.name,
@@ -102,7 +105,7 @@ export async function notifyMentions(input: NotifyMentionsInput): Promise<void> 
         type: "MENTION",
         entityType: input.entityType,
         entityId: input.entityId,
-        preview: input.content,
+        preview: previewTextFor(input) ?? '',
         link: input.link,
       })
     )

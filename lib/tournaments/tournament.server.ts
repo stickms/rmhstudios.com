@@ -19,6 +19,7 @@ import { checkInShortfall, isCheckInOpen, isCheckInMinutes, noShows, checkInOpen
 import { TournamentError } from './tournament-error';
 import { orderForStart } from './seeding.server';
 import { ratingSeedingAvailable, type SeedingMethod } from './seeding';
+import { claimResult, clearClaimAfterSettle, type ClaimResultStatus } from './match-results.server';
 import { randomUUID } from 'node:crypto';
 
 type Db = PrismaClient;
@@ -722,7 +723,7 @@ export async function reportMatch(
     isAdmin?: boolean;
   },
   db: Db = prisma,
-): Promise<{ settled: boolean; tournamentComplete: boolean }> {
+): Promise<{ settled: boolean; tournamentComplete: boolean; claim?: ClaimResultStatus }> {
   const t = await db.tournament.findUnique({ where: { id: opts.tournamentId } });
   if (!t) throw new TournamentError('Tournament not found', 'NOT_FOUND', 404);
 
@@ -749,15 +750,28 @@ export async function reportMatch(
   if (match.state !== 'READY' && match.state !== 'LIVE') {
     throw new TournamentError('Match is not ready', 'NOT_READY', 409);
   }
-  return settleMatch(
-    {
-      tournamentId: t.id,
-      matchId: opts.matchId,
-      winnerEntrantId: opts.winnerEntrantId,
-      source: isHost ? 'admin' : 'agreement',
-    },
+  // A participant's report is a claim the opponent confirms or disputes (s06-20); only a host's
+  // or an admin's report settles at once.
+  if (!isHost) {
+    const { status, settled, tournamentComplete } = await claimResult(
+      {
+        tournamentId: t.id,
+        matchId: opts.matchId,
+        userId: opts.reporterId,
+        winnerEntrantId: opts.winnerEntrantId,
+      },
+      db,
+    );
+    return { settled, tournamentComplete, claim: status };
+  }
+  const res = await settleMatch(
+    { tournamentId: t.id, matchId: opts.matchId, winnerEntrantId: opts.winnerEntrantId, source: 'admin' },
     db,
   );
+  if (res.settled) {
+    await clearClaimAfterSettle(opts.matchId, { notify: true, actorId: opts.reporterId }, db).catch(() => undefined);
+  }
+  return res;
 }
 
 /** Authoritative report from a game hub (via /api/internal/match-result). */
@@ -784,6 +798,8 @@ export async function reportTournamentMatchByGameSession(
     },
     db,
   );
+  // A hub's result overrules any claim on the match.
+  if (res.settled) await clearClaimAfterSettle(match.id, { notify: true }, db).catch(() => undefined);
   return { settled: res.settled };
 }
 
@@ -923,6 +939,16 @@ export interface SerializedTournament {
     /** W winners, L losers, GF grand final, GR bracket reset (W for non-double-elimination formats). */
     bracket: string;
     loserNextMatchId: string | null;
+    /** How a settled match was decided: agreement, admin (the host's report), authoritative or unanswered. */
+    resultSource: string | null;
+    /** Disputed matches read "Disputed" to everyone; the detail below is for the players, the host and admins. */
+    disputed: boolean;
+    /** The claim awaiting the opponent (players, host and admins only). */
+    claimedWinnerId: string | null;
+    claimedByUserId: string | null;
+    claimedAt: string | null;
+    disputedByUserId: string | null;
+    disputeNote: string | null;
   }[];
   payouts?: { userId: string; placement: number; amountCoins: number }[];
   viewerEntered?: boolean;
@@ -974,6 +1000,7 @@ export async function getTournament(
   id: string,
   viewerId?: string | null,
   db: Db = prisma,
+  viewerIsAdmin = false,
 ): Promise<SerializedTournament | null> {
   const t = await db.tournament.findUnique({
     where: { id },
@@ -1000,7 +1027,15 @@ export async function getTournament(
       losses: e.losses,
       user: e.user ? resolveUser(e.user) : null,
     })),
-    matches: t.matches.map((m) => ({
+    matches: t.matches.map((m) => {
+      const privileged =
+        viewerIsAdmin ||
+        (!!viewerId &&
+          (t.createdById === viewerId ||
+            [m.entrantAId, m.entrantBId].some(
+              (id) => id != null && t.entrants.find((e) => e.id === id)?.userId === viewerId,
+            )));
+      return {
       id: m.id,
       round: m.round,
       slot: m.slot,
@@ -1010,7 +1045,15 @@ export async function getTournament(
       state: m.state,
       bracket: m.bracket,
       loserNextMatchId: m.loserNextMatchId,
-    })),
+      resultSource: m.resultSource,
+      disputed: m.disputedAt != null && m.state !== 'COMPLETE',
+      claimedWinnerId: privileged && m.state !== 'COMPLETE' ? m.claimedWinnerId : null,
+      claimedByUserId: privileged && m.state !== 'COMPLETE' ? m.claimedById : null,
+      claimedAt: privileged && m.state !== 'COMPLETE' ? (m.claimedAt?.toISOString() ?? null) : null,
+      disputedByUserId: privileged && m.state !== 'COMPLETE' ? m.disputedById : null,
+      disputeNote: privileged && m.state !== 'COMPLETE' ? m.disputeNote : null,
+      };
+    }),
     payouts: t.payouts.map((p) => ({
       userId: p.userId,
       placement: p.placement,

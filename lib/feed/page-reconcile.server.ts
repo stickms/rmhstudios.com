@@ -48,6 +48,11 @@ interface PostRow {
   communityId: string | null;
   /** Image descriptions as they are NOW: the author can change them after posting (sprint 05 #16). */
   imageAlts: string[];
+  /** The GIF's description as it is NOW (the author can describe it after posting). */
+  gifAlt: string | null;
+  /** The content warning as it is NOW: a cached card must not show text that has since been covered (sprint 06 #16). */
+  isSensitive: boolean;
+  contentWarning: string | null;
   hashtags: { hashtag: { tag: string } }[];
   unlocks: { id: string }[];
   /** The author's quiet-counts switch as it is NOW (the cached card may predate a change). */
@@ -66,9 +71,16 @@ export interface ReconcileResult {
  * A cached card with the post's image descriptions as they are now. A card whose images are withheld (locked,
  * unavailable) has none to update, and the images themselves never change after posting.
  */
-function withCurrentAlts(card: FeedItem, imageAlts: readonly string[]): FeedItem {
-  if (!card.imageUrls?.length) return card;
-  return { ...card, imageAlts: card.imageUrls.map((_, i) => imageAlts[i] ?? '') };
+function withCurrentAlts(
+  card: FeedItem,
+  imageAlts: readonly string[],
+  gifAlt: string | null,
+): FeedItem {
+  const withImages = card.imageUrls?.length
+    ? { ...card, imageAlts: card.imageUrls.map((_, i) => imageAlts[i] ?? '') }
+    : card;
+  // The GIF's description too (sprint 06 #15); a card whose GIF is withheld has none to update.
+  return withImages.gifUrl ? { ...withImages, gifAlt: gifAlt ?? undefined } : withImages;
 }
 
 export async function reconcileCachedPage(
@@ -99,8 +111,10 @@ export async function reconcileCachedPage(
             deletedAt: true,
             unlockPrice: true,
             isSensitive: true,
+            contentWarning: true,
             communityId: true,
             imageAlts: true,
+            gifAlt: true,
             community: { select: { isPrivate: true } },
             user: { select: { profile: { select: { hideCountsOnMine: true } } } },
           },
@@ -116,6 +130,9 @@ export async function reconcileCachedPage(
         deletedAt: true,
         communityId: true,
         imageAlts: true,
+        gifAlt: true,
+        isSensitive: true,
+        contentWarning: true,
         hashtags: { select: { hashtag: { select: { tag: true } } } },
         unlocks: { where: { userId: viewerId }, select: { id: true } },
         user: { select: { profile: { select: { hideCountsOnMine: true } } } },
@@ -209,7 +226,12 @@ export async function reconcileCachedPage(
     if (quotedOriginalVisibleTo(q, viewerId, blocked)) {
       // The quoted author's switch, as it is now, applies to the cached card too, and so do their
       // image descriptions.
-      const original = withCurrentAlts(item.original, q.imageAlts);
+      // The warning as it is now, so a quote of a post warned after it was cached is covered at once.
+      const original = {
+        ...withCurrentAlts(item.original, q.imageAlts, q.gifAlt),
+        isSensitive: q.isSensitive,
+        contentWarning: q.contentWarning ?? undefined,
+      };
       return countsHiddenFrom(q.userId, q.user?.profile?.hideCountsOnMine, viewerId)
         ? { ...item, original: nullPostCounts(original) }
         : { ...item, original };
@@ -222,7 +244,10 @@ export async function reconcileCachedPage(
   const reconciled = quoteChecked.map((item) => {
     if (item.type !== 'rmhark') return item;
     const row = byId.get(item.actualId ?? item.id);
-    const current = row ? withCurrentAlts(item, row.imageAlts) : item;
+    const withAlts = row ? withCurrentAlts(item, row.imageAlts, row.gifAlt) : item;
+    const current = row
+      ? { ...withAlts, isSensitive: row.isSensitive, contentWarning: row.contentWarning ?? undefined }
+      : withAlts;
     return countsHiddenFrom(row?.userId, row?.user?.profile?.hideCountsOnMine, viewerId)
       ? nullPostCounts(current)
       : current;

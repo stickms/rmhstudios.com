@@ -37,6 +37,8 @@ export const reportTournamentMatchApi =
       ok: true;
       settled: boolean;
       tournamentComplete: boolean;
+      /** A participant's report: what it did to the match's claim. */
+      claim?: 'claimed' | 'confirmed' | 'disputed' | 'unchanged';
     };
   }>()(
     {

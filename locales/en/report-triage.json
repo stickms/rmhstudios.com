@@ -29,6 +29,7 @@
   "reports-capped": "Showing the newest {{shown}}. A decision covers all of them.",
   "resolve": "Resolve",
   "resolve-and-remove": "Resolve and remove content",
+  "delete-comment": "Delete comment",
   "retry": "Try again",
   "select-group": "Select {{target}}",
   "show-reports": "Show reports",

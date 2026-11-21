@@ -110,6 +110,13 @@ vi.mock(
           h.item,
         contentReport:
           h.contentReport,
+        // s06-01: nobody is banned in these scenarios.
+        communityBan:
+          {
+            findFirst:
+              async () =>
+                null,
+          },
         $executeRaw:
           h.executeRaw,
       });

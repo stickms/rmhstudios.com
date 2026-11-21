@@ -16,6 +16,9 @@ import { prisma } from '@/lib/prisma.server';
 import { OFFICE_HOURS_KIND, WHOLE_EVENT } from './event-model';
 import type { FeedAnswer, FeedInput } from './feed-entries';
 import { loadPeople } from './people.server';
+import { OVERRIDE_MARGIN_MS } from '@/lib/events/occurrences';
+import { overridesForEvents } from '@/lib/events/occurrences.server';
+import { latestUpdatesFor } from '@/lib/events/updates.server';
 
 const DAY_MS = 86_400_000;
 
@@ -61,7 +64,16 @@ export async function myEventInputs(userId: string, from: Date, to: Date): Promi
     prisma.rsvp.findMany({
       where: {
         userId,
-        OR: [{ occurrenceAt: WHOLE_EVENT }, { occurrenceAt: { gte: from, lte: to } }],
+        // A date moved into the window may be answered under an original start just outside it (s06-10).
+        OR: [
+          { occurrenceAt: WHOLE_EVENT },
+          {
+            occurrenceAt: {
+              gte: new Date(from.getTime() - OVERRIDE_MARGIN_MS),
+              lte: new Date(to.getTime() + OVERRIDE_MARGIN_MS),
+            },
+          },
+        ],
         event: inWindow,
       },
       take: 600,
@@ -128,5 +140,14 @@ export async function myEventInputs(userId: string, from: Date, to: Date): Promi
       i.otherName = other?.name ?? other?.handle ?? null;
     }
   }
+  // Skipped and moved dates of the repeating events (feed-entries.ts applies them).
+  const repeating = [...inputs.values()].filter((i) => i.event.recurrence);
+  if (repeating.length) {
+    const overrides = await overridesForEvents(repeating.map((i) => i.event.id));
+    for (const i of repeating) i.overrides = overrides.get(i.event.id) ?? [];
+  }
+  // s06-11 — what the host said since, for the calendar description.
+  const said = await latestUpdatesFor([...inputs.keys()], userId);
+  for (const i of inputs.values()) i.updates = said.get(i.event.id) ?? [];
   return [...inputs.values()];
 }

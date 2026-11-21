@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { GifEmbed } from '@/components/feed/GifEmbedLazy';
+import { GifDescriptionField } from '@/components/feed/compose/GifDescriptionField';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
@@ -33,9 +35,19 @@ interface EditAltTextDialogProps {
   imageAlts:
     | readonly string[]
     | undefined;
-  /** The saved list, one entry per image, so the surface can update in place. */
+  /** The post's GIF and its description (sprint 06 #15): listed with the images, described the same way. */
+  gifUrl?:
+    | string
+    | null;
+  gifAlt?:
+    | string
+    | null;
+  /** The saved list, one entry per image, and the GIF's description (undefined when the post has no GIF), so the surface can update in place. */
   onSaved: (
     imageAlts: string[],
+    gifAlt?:
+      | string
+      | null,
   ) => void;
   /** The control that opened the dialog; focus goes back to it on close. */
   restoreFocusTo?: () => HTMLElement | null;
@@ -52,6 +64,8 @@ export function EditAltTextDialog({
   postId,
   imageUrls,
   imageAlts,
+  gifUrl,
+  gifAlt,
   onSaved,
   restoreFocusTo,
 }: EditAltTextDialogProps) {
@@ -118,11 +132,21 @@ export function EditAltTextDialog({
             imageUrls,
             imageAlts,
           )}
+          gifUrl={
+            gifUrl ??
+            null
+          }
+          savedGifAlt={
+            gifAlt ??
+            ''
+          }
           onSaved={(
             alts,
+            savedGifAlt,
           ) => {
             onSaved(
               alts,
+              savedGifAlt,
             );
             onOpenChange(
               false,
@@ -143,14 +167,23 @@ function AltFields({
   postId,
   imageUrls,
   saved,
+  gifUrl,
+  savedGifAlt,
   onSaved,
   onCancel,
 }: {
   postId: string;
   imageUrls: string[];
   saved: string[];
+  gifUrl:
+    | string
+    | null;
+  savedGifAlt: string;
   onSaved: (
     imageAlts: string[],
+    gifAlt?:
+      | string
+      | null,
   ) => void;
   onCancel: () => void;
 }) {
@@ -186,9 +219,16 @@ function AltFields({
     >(
       null,
     );
+  const [
+    gifDraft,
+    setGifDraft,
+  ] =
+    useState(
+      savedGifAlt,
+    );
   const total =
     imageUrls.length;
-  const changed =
+  const imagesChanged =
     drafts.some(
       (
         d,
@@ -202,6 +242,13 @@ function AltFields({
           ''
         ).trim(),
     );
+  const gifChanged =
+    !!gifUrl &&
+    gifDraft.trim() !==
+      savedGifAlt.trim();
+  const changed =
+    imagesChanged ||
+    gifChanged;
 
   const save =
     async () => {
@@ -221,12 +268,23 @@ function AltFields({
                   id: postId,
                 },
               body: {
-                alts: drafts.map(
-                  (
-                    d,
-                  ) =>
-                    d.trim(),
-                ),
+                // A post with only a GIF sends no image list; an unchanged part is left alone.
+                alts:
+                  imagesChanged
+                    ? drafts.map(
+                        (
+                          d,
+                        ) =>
+                          d.trim(),
+                      )
+                    : [],
+                ...(gifChanged
+                  ? {
+                      gifAlt:
+                        gifDraft.trim() ||
+                        null,
+                    }
+                  : {}),
               },
             },
           );
@@ -241,6 +299,7 @@ function AltFields({
         );
         onSaved(
           res.imageAlts,
+          res.gifAlt,
         );
       } catch (e) {
         setError(
@@ -392,6 +451,29 @@ function AltFields({
               </div>
             );
           },
+        )}
+        {gifUrl && (
+          <div className="flex flex-col gap-2">
+            <GifEmbed
+              url={
+                gifUrl
+              }
+              gifAlt={
+                savedGifAlt
+              }
+              linked={
+                false
+              }
+            />
+            <GifDescriptionField
+              value={
+                gifDraft
+              }
+              onChange={
+                setGifDraft
+              }
+            />
+          </div>
         )}
       </div>
       {error && (

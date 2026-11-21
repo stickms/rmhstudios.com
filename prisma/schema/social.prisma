@@ -5,6 +5,8 @@ model RMHark {
   userId    String
   content   String   @db.Text
   gifUrl    String?  @db.Text
+  /// Description of the GIF (alt text), plain text; null = none (rendered as "GIF").
+  gifAlt    String?  @db.VarChar(1000)
   imageUrls String[] @default([])
   // Per-image alt text (accessibility), aligned by index with imageUrls.
   // May be shorter than imageUrls; a missing/empty entry means "no description".
@@ -52,6 +54,9 @@ model RMHark {
 
   // Content warning: media/text hidden behind a click-to-reveal overlay.
   isSensitive Boolean @default(false)
+  // Why the post is warned (sprint 06 #16): plain text, 1-80 characters, one line. A reason implies `isSensitive`
+  // and also covers the post's text; a warning without one covers media only, as before.
+  contentWarning String? @db.VarChar(80)
 
   // Who is allowed to reply to this post (anti-harassment control).
   replyControl RMHarkReplyControl @default(EVERYONE)
@@ -288,6 +293,8 @@ model RMHarkPoll {
   rmheetId      String    @unique
   question      String    @db.VarChar(200)
   multiSelect   Boolean   @default(false)
+  /// s06-19: a ranked-choice poll (3-6 options, a required end). Mutually exclusive with `multiSelect`.
+  ranked        Boolean   @default(false)
   closesAt      DateTime? // optional scheduled close; null = never closes
   createdAt     DateTime  @default(now())
   /// s04-08: set when the author ends the poll early. The effective end is `closedAt ?? closesAt`.
@@ -296,6 +303,8 @@ model RMHarkPoll {
   extendedAt    DateTime?
   /// s04-08: claimed (compare-and-set) by the per-minute job before it tells the author and the voters.
   endNotifiedAt DateTime?
+  /// s06-19: the instant-runoff result of a ranked poll, computed once when the poll ends (`lib/feed/ranked-poll.server.ts`).
+  resultJson    Json?
 
   rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   options RMHarkPollOption[]
@@ -541,11 +550,14 @@ model ScheduledPost {
   userId       String
   content      String             @db.Text
   gifUrl       String?            @db.Text
+  gifAlt       String?            @db.VarChar(1000)
   imageUrls    String[]           @default([])
   // Per-image alt text (accessibility), aligned by index with imageUrls.
   imageAlts    String[]           @default([])
   audience     RMHarkAudience     @default(PUBLIC)
   isSensitive  Boolean            @default(false)
+  // The reason for the warning, carried to the published post (sprint 06 #16).
+  contentWarning String?          @db.VarChar(80)
   replyControl RMHarkReplyControl @default(EVERYONE)
   unlockPrice  Int?
   communityId  String?

@@ -7,8 +7,7 @@ import {
   updateDeckApi,
 } from '@/lib/study/decks.contract';
 import { addCardBody, updateDeckBody } from '@/lib/study/decks-schema';
-import { addCard, updateDeck } from '@/lib/study/deck-editor.server';
-import { prisma } from '@/lib/prisma.server';
+import { addCard, deleteDeck, updateDeck } from '@/lib/study/deck-editor.server';
 import { getDeck } from '@/lib/study.server';
 
 /**
@@ -46,13 +45,8 @@ export const route = apiRoute('/api/study/decks/$id', {
   ),
 
   DELETE: implement(deleteDeckApi, {}, async ({ params, session }) => {
-    const deck = await prisma.flashcardDeck.findUnique({
-      where: { id: params.id },
-      select: { userId: true },
-    });
-    if (!deck || deck.userId !== session.user.id)
-      return Response.json({ error: 'Not found' }, { status: 404 });
-    await prisma.flashcardDeck.delete({ where: { id: params.id } });
+    const result = await deleteDeck(session.user.id, params.id);
+    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
     return { success: true as const };
   }),
 });

@@ -27,6 +27,8 @@ function mapEventError(err: EventError): [string, number] {
       return ['The waitlist is full', 409];
     case 'CANCELED':
       return ['This event was canceled', 409];
+    case 'OCCURRENCE_SKIPPED':
+      return ['This date was skipped', 409];
     default:
       return ['Could not update RSVP', 400];
   }

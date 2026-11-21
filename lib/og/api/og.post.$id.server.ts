@@ -2,7 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { renderPostOgImage } from '@/lib/og/post-image.server';
-import { postCardCommunityName, postCardShowsContent } from '@/lib/og/post-visibility';
+import { postCardCommunityName, postCardContentWarning, postCardShowsContent } from '@/lib/og/post-visibility';
+import { contentWarningNotice } from '@/lib/feed/content-warning';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 
 /** GET /api/og/post/$id — dynamic Open Graph card image (PNG) for a post. */
@@ -16,6 +17,7 @@ export const route = apiRoute('/api/og/post/$id', {
         gifUrl: true,
         imageUrls: true,
         isSensitive: true,
+        contentWarning: true,
         deletedAt: true,
         audience: true,
         unlockPrice: true,
@@ -62,6 +64,8 @@ export const route = apiRoute('/api/og/post/$id', {
     // content-warned leaks into a preview. The gate covers the text, the
     // poll AND the attachments — see lib/og/post-visibility.ts.
     const showContent = postCardShowsContent(post);
+    // A post with a content warning reason is a card that names the reason and draws nothing else (sprint 06 #16).
+    const warning = postCardContentWarning(post);
     const showQuote = showContent && postCardShowsContent(post?.original);
     // A private community's name is members-only; the card is public and cached.
     const communityName = postCardCommunityName(post);
@@ -73,10 +77,10 @@ export const route = apiRoute('/api/og/post/$id', {
       // The quote is part of the card, so its state is part of the key: a quoted
       // original that goes private / deleted / edited must not keep its text on
       // a cached card.
-      revision: `${post?.updatedAt?.getTime() ?? 0}:${showContent ? 1 : 0}:${communityName ? 1 : 0}:${hidesCounts ? 'q' : 'c'}:${
+      revision: `${post?.updatedAt?.getTime() ?? 0}:${showContent ? 1 : warning ? 2 : 0}:${communityName ? 1 : 0}:${hidesCounts ? 'q' : 'c'}:${
         showQuote ? `q${post?.original?.updatedAt?.getTime() ?? 0}` : 'n'
       }`,
-      content: showContent ? (post?.content ?? '') : '',
+      content: showContent ? (post?.content ?? '') : warning ? contentWarningNotice(warning) : '',
       authorName: author?.name ?? 'RMH Studios',
       authorHandle: author?.handle ?? null,
       authorImage: author?.image ?? null,

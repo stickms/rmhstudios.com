@@ -4,22 +4,48 @@ import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { GifEmbed } from '../GifEmbed';
 import { GifPicker } from '../GifPickerLazy';
+import { GifDescriptionField } from './GifDescriptionField';
+import type { GifSelection } from '@/lib/feed/gif-alt';
 
-/** The chosen GIF as an attachment in the composer, with a button that removes it. */
-export function GifAttachment({ gifUrl, onRemove }: { gifUrl: string; onRemove: () => void }) {
+/**
+ * The chosen GIF as an attachment in the composer, with a button that removes it and (sprint 06 #15) a labelled
+ * "Describe this GIF" field under it, prefilled from the provider's text.
+ */
+export function GifAttachment({
+  gifUrl,
+  gifAlt,
+  onGifAltChange,
+  altRequired,
+  onRemove,
+}: {
+  gifUrl: string;
+  gifAlt: string;
+  onGifAltChange: (value: string) => void;
+  /** The member's "Require alt text" setting is on. */
+  altRequired?: boolean;
+  onRemove: () => void;
+}) {
   const { t } = useTranslation('feed');
   return (
-    <div className="relative mt-2">
-      <GifEmbed url={gifUrl} />
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={t('remove-gif-aria', { defaultValue: 'Remove GIF' })}
-        title={t('remove-gif-aria', { defaultValue: 'Remove GIF' })}
-        className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-colors hover:bg-site-media-scrim-hover sm:size-auto sm:p-1"
-      >
-        <X className="h-3.5 w-3.5" aria-hidden />
-      </button>
+    <div className="mt-2">
+      <div className="relative">
+        <GifEmbed url={gifUrl} gifAlt={gifAlt} />
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={t('remove-gif-aria', { defaultValue: 'Remove GIF' })}
+          title={t('remove-gif-aria', { defaultValue: 'Remove GIF' })}
+          className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-colors hover:bg-site-media-scrim-hover sm:size-auto sm:p-1"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden />
+        </button>
+      </div>
+      <GifDescriptionField
+        value={gifAlt}
+        onChange={onGifAltChange}
+        required={altRequired}
+        className="mt-2"
+      />
     </div>
   );
 }
@@ -39,7 +65,7 @@ export function GifPopover({
   open: boolean;
   onClose: () => void;
   anchorRef: RefObject<HTMLElement | null>;
-  onSelect: (url: string) => void;
+  onSelect: (selection: GifSelection) => void;
 }) {
   const { t } = useTranslation('feed');
   return (
@@ -55,8 +81,8 @@ export function GifPopover({
     >
       <GifPicker
         listClassName="h-72"
-        onSelect={(url) => {
-          onSelect(url);
+        onSelect={(selection) => {
+          onSelect(selection);
           onClose();
         }}
         unavailable={

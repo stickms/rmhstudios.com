@@ -58,6 +58,7 @@ const ICONS: Record<SecurityEventKind, LucideIcon> = {
   handle_changed: UserRound,
   deletion_scheduled: Trash2,
   deletion_cancelled: Trash2,
+  account_secured_by_admin: ShieldAlert,
 };
 
 function providerLabel(id: string | undefined): string {
@@ -139,6 +140,11 @@ function sentence(t: TFunction, item: SecurityActivityItem): string {
       return t('event-deletion-scheduled', { defaultValue: 'Account deletion scheduled' });
     case 'deletion_cancelled':
       return t('event-deletion-cancelled', { defaultValue: 'Account deletion cancelled' });
+    case 'account_secured_by_admin':
+      return t('event-account-secured-by-admin', {
+        defaultValue:
+          'Staff signed this account out everywhere and revoked its API keys, tokens and webhooks',
+      });
   }
 }
 

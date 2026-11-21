@@ -6,6 +6,7 @@ import { AdminReleaseNotesLink } from '@/components/devplatform/AdminReleaseNote
 import { AdminSafetyLink } from '@/components/safety/AdminSafetyLink';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
+import { AdminFeedbackCard } from '@/components/feedback/AdminFeedbackCard';
 import { AdminHubCard } from '@/components/admin/AdminHubCard';
 import { LookupField } from '@/components/admin/LookupField';
 import { AdminBody } from '@/components/admin/AdminBody';
@@ -331,6 +332,10 @@ function AdminDashboardPage() {
               defaultValue: 'Paste an id, handle, e-mail address or link to find what it is.',
             })}
           />
+
+          {/* Sprint 06 admin tools */}
+          {/* s06-05 feedback-inbox */}
+          <AdminFeedbackCard />
 
         </div>
       </AdminBody>

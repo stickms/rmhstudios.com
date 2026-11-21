@@ -12,3 +12,5 @@ export const MAX_IMPORT_FILE_BYTES = 1024 * 1024;
 export const CLOZE_TEXT_MAX = 1000;
 /** Distinct deletion indices (c1, c2, …) one cloze card may use. */
 export const CLOZE_MAX_INDICES = 20;
+/** Decks one member may own. */
+export const MAX_DECKS_PER_MEMBER = 200;

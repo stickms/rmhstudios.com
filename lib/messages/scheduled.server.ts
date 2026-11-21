@@ -10,6 +10,7 @@
  * is invisible to everyone but its sender.
  */
 
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { prisma } from '@/lib/prisma.server';
 import {
   findDm,
@@ -59,6 +60,9 @@ type Row =
     gifUrl:
       | string
       | null;
+    gifAlt?:
+      | string
+      | null;
     imageUrls: string[];
     imageAlts?: string[];
     sendAt: Date;
@@ -79,6 +83,11 @@ export function toScheduledRow(
       r.content,
     gifUrl:
       r.gifUrl,
+    gifAlt:
+      r.gifUrl
+        ? (r.gifAlt ??
+          null)
+        : null,
     imageUrls:
       r.imageUrls,
     imageAlts:
@@ -215,6 +224,10 @@ export interface ScheduleInput {
   chatId: string;
   content: string;
   gifUrl?:
+    | string
+    | undefined;
+  /** The GIF's description (sprint 06 #15); carried to the message when it sends. */
+  gifAlt?:
     | string
     | undefined;
   imageUrls?:
@@ -417,6 +430,11 @@ export async function scheduleMessage(
               gifUrl:
                 input.gifUrl ??
                 null,
+              gifAlt:
+                normalizeGifAlt(
+                  input.gifUrl,
+                  input.gifAlt,
+                ),
               imageUrls:
                 input.imageUrls ??
                 [],
@@ -753,6 +771,12 @@ async function deliver(
     {
       gifUrl:
         row.gifUrl ??
+        undefined,
+      gifAlt:
+        normalizeGifAlt(
+          row.gifUrl,
+          row.gifAlt,
+        ) ??
         undefined,
       imageUrls:
         row.imageUrls,
@@ -1132,6 +1156,11 @@ export async function exportScheduledMessages(
         r.content,
       gifUrl:
         r.gifUrl,
+      gifAlt:
+        r.gifUrl
+          ? (r.gifAlt ??
+            null)
+          : null,
       imageUrls:
         r.imageUrls,
       imageAlts:

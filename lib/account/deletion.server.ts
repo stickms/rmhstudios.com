@@ -26,6 +26,14 @@
  * tries unprompted. See {@link cancelDeletion} for the call site.
  */
 
+import { awayErasureOps } from '@/lib/messages/away.server';
+import { buildCommentErasureOps } from '@/lib/builds/comments.server';
+import { communityBanErasureOps } from '@/lib/communities/bans.server';
+import { communityNoteErasureOps } from '@/lib/communities/member-notes.server';
+import { feedbackErasureOps } from '@/lib/feedback/inbox.server';
+import { eventOverrideErasureOps } from '@/lib/events/occurrences.server';
+import { eventUpdateErasureOps } from '@/lib/events/updates.server';
+import { groupInviteErasureOps } from '@/lib/group-chat/invites.server';
 import { prisma } from '@/lib/prisma.server';
 import { removeMemberFromFlagLists } from '@/lib/flags/targeting.server';
 import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
@@ -44,12 +52,14 @@ import { adjustmentErasureOps } from '@/lib/economy/adjustments.server';
 import { releaseSeatsOf } from '@/lib/events/waitlist.server';
 import { cohostErasureOps } from '@/lib/events/cohosts.server';
 import { jamTeamErasureOps } from '@/lib/competitive/jam-teams.server';
+import { jamFeedbackErasureOps } from '@/lib/competitive/jam-feedback.server';
 import { replayErasureOps } from '@/lib/replays.server';
 import { leaveAllGroups } from '@/lib/group-chat/manage.server';
 import { repostMuteErasureOps } from '@/lib/feed/repost-mutes.server';
 import { blockMuteErasureOps } from '@/lib/moderation/blocked-muted.server';
 import { savedReplyErasureOps } from '@/lib/messages/saved-replies.server';
 import { leaderboardErasureOps } from '@/lib/game/leaderboard-privacy.server';
+import { matchResultErasureOps } from '@/lib/tournaments/match-results.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -479,6 +489,45 @@ export async function anonymizeAccount(userId: string): Promise<void> {
 
     // s05-20 flashcard-reminders
     prisma.flashcardReminder.deleteMany({ where: { userId } }),
+
+    // Sprint 06 erasures (docs/autonomous/sprint-06/plan.md §Anchors): each feature adds its operations under its own line.
+    // s06-01 community-bans
+    // Sanctions about the member are deleted; where they were the moderator the reference is nulled.
+    ...communityBanErasureOps(userId),
+
+    // s06-02 community-notes
+    ...communityNoteErasureOps(userId),
+
+    // s06-05 feedback-inbox
+    // The member's feedback is deleted (the cascade never fires on an anonymised account); rows they handled as an admin are unlinked.
+    ...feedbackErasureOps(userId),
+
+    // s06-07 jam-feedback
+    ...jamFeedbackErasureOps(userId),
+
+    // s06-09 group-invites
+    ...groupInviteErasureOps(userId),
+
+    // s06-10 event-occurrences
+    // Overrides are event data and stay; where the member made one the reference is nulled.
+    ...eventOverrideErasureOps(userId),
+
+    // s06-11 event-updates
+    // An update is event content and stays; where the member wrote it the author is nulled.
+    ...eventUpdateErasureOps(userId),
+
+    // s06-14 build-comments
+    // Published build comments stay under "Deleted user" (as post comments do); only where the member hid comments is the reference unlinked.
+    ...buildCommentErasureOps(userId),
+
+    // s06-18 away-message
+    // The away message and its reply markers are the member's own; no reference worth keeping.
+    ...awayErasureOps(userId),
+
+    // s06-20 match-results
+    // Match rows are tournament records and stay; where the member was the claimant or disputer the reference is nulled.
+    ...matchResultErasureOps(userId),
+
 
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({

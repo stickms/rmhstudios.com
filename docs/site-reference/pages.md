@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 394 routes. 206 render inside the standard site shell (sidebar, nav, context rail); 188 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 397 routes. 209 render inside the standard site shell (sidebar, nav, context rail); 188 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -38,6 +38,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
 | `/admin/email` | Email | admin | `app/routes/_site/admin/email.tsx` |
 | `/admin/emoji-packs` | Emoji Pack Review | admin | `app/routes/_site/admin/emoji-packs.tsx` |
+| `/admin/feedback` | Feedback \| Admin | admin | `app/routes/_site/admin/feedback.tsx` |
 | `/admin/flags` | Feature Flags | admin | `app/routes/_site/admin/flags.tsx` |
 | `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
 | `/admin/jobs` | Background Jobs \| Admin | admin | `app/routes/_site/admin/jobs.tsx` |
@@ -96,6 +97,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/follows` | Followers and following | public | `app/routes/_site/follows.tsx` |
 | `/groups` | Group Chats | public | `app/routes/_site/groups/index.tsx` |
 | `/groups/:id` | Group Chat | public | `app/routes/_site/groups/$id.tsx` |
+| `/groups/join/:code` | Group invite | public | `app/routes/_site/groups/join.$code.tsx` |
 | `/help` | Help & Concierge | public | `app/routes/_site/help.tsx` |
 | `/history` | History | public | `app/routes/_site/history.tsx` |
 | `/homes` | RMHHomes | public | `app/routes/_site/homes/index.tsx` |
@@ -170,6 +172,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/blocked` | — | public | `app/routes/_site/settings/blocked.tsx` |
 | `/settings/cloud-saves` | Cloud saves | public | `app/routes/_site/settings/cloud-saves.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
+| `/settings/feedback` | — | public | `app/routes/_site/settings/feedback.tsx` |
 | `/settings/keyboard` | Keyboard | public | `app/routes/_site/settings/keyboard.tsx` |
 | `/settings/layout` | Sidebar | public | `app/routes/_site/settings/layout.tsx` |
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |

@@ -16,6 +16,7 @@ import {
   serverError,
 } from '@/lib/http';
 import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 export interface ReplyComposerState {
   commentContent: string;
   setCommentContent: Dispatch<
@@ -62,6 +63,8 @@ export function useReplyComposer(
     );
   const reconsider =
     useReconsider();
+  const sanctionRefusalText =
+    useSanctionRefusal();
 
   const handleSubmit =
     async () => {
@@ -130,9 +133,12 @@ export function useReplyComposer(
           HttpError
         ) {
           toast.error(
-            serverError(
+            sanctionRefusalText(
               error,
             ) ||
+              serverError(
+                error,
+              ) ||
               t(
                 'comment-failed',
                 {

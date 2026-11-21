@@ -23,6 +23,7 @@ const h = vi.hoisted(() => ({
   memberEvent: { create: vi.fn() },
   executeRaw: vi.fn(),
   notify: vi.fn(),
+  banFindFirst: vi.fn(),
 }));
 
 /** `$transaction(cb)` hands the callback a client with the same mocks. */
@@ -34,6 +35,8 @@ vi.mock('@/lib/prisma.server', () => {
     communityJoinRequest: h.request,
     communityModAction: h.modAction,
     communityMemberEvent: h.memberEvent,
+    // s06-01: nobody is banned unless a scenario says so.
+    communityBan: { findFirst: h.banFindFirst },
     $executeRaw: h.executeRaw,
   });
   return {
@@ -76,6 +79,7 @@ beforeEach(() => {
   h.modAction.create.mockReset().mockResolvedValue({ id: 1n });
   h.notify.mockReset().mockResolvedValue(undefined);
   h.member.findUnique.mockResolvedValue(null);
+  h.banFindFirst.mockReset().mockResolvedValue(null);
 });
 
 describe('invite codes', () => {
@@ -228,6 +232,35 @@ describe('removal and cancellation are remembered', () => {
     expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toMatchObject({ ok: false, reason: 'cooldown' });
     expect(h.request.upsert).not.toHaveBeenCalled();
     expect(h.notify).not.toHaveBeenCalled();
+  });
+
+  it('a member removed by a ban may ask again as soon as the ban has ended', async () => {
+    const decidedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000); // inside the 7-day cooldown
+    h.request.findUnique.mockResolvedValue({ status: 'REMOVED', decidedAt });
+    h.member.findMany.mockResolvedValue([{ userId: 'mod1' }]);
+
+    // the 1-day ban that wrote the REMOVED row has expired
+    h.banFindFirst.mockResolvedValue({ endsAt: new Date(decidedAt.getTime() + 86_400_000), liftedAt: null });
+    expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toEqual({ ok: true, status: 'PENDING' });
+    const where = h.banFindFirst.mock.calls[0][0].where;
+    expect(where).toMatchObject({ communityId: 'c1', userId: 'u', kind: 'ban' });
+    expect(where.createdAt.gte.getTime()).toBeLessThan(decidedAt.getTime());
+    expect(where.createdAt.lte.getTime()).toBeGreaterThan(decidedAt.getTime());
+
+    // lifted early: same
+    h.request.upsert.mockClear();
+    h.banFindFirst.mockResolvedValue({ endsAt: null, liftedAt: new Date() });
+    expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toEqual({ ok: true, status: 'PENDING' });
+
+    // a ban still running (the route refuses it first; here the cooldown still holds)
+    h.request.upsert.mockClear();
+    h.banFindFirst.mockResolvedValue({ endsAt: new Date(Date.now() + 86_400_000), liftedAt: null });
+    expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toMatchObject({ ok: false, reason: 'cooldown' });
+
+    // a plain removal (no ban beside it) keeps the cooldown
+    h.banFindFirst.mockResolvedValue(null);
+    expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toMatchObject({ ok: false, reason: 'cooldown' });
+    expect(h.request.upsert).not.toHaveBeenCalled();
   });
 
   it('cancel keeps a CANCELLED row, and a quick re-request is refused without notifying moderators', async () => {

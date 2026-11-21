@@ -5,6 +5,7 @@
  * `readFeedPage` every feed uses (posts from the members, honoring audience,
  * blocks and mutes).
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import {
   feedSourceSelect,
@@ -223,7 +224,7 @@ export async function listTimeline(
   if (!page.length) return { items: [], nextCursor: null };
   const rows = await prisma.rMHark.findMany({
     where: { id: { in: page.map((p) => p.id) } },
-    select: { id: true, content: true, createdAt: true, user: { select: userDisplaySelect } },
+    select: { id: true, content: true, contentWarning: true, createdAt: true, user: { select: userDisplaySelect } },
   });
   const byId = new Map(rows.map((r) => [r.id, r]));
   return {
@@ -232,7 +233,8 @@ export async function listTimeline(
       .filter((r): r is NonNullable<typeof r> => !!r)
       .map((r) => ({
         id: r.id,
-        content: r.content,
+        // A list row cannot be revealed: a content warning reason stands in for the text (sprint 06 #16).
+        content: previewTextFor(r) ?? '',
         createdAt: r.createdAt.toISOString(),
         author: resolveUser(r.user),
       })),

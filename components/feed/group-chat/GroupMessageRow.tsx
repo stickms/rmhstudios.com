@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useGifAlt } from '../use-gif-alt';
 import { ChatRichBody } from '@/components/chat-plus/ChatRichBody';
 import { ChatSystemLine } from '@/components/chat-plus/ChatSystemLine';
 import { MessageBadges, ThreadChip } from '@/components/chat-plus/MessageBadges';
@@ -62,6 +63,7 @@ export function GroupMessageRow({
   className?: string | undefined;
 }) {
   const { t } = useTranslation('feed');
+  const gifAltText = useGifAlt();
   const { locale } = useLocaleFormat();
   const mine = m.sender.id === currentUserId;
   // The sender's "Edit descriptions": the saved list shows at once, whether or not the realtime event arrives.
@@ -122,7 +124,7 @@ export function GroupMessageRow({
             {m.gifUrl && (
               <img
                 src={m.gifUrl}
-                alt=""
+                alt={gifAltText(m.gifAlt)}
                 className="mt-2 max-h-60 w-auto rounded-site"
                 loading="lazy"
               />

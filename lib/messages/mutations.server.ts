@@ -58,6 +58,7 @@ const messageSelect = {
   read: true,
   createdAt: true,
   gifUrl: true,
+  gifAlt: true,
   imageUrls: true,
   imageAlts: true,
   editedAt: true,
@@ -297,6 +298,7 @@ export async function publishMutation(
       deletedAt: Date | null;
       deletedBy: string | null;
       gifUrl: string | null;
+      gifAlt?: string | null;
       imageUrls: string[];
       imageAlts?: string[];
       audioUrl: string | null;

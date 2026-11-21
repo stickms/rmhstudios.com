@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ExportForChallenge } from '@/components/studio/ExportForChallenge';
 import {
   Dialog,
   DialogContent,
@@ -655,6 +656,11 @@ function Detail({
               )}
             />
           </label>
+          <ExportForChallenge
+            onFile={
+              setFile
+            }
+          />
           <Button
             variant="default"
             size="sm"

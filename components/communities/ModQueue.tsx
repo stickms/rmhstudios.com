@@ -21,6 +21,7 @@ import { Select } from '@/components/ui/select';
 import type { ModItemDTO } from '@/lib/communities/plus';
 import type { CommunityRuleDTO } from '@/lib/communities/rules';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { MemberNotesPreview } from '@/components/communities/MemberNotesPreview';
 
 export function ModQueue({
   slug,
@@ -463,6 +464,26 @@ export function ModQueue({
                     i.snapshot
                   }
                 </p>
+                <MemberNotesPreview
+                  slug={
+                    slug
+                  }
+                  member={{
+                    id: i
+                      .author
+                      .id,
+                    name:
+                      i
+                        .author
+                        .name ??
+                      null,
+                    handle:
+                      i
+                        .author
+                        .handle ??
+                      null,
+                  }}
+                />
                 {i.status ===
                   'PENDING' && (
                   <MacroField

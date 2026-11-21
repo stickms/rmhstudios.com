@@ -27,6 +27,7 @@ import type {
   ChatUpdate,
   SystemAction,
 } from '@/lib/chat-plus/types';
+import { revokeInvitesOf } from '@/lib/group-chat/invites-revoke.server';
 import {
   applyCap,
   isGroupOwner,
@@ -78,7 +79,7 @@ type NamedUser =
   };
 
 /** The name the member list shows (custom display name first), else their handle. */
-function displayName(
+export function displayName(
   u: NamedUser | null,
 ):
   | string
@@ -95,7 +96,7 @@ function displayName(
 }
 
 /** Take the group's lock, then read it. Null when it is gone (or is not a group). */
-async function lockedGroup(
+export async function lockedGroup(
   tx: Db,
   chatId: string,
 ) {
@@ -121,7 +122,7 @@ async function lockedGroup(
 }
 
 /** Null when `actorId` owns the group; otherwise the refusal: a stranger to the group is told it does not exist. */
-async function refuseUnlessOwner(
+export async function refuseUnlessOwner(
   tx: Db,
   group: {
     id: string;
@@ -163,7 +164,7 @@ async function refuseUnlessOwner(
 }
 
 /** A system line and/or a realtime update for a group, sent as `senderId` (who must still be a member). */
-async function announce(
+export async function announce(
   chatId: string,
   senderId: string,
   parts: {
@@ -579,6 +580,24 @@ export async function addMembers(
           joining.length >
           0
         ) {
+          // The owner adding someone back lifts the removal that kept an invite link from bringing them in (s06-09).
+          await tx.chatRemoval.deleteMany(
+            {
+              where:
+                {
+                  chatId,
+                  userId:
+                    {
+                      in: joining.map(
+                        (
+                          u,
+                        ) =>
+                          u.id,
+                      ),
+                    },
+                },
+            },
+          );
           await tx.chatMember.createMany(
             {
               data: joining.map(
@@ -785,6 +804,31 @@ export async function removeMember(
               },
           },
         );
+        // Remember the removal so a live invite link cannot bring them back (s06-09); leaving writes nothing.
+        await tx.chatRemoval.upsert(
+          {
+            where:
+              {
+                chatId_userId:
+                  {
+                    chatId,
+                    userId:
+                      targetId,
+                  },
+              },
+            create:
+              {
+                chatId,
+                userId:
+                  targetId,
+              },
+            update:
+              {
+                removedAt:
+                  new Date(),
+              },
+          },
+        );
         return {
           ok: true,
           targetName:
@@ -920,6 +964,12 @@ export async function transferOwnership(
                 targetId,
             },
           },
+        );
+        // The old owner's links go with the ownership; the new owner makes their own (s06-09).
+        await revokeInvitesOf(
+          tx,
+          chatId,
+          actorId,
         );
         return {
           ok: true,
@@ -1106,6 +1156,11 @@ export async function leaveGroup(
                 heirId,
             },
           },
+        );
+        await revokeInvitesOf(
+          tx,
+          chatId,
+          userId,
         );
         const heir =
           await tx.user.findUnique(

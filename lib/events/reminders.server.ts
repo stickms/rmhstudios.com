@@ -16,6 +16,12 @@ export interface EventReminderJob {
   offset: ReminderOffset;
   /** K4 — the occurrence this reminder is for, on a repeating event. */
   occurrenceAt?: string;
+  /**
+   * s06-10 — the effective start this job was scheduled for (a moved occurrence starts at its new
+   * time while `occurrenceAt` stays the original key). The worker drops a job whose `startsAt` no
+   * longer matches the occurrence's current start.
+   */
+  startsAt?: string;
 }
 
 const REMINDER_OFFSETS: { offset: ReminderOffset; leadMs: number }[] = [
@@ -28,8 +34,15 @@ const reminderKey = (
   userId: string,
   offset: ReminderOffset,
   occurrenceAt?: Date,
+  /**
+   * s06-10 — the effective start. The queue is `stately`, so a fresh job for a moved occurrence under
+   * the old key would be dropped while the old one is queued: the key carries the time it fires for.
+   */
+  effectiveStart?: Date,
 ) =>
-  `event-reminder:${eventId}:${userId}:${offset}${occurrenceAt ? `:${occurrenceAt.getTime()}` : ''}`;
+  `event-reminder:${eventId}:${userId}:${offset}${occurrenceAt ? `:${occurrenceAt.getTime()}` : ''}${
+    occurrenceAt && effectiveStart ? `:${effectiveStart.getTime()}` : ''
+  }`;
 
 // Idempotent per-process queue creation, memoised so we don't hit the DB on
 // every RSVP. `stately` policy + a per-(event,user,offset) singletonKey gives us
@@ -56,12 +69,15 @@ export async function scheduleEventReminders(
   userId: string,
   /** K4 — `event.startsAt` is one occurrence of a repeating event. */
   recurring = false,
+  /** s06-10 — `event.startsAt` is the effective start; this is the occurrence's original start (its answer key). */
+  opts: { occurrenceAt?: Date } = {},
 ): Promise<void> {
   const boss = await getBoss();
   if (!boss) return;
   try {
     await ensureQueue(boss);
     const now = Date.now();
+    const original = recurring ? (opts.occurrenceAt ?? event.startsAt) : undefined;
     for (const { offset, leadMs } of REMINDER_OFFSETS) {
       const fireAt = new Date(event.startsAt.getTime() - leadMs);
       if (fireAt.getTime() <= now) continue;
@@ -72,11 +88,13 @@ export async function scheduleEventReminders(
           eventId: event.id,
           userId,
           offset,
-          ...(recurring ? { occurrenceAt: event.startsAt.toISOString() } : {}),
+          ...(original
+            ? { occurrenceAt: original.toISOString(), startsAt: event.startsAt.toISOString() }
+            : {}),
         } satisfies EventReminderJob,
         {
           startAfter: fireAt,
-          singletonKey: reminderKey(event.id, userId, offset, recurring ? event.startsAt : undefined),
+          singletonKey: reminderKey(event.id, userId, offset, original, original ? event.startsAt : undefined),
           retentionSeconds,
           retryLimit: 2,
         },
@@ -97,17 +115,25 @@ export async function cancelEventReminders(
   eventId: string,
   userId: string,
   occurrenceAt?: Date,
+  /**
+   * s06-10 — the start(s) the occurrence's jobs may have been scheduled for (its original, and a
+   * move's new time). The key without a start is tried too: jobs queued before moves existed use it.
+   */
+  effectiveStarts: readonly Date[] = [],
 ): Promise<void> {
   const boss = await getBoss();
   if (!boss) return;
   try {
     await ensureQueue(boss);
+    const starts: (Date | undefined)[] = occurrenceAt ? [undefined, occurrenceAt, ...effectiveStarts] : [undefined];
     for (const { offset } of REMINDER_OFFSETS) {
-      const jobs = await boss.findJobs(EVENT_REMINDER_QUEUE, {
-        key: reminderKey(eventId, userId, offset, occurrenceAt),
-      });
-      const ids = jobs.filter((j) => j.state === 'created' || j.state === 'retry').map((j) => j.id);
-      if (ids.length) await boss.cancel(EVENT_REMINDER_QUEUE, ids);
+      for (const start of starts) {
+        const jobs = await boss.findJobs(EVENT_REMINDER_QUEUE, {
+          key: reminderKey(eventId, userId, offset, occurrenceAt, start),
+        });
+        const ids = jobs.filter((j) => j.state === 'created' || j.state === 'retry').map((j) => j.id);
+        if (ids.length) await boss.cancel(EVENT_REMINDER_QUEUE, ids);
+      }
     }
   } catch {
     /* best-effort — worker re-checks the RSVP before notifying */

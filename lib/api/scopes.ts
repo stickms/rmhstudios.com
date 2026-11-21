@@ -192,6 +192,25 @@ export const SCOPES: ScopeDetail[] =
       description:
         'Read your game playtime and achievements, and the playtime other members share with you.',
     },
+    // Flashcards are the member's own study material; reviews are never writable through the API.
+    {
+      id: 'read:study',
+      action:
+        'read',
+      group:
+        'Study',
+      description:
+        'Read your flashcard decks, authored cards and due counts.',
+    },
+    {
+      id: 'write:study',
+      action:
+        'write',
+      group:
+        'Study',
+      description:
+        'Create, edit and delete your flashcard decks and cards. Reviews cannot be written.',
+    },
     {
       id: 'manage:webhooks',
       action:

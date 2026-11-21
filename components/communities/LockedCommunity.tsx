@@ -36,6 +36,7 @@ import {
   plusFetch,
 } from '@/components/communities/plus-api';
 import { cn } from '@/lib/utils';
+import { useSanctionRefusal } from './useSanctionRefusal';
 
 export interface LockedCommunityMeta {
   slug: string;
@@ -301,6 +302,8 @@ export function RequestToJoin({
     useRef(
       false,
     );
+  const sanctionRefusalText =
+    useSanctionRefusal();
   useEffect(() => {
     if (
       state ===
@@ -384,7 +387,10 @@ export function RequestToJoin({
                     'You can ask again in a few days.',
                 },
               )
-            : res.error ||
+            : sanctionRefusalText(
+                res.errorBody,
+              ) ||
+                res.error ||
                 t(
                   'request-error',
                   {

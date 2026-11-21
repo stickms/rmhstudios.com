@@ -46,6 +46,8 @@ export interface ScheduleDraft {
   gifUrl:
     | string
     | null;
+  /** The GIF's description (sprint 06 #15); carried to the scheduled message. */
+  gifAlt?: string;
   imageUrls: string[];
   /** Index-aligned with `imageUrls`; '' = none. */
   imageAlts?: string[];
@@ -206,6 +208,12 @@ export function SendLaterMenu({
                     ? {
                         gifUrl:
                           draft.gifUrl,
+                        ...(draft.gifAlt?.trim()
+                          ? {
+                              gifAlt:
+                                draft.gifAlt.trim(),
+                            }
+                          : {}),
                       }
                     : {}),
                   ...(draft

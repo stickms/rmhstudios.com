@@ -173,6 +173,9 @@ export function ComposeBox({
   const [aiOpen, setAiOpen] = useState(initialOpen === 'ai');
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [tagsOn, setTagsOn] = useState(false);
+  // The description of the chosen GIF (s06-15). Declared last: the characterization suite seeds the states above by ordinal.
+  const [gifAlt, setGifAlt] = useState('');
+  const [contentWarning, setContentWarning] = useState(''); // s06-16 (declared last so the characterization test's seeded state indexes hold): why the post is warned (optional)
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
@@ -193,7 +196,7 @@ export function ComposeBox({
 
   // Autosave the draft text so a refresh/navigation can't eat an unsent post;
   // offer any stored draft back once on mount.
-  useComposeDraftAutosave(content, gifUrl);
+  useComposeDraftAutosave(content, gifUrl, true, gifAlt);
   useEffect(() => {
     setPendingDraft(readComposeDraft());
   }, []);
@@ -215,13 +218,15 @@ export function ComposeBox({
   const closeGif = useCallback(() => setGifOpen(false), []);
   const closeEmoji = useCallback(() => setEmojiOpen(false), []);
 
-  const hasPoll = isPollPostable(attachment, poll);
+  const hasPoll = isPollPostable(attachment, poll, pollDuration);
   const hasGif = isGifPostable(attachment, gifUrl);
   const hasImages = imageUrls.length > 0;
   const hasContent = content.trim().length > 0;
   // X12: with "Require alt text" on, every attached image needs a description.
-  const requireAlt = useRequireAltText(hasImages);
+  const requireAlt = useRequireAltText(hasImages || hasGif);
   const missingAlt = requireAlt ? missingAltIndexes(imageUrls, imageAlts) : [];
+  // The same setting asks for a description on a GIF (s06-15); the field under the GIF says so.
+  const gifNeedsAlt = requireAlt && hasGif && !gifAlt.trim();
   const canSubmit = computeCanSubmit({
     hasContent,
     hasPoll,
@@ -231,7 +236,7 @@ export function ComposeBox({
     remaining,
     submitting,
     uploadingCount,
-    missingAltCount: missingAlt.length,
+    missingAltCount: missingAlt.length + (gifNeedsAlt ? 1 : 0),
   });
 
   const smartPaste = useSmartPaste({
@@ -265,11 +270,13 @@ export function ComposeBox({
       pollDuration,
       hasGif,
       gifUrl,
+      gifAlt,
       hasImages,
       imageUrls,
       imageAlts,
       audience,
       isSensitive,
+      contentWarning,
       isTake,
       replyControl,
       unlockPrice,
@@ -286,11 +293,13 @@ export function ComposeBox({
     setReplyControl('EVERYONE');
     setReplyOpen(false);
     setIsSensitive(false);
+    setContentWarning('');
     setIsTake(false);
     setUnlockPrice('');
     setAttachment(null);
     setPoll(emptyPoll());
     setGifUrl('');
+    setGifAlt('');
     setImageUrls([]);
     setImageAlts([]);
     setAltEditIndex(null);
@@ -311,12 +320,14 @@ export function ComposeBox({
     audience,
     replyControl,
     isSensitive,
+    contentWarning,
     isTake,
     codeEmbed: codeEmbed.embed,
     unlockPrice,
     attachment,
     poll,
     gifUrl,
+    gifAlt,
     imageUrls,
     imageAlts,
     postsPlus: { ttl: postsPlus.ttl, series: postsPlus.series, answering: postsPlus.answering },
@@ -326,12 +337,14 @@ export function ComposeBox({
     setAudience(d.audience);
     setReplyControl(d.replyControl);
     setIsSensitive(d.isSensitive);
+    setContentWarning(d.contentWarning ?? '');
     setIsTake(d.isTake);
     codeEmbed.setEmbed(d.codeEmbed);
     setUnlockPrice(d.unlockPrice);
     setAttachment(d.attachment);
     setPoll(d.poll);
     setGifUrl(d.gifUrl);
+    setGifAlt(d.gifAlt ?? '');
     setImageUrls(d.imageUrls);
     setImageAlts(d.imageAlts);
     postsPlus.restore(d.postsPlus);
@@ -372,10 +385,12 @@ export function ComposeBox({
         imageUrls,
         imageAlts,
         isSensitive,
+        contentWarning,
         isTake,
         replyControl,
         hasGif,
         gifUrl,
+        gifAlt,
         hasPoll,
         poll,
         unlockPrice,
@@ -431,6 +446,7 @@ export function ComposeBox({
           // invisibly and never posted.
           setAttachment('gif');
           setGifUrl(pendingDraft.gifUrl);
+          setGifAlt(pendingDraft.gifAlt ?? '');
         }
         setPendingDraft(null);
       }}
@@ -448,6 +464,7 @@ export function ComposeBox({
   const addPoll = () => {
     setAttachment('poll');
     setGifUrl('');
+    setGifAlt('');
   };
 
   // What the post carries, under the field in both looks: the thread offer, the active options' chips, the poll
@@ -476,7 +493,16 @@ export function ComposeBox({
         <UnlockPricePill price={parseInt(unlockPrice, 10)} onEdit={() => setShowPriceModal(true)} />
       )}
 
-      {isSensitive && <ContentWarningPill onRemove={() => setIsSensitive(false)} />}
+      {isSensitive && (
+        <ContentWarningPill
+          reason={contentWarning}
+          onReasonChange={setContentWarning}
+          onRemove={() => {
+            setIsSensitive(false);
+            setContentWarning('');
+          }}
+        />
+      )}
 
       {isTake && <TakeChip onRemove={() => setIsTake(false)} />}
       <CodeEmbedChip ce={codeEmbed} />
@@ -500,9 +526,13 @@ export function ComposeBox({
       {hasGif && (
         <GifAttachment
           gifUrl={gifUrl.trim()}
+          gifAlt={gifAlt}
+          onGifAltChange={setGifAlt}
+          altRequired={requireAlt}
           onRemove={() => {
             setAttachment(null);
             setGifUrl('');
+            setGifAlt('');
           }}
         />
       )}
@@ -596,9 +626,10 @@ export function ComposeBox({
         open={gifOpen}
         onClose={closeGif}
         anchorRef={row ? gifBtnRef : menuBtnRef}
-        onSelect={(url) => {
+        onSelect={({ url, description }) => {
           setAttachment('gif');
           setGifUrl(url);
+          setGifAlt(description);
           setPoll(emptyPoll());
         }}
       />

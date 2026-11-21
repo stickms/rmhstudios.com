@@ -24,6 +24,7 @@ import { reportGameResult } from '@/lib/game/results.server';
 import { validateScore, rejectionMessage, type ScoreRejection } from '@/lib/game/registry';
 import { getGameAdapter } from '@/lib/game/adapters.server';
 import { recordPersonalBest } from '@/lib/game/personal-bests.server';
+import { emitPersonalBestCreated } from '@/lib/webhooks/game-emit.server';
 import { prisma } from '@/lib/prisma.server';
 
 /** Submissions allowed per account per minute, across all games. */
@@ -152,13 +153,21 @@ export async function submitGameScore(input: SubmitScoreInput): Promise<SubmitSc
   // The history of how the best moved: one conditional insert, only on a first score or a new best.
   // Best-effort like the progression hooks above: a failed history write never fails the submission.
   if (moment) {
-    await recordPersonalBest(prisma, {
+    const recorded = await recordPersonalBest(prisma, {
       userId: input.userId,
       gameId: input.gameId,
       score,
       previous: moment.previous,
       progress,
-    }).catch(() => {});
+    }).catch(() => false);
+    // The recorded row is the source of truth: a retried submission writes nothing and emits nothing.
+    if (recorded) {
+      void emitPersonalBestCreated(input.userId, {
+        gameId: input.gameId,
+        score,
+        previous: moment.previous,
+      });
+    }
   }
   if (moment?.kind === 'pb') void emitPersonalBest(input.userId, input.gameId, score);
   return { ok: true, moment };

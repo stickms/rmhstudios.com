@@ -40,6 +40,7 @@ import {
 } from '@/components/moderation/moderation-ui';
 import { cn } from '@/lib/utils';
 import { ModeratorNotes } from '@/components/admin/ModeratorNotes';
+import { SecureAccountSection } from '@/components/admin/SecureAccountSection';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Form =
@@ -51,12 +52,15 @@ type Form =
 export function UserModerationPanel({
   userId,
   isAdminUser,
+  displayName = '',
   revealNotes = false,
   onChanged,
 }: {
   userId: string;
   /** Admins cannot be timed out or banned; the forms are hidden for them. */
   isAdminUser: boolean;
+  /** Named in the secure-account confirmation. */
+  displayName?: string;
   /** Scroll to the Notes section once it has loaded (the reports queue links here). */
   revealNotes?: boolean;
   /** Tell the table the counts changed. */
@@ -956,6 +960,8 @@ export function UserModerationPanel({
           </ul>
         )}
       </section>
+
+      {!isAdminUser && <SecureAccountSection userId={userId} displayName={displayName} />}
 
       <ModeratorNotes userId={userId} reveal={revealNotes} />
     </div>

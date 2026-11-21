@@ -14,6 +14,9 @@ export interface FakeDeck {
   isPublic: boolean;
   cardCount: number;
   clonedFromId?: string | null;
+  sourceSyncedAt?: Date | null;
+  cardsChangedAt?: Date | null;
+  notifyUpdates?: boolean;
 }
 export interface FakeCard {
   id: string;
@@ -24,6 +27,8 @@ export interface FakeCard {
   kind?: string;
   sourceId?: string | null;
   clozeIndex?: number | null;
+  originCardId?: string | null;
+  originHash?: string | null;
 }
 export interface FakeReview {
   id: string;
@@ -74,6 +79,8 @@ const withDefaults = (c: FakeCard): Required<FakeCard> => ({
   kind: 'basic',
   sourceId: null,
   clozeIndex: null,
+  originCardId: null,
+  originHash: null,
   ...c,
 });
 
@@ -140,11 +147,13 @@ export function makeStudyPrisma(db: FakeDb) {
         data,
       }: {
         where: { id: string };
-        data: { cardCount?: { increment?: number; decrement?: number } };
+        data: { cardCount?: { increment?: number; decrement?: number } } & Partial<FakeDeck>;
       }) => {
         const deck = db.decks.find((d) => d.id === where.id);
         if (!deck) throw new Error('no such deck');
-        deck.cardCount += (data.cardCount?.increment ?? 0) - (data.cardCount?.decrement ?? 0);
+        const { cardCount, ...rest } = data as { cardCount?: { increment?: number; decrement?: number } };
+        deck.cardCount += (cardCount?.increment ?? 0) - (cardCount?.decrement ?? 0);
+        Object.assign(deck, rest);
         db.writes++;
         return { ...deck };
       },

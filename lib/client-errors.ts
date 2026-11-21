@@ -1,3 +1,5 @@
+import { scrubErrorMessage } from '@/lib/feedback-scrub';
+
 /**
  * Lightweight, dependency-free client-side error reporting.
  *
@@ -20,6 +22,16 @@ const DEDUPE_WINDOW_MS = 10_000;
 let installed = false;
 let sent = 0;
 const recent = new Map<string, number>();
+const RECENT_MESSAGES_KEPT = 3;
+const recentMessages: string[] = [];
+
+/**
+ * The last few client error messages from this tab (messages only, no stacks), oldest first. The feedback form offers
+ * them to the member as an item they can untick; nothing here is sent anywhere by itself.
+ */
+export function recentClientErrorMessages(): string[] {
+  return [...recentMessages];
+}
 
 function signature(message: string, source?: string): string {
   return `${message}::${source ?? ''}`.slice(0, 300);
@@ -41,6 +53,8 @@ export function reportClientError(error: unknown, context: ClientErrorContext = 
         ? error
         : new Error(typeof error === 'string' ? error : 'Unknown client error');
     const message = (err.message || 'Unknown client error').slice(0, 500);
+    recentMessages.push(scrubErrorMessage(message).slice(0, 200));
+    if (recentMessages.length > RECENT_MESSAGES_KEPT) recentMessages.shift();
     const sig = signature(message, context.source);
     const now = Date.now();
 

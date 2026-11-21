@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1146 endpoints across 201 groups: 113 route files under `app/routes/api` and 1033 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1185 endpoints across 202 groups: 120 route files under `app/routes/api` and 1065 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -44,7 +44,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-130 routes.
+133 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -97,6 +97,8 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/email/users` | `GET` | `lib/admin/api/admin.email.users.server.ts` |
 | `/api/admin/emoji-packs` | `GET` | `lib/admin/api/admin.emoji-packs.server.ts` |
 | `/api/admin/emoji-packs/:id` | `POST` | `lib/admin/api/admin.emoji-packs.$id.server.ts` |
+| `/api/admin/feedback` | `GET` | `lib/feedback/api/admin.feedback.server.ts` |
+| `/api/admin/feedback/:id` | `GET` `PATCH` | `lib/feedback/api/admin.feedback.$id.server.ts` |
 | `/api/admin/flags` | `DELETE` `GET` `PUT` | `lib/admin/api/admin.flags.server.ts` |
 | `/api/admin/flags/:key/check` | `GET` | `lib/admin/api/admin.flags.$key.check.server.ts` |
 | `/api/admin/flags/:key/history` | `GET` | `lib/admin/api/admin.flags.$key.history.server.ts` |
@@ -174,6 +176,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/users/:id/notes/:noteId` | `DELETE` `PATCH` | `lib/moderation/api/admin.users.$id.notes.$noteId.server.ts` |
 | `/api/admin/users/:id/owned-communities` | `GET` | `lib/admin/api/admin.users.$id.owned-communities.server.ts` |
 | `/api/admin/users/:id/restrictions` | `POST` | `lib/moderation/api/admin.users.$id.restrictions.server.ts` |
+| `/api/admin/users/:id/secure` | `GET` `POST` | `lib/admin/api/admin.users.$id.secure.server.ts` |
 | `/api/admin/users/:id/strike` | `POST` | `lib/admin/api/admin.users.$id.strike.server.ts` |
 | `/api/admin/vibe/backfill-thumbs` | `POST` | `lib/rmhvibe/api/admin.vibe.backfill-thumbs.server.ts` |
 | `/api/admin/view-as` | `GET` | `lib/admin/api/admin.view-as.server.ts` |
@@ -463,7 +466,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/communities`
 
-41 routes.
+47 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -474,6 +477,8 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/communities/:slug/announcements/:id` | `DELETE` | `lib/communities/api/communities.$slug.announcements.$id.server.ts` |
 | `/api/communities/:slug/automod` | `GET` `POST` | `lib/communities/api/communities.$slug.automod.server.ts` |
 | `/api/communities/:slug/automod/:ruleId` | `DELETE` `PATCH` | `lib/communities/api/communities.$slug.automod.$ruleId.server.ts` |
+| `/api/communities/:slug/bans` | `GET` `POST` | `lib/communities/api/communities.$slug.bans.server.ts` |
+| `/api/communities/:slug/bans/:banId` | `DELETE` | `lib/communities/api/communities.$slug.bans.$banId.server.ts` |
 | `/api/communities/:slug/census` | `GET` `POST` | `lib/communities/api/communities.$slug.census.server.ts` |
 | `/api/communities/:slug/census/:id/answer` | `POST` | `lib/communities/api/communities.$slug.census.$id.answer.server.ts` |
 | `/api/communities/:slug/census/:id/close` | `POST` | `lib/communities/api/communities.$slug.census.$id.close.server.ts` |
@@ -502,6 +507,10 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/communities/:slug/modlog/export` | `GET` | `lib/communities/api/communities.$slug.modlog.export.server.ts` |
 | `/api/communities/:slug/modqueue` | `GET` | `lib/communities/api/communities.$slug.modqueue.server.ts` |
 | `/api/communities/:slug/modqueue/:itemId` | `POST` | `lib/communities/api/communities.$slug.modqueue.$itemId.server.ts` |
+| `/api/communities/:slug/my-standing` | `GET` | `lib/communities/api/communities.$slug.my-standing.server.ts` |
+| `/api/communities/:slug/notes/:userId` | `GET` `POST` | `lib/communities/api/communities.$slug.notes.$userId.server.ts` |
+| `/api/communities/:slug/notes/:userId/:noteId` | `DELETE` `PATCH` | `lib/communities/api/communities.$slug.notes.$userId.$noteId.server.ts` |
+| `/api/communities/:slug/notes/counts` | `GET` | `lib/communities/api/communities.$slug.notes.counts.server.ts` |
 | `/api/communities/:slug/onboarding` | `GET` `POST` `PUT` | `lib/communities/api/communities.$slug.onboarding.server.ts` |
 | `/api/communities/:slug/report` | `POST` | `lib/communities/api/communities.$slug.report.server.ts` |
 | `/api/communities/:slug/rules` | `GET` `PUT` | `lib/communities/api/communities.$slug.rules.server.ts` |
@@ -771,7 +780,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/events`
 
-7 routes.
+11 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -780,7 +789,11 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/events/:id/cohosts` | `DELETE` `GET` `POST` | `lib/events/api/events.$id.cohosts.server.ts` |
 | `/api/events/:id/cohosts/respond` | `POST` | `lib/events/api/events.$id.cohosts.respond.server.ts` |
 | `/api/events/:id/ics` | `GET` | `app/routes/api/events/$id/ics.ts` |
+| `/api/events/:id/occurrences` | `DELETE` `PUT` | `lib/events/api/events.$id.occurrences.server.ts` |
 | `/api/events/:id/rsvp` | `DELETE` `POST` | `lib/api/routes/events.$id.rsvp.server.ts` |
+| `/api/events/:id/updates` | `GET` `POST` | `lib/events/api/events.$id.updates.server.ts` |
+| `/api/events/:id/updates/:updateId` | `DELETE` | `lib/events/api/events.$id.updates.$updateId.server.ts` |
+| `/api/events/:id/updates/recipients` | `GET` | `lib/events/api/events.$id.updates.recipients.server.ts` |
 | `/api/events/:id/waitlist` | `DELETE` `GET` | `lib/events/api/events.$id.waitlist.server.ts` |
 
 ## `/api/experiments`
@@ -814,11 +827,12 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/feedback`
 
-1 route.
+2 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/feedback` | `GET` `POST` | `lib/api/routes/feedback.server.ts` |
+| `/api/feedback` | `POST` | `lib/api/routes/feedback.server.ts` |
+| `/api/feedback/mine` | `GET` | `lib/feedback/api/feedback.mine.server.ts` |
 
 ## `/api/feeds`
 
@@ -998,12 +1012,14 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/group-chats`
 
-11 routes.
+13 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/group-chats` | `GET` `POST` | `lib/group-chat/api/group-chats.server.ts` |
 | `/api/group-chats/:id` | `GET` | `lib/group-chat/api/group-chats.$id.server.ts` |
+| `/api/group-chats/:id/invites` | `GET` `POST` | `lib/group-chat/api/group-chats.$id.invites.server.ts` |
+| `/api/group-chats/:id/invites/:inviteId` | `DELETE` | `lib/group-chat/api/group-chats.$id.invites.$inviteId.server.ts` |
 | `/api/group-chats/:id/leave` | `POST` | `lib/group-chat/api/group-chats.$id.leave.server.ts` |
 | `/api/group-chats/:id/manage` | `PATCH` | `lib/group-chat/api/group-chats.$id.manage.server.ts` |
 | `/api/group-chats/:id/members` | `POST` | `lib/group-chat/api/group-chats.$id.members.server.ts` |
@@ -1013,6 +1029,14 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/group-chats/:id/owner` | `PUT` | `lib/group-chat/api/group-chats.$id.owner.server.ts` |
 | `/api/group-chats/:id/react` | `POST` | `lib/group-chat/api/group-chats.$id.react.server.ts` |
 | `/api/group-chats/:id/stream` | `GET` | `app/routes/api/group-chats/$id/stream.ts` |
+
+## `/api/group-invites`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/group-invites/:code/join` | `POST` | `lib/group-chat/api/group-invites.$code.join.server.ts` |
 
 ## `/api/groupcalls`
 
@@ -1129,15 +1153,17 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/jams`
 
-6 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/jams` | `GET` `POST` | `lib/competitive/api/jams.server.ts` |
 | `/api/jams/:slug` | `GET` | `lib/competitive/api/jams.$slug.server.ts` |
+| `/api/jams/:slug/entries/:entryId/feedback` | `GET` | `lib/competitive/api/jams.$slug.entries.$entryId.feedback.server.ts` |
 | `/api/jams/:slug/entries/:entryId/team` | `DELETE` `GET` `POST` | `lib/competitive/api/jams.$slug.entries.$entryId.team.server.ts` |
 | `/api/jams/:slug/entries/:entryId/team/respond` | `POST` | `lib/competitive/api/jams.$slug.entries.$entryId.team.respond.server.ts` |
 | `/api/jams/:slug/entry` | `POST` | `lib/competitive/api/jams.$slug.entry.server.ts` |
+| `/api/jams/:slug/feedback/:id/helpful` | `DELETE` `POST` | `lib/competitive/api/jams.$slug.feedback.$id.helpful.server.ts` |
 | `/api/jams/:slug/rate` | `POST` | `lib/competitive/api/jams.$slug.rate.server.ts` |
 
 ## `/api/kaikai-debt`
@@ -1247,7 +1273,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/messages`
 
-24 routes.
+26 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1263,6 +1289,8 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/messages/:conversationId/typing` | `POST` | `lib/messages/api/messages.$conversationId.typing.server.ts` |
 | `/api/messages/:conversationId/unsend` | `POST` | `lib/messages/api/messages.$conversationId.unsend.server.ts` |
 | `/api/messages/:conversationId/voice` | `POST` | `lib/messages/api/messages.$conversationId.voice.server.ts` |
+| `/api/messages/away` | `DELETE` `GET` `PUT` | `lib/messages/api/messages.away.server.ts` |
+| `/api/messages/away/:userId/status` | `GET` | `lib/messages/api/messages.away.$userId.status.server.ts` |
 | `/api/messages/read-all` | `POST` | `lib/messages/api/messages.read-all.server.ts` |
 | `/api/messages/requests` | `GET` | `lib/messages/api/messages.requests.server.ts` |
 | `/api/messages/requests/:id` | `POST` | `lib/messages/api/messages.requests.$id.server.ts` |
@@ -1995,13 +2023,14 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/settings`
 
-12 routes.
+14 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/settings/alt-text` | `GET` `POST` | `lib/feed/api/settings.alt-text.server.ts` |
 | `/api/settings/auto-delete` | `GET` `PUT` | `lib/posts-plus/api/settings.auto-delete.server.ts` |
 | `/api/settings/blocked` | `GET` | `lib/moderation/api/settings.blocked.server.ts` |
+| `/api/settings/content-warnings` | `GET` `POST` | `lib/feed/api/settings.content-warnings.server.ts` |
 | `/api/settings/game-assists` | `GET` `POST` | `lib/game/api/settings.game-assists.server.ts` |
 | `/api/settings/leaderboard-privacy` | `GET` `PUT` | `lib/game/api/settings.leaderboard-privacy.server.ts` |
 | `/api/settings/missing-alt-text` | `GET` | `lib/feed/api/settings.missing-alt-text.server.ts` |
@@ -2009,6 +2038,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/settings/play-limits` | `GET` `POST` | `lib/economy/api/settings.play-limits.server.ts` |
 | `/api/settings/playtime-privacy` | `GET` `POST` `PUT` | `lib/playtime/api/settings.playtime-privacy.server.ts` |
 | `/api/settings/quiet-counts` | `GET` `PUT` | `lib/feed/api/settings.quiet-counts.server.ts` |
+| `/api/settings/read-receipts` | `GET` `PUT` | `lib/messages/api/settings.read-receipts.server.ts` |
 | `/api/settings/security/activity` | `GET` | `lib/auth/api/settings.security.activity.server.ts` |
 | `/api/settings/security/activity/export` | `GET` | `lib/auth/api/settings.security.activity.export.server.ts` |
 
@@ -2197,7 +2227,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/study`
 
-13 routes.
+15 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -2207,9 +2237,11 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/study/decks/:id` | `DELETE` `GET` `PATCH` `POST` | `lib/study/api/study.decks.$id.server.ts` |
 | `/api/study/decks/:id/cards` | `POST` | `lib/study/api/study.decks.$id.cards.server.ts` |
 | `/api/study/decks/:id/clone` | `POST` | `lib/study/api/study.decks.$id.clone.server.ts` |
+| `/api/study/decks/:id/link-original` | `POST` | `lib/study/api/study.decks.$id.link-original.server.ts` |
 | `/api/study/decks/:id/order` | `PUT` | `lib/study/api/study.decks.$id.order.server.ts` |
 | `/api/study/decks/:id/review` | `GET` | `lib/study/api/study.decks.$id.review.server.ts` |
 | `/api/study/decks/:id/tests` | `GET` `POST` | `lib/study/api/study.decks.$id.tests.server.ts` |
+| `/api/study/decks/:id/updates` | `GET` `POST` | `lib/study/api/study.decks.$id.updates.server.ts` |
 | `/api/study/marketplace` | `GET` | `lib/study/api/study.marketplace.server.ts` |
 | `/api/study/reminders` | `GET` `PUT` | `lib/study/api/study.reminders.server.ts` |
 | `/api/study/stats` | `GET` | `lib/study/api/study.stats.server.ts` |
@@ -2327,7 +2359,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/tournaments`
 
-10 routes.
+14 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -2335,7 +2367,11 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/tournaments/:id` | `GET` | `lib/tournaments/api/tournaments.$id.server.ts` |
 | `/api/tournaments/:id/cancel` | `POST` | `app/routes/api/tournaments/$id/cancel.ts` |
 | `/api/tournaments/:id/checkin` | `PATCH` `POST` `PUT` | `lib/tournaments/api/tournaments.$id.checkin.server.ts` |
+| `/api/tournaments/:id/matches/:matchId/confirm` | `POST` | `lib/tournaments/api/tournaments.$id.matches.$matchId.confirm.server.ts` |
+| `/api/tournaments/:id/matches/:matchId/decide` | `POST` | `lib/tournaments/api/tournaments.$id.matches.$matchId.decide.server.ts` |
+| `/api/tournaments/:id/matches/:matchId/dispute` | `POST` | `lib/tournaments/api/tournaments.$id.matches.$matchId.dispute.server.ts` |
 | `/api/tournaments/:id/matches/:matchId/report` | `POST` | `lib/tournaments/api/tournaments.$id.matches.$matchId.report.server.ts` |
+| `/api/tournaments/:id/matches/:matchId/withdraw` | `POST` | `lib/tournaments/api/tournaments.$id.matches.$matchId.withdraw.server.ts` |
 | `/api/tournaments/:id/pickem` | `GET` `PUT` | `lib/competitive/api/tournaments.$id.pickem.server.ts` |
 | `/api/tournaments/:id/register` | `POST` | `app/routes/api/tournaments/$id/register.ts` |
 | `/api/tournaments/:id/seeding` | `GET` `PUT` | `lib/tournaments/api/tournaments.$id.seeding.server.ts` |
@@ -2372,13 +2408,16 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/user-builds`
 
-11 routes.
+14 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/user-builds` | `GET` `POST` | `lib/api/routes/user-builds.server.ts` |
 | `/api/user-builds/:id` | `DELETE` `GET` `PATCH` | `lib/api/routes/user-builds.$id.server.ts` |
 | `/api/user-builds/:id/comments` | `GET` `POST` | `lib/api/routes/user-builds.$id.comments.server.ts` |
+| `/api/user-builds/:id/comments-lock` | `PUT` | `lib/builds/api/user-builds.$id.comments-lock.server.ts` |
+| `/api/user-builds/:id/comments/:commentId` | `DELETE` `PATCH` | `lib/builds/api/user-builds.$id.comments.$commentId.server.ts` |
+| `/api/user-builds/:id/comments/:commentId/hide` | `POST` | `lib/builds/api/user-builds.$id.comments.$commentId.hide.server.ts` |
 | `/api/user-builds/:id/insights` | `GET` | `lib/builds/api/user-builds.$id.insights.server.ts` |
 | `/api/user-builds/:id/like` | `POST` | `lib/api/routes/user-builds.$id.like.server.ts` |
 | `/api/user-builds/:id/releases` | `GET` `POST` | `lib/builds/api/user-builds.$id.releases.server.ts` |
@@ -2399,7 +2438,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/v1`
 
-34 routes.
+41 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -2414,11 +2453,18 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/v1/me` | `GET` `OPTIONS` | `app/routes/api/v1/me.ts` |
 | `/api/v1/me/achievements` | `GET` `OPTIONS` | `app/routes/api/v1/me/achievements.ts` |
 | `/api/v1/me/bookmarks` | `GET` `OPTIONS` | `app/routes/api/v1/me/bookmarks.ts` |
+| `/api/v1/me/decks` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/me/decks.ts` |
+| `/api/v1/me/decks/:id` | `DELETE` `GET` `OPTIONS` `PATCH` | `app/routes/api/v1/me/decks/$id.ts` |
+| `/api/v1/me/decks/:id/cards` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/me/decks/$id/cards.ts` |
+| `/api/v1/me/decks/:id/cards/:cardId` | `DELETE` `OPTIONS` `PATCH` | `app/routes/api/v1/me/decks/$id/cards/$cardId.ts` |
+| `/api/v1/me/decks/:id/cards/by-external-id/:externalId` | `OPTIONS` `PUT` | `app/routes/api/v1/me/decks/$id/cards/by-external-id/$externalId.ts` |
+| `/api/v1/me/decks/:id/due` | `GET` `OPTIONS` | `app/routes/api/v1/me/decks/$id/due.ts` |
 | `/api/v1/me/followers` | `GET` `OPTIONS` | `app/routes/api/v1/me/followers.ts` |
 | `/api/v1/me/following` | `GET` `OPTIONS` | `app/routes/api/v1/me/following.ts` |
 | `/api/v1/me/games` | `GET` `OPTIONS` | `app/routes/api/v1/me/games.ts` |
 | `/api/v1/me/games/:gameId/days` | `GET` `OPTIONS` | `app/routes/api/v1/me/games/$gameId/days.ts` |
 | `/api/v1/me/notifications` | `GET` `OPTIONS` | `app/routes/api/v1/me/notifications.ts` |
+| `/api/v1/me/personal-bests` | `GET` `OPTIONS` | `app/routes/api/v1/me/personal-bests.ts` |
 | `/api/v1/news` | `GET` `OPTIONS` | `app/routes/api/v1/news.ts` |
 | `/api/v1/news/:slug` | `GET` `OPTIONS` | `app/routes/api/v1/news/$slug.ts` |
 | `/api/v1/openapi.json` | `GET` `OPTIONS` | `app/routes/api/v1/openapi[.]json.ts` |

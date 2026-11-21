@@ -36,6 +36,8 @@ Your recent posts, newest first. `pinnedOrder` is the post’s place among its a
       "id": "ck_post123",
       "content": "hello world",
       "audience": "PUBLIC",
+      "sensitive": false,
+      "contentWarning": null,
       "createdAt": "2026-06-30T10:00:00.000Z",
       "metrics": {
         "likes": 3,
@@ -84,7 +86,7 @@ Create a post on your account. Awards XP and progresses quests exactly like the 
 
 ### `GET /api/v1/posts/{id}`
 
-Fetch a single post by id. Returns public posts and your own posts; otherwise 404. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema. `pinnedOrder` is the post’s place among its author’s pinned profile posts (1 is the top, at most 3), or `null` when it is not pinned.
+Fetch a single post by id. Returns public posts and your own posts; otherwise 404. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema. `pinnedOrder` is the post’s place among its author’s pinned profile posts (1 is the top, at most 3), or `null` when it is not pinned. `poll` is `null` unless the post carries a poll. A ranked-choice poll has `ranked: true`; once it has ended, `poll.result` holds `winnerOptionId` (null when nobody ranked an option) and the instant-runoff `rounds` (each round's option tallies and the option eliminated at its end, null on the deciding round). When the author hides counts from you, tallies are whole percents and `percentOnly` is `true`.
 
 **Scope:** `read:posts` · **Success:** `200` · **Operation id:** `getPost`
 
@@ -99,6 +101,8 @@ Fetch a single post by id. Returns public posts and your own posts; otherwise 40
   "id": "ck_post123",
   "content": "hello world",
   "audience": "PUBLIC",
+  "sensitive": false,
+  "contentWarning": null,
   "createdAt": "2026-06-30T10:00:00.000Z",
   "metrics": {
     "likes": 3,
@@ -107,6 +111,7 @@ Fetch a single post by id. Returns public posts and your own posts; otherwise 40
     "views": 42
   },
   "pinnedOrder": null,
+  "poll": null,
   "author": {
     "id": "ck_user123",
     "name": "Ada",

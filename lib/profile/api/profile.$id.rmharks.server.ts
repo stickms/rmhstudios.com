@@ -13,8 +13,9 @@ import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { mapQuotedOriginal, type QuotedOriginalRow } from '@/lib/feed/quoted-original';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
 import { isExpired } from '@/lib/posts-plus/constants';
-import { redactCounts } from '@/lib/feed/quiet-counts';
+import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { rankedPollFields } from '@/lib/feed/ranked-poll';
 import { PIN_LIMIT } from '@/lib/feed/profile-pins';
 
 function pollInclude(userId: string | null) {
@@ -28,21 +29,23 @@ function pollInclude(userId: string | null) {
           // perf: denormalized tally (maintained by the vote route) instead of a
           // correlated COUNT per option.
           voteCount: true,
-          ...(userId ? { votes: { where: { userId }, select: { id: true, optionId: true } } } : {}),
+          ...(userId ? { votes: { where: { userId }, select: { id: true, optionId: true, rank: true } } } : {}),
         },
       },
     },
   };
 }
 
-function mapPoll(poll: any): FeedPoll | undefined {
+function mapPoll(poll: any, countsHidden = false): FeedPoll | undefined {
   if (!poll) return undefined;
+  const lifecycle = pollLifecycleView(poll);
   const totalVotes = poll.options.reduce((sum: number, o: any) => sum + (o.voteCount ?? 0), 0);
   return {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
-    ...pollLifecycleView(poll),
+    ...lifecycle,
+    ...rankedPollFields(poll, { ended: lifecycle.ended, countsHidden }),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -202,11 +205,13 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
           reposted: viewerId ? r.reposts.length > 0 : false,
           edited: !!r.editedAt,
           original: quote(r.original),
-          poll: mapPoll(r.poll),
+          poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId)),
           gifUrl: r.gifUrl ?? undefined,
+          gifAlt: r.gifAlt ?? undefined,
           imageUrls: r.imageUrls ?? undefined,
           imageAlts: r.imageAlts ?? undefined,
           isSensitive: r.isSensitive ?? false,
+          contentWarning: r.contentWarning ?? undefined,
           isTake: r.isTake || undefined,
           seriesId: r.seriesId ?? undefined,
           expiresAt: r.expiresAt?.toISOString(),
@@ -237,11 +242,13 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
           reposted: viewerId ? r.reposts.length > 0 : false,
           repostedBy: resolveUser(rp.user),
           original: quote(r.original),
-          poll: mapPoll(r.poll),
+          poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId)),
           gifUrl: r.gifUrl ?? undefined,
+          gifAlt: r.gifAlt ?? undefined,
           imageUrls: r.imageUrls ?? undefined,
           imageAlts: r.imageAlts ?? undefined,
           isSensitive: r.isSensitive ?? false,
+          contentWarning: r.contentWarning ?? undefined,
           isTake: r.isTake || undefined,
           seriesId: r.seriesId ?? undefined,
           expiresAt: r.expiresAt?.toISOString(),

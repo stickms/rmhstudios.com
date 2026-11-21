@@ -218,6 +218,9 @@ export interface ScheduledMessageRow {
   gifUrl:
     | string
     | null;
+  gifAlt?:
+    | string
+    | null;
   imageUrls: string[];
   /** One description per image ('' = none); the same length as `imageUrls`. */
   imageAlts: string[];

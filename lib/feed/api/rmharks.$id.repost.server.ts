@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
@@ -97,7 +98,7 @@ export const route = apiRoute('/api/rmharks/$id/repost', {
         // Tell the author (dedupes repeated toggle spam; skips self-reposts).
         const reposted = await prisma.rMHark.findUnique({
           where: { id },
-          select: { id: true, userId: true, threadRootId: true, content: true },
+          select: { id: true, userId: true, threadRootId: true, content: true, contentWarning: true },
         });
         if (reposted) {
           void createNotification({
@@ -106,7 +107,7 @@ export const route = apiRoute('/api/rmharks/$id/repost', {
             type: 'REPOST',
             entityType: 'rmhark',
             entityId: id,
-            preview: reposted.content?.slice(0, 140) || null,
+            preview: previewTextFor(reposted)?.slice(0, 140) || null,
             dedupeUnread: true,
             conversationKey: postConversationKey(reposted),
           });

@@ -1,4 +1,6 @@
+import { useId } from 'react';
 import { Lock, X, AlertTriangle } from 'lucide-react';
+import { MAX_CONTENT_WARNING_LENGTH } from '@/lib/feed/content-warning';
 import { useTranslation } from 'react-i18next';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 
@@ -29,8 +31,20 @@ export function UnlockPricePill({ price, onEdit }: { price: number; onEdit: () =
  * Active content-warning pill — the toggle lives in the (+) menu, so this keeps
  * an enabled CW visible and one-tap removable.
  */
-export function ContentWarningPill({ onRemove }: { onRemove: () => void }) {
-  const { t } = useTranslation('feed');
+export function ContentWarningPill({
+  onRemove,
+  reason = '',
+  onReasonChange,
+}: {
+  onRemove: () => void;
+  /** The reason typed so far (sprint 06 #16); the pill shows it. */
+  reason?: string;
+  /** When given, the "What is it for?" field appears beside the pill. */
+  onReasonChange?: (reason: string) => void;
+}) {
+  const { t } = useTranslation(['feed', 'content-warnings']);
+  const reasonId = useId();
+  const shown = reason.trim();
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
       <button
@@ -42,9 +56,29 @@ export function ContentWarningPill({ onRemove }: { onRemove: () => void }) {
         className="inline-flex items-center gap-1 rounded-full border border-site-warning/50 bg-site-warning/10 px-3 py-1 text-xs font-medium text-site-warning transition-colors hover:bg-site-warning/20"
       >
         <AlertTriangle className="h-3.5 w-3.5" />
-        <span>{t('mark-sensitive-short', { defaultValue: 'CW' })}</span>
+        <span className="max-w-[16rem] truncate">
+          {shown
+            ? t('pill-with-reason', { ns: 'content-warnings', reason: shown, defaultValue: 'CW: {{reason}}' })
+            : t('mark-sensitive-short', { defaultValue: 'CW' })}
+        </span>
         <X className="h-3 w-3" />
       </button>
+      {onReasonChange ? (
+        <>
+          <label htmlFor={reasonId} className="sr-only">
+            {t('reason-label', { ns: 'content-warnings', defaultValue: 'What is it for?' })}
+          </label>
+          <input
+            id={reasonId}
+            type="text"
+            value={reason}
+            maxLength={MAX_CONTENT_WARNING_LENGTH}
+            onChange={(e) => onReasonChange(e.target.value.replace(/[\r\n]+/g, ' '))}
+            placeholder={t('reason-placeholder', { ns: 'content-warnings', defaultValue: 'What is it for? Optional' })}
+            className="t-body min-w-0 flex-1 rounded-site border border-site-border bg-site-bg px-2 py-1 text-site-text placeholder:text-site-text-muted"
+          />
+        </>
+      ) : null}
     </div>
   );
 }

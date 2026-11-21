@@ -39,6 +39,7 @@ import { loadParticipantConversation, otherParticipant } from '@/lib/messages/mu
 import { messageStamp } from '@/lib/chat-plus/post.server';
 import { clearStaleDraft, requestGate } from '@/lib/messages/requests.server';
 import { gateRefusalCopy } from '@/lib/messages/requests';
+import { afterDirectMessage } from '@/lib/messages/away.server';
 
 /** Human-readable refusal for each policy rejection, with the tier's ceiling. */
 export function voiceRejectionMessage(
@@ -181,6 +182,7 @@ export async function sendVoiceMessage(args: {
         read: true,
         createdAt: true,
         gifUrl: true,
+        gifAlt: true,
         imageUrls: true,
         editedAt: true,
         deletedAt: true,
@@ -212,6 +214,7 @@ export async function sendVoiceMessage(args: {
         read: view.read,
         createdAt: view.createdAt,
         gifUrl: view.gifUrl,
+        gifAlt: view.gifAlt,
         imageUrls: view.imageUrls,
         reactions: [],
         audioUrl: view.audioUrl,
@@ -220,6 +223,9 @@ export async function sendVoiceMessage(args: {
         editedAt: view.editedAt,
       },
     });
+
+  // s06-18: a voice note to an away member gets the same one automatic reply as a text (best-effort, never throws).
+  if (!isSavedChat) void afterDirectMessage({ senderId: args.userId, recipientId, chatId: args.conversationId, now });
 
   return { ok: true, message: { ...view, conversationId: args.conversationId } };
 }

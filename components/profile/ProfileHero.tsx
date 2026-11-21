@@ -26,6 +26,7 @@ import { SITE_URL } from '@/lib/seo';
 import { ProfileIdentityExtras, ProfileShareCardButton } from './plus/ProfileIdentityExtras';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { PresenceDot } from './PresenceDot';
+import { AwayStatusLine } from '@/components/messages/AwayLine';
 import { BadgeMark } from '@/components/shop/art/BadgeMark';
 import { PetMark } from '@/components/shop/art/PetMark';
 import { CompareProfileLink } from '@/components/achievements/CompareProfileLink';
@@ -252,6 +253,7 @@ export function ProfileHero({
               @{profile.handle}
             </p>
           ) : null}
+          {profile.isOwnProfile ? null : <AwayStatusLine userId={profile.id} context="profile" />}
         </div>
       </div>
       <div className="flex items-center gap-3 sm:col-start-2 sm:row-span-[20] sm:shrink-0 sm:flex-col sm:items-end sm:gap-1 sm:self-start">

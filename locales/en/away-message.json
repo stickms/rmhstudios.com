@@ -1,0 +1,23 @@
+{
+  "auto-replied": "Auto-replied",
+  "automatic-reply": "Automatic reply",
+  "away-until": "Away until {{date}}",
+  "body-label": "Message",
+  "cancel": "Cancel",
+  "dialog-description": "People in your accepted conversations get this once while you are away. Group chats and message requests are not answered.",
+  "dialog-title": "Away message",
+  "edit": "Edit",
+  "end-label": "Until ({{tz}})",
+  "error-dates": "The end date must be today or later, and not before the start.",
+  "error-generic": "Could not save your away message. Try again.",
+  "error-too-far": "Choose an end date within {{days}} days.",
+  "inbox-on-until": "Away message on until {{date}}",
+  "inbox-starts": "Away message set, ends {{date}}",
+  "profile-label": "Also show \"Away until …\" on my profile",
+  "save": "Save",
+  "saved": "Away message saved",
+  "set-away-message": "Set an away message",
+  "start-label": "From (optional, {{tz}})",
+  "turn-off": "Turn off",
+  "turn-off-failed": "Could not turn off your away message"
+}

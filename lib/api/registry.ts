@@ -17,6 +17,7 @@ export type HttpMethod =
   | 'GET'
   | 'POST'
   | 'PATCH'
+  | 'PUT'
   | 'DELETE';
 
 export interface ApiParam {
@@ -94,6 +95,10 @@ const QUIET_COUNTS_NOTE =
 const PIN_NOTE =
   '`pinnedOrder` is the post’s place among its author’s pinned profile posts (1 is the top, at most 3), or `null` when it is not pinned.';
 
+/** Appended to `getPost` (sprint 06 #19). */
+const POLL_NOTE =
+  '`poll` is `null` unless the post carries a poll. A ranked-choice poll has `ranked: true`; once it has ended, `poll.result` holds `winnerOptionId` (null when nobody ranked an option) and the instant-runoff `rounds` (each round\'s option tallies and the option eliminated at its end, null on the deciding round). When the author hides counts from you, tallies are whole percents and `percentOnly` is `true`.';
+
 const POST_OBJECT =
   {
     id: 'ck_post123',
@@ -101,6 +106,8 @@ const POST_OBJECT =
       'hello world',
     audience:
       'PUBLIC',
+    sensitive: false,
+    contentWarning: null,
     createdAt:
       '2026-06-30T10:00:00.000Z',
     metrics:
@@ -389,7 +396,9 @@ export const ENDPOINTS: ApiEndpoint[] =
         'Fetch a single post by id. Returns public posts and your own posts; otherwise 404. '+
         QUIET_COUNTS_NOTE+
         ' '+
-        PIN_NOTE,
+        PIN_NOTE+
+        ' '+
+        POLL_NOTE,
       params:
         [
           {
@@ -405,6 +414,7 @@ export const ENDPOINTS: ApiEndpoint[] =
         {
           ...POST_OBJECT,
           pinnedOrder: null,
+          poll: null,
           author:
             AUTHOR_OBJECT,
         },
@@ -1741,6 +1751,506 @@ export const ENDPOINTS: ApiEndpoint[] =
               'v1',
           },
         },
+    },
+
+    // Sprint 06 (docs/autonomous/sprint-06/plan.md §Anchors)
+    // s06-12 game-webhooks
+    {
+      method: 'GET',
+      path: '/api/v1/me/personal-bests',
+      operationId: 'listMyPersonalBests',
+      group: 'Games',
+      scope: 'read:games',
+      paginated: true,
+      summary: 'List your personal bests',
+      description:
+        'Your current personal best in each game, ordered by game id. `previousScore` is the best before this one (null for a first score). No rank is returned. Other members’ bests are not readable. The same data is sent by the `personal_best.created` webhook event: `{ "event": "personal_best.created", "created": "2026-11-20T21:14:00.000Z", "data": { "gameId": "altair", "gameTitle": "Altair", "score": 4200, "previousScore": 3900, "achievedAt": "2026-11-20T21:14:00.000Z" } }`. The `achievement.unlocked` event carries `{ "achievementId": "game.altair.first_run", "name": "Into the Black", "gameId": "altair", "unlockedAt": "2026-11-20T21:14:00.000Z" }`.',
+      params: [
+        {
+          name: 'gameId',
+          in: 'query',
+          type: 'string',
+          description: 'Only this game.',
+        },
+        {
+          name: 'since',
+          in: 'query',
+          type: 'string',
+          description: 'ISO 8601 time; only games whose current best was set at or after it.',
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          type: 'integer',
+          description: 'Page size, 1–100 (default 20).',
+        },
+        {
+          name: 'cursor',
+          in: 'query',
+          type: 'string',
+          description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+        },
+      ],
+      responseExample: {
+        data: [
+          {
+            gameId: 'altair',
+            gameTitle: 'Altair',
+            score: 4200,
+            previousScore: null,
+            achievedAt: '2026-11-20T21:14:00.000Z',
+          },
+        ],
+        nextCursor: null,
+      },
+    },
+
+    // s06-13 api-flashcards
+    {
+      method: 'GET',
+      path: '/api/v1/me/decks',
+      operationId: 'listMyDecks',
+      group: 'Study',
+      scope: 'read:study',
+      summary: 'List your decks',
+      description: 'Your flashcard decks, newest change first. `dueCount` is how many cards are due now. Only your own decks are listed.',
+      paginated: true,
+      params: [
+        {
+          name: 'limit',
+          in: 'query',
+          type: 'integer',
+          description: 'Page size, 1–100 (default 20).',
+        },
+        {
+          name: 'cursor',
+          in: 'query',
+          type: 'string',
+          description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+        },
+      ],
+      responseExample: {
+        data: [
+          {
+            id: 'cldeck1',
+            title: 'Spanish verbs',
+            description: null,
+            isPublic: false,
+            cardCount: 2,
+            dueCount: 2,
+            updatedAt: '2026-11-20T21:14:00.000Z',
+          },
+        ],
+        nextCursor: null,
+      },
+    },
+    {
+      method: 'POST',
+      path: '/api/v1/me/decks',
+      operationId: 'createMyDeck',
+      group: 'Study',
+      scope: 'write:study',
+      summary: 'Create a deck',
+      description: 'Create an empty deck. At most 200 decks per account.',
+      idempotent: true,
+      status: 201,
+      requestBody: {
+        fields: [
+          {
+            name: 'title',
+            type: 'string',
+            required: true,
+            description: '1–100 characters.',
+          },
+          {
+            name: 'description',
+            type: 'string',
+            description: 'Up to 500 characters.',
+          },
+          {
+            name: 'isPublic',
+            type: 'boolean',
+            description: 'List the deck in the public marketplace (default false).',
+          },
+        ],
+        example: {
+          title: 'Spanish verbs',
+          description: null,
+          isPublic: false,
+        },
+      },
+      responseExample: {
+        id: 'cldeck1',
+        title: 'Spanish verbs',
+        description: null,
+        isPublic: false,
+        cardCount: 2,
+        dueCount: 2,
+        updatedAt: '2026-11-20T21:14:00.000Z',
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/decks/{id}',
+      operationId: 'getMyDeck',
+      group: 'Study',
+      scope: 'read:study',
+      summary: 'Get a deck',
+      description: 'One of your decks. A deck that is not yours is 404.',
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+      ],
+      responseExample: {
+        id: 'cldeck1',
+        title: 'Spanish verbs',
+        description: null,
+        isPublic: false,
+        cardCount: 2,
+        dueCount: 2,
+        updatedAt: '2026-11-20T21:14:00.000Z',
+      },
+    },
+    {
+      method: 'PATCH',
+      path: '/api/v1/me/decks/{id}',
+      operationId: 'updateMyDeck',
+      group: 'Study',
+      scope: 'write:study',
+      summary: 'Update a deck',
+      description: 'Change the title, description or visibility. An empty description clears it.',
+      idempotent: true,
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+      ],
+      requestBody: {
+        fields: [
+          {
+            name: 'title',
+            type: 'string',
+            description: '1–100 characters.',
+          },
+          {
+            name: 'description',
+            type: 'string',
+            description: 'Up to 500 characters; empty clears it.',
+          },
+          {
+            name: 'isPublic',
+            type: 'boolean',
+            description: 'Public in the marketplace.',
+          },
+        ],
+        example: {
+          title: 'Spanish verbs, set 1',
+        },
+      },
+      responseExample: {
+        id: 'cldeck1',
+        title: 'Spanish verbs',
+        description: null,
+        isPublic: false,
+        cardCount: 2,
+        dueCount: 2,
+        updatedAt: '2026-11-20T21:14:00.000Z',
+      },
+    },
+    {
+      method: 'DELETE',
+      path: '/api/v1/me/decks/{id}',
+      operationId: 'deleteMyDeck',
+      group: 'Study',
+      scope: 'write:study',
+      summary: 'Delete a deck',
+      description: 'Permanently delete the deck, its cards and their review history.',
+      idempotent: true,
+      status: 204,
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+      ],
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/decks/{id}/cards',
+      operationId: 'listMyDeckCards',
+      group: 'Study',
+      scope: 'read:study',
+      summary: 'List a deck’s cards',
+      description: 'The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion) are not listed.',
+      paginated: true,
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          type: 'integer',
+          description: 'Page size, 1–100 (default 20).',
+        },
+        {
+          name: 'cursor',
+          in: 'query',
+          type: 'string',
+          description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+        },
+      ],
+      responseExample: {
+        data: [
+          {
+            id: 'clcard1',
+            kind: 'basic',
+            front: 'hablar',
+            back: 'to speak',
+            position: 0,
+            externalId: null,
+          },
+        ],
+        nextCursor: null,
+      },
+    },
+    {
+      method: 'POST',
+      path: '/api/v1/me/decks/{id}/cards',
+      operationId: 'createMyDeckCards',
+      group: 'Study',
+      scope: 'write:study',
+      summary: 'Add cards',
+      description: 'Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate `externalId`, or a deck over its 2,000-card limit (generated cards count) writes nothing. Reversible and cloze cards get their generated cards exactly as in the editor. `kind` is `basic`, `reversible` or `cloze` (a cloze card has only `front`, with `{{c1::answer}}` deletions).',
+      idempotent: true,
+      status: 201,
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+      ],
+      requestBody: {
+        fields: [
+          {
+            name: 'cards',
+            type: 'object[]',
+            required: true,
+            description: '1–100 cards: `{ kind?, front, back?, externalId? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck.',
+          },
+        ],
+        example: {
+          cards: [
+            {
+              front: 'hablar',
+              back: 'to speak',
+              externalId: null,
+            },
+            {
+              kind: 'reversible',
+              front: 'comer',
+              back: 'to eat',
+            },
+          ],
+        },
+      },
+      responseExample: {
+        data: [
+          {
+            id: 'clcard1',
+            kind: 'basic',
+            front: 'hablar',
+            back: 'to speak',
+            position: 0,
+            externalId: null,
+          },
+        ],
+        cardCount: 2,
+      },
+    },
+    {
+      method: 'PATCH',
+      path: '/api/v1/me/decks/{id}/cards/{cardId}',
+      operationId: 'updateMyDeckCard',
+      group: 'Study',
+      scope: 'write:study',
+      summary: 'Update a card',
+      description: 'Change a card’s kind, front or back. Its review history stays; its generated cards are regenerated in place. A generated card is 404.',
+      idempotent: true,
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+        {
+          name: 'cardId',
+          in: 'path',
+          type: 'string',
+          description: 'The card id.',
+          required: true,
+        },
+      ],
+      requestBody: {
+        fields: [
+          {
+            name: 'kind',
+            type: 'string',
+            description: '`basic`, `reversible` or `cloze`.',
+          },
+          {
+            name: 'front',
+            type: 'string',
+            description: 'The front (a cloze card’s whole text).',
+          },
+          {
+            name: 'back',
+            type: 'string',
+            description: 'The back.',
+          },
+        ],
+        example: {
+          back: 'to talk, to speak',
+        },
+      },
+      responseExample: {
+        id: 'clcard1',
+        kind: 'basic',
+        front: 'hablar',
+        back: 'to speak',
+        position: 0,
+        externalId: null,
+      },
+    },
+    {
+      method: 'DELETE',
+      path: '/api/v1/me/decks/{id}/cards/{cardId}',
+      operationId: 'deleteMyDeckCard',
+      group: 'Study',
+      scope: 'write:study',
+      summary: 'Delete a card',
+      description: 'Delete a card with its generated cards and review history.',
+      idempotent: true,
+      status: 204,
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+        {
+          name: 'cardId',
+          in: 'path',
+          type: 'string',
+          description: 'The card id.',
+          required: true,
+        },
+      ],
+    },
+    {
+      method: 'PUT',
+      path: '/api/v1/me/decks/{id}/cards/by-external-id/{externalId}',
+      operationId: 'upsertMyDeckCard',
+      group: 'Study',
+      scope: 'write:study',
+      summary: 'Create or update a card by external id',
+      description: 'Create the card keyed by your own id in this deck, or update it. The same body sent twice changes nothing the second time. 201 when created, 200 when the card already existed.',
+      idempotent: true,
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+        {
+          name: 'externalId',
+          in: 'path',
+          type: 'string',
+          description: 'Your own id for the card, up to 100 characters, unique in the deck.',
+          required: true,
+        },
+      ],
+      requestBody: {
+        fields: [
+          {
+            name: 'kind',
+            type: 'string',
+            description: '`basic` (default), `reversible` or `cloze`.',
+          },
+          {
+            name: 'front',
+            type: 'string',
+            required: true,
+            description: 'The front.',
+          },
+          {
+            name: 'back',
+            type: 'string',
+            description: 'The back (not used by cloze cards).',
+          },
+        ],
+        example: {
+          front: 'hablar',
+          back: 'to speak',
+        },
+      },
+      responseExample: {
+        id: 'clcard1',
+        kind: 'basic',
+        front: 'hablar',
+        back: 'to speak',
+        position: 0,
+        externalId: 'verbs-001',
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/decks/{id}/due',
+      operationId: 'getMyDeckDue',
+      group: 'Study',
+      scope: 'read:study',
+      summary: 'Get due counts',
+      description: 'How many cards in the deck are due now and in the next 24 hours, for a “you have 40 cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.',
+      params: [
+        {
+          name: 'id',
+          in: 'path',
+          type: 'string',
+          description: 'The deck id.',
+          required: true,
+        },
+      ],
+      responseExample: {
+        deckId: 'cldeck1',
+        dueNow: 40,
+        dueNext24h: 12,
+        asOf: '2026-11-20T21:14:00.000Z',
+      },
     },
   ];
 

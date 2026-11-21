@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/v1/posts')({
               where: { userId, deletedAt: null, ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}) },
               orderBy: { createdAt: 'desc' },
               take: limit,
-              select: { id: true, content: true, createdAt: true, likeCount: true, commentCount: true, repostCount: true, viewCount: true, audience: true, imageUrls: true, imageAlts: true, pinnedCommentId: true },
+              select: { id: true, content: true, createdAt: true, likeCount: true, commentCount: true, repostCount: true, viewCount: true, audience: true, imageUrls: true, imageAlts: true, gifUrl: true, gifAlt: true, isSensitive: true, contentWarning: true, pinnedCommentId: true },
             });
             const pinnedOrder = await pinnedOrderFor(posts.map((p) => p.id));
             return json(

@@ -11,6 +11,7 @@ import {
   serverError,
 } from '@/lib/http';
 import { createScheduledApi } from '@/lib/scheduled/scheduled.contract';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 
 /**
  * Everything that sends the composer's contents somewhere: the optimistic home
@@ -65,6 +66,8 @@ export function useComposeSubmit<
     useTranslation(
       'feed',
     );
+  const sanctionRefusalText =
+    useSanctionRefusal();
   const {
     prependItem,
     removeItem,
@@ -142,7 +145,10 @@ export function useComposeSubmit<
               )
                 ?.error;
             toast.error(
-              message ||
+              sanctionRefusalText(
+                data,
+              ) ||
+                message ||
                 t(
                   'post-error',
                   {
@@ -265,7 +271,10 @@ export function useComposeSubmit<
             draft,
           );
           toast.error(
-            message ||
+            sanctionRefusalText(
+              data,
+            ) ||
+              message ||
               t(
                 'post-error',
                 {
@@ -412,9 +421,12 @@ export function useComposeSubmit<
             error,
           );
         setSavedMsg(
-          serverError(
+          sanctionRefusalText(
             error,
           ) ??
+            serverError(
+              error,
+            ) ??
             t(
               'could-not-save',
               {

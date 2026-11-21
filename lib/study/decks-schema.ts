@@ -81,8 +81,16 @@ export const updateDeckBody = z
     title: z.string().trim().min(1).max(100).optional(),
     description: z.string().trim().max(500).optional(),
     isPublic: z.boolean().optional(),
+    /** "Tell me about updates", on a copied deck. */
+    notifyUpdates: z.boolean().optional(),
   })
-  .refine((b) => b.title !== undefined || b.description !== undefined || b.isPublic !== undefined);
+  .refine(
+    (b) =>
+      b.title !== undefined ||
+      b.description !== undefined ||
+      b.isPublic !== undefined ||
+      b.notifyUpdates !== undefined,
+  );
 
 /** PATCH a card: any of its kind and sides; the review history stays. The merged card is checked by the server. */
 export const updateCardBody = z

@@ -9,7 +9,8 @@ import { PostDetail } from '@/components/feed/PostDetail';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
-import { postCardShowsContent } from '@/lib/og/post-visibility';
+import { postCardContentWarning, postCardShowsContent } from '@/lib/og/post-visibility';
+import { contentWarningNotice } from '@/lib/feed/content-warning';
 import { prefetchPostDetail } from '@/lib/feed/post-detail-prefetch';
 
 const fetchPostMeta = createServerFn({ method: 'GET' })
@@ -20,11 +21,13 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
       select: {
         content: true,
         gifUrl: true,
+        gifAlt: true,
         imageUrls: true,
         imageAlts: true,
         audience: true,
         unlockPrice: true,
         isSensitive: true,
+        contentWarning: true,
         community: { select: { isPrivate: true } },
         deletedAt: true,
         createdAt: true,
@@ -54,9 +57,12 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
       !rmhark.community?.isPrivate;
     const imageCount = rmhark.imageUrls?.length ?? 0;
 
+    // A warned post's link preview names the reason, not the text (sprint 06 #16).
+    const warning = postCardContentWarning(rmhark);
+
     let description: string;
     if (!showContent) {
-      description = `A post by ${userName} on RMH.`;
+      description = warning ? contentWarningNotice(warning) : `A post by ${userName} on RMH.`;
     } else if (rmhark.content) {
       description = rmhark.content;
     } else if (rmhark.poll) {
@@ -75,8 +81,10 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
     // What the card will actually show, so the image has a text alternative
     // that describes the picture rather than repeating the title.
     // The author's own description of the first image wins when there is one (sprint 05 #16).
+    // A GIF's description stands in when the post has no described image (sprint 06 #15).
     const firstAlt = showContent
-      ? (rmhark.imageAlts ?? []).find((a) => a.trim().length > 0)?.trim()
+      ? ((rmhark.imageAlts ?? []).find((a) => a.trim().length > 0)?.trim() ??
+        (rmhark.gifUrl ? rmhark.gifAlt?.trim() || undefined : undefined))
       : undefined;
     const imageAlt = firstAlt
       ? `Post by ${userName} on RMH: ${firstAlt.length > 200 ? `${firstAlt.slice(0, 199)}…` : firstAlt}`

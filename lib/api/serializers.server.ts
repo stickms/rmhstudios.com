@@ -5,6 +5,8 @@
 
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { countsHiddenFrom } from '@/lib/feed/quiet-counts';
+import { isPollEnded, pollEffectiveEnd } from '@/lib/feed/poll-lifecycle';
+import { viewRankedResult, type RankedResult } from '@/lib/feed/ranked-poll';
 
 /** The Prisma select for an author block on any post/comment/list item. */
 export const apiAuthorSelect = userDisplaySelect;
@@ -67,6 +69,12 @@ interface PostRow {
   viewCount: number;
   imageUrls?: string[];
   imageAlts?: string[];
+  /** The GIF on the post and its description (sprint 06 #15); both read as null when there is none. */
+  gifUrl?: string | null;
+  gifAlt?: string | null;
+  /** The content warning (sprint 06 #16): the flag and its optional reason. The text is still returned; clients decide how to show it. */
+  isSensitive?: boolean | null;
+  contentWarning?: string | null;
   /** The reply the author pinned, when the query selected it. */
   pinnedCommentId?: string | null;
   /** The post's place among its author's pinned posts, when the route looked it up (`pinnedOrderFor`); absent otherwise. */
@@ -81,6 +89,10 @@ export function serializeOwnPost(p: PostRow & { audience: string }) {
     audience: p.audience,
     imageUrls: p.imageUrls ?? [],
     imageAlts: p.imageAlts ?? [],
+    gifUrl: p.gifUrl ?? null,
+    gifAlt: p.gifAlt ?? null,
+    sensitive: p.isSensitive ?? false,
+    contentWarning: p.contentWarning ?? null,
     pinnedReplyId: p.pinnedCommentId ?? null,
     ...(p.pinnedOrder !== undefined ? { pinnedOrder: p.pinnedOrder } : {}),
     createdAt: p.createdAt,
@@ -95,10 +107,54 @@ export function serializePublicPost(p: PostRow & { user: ResolvableUser }, viewe
     content: p.content,
     imageUrls: p.imageUrls ?? [],
     imageAlts: p.imageAlts ?? [],
+    gifUrl: p.gifUrl ?? null,
+    gifAlt: p.gifAlt ?? null,
+    sensitive: p.isSensitive ?? false,
+    contentWarning: p.contentWarning ?? null,
     pinnedReplyId: p.pinnedCommentId ?? null,
     ...(p.pinnedOrder !== undefined ? { pinnedOrder: p.pinnedOrder } : {}),
     createdAt: p.createdAt,
     author: serializeAuthor(p.user),
     metrics: metrics(p, countsHiddenFrom(p.user.id, p.user.profile?.hideCountsOnMine, viewerId)),
+  };
+}
+
+interface ApiPollRow {
+  id: string;
+  question: string;
+  multiSelect: boolean;
+  ranked: boolean;
+  closesAt: Date | null;
+  closedAt: Date | null;
+  options: { id: string; text: string }[];
+}
+
+/**
+ * The poll on a post, for `GET /api/v1/posts/{id}` (sprint 06 #19). `ranked` says the poll is ranked-choice; `result`
+ * is the instant-runoff count, present only once a ranked poll has ended. Round tallies are whole percents when the
+ * author hides counts from this viewer (quiet counts), counts otherwise.
+ */
+export function serializePostPoll(
+  poll: ApiPollRow,
+  result: RankedResult | null,
+  countsHidden: boolean,
+) {
+  const view = result ? viewRankedResult(result, countsHidden) : null;
+  const end = pollEffectiveEnd(poll);
+  return {
+    id: poll.id,
+    question: poll.question,
+    multiSelect: poll.multiSelect,
+    ranked: poll.ranked,
+    ended: isPollEnded(poll),
+    closesAt: end ? end.toISOString() : null,
+    options: poll.options.map((o) => ({ id: o.id, text: o.text })),
+    result: view
+      ? {
+          winnerOptionId: view.winnerOptionId,
+          percentOnly: view.percentOnly,
+          rounds: view.rounds.map((r) => ({ tally: r.tally, eliminatedOptionId: r.eliminatedOptionId })),
+        }
+      : null,
   };
 }

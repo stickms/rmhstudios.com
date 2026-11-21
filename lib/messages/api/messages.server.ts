@@ -5,6 +5,7 @@ import { listConversationsApi, sendMessageApi } from '@/lib/messages/messages.co
 import { sendMessageSchema } from '@/lib/messages/messages-schema';
 import { prisma } from '@/lib/prisma.server';
 import { findDmByPair, upsertDm } from '@/lib/chat/chat.server';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { guardImageAlts, isBlockedPair, sendRequestMessage } from '@/lib/messages/send.server';
 import { clearStaleDraft, openRequest, requestGate } from '@/lib/messages/requests.server';
 import { gateRefusalCopy } from '@/lib/messages/requests';
@@ -62,7 +63,7 @@ export const route = apiRoute('/api/messages', {
         );
       }
 
-      const { recipientId, content, gifUrl, imageUrls, imageAlts } = parsed.data;
+      const { recipientId, content, gifUrl, gifAlt, imageUrls, imageAlts } = parsed.data;
       const senderId = session.user.id;
 
       if (recipientId === senderId) {
@@ -156,6 +157,7 @@ export const route = apiRoute('/api/messages', {
               senderId,
               content: content ?? '',
               gifUrl: gifUrl ?? null,
+              gifAlt: normalizeGifAlt(gifUrl, gifAlt),
               imageUrls: imageUrls ?? [],
               imageAlts: normalizeImageAlts(imageUrls, imageAlts),
               ...messageStamp(conversation.disappearAfterSec, { content, gifUrl, imageUrls }),
@@ -175,6 +177,7 @@ export const route = apiRoute('/api/messages', {
           read: message.read,
           createdAt: message.createdAt.toISOString(),
           gifUrl: message.gifUrl,
+          gifAlt: message.gifAlt,
           imageUrls: message.imageUrls,
           imageAlts: message.imageAlts,
           reactions: [],
