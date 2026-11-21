@@ -7,28 +7,12 @@
  * one instead, and keep the old id here until no active row can carry it.
  */
 
-export const RESTRICTABLE_FEATURES =
-  [
-    'post',
-    'comment',
-    'message',
-    'community',
-    'space',
-    'vibe',
-    'persona',
-  ] as const;
+export const RESTRICTABLE_FEATURES = ['post', 'comment', 'message', 'community', 'space', 'vibe', 'persona'] as const;
 
-export type RestrictableFeature =
-  (typeof RESTRICTABLE_FEATURES)[number];
+export type RestrictableFeature = (typeof RESTRICTABLE_FEATURES)[number];
 
-export function isRestrictableFeature(
-  v: string,
-): v is RestrictableFeature {
-  return (
-    RESTRICTABLE_FEATURES as readonly string[]
-  ).includes(
-    v,
-  );
+export function isRestrictableFeature(v: string): v is RestrictableFeature {
+  return (RESTRICTABLE_FEATURES as readonly string[]).includes(v);
 }
 
 /**
@@ -36,38 +20,18 @@ export function isRestrictableFeature(
  * Kept here so the server's refusal message and the admin page name a feature
  * the same way.
  */
-export const FEATURE_LABELS: Record<
-  RestrictableFeature,
-  string
-> =
-  {
-    post: 'Posting',
-    comment:
-      'Replying',
-    message:
-      'Direct messages',
-    community:
-      'Creating communities',
-    space:
-      'Hosting spaces',
-    vibe: 'Building vibes',
-    persona:
-      'Creating personas',
-  };
+export const FEATURE_LABELS: Record<RestrictableFeature, string> = {
+  post: 'Posting',
+  comment: 'Replying',
+  message: 'Direct messages',
+  community: 'Creating communities',
+  space: 'Hosting spaces',
+  vibe: 'Building vibes',
+  persona: 'Creating personas',
+};
 
 /** Timeout presets the admin dialog offers, in days; `null` is permanent. */
-export const TIMEOUT_PRESETS: readonly (
-  | number
-  | null
-)[] =
-  [
-    1,
-    3,
-    7,
-    30,
-    90,
-    null,
-  ];
+export const TIMEOUT_PRESETS: readonly (number | null)[] = [1, 3, 7, 30, 90, null];
 
 /** A restriction as the admin page and the user's status page show it. */
 export interface FeatureRestrictionView {
@@ -76,12 +40,8 @@ export interface FeatureRestrictionView {
   reason: string;
   createdAt: string;
   /** null = permanent. */
-  expiresAt:
-    | string
-    | null;
-  liftedAt:
-    | string
-    | null;
+  expiresAt: string | null;
+  liftedAt: string | null;
   /** Still in force: not lifted and not expired. */
   active: boolean;
 }

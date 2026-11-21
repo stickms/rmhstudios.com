@@ -11,21 +11,6 @@ export {
   type BotStats,
   type TFBotBrainOptions,
 } from './tf-bot-brain';
-export {
-  BOT_SKILLS,
-  botSkill,
-  type BotSkill,
-} from './difficulty';
-export {
-  BotManager,
-  cachedNavMesh,
-  getBotManager,
-  provideNavMesh,
-  NAV_GEN_TRACES_PER_TICK,
-} from './manager';
-export {
-  objectiveGoal,
-  botRole,
-  type BotRole,
-  type ObjectiveGoal,
-} from './objective';
+export { BOT_SKILLS, botSkill, type BotSkill } from './difficulty';
+export { BotManager, cachedNavMesh, getBotManager, provideNavMesh, NAV_GEN_TRACES_PER_TICK } from './manager';
+export { objectiveGoal, botRole, type BotRole, type ObjectiveGoal } from './objective';

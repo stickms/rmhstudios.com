@@ -23,7 +23,6 @@
  * lost leaves no trace here (the ledger holds no zero-amount rows).
  */
 
-
 // Relative, never `@/`: this module is bundled into the socket hub
 // (server/CLAUDE.md gotcha 7). `escrow-core` imports no client and no `.server`
 // module, so the read runs on the hub's own Prisma client.
@@ -32,10 +31,7 @@ import { readSettledKeys } from '../../../lib/economy/escrow-core';
 import type { StakeFate, StakeKeys } from './stake-keys';
 
 /** The fate of each stake that has one. Throws if the ledger cannot be read. */
-export async function readStakeFates(
-  keys: StakeKeys,
-  stakeIds: Iterable<string>,
-): Promise<Map<string, StakeFate>> {
+export async function readStakeFates(keys: StakeKeys, stakeIds: Iterable<string>): Promise<Map<string, StakeFate>> {
   const byKey = new Map<string, [stakeId: string, fate: StakeFate]>();
   for (const id of stakeIds) {
     byKey.set(keys.returned(id), [id, 'returned']);

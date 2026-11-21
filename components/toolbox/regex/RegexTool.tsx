@@ -51,10 +51,7 @@ export function RegexTool() {
     () => (deferredPattern ? compileRegex(deferredPattern, [...flags].join('')) : null),
     [deferredPattern, flags],
   );
-  const result = useMemo(
-    () => (compiled?.ok ? findMatches(compiled.regex, subject) : null),
-    [compiled, subject],
-  );
+  const result = useMemo(() => (compiled?.ok ? findMatches(compiled.regex, subject) : null), [compiled, subject]);
   const segments = useMemo(() => (result ? segmentText(subject, result.matches) : []), [result, subject]);
   const replaced = useMemo(
     () => (compiled?.ok && replacement !== '' ? replacePreview(compiled.regex, subject, replacement) : null),
@@ -122,7 +119,10 @@ export function RegexTool() {
           }
         >
           {subject && (
-            <p dir="ltr" className="whitespace-pre-wrap break-all rounded-site border border-site-border p-3 font-mono text-sm">
+            <p
+              dir="ltr"
+              className="whitespace-pre-wrap break-all rounded-site border border-site-border p-3 font-mono text-sm"
+            >
               {segments.map((seg, i) =>
                 seg.match === -1 ? (
                   <span key={i}>{seg.text}</span>
@@ -176,9 +176,7 @@ export function RegexTool() {
             className="font-mono"
             placeholder={t('regex-replacement-placeholder', { defaultValue: 'Replacement, for example $2/$<year>' })}
           />
-          {replaced !== null && (
-            <p className="whitespace-pre-wrap break-all font-mono text-sm">{replaced}</p>
-          )}
+          {replaced !== null && <p className="whitespace-pre-wrap break-all font-mono text-sm">{replaced}</p>}
         </ToolSection>
       )}
     </ToolFrame>

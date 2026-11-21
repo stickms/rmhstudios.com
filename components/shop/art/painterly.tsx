@@ -45,7 +45,14 @@ export function PaintFilter({
       colorInterpolationFilters="sRGB"
     >
       <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves={2} seed={seed} result="wobble" />
-      <feDisplacementMap in="SourceGraphic" in2="wobble" scale={2.4} xChannelSelector="R" yChannelSelector="G" result="drawn" />
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="wobble"
+        scale={2.4}
+        xChannelSelector="R"
+        yChannelSelector="G"
+        result="drawn"
+      />
       <feColorMatrix in="drawn" type="saturate" values="0.7" result="muted" />
       <feComponentTransfer in="muted" result="pastel">
         <feFuncR type="linear" slope={slope} intercept={intercept + 0.02} />
@@ -53,7 +60,13 @@ export function PaintFilter({
         <feFuncB type="linear" slope={slope} intercept={intercept - 0.02} />
       </feComponentTransfer>
       <feTurbulence type="fractalNoise" baseFrequency="0.07 0.17" numOctaves={2} seed={seed + 5} result="strokes" />
-      <feDiffuseLighting in="strokes" surfaceScale={0.9} diffuseConstant={1.05} lightingColor="#ffffff" result="impasto">
+      <feDiffuseLighting
+        in="strokes"
+        surfaceScale={0.9}
+        diffuseConstant={1.05}
+        lightingColor="#ffffff"
+        result="impasto"
+      >
         <feDistantLight azimuth={225} elevation={58} />
       </feDiffuseLighting>
       <feComposite in="pastel" in2="impasto" operator="arithmetic" k1={0.9} k2={0.18} k3={0} k4={0} result="painted" />

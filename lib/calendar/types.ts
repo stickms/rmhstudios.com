@@ -4,15 +4,9 @@ import type { RecurrenceRule } from './recurrence';
 
 export interface CalPerson {
   id: string;
-  name:
-    | string
-    | null;
-  handle:
-    | string
-    | null;
-  image:
-    | string
-    | null;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
 }
 
 export interface PollRespondentView {
@@ -27,27 +21,13 @@ export interface PollView {
   description: string;
   params: PollParams;
   creator: CalPerson;
-  communityId:
-    | string
-    | null;
-  groupChatId:
-    | string
-    | null;
-  communityName:
-    | string
-    | null;
-  lockedStartMin:
-    | number
-    | null;
-  lockedEndMin:
-    | number
-    | null;
-  lockedAt:
-    | string
-    | null;
-  lockedEventId:
-    | string
-    | null;
+  communityId: string | null;
+  groupChatId: string | null;
+  communityName: string | null;
+  lockedStartMin: number | null;
+  lockedEndMin: number | null;
+  lockedAt: string | null;
+  lockedEventId: string | null;
   createdAt: string;
   /** Required invitees who have not answered yet. */
   pending: CalPerson[];
@@ -55,9 +35,7 @@ export interface PollView {
   viewer: {
     isCreator: boolean;
     /** The viewer's own answers, or null if they have not responded. */
-    answers:
-      | string
-      | null;
+    answers: string | null;
     canLock: boolean;
   };
 }
@@ -65,13 +43,8 @@ export interface PollView {
 export interface PollListItem {
   id: string;
   title: string;
-  role:
-    | 'organiser'
-    | 'respondent'
-    | 'invitee';
-  lockedStartMin:
-    | number
-    | null;
+  role: 'organiser' | 'respondent' | 'invitee';
+  lockedStartMin: number | null;
   lastDayMs: number;
   respondentCount: number;
 }
@@ -98,9 +71,7 @@ export interface OfficeHoursConfigView {
   blurb: string;
   tz: string;
   slotMin: number;
-  maxPerWeek:
-    | number
-    | null;
+  maxPerWeek: number | null;
   enabled: boolean;
   windows: {
     weekday: number;
@@ -124,9 +95,7 @@ export interface OfficeHoursPublicView {
 export interface CalendarFeedView {
   enabled: boolean;
   /** Absolute subscribe URL, or null when the feed has never been created. */
-  url:
-    | string
-    | null;
+  url: string | null;
   slots: {
     id: string;
     title: string;
@@ -141,9 +110,7 @@ export interface StudyBuddyWaitingView {
   lengthMin: number;
   startsAt: string;
   expiresAt: string;
-  mode:
-    | 'now'
-    | 'slot';
+  mode: 'now' | 'slot';
 }
 
 export interface StudyBuddyStatus {
@@ -166,9 +133,7 @@ export interface EventRecurrenceDTO {
   /** Members' events repeat 'W' or 'M'; 'D' is only on the platform's grid. */
   rule: RecurrenceRule;
   tz: string;
-  until:
-    | string
-    | null;
+  until: string | null;
   /** 0 for the first occurrence. */
   index: number;
   /** Who hosts the shown occurrence (the rotation's pick, else the organiser). */

@@ -1,7 +1,4 @@
-import {
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { toast } from '@/lib/toast';
@@ -11,21 +8,10 @@ import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
 import { Button } from '@/components/ui/button';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import {
-  CALL_PRIVACY_VALUES,
-  DEFAULT_CALL_PRIVACY,
-  isCallPrivacy,
-  type CallPrivacy,
-} from '@/lib/call/state';
+import { CALL_PRIVACY_VALUES, DEFAULT_CALL_PRIVACY, isCallPrivacy, type CallPrivacy } from '@/lib/call/state';
 import { api } from '@/lib/contract/client';
-import {
-  setCallPrivacyApi,
-  unmuteCallerApi,
-} from '@/lib/call/calls.contract';
-import {
-  callMutesQuery,
-  callPrivacyQuery,
-} from '@/lib/settings/prefs.queries';
+import { setCallPrivacyApi, unmuteCallerApi } from '@/lib/call/calls.contract';
+import { callMutesQuery, callPrivacyQuery } from '@/lib/settings/prefs.queries';
 
 /**
  * CallPrivacyControls — who may ring this account. Sits in Settings → Privacy
@@ -33,134 +19,57 @@ import {
  * the socket hub (a block still beats every option here), never in this form.
  */
 export function CallPrivacyControls() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'site',
-    );
-  const queryClient =
-    useQueryClient();
-  const privacy =
-    callPrivacyQuery();
-  const mutesQuery =
-    callMutesQuery();
-  const {
-    data: privacyData,
-    isPending,
-  } =
-    useQuery(
-      privacy,
-    );
+  const { t } = useTranslation('site');
+  const queryClient = useQueryClient();
+  const privacy = callPrivacyQuery();
+  const mutesQuery = callMutesQuery();
+  const { data: privacyData, isPending } = useQuery(privacy);
   // People muted from the incoming-call banner. Listed here so a mute is never
   // something you can set and then not find again.
-  const {
-    data: mutesData,
-  } =
-    useQuery(
-      mutesQuery,
-    );
-  const loaded =
-    !isPending;
-  const value: CallPrivacy =
-    isCallPrivacy(
-      privacyData?.callPrivacy,
-    )
-      ? privacyData.callPrivacy
-      : DEFAULT_CALL_PRIVACY;
-  const mutes =
-    mutesData?.mutes ??
-    [];
-  const mutesArrival =
-    useArrival(
-      !!mutesData,
-    );
+  const { data: mutesData } = useQuery(mutesQuery);
+  const loaded = !isPending;
+  const value: CallPrivacy = isCallPrivacy(privacyData?.callPrivacy) ? privacyData.callPrivacy : DEFAULT_CALL_PRIVACY;
+  const mutes = mutesData?.mutes ?? [];
+  const mutesArrival = useArrival(!!mutesData);
 
-  function unmute(
-    targetUserId: string,
-  ) {
-    const previous =
-      mutesData;
-    queryClient.setQueryData(
-      mutesQuery.queryKey,
-      {
-        mutes:
-          mutes.filter(
-            (
-              m,
-            ) =>
-              m
-                .user
-                .id !==
-              targetUserId,
-          ),
+  function unmute(targetUserId: string) {
+    const previous = mutesData;
+    queryClient.setQueryData(mutesQuery.queryKey, {
+      mutes: mutes.filter((m) => m.user.id !== targetUserId),
+    });
+    api(unmuteCallerApi, {
+      body: {
+        targetUserId,
       },
-    );
-    api(
-      unmuteCallerApi,
-      {
-        body: {
-          targetUserId,
-        },
-      },
-    ).catch(
-      () => {
-        queryClient.setQueryData(
-          mutesQuery.queryKey,
-          previous,
-        );
-        toast.error(
-          t(
-            'call-privacy-save-error',
-            {
-              defaultValue:
-                'Could not save',
-            },
-          ),
-        );
-      },
-    );
+    }).catch(() => {
+      queryClient.setQueryData(mutesQuery.queryKey, previous);
+      toast.error(
+        t('call-privacy-save-error', {
+          defaultValue: 'Could not save',
+        }),
+      );
+    });
   }
 
-  function choose(
-    next: CallPrivacy,
-  ) {
-    const previous =
-      privacyData;
-    queryClient.setQueryData(
-      privacy.queryKey,
-      {
-        callPrivacy:
-          next,
+  function choose(next: CallPrivacy) {
+    const previous = privacyData;
+    queryClient.setQueryData(privacy.queryKey, {
+      callPrivacy: next,
+    });
+    api(setCallPrivacyApi, {
+      body: {
+        callPrivacy: next,
       },
-    );
-    api(
-      setCallPrivacyApi,
-      {
-        body: {
-          callPrivacy:
-            next,
-        },
-      },
-    ).catch(
-      () => {
-        // Put the choice back: showing a setting that did not save is worse than
-        // showing the old one.
-        queryClient.setQueryData(
-          privacy.queryKey,
-          previous,
-        );
-        toast.error(
-          t(
-            'call-privacy-save-error',
-            {
-              defaultValue:
-                'Could not save',
-            },
-          ),
-        );
-      },
-    );
+    }).catch(() => {
+      // Put the choice back: showing a setting that did not save is worse than
+      // showing the old one.
+      queryClient.setQueryData(privacy.queryKey, previous);
+      toast.error(
+        t('call-privacy-save-error', {
+          defaultValue: 'Could not save',
+        }),
+      );
+    });
   }
 
   const LABEL: Record<
@@ -169,226 +78,101 @@ export function CallPrivacyControls() {
       title: string;
       hint: string;
     }
-  > =
-    {
-      mutuals:
-        {
-          title:
-            t(
-              'call-privacy-mutuals',
-              {
-                defaultValue:
-                  'Mutuals',
-              },
-            ),
-          hint: t(
-            'call-privacy-mutuals-hint',
-            {
-              defaultValue:
-                'Only people you follow who also follow you.',
-            },
-          ),
-        },
-      everyone:
-        {
-          title:
-            t(
-              'call-privacy-everyone',
-              {
-                defaultValue:
-                  'Everyone',
-              },
-            ),
-          hint: t(
-            'call-privacy-everyone-hint',
-            {
-              defaultValue:
-                'Anyone can ring you, unless you have blocked them.',
-            },
-          ),
-        },
-      nobody:
-        {
-          title:
-            t(
-              'call-privacy-nobody',
-              {
-                defaultValue:
-                  'No one',
-              },
-            ),
-          hint: t(
-            'call-privacy-nobody-hint',
-            {
-              defaultValue:
-                'Nobody can call you. You can still call others.',
-            },
-          ),
-        },
-    };
+  > = {
+    mutuals: {
+      title: t('call-privacy-mutuals', {
+        defaultValue: 'Mutuals',
+      }),
+      hint: t('call-privacy-mutuals-hint', {
+        defaultValue: 'Only people you follow who also follow you.',
+      }),
+    },
+    everyone: {
+      title: t('call-privacy-everyone', {
+        defaultValue: 'Everyone',
+      }),
+      hint: t('call-privacy-everyone-hint', {
+        defaultValue: 'Anyone can ring you, unless you have blocked them.',
+      }),
+    },
+    nobody: {
+      title: t('call-privacy-nobody', {
+        defaultValue: 'No one',
+      }),
+      hint: t('call-privacy-nobody-hint', {
+        defaultValue: 'Nobody can call you. You can still call others.',
+      }),
+    },
+  };
 
   return (
     <SettingsSection
-      title={t(
-        'call-privacy-title',
-        {
-          defaultValue:
-            'Calls',
-        },
-      )}
-      description={t(
-        'call-privacy-subtitle',
-        {
-          defaultValue:
-            'Choose who can ring you. People you have blocked can never call.',
-        },
-      )}
+      title={t('call-privacy-title', {
+        defaultValue: 'Calls',
+      })}
+      description={t('call-privacy-subtitle', {
+        defaultValue: 'Choose who can ring you. People you have blocked can never call.',
+      })}
     >
       <SettingsSelectRow
-        label={t(
-          'call-privacy-who',
-          {
-            defaultValue:
-              'Who can call me',
-          },
-        )}
-        hint={
-          LABEL[
-            value
-          ]
-            .hint
-        }
-        value={
-          value
-        }
-        options={CALL_PRIVACY_VALUES.map(
-          (
-            v,
-          ) => ({
-            value:
-              v,
-            label:
-              LABEL[
-                v
-              ]
-                .title,
-          }),
-        )}
-        onChange={(
-          v,
-        ) =>
-          choose(
-            v as CallPrivacy,
-          )
-        }
-        disabled={
-          !loaded
-        }
+        label={t('call-privacy-who', {
+          defaultValue: 'Who can call me',
+        })}
+        hint={LABEL[value].hint}
+        value={value}
+        options={CALL_PRIVACY_VALUES.map((v) => ({
+          value: v,
+          label: LABEL[v].title,
+        }))}
+        onChange={(v) => choose(v as CallPrivacy)}
+        disabled={!loaded}
       />
 
-      {mutes.length >
-        0 && (
-        <div
-          className={cn(
-            'border-t border-site-border pt-3',
-            mutesArrival,
-          )}
-        >
+      {mutes.length > 0 && (
+        <div className={cn('border-t border-site-border pt-3', mutesArrival)}>
           <p className="mb-2 text-sm font-medium text-site-text">
-            {t(
-              'call-mutes-heading',
-              {
-                defaultValue:
-                  'Muted callers',
-              },
-            )}
+            {t('call-mutes-heading', {
+              defaultValue: 'Muted callers',
+            })}
           </p>
           <ul className="flex flex-col gap-1">
-            {mutes.map(
-              (
-                m,
-              ) => {
-                const who =
-                  m
-                    .user
-                    .name ||
-                  m
-                    .user
-                    .handle ||
-                  t(
-                    'someone',
-                    {
-                      defaultValue:
-                        'Someone',
-                    },
-                  );
-                return (
-                  <li
-                    key={
-                      m
-                        .user
-                        .id
-                    }
-                    className="flex items-center justify-between gap-3 px-3 py-1"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm text-site-text">
-                        {
-                          who
-                        }
-                      </span>
-                      <span className="block text-xs text-site-text-muted">
-                        {t(
-                          'call-mutes-until',
-                          {
-                            defaultValue:
-                              'Until {{time}}',
-                            time: new Date(
-                              m.until,
-                            ).toLocaleString(
-                              undefined,
-                              {
-                                dateStyle:
-                                  'medium',
-                                timeStyle:
-                                  'short',
-                              },
-                            ),
-                          },
-                        )}
-                      </span>
+            {mutes.map((m) => {
+              const who =
+                m.user.name ||
+                m.user.handle ||
+                t('someone', {
+                  defaultValue: 'Someone',
+                });
+              return (
+                <li key={m.user.id} className="flex items-center justify-between gap-3 px-3 py-1">
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm text-site-text">{who}</span>
+                    <span className="block text-xs text-site-text-muted">
+                      {t('call-mutes-until', {
+                        defaultValue: 'Until {{time}}',
+                        time: new Date(m.until).toLocaleString(undefined, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }),
+                      })}
                     </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() =>
-                        unmute(
-                          m
-                            .user
-                            .id,
-                        )
-                      }
-                      aria-label={t(
-                        'call-mutes-unmute-aria',
-                        {
-                          defaultValue:
-                            'Unmute {{name}}',
-                          name: who,
-                        },
-                      )}
-                    >
-                      {t(
-                        'call-mutes-unmute',
-                        {
-                          defaultValue:
-                            'Unmute',
-                        },
-                      )}
-                    </Button>
-                  </li>
-                );
-              },
-            )}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => unmute(m.user.id)}
+                    aria-label={t('call-mutes-unmute-aria', {
+                      defaultValue: 'Unmute {{name}}',
+                      name: who,
+                    })}
+                  >
+                    {t('call-mutes-unmute', {
+                      defaultValue: 'Unmute',
+                    })}
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

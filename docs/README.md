@@ -1,300 +1,70 @@
 # docs/ — Index
 
-Map
-of
-everything
-under
-`docs/`,
-with
-freshness
-flags
-so
-agents
-and
-humans
-know
-what
-to
-trust.
-Agent-facing
-guides
-live
-at
-the
-repo
-root
-([`CLAUDE.md`](../CLAUDE.md),
-[`AGENTS.md`](../AGENTS.md))
-and
-in
-each
-major
-directory's
-`CLAUDE.md`.
+Map of everything under `docs/`, with freshness flags so agents and humans know what to trust. Agent-facing guides live
+at the repo root ([`CLAUDE.md`](../CLAUDE.md), [`AGENTS.md`](../AGENTS.md)) and in each major directory's `CLAUDE.md`.
 
-Latest
-build
-and
-deployment
-review:
-[`build-deploy-audit-2026-10-23.md`](./archive/2026/build-deploy-audit-2026-10-23.md)
-measures
-30
-recent
-deployment
-runs,
-separates
-CI
-handoff
-from
-production
-readiness,
-and
-ranks
-speed
-improvements
-with
-runtime-performance
-acceptance
-criteria.
-Implementation
-and
-post-merge
-activation:
+Latest build and deployment review:
+[`build-deploy-audit-2026-10-23.md`](./archive/2026/build-deploy-audit-2026-10-23.md) measures 30 recent deployment
+runs, separates CI handoff from production readiness, and ranks speed improvements with runtime-performance acceptance
+criteria. Implementation and post-merge activation:
 [`deployment-speed-implementation-2026-10-24.md`](./archive/2026/deployment-speed-implementation-2026-10-24.md).
 
-This
-tree
-also
-builds
-as
-a
-Sphinx/MyST
-site
-for
-Read
-the
-Docs
-—
-`conf.py`,
-`requirements.txt`
-and
-`index.md`
-(the
-landing
-page +
-nav)
-here,
-with
-`.readthedocs.yaml`
-at
-the
-repo
-root.
-Build
-it
-locally
-with:
+This tree also builds as a Sphinx/MyST site for Read the Docs — `conf.py`, `requirements.txt` and `index.md` (the
+landing page + nav) here, with `.readthedocs.yaml` at the repo root. Build it locally with:
 
 ```bash
 pip install -r docs/requirements.txt
 python -m sphinx -b html docs docs/_build/html
 ```
 
-New
-Markdown
-files
-are
-picked
-up
-by
-the
-globbed
-toctrees
-in
-`index.md`
-automatically;
-a
-file
-needs
-an
-`# H1`
-to
-get
-a
-nav
-entry.
+New Markdown files are picked up by the globbed toctrees in `index.md` automatically; a file needs an `# H1` to get a
+nav entry.
 
-The
-site
-is
-published
-in
-the
-same
-9
-languages
-as
-the
-product
-—
-see
-[`translations.md`](./translations.md)
-for
-the
-pipeline,
-the
-translated-page
-subset,
-and
-the
-Read
-the
-Docs
-per-language
-project
-setup.
+The site is published in the same 9 languages as the product — see [`translations.md`](./translations.md) for the
+pipeline, the translated-page subset, and the Read the Docs per-language project setup.
 
-**Trust
-order
-for
-conflicts:**
-code >
-`docker-compose.yml`/`deploy.sh` >
-root
-`CLAUDE.md`
-/
-directory
-`CLAUDE.md`s >
-the
-reference
-docs
-below >
-dated
-design
-docs/plans
-(historical
-snapshots
-—
-they
-describe
-intent
-at
-the
-time
-of
-writing,
-not
-necessarily
-the
-current
-code).
+**Trust order for conflicts:** code > `docker-compose.yml`/`deploy.sh` > root `CLAUDE.md` / directory `CLAUDE.md`s > the
+reference docs below > dated design docs/plans (historical snapshots — they describe intent at the time of writing, not
+necessarily the current code).
 
 ## Reference docs (keep current)
 
-- [`hearthworks-multiplayer.md`](./hearthworks-multiplayer.md)
-  —
-  Hearthworks
-  P2P
-  multiplayer:
-  wire
-  protocol
-  v2
-  (host→peer
-  refusals),
-  room
-  passwords,
-  remote-player
-  interpolation,
-  the
-  real-WebRTC
-  Chromium
-  e2e
-  (`pnpm test:hearthworks:e2e`)
-  and
-  what
-  loopback
-  cannot
-  prove.
-- [`hearthworks-models.md`](./hearthworks-models.md)
-  —
-  Hearthworks
-  skinned
-  character
-  models,
-  loaded
-  at
-  run
-  time
-  from
-  the
-  site's
-  own
-  Steam-sourced
-  R2
-  channels
-  (no
-  model
-  data
-  in
-  the
-  repo):
-  the
-  `features/hearthworks/engine/skins/models.manifest.json`
-  v2
-  contract,
-  index
-  resolution,
-  clip
-  selection,
-  fallbacks,
-  how
-  the
-  animator
-  blends
-  clips,
-  the
-  model/procedural
-  budget,
-  the
-  live-channel
-  browser
-  check,
-  and
-  how
-  to
-  add
-  a
-  skin.
+- [`hearthworks-multiplayer.md`](./hearthworks-multiplayer.md) — Hearthworks P2P multiplayer: wire protocol v2
+  (host→peer refusals), room passwords, remote-player interpolation, the real-WebRTC Chromium e2e
+  (`pnpm test:hearthworks:e2e`) and what loopback cannot prove.
+- [`hearthworks-models.md`](./hearthworks-models.md) — Hearthworks skinned character models, loaded at run time from the
+  site's own Steam-sourced R2 channels (no model data in the repo): the
+  `features/hearthworks/engine/skins/models.manifest.json` v2 contract, index resolution, clip selection, fallbacks, how
+  the animator blends clips, the model/procedural budget, the live-channel browser check, and how to add a skin.
 
-| Doc                                                                                                 | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`site-reference/`](./site-reference/)                                                              | **What the site consists of** — hand-written area guides (social, economy, content, games/apps) plus generated inventories of every page route, API route, game and app (`pnpm docs:site`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| [`codebase-overview.md`](./codebase-overview.md)                                                    | Canonical code-layout overview: stack, repo layout, conventions, where to look first                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| [`architecture.md`](./architecture.md)                                                              | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| [`testing.md`](./testing.md)                                                                        | Test suites (Vitest main + epic, Go Bazel), how to run them, and which CI workflows gate them                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| [`fouc.md`](./fouc.md)                                                                              | The FOUC audit: what counts as a flash, the six detectors and why each asks its question when it does, the appearance profiles, how route coverage is kept total, and the commit-time contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| [`performance-slo.md`](./performance-slo.md)                                                        | Performance guardrails: bundle budgets, synthetic probes, RUM SLO bands, and rollback trigger policy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| [`status-page.md`](./status-page.md)                                                                | **status.rmhstudios.com**: how uptime, bars, incidents and percentiles are computed, the persistence files, the admin API for incidents/maintenance/announcements, every public endpoint (incl. the Statuspage-compatible v2 API, metrics, badges, feeds) and the feature catalogue                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| [`wiki.md`](./wiki.md)                                                                              | **wiki.rmhstudios.com**: the MediaWiki container (image, LocalSettings, sign-in extension, startup script) and its vhost, how it lives in the site's database and derives its keys from `BETTER_AUTH_SECRET`, signing in with an rmhstudios.com account (`/api/wiki/sso`), who can do what, first-time setup on the VPS, and operations (upgrades, backups, connections)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| [`../design.md`](../design.md)                                                                      | **The statement of the design language** (repo root): Steel, in one page. The values and phases are in `plans/2026-11-11-steel-design-implementation.md`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| [`design-language.md`](./design-language.md)                                                        | **Steel**: the definition of done for a UI change, tokens, surfaces, the spine, and the gates that enforce them. The statement is [`../design.md`](../design.md); every value is in the Steel plan.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| [`archive/2026/plasmatic-jelly-design-language.md`](./archive/2026/plasmatic-jelly-design-language.md)                        | **Historical** (see below): the radial shell, liquid globe and Plasmatic Jelly material.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| [`archive/2026/plasmatic-jelly-system.md`](./archive/2026/plasmatic-jelly-system.md)                                          | **Historical** (see below): the old material's implementation contract.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| [`page-consistency.md`](./page-consistency.md)                                                      | Checklist + recipes for building pages that look native                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| [`../scripts/check-consistency.sh`](../scripts/check-consistency.sh)                                | **The commit gate** (`pnpm check:consistency`) — the design/style/convention checks that run before every commit, wired into `git commit` by `.githooks/pre-commit` and, for agent sessions, `.claude/hooks/commit-gate.sh`. Rationale and rules: root [`CLAUDE.md`](../CLAUDE.md) → "The commit gate"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| [`open-graph.md`](./open-graph.md)                                                                  | **Link previews**: the card design (the globe, in ink on white), the `lib/og/` modules, the two satori rules that bite, how a page gets its card (own picture → dynamic card → section card → default), and the privacy rules the card routes apply                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| [`elections.md`](./elections.md)                                                                    | **Elections hub** (`/elections`): the keyless results feed and its caveats, the adapter/snapshot architecture, env vars, rehearsing against a mirror, and the safety rules for markets, chat, AI and OG cards                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| [`search.md`](./search.md)                                                                          | Universal search: the nine corpora, the recall/precision two-stage design, the shared 0..1 relevance scale and confidence bands, and the gated DeepSeek query-expansion fallback                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| [`adsense.md`](./adsense.md)                                                                        | **Advertising**: the five conditions under which an ad may render (publisher id, cookie consent, non-paid tier, allowed path, not in Discord), the manual-placement design and why not Auto ads, the two build-time variables and the four files each has to be threaded through, the CSP additions, and a blank-unit debugging order                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| [`people.md`](./people.md)                                                                          | **RMH Capital leadership (canon)** — the firm's executive committee and six business heads, their titles and remits, plus the rules for writing them                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| [`developer-api/`](./developer-api/)                                                                | **The** developer API documentation — guides plus a generated endpoint reference (`pnpm docs:api`). Replaces the removed in-app `/developer/docs` wiki; `internals.md` is the contributor view                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| [`albums-storage.md`](./albums-storage.md)                                                          | Albums storage architecture (DB + R2/S3)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| [`coins.md`](./coins.md)                                                                            | Coin economy design (implementation plan, largely shipped)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| [`rmhos.md`](./rmhos.md)                                                                            | **rmhOS runbook**: the browser Linux desktop at `/rmhos` — the page, the image and the relay hub (`server/rmhos-net/`, port 7009); building and publishing an image (workflow → paste manifest → commit); every `RMHOS_*` env var; the relay policy and how to switch it off; the relay ticket lifecycle (a bearer credential for the session: 60 s to first use, then 15 min idle / 12 h cap, one per user); the sandbox (container, `rmhos-egress` network, the root systemd firewall unit and the deploy probe — networking stays off in production until both the unit and `RMHOS_NET_TICKET_SECRET` exist); traffic leaving from the VPS's IP, the stream log and the abuse-report procedure; the home folder being browser-only; licence obligations and where each is met. Design: `superpowers/specs/2026-11-14-rmhos-design.md`                                                                                                                                                                                                                                                                                                                                                                                   |
-| [`slice-it.md`](./slice-it.md)                                                                      | **Slice It**: the beatmap analyser (SuperFlux onsets, comb-filtered tempo, DP beat tracking, nested difficulty budgets), the multiplayer state machine and its two disconnect grace windows, the pause/resume rules, storage and quotas, and the scoring the score endpoint bounds submissions against                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| [`slice-it-visibility-audit-2026-08-08.md`](./archive/2026/slice-it-visibility-audit-2026-08-08.md) | **What of Slice It you can actually reach.** `_handoff/implementation-status.md` records 155 of the 162 ideas as shipped; this is the second count, of how many have a path to them from the running game. Seven API routes with zero client callers (`L2` shelves, `L3` chart reviews, `L6` uploader dashboard, `R7` integrity review, `L9`/`L12` takedowns, `C8`/`C10` regeneration, `C9` chart import), seven logic modules imported only by their own tests (`goals.ts`, `session.ts`, `drill.ts`, `patterns.ts`, `note-vocab.ts`, `hit-sounds.ts`, `frame-timing.ts`), `setPractice`/`setAutoplay` called only from a test (`P1`/`P3`), four wire events the server handles and the client never sends (`N3`/`N4`/`N5` match modes, `N8` queue, `N12` rejoin), and `L1`'s genre/tag facets unreachable from both ends at once. §D and §E — fourteen persisted settings and five modifiers with no control anywhere — were closed by the same change that wrote this. §H is a third silent i18n failure mode: `i18next-parser` does not recognise the `const { t: ts } = useTranslation(…)` alias this game uses everywhere, so those strings reach no catalog and every non-English locale serves the English default |
-| [`slice-it-chart-editor.md`](./slice-it-chart-editor.md)                                            | **Slice It chart editor** design (idea `C1`): the `Chart`/`ChartRevision` models kept beside `Song.analysisData` so regeneration never eats human work, the canvas timeline with quantisation colour and the three kinds of hit highlight, the command-pattern undo stack, the enforced Easy ⊆ Normal ⊆ Hard ⊆ Expert nesting invariant, playtest through the real `GameEngine`, onset ghosts from the analyser's rejected candidates, the linter, the four auto-generate scopes (including `auto-only`, which never touches an edited note), and §12's full neumorphic UI spec                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Doc                                                                                                    | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`site-reference/`](./site-reference/)                                                                 | **What the site consists of** — hand-written area guides (social, economy, content, games/apps) plus generated inventories of every page route, API route, game and app (`pnpm docs:site`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| [`codebase-overview.md`](./codebase-overview.md)                                                       | Canonical code-layout overview: stack, repo layout, conventions, where to look first                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| [`architecture.md`](./architecture.md)                                                                 | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| [`testing.md`](./testing.md)                                                                           | Test suites (Vitest main + epic, Go Bazel), how to run them, and which CI workflows gate them                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| [`fouc.md`](./fouc.md)                                                                                 | The FOUC audit: what counts as a flash, the six detectors and why each asks its question when it does, the appearance profiles, how route coverage is kept total, and the commit-time contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| [`performance-slo.md`](./performance-slo.md)                                                           | Performance guardrails: bundle budgets, synthetic probes, RUM SLO bands, and rollback trigger policy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| [`status-page.md`](./status-page.md)                                                                   | **status.rmhstudios.com**: how uptime, bars, incidents and percentiles are computed, the persistence files, the admin API for incidents/maintenance/announcements, every public endpoint (incl. the Statuspage-compatible v2 API, metrics, badges, feeds) and the feature catalogue                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| [`wiki.md`](./wiki.md)                                                                                 | **wiki.rmhstudios.com**: the MediaWiki container (image, LocalSettings, sign-in extension, startup script) and its vhost, how it lives in the site's database and derives its keys from `BETTER_AUTH_SECRET`, signing in with an rmhstudios.com account (`/api/wiki/sso`), who can do what, first-time setup on the VPS, and operations (upgrades, backups, connections)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| [`../design.md`](../design.md)                                                                         | **The statement of the design language** (repo root): Steel, in one page. The values and phases are in `plans/2026-11-11-steel-design-implementation.md`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| [`design-language.md`](./design-language.md)                                                           | **Steel**: the definition of done for a UI change, tokens, surfaces, the spine, and the gates that enforce them. The statement is [`../design.md`](../design.md); every value is in the Steel plan.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| [`archive/2026/plasmatic-jelly-design-language.md`](./archive/2026/plasmatic-jelly-design-language.md) | **Historical** (see below): the radial shell, liquid globe and Plasmatic Jelly material.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| [`archive/2026/plasmatic-jelly-system.md`](./archive/2026/plasmatic-jelly-system.md)                   | **Historical** (see below): the old material's implementation contract.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| [`page-consistency.md`](./page-consistency.md)                                                         | Checklist + recipes for building pages that look native                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| [`../scripts/check-consistency.sh`](../scripts/check-consistency.sh)                                   | **The commit gate** (`pnpm check:consistency`) — the design/style/convention checks that run before every commit, wired into `git commit` by `.githooks/pre-commit` and, for agent sessions, `.claude/hooks/commit-gate.sh`. Rationale and rules: root [`CLAUDE.md`](../CLAUDE.md) → "The commit gate"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| [`open-graph.md`](./open-graph.md)                                                                     | **Link previews**: the card design (the globe, in ink on white), the `lib/og/` modules, the two satori rules that bite, how a page gets its card (own picture → dynamic card → section card → default), and the privacy rules the card routes apply                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| [`elections.md`](./elections.md)                                                                       | **Elections hub** (`/elections`): the keyless results feed and its caveats, the adapter/snapshot architecture, env vars, rehearsing against a mirror, and the safety rules for markets, chat, AI and OG cards                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| [`search.md`](./search.md)                                                                             | Universal search: the nine corpora, the recall/precision two-stage design, the shared 0..1 relevance scale and confidence bands, and the gated DeepSeek query-expansion fallback                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| [`adsense.md`](./adsense.md)                                                                           | **Advertising**: the five conditions under which an ad may render (publisher id, cookie consent, non-paid tier, allowed path, not in Discord), the manual-placement design and why not Auto ads, the two build-time variables and the four files each has to be threaded through, the CSP additions, and a blank-unit debugging order                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| [`people.md`](./people.md)                                                                             | **RMH Capital leadership (canon)** — the firm's executive committee and six business heads, their titles and remits, plus the rules for writing them                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| [`developer-api/`](./developer-api/)                                                                   | **The** developer API documentation — guides plus a generated endpoint reference (`pnpm docs:api`). Replaces the removed in-app `/developer/docs` wiki; `internals.md` is the contributor view                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| [`albums-storage.md`](./albums-storage.md)                                                             | Albums storage architecture (DB + R2/S3)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| [`coins.md`](./coins.md)                                                                               | Coin economy design (implementation plan, largely shipped)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| [`rmhos.md`](./rmhos.md)                                                                               | **rmhOS runbook**: the browser Linux desktop at `/rmhos` — the page, the image and the relay hub (`server/rmhos-net/`, port 7009); building and publishing an image (workflow → paste manifest → commit); every `RMHOS_*` env var; the relay policy and how to switch it off; the relay ticket lifecycle (a bearer credential for the session: 60 s to first use, then 15 min idle / 12 h cap, one per user); the sandbox (container, `rmhos-egress` network, the root systemd firewall unit and the deploy probe — networking stays off in production until both the unit and `RMHOS_NET_TICKET_SECRET` exist); traffic leaving from the VPS's IP, the stream log and the abuse-report procedure; the home folder being browser-only; licence obligations and where each is met. Design: `superpowers/specs/2026-11-14-rmhos-design.md`                                                                                                                                                                                                                                                                                                                                                                                   |
+| [`slice-it.md`](./slice-it.md)                                                                         | **Slice It**: the beatmap analyser (SuperFlux onsets, comb-filtered tempo, DP beat tracking, nested difficulty budgets), the multiplayer state machine and its two disconnect grace windows, the pause/resume rules, storage and quotas, and the scoring the score endpoint bounds submissions against                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| [`slice-it-visibility-audit-2026-08-08.md`](./archive/2026/slice-it-visibility-audit-2026-08-08.md)    | **What of Slice It you can actually reach.** `_handoff/implementation-status.md` records 155 of the 162 ideas as shipped; this is the second count, of how many have a path to them from the running game. Seven API routes with zero client callers (`L2` shelves, `L3` chart reviews, `L6` uploader dashboard, `R7` integrity review, `L9`/`L12` takedowns, `C8`/`C10` regeneration, `C9` chart import), seven logic modules imported only by their own tests (`goals.ts`, `session.ts`, `drill.ts`, `patterns.ts`, `note-vocab.ts`, `hit-sounds.ts`, `frame-timing.ts`), `setPractice`/`setAutoplay` called only from a test (`P1`/`P3`), four wire events the server handles and the client never sends (`N3`/`N4`/`N5` match modes, `N8` queue, `N12` rejoin), and `L1`'s genre/tag facets unreachable from both ends at once. §D and §E — fourteen persisted settings and five modifiers with no control anywhere — were closed by the same change that wrote this. §H is a third silent i18n failure mode: `i18next-parser` does not recognise the `const { t: ts } = useTranslation(…)` alias this game uses everywhere, so those strings reach no catalog and every non-English locale serves the English default |
+| [`slice-it-chart-editor.md`](./slice-it-chart-editor.md)                                               | **Slice It chart editor** design (idea `C1`): the `Chart`/`ChartRevision` models kept beside `Song.analysisData` so regeneration never eats human work, the canvas timeline with quantisation colour and the three kinds of hit highlight, the command-pattern undo stack, the enforced Easy ⊆ Normal ⊆ Hard ⊆ Expert nesting invariant, playtest through the real `GameEngine`, onset ghosts from the analyser's rejected candidates, the linter, the four auto-generate scopes (including `auto-only`, which never touches an edited note), and §12's full neumorphic UI spec                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ## Operations
 
@@ -309,10 +79,10 @@ code).
 
 | Location                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`archive/2026/plans/plasmatic-jelly/`](./archive/2026/plans/plasmatic-jelly/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | **Plasmatic Jelly overhaul** (2026-10-23, implemented): the master plan with the binding decisions R1–R16 plus five section specs (material, soft body, arcs, coverage/a11y/perf, gates/docs/naming). The shipped contract is [`archive/2026/plasmatic-jelly-system.md`](./archive/2026/plasmatic-jelly-system.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| [`archive/2026/plans/plasmatic-jelly/`](./archive/2026/plans/plasmatic-jelly/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | **Plasmatic Jelly overhaul** (2026-10-23, implemented): the master plan with the binding decisions R1–R16 plus five section specs (material, soft body, arcs, coverage/a11y/perf, gates/docs/naming). The shipped contract is [`archive/2026/plasmatic-jelly-system.md`](./archive/2026/plasmatic-jelly-system.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | [`plans/2026-10-17-globe-eversion-tasks.md`](./plans/2026-10-17-globe-eversion-tasks.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | **Globe Eversion — task plan** (2026-10-17, **implemented behind the flag** — T01–T37 done; pending the device lab T38 and owner sign-off T28): the spec above split into 39 spec-driven tasks across five lanes, each with spec citations, instructions, file scope, acceptance criteria and separate start/finish dependencies. A contract-freezing first task (T01) lets 22 tasks start in parallel against stubs; integration is built on a stub shader so the eversion math stays off the critical path; every task merges dark behind `isEversionEnabled()` until the device lab signs off. Ends with a file-ownership table and a spec-test → task traceability matrix                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | [`plans/2026-10-17-globe-eversion.md`](./plans/2026-10-17-globe-eversion.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | **Globe Eversion — navigation transition spec** (2026-10-17, **implemented and enabled for all visitors** (`EVERSION_ENABLED = true`, flipped ahead of the device lab T38 and owner sign-off T28); status, open measurements and the Thurston licence provenance are in its _Implementation status_): replaces the hub's veil-and-navigate with a three-stage WebGL2 transition — the current page WRAPs onto the liquid globe through a selectable map projection (Mercator, Peirce quincuncial, stereographic, Lambert azimuthal, equirectangular; Random by default), the globe performs Thurston's corrugation sphere EVERSION with the destination on the inside, then the destination UNWRAPs onto the live page. Records the owner's decisions, the worker-hosted renderer (so the destination's main-thread render cannot stutter it), `modern-screenshot` capture rules, quintic-replanned C² timeline with fast-forward, and 46 numbered correctness/performance tests including the immersion check that makes the eversion valid                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| [`archive/2026/plans/globe-eversion/`](./archive/2026/plans/globe-eversion/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | **Globe Eversion — derivation docs**: [`thurston-derivation.md`](./archive/2026/plans/globe-eversion/thurston-derivation.md) (the eversion construction re-derived for the TS oracle and the GLSL port, with provenance and licence text — the construction descends from the Geometry Center `evert` code, "freely available"/"used with permission" but with no explicit licence grant, so no code is copied) and its runnable checks [`thurston-check.ts`](./archive/2026/plans/globe-eversion/thurston-check.ts) and [`bednorz-check.ts`](./archive/2026/plans/globe-eversion/bednorz-check.ts) (the verified Bednorz-based fallback derivation, available if a clean-room source is required). Module docs: [`lib/eversion/README.md`](../lib/eversion/README.md), [`components/radial/README.md`](../components/radial/README.md) _Globe Eversion_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| [`archive/2026/plans/globe-eversion/`](./archive/2026/plans/globe-eversion/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | **Globe Eversion — derivation docs**: [`thurston-derivation.md`](./archive/2026/plans/globe-eversion/thurston-derivation.md) (the eversion construction re-derived for the TS oracle and the GLSL port, with provenance and licence text — the construction descends from the Geometry Center `evert` code, "freely available"/"used with permission" but with no explicit licence grant, so no code is copied) and its runnable checks [`thurston-check.ts`](./archive/2026/plans/globe-eversion/thurston-check.ts) and [`bednorz-check.ts`](./archive/2026/plans/globe-eversion/bednorz-check.ts) (the verified Bednorz-based fallback derivation, available if a clean-room source is required). Module docs: [`lib/eversion/README.md`](../lib/eversion/README.md), [`components/radial/README.md`](../components/radial/README.md) _Globe Eversion_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | [`plans/2026-11-07-altair-outpost-13-phase-2.md`](./plans/2026-11-07-altair-outpost-13-phase-2.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | **Altair "Outpost 13" phase 2 plan** (2026-11-07, in progress): content, balance and progression. Measured baseline from the balance bot (every class dies at the 5:00 boss), the sim-version rule (bump `SIM_VERSION` with any change to how a run plays out), how "200 hours" is modelled and what cannot be proven, the content plan, the order of work with measured gates, and the one input only the owner can supply                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | [`plans/2026-10-12-feature-ideas-every-surface.md`](./plans/2026-10-12-feature-ideas-every-surface.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | **Feature ideas for every surface** (2026-10-12, round ten): 170 ideas across every surface, each borrowed from a named site; fifteen ship with a pure `lib/` template and the batch implements them end to end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | [`plans/2026-09-19-next-phase-feature-ideas.md`](./plans/2026-09-19-next-phase-feature-ideas.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | **Next-phase feature ideas** (2026-09-19, round nine): argues the next phase is **depth, not surface** — the six weeks to `be7a951` added eleven destinations, and the audit for this doc found three of the platform's best-built shared systems sitting unadopted. The party system is complete and switched off (`server/socket-server/party-contract.ts:55` is an empty registry; 13 games declare online play and none can be partied into); `replayableGames` (`lib/game/replay.ts:262`) has 2 of 23 entries; ranked is challenge-only with no queue, season or decay; and `/services` + `/ventures` are eleven microsites backed by **zero Prisma models**, whose only interactive control is a `mailto:`. Thirty ideas across six pillars — P (multiplayer as a platform service), W (the conglomerate gets state), B (the platform becomes programmable), M (embeddings, recommendation and member memory), L (a schedule), K (the vertical kit before microsite #12) — with a sequencing section and two hard gates. Also records one **live defect**: `/wager`, `/predictions`, `CoinStake`, `DailyWheelSpin` and five casino lobbies ship with no age gate, self-exclusion, cool-off or daily cap (W8)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -336,8 +106,8 @@ code).
 | [`server-perf-2026-10-21/`](./archive/2026/server-perf-2026-10-21/06-report.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | **The server-side performance program: start at [`06-report.md`](./archive/2026/server-perf-2026-10-21/06-report.md).** Outcome: the typical route was already fast and the medians barely moved; the gains are the signed tag feed (645 to 31 ms), post and people search (637 to 83 ms, 423 to 255 ms) and in-process wins on sitemaps, OG, hubs, the status page and worker queries, while the larger result is a set of privacy fixes (feed, comments, unlock, private communities) and a production `/api/auth/*` 500 (zod below Better Auth's peer requirement) that needs an image rebuild. The folder also holds the governing documents: [`index.md`](./archive/2026/server-perf-2026-10-21/index.md) (goal, scope, phases), `01-method` (harness and evidence rules), `02-budgets` (origin budgets, ratified), `03-rules` (cache-safety and DB rules), `04-workstreams`; `results/` holds the per-workstream ledgers and the before/after runs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | [`loading-audit-2026-08-11/`](./archive/2026/loading-audit-2026-08-11/index.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | **The current loading/runtime audit** — read this before any earlier performance pass, and read its "Corrections to earlier audits" section first: two claims in 08-09 are wrong and would send you the wrong way. Measured against a running production build in a real browser. Found and fixed the actual root cause of the 431 KB lucide icon chunk (four files doing a computed lookup on a namespace import — **not** the 588-file codemod OPT-10 proposed), zod on the critical path via the catalog, socket.io-client on every page, nine routes blocking first paint on Google Fonts, the H3 `event.res` header bug **still present in `otel.ts`** (so `Server-Timing` never reached a client), and a missing `STRIPE_SECRET_KEY` 500-ing the first request to every page. Concludes that the **database and the API handler layer do NOT need a revamp** — with the evidence — and that the largest remaining win is _adopting_ the caching the API wrapper already implements (269 GET handlers, 10 declare a policy)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | [`css-js-audit-2026-10-09.md`](./archive/2026/css-js-audit-2026-10-09.md) · [`performance-audit-2026-10-08.md`](./archive/2026/performance-audit-2026-10-08.md) · [`-08-12`](./archive/2026/performance-audit-2026-08-12.md) · [`-08-09`](./archive/2026/performance-audit-2026-08-09.md) · [`-08-04`](./archive/2026/performance-audit-2026-08-04.md) · [`-08-01`](./archive/2026/performance-audit-2026-08-01.md) · [`-07-30`](./archive/2026/performance-audit-2026-07-30.md) · [`-07-17`](./archive/2026/performance-audit-2026-07-17.md) · [`3d-performance-audit.md`](./3d-performance-audit.md) | **Measured performance passes.** The 10-09 CSS/JS pass splits the render-blocking sheet into a site tier and an app-tier superset (site pages −29% gzip, games unchanged; `style-tiers` gate), deletes ~4,000 lines of CSS nothing rendered, and takes zod, two RMHbox registries, an exported page component and the bundled English catalog (~136 KB, now rendered from `defaultValue`s and backfilled at idle) out of every page's entry — critical path −18% brotli, and the CI entry budget green again (628 → 460 KB). 10-08 asks what a page does when nobody is touching it — the high-refresh question: the shared backdrop (aurora ×2, rings ×6, blobs ×4) animated forever, so every `_site` page rendered every vsync and cost ~1 CPU core at rest on desktop (16fps → a locked 60, ~0 frames at rest, once static — removing the blur instead changed nothing); the far aurora layer had escaped every degradation tier by specificity, so phones ran it all along; fixed-timestep games (Altair, Nightrail, Plinko, Laundry Sort) drew raw sim state and juddered at 144/240Hz — now interpolated; game/app menus that never idled (Slice It's pulse under a full-menu blur: 10fps → 60); 60Hz-tuned per-frame smoothing (`frameAlpha`); a 3D governor that never governed above 60Hz. Adds `testing/e2e/frame-budget.mjs` and the `static-backdrop` gate. 08-12 asks where the work runs rather than how much there is: it finds the site had already built a zero-JS scroll-driven reveal (`.u-reveal`) and kept using the framer-motion one in 34 places including 19 feed columns, that `AnimatedCount` re-renders React once per frame ×4 per feed card, that 15 files import full `motion` and defeat `LazyMotion` app-wide, and that `useReveal`'s target class has zero consumers. Also the one real WASM candidate (the Slice It STFT, measured at 2.9 s per 15-min upload — where the first fix is `worker_threads`, not WASM) and a needless `vibe-builder` → `vite-builder` serialization. 08-09 is the first pass measured against a **running** production build in a real browser — every game and app, signed out and in: it found the anonymous-HTML cache and security-header plugins were silent no-ops (H3's `event.res` getter builds a detached response — **fixed there**), 8 routes whose first paint is gated on `fonts.googleapis.com`, a 116 KB-gzip chunk carrying all 1,074 lucide icons, zod back on the critical path via the catalog refactor, and 5–6 s of main-thread long tasks in the 3D games. 08-04 is the initial-load pass: `routeTree.gen.ts` imports all 739 route modules statically, so the shared entry chunk had accumulated the Discord Activity SDK, zod, twemoji, web-vitals and all of RMHBox — halved it, and states the rule that keeps them out. 08-01 is the one that ended the site's cursor reactivity: a per-frame custom-property write on `<html>` restyles the whole document, and it was costing the globe drag 23.7s of blocking time. Each pass states what it does _not_ revisit |
-| [`archive/2026/plans/2026-07-21-liquid-glass-v2-optics.md`](./archive/2026/plans/2026-07-21-liquid-glass-v2-optics.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | **Liquid Glass v2 optics & floating shell** design doc (2026-07-21): the rim-glint layer, lens refraction, the two-layer aurora, sheen rebuild, degradation extensions. ⚠️ Its `useGlassLight` v2 and GL/WebGPU shader-tier sections describe code that has since been **deleted** — `design-language.md` is authoritative                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| [`archive/2026/plans/2026-07-14-liquid-glass-ui-redesign.md`](./archive/2026/plans/2026-07-14-liquid-glass-ui-redesign.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | **Sitewide Liquid Glass redesign** design doc (2026-07-14): glass as the material system — tokens, elevation tiers, realism/reactivity/performance specs, per-page coverage incl. library/studio/shop/admin, phased rollout. ⚠️ Its reactivity section (the pointer-tracked hotspot) was retired on 2026-08-01                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| [`archive/2026/plans/2026-07-21-liquid-glass-v2-optics.md`](./archive/2026/plans/2026-07-21-liquid-glass-v2-optics.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | **Liquid Glass v2 optics & floating shell** design doc (2026-07-21): the rim-glint layer, lens refraction, the two-layer aurora, sheen rebuild, degradation extensions. ⚠️ Its `useGlassLight` v2 and GL/WebGPU shader-tier sections describe code that has since been **deleted** — `design-language.md` is authoritative                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| [`archive/2026/plans/2026-07-14-liquid-glass-ui-redesign.md`](./archive/2026/plans/2026-07-14-liquid-glass-ui-redesign.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | **Sitewide Liquid Glass redesign** design doc (2026-07-14): glass as the material system — tokens, elevation tiers, realism/reactivity/performance specs, per-page coverage incl. library/studio/shop/admin, phased rollout. ⚠️ Its reactivity section (the pointer-tracked hotspot) was retired on 2026-08-01                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | [`superpowers/`](./superpowers/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | The main archive of dated design specs + implementation plans (~75 files, `plans/` + `specs/`), plus the reusable [`i18n-extraction-guide.md`](./superpowers/i18n-extraction-guide.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | [`plans/`](./plans/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Older dated plan/design pairs (dream-rift, rmhcode CLI, terraform/helm migration, farming sim)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | [`autonomous/`](./autonomous/README.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Autonomous feature sprints: per sprint an index, a plan, one specification per feature (story, requirements, spec, acceptance) and a summary. Sprint 01 is the Toolbox (`/tools`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -364,764 +134,77 @@ code).
 
 ## Historical: Plasmatic Jelly, the liquid globe and the eversion
 
-Steel
-(2026-11-11,
-[`plans/2026-11-11-steel-design-implementation.md`](./plans/2026-11-11-steel-design-implementation.md))
-replaced
-the
-old
-material
-and
-shell,
-and
-phase
-6
-deleted
-their
-code:
-`components/radial/`,
-`lib/jelly/`,
-`lib/liquid/`,
-`lib/eversion/`,
-the
-WebAssembly
-kernels,
-the
-glass,
-jelly
-and
-arc
-stylesheets
-and
-the
-`/jelly`
-and
-`/eversion-lab`
-routes.
-The
-documents
-below
-describe
-that
-code.
-They
-are
-**kept
-for
-the
-record
-and
-are
-not
-current**;
-nothing
-they
-say
-about
-the
-material,
-the
-radial
-shell,
-the
-liquid
-globe,
-the
-eversion
-or
-the
-WebAssembly
-kernels
-is
-true
-of
-the
-repo.
-The
-current
-design
-is
-`../design.md`
-and
-the
-Steel
-plan.
-`lib/dough.ts`,
-`lib/fluid.ts`
-and
-`lib/trackball.ts`
-survive:
-the
-chrome
-globe
-(`lib/globe/`)
-runs
-on
-them.
+Steel (2026-11-11,
+[`plans/2026-11-11-steel-design-implementation.md`](./plans/2026-11-11-steel-design-implementation.md)) replaced the old
+material and shell, and phase 6 deleted their code: `components/radial/`, `lib/jelly/`, `lib/liquid/`, `lib/eversion/`,
+the WebAssembly kernels, the glass, jelly and arc stylesheets and the `/jelly` and `/eversion-lab` routes. The documents
+below describe that code. They are **kept for the record and are not current**; nothing they say about the material, the
+radial shell, the liquid globe, the eversion or the WebAssembly kernels is true of the repo. The current design is
+`../design.md` and the Steel plan. `lib/dough.ts`, `lib/fluid.ts` and `lib/trackball.ts` survive: the chrome globe
+(`lib/globe/`) runs on them.
 
 - [`archive/2026/plasmatic-jelly-design-language.md`](./archive/2026/plasmatic-jelly-design-language.md),
   [`archive/2026/plasmatic-jelly-system.md`](./archive/2026/plasmatic-jelly-system.md),
   [`archive/2026/liquid-glass-system.md`](./archive/2026/liquid-glass-system.md),
   [`archive/2026/jelly-group-audit.md`](./archive/2026/jelly-group-audit.md)
 - [`archive/2026/plans/plasmatic-jelly/`](./archive/2026/plans/plasmatic-jelly/),
-  [`archive/2026/plans/globe-eversion/`](./archive/2026/plans/globe-eversion/),
-  `plans/2026-10-17-globe-eversion*.md`,
-  `archive/2026/plans/2026-10-21-liquid-glass-system.md`,
-  `archive/2026/plans/2026-10-22-liquid-refraction.md`,
-  the
-  two
+  [`archive/2026/plans/globe-eversion/`](./archive/2026/plans/globe-eversion/), `plans/2026-10-17-globe-eversion*.md`,
+  `archive/2026/plans/2026-10-21-liquid-glass-system.md`, `archive/2026/plans/2026-10-22-liquid-refraction.md`, the two
   `plans/2026-07-*-liquid-glass-*.md`
-- `superpowers/plans/`
-  and
-  `superpowers/specs/`
-  entries
-  named
-  `*jelly*`,
-  `*globe-jelly*`,
-  `*css-first-jelly*`
-  and
+- `superpowers/plans/` and `superpowers/specs/` entries named `*jelly*`, `*globe-jelly*`, `*css-first-jelly*` and
   `*refractive-glass*`
-- The
-  WebAssembly
-  kernels
-  doc
-  (`frontend-webassembly.md`)
-  was
-  deleted
-  with
-  the
-  kernels.
+- The WebAssembly kernels doc (`frontend-webassembly.md`) was deleted with the kernels.
 
 ## ⚠️ Known-stale docs (do not trust these claims)
 
-These
-predate
-the
-Next.js
-→
-TanStack
-Start
-migration
-and/or
-the
-Go
-cutover:
+These predate the Next.js → TanStack Start migration and/or the Go cutover:
 
-- Any
-  reference
-  to
-  a
-  repo-root
-  `specs/`
-  directory
-  —
-  it
-  was
-  deleted;
-  the
-  legacy
-  AI-agent
-  game
-  specs
-  it
-  held
-  (`vega.md`
-  and
-  friends)
-  are
-  gone
-  with
-  it
-- `rmhtube/features.md`
-  —
-  2025
-  roadmap
-  for
-  a
-  now-shipped
-  app
-  (its
-  stack
-  line
-  is
-  now
-  correct,
-  but
-  it
-  still
-  describes
-  intent
-  rather
-  than
-  the
-  shipped
-  feature
-  set)
-- Older
-  design
-  docs
-  in
-  `rmhbox/`,
-  `plans/`,
-  `misc/`,
-  and
-  the
-  textbook
-  chapters
-  mention
-  Next.js
-  in
-  historical
-  context
-  —
-  the
-  routes/stack
-  described
-  there
-  map
-  to
-  `app/routes/` +
-  TanStack
-  Start
-  today
-- `../go-services/FOUNDATION.md`
-  —
-  a
-  `pkg/`
-  API
-  reference;
-  the
-  removed
-  `pkg/events`/`pkg/realtime`
-  sections
-  were
-  cut,
-  but
-  treat
-  `go-services/CLAUDE.md`
-  as
-  canonical
-  (`go-services/README.md`
-  was
-  refreshed
-  to
-  the
-  current
-  2-service-in-prod
-  reality:
-  `status` +
-  `assets`)
-- The
-  June
-  2026
-  Go
-  cutover
-  runbooks
-  and
-  designs
-  (`runbooks/2026-06-22-go-runtime-cutover.md`,
-  `runbooks/2026-06-23-go-fleet-deploy.md`,
-  `superpowers/*/2026-06-22-goroutine-migration*`)
-  describe
-  a
-  Go
-  `supervisor`
-  running
-  the
-  background
-  workers.
-  Every
-  one
-  of
-  those
-  workers,
-  the
-  Discord
-  bot
-  last,
-  now
-  runs
-  in
-  the
-  Node
-  `jobs`
-  worker
-  and
-  the
-  supervisor
-  is
-  deleted
-  (D3)
-- Anything
-  claiming
-  production
-  runs
-  PM2
-  —
-  production
-  is
-  Docker
-  Compose
-  with
-  a
-  blue/green
-  web
-  hotswap
-  (see
+- Any reference to a repo-root `specs/` directory — it was deleted; the legacy AI-agent game specs it held (`vega.md`
+  and friends) are gone with it
+- `rmhtube/features.md` — 2025 roadmap for a now-shipped app (its stack line is now correct, but it still describes
+  intent rather than the shipped feature set)
+- Older design docs in `rmhbox/`, `plans/`, `misc/`, and the textbook chapters mention Next.js in historical context —
+  the routes/stack described there map to `app/routes/` + TanStack Start today
+- `../go-services/FOUNDATION.md` — a `pkg/` API reference; the removed `pkg/events`/`pkg/realtime` sections were cut,
+  but treat `go-services/CLAUDE.md` as canonical (`go-services/README.md` was refreshed to the current 2-service-in-prod
+  reality: `status` + `assets`)
+- The June 2026 Go cutover runbooks and designs (`runbooks/2026-06-22-go-runtime-cutover.md`,
+  `runbooks/2026-06-23-go-fleet-deploy.md`, `superpowers/*/2026-06-22-goroutine-migration*`) describe a Go `supervisor`
+  running the background workers. Every one of those workers, the Discord bot last, now runs in the Node `jobs` worker
+  and the supervisor is deleted (D3)
+- Anything claiming production runs PM2 — production is Docker Compose with a blue/green web hotswap (see
   `architecture.md`)
-- **Anything
-  describing
-  a
-  warm
-  `.vinxi`
-  module-graph
-  cache
-  as
-  load-bearing**
-  —
-  `opti/build-deploy-speedup.md`,
-  `runbooks/2026-06-23-go-fleet-deploy.md`
-  and
-  `ci-speed-audit-2026-07-17.md`
-  all
-  treat
-  it
-  as
-  the
-  thing
-  that
-  keeps
-  the
-  Vite
-  build
-  incremental.
-  It
-  never
-  was:
-  `.vinxi`
-  is
-  a
-  Vinxi
-  artifact
-  and
-  this
-  stack
-  builds
-  through
-  Vite/Nitro,
-  so
-  the
-  mount
-  was
-  always
-  empty.
-  It
-  was
-  removed
-  on
-  2026-08-08
-  —
-  see
-  `build-deploy-audit-2026-08-08.md`
-  §2.
-  `opti/`
-  also
-  predates
-  the
-  move
-  of
-  the
-  image
-  build
-  into
-  CI,
-  so
-  its
-  `deploy.sh`-builds-the-image
-  framing
-  is
-  superseded
-  wholesale
-- **Any
-  design
-  doc
-  describing
-  pointer-tracked
-  optics**
-  —
-  a
-  hovered-glass
-  diffuse
-  hotspot,
-  a
-  pointer-parallaxing
-  aurora
-  or
-  ring
-  backdrop,
-  `useGlassLight`,
-  `usePointerParallax`,
-  `useCardSheen`,
-  a
-  JS-published
-  `--light-x/--light-y`
-  scene
-  light,
-  or
-  the
-  `lib/liquid-gl`
-  GL/WebGPU
-  shader
-  tier.
-  All
-  of
-  it
-  was
-  deleted
-  on
-  2026-08-01;
-  the
-  glass
-  answers
-  a
-  static
-  sun
-  and
-  hover
-  is
-  a
-  state,
-  not
-  a
-  coordinate.
-  `archive/2026/plasmatic-jelly-design-language.md`
-  §5.1.1
-  is
-  the
-  record
-  of
-  what
-  went
-  and
-  why.
-  The
-  two
-  `plans/2026-07-*`
-  glass
-  docs
-  and
-  the
-  older
-  audits
-  still
-  describe
-  it
-  as
-  live
-  because
-  they
-  are
-  dated
-  snapshots
-- **Anything
-  describing
-  the
-  Liquid
-  Glass
-  material
-  as
-  current**
-  —
-  `archive/2026/liquid-glass-system.md`
-  (kept
-  behind
-  a
-  superseded
-  banner
-  for
-  its
-  optics
-  and
-  snapshot
-  history)
-  and
-  the
-  two
-  `plans/2026-07-*-liquid-glass-*`
-  docs
-  describe
-  clear
-  glass
-  with
-  no
-  resting
-  loop,
-  no
-  tap
-  feedback
-  and
-  still
-  neighbours.
-  The
-  material
-  is
-  Plasmatic
-  Jelly
-  since
-  2026-10-23:
-  always-moving
-  haze,
-  a
-  bounded
-  soft
-  body
-  and
-  electric
-  arcs;
-  the
-  authority
-  is
+- **Anything describing a warm `.vinxi` module-graph cache as load-bearing** — `opti/build-deploy-speedup.md`,
+  `runbooks/2026-06-23-go-fleet-deploy.md` and `ci-speed-audit-2026-07-17.md` all treat it as the thing that keeps the
+  Vite build incremental. It never was: `.vinxi` is a Vinxi artifact and this stack builds through Vite/Nitro, so the
+  mount was always empty. It was removed on 2026-08-08 — see `build-deploy-audit-2026-08-08.md` §2. `opti/` also
+  predates the move of the image build into CI, so its `deploy.sh`-builds-the-image framing is superseded wholesale
+- **Any design doc describing pointer-tracked optics** — a hovered-glass diffuse hotspot, a pointer-parallaxing aurora
+  or ring backdrop, `useGlassLight`, `usePointerParallax`, `useCardSheen`, a JS-published `--light-x/--light-y` scene
+  light, or the `lib/liquid-gl` GL/WebGPU shader tier. All of it was deleted on 2026-08-01; the glass answers a static
+  sun and hover is a state, not a coordinate. `archive/2026/plasmatic-jelly-design-language.md` §5.1.1 is the record of
+  what went and why. The two `plans/2026-07-*` glass docs and the older audits still describe it as live because they
+  are dated snapshots
+- **Anything describing the Liquid Glass material as current** — `archive/2026/liquid-glass-system.md` (kept behind a
+  superseded banner for its optics and snapshot history) and the two `plans/2026-07-*-liquid-glass-*` docs describe
+  clear glass with no resting loop, no tap feedback and still neighbours. The material is Plasmatic Jelly since
+  2026-10-23: always-moving haze, a bounded soft body and electric arcs; the authority is
   `archive/2026/plasmatic-jelly-system.md`
 
-Fixed
-in
-the
-2026-07-29
-audit:
-the
-stack
-lines
-in
-`void-breaker/specs.md`,
-`temple-of-joy/game-design.md`
-and
-`rmhtube/features.md`
-now
-name
-TanStack
-Start.
-`temple-of-joy/`
-was
-rewritten
-again
-on
-2026-07-30
-alongside
-the
-game
-itself:
-`game-design.md`
-describes
-the
-current
-economy,
-and
-the
-four
-docs
-that
-described
-the
-superseded
-one
-(`patch-1.md`,
-`patch-2.md`,
-`content-expansion.md`,
-`implementation-plan.md`)
-were
-deleted.
-The
-repo-root
-`specs/`
-directory
-this
-file
-used
-to
-point
-at
-no
-longer
-exists
-—
-the
-reference
-was
-removed
-rather
-than
-repaired.
+Fixed in the 2026-07-29 audit: the stack lines in `void-breaker/specs.md`, `temple-of-joy/game-design.md` and
+`rmhtube/features.md` now name TanStack Start. `temple-of-joy/` was rewritten again on 2026-07-30 alongside the game
+itself: `game-design.md` describes the current economy, and the four docs that described the superseded one
+(`patch-1.md`, `patch-2.md`, `content-expansion.md`, `implementation-plan.md`) were deleted. The repo-root `specs/`
+directory this file used to point at no longer exists — the reference was removed rather than repaired.
 
-Narrowed
-in
-the
-2026-08-08
-testing
-audit:
-the
-vitest
-suite
-no
-longer
-covers
-gameplay.
-180
-test
-files
-—
-Slice
-It's
-judgement
-engine,
-the
-RMHBox
-minigame
-rules,
-and
-the
-whole
-gameplay
-suites
-for
-cookgame
-/
-Kowloon
-Knockout
-/
-Dream
-Rift
-/
-Temple
-of
-Joy
-/
-Versecraft
-/
-Kaikai
-/
-laundry-sort
-/
-massive-march
-/
-isleworks
-/
-nightrail
-/
-daily-puzzles
-/
-Void
-Breaker
-—
-were
-deleted
-to
-take
-the
-run
-from
-~37s
-to
-~20s.
-**Any
-game
-design
-doc
-that
-describes
-a
-behaviour
-as
-"covered
-by
-tests"
-is
-now
-stale.**
-What
-survived
-and
-why:
-[`testing.md`](./testing.md)
-§What
-is
-not
-tested.
+Narrowed in the 2026-08-08 testing audit: the vitest suite no longer covers gameplay. 180 test files — Slice It's
+judgement engine, the RMHBox minigame rules, and the whole gameplay suites for cookgame / Kowloon Knockout / Dream Rift
+/ Temple of Joy / Versecraft / Kaikai / laundry-sort / massive-march / isleworks / nightrail / daily-puzzles / Void
+Breaker — were deleted to take the run from ~37s to ~20s. **Any game design doc that describes a behaviour as "covered
+by tests" is now stale.** What survived and why: [`testing.md`](./testing.md) §What is not tested.
 
-Fixed
-in
-the
-2026-08-08
-testing
-audit:
-`testing.md`
-was
-rewritten.
-It
-had
-described
-a
-`vitest-coverage.yml`,
-an
-`epic-tests.yml`
-and
-a
-`typecheck-server.yml`
-that
-did
-not
-exist,
-counted
-"~45
-workflows"
-and
-"~227
-test
-files"
-against
-a
-tree
-with
-10
-and
-427,
-and
-called
-the
-epic
-suite
-CI-gated
-when
-nothing
-ran
-it.
-The
-workflow
-count
-and
-the
-epic
-gate
-are
-now
-real
-(`epic-tests.yml`
-was
-written
-rather
-than
-the
-claim
-deleted);
-the
-rest
-is
-measured
-against
-the
-tree
-and
-dated
-in
-the
-doc's
-header.
+Fixed in the 2026-08-08 testing audit: `testing.md` was rewritten. It had described a `vitest-coverage.yml`, an
+`epic-tests.yml` and a `typecheck-server.yml` that did not exist, counted "~45 workflows" and "~227 test files" against
+a tree with 10 and 427, and called the epic suite CI-gated when nothing ran it. The workflow count and the epic gate are
+now real (`epic-tests.yml` was written rather than the claim deleted); the rest is measured against the tree and dated
+in the doc's header.

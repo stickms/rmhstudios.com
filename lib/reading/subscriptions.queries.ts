@@ -5,19 +5,8 @@
 import { listReadingSubscriptionsApi } from '@/lib/reading/subscriptions.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const readingSubscriptionsQuery =
-  (
-    enabled = true,
-  ) =>
-    contractQuery(
-      [
-        'reading',
-        'subscriptions',
-      ],
-      listReadingSubscriptionsApi,
-      undefined,
-      {
-        staleTime: 30_000,
-        enabled,
-      },
-    );
+export const readingSubscriptionsQuery = (enabled = true) =>
+  contractQuery(['reading', 'subscriptions'], listReadingSubscriptionsApi, undefined, {
+    staleTime: 30_000,
+    enabled,
+  });

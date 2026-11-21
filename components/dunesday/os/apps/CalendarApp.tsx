@@ -5,31 +5,10 @@ import { useDunesday } from '../../DunesdayProvider';
 import { Schedule } from '../../Schedule';
 
 export default function CalendarApp() {
-  const {
-    plan,
-    state,
-    actions,
-    today,
-  } =
-    useDunesday();
+  const { plan, state, actions, today } = useDunesday();
   return (
-    <BareChrome
-      value
-    >
-      <Schedule
-        plan={
-          plan
-        }
-        state={
-          state
-        }
-        actions={
-          actions
-        }
-        today={
-          today
-        }
-      />
+    <BareChrome value>
+      <Schedule plan={plan} state={state} actions={actions} today={today} />
     </BareChrome>
   );
 }

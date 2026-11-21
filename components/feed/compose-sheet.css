@@ -8,38 +8,20 @@
       is `transform`, separate from the `translate` that centres the card, so the two never fight. */
 @media (max-width: 639.98px) {
   [data-slot='dialog-content'][data-compose-sheet] {
-    top: calc(
-      var(
-          --safe-top
-        ) +
-        0.75rem
-    );
-    translate: -50%
-      0;
+    top: calc(var(--safe-top) + 0.75rem);
+    translate: -50% 0;
   }
 }
 [data-slot='dialog-content'][data-compose-sheet] {
   transition:
-    opacity
-      var(
-        --m5
-      )
-      ease,
-    transform
-      var(
-        --m5
-      )
-      ease;
+    opacity var(--m5) ease,
+    transform var(--m5) ease;
 }
 [data-slot='dialog-content'][data-compose-sheet][data-state='closed'] {
-  transform: translateY(
-    12px
-  );
+  transform: translateY(12px);
 }
 @starting-style {
   [data-slot='dialog-content'][data-compose-sheet][data-state='open'] {
-    transform: translateY(
-      12px
-    );
+    transform: translateY(12px);
   }
 }

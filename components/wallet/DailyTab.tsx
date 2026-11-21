@@ -6,17 +6,9 @@ import { ArrivalSuspense } from '@/components/ui/arrive';
 // the store's Daily tab opens. The split lives here rather than in the route
 // module because routes import their page statically (docs/performance, FOUC
 // contract) — this wrapper is what the route imports.
-const DailyShopPanel =
-  lazy(
-    () =>
-      import('./DailyShopPanel'),
-  );
+const DailyShopPanel = lazy(() => import('./DailyShopPanel'));
 
-export function DailyTab({
-  signedIn,
-}: {
-  signedIn: boolean;
-}) {
+export function DailyTab({ signedIn }: { signedIn: boolean }) {
   return (
     <ArrivalSuspense
       fallback={
@@ -26,11 +18,7 @@ export function DailyTab({
         </div>
       }
     >
-      <DailyShopPanel
-        signedIn={
-          signedIn
-        }
-      />
+      <DailyShopPanel signedIn={signedIn} />
     </ArrivalSuspense>
   );
 }

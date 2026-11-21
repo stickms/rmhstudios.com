@@ -11,7 +11,12 @@ const block = (kind: SpeechBlock<string>['kind'], text: string, element = text):
 describe('buildSegments', () => {
   it('keeps headings, paragraphs and list items in document order with running indices', () => {
     const out = buildSegments(
-      [block('text', 'Title', 'h1'), block('text', 'First.', 'p'), block('text', 'Item one', 'li'), block('text', 'Item two', 'li')],
+      [
+        block('text', 'Title', 'h1'),
+        block('text', 'First.', 'p'),
+        block('text', 'Item one', 'li'),
+        block('text', 'Item two', 'li'),
+      ],
       labels,
     );
     expect(out.map((s) => [s.index, s.text, s.element])).toEqual([
@@ -23,7 +28,10 @@ describe('buildSegments', () => {
   });
 
   it('announces a code block instead of reading it', () => {
-    const out = buildSegments([block('text', 'Before'), block('code', 'const secret = 1;'), block('text', 'After')], labels);
+    const out = buildSegments(
+      [block('text', 'Before'), block('code', 'const secret = 1;'), block('text', 'After')],
+      labels,
+    );
     expect(out.map((s) => s.text)).toEqual(['Before', 'Code block skipped', 'After']);
   });
 
@@ -33,7 +41,10 @@ describe('buildSegments', () => {
   });
 
   it('drops footnote markers and empty blocks, and re-indexes', () => {
-    const out = buildSegments([block('text', 'Claim[^1] stands.[2]'), block('text', '   '), block('text', 'Next')], labels);
+    const out = buildSegments(
+      [block('text', 'Claim[^1] stands.[2]'), block('text', '   '), block('text', 'Next')],
+      labels,
+    );
     expect(out.map((s) => [s.index, s.text])).toEqual([
       [0, 'Claim stands.'],
       [1, 'Next'],

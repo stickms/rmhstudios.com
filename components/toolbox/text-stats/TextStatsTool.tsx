@@ -14,8 +14,7 @@ export function TextStatsTool() {
   const deferred = useDeferredValue(text);
   const stats = useMemo(() => textStats(deferred, locale), [deferred, locale]);
   const top = useMemo(() => topWords(deferred, { locale }), [deferred, locale]);
-  const num = (n: number, digits = 0) =>
-    new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(n);
+  const num = (n: number, digits = 0) => new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(n);
 
   return (
     <ToolFrame slug="text-stats">

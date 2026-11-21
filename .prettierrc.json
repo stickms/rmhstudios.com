@@ -6,6 +6,5 @@
   "trailingComma": "all",
   "arrowParens": "always",
   "endOfLine": "lf",
-  "proseWrap": "always",
-  "singleAttributePerLine": true
+  "proseWrap": "always"
 }

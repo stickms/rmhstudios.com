@@ -2,7 +2,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import * as R from '@features/rmhcharacters/engine/dnd5e/rules';
 import type { Dnd5eCharacter, Dnd5eData } from '@features/rmhcharacters/engine/types';
@@ -49,7 +56,12 @@ export function LevelUp5e({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('lu.title', { defaultValue: 'Level up to {{n}}', n: R.totalLevel(c) + 1 })}</DialogTitle>
-          <DialogDescription>{t('lu.body5e', { defaultValue: 'Choose the class you gain a level in. Multiclass options need 13 in the primary abilities of every class you have.' })}</DialogDescription>
+          <DialogDescription>
+            {t('lu.body5e', {
+              defaultValue:
+                'Choose the class you gain a level in. Multiclass options need 13 in the primary abilities of every class you have.',
+            })}
+          </DialogDescription>
         </DialogHeader>
         <Field label={t('lu.class', { defaultValue: 'Class' })}>
           <select className={nativeSelectClass} value={classId} onChange={(e) => setClassId(e.target.value)}>
@@ -65,23 +77,68 @@ export function LevelUp5e({
             <ul className="flex flex-col">
               {preview.features.map((f) => (
                 <li key={f.name} className="border-b border-app-border py-1.5 last:border-b-0">
-                  <span className="font-medium text-app-text">{f.name}.</span> <span className="text-app-text-muted">{f.text}</span>
+                  <span className="font-medium text-app-text">{f.name}.</span>{' '}
+                  <span className="text-app-text-muted">{f.text}</span>
                 </li>
               ))}
             </ul>
-            {preview.subclassChoice ? <Muted>{t('lu.subclass', { defaultValue: 'Choose a subclass on the Build tab.' })}</Muted> : null}
-            {preview.asi ? <Muted>{t('lu.asi', { defaultValue: 'You gain an Ability Score Improvement or a feat — choose it on the Build tab.' })}</Muted> : null}
-            {preview.epicBoon ? <Muted>{t('lu.boon', { defaultValue: 'You gain an Epic Boon feat — choose it on the Build tab.' })}</Muted> : null}
-            {preview.proficiencyBonusUp ? <Muted>{t('lu.pb', { defaultValue: 'Your Proficiency Bonus increases.' })}</Muted> : null}
+            {preview.subclassChoice ? (
+              <Muted>{t('lu.subclass', { defaultValue: 'Choose a subclass on the Build tab.' })}</Muted>
+            ) : null}
+            {preview.asi ? (
+              <Muted>
+                {t('lu.asi', {
+                  defaultValue: 'You gain an Ability Score Improvement or a feat — choose it on the Build tab.',
+                })}
+              </Muted>
+            ) : null}
+            {preview.epicBoon ? (
+              <Muted>
+                {t('lu.boon', { defaultValue: 'You gain an Epic Boon feat — choose it on the Build tab.' })}
+              </Muted>
+            ) : null}
+            {preview.proficiencyBonusUp ? (
+              <Muted>{t('lu.pb', { defaultValue: 'Your Proficiency Bonus increases.' })}</Muted>
+            ) : null}
             {preview.cantripsGained || preview.preparedGained ? (
-              <Muted>{t('lu.spells', { defaultValue: '+{{c}} cantrip(s), +{{p}} prepared spell(s).', c: preview.cantripsGained, p: preview.preparedGained })}</Muted>
+              <Muted>
+                {t('lu.spells', {
+                  defaultValue: '+{{c}} cantrip(s), +{{p}} prepared spell(s).',
+                  c: preview.cantripsGained,
+                  p: preview.preparedGained,
+                })}
+              </Muted>
             ) : null}
             {preview.newSlots.some(Boolean) ? (
-              <Muted>{t('lu.slots', { defaultValue: 'New spell slots: {{list}}', list: preview.newSlots.map((n, i) => (n ? `L${i + 1} +${n}` : '')).filter(Boolean).join(', ') })}</Muted>
+              <Muted>
+                {t('lu.slots', {
+                  defaultValue: 'New spell slots: {{list}}',
+                  list: preview.newSlots
+                    .map((n, i) => (n ? `L${i + 1} +${n}` : ''))
+                    .filter(Boolean)
+                    .join(', '),
+                })}
+              </Muted>
             ) : null}
-            {preview.masteryGained ? <Muted>{t('lu.mastery', { defaultValue: '+{{n}} Weapon Mastery.', n: preview.masteryGained })}</Muted> : null}
-            <Field label={t('lu.hp', { defaultValue: 'Hit points: average {{avg}}, or enter your d{{die}} roll', avg: preview.hpAverage, die: preview.hitDie })}>
-              <Input type="number" min={1} max={preview.hitDie} value={roll} onChange={(e) => setRoll(e.target.value)} placeholder={t('lu.average', { defaultValue: 'Average' })} className="w-32" />
+            {preview.masteryGained ? (
+              <Muted>{t('lu.mastery', { defaultValue: '+{{n}} Weapon Mastery.', n: preview.masteryGained })}</Muted>
+            ) : null}
+            <Field
+              label={t('lu.hp', {
+                defaultValue: 'Hit points: average {{avg}}, or enter your d{{die}} roll',
+                avg: preview.hpAverage,
+                die: preview.hitDie,
+              })}
+            >
+              <Input
+                type="number"
+                min={1}
+                max={preview.hitDie}
+                value={roll}
+                onChange={(e) => setRoll(e.target.value)}
+                placeholder={t('lu.average', { defaultValue: 'Average' })}
+                className="w-32"
+              />
             </Field>
           </div>
         ) : (

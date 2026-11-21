@@ -14,33 +14,14 @@ export interface Hearing {
   /** When it ends on its own. */
   endsAt: number;
   /** When it was cancelled, if it was. */
-  cancelledAt:
-    | number
-    | null;
+  cancelledAt: number | null;
 }
 
 /** Until when notes from `source` are held back (−Infinity: never). */
-export function inputBlockedUntil(
-  h: Hearing | null,
-  source: InputSource,
-): number {
-  if (
-    !h
-  )
-    return -Infinity;
-  const end =
-    h.cancelledAt ===
-    null
-      ? h.endsAt
-      : Math.min(
-          h.cancelledAt,
-          h.endsAt,
-        );
-  return source ===
-    'mic'
-    ? end +
-        ECHO_TAIL_MS
-    : end;
+export function inputBlockedUntil(h: Hearing | null, source: InputSource): number {
+  if (!h) return -Infinity;
+  const end = h.cancelledAt === null ? h.endsAt : Math.min(h.cancelledAt, h.endsAt);
+  return source === 'mic' ? end + ECHO_TAIL_MS : end;
 }
 
 export function takesNote(
@@ -50,17 +31,6 @@ export function takesNote(
     source: InputSource;
   },
 ): boolean {
-  if (
-    !h ||
-    note.time <
-      h.startedAt
-  )
-    return true;
-  return (
-    note.time >=
-    inputBlockedUntil(
-      h,
-      note.source,
-    )
-  );
+  if (!h || note.time < h.startedAt) return true;
+  return note.time >= inputBlockedUntil(h, note.source);
 }

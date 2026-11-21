@@ -35,10 +35,14 @@ export function Story<C extends Character>({ c, set }: { c: C; set: (fn: (c: C) 
   const [lang, setLang] = useState('');
   const text = (key: 'appearance' | 'personality' | 'backstory' | 'notes', label: string, rows = 4) => (
     <Field label={label}>
-      <Textarea rows={rows} value={c[key]} onChange={(e) => {
-        const v = e.target.value.slice(0, 20_000);
-        set((x) => ({ ...x, [key]: v }));
-      }} />
+      <Textarea
+        rows={rows}
+        value={c[key]}
+        onChange={(e) => {
+          const v = e.target.value.slice(0, 20_000);
+          set((x) => ({ ...x, [key]: v }));
+        }}
+      />
     </Field>
   );
   return (
@@ -47,7 +51,11 @@ export function Story<C extends Character>({ c, set }: { c: C; set: (fn: (c: C) 
         <Section title={t('story.portrait', { defaultValue: 'Portrait' })}>
           <div className="flex items-center gap-4">
             {c.portrait ? (
-              <img src={c.portrait} alt={t('story.portraitAlt', { defaultValue: 'Portrait of {{name}}', name: c.name })} className="size-28 rounded-app border border-app-border object-cover" />
+              <img
+                src={c.portrait}
+                alt={t('story.portraitAlt', { defaultValue: 'Portrait of {{name}}', name: c.name })}
+                className="size-28 rounded-app border border-app-border object-cover"
+              />
             ) : (
               <div className="size-28 rounded-app border border-app-border bg-app-bg-subtle" />
             )}
@@ -56,7 +64,17 @@ export function Story<C extends Character>({ c, set }: { c: C; set: (fn: (c: C) 
                 <ImageUp aria-hidden /> {t('story.upload', { defaultValue: 'Upload image' })}
               </Button>
               {c.portrait ? (
-                <Button type="button" variant="ghost" onClick={() => set((x) => { const { portrait: _drop, ...rest } = x; void _drop; return rest as C; })}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() =>
+                    set((x) => {
+                      const { portrait: _drop, ...rest } = x;
+                      void _drop;
+                      return rest as C;
+                    })
+                  }
+                >
                   {t('story.removePortrait', { defaultValue: 'Remove' })}
                 </Button>
               ) : null}
@@ -85,15 +103,25 @@ export function Story<C extends Character>({ c, set }: { c: C; set: (fn: (c: C) 
         <Section title={t('story.identity', { defaultValue: 'Identity' })}>
           <div className="flex flex-col gap-3">
             <Field label={t('story.player', { defaultValue: 'Player name' })}>
-              <Input value={c.playerName} onChange={(e) => {
-                const v = e.target.value.slice(0, 120);
-                set((x) => ({ ...x, playerName: v }));
-              }} />
+              <Input
+                value={c.playerName}
+                onChange={(e) => {
+                  const v = e.target.value.slice(0, 120);
+                  set((x) => ({ ...x, playerName: v }));
+                }}
+              />
             </Field>
             <Field label={t('story.languages', { defaultValue: 'Languages' })}>
               <div className="flex flex-wrap gap-2">
                 {c.languages.map((l) => (
-                  <Button key={l} type="button" size="xs" variant="ghost" onClick={() => set((x) => ({ ...x, languages: x.languages.filter((y) => y !== l) }))} aria-label={t('story.removeLanguage', { defaultValue: 'Remove {{name}}', name: l })}>
+                  <Button
+                    key={l}
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => set((x) => ({ ...x, languages: x.languages.filter((y) => y !== l) }))}
+                    aria-label={t('story.removeLanguage', { defaultValue: 'Remove {{name}}', name: l })}
+                  >
                     {l} ×
                   </Button>
                 ))}
@@ -108,7 +136,12 @@ export function Story<C extends Character>({ c, set }: { c: C; set: (fn: (c: C) 
                 setLang('');
               }}
             >
-              <Input value={lang} onChange={(e) => setLang(e.target.value)} placeholder={t('story.addLanguage', { defaultValue: 'Add a language' })} aria-label={t('story.addLanguage', { defaultValue: 'Add a language' })} />
+              <Input
+                value={lang}
+                onChange={(e) => setLang(e.target.value)}
+                placeholder={t('story.addLanguage', { defaultValue: 'Add a language' })}
+                aria-label={t('story.addLanguage', { defaultValue: 'Add a language' })}
+              />
               <Button type="submit">{t('inv.add', { defaultValue: 'Add' })}</Button>
             </form>
           </div>
@@ -121,39 +154,74 @@ export function Story<C extends Character>({ c, set }: { c: C; set: (fn: (c: C) 
         </Section>
       </div>
       <div>
-        <Section title={t('story.backstory', { defaultValue: 'Backstory' })}>{text('backstory', t('story.backstory', { defaultValue: 'Backstory' }), 10)}</Section>
-        <Section title={t('story.notes', { defaultValue: 'Notes' })}>{text('notes', t('story.notes', { defaultValue: 'Notes' }), 6)}</Section>
+        <Section title={t('story.backstory', { defaultValue: 'Backstory' })}>
+          {text('backstory', t('story.backstory', { defaultValue: 'Backstory' }), 10)}
+        </Section>
+        <Section title={t('story.notes', { defaultValue: 'Notes' })}>
+          {text('notes', t('story.notes', { defaultValue: 'Notes' }), 6)}
+        </Section>
         <Section
           title={t('story.custom', { defaultValue: 'Homebrew and other books' })}
           action={
-            <Button type="button" size="sm" onClick={() => set((x) => ({ ...x, custom: [...x.custom, { id: newId(), name: '', text: '', kind: 'Feature' }] }))}>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() =>
+                set((x) => ({ ...x, custom: [...x.custom, { id: newId(), name: '', text: '', kind: 'Feature' }] }))
+              }
+            >
               <Plus aria-hidden /> {t('story.addEntry', { defaultValue: 'Add entry' })}
             </Button>
           }
         >
           <p className="mb-3 text-sm text-app-text-muted">
-            {t('story.customHint', { defaultValue: 'Anything the built-in rules do not carry: a subclass, feat, item or spell from another book, or a GM ruling. It prints on the sheet and the advisor reads it.' })}
+            {t('story.customHint', {
+              defaultValue:
+                'Anything the built-in rules do not carry: a subclass, feat, item or spell from another book, or a GM ruling. It prints on the sheet and the advisor reads it.',
+            })}
           </p>
           <ul className="flex flex-col">
             {c.custom.map((e) => (
               <li key={e.id} className="flex flex-col gap-2 border-b border-app-border py-3 last:border-b-0">
                 <div className="flex gap-2">
-                  <Input value={e.name} placeholder={t('story.entryName', { defaultValue: 'Name' })} aria-label={t('story.entryName', { defaultValue: 'Name' })} onChange={(ev) => {
-                    const v = ev.target.value.slice(0, 200);
-                    set((x) => ({ ...x, custom: x.custom.map((y) => (y.id === e.id ? { ...y, name: v } : y)) }));
-                  }} />
-                  <Input value={e.kind ?? ''} placeholder={t('story.entryKind', { defaultValue: 'Kind' })} aria-label={t('story.entryKind', { defaultValue: 'Kind' })} className="w-36" onChange={(ev) => {
-                    const v = ev.target.value.slice(0, 60);
-                    set((x) => ({ ...x, custom: x.custom.map((y) => (y.id === e.id ? { ...y, kind: v } : y)) }));
-                  }} />
-                  <Button type="button" variant="ghost" size="icon" aria-label={t('story.removeEntry', { defaultValue: 'Remove entry' })} onClick={() => set((x) => ({ ...x, custom: x.custom.filter((y) => y.id !== e.id) }))}>
+                  <Input
+                    value={e.name}
+                    placeholder={t('story.entryName', { defaultValue: 'Name' })}
+                    aria-label={t('story.entryName', { defaultValue: 'Name' })}
+                    onChange={(ev) => {
+                      const v = ev.target.value.slice(0, 200);
+                      set((x) => ({ ...x, custom: x.custom.map((y) => (y.id === e.id ? { ...y, name: v } : y)) }));
+                    }}
+                  />
+                  <Input
+                    value={e.kind ?? ''}
+                    placeholder={t('story.entryKind', { defaultValue: 'Kind' })}
+                    aria-label={t('story.entryKind', { defaultValue: 'Kind' })}
+                    className="w-36"
+                    onChange={(ev) => {
+                      const v = ev.target.value.slice(0, 60);
+                      set((x) => ({ ...x, custom: x.custom.map((y) => (y.id === e.id ? { ...y, kind: v } : y)) }));
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('story.removeEntry', { defaultValue: 'Remove entry' })}
+                    onClick={() => set((x) => ({ ...x, custom: x.custom.filter((y) => y.id !== e.id) }))}
+                  >
                     <Trash2 aria-hidden />
                   </Button>
                 </div>
-                <Textarea rows={3} value={e.text} aria-label={t('story.entryText', { defaultValue: 'Rules text' })} onChange={(ev) => {
-                  const v = ev.target.value.slice(0, 10_000);
-                  set((x) => ({ ...x, custom: x.custom.map((y) => (y.id === e.id ? { ...y, text: v } : y)) }));
-                }} />
+                <Textarea
+                  rows={3}
+                  value={e.text}
+                  aria-label={t('story.entryText', { defaultValue: 'Rules text' })}
+                  onChange={(ev) => {
+                    const v = ev.target.value.slice(0, 10_000);
+                    set((x) => ({ ...x, custom: x.custom.map((y) => (y.id === e.id ? { ...y, text: v } : y)) }));
+                  }}
+                />
               </li>
             ))}
           </ul>

@@ -20,52 +20,18 @@ export const BLOCK_POWER = 9;
 /** Damage a knockout stands for: the biggest thing the game shows. */
 export const KO_POWER = 34;
 
-const bySeat =
-  (
-    fs: readonly FighterPos[],
-    seat: number,
-  ) =>
-    fs.find(
-      (
-        f,
-      ) =>
-        f.seat ===
-        seat,
-    );
+const bySeat = (fs: readonly FighterPos[], seat: number) => fs.find((f) => f.seat === seat);
 
 /** The living fighter nearest to (x, z) other than `seat` — the one who must have thrown it. */
-export function nearestOther(
-  fs: readonly FighterPos[],
-  seat: number,
-  x: number,
-  z: number,
-): FighterPos | null {
-  let best: FighterPos | null =
-    null;
-  let bestD =
-    Infinity;
+export function nearestOther(fs: readonly FighterPos[], seat: number, x: number, z: number): FighterPos | null {
+  let best: FighterPos | null = null;
+  let bestD = Infinity;
   for (const f of fs) {
-    if (
-      f.seat ===
-        seat ||
-      !f.alive
-    )
-      continue;
-    const d =
-      Math.hypot(
-        f.x -
-          x,
-        f.z -
-          z,
-      );
-    if (
-      d <
-      bestD
-    ) {
-      bestD =
-        d;
-      best =
-        f;
+    if (f.seat === seat || !f.alive) continue;
+    const d = Math.hypot(f.x - x, f.z - z);
+    if (d < bestD) {
+      bestD = d;
+      best = f;
     }
   }
   return best;
@@ -81,111 +47,57 @@ export function unitDir(
   dirX: number;
   dirZ: number;
 } {
-  const dx =
-    bx -
-    ax;
-  const dz =
-    bz -
-    az;
-  const len =
-    Math.hypot(
-      dx,
-      dz,
-    );
-  return len <
-    1e-6
+  const dx = bx - ax;
+  const dz = bz - az;
+  const len = Math.hypot(dx, dz);
+  return len < 1e-6
     ? {
         dirX: 0,
         dirZ: 1,
       }
     : {
-        dirX:
-          dx /
-          len,
-        dirZ:
-          dz /
-          len,
+        dirX: dx / len,
+        dirZ: dz / len,
       };
 }
 
 /** The impact a sim event stands for, or null for events that are not impacts (combo text). */
-export function toImpactEvent(
-  e: GameEvent,
-  fighters: readonly FighterPos[],
-): ImpactEvent | null {
-  switch (
-    e.kind
-  ) {
+export function toImpactEvent(e: GameEvent, fighters: readonly FighterPos[]): ImpactEvent | null {
+  switch (e.kind) {
     case 'hit': {
-      const atk =
-        bySeat(
-          fighters,
-          e.seat,
-        );
-      const vic =
-        bySeat(
-          fighters,
-          e.targetSeat,
-        );
-      const dir =
-        atk
-          ? unitDir(
-              atk.x,
-              atk.z,
-              vic?.x ??
-                e.x,
-              vic?.z ??
-                e.z,
-            )
-          : {
-              dirX: 0,
-              dirZ: 1,
-            };
+      const atk = bySeat(fighters, e.seat);
+      const vic = bySeat(fighters, e.targetSeat);
+      const dir = atk
+        ? unitDir(atk.x, atk.z, vic?.x ?? e.x, vic?.z ?? e.z)
+        : {
+            dirX: 0,
+            dirZ: 1,
+          };
       return {
         kind: 'hit',
-        victim:
-          e.targetSeat,
-        attacker:
-          e.seat,
-        power:
-          e.power,
+        victim: e.targetSeat,
+        attacker: e.seat,
+        power: e.power,
         x: e.x,
         y: e.y,
         z: e.z,
-        color:
-          e.color,
+        color: e.color,
         ...dir,
       };
     }
     case 'block': {
-      const atk =
-        nearestOther(
-          fighters,
-          e.seat,
-          e.x,
-          e.z,
-        );
-      const dir =
-        atk
-          ? unitDir(
-              atk.x,
-              atk.z,
-              e.x,
-              e.z,
-            )
-          : {
-              dirX: 0,
-              dirZ: 1,
-            };
+      const atk = nearestOther(fighters, e.seat, e.x, e.z);
+      const dir = atk
+        ? unitDir(atk.x, atk.z, e.x, e.z)
+        : {
+            dirX: 0,
+            dirZ: 1,
+          };
       return {
         kind: 'block',
-        victim:
-          e.seat,
-        attacker:
-          atk?.seat ??
-          null,
-        power:
-          BLOCK_POWER,
+        victim: e.seat,
+        attacker: atk?.seat ?? null,
+        power: BLOCK_POWER,
         x: e.x,
         y: e.y,
         z: e.z,
@@ -193,34 +105,18 @@ export function toImpactEvent(
       };
     }
     case 'ko': {
-      const atk =
-        nearestOther(
-          fighters,
-          e.seat,
-          e.x,
-          e.z,
-        );
-      const dir =
-        atk
-          ? unitDir(
-              atk.x,
-              atk.z,
-              e.x,
-              e.z,
-            )
-          : {
-              dirX: 0,
-              dirZ: 1,
-            };
+      const atk = nearestOther(fighters, e.seat, e.x, e.z);
+      const dir = atk
+        ? unitDir(atk.x, atk.z, e.x, e.z)
+        : {
+            dirX: 0,
+            dirZ: 1,
+          };
       return {
         kind: 'ko',
-        victim:
-          e.seat,
-        attacker:
-          atk?.seat ??
-          null,
-        power:
-          KO_POWER,
+        victim: e.seat,
+        attacker: atk?.seat ?? null,
+        power: KO_POWER,
         x: e.x,
         y: 1.1,
         z: e.z,

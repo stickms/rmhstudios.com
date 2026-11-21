@@ -31,15 +31,7 @@
  * a look-alike like `discord.com.evil.test` — fails, because the comparison is
  * on the parsed `hostname`, not a substring of the string.
  */
-const ALLOWED_HOSTS =
-  new Set(
-    [
-      'discord.com',
-      'discordapp.com',
-      'ptb.discord.com',
-      'canary.discord.com',
-    ],
-  );
+const ALLOWED_HOSTS = new Set(['discord.com', 'discordapp.com', 'ptb.discord.com', 'canary.discord.com']);
 
 export interface WebhookValidation {
   ok: boolean;
@@ -57,70 +49,43 @@ export interface WebhookValidation {
  * a far better error than a generic rejection when someone has pasted a channel
  * link by mistake, which is the common case.
  */
-export function validateWebhookUrl(
-  raw: string,
-): WebhookValidation {
-  const trimmed =
-    raw.trim();
-  if (
-    !trimmed
-  )
+export function validateWebhookUrl(raw: string): WebhookValidation {
+  const trimmed = raw.trim();
+  if (!trimmed)
     return {
       ok: false,
-      error:
-        'Paste a Discord webhook URL.',
+      error: 'Paste a Discord webhook URL.',
     };
-  if (
-    trimmed.length >
-    500
-  )
+  if (trimmed.length > 500)
     return {
       ok: false,
-      error:
-        'That URL is too long to be a webhook.',
+      error: 'That URL is too long to be a webhook.',
     };
 
   let parsed: URL;
   try {
-    parsed =
-      new URL(
-        trimmed,
-      );
+    parsed = new URL(trimmed);
   } catch {
     return {
       ok: false,
-      error:
-        'That is not a valid URL.',
+      error: 'That is not a valid URL.',
     };
   }
 
-  if (
-    parsed.protocol !==
-    'https:'
-  ) {
+  if (parsed.protocol !== 'https:') {
     return {
       ok: false,
-      error:
-        'The webhook URL must start with https://.',
+      error: 'The webhook URL must start with https://.',
     };
   }
-  if (
-    !ALLOWED_HOSTS.has(
-      parsed.hostname,
-    )
-  ) {
+  if (!ALLOWED_HOSTS.has(parsed.hostname)) {
     return {
       ok: false,
-      error:
-        'That is not a Discord URL. It should be on discord.com.',
+      error: 'That is not a Discord URL. It should be on discord.com.',
     };
   }
   // `/api/webhooks/<id>/<token>`, optionally with a version segment.
-  if (
-    !/^\/api\/(v\d+\/)?webhooks\/\d+\/[\w-]+\/?$/.test(
-      parsed.pathname,
-    )
-  ) {
+  if (!/^\/api\/(v\d+\/)?webhooks\/\d+\/[\w-]+\/?$/.test(parsed.pathname)) {
     return {
       ok: false,
       error:
@@ -141,43 +106,13 @@ export function validateWebhookUrl(
  * What the client is allowed to see: enough to recognise which webhook is
  * configured, not enough to post with it.
  */
-export function maskWebhookUrl(
-  url:
-    | string
-    | null
-    | undefined,
-):
-  | string
-  | null {
-  if (
-    !url
-  )
-    return null;
+export function maskWebhookUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
   try {
-    const parsed =
-      new URL(
-        url,
-      );
-    const parts =
-      parsed.pathname
-        .split(
-          '/',
-        )
-        .filter(
-          Boolean,
-        );
-    const token =
-      parts[
-        parts.length -
-          1
-      ] ??
-      '';
-    const id =
-      parts[
-        parts.length -
-          2
-      ] ??
-      '';
+    const parsed = new URL(url);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    const token = parts[parts.length - 1] ?? '';
+    const id = parts[parts.length - 2] ?? '';
     // The id is not secret (it is in the channel's integration settings); the
     // token is. Show the id and the last four of the token, nothing more.
     return `${parsed.hostname}/…/${id}/…${token.slice(-4)}`;
@@ -203,87 +138,51 @@ export interface SendResult {
  * channel being deleted must not stop the rest of the run. Errors come back as
  * data, with the status but never the URL.
  */
-export async function postToWebhook(
-  webhookUrl: string,
-  payload: unknown,
-): Promise<SendResult> {
+export async function postToWebhook(webhookUrl: string, payload: unknown): Promise<SendResult> {
   // Re-validated at send time, not just at write time. The stored value went
   // through `validateWebhookUrl`, but this is the function that makes an
   // outbound request with a database-supplied URL, and it should be safe on its
   // own terms rather than on the strength of a check somewhere upstream.
-  const check =
-    validateWebhookUrl(
-      webhookUrl,
-    );
-  if (
-    !check.ok ||
-    !check.url
-  )
+  const check = validateWebhookUrl(webhookUrl);
+  if (!check.ok || !check.url)
     return {
       ok: false,
-      error:
-        'Stored webhook URL is not valid.',
+      error: 'Stored webhook URL is not valid.',
     };
 
   try {
-    const response =
-      await fetch(
-        check.url,
-        {
-          method:
-            'POST',
-          headers:
-            {
-              'Content-Type':
-                'application/json',
-            },
-          body: JSON.stringify(
-            payload,
-          ),
-          // Discord is normally sub-second; a hung connection must not pin the
-          // worker, and `AbortSignal.timeout` beats a manual controller here.
-          signal:
-            AbortSignal.timeout(
-              10_000,
-            ),
-        },
-      );
+    const response = await fetch(check.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      // Discord is normally sub-second; a hung connection must not pin the
+      // worker, and `AbortSignal.timeout` beats a manual controller here.
+      signal: AbortSignal.timeout(10_000),
+    });
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
       return {
         ok: false,
-        status:
-          response.status,
+        status: response.status,
         error:
-          response.status ===
-          404
+          response.status === 404
             ? 'Discord says that webhook no longer exists — it may have been deleted.'
-            : response.status ===
-                429
+            : response.status === 429
               ? 'Discord is rate-limiting us. Try again shortly.'
               : `Discord rejected the message (HTTP ${response.status}).`,
       };
     }
     return {
       ok: true,
-      status:
-        response.status,
+      status: response.status,
     };
   } catch (cause) {
-    const aborted =
-      (
-        cause as Error
-      )
-        ?.name ===
-      'TimeoutError';
+    const aborted = (cause as Error)?.name === 'TimeoutError';
     return {
       ok: false,
-      error:
-        aborted
-          ? 'Discord did not respond in time.'
-          : 'Could not reach Discord.',
+      error: aborted ? 'Discord did not respond in time.' : 'Could not reach Discord.',
     };
   }
 }

@@ -4,23 +4,11 @@
 
 import type { BulletShape } from './render/bullets';
 import type { BulletColorName } from './render/palette';
-import type {
-  PlayerId,
-  FairyVariant,
-} from './render/sprites';
+import type { PlayerId, FairyVariant } from './render/sprites';
 
-export type {
-  BulletShape,
-  BulletColorName,
-  PlayerId,
-  FairyVariant,
-};
+export type { BulletShape, BulletColorName, PlayerId, FairyVariant };
 
-export type Difficulty =
-  | 'easy'
-  | 'normal'
-  | 'hard'
-  | 'lunatic';
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'lunatic';
 
 /** High-level screen the UI is showing (mirrors store state). */
 export type Screen =
@@ -36,13 +24,7 @@ export type Screen =
   | 'practice';
 
 /** Phases within a single stage. */
-export type StagePhase =
-  | 'intro'
-  | 'waves'
-  | 'midboss'
-  | 'bridge'
-  | 'boss'
-  | 'clear';
+export type StagePhase = 'intro' | 'waves' | 'midboss' | 'bridge' | 'boss' | 'clear';
 
 // ─── Vectors ───
 
@@ -90,12 +72,7 @@ export interface Bullet {
 
 // ─── Player shots ───
 
-export type ShotKind =
-  | 'amulet'
-  | 'star'
-  | 'wave'
-  | 'lance'
-  | 'spark';
+export type ShotKind = 'amulet' | 'star' | 'wave' | 'lance' | 'spark';
 
 export interface Shot {
   active: boolean;
@@ -118,13 +95,7 @@ export interface Shot {
 
 // ─── Items ───
 
-export type ItemKind =
-  | 'power'
-  | 'point'
-  | 'life'
-  | 'bomb'
-  | 'fullpower'
-  | 'star';
+export type ItemKind = 'power' | 'point' | 'life' | 'bomb' | 'fullpower' | 'star';
 
 export interface Item {
   active: boolean;
@@ -216,8 +187,7 @@ export interface BossState {
 
 // ─── Pattern ids (data-driven emitters) ───
 
-export type PatternId =
-  string;
+export type PatternId = string;
 
 // ─── Players ───
 
@@ -287,13 +257,7 @@ export interface Effect {
   vy: number;
   age: number;
   ttl: number;
-  kind:
-    | 'spark'
-    | 'ring'
-    | 'death'
-    | 'graze'
-    | 'spell'
-    | 'pop';
+  kind: 'spark' | 'ring' | 'death' | 'graze' | 'spell' | 'pop';
   color: string;
   size: number;
 }
@@ -310,13 +274,12 @@ export interface InputFrame {
   focus: boolean;
 }
 
-export const EMPTY_INPUT: InputFrame =
-  {
-    up: false,
-    down: false,
-    left: false,
-    right: false,
-    shot: false,
-    bomb: false,
-    focus: false,
-  };
+export const EMPTY_INPUT: InputFrame = {
+  up: false,
+  down: false,
+  left: false,
+  right: false,
+  shot: false,
+  bomb: false,
+  focus: false,
+};

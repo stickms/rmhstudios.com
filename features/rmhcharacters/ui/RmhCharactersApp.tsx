@@ -81,16 +81,21 @@ function SignedInApp() {
     <main className="app-page">
       <div className="rmhc-page">
         {status === 'loading' || status === 'idle' ? (
-          <p className="py-8 text-sm text-app-text-muted">{t('app.loading', { defaultValue: 'Loading your characters…' })}</p>
+          <p className="py-8 text-sm text-app-text-muted">
+            {t('app.loading', { defaultValue: 'Loading your characters…' })}
+          </p>
         ) : status === 'error' ? (
           <div className="flex flex-col items-start gap-3 py-8">
             <p role="alert" className="text-sm text-app-text">
               {t('app.loadFailed', { defaultValue: 'Your characters could not be loaded.' })}
             </p>
-            <Button type="button" onClick={() => {
+            <Button
+              type="button"
+              onClick={() => {
                 useRoster.setState({ status: 'idle' });
                 void load();
-              }}>
+              }}
+            >
               {t('app.retry', { defaultValue: 'Try again' })}
             </Button>
           </div>

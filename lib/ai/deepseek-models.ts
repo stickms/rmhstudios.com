@@ -30,79 +30,43 @@
 export interface DeepseekProfile {
   readonly model: string;
   readonly thinking: {
-    readonly type:
-      | 'enabled'
-      | 'disabled';
+    readonly type: 'enabled' | 'disabled';
   };
 }
 
-function env(
-  name: string,
-):
-  | string
-  | undefined {
-  const value =
-    typeof process ===
-    'undefined'
-      ? undefined
-      : process
-          .env?.[
-          name
-        ];
-  return (
-    value?.trim() ||
-    undefined
-  );
+function env(name: string): string | undefined {
+  const value = typeof process === 'undefined' ? undefined : process.env?.[name];
+  return value?.trim() || undefined;
 }
 
 /** DeepSeek's fast model, as the API names it today. */
-export const DEEPSEEK_FLASH_DEFAULT =
-  'deepseek-flash';
+export const DEEPSEEK_FLASH_DEFAULT = 'deepseek-flash';
 /** DeepSeek's larger model (RMHVibe's "DeepSeek Pro" choice only). */
-export const DEEPSEEK_PRO_MODEL =
-  'deepseek-v4-pro';
+export const DEEPSEEK_PRO_MODEL = 'deepseek-v4-pro';
 
 /** Thinking off. The default for everything. */
-export const DEEPSEEK_FLASH: DeepseekProfile =
-  {
-    model:
-      env(
-        'DEEPSEEK_FLASH_MODEL',
-      ) ??
-      DEEPSEEK_FLASH_DEFAULT,
-    thinking:
-      {
-        type: 'disabled',
-      },
-  };
+export const DEEPSEEK_FLASH: DeepseekProfile = {
+  model: env('DEEPSEEK_FLASH_MODEL') ?? DEEPSEEK_FLASH_DEFAULT,
+  thinking: {
+    type: 'disabled',
+  },
+};
 
 /** Thinking on, for work whose quality depends on reasoning first. */
-export const DEEPSEEK_REASONING: DeepseekProfile =
-  {
-    model:
-      env(
-        'DEEPSEEK_REASONING_MODEL',
-      ) ??
-      DEEPSEEK_FLASH_DEFAULT,
-    thinking:
-      {
-        type: 'enabled',
-      },
-  };
+export const DEEPSEEK_REASONING: DeepseekProfile = {
+  model: env('DEEPSEEK_REASONING_MODEL') ?? DEEPSEEK_FLASH_DEFAULT,
+  thinking: {
+    type: 'enabled',
+  },
+};
 
 /**
  * Just the `thinking` field of a profile, for a request that names its model
  * another way. Spread it (`...deepseekThinking(DEEPSEEK_FLASH)`): the OpenAI SDK
  * types do not declare the field, and a spread is not excess-property checked.
  */
-export function deepseekThinking(
-  profile: DeepseekProfile,
-): Pick<
-  DeepseekProfile,
-  'thinking'
-> {
+export function deepseekThinking(profile: DeepseekProfile): Pick<DeepseekProfile, 'thinking'> {
   return {
-    thinking:
-      profile.thinking,
+    thinking: profile.thinking,
   };
 }

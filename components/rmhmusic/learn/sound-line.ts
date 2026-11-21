@@ -4,11 +4,7 @@
  */
 import type { SoundStatus } from '@/lib/rmhmusic/learn/audio/voice';
 
-export type SoundLine =
-  | 'blocked'
-  | 'none'
-  | 'loading'
-  | 'fallback';
+export type SoundLine = 'blocked' | 'none' | 'loading' | 'fallback';
 
 /**
  * The sound line for the question at hand: a Hear it that could not sound here (blocked, no Web
@@ -19,41 +15,15 @@ export function matchSoundLine(o: {
   /** The last Hear it was on this question. */
   here: boolean;
   /** What that Hear it found. */
-  heard:
-    | 'ok'
-    | 'waking'
-    | 'blocked'
-    | 'none'
-    | 'loading';
+  heard: 'ok' | 'waking' | 'blocked' | 'none' | 'loading';
   live: SoundStatus;
   fellBack: boolean;
   asking: boolean;
 }): SoundLine | null {
-  if (
-    o.here &&
-    o.heard ===
-      'blocked'
-  )
-    return 'blocked';
-  if (
-    o.here &&
-    o.heard ===
-      'none'
-  )
-    return 'none';
-  if (
-    o.here &&
-    o.heard ===
-      'loading' &&
-    o.live ===
-      'loading'
-  )
-    return 'loading';
-  if (
-    o.fellBack &&
-    o.asking
-  )
-    return 'fallback';
+  if (o.here && o.heard === 'blocked') return 'blocked';
+  if (o.here && o.heard === 'none') return 'none';
+  if (o.here && o.heard === 'loading' && o.live === 'loading') return 'loading';
+  if (o.fellBack && o.asking) return 'fallback';
   return null;
 }
 
@@ -62,9 +32,6 @@ export function matchSoundLine(o: {
  * sound... to the fallback notice, which wraps to a second line on a phone) it is a new line and
  * not the old one re-wrapped in place, which the browser counts as a layout shift.
  */
-export function soundLineKey(
-  line: SoundLine,
-  position: string,
-): string {
+export function soundLineKey(line: SoundLine, position: string): string {
   return `sound-${line}-${position}`;
 }

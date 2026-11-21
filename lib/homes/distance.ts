@@ -28,14 +28,8 @@
 
 const EARTH_RADIUS_KM = 6371;
 
-function toRad(
-  deg: number,
-): number {
-  return (
-    (deg *
-      Math.PI) /
-    180
-  );
+function toRad(deg: number): number {
+  return (deg * Math.PI) / 180;
 }
 
 /** Great-circle distance in kilometers between two coordinates. */
@@ -49,53 +43,12 @@ export function haversineKm(
     lng: number;
   },
 ): number {
-  const dLat =
-    toRad(
-      b.lat -
-        a.lat,
-    );
-  const dLng =
-    toRad(
-      b.lng -
-        a.lng,
-    );
-  const lat1 =
-    toRad(
-      a.lat,
-    );
-  const lat2 =
-    toRad(
-      b.lat,
-    );
-  const h =
-    Math.sin(
-      dLat /
-        2,
-    ) **
-      2 +
-    Math.cos(
-      lat1,
-    ) *
-      Math.cos(
-        lat2,
-      ) *
-      Math.sin(
-        dLng /
-          2,
-      ) **
-        2;
-  return (
-    2 *
-    EARTH_RADIUS_KM *
-    Math.asin(
-      Math.min(
-        1,
-        Math.sqrt(
-          h,
-        ),
-      ),
-    )
-  );
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -112,12 +65,7 @@ export interface LatLng {
  * routed provider added later cannot silently inherit the crow-flies caveat —
  * or lose it.
  */
-export type DistanceMethod =
-  | 'straight-line'
-  | 'drive'
-  | 'transit'
-  | 'bike'
-  | 'walk';
+export type DistanceMethod = 'straight-line' | 'drive' | 'transit' | 'bike' | 'walk';
 
 export interface DistanceEstimate {
   km: number;
@@ -127,9 +75,7 @@ export interface DistanceEstimate {
    * `straight-line`, which is the whole point: there is no honest way to turn a
    * chord across a map into a duration.
    */
-  minutes:
-    | number
-    | null;
+  minutes: number | null;
 }
 
 export interface DistanceProvider {
@@ -140,12 +86,7 @@ export interface DistanceProvider {
    * Measure one origin against many destinations. Async and batched so a
    * network router drops in without changing any call site.
    */
-  measure(
-    origin: LatLng,
-    destinations: readonly LatLng[],
-  ): Promise<
-    DistanceEstimate[]
-  >;
+  measure(origin: LatLng, destinations: readonly LatLng[]): Promise<DistanceEstimate[]>;
 }
 
 /**
@@ -153,31 +94,17 @@ export interface DistanceProvider {
  * which is why the distance filter can run entirely in the browser over the
  * listings already on screen.
  */
-export const straightLineProvider: DistanceProvider =
-  {
-    id: 'haversine',
-    method:
-      'straight-line',
-    async measure(
-      origin,
-      destinations,
-    ) {
-      return destinations.map(
-        (
-          d,
-        ) => ({
-          km: haversineKm(
-            origin,
-            d,
-          ),
-          method:
-            'straight-line' as const,
-          minutes:
-            null,
-        }),
-      );
-    },
-  };
+export const straightLineProvider: DistanceProvider = {
+  id: 'haversine',
+  method: 'straight-line',
+  async measure(origin, destinations) {
+    return destinations.map((d) => ({
+      km: haversineKm(origin, d),
+      method: 'straight-line' as const,
+      minutes: null,
+    }));
+  },
+};
 
 /**
  * The synchronous fast path the client filter uses. Kept separate from the
@@ -185,42 +112,24 @@ export const straightLineProvider: DistanceProvider =
  * slider tick should not allocate a promise per frame, and straight-line
  * distance is the one method that can answer instantly.
  */
-export function straightLineKm(
-  a: LatLng,
-  b: LatLng,
-): number {
-  return haversineKm(
-    a,
-    b,
-  );
+export function straightLineKm(a: LatLng, b: LatLng): number {
+  return haversineKm(a, b);
 }
 
 /* -------------------------------------------------------------------------- */
 /* Units + formatting                                                         */
 /* -------------------------------------------------------------------------- */
 
-export type DistanceUnit =
-  | 'km'
-  | 'mi';
+export type DistanceUnit = 'km' | 'mi';
 
 export const KM_PER_MILE = 1.609344;
 
-export function kmToMiles(
-  km: number,
-): number {
-  return (
-    km /
-    KM_PER_MILE
-  );
+export function kmToMiles(km: number): number {
+  return km / KM_PER_MILE;
 }
 
-export function milesToKm(
-  mi: number,
-): number {
-  return (
-    mi *
-    KM_PER_MILE
-  );
+export function milesToKm(mi: number): number {
+  return mi * KM_PER_MILE;
 }
 
 /**
@@ -230,71 +139,21 @@ export function milesToKm(
  * meaningful at walking range and noise at 40 km. Non-finite input formats as
  * an em dash rather than `NaN`.
  */
-export function formatDistance(
-  km: number,
-  unit: DistanceUnit = 'mi',
-): string {
-  if (
-    !Number.isFinite(
-      km,
-    ) ||
-    km <
-      0
-  )
-    return '—';
-  const value =
-    unit ===
-    'mi'
-      ? kmToMiles(
-          km,
-        )
-      : km;
-  if (
-    value <
-    0.1
-  )
-    return `< 0.1 ${unit}`;
-  const rounded =
-    value <
-    10
-      ? value.toFixed(
-          1,
-        )
-      : String(
-          Math.round(
-            value,
-          ),
-        );
+export function formatDistance(km: number, unit: DistanceUnit = 'mi'): string {
+  if (!Number.isFinite(km) || km < 0) return '—';
+  const value = unit === 'mi' ? kmToMiles(km) : km;
+  if (value < 0.1) return `< 0.1 ${unit}`;
+  const rounded = value < 10 ? value.toFixed(1) : String(Math.round(value));
   return `${rounded} ${unit}`;
 }
 
 /** Whether `b` sits within `maxKm` of `a`. A non-positive radius matches nothing. */
-export function withinKm(
-  a: LatLng,
-  b: LatLng,
-  maxKm: number,
-): boolean {
-  if (
-    !Number.isFinite(
-      maxKm,
-    ) ||
-    maxKm <=
-      0
-  )
-    return false;
-  return (
-    haversineKm(
-      a,
-      b,
-    ) <=
-    maxKm
-  );
+export function withinKm(a: LatLng, b: LatLng, maxKm: number): boolean {
+  if (!Number.isFinite(maxKm) || maxKm <= 0) return false;
+  return haversineKm(a, b) <= maxKm;
 }
 
-export interface NearestResult<
-  P extends
-    LatLng,
-> {
+export interface NearestResult<P extends LatLng> {
   place: P;
   km: number;
 }
@@ -304,31 +163,15 @@ export interface NearestResult<
  * none. Used to label a listing card with "1.2 mi from Work" without the caller
  * re-deriving which place won.
  */
-export function nearestPlace<
-  P extends
-    LatLng,
->(
-  point: LatLng,
-  places: readonly P[],
-): NearestResult<P> | null {
-  let best: NearestResult<P> | null =
-    null;
+export function nearestPlace<P extends LatLng>(point: LatLng, places: readonly P[]): NearestResult<P> | null {
+  let best: NearestResult<P> | null = null;
   for (const place of places) {
-    const km =
-      haversineKm(
-        point,
+    const km = haversineKm(point, place);
+    if (!best || km < best.km)
+      best = {
         place,
-      );
-    if (
-      !best ||
-      km <
-        best.km
-    )
-      best =
-        {
-          place,
-          km,
-        };
+        km,
+      };
   }
   return best;
 }

@@ -34,9 +34,7 @@ export interface EntitySpriteSet {
 }
 
 /** Create a fresh animation state for a given animation. */
-export function createAnimState(
-  animation: SpriteAnimation,
-): AnimationState {
+export function createAnimState(animation: SpriteAnimation): AnimationState {
   return {
     animation,
     currentFrame: 0,
@@ -46,44 +44,21 @@ export function createAnimState(
 }
 
 /** Advance the animation by `dt` seconds. */
-export function updateAnimation(
-  state: AnimationState,
-  dt: number,
-): void {
-  if (
-    state.finished
-  )
-    return;
+export function updateAnimation(state: AnimationState, dt: number): void {
+  if (state.finished) return;
 
-  state.elapsed +=
-    dt;
-  const {
-    frameDuration,
-    frames,
-    loop,
-  } =
-    state.animation;
+  state.elapsed += dt;
+  const { frameDuration, frames, loop } = state.animation;
 
-  while (
-    state.elapsed >=
-    frameDuration
-  ) {
-    state.elapsed -=
-      frameDuration;
+  while (state.elapsed >= frameDuration) {
+    state.elapsed -= frameDuration;
     state.currentFrame++;
 
-    if (
-      state.currentFrame >=
-      frames.length
-    ) {
-      if (
-        loop
-      ) {
+    if (state.currentFrame >= frames.length) {
+      if (loop) {
         state.currentFrame = 0;
       } else {
-        state.currentFrame =
-          frames.length -
-          1;
+        state.currentFrame = frames.length - 1;
         state.finished = true;
         break;
       }
@@ -92,18 +67,8 @@ export function updateAnimation(
 }
 
 /** Get the current frame index from the sprite sheet. */
-export function getCurrentFrameIndex(
-  state: AnimationState,
-): number {
-  return (
-    state
-      .animation
-      .frames[
-      state
-        .currentFrame
-    ] ??
-    0
-  );
+export function getCurrentFrameIndex(state: AnimationState): number {
+  return state.animation.frames[state.currentFrame] ?? 0;
 }
 
 /**
@@ -150,24 +115,12 @@ export function frameRectInto(
   sw: number;
   sh: number;
 } {
-  const col =
-    frameIndex %
-    sheet.cols;
-  const row =
-    Math.floor(
-      frameIndex /
-        sheet.cols,
-    );
-  out.sx =
-    col *
-    sheet.frameWidth;
-  out.sy =
-    row *
-    sheet.frameHeight;
-  out.sw =
-    sheet.frameWidth;
-  out.sh =
-    sheet.frameHeight;
+  const col = frameIndex % sheet.cols;
+  const row = Math.floor(frameIndex / sheet.cols);
+  out.sx = col * sheet.frameWidth;
+  out.sy = row * sheet.frameHeight;
+  out.sw = sheet.frameWidth;
+  out.sh = sheet.frameHeight;
   return out;
 }
 
@@ -184,50 +137,30 @@ export function pickDirectionalAnim(
   animation: SpriteAnimation;
   flipX: boolean;
 } {
-  if (
-    !isMoving
-  ) {
+  if (!isMoving) {
     return {
-      animation:
-        sprites.idle,
+      animation: sprites.idle,
       flipX: false,
     };
   }
 
-  const absX =
-    Math.abs(
-      vx,
-    );
-  const absY =
-    Math.abs(
-      vy,
-    );
+  const absX = Math.abs(vx);
+  const absY = Math.abs(vy);
 
   // Prefer horizontal if it dominates, otherwise vertical
-  if (
-    absX >
-    absY
-  ) {
+  if (absX > absY) {
     return {
-      animation:
-        sprites.walkSide,
-      flipX:
-        vx <
-        0,
+      animation: sprites.walkSide,
+      flipX: vx < 0,
     };
-  } else if (
-    vy >
-    0
-  ) {
+  } else if (vy > 0) {
     return {
-      animation:
-        sprites.walkDown,
+      animation: sprites.walkDown,
       flipX: false,
     };
   } else {
     return {
-      animation:
-        sprites.walkUp,
+      animation: sprites.walkUp,
       flipX: false,
     };
   }

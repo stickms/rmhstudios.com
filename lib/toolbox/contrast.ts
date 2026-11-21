@@ -19,7 +19,6 @@ export interface Rgb {
   b: number;
 }
 
-
 function parseHex(input: string): Rgb | null {
   const hex = input.replace(/^#/, '');
   if (!/^([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(hex)) return null;

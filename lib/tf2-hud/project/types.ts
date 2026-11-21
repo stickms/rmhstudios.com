@@ -18,11 +18,7 @@ export type FileContent =
     };
 
 /** `null` marks a base file the author deleted. */
-export type Overlay =
-  ReadonlyMap<
-    string,
-    FileContent | null
-  >;
+export type Overlay = ReadonlyMap<string, FileContent | null>;
 
 export interface HudMeta {
   name: string;
@@ -44,24 +40,14 @@ export interface BaseIndex {
     commit: string;
     license: string;
   };
-  files: ReadonlyMap<
-    string,
-    BaseEntry
-  >;
+  files: ReadonlyMap<string, BaseEntry>;
 }
 
-export type FileStatus =
-  | 'unchanged'
-  | 'modified'
-  | 'added'
-  | 'deleted';
+export type FileStatus = 'unchanged' | 'modified' | 'added' | 'deleted';
 
-export const DEFAULT_META: HudMeta =
-  {
-    name: 'My HUD',
-    description:
-      '',
-    author:
-      '',
-    tags: [],
-  };
+export const DEFAULT_META: HudMeta = {
+  name: 'My HUD',
+  description: '',
+  author: '',
+  tags: [],
+};

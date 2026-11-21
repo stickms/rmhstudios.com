@@ -8,24 +8,10 @@
  */
 
 import { z } from 'zod';
-import {
-  createSeededRng,
-  getDateSeed,
-  seededShuffle,
-} from './seed';
-import {
-  generateSpectrumPuzzle,
-  type SpectrumPuzzle,
-  type SpectrumItem,
-} from './spectrum';
-import {
-  generateAlibiPuzzle,
-  type AlibiPuzzle,
-} from './alibi';
-import {
-  generateOutcastPuzzle,
-  type OutcastPuzzle,
-} from './outcast';
+import { createSeededRng, getDateSeed, seededShuffle } from './seed';
+import { generateSpectrumPuzzle, type SpectrumPuzzle, type SpectrumItem } from './spectrum';
+import { generateAlibiPuzzle, type AlibiPuzzle } from './alibi';
+import { generateOutcastPuzzle, type OutcastPuzzle } from './outcast';
 import {
   generateChainlinkPuzzle,
   isValidAssociation,
@@ -33,130 +19,50 @@ import {
   associationVocabulary,
   type ChainlinkPuzzle,
 } from './chainlink';
-import {
-  generateImpostorPuzzle,
-  type ImpostorPuzzle,
-  type ImpostorStatement,
-} from './impostor';
+import { generateImpostorPuzzle, type ImpostorPuzzle, type ImpostorStatement } from './impostor';
 
-export type DailyPuzzleMode =
-  | 'alibi'
-  | 'spectrum'
-  | 'outcast'
-  | 'chainlink'
-  | 'impostor';
+export type DailyPuzzleMode = 'alibi' | 'spectrum' | 'outcast' | 'chainlink' | 'impostor';
 
-export const AI_PUZZLE_MODES: DailyPuzzleMode[] =
-  [
-    'alibi',
-    'spectrum',
-    'outcast',
-    'chainlink',
-    'impostor',
-  ];
+export const AI_PUZZLE_MODES: DailyPuzzleMode[] = ['alibi', 'spectrum', 'outcast', 'chainlink', 'impostor'];
 
-export function isAIPuzzleMode(
-  mode: string,
-): mode is DailyPuzzleMode {
-  return (
-    AI_PUZZLE_MODES as string[]
-  ).includes(
-    mode,
-  );
+export function isAIPuzzleMode(mode: string): mode is DailyPuzzleMode {
+  return (AI_PUZZLE_MODES as string[]).includes(mode);
 }
 
-export type AnyPuzzle =
-  | SpectrumPuzzle
-  | AlibiPuzzle
-  | OutcastPuzzle
-  | ChainlinkPuzzle
-  | ImpostorPuzzle;
+export type AnyPuzzle = SpectrumPuzzle | AlibiPuzzle | OutcastPuzzle | ChainlinkPuzzle | ImpostorPuzzle;
 
 /** Tokens to allow per mode (Outcast is the largest — 5 rounds). */
-export const MAX_TOKENS: Record<
-  DailyPuzzleMode,
-  number
-> =
-  {
-    spectrum: 900,
-    alibi: 1100,
-    outcast: 1400,
-    impostor: 1000,
-    chainlink: 700,
-  };
+export const MAX_TOKENS: Record<DailyPuzzleMode, number> = {
+  spectrum: 900,
+  alibi: 1100,
+  outcast: 1400,
+  impostor: 1000,
+  chainlink: 700,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Small helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function parseDateKey(
-  dateKey: string,
-): Date {
-  const [
-    y,
-    m,
-    d,
-  ] =
-    dateKey
-      .split(
-        '-',
-      )
-      .map(
-        Number,
-      );
-  return new Date(
-    y,
-    m -
-      1,
-    d,
-  );
+export function parseDateKey(dateKey: string): Date {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
-export function parseJson(
-  raw: string,
-): unknown {
-  if (
-    !raw
-  )
-    return null;
-  const cleaned =
-    raw
-      .replace(
-        /^```(?:json)?\s*/i,
-        '',
-      )
-      .replace(
-        /\s*```$/i,
-        '',
-      )
-      .trim();
+export function parseJson(raw: string): unknown {
+  if (!raw) return null;
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
   try {
-    return JSON.parse(
-      cleaned,
-    );
+    return JSON.parse(cleaned);
   } catch {
-    const start =
-      cleaned.indexOf(
-        '{',
-      );
-    const end =
-      cleaned.lastIndexOf(
-        '}',
-      );
-    if (
-      start !==
-        -1 &&
-      end >
-        start
-    ) {
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start !== -1 && end > start) {
       try {
-        return JSON.parse(
-          cleaned.slice(
-            start,
-            end +
-              1,
-          ),
-        );
+        return JSON.parse(cleaned.slice(start, end + 1));
       } catch {
         /* ignore */
       }
@@ -166,212 +72,70 @@ export function parseJson(
 }
 
 /** A stable per-mode rng for cosmetic shuffling of a generated puzzle. */
-function shuffleRng(
-  dateKey: string,
-  salt: number,
-): () => number {
-  return createSeededRng(
-    getDateSeed(
-      parseDateKey(
-        dateKey,
-      ),
-    ) *
-      100 +
-      salt,
-  );
+function shuffleRng(dateKey: string, salt: number): () => number {
+  return createSeededRng(getDateSeed(parseDateKey(dateKey)) * 100 + salt);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Shared field schemas
 // ─────────────────────────────────────────────────────────────────────────────
 
-const emoji =
-  z
-    .string()
-    .trim()
-    .min(
-      1,
-    )
-    .max(
-      16,
-    );
-const shortText =
-  z
-    .string()
-    .trim()
-    .min(
-      1,
-    )
-    .max(
-      200,
-    );
-const longText =
-  z
-    .string()
-    .trim()
-    .min(
-      1,
-    )
-    .max(
-      1200,
-    );
+const emoji = z.string().trim().min(1).max(16);
+const shortText = z.string().trim().min(1).max(200);
+const longText = z.string().trim().min(1).max(1200);
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  SPECTRUM
 // ─────────────────────────────────────────────────────────────────────────────
 
-const spectrumRaw =
-  z.object(
-    {
-      label:
-        shortText,
-      category:
-        shortText,
-      funFact:
-        longText,
-      items:
-        z
-          .array(
-            z.object(
-              {
-                name: shortText,
-                emoji,
-                value:
-                  z.number(),
-                displayValue:
-                  shortText,
-              },
-            ),
-          )
-          .length(
-            5,
-          ),
-    },
-  );
-
-function normalizeSpectrum(
-  raw: unknown,
-  dateKey: string,
-): SpectrumPuzzle | null {
-  const parsed =
-    spectrumRaw.safeParse(
-      raw,
-    );
-  if (
-    !parsed.success
-  )
-    return null;
-  const {
-    label,
-    category,
-    funFact,
-    items,
-  } =
-    parsed.data;
-
-  if (
-    new Set(
-      items.map(
-        (
-          i,
-        ) =>
-          i.name.toLowerCase(),
-      ),
+const spectrumRaw = z.object({
+  label: shortText,
+  category: shortText,
+  funFact: longText,
+  items: z
+    .array(
+      z.object({
+        name: shortText,
+        emoji,
+        value: z.number(),
+        displayValue: shortText,
+      }),
     )
-      .size !==
-    5
-  )
-    return null;
+    .length(5),
+});
+
+function normalizeSpectrum(raw: unknown, dateKey: string): SpectrumPuzzle | null {
+  const parsed = spectrumRaw.safeParse(raw);
+  if (!parsed.success) return null;
+  const { label, category, funFact, items } = parsed.data;
+
+  if (new Set(items.map((i) => i.name.toLowerCase())).size !== 5) return null;
 
   // The ordering must be unambiguous: values strictly monotonic (either
   // direction). The provided order IS the rank order (1 = first item).
-  const values =
-    items.map(
-      (
-        i,
-      ) =>
-        i.value,
-    );
-  const strictlyUp =
-    values.every(
-      (
-        v,
-        i,
-      ) =>
-        i ===
-          0 ||
-        values[
-          i -
-            1
-        ] <
-          v,
-    );
-  const strictlyDown =
-    values.every(
-      (
-        v,
-        i,
-      ) =>
-        i ===
-          0 ||
-        values[
-          i -
-            1
-        ] >
-          v,
-    );
-  if (
-    !strictlyUp &&
-    !strictlyDown
-  )
-    return null;
+  const values = items.map((i) => i.value);
+  const strictlyUp = values.every((v, i) => i === 0 || values[i - 1] < v);
+  const strictlyDown = values.every((v, i) => i === 0 || values[i - 1] > v);
+  if (!strictlyUp && !strictlyDown) return null;
 
-  const solution: SpectrumItem[] =
-    items.map(
-      (
-        it,
-        i,
-      ) => ({
-        name: it.name,
-        emoji:
-          it.emoji,
-        trueRank:
-          i +
-          1,
-        value:
-          it.value,
-        displayValue:
-          it.displayValue,
-      }),
-    );
+  const solution: SpectrumItem[] = items.map((it, i) => ({
+    name: it.name,
+    emoji: it.emoji,
+    trueRank: i + 1,
+    value: it.value,
+    displayValue: it.displayValue,
+  }));
 
-  const shuffled =
-    seededShuffle(
-      solution,
-      shuffleRng(
-        dateKey,
-        1,
-      ),
-    );
+  const shuffled = seededShuffle(solution, shuffleRng(dateKey, 1));
   return {
     label,
-    items:
-      shuffled.map(
-        ({
-          name,
-          emoji:
-            e,
-        }) => ({
-          name,
-          emoji:
-            e,
-        }),
-      ),
+    items: shuffled.map(({ name, emoji: e }) => ({
+      name,
+      emoji: e,
+    })),
     category,
-    _solution:
-      solution,
-    _funFact:
-      funFact,
+    _solution: solution,
+    _funFact: funFact,
   };
 }
 
@@ -382,23 +146,18 @@ function spectrumPrompt(
   system: string;
   user: string;
 } {
-  const categories =
-    [
-      'food & drink',
-      'geography',
-      'science',
-      'history',
-      'pop culture',
-      'sports',
-      'technology',
-      'economics',
-      'nature & animals',
-    ];
-  const hint =
-    categories[
-      puzzleNumber %
-        categories.length
-    ];
+  const categories = [
+    'food & drink',
+    'geography',
+    'science',
+    'history',
+    'pop culture',
+    'sports',
+    'technology',
+    'economics',
+    'nature & animals',
+  ];
+  const hint = categories[puzzleNumber % categories.length];
   return {
     system:
       'You create one "Spectrum" ranking puzzle. The player is shown 5 items in scrambled order and must rank them along a clearly named numeric scale. ' +
@@ -419,197 +178,82 @@ function spectrumPrompt(
 //  ALIBI
 // ─────────────────────────────────────────────────────────────────────────────
 
-const alibiRaw =
-  z.object(
-    {
-      scenario:
-        longText,
-      difficulty:
-        z.enum(
-          [
-            'simple',
-            'tricky',
-            'devious',
-          ],
-        ),
-      suspects:
-        z
-          .array(
-            z.object(
-              {
-                name: shortText,
-                emoji,
-                alibi:
-                  longText,
-              },
-            ),
-          )
-          .length(
-            4,
-          ),
-      guiltyName:
-        shortText,
-      contradiction:
-        z.object(
-          {
-            explanation:
-              longText,
-            highlights:
-              z
-                .array(
-                  z.object(
-                    {
-                      text: shortText,
-                      source:
-                        z.enum(
-                          [
-                            'scenario',
-                            'suspect',
-                          ],
-                        ),
-                      suspectName:
-                        shortText.optional(),
-                    },
-                  ),
-                )
-                .min(
-                  2,
-                )
-                .max(
-                  5,
-                ),
-          },
-        ),
-    },
-  );
-
-function normalizeAlibi(
-  raw: unknown,
-  dateKey: string,
-): AlibiPuzzle | null {
-  const parsed =
-    alibiRaw.safeParse(
-      raw,
-    );
-  if (
-    !parsed.success
-  )
-    return null;
-  const {
-    scenario,
-    difficulty,
-    suspects,
-    guiltyName,
-    contradiction,
-  } =
-    parsed.data;
-
-  const names =
-    suspects.map(
-      (
-        s,
-      ) =>
-        s.name,
-    );
-  if (
-    new Set(
-      names.map(
-        (
-          n,
-        ) =>
-          n.toLowerCase(),
-      ),
+const alibiRaw = z.object({
+  scenario: longText,
+  difficulty: z.enum(['simple', 'tricky', 'devious']),
+  suspects: z
+    .array(
+      z.object({
+        name: shortText,
+        emoji,
+        alibi: longText,
+      }),
     )
-      .size !==
-    4
-  )
-    return null;
-  if (
-    !names.includes(
-      guiltyName,
-    )
-  )
-    return null;
+    .length(4),
+  guiltyName: shortText,
+  contradiction: z.object({
+    explanation: longText,
+    highlights: z
+      .array(
+        z.object({
+          text: shortText,
+          source: z.enum(['scenario', 'suspect']),
+          suspectName: shortText.optional(),
+        }),
+      )
+      .min(2)
+      .max(5),
+  }),
+});
+
+function normalizeAlibi(raw: unknown, dateKey: string): AlibiPuzzle | null {
+  const parsed = alibiRaw.safeParse(raw);
+  if (!parsed.success) return null;
+  const { scenario, difficulty, suspects, guiltyName, contradiction } = parsed.data;
+
+  const names = suspects.map((s) => s.name);
+  if (new Set(names.map((n) => n.toLowerCase())).size !== 4) return null;
+  if (!names.includes(guiltyName)) return null;
 
   for (const h of contradiction.highlights) {
-    if (
-      h.source ===
-      'suspect'
-    ) {
-      if (
-        !h.suspectName ||
-        !names.includes(
-          h.suspectName,
-        )
-      )
-        return null;
+    if (h.source === 'suspect') {
+      if (!h.suspectName || !names.includes(h.suspectName)) return null;
     }
   }
   // The contradiction must implicate the guilty suspect's own testimony.
-  const hasGuiltyHighlight =
-    contradiction.highlights.some(
-      (
-        h,
-      ) =>
-        h.source ===
-          'suspect' &&
-        h.suspectName ===
-          guiltyName,
-    );
-  if (
-    !hasGuiltyHighlight
-  )
-    return null;
+  const hasGuiltyHighlight = contradiction.highlights.some(
+    (h) => h.source === 'suspect' && h.suspectName === guiltyName,
+  );
+  if (!hasGuiltyHighlight) return null;
 
-  const shuffled =
-    seededShuffle(
-      suspects.map(
-        (
-          s,
-        ) => ({
-          name: s.name,
-          emoji:
-            s.emoji,
-          alibi:
-            s.alibi,
-        }),
-      ),
-      shuffleRng(
-        dateKey,
-        2,
-      ),
-    );
+  const shuffled = seededShuffle(
+    suspects.map((s) => ({
+      name: s.name,
+      emoji: s.emoji,
+      alibi: s.alibi,
+    })),
+    shuffleRng(dateKey, 2),
+  );
 
   return {
     scenario,
-    suspects:
-      shuffled,
+    suspects: shuffled,
     difficulty,
-    _solution:
-      {
-        guiltyName,
-        contradiction:
-          {
-            explanation:
-              contradiction.explanation,
-            highlights:
-              contradiction.highlights.map(
-                (
-                  h,
-                ) => ({
-                  text: h.text,
-                  source:
-                    h.source,
-                  ...(h.suspectName
-                    ? {
-                        suspectName:
-                          h.suspectName,
-                      }
-                    : {}),
-                }),
-              ),
-          },
+    _solution: {
+      guiltyName,
+      contradiction: {
+        explanation: contradiction.explanation,
+        highlights: contradiction.highlights.map((h) => ({
+          text: h.text,
+          source: h.source,
+          ...(h.suspectName
+            ? {
+                suspectName: h.suspectName,
+              }
+            : {}),
+        })),
       },
+    },
   };
 }
 
@@ -620,24 +264,19 @@ function alibiPrompt(
   system: string;
   user: string;
 } {
-  const settings =
-    [
-      'an art gallery',
-      'a tech company office',
-      'a restaurant',
-      'a museum',
-      'a hotel',
-      'a university lab',
-      'a jewelry store',
-      'a concert hall',
-      'a private estate',
-      'a casino',
-    ];
-  const hint =
-    settings[
-      puzzleNumber %
-        settings.length
-    ];
+  const settings = [
+    'an art gallery',
+    'a tech company office',
+    'a restaurant',
+    'a museum',
+    'a hotel',
+    'a university lab',
+    'a jewelry store',
+    'a concert hall',
+    'a private estate',
+    'a casino',
+  ];
+  const hint = settings[puzzleNumber % settings.length];
   return {
     system:
       'You create one "Alibi" logic puzzle. A crime is described, four suspects each give an alibi, and exactly ONE alibi contains a clear factual contradiction with the scenario. ' +
@@ -658,147 +297,57 @@ function alibiPrompt(
 //  OUTCAST
 // ─────────────────────────────────────────────────────────────────────────────
 
-const OUTCAST_DIFFICULTIES =
-  [
-    'easy',
-    'medium',
-    'hard',
-    'expert',
-    'nightmare',
-  ] as const;
+const OUTCAST_DIFFICULTIES = ['easy', 'medium', 'hard', 'expert', 'nightmare'] as const;
 
-const outcastRaw =
-  z.object(
-    {
-      rounds:
-        z
+const outcastRaw = z.object({
+  rounds: z
+    .array(
+      z.object({
+        items: z
           .array(
-            z.object(
-              {
-                items:
-                  z
-                    .array(
-                      z.object(
-                        {
-                          name: shortText,
-                          emoji,
-                        },
-                      ),
-                    )
-                    .length(
-                      5,
-                    ),
-                outcastName:
-                  shortText,
-                trait:
-                  shortText,
-                redHerring:
-                  shortText,
-              },
-            ),
+            z.object({
+              name: shortText,
+              emoji,
+            }),
           )
-          .length(
-            5,
-          ),
-    },
-  );
-
-function normalizeOutcast(
-  raw: unknown,
-  dateKey: string,
-): OutcastPuzzle | null {
-  const parsed =
-    outcastRaw.safeParse(
-      raw,
-    );
-  if (
-    !parsed.success
-  )
-    return null;
-
-  const rounds =
-    parsed.data.rounds.map(
-      (
-        r,
-        i,
-      ) => {
-        const names =
-          r.items.map(
-            (
-              it,
-            ) =>
-              it.name,
-          );
-        if (
-          new Set(
-            names.map(
-              (
-                n,
-              ) =>
-                n.toLowerCase(),
-            ),
-          )
-            .size !==
-          5
-        )
-          return null;
-        if (
-          !names.includes(
-            r.outcastName,
-          )
-        )
-          return null;
-        return {
-          roundNumber:
-            i +
-            1,
-          items:
-            seededShuffle(
-              r.items.map(
-                (
-                  it,
-                ) => ({
-                  name: it.name,
-                  emoji:
-                    it.emoji,
-                }),
-              ),
-              shuffleRng(
-                dateKey,
-                3 +
-                  i,
-              ),
-            ),
-          difficulty:
-            OUTCAST_DIFFICULTIES[
-              i
-            ],
-          _solution:
-            {
-              outcastName:
-                r.outcastName,
-              trait:
-                r.trait,
-              redHerring:
-                r.redHerring,
-            },
-        };
-      },
-    );
-
-  if (
-    rounds.some(
-      (
-        r,
-      ) =>
-        r ===
-        null,
+          .length(5),
+        outcastName: shortText,
+        trait: shortText,
+        redHerring: shortText,
+      }),
     )
-  )
-    return null;
+    .length(5),
+});
+
+function normalizeOutcast(raw: unknown, dateKey: string): OutcastPuzzle | null {
+  const parsed = outcastRaw.safeParse(raw);
+  if (!parsed.success) return null;
+
+  const rounds = parsed.data.rounds.map((r, i) => {
+    const names = r.items.map((it) => it.name);
+    if (new Set(names.map((n) => n.toLowerCase())).size !== 5) return null;
+    if (!names.includes(r.outcastName)) return null;
+    return {
+      roundNumber: i + 1,
+      items: seededShuffle(
+        r.items.map((it) => ({
+          name: it.name,
+          emoji: it.emoji,
+        })),
+        shuffleRng(dateKey, 3 + i),
+      ),
+      difficulty: OUTCAST_DIFFICULTIES[i],
+      _solution: {
+        outcastName: r.outcastName,
+        trait: r.trait,
+        redHerring: r.redHerring,
+      },
+    };
+  });
+
+  if (rounds.some((r) => r === null)) return null;
   return {
-    rounds:
-      rounds as OutcastPuzzle['rounds'],
+    rounds: rounds as OutcastPuzzle['rounds'],
   };
 }
 
@@ -829,112 +378,46 @@ function outcastPrompt(
 //  IMPOSTOR
 // ─────────────────────────────────────────────────────────────────────────────
 
-const impostorRaw =
-  z.object(
-    {
-      topic:
-        shortText,
-      topicEmoji:
-        emoji,
-      category:
-        shortText,
-      statements:
-        z
-          .array(
-            z.object(
-              {
-                text: longText,
-                isFake:
-                  z.boolean(),
-                explanation:
-                  longText,
-              },
-            ),
-          )
-          .length(
-            5,
-          ),
-    },
+const impostorRaw = z.object({
+  topic: shortText,
+  topicEmoji: emoji,
+  category: shortText,
+  statements: z
+    .array(
+      z.object({
+        text: longText,
+        isFake: z.boolean(),
+        explanation: longText,
+      }),
+    )
+    .length(5),
+});
+
+function normalizeImpostor(raw: unknown, dateKey: string): ImpostorPuzzle | null {
+  const parsed = impostorRaw.safeParse(raw);
+  if (!parsed.success) return null;
+  const { topic, topicEmoji, category, statements } = parsed.data;
+
+  if (statements.filter((s) => s.isFake).length !== 2) return null; // exactly 2 lies, 3 truths
+  if (new Set(statements.map((s) => s.text.toLowerCase())).size !== 5) return null;
+
+  const solution: ImpostorStatement[] = seededShuffle(
+    statements.map((s) => ({
+      text: s.text,
+      isFake: s.isFake,
+      explanation: s.explanation,
+    })),
+    shuffleRng(dateKey, 8),
   );
-
-function normalizeImpostor(
-  raw: unknown,
-  dateKey: string,
-): ImpostorPuzzle | null {
-  const parsed =
-    impostorRaw.safeParse(
-      raw,
-    );
-  if (
-    !parsed.success
-  )
-    return null;
-  const {
-    topic,
-    topicEmoji,
-    category,
-    statements,
-  } =
-    parsed.data;
-
-  if (
-    statements.filter(
-      (
-        s,
-      ) =>
-        s.isFake,
-    )
-      .length !==
-    2
-  )
-    return null; // exactly 2 lies, 3 truths
-  if (
-    new Set(
-      statements.map(
-        (
-          s,
-        ) =>
-          s.text.toLowerCase(),
-      ),
-    )
-      .size !==
-    5
-  )
-    return null;
-
-  const solution: ImpostorStatement[] =
-    seededShuffle(
-      statements.map(
-        (
-          s,
-        ) => ({
-          text: s.text,
-          isFake:
-            s.isFake,
-          explanation:
-            s.explanation,
-        }),
-      ),
-      shuffleRng(
-        dateKey,
-        8,
-      ),
-    );
 
   return {
     topic,
     topicEmoji,
     category,
-    statements:
-      solution.map(
-        ({
-          text,
-        }) => ({
-          text,
-        }),
-      ),
-    _solution:
-      solution,
+    statements: solution.map(({ text }) => ({
+      text,
+    })),
+    _solution: solution,
   };
 }
 
@@ -945,24 +428,19 @@ function impostorPrompt(
   system: string;
   user: string;
 } {
-  const categories =
-    [
-      'science',
-      'history',
-      'geography',
-      'food',
-      'animals',
-      'sports',
-      'technology',
-      'pop culture',
-      'language',
-      'math',
-    ];
-  const hint =
-    categories[
-      puzzleNumber %
-        categories.length
-    ];
+  const categories = [
+    'science',
+    'history',
+    'geography',
+    'food',
+    'animals',
+    'sports',
+    'technology',
+    'pop culture',
+    'language',
+    'math',
+  ];
+  const hint = categories[puzzleNumber % categories.length];
   return {
     system:
       'You create one "Impostor" puzzle: five factual-sounding statements about a single topic, of which exactly THREE are true and TWO are false. ' +
@@ -982,176 +460,50 @@ function impostorPrompt(
 //  generated puzzle is actually solvable; strictly re-validated, else fallback.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const chainlinkRaw =
-  z.object(
-    {
-      startWord:
-        shortText,
-      endWord:
-        shortText,
-      exampleChain:
-        z
-          .array(
-            shortText,
-          )
-          .min(
-            5,
-          )
-          .max(
-            7,
-          ),
-      connectionExplanations:
-        z
-          .array(
-            shortText,
-          )
-          .min(
-            4,
-          )
-          .max(
-            6,
-          ),
-    },
-  );
+const chainlinkRaw = z.object({
+  startWord: shortText,
+  endWord: shortText,
+  exampleChain: z.array(shortText).min(5).max(7),
+  connectionExplanations: z.array(shortText).min(4).max(6),
+});
 
-const PAR_TO_DIFFICULTY: Record<
-  number,
-  ChainlinkPuzzle['difficulty']
-> =
-  {
-    4: 'short',
-    5: 'medium',
-    6: 'long',
-  };
+const PAR_TO_DIFFICULTY: Record<number, ChainlinkPuzzle['difficulty']> = {
+  4: 'short',
+  5: 'medium',
+  6: 'long',
+};
 
-function normalizeChainlink(
-  raw: unknown,
-): ChainlinkPuzzle | null {
-  const parsed =
-    chainlinkRaw.safeParse(
-      raw,
-    );
-  if (
-    !parsed.success
-  )
-    return null;
-  const startWord =
-    parsed.data.startWord
-      .trim()
-      .toUpperCase();
-  const endWord =
-    parsed.data.endWord
-      .trim()
-      .toUpperCase();
-  const chain =
-    parsed.data.exampleChain.map(
-      (
-        w,
-      ) =>
-        w.trim(),
-    );
-  const explanations =
-    parsed.data.connectionExplanations.map(
-      (
-        w,
-      ) =>
-        w.trim(),
-    );
+function normalizeChainlink(raw: unknown): ChainlinkPuzzle | null {
+  const parsed = chainlinkRaw.safeParse(raw);
+  if (!parsed.success) return null;
+  const startWord = parsed.data.startWord.trim().toUpperCase();
+  const endWord = parsed.data.endWord.trim().toUpperCase();
+  const chain = parsed.data.exampleChain.map((w) => w.trim());
+  const explanations = parsed.data.connectionExplanations.map((w) => w.trim());
 
-  if (
-    chain.length <
-      5 ||
-    chain.length >
-      7
-  )
-    return null;
-  if (
-    explanations.length !==
-    chain.length -
-      1
-  )
-    return null;
-  if (
-    chain[0].toUpperCase() !==
-    startWord
-  )
-    return null;
-  if (
-    chain[
-      chain.length -
-        1
-    ].toUpperCase() !==
-    endWord
-  )
-    return null;
+  if (chain.length < 5 || chain.length > 7) return null;
+  if (explanations.length !== chain.length - 1) return null;
+  if (chain[0].toUpperCase() !== startWord) return null;
+  if (chain[chain.length - 1].toUpperCase() !== endWord) return null;
 
   // Anchors must be real association keys, and every hop must be a valid
   // association — otherwise the client could never accept a correct chain.
-  if (
-    !isAssociationKey(
-      startWord,
-    ) ||
-    !isAssociationKey(
-      endWord,
-    )
-  )
-    return null;
-  for (
-    let i = 0;
-    i <
-    chain.length -
-      1;
-    i++
-  ) {
-    if (
-      !isValidAssociation(
-        chain[
-          i
-        ],
-        chain[
-          i +
-            1
-        ],
-      )
-    )
-      return null;
+  if (!isAssociationKey(startWord) || !isAssociationKey(endWord)) return null;
+  for (let i = 0; i < chain.length - 1; i++) {
+    if (!isValidAssociation(chain[i], chain[i + 1])) return null;
   }
 
-  const parLinks =
-    chain.length -
-    1;
-  const difficulty =
-    PAR_TO_DIFFICULTY[
-      parLinks
-    ];
-  if (
-    !difficulty
-  )
-    return null;
+  const parLinks = chain.length - 1;
+  const difficulty = PAR_TO_DIFFICULTY[parLinks];
+  if (!difficulty) return null;
 
   return {
     startWord,
     endWord,
     parLinks,
     difficulty,
-    _exampleChain:
-      [
-        startWord,
-        ...chain
-          .slice(
-            1,
-            -1,
-          )
-          .map(
-            (
-              w,
-            ) =>
-              w.toLowerCase(),
-          ),
-        endWord,
-      ],
-    _connectionExplanations:
-      explanations,
+    _exampleChain: [startWord, ...chain.slice(1, -1).map((w) => w.toLowerCase()), endWord],
+    _connectionExplanations: explanations,
   };
 }
 
@@ -1162,17 +514,8 @@ function chainlinkPrompt(
   system: string;
   user: string;
 } {
-  const vocab =
-    associationVocabulary();
-  const parLinks =
-    [
-      4,
-      5,
-      6,
-    ][
-      puzzleNumber %
-        3
-    ];
+  const vocab = associationVocabulary();
+  const parLinks = [4, 5, 6][puzzleNumber % 3];
   return {
     system:
       'You create one "Chainlink" word puzzle. The player connects a START word to an END word through a chain of intermediate words where every ADJACENT pair forms a common compound word or a very tight, well-known association (e.g. SUN→light→house→work: "sunlight", "lighthouse", "housework"). ' +
@@ -1202,34 +545,17 @@ export function buildPrompt(
   system: string;
   user: string;
 } {
-  switch (
-    mode
-  ) {
+  switch (mode) {
     case 'spectrum':
-      return spectrumPrompt(
-        dateKey,
-        puzzleNumber,
-      );
+      return spectrumPrompt(dateKey, puzzleNumber);
     case 'alibi':
-      return alibiPrompt(
-        dateKey,
-        puzzleNumber,
-      );
+      return alibiPrompt(dateKey, puzzleNumber);
     case 'outcast':
-      return outcastPrompt(
-        dateKey,
-        puzzleNumber,
-      );
+      return outcastPrompt(dateKey, puzzleNumber);
     case 'impostor':
-      return impostorPrompt(
-        dateKey,
-        puzzleNumber,
-      );
+      return impostorPrompt(dateKey, puzzleNumber);
     case 'chainlink':
-      return chainlinkPrompt(
-        dateKey,
-        puzzleNumber,
-      );
+      return chainlinkPrompt(dateKey, puzzleNumber);
   }
 }
 
@@ -1237,68 +563,33 @@ export function buildPrompt(
  * Validate + normalize a raw model response into the exact client puzzle shape.
  * Returns null when the response is unusable (caller then falls back).
  */
-export function validateAndNormalize(
-  mode: DailyPuzzleMode,
-  raw: unknown,
-  dateKey: string,
-): AnyPuzzle | null {
-  switch (
-    mode
-  ) {
+export function validateAndNormalize(mode: DailyPuzzleMode, raw: unknown, dateKey: string): AnyPuzzle | null {
+  switch (mode) {
     case 'spectrum':
-      return normalizeSpectrum(
-        raw,
-        dateKey,
-      );
+      return normalizeSpectrum(raw, dateKey);
     case 'alibi':
-      return normalizeAlibi(
-        raw,
-        dateKey,
-      );
+      return normalizeAlibi(raw, dateKey);
     case 'outcast':
-      return normalizeOutcast(
-        raw,
-        dateKey,
-      );
+      return normalizeOutcast(raw, dateKey);
     case 'impostor':
-      return normalizeImpostor(
-        raw,
-        dateKey,
-      );
+      return normalizeImpostor(raw, dateKey);
     case 'chainlink':
-      return normalizeChainlink(
-        raw,
-      );
+      return normalizeChainlink(raw);
   }
 }
 
 /** The built-in deterministic pool puzzle for a mode + day (the fallback). */
-export function fallbackPuzzle(
-  mode: DailyPuzzleMode,
-  date: Date,
-): AnyPuzzle {
-  switch (
-    mode
-  ) {
+export function fallbackPuzzle(mode: DailyPuzzleMode, date: Date): AnyPuzzle {
+  switch (mode) {
     case 'spectrum':
-      return generateSpectrumPuzzle(
-        date,
-      );
+      return generateSpectrumPuzzle(date);
     case 'alibi':
-      return generateAlibiPuzzle(
-        date,
-      );
+      return generateAlibiPuzzle(date);
     case 'outcast':
-      return generateOutcastPuzzle(
-        date,
-      );
+      return generateOutcastPuzzle(date);
     case 'impostor':
-      return generateImpostorPuzzle(
-        date,
-      );
+      return generateImpostorPuzzle(date);
     case 'chainlink':
-      return generateChainlinkPuzzle(
-        date,
-      );
+      return generateChainlinkPuzzle(date);
   }
 }

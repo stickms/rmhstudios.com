@@ -279,7 +279,11 @@ describe('notifyReportersOfOutcome', () => {
   });
 
   it('gives each reporter of the same content their own notification', async () => {
-    h.rows = [row({ id: 'a', reporterId: 'alice' }), row({ id: 'b', reporterId: 'carol' }), row({ id: 'c', reporterId: 'dan' })];
+    h.rows = [
+      row({ id: 'a', reporterId: 'alice' }),
+      row({ id: 'b', reporterId: 'carol' }),
+      row({ id: 'c', reporterId: 'dan' }),
+    ];
     for (const r of h.rows) decide(r, 'RESOLVED');
     expect(await notifyReportersOfOutcome(['a', 'b', 'c'])).toBe(3);
     expect(h.created.map((n) => n.userId).sort()).toEqual(['alice', 'carol', 'dan']);

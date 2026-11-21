@@ -6,24 +6,13 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import type { Prisma } from '@prisma/client';
-import {
-  deliverToEndpoint,
-  generateWebhookSecret,
-  validateWebhookUrl,
-} from '@/lib/webhooks/emit.server';
+import { deliverToEndpoint, generateWebhookSecret, validateWebhookUrl } from '@/lib/webhooks/emit.server';
 import { normalizeWebhookEvents, WEBHOOK_PING_EVENT } from '@/lib/webhooks/events';
 import { MAX_WEBHOOK_ENDPOINTS, SECRET_OVERLAP_MS } from '@/lib/webhooks/limits';
 import { HEALTH_WINDOW, webhookHealth, type HealthCounts } from '@/lib/webhooks/health';
-import type {
-  WebhookDeliveryRow,
-  WebhookEndpointRow,
-} from '@/lib/developer/webhooks.contract';
+import type { WebhookDeliveryRow, WebhookEndpointRow } from '@/lib/developer/webhooks.contract';
 import type { z } from 'zod';
-import type {
-  createWebhookBody,
-  deliveriesQuery,
-  patchWebhookBody,
-} from '@/lib/developer/webhooks-schema';
+import type { createWebhookBody, deliveriesQuery, patchWebhookBody } from '@/lib/developer/webhooks-schema';
 
 export const DELIVERY_PAGE_SIZE = 25;
 
@@ -73,8 +62,7 @@ function serializeEndpoint(
   disabledReason: string | null,
   now: Date,
 ): WebhookEndpointRow {
-  const overlapOpen =
-    e.previousSecretExpiresAt !== null && e.previousSecretExpiresAt.getTime() > now.getTime();
+  const overlapOpen = e.previousSecretExpiresAt !== null && e.previousSecretExpiresAt.getTime() > now.getTime();
   return {
     id: e.id,
     url: e.url,
@@ -152,10 +140,7 @@ async function disabledReasons(records: EndpointRecord[]): Promise<Map<string, s
 }
 
 async function serializeEndpoints(records: EndpointRecord[]): Promise<WebhookEndpointRow[]> {
-  const [counts, reasons] = await Promise.all([
-    healthCounts(records.map((e) => e.id)),
-    disabledReasons(records),
-  ]);
+  const [counts, reasons] = await Promise.all([healthCounts(records.map((e) => e.id)), disabledReasons(records)]);
   const now = new Date();
   return records.map((e) => serializeEndpoint(e, counts.get(e.id), reasons.get(e.id) ?? null, now));
 }
@@ -222,9 +207,7 @@ export async function getWebhook(
   userId: string,
   id: string,
   filters: DeliveryFilters,
-): Promise<
-  Result<{ endpoint: WebhookEndpointRow; deliveries: WebhookDeliveryRow[]; nextCursor: string | null }>
-> {
+): Promise<Result<{ endpoint: WebhookEndpointRow; deliveries: WebhookDeliveryRow[]; nextCursor: string | null }>> {
   const endpoint = await readEndpoint(userId, id);
   if (!endpoint) return notFound;
 
@@ -243,8 +226,7 @@ export async function getWebhook(
   });
   const page = rows.slice(0, DELIVERY_PAGE_SIZE);
   const last = page[page.length - 1];
-  const nextCursor =
-    rows.length > DELIVERY_PAGE_SIZE && last ? `${last.createdAt.getTime()}_${last.id}` : null;
+  const nextCursor = rows.length > DELIVERY_PAGE_SIZE && last ? `${last.createdAt.getTime()}_${last.id}` : null;
   return { ok: true, endpoint, deliveries: page.map(serializeDelivery), nextCursor };
 }
 
@@ -322,10 +304,7 @@ async function readDelivery(userId: string, id: string): Promise<WebhookDelivery
 }
 
 /** Deliver a `ping` to this endpoint only, whatever it subscribes to, and return the recorded delivery. */
-export async function sendTestEvent(
-  userId: string,
-  id: string,
-): Promise<Result<{ delivery: WebhookDeliveryRow }>> {
+export async function sendTestEvent(userId: string, id: string): Promise<Result<{ delivery: WebhookDeliveryRow }>> {
   const owned = await prisma.webhookEndpoint.findFirst({ where: { id, userId }, select: { id: true } });
   if (!owned) return notFound;
   const sent = await deliverToEndpoint(id, WEBHOOK_PING_EVENT, {
@@ -342,10 +321,7 @@ export async function sendTestEvent(
  * original is never touched. A delivery still retrying is refused: the drain is
  * already sending it.
  */
-export async function redeliver(
-  userId: string,
-  deliveryId: string,
-): Promise<Result<{ delivery: WebhookDeliveryRow }>> {
+export async function redeliver(userId: string, deliveryId: string): Promise<Result<{ delivery: WebhookDeliveryRow }>> {
   const original = await prisma.webhookDelivery.findFirst({
     where: { id: deliveryId, endpoint: { userId } },
     select: { id: true, endpointId: true, event: true, status: true, payload: true },

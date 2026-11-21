@@ -8,8 +8,7 @@ import { cn } from '@/lib/utils';
  * a capsule's `sizes` came from its 240px intrinsic width, which on a 3x phone
  * asked for 720 device pixels and fetched the 960 variant into a 111px tile.
  */
-export const CAPSULE_SIZES =
-  '(max-width: 767px) 34vw, 240px';
+export const CAPSULE_SIZES = '(max-width: 767px) 34vw, 240px';
 
 /**
  * A title's card art, Steam-style: the portrait image when it has one, else a flat
@@ -23,40 +22,22 @@ export function TitleArt({
   className,
   sizes,
 }: {
-  build: Pick<
-    CuratedBuild,
-    | 'title'
-    | 'thumbnailUrl'
-    | 'hue'
-  >;
+  build: Pick<CuratedBuild, 'title' | 'thumbnailUrl' | 'hue'>;
   width: number;
   height: number;
   className?: string;
   /** The slot's rendered width, when CSS draws it narrower than `width`. */
   sizes?: string;
 }) {
-  if (
-    build.thumbnailUrl
-  ) {
+  if (build.thumbnailUrl) {
     return (
       <OptimizedImage
-        src={
-          build.thumbnailUrl
-        }
+        src={build.thumbnailUrl}
         alt=""
-        width={
-          width
-        }
-        height={
-          height
-        }
-        sizes={
-          sizes
-        }
-        className={cn(
-          'stm-art',
-          className,
-        )}
+        width={width}
+        height={height}
+        sizes={sizes}
+        className={cn('stm-art', className)}
         // The site's media-reveal script stamps `data-loaded` on an <img> as it
         // finishes; art above the fold can finish before hydration. Expected.
         suppressHydrationWarning
@@ -66,17 +47,12 @@ export function TitleArt({
   return (
     <span
       aria-hidden
-      className={cn(
-        'stm-art stm-art-tile',
-        className,
-      )}
+      className={cn('stm-art stm-art-tile', className)}
       style={{
         background: `hsl(${build.hue} 32% 22%)`,
       }}
     >
-      {build.title.charAt(
-        0,
-      )}
+      {build.title.charAt(0)}
     </span>
   );
 }

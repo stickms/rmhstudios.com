@@ -66,11 +66,7 @@
  * Prisma. Both bundles import the same strings so they can never drift.
  */
 
-import {
-  MAX_ICE_BYTES,
-  MAX_SDP_BYTES,
-  type CallPeer,
-} from '@/lib/call/events';
+import { MAX_ICE_BYTES, MAX_SDP_BYTES, type CallPeer } from '@/lib/call/events';
 
 /**
  * The minimal user shape shown for a participant, reused verbatim from the 1:1
@@ -97,86 +93,63 @@ export type { CallPeer };
  * The dependency runs one way (`groupcall` → `call`) into a leaf module with no
  * imports of its own, so it costs nothing structurally.
  */
-export {
-  MAX_SDP_BYTES,
-  MAX_ICE_BYTES,
-};
+export { MAX_SDP_BYTES, MAX_ICE_BYTES };
 
 /* -------------------------------------------------------------------------- */
 /* Events                                                                     */
 /* -------------------------------------------------------------------------- */
 
 /** Client → server. */
-export const GCALL_C2S =
-  {
-    /** Open a room. Rings invitees for `adhoc`; joins or creates the open room for a community/party. */
-    START:
-      'gcall:start',
-    /** Ring more people into a room that is already running. */
-    INVITE:
-      'gcall:invite',
-    /** Accept a ring, or walk into an open room. Always by `callId`. */
-    JOIN: 'gcall:join',
-    /** Refuse a ring without joining. */
-    DECLINE:
-      'gcall:decline',
-    /** Leave a room that carries on without us. */
-    LEAVE:
-      'gcall:leave',
-    /** Host only: end the room for everyone in it. */
-    END: 'gcall:end',
-    /** SDP offer/answer relay to one named peer. */
-    SIGNAL:
-      'gcall:signal',
-    /** ICE candidate relay to one named peer (separate: chatty, higher limit). */
-    ICE: 'gcall:ice',
-    /** Our own mute state, so the roster can show it. */
-    STATE:
-      'gcall:state',
-    /** Is there a live open room for this community/party? */
-    LOOKUP:
-      'gcall:lookup',
-  } as const;
+export const GCALL_C2S = {
+  /** Open a room. Rings invitees for `adhoc`; joins or creates the open room for a community/party. */
+  START: 'gcall:start',
+  /** Ring more people into a room that is already running. */
+  INVITE: 'gcall:invite',
+  /** Accept a ring, or walk into an open room. Always by `callId`. */
+  JOIN: 'gcall:join',
+  /** Refuse a ring without joining. */
+  DECLINE: 'gcall:decline',
+  /** Leave a room that carries on without us. */
+  LEAVE: 'gcall:leave',
+  /** Host only: end the room for everyone in it. */
+  END: 'gcall:end',
+  /** SDP offer/answer relay to one named peer. */
+  SIGNAL: 'gcall:signal',
+  /** ICE candidate relay to one named peer (separate: chatty, higher limit). */
+  ICE: 'gcall:ice',
+  /** Our own mute state, so the roster can show it. */
+  STATE: 'gcall:state',
+  /** Is there a live open room for this community/party? */
+  LOOKUP: 'gcall:lookup',
+} as const;
 
 /** Server → client. */
-export const GCALL_S2C =
-  {
-    /** An ad-hoc room is ringing you. */
-    INCOMING:
-      'gcall:incoming',
-    /** Authoritative roster snapshot. Replaces whatever the client had. */
-    ROSTER:
-      'gcall:roster',
-    /** You are in. Carries the room and the roster as of this instant. */
-    JOINED:
-      'gcall:joined',
-    /** Someone joined (or was invited and is now ringing). */
-    PEER_JOINED:
-      'gcall:peer-joined',
-    /** Someone is gone — tear their peer connection down. */
-    PEER_LEFT:
-      'gcall:peer-left',
-    /** SDP relay from one named peer. */
-    SIGNAL:
-      'gcall:signal',
-    /** ICE relay from one named peer. */
-    ICE: 'gcall:ice',
-    /** A participant muted or unmuted. */
-    STATE:
-      'gcall:state',
-    /** The room is over for everyone, with a reason. */
-    ENDED:
-      'gcall:ended',
-    /** Your start/join/invite could not be performed at all. */
-    REJECTED:
-      'gcall:rejected',
-    /** Open-room presence: the answer to LOOKUP, and pushed when a room opens or closes. */
-    ACTIVE:
-      'gcall:active',
-    /** Recoverable protocol-level error surfaced to the acting socket. */
-    ERROR:
-      'gcall:error',
-  } as const;
+export const GCALL_S2C = {
+  /** An ad-hoc room is ringing you. */
+  INCOMING: 'gcall:incoming',
+  /** Authoritative roster snapshot. Replaces whatever the client had. */
+  ROSTER: 'gcall:roster',
+  /** You are in. Carries the room and the roster as of this instant. */
+  JOINED: 'gcall:joined',
+  /** Someone joined (or was invited and is now ringing). */
+  PEER_JOINED: 'gcall:peer-joined',
+  /** Someone is gone — tear their peer connection down. */
+  PEER_LEFT: 'gcall:peer-left',
+  /** SDP relay from one named peer. */
+  SIGNAL: 'gcall:signal',
+  /** ICE relay from one named peer. */
+  ICE: 'gcall:ice',
+  /** A participant muted or unmuted. */
+  STATE: 'gcall:state',
+  /** The room is over for everyone, with a reason. */
+  ENDED: 'gcall:ended',
+  /** Your start/join/invite could not be performed at all. */
+  REJECTED: 'gcall:rejected',
+  /** Open-room presence: the answer to LOOKUP, and pushed when a room opens or closes. */
+  ACTIVE: 'gcall:active',
+  /** Recoverable protocol-level error surfaced to the acting socket. */
+  ERROR: 'gcall:error',
+} as const;
 
 /* -------------------------------------------------------------------------- */
 /* Vocabulary                                                                 */
@@ -204,42 +177,16 @@ export const GCALL_S2C =
  * PROFILE` and `persistedOrigin()` in `lib/groupcall/state.ts` maps between
  * them.
  */
-export type GroupCallOrigin =
-  | 'adhoc'
-  | 'community'
-  | 'party'
-  | 'profile';
+export type GroupCallOrigin = 'adhoc' | 'community' | 'party' | 'profile';
 
-export const GROUP_CALL_ORIGINS: readonly GroupCallOrigin[] =
-  [
-    'adhoc',
-    'community',
-    'party',
-    'profile',
-  ];
+export const GROUP_CALL_ORIGINS: readonly GroupCallOrigin[] = ['adhoc', 'community', 'party', 'profile'];
 
-export function isGroupCallOrigin(
-  v: unknown,
-): v is GroupCallOrigin {
-  return (
-    typeof v ===
-      'string' &&
-    (
-      GROUP_CALL_ORIGINS as readonly string[]
-    ).includes(
-      v,
-    )
-  );
+export function isGroupCallOrigin(v: unknown): v is GroupCallOrigin {
+  return typeof v === 'string' && (GROUP_CALL_ORIGINS as readonly string[]).includes(v);
 }
 
 /** The origins that produce an open room rather than a ring. */
-export type OpenRoomOrigin =
-  Extract<
-    GroupCallOrigin,
-    | 'community'
-    | 'party'
-    | 'profile'
-  >;
+export type OpenRoomOrigin = Extract<GroupCallOrigin, 'community' | 'party' | 'profile'>;
 
 /**
  * Why a room ended, or why we are no longer in one.
@@ -280,17 +227,10 @@ export type GroupCallEndReason =
  * is of `CallEndReason`, so a rejection can be fed straight into the same
  * `end` transition without a translation table.
  */
-export type GroupCallRejectReason =
-  Extract<
-    GroupCallEndReason,
-    | 'blocked'
-    | 'privacy'
-    | 'not-member'
-    | 'full'
-    | 'gone'
-    | 'busy'
-    | 'failed'
-  >;
+export type GroupCallRejectReason = Extract<
+  GroupCallEndReason,
+  'blocked' | 'privacy' | 'not-member' | 'full' | 'gone' | 'busy' | 'failed'
+>;
 
 /** Why one participant is no longer on the roster. */
 export type GroupCallLeaveReason =
@@ -333,12 +273,8 @@ export type GroupCallErrorCode =
 export interface GroupCallParticipantView {
   userId: string;
   name: string;
-  image:
-    | string
-    | null;
-  handle:
-    | string
-    | null;
+  image: string | null;
+  handle: string | null;
   /** Their microphone, as last reported by them. */
   muted: boolean;
   /** The host — for `adhoc` the starter, for an open room whoever opened it. */
@@ -351,9 +287,7 @@ export interface GroupCallParticipantView {
    * needing a parallel status enum, and it is why an open room never has a null
    * here — nobody is ever rung into one.
    */
-  joinedAt:
-    | number
-    | null;
+  joinedAt: number | null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -428,9 +362,7 @@ export interface GroupCallSignalPayload {
   to: string;
   /** An `RTCSessionDescriptionInit`, passed through opaquely. */
   description: {
-    type:
-      | 'offer'
-      | 'answer';
+    type: 'offer' | 'answer';
     sdp: string;
   };
 }
@@ -443,15 +375,9 @@ export interface GroupCallIcePayload {
   /** An `RTCIceCandidateInit`, passed through opaquely. */
   candidate: {
     candidate: string;
-    sdpMid?:
-      | string
-      | null;
-    sdpMLineIndex?:
-      | number
-      | null;
-    usernameFragment?:
-      | string
-      | null;
+    sdpMid?: string | null;
+    sdpMLineIndex?: number | null;
+    usernameFragment?: string | null;
   };
 }
 
@@ -486,12 +412,8 @@ export interface GroupCallLookupPayload {
 export interface GroupCallIncomingPayload {
   callId: string;
   origin: GroupCallOrigin;
-  originId:
-    | string
-    | null;
-  conversationId:
-    | string
-    | null;
+  originId: string | null;
+  conversationId: string | null;
   /** Who started it. */
   from: CallPeer;
   /** Everyone already in, plus anyone else still ringing. */
@@ -521,12 +443,8 @@ export interface GroupCallRosterPayload {
 export interface GroupCallJoinedPayload {
   callId: string;
   origin: GroupCallOrigin;
-  originId:
-    | string
-    | null;
-  conversationId:
-    | string
-    | null;
+  originId: string | null;
+  conversationId: string | null;
   /** Our own userId, echoed so the mesh's offer rule has both sides of its compare. */
   selfId: string;
   hostId: string;
@@ -559,9 +477,7 @@ export interface GroupCallSignalRelayPayload {
   /** The sender's **userId**. Server-stamped — never taken from the sender. */
   from: string;
   description: {
-    type:
-      | 'offer'
-      | 'answer';
+    type: 'offer' | 'answer';
     sdp: string;
   };
 }
@@ -573,15 +489,9 @@ export interface GroupCallIceRelayPayload {
   from: string;
   candidate: {
     candidate: string;
-    sdpMid?:
-      | string
-      | null;
-    sdpMLineIndex?:
-      | number
-      | null;
-    usernameFragment?:
-      | string
-      | null;
+    sdpMid?: string | null;
+    sdpMLineIndex?: number | null;
+    usernameFragment?: string | null;
   };
 }
 
@@ -608,15 +518,10 @@ export interface GroupCallEndedPayload {
  */
 export interface GroupCallRejectedPayload {
   reason: GroupCallRejectReason;
-  operation:
-    | 'start'
-    | 'join'
-    | 'invite';
+  operation: 'start' | 'join' | 'invite';
   callId?: string;
   origin?: GroupCallOrigin;
-  originId?:
-    | string
-    | null;
+  originId?: string | null;
 }
 
 /**
@@ -629,9 +534,7 @@ export interface GroupCallRejectedPayload {
 export interface GroupCallActivePayload {
   origin: OpenRoomOrigin;
   originId: string;
-  callId:
-    | string
-    | null;
+  callId: string | null;
   participantCount: number;
   /**
    * Who is in, for the stacked avatars on the pill. Trimmed by the server; not
@@ -666,9 +569,7 @@ export const MAX_GROUP_CALL_PARTICIPANTS = 8;
  * The host is already in the room, so the most invitees that could ever fit is
  * the cap minus one. Derived rather than written as `7` so the two cannot drift.
  */
-export const MAX_GROUP_CALL_INVITES =
-  MAX_GROUP_CALL_PARTICIPANTS -
-  1;
+export const MAX_GROUP_CALL_INVITES = MAX_GROUP_CALL_PARTICIPANTS - 1;
 
 /**
  * How long an ad-hoc room rings before the un-answered invitees are dropped.
@@ -689,19 +590,10 @@ export const GROUP_RING_TIMEOUT_MS = 45_000;
  * Re-exported so a validator can reach every cap from one import. `satisfies`
  * keeps the literal types while asserting the shape.
  */
-export const GROUP_CALL_LIMITS =
-  {
-    maxParticipants:
-      MAX_GROUP_CALL_PARTICIPANTS,
-    maxInvites:
-      MAX_GROUP_CALL_INVITES,
-    ringTimeoutMs:
-      GROUP_RING_TIMEOUT_MS,
-    maxSdpBytes:
-      MAX_SDP_BYTES,
-    maxIceBytes:
-      MAX_ICE_BYTES,
-  } satisfies Record<
-    string,
-    number
-  >;
+export const GROUP_CALL_LIMITS = {
+  maxParticipants: MAX_GROUP_CALL_PARTICIPANTS,
+  maxInvites: MAX_GROUP_CALL_INVITES,
+  ringTimeoutMs: GROUP_RING_TIMEOUT_MS,
+  maxSdpBytes: MAX_SDP_BYTES,
+  maxIceBytes: MAX_ICE_BYTES,
+} satisfies Record<string, number>;

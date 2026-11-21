@@ -3,10 +3,7 @@
  * localStorage for anonymous play; DB for signed-in users (via API).
  */
 
-import {
-  readJson,
-  writeJson,
-} from '@/lib/core/persist';
+import { readJson, writeJson } from '@/lib/core/persist';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import {
@@ -16,15 +13,12 @@ import {
   type DailyPuzzleScoreBody,
 } from './daily-puzzles.contract';
 
-const STORAGE_KEY =
-  'rmh-daily-puzzles';
+const STORAGE_KEY = 'rmh-daily-puzzles';
 
 export interface PuzzleResult {
   puzzleDate: string;
   score: number;
-  timeSeconds:
-    | number
-    | null;
+  timeSeconds: number | null;
   resultJson: any;
   completedAt: string;
 }
@@ -32,12 +26,8 @@ export interface PuzzleResult {
 interface DailyPuzzlesState {
   version: 1;
   results: {
-    [
-      gameMode: string
-    ]: {
-      [
-        puzzleDate: string
-      ]: PuzzleResult;
+    [gameMode: string]: {
+      [puzzleDate: string]: PuzzleResult;
     };
   };
 }
@@ -47,167 +37,70 @@ function loadState(): DailyPuzzlesState {
     STORAGE_KEY,
     {
       version: 1,
-      results:
-        {},
+      results: {},
     },
     {
-      validate:
-        (
-          v,
-        ) =>
-          v &&
-          typeof v ===
-            'object' &&
-          (
-            v as DailyPuzzlesState
-          )
-            .results
-            ? (v as DailyPuzzlesState)
-            : undefined,
+      validate: (v) =>
+        v && typeof v === 'object' && (v as DailyPuzzlesState).results ? (v as DailyPuzzlesState) : undefined,
     },
   );
 }
 
-function saveState(
-  state: DailyPuzzlesState,
-): void {
-  writeJson(
-    STORAGE_KEY,
-    state,
-  );
+function saveState(state: DailyPuzzlesState): void {
+  writeJson(STORAGE_KEY, state);
 }
 
 /** Get result from localStorage */
-export function getResult(
-  gameMode: string,
-  puzzleDate: string,
-): PuzzleResult | null {
-  const state =
-    loadState();
-  return (
-    state
-      .results[
-      gameMode
-    ]?.[
-      puzzleDate
-    ] ??
-    null
-  );
+export function getResult(gameMode: string, puzzleDate: string): PuzzleResult | null {
+  const state = loadState();
+  return state.results[gameMode]?.[puzzleDate] ?? null;
 }
 
 /** Save result to localStorage */
-export function saveResult(
-  gameMode: string,
-  puzzleDate: string,
-  result: PuzzleResult,
-): void {
-  const state =
-    loadState();
-  if (
-    !state
-      .results[
-      gameMode
-    ]
-  )
-    state.results[
-      gameMode
-    ] =
-      {};
-  state.results[
-    gameMode
-  ][
-    puzzleDate
-  ] =
-    result;
-  saveState(
-    state,
-  );
+export function saveResult(gameMode: string, puzzleDate: string, result: PuzzleResult): void {
+  const state = loadState();
+  if (!state.results[gameMode]) state.results[gameMode] = {};
+  state.results[gameMode][puzzleDate] = result;
+  saveState(state);
 }
 
 /** Check if puzzle was completed (localStorage only) */
-export function hasCompleted(
-  gameMode: string,
-  puzzleDate: string,
-): boolean {
-  return (
-    getResult(
-      gameMode,
-      puzzleDate,
-    ) !==
-    null
-  );
+export function hasCompleted(gameMode: string, puzzleDate: string): boolean {
+  return getResult(gameMode, puzzleDate) !== null;
 }
 
 /** Get all completed dates for a game mode from localStorage */
-export function getCompletedDates(
-  gameMode: string,
-): Record<
-  string,
-  PuzzleResult
-> {
-  const state =
-    loadState();
-  return (
-    state
-      .results[
-      gameMode
-    ] ??
-    {}
-  );
+export function getCompletedDates(gameMode: string): Record<string, PuzzleResult> {
+  const state = loadState();
+  return state.results[gameMode] ?? {};
 }
 
 // ─── Server-aware functions (for signed-in users) ───
 
 /** Fetch a single result from the server */
-export async function fetchResultFromServer(
-  gameMode: string,
-  dateKey: string,
-): Promise<PuzzleResult | null> {
+export async function fetchResultFromServer(gameMode: string, dateKey: string): Promise<PuzzleResult | null> {
   try {
-    const data =
-      await api(
-        getDailyPuzzleResultApi,
-        {
-          query:
-            {
-              gameMode,
-              date: dateKey,
-            },
-        },
-      );
-    return (
-      data.result ??
-      null
-    );
+    const data = await api(getDailyPuzzleResultApi, {
+      query: {
+        gameMode,
+        date: dateKey,
+      },
+    });
+    return data.result ?? null;
   } catch {
     return null;
   }
 }
 
 /** Fetch all results for a game mode from the server */
-export async function fetchResultsFromServer(
-  gameMode: string,
-): Promise<
-  Record<
-    string,
-    PuzzleResult
-  >
-> {
+export async function fetchResultsFromServer(gameMode: string): Promise<Record<string, PuzzleResult>> {
   try {
-    const data =
-      await api(
-        getDailyPuzzleResultsApi,
-        {
-          query:
-            {
-              gameMode,
-            },
-        },
-      );
-    return (
-      data.results ??
-      {}
-    );
+    const data = await api(getDailyPuzzleResultsApi, {
+      query: {
+        gameMode,
+      },
+    });
+    return data.results ?? {};
   } catch {
     return {};
   }
@@ -217,57 +110,18 @@ export async function fetchResultsFromServer(
  * Sync results from server into localStorage.
  * Server results override local for matching dates.
  */
-export async function syncFromServer(
-  gameMode: string,
-): Promise<
-  Record<
-    string,
-    PuzzleResult
-  >
-> {
-  const serverResults =
-    await fetchResultsFromServer(
-      gameMode,
-    );
-  if (
-    Object.keys(
-      serverResults,
-    )
-      .length ===
-    0
-  )
-    return serverResults;
+export async function syncFromServer(gameMode: string): Promise<Record<string, PuzzleResult>> {
+  const serverResults = await fetchResultsFromServer(gameMode);
+  if (Object.keys(serverResults).length === 0) return serverResults;
 
-  const state =
-    loadState();
-  if (
-    !state
-      .results[
-      gameMode
-    ]
-  )
-    state.results[
-      gameMode
-    ] =
-      {};
+  const state = loadState();
+  if (!state.results[gameMode]) state.results[gameMode] = {};
 
-  for (const [
-    dateKey,
-    result,
-  ] of Object.entries(
-    serverResults,
-  )) {
-    state.results[
-      gameMode
-    ][
-      dateKey
-    ] =
-      result;
+  for (const [dateKey, result] of Object.entries(serverResults)) {
+    state.results[gameMode][dateKey] = result;
   }
 
-  saveState(
-    state,
-  );
+  saveState(state);
   return serverResults;
 }
 
@@ -282,103 +136,49 @@ export function saveResultWithSync(
   isSignedIn: boolean,
 ): void {
   // Always save to localStorage first (immediate)
-  saveResult(
-    gameMode,
-    puzzleDate,
-    result,
-  );
+  saveResult(gameMode, puzzleDate, result);
 
   // If signed in, also persist to server (fire-and-forget)
-  if (
-    isSignedIn
-  ) {
-    const isLightsOut =
-      gameMode ===
-      'lights-out';
-    const body: DailyPuzzleScoreBody =
-      {
-        gameMode,
-        dateKey:
-          puzzleDate,
-        resultJson:
-          result.resultJson,
-        timeSeconds:
-          result.timeSeconds,
-      };
+  if (isSignedIn) {
+    const isLightsOut = gameMode === 'lights-out';
+    const body: DailyPuzzleScoreBody = {
+      gameMode,
+      dateKey: puzzleDate,
+      resultJson: result.resultJson,
+      timeSeconds: result.timeSeconds,
+    };
 
-    if (
-      isLightsOut
-    ) {
-      body.moves =
-        result
-          .resultJson
-          ?.moves ??
-        result.score;
-      body.hintUsed =
-        result
-          .resultJson
-          ?.hintUsed ??
-        false;
-      body.dnf =
-        result
-          .resultJson
-          ?.dnf ??
-        false;
+    if (isLightsOut) {
+      body.moves = result.resultJson?.moves ?? result.score;
+      body.hintUsed = result.resultJson?.hintUsed ?? false;
+      body.dnf = result.resultJson?.dnf ?? false;
     } else {
-      body.score =
-        result.score;
+      body.score = result.score;
       // GlobeSet's `dnf` is "the auto-solver was used": the run is stored but is not a solve.
-      if (
-        gameMode ===
-        'globeset'
-      ) {
-        body.dnf =
-          result
-            .resultJson
-            ?.solverUsed ===
-          true;
+      if (gameMode === 'globeset') {
+        body.dnf = result.resultJson?.solverUsed === true;
       }
     }
 
     // One retry: a flaky mobile connection otherwise silently drops the score/streak.
-    const send =
-      () =>
-        api(
-          submitDailyPuzzleScoreApi,
-          {
-            body,
-            keepalive: true,
-          },
-        ).then(
-          () =>
-            undefined,
-          (
-            e: unknown,
-          ) => {
-            // Only a server failure is worth another try; a 4xx refusal is final.
-            if (
-              e instanceof
-                HttpError &&
-              e.status <
-                500
-            )
-              return;
-            throw e;
-          },
-        );
-    send().catch(
-      () => {
-        setTimeout(
-          () => {
-            send().catch(
-              () => {
-                /* give up; local copy is kept */
-              },
-            );
-          },
-          4000,
-        );
-      },
-    );
+    const send = () =>
+      api(submitDailyPuzzleScoreApi, {
+        body,
+        keepalive: true,
+      }).then(
+        () => undefined,
+        (e: unknown) => {
+          // Only a server failure is worth another try; a 4xx refusal is final.
+          if (e instanceof HttpError && e.status < 500) return;
+          throw e;
+        },
+      );
+    send().catch(() => {
+      setTimeout(() => {
+        send().catch(() => {
+          /* give up; local copy is kept */
+        });
+      }, 4000);
+    });
   }
 }

@@ -18,10 +18,7 @@
 import { randomBytes } from 'node:crypto';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { prisma } from '@/lib/prisma.server';
-import {
-  resolveUser,
-  userDisplaySelect,
-} from '@/lib/user-display';
+import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { ShareSummary } from '@/lib/rmhmusic/social/share.contract';
 import type { SongMode } from '../songs/scoring';
 import { eligibleUser } from './board.server';
@@ -43,11 +40,7 @@ import {
 
 /** 128 random bits, base64url: 22 characters. */
 export function newShareToken(): string {
-  return randomBytes(
-    16,
-  ).toString(
-    'base64url',
-  );
+  return randomBytes(16).toString('base64url');
 }
 
 export type CreateShare =
@@ -70,9 +63,7 @@ export type CreateShareResult =
     }
   | {
       ok: false;
-      reason:
-        | 'nothing'
-        | 'cap';
+      reason: 'nothing' | 'cap';
     };
 
 interface StoredShare {
@@ -84,48 +75,27 @@ interface StoredShare {
   expiresAt: Date;
 }
 
-function summary(
-  row: StoredShare,
-): ShareSummary | null {
-  const payload =
-    readPayload(
-      row.payload,
-    );
-  if (
-    !payload
-  )
-    return null;
+function summary(row: StoredShare): ShareSummary | null {
+  const payload = readPayload(row.payload);
+  if (!payload) return null;
   return {
     id: row.id,
-    path: sharePath(
-      row.token,
-    ),
+    path: sharePath(row.token),
     payload,
-    showName:
-      row.showName,
-    createdAt:
-      row.createdAt.toISOString(),
-    expiresAt:
-      row.expiresAt.toISOString(),
+    showName: row.showName,
+    createdAt: row.createdAt.toISOString(),
+    expiresAt: row.expiresAt.toISOString(),
   };
 }
 
-function liveWhere(
-  userId: string,
-  now: number,
-) {
+function liveWhere(userId: string, now: number) {
   return {
     userId,
-    stoppedAt:
-      null,
-    hiddenAt:
-      null,
-    expiresAt:
-      {
-        gt: new Date(
-          now,
-        ),
-      },
+    stoppedAt: null,
+    hiddenAt: null,
+    expiresAt: {
+      gt: new Date(now),
+    },
   };
 }
 
@@ -138,268 +108,141 @@ async function snapshot(
   rowId: string;
   payload: SharePayload;
 } | null> {
-  if (
-    input.kind ===
-    'daily'
-  ) {
-    const row =
-      await prisma.musicSprintDaily.findUnique(
-        {
-          where:
-            {
-              userId_date:
-                {
-                  userId,
-                  date: input.date,
-                },
-            },
-          select:
-            {
-              id: true,
-              userId: true,
-              date: true,
-              score: true,
-              avgMs: true,
-              played: true,
-              skipped: true,
-              results: true,
-              hiddenAt: true,
-            },
+  if (input.kind === 'daily') {
+    const row = await prisma.musicSprintDaily.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date: input.date,
         },
-      );
-    if (
-      !row ||
-      row.userId !==
-        userId ||
-      row.hiddenAt !==
-        null
-    )
-      return null;
-    const payload =
-      dailyPayload(
-        row,
-      );
+      },
+      select: {
+        id: true,
+        userId: true,
+        date: true,
+        score: true,
+        avgMs: true,
+        played: true,
+        skipped: true,
+        results: true,
+        hiddenAt: true,
+      },
+    });
+    if (!row || row.userId !== userId || row.hiddenAt !== null) return null;
+    const payload = dailyPayload(row);
     return payload
       ? {
-          subject:
-            dailySubject(
-              row.date,
-            ),
-          rowId:
-            row.id,
+          subject: dailySubject(row.date),
+          rowId: row.id,
           payload,
         }
       : null;
   }
-  const [
-    best,
-    profile,
-  ] =
-    await Promise.all(
-      [
-        prisma.musicSongBest.findUnique(
-          {
-            where:
-              {
-                userId_songId_mode:
-                  {
-                    userId,
-                    songId:
-                      input.songId,
-                    mode: input.mode,
-                  },
-              },
-            select:
-              {
-                id: true,
-                userId: true,
-                songId: true,
-                mode: true,
-                bestScore: true,
-              },
-          },
-        ),
-        prisma.musicLearnProfile.findUnique(
-          {
-            where:
-              {
-                userId,
-              },
-            select:
-              {
-                instrument: true,
-              },
-          },
-        ),
-      ],
-    );
-  if (
-    !best ||
-    best.userId !==
-      userId
-  )
-    return null;
-  const instrument =
-    profile?.instrument;
-  const payload =
-    songPayload(
-      best,
-      instrument ===
-        'guitar' ||
-        instrument ===
-          'voice'
-        ? instrument
-        : 'piano',
-    );
+  const [best, profile] = await Promise.all([
+    prisma.musicSongBest.findUnique({
+      where: {
+        userId_songId_mode: {
+          userId,
+          songId: input.songId,
+          mode: input.mode,
+        },
+      },
+      select: {
+        id: true,
+        userId: true,
+        songId: true,
+        mode: true,
+        bestScore: true,
+      },
+    }),
+    prisma.musicLearnProfile.findUnique({
+      where: {
+        userId,
+      },
+      select: {
+        instrument: true,
+      },
+    }),
+  ]);
+  if (!best || best.userId !== userId) return null;
+  const instrument = profile?.instrument;
+  const payload = songPayload(best, instrument === 'guitar' || instrument === 'voice' ? instrument : 'piano');
   return payload
     ? {
-        subject:
-          songSubject(
-            best.songId,
-            best.mode,
-          ),
-        rowId:
-          best.id,
+        subject: songSubject(best.songId, best.mode),
+        rowId: best.id,
         payload,
       }
     : null;
 }
 
-const SHARE_SELECT =
-  {
-    id: true,
-    token: true,
-    payload: true,
-    showName: true,
-    createdAt: true,
-    expiresAt: true,
-  } as const;
+const SHARE_SELECT = {
+  id: true,
+  token: true,
+  payload: true,
+  showName: true,
+  createdAt: true,
+  expiresAt: true,
+} as const;
 
-export async function createShare(
-  userId: string,
-  input: CreateShare,
-  now: number,
-): Promise<CreateShareResult> {
-  const snap =
-    await snapshot(
-      userId,
-      input,
-    );
-  if (
-    !snap
-  )
+export async function createShare(userId: string, input: CreateShare, now: number): Promise<CreateShareResult> {
+  const snap = await snapshot(userId, input);
+  if (!snap)
     return {
       ok: false,
-      reason:
-        'nothing',
+      reason: 'nothing',
     };
 
   // The same result with the same name choice: hand back the live link (a better song best since
   // makes a new snapshot, so a new link).
-  const existing =
-    await prisma.musicShare.findFirst(
-      {
-        where:
-          {
-            ...liveWhere(
-              userId,
-              now,
-            ),
-            subject:
-              snap.subject,
-            showName:
-              input.showName,
-          },
-        orderBy:
-          {
-            createdAt:
-              'desc',
-          },
-        select:
-          SHARE_SELECT,
-      },
-    );
-  if (
-    existing &&
-    samePayload(
-      readPayload(
-        existing.payload,
-      ),
-      snap.payload,
-    )
-  ) {
-    const s =
-      summary(
-        existing,
-      );
-    if (
-      s
-    )
+  const existing = await prisma.musicShare.findFirst({
+    where: {
+      ...liveWhere(userId, now),
+      subject: snap.subject,
+      showName: input.showName,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    select: SHARE_SELECT,
+  });
+  if (existing && samePayload(readPayload(existing.payload), snap.payload)) {
+    const s = summary(existing);
+    if (s)
       return {
         ok: true,
-        share:
-          s,
+        share: s,
       };
   }
 
-  const live =
-    await prisma.musicShare.count(
-      {
-        where:
-          liveWhere(
-            userId,
-            now,
-          ),
-      },
-    );
-  if (
-    live >=
-    SHARE_LIVE_CAP
-  )
+  const live = await prisma.musicShare.count({
+    where: liveWhere(userId, now),
+  });
+  if (live >= SHARE_LIVE_CAP)
     return {
       ok: false,
-      reason:
-        'cap',
+      reason: 'cap',
     };
 
-  const data =
-    {
-      userId,
-      kind: snap
-        .payload
-        .kind,
-      subject:
-        snap.subject,
-      rowId:
-        snap.rowId,
-      payload:
-        snap.payload as unknown as object,
-      showName:
-        input.showName,
-      createdAt:
-        new Date(
-          now,
-        ),
-      expiresAt:
-        new Date(
-          now +
-            SHARE_TTL_MS,
-        ),
-    };
+  const data = {
+    userId,
+    kind: snap.payload.kind,
+    subject: snap.subject,
+    rowId: snap.rowId,
+    payload: snap.payload as unknown as object,
+    showName: input.showName,
+    createdAt: new Date(now),
+    expiresAt: new Date(now + SHARE_TTL_MS),
+  };
   let row: StoredShare;
   try {
-    row =
-      await prisma.musicShare.create(
-        {
-          data: {
-            ...data,
-            token:
-              newShareToken(),
-          },
-          select:
-            SHARE_SELECT,
-        },
-      );
+    row = await prisma.musicShare.create({
+      data: {
+        ...data,
+        token: newShareToken(),
+      },
+      select: SHARE_SELECT,
+    });
   } catch (err) {
     // A token collision at 128 bits does not happen; if a unique index says it did, draw again once.
     if (
@@ -407,126 +250,64 @@ export async function createShare(
         err as {
           code?: string;
         }
-      )
-        ?.code !==
-      'P2002'
+      )?.code !== 'P2002'
     )
       throw err;
-    row =
-      await prisma.musicShare.create(
-        {
-          data: {
-            ...data,
-            token:
-              newShareToken(),
-          },
-          select:
-            SHARE_SELECT,
-        },
-      );
+    row = await prisma.musicShare.create({
+      data: {
+        ...data,
+        token: newShareToken(),
+      },
+      select: SHARE_SELECT,
+    });
   }
-  const s =
-    summary(
-      row,
-    );
-  if (
-    !s
-  )
-    throw new Error(
-      'share payload did not read back',
-    );
+  const s = summary(row);
+  if (!s) throw new Error('share payload did not read back');
   return {
     ok: true,
-    share:
-      s,
+    share: s,
   };
 }
 
 /** The learner's live links, newest first. */
-export async function listShares(
-  userId: string,
-  now: number,
-): Promise<
-  ShareSummary[]
-> {
-  const rows =
-    await prisma.musicShare.findMany(
-      {
-        where:
-          liveWhere(
-            userId,
-            now,
-          ),
-        orderBy:
-          {
-            createdAt:
-              'desc',
-          },
-        take: SHARE_LIVE_CAP,
-        select:
-          SHARE_SELECT,
-      },
-    );
-  return rows.flatMap(
-    (
-      r,
-    ) =>
-      summary(
-        r,
-      ) ??
-      [],
-  );
+export async function listShares(userId: string, now: number): Promise<ShareSummary[]> {
+  const rows = await prisma.musicShare.findMany({
+    where: liveWhere(userId, now),
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: SHARE_LIVE_CAP,
+    select: SHARE_SELECT,
+  });
+  return rows.flatMap((r) => summary(r) ?? []);
 }
 
 /** Stop one of the learner's links; answers how many it stopped (0 for another learner's id). */
-export async function stopShare(
-  userId: string,
-  id: string,
-  now: number,
-): Promise<number> {
-  const res =
-    await prisma.musicShare.updateMany(
-      {
-        where:
-          {
-            id,
-            userId,
-            stoppedAt:
-              null,
-          },
-        data: {
-          stoppedAt:
-            new Date(
-              now,
-            ),
-        },
-      },
-    );
+export async function stopShare(userId: string, id: string, now: number): Promise<number> {
+  const res = await prisma.musicShare.updateMany({
+    where: {
+      id,
+      userId,
+      stoppedAt: null,
+    },
+    data: {
+      stoppedAt: new Date(now),
+    },
+  });
   return res.count;
 }
 
 /** Stop every live link of the learner's. */
-export async function stopAllShares(
-  userId: string,
-  now: number,
-): Promise<number> {
-  const res =
-    await prisma.musicShare.updateMany(
-      {
-        where:
-          {
-            userId,
-            stoppedAt:
-              null,
-          },
-        data: {
-          stoppedAt:
-            new Date(
-              now,
-            ),
-        },
-      },
-    );
+export async function stopAllShares(userId: string, now: number): Promise<number> {
+  const res = await prisma.musicShare.updateMany({
+    where: {
+      userId,
+      stoppedAt: null,
+    },
+    data: {
+      stoppedAt: new Date(now),
+    },
+  });
   return res.count;
 }
 
@@ -542,195 +323,94 @@ export type SharedResult =
       mine: boolean;
       payload: SharePayload;
       /** Null unless the link chose to show them ("A learner"). */
-      name:
-        | string
-        | null;
-      image:
-        | string
-        | null;
+      name: string | null;
+      image: string | null;
     };
 
-const GONE: SharedResult =
-  {
-    state:
-      'gone',
-  };
+const GONE: SharedResult = {
+  state: 'gone',
+};
 
 /**
  * A shared result as a viewer may see it (`viewerId` null: signed out, or the card). Every reason
  * it cannot be seen is the same "gone".
  */
-export async function getSharedResult(
-  token: string,
-  viewerId:
-    | string
-    | null,
-  now: number,
-): Promise<SharedResult> {
-  if (
-    !isShareToken(
+export async function getSharedResult(token: string, viewerId: string | null, now: number): Promise<SharedResult> {
+  if (!isShareToken(token)) return GONE;
+  const row = await prisma.musicShare.findUnique({
+    where: {
       token,
-    )
-  )
-    return GONE;
-  const row =
-    await prisma.musicShare.findUnique(
-      {
-        where:
-          {
-            token,
-          },
-        select:
-          {
-            id: true,
-            userId: true,
-            kind: true,
-            rowId: true,
-            payload: true,
-            showName: true,
-            expiresAt: true,
-            stoppedAt: true,
-            hiddenAt: true,
-          },
-      },
-    );
-  if (
-    !row ||
-    shareGone(
-      row,
-      now,
-    )
-  )
-    return GONE;
-  const payload =
-    readPayload(
-      row.payload,
-    );
-  if (
-    !payload
-  )
-    return GONE;
+    },
+    select: {
+      id: true,
+      userId: true,
+      kind: true,
+      rowId: true,
+      payload: true,
+      showName: true,
+      expiresAt: true,
+      stoppedAt: true,
+      hiddenAt: true,
+    },
+  });
+  if (!row || shareGone(row, now)) return GONE;
+  const payload = readPayload(row.payload);
+  if (!payload) return GONE;
 
-  if (
-    viewerId !==
-      null &&
-    viewerId !==
-      row.userId
-  ) {
+  if (viewerId !== null && viewerId !== row.userId) {
     let blocked: string[];
     try {
-      blocked =
-        await getBlockedAuthorIds(
-          viewerId,
-        );
+      blocked = await getBlockedAuthorIds(viewerId);
     } catch {
       return GONE;
     }
-    if (
-      blocked.includes(
-        row.userId,
-      )
-    )
-      return GONE;
+    if (blocked.includes(row.userId)) return GONE;
   }
 
-  const [
-    author,
-    source,
-  ] =
-    await Promise.all(
-      [
-        // The board's and the friends list's rule: not banned (a lapsed ban is fine, a deleted
-        // account is a tombstone banned until 9999) and not a bot.
-        prisma.user.findFirst(
-          {
-            where:
-              {
-                id: row.userId,
-                ...eligibleUser(
-                  new Date(
-                    now,
-                  ),
-                ),
-              },
-            select:
-              userDisplaySelect,
+  const [author, source] = await Promise.all([
+    // The board's and the friends list's rule: not banned (a lapsed ban is fine, a deleted
+    // account is a tombstone banned until 9999) and not a bot.
+    prisma.user.findFirst({
+      where: {
+        id: row.userId,
+        ...eligibleUser(new Date(now)),
+      },
+      select: userDisplaySelect,
+    }),
+    row.kind === 'daily'
+      ? prisma.musicSprintDaily.findUnique({
+          where: {
+            id: row.rowId,
           },
-        ),
-        row.kind ===
-        'daily'
-          ? prisma.musicSprintDaily.findUnique(
-              {
-                where:
-                  {
-                    id: row.rowId,
-                  },
-                select:
-                  {
-                    hiddenAt: true,
-                  },
-              },
-            )
-          : Promise.resolve(
-              null,
-            ),
-      ],
-    );
-  if (
-    !author
-  )
-    return GONE;
+          select: {
+            hiddenAt: true,
+          },
+        })
+      : Promise.resolve(null),
+  ]);
+  if (!author) return GONE;
   // A Daily run a moderator took off the board is not shared either.
-  if (
-    row.kind ===
-      'daily' &&
-    (!source ||
-      source.hiddenAt !==
-        null)
-  )
-    return GONE;
+  if (row.kind === 'daily' && (!source || source.hiddenAt !== null)) return GONE;
 
-  const who =
-    row.showName
-      ? resolveUser(
-          author,
-        )
-      : null;
+  const who = row.showName ? resolveUser(author) : null;
   return {
-    state:
-      'live',
+    state: 'live',
     id: row.id,
-    mine:
-      viewerId ===
-      row.userId,
+    mine: viewerId === row.userId,
     payload,
-    name:
-      who?.name ??
-      null,
-    image:
-      who?.image ??
-      null,
+    name: who?.name ?? null,
+    image: who?.image ?? null,
   };
 }
 
 /** Delete links that expired more than 30 days ago (the maintenance job). */
-export async function sweepExpiredShares(
-  now: number,
-): Promise<number> {
-  const res =
-    await prisma.musicShare.deleteMany(
-      {
-        where:
-          {
-            expiresAt:
-              {
-                lt: new Date(
-                  now -
-                    SHARE_SWEEP_AFTER_MS,
-                ),
-              },
-          },
+export async function sweepExpiredShares(now: number): Promise<number> {
+  const res = await prisma.musicShare.deleteMany({
+    where: {
+      expiresAt: {
+        lt: new Date(now - SHARE_SWEEP_AFTER_MS),
       },
-    );
+    },
+  });
   return res.count;
 }

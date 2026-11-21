@@ -51,10 +51,7 @@ vi.mock('@/lib/social/follow-events.server', () => ({
   invalidateAudience: (id: string) => {
     h.invalidatedAudience.push(id);
   },
-  recordFollowEvent: async (
-    _tx: unknown,
-    e: { followerId: string; followingId: string; kind: string },
-  ) => {
+  recordFollowEvent: async (_tx: unknown, e: { followerId: string; followingId: string; kind: string }) => {
     if (h.failEvent) throw new Error('event insert failed');
     h.events.push({ ...e, createdAt: new Date() });
   },
@@ -84,11 +81,7 @@ vi.mock('@/lib/prisma.server', () => {
         h.edges = h.edges.filter((e) => !matches(e, where));
         return { count: before - h.edges.length };
       },
-      delete: async ({
-        where,
-      }: {
-        where: { followerId_followingId: { followerId: string; followingId: string } };
-      }) => {
+      delete: async ({ where }: { where: { followerId_followingId: { followerId: string; followingId: string } } }) => {
         h.edges = h.edges.filter((e) => !matches(e, where.followerId_followingId));
         return {};
       },
@@ -108,8 +101,7 @@ vi.mock('@/lib/prisma.server', () => {
       }) => {
         const row = count(where.id);
         if (data.followerCount && row.followerCount > 0) row.followerCount -= data.followerCount.decrement;
-        if (data.followingCount && row.followingCount > 0)
-          row.followingCount -= data.followingCount.decrement;
+        if (data.followingCount && row.followingCount > 0) row.followingCount -= data.followingCount.decrement;
         return { count: 1 };
       },
       update: async ({
@@ -126,14 +118,8 @@ vi.mock('@/lib/prisma.server', () => {
       },
     },
     userBlock: {
-      findFirst: async ({
-        where,
-      }: {
-        where: { OR: { blockerId: string; blockedId: string }[] };
-      }) =>
-        h.blocks.find((b) =>
-          where.OR.some((c) => c.blockerId === b.blockerId && c.blockedId === b.blockedId),
-        ) ?? null,
+      findFirst: async ({ where }: { where: { OR: { blockerId: string; blockedId: string }[] } }) =>
+        h.blocks.find((b) => where.OR.some((c) => c.blockerId === b.blockerId && c.blockedId === b.blockedId)) ?? null,
     },
     followEvent: {
       findFirst: async ({
@@ -173,12 +159,7 @@ vi.mock('@/lib/prisma.server', () => {
   return { prisma };
 });
 
-import {
-  bulkRemoveFollowers,
-  bulkUnfollow,
-  removeFollower,
-  undoUnfollow,
-} from '@/lib/social/follow-manager.server';
+import { bulkRemoveFollowers, bulkUnfollow, removeFollower, undoUnfollow } from '@/lib/social/follow-manager.server';
 import { followUser } from '@/lib/social/engagement.server';
 
 function follow(followerId: string, followingId: string) {
@@ -210,9 +191,7 @@ describe('removeFollower', () => {
     expect(h.edges).toHaveLength(0);
     expect(h.counts.me?.followerCount).toBe(39);
     expect(h.counts.ann?.followingCount).toBe(4);
-    expect(h.events).toEqual([
-      expect.objectContaining({ followerId: 'ann', followingId: 'me', kind: 'removed' }),
-    ]);
+    expect(h.events).toEqual([expect.objectContaining({ followerId: 'ann', followingId: 'me', kind: 'removed' })]);
     expect(h.invalidatedFollowing).toEqual(['ann']);
     expect(h.invalidatedAudience).toEqual(['me']);
   });

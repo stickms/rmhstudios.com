@@ -128,10 +128,7 @@ export function AudienceInsights() {
 
   const hasEngagement = data.engagement.some((row) => row.some((n) => n > 0));
   const nothingYet =
-    data.followerCount === 0 &&
-    data.logStart === null &&
-    data.newFollowers.length === 0 &&
-    !hasEngagement;
+    data.followerCount === 0 && data.logStart === null && data.newFollowers.length === 0 && !hasEngagement;
   if (nothingYet) {
     return (
       <section>
@@ -141,8 +138,7 @@ export function AudienceInsights() {
             defaultValue: 'No audience yet',
           })}
           description={t('empty-desc', {
-            defaultValue:
-              'When people follow you or engage with your posts, their numbers appear here.',
+            defaultValue: 'When people follow you or engage with your posts, their numbers appear here.',
           })}
         />
       </section>
@@ -185,8 +181,7 @@ export function AudienceInsights() {
   const logNote =
     data.logStart === null
       ? t('log-not-started', {
-          defaultValue:
-            'Losses are counted from your next follower change. Earlier days show gains only.',
+          defaultValue: 'Losses are counted from your next follower change. Earlier days show gains only.',
         })
       : first && data.logStart > first.date
         ? t('log-started', {
@@ -232,10 +227,7 @@ export function AudienceInsights() {
   };
 
   return (
-    <section
-      aria-labelledby="audience-heading"
-      className={cn('space-y-[var(--site-section-gap)]', arrival)}
-    >
+    <section aria-labelledby="audience-heading" className={cn('space-y-[var(--site-section-gap)]', arrival)}>
       <div className="space-y-3">
         {heading}
         <Tabs
@@ -346,8 +338,7 @@ export function AudienceInsights() {
         </h3>
         <p className="t-meta">
           {t('hours-note', {
-            defaultValue:
-              'Likes, comments and reposts on your posts over the last 90 days, in your time zone.',
+            defaultValue: 'Likes, comments and reposts on your posts over the last 90 days, in your time zone.',
           })}
         </p>
         <EngagementHoursGrid grid={data.engagement} />
@@ -368,8 +359,7 @@ export function AudienceInsights() {
         ) : (
           <p className="t-body text-site-text">
             {t('mutuals-share', {
-              defaultValue:
-                'You follow back {{share}} of your followers ({{mutual}} of {{followers}}).',
+              defaultValue: 'You follow back {{share}} of your followers ({{mutual}} of {{followers}}).',
               share: percent.format(data.mutuals.mutual / data.mutuals.followers),
               mutual: number.format(data.mutuals.mutual),
               followers: number.format(data.mutuals.followers),

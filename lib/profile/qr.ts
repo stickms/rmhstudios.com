@@ -9,46 +9,16 @@
 import qrcode from 'qrcode-generator';
 
 /** The module matrix for `text` (`true` = dark). Throws if the text cannot fit. */
-export function qrMatrix(
-  text: string,
-): boolean[][] {
-  const qr =
-    qrcode(
-      0,
-      'M',
-    );
-  qr.addData(
-    text,
-    'Byte',
-  );
+export function qrMatrix(text: string): boolean[][] {
+  const qr = qrcode(0, 'M');
+  qr.addData(text, 'Byte');
   qr.make();
-  const n =
-    qr.getModuleCount();
-  const rows: boolean[][] =
-    [];
-  for (
-    let r = 0;
-    r <
-    n;
-    r++
-  ) {
-    const row: boolean[] =
-      [];
-    for (
-      let c = 0;
-      c <
-      n;
-      c++
-    )
-      row.push(
-        qr.isDark(
-          r,
-          c,
-        ),
-      );
-    rows.push(
-      row,
-    );
+  const n = qr.getModuleCount();
+  const rows: boolean[][] = [];
+  for (let r = 0; r < n; r++) {
+    const row: boolean[] = [];
+    for (let c = 0; c < n; c++) row.push(qr.isDark(r, c));
+    rows.push(row);
   }
   return rows;
 }
@@ -58,59 +28,22 @@ export function qrMatrix(
  * white plate), a quiet-zone `margin` measured in modules. One `<path>` of
  * horizontal runs, so a version-4 code is ~1 KB rather than hundreds of rects.
  */
-export function qrSvg(
-  text: string,
-  margin = 0,
-): string {
-  const m =
-    qrMatrix(
-      text,
-    );
-  const n =
-    m.length;
-  const size =
-    n +
-    margin *
-      2;
-  let d =
-    '';
-  for (
-    let r = 0;
-    r <
-    n;
-    r++
-  ) {
+export function qrSvg(text: string, margin = 0): string {
+  const m = qrMatrix(text);
+  const n = m.length;
+  const size = n + margin * 2;
+  let d = '';
+  for (let r = 0; r < n; r++) {
     let c = 0;
-    while (
-      c <
-      n
-    ) {
-      if (
-        !m[
-          r
-        ]![
-          c
-        ]
-      ) {
+    while (c < n) {
+      if (!m[r]![c]) {
         c++;
         continue;
       }
       let run = 1;
-      while (
-        c +
-          run <
-          n &&
-        m[
-          r
-        ]![
-          c +
-            run
-        ]
-      )
-        run++;
+      while (c + run < n && m[r]![c + run]) run++;
       d += `M${c + margin} ${r + margin}h${run}v1h-${run}z`;
-      c +=
-        run;
+      c += run;
     }
   }
   return (
@@ -121,9 +54,6 @@ export function qrSvg(
 }
 
 /** `data:` URI form of {@link qrSvg}, for an `<img>` in a satori tree. */
-export function qrSvgDataUri(
-  text: string,
-  margin = 0,
-): string {
+export function qrSvgDataUri(text: string, margin = 0): string {
   return `data:image/svg+xml;base64,${Buffer.from(qrSvg(text, margin)).toString('base64')}`;
 }

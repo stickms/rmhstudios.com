@@ -23,13 +23,7 @@
     "borderStyle": "2px solid gold with small marquee-bulb dots along the top edge",
     "texture": "velvet vignette with fine film grain"
   },
-  "motifs": [
-    "marquee bulbs",
-    "fanged archway",
-    "playing-card suits",
-    "slot reels showing 777",
-    "checkerboard floor"
-  ],
+  "motifs": ["marquee bulbs", "fanged archway", "playing-card suits", "slot reels showing 777", "checkerboard floor"],
   "buttonStyle": "Primary is a gold gradient plate with dark red Abril text and glowing bulb dots on its border; secondary is a dark red plate with a thin gold outline and cream text.",
   "backdrop": "Deep red radial glow behind a dark archway silhouette, with marquee bulbs twinkling one at a time (opacity only, each at most once per second) and slow drifting dust.",
   "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."

@@ -19,19 +19,9 @@ export function ReadingToolbar({
   rootRef: RefObject<HTMLElement | null>;
   resetKey: string;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'f-reading',
-    );
-  const [
-    ruler,
-    setRuler,
-  ] =
-    useReadingRuler();
-  const id =
-    useId();
+  const { t } = useTranslation('f-reading');
+  const [ruler, setRuler] = useReadingRuler();
+  const id = useId();
   return (
     <div
       data-rf-skip=""
@@ -39,49 +29,23 @@ export function ReadingToolbar({
     >
       <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
         <Switch
-          id={
-            id
-          }
-          checked={
-            ruler
-          }
-          onCheckedChange={
-            setRuler
-          }
+          id={id}
+          checked={ruler}
+          onCheckedChange={setRuler}
           aria-labelledby={`${id}-label`}
           aria-describedby={`${id}-hint`}
         />
-        <span
-          id={`${id}-label`}
-        >
-          {t(
-            'ruler-label',
-            {
-              defaultValue:
-                'Reading ruler',
-            },
-          )}
+        <span id={`${id}-label`}>
+          {t('ruler-label', {
+            defaultValue: 'Reading ruler',
+          })}
         </span>
-        <span
-          id={`${id}-hint`}
-          className="sr-only"
-        >
-          {t(
-            'ruler-hint',
-            {
-              defaultValue:
-                'Dims everything except a line of text. Move it with the up and down arrow keys.',
-            },
-          )}
+        <span id={`${id}-hint`} className="sr-only">
+          {t('ruler-hint', {
+            defaultValue: 'Dims everything except a line of text. Move it with the up and down arrow keys.',
+          })}
         </span>
-        <ListenButton
-          rootRef={
-            rootRef
-          }
-          resetKey={
-            resetKey
-          }
-        />
+        <ListenButton rootRef={rootRef} resetKey={resetKey} />
       </span>
       <Link
         to="/library"
@@ -91,13 +55,9 @@ export function ReadingToolbar({
         }}
         className="text-site-accent underline-offset-4 hover:underline"
       >
-        {t(
-          'my-highlights-link',
-          {
-            defaultValue:
-              'My highlights',
-          },
-        )}
+        {t('my-highlights-link', {
+          defaultValue: 'My highlights',
+        })}
       </Link>
     </div>
   );

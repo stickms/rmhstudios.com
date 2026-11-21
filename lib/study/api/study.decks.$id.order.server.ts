@@ -6,13 +6,9 @@ import { reorderCards } from '@/lib/study/deck-editor.server';
 
 /** PUT /api/study/decks/$id/order — the deck's cards in a new order (owner). */
 export const route = apiRoute('/api/study/decks/$id/order', {
-  PUT: implement(
-    reorderCardsApi,
-    { rateLimit: 'write', body: reorderCardsBody },
-    async ({ userId, params, body }) => {
-      const result = await reorderCards(userId, params.id, body.cardIds);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-      return { success: true as const };
-    },
-  ),
+  PUT: implement(reorderCardsApi, { rateLimit: 'write', body: reorderCardsBody }, async ({ userId, params, body }) => {
+    const result = await reorderCards(userId, params.id, body.cardIds);
+    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    return { success: true as const };
+  }),
 });

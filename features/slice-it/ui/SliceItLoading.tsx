@@ -92,15 +92,8 @@ export function SliceItLoading() {
           {
             length: 9,
           },
-          (
-            _,
-            i,
-          ) => (
-            <SkeletonRow
-              key={
-                i
-              }
-            />
+          (_, i) => (
+            <SkeletonRow key={i} />
           ),
         )}
       </ul>

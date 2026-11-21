@@ -7,19 +7,10 @@ import { noindexHead } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import LessonsIndex from '@/components/rmhtype/lessons/LessonsIndex';
 
-export const Route =
-  createFileRoute(
-    '/rmhtype/lessons/',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'Touch-typing Lessons',
-        ),
-      component:
-        LessonsRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhtype/lessons/')({
+  head: () => noindexHead('Touch-typing Lessons'),
+  component: LessonsRoute,
+});
 
 function LessonsRoute() {
   return (

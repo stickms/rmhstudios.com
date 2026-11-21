@@ -105,9 +105,7 @@ export async function readFeedPage(
   const cur = parseCursor(opts.cursor);
   const and: Prisma.RMHarkWhereInput[] = [
     visible as Prisma.RMHarkWhereInput,
-    ...(cur
-      ? [{ OR: [{ createdAt: { lt: cur.at } }, { createdAt: cur.at, id: { lt: cur.id } }] }]
-      : []),
+    ...(cur ? [{ OR: [{ createdAt: { lt: cur.at } }, { createdAt: cur.at, id: { lt: cur.id } }] }] : []),
   ];
   const top = { threadRootId: null, communityId: null } as const;
   const recent = { createdAt: { gte: new Date(Date.now() - KEYWORD_WINDOW_MS) } };
@@ -167,20 +165,14 @@ export async function readFeedPage(
         .findMany({
           where: {
             ...top,
-            AND: [
-              ...and,
-              recent,
-              ...(first ? [{ content: { contains: first, mode: 'insensitive' as const } }] : []),
-            ],
+            AND: [...and, recent, ...(first ? [{ content: { contains: first, mode: 'insensitive' as const } }] : [])],
           },
           orderBy: order,
           take: take * ALERT_SCAN,
           select: { ...sel, content: true },
         })
         .then((rows) =>
-          rows
-            .filter((r) => matches(compiled, r.content))
-            .map((r) => ({ id: r.id, createdAt: r.createdAt })),
+          rows.filter((r) => matches(compiled, r.content)).map((r) => ({ id: r.id, createdAt: r.createdAt })),
         ),
     );
   }
@@ -195,8 +187,7 @@ export async function readFeedPage(
   const last = page[page.length - 1];
   return {
     page,
-    nextCursor:
-      ordered.length > opts.pageSize && last ? `${last.createdAt.toISOString()}|${last.id}` : null,
+    nextCursor: ordered.length > opts.pageSize && last ? `${last.createdAt.toISOString()}|${last.id}` : null,
   };
 }
 

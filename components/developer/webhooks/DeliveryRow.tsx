@@ -38,13 +38,9 @@ export function DeliveryRow({ delivery, redelivering, onRedeliver }: DeliveryRow
             ? t('row-no-response', { defaultValue: 'No response' })
             : t('row-http', { defaultValue: 'HTTP {{status}}', status: delivery.responseStatus })}
         </span>
-        <span className="t-meta">
-          {t('row-attempts', { defaultValue: 'Attempts: {{n}}', n: delivery.attempts })}
-        </span>
+        <span className="t-meta">{t('row-attempts', { defaultValue: 'Attempts: {{n}}', n: delivery.attempts })}</span>
         {delivery.durationMs !== null && (
-          <span className="t-meta">
-            {t('row-duration', { defaultValue: '{{ms}} ms', ms: delivery.durationMs })}
-          </span>
+          <span className="t-meta">{t('row-duration', { defaultValue: '{{ms}} ms', ms: delivery.durationMs })}</span>
         )}
         <time className="t-meta ms-auto" dateTime={delivery.createdAt}>
           {formatWhen(delivery.createdAt)}

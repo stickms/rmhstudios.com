@@ -1,9 +1,5 @@
 import type * as ToneNS from 'tone';
-import type {
-  PluginParam,
-  PluginPreset,
-  PluginType,
-} from '../types';
+import type { PluginParam, PluginPreset, PluginType } from '../types';
 
 /**
  * Common interface all studio plugins (instruments + effects) must implement.
@@ -15,17 +11,13 @@ export interface StudioPlugin {
   readonly category: string;
 
   /** Create the underlying Tone.js audio node(s). */
-  createNode(
-    tone: typeof ToneNS,
-  ): ToneNS.ToneAudioNode;
+  createNode(tone: typeof ToneNS): ToneNS.ToneAudioNode;
 
   /** Get the created node (after createNode). */
   getNode(): ToneNS.ToneAudioNode | null;
 
   /** Connect output to a destination. */
-  connect(
-    destination: ToneNS.InputNode,
-  ): void;
+  connect(destination: ToneNS.InputNode): void;
 
   /** Disconnect from everything. */
   disconnect(): void;
@@ -37,37 +29,22 @@ export interface StudioPlugin {
   getParams(): PluginParam[];
 
   /** Get current value of a parameter. */
-  getParam(
-    name: string,
-  ): number;
+  getParam(name: string): number;
 
   /** Set a parameter value. */
-  setParam(
-    name: string,
-    value: number,
-  ): void;
+  setParam(name: string, value: number): void;
 
   /** Get all parameter values as a map. */
-  getAllParams(): Record<
-    string,
-    number
-  >;
+  getAllParams(): Record<string, number>;
 
   /** Set all parameter values from a map. */
-  setAllParams(
-    params: Record<
-      string,
-      number
-    >,
-  ): void;
+  setAllParams(params: Record<string, number>): void;
 
   /** Get available presets. */
   getPresets(): PluginPreset[];
 
   /** Load a preset by setting all params. */
-  loadPreset(
-    preset: PluginPreset,
-  ): void;
+  loadPreset(preset: PluginPreset): void;
 }
 
 /**
@@ -76,32 +53,10 @@ export interface StudioPlugin {
 export interface InstrumentPlugin extends StudioPlugin {
   readonly type: 'instrument';
 
-  triggerAttack(
-    note:
-      | string
-      | number,
-    velocity?: number,
-    time?: number,
-  ): void;
-  triggerRelease(
-    note:
-      | string
-      | number,
-    time?: number,
-  ): void;
-  triggerAttackRelease(
-    note:
-      | string
-      | number,
-    duration:
-      | number
-      | string,
-    time?: number,
-    velocity?: number,
-  ): void;
-  releaseAll(
-    time?: number,
-  ): void;
+  triggerAttack(note: string | number, velocity?: number, time?: number): void;
+  triggerRelease(note: string | number, time?: number): void;
+  triggerAttackRelease(note: string | number, duration: number | string, time?: number, velocity?: number): void;
+  releaseAll(time?: number): void;
 }
 
 /**
@@ -110,8 +65,6 @@ export interface InstrumentPlugin extends StudioPlugin {
 export interface EffectPlugin extends StudioPlugin {
   readonly type: 'effect';
   /** Wet/dry mix 0–1 */
-  setWet(
-    value: number,
-  ): void;
+  setWet(value: number): void;
   getWet(): number;
 }

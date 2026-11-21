@@ -73,8 +73,7 @@
   max-width: 1180px;
   margin: 0 auto;
   width: 100%;
-  padding: calc(var(--safe-top, 0px) + 16px) max(16px, var(--safe-right, 0px)) 32px
-    max(16px, var(--safe-left, 0px));
+  padding: calc(var(--safe-top, 0px) + 16px) max(16px, var(--safe-right, 0px)) 32px max(16px, var(--safe-left, 0px));
 }
 
 /* Six ability blocks: three across on a phone, six on a desktop. */

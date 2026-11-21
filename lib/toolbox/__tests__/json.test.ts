@@ -9,7 +9,21 @@ describe('validateJson', () => {
   });
 
   it('agrees with JSON.parse on a set of broken documents', () => {
-    for (const doc of ['{', '[1,]', '{"a":1,}', "{'a':1}", '01', '1.', '"\\x"', '[1 2]', '{"a" 1}', 'tru', '"a\tb"', '{} x', '-']) {
+    for (const doc of [
+      '{',
+      '[1,]',
+      '{"a":1,}',
+      "{'a':1}",
+      '01',
+      '1.',
+      '"\\x"',
+      '[1 2]',
+      '{"a" 1}',
+      'tru',
+      '"a\tb"',
+      '{} x',
+      '-',
+    ]) {
       expect(() => JSON.parse(doc), doc).toThrow();
       expect(validateJson(doc), doc).not.toBeNull();
     }
@@ -35,7 +49,10 @@ describe('formatJson', () => {
   it('indents, minifies and sorts', () => {
     const doc = '{"b":1,"a":[1,2]}';
     expect(formatJson(doc, '2')).toMatchObject({ ok: true, text: '{\n  "b": 1,\n  "a": [\n    1,\n    2\n  ]\n}' });
-    expect(formatJson(doc, 'tab', true)).toMatchObject({ ok: true, text: '{\n\t"a": [\n\t\t1,\n\t\t2\n\t],\n\t"b": 1\n}' });
+    expect(formatJson(doc, 'tab', true)).toMatchObject({
+      ok: true,
+      text: '{\n\t"a": [\n\t\t1,\n\t\t2\n\t],\n\t"b": 1\n}',
+    });
     expect(formatJson(' { "b" : 1 } ', 'minify')).toMatchObject({ ok: true, text: '{"b":1}' });
   });
 

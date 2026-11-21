@@ -2,30 +2,15 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import {
-  DoorOpen,
-  Lock,
-  Globe,
-  MonitorPlay,
-} from 'lucide-react';
+import { DoorOpen, Lock, Globe, MonitorPlay } from 'lucide-react';
 import { useSession } from '@/components/Providers';
-import {
-  isRoomCode,
-  ROOM_NAME_MAX,
-} from '@/lib/elections/room-config';
+import { isRoomCode, ROOM_NAME_MAX } from '@/lib/elections/room-config';
 import type { RoomListItem } from '@/lib/elections/rooms';
 import type { RoomSource } from './useRoomState';
 import { api } from '@/lib/contract/client';
-import {
-  listElectionRoomsApi,
-  createElectionRoomApi,
-} from '@/lib/elections/elections.contract';
+import { listElectionRoomsApi, createElectionRoomApi } from '@/lib/elections/elections.contract';
 import { serverError } from '@/lib/http';
-import {
-  ARRIVE,
-  useArrival,
-  useArrivingKeys,
-} from '@/components/ui/arrive';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 /**
@@ -35,198 +20,78 @@ import { cn } from '@/lib/utils';
  *  - PUBLIC — listed here for everyone watching this election.
  * Joining needs no account to WATCH; creating a room, chatting and reacting do.
  */
-export function RoomLobby({
-  cycle,
-  onOpen,
-}: {
-  cycle: string;
-  onOpen: (
-    s: RoomSource,
-  ) => void;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-elections',
-    );
-  const {
-    data: session,
-  } =
-    useSession();
-  const [
-    name,
-    setName,
-  ] =
-    useState(
-      '',
-    );
-  const [
-    visibility,
-    setVisibility,
-  ] =
-    useState<
-      | 'PRIVATE'
-      | 'PUBLIC'
-    >(
-      'PRIVATE',
-    );
-  const [
-    code,
-    setCode,
-  ] =
-    useState(
-      '',
-    );
-  const [
-    busy,
-    setBusy,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    error,
-    setError,
-  ] =
-    useState<
-      | string
-      | null
-    >(
-      null,
-    );
+export function RoomLobby({ cycle, onOpen }: { cycle: string; onOpen: (s: RoomSource) => void }) {
+  const { t } = useTranslation('c-elections');
+  const { data: session } = useSession();
+  const [name, setName] = useState('');
+  const [visibility, setVisibility] = useState<'PRIVATE' | 'PUBLIC'>('PRIVATE');
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const {
-    data,
-  } =
-    useQuery<{
-      rooms: RoomListItem[];
-    }>(
-      {
-        queryKey:
-          [
-            'elections-rooms',
-            cycle,
-          ],
-        queryFn:
-          async () => {
-            return api(
-              listElectionRoomsApi,
-              {
-                query:
-                  {
-                    cycle,
-                  },
-                retries: 0,
-              },
-            );
-          },
-        refetchInterval: 20_000,
-        staleTime: 5_000,
-        retry: 1,
-      },
-    );
-  const arrival =
-    useArrival(
-      !!data,
-    );
-  const isNew =
-    useArrivingKeys(
-      data?.rooms.map(
-        (
-          r,
-        ) =>
-          r.code,
-      ) ??
-        [],
-    );
+  const { data } = useQuery<{
+    rooms: RoomListItem[];
+  }>({
+    queryKey: ['elections-rooms', cycle],
+    queryFn: async () => {
+      return api(listElectionRoomsApi, {
+        query: {
+          cycle,
+        },
+        retries: 0,
+      });
+    },
+    refetchInterval: 20_000,
+    staleTime: 5_000,
+    retry: 1,
+  });
+  const arrival = useArrival(!!data);
+  const isNew = useArrivingKeys(data?.rooms.map((r) => r.code) ?? []);
 
-  const create =
-    async (
-      e: React.FormEvent,
-    ) => {
-      e.preventDefault();
-      if (
-        busy
-      )
-        return;
-      setBusy(
-        true,
-      );
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { room } = await api(createElectionRoomApi, {
+        body: {
+          name: name.trim(),
+          visibility,
+          cycle,
+        },
+      });
+      onOpen({
+        kind: 'hosted',
+        code: room.code,
+      });
+    } catch (err) {
       setError(
-        null,
+        serverError(err) ??
+          t('lobby.createFail', {
+            defaultValue: 'Could not create the room.',
+          }),
       );
-      try {
-        const {
-          room,
-        } =
-          await api(
-            createElectionRoomApi,
-            {
-              body: {
-                name: name.trim(),
-                visibility,
-                cycle,
-              },
-            },
-          );
-        onOpen(
-          {
-            kind: 'hosted',
-            code: room.code,
-          },
-        );
-      } catch (err) {
-        setError(
-          serverError(
-            err,
-          ) ??
-            t(
-              'lobby.createFail',
-              {
-                defaultValue:
-                  'Could not create the room.',
-              },
-            ),
-        );
-      } finally {
-        setBusy(
-          false,
-        );
-      }
-    };
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  const join =
-    (
-      e: React.FormEvent,
-    ) => {
-      e.preventDefault();
-      const c =
-        code
-          .trim()
-          .toUpperCase();
-      if (
-        isRoomCode(
-          c,
-        )
-      )
-        onOpen(
-          {
-            kind: 'hosted',
-            code: c,
-          },
-        );
-      else
-        setError(
-          t(
-            'lobby.badCode',
-            {
-              defaultValue:
-                'Room codes are 8 letters and numbers.',
-            },
-          ),
-        );
-    };
+  const join = (e: React.FormEvent) => {
+    e.preventDefault();
+    const c = code.trim().toUpperCase();
+    if (isRoomCode(c))
+      onOpen({
+        kind: 'hosted',
+        code: c,
+      });
+    else
+      setError(
+        t('lobby.badCode', {
+          defaultValue: 'Room codes are 8 letters and numbers.',
+        }),
+      );
+  };
 
   return (
     <div className="el-lobby">
@@ -243,50 +108,33 @@ export function RoomLobby({
           }}
         >
           <MonitorPlay
-            size={
-              22
-            }
+            size={22}
             aria-hidden
             style={{
-              verticalAlign:
-                -3,
+              verticalAlign: -3,
             }}
           />{' '}
-          {t(
-            'lobby.solo',
-            {
-              defaultValue:
-                'Solo room',
-            },
-          )}
+          {t('lobby.solo', {
+            defaultValue: 'Solo room',
+          })}
         </h3>
         <p className="el-eyebrow">
-          {t(
-            'lobby.soloHint',
-            {
-              defaultValue:
-                'Your own screen. Streams, graphs, the map and the wire side by side. Saved in this browser.',
-            },
-          )}
+          {t('lobby.soloHint', {
+            defaultValue: 'Your own screen. Streams, graphs, the map and the wire side by side. Saved in this browser.',
+          })}
         </p>
         <button
           type="button"
           className="el-btn"
           onClick={() =>
-            onOpen(
-              {
-                kind: 'solo',
-              },
-            )
+            onOpen({
+              kind: 'solo',
+            })
           }
         >
-          {t(
-            'lobby.startBriefing',
-            {
-              defaultValue:
-                'Open the Briefing Room',
-            },
-          )}
+          {t('lobby.startBriefing', {
+            defaultValue: 'Open the Briefing Room',
+          })}
         </button>
       </div>
 
@@ -303,78 +151,39 @@ export function RoomLobby({
           }}
         >
           <DoorOpen
-            size={
-              22
-            }
+            size={22}
             aria-hidden
             style={{
-              verticalAlign:
-                -3,
+              verticalAlign: -3,
             }}
           />{' '}
-          {t(
-            'lobby.host',
-            {
-              defaultValue:
-                'Host a room',
-            },
-          )}
+          {t('lobby.host', {
+            defaultValue: 'Host a room',
+          })}
         </h3>
         {session ? (
-          <form
-            onSubmit={
-              create
-            }
-            className="el-stack"
-          >
-            <label
-              className="el-sr"
-              htmlFor="room-name"
-            >
-              {t(
-                'lobby.name',
-                {
-                  defaultValue:
-                    'Room name',
-                },
-              )}
+          <form onSubmit={create} className="el-stack">
+            <label className="el-sr" htmlFor="room-name">
+              {t('lobby.name', {
+                defaultValue: 'Room name',
+              })}
             </label>
             <input
               id="room-name"
               className="el-input"
-              value={
-                name
-              }
-              maxLength={
-                ROOM_NAME_MAX
-              }
-              placeholder={t(
-                'lobby.namePh',
-                {
-                  defaultValue:
-                    'Election night with friends',
-                },
-              )}
-              onChange={(
-                e,
-              ) =>
-                setName(
-                  e
-                    .target
-                    .value,
-                )
-              }
+              value={name}
+              maxLength={ROOM_NAME_MAX}
+              placeholder={t('lobby.namePh', {
+                defaultValue: 'Election night with friends',
+              })}
+              onChange={(e) => setName(e.target.value)}
             />
             <div
               className="el-pick-row"
               role="group"
-              aria-label={t(
-                'lobby.visibility',
-                {
-                  defaultValue:
-                    'Who can find it',
-                },
-              )}
+              aria-label={t('lobby.visibility', {
+                defaultValue: 'Who can find it',
+              })}
               style={{
                 margin: 0,
               }}
@@ -382,83 +191,34 @@ export function RoomLobby({
               <button
                 type="button"
                 className="el-btn el-btn--sm"
-                aria-pressed={
-                  visibility ===
-                  'PRIVATE'
-                }
-                onClick={() =>
-                  setVisibility(
-                    'PRIVATE',
-                  )
-                }
+                aria-pressed={visibility === 'PRIVATE'}
+                onClick={() => setVisibility('PRIVATE')}
               >
-                <Lock
-                  size={
-                    13
-                  }
-                  aria-hidden
-                />{' '}
-                {t(
-                  'lobby.private',
-                  {
-                    defaultValue:
-                      'Private (code only)',
-                  },
-                )}
+                <Lock size={13} aria-hidden />{' '}
+                {t('lobby.private', {
+                  defaultValue: 'Private (code only)',
+                })}
               </button>
               <button
                 type="button"
                 className="el-btn el-btn--sm"
-                aria-pressed={
-                  visibility ===
-                  'PUBLIC'
-                }
-                onClick={() =>
-                  setVisibility(
-                    'PUBLIC',
-                  )
-                }
+                aria-pressed={visibility === 'PUBLIC'}
+                onClick={() => setVisibility('PUBLIC')}
               >
-                <Globe
-                  size={
-                    13
-                  }
-                  aria-hidden
-                />{' '}
-                {t(
-                  'lobby.public',
-                  {
-                    defaultValue:
-                      'Public (listed)',
-                  },
-                )}
+                <Globe size={13} aria-hidden />{' '}
+                {t('lobby.public', {
+                  defaultValue: 'Public (listed)',
+                })}
               </button>
             </div>
-            <button
-              type="submit"
-              className="el-btn el-btn--pink"
-              disabled={
-                busy ||
-                name.trim()
-                  .length <
-                  2
-              }
-            >
+            <button type="submit" className="el-btn el-btn--pink" disabled={busy || name.trim().length < 2}>
               {busy
-                ? t(
-                    'lobby.creating',
-                    {
-                      defaultValue:
-                        'Creating…',
-                    },
-                  )
-                : t(
-                    'lobby.create',
-                    {
-                      defaultValue:
-                        'Create room',
-                    },
-                  )}
+                ? t('lobby.creating', {
+                    defaultValue: 'Creating…',
+                  })
+                : t('lobby.create', {
+                    defaultValue: 'Create room',
+                  })}
             </button>
           </form>
         ) : (
@@ -466,29 +226,19 @@ export function RoomLobby({
             <Link
               to="/login"
               search={{
-                callbackURL:
-                  '/elections',
+                callbackURL: '/elections',
               }}
               style={{
-                textDecoration:
-                  'underline',
+                textDecoration: 'underline',
               }}
             >
-              {t(
-                'lobby.signin',
-                {
-                  defaultValue:
-                    'Sign in',
-                },
-              )}
+              {t('lobby.signin', {
+                defaultValue: 'Sign in',
+              })}
             </Link>{' '}
-            {t(
-              'lobby.signinRest',
-              {
-                defaultValue:
-                  'to host a private or public room.',
-              },
-            )}
+            {t('lobby.signinRest', {
+              defaultValue: 'to host a private or public room.',
+            })}
           </p>
         )}
       </div>
@@ -505,36 +255,22 @@ export function RoomLobby({
             fontSize: 28,
           }}
         >
-          {t(
-            'lobby.join',
-            {
-              defaultValue:
-                'Join by code',
-            },
-          )}
+          {t('lobby.join', {
+            defaultValue: 'Join by code',
+          })}
         </h3>
         <form
-          onSubmit={
-            join
-          }
+          onSubmit={join}
           className="el-pick-row"
           style={{
-            flexWrap:
-              'nowrap',
+            flexWrap: 'nowrap',
             margin: 0,
           }}
         >
-          <label
-            className="el-sr"
-            htmlFor="room-code"
-          >
-            {t(
-              'lobby.code',
-              {
-                defaultValue:
-                  'Room code',
-              },
-            )}
+          <label className="el-sr" htmlFor="room-code">
+            {t('lobby.code', {
+              defaultValue: 'Room code',
+            })}
           </label>
           <input
             id="room-code"
@@ -542,44 +278,23 @@ export function RoomLobby({
             style={{
               flex: 1,
               minWidth: 0,
-              textTransform:
-                'uppercase',
-              letterSpacing:
-                '0.12em',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
             }}
-            value={
-              code
-            }
-            maxLength={
-              8
-            }
+            value={code}
+            maxLength={8}
             autoComplete="off"
             autoCapitalize="characters"
             placeholder="K7M2QXH9"
-            onChange={(
-              e,
-            ) => {
-              setCode(
-                e
-                  .target
-                  .value,
-              );
-              setError(
-                null,
-              );
+            onChange={(e) => {
+              setCode(e.target.value);
+              setError(null);
             }}
           />
-          <button
-            type="submit"
-            className="el-btn el-btn--pink"
-          >
-            {t(
-              'lobby.go',
-              {
-                defaultValue:
-                  'Join',
-              },
-            )}
+          <button type="submit" className="el-btn el-btn--pink">
+            {t('lobby.go', {
+              defaultValue: 'Join',
+            })}
           </button>
         </form>
       </div>
@@ -589,20 +304,16 @@ export function RoomLobby({
           className="el-eyebrow"
           role="alert"
           style={{
-            gridColumn:
-              '1 / -1',
+            gridColumn: '1 / -1',
           }}
         >
-          {
-            error
-          }
+          {error}
         </p>
       ) : null}
 
       <div
         style={{
-          gridColumn:
-            '1 / -1',
+          gridColumn: '1 / -1',
         }}
       >
         <h3
@@ -611,122 +322,54 @@ export function RoomLobby({
             fontSize: 28,
           }}
         >
-          {t(
-            'lobby.open',
-            {
-              defaultValue:
-                'Public rooms',
-            },
-          )}
+          {t('lobby.open', {
+            defaultValue: 'Public rooms',
+          })}
         </h3>
-        {data &&
-        data
-          .rooms
-          .length ===
-          0 ? (
-          <p
-            className={cn(
-              'el-eyebrow',
-              arrival,
-            )}
-          >
-            {t(
-              'lobby.none',
-              {
-                defaultValue:
-                  'No public rooms yet. Host the first.',
-              },
-            )}
+        {data && data.rooms.length === 0 ? (
+          <p className={cn('el-eyebrow', arrival)}>
+            {t('lobby.none', {
+              defaultValue: 'No public rooms yet. Host the first.',
+            })}
           </p>
         ) : (
-          <div
-            className={cn(
-              'el-cards',
-              arrival,
-            )}
-          >
-            {(
-              data?.rooms ??
-              []
-            ).map(
-              (
-                r,
-              ) => (
-                <article
-                  key={
-                    r.code
-                  }
-                  className={cn(
-                    'el-race el-box',
-                    isNew(
-                      r.code,
-                    ) &&
-                      ARRIVE,
-                  )}
-                  aria-label={
-                    r.name
-                  }
+          <div className={cn('el-cards', arrival)}>
+            {(data?.rooms ?? []).map((r) => (
+              <article key={r.code} className={cn('el-race el-box', isNew(r.code) && ARRIVE)} aria-label={r.name}>
+                <h4 className="el-race__label">{r.name}</h4>
+                <p
+                  className="el-eyebrow"
+                  style={{
+                    margin: '8px 0 0',
+                  }}
                 >
-                  <h4 className="el-race__label">
-                    {
-                      r.name
+                  {r.owner?.name
+                    ? t('room.host', {
+                        defaultValue: 'hosted by {{name}}',
+                        name: r.owner.name,
+                      })
+                    : ''}{' '}
+                  {r.summary ? `· ${r.summary}` : ''}
+                </p>
+                <footer className="el-race__foot">
+                  <span className="el-mono">{r.code}</span>
+                  <button
+                    type="button"
+                    className="el-btn el-btn--sm el-btn--pink"
+                    onClick={() =>
+                      onOpen({
+                        kind: 'hosted',
+                        code: r.code,
+                      })
                     }
-                  </h4>
-                  <p
-                    className="el-eyebrow"
-                    style={{
-                      margin:
-                        '8px 0 0',
-                    }}
                   >
-                    {r
-                      .owner
-                      ?.name
-                      ? t(
-                          'room.host',
-                          {
-                            defaultValue:
-                              'hosted by {{name}}',
-                            name: r
-                              .owner
-                              .name,
-                          },
-                        )
-                      : ''}{' '}
-                    {r.summary
-                      ? `· ${r.summary}`
-                      : ''}
-                  </p>
-                  <footer className="el-race__foot">
-                    <span className="el-mono">
-                      {
-                        r.code
-                      }
-                    </span>
-                    <button
-                      type="button"
-                      className="el-btn el-btn--sm el-btn--pink"
-                      onClick={() =>
-                        onOpen(
-                          {
-                            kind: 'hosted',
-                            code: r.code,
-                          },
-                        )
-                      }
-                    >
-                      {t(
-                        'lobby.joinRoom',
-                        {
-                          defaultValue:
-                            'Join',
-                        },
-                      )}
-                    </button>
-                  </footer>
-                </article>
-              ),
-            )}
+                    {t('lobby.joinRoom', {
+                      defaultValue: 'Join',
+                    })}
+                  </button>
+                </footer>
+              </article>
+            ))}
           </div>
         )}
       </div>

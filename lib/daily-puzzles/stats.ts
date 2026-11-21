@@ -17,127 +17,48 @@
 import { addDays } from '@/lib/calendar/tz';
 import { DESK_MODES } from '@/lib/daily-puzzles/desk-modes';
 
-export const STAT_MODES: readonly string[] =
-  DESK_MODES.map(
-    (
-      m,
-    ) =>
-      m.id,
-  );
+export const STAT_MODES: readonly string[] = DESK_MODES.map((m) => m.id);
 
 /** The columns of `DailyPuzzleScore` the statistics read. */
 export interface DailyStatRow {
   gameMode: string;
   dateKey: string;
   score: number;
-  moves:
-    | number
-    | null;
-  dnf:
-    | boolean
-    | null;
-  timeSeconds:
-    | number
-    | null;
+  moves: number | null;
+  dnf: boolean | null;
+  timeSeconds: number | null;
 }
 
 /** What a mode's figure measures: points (higher is better), moves or seconds (lower is better). */
-export type StatMetric =
-  | 'score'
-  | 'moves'
-  | 'time';
+export type StatMetric = 'score' | 'moves' | 'time';
 
-export function metricOf(
-  mode: string,
-): StatMetric {
-  if (
-    mode ===
-    'lights-out'
-  )
-    return 'moves';
-  if (
-    mode ===
-    'globeset'
-  )
-    return 'time';
+export function metricOf(mode: string): StatMetric {
+  if (mode === 'lights-out') return 'moves';
+  if (mode === 'globeset') return 'time';
   return 'score';
 }
 
 /** One distribution bucket: results from `min` up to and including `max` (`null` = no upper bound). */
 export interface StatBucket {
   min: number;
-  max:
-    | number
-    | null;
+  max: number | null;
   count: number;
 }
 
 /** Lower bound of each bucket, per metric. At most 8 each; the last is open-ended. */
-const BUCKET_STARTS: Record<
-  StatMetric,
-  readonly number[]
-> =
-  {
-    score:
-      [
-        0,
-        125,
-        250,
-        375,
-        500,
-        625,
-        750,
-        875,
-      ],
-    moves:
-      [
-        0,
-        6,
-        11,
-        16,
-        21,
-        31,
-        41,
-        61,
-      ],
-    time: [
-      0,
-      60,
-      120,
-      180,
-      300,
-      600,
-      900,
-      1800,
-    ],
-  };
+const BUCKET_STARTS: Record<StatMetric, readonly number[]> = {
+  score: [0, 125, 250, 375, 500, 625, 750, 875],
+  moves: [0, 6, 11, 16, 21, 31, 41, 61],
+  time: [0, 60, 120, 180, 300, 600, 900, 1800],
+};
 
-export function bucketsFor(
-  metric: StatMetric,
-): StatBucket[] {
-  const starts =
-    BUCKET_STARTS[
-      metric
-    ];
-  return starts.map(
-    (
-      min,
-      i,
-    ) => ({
-      min,
-      max:
-        i +
-          1 <
-        starts.length
-          ? starts[
-              i +
-                1
-            ] -
-            1
-          : null,
-      count: 0,
-    }),
-  );
+export function bucketsFor(metric: StatMetric): StatBucket[] {
+  const starts = BUCKET_STARTS[metric];
+  return starts.map((min, i) => ({
+    min,
+    max: i + 1 < starts.length ? starts[i + 1] - 1 : null,
+    count: 0,
+  }));
 }
 
 export interface ModeStats {
@@ -150,12 +71,8 @@ export interface ModeStats {
   currentStreak: number;
   longestStreak: number;
   /** Highest score, or fewest moves, or fastest time; null until a solve has the figure. */
-  best:
-    | number
-    | null;
-  average:
-    | number
-    | null;
+  best: number | null;
+  average: number | null;
   distribution: StatBucket[];
 }
 
@@ -166,27 +83,14 @@ export interface DailyStats {
   totalSolves: number;
   modes: ModeStats[];
   /** Day key -> the modes solved that day (a day with only unfinished runs is absent). */
-  days: Record<
-    string,
-    string[]
-  >;
+  days: Record<string, string[]>;
   /** The earliest day key in `days`, for calendar navigation; null with no solves. */
-  firstDay:
-    | string
-    | null;
+  firstDay: string | null;
 }
 
 /** Whether the run was finished by the player. */
-export function isSolved(
-  row: Pick<
-    DailyStatRow,
-    'dnf'
-  >,
-): boolean {
-  return (
-    row.dnf !==
-    true
-  );
+export function isSolved(row: Pick<DailyStatRow, 'dnf'>): boolean {
+  return row.dnf !== true;
 }
 
 /**
@@ -200,66 +104,20 @@ export function streaks(
   current: number;
   longest: number;
 } {
-  const set =
-    new Set(
-      dayKeys,
-    );
+  const set = new Set(dayKeys);
   let longest = 0;
   for (const key of set) {
-    if (
-      set.has(
-        addDays(
-          key,
-          -1,
-        ),
-      )
-    )
-      continue; // not the start of a run
+    if (set.has(addDays(key, -1))) continue; // not the start of a run
     let len = 0;
-    for (
-      let d =
-        key;
-      set.has(
-        d,
-      );
-      d =
-        addDays(
-          d,
-          1,
-        )
-    )
-      len++;
-    if (
-      len >
-      longest
-    )
-      longest =
-        len;
+    for (let d = key; set.has(d); d = addDays(d, 1)) len++;
+    if (len > longest) longest = len;
   }
-  let cursor =
-    todayKey;
-  if (
-    !set.has(
-      cursor,
-    )
-  )
-    cursor =
-      addDays(
-        todayKey,
-        -1,
-      );
+  let cursor = todayKey;
+  if (!set.has(cursor)) cursor = addDays(todayKey, -1);
   let current = 0;
-  while (
-    set.has(
-      cursor,
-    )
-  ) {
+  while (set.has(cursor)) {
     current++;
-    cursor =
-      addDays(
-        cursor,
-        -1,
-      );
+    cursor = addDays(cursor, -1);
   }
   return {
     current,
@@ -267,124 +125,35 @@ export function streaks(
   };
 }
 
-function modeStats(
-  mode: string,
-  rows: DailyStatRow[],
-  todayKey: string,
-): ModeStats {
-  const metric =
-    metricOf(
-      mode,
-    );
-  const solvedRows =
-    rows.filter(
-      isSolved,
-    );
-  const values: number[] =
-    [];
+function modeStats(mode: string, rows: DailyStatRow[], todayKey: string): ModeStats {
+  const metric = metricOf(mode);
+  const solvedRows = rows.filter(isSolved);
+  const values: number[] = [];
   for (const r of solvedRows) {
-    const v =
-      metric ===
-      'moves'
-        ? r.moves
-        : metric ===
-            'time'
-          ? r.timeSeconds
-          : r.score;
-    if (
-      typeof v ===
-        'number' &&
-      Number.isFinite(
-        v,
-      )
-    )
-      values.push(
-        v,
-      );
+    const v = metric === 'moves' ? r.moves : metric === 'time' ? r.timeSeconds : r.score;
+    if (typeof v === 'number' && Number.isFinite(v)) values.push(v);
   }
-  const distribution =
-    bucketsFor(
-      metric,
-    );
+  const distribution = bucketsFor(metric);
   for (const v of values) {
-    let i =
-      distribution.length -
-      1;
-    while (
-      i >
-        0 &&
-      v <
-        distribution[
-          i
-        ]
-          .min
-    )
-      i--;
-    distribution[
-      i
-    ]
-      .count++;
+    let i = distribution.length - 1;
+    while (i > 0 && v < distribution[i].min) i--;
+    distribution[i].count++;
   }
-  const {
-    current,
-    longest,
-  } =
-    streaks(
-      solvedRows.map(
-        (
-          r,
-        ) =>
-          r.dateKey,
-      ),
-      todayKey,
-    );
-  const best =
-    values.length ===
-    0
-      ? null
-      : metric ===
-          'score'
-        ? Math.max(
-            ...values,
-          )
-        : Math.min(
-            ...values,
-          );
+  const { current, longest } = streaks(
+    solvedRows.map((r) => r.dateKey),
+    todayKey,
+  );
+  const best = values.length === 0 ? null : metric === 'score' ? Math.max(...values) : Math.min(...values);
   const average =
-    values.length ===
-    0
-      ? null
-      : Math.round(
-          (values.reduce(
-            (
-              a,
-              b,
-            ) =>
-              a +
-              b,
-            0,
-          ) /
-            values.length) *
-            10,
-        ) /
-        10;
+    values.length === 0 ? null : Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
   return {
     mode,
     metric,
-    played:
-      rows.length,
-    solved:
-      solvedRows.length,
-    solveRate:
-      rows.length ===
-      0
-        ? 0
-        : solvedRows.length /
-          rows.length,
-    currentStreak:
-      current,
-    longestStreak:
-      longest,
+    played: rows.length,
+    solved: solvedRows.length,
+    solveRate: rows.length === 0 ? 0 : solvedRows.length / rows.length,
+    currentStreak: current,
+    longestStreak: longest,
     best,
     average,
     distribution,
@@ -392,97 +161,29 @@ function modeStats(
 }
 
 /** Everything the statistics page shows, from a member's rows and today's day key. */
-export function computeDailyStats(
-  rows: readonly DailyStatRow[],
-  todayKey: string,
-): DailyStats {
-  const byMode =
-    new Map<
-      string,
-      DailyStatRow[]
-    >(
-      STAT_MODES.map(
-        (
-          m,
-        ) => [
-          m,
-          [],
-        ],
-      ),
-    );
-  for (const r of rows)
-    byMode
-      .get(
-        r.gameMode,
-      )
-      ?.push(
-        r,
-      );
+export function computeDailyStats(rows: readonly DailyStatRow[], todayKey: string): DailyStats {
+  const byMode = new Map<string, DailyStatRow[]>(STAT_MODES.map((m) => [m, []]));
+  for (const r of rows) byMode.get(r.gameMode)?.push(r);
 
-  const days: Record<
-    string,
-    string[]
-  > =
-    {};
+  const days: Record<string, string[]> = {};
   let totalSolves = 0;
   for (const mode of STAT_MODES) {
-    for (const r of byMode.get(
-      mode,
-    ) ??
-      []) {
-      if (
-        !isSolved(
-          r,
-        )
-      )
-        continue;
+    for (const r of byMode.get(mode) ?? []) {
+      if (!isSolved(r)) continue;
       totalSolves++;
-      (days[
-        r.dateKey
-      ] ??=
-        []).push(
-        mode,
-      );
+      (days[r.dateKey] ??= []).push(mode);
     }
   }
-  const dayKeys =
-    Object.keys(
-      days,
-    ).sort();
-  const {
-    current,
-    longest,
-  } =
-    streaks(
-      dayKeys,
-      todayKey,
-    );
+  const dayKeys = Object.keys(days).sort();
+  const { current, longest } = streaks(dayKeys, todayKey);
 
   return {
-    currentStreak:
-      current,
-    longestStreak:
-      longest,
-    daysPlayed:
-      dayKeys.length,
+    currentStreak: current,
+    longestStreak: longest,
+    daysPlayed: dayKeys.length,
     totalSolves,
-    modes:
-      STAT_MODES.map(
-        (
-          m,
-        ) =>
-          modeStats(
-            m,
-            byMode.get(
-              m,
-            ) ??
-              [],
-            todayKey,
-          ),
-      ),
+    modes: STAT_MODES.map((m) => modeStats(m, byMode.get(m) ?? [], todayKey)),
     days,
-    firstDay:
-      dayKeys[0] ??
-      null,
+    firstDay: dayKeys[0] ?? null,
   };
 }

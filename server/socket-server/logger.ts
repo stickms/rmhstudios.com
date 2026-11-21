@@ -6,7 +6,4 @@
 
 import { createLogger } from '../shared/logger';
 
-export const logger =
-  createLogger(
-    'socket-server',
-  );
+export const logger = createLogger('socket-server');

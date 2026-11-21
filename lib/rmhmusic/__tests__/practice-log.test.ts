@@ -7,13 +7,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 interface Row {
@@ -151,8 +145,7 @@ const call = (route: unknown, method: string, path: string, body?: unknown, para
     }),
     params,
   });
-const signIn = (id: string) =>
-  m.session.mockResolvedValue({ user: { id, isAdmin: false }, session: { id: 's' } });
+const signIn = (id: string) => m.session.mockResolvedValue({ user: { id, isAdmin: false }, session: { id: 's' } });
 
 const prompt = (level: string) => ({
   level,
@@ -366,13 +359,13 @@ describe('the entries and song endpoints never return another member’s rows', 
   });
 
   it('filters by kind and pages by the id cursor, still only the caller’s', async () => {
-    const lessons = (await (
-      await call(entriesRoute, 'GET', '/api/rmhmusic/history/entries?kind=lesson')
-    ).json()) as { entries: { id: string }[] };
+    const lessons = (await (await call(entriesRoute, 'GET', '/api/rmhmusic/history/entries?kind=lesson')).json()) as {
+      entries: { id: string }[];
+    };
     expect(lessons.entries.map((e) => e.id)).toEqual(['5']);
-    const older = (await (
-      await call(entriesRoute, 'GET', '/api/rmhmusic/history/entries?cursor=5')
-    ).json()) as { entries: { id: string }[] };
+    const older = (await (await call(entriesRoute, 'GET', '/api/rmhmusic/history/entries?cursor=5')).json()) as {
+      entries: { id: string }[];
+    };
     expect(older.entries.map((e) => e.id)).toEqual(['3', '1']);
   });
 
@@ -395,13 +388,9 @@ describe('the entries and song endpoints never return another member’s rows', 
   });
 
   it('shows a song’s attempts, the lower scores included, oldest first, only the caller’s', async () => {
-    const res = await call(
-      songProgressRoute,
-      'GET',
-      '/api/rmhmusic/history/songs/ode-to-joy',
-      undefined,
-      { songId: 'ode-to-joy' },
-    );
+    const res = await call(songProgressRoute, 'GET', '/api/rmhmusic/history/songs/ode-to-joy', undefined, {
+      songId: 'ode-to-joy',
+    });
     const body = (await res.json()) as { attempts: { id: string; score: number; mode: string }[] };
     expect(body.attempts.map((a) => [a.id, a.score, a.mode])).toEqual([
       ['1', 40, 'wait'],
@@ -410,37 +399,23 @@ describe('the entries and song endpoints never return another member’s rows', 
   });
 
   it('filters a song’s attempts by mode', async () => {
-    const res = await call(
-      songProgressRoute,
-      'GET',
-      '/api/rmhmusic/history/songs/ode-to-joy?mode=play',
-      undefined,
-      { songId: 'ode-to-joy' },
-    );
+    const res = await call(songProgressRoute, 'GET', '/api/rmhmusic/history/songs/ode-to-joy?mode=play', undefined, {
+      songId: 'ode-to-joy',
+    });
     const body = (await res.json()) as { attempts: { id: string }[] };
     expect(body.attempts.map((a) => a.id)).toEqual(['3']);
   });
 
   it('says 400 for a song that is not in the songbook', async () => {
-    const res = await call(
-      songProgressRoute,
-      'GET',
-      '/api/rmhmusic/history/songs/nope',
-      undefined,
-      { songId: 'nope' },
-    );
+    const res = await call(songProgressRoute, 'GET', '/api/rmhmusic/history/songs/nope', undefined, { songId: 'nope' });
     expect(res.status).toBe(400);
   });
 
   it('answers another member’s view of the same song with only that member’s rows', async () => {
     signIn('u2');
-    const res = await call(
-      songProgressRoute,
-      'GET',
-      '/api/rmhmusic/history/songs/ode-to-joy',
-      undefined,
-      { songId: 'ode-to-joy' },
-    );
+    const res = await call(songProgressRoute, 'GET', '/api/rmhmusic/history/songs/ode-to-joy', undefined, {
+      songId: 'ode-to-joy',
+    });
     const body = (await res.json()) as { attempts: { score: number }[] };
     expect(body.attempts.map((a) => a.score)).toEqual([99]);
   });

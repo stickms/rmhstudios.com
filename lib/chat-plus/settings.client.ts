@@ -5,20 +5,14 @@ export interface PinView {
   text: string;
   hasMedia: boolean;
   senderId: string;
-  senderName:
-    | string
-    | null;
+  senderName: string | null;
   createdAt: string;
   pinnedById: string;
 }
 
 export interface ChatMeta {
-  disappearAfterSec:
-    | number
-    | null;
-  themeKey:
-    | string
-    | null;
+  disappearAfterSec: number | null;
+  themeKey: string | null;
   isSelf: boolean;
   prefs: {
     hideReceipts: boolean;

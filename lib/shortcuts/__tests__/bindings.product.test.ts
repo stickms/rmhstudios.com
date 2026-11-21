@@ -44,9 +44,7 @@ describe('single-key mode', () => {
 
   it('keeps the effective set free of conflicts in every mode', () => {
     for (const singleKeys of ['on', 'off', 'alt'] as const) {
-      expect(
-        findShortcutConflicts(effectiveBindings(SITE_SHORTCUTS, prefs({ singleKeys }))),
-      ).toEqual([]);
+      expect(findShortcutConflicts(effectiveBindings(SITE_SHORTCUTS, prefs({ singleKeys })))).toEqual([]);
     }
   });
 
@@ -79,9 +77,7 @@ describe('overrides', () => {
     expect(effectiveBindings(SITE_SHORTCUTS, changed)).not.toEqual([...SITE_SHORTCUTS]);
     expect(effectiveBindings(SITE_SHORTCUTS, DEFAULT_KEYBOARD_PREFS)).toEqual([...SITE_SHORTCUTS]);
     const { 'site.compose': _gone, ...rest } = changed.overrides;
-    expect(
-      keysOf(effectiveBindings(SITE_SHORTCUTS, prefs({ overrides: rest })), 'site.compose'),
-    ).toEqual(['c']);
+    expect(keysOf(effectiveBindings(SITE_SHORTCUTS, prefs({ overrides: rest })), 'site.compose')).toEqual(['c']);
   });
 
   it('ignores an override with a malformed sequence', () => {
@@ -155,13 +151,8 @@ describe('validateOverride', () => {
 
 describe('validateOverrides and sanitizePrefs', () => {
   it('validates a whole map against itself', () => {
-    expect(
-      validateOverrides({ 'site.compose': ['n'], 'site.search': ['x'] }, SITE_SHORTCUTS),
-    ).toEqual({ ok: true });
-    const clash = validateOverrides(
-      { 'site.compose': ['n'], 'site.search': ['n'] },
-      SITE_SHORTCUTS,
-    );
+    expect(validateOverrides({ 'site.compose': ['n'], 'site.search': ['x'] }, SITE_SHORTCUTS)).toEqual({ ok: true });
+    const clash = validateOverrides({ 'site.compose': ['n'], 'site.search': ['n'] }, SITE_SHORTCUTS);
     expect(clash).toMatchObject({ ok: false, error: { reason: 'conflict' } });
   });
 
@@ -206,9 +197,7 @@ describe('events and labels', () => {
   });
 
   it('matches an Option-modified letter by its physical key (macOS)', () => {
-    expect(eventMatchesKeystroke('alt+n', event({ key: 'Dead', code: 'KeyN', altKey: true }))).toBe(
-      true,
-    );
+    expect(eventMatchesKeystroke('alt+n', event({ key: 'Dead', code: 'KeyN', altKey: true }))).toBe(true);
     expect(eventMatchesKeystroke('n', event({ key: 'Dead', code: 'KeyN' }))).toBe(false);
   });
 

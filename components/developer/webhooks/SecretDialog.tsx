@@ -22,13 +22,7 @@ export interface RevealedSecret {
  * Shows a signing secret exactly once. The server never returns it again, so
  * closing the dialog drops it from memory.
  */
-export function SecretDialog({
-  revealed,
-  onClose,
-}: {
-  revealed: RevealedSecret | null;
-  onClose: () => void;
-}) {
+export function SecretDialog({ revealed, onClose }: { revealed: RevealedSecret | null; onClose: () => void }) {
   const { t } = useTranslation('dev-webhooks');
   return (
     <Dialog open={revealed !== null} onOpenChange={(open) => !open && onClose()}>

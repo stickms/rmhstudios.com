@@ -126,9 +126,7 @@ export function MyReportsPanel() {
       await api(withdrawReportApi, { params: { id: r.id } });
       toast.success(t('withdrawn-toast', { defaultValue: 'Report withdrawn.' }));
     } catch (e) {
-      toast.error(
-        serverError(e) ?? t('withdraw-failed', { defaultValue: 'Could not withdraw the report.' }),
-      );
+      toast.error(serverError(e) ?? t('withdraw-failed', { defaultValue: 'Could not withdraw the report.' }));
     } finally {
       setWithdrawing(null);
       // A 409 means a moderator moved first: refetching shows where the report stands now.
@@ -152,7 +150,11 @@ export function MyReportsPanel() {
         aria-label={t('filters', { defaultValue: 'Filter your reports' })}
       />
       {q.isPending ? (
-        <div className="space-y-3 pt-4" role="status" aria-label={t('loading', { defaultValue: 'Loading your reports' })}>
+        <div
+          className="space-y-3 pt-4"
+          role="status"
+          aria-label={t('loading', { defaultValue: 'Loading your reports' })}
+        >
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
@@ -185,7 +187,10 @@ export function MyReportsPanel() {
             {items.map((r) => {
               const what = whatOf(r);
               return (
-                <li key={r.id} className={`flex flex-wrap items-start gap-x-4 gap-y-2 py-3 ${isNew(r.id) ? ARRIVE : ''}`}>
+                <li
+                  key={r.id}
+                  className={`flex flex-wrap items-start gap-x-4 gap-y-2 py-3 ${isNew(r.id) ? ARRIVE : ''}`}
+                >
                   <div className="min-w-0 flex-1 space-y-1">
                     <p className="t-body break-words text-site-text">
                       {r.target.href ? (

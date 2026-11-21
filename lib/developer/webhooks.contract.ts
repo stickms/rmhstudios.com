@@ -6,11 +6,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  createWebhookBody,
-  deliveriesQuery,
-  patchWebhookBody,
-} from '@/lib/developer/webhooks-schema';
+import type { createWebhookBody, deliveriesQuery, patchWebhookBody } from '@/lib/developer/webhooks-schema';
 import type { WebhookHealth } from '@/lib/webhooks/health';
 
 export type WebhookDeliveryStatus = 'PENDING' | 'DELIVERED' | 'FAILED';

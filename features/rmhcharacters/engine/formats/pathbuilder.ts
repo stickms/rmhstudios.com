@@ -31,7 +31,9 @@ export function exportPathbuilder(c: Pf2eCharacter, d: Pf2eData) {
     ancestryFlaws: (c.boosts.ancestryAltFree ? [] : c.boosts.ancestryFlaws).map((a) => a.toUpperCase()),
     backgroundBoosts: c.boosts.background.map((a) => a.toUpperCase()),
     classBoosts: c.boosts.class ? [c.boosts.class.toUpperCase()] : [],
-    mapLevelledBoosts: Object.fromEntries(Object.entries(c.boosts.levels).map(([k, v]) => [k, v.map((a) => a.toUpperCase())])),
+    mapLevelledBoosts: Object.fromEntries(
+      Object.entries(c.boosts.levels).map(([k, v]) => [k, v.map((a) => a.toUpperCase())]),
+    ),
   };
   const proficiencies: Record<string, number> = {
     classDC: RANK_NUM[p2.statRank(c, d, 'classDC')] ?? 0,
@@ -57,7 +59,14 @@ export function exportPathbuilder(c: Pf2eCharacter, d: Pf2eData) {
   const feats = c.feats.map((f) => {
     const feat = d.feats.find((x) => x.id === f.featId);
     const [type, lvl] = f.slot.split('-');
-    const label = { ancestry: 'Ancestry Feat', class: 'Class Feat', skill: 'Skill Feat', general: 'General Feat', bonus: 'Awarded Feat' }[type ?? ''] ?? 'Awarded Feat';
+    const label =
+      {
+        ancestry: 'Ancestry Feat',
+        class: 'Class Feat',
+        skill: 'Skill Feat',
+        general: 'General Feat',
+        bonus: 'Awarded Feat',
+      }[type ?? ''] ?? 'Awarded Feat';
     return [feat?.name ?? f.customName ?? '', null, label, Number(lvl) || feat?.level || 1];
   });
   const spellsByRank = new Map<number, string[]>();
@@ -97,32 +106,71 @@ export function exportPathbuilder(c: Pf2eCharacter, d: Pf2eData) {
       feats,
       specials: (klass?.features ?? []).filter((f) => f.level <= c.level).map((f) => f.name),
       lores: c.lores.map((l) => [l.replace(/\s*Lore$/i, ''), RANK_NUM[p2.skillRank(c, l) || 1]]),
-      equipment: c.inventory.filter((i) => !d.weapons.some((w) => w.id === i.refId) && !d.armor.some((a) => a.id === i.refId)).map((i) => [i.name, i.quantity]),
-      weapons: c.inventory.filter((i) => d.weapons.some((w) => w.id === i.refId)).map((i) => {
-        const w = d.weapons.find((x) => x.id === i.refId)!;
-        return { name: i.name, qty: i.quantity, prof: w.category, die: w.damage.replace(/^\d*/, ''), pot: 0, str: '', mat: null, display: i.name, runes: [], damageType: w.damageType };
-      }),
-      armor: armor ? [{ name: armor.name, qty: 1, prof: armor.category, pot: 0, res: '', mat: null, display: armor.name, worn: true, runes: [] }] : [],
+      equipment: c.inventory
+        .filter((i) => !d.weapons.some((w) => w.id === i.refId) && !d.armor.some((a) => a.id === i.refId))
+        .map((i) => [i.name, i.quantity]),
+      weapons: c.inventory
+        .filter((i) => d.weapons.some((w) => w.id === i.refId))
+        .map((i) => {
+          const w = d.weapons.find((x) => x.id === i.refId)!;
+          return {
+            name: i.name,
+            qty: i.quantity,
+            prof: w.category,
+            die: w.damage.replace(/^\d*/, ''),
+            pot: 0,
+            str: '',
+            mat: null,
+            display: i.name,
+            runes: [],
+            damageType: w.damageType,
+          };
+        }),
+      armor: armor
+        ? [
+            {
+              name: armor.name,
+              qty: 1,
+              prof: armor.category,
+              pot: 0,
+              res: '',
+              mat: null,
+              display: armor.name,
+              worn: true,
+              runes: [],
+            },
+          ]
+        : [],
       money: { pp: c.currency.pp, gp: c.currency.gp, sp: c.currency.sp, cp: c.currency.cp },
       spellCasters: sc
-        ? [{
-            name: klass?.name ?? '',
-            magicTradition: sc.tradition,
-            spellcastingType: sc.type,
-            ability: sc.ability,
-            proficiency: RANK_NUM[sc.rank] ?? 0,
-            focusPoints: 0,
-            innate: false,
-            perDay: [sc.cantrips, ...sc.slots],
-            spells: [...spellsByRank.entries()].sort((a, b) => a[0] - b[0]).map(([spellLevel, list]) => ({ spellLevel, list })),
-            prepared: [],
-            blendedSpells: [],
-          }]
+        ? [
+            {
+              name: klass?.name ?? '',
+              magicTradition: sc.tradition,
+              spellcastingType: sc.type,
+              ability: sc.ability,
+              proficiency: RANK_NUM[sc.rank] ?? 0,
+              focusPoints: 0,
+              innate: false,
+              perDay: [sc.cantrips, ...sc.slots],
+              spells: [...spellsByRank.entries()]
+                .sort((a, b) => a[0] - b[0])
+                .map(([spellLevel, list]) => ({ spellLevel, list })),
+              prepared: [],
+              blendedSpells: [],
+            },
+          ]
         : [],
       focusPoints: c.focusPoints,
       focus: {},
       pets: [],
-      acTotal: { acProfBonus: 0, acAbilityBonus: 0, acItemBonus: armor?.acBonus ?? 0, acTotal: p2.armorClass(c, d).value, shieldBonus: null },
+      acTotal: {
+        acProfBonus: 0,
+        acAbilityBonus: 0,
+        acItemBonus: armor?.acBonus ?? 0,
+        acTotal: p2.armorClass(c, d).value,
+        shieldBonus: null,
+      },
     },
   };
 }
@@ -131,7 +179,10 @@ const abil = (v: unknown): Ability | null => {
   const s = asStr(v).toLowerCase();
   return (ABILITIES as readonly string[]).includes(s) ? (s as Ability) : null;
 };
-const abilList = (v: unknown): Ability[] => asArr(v).map(abil).filter((a): a is Ability => Boolean(a));
+const abilList = (v: unknown): Ability[] =>
+  asArr(v)
+    .map(abil)
+    .filter((a): a is Ability => Boolean(a));
 
 export function importPathbuilder(json: { build: Obj }, d: Pf2eData): Pf2eCharacter {
   const b = json.build;
@@ -163,8 +214,15 @@ export function importPathbuilder(json: { build: Obj }, d: Pf2eData): Pf2eCharac
   } else {
     // Old exports carry only final scores: put the whole spread into free boosts at level 1+.
     c.boosts.class = abil(b.keyability);
-    const want: Record<Ability, number> = Object.fromEntries(ABILITIES.map((a) => [a, Math.floor((asNum(abilities[a], 10) - 10) / 2)])) as Record<Ability, number>;
-    c.custom.push({ id: newId(), name: 'Imported attribute modifiers', text: ABILITIES.map((a) => `${a.toUpperCase()} ${p2.signed(want[a])}`).join(', '), kind: 'Import note' });
+    const want: Record<Ability, number> = Object.fromEntries(
+      ABILITIES.map((a) => [a, Math.floor((asNum(abilities[a], 10) - 10) / 2)]),
+    ) as Record<Ability, number>;
+    c.custom.push({
+      id: newId(),
+      name: 'Imported attribute modifiers',
+      text: ABILITIES.map((a) => `${a.toUpperCase()} ${p2.signed(want[a])}`).join(', '),
+      kind: 'Import note',
+    });
   }
 
   const prof = isObj(b.proficiencies) ? b.proficiencies : {};
@@ -209,17 +267,38 @@ export function importPathbuilder(json: { build: Obj }, d: Pf2eData): Pf2eCharac
   for (const e of asArr(b.equipment)) {
     if (!Array.isArray(e)) continue;
     const ref = matchByName(d.gear, e[0]);
-    c.inventory.push({ id: newId(), name: asStr(e[0]), quantity: Math.max(1, asNum(e[1], 1)), equipped: false, bulk: 0, ...(ref ? { refId: ref.id, bulk: ref.bulk } : {}) });
+    c.inventory.push({
+      id: newId(),
+      name: asStr(e[0]),
+      quantity: Math.max(1, asNum(e[1], 1)),
+      equipped: false,
+      bulk: 0,
+      ...(ref ? { refId: ref.id, bulk: ref.bulk } : {}),
+    });
   }
   for (const w of asArr(b.weapons)) {
     if (!isObj(w)) continue;
     const ref = matchByName(d.weapons, w.name);
-    c.inventory.push({ id: newId(), name: asStr(w.display) || asStr(w.name), quantity: Math.max(1, asNum(w.qty, 1)), equipped: true, bulk: ref?.bulk ?? 1, ...(ref ? { refId: ref.id } : {}) });
+    c.inventory.push({
+      id: newId(),
+      name: asStr(w.display) || asStr(w.name),
+      quantity: Math.max(1, asNum(w.qty, 1)),
+      equipped: true,
+      bulk: ref?.bulk ?? 1,
+      ...(ref ? { refId: ref.id } : {}),
+    });
   }
   for (const a of asArr(b.armor)) {
     if (!isObj(a)) continue;
     const ref = matchByName(d.armor, a.name);
-    c.inventory.push({ id: newId(), name: asStr(a.display) || asStr(a.name), quantity: 1, equipped: a.worn === true, bulk: ref?.bulk ?? 1, ...(ref ? { refId: ref.id } : {}) });
+    c.inventory.push({
+      id: newId(),
+      name: asStr(a.display) || asStr(a.name),
+      quantity: 1,
+      equipped: a.worn === true,
+      bulk: ref?.bulk ?? 1,
+      ...(ref ? { refId: ref.id } : {}),
+    });
     if (ref && a.worn === true && ref.category !== 'shield') c.armorId = ref.id;
   }
   const money = isObj(b.money) ? b.money : {};

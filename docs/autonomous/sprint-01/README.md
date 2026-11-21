@@ -1,294 +1,30 @@
 # Sprint 01 — the Toolbox
 
-Twenty
-small,
-private
-utilities
-under
-[`/tools`](https://rmhstudios.com/tools),
-built
-as
-one
-coherent
-section
-of
-the
-site:
-a
-hub
-and
-twenty
-tools
-that
-run
-entirely
-in
-the
-browser.
-Nothing
-a
-visitor
-types
-into
-a
-tool
-is
-sent
-to
-the
+Twenty small, private utilities under [`/tools`](https://rmhstudios.com/tools), built as one coherent section of the
+site: a hub and twenty tools that run entirely in the browser. Nothing a visitor types into a tool is sent to the
 server.
 
-- [plan.md](plan.md)
-  —
-  build
-  order,
-  shared
-  files,
-  how
-  conflicts
-  were
-  avoided.
-- [summary.md](summary.md)
-  —
-  what
-  shipped,
-  line
-  counts,
-  verification.
-- `features/`
-  —
-  one
-  document
-  per
-  feature:
-  user
-  story,
-  requirements,
-  full
-  specification
-  (functional,
-  non-functional,
-  testing)
-  and
-  acceptance
-  criteria.
+- [plan.md](plan.md) — build order, shared files, how conflicts were avoided.
+- [summary.md](summary.md) — what shipped, line counts, verification.
+- `features/` — one document per feature: user story, requirements, full specification (functional, non-functional,
+  testing) and acceptance criteria.
 
 ## Why a toolbox
 
-The
-site's
-members
-already
-come
-here
-to
-write
-(RMHarks,
-the
-blog,
-RMHStudy),
-to
-code
-(RMHCode,
-vibes,
-the
-developer
-API),
-to
-organise
-(communities,
-group
-chats,
-events)
-and
-to
-play
-(tabletop-style
-games,
-RMHBox).
-Each
-of
-those
-jobs
-has
-small
-chores
-beside
-it
-—
-counting
-words,
-formatting
-JSON,
-testing
-a
-pattern,
-checking
-a
-colour,
-splitting
-a
-bill,
-rolling
-dice,
-drawing
-a
-winner
-—
-that
-people
-do
-today
-by
-pasting
-their
-data
-into
-ad-funded
-third-party
-sites.
-Doing
-them
-here,
-privately
-and
-in
-the
-site's
-own
-design,
-is
-a
-genuine
-value-add;
-doing
-them
-as
-one
-section
-with
-one
-frame
-keeps
-them
-from
-becoming
-twenty
-one-off
-pages
-that
-look
-like
-they
-came
-from
-different
-sites.
+The site's members already come here to write (RMHarks, the blog, RMHStudy), to code (RMHCode, vibes, the developer
+API), to organise (communities, group chats, events) and to play (tabletop-style games, RMHBox). Each of those jobs has
+small chores beside it — counting words, formatting JSON, testing a pattern, checking a colour, splitting a bill,
+rolling dice, drawing a winner — that people do today by pasting their data into ad-funded third-party sites. Doing them
+here, privately and in the site's own design, is a genuine value-add; doing them as one section with one frame keeps
+them from becoming twenty one-off pages that look like they came from different sites.
 
 ## Brainstorm and selection
 
-Ideas
-were
-kept
-only
-if
-they
-(1)
-serve
-a
-job
-the
-site's
-users
-already
-have,
-(2)
-are
-complete
-on
-their
-own,
-(3)
-need
-real
-logic
-worth
-testing,
-and
-(4)
-do
-not
-duplicate
-something
-the
-site
-has.
-Rejected
-on
-the
-last
-test:
-a
-unit
-converter
-(RMHCalculator's
-notebook
-already
-converts
-units),
-a
-focus
-timer
-(RMHStudy
-has
-body-doubling
-sessions),
-a
-QR
-code
-maker
-(the
-feed
-already
-has
-one),
-a
-world
-clock
-that
-ticks
-(Steel
-R5:
-nothing
-moves
-at
-rest
-—
-the
-time
-zone
-converter
-shows
-a
-chosen
-moment
-instead),
-and
-anything
-that
-would
-hinge
-on
-a
-decision
-the
-Steel
-plan
-lists
-as
-open
-in
-section 18.
+Ideas were kept only if they (1) serve a job the site's users already have, (2) are complete on their own, (3) need real
+logic worth testing, and (4) do not duplicate something the site has. Rejected on the last test: a unit converter
+(RMHCalculator's notebook already converts units), a focus timer (RMHStudy has body-doubling sessions), a QR code maker
+(the feed already has one), a world clock that ticks (Steel R5: nothing moves at rest — the time zone converter shows a
+chosen moment instead), and anything that would hinge on a decision the Steel plan lists as open in section 18.
 
 ## Features
 
@@ -317,63 +53,9 @@ section 18.
 
 ## Shared pieces
 
-- `lib/toolbox/catalog.ts`
-  —
-  the
-  list;
-  the
-  hub,
-  the
-  sitemap
-  and
-  the
-  catalog
-  test
-  read
-  it.
-- `lib/toolbox/random.ts`
-  —
-  unbiased
-  crypto
-  randomness
-  (password,
-  IDs,
-  dice,
-  picker).
-- `components/toolbox/ToolFrame.tsx`
-  —
-  page
-  frame,
-  sections,
-  result
-  rows,
-  field
-  errors,
-  labelled
-  switches.
-- `components/toolbox/tool-copy.ts`
-  —
-  each
-  tool's
-  translated
-  name,
-  description
-  and
-  icon.
-- `vitest.toolbox.config.ts`
-  —
-  the
-  tests'
-  own
-  suite
-  (`pnpm test:toolbox`),
-  kept
-  out
-  of
-  the
-  mission-critical
-  main
-  suite
-  as
-  `docs/testing.md`
-  requires.
+- `lib/toolbox/catalog.ts` — the list; the hub, the sitemap and the catalog test read it.
+- `lib/toolbox/random.ts` — unbiased crypto randomness (password, IDs, dice, picker).
+- `components/toolbox/ToolFrame.tsx` — page frame, sections, result rows, field errors, labelled switches.
+- `components/toolbox/tool-copy.ts` — each tool's translated name, description and icon.
+- `vitest.toolbox.config.ts` — the tests' own suite (`pnpm test:toolbox`), kept out of the mission-critical main suite
+  as `docs/testing.md` requires.

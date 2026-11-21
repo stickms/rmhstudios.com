@@ -5,41 +5,29 @@ import { previewBodySchema } from '@/lib/email/campaign-schema';
 import { previewAudience } from '@/lib/email/campaign.server';
 
 /** POST /api/admin/email/preview — how many people an audience reaches, and a sample. */
-export const route =
-  apiRoute(
-    '/api/admin/email/preview',
+export const route = apiRoute('/api/admin/email/preview', {
+  POST: implement(
+    adminEmailPreview,
     {
-      POST: implement(
-        adminEmailPreview,
-        {
-          auth: 'admin',
-          rateLimit:
-            {
-              limit: 60,
-              windowMs: 60_000,
-              prefix:
-                'admin-email-preview',
-            },
-          body: previewBodySchema,
-        },
-        async ({
-          body,
-        }) =>
-          previewAudience(
-            body.audience,
-            body.category,
-            {
-              subject:
-                body.subject,
-              body: body.body,
-              imageUrls:
-                body.imageUrls,
-              design:
-                body.design,
-            },
-            body.ignoreFrequencyCap ===
-              true,
-          ),
-      ),
+      auth: 'admin',
+      rateLimit: {
+        limit: 60,
+        windowMs: 60_000,
+        prefix: 'admin-email-preview',
+      },
+      body: previewBodySchema,
     },
-  );
+    async ({ body }) =>
+      previewAudience(
+        body.audience,
+        body.category,
+        {
+          subject: body.subject,
+          body: body.body,
+          imageUrls: body.imageUrls,
+          design: body.design,
+        },
+        body.ignoreFrequencyCap === true,
+      ),
+  ),
+});

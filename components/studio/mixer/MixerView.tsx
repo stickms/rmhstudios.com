@@ -8,37 +8,19 @@ interface MixerViewProps {
   compact?: boolean;
 }
 
-export function MixerView({
-  compact = false,
-}: MixerViewProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-studio',
-    );
-  const {
-    tracks,
-    selectedTrackId,
-  } =
-    useStudioStore();
+export function MixerView({ compact = false }: MixerViewProps) {
+  const { t } = useTranslation('c-studio');
+  const { tracks, selectedTrackId } = useStudioStore();
 
-  if (
-    tracks.length ===
-    0
-  ) {
+  if (tracks.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-app-text-muted">
         <div className="text-center">
           <SlidersHorizontal className="mx-auto h-10 w-10 opacity-20" />
           <p className="mt-2 text-xs">
-            {t(
-              'add-tracks-to-see-mixer',
-              {
-                defaultValue:
-                  'Add tracks to see the mixer',
-              },
-            )}
+            {t('add-tracks-to-see-mixer', {
+              defaultValue: 'Add tracks to see the mixer',
+            })}
           </p>
         </div>
       </div>
@@ -49,35 +31,13 @@ export function MixerView({
     <div className="flex h-full">
       {/* Channel strips (scrollable) */}
       <div className="flex flex-1 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-(--app-border)">
-        {tracks.map(
-          (
-            track,
-          ) => (
-            <ChannelStrip
-              key={
-                track.id
-              }
-              track={
-                track
-              }
-              isSelected={
-                track.id ===
-                selectedTrackId
-              }
-              compact={
-                compact
-              }
-            />
-          ),
-        )}
+        {tracks.map((track) => (
+          <ChannelStrip key={track.id} track={track} isSelected={track.id === selectedTrackId} compact={compact} />
+        ))}
       </div>
 
       {/* Master strip (fixed right) */}
-      <MasterStrip
-        compact={
-          compact
-        }
-      />
+      <MasterStrip compact={compact} />
     </div>
   );
 }

@@ -9,17 +9,7 @@
  */
 
 export type CaseStyle =
-  | 'camel'
-  | 'pascal'
-  | 'snake'
-  | 'kebab'
-  | 'constant'
-  | 'dot'
-  | 'path'
-  | 'title'
-  | 'sentence'
-  | 'lower'
-  | 'upper';
+  'camel' | 'pascal' | 'snake' | 'kebab' | 'constant' | 'dot' | 'path' | 'title' | 'sentence' | 'lower' | 'upper';
 
 export const CASE_STYLES: readonly CaseStyle[] = [
   'camel',

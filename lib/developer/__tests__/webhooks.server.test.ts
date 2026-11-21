@@ -39,7 +39,11 @@ const db = vi.hoisted(() => ({
 /** Picks the selected keys, the way Prisma does: a secret never leaves unless it was selected. */
 function pick<T extends object>(row: T, select: Record<string, boolean> | undefined): Partial<T> {
   if (!select) return { ...row };
-  return Object.fromEntries(Object.entries(select).filter(([, on]) => on).map(([k]) => [k, row[k as keyof T]])) as Partial<T>;
+  return Object.fromEntries(
+    Object.entries(select)
+      .filter(([, on]) => on)
+      .map(([k]) => [k, row[k as keyof T]]),
+  ) as Partial<T>;
 }
 function matchesEndpoint(e: Endpoint, where: Partial<Endpoint> & { OR?: unknown }): boolean {
   return (['id', 'userId', 'secret'] as const).every((k) => where[k] === undefined || e[k] === where[k]);
@@ -191,7 +195,7 @@ describe('ownership', () => {
     db.deliveries = [delivery()];
   });
 
-  it('answers 404 for another member\'s endpoint on every operation, never 403', async () => {
+  it("answers 404 for another member's endpoint on every operation, never 403", async () => {
     const results = await Promise.all([
       getWebhook('mallory', 'ep1', {}),
       updateWebhook('mallory', 'ep1', { enabled: false }),
@@ -208,7 +212,7 @@ describe('ownership', () => {
     expect(db.endpoints[0]).toMatchObject({ enabled: true, secret: SECRET, previousSecret: OLD_SECRET });
   });
 
-  it('lists only the caller\'s endpoints', async () => {
+  it("lists only the caller's endpoints", async () => {
     db.endpoints.push(endpoint({ id: 'ep2', userId: 'bob' }));
     const { endpoints } = await listWebhooks('alice');
     expect(endpoints.map((e) => e.id)).toEqual(['ep1']);
@@ -304,7 +308,11 @@ describe('redelivery', () => {
     );
     expect(sent.delivery).toMatchObject({ id: 'd2', redeliveryOfId: 'd1' });
     // The original row is untouched.
-    expect(db.deliveries.find((d) => d.id === 'd1')).toMatchObject({ status: 'FAILED', error: 'HTTP 500', attempts: 1 });
+    expect(db.deliveries.find((d) => d.id === 'd1')).toMatchObject({
+      status: 'FAILED',
+      error: 'HTTP 500',
+      attempts: 1,
+    });
   });
 
   it('refuses a delivery that is still being retried', async () => {
@@ -332,7 +340,7 @@ describe('the endpoint cap', () => {
     expect(db.endpoints.filter((e) => e.userId === 'alice')).toHaveLength(MAX_WEBHOOK_ENDPOINTS);
   });
 
-  it('counts only the caller\'s endpoints', async () => {
+  it("counts only the caller's endpoints", async () => {
     db.endpoints = Array.from({ length: MAX_WEBHOOK_ENDPOINTS }, (_, i) => endpoint({ id: `e${i}`, userId: 'bob' }));
     expect((await createWebhook('alice', { url: 'https://example.com/x', events: ['*'] })).ok).toBe(true);
   });
@@ -340,9 +348,18 @@ describe('the endpoint cap', () => {
 
 describe('create and update validation', () => {
   it('rejects a private address and an empty or unknown event list', async () => {
-    expect(await createWebhook('alice', { url: 'https://localhost/x', events: ['*'] })).toMatchObject({ ok: false, status: 400 });
-    expect(await createWebhook('alice', { url: 'http://example.com/x', events: ['*'] })).toMatchObject({ ok: false, status: 400 });
-    expect(await createWebhook('alice', { url: 'https://example.com/x', events: ['nope'] })).toMatchObject({ ok: false, status: 400 });
+    expect(await createWebhook('alice', { url: 'https://localhost/x', events: ['*'] })).toMatchObject({
+      ok: false,
+      status: 400,
+    });
+    expect(await createWebhook('alice', { url: 'http://example.com/x', events: ['*'] })).toMatchObject({
+      ok: false,
+      status: 400,
+    });
+    expect(await createWebhook('alice', { url: 'https://example.com/x', events: ['nope'] })).toMatchObject({
+      ok: false,
+      status: 400,
+    });
     expect(db.endpoints).toHaveLength(0);
   });
 
@@ -358,9 +375,7 @@ describe('create and update validation', () => {
 describe('the list', () => {
   it('derives health from the grouped counts and explains a disabled endpoint with its last error', async () => {
     db.endpoints = [endpoint({ id: 'ok' }), endpoint({ id: 'off', enabled: false, failureCount: 20 })];
-    db.deliveries = [
-      delivery({ id: 'a', endpointId: 'off', status: 'FAILED', error: 'connect ETIMEDOUT' }),
-    ];
+    db.deliveries = [delivery({ id: 'a', endpointId: 'off', status: 'FAILED', error: 'connect ETIMEDOUT' })];
     db.rawRows = [
       { endpointId: 'ok', status: 'DELIVERED', n: 20n },
       { endpointId: 'off', status: 'FAILED', n: 20n },

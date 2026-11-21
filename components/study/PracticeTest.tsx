@@ -97,7 +97,11 @@ export function PracticeTest({ deckId, data }: { deckId: string; data: PracticeT
   }
 
   const back = (
-    <Link to="/study/$deckId" params={{ deckId }} className="t-meta inline-flex items-center gap-1 hover:text-site-text">
+    <Link
+      to="/study/$deckId"
+      params={{ deckId }}
+      className="t-meta inline-flex items-center gap-1 hover:text-site-text"
+    >
       <ArrowLeft className="size-3.5" aria-hidden />
       {data.deck.title}
     </Link>

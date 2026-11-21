@@ -4,32 +4,10 @@ export interface WhenSearch {
   groupChatId?: string;
 }
 
-export function validateWhenSearch(
-  raw: Record<
-    string,
-    unknown
-  >,
-): WhenSearch {
-  const pick =
-    (
-      v: unknown,
-    ) =>
-      typeof v ===
-        'string' &&
-      v.length >
-        0 &&
-      v.length <=
-        40
-        ? v
-        : undefined;
+export function validateWhenSearch(raw: Record<string, unknown>): WhenSearch {
+  const pick = (v: unknown) => (typeof v === 'string' && v.length > 0 && v.length <= 40 ? v : undefined);
   return {
-    communityId:
-      pick(
-        raw.communityId,
-      ),
-    groupChatId:
-      pick(
-        raw.groupChatId,
-      ),
+    communityId: pick(raw.communityId),
+    groupChatId: pick(raw.groupChatId),
   };
 }

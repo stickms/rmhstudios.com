@@ -7,68 +7,23 @@ export function formatClockSeconds(
     hours?: boolean;
   } = {},
 ): string {
-  const s =
-    Math.max(
-      0,
-      Math.floor(
-        seconds,
-      ),
-    );
-  const pad =
-    (
-      n: number,
-    ) =>
-      String(
-        n,
-      ).padStart(
-        2,
-        '0',
-      );
-  if (
-    opts.hours
-  ) {
-    const h =
-      Math.floor(
-        s /
-          3600,
-      );
-    const m =
-      Math.floor(
-        (s %
-          3600) /
-          60,
-      );
-    if (
-      h >
-      0
-    )
-      return `${h}:${pad(m)}:${pad(s % 60)}`;
+  const s = Math.max(0, Math.floor(seconds));
+  const pad = (n: number) => String(n).padStart(2, '0');
+  if (opts.hours) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (h > 0) return `${h}:${pad(m)}:${pad(s % 60)}`;
     return `${m}:${pad(s % 60)}`;
   }
   return `${Math.floor(s / 60)}:${pad(s % 60)}`;
 }
 
 /** Short duration from milliseconds, rounded to the second: `42s` / `3m 7s`. */
-export function formatDurationMs(
-  ms: number,
-): string {
-  const totalSec =
-    Math.round(
-      ms /
-        1000,
-    );
-  const m =
-    Math.floor(
-      totalSec /
-        60,
-    );
-  const s =
-    totalSec %
-    60;
-  return m >
-    0
-    ? `${m}m ${s}s`
-    : `${s}s`;
+export function formatDurationMs(ms: number): string {
+  const totalSec = Math.round(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
 /**
@@ -76,52 +31,20 @@ export function formatDurationMs(
  * runtime's for either when omitted). Throws on an invalid date, like the
  * `Intl.DateTimeFormat` it wraps; guard first where the value can be missing.
  */
-export function formatDateShort(
-  value:
-    | Date
-    | string
-    | number,
-  locale?: string,
-  timeZone?: string,
-): string {
-  const options: Intl.DateTimeFormatOptions =
-    {
-      month:
-        'short',
-      day: 'numeric',
-      year: 'numeric',
-    };
-  if (
-    timeZone
-  )
-    options.timeZone =
-      timeZone;
-  return new Intl.DateTimeFormat(
-    locale,
-    options,
-  ).format(
-    value instanceof
-      Date
-      ? value
-      : new Date(
-          value,
-        ),
-  );
+export function formatDateShort(value: Date | string | number, locale?: string, timeZone?: string): string {
+  const options: Intl.DateTimeFormatOptions = {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  };
+  if (timeZone) options.timeZone = timeZone;
+  return new Intl.DateTimeFormat(locale, options).format(value instanceof Date ? value : new Date(value));
 }
 
 /** Compact count (`1.2K`, `3.4M`) via Intl; `locale` defaults to the runtime's. */
-export function formatCompact(
-  n: number,
-  locale?: string,
-): string {
-  return new Intl.NumberFormat(
-    locale,
-    {
-      notation:
-        'compact',
-      maximumFractionDigits: 1,
-    },
-  ).format(
-    n,
-  );
+export function formatCompact(n: number, locale?: string): string {
+  return new Intl.NumberFormat(locale, {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(n);
 }

@@ -1,14 +1,5 @@
 export type PuzzleCategory =
-  | 'math'
-  | 'pattern'
-  | 'language'
-  | 'spatial'
-  | 'memory'
-  | 'reaction'
-  | 'minigame'
-  | 'fling'
-  | 'powerup'
-  | 'meta';
+  'math' | 'pattern' | 'language' | 'spatial' | 'memory' | 'reaction' | 'minigame' | 'fling' | 'powerup' | 'meta';
 
 export interface PuzzleDefinition {
   id: string;
@@ -23,15 +14,7 @@ export interface PuzzleDefinition {
 
 export interface MetaPuzzleData {
   type: 'meta';
-  variant:
-    | 'gameTime'
-    | 'lives'
-    | 'intensity'
-    | 'combo'
-    | 'maxCombo'
-    | 'activeCount'
-    | 'realTimeHour'
-    | 'score';
+  variant: 'gameTime' | 'lives' | 'intensity' | 'combo' | 'maxCombo' | 'activeCount' | 'realTimeHour' | 'score';
   answer?: number; // baked in for singleplayer; computed at render for multiplayer
   options?: number[];
 }
@@ -51,32 +34,15 @@ export type PuzzleData =
 export interface MathPuzzleData {
   type: 'math';
   variant:
-    | 'arithmetic'
-    | 'algebra'
-    | 'geometry'
-    | 'compare'
-    | 'nearest'
-    | 'operator'
-    | 'percent'
-    | 'sequence'
-    | 'digit_sum';
+    'arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator' | 'percent' | 'sequence' | 'digit_sum';
   expression: string;
-  answer:
-    | number
-    | string;
-  options?: (
-    | number
-    | string
-  )[];
+  answer: number | string;
+  options?: (number | string)[];
 }
 
 export interface PatternPuzzleData {
   type: 'pattern';
-  variant:
-    | 'alternating'
-    | 'growing'
-    | 'rotating'
-    | 'color_cycle';
+  variant: 'alternating' | 'growing' | 'rotating' | 'color_cycle';
   sequence: ShapeInfo[];
   answer: ShapeInfo;
   options: ShapeInfo[];
@@ -103,32 +69,15 @@ export interface LanguagePuzzleData {
 
 export interface SpatialPuzzleData {
   type: 'spatial';
-  variant:
-    | 'count'
-    | 'match'
-    | 'odd'
-    | 'color'
-    | 'size'
-    | 'rotation'
-    | 'pair';
+  variant: 'count' | 'match' | 'odd' | 'color' | 'size' | 'rotation' | 'pair';
   shapes: ShapeInfo[];
-  answer:
-    | number
-    | string;
+  answer: number | string;
   answerIndices?: number[]; // for 'pair': multiple valid clicks
-  options?: (
-    | number
-    | string
-  )[];
+  options?: (number | string)[];
 }
 
 export interface ShapeInfo {
-  shape:
-    | 'circle'
-    | 'square'
-    | 'triangle'
-    | 'diamond'
-    | 'hexagon';
+  shape: 'circle' | 'square' | 'triangle' | 'diamond' | 'hexagon';
   color: string;
   size: number;
   rotation?: number;
@@ -136,41 +85,21 @@ export interface ShapeInfo {
 
 export interface MemoryPuzzleData {
   type: 'memory';
-  variant:
-    | 'numbers'
-    | 'colors'
-    | 'shapes';
-  sequence: (
-    | string
-    | number
-  )[];
+  variant: 'numbers' | 'colors' | 'shapes';
+  sequence: (string | number)[];
   showDuration: number; // ms
   inputDuration: number; // ms - for the second phase
 }
 
 export interface ReactionPuzzleData {
   type: 'reaction';
-  variant:
-    | 'click'
-    | 'sequence'
-    | 'moving'
-    | 'decoy'
-    | 'double'
-    | 'jitter'
-    | 'burst';
+  variant: 'click' | 'sequence' | 'moving' | 'decoy' | 'double' | 'jitter' | 'burst';
   targetCount: number;
   decoys?: number;
 }
 
 export type FlingDirection =
-  | 'left'
-  | 'right'
-  | 'top'
-  | 'bottom'
-  | 'top-left'
-  | 'top-right'
-  | 'bottom-left'
-  | 'bottom-right';
+  'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export interface MinigamePuzzleData {
   type: 'minigame';
@@ -194,14 +123,8 @@ export interface MinigamePuzzleData {
 
 export interface PowerUpPuzzleData {
   type: 'powerup';
-  variant:
-    | 'timeDilation'
-    | 'purge'
-    | 'secondChance';
-  actionType:
-    | 'slider'
-    | 'spam'
-    | 'hold';
+  variant: 'timeDilation' | 'purge' | 'secondChance';
+  actionType: 'slider' | 'spam' | 'hold';
   targetValue: number;
   effectDescription: string;
 }
@@ -215,17 +138,12 @@ export interface ActivePuzzle extends PuzzleDefinition {
     x: number;
     y: number;
   };
-  memoryPhase?:
-    | 'show'
-    | 'input';
+  memoryPhase?: 'show' | 'input';
   memoryShowEndsAt?: number;
 }
 
 export interface GameState {
-  status:
-    | 'menu'
-    | 'playing'
-    | 'gameover';
+  status: 'menu' | 'playing' | 'gameover';
   score: number;
   combo: number;
   maxCombo: number;
@@ -245,10 +163,7 @@ export interface GameState {
   nextBurstAt: number;
   lastPowerupSpawnAt: number;
   activeEffect: {
-    type:
-      | 'timeDilation'
-      | 'purge'
-      | 'secondChance';
+    type: 'timeDilation' | 'purge' | 'secondChance';
     endsAt: number;
   } | null;
   isSaturated: boolean;
@@ -261,71 +176,37 @@ export interface DifficultyConfig {
   multiStepChance: number; // 0-1 chance of harder puzzles
 }
 
-export const CATEGORY_COLORS: Record<
-  PuzzleCategory,
-  string
-> =
-  {
-    math: '#00e5ff',
-    pattern:
-      '#ff6ec7',
-    language:
-      '#76ff03',
-    spatial:
-      '#ffab00',
-    memory:
-      '#b388ff',
-    reaction:
-      '#ff5252',
-    minigame:
-      '#ff4081',
-    fling:
-      '#ff4081',
-    powerup:
-      '#ffd740',
-    meta: '#9c27b0',
-  };
+export const CATEGORY_COLORS: Record<PuzzleCategory, string> = {
+  math: '#00e5ff',
+  pattern: '#ff6ec7',
+  language: '#76ff03',
+  spatial: '#ffab00',
+  memory: '#b388ff',
+  reaction: '#ff5252',
+  minigame: '#ff4081',
+  fling: '#ff4081',
+  powerup: '#ffd740',
+  meta: '#9c27b0',
+};
 
-export const SHAPE_COLOR_NAMES: Record<
-  string,
-  string
-> =
-  {
-    '#ff5252':
-      'Red',
-    '#00e5ff':
-      'Cyan',
-    '#76ff03':
-      'Green',
-    '#ffab00':
-      'Orange',
-    '#b388ff':
-      'Purple',
-    '#ff6ec7':
-      'Pink',
-  };
+export const SHAPE_COLOR_NAMES: Record<string, string> = {
+  '#ff5252': 'Red',
+  '#00e5ff': 'Cyan',
+  '#76ff03': 'Green',
+  '#ffab00': 'Orange',
+  '#b388ff': 'Purple',
+  '#ff6ec7': 'Pink',
+};
 
-export const CATEGORY_LABELS: Record<
-  PuzzleCategory,
-  string
-> =
-  {
-    math: '🧮 Math',
-    pattern:
-      '🔄 Pattern',
-    language:
-      '📝 Language',
-    spatial:
-      '🔲 Spatial',
-    memory:
-      '🧠 Memory',
-    reaction:
-      '⚡ Reaction',
-    minigame:
-      '🎮 Mini',
-    fling:
-      '👉 Fling',
-    powerup:
-      '⭐ Power-Up',
-    meta: '🎯 Meta',
-  };
+export const CATEGORY_LABELS: Record<PuzzleCategory, string> = {
+  math: '🧮 Math',
+  pattern: '🔄 Pattern',
+  language: '📝 Language',
+  spatial: '🔲 Spatial',
+  memory: '🧠 Memory',
+  reaction: '⚡ Reaction',
+  minigame: '🎮 Mini',
+  fling: '👉 Fling',
+  powerup: '⭐ Power-Up',
+  meta: '🎯 Meta',
+};

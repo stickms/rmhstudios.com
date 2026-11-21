@@ -9,123 +9,40 @@ import { mulberry32 } from '@/lib/core/rng';
 import { MAX_WPM } from '@/lib/rmhtype/typing-run';
 
 /** A started run that is not finished within this long is a miss. */
-export const DAILY_WINDOW_MS =
-  15 *
-  60 *
-  1000;
+export const DAILY_WINDOW_MS = 15 * 60 * 1000;
 
 /** Keystrokes beyond this multiple of the passage are not a typing run. */
 const MAX_KEYSTROKE_RATIO = 5;
 
 const DAY_MS = 86_400_000;
 
-export const DAY_PATTERN =
-  /^\d{8}$/;
+export const DAY_PATTERN = /^\d{8}$/;
 
-export function dayKey(
-  date: Date,
-): string {
-  const y =
-    String(
-      date.getUTCFullYear(),
-    ).padStart(
-      4,
-      '0',
-    );
-  const m =
-    String(
-      date.getUTCMonth() +
-        1,
-    ).padStart(
-      2,
-      '0',
-    );
-  const d =
-    String(
-      date.getUTCDate(),
-    ).padStart(
-      2,
-      '0',
-    );
+export function dayKey(date: Date): string {
+  const y = String(date.getUTCFullYear()).padStart(4, '0');
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
   return `${y}${m}${d}`;
 }
 
 /** The UTC midnight a day key starts at. */
-export function dayStart(
-  day: string,
-): Date {
-  return new Date(
-    Date.UTC(
-      Number(
-        day.slice(
-          0,
-          4,
-        ),
-      ),
-      Number(
-        day.slice(
-          4,
-          6,
-        ),
-      ) -
-        1,
-      Number(
-        day.slice(
-          6,
-          8,
-        ),
-      ),
-    ),
-  );
+export function dayStart(day: string): Date {
+  return new Date(Date.UTC(Number(day.slice(0, 4)), Number(day.slice(4, 6)) - 1, Number(day.slice(6, 8))));
 }
 
 /** `day` moved by `delta` days (negative goes back). */
-export function shiftDay(
-  day: string,
-  delta: number,
-): string {
-  return dayKey(
-    new Date(
-      dayStart(
-        day,
-      ).getTime() +
-        delta *
-          DAY_MS,
-    ),
-  );
+export function shiftDay(day: string, delta: number): string {
+  return dayKey(new Date(dayStart(day).getTime() + delta * DAY_MS));
 }
 
 /** `2026-11-22` for the share line and headings. */
-export function isoDay(
-  day: string,
-): string {
+export function isoDay(day: string): string {
   return `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`;
 }
 
-function dayOfYear(
-  day: string,
-): number {
-  const start =
-    Date.UTC(
-      Number(
-        day.slice(
-          0,
-          4,
-        ),
-      ),
-      0,
-      1,
-    );
-  return (
-    Math.round(
-      (dayStart(
-        day,
-      ).getTime() -
-        start) /
-        DAY_MS,
-    ) +
-    1
-  );
+function dayOfYear(day: string): number {
+  const start = Date.UTC(Number(day.slice(0, 4)), 0, 1);
+  return Math.round((dayStart(day).getTime() - start) / DAY_MS) + 1;
 }
 
 /**
@@ -134,101 +51,30 @@ function dayOfYear(
  * shuffle. Within a year nothing repeats until the list is used up; every member gets
  * the same answer for the same day.
  */
-export function passageForDay(
-  day: string,
-  passageIds: readonly string[],
-): string {
-  if (
-    passageIds.length ===
-    0
-  )
-    throw new Error(
-      'No passages to choose from',
-    );
-  const order =
-    [
-      ...passageIds,
-    ].sort();
-  const random =
-    mulberry32(
-      Number(
-        day.slice(
-          0,
-          4,
-        ),
-      ),
-    );
-  for (
-    let i =
-      order.length -
-      1;
-    i >
-    0;
-    i -= 1
-  ) {
-    const j =
-      Math.floor(
-        random() *
-          (i +
-            1),
-      );
-    const swap =
-      order[
-        i
-      ] as string;
-    order[
-      i
-    ] =
-      order[
-        j
-      ] as string;
-    order[
-      j
-    ] =
-      swap;
+export function passageForDay(day: string, passageIds: readonly string[]): string {
+  if (passageIds.length === 0) throw new Error('No passages to choose from');
+  const order = [...passageIds].sort();
+  const random = mulberry32(Number(day.slice(0, 4)));
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    const swap = order[i] as string;
+    order[i] = order[j] as string;
+    order[j] = swap;
   }
-  return order[
-    (dayOfYear(
-      day,
-    ) -
-      1) %
-      order.length
-  ] as string;
+  return order[(dayOfYear(day) - 1) % order.length] as string;
 }
 
 /**
  * Consecutive UTC days with a finished attempt, counted back from `today`. Today not
  * being done yet does not break a streak that reaches yesterday.
  */
-export function streakFrom(
-  days: readonly string[],
-  today: string,
-): number {
-  const done =
-    new Set(
-      days,
-    );
-  let cursor =
-    done.has(
-      today,
-    )
-      ? today
-      : shiftDay(
-          today,
-          -1,
-        );
+export function streakFrom(days: readonly string[], today: string): number {
+  const done = new Set(days);
+  let cursor = done.has(today) ? today : shiftDay(today, -1);
   let streak = 0;
-  while (
-    done.has(
-      cursor,
-    )
-  ) {
+  while (done.has(cursor)) {
     streak += 1;
-    cursor =
-      shiftDay(
-        cursor,
-        -1,
-      );
+    cursor = shiftDay(cursor, -1);
   }
   return streak;
 }
@@ -247,48 +93,15 @@ export interface DailyScore {
   accuracy: number;
 }
 
-const round1 =
-  (
-    value: number,
-  ) =>
-    Math.round(
-      value *
-        10,
-    ) /
-    10;
+const round1 = (value: number) => Math.round(value * 10) / 10;
 
 /** Net speed and keystroke accuracy for a report. The clock is the server's, never the client's. */
-export function scoreOf(
-  report: DailyReport,
-  passageLength: number,
-): DailyScore {
-  const minutes =
-    report.elapsedMs /
-    60_000;
-  const characters =
-    Math.min(
-      report.correct,
-      passageLength,
-    );
+export function scoreOf(report: DailyReport, passageLength: number): DailyScore {
+  const minutes = report.elapsedMs / 60_000;
+  const characters = Math.min(report.correct, passageLength);
   return {
-    wpm:
-      minutes >
-      0
-        ? round1(
-            characters /
-              5 /
-              minutes,
-          )
-        : 0,
-    accuracy:
-      report.total >
-      0
-        ? round1(
-            (report.correct /
-              report.total) *
-              100,
-          )
-        : 0,
+    wpm: minutes > 0 ? round1(characters / 5 / minutes) : 0,
+    accuracy: report.total > 0 ? round1((report.correct / report.total) * 100) : 0,
   };
 }
 
@@ -297,57 +110,16 @@ export function scoreOf(
  * the counts are whole and ordered, the passage was struck out in full, there is time
  * on the clock but not more than the window, and the speed is one a person can type.
  */
-export function plausible(
-  report: DailyReport,
-  passageLength: number,
-): boolean {
-  const {
-    correct,
-    total,
-    elapsedMs,
-  } =
-    report;
-  if (
-    !Number.isInteger(
-      correct,
-    ) ||
-    !Number.isInteger(
-      total,
-    ) ||
-    !Number.isFinite(
-      elapsedMs,
-    )
-  ) {
+export function plausible(report: DailyReport, passageLength: number): boolean {
+  const { correct, total, elapsedMs } = report;
+  if (!Number.isInteger(correct) || !Number.isInteger(total) || !Number.isFinite(elapsedMs)) {
     return false;
   }
-  if (
-    correct <
-      0 ||
-    correct >
-      total ||
-    total <
-      passageLength ||
-    total >
-      passageLength *
-        MAX_KEYSTROKE_RATIO
-  ) {
+  if (correct < 0 || correct > total || total < passageLength || total > passageLength * MAX_KEYSTROKE_RATIO) {
     return false;
   }
-  if (
-    elapsedMs <=
-      0 ||
-    elapsedMs >
-      DAILY_WINDOW_MS
-  )
-    return false;
-  return (
-    scoreOf(
-      report,
-      passageLength,
-    )
-      .wpm <=
-    MAX_WPM
-  );
+  if (elapsedMs <= 0 || elapsedMs > DAILY_WINDOW_MS) return false;
+  return scoreOf(report, passageLength).wpm <= MAX_WPM;
 }
 
 export type DailyStatus =
@@ -374,12 +146,8 @@ export interface DailyState {
   status: DailyStatus;
   passageLength: number;
   /** The passage; null until the member has started (a missed or finished day may be practised). */
-  text:
-    | string
-    | null;
-  startedAt:
-    | string
-    | null;
+  text: string | null;
+  startedAt: string | null;
   /** The server's clock when this answer was made, so a client can show time left without trusting its own. */
   serverNow: string;
   result: DailyResult | null;
@@ -387,17 +155,13 @@ export interface DailyState {
   streak: number;
 }
 
-export type DailyScope =
-  | 'global'
-  | 'friends';
+export type DailyScope = 'global' | 'friends';
 
 export interface DailyBoardRow {
   rank: number;
   userId: string;
   name: string;
-  image:
-    | string
-    | null;
+  image: string | null;
   wpm: number;
   accuracy: number;
   timeMs: number;

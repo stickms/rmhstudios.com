@@ -8,27 +8,10 @@
  * string) takes its lowest fret too, which keeps the hand as low as it can go. A note below the
  * low E, past the last fret, or not a whole semitone has no fingering.
  */
-import {
-  MAX_FRET,
-  positionsOf,
-  type FretPosition,
-} from '../theory/fretboard';
+import { MAX_FRET, positionsOf, type FretPosition } from '../theory/fretboard';
 
-export function fingerFor(
-  sounding: number,
-): FretPosition | null {
-  let best: FretPosition | null =
-    null;
-  for (const p of positionsOf(
-    sounding,
-    MAX_FRET,
-  ))
-    if (
-      !best ||
-      p.fret <
-        best.fret
-    )
-      best =
-        p;
+export function fingerFor(sounding: number): FretPosition | null {
+  let best: FretPosition | null = null;
+  for (const p of positionsOf(sounding, MAX_FRET)) if (!best || p.fret < best.fret) best = p;
   return best;
 }

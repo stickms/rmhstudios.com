@@ -1,17 +1,7 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { LazyContext } from 'framer-motion-internal/lazy-context';
 
-type Renderer =
-  NonNullable<
-    React.ContextType<
-      typeof LazyContext
-    >['renderer']
-  >;
+type Renderer = NonNullable<React.ContextType<typeof LazyContext>['renderer']>;
 
 /**
  * framer-motion's `<LazyMotion>` for an asynchronously loaded feature bundle,
@@ -37,36 +27,14 @@ export function LazyMotionProvider({
   load: () => Promise<Renderer>;
   strict?: boolean;
 }) {
-  const [
-    ,
-    setLoaded,
-  ] =
-    useState(
-      false,
-    );
-  const renderer =
-    useRef<
-      | Renderer
-      | undefined
-    >(
-      undefined,
-    );
+  const [, setLoaded] = useState(false);
+  const renderer = useRef<Renderer | undefined>(undefined);
   useEffect(() => {
     let live = true;
-    void load().then(
-      (
-        r,
-      ) => {
-        renderer.current =
-          r;
-        if (
-          live
-        )
-          setLoaded(
-            true,
-          );
-      },
-    );
+    void load().then((r) => {
+      renderer.current = r;
+      if (live) setLoaded(true);
+    });
     return () => {
       live = false;
     };
@@ -76,14 +44,11 @@ export function LazyMotionProvider({
   return (
     <LazyContext
       value={{
-        renderer:
-          renderer.current,
+        renderer: renderer.current,
         strict,
       }}
     >
-      {
-        children
-      }
+      {children}
     </LazyContext>
   );
 }

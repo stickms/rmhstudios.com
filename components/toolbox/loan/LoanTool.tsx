@@ -127,7 +127,10 @@ export function LoanTool() {
                 : t('loan-per-month', { defaultValue: 'a month' })}
             </p>
             <div>
-              <ResultRow label={t('loan-total-interest', { defaultValue: 'Total interest' })} value={money(result.totalInterest)} />
+              <ResultRow
+                label={t('loan-total-interest', { defaultValue: 'Total interest' })}
+                value={money(result.totalInterest)}
+              />
               <ResultRow label={t('loan-total-paid', { defaultValue: 'Total paid' })} value={money(result.totalPaid)} />
               <ResultRow
                 label={t('loan-payoff', { defaultValue: 'Paid off in' })}

@@ -117,10 +117,7 @@ export function BaseTool() {
                   <CopyButton value={formatInBase(parsed.value, custom)} />
                 </span>
               </div>
-              <ResultRow
-                label={t('base-bits', { defaultValue: 'Bits needed' })}
-                value={bitLength(parsed.value)}
-              />
+              <ResultRow label={t('base-bits', { defaultValue: 'Bits needed' })} value={bitLength(parsed.value)} />
             </div>
           </ToolSection>
 

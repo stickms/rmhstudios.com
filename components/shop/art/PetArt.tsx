@@ -116,7 +116,19 @@ function Eye({ x, y, rx = 3.5, ry = 4.3, fill }: { x: number; y: number; rx?: nu
   );
 }
 
-function Blush({ x, y, rx = 3, color = '#ff6f91', o = 0.45 }: { x: number; y: number; rx?: number; color?: string; o?: number }) {
+function Blush({
+  x,
+  y,
+  rx = 3,
+  color = '#ff6f91',
+  o = 0.45,
+}: {
+  x: number;
+  y: number;
+  rx?: number;
+  color?: string;
+  o?: number;
+}) {
   return <ellipse cx={x} cy={y} rx={rx} ry={rx * 0.58} fill={color} opacity={o} />;
 }
 
@@ -131,7 +143,19 @@ function Tube({ d, w, color, ow = SW }: { d: string; w: number; color: string; o
 }
 
 /** A four-point twinkle. */
-function Sparkle({ x, y, r, fill = '#ffd65c', line = true }: { x: number; y: number; r: number; fill?: string; line?: boolean }) {
+function Sparkle({
+  x,
+  y,
+  r,
+  fill = '#ffd65c',
+  line = true,
+}: {
+  x: number;
+  y: number;
+  r: number;
+  fill?: string;
+  line?: boolean;
+}) {
   const d = `M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z`;
   return <path d={d} fill={fill} stroke={line ? INK : 'none'} strokeWidth={0.8} strokeLinejoin="round" />;
 }
@@ -158,9 +182,31 @@ function Cat(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('fur')} stops={[[0, '#c3cde4'], [1, '#7886ad']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#14261c'], [1, '#3fae6e']]} />
-        <Rg id={k.id('bell')} cx={0.38} cy={0.35} r={0.65} stops={[[0, '#fff3b0'], [0.5, '#ffc93c'], [1, '#c98a12']]} />
+        <Lg
+          id={k.id('fur')}
+          stops={[
+            [0, '#c3cde4'],
+            [1, '#7886ad'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#14261c'],
+            [1, '#3fae6e'],
+          ]}
+        />
+        <Rg
+          id={k.id('bell')}
+          cx={0.38}
+          cy={0.35}
+          r={0.65}
+          stops={[
+            [0, '#fff3b0'],
+            [0.5, '#ffc93c'],
+            [1, '#c98a12'],
+          ]}
+        />
       </defs>
       <Shadow />
       <Tube d="M42 53C51 53 55 46 52 40C50.5 37 52 34 54.5 34.5" w={4.4} color="#8592b6" />
@@ -180,7 +226,10 @@ function Cat(k: K) {
         <path d="M27.6 15.2L28.6 18.2" />
         <path d="M36.4 15.2L35.4 18.2" />
       </g>
-      <path d="M25 35.2C25 31.8 28.5 31.2 32 32.2C35.5 31.2 39 31.8 39 35.2C39 38.2 35.5 39.2 32 38.4C28.5 39.2 25 38.2 25 35.2Z" fill="#f6f7fb" />
+      <path
+        d="M25 35.2C25 31.8 28.5 31.2 32 32.2C35.5 31.2 39 31.8 39 35.2C39 38.2 35.5 39.2 32 38.4C28.5 39.2 25 38.2 25 35.2Z"
+        fill="#f6f7fb"
+      />
       <Eye x={25} y={27.5} rx={3.7} ry={4.4} fill={k.url('eye')} />
       <Eye x={39} y={27.5} rx={3.7} ry={4.4} fill={k.url('eye')} />
       <path d="M30.2 32.4H33.8L32 34.4Z" fill="#ff8fa6" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
@@ -204,16 +253,60 @@ function BabyDragon(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('skin')} stops={[[0, '#a6f2bd'], [1, '#36a872']]} />
-        <Lg id={k.id('wing')} stops={[[0, '#ffc49a'], [1, '#ff7b6b']]} />
-        <Lg id={k.id('belly')} stops={[[0, '#fff4d1'], [1, '#ffd27e']]} />
-        <Lg id={k.id('shell')} stops={[[0, '#fffdf6'], [1, '#e4d6bd']]} />
-        <Lg id={k.id('horn')} stops={[[0, '#fffaf0'], [1, '#e8cf9a']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#2a170c'], [1, '#e08d1a']]} />
+        <Lg
+          id={k.id('skin')}
+          stops={[
+            [0, '#a6f2bd'],
+            [1, '#36a872'],
+          ]}
+        />
+        <Lg
+          id={k.id('wing')}
+          stops={[
+            [0, '#ffc49a'],
+            [1, '#ff7b6b'],
+          ]}
+        />
+        <Lg
+          id={k.id('belly')}
+          stops={[
+            [0, '#fff4d1'],
+            [1, '#ffd27e'],
+          ]}
+        />
+        <Lg
+          id={k.id('shell')}
+          stops={[
+            [0, '#fffdf6'],
+            [1, '#e4d6bd'],
+          ]}
+        />
+        <Lg
+          id={k.id('horn')}
+          stops={[
+            [0, '#fffaf0'],
+            [1, '#e8cf9a'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#2a170c'],
+            [1, '#e08d1a'],
+          ]}
+        />
       </defs>
       <Shadow rx={19} cy={60.3} />
-      <path d="M22 40C17 34 11 28 7 21C8 26 7 30 4.5 33C8 33 10 34 11 36.5C13 36 15 37 16 39C18 38.6 20 39.4 22 40Z" fill={k.url('wing')} {...O} />
-      <path d="M42 40C47 34 53 28 57 21C56 26 57 30 59.5 33C56 33 54 34 53 36.5C51 36 49 37 48 39C46 38.6 44 39.4 42 40Z" fill={k.url('wing')} {...O} />
+      <path
+        d="M22 40C17 34 11 28 7 21C8 26 7 30 4.5 33C8 33 10 34 11 36.5C13 36 15 37 16 39C18 38.6 20 39.4 22 40Z"
+        fill={k.url('wing')}
+        {...O}
+      />
+      <path
+        d="M42 40C47 34 53 28 57 21C56 26 57 30 59.5 33C56 33 54 34 53 36.5C51 36 49 37 48 39C46 38.6 44 39.4 42 40Z"
+        fill={k.url('wing')}
+        {...O}
+      />
       <g stroke={INK} strokeWidth={1} strokeLinecap="round" opacity={0.45}>
         <path d="M11 28.5L11 36.4" />
         <path d="M15.5 33L16 39" />
@@ -266,9 +359,31 @@ function Ghost(k: K) {
   return (
     <>
       <defs>
-        <Rg id={k.id('aura')} stops={[[0, '#b8a6ff', 0.45], [1, '#b8a6ff', 0]]} />
-        <Rg id={k.id('sheet')} cx={0.36} cy={0.28} r={0.8} stops={[[0, '#ffffff'], [0.55, '#f1eeff'], [1, '#c4b8ff']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#1d1630'], [1, '#5b4a92']]} />
+        <Rg
+          id={k.id('aura')}
+          stops={[
+            [0, '#b8a6ff', 0.45],
+            [1, '#b8a6ff', 0],
+          ]}
+        />
+        <Rg
+          id={k.id('sheet')}
+          cx={0.36}
+          cy={0.28}
+          r={0.8}
+          stops={[
+            [0, '#ffffff'],
+            [0.55, '#f1eeff'],
+            [1, '#c4b8ff'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#1d1630'],
+            [1, '#5b4a92'],
+          ]}
+        />
       </defs>
       <circle cx={32} cy={30} r={29} fill={k.url('aura')} />
       <Shadow rx={12} o={0.13} />
@@ -297,13 +412,63 @@ function Robot(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('metal')} stops={[[0, '#f3f7fc'], [1, '#a2b2c8']]} />
-        <Lg id={k.id('dark')} stops={[[0, '#8d9cb3'], [1, '#5e6c85']]} />
-        <Lg id={k.id('screen')} stops={[[0, '#26305a'], [1, '#141a33']]} />
-        <Lg id={k.id('teal')} stops={[[0, '#8af0ff'], [1, '#22b3cc']]} />
-        <Rg id={k.id('glow')} stops={[[0, '#7cf2ff', 0.55], [1, '#7cf2ff', 0]]} />
-        <Rg id={k.id('lens')} cx={0.45} cy={0.4} r={0.6} stops={[[0, '#f2ffff'], [0.55, '#8af0ff'], [1, '#2bbad3']]} />
-        <Rg id={k.id('bulb')} cx={0.38} cy={0.35} r={0.65} stops={[[0, '#ffd1d6'], [0.5, '#ff5d6c'], [1, '#c22d44']]} />
+        <Lg
+          id={k.id('metal')}
+          stops={[
+            [0, '#f3f7fc'],
+            [1, '#a2b2c8'],
+          ]}
+        />
+        <Lg
+          id={k.id('dark')}
+          stops={[
+            [0, '#8d9cb3'],
+            [1, '#5e6c85'],
+          ]}
+        />
+        <Lg
+          id={k.id('screen')}
+          stops={[
+            [0, '#26305a'],
+            [1, '#141a33'],
+          ]}
+        />
+        <Lg
+          id={k.id('teal')}
+          stops={[
+            [0, '#8af0ff'],
+            [1, '#22b3cc'],
+          ]}
+        />
+        <Rg
+          id={k.id('glow')}
+          stops={[
+            [0, '#7cf2ff', 0.55],
+            [1, '#7cf2ff', 0],
+          ]}
+        />
+        <Rg
+          id={k.id('lens')}
+          cx={0.45}
+          cy={0.4}
+          r={0.6}
+          stops={[
+            [0, '#f2ffff'],
+            [0.55, '#8af0ff'],
+            [1, '#2bbad3'],
+          ]}
+        />
+        <Rg
+          id={k.id('bulb')}
+          cx={0.38}
+          cy={0.35}
+          r={0.65}
+          stops={[
+            [0, '#ffd1d6'],
+            [0.5, '#ff5d6c'],
+            [1, '#c22d44'],
+          ]}
+        />
       </defs>
       <Shadow rx={15} />
       <Tube d="M22 44C17 44.5 15 48 15.5 51.5" w={3.6} color="#c3cede" />
@@ -314,14 +479,26 @@ function Robot(k: K) {
       <rect x={34} y={53} width={9} height={5} rx={2.4} fill={k.url('dark')} {...O} strokeWidth={1.6} />
       <rect x={20.5} y={39.5} width={23} height={16} rx={6.5} fill={k.url('metal')} {...O} />
       <rect x={26.5} y={43.5} width={11} height={8} rx={2.6} fill="#d5deea" stroke={INK} strokeWidth={1.2} />
-      <path d="M32 50.2C29.2 48.3 28.4 47 28.8 45.8C29.3 44.6 31 44.6 32 45.9C33 44.6 34.7 44.6 35.2 45.8C35.6 47 34.8 48.3 32 50.2Z" fill={k.url('bulb')} stroke={INK} strokeWidth={0.8} />
+      <path
+        d="M32 50.2C29.2 48.3 28.4 47 28.8 45.8C29.3 44.6 31 44.6 32 45.9C33 44.6 34.7 44.6 35.2 45.8C35.6 47 34.8 48.3 32 50.2Z"
+        fill={k.url('bulb')}
+        stroke={INK}
+        strokeWidth={0.8}
+      />
       <rect x={28.5} y={36} width={7} height={5} rx={1.2} fill={k.url('dark')} {...O} strokeWidth={1.6} />
       <path d="M32 13V7.5" stroke={INK} strokeWidth={2} strokeLinecap="round" />
       <circle cx={32} cy={5.6} r={3.1} fill={k.url('bulb')} {...O} strokeWidth={1.6} />
       <rect x={8.4} y={20.5} width={5} height={11} rx={2.2} fill={k.url('teal')} {...O} strokeWidth={1.6} />
       <rect x={50.6} y={20.5} width={5} height={11} rx={2.2} fill={k.url('teal')} {...O} strokeWidth={1.6} />
       <rect x={12} y={12.5} width={40} height={26.5} rx={11} fill={k.url('metal')} {...O} />
-      <path d="M16.5 20C16.5 17 18.5 15.4 22 15.4H30" stroke="#fff" strokeWidth={1.7} strokeLinecap="round" opacity={0.9} fill="none" />
+      <path
+        d="M16.5 20C16.5 17 18.5 15.4 22 15.4H30"
+        stroke="#fff"
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        opacity={0.9}
+        fill="none"
+      />
       <rect x={16.5} y={17.5} width={31} height={18} rx={7.5} fill={k.url('screen')} stroke={INK} strokeWidth={1.4} />
       <path d="M21 34L33 18.5H38.5L26.5 34Z" fill="#fff" opacity={0.07} />
       <ellipse cx={25.5} cy={25.5} rx={5.6} ry={6} fill={k.url('glow')} />
@@ -343,8 +520,20 @@ function Fox(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('fur')} stops={[[0, '#ffad5e'], [1, '#e4642a']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#1d120d'], [1, '#9a521e']]} />
+        <Lg
+          id={k.id('fur')}
+          stops={[
+            [0, '#ffad5e'],
+            [1, '#e4642a'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#1d120d'],
+            [1, '#9a521e'],
+          ]}
+        />
         <clipPath id={k.id('tail')}>
           <path d={tail} />
         </clipPath>
@@ -391,10 +580,36 @@ function Panda(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('white')} stops={[[0, '#ffffff'], [1, '#d9dee8']]} />
-        <Lg id={k.id('black')} stops={[[0, '#45424f'], [1, '#1c1b22']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#000000'], [1, '#4d4760']]} />
-        <Lg id={k.id('bamboo')} x2={1} y2={0} stops={[[0, '#9be38a'], [1, '#4fa94a']]} />
+        <Lg
+          id={k.id('white')}
+          stops={[
+            [0, '#ffffff'],
+            [1, '#d9dee8'],
+          ]}
+        />
+        <Lg
+          id={k.id('black')}
+          stops={[
+            [0, '#45424f'],
+            [1, '#1c1b22'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#000000'],
+            [1, '#4d4760'],
+          ]}
+        />
+        <Lg
+          id={k.id('bamboo')}
+          x2={1}
+          y2={0}
+          stops={[
+            [0, '#9be38a'],
+            [1, '#4fa94a'],
+          ]}
+        />
       </defs>
       <Shadow />
       <path d={CAT_BODY} fill={k.url('white')} {...O} />
@@ -407,8 +622,18 @@ function Panda(k: K) {
         <path d="M41.2 39H45.4M41.2 47H45.4" stroke="#3f8a3c" strokeWidth={1.2} strokeLinecap="round" />
       </g>
       <path d="M45 33Q50 26.5 55.5 28.5Q51 34 45 33Z" fill="#7fd36f" {...O} strokeWidth={1.4} />
-      <path d="M22 41.5C17.5 44.5 18.5 50.5 23 51.2C26.4 51.4 27.4 47.2 27.2 44Z" fill={k.url('black')} {...O} strokeWidth={1.6} />
-      <path d="M41.5 40.5C46.5 42.5 47.6 47.4 44.4 49.2C41.2 50.4 37.8 48.2 37.8 45Z" fill={k.url('black')} {...O} strokeWidth={1.6} />
+      <path
+        d="M22 41.5C17.5 44.5 18.5 50.5 23 51.2C26.4 51.4 27.4 47.2 27.2 44Z"
+        fill={k.url('black')}
+        {...O}
+        strokeWidth={1.6}
+      />
+      <path
+        d="M41.5 40.5C46.5 42.5 47.6 47.4 44.4 49.2C41.2 50.4 37.8 48.2 37.8 45Z"
+        fill={k.url('black')}
+        {...O}
+        strokeWidth={1.6}
+      />
       <circle cx={18} cy={15} r={5.6} fill={k.url('black')} {...O} />
       <circle cx={46} cy={15} r={5.6} fill={k.url('black')} {...O} />
       <circle cx={18.6} cy={15.6} r={2.6} fill="#5a5664" />
@@ -432,22 +657,59 @@ function Penguin(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('navy')} stops={[[0, '#56679a'], [1, '#1f2742']]} />
-        <Lg id={k.id('white')} stops={[[0, '#ffffff'], [1, '#dde4f0']]} />
-        <Lg id={k.id('beak')} stops={[[0, '#ffc24d'], [1, '#f0861a']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#0f1220'], [1, '#3e4c7a']]} />
+        <Lg
+          id={k.id('navy')}
+          stops={[
+            [0, '#56679a'],
+            [1, '#1f2742'],
+          ]}
+        />
+        <Lg
+          id={k.id('white')}
+          stops={[
+            [0, '#ffffff'],
+            [1, '#dde4f0'],
+          ]}
+        />
+        <Lg
+          id={k.id('beak')}
+          stops={[
+            [0, '#ffc24d'],
+            [1, '#f0861a'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#0f1220'],
+            [1, '#3e4c7a'],
+          ]}
+        />
       </defs>
       <Shadow />
       <path d="M15 31C9.5 35 7 42 8.5 45.6C11 46 14.2 42 16 38.6Z" fill={k.url('navy')} {...O} />
       <path d="M49 30C54.5 27.5 58.5 23 59 20.5C56 19.8 52 23 48.4 26.8Z" fill={k.url('navy')} {...O} />
       <ellipse cx={26} cy={57} rx={4.6} ry={2.4} fill={k.url('beak')} {...O} strokeWidth={1.6} />
       <ellipse cx={38} cy={57} rx={4.6} ry={2.4} fill={k.url('beak')} {...O} strokeWidth={1.6} />
-      <path d="M32 7C45 7 51 20 51 36C51 49.5 44 56 32 56C20 56 13 49.5 13 36C13 20 19 7 32 7Z" fill={k.url('navy')} {...O} />
-      <path d="M32 17C28 13 18 14 18 25C18 30 20 33 20 38C20 48.5 25 53.5 32 53.5C39 53.5 44 48.5 44 38C44 33 46 30 46 25C46 14 36 13 32 17Z" fill={k.url('white')} />
+      <path
+        d="M32 7C45 7 51 20 51 36C51 49.5 44 56 32 56C20 56 13 49.5 13 36C13 20 19 7 32 7Z"
+        fill={k.url('navy')}
+        {...O}
+      />
+      <path
+        d="M32 17C28 13 18 14 18 25C18 30 20 33 20 38C20 48.5 25 53.5 32 53.5C39 53.5 44 48.5 44 38C44 33 46 30 46 25C46 14 36 13 32 17Z"
+        fill={k.url('white')}
+      />
       <Sheen d="M18 17C20 12 25 9 30 8.8C25.5 11 22 14 20 18.5Z" o={0.35} />
       <Eye x={26} y={25} rx={3} ry={3.8} fill={k.url('eye')} />
       <Eye x={38} y={25} rx={3} ry={3.8} fill={k.url('eye')} />
-      <path d="M28.4 30Q32 28 35.6 30Q34 34 32 34.4Q30 34 28.4 30Z" fill={k.url('beak')} stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
+      <path
+        d="M28.4 30Q32 28 35.6 30Q34 34 32 34.4Q30 34 28.4 30Z"
+        fill={k.url('beak')}
+        stroke={INK}
+        strokeWidth={1.3}
+        strokeLinejoin="round"
+      />
       <path d="M29.6 30.8Q32 31.6 34.4 30.8" stroke="#b85f12" strokeWidth={0.8} fill="none" strokeLinecap="round" />
       <Blush x={22} y={31.2} />
       <Blush x={42} y={31.2} />
@@ -460,16 +722,54 @@ function Owl(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('body')} stops={[[0, '#cf956a'], [1, '#8a5434']]} />
-        <Lg id={k.id('wing')} stops={[[0, '#a06a46'], [1, '#6a3e26']]} />
-        <Lg id={k.id('disc')} stops={[[0, '#fbe8cc'], [1, '#e8c294']]} />
-        <Rg id={k.id('iris')} cx={0.5} cy={0.6} r={0.55} stops={[[0, '#ffe27a'], [0.7, '#ffb52e'], [1, '#e07a12']]} />
-        <Lg id={k.id('branch')} stops={[[0, '#a06e48'], [1, '#6c4228']]} />
+        <Lg
+          id={k.id('body')}
+          stops={[
+            [0, '#cf956a'],
+            [1, '#8a5434'],
+          ]}
+        />
+        <Lg
+          id={k.id('wing')}
+          stops={[
+            [0, '#a06a46'],
+            [1, '#6a3e26'],
+          ]}
+        />
+        <Lg
+          id={k.id('disc')}
+          stops={[
+            [0, '#fbe8cc'],
+            [1, '#e8c294'],
+          ]}
+        />
+        <Rg
+          id={k.id('iris')}
+          cx={0.5}
+          cy={0.6}
+          r={0.55}
+          stops={[
+            [0, '#ffe27a'],
+            [0.7, '#ffb52e'],
+            [1, '#e07a12'],
+          ]}
+        />
+        <Lg
+          id={k.id('branch')}
+          stops={[
+            [0, '#a06e48'],
+            [1, '#6c4228'],
+          ]}
+        />
       </defs>
       <Shadow cy={61} rx={20} o={0.12} />
       <path d="M17.5 18L12 5.5L24.5 12Z" fill={k.url('body')} {...O} />
       <path d="M46.5 18L52 5.5L39.5 12Z" fill={k.url('body')} {...O} />
-      <path d="M32 9C45 9 51 18 51 32C51 46 44 55 32 55C20 55 13 46 13 32C13 18 19 9 32 9Z" fill={k.url('body')} {...O} />
+      <path
+        d="M32 9C45 9 51 18 51 32C51 46 44 55 32 55C20 55 13 46 13 32C13 18 19 9 32 9Z"
+        fill={k.url('body')}
+        {...O}
+      />
       <ellipse cx={32} cy={44} rx={10.5} ry={9.6} fill="#f2d5ab" />
       <g stroke="#b47c50" strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round">
         <path d="M26.5 40L28 41.4L29.5 40" />
@@ -520,8 +820,20 @@ function Tiger(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('fur')} stops={[[0, '#ffc066'], [1, '#ee7420']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#13203a'], [1, '#4aa8e6']]} />
+        <Lg
+          id={k.id('fur')}
+          stops={[
+            [0, '#ffc066'],
+            [1, '#ee7420'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#13203a'],
+            [1, '#4aa8e6'],
+          ]}
+        />
       </defs>
       <Shadow />
       <Tube d={tail} w={4.6} color="#f59a3c" />
@@ -557,7 +869,10 @@ function Tiger(k: K) {
       </g>
       <ellipse cx={24.4} cy={20.8} rx={2.6} ry={1.3} fill="#fffaf2" />
       <ellipse cx={39.6} cy={20.8} rx={2.6} ry={1.3} fill="#fffaf2" />
-      <path d="M24.4 35.4C24.4 31.6 28.4 31 32 32C35.6 31 39.6 31.6 39.6 35.4C39.6 38.6 35.6 39.6 32 38.8C28.4 39.6 24.4 38.6 24.4 35.4Z" fill="#fffaf2" />
+      <path
+        d="M24.4 35.4C24.4 31.6 28.4 31 32 32C35.6 31 39.6 31.6 39.6 35.4C39.6 38.6 35.6 39.6 32 38.8C28.4 39.6 24.4 38.6 24.4 35.4Z"
+        fill="#fffaf2"
+      />
       <Eye x={25} y={27} rx={3.6} ry={4.3} fill={k.url('eye')} />
       <Eye x={39} y={27} rx={3.6} ry={4.3} fill={k.url('eye')} />
       <path d="M30 32.4H34L32 34.6Z" fill="#e5707e" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
@@ -580,8 +895,20 @@ function Octopus(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('skin')} stops={[[0, '#ffa8cb'], [1, '#e2508f']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#2a0f22'], [1, '#8a2f68']]} />
+        <Lg
+          id={k.id('skin')}
+          stops={[
+            [0, '#ffa8cb'],
+            [1, '#e2508f'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#2a0f22'],
+            [1, '#8a2f68'],
+          ]}
+        />
       </defs>
       <Shadow rx={19} />
       <g fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -599,7 +926,11 @@ function Octopus(k: K) {
         <circle cx={41.6} cy={52.4} r={0.9} />
         <circle cx={51.4} cy={48.6} r={0.9} />
       </g>
-      <path d="M13 30C13 15 21 7 32 7C43 7 51 15 51 30C51 38.5 45 43.4 32 43.4C19 43.4 13 38.5 13 30Z" fill={k.url('skin')} {...O} />
+      <path
+        d="M13 30C13 15 21 7 32 7C43 7 51 15 51 30C51 38.5 45 43.4 32 43.4C19 43.4 13 38.5 13 30Z"
+        fill={k.url('skin')}
+        {...O}
+      />
       <Sheen d="M18 22C19 15 24 10.5 30 9.6C25 12.5 21.5 16.5 20.4 23Z" o={0.5} />
       <g fill="#ffd6e7" opacity={0.85}>
         <circle cx={40} cy={13.6} r={2.1} />
@@ -624,9 +955,27 @@ function Dino(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('skin')} stops={[[0, '#d2c2ff'], [1, '#8a68e6']]} />
-        <Lg id={k.id('far')} stops={[[0, '#9a7ee6'], [1, '#6446bd']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#1a1233'], [1, '#6a4fc2']]} />
+        <Lg
+          id={k.id('skin')}
+          stops={[
+            [0, '#d2c2ff'],
+            [1, '#8a68e6'],
+          ]}
+        />
+        <Lg
+          id={k.id('far')}
+          stops={[
+            [0, '#9a7ee6'],
+            [1, '#6446bd'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#1a1233'],
+            [1, '#6a4fc2'],
+          ]}
+        />
         <clipPath id={k.id('body')}>
           <path d={body} />
         </clipPath>
@@ -692,17 +1041,51 @@ function Whale(k: K) {
   return (
     <>
       <defs>
-        <Lg id={k.id('skin')} stops={[[0, '#86ceff'], [1, '#356fd0']]} />
-        <Lg id={k.id('belly')} stops={[[0, '#eef9ff'], [1, '#c2e3ff']]} />
-        <Lg id={k.id('spout')} stops={[[0, '#ffffff'], [1, '#b8e6ff']]} />
-        <Lg id={k.id('sea')} stops={[[0, '#8fdcff'], [1, '#3ea6ea']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#0c1830'], [1, '#2f62b0']]} />
+        <Lg
+          id={k.id('skin')}
+          stops={[
+            [0, '#86ceff'],
+            [1, '#356fd0'],
+          ]}
+        />
+        <Lg
+          id={k.id('belly')}
+          stops={[
+            [0, '#eef9ff'],
+            [1, '#c2e3ff'],
+          ]}
+        />
+        <Lg
+          id={k.id('spout')}
+          stops={[
+            [0, '#ffffff'],
+            [1, '#b8e6ff'],
+          ]}
+        />
+        <Lg
+          id={k.id('sea')}
+          stops={[
+            [0, '#8fdcff'],
+            [1, '#3ea6ea'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#0c1830'],
+            [1, '#2f62b0'],
+          ]}
+        />
         <clipPath id={k.id('body')}>
           <path d={body} />
         </clipPath>
       </defs>
       <path d="M46 42C52 40 55 34 55 28L59 29C59 37 55 45 48 48.5Z" fill={k.url('skin')} {...O} />
-      <path d="M57 28.6C52.5 27 49.5 23 50 19C53 19.6 55.4 21.6 57 24C58.2 21 60.4 19 63 18.6C63.2 22.8 61.2 26.8 58 28.8Z" fill={k.url('skin')} {...O} />
+      <path
+        d="M57 28.6C52.5 27 49.5 23 50 19C53 19.6 55.4 21.6 57 24C58.2 21 60.4 19 63 18.6C63.2 22.8 61.2 26.8 58 28.8Z"
+        fill={k.url('skin')}
+        {...O}
+      />
       <path d={body} fill={k.url('skin')} />
       <g clipPath={k.url('body')}>
         <ellipse cx={27} cy={54} rx={21} ry={9.6} fill={k.url('belly')} />
@@ -719,9 +1102,24 @@ function Whale(k: K) {
       <path d="M22.4 41.6Q25.2 44.2 28 41.6" {...THIN} />
       <Blush x={15} y={41.8} rx={2.6} />
       <Blush x={35.4} y={41.8} rx={2.6} />
-      <path d="M28.6 22.4C28.8 18 29.8 15 30 11.6H32.4C32.6 15 33.6 18 33.8 22.4Z" fill={k.url('spout')} {...O} strokeWidth={1.5} />
-      <path d="M31.2 12.4C27 8 21.6 8.6 19.4 12.2C23.4 11.2 27 12 31.2 13.8Z" fill={k.url('spout')} {...O} strokeWidth={1.5} />
-      <path d="M31.2 12.4C35.4 8 40.8 8.6 43 12.2C39 11.2 35.4 12 31.2 13.8Z" fill={k.url('spout')} {...O} strokeWidth={1.5} />
+      <path
+        d="M28.6 22.4C28.8 18 29.8 15 30 11.6H32.4C32.6 15 33.6 18 33.8 22.4Z"
+        fill={k.url('spout')}
+        {...O}
+        strokeWidth={1.5}
+      />
+      <path
+        d="M31.2 12.4C27 8 21.6 8.6 19.4 12.2C23.4 11.2 27 12 31.2 13.8Z"
+        fill={k.url('spout')}
+        {...O}
+        strokeWidth={1.5}
+      />
+      <path
+        d="M31.2 12.4C35.4 8 40.8 8.6 43 12.2C39 11.2 35.4 12 31.2 13.8Z"
+        fill={k.url('spout')}
+        {...O}
+        strokeWidth={1.5}
+      />
       <circle cx={17.6} cy={16} r={1.3} fill="#d6f1ff" {...O} strokeWidth={1} />
       <circle cx={45} cy={15.6} r={1.3} fill="#d6f1ff" {...O} strokeWidth={1} />
       <path
@@ -730,7 +1128,14 @@ function Whale(k: K) {
         {...O}
         strokeWidth={1.6}
       />
-      <path d="M8 54.4Q10.4 53.2 12.4 54.6M28 54.4Q30.4 53.2 32.4 54.6M48 54.4Q50.4 53.2 52.4 54.6" stroke="#fff" strokeWidth={1.1} strokeLinecap="round" fill="none" opacity={0.85} />
+      <path
+        d="M8 54.4Q10.4 53.2 12.4 54.6M28 54.4Q30.4 53.2 32.4 54.6M48 54.4Q50.4 53.2 52.4 54.6"
+        stroke="#fff"
+        strokeWidth={1.1}
+        strokeLinecap="round"
+        fill="none"
+        opacity={0.85}
+      />
       <Sparkle x={8} y={22} r={2.8} />
       <Sparkle x={51} y={6} r={2} fill="#fff4c4" />
     </>
@@ -743,16 +1148,61 @@ function Wyrmling(k: K) {
   return (
     <g transform="translate(0 2.2)">
       <defs>
-        <Lg id={k.id('scale')} stops={[[0, '#ff7563'], [1, '#c42638']]} />
-        <Lg id={k.id('gold')} stops={[[0, '#ffe58a'], [1, '#f39a2a']]} />
-        <Lg id={k.id('cloud')} stops={[[0, '#ffffff'], [1, '#d9e2ff']]} />
-        <Rg id={k.id('pearl')} cx={0.4} cy={0.35} r={0.65} stops={[[0, '#ffffff'], [0.5, '#e4f3ff'], [1, '#a8b8ff']]} />
-        <Rg id={k.id('halo')} stops={[[0, '#fff2b0', 0.75], [1, '#fff2b0', 0]]} />
-        <Lg id={k.id('eye')} stops={[[0, '#1e0c06'], [1, '#d9781a']]} />
+        <Lg
+          id={k.id('scale')}
+          stops={[
+            [0, '#ff7563'],
+            [1, '#c42638'],
+          ]}
+        />
+        <Lg
+          id={k.id('gold')}
+          stops={[
+            [0, '#ffe58a'],
+            [1, '#f39a2a'],
+          ]}
+        />
+        <Lg
+          id={k.id('cloud')}
+          stops={[
+            [0, '#ffffff'],
+            [1, '#d9e2ff'],
+          ]}
+        />
+        <Rg
+          id={k.id('pearl')}
+          cx={0.4}
+          cy={0.35}
+          r={0.65}
+          stops={[
+            [0, '#ffffff'],
+            [0.5, '#e4f3ff'],
+            [1, '#a8b8ff'],
+          ]}
+        />
+        <Rg
+          id={k.id('halo')}
+          stops={[
+            [0, '#fff2b0', 0.75],
+            [1, '#fff2b0', 0],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#1e0c06'],
+            [1, '#d9781a'],
+          ]}
+        />
       </defs>
       <Shadow cy={59} rx={20} o={0.12} />
       <circle cx={53.4} cy={31.6} r={9.5} fill={k.url('halo')} />
-      <path d="M47 50C52 46 56.2 47 58.4 44C58.4 49 56.4 52 53.4 53.2C55.4 55 58.2 55 60.4 54C57.4 58.4 52 58.6 48.4 54.4Z" fill={k.url('gold')} {...O} strokeWidth={1.6} />
+      <path
+        d="M47 50C52 46 56.2 47 58.4 44C58.4 49 56.4 52 53.4 53.2C55.4 55 58.2 55 60.4 54C57.4 58.4 52 58.6 48.4 54.4Z"
+        fill={k.url('gold')}
+        {...O}
+        strokeWidth={1.6}
+      />
       <g fill="none" strokeLinecap="round" strokeLinejoin="round">
         <path d={coil} stroke={INK} strokeWidth={11} />
         <path d={coil} stroke="#e8463f" strokeWidth={7} />
@@ -763,17 +1213,54 @@ function Wyrmling(k: K) {
       <circle cx={53.4} cy={31.6} r={4.4} fill={k.url('pearl')} {...O} strokeWidth={1.5} />
       <circle cx={52.1} cy={30.2} r={1.2} fill="#fff" />
       <Tube d="M23 45.6L17.2 49.2" w={2.6} color="#e8463f" ow={1.6} />
-      <path d="M8 55.6C6 51.6 10 48.8 14 50.8C15 46.8 21 45.8 24 48.8C27 45.8 33 46.8 34 50.8C38 48.8 42 50.8 41 54.8C44 54.8 45 57.8 42 58.8L10 58.8C6 58.8 5 56.6 8 55.6Z" fill={k.url('cloud')} {...O} strokeWidth={1.7} />
-      <path d="M17 54.6Q19.4 52.4 21.6 54.4M29 54.2Q31.4 52 33.6 54" stroke="#9fb0e6" strokeWidth={1.1} fill="none" strokeLinecap="round" />
-      <path d="M34 11C40 8.6 42.4 12 44.6 10C44 14.6 40.6 16.6 37.4 16.6C41 18 43.4 20.6 44.6 19.8C42.8 24 38.4 24.2 35.4 21Z" fill={k.url('gold')} {...O} strokeWidth={1.5} />
-      <path d="M15 11C9.6 9.6 7.6 12.4 5.6 11C6.6 15 9.6 16.6 12.6 16.6Z" fill={k.url('gold')} {...O} strokeWidth={1.5} />
+      <path
+        d="M8 55.6C6 51.6 10 48.8 14 50.8C15 46.8 21 45.8 24 48.8C27 45.8 33 46.8 34 50.8C38 48.8 42 50.8 41 54.8C44 54.8 45 57.8 42 58.8L10 58.8C6 58.8 5 56.6 8 55.6Z"
+        fill={k.url('cloud')}
+        {...O}
+        strokeWidth={1.7}
+      />
+      <path
+        d="M17 54.6Q19.4 52.4 21.6 54.4M29 54.2Q31.4 52 33.6 54"
+        stroke="#9fb0e6"
+        strokeWidth={1.1}
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M34 11C40 8.6 42.4 12 44.6 10C44 14.6 40.6 16.6 37.4 16.6C41 18 43.4 20.6 44.6 19.8C42.8 24 38.4 24.2 35.4 21Z"
+        fill={k.url('gold')}
+        {...O}
+        strokeWidth={1.5}
+      />
+      <path
+        d="M15 11C9.6 9.6 7.6 12.4 5.6 11C6.6 15 9.6 16.6 12.6 16.6Z"
+        fill={k.url('gold')}
+        {...O}
+        strokeWidth={1.5}
+      />
       <Tube d="M18.4 8.4C15.6 5 14.6 2.6 15.4 1.4M16.4 5L12.8 4.2" w={1.8} color="#ffd97a" ow={1.4} />
       <Tube d="M30.6 8.4C33.4 5 34.4 2.6 33.6 1.4M32.6 5L36.2 4.2" w={1.8} color="#ffd97a" ow={1.4} />
-      <path d="M13 16.5C13 10 18 6 24.5 6C31 6 36 10 36 16.5C36 21.5 31.6 25.4 24.5 25.4C17.4 25.4 13 21.5 13 16.5Z" fill={k.url('scale')} {...O} />
+      <path
+        d="M13 16.5C13 10 18 6 24.5 6C31 6 36 10 36 16.5C36 21.5 31.6 25.4 24.5 25.4C17.4 25.4 13 21.5 13 16.5Z"
+        fill={k.url('scale')}
+        {...O}
+      />
       <Sheen d="M16.4 13.4C17.4 9.6 20.6 7.8 24.4 7.8C21 9.2 18.8 11.2 18.2 14.6Z" o={0.45} />
       <ellipse cx={24.5} cy={21.2} rx={6.6} ry={3.6} fill="#ffc2a8" />
-      <path d="M22.2 19.8Q21.6 18.8 22.6 18.6M26.8 19.8Q27.4 18.8 26.4 18.6" stroke={INK} strokeWidth={0.9} fill="none" strokeLinecap="round" />
-      <path d="M17 11.2Q19.6 9.4 22.2 10.8M26.8 10.8Q29.4 9.4 32 11.2" stroke="#ffd97a" strokeWidth={1.6} fill="none" strokeLinecap="round" />
+      <path
+        d="M22.2 19.8Q21.6 18.8 22.6 18.6M26.8 19.8Q27.4 18.8 26.4 18.6"
+        stroke={INK}
+        strokeWidth={0.9}
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M17 11.2Q19.6 9.4 22.2 10.8M26.8 10.8Q29.4 9.4 32 11.2"
+        stroke="#ffd97a"
+        strokeWidth={1.6}
+        fill="none"
+        strokeLinecap="round"
+      />
       <Eye x={20.4} y={14.6} rx={2.8} ry={3.4} fill={k.url('eye')} />
       <Eye x={28.6} y={14.6} rx={2.8} ry={3.4} fill={k.url('eye')} />
       <path d="M22.4 22.6Q24.5 24.2 26.6 22.6" {...THIN} />
@@ -794,13 +1281,61 @@ function Fairy(k: K) {
   return (
     <>
       <defs>
-        <Rg id={k.id('halo')} stops={[[0, '#fff3c2', 0.85], [0.6, '#ffd9f2', 0.35], [1, '#ffd9f2', 0]]} />
-        <Lg id={k.id('wing')} x1={0} y1={0} x2={1} y2={1} stops={[[0, '#c6f3ff', 0.92], [0.5, '#e6cbff', 0.88], [1, '#fff0b8', 0.9]]} />
-        <Lg id={k.id('skin')} stops={[[0, '#ffe6d6'], [1, '#f6bea4']]} />
-        <Lg id={k.id('hair')} stops={[[0, '#ffa6d8'], [1, '#a77aff']]} />
-        <Lg id={k.id('dress')} stops={[[0, '#9ff3dc'], [1, '#3fbcc4']]} />
-        <Lg id={k.id('star')} stops={[[0, '#fff3a6'], [1, '#ffbe2e']]} />
-        <Lg id={k.id('eye')} stops={[[0, '#22123a'], [1, '#8d5ce6']]} />
+        <Rg
+          id={k.id('halo')}
+          stops={[
+            [0, '#fff3c2', 0.85],
+            [0.6, '#ffd9f2', 0.35],
+            [1, '#ffd9f2', 0],
+          ]}
+        />
+        <Lg
+          id={k.id('wing')}
+          x1={0}
+          y1={0}
+          x2={1}
+          y2={1}
+          stops={[
+            [0, '#c6f3ff', 0.92],
+            [0.5, '#e6cbff', 0.88],
+            [1, '#fff0b8', 0.9],
+          ]}
+        />
+        <Lg
+          id={k.id('skin')}
+          stops={[
+            [0, '#ffe6d6'],
+            [1, '#f6bea4'],
+          ]}
+        />
+        <Lg
+          id={k.id('hair')}
+          stops={[
+            [0, '#ffa6d8'],
+            [1, '#a77aff'],
+          ]}
+        />
+        <Lg
+          id={k.id('dress')}
+          stops={[
+            [0, '#9ff3dc'],
+            [1, '#3fbcc4'],
+          ]}
+        />
+        <Lg
+          id={k.id('star')}
+          stops={[
+            [0, '#fff3a6'],
+            [1, '#ffbe2e'],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#22123a'],
+            [1, '#8d5ce6'],
+          ]}
+        />
       </defs>
       <circle cx={32} cy={30} r={29} fill={k.url('halo')} />
       <Shadow rx={11} o={0.12} />
@@ -827,7 +1362,13 @@ function Fairy(k: K) {
         {...O}
         strokeWidth={1.6}
       />
-      <path d="M28.6 44Q28 48.6 29.4 53M35.4 44Q36 48.6 34.6 53" stroke="#2f9aa3" strokeWidth={0.9} fill="none" strokeLinecap="round" />
+      <path
+        d="M28.6 44Q28 48.6 29.4 53M35.4 44Q36 48.6 34.6 53"
+        stroke="#2f9aa3"
+        strokeWidth={0.9}
+        fill="none"
+        strokeLinecap="round"
+      />
       <Tube d="M37 40.4L42.6 35.8" w={2.4} color="#f8c9b2" ow={1.4} />
       <Tube d="M43 35.6L50 24.6" w={1.4} color="#fff2c9" ow={1.1} />
       <path
@@ -836,12 +1377,22 @@ function Fairy(k: K) {
         {...O}
         strokeWidth={1.2}
       />
-      <path d="M18 24C18 13 25 8.4 32 8.4C39 8.4 46 13 46 24C46 30 44.4 34 42 36.6L22 36.6C19.6 34 18 30 18 24Z" fill={k.url('hair')} {...O} />
+      <path
+        d="M18 24C18 13 25 8.4 32 8.4C39 8.4 46 13 46 24C46 30 44.4 34 42 36.6L22 36.6C19.6 34 18 30 18 24Z"
+        fill={k.url('hair')}
+        {...O}
+      />
       <circle cx={32} cy={7.4} r={4.6} fill={k.url('hair')} {...O} />
       <path d="M20.6 23.4L15.6 21.4L20.4 28.4Z" fill={k.url('skin')} {...O} strokeWidth={1.4} />
       <path d="M43.4 23.4L48.4 21.4L43.6 28.4Z" fill={k.url('skin')} {...O} strokeWidth={1.4} />
       <ellipse cx={32} cy={25} rx={11} ry={10.4} fill={k.url('skin')} {...O} />
-      <path d="M20.8 22C20.8 14.6 26 11.4 32 11.4C38 11.4 43.2 14.6 43.2 22C40.4 19 37.6 17.6 35.4 16.6C34 18.6 31 19.6 28 19C26 20.8 23.4 21.8 20.8 22Z" fill={k.url('hair')} stroke={INK} strokeWidth={1.4} strokeLinejoin="round" />
+      <path
+        d="M20.8 22C20.8 14.6 26 11.4 32 11.4C38 11.4 43.2 14.6 43.2 22C40.4 19 37.6 17.6 35.4 16.6C34 18.6 31 19.6 28 19C26 20.8 23.4 21.8 20.8 22Z"
+        fill={k.url('hair')}
+        stroke={INK}
+        strokeWidth={1.4}
+        strokeLinejoin="round"
+      />
       <Sheen d="M24 13.8C26 12.4 28.6 11.8 31 11.8C28.4 13 26.4 14.4 25 16.4Z" o={0.6} />
       <g transform="translate(42.4 13.6)">
         <circle cx={0} cy={-2} r={1.7} fill="#fff" {...O} strokeWidth={0.8} />
@@ -872,19 +1423,85 @@ function VoidCat(k: K) {
   return (
     <>
       <defs>
-        <Rg id={k.id('aura')} stops={[[0, '#8b5cff', 0.5], [0.7, '#5a3bd6', 0.18], [1, '#5a3bd6', 0]]} />
-        <Rg id={k.id('cosmos')} cx={0.42} cy={0.38} r={0.75} stops={[[0, '#4a2c9c'], [0.55, '#21134d'], [1, '#0c0822']]} />
-        <Rg id={k.id('nebula')} stops={[[0, '#ff5fd2', 0.55], [1, '#ff5fd2', 0]]} />
-        <Rg id={k.id('nebula2')} stops={[[0, '#46d8ff', 0.45], [1, '#46d8ff', 0]]} />
-        <Rg id={k.id('glow')} stops={[[0, '#fff59a', 0.75], [1, '#ffd23f', 0]]} />
-        <Lg id={k.id('eye')} stops={[[0, '#fdffb8'], [1, '#7dffa6']]} />
-        <Lg id={k.id('ring')} x2={1} y2={0} stops={[[0, '#9ad8ff'], [0.5, '#e7d6ff'], [1, '#ffb6e6']]} />
-        <Rg id={k.id('planet')} cx={0.35} cy={0.35} r={0.7} stops={[[0, '#ffe1b0'], [1, '#ff7a6b']]} />
+        <Rg
+          id={k.id('aura')}
+          stops={[
+            [0, '#8b5cff', 0.5],
+            [0.7, '#5a3bd6', 0.18],
+            [1, '#5a3bd6', 0],
+          ]}
+        />
+        <Rg
+          id={k.id('cosmos')}
+          cx={0.42}
+          cy={0.38}
+          r={0.75}
+          stops={[
+            [0, '#4a2c9c'],
+            [0.55, '#21134d'],
+            [1, '#0c0822'],
+          ]}
+        />
+        <Rg
+          id={k.id('nebula')}
+          stops={[
+            [0, '#ff5fd2', 0.55],
+            [1, '#ff5fd2', 0],
+          ]}
+        />
+        <Rg
+          id={k.id('nebula2')}
+          stops={[
+            [0, '#46d8ff', 0.45],
+            [1, '#46d8ff', 0],
+          ]}
+        />
+        <Rg
+          id={k.id('glow')}
+          stops={[
+            [0, '#fff59a', 0.75],
+            [1, '#ffd23f', 0],
+          ]}
+        />
+        <Lg
+          id={k.id('eye')}
+          stops={[
+            [0, '#fdffb8'],
+            [1, '#7dffa6'],
+          ]}
+        />
+        <Lg
+          id={k.id('ring')}
+          x2={1}
+          y2={0}
+          stops={[
+            [0, '#9ad8ff'],
+            [0.5, '#e7d6ff'],
+            [1, '#ffb6e6'],
+          ]}
+        />
+        <Rg
+          id={k.id('planet')}
+          cx={0.35}
+          cy={0.35}
+          r={0.7}
+          stops={[
+            [0, '#ffe1b0'],
+            [1, '#ff7a6b'],
+          ]}
+        />
       </defs>
       <circle cx={32} cy={32} r={31} fill={k.url('aura')} />
       <Shadow rx={15} o={0.2} />
       <g transform={ring}>
-        <path d="M4 44A28 7 0 0 1 60 44" fill="none" stroke={k.url('ring')} strokeWidth={1.8} strokeLinecap="round" opacity={0.75} />
+        <path
+          d="M4 44A28 7 0 0 1 60 44"
+          fill="none"
+          stroke={k.url('ring')}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          opacity={0.75}
+        />
       </g>
       <Tube d="M42 53C51 53 55 46 52 40C50.5 37 52 34 54.5 34.5" w={4.4} color="#24145a" />
       <Sparkle x={54.6} y={34.4} r={2.4} fill="#fff59a" />
@@ -900,7 +1517,14 @@ function VoidCat(k: K) {
       <path d={CAT_HEAD} fill={k.url('cosmos')} {...O} />
       <ellipse cx={41} cy={19} rx={8} ry={5} fill={k.url('nebula')} />
       <ellipse cx={21} cy={36} rx={6} ry={4} fill={k.url('nebula2')} />
-      <path d="M18.6 21.4C20.2 16.4 25.6 14 31.6 14" stroke="#b39bff" strokeWidth={1.2} fill="none" strokeLinecap="round" opacity={0.9} />
+      <path
+        d="M18.6 21.4C20.2 16.4 25.6 14 31.6 14"
+        stroke="#b39bff"
+        strokeWidth={1.2}
+        fill="none"
+        strokeLinecap="round"
+        opacity={0.9}
+      />
       <g fill="#ffffff">
         <circle cx={22} cy={18} r={0.6} />
         <circle cx={44} cy={23} r={0.5} />
@@ -924,7 +1548,13 @@ function VoidCat(k: K) {
       <circle cx={26.2} cy={25.8} r={1.1} fill="#fff" />
       <circle cx={40.2} cy={25.8} r={1.1} fill="#fff" />
       <path d="M30.4 32.6H33.6L32 34.4Z" fill="#c9a8ff" stroke={INK} strokeWidth={0.8} strokeLinejoin="round" />
-      <path d="M29.2 35.4Q30.6 37 32 35.4Q33.4 37 34.8 35.4" stroke="#c9a8ff" strokeWidth={1.1} fill="none" strokeLinecap="round" />
+      <path
+        d="M29.2 35.4Q30.6 37 32 35.4Q33.4 37 34.8 35.4"
+        stroke="#c9a8ff"
+        strokeWidth={1.1}
+        fill="none"
+        strokeLinecap="round"
+      />
       <g stroke="#b39bff" strokeWidth={0.8} strokeLinecap="round" opacity={0.7}>
         <path d="M19.5 34.6L13.5 33.6" />
         <path d="M19.5 36.2L14 37.4" />

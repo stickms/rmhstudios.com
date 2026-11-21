@@ -20,24 +20,11 @@
  */
 
 import { BaseMinigame } from '../base-minigame';
-import type {
-  MinigameContext,
-  MinigameResults,
-} from '../base-minigame';
-import type {
-  PlayerRanking,
-  Award,
-} from '@/lib/rmhbox/types';
-import {
-  selectRoundPrompts,
-  assignPromptsToPlayers,
-  loadPrompts,
-} from '@/lib/rmhbox/wit-war/data-loader';
+import type { MinigameContext, MinigameResults } from '../base-minigame';
+import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
+import { selectRoundPrompts, assignPromptsToPlayers, loadPrompts } from '@/lib/rmhbox/wit-war/data-loader';
 import { loadPackPrompts } from '../../pack-loader';
-import {
-  SubmitAnswerSchema,
-  CastVoteSchema,
-} from '@/lib/rmhbox/wit-war/schemas';
+import { SubmitAnswerSchema, CastVoteSchema } from '@/lib/rmhbox/wit-war/schemas';
 import {
   WW_TOTAL_ROUNDS,
   WW_WRITING_DURATION,
@@ -50,12 +37,7 @@ import {
   WW_SAFETY_QUIP,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
-import {
-  WitWarPhase,
-  type WWMatchup,
-  type WWPromptAssignment,
-  type WitWarState,
-} from './types';
+import { WitWarPhase, type WWMatchup, type WWPromptAssignment, type WitWarState } from './types';
 
 // ─── Wit-War Minigame ───────────────────────────────────────────
 
@@ -63,28 +45,16 @@ export class WitWarMinigame extends BaseMinigame {
   private state!: WitWarState;
   private startedAt: number = 0;
   /** Handle for the current voting timeout, so early-end can cancel it. */
-  private votingTimeoutHandle: NodeJS.Timeout | null =
-    null;
+  private votingTimeoutHandle: NodeJS.Timeout | null = null;
   /** Handle for the writing-phase timeout, so an early end (everyone submitted) can cancel it. */
-  private writingTimeoutHandle: NodeJS.Timeout | null =
-    null;
+  private writingTimeoutHandle: NodeJS.Timeout | null = null;
   /** The round whose writing phase has already been closed (guards the 1 s grace window). */
   private writingClosedRound = 0;
   /** Audience (spectator) votes for the current matchup; counted as ONE aggregated vote. */
-  private audienceVotes =
-    new Map<
-      string,
-      string
-    >();
+  private audienceVotes = new Map<string, string>();
   /** Custom prompt pool (community pack); undefined = built-in prompts. */
-  private promptPool:
-    | string[]
-    | undefined;
-  private audienceChanges =
-    new Map<
-      string,
-      number
-    >();
+  private promptPool: string[] | undefined;
+  private audienceChanges = new Map<string, number>();
 
   /**
    * Spectators are the audience: they all share the omniscient view
@@ -96,616 +66,257 @@ export class WitWarMinigame extends BaseMinigame {
     return 'shared-privileged';
   }
 
-  constructor(
-    context: MinigameContext,
-  ) {
-    super(
-      context,
-    );
+  constructor(context: MinigameContext) {
+    super(context);
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────
 
   start(): void {
     this.isRunning = true;
-    this.startedAt =
-      Date.now();
+    this.startedAt = Date.now();
     this.initializeState();
 
     // Optional community pack (R2): resolve it before the first round; any failure
     // falls back to the built-in prompts.
-    const packCode =
-      this.getSetting(
-        'packCode',
-        '',
-      );
-    if (
-      !packCode
-    )
-      return this.begin();
-    void loadPackPrompts(
-      packCode,
-      'wit-war',
-    ).then(
-      (
-        prompts,
-      ) => {
-        if (
-          !this
-            .isRunning
-        )
-          return;
-        if (
-          prompts
-        ) {
-          const needed =
-            this
-              .context
-              .players
-              .size *
-            this
-              .state
-              .totalRounds;
-          this.promptPool =
-            prompts.length >=
-            needed
-              ? prompts
-              : prompts.concat(
-                  loadPrompts(),
-                );
-        }
-        this.begin();
-        // The coordinator's initial snapshot went out before the first round
-        // existed (no prompts). Re-send it now so a client that mounts after the
-        // one-shot WW_PROMPT_REVEAL still hydrates its prompts from the store.
-        if (
-          this
-            .isRunning
-        )
-          this.broadcastInitialState(
-            'rmhbox:game:state_snapshot',
-          );
-      },
-    );
+    const packCode = this.getSetting('packCode', '');
+    if (!packCode) return this.begin();
+    void loadPackPrompts(packCode, 'wit-war').then((prompts) => {
+      if (!this.isRunning) return;
+      if (prompts) {
+        const needed = this.context.players.size * this.state.totalRounds;
+        this.promptPool = prompts.length >= needed ? prompts : prompts.concat(loadPrompts());
+      }
+      this.begin();
+      // The coordinator's initial snapshot went out before the first round
+      // existed (no prompts). Re-send it now so a client that mounts after the
+      // one-shot WW_PROMPT_REVEAL still hydrates its prompts from the store.
+      if (this.isRunning) this.broadcastInitialState('rmhbox:game:state_snapshot');
+    });
   }
 
   private begin(): void {
-    logger.info(
-      {
-        event:
-          'wit_war:start',
-        lobbyId:
-          this
-            .context
-            .lobbyId,
-        totalRounds:
-          this.getSetting(
-            'totalRounds',
-            WW_TOTAL_ROUNDS,
-          ),
-        playerCount:
-          this
-            .context
-            .players
-            .size,
-      },
-    );
+    logger.info({
+      event: 'wit_war:start',
+      lobbyId: this.context.lobbyId,
+      totalRounds: this.getSetting('totalRounds', WW_TOTAL_ROUNDS),
+      playerCount: this.context.players.size,
+    });
 
     this.startRound();
   }
 
   private initializeState(): void {
-    const scores: Record<
-      string,
-      number
-    > =
-      {};
+    const scores: Record<string, number> = {};
     for (const userId of this.context.players.keys()) {
-      scores[
-        userId
-      ] =
-        0;
+      scores[userId] = 0;
     }
 
-    this.state =
-      {
-        phase:
-          WitWarPhase.PROMPT_REVEAL,
-        currentRound: 0,
-        totalRounds:
-          this.getSetting(
-            'totalRounds',
-            WW_TOTAL_ROUNDS,
-          ),
-        matchups:
-          [],
-        assignments:
-          {},
-        submitted:
-          new Set(),
-        currentMatchupIndex: 0,
-        scores,
-        usedPromptIndices:
-          new Set(),
-        roundMatchups:
-          [],
-        actionLog:
-          [],
-        timeRemaining: 0,
-      };
+    this.state = {
+      phase: WitWarPhase.PROMPT_REVEAL,
+      currentRound: 0,
+      totalRounds: this.getSetting('totalRounds', WW_TOTAL_ROUNDS),
+      matchups: [],
+      assignments: {},
+      submitted: new Set(),
+      currentMatchupIndex: 0,
+      scores,
+      usedPromptIndices: new Set(),
+      roundMatchups: [],
+      actionLog: [],
+      timeRemaining: 0,
+    };
   }
 
   // ─── Round Flow ─────────────────────────────────────────────
 
   private startRound(): void {
-    this
-      .state
-      .currentRound++;
-    this.state.submitted =
-      new Set();
+    this.state.currentRound++;
+    this.state.submitted = new Set();
     this.state.currentMatchupIndex = 0;
 
-    const playerIds =
-      Array.from(
-        this.context.players.keys(),
-      );
-    const promptCount =
-      playerIds.length;
-    const prompts =
-      selectRoundPrompts(
-        promptCount,
-        this
-          .state
-          .usedPromptIndices,
-        this
-          .promptPool,
-      );
+    const playerIds = Array.from(this.context.players.keys());
+    const promptCount = playerIds.length;
+    const prompts = selectRoundPrompts(promptCount, this.state.usedPromptIndices, this.promptPool);
 
     for (const p of prompts) {
-      this.state.usedPromptIndices.add(
-        p.index,
-      );
+      this.state.usedPromptIndices.add(p.index);
     }
 
-    const pairings =
-      assignPromptsToPlayers(
-        prompts,
-        playerIds,
-      );
+    const pairings = assignPromptsToPlayers(prompts, playerIds);
 
-    const matchups: WWMatchup[] =
-      pairings.map(
-        (
-          p,
-        ) => ({
-          promptIndex:
-            p.promptIndex,
-          promptText:
-            p.promptText,
-          playerA:
-            p.playerA,
-          playerB:
-            p.playerB,
-          answerA:
-            null,
-          answerB:
-            null,
-          votes:
-            {},
-          votePercentA: 0,
-          votePercentB: 0,
-          winnerId:
-            null,
-          isWitWham: false,
-        }),
-      );
+    const matchups: WWMatchup[] = pairings.map((p) => ({
+      promptIndex: p.promptIndex,
+      promptText: p.promptText,
+      playerA: p.playerA,
+      playerB: p.playerB,
+      answerA: null,
+      answerB: null,
+      votes: {},
+      votePercentA: 0,
+      votePercentB: 0,
+      winnerId: null,
+      isWitWham: false,
+    }));
 
-    this.state.matchups =
-      matchups;
+    this.state.matchups = matchups;
 
     // Build per-player assignments
-    const assignments: Record<
-      string,
-      WWPromptAssignment[]
-    > =
-      {};
+    const assignments: Record<string, WWPromptAssignment[]> = {};
     for (const userId of playerIds) {
-      assignments[
-        userId
-      ] =
-        [];
+      assignments[userId] = [];
     }
-    matchups.forEach(
-      (
-        m,
-        idx,
-      ) => {
-        if (
-          assignments[
-            m
-              .playerA
-          ]
-        ) {
-          assignments[
-            m
-              .playerA
-          ].push(
-            {
-              promptIndex:
-                m.promptIndex,
-              promptText:
-                m.promptText,
-              opponentId:
-                m.playerB,
-              matchupIndex:
-                idx,
-            },
-          );
-        }
-        if (
-          assignments[
-            m
-              .playerB
-          ]
-        ) {
-          assignments[
-            m
-              .playerB
-          ].push(
-            {
-              promptIndex:
-                m.promptIndex,
-              promptText:
-                m.promptText,
-              opponentId:
-                m.playerA,
-              matchupIndex:
-                idx,
-            },
-          );
-        }
-      },
-    );
-    this.state.assignments =
-      assignments;
+    matchups.forEach((m, idx) => {
+      if (assignments[m.playerA]) {
+        assignments[m.playerA].push({
+          promptIndex: m.promptIndex,
+          promptText: m.promptText,
+          opponentId: m.playerB,
+          matchupIndex: idx,
+        });
+      }
+      if (assignments[m.playerB]) {
+        assignments[m.playerB].push({
+          promptIndex: m.promptIndex,
+          promptText: m.promptText,
+          opponentId: m.playerA,
+          matchupIndex: idx,
+        });
+      }
+    });
+    this.state.assignments = assignments;
 
-    this.broadcastRound(
-      this
-        .state
-        .currentRound,
-      this
-        .state
-        .totalRounds,
-    );
+    this.broadcastRound(this.state.currentRound, this.state.totalRounds);
     this.startPromptReveal();
   }
 
   private startPromptReveal(): void {
-    this.state.phase =
-      WitWarPhase.PROMPT_REVEAL;
+    this.state.phase = WitWarPhase.PROMPT_REVEAL;
 
     // Send each player their own prompt assignments
-    for (const [
-      userId,
-      playerAssignments,
-    ] of Object.entries(
-      this
-        .state
-        .assignments,
-    )) {
-      this.context.sendToPlayer(
-        userId,
-        'rmhbox:game:action',
-        {
-          type: 'WW_PROMPT_REVEAL',
-          payload:
-            {
-              round:
-                this
-                  .state
-                  .currentRound,
-              totalRounds:
-                this
-                  .state
-                  .totalRounds,
-              prompts:
-                playerAssignments.map(
-                  (
-                    a,
-                  ) => ({
-                    promptIndex:
-                      a.promptIndex,
-                    promptText:
-                      a.promptText,
-                    matchupIndex:
-                      a.matchupIndex,
-                  }),
-                ),
-            },
+    for (const [userId, playerAssignments] of Object.entries(this.state.assignments)) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'WW_PROMPT_REVEAL',
+        payload: {
+          round: this.state.currentRound,
+          totalRounds: this.state.totalRounds,
+          prompts: playerAssignments.map((a) => ({
+            promptIndex: a.promptIndex,
+            promptText: a.promptText,
+            matchupIndex: a.matchupIndex,
+          })),
         },
-      );
+      });
     }
 
     // Send spectators the full state
-    this.context.sendToSpectators(
-      'rmhbox:game:state_snapshot',
-      this.getStateForSpectator(),
-    );
+    this.context.sendToSpectators('rmhbox:game:state_snapshot', this.getStateForSpectator());
 
-    this.context.broadcastToLobby(
-      'rmhbox:game:action',
-      {
-        type: 'WW_PHASE_CHANGE',
-        payload:
-          {
-            phase:
-              'PROMPT_REVEAL',
-            round:
-              this
-                .state
-                .currentRound,
-          },
+    this.context.broadcastToLobby('rmhbox:game:action', {
+      type: 'WW_PHASE_CHANGE',
+      payload: {
+        phase: 'PROMPT_REVEAL',
+        round: this.state.currentRound,
       },
-    );
+    });
 
-    this.logAction(
-      'prompt_reveal',
-      {
-        round:
-          this
-            .state
-            .currentRound,
-        matchupCount:
-          this
-            .state
-            .matchups
-            .length,
-      },
-    );
+    this.logAction('prompt_reveal', {
+      round: this.state.currentRound,
+      matchupCount: this.state.matchups.length,
+    });
 
-    this.setTimeout(
-      () =>
-        this.startWritingPhase(),
-      WW_PROMPT_REVEAL_DURATION *
-        1000,
-    );
+    this.setTimeout(() => this.startWritingPhase(), WW_PROMPT_REVEAL_DURATION * 1000);
   }
 
   private startWritingPhase(): void {
-    if (
-      !this
-        .isRunning ||
-      this
-        .state
-        .phase !==
-        WitWarPhase.PROMPT_REVEAL
-    )
-      return;
-    this.state.phase =
-      WitWarPhase.WRITING;
-    const duration =
-      this.getSetting(
-        'writingDuration',
-        WW_WRITING_DURATION,
-      );
+    if (!this.isRunning || this.state.phase !== WitWarPhase.PROMPT_REVEAL) return;
+    this.state.phase = WitWarPhase.WRITING;
+    const duration = this.getSetting('writingDuration', WW_WRITING_DURATION);
 
-    this.context.broadcastAction(
-      {
-        type: 'WW_WRITING_START',
-        payload:
-          {
-            durationSeconds:
-              duration,
-          },
+    this.context.broadcastAction({
+      type: 'WW_WRITING_START',
+      payload: {
+        durationSeconds: duration,
       },
-    );
+    });
 
-    this.startPhaseTimer(
-      duration,
-    );
+    this.startPhaseTimer(duration);
 
-    this.clearTrackedTimeout(
-      this
-        .writingTimeoutHandle,
-    );
-    this.writingTimeoutHandle =
-      this.setTimeout(
-        () =>
-          this.endWritingPhase(),
-        duration *
-          1000,
-      );
+    this.clearTrackedTimeout(this.writingTimeoutHandle);
+    this.writingTimeoutHandle = this.setTimeout(() => this.endWritingPhase(), duration * 1000);
   }
 
   private endWritingPhase(): void {
     // Idempotent: the timer and the "everyone submitted" check can both get here
-    if (
-      !this
-        .isRunning ||
-      this
-        .state
-        .phase !==
-        WitWarPhase.WRITING
-    )
-      return;
-    if (
-      this
-        .writingClosedRound ===
-      this
-        .state
-        .currentRound
-    )
-      return;
-    this.writingClosedRound =
-      this.state.currentRound;
-    const round =
-      this
-        .state
-        .currentRound;
-    this.clearTrackedTimeout(
-      this
-        .writingTimeoutHandle,
-    );
-    this.writingTimeoutHandle =
-      null;
+    if (!this.isRunning || this.state.phase !== WitWarPhase.WRITING) return;
+    if (this.writingClosedRound === this.state.currentRound) return;
+    this.writingClosedRound = this.state.currentRound;
+    const round = this.state.currentRound;
+    this.clearTrackedTimeout(this.writingTimeoutHandle);
+    this.writingTimeoutHandle = null;
     this.clearPhaseTimer();
 
     // Broadcast writing end so clients can auto-submit typed answers
-    this.context.broadcastAction(
-      {
-        type: 'WW_WRITING_END',
-      },
-    );
+    this.context.broadcastAction({
+      type: 'WW_WRITING_END',
+    });
 
     // Brief grace period for client auto-submitted answers to arrive
-    this.setTimeout(
-      () => {
-        if (
-          this
-            .state
-            .phase !==
-            WitWarPhase.WRITING ||
-          this
-            .state
-            .currentRound !==
-            round
-        )
-          return;
-        // Fill in safety quips for still-missing answers
-        for (const matchup of this
-          .state
-          .matchups) {
-          if (
-            !matchup.answerA
-          )
-            matchup.answerA =
-              WW_SAFETY_QUIP;
-          if (
-            !matchup.answerB
-          )
-            matchup.answerB =
-              WW_SAFETY_QUIP;
-        }
+    this.setTimeout(() => {
+      if (this.state.phase !== WitWarPhase.WRITING || this.state.currentRound !== round) return;
+      // Fill in safety quips for still-missing answers
+      for (const matchup of this.state.matchups) {
+        if (!matchup.answerA) matchup.answerA = WW_SAFETY_QUIP;
+        if (!matchup.answerB) matchup.answerB = WW_SAFETY_QUIP;
+      }
 
-        this.logAction(
-          'writing_end',
-          {
-            round:
-              this
-                .state
-                .currentRound,
-            submittedCount:
-              this
-                .state
-                .submitted
-                .size,
-            totalPlayers:
-              this
-                .context
-                .players
-                .size,
-          },
-        );
+      this.logAction('writing_end', {
+        round: this.state.currentRound,
+        submittedCount: this.state.submitted.size,
+        totalPlayers: this.context.players.size,
+      });
 
-        this.startMatchupVoting();
-      },
-      1000,
-    );
+      this.startMatchupVoting();
+    }, 1000);
   }
 
   // ─── Voting Flow ────────────────────────────────────────────
 
   private startMatchupVoting(): void {
-    if (
-      this
-        .state
-        .currentMatchupIndex >=
-      this
-        .state
-        .matchups
-        .length
-    ) {
+    if (this.state.currentMatchupIndex >= this.state.matchups.length) {
       this.showRoundResults();
       return;
     }
 
-    this.clearTrackedTimeout(
-      this
-        .votingTimeoutHandle,
-    );
-    this.votingTimeoutHandle =
-      null;
-    this.state.phase =
-      WitWarPhase.VOTING;
+    this.clearTrackedTimeout(this.votingTimeoutHandle);
+    this.votingTimeoutHandle = null;
+    this.state.phase = WitWarPhase.VOTING;
     this.audienceVotes.clear();
     this.audienceChanges.clear();
-    const matchup =
-      this
-        .state
-        .matchups[
-        this
-          .state
-          .currentMatchupIndex
-      ];
-    const duration =
-      this.getSetting(
-        'votingDuration',
-        WW_VOTING_DURATION,
-      );
+    const matchup = this.state.matchups[this.state.currentMatchupIndex];
+    const duration = this.getSetting('votingDuration', WW_VOTING_DURATION);
 
-    this.context.broadcastAction(
-      {
-        type: 'WW_MATCHUP_START',
-        payload:
-          {
-            matchupIndex:
-              this
-                .state
-                .currentMatchupIndex,
-            totalMatchups:
-              this
-                .state
-                .matchups
-                .length,
-            promptText:
-              matchup.promptText,
-            answerA:
-              matchup.answerA,
-            answerB:
-              matchup.answerB,
-            playerA:
-              matchup.playerA,
-            playerB:
-              matchup.playerB,
-            durationSeconds:
-              duration,
-          },
+    this.context.broadcastAction({
+      type: 'WW_MATCHUP_START',
+      payload: {
+        matchupIndex: this.state.currentMatchupIndex,
+        totalMatchups: this.state.matchups.length,
+        promptText: matchup.promptText,
+        answerA: matchup.answerA,
+        answerB: matchup.answerB,
+        playerA: matchup.playerA,
+        playerB: matchup.playerB,
+        durationSeconds: duration,
       },
-    );
+    });
 
     // Update spectator state for reconnection
-    this.context.sendToSpectators(
-      'rmhbox:game:state_snapshot',
-      this.getStateForSpectator(),
-    );
+    this.context.sendToSpectators('rmhbox:game:state_snapshot', this.getStateForSpectator());
 
-    this.startPhaseTimer(
-      duration,
-    );
+    this.startPhaseTimer(duration);
 
-    const matchupIndex =
-      this
-        .state
-        .currentMatchupIndex;
-    this.votingTimeoutHandle =
-      this.setTimeout(
-        () =>
-          this.endMatchupVoting(
-            matchupIndex,
-          ),
-        duration *
-          1000,
-      );
+    const matchupIndex = this.state.currentMatchupIndex;
+    this.votingTimeoutHandle = this.setTimeout(() => this.endMatchupVoting(matchupIndex), duration * 1000);
   }
 
   /**
@@ -713,1184 +324,432 @@ export class WitWarMinigame extends BaseMinigame {
    * and only for the matchup the caller saw (a stale vote timer from an
    * earlier matchup can't score this one or advance the index twice).
    */
-  private endMatchupVoting(
-    expectedIndex: number = this
-      .state
-      .currentMatchupIndex,
-  ): void {
-    if (
-      !this
-        .isRunning ||
-      this
-        .state
-        .phase !==
-        WitWarPhase.VOTING
-    )
-      return;
-    if (
-      expectedIndex !==
-      this
-        .state
-        .currentMatchupIndex
-    )
-      return;
-    this.clearTrackedTimeout(
-      this
-        .votingTimeoutHandle,
-    );
-    this.votingTimeoutHandle =
-      null;
+  private endMatchupVoting(expectedIndex: number = this.state.currentMatchupIndex): void {
+    if (!this.isRunning || this.state.phase !== WitWarPhase.VOTING) return;
+    if (expectedIndex !== this.state.currentMatchupIndex) return;
+    this.clearTrackedTimeout(this.votingTimeoutHandle);
+    this.votingTimeoutHandle = null;
     this.clearPhaseTimer();
-    const matchup =
-      this
-        .state
-        .matchups[
-        this
-          .state
-          .currentMatchupIndex
-      ];
-    if (
-      !matchup
-    )
-      return;
+    const matchup = this.state.matchups[this.state.currentMatchupIndex];
+    if (!matchup) return;
 
-    this.resolveMatchup(
-      matchup,
-    );
-    this.showMatchupResults(
-      matchup,
-    );
+    this.resolveMatchup(matchup);
+    this.showMatchupResults(matchup);
   }
 
-  private resolveMatchup(
-    matchup: WWMatchup,
-  ): void {
-    let votesForA =
-      Object.values(
-        matchup.votes,
-      ).filter(
-        (
-          v,
-        ) =>
-          v ===
-          matchup.playerA,
-      ).length;
-    let votesForB =
-      Object.values(
-        matchup.votes,
-      ).filter(
-        (
-          v,
-        ) =>
-          v ===
-          matchup.playerB,
-      ).length;
+  private resolveMatchup(matchup: WWMatchup): void {
+    let votesForA = Object.values(matchup.votes).filter((v) => v === matchup.playerA).length;
+    let votesForB = Object.values(matchup.votes).filter((v) => v === matchup.playerB).length;
     // Audience counts as a single player's vote: the majority pick (ties abstain).
     let audA = 0;
-    for (const v of this.audienceVotes.values())
-      audA +=
-        v ===
-        matchup.playerA
-          ? 1
-          : -1;
-    if (
-      audA >
-      0
-    )
-      votesForA++;
-    else if (
-      audA <
-      0
-    )
-      votesForB++;
-    const totalVotes =
-      votesForA +
-      votesForB;
+    for (const v of this.audienceVotes.values()) audA += v === matchup.playerA ? 1 : -1;
+    if (audA > 0) votesForA++;
+    else if (audA < 0) votesForB++;
+    const totalVotes = votesForA + votesForB;
 
-    if (
-      totalVotes ===
-      0
-    ) {
+    if (totalVotes === 0) {
       matchup.votePercentA = 50;
       matchup.votePercentB = 50;
-      matchup.winnerId =
-        null;
+      matchup.winnerId = null;
       matchup.isWitWham = false;
     } else {
-      matchup.votePercentA =
-        Math.round(
-          (votesForA /
-            totalVotes) *
-            100,
-        );
-      matchup.votePercentB =
-        100 -
-        matchup.votePercentA;
+      matchup.votePercentA = Math.round((votesForA / totalVotes) * 100);
+      matchup.votePercentB = 100 - matchup.votePercentA;
 
-      if (
-        votesForA >
-        votesForB
-      ) {
-        matchup.winnerId =
-          matchup.playerA;
-      } else if (
-        votesForB >
-        votesForA
-      ) {
-        matchup.winnerId =
-          matchup.playerB;
+      if (votesForA > votesForB) {
+        matchup.winnerId = matchup.playerA;
+      } else if (votesForB > votesForA) {
+        matchup.winnerId = matchup.playerB;
       } else {
-        matchup.winnerId =
-          null;
+        matchup.winnerId = null;
       }
 
-      matchup.isWitWham =
-        totalVotes >=
-          2 &&
-        (votesForA ===
-          totalVotes ||
-          votesForB ===
-            totalVotes);
+      matchup.isWitWham = totalVotes >= 2 && (votesForA === totalVotes || votesForB === totalVotes);
     }
 
     // Award points
-    const isSafetyA =
-      matchup.answerA ===
-      WW_SAFETY_QUIP;
-    const isSafetyB =
-      matchup.answerB ===
-      WW_SAFETY_QUIP;
+    const isSafetyA = matchup.answerA === WW_SAFETY_QUIP;
+    const isSafetyB = matchup.answerB === WW_SAFETY_QUIP;
 
-    const scoreA =
-      isSafetyA
-        ? 0
-        : Math.round(
-            (matchup.votePercentA /
-              100) *
-              WW_MAX_MATCHUP_POINTS,
-          );
-    const scoreB =
-      isSafetyB
-        ? 0
-        : Math.round(
-            (matchup.votePercentB /
-              100) *
-              WW_MAX_MATCHUP_POINTS,
-          );
+    const scoreA = isSafetyA ? 0 : Math.round((matchup.votePercentA / 100) * WW_MAX_MATCHUP_POINTS);
+    const scoreB = isSafetyB ? 0 : Math.round((matchup.votePercentB / 100) * WW_MAX_MATCHUP_POINTS);
 
-    const bonusA =
-      matchup.isWitWham &&
-      matchup.winnerId ===
-        matchup.playerA
-        ? WW_WITWHAM_BONUS
-        : 0;
-    const bonusB =
-      matchup.isWitWham &&
-      matchup.winnerId ===
-        matchup.playerB
-        ? WW_WITWHAM_BONUS
-        : 0;
+    const bonusA = matchup.isWitWham && matchup.winnerId === matchup.playerA ? WW_WITWHAM_BONUS : 0;
+    const bonusB = matchup.isWitWham && matchup.winnerId === matchup.playerB ? WW_WITWHAM_BONUS : 0;
 
-    this.state.scores[
-      matchup.playerA
-    ] =
-      (this
-        .state
-        .scores[
-        matchup
-          .playerA
-      ] ??
-        0) +
-      scoreA +
-      bonusA;
-    this.state.scores[
-      matchup.playerB
-    ] =
-      (this
-        .state
-        .scores[
-        matchup
-          .playerB
-      ] ??
-        0) +
-      scoreB +
-      bonusB;
+    this.state.scores[matchup.playerA] = (this.state.scores[matchup.playerA] ?? 0) + scoreA + bonusA;
+    this.state.scores[matchup.playerB] = (this.state.scores[matchup.playerB] ?? 0) + scoreB + bonusB;
 
-    this.logAction(
-      'matchup_resolved',
-      {
-        round:
-          this
-            .state
-            .currentRound,
-        matchupIndex:
-          this
-            .state
-            .currentMatchupIndex,
-        prompt:
-          matchup.promptText,
-        playerA:
-          matchup.playerA,
-        playerB:
-          matchup.playerB,
-        answerA:
-          matchup.answerA,
-        answerB:
-          matchup.answerB,
-        votePercentA:
-          matchup.votePercentA,
-        votePercentB:
-          matchup.votePercentB,
-        winnerId:
-          matchup.winnerId,
-        isWitWham:
-          matchup.isWitWham,
-        scoreA:
-          scoreA +
-          bonusA,
-        scoreB:
-          scoreB +
-          bonusB,
-      },
-    );
+    this.logAction('matchup_resolved', {
+      round: this.state.currentRound,
+      matchupIndex: this.state.currentMatchupIndex,
+      prompt: matchup.promptText,
+      playerA: matchup.playerA,
+      playerB: matchup.playerB,
+      answerA: matchup.answerA,
+      answerB: matchup.answerB,
+      votePercentA: matchup.votePercentA,
+      votePercentB: matchup.votePercentB,
+      winnerId: matchup.winnerId,
+      isWitWham: matchup.isWitWham,
+      scoreA: scoreA + bonusA,
+      scoreB: scoreB + bonusB,
+    });
   }
 
-  private showMatchupResults(
-    matchup: WWMatchup,
-  ): void {
-    this.state.phase =
-      WitWarPhase.MATCHUP_RESULTS;
+  private showMatchupResults(matchup: WWMatchup): void {
+    this.state.phase = WitWarPhase.MATCHUP_RESULTS;
 
-    const playerAName =
-      this.context.players.get(
-        matchup.playerA,
-      )
-        ?.userName ??
-      'Unknown';
-    const playerBName =
-      this.context.players.get(
-        matchup.playerB,
-      )
-        ?.userName ??
-      'Unknown';
+    const playerAName = this.context.players.get(matchup.playerA)?.userName ?? 'Unknown';
+    const playerBName = this.context.players.get(matchup.playerB)?.userName ?? 'Unknown';
 
-    this.context.broadcastAction(
-      {
-        type: 'WW_MATCHUP_RESULT',
-        payload:
-          {
-            matchupIndex:
-              this
-                .state
-                .currentMatchupIndex,
-            promptText:
-              matchup.promptText,
-            playerA:
-              matchup.playerA,
-            playerAName,
-            answerA:
-              matchup.answerA,
-            playerB:
-              matchup.playerB,
-            playerBName,
-            answerB:
-              matchup.answerB,
-            votePercentA:
-              matchup.votePercentA,
-            votePercentB:
-              matchup.votePercentB,
-            winnerId:
-              matchup.winnerId,
-            isWitWham:
-              matchup.isWitWham,
-            scores:
-              {
-                ...this
-                  .state
-                  .scores,
-              },
-          },
+    this.context.broadcastAction({
+      type: 'WW_MATCHUP_RESULT',
+      payload: {
+        matchupIndex: this.state.currentMatchupIndex,
+        promptText: matchup.promptText,
+        playerA: matchup.playerA,
+        playerAName,
+        answerA: matchup.answerA,
+        playerB: matchup.playerB,
+        playerBName,
+        answerB: matchup.answerB,
+        votePercentA: matchup.votePercentA,
+        votePercentB: matchup.votePercentB,
+        winnerId: matchup.winnerId,
+        isWitWham: matchup.isWitWham,
+        scores: {
+          ...this.state.scores,
+        },
       },
-    );
+    });
 
-    const matchupIndex =
-      this
-        .state
-        .currentMatchupIndex;
-    this.setTimeout(
-      () => {
-        if (
-          this
-            .state
-            .phase !==
-            WitWarPhase.MATCHUP_RESULTS ||
-          this
-            .state
-            .currentMatchupIndex !==
-            matchupIndex
-        )
-          return;
-        this
-          .state
-          .currentMatchupIndex++;
-        this.startMatchupVoting();
-      },
-      WW_MATCHUP_RESULTS_DURATION *
-        1000,
-    );
+    const matchupIndex = this.state.currentMatchupIndex;
+    this.setTimeout(() => {
+      if (this.state.phase !== WitWarPhase.MATCHUP_RESULTS || this.state.currentMatchupIndex !== matchupIndex) return;
+      this.state.currentMatchupIndex++;
+      this.startMatchupVoting();
+    }, WW_MATCHUP_RESULTS_DURATION * 1000);
   }
 
   // ─── Round Results ──────────────────────────────────────────
 
   private showRoundResults(): void {
-    this.state.phase =
-      WitWarPhase.ROUND_RESULTS;
+    this.state.phase = WitWarPhase.ROUND_RESULTS;
 
-    this.state.roundMatchups.push(
-      [
-        ...this
-          .state
-          .matchups,
-      ],
-    );
+    this.state.roundMatchups.push([...this.state.matchups]);
 
-    this.context.broadcastAction(
-      {
-        type: 'WW_ROUND_RESULTS',
-        payload:
-          {
-            round:
-              this
-                .state
-                .currentRound,
-            totalRounds:
-              this
-                .state
-                .totalRounds,
-            scores:
-              {
-                ...this
-                  .state
-                  .scores,
-              },
-            matchups:
-              this.publicMatchups(),
-          },
+    this.context.broadcastAction({
+      type: 'WW_ROUND_RESULTS',
+      payload: {
+        round: this.state.currentRound,
+        totalRounds: this.state.totalRounds,
+        scores: {
+          ...this.state.scores,
+        },
+        matchups: this.publicMatchups(),
       },
-    );
+    });
 
-    this.startPhaseTimer(
-      WW_ROUND_RESULTS_DURATION,
-    );
+    this.startPhaseTimer(WW_ROUND_RESULTS_DURATION);
 
-    const round =
-      this
-        .state
-        .currentRound;
-    this.setTimeout(
-      () => {
-        if (
-          this
-            .state
-            .phase !==
-            WitWarPhase.ROUND_RESULTS ||
-          this
-            .state
-            .currentRound !==
-            round
-        )
-          return;
-        this.clearPhaseTimer();
-        if (
-          this
-            .state
-            .currentRound <
-          this
-            .state
-            .totalRounds
-        ) {
-          this.startRound();
-        } else {
-          this.endGame();
-        }
-      },
-      WW_ROUND_RESULTS_DURATION *
-        1000,
-    );
+    const round = this.state.currentRound;
+    this.setTimeout(() => {
+      if (this.state.phase !== WitWarPhase.ROUND_RESULTS || this.state.currentRound !== round) return;
+      this.clearPhaseTimer();
+      if (this.state.currentRound < this.state.totalRounds) {
+        this.startRound();
+      } else {
+        this.endGame();
+      }
+    }, WW_ROUND_RESULTS_DURATION * 1000);
   }
 
   /** The current round's matchups as shown on the results screen. */
   private publicMatchups() {
-    return this.state.matchups.map(
-      (
-        m,
-      ) => ({
-        promptText:
-          m.promptText,
-        playerA:
-          m.playerA,
-        playerAName:
-          this.context.players.get(
-            m.playerA,
-          )
-            ?.userName ??
-          'Unknown',
-        answerA:
-          m.answerA,
-        playerB:
-          m.playerB,
-        playerBName:
-          this.context.players.get(
-            m.playerB,
-          )
-            ?.userName ??
-          'Unknown',
-        answerB:
-          m.answerB,
-        votePercentA:
-          m.votePercentA,
-        votePercentB:
-          m.votePercentB,
-        winnerId:
-          m.winnerId,
-        isWitWham:
-          m.isWitWham,
-      }),
-    );
+    return this.state.matchups.map((m) => ({
+      promptText: m.promptText,
+      playerA: m.playerA,
+      playerAName: this.context.players.get(m.playerA)?.userName ?? 'Unknown',
+      answerA: m.answerA,
+      playerB: m.playerB,
+      playerBName: this.context.players.get(m.playerB)?.userName ?? 'Unknown',
+      answerB: m.answerB,
+      votePercentA: m.votePercentA,
+      votePercentB: m.votePercentB,
+      winnerId: m.winnerId,
+      isWitWham: m.isWitWham,
+    }));
   }
 
   // ─── Connected-player bookkeeping ───────────────────────────
 
-  private isConnected(
-    userId: string,
-  ): boolean {
-    return (
-      this.context.players.get(
-        userId,
-      )
-        ?.isConnected ===
-      true
-    );
+  private isConnected(userId: string): boolean {
+    return this.context.players.get(userId)?.isConnected === true;
   }
 
   /** Connected players who write this round (have prompt assignments). */
   private connectedWriters(): string[] {
-    return Object.keys(
-      this
-        .state
-        .assignments,
-    ).filter(
-      (
-        id,
-      ) =>
-        (this
-          .state
-          .assignments[
-          id
-        ]
-          ?.length ??
-          0) >
-          0 &&
-        this.isConnected(
-          id,
-        ),
+    return Object.keys(this.state.assignments).filter(
+      (id) => (this.state.assignments[id]?.length ?? 0) > 0 && this.isConnected(id),
     );
   }
 
   /** Connected players who may vote on a matchup (everyone but its two authors). */
-  private eligibleVoters(
-    matchup: WWMatchup,
-  ): string[] {
-    const ids: string[] =
-      [];
-    for (const [
-      id,
-      p,
-    ] of this
-      .context
-      .players) {
-      if (
-        !p.isConnected ||
-        id ===
-          matchup.playerA ||
-        id ===
-          matchup.playerB
-      )
-        continue;
-      ids.push(
-        id,
-      );
+  private eligibleVoters(matchup: WWMatchup): string[] {
+    const ids: string[] = [];
+    for (const [id, p] of this.context.players) {
+      if (!p.isConnected || id === matchup.playerA || id === matchup.playerB) continue;
+      ids.push(id);
     }
     return ids;
   }
 
   /** End WRITING once every connected writer has submitted all of their prompts. */
   private endWritingIfAllSubmitted(): void {
-    if (
-      this
-        .state
-        .phase !==
-      WitWarPhase.WRITING
-    )
-      return;
-    const writers =
-      this.connectedWriters();
-    if (
-      writers.length ===
-      0
-    )
-      return;
-    if (
-      writers.every(
-        (
-          id,
-        ) =>
-          this.state.submitted.has(
-            id,
-          ),
-      )
-    ) {
+    if (this.state.phase !== WitWarPhase.WRITING) return;
+    const writers = this.connectedWriters();
+    if (writers.length === 0) return;
+    if (writers.every((id) => this.state.submitted.has(id))) {
       this.endWritingPhase();
     }
   }
 
   /** End the current vote once every connected eligible voter has voted. */
   private endVotingIfAllVoted(): void {
-    if (
-      this
-        .state
-        .phase !==
-      WitWarPhase.VOTING
-    )
-      return;
-    const matchup =
-      this
-        .state
-        .matchups[
-        this
-          .state
-          .currentMatchupIndex
-      ];
-    if (
-      !matchup
-    )
-      return;
-    const voters =
-      this.eligibleVoters(
-        matchup,
-      );
+    if (this.state.phase !== WitWarPhase.VOTING) return;
+    const matchup = this.state.matchups[this.state.currentMatchupIndex];
+    if (!matchup) return;
+    const voters = this.eligibleVoters(matchup);
     // Nobody can vote (e.g. both authors are the only ones left): the audience
     // still may, so let the timer run.
-    if (
-      voters.length ===
-      0
-    )
-      return;
-    if (
-      voters.every(
-        (
-          id,
-        ) =>
-          matchup
-            .votes[
-            id
-          ] !==
-          undefined,
-      )
-    ) {
-      this.endMatchupVoting(
-        this
-          .state
-          .currentMatchupIndex,
-      );
+    if (voters.length === 0) return;
+    if (voters.every((id) => matchup.votes[id] !== undefined)) {
+      this.endMatchupVoting(this.state.currentMatchupIndex);
     }
   }
 
   private currentTimeRemaining(): number {
-    const timer =
-      this.getPhaseTimerSnapshot();
-    return timer &&
-      !timer.infinite
-      ? timer.remaining
-      : 0;
+    const timer = this.getPhaseTimerSnapshot();
+    return timer && !timer.infinite ? timer.remaining : 0;
   }
 
   private endGame(): void {
-    this.state.phase =
-      WitWarPhase.GAME_OVER;
+    this.state.phase = WitWarPhase.GAME_OVER;
     this.cleanup();
-    this.context.onComplete(
-      this.computeResults(),
-    );
+    this.context.onComplete(this.computeResults());
   }
 
   // ─── Input Handling ─────────────────────────────────────────
 
-  handleInput(
-    userId: string,
-    action: string,
-    data: unknown,
-  ): void {
-    switch (
-      action
-    ) {
+  handleInput(userId: string, action: string, data: unknown): void {
+    switch (action) {
       case 'WW_SUBMIT_ANSWER':
-        this.handleSubmitAnswer(
-          userId,
-          data,
-        );
+        this.handleSubmitAnswer(userId, data);
         break;
       case 'WW_CAST_VOTE':
-        this.handleCastVote(
-          userId,
-          data,
-        );
+        this.handleCastVote(userId, data);
         break;
       default:
-        logger.warn(
-          {
-            event:
-              'wit_war:unknown_action',
-            lobbyId:
-              this
-                .context
-                .lobbyId,
-            userId,
-            action,
-          },
-        );
+        logger.warn({
+          event: 'wit_war:unknown_action',
+          lobbyId: this.context.lobbyId,
+          userId,
+          action,
+        });
     }
   }
 
-  private handleSubmitAnswer(
-    userId: string,
-    data: unknown,
-  ): void {
-    if (
-      this
-        .state
-        .phase !==
-      WitWarPhase.WRITING
-    )
-      return;
+  private handleSubmitAnswer(userId: string, data: unknown): void {
+    if (this.state.phase !== WitWarPhase.WRITING) return;
 
-    const parsed =
-      SubmitAnswerSchema.safeParse(
-        data,
-      );
-    if (
-      !parsed.success
-    )
-      return;
+    const parsed = SubmitAnswerSchema.safeParse(data);
+    if (!parsed.success) return;
 
-    const {
-      promptIndex,
-      answer,
-    } =
-      parsed.data;
+    const { promptIndex, answer } = parsed.data;
 
     // Find the matchup this player is assigned to for this prompt
-    const matchup =
-      this.state.matchups.find(
-        (
-          m,
-        ) =>
-          m.promptIndex ===
-            promptIndex &&
-          (m.playerA ===
-            userId ||
-            m.playerB ===
-              userId),
-      );
-    if (
-      !matchup
-    )
-      return;
+    const matchup = this.state.matchups.find(
+      (m) => m.promptIndex === promptIndex && (m.playerA === userId || m.playerB === userId),
+    );
+    if (!matchup) return;
 
-    if (
-      matchup.playerA ===
-      userId
-    ) {
-      matchup.answerA =
-        answer;
+    if (matchup.playerA === userId) {
+      matchup.answerA = answer;
     } else {
-      matchup.answerB =
-        answer;
+      matchup.answerB = answer;
     }
 
     // Check if this player has submitted all their answers
-    const playerAssignments =
-      this
-        .state
-        .assignments[
-        userId
-      ] ??
-      [];
-    const allSubmitted =
-      playerAssignments.every(
-        (
-          a,
-        ) => {
-          const m =
-            this
-              .state
-              .matchups[
-              a
-                .matchupIndex
-            ];
-          if (
-            !m
-          )
-            return false;
-          return m.playerA ===
-            userId
-            ? m.answerA !==
-                null
-            : m.answerB !==
-                null;
-        },
-      );
+    const playerAssignments = this.state.assignments[userId] ?? [];
+    const allSubmitted = playerAssignments.every((a) => {
+      const m = this.state.matchups[a.matchupIndex];
+      if (!m) return false;
+      return m.playerA === userId ? m.answerA !== null : m.answerB !== null;
+    });
 
-    if (
-      allSubmitted
-    ) {
-      this.state.submitted.add(
-        userId,
-      );
+    if (allSubmitted) {
+      this.state.submitted.add(userId);
     }
 
     this.broadcastSubmitCount();
 
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:action',
-      {
-        type: 'WW_ANSWER_ACCEPTED',
-        payload:
-          {
-            promptIndex,
-          },
-      },
-    );
-
-    this.logAction(
-      'answer_submitted',
-      {
-        userId,
+    this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'WW_ANSWER_ACCEPTED',
+      payload: {
         promptIndex,
       },
-    );
+    });
+
+    this.logAction('answer_submitted', {
+      userId,
+      promptIndex,
+    });
 
     // Everyone still here is done: don't make the room wait out the clock
     this.endWritingIfAllSubmitted();
   }
 
   private broadcastSubmitCount(): void {
-    const writers =
-      this.connectedWriters();
-    this.context.broadcastAction(
-      {
-        type: 'WW_SUBMIT_COUNT',
-        payload:
-          {
-            submittedCount:
-              writers.filter(
-                (
-                  id,
-                ) =>
-                  this.state.submitted.has(
-                    id,
-                  ),
-              )
-                .length,
-            totalPlayers:
-              writers.length,
-          },
+    const writers = this.connectedWriters();
+    this.context.broadcastAction({
+      type: 'WW_SUBMIT_COUNT',
+      payload: {
+        submittedCount: writers.filter((id) => this.state.submitted.has(id)).length,
+        totalPlayers: writers.length,
       },
-    );
+    });
   }
 
-  private handleCastVote(
-    userId: string,
-    data: unknown,
-  ): void {
-    if (
-      this
-        .state
-        .phase !==
-      WitWarPhase.VOTING
-    )
-      return;
+  private handleCastVote(userId: string, data: unknown): void {
+    if (this.state.phase !== WitWarPhase.VOTING) return;
 
-    const parsed =
-      CastVoteSchema.safeParse(
-        data,
-      );
-    if (
-      !parsed.success
-    )
-      return;
+    const parsed = CastVoteSchema.safeParse(data);
+    if (!parsed.success) return;
 
-    const {
-      matchupIndex,
-      votedForUserId,
-    } =
-      parsed.data;
+    const { matchupIndex, votedForUserId } = parsed.data;
 
-    if (
-      matchupIndex !==
-      this
-        .state
-        .currentMatchupIndex
-    )
-      return;
+    if (matchupIndex !== this.state.currentMatchupIndex) return;
 
-    const matchup =
-      this
-        .state
-        .matchups[
-        matchupIndex
-      ];
-    if (
-      !matchup
-    )
-      return;
+    const matchup = this.state.matchups[matchupIndex];
+    if (!matchup) return;
 
     // Authors cannot vote on their own matchup
-    if (
-      userId ===
-        matchup.playerA ||
-      userId ===
-        matchup.playerB
-    )
-      return;
+    if (userId === matchup.playerA || userId === matchup.playerB) return;
 
     // Must vote for one of the two contestants
-    if (
-      votedForUserId !==
-        matchup.playerA &&
-      votedForUserId !==
-        matchup.playerB
-    )
-      return;
+    if (votedForUserId !== matchup.playerA && votedForUserId !== matchup.playerB) return;
 
-    matchup.votes[
-      userId
-    ] =
-      votedForUserId;
+    matchup.votes[userId] = votedForUserId;
 
-    this.broadcastVoteCount(
-      matchupIndex,
-    );
+    this.broadcastVoteCount(matchupIndex);
 
     // End voting early if all connected eligible voters have voted
     this.endVotingIfAllVoted();
   }
 
-  private broadcastVoteCount(
-    matchupIndex: number,
-  ): void {
-    const matchup =
-      this
-        .state
-        .matchups[
-        matchupIndex
-      ];
-    if (
-      !matchup
-    )
-      return;
-    this.context.broadcastAction(
-      {
-        type: 'WW_VOTE_COUNT',
-        payload:
-          {
-            matchupIndex,
-            voteCount:
-              Object.keys(
-                matchup.votes,
-              )
-                .length,
-            totalVoters:
-              Math.max(
-                this.eligibleVoters(
-                  matchup,
-                )
-                  .length,
-                1,
-              ),
-          },
+  private broadcastVoteCount(matchupIndex: number): void {
+    const matchup = this.state.matchups[matchupIndex];
+    if (!matchup) return;
+    this.context.broadcastAction({
+      type: 'WW_VOTE_COUNT',
+      payload: {
+        matchupIndex,
+        voteCount: Object.keys(matchup.votes).length,
+        totalVoters: Math.max(this.eligibleVoters(matchup).length, 1),
       },
-    );
+    });
   }
 
   /** Audience vote (spectators). Max 5 changes each; aggregated into one vote at resolve time. */
-  handleAudienceVote(
-    userId: string,
-    data: unknown,
-  ): void {
-    if (
-      this
-        .state
-        .phase !==
-      WitWarPhase.VOTING
-    )
-      return;
-    const parsed =
-      CastVoteSchema.safeParse(
-        data,
-      );
-    if (
-      !parsed.success
-    )
-      return;
-    const {
-      matchupIndex,
-      votedForUserId,
-    } =
-      parsed.data;
-    const matchup =
-      this
-        .state
-        .matchups[
-        matchupIndex
-      ];
-    if (
-      matchupIndex !==
-        this
-          .state
-          .currentMatchupIndex ||
-      !matchup
-    )
-      return;
-    if (
-      votedForUserId !==
-        matchup.playerA &&
-      votedForUserId !==
-        matchup.playerB
-    )
-      return;
-    const changes =
-      this.audienceChanges.get(
-        userId,
-      ) ??
-      0;
-    if (
-      changes >=
-      5
-    )
-      return;
-    this.audienceChanges.set(
-      userId,
-      changes +
-        1,
-    );
-    this.audienceVotes.set(
-      userId,
-      votedForUserId,
-    );
-    this.context.broadcastAction(
-      {
-        type: 'WW_AUDIENCE_COUNT',
-        payload:
-          {
-            matchupIndex,
-            count:
-              this
-                .audienceVotes
-                .size,
-          },
+  handleAudienceVote(userId: string, data: unknown): void {
+    if (this.state.phase !== WitWarPhase.VOTING) return;
+    const parsed = CastVoteSchema.safeParse(data);
+    if (!parsed.success) return;
+    const { matchupIndex, votedForUserId } = parsed.data;
+    const matchup = this.state.matchups[matchupIndex];
+    if (matchupIndex !== this.state.currentMatchupIndex || !matchup) return;
+    if (votedForUserId !== matchup.playerA && votedForUserId !== matchup.playerB) return;
+    const changes = this.audienceChanges.get(userId) ?? 0;
+    if (changes >= 5) return;
+    this.audienceChanges.set(userId, changes + 1);
+    this.audienceVotes.set(userId, votedForUserId);
+    this.context.broadcastAction({
+      type: 'WW_AUDIENCE_COUNT',
+      payload: {
+        matchupIndex,
+        count: this.audienceVotes.size,
       },
-    );
+    });
   }
 
   // ─── State Getters ──────────────────────────────────────────
 
-  getStateForPlayer(
-    userId: string,
-  ): unknown {
-    const base =
-      {
-        phase:
-          this
-            .state
-            .phase,
-        currentRound:
-          this
-            .state
-            .currentRound,
-        totalRounds:
-          this
-            .state
-            .totalRounds,
-        scores:
-          this
-            .state
-            .scores,
-        timeRemaining:
-          this.currentTimeRemaining(),
-      };
+  getStateForPlayer(userId: string): unknown {
+    const base = {
+      phase: this.state.phase,
+      currentRound: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
+      scores: this.state.scores,
+      timeRemaining: this.currentTimeRemaining(),
+    };
 
-    switch (
-      this
-        .state
-        .phase
-    ) {
+    switch (this.state.phase) {
       case WitWarPhase.PROMPT_REVEAL:
       case WitWarPhase.WRITING: {
-        const myAssignments =
-          this
-            .state
-            .assignments[
-            userId
-          ] ??
-          [];
+        const myAssignments = this.state.assignments[userId] ?? [];
         return {
           ...base,
-          prompts:
-            myAssignments.map(
-              (
-                a,
-              ) => ({
-                promptIndex:
-                  a.promptIndex,
-                promptText:
-                  a.promptText,
-                matchupIndex:
-                  a.matchupIndex,
-              }),
-            ),
-          submittedCount:
-            this.connectedWriters().filter(
-              (
-                id,
-              ) =>
-                this.state.submitted.has(
-                  id,
-                ),
-            )
-              .length,
-          totalPlayers:
-            this.connectedWriters()
-              .length,
-          hasSubmitted:
-            this.state.submitted.has(
-              userId,
-            ),
+          prompts: myAssignments.map((a) => ({
+            promptIndex: a.promptIndex,
+            promptText: a.promptText,
+            matchupIndex: a.matchupIndex,
+          })),
+          submittedCount: this.connectedWriters().filter((id) => this.state.submitted.has(id)).length,
+          totalPlayers: this.connectedWriters().length,
+          hasSubmitted: this.state.submitted.has(userId),
         };
       }
 
       case WitWarPhase.VOTING: {
-        const matchup =
-          this
-            .state
-            .matchups[
-            this
-              .state
-              .currentMatchupIndex
-          ];
-        const isAuthor =
-          matchup &&
-          (matchup.playerA ===
-            userId ||
-            matchup.playerB ===
-              userId);
+        const matchup = this.state.matchups[this.state.currentMatchupIndex];
+        const isAuthor = matchup && (matchup.playerA === userId || matchup.playerB === userId);
         return {
           ...base,
-          matchupIndex:
-            this
-              .state
-              .currentMatchupIndex,
-          totalMatchups:
-            this
-              .state
-              .matchups
-              .length,
-          promptText:
-            matchup?.promptText,
-          answerA:
-            matchup?.answerA,
-          answerB:
-            matchup?.answerB,
-          playerA:
-            matchup?.playerA,
-          playerB:
-            matchup?.playerB,
+          matchupIndex: this.state.currentMatchupIndex,
+          totalMatchups: this.state.matchups.length,
+          promptText: matchup?.promptText,
+          answerA: matchup?.answerA,
+          answerB: matchup?.answerB,
+          playerA: matchup?.playerA,
+          playerB: matchup?.playerB,
           isAuthor,
-          myVote:
-            matchup
-              ?.votes[
-              userId
-            ] ??
-            null,
-          voteCount:
-            matchup
-              ? Object.keys(
-                  matchup.votes,
-                )
-                  .length
-              : 0,
-          totalVoters:
-            matchup
-              ? Math.max(
-                  this.eligibleVoters(
-                    matchup,
-                  )
-                    .length,
-                  1,
-                )
-              : 1,
+          myVote: matchup?.votes[userId] ?? null,
+          voteCount: matchup ? Object.keys(matchup.votes).length : 0,
+          totalVoters: matchup ? Math.max(this.eligibleVoters(matchup).length, 1) : 1,
         };
       }
 
       case WitWarPhase.MATCHUP_RESULTS: {
-        const matchup =
-          this
-            .state
-            .matchups[
-            this
-              .state
-              .currentMatchupIndex
-          ];
+        const matchup = this.state.matchups[this.state.currentMatchupIndex];
         return {
           ...base,
-          matchupIndex:
-            this
-              .state
-              .currentMatchupIndex,
-          matchup:
-            matchup
-              ? {
-                  promptText:
-                    matchup.promptText,
-                  playerA:
-                    matchup.playerA,
-                  playerAName:
-                    this.context.players.get(
-                      matchup.playerA,
-                    )
-                      ?.userName,
-                  answerA:
-                    matchup.answerA,
-                  playerB:
-                    matchup.playerB,
-                  playerBName:
-                    this.context.players.get(
-                      matchup.playerB,
-                    )
-                      ?.userName,
-                  answerB:
-                    matchup.answerB,
-                  votePercentA:
-                    matchup.votePercentA,
-                  votePercentB:
-                    matchup.votePercentB,
-                  winnerId:
-                    matchup.winnerId,
-                  isWitWham:
-                    matchup.isWitWham,
-                }
-              : null,
+          matchupIndex: this.state.currentMatchupIndex,
+          matchup: matchup
+            ? {
+                promptText: matchup.promptText,
+                playerA: matchup.playerA,
+                playerAName: this.context.players.get(matchup.playerA)?.userName,
+                answerA: matchup.answerA,
+                playerB: matchup.playerB,
+                playerBName: this.context.players.get(matchup.playerB)?.userName,
+                answerB: matchup.answerB,
+                votePercentA: matchup.votePercentA,
+                votePercentB: matchup.votePercentB,
+                winnerId: matchup.winnerId,
+                isWitWham: matchup.isWitWham,
+              }
+            : null,
         };
       }
 
@@ -1898,8 +757,7 @@ export class WitWarMinigame extends BaseMinigame {
       case WitWarPhase.GAME_OVER:
         return {
           ...base,
-          matchups:
-            this.publicMatchups(),
+          matchups: this.publicMatchups(),
         };
 
       default:
@@ -1908,330 +766,124 @@ export class WitWarMinigame extends BaseMinigame {
   }
 
   getStateForSpectator(): unknown {
-    const matchup =
-      this
-        .state
-        .matchups[
-        this
-          .state
-          .currentMatchupIndex
-      ];
-    const allPrompts =
-      this.state.matchups.map(
-        (
-          m,
-        ) => ({
-          promptText:
-            m.promptText,
-          playerA:
-            m.playerA,
-          playerAName:
-            this.context.players.get(
-              m.playerA,
-            )
-              ?.userName ??
-            'Unknown',
-          answerA:
-            m.answerA,
-          playerB:
-            m.playerB,
-          playerBName:
-            this.context.players.get(
-              m.playerB,
-            )
-              ?.userName ??
-            'Unknown',
-          answerB:
-            m.answerB,
-          votePercentA:
-            m.votePercentA,
-          votePercentB:
-            m.votePercentB,
-          winnerId:
-            m.winnerId,
-          isWitWham:
-            m.isWitWham,
-        }),
-      );
+    const matchup = this.state.matchups[this.state.currentMatchupIndex];
+    const allPrompts = this.state.matchups.map((m) => ({
+      promptText: m.promptText,
+      playerA: m.playerA,
+      playerAName: this.context.players.get(m.playerA)?.userName ?? 'Unknown',
+      answerA: m.answerA,
+      playerB: m.playerB,
+      playerBName: this.context.players.get(m.playerB)?.userName ?? 'Unknown',
+      answerB: m.answerB,
+      votePercentA: m.votePercentA,
+      votePercentB: m.votePercentB,
+      winnerId: m.winnerId,
+      isWitWham: m.isWitWham,
+    }));
 
-    const voting =
-      this
-        .state
-        .phase ===
-      WitWarPhase.VOTING;
-    const writers =
-      this.connectedWriters();
+    const voting = this.state.phase === WitWarPhase.VOTING;
+    const writers = this.connectedWriters();
     return {
-      phase:
-        this
-          .state
-          .phase,
-      currentRound:
-        this
-          .state
-          .currentRound,
-      totalRounds:
-        this
-          .state
-          .totalRounds,
-      scores:
-        this
-          .state
-          .scores,
-      matchupIndex:
-        this
-          .state
-          .currentMatchupIndex,
-      totalMatchups:
-        this
-          .state
-          .matchups
-          .length,
-      timeRemaining:
-        this.currentTimeRemaining(),
-      submittedCount:
-        writers.filter(
-          (
-            id,
-          ) =>
-            this.state.submitted.has(
-              id,
-            ),
-        )
-          .length,
-      totalPlayers:
-        writers.length,
-      voteCount:
-        matchup
-          ? Object.keys(
-              matchup.votes,
-            )
-              .length
-          : 0,
-      totalVoters:
-        matchup
-          ? Math.max(
-              this.eligibleVoters(
-                matchup,
-              )
-                .length,
-              1,
-            )
-          : 1,
-      audienceCount:
-        voting
-          ? this
-              .audienceVotes
-              .size
-          : 0,
+      phase: this.state.phase,
+      currentRound: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
+      scores: this.state.scores,
+      matchupIndex: this.state.currentMatchupIndex,
+      totalMatchups: this.state.matchups.length,
+      timeRemaining: this.currentTimeRemaining(),
+      submittedCount: writers.filter((id) => this.state.submitted.has(id)).length,
+      totalPlayers: writers.length,
+      voteCount: matchup ? Object.keys(matchup.votes).length : 0,
+      totalVoters: matchup ? Math.max(this.eligibleVoters(matchup).length, 1) : 1,
+      audienceCount: voting ? this.audienceVotes.size : 0,
       matchups:
-        this
-          .state
-          .phase ===
-          WitWarPhase.ROUND_RESULTS ||
-        this
-          .state
-          .phase ===
-          WitWarPhase.GAME_OVER
+        this.state.phase === WitWarPhase.ROUND_RESULTS || this.state.phase === WitWarPhase.GAME_OVER
           ? this.publicMatchups()
           : undefined,
       allPrompts,
-      currentMatchup:
-        matchup
-          ? {
-              promptText:
-                matchup.promptText,
-              playerA:
-                matchup.playerA,
-              playerAName:
-                this.context.players.get(
-                  matchup.playerA,
-                )
-                  ?.userName ??
-                'Unknown',
-              answerA:
-                matchup.answerA,
-              playerB:
-                matchup.playerB,
-              playerBName:
-                this.context.players.get(
-                  matchup.playerB,
-                )
-                  ?.userName ??
-                'Unknown',
-              answerB:
-                matchup.answerB,
-              votePercentA:
-                matchup.votePercentA,
-              votePercentB:
-                matchup.votePercentB,
-              winnerId:
-                matchup.winnerId,
-              isWitWham:
-                matchup.isWitWham,
-              // Who voted for whom stays private until the vote closes
-              votes:
-                voting
-                  ? {}
-                  : matchup.votes,
-            }
-          : null,
+      currentMatchup: matchup
+        ? {
+            promptText: matchup.promptText,
+            playerA: matchup.playerA,
+            playerAName: this.context.players.get(matchup.playerA)?.userName ?? 'Unknown',
+            answerA: matchup.answerA,
+            playerB: matchup.playerB,
+            playerBName: this.context.players.get(matchup.playerB)?.userName ?? 'Unknown',
+            answerB: matchup.answerB,
+            votePercentA: matchup.votePercentA,
+            votePercentB: matchup.votePercentB,
+            winnerId: matchup.winnerId,
+            isWitWham: matchup.isWitWham,
+            // Who voted for whom stays private until the vote closes
+            votes: voting ? {} : matchup.votes,
+          }
+        : null,
     };
   }
 
   // ─── Results & Awards ──────────────────────────────────────
 
   computeResults(): MinigameResults {
-    const rankings =
-      this.computeRankings();
-    const awards =
-      this.computeAwards();
-    const duration =
-      Date.now() -
-      this
-        .startedAt;
+    const rankings = this.computeRankings();
+    const awards = this.computeAwards();
+    const duration = Date.now() - this.startedAt;
 
     return {
       rankings,
       awards,
-      gameSpecificData:
-        {
-          roundMatchups:
-            this
-              .state
-              .roundMatchups,
-          totalRounds:
-            this
-              .state
-              .totalRounds,
-          gameLog:
-            this.buildGameLog(),
-        },
+      gameSpecificData: {
+        roundMatchups: this.state.roundMatchups,
+        totalRounds: this.state.totalRounds,
+        gameLog: this.buildGameLog(),
+      },
       duration,
     };
   }
 
   private computeRankings(): PlayerRanking[] {
-    const entries: PlayerRanking[] =
-      [];
+    const entries: PlayerRanking[] = [];
 
     for (const userId of this.context.players.keys()) {
-      const player =
-        this.context.players.get(
-          userId,
-        )!;
-      const score =
-        this
-          .state
-          .scores[
-          userId
-        ] ??
-        0;
+      const player = this.context.players.get(userId)!;
+      const score = this.state.scores[userId] ?? 0;
 
-      const deltas: Record<
-        string,
-        number
-      > =
-        {};
-      this.state.roundMatchups.forEach(
-        (
-          matchups,
-          roundIdx,
-        ) => {
-          let roundScore = 0;
-          for (const m of matchups) {
-            if (
-              m.playerA ===
-              userId
-            ) {
-              const pts =
-                m.answerA ===
-                WW_SAFETY_QUIP
-                  ? 0
-                  : Math.round(
-                      (m.votePercentA /
-                        100) *
-                        WW_MAX_MATCHUP_POINTS,
-                    );
-              const bonus =
-                m.isWitWham &&
-                m.winnerId ===
-                  userId
-                  ? WW_WITWHAM_BONUS
-                  : 0;
-              roundScore +=
-                pts +
-                bonus;
-            } else if (
-              m.playerB ===
-              userId
-            ) {
-              const pts =
-                m.answerB ===
-                WW_SAFETY_QUIP
-                  ? 0
-                  : Math.round(
-                      (m.votePercentB /
-                        100) *
-                        WW_MAX_MATCHUP_POINTS,
-                    );
-              const bonus =
-                m.isWitWham &&
-                m.winnerId ===
-                  userId
-                  ? WW_WITWHAM_BONUS
-                  : 0;
-              roundScore +=
-                pts +
-                bonus;
-            }
+      const deltas: Record<string, number> = {};
+      this.state.roundMatchups.forEach((matchups, roundIdx) => {
+        let roundScore = 0;
+        for (const m of matchups) {
+          if (m.playerA === userId) {
+            const pts = m.answerA === WW_SAFETY_QUIP ? 0 : Math.round((m.votePercentA / 100) * WW_MAX_MATCHUP_POINTS);
+            const bonus = m.isWitWham && m.winnerId === userId ? WW_WITWHAM_BONUS : 0;
+            roundScore += pts + bonus;
+          } else if (m.playerB === userId) {
+            const pts = m.answerB === WW_SAFETY_QUIP ? 0 : Math.round((m.votePercentB / 100) * WW_MAX_MATCHUP_POINTS);
+            const bonus = m.isWitWham && m.winnerId === userId ? WW_WITWHAM_BONUS : 0;
+            roundScore += pts + bonus;
           }
-          deltas[
-            `round_${roundIdx + 1}`
-          ] =
-            roundScore;
-        },
-      );
+        }
+        deltas[`round_${roundIdx + 1}`] = roundScore;
+      });
 
-      entries.push(
-        {
-          userId,
-          userName:
-            player.userName,
-          score,
-          rank: 0,
-          deltas,
-        },
-      );
+      entries.push({
+        userId,
+        userName: player.userName,
+        score,
+        rank: 0,
+        deltas,
+      });
     }
 
-    entries.sort(
-      (
-        a,
-        b,
-      ) =>
-        b.score -
-        a.score,
-    );
-    entries.forEach(
-      (
-        e,
-        i,
-      ) => {
-        e.rank =
-          i +
-          1;
-      },
-    );
+    entries.sort((a, b) => b.score - a.score);
+    entries.forEach((e, i) => {
+      e.rank = i + 1;
+    });
 
     return entries;
   }
 
   private computeAwards(): Award[] {
-    const awards: Award[] =
-      [];
-    const allMatchups =
-      this.state.roundMatchups.flat();
+    const awards: Award[] = [];
+    const allMatchups = this.state.roundMatchups.flat();
 
     // Stats per player
     const stats: Record<
@@ -2243,121 +895,35 @@ export class WitWarMinigame extends BaseMinigame {
         biggestUpset: number;
         safetyQuips: number;
       }
-    > =
-      {};
+    > = {};
 
     for (const userId of this.context.players.keys()) {
-      stats[
-        userId
-      ] =
-        {
-          totalVotePct: 0,
-          matchupsPlayed: 0,
-          witWhamWins: 0,
-          biggestUpset: 0,
-          safetyQuips: 0,
-        };
+      stats[userId] = {
+        totalVotePct: 0,
+        matchupsPlayed: 0,
+        witWhamWins: 0,
+        biggestUpset: 0,
+        safetyQuips: 0,
+      };
     }
 
     for (const m of allMatchups) {
-      if (
-        stats[
-          m
-            .playerA
-        ]
-      ) {
-        stats[
-          m
-            .playerA
-        ]
-          .matchupsPlayed++;
-        stats[
-          m.playerA
-        ].totalVotePct +=
-          m.votePercentA;
-        if (
-          m.answerA ===
-          WW_SAFETY_QUIP
-        )
-          stats[
-            m
-              .playerA
-          ]
-            .safetyQuips++;
-        if (
-          m.isWitWham &&
-          m.winnerId ===
-            m.playerA
-        )
-          stats[
-            m
-              .playerA
-          ]
-            .witWhamWins++;
-        if (
-          m.votePercentA >
-            50 &&
-          m.votePercentA >
-            stats[
-              m
-                .playerA
-            ]
-              .biggestUpset
-        ) {
-          stats[
-            m.playerA
-          ].biggestUpset =
-            m.votePercentA;
+      if (stats[m.playerA]) {
+        stats[m.playerA].matchupsPlayed++;
+        stats[m.playerA].totalVotePct += m.votePercentA;
+        if (m.answerA === WW_SAFETY_QUIP) stats[m.playerA].safetyQuips++;
+        if (m.isWitWham && m.winnerId === m.playerA) stats[m.playerA].witWhamWins++;
+        if (m.votePercentA > 50 && m.votePercentA > stats[m.playerA].biggestUpset) {
+          stats[m.playerA].biggestUpset = m.votePercentA;
         }
       }
-      if (
-        stats[
-          m
-            .playerB
-        ]
-      ) {
-        stats[
-          m
-            .playerB
-        ]
-          .matchupsPlayed++;
-        stats[
-          m.playerB
-        ].totalVotePct +=
-          m.votePercentB;
-        if (
-          m.answerB ===
-          WW_SAFETY_QUIP
-        )
-          stats[
-            m
-              .playerB
-          ]
-            .safetyQuips++;
-        if (
-          m.isWitWham &&
-          m.winnerId ===
-            m.playerB
-        )
-          stats[
-            m
-              .playerB
-          ]
-            .witWhamWins++;
-        if (
-          m.votePercentB >
-            50 &&
-          m.votePercentB >
-            stats[
-              m
-                .playerB
-            ]
-              .biggestUpset
-        ) {
-          stats[
-            m.playerB
-          ].biggestUpset =
-            m.votePercentB;
+      if (stats[m.playerB]) {
+        stats[m.playerB].matchupsPlayed++;
+        stats[m.playerB].totalVotePct += m.votePercentB;
+        if (m.answerB === WW_SAFETY_QUIP) stats[m.playerB].safetyQuips++;
+        if (m.isWitWham && m.winnerId === m.playerB) stats[m.playerB].witWhamWins++;
+        if (m.votePercentB > 50 && m.votePercentB > stats[m.playerB].biggestUpset) {
+          stats[m.playerB].biggestUpset = m.votePercentB;
         }
       }
     }
@@ -2366,239 +932,110 @@ export class WitWarMinigame extends BaseMinigame {
     let crowdPleaser: {
       userId: string;
       avgPct: number;
-    } | null =
-      null;
-    for (const [
-      userId,
-      s,
-    ] of Object.entries(
-      stats,
-    )) {
-      if (
-        s.matchupsPlayed ===
-        0
-      )
-        continue;
-      const avg =
-        s.totalVotePct /
-        s.matchupsPlayed;
-      if (
-        !crowdPleaser ||
-        avg >
-          crowdPleaser.avgPct
-      ) {
-        crowdPleaser =
-          {
-            userId,
-            avgPct:
-              avg,
-          };
+    } | null = null;
+    for (const [userId, s] of Object.entries(stats)) {
+      if (s.matchupsPlayed === 0) continue;
+      const avg = s.totalVotePct / s.matchupsPlayed;
+      if (!crowdPleaser || avg > crowdPleaser.avgPct) {
+        crowdPleaser = {
+          userId,
+          avgPct: avg,
+        };
       }
     }
-    if (
-      crowdPleaser &&
-      crowdPleaser.avgPct >
-        0
-    ) {
-      awards.push(
-        {
-          userId:
-            crowdPleaser.userId,
-          title:
-            'Crowd Pleaser',
-          description: `Averaged ${Math.round(crowdPleaser.avgPct)}% of votes per matchup`,
-          icon: 'heart',
-        },
-      );
+    if (crowdPleaser && crowdPleaser.avgPct > 0) {
+      awards.push({
+        userId: crowdPleaser.userId,
+        title: 'Crowd Pleaser',
+        description: `Averaged ${Math.round(crowdPleaser.avgPct)}% of votes per matchup`,
+        icon: 'heart',
+      });
     }
 
     // Wit-Wham! — most unanimous wins
     let witWhamChamp: {
       userId: string;
       count: number;
-    } | null =
-      null;
-    for (const [
-      userId,
-      s,
-    ] of Object.entries(
-      stats,
-    )) {
-      if (
-        s.witWhamWins >
-          0 &&
-        (!witWhamChamp ||
-          s.witWhamWins >
-            witWhamChamp.count)
-      ) {
-        witWhamChamp =
-          {
-            userId,
-            count:
-              s.witWhamWins,
-          };
+    } | null = null;
+    for (const [userId, s] of Object.entries(stats)) {
+      if (s.witWhamWins > 0 && (!witWhamChamp || s.witWhamWins > witWhamChamp.count)) {
+        witWhamChamp = {
+          userId,
+          count: s.witWhamWins,
+        };
       }
     }
-    if (
-      witWhamChamp
-    ) {
-      awards.push(
-        {
-          userId:
-            witWhamChamp.userId,
-          title:
-            'Wit-Wham!',
-          description: `Won ${witWhamChamp.count} matchup${witWhamChamp.count > 1 ? 's' : ''} unanimously`,
-          icon: 'zap',
-        },
-      );
+    if (witWhamChamp) {
+      awards.push({
+        userId: witWhamChamp.userId,
+        title: 'Wit-Wham!',
+        description: `Won ${witWhamChamp.count} matchup${witWhamChamp.count > 1 ? 's' : ''} unanimously`,
+        icon: 'zap',
+      });
     }
 
     // Dark Horse — biggest single upset (highest vote % in a single matchup)
     let darkHorse: {
       userId: string;
       pct: number;
-    } | null =
-      null;
-    for (const [
-      userId,
-      s,
-    ] of Object.entries(
-      stats,
-    )) {
-      if (
-        s.biggestUpset >
-          0 &&
-        (!darkHorse ||
-          s.biggestUpset >
-            darkHorse.pct)
-      ) {
-        darkHorse =
-          {
-            userId,
-            pct: s.biggestUpset,
-          };
+    } | null = null;
+    for (const [userId, s] of Object.entries(stats)) {
+      if (s.biggestUpset > 0 && (!darkHorse || s.biggestUpset > darkHorse.pct)) {
+        darkHorse = {
+          userId,
+          pct: s.biggestUpset,
+        };
       }
     }
-    if (
-      darkHorse &&
-      darkHorse.pct >
-        75
-    ) {
-      awards.push(
-        {
-          userId:
-            darkHorse.userId,
-          title:
-            'Dark Horse',
-          description: `Won a matchup with ${darkHorse.pct}% of the vote`,
-          icon: 'trending-up',
-        },
-      );
+    if (darkHorse && darkHorse.pct > 75) {
+      awards.push({
+        userId: darkHorse.userId,
+        title: 'Dark Horse',
+        description: `Won a matchup with ${darkHorse.pct}% of the vote`,
+        icon: 'trending-up',
+      });
     }
 
     return awards;
   }
 
-  private buildGameLog(): Record<
-    string,
-    unknown
-  > {
+  private buildGameLog(): Record<string, unknown> {
     return {
       type: 'wit-war',
-      initialState:
-        {
-          totalRounds:
-            this
-              .state
-              .totalRounds,
-          playerCount:
-            this
-              .context
-              .players
-              .size,
-        },
-      actions:
-        this
-          .state
-          .actionLog,
+      initialState: {
+        totalRounds: this.state.totalRounds,
+        playerCount: this.context.players.size,
+      },
+      actions: this.state.actionLog,
     };
   }
 
-  private logAction(
-    type: string,
-    payload: Record<
-      string,
-      unknown
-    >,
-  ): void {
-    this.state.actionLog.push(
-      {
-        seq:
-          this
-            .state
-            .actionLog
-            .length +
-          1,
-        type,
-        timestamp:
-          Date.now(),
-        payload,
-      },
-    );
+  private logAction(type: string, payload: Record<string, unknown>): void {
+    this.state.actionLog.push({
+      seq: this.state.actionLog.length + 1,
+      type,
+      timestamp: Date.now(),
+      payload,
+    });
   }
 
   // ─── Disconnect Handling ───────────────────────────────────
 
-  handlePlayerDisconnect(
-    userId: string,
-  ): void {
-    logger.info(
-      {
-        event:
-          'wit_war:player_disconnect',
-        lobbyId:
-          this
-            .context
-            .lobbyId,
-        userId,
-        round:
-          this
-            .state
-            ?.currentRound,
-        phase:
-          this
-            .state
-            ?.phase,
-      },
-    );
-    if (
-      !this
-        .isRunning ||
-      !this
-        .state
-    )
-      return;
+  handlePlayerDisconnect(userId: string): void {
+    logger.info({
+      event: 'wit_war:player_disconnect',
+      lobbyId: this.context.lobbyId,
+      userId,
+      round: this.state?.currentRound,
+      phase: this.state?.phase,
+    });
+    if (!this.isRunning || !this.state) return;
     // A player who is gone no longer holds up the writing or the vote
-    if (
-      this
-        .state
-        .phase ===
-      WitWarPhase.WRITING
-    ) {
+    if (this.state.phase === WitWarPhase.WRITING) {
       this.broadcastSubmitCount();
       this.endWritingIfAllSubmitted();
-    } else if (
-      this
-        .state
-        .phase ===
-      WitWarPhase.VOTING
-    ) {
-      this.broadcastVoteCount(
-        this
-          .state
-          .currentMatchupIndex,
-      );
+    } else if (this.state.phase === WitWarPhase.VOTING) {
+      this.broadcastVoteCount(this.state.currentMatchupIndex);
       this.endVotingIfAllVoted();
     }
   }

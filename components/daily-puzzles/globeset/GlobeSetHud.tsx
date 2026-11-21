@@ -11,13 +11,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
-import {
-  Clock,
-  Flag,
-  Layers,
-  Lightbulb,
-  Sparkles,
-} from 'lucide-react';
+import { Clock, Flag, Layers, Lightbulb, Sparkles } from 'lucide-react';
 import { formatDuration } from '@/lib/globeset/game';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Button } from '@/components/ui/button';
@@ -45,134 +39,56 @@ export function GlobeSetHud({
   onHint,
   onGiveUp,
 }: GlobeSetHudProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-daily-puzzles',
-    );
-  const reduced =
-    useReducedMotion();
+  const { t } = useTranslation('c-daily-puzzles');
+  const reduced = useReducedMotion();
 
   return (
     <div className="surface-panel rounded-site p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <dl className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <Stat
-            icon={
-              <Clock
-                className="h-4 w-4"
-                aria-hidden
-              />
-            }
-            label={t(
-              'globeset-stat-time',
-              {
-                defaultValue:
-                  'Time',
-              },
-            )}
-            value={formatDuration(
-              elapsedSeconds,
-            )}
+            icon={<Clock className="h-4 w-4" aria-hidden />}
+            label={t('globeset-stat-time', {
+              defaultValue: 'Time',
+            })}
+            value={formatDuration(elapsedSeconds)}
             mono
           />
           <Stat
-            icon={
-              <Layers
-                className="h-4 w-4"
-                aria-hidden
-              />
-            }
-            label={t(
-              'globeset-stat-cards-left',
-              {
-                defaultValue:
-                  'Cards left',
-              },
-            )}
-            value={String(
-              cardsLeft,
-            )}
+            icon={<Layers className="h-4 w-4" aria-hidden />}
+            label={t('globeset-stat-cards-left', {
+              defaultValue: 'Cards left',
+            })}
+            value={String(cardsLeft)}
             mono
           />
           <Stat
-            icon={
-              <Sparkles
-                className="h-4 w-4"
-                aria-hidden
-              />
-            }
-            label={t(
-              'globeset-stat-globesets',
-              {
-                defaultValue:
-                  'Sets',
-              },
-            )}
-            value={String(
-              globeSets,
-            )}
+            icon={<Sparkles className="h-4 w-4" aria-hidden />}
+            label={t('globeset-stat-globesets', {
+              defaultValue: 'Sets',
+            })}
+            value={String(globeSets)}
             mono
           />
         </dl>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            onClick={
-              onHint
-            }
-            disabled={
-              locked
-            }
-          >
-            <Lightbulb
-              className="h-4 w-4"
-              aria-hidden
-            />
-            {hints >
-            0
-              ? t(
-                  'globeset-hint-again',
-                  {
-                    defaultValue:
-                      'Hint ({{n}})',
-                    n: hints,
-                  },
-                )
-              : t(
-                  'globeset-hint',
-                  {
-                    defaultValue:
-                      'Hint',
-                  },
-                )}
+          <Button type="button" variant="default" size="sm" onClick={onHint} disabled={locked}>
+            <Lightbulb className="h-4 w-4" aria-hidden />
+            {hints > 0
+              ? t('globeset-hint-again', {
+                  defaultValue: 'Hint ({{n}})',
+                  n: hints,
+                })
+              : t('globeset-hint', {
+                  defaultValue: 'Hint',
+                })}
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={
-              onGiveUp
-            }
-            disabled={
-              locked
-            }
-          >
-            <Flag
-              className="h-4 w-4"
-              aria-hidden
-            />
-            {t(
-              'globeset-give-up',
-              {
-                defaultValue:
-                  'Solve it for me',
-              },
-            )}
+          <Button type="button" variant="ghost" size="sm" onClick={onGiveUp} disabled={locked}>
+            <Flag className="h-4 w-4" aria-hidden />
+            {t('globeset-give-up', {
+              defaultValue: 'Solve it for me',
+            })}
           </Button>
         </div>
       </div>
@@ -182,35 +98,18 @@ export function GlobeSetHud({
       <div
         className="mt-3 h-2 overflow-hidden rounded-full bg-site-bg-subtle"
         role="progressbar"
-        aria-valuemin={
-          0
-        }
-        aria-valuemax={
-          100
-        }
-        aria-valuenow={Math.round(
-          progress *
-            100,
-        )}
-        aria-label={t(
-          'globeset-progress-label',
-          {
-            defaultValue:
-              'Deck cleared',
-          },
-        )}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+        aria-label={t('globeset-progress-label', {
+          defaultValue: 'Deck cleared',
+        })}
       >
         <motion.div
           className="h-full origin-left rounded-full bg-site-accent"
-          initial={
-            false
-          }
+          initial={false}
           animate={{
-            scaleX:
-              Math.max(
-                0.005,
-                progress,
-              ),
+            scaleX: Math.max(0.005, progress),
           }}
           transition={
             reduced
@@ -229,36 +128,14 @@ export function GlobeSetHud({
   );
 }
 
-function Stat({
-  icon,
-  label,
-  value,
-  mono,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
+function Stat({ icon, label, value, mono }: { icon: React.ReactNode; label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-site-accent">
-        {
-          icon
-        }
-      </span>
+      <span className="text-site-accent">{icon}</span>
       <div>
-        <dt className="text-xs font-medium text-site-text-muted">
-          {
-            label
-          }
-        </dt>
-        <dd
-          className={`text-lg font-bold leading-tight text-site-text ${mono ? 'font-mono tabular-nums' : ''}`}
-        >
-          {
-            value
-          }
+        <dt className="text-xs font-medium text-site-text-muted">{label}</dt>
+        <dd className={`text-lg font-bold leading-tight text-site-text ${mono ? 'font-mono tabular-nums' : ''}`}>
+          {value}
         </dd>
       </div>
     </div>

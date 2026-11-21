@@ -5,9 +5,7 @@
  */
 
 const MIN = 60_000;
-const HOUR =
-  60 *
-  MIN;
+const HOUR = 60 * MIN;
 
 /** The share of bot posts that are ordinary ("usual") rather than reactions. Conservative: a slightly big buffer is harmless. */
 export const USUAL_POST_SHARE = 0.7;
@@ -16,32 +14,14 @@ export const BUFFER_HOURS = 5;
 /** Model calls (posts and comments together) one fill run may make. */
 export const FILL_CAP = 60;
 /** A queued post nobody used is deleted this long after it was written. */
-export const QUEUE_TTL_MS =
-  48 *
-  HOUR;
+export const QUEUE_TTL_MS = 48 * HOUR;
 /** At most this many pre-written top-level comments per queued post, on average. */
 export const MAX_COMMENT_MEAN = 3;
 
 /** Queued usual posts to keep for a bot that posts `perDay` times a day (multiplier applied). */
-export function bufferTarget(
-  perDay: number,
-): number {
-  if (
-    !(
-      perDay >
-      0
-    )
-  )
-    return 0;
-  return (
-    Math.ceil(
-      ((perDay *
-        USUAL_POST_SHARE) /
-        24) *
-        BUFFER_HOURS,
-    ) +
-    1
-  );
+export function bufferTarget(perDay: number): number {
+  if (!(perDay > 0)) return 0;
+  return Math.ceil(((perDay * USUAL_POST_SHARE) / 24) * BUFFER_HOURS) + 1;
 }
 
 /**
@@ -55,52 +35,17 @@ export function commentMean(
   replyTickMs: number,
   botPostsPerHour: number,
 ): number {
-  if (
-    !(
-      botPostsPerHour >
-      0
-    ) ||
-    !(
-      replyTickMs >
-      0
-    )
-  )
-    return 0;
-  const seedsPerHour =
-    proactiveProb *
-    multiplier *
-    (HOUR /
-      replyTickMs);
-  return Math.min(
-    MAX_COMMENT_MEAN,
-    Math.max(
-      0,
-      seedsPerHour /
-        botPostsPerHour,
-    ),
-  );
+  if (!(botPostsPerHour > 0) || !(replyTickMs > 0)) return 0;
+  const seedsPerHour = proactiveProb * multiplier * (HOUR / replyTickMs);
+  return Math.min(MAX_COMMENT_MEAN, Math.max(0, seedsPerHour / botPostsPerHour));
 }
 
 /** A top-level comment lands 5-180 minutes after its post. `rnd` is uniform [0,1). */
-export function commentDelayMs(
-  rnd: number,
-): number {
-  return Math.round(
-    (5 +
-      rnd *
-        175) *
-      MIN,
-  );
+export function commentDelayMs(rnd: number): number {
+  return Math.round((5 + rnd * 175) * MIN);
 }
 
 /** A reply lands 2-60 minutes after the comment it answers. `rnd` is uniform [0,1). */
-export function replyDelayMs(
-  rnd: number,
-): number {
-  return Math.round(
-    (2 +
-      rnd *
-        58) *
-      MIN,
-  );
+export function replyDelayMs(rnd: number): number {
+  return Math.round((2 + rnd * 58) * MIN);
 }

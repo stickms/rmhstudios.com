@@ -1,10 +1,5 @@
 import { getAudioContext } from '@/lib/shared/platform';
-import {
-  saveSample,
-  loadSample,
-  listSamples,
-  deleteSample,
-} from '../project-store';
+import { saveSample, loadSample, listSamples, deleteSample } from '../project-store';
 import type { SampleMeta } from '../types';
 
 /**
@@ -12,30 +7,17 @@ import type { SampleMeta } from '../types';
  * Stores raw ArrayBuffers in IndexedDB, decoded AudioBuffers in memory.
  */
 export class SampleManager {
-  private static instance: SampleManager | null =
-    null;
-  private cache =
-    new Map<
-      string,
-      AudioBuffer
-    >();
-  private audioContext: AudioContext | null =
-    null;
+  private static instance: SampleManager | null = null;
+  private cache = new Map<string, AudioBuffer>();
+  private audioContext: AudioContext | null = null;
 
   static getInstance(): SampleManager {
-    if (
-      !SampleManager.instance
-    )
-      SampleManager.instance =
-        new SampleManager();
+    if (!SampleManager.instance) SampleManager.instance = new SampleManager();
     return SampleManager.instance;
   }
 
-  setAudioContext(
-    ctx: AudioContext,
-  ) {
-    this.audioContext =
-      ctx;
+  setAudioContext(ctx: AudioContext) {
+    this.audioContext = ctx;
   }
 
   /**
@@ -48,43 +30,23 @@ export class SampleManager {
     id: string;
     meta: SampleMeta;
   }> {
-    const buffer =
-      await file.arrayBuffer();
-    const id =
-      crypto.randomUUID();
-    const audioBuffer =
-      await this.decodeBuffer(
-        buffer,
-      );
+    const buffer = await file.arrayBuffer();
+    const id = crypto.randomUUID();
+    const audioBuffer = await this.decodeBuffer(buffer);
 
-    const meta: SampleMeta =
-      {
-        id,
-        name: file.name.replace(
-          /\.[^.]+$/,
-          '',
-        ),
-        duration:
-          audioBuffer.duration,
-        sampleRate:
-          audioBuffer.sampleRate,
-        channels:
-          audioBuffer.numberOfChannels,
-        size: buffer.byteLength,
-        folder,
-        tags: [],
-      };
+    const meta: SampleMeta = {
+      id,
+      name: file.name.replace(/\.[^.]+$/, ''),
+      duration: audioBuffer.duration,
+      sampleRate: audioBuffer.sampleRate,
+      channels: audioBuffer.numberOfChannels,
+      size: buffer.byteLength,
+      folder,
+      tags: [],
+    };
 
-    await saveSample(
-      id,
-      meta.name,
-      buffer,
-      meta,
-    );
-    this.cache.set(
-      id,
-      audioBuffer,
-    );
+    await saveSample(id, meta.name, buffer, meta);
+    this.cache.set(id, audioBuffer);
 
     return {
       id,
@@ -95,59 +57,30 @@ export class SampleManager {
   /**
    * Get a decoded AudioBuffer by sample ID. Loads from IndexedDB if not cached.
    */
-  async getBuffer(
-    id: string,
-  ): Promise<AudioBuffer | null> {
-    if (
-      this.cache.has(
-        id,
-      )
-    )
-      return this.cache.get(
-        id,
-      )!;
+  async getBuffer(id: string): Promise<AudioBuffer | null> {
+    if (this.cache.has(id)) return this.cache.get(id)!;
 
-    const data =
-      await loadSample(
-        id,
-      );
-    if (
-      !data
-    )
-      return null;
+    const data = await loadSample(id);
+    if (!data) return null;
 
-    const audioBuffer =
-      await this.decodeBuffer(
-        data.buffer,
-      );
-    this.cache.set(
-      id,
-      audioBuffer,
-    );
+    const audioBuffer = await this.decodeBuffer(data.buffer);
+    this.cache.set(id, audioBuffer);
     return audioBuffer;
   }
 
   /**
    * List all stored sample metadata.
    */
-  async list(): Promise<
-    SampleMeta[]
-  > {
+  async list(): Promise<SampleMeta[]> {
     return listSamples();
   }
 
   /**
    * Remove a sample from storage and cache.
    */
-  async remove(
-    id: string,
-  ): Promise<void> {
-    this.cache.delete(
-      id,
-    );
-    await deleteSample(
-      id,
-    );
+  async remove(id: string): Promise<void> {
+    this.cache.delete(id);
+    await deleteSample(id);
   }
 
   /**
@@ -157,27 +90,13 @@ export class SampleManager {
     this.cache.clear();
   }
 
-  private async decodeBuffer(
-    buffer: ArrayBuffer,
-  ): Promise<AudioBuffer> {
+  private async decodeBuffer(buffer: ArrayBuffer): Promise<AudioBuffer> {
     // Falls back to the page's shared context rather than minting a new one:
     // browsers cap AudioContexts per document (Chromium's limit is six), and a
     // studio session that decodes into a fresh one each time hits the ceiling,
     // after which every construction throws.
-    const ctx =
-      this
-        .audioContext ??
-      getAudioContext();
-    if (
-      !ctx
-    )
-      throw new Error(
-        'Web Audio is unavailable on this device',
-      );
-    return ctx.decodeAudioData(
-      buffer.slice(
-        0,
-      ),
-    );
+    const ctx = this.audioContext ?? getAudioContext();
+    if (!ctx) throw new Error('Web Audio is unavailable on this device');
+    return ctx.decodeAudioData(buffer.slice(0));
   }
 }

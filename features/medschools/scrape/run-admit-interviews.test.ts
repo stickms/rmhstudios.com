@@ -16,8 +16,7 @@ const SECRET = 'test-secret-0123456789abcdef';
 const NOW = new Date('2026-11-20T18:00:00.000Z');
 const HARVARD = 'harvard-medical-school';
 const YALE = 'yale-school-of-medicine';
-const key = (op: AdmitOperation, vars: Record<string, unknown>) =>
-  gqlKey(ADMIT_GRAPHQL_PATH, op.operationName, vars);
+const key = (op: AdmitOperation, vars: Record<string, unknown>) => gqlKey(ADMIT_GRAPHQL_PATH, op.operationName, vars);
 const statsKey = (filterBy: string) =>
   key(SCHOOL_STATS, { ...SCHOOL_STATS.variables, filterBy, page: 1, pageSize: 999 });
 const schoolsKey = key(INTERVIEW_SCHOOLS, { ...INTERVIEW_SCHOOLS.variables, limit: 100, offset: 0 });
@@ -511,10 +510,9 @@ describe('runAdmitInterviews', () => {
       }),
     );
     await t.run();
-    assertNoLeak([...t.writes, t.table('medSchoolStats'), t.table('medInterviewQuestion'), t.logs], [
-      ...NEEDLES,
-      '987654321',
-      '987654322',
-    ]);
+    assertNoLeak(
+      [...t.writes, t.table('medSchoolStats'), t.table('medInterviewQuestion'), t.logs],
+      [...NEEDLES, '987654321', '987654322'],
+    );
   });
 });

@@ -3,9 +3,7 @@
   "j2l": [
     {
       "name": "in order, one batch",
-      "handlers": [
-        "toast"
-      ],
+      "handlers": ["toast"],
       "text": "{\"s\":1,\"t\":\"toast\",\"d\":{\"key\":\"a\"}}\n{\"s\":2,\"t\":\"toast\",\"d\":{\"key\":\"b\",\"vars\":{\"n\":3}}}\n",
       "applied": [
         {
@@ -29,9 +27,7 @@
     },
     {
       "name": "duplicates and replays are dropped",
-      "handlers": [
-        "toast"
-      ],
+      "handlers": ["toast"],
       "text": "{\"s\":1,\"t\":\"toast\",\"d\":{\"key\":\"a\"}}\n{\"s\":1,\"t\":\"toast\",\"d\":{\"key\":\"a\"}}\n{\"s\":3,\"t\":\"toast\",\"d\":{\"key\":\"c\"}}\n{\"s\":2,\"t\":\"toast\",\"d\":{\"key\":\"late\"}}\n",
       "applied": [
         {
@@ -52,9 +48,7 @@
     },
     {
       "name": "malformed lines are skipped",
-      "handlers": [
-        "toast"
-      ],
+      "handlers": ["toast"],
       "text": "{\"s\":1,\"t\":\"toast\",\"d\":{\"key\":\"a\"}\n\nnull\n{\"s\":2,\"t\":\"toast\",\"d\":{\"key\":\"b\"}}\n{\"s\":3,\"t\":\"nope\",\"d\":{}}\n{\"s\":4}\n",
       "applied": [
         {
@@ -68,9 +62,7 @@
     },
     {
       "name": "unicode and escapes survive",
-      "handlers": [
-        "chat_line"
-      ],
+      "handlers": ["chat_line"],
       "text": "{\"s\":1,\"t\":\"chat_line\",\"d\":{\"from\":\"u1\",\"name\":\"Zoë 🃏 漢\",\"text\":\"line1\\nline2 \\\"q\\\" \\\\   \\u0001\",\"kind\":\"in\"}}\n",
       "applied": [
         {
@@ -87,10 +79,7 @@
     },
     {
       "name": "numbers keep their doubles",
-      "handlers": [
-        "vote_progress",
-        "timer_state"
-      ],
+      "handlers": ["vote_progress", "timer_state"],
       "text": "{\"s\":1,\"t\":\"vote_progress\",\"d\":{\"kind\":\"seed\",\"k\":0,\"n\":9007199254740991}}\n{\"s\":2,\"t\":\"timer_state\",\"d\":{\"value\":0.1,\"mode\":\"pvp\",\"ticking\":true,\"beingTimered\":false,\"timering\":false,\"pressable\":true,\"auto\":false,\"color\":\"normal\",\"display\":null}}\n",
       "applied": [
         {
@@ -120,9 +109,7 @@
     },
     {
       "name": "no trailing newline and CRLF-free",
-      "handlers": [
-        "timer_cue"
-      ],
+      "handlers": ["timer_cue"],
       "text": "{\"s\":5,\"t\":\"timer_cue\",\"d\":{}}",
       "applied": [
         {

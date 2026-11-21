@@ -25,9 +25,7 @@ const OLD_MODELS = /\.\s*(?:marketListing|cardListing|storefrontProduct|storefro
 
 describe('listings live in one module', () => {
   it('only lib/listings reads or writes the Listing tables', () => {
-    const offenders = SOURCES.filter(
-      (f) => !f.startsWith('lib/listings/') && NEW_MODEL.test(readFileSync(f, 'utf8')),
-    );
+    const offenders = SOURCES.filter((f) => !f.startsWith('lib/listings/') && NEW_MODEL.test(readFileSync(f, 'utf8')));
     expect(offenders).toEqual([]);
   });
 

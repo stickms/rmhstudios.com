@@ -17,10 +17,7 @@
 
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  themeCssVars,
-  type ThemeTokens,
-} from '@/lib/themes/tokens';
+import { themeCssVars, type ThemeTokens } from '@/lib/themes/tokens';
 
 export function ThemeMiniShell({
   tokens,
@@ -35,46 +32,18 @@ export function ThemeMiniShell({
    * app/globals/tokens-themes.css restate the edition so a preview can show Day while Night is up). Ignored when
    * `tokens` is given.
    */
-  edition?:
-    | 'default'
-    | 'graphite';
-  size?:
-    | 'sm'
-    | 'lg';
+  edition?: 'default' | 'graphite';
+  size?: 'sm' | 'lg';
   className?: string;
 }) {
-  const vars =
-    useMemo(
-      () =>
-        tokens
-          ? themeCssVars(
-              tokens,
-            )
-          : undefined,
-      [
-        tokens,
-      ],
-    );
-  const heavy =
-    size ===
-    'lg';
+  const vars = useMemo(() => (tokens ? themeCssVars(tokens) : undefined), [tokens]);
+  const heavy = size === 'lg';
   // Feature surfaces get real material in the large variant; the small variant
   // stays L1 (no backdrop-filter) so a card grid is cheap.
-  const feature =
-    heavy
-      ? ''
-      : '';
+  const feature = heavy ? '' : '';
 
-  const t =
-    size ===
-    'lg'
-      ? 'text-caption'
-      : 'text-nano';
-  const tSm =
-    size ===
-    'lg'
-      ? 'text-tiny'
-      : 'text-pico';
+  const t = size === 'lg' ? 'text-caption' : 'text-nano';
+  const tSm = size === 'lg' ? 'text-tiny' : 'text-pico';
 
   return (
     <div
@@ -82,22 +51,16 @@ export function ThemeMiniShell({
       style={
         {
           ...vars,
-          background:
-            'var(--site-bg)',
+          background: 'var(--site-bg)',
         } as React.CSSProperties
       }
       className={cn(
-        !tokens &&
-          edition &&
-          `style-${edition}`,
+        !tokens && edition && `style-${edition}`,
         // §17.3: `contain: layout paint` isolates each mini shell's recalc/repaint
         // so a grid of them (or a root theme-preview swap) can't cascade a
         // full-document style/layout storm through every glass surface inside them.
         'pointer-events-none relative isolate overflow-hidden rounded-site select-none [contain:layout_paint]',
-        size ===
-          'lg'
-          ? 'min-h-[320px] p-4'
-          : 'h-[132px] p-2',
+        size === 'lg' ? 'min-h-[320px] p-4' : 'h-[132px] p-2',
         className,
       )}
     >
@@ -106,44 +69,18 @@ export function ThemeMiniShell({
         <div
           className={cn(
             'flex shrink-0 flex-col items-center gap-1.5 rounded-site',
-            size ===
-              'lg'
-              ? 'w-10 py-2'
-              : 'w-5 py-1.5',
+            size === 'lg' ? 'w-10 py-2' : 'w-5 py-1.5',
           )}
         >
-          <span
-            className={cn(
-              'rounded-full bg-site-accent',
-              size ===
-                'lg'
-                ? 'h-4 w-4'
-                : 'h-2 w-2',
-            )}
-          />
-          {Array.from(
-            {
-              length: 3,
-            },
-          ).map(
-            (
-              _,
-              i,
-            ) => (
-              <span
-                key={
-                  i
-                }
-                className={cn(
-                  'rounded-full bg-site-text-muted/50',
-                  size ===
-                    'lg'
-                    ? 'h-2.5 w-2.5'
-                    : 'h-1.5 w-1.5',
-                )}
-              />
-            ),
-          )}
+          <span className={cn('rounded-full bg-site-accent', size === 'lg' ? 'h-4 w-4' : 'h-2 w-2')} />
+          {Array.from({
+            length: 3,
+          }).map((_, i) => (
+            <span
+              key={i}
+              className={cn('rounded-full bg-site-text-muted/50', size === 'lg' ? 'h-2.5 w-2.5' : 'h-1.5 w-1.5')}
+            />
+          ))}
         </div>
 
         {/* Main column */}
@@ -153,28 +90,15 @@ export function ThemeMiniShell({
             className={cn(
               feature,
               'flex items-center justify-between rounded-full',
-              size ===
-                'lg'
-                ? 'px-3 py-2'
-                : 'px-2 py-1',
+              size === 'lg' ? 'px-3 py-2' : 'px-2 py-1',
             )}
           >
-            <span
-              className={cn(
-                'font-semibold text-site-text',
-                t,
-              )}
-            >
-              Aa
-            </span>
+            <span className={cn('font-semibold text-site-text', t)}>Aa</span>
             <span
               className={cn(
                 'rounded-full bg-site-accent px-2 font-medium text-site-accent-fg',
                 tSm,
-                size ===
-                  'lg'
-                  ? 'py-1'
-                  : 'py-0.5',
+                size === 'lg' ? 'py-1' : 'py-0.5',
               )}
             >
               ●
@@ -182,88 +106,31 @@ export function ThemeMiniShell({
           </div>
 
           {/* One feed card */}
-          <div
-            className={cn(
-              feature,
-              'rounded-site',
-              size ===
-                'lg'
-                ? 'p-3'
-                : 'p-2',
-            )}
-          >
+          <div className={cn(feature, 'rounded-site', size === 'lg' ? 'p-3' : 'p-2')}>
             <div className="flex items-center gap-1.5">
-              <span
-                className={cn(
-                  'rounded-full bg-site-bg-subtle',
-                  size ===
-                    'lg'
-                    ? 'h-5 w-5'
-                    : 'h-3 w-3',
-                )}
-              />
-              <span
-                className={cn(
-                  'font-semibold text-site-text',
-                  tSm,
-                )}
-              >
-                Card
-                title
-              </span>
+              <span className={cn('rounded-full bg-site-bg-subtle', size === 'lg' ? 'h-5 w-5' : 'h-3 w-3')} />
+              <span className={cn('font-semibold text-site-text', tSm)}>Card title</span>
             </div>
-            <p
-              className={cn(
-                'mt-1 leading-snug text-site-text-muted',
-                tSm,
-              )}
-            >
-              A
-              line
-              of
-              body
-              copy
-              sitting
-              on
-              the
-              glass.
+            <p className={cn('mt-1 leading-snug text-site-text-muted', tSm)}>
+              A line of body copy sitting on the glass.
             </p>
           </div>
 
           {/* Static Tabs-like pill strip */}
           <div className="flex w-fit items-center gap-0.5 rounded-full p-0.5">
-            {[
-              'One',
-              'Two',
-              'Three',
-            ].map(
-              (
-                label,
-                i,
-              ) => (
-                <span
-                  key={
-                    label
-                  }
-                  className={cn(
-                    'rounded-full px-2 font-medium',
-                    tSm,
-                    size ===
-                      'lg'
-                      ? 'py-1'
-                      : 'py-0.5',
-                    i ===
-                      0
-                      ? 'bg-site-bg-subtle text-site-accent'
-                      : 'text-site-text-muted',
-                  )}
-                >
-                  {
-                    label
-                  }
-                </span>
-              ),
-            )}
+            {['One', 'Two', 'Three'].map((label, i) => (
+              <span
+                key={label}
+                className={cn(
+                  'rounded-full px-2 font-medium',
+                  tSm,
+                  size === 'lg' ? 'py-1' : 'py-0.5',
+                  i === 0 ? 'bg-site-bg-subtle text-site-accent' : 'text-site-text-muted',
+                )}
+              >
+                {label}
+              </span>
+            ))}
           </div>
 
           {/* Button pair + input well */}
@@ -272,10 +139,7 @@ export function ThemeMiniShell({
               className={cn(
                 'rounded-site bg-site-accent px-2 font-medium text-site-accent-fg',
                 tSm,
-                size ===
-                  'lg'
-                  ? 'py-1'
-                  : 'py-0.5',
+                size === 'lg' ? 'py-1' : 'py-0.5',
               )}
             >
               Action
@@ -284,10 +148,7 @@ export function ThemeMiniShell({
               className={cn(
                 'rounded-site border border-site-border px-2 font-medium text-site-text',
                 tSm,
-                size ===
-                  'lg'
-                  ? 'py-1'
-                  : 'py-0.5',
+                size === 'lg' ? 'py-1' : 'py-0.5',
               )}
             >
               Alt
@@ -296,15 +157,10 @@ export function ThemeMiniShell({
               className={cn(
                 'surface-field ms-auto flex flex-1 items-center rounded-site-sm',
                 tSm,
-                size ===
-                  'lg'
-                  ? 'px-2 py-1.5'
-                  : 'px-1.5 py-1',
+                size === 'lg' ? 'px-2 py-1.5' : 'px-1.5 py-1',
               )}
             >
-              <span className="text-site-text-muted">
-                Search…
-              </span>
+              <span className="text-site-text-muted">Search…</span>
             </span>
           </div>
         </div>

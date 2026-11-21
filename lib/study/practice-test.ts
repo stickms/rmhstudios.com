@@ -69,11 +69,7 @@ export interface MatchingQuestion {
   /** The same cards' definitions in shuffled order. */
   definitions: { cardId: string; text: string }[];
 }
-export type TestQuestion =
-  | MultipleChoiceQuestion
-  | WrittenQuestion
-  | TrueFalseQuestion
-  | MatchingQuestion;
+export type TestQuestion = MultipleChoiceQuestion | WrittenQuestion | TrueFalseQuestion | MatchingQuestion;
 
 export type WrittenGrade = 'correct' | 'almost' | 'wrong';
 
@@ -266,9 +262,15 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
   const usable: readonly TestKind[] = kinds.length > 0 ? kinds : ['written'];
 
   // Kinds are dealt evenly, then put in a seeded order.
-  const plan = shuffle(Array.from({ length: count }, (_, i) => usable[i % usable.length] as TestKind), rand);
+  const plan = shuffle(
+    Array.from({ length: count }, (_, i) => usable[i % usable.length] as TestKind),
+    rand,
+  );
   const tfCount = plan.filter((k) => k === 'true-false').length;
-  const truths = shuffle(Array.from({ length: tfCount }, (_, i) => i % 2 === 0), rand);
+  const truths = shuffle(
+    Array.from({ length: tfCount }, (_, i) => i % 2 === 0),
+    rand,
+  );
 
   const distractorPools: Partial<Record<Side, AnswerEntry[]>> = {};
   const poolFor = (side: Side): AnswerEntry[] => (distractorPools[side] ??= answerPool(cards, side));

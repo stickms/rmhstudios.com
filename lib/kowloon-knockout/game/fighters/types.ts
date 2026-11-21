@@ -18,35 +18,11 @@ export type FighterClass =
   | 'black_tortoise'
   | 'iron_bull'
   | 'smoke_leopard';
-export type PunchType =
-  | 'jab'
-  | 'cross'
-  | 'hook'
-  | 'uppercut';
-export type FighterState =
-  | 'idle'
-  | 'walking'
-  | 'punching'
-  | 'blocking'
-  | 'hit'
-  | 'stunned'
-  | 'knockedOut';
-export type GamePhase =
-  | 'menu'
-  | 'select'
-  | 'lobby'
-  | 'fight'
-  | 'countdown'
-  | 'roundEnd'
-  | 'result';
-export type FightResult =
-  | 'ko'
-  | 'tko'
-  | 'decision'
-  | null;
-export type MatchMode =
-  | 'ffa'
-  | 'teams';
+export type PunchType = 'jab' | 'cross' | 'hook' | 'uppercut';
+export type FighterState = 'idle' | 'walking' | 'punching' | 'blocking' | 'hit' | 'stunned' | 'knockedOut';
+export type GamePhase = 'menu' | 'select' | 'lobby' | 'fight' | 'countdown' | 'roundEnd' | 'result';
+export type FightResult = 'ko' | 'tko' | 'decision' | null;
+export type MatchMode = 'ffa' | 'teams';
 
 export interface FighterStats {
   maxHealth: number;
@@ -176,9 +152,7 @@ export interface WorldState {
   roundEndTimer: number;
   roundEndText: string;
   result: FightResult;
-  winnerSeat:
-    | number
-    | null; // FFA: winning seat. Teams: winning team id.
+  winnerSeat: number | null; // FFA: winning seat. Teams: winning team id.
   events: GameEvent[];
   frame: number;
   screenShake: number;
@@ -190,8 +164,7 @@ export function emptyInput(): InputCommand {
     moveX: 0,
     moveZ: 0,
     block: false,
-    punch:
-      null,
+    punch: null,
   };
 }
 

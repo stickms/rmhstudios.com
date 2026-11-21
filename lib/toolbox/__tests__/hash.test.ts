@@ -41,7 +41,12 @@ describe('matchDigest', () => {
   it('normalises pasted checksums and finds the algorithm', async () => {
     const all = await digestAll(bytes('abc'));
     expect(matchDigest('  0x900150983CD24FB0D6963F7D28E17F72 ', all)).toBe('MD5');
-    expect(matchDigest('ba:78:16:bf:8f:01:cf:ea:41:41:40:de:5d:ae:22:23:b0:03:61:a3:96:17:7a:9c:b4:10:ff:61:f2:00:15:ad', all)).toBe('SHA-256');
+    expect(
+      matchDigest(
+        'ba:78:16:bf:8f:01:cf:ea:41:41:40:de:5d:ae:22:23:b0:03:61:a3:96:17:7a:9c:b4:10:ff:61:f2:00:15:ad',
+        all,
+      ),
+    ).toBe('SHA-256');
     expect(matchDigest('deadbeef', all)).toBeNull();
     expect(matchDigest('not hex', all)).toBeNull();
     expect(normaliseHash('AB CD')).toBe('abcd');

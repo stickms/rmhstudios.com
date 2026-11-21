@@ -21,42 +21,15 @@ export interface RingMember {
 }
 
 /** Ring order: join time, then id so equal timestamps are still stable. */
-export function ringOrder(
-  members: readonly RingMember[],
-): string[] {
-  return [
-    ...members,
-  ]
-    .sort(
-      (
-        a,
-        b,
-      ) =>
-        a.joinedAt -
-          b.joinedAt ||
-        (a.userId <
-        b.userId
-          ? -1
-          : a.userId >
-              b.userId
-            ? 1
-            : 0),
-    )
-    .map(
-      (
-        m,
-      ) =>
-        m.userId,
-    );
+export function ringOrder(members: readonly RingMember[]): string[] {
+  return [...members]
+    .sort((a, b) => a.joinedAt - b.joinedAt || (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0))
+    .map((m) => m.userId);
 }
 
 export interface RingHops {
-  prev:
-    | string
-    | null;
-  next:
-    | string
-    | null;
+  prev: string | null;
+  next: string | null;
   position: number;
   size: number;
 }
@@ -66,66 +39,21 @@ export interface RingHops {
  * `current` itself need not be eligible (a viewer can be on a profile that
  * just went private) but must be a member.
  */
-export function hops(
-  order: readonly string[],
-  current: string,
-  eligible: (
-    id: string,
-  ) => boolean,
-): RingHops | null {
-  const i =
-    order.indexOf(
-      current,
-    );
-  if (
-    i ===
-    -1
-  )
+export function hops(order: readonly string[], current: string, eligible: (id: string) => boolean): RingHops | null {
+  const i = order.indexOf(current);
+  if (i === -1) return null;
+  const n = order.length;
+  const find = (step: 1 | -1): string | null => {
+    for (let k = 1; k < n; k++) {
+      const id = order[(i + step * k + n * k) % n]!;
+      if (eligible(id)) return id;
+    }
     return null;
-  const n =
-    order.length;
-  const find =
-    (
-      step:
-        | 1
-        | -1,
-    ):
-      | string
-      | null => {
-      for (
-        let k = 1;
-        k <
-        n;
-        k++
-      ) {
-        const id =
-          order[
-            (i +
-              step *
-                k +
-              n *
-                k) %
-              n
-          ]!;
-        if (
-          eligible(
-            id,
-          )
-        )
-          return id;
-      }
-      return null;
-    };
+  };
   return {
-    prev: find(
-      -1,
-    ),
-    next: find(
-      1,
-    ),
-    position:
-      i +
-      1,
+    prev: find(-1),
+    next: find(1),
+    position: i + 1,
     size: n,
   };
 }
@@ -134,30 +62,9 @@ export function hops(
 export function randomHop(
   order: readonly string[],
   current: string,
-  eligible: (
-    id: string,
-  ) => boolean,
+  eligible: (id: string) => boolean,
   rand: () => number = Math.random,
-):
-  | string
-  | null {
-  const pool =
-    order.filter(
-      (
-        id,
-      ) =>
-        id !==
-          current &&
-        eligible(
-          id,
-        ),
-    );
-  return pool.length
-    ? pool[
-        Math.floor(
-          rand() *
-            pool.length,
-        )
-      ]!
-    : null;
+): string | null {
+  const pool = order.filter((id) => id !== current && eligible(id));
+  return pool.length ? pool[Math.floor(rand() * pool.length)]! : null;
 }

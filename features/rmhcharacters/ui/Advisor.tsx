@@ -46,7 +46,9 @@ export function Advisor({
           t('advisor.q.levelUp', { defaultValue: 'What should I take when I level up?' }),
           t('advisor.q.spellPicks', { defaultValue: 'Recommend spells for my character.' }),
           t('advisor.q.items', { defaultValue: 'What magic items and gear should I look for?' }),
-          t('advisor.q.pfFeats', { defaultValue: 'Which class and skill feats should I plan for the next few levels?' }),
+          t('advisor.q.pfFeats', {
+            defaultValue: 'Which class and skill feats should I plan for the next few levels?',
+          }),
           t('advisor.q.archetype', { defaultValue: 'Which archetype dedication would suit this character?' }),
           t('advisor.q.actions', { defaultValue: 'How should I spend my three actions each turn?' }),
           t('advisor.q.pfSpells', { defaultValue: 'Which spells should I prepare or learn next?' }),
@@ -70,7 +72,14 @@ export function Advisor({
         </Muted>
         <div className="flex flex-wrap gap-2">
           {prompts.map((p) => (
-            <Button key={p} type="button" size="sm" disabled={busy} onClick={() => ask(p)} className="h-auto min-h-9 max-w-full whitespace-normal py-1.5 text-left">
+            <Button
+              key={p}
+              type="button"
+              size="sm"
+              disabled={busy}
+              onClick={() => ask(p)}
+              className="h-auto min-h-9 max-w-full whitespace-normal py-1.5 text-left"
+            >
               {p}
             </Button>
           ))}
@@ -78,9 +87,14 @@ export function Advisor({
       </Section>
       <ol className="flex flex-col gap-4" aria-live="polite">
         {turns.map((x, i) => (
-          <li key={i} className={x.role === 'user' ? 'border-l-2 border-app-accent pl-3' : 'border-l-2 border-app-border pl-3'}>
+          <li
+            key={i}
+            className={x.role === 'user' ? 'border-l-2 border-app-accent pl-3' : 'border-l-2 border-app-border pl-3'}
+          >
             <p className="mb-1 font-mono text-xs text-app-text-muted">
-              {x.role === 'user' ? t('advisor.you', { defaultValue: 'You' }) : t('advisor.name', { defaultValue: 'Advisor' })}
+              {x.role === 'user'
+                ? t('advisor.you', { defaultValue: 'You' })
+                : t('advisor.name', { defaultValue: 'Advisor' })}
             </p>
             {x.role === 'user' ? (
               <p className="text-sm text-app-text">{x.content}</p>
@@ -89,12 +103,18 @@ export function Advisor({
                 <div className="rmhc-markdown text-sm leading-relaxed text-app-text">
                   <ReactMarkdown>{x.content}</ReactMarkdown>
                 </div>
-                {x.recommendations?.length ? <Recommendations c={c} data={data} recs={x.recommendations} onApply={onApply} /> : null}
+                {x.recommendations?.length ? (
+                  <Recommendations c={c} data={data} recs={x.recommendations} onApply={onApply} />
+                ) : null}
               </>
             )}
           </li>
         ))}
-        {busy ? <li className="text-sm text-app-text-muted">{t('advisor.thinking', { defaultValue: 'Reading your sheet…' })}</li> : null}
+        {busy ? (
+          <li className="text-sm text-app-text-muted">
+            {t('advisor.thinking', { defaultValue: 'Reading your sheet…' })}
+          </li>
+        ) : null}
       </ol>
       {error ? (
         <p role="alert" className="text-sm text-app-danger">

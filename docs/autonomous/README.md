@@ -1,41 +1,7 @@
 # Autonomous sprints
 
-Feature
-work
-planned,
-specified,
-built,
-reviewed
-and
-merged
-by
-an
-autonomous
-agent
-program,
-one
-sprint
-at
-a
-time.
-Each
-sprint
-directory
-holds
-its
-index,
-its
-plan,
-one
-specification
-per
-feature
-and
-a
-summary
-of
-what
-shipped.
+Feature work planned, specified, built, reviewed and merged by an autonomous agent program, one sprint at a time. Each
+sprint directory holds its index, its plan, one specification per feature and a summary of what shipped.
 
 | Sprint | Theme                                                               | Index                                                                       |
 | ------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------- |

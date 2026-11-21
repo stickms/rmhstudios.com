@@ -27,11 +27,9 @@
 import { prisma } from '@/lib/prisma.server';
 
 async function main() {
-  const startedAt =
-    Date.now();
+  const startedAt = Date.now();
 
-  const corrected =
-    await prisma.$executeRawUnsafe(`
+  const corrected = await prisma.$executeRawUnsafe(`
     UPDATE "rmheet" r SET
       "likeCount"    = c.likes,
       "commentCount" = c.comments,
@@ -51,28 +49,15 @@ async function main() {
     );
   `);
 
-  const ms =
-    Date.now() -
-    startedAt;
-  console.log(
-    `[reconcile-feed-counts] corrected ${corrected} drifted RMHark${corrected === 1 ? '' : 's'} in ${ms}ms`,
-  );
+  const ms = Date.now() - startedAt;
+  console.log(`[reconcile-feed-counts] corrected ${corrected} drifted RMHark${corrected === 1 ? '' : 's'} in ${ms}ms`);
 }
 
 main()
-  .catch(
-    (
-      e,
-    ) => {
-      console.error(
-        '[reconcile-feed-counts] failed:',
-        e,
-      );
-      process.exitCode = 1;
-    },
-  )
-  .finally(
-    async () => {
-      await prisma.$disconnect();
-    },
-  );
+  .catch((e) => {
+    console.error('[reconcile-feed-counts] failed:', e);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

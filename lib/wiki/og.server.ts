@@ -11,10 +11,8 @@
  */
 import { wikiPublicUrl } from '@/lib/wiki/sso.server';
 
-export const WIKI_NAME =
-  'RMH Studios Wiki';
-export const WIKI_TAGLINE =
-  'The reference for rmhstudios.com: its games, apps, feed and economy.';
+export const WIKI_NAME = 'RMH Studios Wiki';
+export const WIKI_TAGLINE = 'The reference for rmhstudios.com: its games, apps, feed and economy.';
 
 export interface WikiCardPage {
   /** The title as the wiki has it (normalised, redirects followed). */
@@ -41,95 +39,43 @@ interface ApiPage {
  * The page behind a card, read from the wiki's API, or null when the wiki does
  * not have it (or cannot be reached: a card is never worth an error).
  */
-export async function fetchWikiCardPage(
-  page: string,
-): Promise<WikiCardPage | null> {
-  const query =
-    new URLSearchParams(
-      {
-        action:
-          'query',
-        format:
-          'json',
-        formatversion:
-          '2',
-        redirects:
-          '1',
-        prop: 'info|extracts',
-        exintro:
-          '1',
-        explaintext:
-          '1',
-        exsentences:
-          '2',
-        titles:
-          page,
-        meta: 'siteinfo',
-        siprop:
-          'general',
-      },
-    );
+export async function fetchWikiCardPage(page: string): Promise<WikiCardPage | null> {
+  const query = new URLSearchParams({
+    action: 'query',
+    format: 'json',
+    formatversion: '2',
+    redirects: '1',
+    prop: 'info|extracts',
+    exintro: '1',
+    explaintext: '1',
+    exsentences: '2',
+    titles: page,
+    meta: 'siteinfo',
+    siprop: 'general',
+  });
   try {
-    const res =
-      await fetch(
-        `${wikiPublicUrl()}/api.php?${query}`,
-        {
-          headers:
-            {
-              'User-Agent':
-                'rmhstudios.com link previews',
-            },
-          signal:
-            AbortSignal.timeout(
-              TIMEOUT_MS,
-            ),
-        },
-      );
-    if (
-      !res.ok
-    )
-      return null;
-    const json =
-      (await res.json()) as {
-        query?: {
-          pages?: ApiPage[];
-          general?: {
-            mainpage?: string;
-          };
+    const res = await fetch(`${wikiPublicUrl()}/api.php?${query}`, {
+      headers: {
+        'User-Agent': 'rmhstudios.com link previews',
+      },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      query?: {
+        pages?: ApiPage[];
+        general?: {
+          mainpage?: string;
         };
       };
-    const found =
-      json
-        .query
-        ?.pages?.[0];
-    if (
-      !found ||
-      found.missing ||
-      found.invalid ||
-      !found.lastrevid
-    )
-      return null;
+    };
+    const found = json.query?.pages?.[0];
+    if (!found || found.missing || found.invalid || !found.lastrevid) return null;
     return {
-      title:
-        found.title,
-      extract:
-        (
-          found.extract ??
-          ''
-        )
-          .replace(
-            /\s+/g,
-            ' ',
-          )
-          .trim(),
-      revision:
-        found.lastrevid,
-      isMainPage:
-        found.title ===
-        json
-          .query
-          ?.general
-          ?.mainpage,
+      title: found.title,
+      extract: (found.extract ?? '').replace(/\s+/g, ' ').trim(),
+      revision: found.lastrevid,
+      isMainPage: found.title === json.query?.general?.mainpage,
     };
   } catch {
     return null;

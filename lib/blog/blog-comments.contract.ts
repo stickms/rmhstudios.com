@@ -27,44 +27,30 @@ export interface BlogCommentList {
 }
 
 /** Oldest first. */
-export const listBlogCommentsApi =
-  endpoint<{
-    res: BlogCommentList;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/blog/$slug/comments',
-    },
-  );
+export const listBlogCommentsApi = endpoint<{
+  res: BlogCommentList;
+}>()({
+  method: 'GET',
+  path: '/api/blog/$slug/comments',
+});
 
 /** 201. */
-export const createBlogCommentApi =
-  endpoint<{
-    body: z.infer<
-      typeof createBlogCommentSchema
-    >;
-    res: {
-      comment: BlogCommentView;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/blog/$slug/comments',
-    },
-  );
+export const createBlogCommentApi = endpoint<{
+  body: z.infer<typeof createBlogCommentSchema>;
+  res: {
+    comment: BlogCommentView;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/blog/$slug/comments',
+});
 
 /** Soft delete; the author or an admin. */
-export const deleteBlogCommentApi =
-  endpoint<{
-    res: {
-      ok: true;
-    };
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/blog/comments/$id',
-    },
-  );
+export const deleteBlogCommentApi = endpoint<{
+  res: {
+    ok: true;
+  };
+}>()({
+  method: 'DELETE',
+  path: '/api/blog/comments/$id',
+});

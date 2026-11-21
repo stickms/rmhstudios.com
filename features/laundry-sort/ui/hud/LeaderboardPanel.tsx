@@ -9,11 +9,7 @@
  * are a CI failure in this repo (`lib/__tests__/design-consistency.test.ts`).
  */
 
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
@@ -33,134 +29,48 @@ interface Row {
   totalSorted: number;
 }
 
-type Mode =
-  | 'solo'
-  | 'versus';
+type Mode = 'solo' | 'versus';
 
-export function LeaderboardPanel({
-  refreshKey = 0,
-}: {
-  refreshKey?: number;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-laundry-sort',
-    );
-  const [
-    mode,
-    setMode,
-  ] =
-    useState<Mode>(
-      'solo',
-    );
-  const [
-    rows,
-    setRows,
-  ] =
-    useState<
-      Row[]
-    >(
-      [],
-    );
-  const [
-    loading,
-    setLoading,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    error,
-    setError,
-  ] =
-    useState<
-      | string
-      | null
-    >(
-      null,
-    );
-  const arrival =
-    useArrival(
-      !loading,
-    );
+export function LeaderboardPanel({ refreshKey = 0 }: { refreshKey?: number }) {
+  const { t } = useTranslation('c-laundry-sort');
+  const [mode, setMode] = useState<Mode>('solo');
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
-  const load =
-    useCallback(
-      async (
-        which: Mode,
-        signal: AbortSignal,
-      ) => {
-        setLoading(
-          true,
-        );
+  const load = useCallback(
+    async (which: Mode, signal: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await api(laundryLeaderboardApi, {
+          query: {
+            mode: which,
+            limit: 10,
+          },
+          signal,
+        });
+        setRows(Array.isArray(data) ? data : []);
+      } catch (cause) {
+        if ((cause as Error)?.name === 'AbortError') return;
         setError(
-          null,
+          t('failed-to-load-leaderboard', {
+            defaultValue: 'Failed to load leaderboard',
+          }),
         );
-        try {
-          const data =
-            await api(
-              laundryLeaderboardApi,
-              {
-                query:
-                  {
-                    mode: which,
-                    limit: 10,
-                  },
-                signal,
-              },
-            );
-          setRows(
-            Array.isArray(
-              data,
-            )
-              ? data
-              : [],
-          );
-        } catch (cause) {
-          if (
-            (
-              cause as Error
-            )
-              ?.name ===
-            'AbortError'
-          )
-            return;
-          setError(
-            t(
-              'failed-to-load-leaderboard',
-              {
-                defaultValue:
-                  'Failed to load leaderboard',
-              },
-            ),
-          );
-        } finally {
-          setLoading(
-            false,
-          );
-        }
-      },
-      [
-        t,
-      ],
-    );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t],
+  );
 
   useEffect(() => {
-    const controller =
-      new AbortController();
-    void load(
-      mode,
-      controller.signal,
-    );
-    return () =>
-      controller.abort();
-  }, [
-    load,
-    mode,
-    refreshKey,
-  ]);
+    const controller = new AbortController();
+    void load(mode, controller.signal);
+    return () => controller.abort();
+  }, [load, mode, refreshKey]);
 
   return (
     <section className="flex min-h-0 flex-col gap-3">
@@ -168,44 +78,22 @@ export function LeaderboardPanel({
         tabs={[
           {
             id: 'solo',
-            label:
-              t(
-                'solo',
-                {
-                  defaultValue:
-                    'Solo',
-                },
-              ),
+            label: t('solo', {
+              defaultValue: 'Solo',
+            }),
           },
           {
             id: 'versus',
-            label:
-              t(
-                'versus',
-                {
-                  defaultValue:
-                    'Versus',
-                },
-              ),
+            label: t('versus', {
+              defaultValue: 'Versus',
+            }),
           },
         ]}
-        value={
-          mode
-        }
-        onChange={(
-          id,
-        ) =>
-          setMode(
-            id as Mode,
-          )
-        }
-        aria-label={t(
-          'leaderboard',
-          {
-            defaultValue:
-              'Leaderboard',
-          },
-        )}
+        value={mode}
+        onChange={(id) => setMode(id as Mode)}
+        aria-label={t('leaderboard', {
+          defaultValue: 'Leaderboard',
+        })}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -215,103 +103,45 @@ export function LeaderboardPanel({
           </div>
         ) : null}
 
-        {error ? (
-          <p
-            className={cn(
-              'py-4 text-center text-xs text-[var(--ls-danger)]',
-              arrival,
-            )}
-          >
-            {
-              error
-            }
+        {error ? <p className={cn('py-4 text-center text-xs text-[var(--ls-danger)]', arrival)}>{error}</p> : null}
+
+        {!loading && !error && rows.length === 0 ? (
+          <p className={cn('ls-muted py-4 text-center text-xs', arrival)}>
+            {t('no-scores-yet', {
+              defaultValue: 'No scores yet. Be the first!',
+            })}
           </p>
         ) : null}
 
-        {!loading &&
-        !error &&
-        rows.length ===
-          0 ? (
-          <p
-            className={cn(
-              'ls-muted py-4 text-center text-xs',
-              arrival,
-            )}
-          >
-            {t(
-              'no-scores-yet',
-              {
-                defaultValue:
-                  'No scores yet. Be the first!',
-              },
-            )}
-          </p>
-        ) : null}
-
-        {!loading &&
-        !error &&
-        rows.length >
-          0 ? (
-          <ol
-            className={cn(
-              'space-y-1',
-              arrival,
-            )}
-          >
-            {rows.map(
-              (
-                row,
-                index,
-              ) => (
-                <li
-                  key={
-                    row.username
-                  }
-                  className="flex items-baseline gap-2 rounded-md px-2 py-1.5 text-xs odd:bg-white/[0.03]"
-                >
-                  <span className="ls-numeric ls-muted w-5 shrink-0">
-                    {index +
-                      1}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate font-semibold">
-                    {
-                      row.username
-                    }
-                  </span>
-                  {mode ===
-                  'versus' ? (
-                    <>
-                      <span className="ls-muted ls-numeric shrink-0 text-[10px]">
-                        {t(
-                          'races-played',
-                          {
-                            defaultValue:
-                              '{{count}} races',
-                            count:
-                              row.versusPlayed,
-                          },
-                        )}
-                      </span>
-                      <span className="ls-accent ls-numeric shrink-0 font-bold">
-                        {t(
-                          'wins-count',
-                          {
-                            defaultValue:
-                              '{{count}}W',
-                            count:
-                              row.versusWins,
-                          },
-                        )}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="ls-accent ls-numeric shrink-0 font-bold">
-                      {row.highScore.toLocaleString()}
+        {!loading && !error && rows.length > 0 ? (
+          <ol className={cn('space-y-1', arrival)}>
+            {rows.map((row, index) => (
+              <li
+                key={row.username}
+                className="flex items-baseline gap-2 rounded-md px-2 py-1.5 text-xs odd:bg-white/[0.03]"
+              >
+                <span className="ls-numeric ls-muted w-5 shrink-0">{index + 1}</span>
+                <span className="min-w-0 flex-1 truncate font-semibold">{row.username}</span>
+                {mode === 'versus' ? (
+                  <>
+                    <span className="ls-muted ls-numeric shrink-0 text-[10px]">
+                      {t('races-played', {
+                        defaultValue: '{{count}} races',
+                        count: row.versusPlayed,
+                      })}
                     </span>
-                  )}
-                </li>
-              ),
-            )}
+                    <span className="ls-accent ls-numeric shrink-0 font-bold">
+                      {t('wins-count', {
+                        defaultValue: '{{count}}W',
+                        count: row.versusWins,
+                      })}
+                    </span>
+                  </>
+                ) : (
+                  <span className="ls-accent ls-numeric shrink-0 font-bold">{row.highScore.toLocaleString()}</span>
+                )}
+              </li>
+            ))}
           </ol>
         ) : null}
       </div>

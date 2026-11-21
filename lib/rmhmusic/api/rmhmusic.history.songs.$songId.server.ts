@@ -10,37 +10,16 @@ import { isSongId } from '@/lib/rmhmusic/learn/songs/catalog';
  * `GET /api/rmhmusic/history/songs/$songId?mode=` — the learner's own attempts at one song, the
  * lower scores included, oldest first. Owner-only: the query is scoped to the caller.
  */
-export const route =
-  apiRoute(
-    '/api/rmhmusic/history/songs/$songId',
+export const route = apiRoute('/api/rmhmusic/history/songs/$songId', {
+  GET: implement(
+    getSongProgressApi,
     {
-      GET: implement(
-        getSongProgressApi,
-        {
-          rateLimit:
-            'read',
-          query:
-            songProgressQuery,
-        },
-        async ({
-          userId,
-          params,
-          query,
-        }) => {
-          if (
-            !isSongId(
-              params.songId,
-            )
-          )
-            return badRequest(
-              'Unknown song',
-            );
-          return getSongProgress(
-            userId,
-            params.songId,
-            query.mode,
-          );
-        },
-      ),
+      rateLimit: 'read',
+      query: songProgressQuery,
     },
-  );
+    async ({ userId, params, query }) => {
+      if (!isSongId(params.songId)) return badRequest('Unknown song');
+      return getSongProgress(userId, params.songId, query.mode);
+    },
+  ),
+});

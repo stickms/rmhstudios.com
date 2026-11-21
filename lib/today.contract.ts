@@ -21,29 +21,21 @@ export interface TodaySummary {
   };
 }
 
-export const getTodayApi =
-  endpoint<{
-    res: TodaySummary;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/today',
-    },
-  );
+export const getTodayApi = endpoint<{
+  res: TodaySummary;
+}>()({
+  method: 'GET',
+  path: '/api/today',
+});
 
-export const buyStreakFreezeApi =
-  endpoint<{
-    res: {
-      success: true;
-      cost: number;
-      freezeTokens: number;
-      newBalance: number;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/streak/freeze',
-    },
-  );
+export const buyStreakFreezeApi = endpoint<{
+  res: {
+    success: true;
+    cost: number;
+    freezeTokens: number;
+    newBalance: number;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/streak/freeze',
+});

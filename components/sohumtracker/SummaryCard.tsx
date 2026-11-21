@@ -13,11 +13,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  formatWeekRange,
-  formatDayLong,
-  formatMonthLong,
-} from '@/lib/sohumtracker/dates';
+import { formatWeekRange, formatDayLong, formatMonthLong } from '@/lib/sohumtracker/dates';
 import type { WatchSummaryDTO } from '@/lib/sohumtracker/types';
 
 interface SummaryCardProps {
@@ -34,160 +30,71 @@ interface SummaryCardProps {
 }
 
 /** The human label for a period key, by period. */
-function periodLabel(
-  summary: WatchSummaryDTO,
-): string {
-  switch (
-    summary.period
-  ) {
+function periodLabel(summary: WatchSummaryDTO): string {
+  switch (summary.period) {
     case 'week':
-      return formatWeekRange(
-        summary.periodKey,
-      );
+      return formatWeekRange(summary.periodKey);
     case 'month':
-      return formatMonthLong(
-        summary.periodKey,
-      );
+      return formatMonthLong(summary.periodKey);
     default:
-      return formatDayLong(
-        summary.periodKey,
-      );
+      return formatDayLong(summary.periodKey);
   }
 }
 
-export function SummaryCard({
-  summary,
-  emptyTitle,
-  emptyBody,
-  showPermalink = false,
-}: SummaryCardProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'r-sohumtracker',
-    );
+export function SummaryCard({ summary, emptyTitle, emptyBody, showPermalink = false }: SummaryCardProps) {
+  const { t } = useTranslation('r-sohumtracker');
 
-  if (
-    !summary
-  ) {
+  if (!summary) {
     return (
       <div className="stk-summary">
-        <p className="stk-summary__eyebrow">
-          {
-            emptyTitle
-          }
-        </p>
-        <p className="stk-summary__body">
-          {
-            emptyBody
-          }
-        </p>
+        <p className="stk-summary__eyebrow">{emptyTitle}</p>
+        <p className="stk-summary__body">{emptyBody}</p>
       </div>
     );
   }
 
   const eyebrow =
-    summary.period ===
-    'week'
-      ? t(
-          'summary-eyebrow-week',
-          {
-            range:
-              periodLabel(
-                summary,
-              ),
-            defaultValue:
-              'Week of {{range}}',
-          },
-        )
-      : summary.period ===
-          'month'
-        ? t(
-            'summary-eyebrow-month',
-            {
-              range:
-                periodLabel(
-                  summary,
-                ),
-              defaultValue:
-                '{{range}} in review',
-            },
-          )
-        : periodLabel(
-            summary,
-          );
+    summary.period === 'week'
+      ? t('summary-eyebrow-week', {
+          range: periodLabel(summary),
+          defaultValue: 'Week of {{range}}',
+        })
+      : summary.period === 'month'
+        ? t('summary-eyebrow-month', {
+            range: periodLabel(summary),
+            defaultValue: '{{range}} in review',
+          })
+        : periodLabel(summary);
 
   return (
     <article className="stk-summary">
-      <p className="stk-summary__eyebrow">
-        {
-          eyebrow
-        }
-      </p>
-      <h3 className="stk-summary__headline">
-        {
-          summary.headline
-        }
-      </h3>
-      <p className="stk-summary__body">
-        {
-          summary.summary
-        }
-      </p>
+      <p className="stk-summary__eyebrow">{eyebrow}</p>
+      <h3 className="stk-summary__headline">{summary.headline}</h3>
+      <p className="stk-summary__body">{summary.summary}</p>
 
-      {summary.verdict ? (
-        <p className="stk-summary__verdict">
-          {
-            summary.verdict
-          }
-        </p>
-      ) : null}
+      {summary.verdict ? <p className="stk-summary__verdict">{summary.verdict}</p> : null}
 
-      {summary
-        .topics
-        .length >
-      0 ? (
+      {summary.topics.length > 0 ? (
         <p className="stk-topics">
           <span className="stk-sr">
-            {t(
-              'summary-topics',
-              {
-                defaultValue:
-                  'Topics:',
-              },
-            )}
+            {t('summary-topics', {
+              defaultValue: 'Topics:',
+            })}
           </span>
-          {summary.topics.map(
-            (
-              topic,
-            ) => (
-              <span
-                key={
-                  topic
-                }
-                className="stk-topic"
-              >
-                {
-                  topic
-                }
-              </span>
-            ),
-          )}
+          {summary.topics.map((topic) => (
+            <span key={topic} className="stk-topic">
+              {topic}
+            </span>
+          ))}
         </p>
       ) : null}
 
       <p className="stk-summary__meta">
-        {t(
-          'summary-generated',
-          {
-            defaultValue:
-              'Written from the measured figures and a sample of his messages. The figures are counted, not estimated.',
-          },
-        )}
-        {showPermalink &&
-        summary.period ===
-          'week' ? (
+        {t('summary-generated', {
+          defaultValue:
+            'Written from the measured figures and a sample of his messages. The figures are counted, not estimated.',
+        })}
+        {showPermalink && summary.period === 'week' ? (
           <>
             {' '}
             <Link
@@ -196,35 +103,24 @@ export function SummaryCard({
                 week: summary.periodKey,
               }}
             >
-              {t(
-                'summary-open-week',
-                {
-                  defaultValue:
-                    'Open this week',
-                },
-              )}
+              {t('summary-open-week', {
+                defaultValue: 'Open this week',
+              })}
             </Link>
           </>
         ) : null}
-        {showPermalink &&
-        summary.period ===
-          'month' ? (
+        {showPermalink && summary.period === 'month' ? (
           <>
             {' '}
             <Link
               to="/sohumtracker/month/$month"
               params={{
-                month:
-                  summary.periodKey,
+                month: summary.periodKey,
               }}
             >
-              {t(
-                'summary-open-month',
-                {
-                  defaultValue:
-                    'Open this month',
-                },
-              )}
+              {t('summary-open-month', {
+                defaultValue: 'Open this month',
+              })}
             </Link>
           </>
         ) : null}

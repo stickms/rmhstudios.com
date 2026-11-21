@@ -18,10 +18,7 @@ import { config } from './config';
 import { LobbyManager } from './lobby-manager';
 import { S2C } from '../../lib/rmhbox/events';
 import type { RMHboxLobby } from './types';
-import type {
-  ClientLobbyState,
-  ClientTimerSnapshot,
-} from '../../lib/rmhbox/types';
+import type { ClientLobbyState, ClientTimerSnapshot } from '../../lib/rmhbox/types';
 
 /** Handle returned by startTimerBroadcast for cancel / pause / resume control. */
 export interface TimerHandle {
@@ -36,43 +33,23 @@ export interface TimerHandle {
 export class StateSyncService {
   private readonly io: Server;
   private readonly lobbyManager: LobbyManager;
-  private heartbeatInterval: ReturnType<
-    typeof setInterval
-  > | null =
-    null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(
-    io: Server,
-    lobbyManager: LobbyManager,
-  ) {
-    this.io =
-      io;
-    this.lobbyManager =
-      lobbyManager;
+  constructor(io: Server, lobbyManager: LobbyManager) {
+    this.io = io;
+    this.lobbyManager = lobbyManager;
   }
 
   // ─── Heartbeat (§3.2) ─────────────────────────────────────────
 
   startHeartbeat(): void {
-    this.heartbeatInterval =
-      setInterval(
-        () =>
-          this.tick(),
-        config.HEARTBEAT_INTERVAL_MS,
-      );
+    this.heartbeatInterval = setInterval(() => this.tick(), config.HEARTBEAT_INTERVAL_MS);
   }
 
   stopHeartbeat(): void {
-    if (
-      this
-        .heartbeatInterval
-    ) {
-      clearInterval(
-        this
-          .heartbeatInterval,
-      );
-      this.heartbeatInterval =
-        null;
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
   }
 
@@ -81,17 +58,9 @@ export class StateSyncService {
    * to all connected members during active gameplay.
    */
   private tick(): void {
-    for (const lobby of this.lobbyManager
-      .getLobbies()
-      .values()) {
-      if (
-        lobby.state !==
-        'PLAYING'
-      )
-        continue;
-      this.sendFullSyncToAll(
-        lobby,
-      );
+    for (const lobby of this.lobbyManager.getLobbies().values()) {
+      if (lobby.state !== 'PLAYING') continue;
+      this.sendFullSyncToAll(lobby);
     }
   }
 
@@ -102,25 +71,13 @@ export class StateSyncService {
    * Called on every lobby state transition to ensure all clients
    * are fully synchronized at phase boundaries.
    */
-  broadcastFullSync(
-    lobbyId: string,
-  ): void {
-    const lobby =
-      this.lobbyManager.getLobby(
-        lobbyId,
-      );
-    if (
-      !lobby
-    )
-      return;
-    this.sendFullSyncToAll(
-      lobby,
-    );
+  broadcastFullSync(lobbyId: string): void {
+    const lobby = this.lobbyManager.getLobby(lobbyId);
+    if (!lobby) return;
+    this.sendFullSyncToAll(lobby);
     // Phase boundaries (round results, back to WAITING) are a save point for
     // durable lobbies; the 10 s heartbeat (tick) is not.
-    this.lobbyManager.markChanged(
-      lobbyId,
-    );
+    this.lobbyManager.markChanged(lobbyId);
   }
 
   /**
@@ -129,14 +86,8 @@ export class StateSyncService {
    * ONLY exit point for state data — it strips internal fields
    * and scopes minigame state per player role.
    */
-  buildClientState(
-    lobby: RMHboxLobby,
-    userId: string,
-  ): ClientLobbyState {
-    return this.lobbyManager.buildClientState(
-      lobby,
-      userId,
-    );
+  buildClientState(lobby: RMHboxLobby, userId: string): ClientLobbyState {
+    return this.lobbyManager.buildClientState(lobby, userId);
   }
 
   // ─── Timer Tick Broadcasting (§3.5) ────────────────────────────
@@ -154,149 +105,77 @@ export class StateSyncService {
    * @param onComplete - Callback fired when countdown reaches 0
    * @returns A timer handle with cancel / pause / resume helpers
    */
-  startTimerBroadcast(
-    lobbyId: string,
-    durationSeconds: number,
-    onComplete: () => void,
-  ): TimerHandle {
-    let remaining =
-      durationSeconds;
+  startTimerBroadcast(lobbyId: string, durationSeconds: number, onComplete: () => void): TimerHandle {
+    let remaining = durationSeconds;
     let cancelled = false;
     let paused = false;
-    let interval: ReturnType<
-      typeof setInterval
-    > | null =
-      null;
+    let interval: ReturnType<typeof setInterval> | null = null;
 
     // Emit TIMER_START so the client knows totalDuration for ring animation
-    this.lobbyManager.broadcastAction(
-      lobbyId,
-      {
-        type: 'TIMER_START',
-        payload:
-          {
-            totalDuration:
-              durationSeconds,
-            timeRemaining:
-              remaining,
-          },
+    this.lobbyManager.broadcastAction(lobbyId, {
+      type: 'TIMER_START',
+      payload: {
+        totalDuration: durationSeconds,
+        timeRemaining: remaining,
       },
-    );
+    });
 
-    const tick =
-      () => {
-        if (
-          cancelled ||
-          paused
-        )
-          return;
+    const tick = () => {
+      if (cancelled || paused) return;
 
-        remaining--;
+      remaining--;
 
-        // Broadcast TIMER_TICK action (decrement first so remaining matches display)
-        this.lobbyManager.broadcastAction(
-          lobbyId,
-          {
-            type: 'TIMER_TICK',
-            payload:
-              {
-                timeRemaining:
-                  Math.max(
-                    0,
-                    remaining,
-                  ),
-              },
-          },
-        );
+      // Broadcast TIMER_TICK action (decrement first so remaining matches display)
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_TICK',
+        payload: {
+          timeRemaining: Math.max(0, remaining),
+        },
+      });
 
-        // Complete on reaching 0 (it used to wait for -1: every phase ran one
-        // second long and sat on "0"). A finished handle counts as cancelled, so
-        // a later pause/resume through a stale reference broadcasts nothing —
-        // a leftover countdown handle used to push "paused at 0" into PLAYING.
-        if (
-          remaining <=
-          0
-        ) {
-          cancelled = true;
-          if (
-            interval
-          )
-            clearInterval(
-              interval,
-            );
-          interval =
-            null;
-          onComplete();
-        }
-      };
-
-    interval =
-      setInterval(
-        tick,
-        1000,
-      );
-
-    const cancel =
-      () => {
+      // Complete on reaching 0 (it used to wait for -1: every phase ran one
+      // second long and sat on "0"). A finished handle counts as cancelled, so
+      // a later pause/resume through a stale reference broadcasts nothing —
+      // a leftover countdown handle used to push "paused at 0" into PLAYING.
+      if (remaining <= 0) {
         cancelled = true;
-        if (
-          interval
-        ) {
-          clearInterval(
-            interval,
-          );
-          interval =
-            null;
-        }
-      };
+        if (interval) clearInterval(interval);
+        interval = null;
+        onComplete();
+      }
+    };
 
-    const pause =
-      () => {
-        if (
-          paused ||
-          cancelled
-        )
-          return;
-        paused = true;
-        this.lobbyManager.broadcastAction(
-          lobbyId,
-          {
-            type: 'TIMER_PAUSED',
-            payload:
-              {
-                timeRemaining:
-                  Math.max(
-                    0,
-                    remaining,
-                  ),
-              },
-          },
-        );
-      };
+    interval = setInterval(tick, 1000);
 
-    const resume =
-      () => {
-        if (
-          !paused ||
-          cancelled
-        )
-          return;
-        paused = false;
-        this.lobbyManager.broadcastAction(
-          lobbyId,
-          {
-            type: 'TIMER_RESUMED',
-            payload:
-              {
-                timeRemaining:
-                  Math.max(
-                    0,
-                    remaining,
-                  ),
-              },
-          },
-        );
-      };
+    const cancel = () => {
+      cancelled = true;
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    const pause = () => {
+      if (paused || cancelled) return;
+      paused = true;
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_PAUSED',
+        payload: {
+          timeRemaining: Math.max(0, remaining),
+        },
+      });
+    };
+
+    const resume = () => {
+      if (!paused || cancelled) return;
+      paused = false;
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_RESUMED',
+        payload: {
+          timeRemaining: Math.max(0, remaining),
+        },
+      });
+    };
 
     return {
       cancel,
@@ -305,22 +184,16 @@ export class StateSyncService {
       get isPaused() {
         return paused;
       },
-      snapshot:
-        () =>
-          cancelled
-            ? null
-            : {
-                total:
-                  durationSeconds,
-                remaining:
-                  Math.max(
-                    0,
-                    remaining,
-                  ),
-                paused,
-                infinite: false,
-                showSkip: false,
-              },
+      snapshot: () =>
+        cancelled
+          ? null
+          : {
+              total: durationSeconds,
+              remaining: Math.max(0, remaining),
+              paused,
+              infinite: false,
+              showSkip: false,
+            },
     };
   }
 
@@ -330,73 +203,44 @@ export class StateSyncService {
    * Sentinel value: `totalDuration: -1, timeRemaining: -1`.
    * Always shows the host "Next" button (`showSkip: true`).
    */
-  broadcastInfiniteTimer(
-    lobbyId: string,
-  ): TimerHandle {
+  broadcastInfiniteTimer(lobbyId: string): TimerHandle {
     let cancelled = false;
     let paused = false;
 
-    this.lobbyManager.broadcastAction(
-      lobbyId,
-      {
-        type: 'TIMER_START',
-        payload:
-          {
-            totalDuration:
-              -1,
-            timeRemaining:
-              -1,
-            showSkip: true,
-          },
+    this.lobbyManager.broadcastAction(lobbyId, {
+      type: 'TIMER_START',
+      payload: {
+        totalDuration: -1,
+        timeRemaining: -1,
+        showSkip: true,
       },
-    );
+    });
 
-    const cancel =
-      () => {
-        cancelled = true;
-      };
+    const cancel = () => {
+      cancelled = true;
+    };
 
-    const pause =
-      () => {
-        if (
-          paused ||
-          cancelled
-        )
-          return;
-        paused = true;
-        this.lobbyManager.broadcastAction(
-          lobbyId,
-          {
-            type: 'TIMER_PAUSED',
-            payload:
-              {
-                timeRemaining:
-                  -1,
-              },
-          },
-        );
-      };
+    const pause = () => {
+      if (paused || cancelled) return;
+      paused = true;
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_PAUSED',
+        payload: {
+          timeRemaining: -1,
+        },
+      });
+    };
 
-    const resume =
-      () => {
-        if (
-          !paused ||
-          cancelled
-        )
-          return;
-        paused = false;
-        this.lobbyManager.broadcastAction(
-          lobbyId,
-          {
-            type: 'TIMER_RESUMED',
-            payload:
-              {
-                timeRemaining:
-                  -1,
-              },
-          },
-        );
-      };
+    const resume = () => {
+      if (!paused || cancelled) return;
+      paused = false;
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_RESUMED',
+        payload: {
+          timeRemaining: -1,
+        },
+      });
+    };
 
     return {
       cancel,
@@ -405,19 +249,16 @@ export class StateSyncService {
       get isPaused() {
         return paused;
       },
-      snapshot:
-        () =>
-          cancelled
-            ? null
-            : {
-                total:
-                  -1,
-                remaining:
-                  -1,
-                paused,
-                infinite: true,
-                showSkip: true,
-              },
+      snapshot: () =>
+        cancelled
+          ? null
+          : {
+              total: -1,
+              remaining: -1,
+              paused,
+              infinite: true,
+              showSkip: true,
+            },
     };
   }
 
@@ -427,64 +268,23 @@ export class StateSyncService {
    * Send per-player scoped state snapshots to all connected
    * players and spectators in a lobby.
    */
-  private sendFullSyncToAll(
-    lobby: RMHboxLobby,
-  ): void {
+  private sendFullSyncToAll(lobby: RMHboxLobby): void {
     // perf: roster/match history/spectator view are identical for every
     // recipient; build them once per tick and add only the per-player bits.
-    const shared =
-      this.lobbyManager.buildSharedClientParts(
-        lobby,
-      );
+    const shared = this.lobbyManager.buildSharedClientParts(lobby);
     // Send per-player scoped state snapshots
-    for (const [
-      userId,
-      player,
-    ] of lobby.players) {
-      if (
-        player.isConnected &&
-        player.socketId
-      ) {
-        const clientState =
-          this.lobbyManager.buildClientState(
-            lobby,
-            userId,
-            shared,
-          );
-        this.io
-          .to(
-            `lobby:${lobby.id}:player:${userId}`,
-          )
-          .emit(
-            S2C.LOBBY_STATE_SNAPSHOT,
-            clientState,
-          );
+    for (const [userId, player] of lobby.players) {
+      if (player.isConnected && player.socketId) {
+        const clientState = this.lobbyManager.buildClientState(lobby, userId, shared);
+        this.io.to(`lobby:${lobby.id}:player:${userId}`).emit(S2C.LOBBY_STATE_SNAPSHOT, clientState);
       }
     }
 
     // Spectators get the spectator view
-    for (const [
-      userId,
-      spectator,
-    ] of lobby.spectators) {
-      if (
-        spectator.isConnected &&
-        spectator.socketId
-      ) {
-        const clientState =
-          this.lobbyManager.buildClientState(
-            lobby,
-            userId,
-            shared,
-          );
-        this.io
-          .to(
-            `lobby:${lobby.id}:player:${userId}`,
-          )
-          .emit(
-            S2C.LOBBY_STATE_SNAPSHOT,
-            clientState,
-          );
+    for (const [userId, spectator] of lobby.spectators) {
+      if (spectator.isConnected && spectator.socketId) {
+        const clientState = this.lobbyManager.buildClientState(lobby, userId, shared);
+        this.io.to(`lobby:${lobby.id}:player:${userId}`).emit(S2C.LOBBY_STATE_SNAPSHOT, clientState);
       }
     }
   }

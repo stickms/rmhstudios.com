@@ -5,10 +5,7 @@
    data collection flow
    ═══════════════════════════════════════════ */
 
-import {
-  getAudioContext,
-  resumeAudioContext,
-} from '@/lib/shared/platform';
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 import { Terminal } from './terminal/Terminal';
 import { GameSettings } from './settings/GameSettings';
 import { GameHud } from './ui/GameHud';
@@ -28,348 +25,180 @@ let CyberpunkScene,
   MissionManager,
   Weapon;
 async function loadSimModules() {
-  if (
-    CyberpunkScene
-  )
-    return; // already loaded
-  const [
-    scene,
-    vehicle,
-    seg,
-    dc,
-    exp,
-    tm,
-    lsc,
-    radio,
-    engine,
-    mission,
-    weapon,
-  ] =
-    await Promise.all(
-      [
-        import('./scene/CyberpunkScene'),
-        import('./vehicle/Vehicle'),
-        import('./segmentation/Segmenter'),
-        import('./data/DataCollector'),
-        import('./data/Exporter'),
-        import('./textures/TextureManager'),
-        import('./textures/LiveStreamClient'),
-        import('./audio/LofiRadio'),
-        import('./audio/EngineSound'),
-        import('./gameplay/MissionManager'),
-        import('./gameplay/Weapon'),
-      ],
-    );
-  CyberpunkScene =
-    scene.CyberpunkScene;
-  Vehicle =
-    vehicle.Vehicle;
-  Segmenter =
-    seg.Segmenter;
-  DataCollector =
-    dc.DataCollector;
-  Exporter =
-    exp.Exporter;
-  TextureManager =
-    tm.TextureManager;
-  LiveStreamClient =
-    lsc.LiveStreamClient;
-  LofiRadio =
-    radio.LofiRadio;
-  EngineSound =
-    engine.EngineSound;
-  MissionManager =
-    mission.MissionManager;
-  Weapon =
-    weapon.Weapon;
+  if (CyberpunkScene) return; // already loaded
+  const [scene, vehicle, seg, dc, exp, tm, lsc, radio, engine, mission, weapon] = await Promise.all([
+    import('./scene/CyberpunkScene'),
+    import('./vehicle/Vehicle'),
+    import('./segmentation/Segmenter'),
+    import('./data/DataCollector'),
+    import('./data/Exporter'),
+    import('./textures/TextureManager'),
+    import('./textures/LiveStreamClient'),
+    import('./audio/LofiRadio'),
+    import('./audio/EngineSound'),
+    import('./gameplay/MissionManager'),
+    import('./gameplay/Weapon'),
+  ]);
+  CyberpunkScene = scene.CyberpunkScene;
+  Vehicle = vehicle.Vehicle;
+  Segmenter = seg.Segmenter;
+  DataCollector = dc.DataCollector;
+  Exporter = exp.Exporter;
+  TextureManager = tm.TextureManager;
+  LiveStreamClient = lsc.LiveStreamClient;
+  LofiRadio = radio.LofiRadio;
+  EngineSound = engine.EngineSound;
+  MissionManager = mission.MissionManager;
+  Weapon = weapon.Weapon;
 }
 
 /* ── Scrolling Chinese text overlay ── */
-const _SCROLL_PHRASES =
-  [
-    '神经网络同步中 ░░░░░░░░░░',
-    '警告：未授权访问检测',
-    '记忆碎片重组 ██████░░░░',
-    '数据流加密传输中',
-    '目标锁定 — 追踪协议启动',
-    '城市基础设施扫描完成',
-    '生体认证失败 — 重试中',
-    '黑客入侵防御系统激活',
-    '量子解密进度 47.3%',
-    '虚拟现实界面校准',
-    '信号干扰源定位中',
-    '自动驾驶模块 v7.82 已加载',
-    '街道监控网络接入',
-    '义体改造数据同步',
-    '电子战反制措施部署',
-    '地下网络节点连接建立',
-    '意识上传协议 — 待命',
-    '区域封锁解除 — 通行许可',
-    '合成记忆写入 ████████░░',
-    '赛博空间坐标校正中',
-    '隐形伪装场已激活',
-    '全息投影系统正常运行',
-    '深层网络扫描 — 无异常',
-    '加速世界接口同步完成',
-    '警告：第七区防火墙已被突破 — 所有单位立即切换至备用加密频道 — 重复 — 立即切换',
-    '意识碎片回收程序运行中 ████████████░░░░ 回收率 73.2% — 预计剩余时间 00:04:17',
-    '夜之城地下交通管制系统 v12.4 — 全部路段实时监控已启用 — 违规车辆自动标记',
-    '检测到未注册义体信号 — 坐标：N34°07′ E118°21′ — 已通知执法单元 — 请勿移动',
-    '合成记忆市场行情 ▲ 战斗经验 +12.4% ▼ 语言模块 -3.1% ■ 驾驶技能 持平',
-    '全息广告投放中 — 赞助商：阿拉萨卡生体科技 — "超越人类，定义未来"',
-    '紧急广播 ░░░ 第三区供电中断 ░░░ 预计恢复时间未知 ░░░ 请启用备用能源',
-    '深层网络拍卖进行中 — 军用级神经接口 — 起拍价 ¥2,400,000 — 剩余时间 00:12:33',
-    '城市AI管理核心状态报告 — CPU负载 94.7% — 内存占用 88.1% — 异常进程数 147',
-    '量子通信卫星阵列校准完成 — 延迟降至 0.003ms — 加密等级提升至 OMEGA-9',
-    '自动驾驶网络节点 #4472 已离线 — 周边车辆切换手动模式 — 请保持警惕',
-    '黑市交易记录 — 时间戳已擦除 — 金额已加密 — 追踪程序已被反制',
-  ];
+const _SCROLL_PHRASES = [
+  '神经网络同步中 ░░░░░░░░░░',
+  '警告：未授权访问检测',
+  '记忆碎片重组 ██████░░░░',
+  '数据流加密传输中',
+  '目标锁定 — 追踪协议启动',
+  '城市基础设施扫描完成',
+  '生体认证失败 — 重试中',
+  '黑客入侵防御系统激活',
+  '量子解密进度 47.3%',
+  '虚拟现实界面校准',
+  '信号干扰源定位中',
+  '自动驾驶模块 v7.82 已加载',
+  '街道监控网络接入',
+  '义体改造数据同步',
+  '电子战反制措施部署',
+  '地下网络节点连接建立',
+  '意识上传协议 — 待命',
+  '区域封锁解除 — 通行许可',
+  '合成记忆写入 ████████░░',
+  '赛博空间坐标校正中',
+  '隐形伪装场已激活',
+  '全息投影系统正常运行',
+  '深层网络扫描 — 无异常',
+  '加速世界接口同步完成',
+  '警告：第七区防火墙已被突破 — 所有单位立即切换至备用加密频道 — 重复 — 立即切换',
+  '意识碎片回收程序运行中 ████████████░░░░ 回收率 73.2% — 预计剩余时间 00:04:17',
+  '夜之城地下交通管制系统 v12.4 — 全部路段实时监控已启用 — 违规车辆自动标记',
+  '检测到未注册义体信号 — 坐标：N34°07′ E118°21′ — 已通知执法单元 — 请勿移动',
+  '合成记忆市场行情 ▲ 战斗经验 +12.4% ▼ 语言模块 -3.1% ■ 驾驶技能 持平',
+  '全息广告投放中 — 赞助商：阿拉萨卡生体科技 — "超越人类，定义未来"',
+  '紧急广播 ░░░ 第三区供电中断 ░░░ 预计恢复时间未知 ░░░ 请启用备用能源',
+  '深层网络拍卖进行中 — 军用级神经接口 — 起拍价 ¥2,400,000 — 剩余时间 00:12:33',
+  '城市AI管理核心状态报告 — CPU负载 94.7% — 内存占用 88.1% — 异常进程数 147',
+  '量子通信卫星阵列校准完成 — 延迟降至 0.003ms — 加密等级提升至 OMEGA-9',
+  '自动驾驶网络节点 #4472 已离线 — 周边车辆切换手动模式 — 请保持警惕',
+  '黑市交易记录 — 时间戳已擦除 — 金额已加密 — 追踪程序已被反制',
+];
 
 class _ScrollText {
-  constructor(
-    container,
-  ) {
-    this._container =
-      container;
-    this._active =
-      [];
+  constructor(container) {
+    this._container = container;
+    this._active = [];
     this._timer = 0;
-    this._nextDelay =
-      3 +
-      Math.random() *
-        5;
+    this._nextDelay = 3 + Math.random() * 5;
   }
 
-  update(
-    dt,
-  ) {
-    this._timer +=
-      dt;
-    if (
-      this
-        ._timer >=
-      this
-        ._nextDelay
-    ) {
+  update(dt) {
+    this._timer += dt;
+    if (this._timer >= this._nextDelay) {
       this._timer = 0;
-      this._nextDelay =
-        4 +
-        Math.random() *
-          8;
+      this._nextDelay = 4 + Math.random() * 8;
       this._spawn();
     }
-    for (
-      let i =
-        this
-          ._active
-          .length -
-        1;
-      i >=
-      0;
-      i--
-    ) {
-      const s =
-        this
-          ._active[
-          i
-        ];
-      s.x +=
-        s.speed *
-        dt;
+    for (let i = this._active.length - 1; i >= 0; i--) {
+      const s = this._active[i];
+      s.x += s.speed * dt;
       s.el.style.transform = `translateX(${s.x}px)`;
-      if (
-        s.x >
-        window.innerWidth +
-          100
-      ) {
+      if (s.x > window.innerWidth + 100) {
         s.el.remove();
-        this._active.splice(
-          i,
-          1,
-        );
+        this._active.splice(i, 1);
       }
     }
   }
 
   _spawn() {
-    const el =
-      document.createElement(
-        'div',
-      );
-    const phrase =
-      _SCROLL_PHRASES[
-        Math.floor(
-          Math.random() *
-            _SCROLL_PHRASES.length,
-        )
-      ];
-    el.textContent =
-      phrase;
-    const y =
-      30 +
-      Math.random() *
-        (window.innerHeight -
-          80);
-    const size =
-      14 +
-      Math.floor(
-        Math.random() *
-          10,
-      );
-    const opacity =
-      0.25 +
-      Math.random() *
-        0.35;
-    const hue =
-      [
-        0,
-        180,
-        270,
-        60,
-        120,
-      ][
-        Math.floor(
-          Math.random() *
-            5,
-        )
-      ];
+    const el = document.createElement('div');
+    const phrase = _SCROLL_PHRASES[Math.floor(Math.random() * _SCROLL_PHRASES.length)];
+    el.textContent = phrase;
+    const y = 30 + Math.random() * (window.innerHeight - 80);
+    const size = 14 + Math.floor(Math.random() * 10);
+    const opacity = 0.25 + Math.random() * 0.35;
+    const hue = [0, 180, 270, 60, 120][Math.floor(Math.random() * 5)];
     el.style.cssText = `position:fixed;top:${y}px;left:0;font-family:'VT323',monospace;font-size:${size}px;color:hsla(${hue},100%,65%,${opacity});white-space:nowrap;pointer-events:none;z-index:150;text-shadow:0 0 8px hsla(${hue},100%,50%,0.4);letter-spacing:2px;`;
-    this._container.appendChild(
+    this._container.appendChild(el);
+    const speed = 60 + Math.random() * 120;
+    this._active.push({
       el,
-    );
-    const speed =
-      60 +
-      Math.random() *
-        120;
-    this._active.push(
-      {
-        el,
-        x:
-          -el.offsetWidth -
-          20,
-        speed,
-      },
-    );
+      x: -el.offsetWidth - 20,
+      speed,
+    });
     el.style.transform = `translateX(${-el.offsetWidth - 20}px)`;
   }
 
   cleanup() {
-    for (const s of this
-      ._active)
-      s.el.remove();
+    for (const s of this._active) s.el.remove();
     this._active.length = 0;
   }
 }
 
 export class App {
-  constructor(
-    container,
-    opts = {},
-  ) {
-    this._container =
-      container;
+  constructor(container, opts = {}) {
+    this._container = container;
     // Leave the game for the catalog. Supplied by the React host, which owns the router.
-    this._onQuit =
-      opts.onQuit ||
-      (() => {});
-    this.terminalEl =
-      container.querySelector(
-        '#terminal-screen',
-      );
-    this.canvasEl =
-      container.querySelector(
-        '#game-canvas',
-      );
+    this._onQuit = opts.onQuit || (() => {});
+    this.terminalEl = container.querySelector('#terminal-screen');
+    this.canvasEl = container.querySelector('#game-canvas');
 
-    this.settings =
-      new GameSettings();
-    this.terminal =
-      new Terminal(
-        this
-          .terminalEl,
-      );
-    this.scene =
-      null;
-    this.vehicle =
-      null;
-    this.segmenter =
-      null;
-    this.collector =
-      null;
+    this.settings = new GameSettings();
+    this.terminal = new Terminal(this.terminalEl);
+    this.scene = null;
+    this.vehicle = null;
+    this.segmenter = null;
+    this.collector = null;
 
     this.running = false;
     this._destroyed = false;
-    this._animFrameId =
-      null;
+    this._animFrameId = null;
     this._captureRequested = false;
-    this._vhsEl =
-      container.querySelector(
-        '#vhs-timestamp',
-      );
+    this._vhsEl = container.querySelector('#vhs-timestamp');
     this._vhsTimer = 0;
 
     // FPS counter
     this._fpsFrames = 0;
     this._fpsTime = 0;
-    this._fpsEl =
-      null;
+    this._fpsEl = null;
     this._booted = false;
-    this._pendingInvite =
-      null;
+    this._pendingInvite = null;
 
     this._init();
   }
 
   async _init() {
     // Set up terminal menu actions
-    this.terminal.onAction =
-      (
-        action,
-      ) =>
-        this._handleAction(
-          action,
-        );
+    this.terminal.onAction = (action) => this._handleAction(action);
 
     // Start the terminal boot sequence
     await this.terminal.show();
 
-    if (
-      this
-        ._destroyed
-    )
-      return;
+    if (this._destroyed) return;
 
     this._booted = true;
-    if (
-      this
-        ._pendingInvite
-    )
-      void this._openLobby();
+    if (this._pendingInvite) void this._openLobby();
 
     // Pre-load simulation modules in background while user sees the terminal.
     // The segmenter is created but NOT initialised here — OpenCV.js only loads
     // the first time data collection actually runs (see _ensureDataPipeline).
-    loadSimModules().then(
-      () => {
-        if (
-          this
-            ._destroyed
-        )
-          return;
-        this.segmenter =
-          new Segmenter();
-        this.collector =
-          new DataCollector();
-      },
-    );
+    loadSimModules().then(() => {
+      if (this._destroyed) return;
+      this.segmenter = new Segmenter();
+      this.collector = new DataCollector();
+    });
   }
 
-  _handleAction(
-    action,
-  ) {
-    switch (
-      action
-    ) {
+  _handleAction(action) {
+    switch (action) {
       case 'start':
         this._startSimulation();
         break;
@@ -383,10 +212,7 @@ export class App {
         this._exportData();
         break;
       case 'settings':
-        this.terminal.enterSettingsMode(
-          this
-            .settings,
-        );
+        this.terminal.enterSettingsMode(this.settings);
         break;
       case 'quit':
         this._onQuit();
@@ -399,178 +225,84 @@ export class App {
    * an invite link. Held until the boot sequence finishes: the terminal is
    * mid-animation before that and would draw itself back over the overlay.
    */
-  openLobbyWithInvite(
-    code,
-  ) {
-    this._pendingInvite =
-      code;
-    if (
-      this
-        ._booted
-    )
-      void this._openLobby();
+  openLobbyWithInvite(code) {
+    this._pendingInvite = code;
+    if (this._booted) void this._openLobby();
   }
 
   /** Open the multiplayer lobby overlay (create / join a shared cruise). */
   async _openLobby() {
-    const [
-      {
-        LobbyUI,
-      },
-      {
-        VelumMultiplayerClient,
-      },
-    ] =
-      await Promise.all(
-        [
-          import('./multiplayer/LobbyUI'),
-          import('@/lib/velum2099/multiplayer'),
-        ],
-      );
-    if (
-      this
-        ._destroyed
-    )
-      return;
+    const [{ LobbyUI }, { VelumMultiplayerClient }] = await Promise.all([
+      import('./multiplayer/LobbyUI'),
+      import('@/lib/velum2099/multiplayer'),
+    ]);
+    if (this._destroyed) return;
 
-    const inviteCode =
-      this
-        ._pendingInvite ||
-      null;
-    this._pendingInvite =
-      null;
+    const inviteCode = this._pendingInvite || null;
+    this._pendingInvite = null;
 
     this.terminal.hide();
-    this._lobby =
-      new LobbyUI(
-        this
-          ._container,
-        {
-          inviteCode,
-          onStart:
-            (
-              roomId,
-              selfInfo,
-            ) => {
-              this._mpRoomId =
-                roomId;
-              this._mpSelfColor =
-                (selfInfo &&
-                  selfInfo.colorIndex) ||
-                0;
-              if (
-                this
-                  ._lobby
-              ) {
-                this._lobby.dispose();
-                this._lobby =
-                  null;
-              }
-              this._startSimulation(
-                {
-                  multiplayer: true,
-                  roomId,
-                },
-              );
-            },
-          onExit:
-            () => {
-              if (
-                this
-                  ._lobby
-              ) {
-                this._lobby.dispose();
-                this._lobby =
-                  null;
-              }
-              VelumMultiplayerClient.getInstance().disconnect();
-              this.terminal.show();
-            },
-        },
-      );
+    this._lobby = new LobbyUI(this._container, {
+      inviteCode,
+      onStart: (roomId, selfInfo) => {
+        this._mpRoomId = roomId;
+        this._mpSelfColor = (selfInfo && selfInfo.colorIndex) || 0;
+        if (this._lobby) {
+          this._lobby.dispose();
+          this._lobby = null;
+        }
+        this._startSimulation({
+          multiplayer: true,
+          roomId,
+        });
+      },
+      onExit: () => {
+        if (this._lobby) {
+          this._lobby.dispose();
+          this._lobby = null;
+        }
+        VelumMultiplayerClient.getInstance().disconnect();
+        this.terminal.show();
+      },
+    });
     this._lobby.show();
   }
 
   /** Open the Story Mode (GHOST ROUTE) menu overlay. */
   async _openStory() {
-    const [
-      {
-        StorySave,
-      },
-      {
-        StoryMenu,
-      },
-    ] =
-      await Promise.all(
-        [
-          import('./story/StorySave'),
-          import('./story/StoryMenu'),
-        ],
-      );
-    if (
-      this
-        ._destroyed
-    )
-      return;
+    const [{ StorySave }, { StoryMenu }] = await Promise.all([
+      import('./story/StorySave'),
+      import('./story/StoryMenu'),
+    ]);
+    if (this._destroyed) return;
 
-    if (
-      !this
-        ._storySave
-    )
-      this._storySave =
-        new StorySave();
+    if (!this._storySave) this._storySave = new StorySave();
     this.terminal.hide();
-    this.canvasEl.style.display =
-      'none';
+    this.canvasEl.style.display = 'none';
 
-    if (
-      this
-        ._storyMenu
-    ) {
+    if (this._storyMenu) {
       this._storyMenu.dispose();
-      this._storyMenu =
-        null;
+      this._storyMenu = null;
     }
-    this._storyMenu =
-      new StoryMenu(
-        this
-          ._container,
-        this
-          ._storySave,
-        {
-          onPlay:
-            (
-              missionId,
-            ) => {
-              if (
-                this
-                  ._storyMenu
-              ) {
-                this._storyMenu.dispose();
-                this._storyMenu =
-                  null;
-              }
-              this._startSimulation(
-                {
-                  story: true,
-                  missionId,
-                },
-              );
-            },
-          onExit:
-            () => {
-              if (
-                this
-                  ._storyMenu
-              ) {
-                this._storyMenu.dispose();
-                this._storyMenu =
-                  null;
-              }
-              this.terminal.show();
-            },
-        },
-      );
+    this._storyMenu = new StoryMenu(this._container, this._storySave, {
+      onPlay: (missionId) => {
+        if (this._storyMenu) {
+          this._storyMenu.dispose();
+          this._storyMenu = null;
+        }
+        this._startSimulation({
+          story: true,
+          missionId,
+        });
+      },
+      onExit: () => {
+        if (this._storyMenu) {
+          this._storyMenu.dispose();
+          this._storyMenu = null;
+        }
+        this.terminal.show();
+      },
+    });
     this._storyMenu.show();
   }
 
@@ -582,102 +314,42 @@ export class App {
 
   /** ESC / mobile-exit router: Story Mode returns to its menu, else the terminal. */
   _exitSimulation() {
-    if (
-      this
-        ._storyActive
-    )
-      this._exitStoryToMenu();
-    else
-      this._stopSimulation();
+    if (this._storyActive) this._exitStoryToMenu();
+    else this._stopSimulation();
   }
 
-  async _startSimulation(
-    opts = {},
-  ) {
-    const multiplayer =
-      !!opts.multiplayer;
-    this._multiplayer =
-      multiplayer;
-    this._storyActive =
-      !!opts.story;
-    this._mpRoomId =
-      opts.roomId ||
-      this
-        ._mpRoomId ||
-      null;
+  async _startSimulation(opts = {}) {
+    const multiplayer = !!opts.multiplayer;
+    this._multiplayer = multiplayer;
+    this._storyActive = !!opts.story;
+    this._mpRoomId = opts.roomId || this._mpRoomId || null;
 
     // Ensure simulation modules are loaded
     await loadSimModules();
-    if (
-      this
-        ._destroyed
-    )
-      return;
-    if (
-      !this
-        .segmenter
-    )
-      this.segmenter =
-        new Segmenter();
-    if (
-      !this
-        .collector
-    )
-      this.collector =
-        new DataCollector();
+    if (this._destroyed) return;
+    if (!this.segmenter) this.segmenter = new Segmenter();
+    if (!this.collector) this.collector = new DataCollector();
 
     // Hide terminal, show canvas
     this.terminal.hide();
-    this.canvasEl.style.display =
-      'block';
+    this.canvasEl.style.display = 'block';
 
     // Initialize Three.js scene and vehicle
-    if (
-      !this
-        .scene
-    ) {
+    if (!this.scene) {
       // Load pre-generated textures (Layer 1)
-      const textureManager =
-        new TextureManager();
+      const textureManager = new TextureManager();
       await textureManager.loadAll();
 
-      if (
-        this
-          ._destroyed
-      )
-        return;
+      if (this._destroyed) return;
 
-      this.scene =
-        new CyberpunkScene(
-          this
-            .canvasEl,
-          textureManager,
-        );
+      this.scene = new CyberpunkScene(this.canvasEl, textureManager);
 
       // Initialize live stream client (Layer 2)
-      this._liveClient =
-        new LiveStreamClient(
-          this.scene.getRenderer(),
-          this
-            .scene
-            .scene,
-          this
-            .scene
-            .camera,
-        );
-      this.scene.liveStreamClient =
-        this._liveClient;
+      this._liveClient = new LiveStreamClient(this.scene.getRenderer(), this.scene.scene, this.scene.camera);
+      this.scene.liveStreamClient = this._liveClient;
     }
-    if (
-      !this
-        .vehicle
-    ) {
-      this.vehicle =
-        new Vehicle(
-          this
-            .scene
-            .scene,
-        );
+    if (!this.vehicle) {
+      this.vehicle = new Vehicle(this.scene.scene);
     }
 
     // Apply settings
@@ -687,429 +359,168 @@ export class App {
     this.collector.startSession();
 
     // Bind capture key (C)
-    this._captureKeyHandler =
-      (
-        e,
-      ) => {
-        if (
-          e.code ===
-          'KeyC'
-        ) {
-          this._captureRequested = true;
-        }
-        // ESC returns to menu (Story Mode → story menu, else terminal)
-        if (
-          e.code ===
-          'Escape'
-        ) {
-          this._exitSimulation();
-        }
-        // Cycle palette with E
-        if (
-          e.code ===
-          'KeyE'
-        ) {
-          this.scene.nextPalette();
-        }
-        // Toggle continuous mode with T
-        if (
-          e.code ===
-          'KeyT'
-        ) {
-          const newMode =
-            this
-              .collector
-              .mode ===
-            'manual'
-              ? 'continuous'
-              : 'manual';
-          this.collector.setMode(
-            newMode,
-          );
-        }
-        // Toggle live StreamDiffusion mode with L
-        if (
-          e.code ===
-            'KeyL' &&
-          this
-            ._liveClient
-        ) {
-          this._liveClient.toggle();
-        }
-        // Open settings console overlay with /
-        if (
-          e.key ===
-            '/' ||
-          e.code ===
-            'Slash'
-        ) {
-          this._openConsole();
-          return;
-        }
-        // Cycle radio with R: OFF → lo-fi → jazz → OFF
-        if (
-          e.code ===
-          'KeyR'
-        ) {
-          if (
-            !this
-              ._radio
-          ) {
-            this._radio =
-              new LofiRadio();
-            if (
-              this
-                ._radioVolume !==
-                undefined &&
-              this
-                ._radio
-                ._masterGain
-            ) {
-              this._radio._masterGain.gain.value =
-                this._radioVolume;
-            }
+    this._captureKeyHandler = (e) => {
+      if (e.code === 'KeyC') {
+        this._captureRequested = true;
+      }
+      // ESC returns to menu (Story Mode → story menu, else terminal)
+      if (e.code === 'Escape') {
+        this._exitSimulation();
+      }
+      // Cycle palette with E
+      if (e.code === 'KeyE') {
+        this.scene.nextPalette();
+      }
+      // Toggle continuous mode with T
+      if (e.code === 'KeyT') {
+        const newMode = this.collector.mode === 'manual' ? 'continuous' : 'manual';
+        this.collector.setMode(newMode);
+      }
+      // Toggle live StreamDiffusion mode with L
+      if (e.code === 'KeyL' && this._liveClient) {
+        this._liveClient.toggle();
+      }
+      // Open settings console overlay with /
+      if (e.key === '/' || e.code === 'Slash') {
+        this._openConsole();
+        return;
+      }
+      // Cycle radio with R: OFF → lo-fi → jazz → OFF
+      if (e.code === 'KeyR') {
+        if (!this._radio) {
+          this._radio = new LofiRadio();
+          if (this._radioVolume !== undefined && this._radio._masterGain) {
+            this._radio._masterGain.gain.value = this._radioVolume;
           }
-          const mode =
-            this._radio.toggle();
-          this._updateRadioHud(
-            mode,
-          );
         }
-        // Fire laser with F (or Ctrl) — hold to keep firing
-        if (
-          e.code ===
-            'KeyF' ||
-          e.code ===
-            'ControlLeft' ||
-          e.code ===
-            'ControlRight'
-        ) {
-          this._fireHeld = true;
-        }
-      };
-    this._captureKeyUpHandler =
-      (
-        e,
-      ) => {
-        if (
-          e.code ===
-            'KeyF' ||
-          e.code ===
-            'ControlLeft' ||
-          e.code ===
-            'ControlRight'
-        ) {
-          this._fireHeld = false;
-        }
-      };
-    window.addEventListener(
-      'keydown',
-      this
-        ._captureKeyHandler,
-    );
-    window.addEventListener(
-      'keyup',
-      this
-        ._captureKeyUpHandler,
-    );
+        const mode = this._radio.toggle();
+        this._updateRadioHud(mode);
+      }
+      // Fire laser with F (or Ctrl) — hold to keep firing
+      if (e.code === 'KeyF' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+        this._fireHeld = true;
+      }
+    };
+    this._captureKeyUpHandler = (e) => {
+      if (e.code === 'KeyF' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+        this._fireHeld = false;
+      }
+    };
+    window.addEventListener('keydown', this._captureKeyHandler);
+    window.addEventListener('keyup', this._captureKeyUpHandler);
 
     // Show VHS timestamp
-    if (
-      this
-        ._vhsEl
-    )
-      this._vhsEl.style.display =
-        'block';
+    if (this._vhsEl) this._vhsEl.style.display = 'block';
 
     // FPS counter overlay
-    if (
-      !this
-        ._fpsEl
-    ) {
-      this._fpsEl =
-        document.createElement(
-          'div',
-        );
+    if (!this._fpsEl) {
+      this._fpsEl = document.createElement('div');
       this._fpsEl.style.cssText =
         'position:fixed;top:8px;left:8px;color:#0f0;font:bold 14px monospace;z-index:9999;text-shadow:0 0 4px #000;pointer-events:none;';
-      this._container.appendChild(
-        this
-          ._fpsEl,
-      );
+      this._container.appendChild(this._fpsEl);
     }
-    this._fpsEl.style.display =
-      'block';
+    this._fpsEl.style.display = 'block';
     this._fpsFrames = 0;
     this._fpsTime = 0;
 
     // Scrolling Chinese text overlay
-    if (
-      !this
-        ._scrollText
-    )
-      this._scrollText =
-        new _ScrollText(
-          this
-            ._container,
-        );
+    if (!this._scrollText) this._scrollText = new _ScrollText(this._container);
 
     // Start engine sound (always on during simulation)
-    if (
-      !this
-        ._engine
-    )
-      this._engine =
-        new EngineSound();
+    if (!this._engine) this._engine = new EngineSound();
     this._engine.start();
 
     // Hex HUD
-    if (
-      !this
-        ._hexHud
-    ) {
-      const {
-        HexHud,
-      } =
-        await import('./ui/HexHud');
-      this._hexHud =
-        new HexHud();
+    if (!this._hexHud) {
+      const { HexHud } = await import('./ui/HexHud');
+      this._hexHud = new HexHud();
     }
     this._hexHud.show();
 
     // ── Gameplay HUD + mission/pursuit system ──
-    if (
-      !this
-        ._gameHud
-    )
-      this._gameHud =
-        new GameHud(
-          this
-            ._container,
-        );
+    if (!this._gameHud) this._gameHud = new GameHud(this._container);
     this._gameHud.show();
 
-    if (
-      !this
-        ._mission
-    ) {
-      this._mission =
-        new MissionManager(
-          this
-            .scene,
-          this
-            .vehicle,
-          {
-            onToast:
-              (
-                text,
-                kind,
-              ) => {
-                if (
-                  this
-                    ._gameHud
-                )
-                  this._gameHud.toast(
-                    text,
-                    kind,
-                  );
-              },
-          },
-        );
+    if (!this._mission) {
+      this._mission = new MissionManager(this.scene, this.vehicle, {
+        onToast: (text, kind) => {
+          if (this._gameHud) this._gameHud.toast(text, kind);
+        },
+      });
     }
     // Story Mode drives the pursuit system itself; free roam clears the hook.
-    this._mission.setStoryMode(
-      !!opts.story,
-    );
-    if (
-      !opts.story
-    )
-      this._mission.onEvent =
-        null;
+    this._mission.setStoryMode(!!opts.story);
+    if (!opts.story) this._mission.onEvent = null;
     this._mission.startSession();
 
     // R12: the React contract dock listens for the sim and hands us routes to attempt.
-    if (
-      !this
-        ._onTakeContract
-    ) {
-      this._onTakeContract =
-        (
-          e,
-        ) => {
-          if (
-            this
-              ._mission
-          )
-            this._mission.setContract(
-              e.detail,
-            );
-        };
-      window.addEventListener(
-        'velum2099:take-contract',
-        this
-          ._onTakeContract,
-      );
+    if (!this._onTakeContract) {
+      this._onTakeContract = (e) => {
+        if (this._mission) this._mission.setContract(e.detail);
+      };
+      window.addEventListener('velum2099:take-contract', this._onTakeContract);
     }
     window.dispatchEvent(
-      new CustomEvent(
-        'velum2099:sim',
-        {
-          detail:
-            {
-              active:
-                !opts.story,
-            },
+      new CustomEvent('velum2099:sim', {
+        detail: {
+          active: !opts.story,
         },
-      ),
+      }),
     );
 
     // ── Laser cannon ──
-    if (
-      !this
-        ._weapon
-    ) {
-      this._weapon =
-        new Weapon(
-          this
-            .scene,
-          this
-            .vehicle,
-          this
-            ._mission,
-          {
-            onToast:
-              (
-                text,
-                kind,
-              ) => {
-                if (
-                  this
-                    ._gameHud
-                )
-                  this._gameHud.toast(
-                    text,
-                    kind,
-                  );
-              },
-          },
-        );
+    if (!this._weapon) {
+      this._weapon = new Weapon(this.scene, this.vehicle, this._mission, {
+        onToast: (text, kind) => {
+          if (this._gameHud) this._gameHud.toast(text, kind);
+        },
+      });
     }
 
     // ── GTA-style minimap ──
-    if (
-      !this
-        ._minimap
-    ) {
-      this._minimap =
-        new Minimap(
-          this
-            ._container,
-          this
-            .scene,
-          this
-            .vehicle,
-          this
-            ._mission,
-        );
+    if (!this._minimap) {
+      this._minimap = new Minimap(this._container, this.scene, this.vehicle, this._mission);
     }
     this._minimap.show();
 
     // ── Mobile touch controls (joystick) — only on touch devices ──
-    if (
-      MobileControls.isTouch()
-    ) {
-      if (
-        !this
-          ._mobileControls
-      ) {
-        this._mobileControls =
-          new MobileControls(
-            this
-              ._container,
-            this
-              .vehicle,
-            {
-              onExit:
-                () =>
-                  this._exitSimulation(),
-            },
-          );
+    if (MobileControls.isTouch()) {
+      if (!this._mobileControls) {
+        this._mobileControls = new MobileControls(this._container, this.vehicle, {
+          onExit: () => this._exitSimulation(),
+        });
       }
       this._mobileControls.show();
     } else {
       // Desktop controls hint
-      this._gameHud.toast(
-        'WASD 驾驶 · SPACE 漂移 · F 开火 · ESC 返回菜单',
-        'info',
-      );
+      this._gameHud.toast('WASD 驾驶 · SPACE 漂移 · F 开火 · ESC 返回菜单', 'info');
     }
 
     // ── Multiplayer: remote players + driving-state sync ──
-    if (
-      multiplayer
-    ) {
+    if (multiplayer) {
       await this._setupMultiplayer();
-      if (
-        this
-          ._destroyed
-      )
-        return;
+      if (this._destroyed) return;
     }
 
     // ── Story Mode (GHOST ROUTE): objective engine over the live world ──
-    if (
-      opts.story &&
-      this
-        ._storySave
-    ) {
-      const {
-        StoryManager,
-      } =
-        await import('./story/StoryManager');
-      if (
-        this
-          ._destroyed
-      )
-        return;
-      if (
-        this
-          ._story
-      ) {
+    if (opts.story && this._storySave) {
+      const { StoryManager } = await import('./story/StoryManager');
+      if (this._destroyed) return;
+      if (this._story) {
         this._story.dispose();
-        this._story =
-          null;
+        this._story = null;
       }
-      this._story =
-        new StoryManager(
-          this
-            .scene,
-          this
-            .vehicle,
-          this
-            ._mission,
-          this
-            ._storySave,
-          {
-            container:
-              this
-                ._container,
-            gameHud:
-              this
-                ._gameHud,
-            onExit:
-              () =>
-                this._exitStoryToMenu(),
-          },
-        );
-      this._story.startMission(
-        opts.missionId,
-      );
+      this._story = new StoryManager(this.scene, this.vehicle, this._mission, this._storySave, {
+        container: this._container,
+        gameHud: this._gameHud,
+        onExit: () => this._exitStoryToMenu(),
+      });
+      this._story.startMission(opts.missionId);
     }
 
     // Start game loop
     this.running = true;
-    this._lastTime =
-      performance.now();
+    this._lastTime = performance.now();
     this._gameLoop();
 
     // Seatbelt chime
@@ -1118,663 +529,218 @@ export class App {
 
   /** Wire up the shared-cruise networking once the scene/vehicle exist. */
   async _setupMultiplayer() {
-    const [
-      {
-        RemotePlayers,
-      },
-      {
-        VelumMultiplayerClient,
-      },
-    ] =
-      await Promise.all(
-        [
-          import('./multiplayer/RemotePlayers'),
-          import('@/lib/velum2099/multiplayer'),
-        ],
-      );
-    if (
-      this
-        ._destroyed
-    )
-      return;
+    const [{ RemotePlayers }, { VelumMultiplayerClient }] = await Promise.all([
+      import('./multiplayer/RemotePlayers'),
+      import('@/lib/velum2099/multiplayer'),
+    ]);
+    if (this._destroyed) return;
 
-    this._mpClient =
-      VelumMultiplayerClient.getInstance();
+    this._mpClient = VelumMultiplayerClient.getInstance();
     this._mpClient.connect();
-    this._remotePlayers =
-      new RemotePlayers(
-        this
-          .scene
-          .scene,
-      );
+    this._remotePlayers = new RemotePlayers(this.scene.scene);
     this._mpSendTimer = 0;
-    this._mpSendInterval =
-      1 /
-      15; // ~15 Hz state broadcast
+    this._mpSendInterval = 1 / 15; // ~15 Hz state broadcast
 
     // Spread players out around the spawn so they don't stack on launch.
-    const slot =
-      this
-        ._mpSelfColor ||
-      0;
-    const offsetX =
-      (slot -
-        3.5) *
-      3.6;
-    this.vehicle.position.set(
-      offsetX,
-      0,
-      0,
-    );
-    this.vehicle.rotation.set(
-      0,
-      0,
-      0,
-    );
+    const slot = this._mpSelfColor || 0;
+    const offsetX = (slot - 3.5) * 3.6;
+    this.vehicle.position.set(offsetX, 0, 0);
+    this.vehicle.rotation.set(0, 0, 0);
     this.vehicle.velocity = 0;
     this.vehicle.lateralVelocity = 0;
-    this.vehicle.group.position.copy(
-      this
-        .vehicle
-        .position,
-    );
+    this.vehicle.group.position.copy(this.vehicle.position);
 
     // Inbound handlers
-    this._mpHandlers =
-      {
-        state:
-          (
-            s,
-          ) => {
-            if (
-              this
-                ._remotePlayers &&
-              s &&
-              s.id !==
-                this._mpClient.getSocketId()
-            )
-              this._remotePlayers.upsert(
-                s,
-              );
-          },
-        left: (
-          d,
-        ) => {
-          if (
-            this
-              ._remotePlayers &&
-            d
-          )
-            this._remotePlayers.remove(
-              d.id,
-            );
-        },
-        chat: (
-          m,
-        ) => {
-          if (
-            m &&
-            m.id !==
-              this._mpClient.getSocketId() &&
-            this
-              ._gameHud
-          ) {
-            this._gameHud.toast(
-              `💬 ${m.name}: ${m.text}`,
-              'info',
-            );
-          }
-        },
-      };
-    this._mpClient.on(
-      'velum:playerState',
-      this
-        ._mpHandlers
-        .state,
-    );
-    this._mpClient.on(
-      'velum:playerLeft',
-      this
-        ._mpHandlers
-        .left,
-    );
-    this._mpClient.on(
-      'velum:chat',
-      this
-        ._mpHandlers
-        .chat,
-    );
+    this._mpHandlers = {
+      state: (s) => {
+        if (this._remotePlayers && s && s.id !== this._mpClient.getSocketId()) this._remotePlayers.upsert(s);
+      },
+      left: (d) => {
+        if (this._remotePlayers && d) this._remotePlayers.remove(d.id);
+      },
+      chat: (m) => {
+        if (m && m.id !== this._mpClient.getSocketId() && this._gameHud) {
+          this._gameHud.toast(`💬 ${m.name}: ${m.text}`, 'info');
+        }
+      },
+    };
+    this._mpClient.on('velum:playerState', this._mpHandlers.state);
+    this._mpClient.on('velum:playerLeft', this._mpHandlers.left);
+    this._mpClient.on('velum:chat', this._mpHandlers.chat);
 
-    if (
-      this
-        ._gameHud
-    )
-      this._gameHud.toast(
-        '多人巡航已连接 · MULTIPLAYER LIVE',
-        'good',
-      );
+    if (this._gameHud) this._gameHud.toast('多人巡航已连接 · MULTIPLAYER LIVE', 'good');
   }
 
   /** Tear down all multiplayer state (handlers, ghosts, lobby membership). */
   _teardownMultiplayer() {
-    if (
-      this
-        ._mpClient &&
-      this
-        ._mpHandlers
-    ) {
-      this._mpClient.off(
-        'velum:playerState',
-        this
-          ._mpHandlers
-          .state,
-      );
-      this._mpClient.off(
-        'velum:playerLeft',
-        this
-          ._mpHandlers
-          .left,
-      );
-      this._mpClient.off(
-        'velum:chat',
-        this
-          ._mpHandlers
-          .chat,
-      );
+    if (this._mpClient && this._mpHandlers) {
+      this._mpClient.off('velum:playerState', this._mpHandlers.state);
+      this._mpClient.off('velum:playerLeft', this._mpHandlers.left);
+      this._mpClient.off('velum:chat', this._mpHandlers.chat);
     }
-    if (
-      this
-        ._mpClient &&
-      this
-        ._mpRoomId
-    ) {
-      this._mpClient.leaveLobby(
-        this
-          ._mpRoomId,
-      );
+    if (this._mpClient && this._mpRoomId) {
+      this._mpClient.leaveLobby(this._mpRoomId);
       this._mpClient.disconnect();
     }
-    if (
-      this
-        ._remotePlayers
-    ) {
+    if (this._remotePlayers) {
       this._remotePlayers.dispose();
-      this._remotePlayers =
-        null;
+      this._remotePlayers = null;
     }
-    this._mpHandlers =
-      null;
-    this._mpClient =
-      null;
-    this._mpRoomId =
-      null;
+    this._mpHandlers = null;
+    this._mpClient = null;
+    this._mpRoomId = null;
     this._multiplayer = false;
   }
 
   _gameLoop() {
-    if (
-      !this
-        .running
-    )
-      return;
+    if (!this.running) return;
 
-    const now =
-      performance.now();
-    const dt =
-      Math.min(
-        (now -
-          this
-            ._lastTime) /
-          1000,
-        0.05,
-      ); // cap at 50ms
-    this._lastTime =
-      now;
+    const now = performance.now();
+    const dt = Math.min((now - this._lastTime) / 1000, 0.05); // cap at 50ms
+    this._lastTime = now;
 
     // Update vehicle physics
-    this.vehicle.groundY =
-      this.scene.getGroundHeight(
-        this
-          .vehicle
-          .position
-          .x,
-        this
-          .vehicle
-          .position
-          .z,
-      );
-    this.vehicle.update(
-      dt,
-    );
+    this.vehicle.groundY = this.scene.getGroundHeight(this.vehicle.position.x, this.vehicle.position.z);
+    this.vehicle.update(dt);
 
     // Collision detection — include solid cop cars so they can block/ram
-    const collidables =
-      this.scene.getCollidables(
-        this
-          .vehicle
-          .position,
-        30,
-      );
-    if (
-      this
-        ._mission
-    )
-      this._mission.getPoliceCollidables(
-        collidables,
-      );
-    const collisions =
-      this.vehicle.checkCollisions(
-        collidables,
-        dt,
-      );
+    const collidables = this.scene.getCollidables(this.vehicle.position, 30);
+    if (this._mission) this._mission.getPoliceCollidables(collidables);
+    const collisions = this.vehicle.checkCollisions(collidables, dt);
 
     // Update scene (camera, rain, neon flicker, post-processing render)
-    this.scene.update(
-      this
-        .vehicle
-        .position,
-      this
-        .vehicle
-        .rotation,
-      dt,
-    );
+    this.scene.update(this.vehicle.position, this.vehicle.rotation, dt);
 
     // ── Gameplay: missions + police pursuit ──
-    if (
-      this
-        ._mission
-    ) {
-      this._mission.reportCollisions(
-        collisions,
-      );
-      this._mission.update(
-        dt,
-      );
+    if (this._mission) {
+      this._mission.reportCollisions(collisions);
+      this._mission.update(dt);
 
       // Story Mode objective engine — drives objectives, dialogue and markers,
       // and (when active) supplies the objective/timer shown on the gameplay HUD.
-      if (
-        this
-          ._story
-      ) {
-        this._story.reportCollisions(
-          collisions,
-        );
-        this._story.update(
-          dt,
-        );
+      if (this._story) {
+        this._story.reportCollisions(collisions);
+        this._story.update(dt);
       }
 
       // Laser cannon — fire while held (respects cooldown/overheat)
-      if (
-        this
-          ._weapon
-      ) {
-        const firing =
-          this
-            ._fireHeld ||
-          (this
-            .vehicle
-            .mobileInput &&
-            this
-              .vehicle
-              .mobileInput
-              .fire);
-        if (
-          firing
-        )
-          this._weapon.fire();
-        this._weapon.update(
-          dt,
-        );
+      if (this._weapon) {
+        const firing = this._fireHeld || (this.vehicle.mobileInput && this.vehicle.mobileInput.fire);
+        if (firing) this._weapon.fire();
+        this._weapon.update(dt);
       }
 
-      if (
-        this
-          ._gameHud
-      ) {
-        const hudState =
-          this
-            ._story
-            ? this._story.getHudState()
-            : this._mission.getState();
-        this._gameHud.update(
-          hudState,
-          this
-            ._weapon
-            ? this._weapon.getState()
-            : null,
-        );
-        this._gameHud.tickToasts(
-          dt,
-        );
+      if (this._gameHud) {
+        const hudState = this._story ? this._story.getHudState() : this._mission.getState();
+        this._gameHud.update(hudState, this._weapon ? this._weapon.getState() : null);
+        this._gameHud.tickToasts(dt);
       }
-      if (
-        this
-          ._minimap
-      )
-        this._minimap.update(
-          dt,
-        );
+      if (this._minimap) this._minimap.update(dt);
     }
 
     // ── Multiplayer: broadcast our state (≈15 Hz) + interpolate ghosts ──
-    if (
-      this
-        ._multiplayer &&
-      this
-        ._mpClient
-    ) {
-      this._mpSendTimer +=
-        dt;
-      if (
-        this
-          ._mpSendTimer >=
-          this
-            ._mpSendInterval &&
-        this
-          ._mpRoomId
-      ) {
+    if (this._multiplayer && this._mpClient) {
+      this._mpSendTimer += dt;
+      if (this._mpSendTimer >= this._mpSendInterval && this._mpRoomId) {
         this._mpSendTimer = 0;
-        this._mpClient.sendPlayerState(
-          this
-            ._mpRoomId,
-          {
-            x: this
-              .vehicle
-              .position
-              .x,
-            y: this
-              .vehicle
-              .position
-              .y,
-            z: this
-              .vehicle
-              .position
-              .z,
-            ry: this
-              .vehicle
-              .rotation
-              .y,
-            speed:
-              this
-                .vehicle
-                .velocity,
-            drifting:
-              !!this
-                .vehicle
-                .drifting,
-          },
-        );
+        this._mpClient.sendPlayerState(this._mpRoomId, {
+          x: this.vehicle.position.x,
+          y: this.vehicle.position.y,
+          z: this.vehicle.position.z,
+          ry: this.vehicle.rotation.y,
+          speed: this.vehicle.velocity,
+          drifting: !!this.vehicle.drifting,
+        });
       }
-      if (
-        this
-          ._remotePlayers
-      )
-        this._remotePlayers.update(
-          dt,
-        );
+      if (this._remotePlayers) this._remotePlayers.update(dt);
     }
 
     // Segmentation + data collection — the OpenCV pass is expensive, so only
     // run it when data is actually being recorded (continuous mode, or a
     // manual capture this frame). Idle gameplay skips it entirely.
-    const needSeg =
-      this
-        .collector
-        .recording &&
-      (this
-        .collector
-        .mode ===
-        'continuous' ||
-        this
-          ._captureRequested);
-    if (
-      needSeg
-    )
-      this._ensureDataPipeline();
-    const mask =
-      needSeg
-        ? this.segmenter.processFrame(
-            this
-              .canvasEl,
-          )
-        : null;
-    if (
-      needSeg
-    ) {
-      this.collector.tick(
-        this
-          .canvasEl,
-        this
-          .vehicle,
-        mask,
-        this
-          ._captureRequested,
-      );
+    const needSeg = this.collector.recording && (this.collector.mode === 'continuous' || this._captureRequested);
+    if (needSeg) this._ensureDataPipeline();
+    const mask = needSeg ? this.segmenter.processFrame(this.canvasEl) : null;
+    if (needSeg) {
+      this.collector.tick(this.canvasEl, this.vehicle, mask, this._captureRequested);
     }
     this._captureRequested = false;
 
     // VHS timestamp — throttled to 1Hz
-    this._vhsTimer +=
-      dt;
-    if (
-      this
-        ._vhsEl &&
-      this
-        ._vhsTimer >=
-        1
-    ) {
+    this._vhsTimer += dt;
+    if (this._vhsEl && this._vhsTimer >= 1) {
       this._vhsTimer = 0;
-      const d =
-        new Date();
-      const pad =
-        (
-          n,
-        ) =>
-          String(
-            n,
-          ).padStart(
-            2,
-            '0',
-          );
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
       const date = `${pad(d.getMonth() + 1)}.${pad(d.getDate())}.${d.getFullYear()}`;
       const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
       this._vhsEl.innerHTML = `<span class="rec-dot"></span>REC  ${date}  ${time}\nPLAY  \u25B6`;
     }
 
     // Scrolling Chinese text
-    if (
-      this
-        ._scrollText
-    )
-      this._scrollText.update(
-        dt,
-      );
+    if (this._scrollText) this._scrollText.update(dt);
 
     // Lo-fi radio scheduling
-    if (
-      this
-        ._radio
-    )
-      this._radio.update(
-        dt,
-      );
+    if (this._radio) this._radio.update(dt);
 
     // Engine sound
-    if (
-      this
-        ._engine
-    )
-      this._engine.update(
-        dt,
-        this
-          .vehicle,
-      );
+    if (this._engine) this._engine.update(dt, this.vehicle);
 
     // Hex HUD — collision proximity
-    if (
-      this
-        ._hexHud
-    ) {
-      let minDist =
-        Infinity;
+    if (this._hexHud) {
+      let minDist = Infinity;
       for (const col of collidables) {
-        const dx =
-          (col
-            .box
-            .min
-            .x +
-            col
-              .box
-              .max
-              .x) *
-            0.5 -
-          this
-            .vehicle
-            .position
-            .x;
-        const dz =
-          (col
-            .box
-            .min
-            .z +
-            col
-              .box
-              .max
-              .z) *
-            0.5 -
-          this
-            .vehicle
-            .position
-            .z;
-        const dist =
-          Math.sqrt(
-            dx *
-              dx +
-              dz *
-                dz,
-          );
-        if (
-          dist <
-          minDist
-        )
-          minDist =
-            dist;
+        const dx = (col.box.min.x + col.box.max.x) * 0.5 - this.vehicle.position.x;
+        const dz = (col.box.min.z + col.box.max.z) * 0.5 - this.vehicle.position.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist < minDist) minDist = dist;
       }
-      this._hexHud.update(
-        dt,
-        Math.max(
-          0,
-          1 -
-            minDist /
-              15,
-        ),
-      );
+      this._hexHud.update(dt, Math.max(0, 1 - minDist / 15));
     }
 
     // FPS counter
-    this
-      ._fpsFrames++;
-    this._fpsTime +=
-      dt;
-    if (
-      this
-        ._fpsTime >=
-      0.5
-    ) {
-      const fps =
-        this
-          ._fpsFrames /
-        this
-          ._fpsTime;
-      if (
-        this
-          ._fpsEl
-      )
-        this._fpsEl.textContent = `${fps.toFixed(1)} FPS`;
+    this._fpsFrames++;
+    this._fpsTime += dt;
+    if (this._fpsTime >= 0.5) {
+      const fps = this._fpsFrames / this._fpsTime;
+      if (this._fpsEl) this._fpsEl.textContent = `${fps.toFixed(1)} FPS`;
       this._fpsFrames = 0;
       this._fpsTime = 0;
     }
 
-    this._animFrameId =
-      requestAnimationFrame(
-        () =>
-          this._gameLoop(),
-      );
+    this._animFrameId = requestAnimationFrame(() => this._gameLoop());
   }
 
   /** Lazily initialise the segmentation/OpenCV pipeline on first data capture. */
   _ensureDataPipeline() {
-    if (
-      this
-        ._segInitStarted ||
-      !this
-        .segmenter
-    )
-      return;
+    if (this._segInitStarted || !this.segmenter) return;
     this._segInitStarted = true;
-    this.segmenter
-      .init()
-      .catch(
-        (
-          err,
-        ) => {
-          console.warn(
-            '[Segmenter] 初始化警告:',
-            err,
-          );
-        },
-      );
+    this.segmenter.init().catch((err) => {
+      console.warn('[Segmenter] 初始化警告:', err);
+    });
   }
 
   /** Tear down all running-simulation state (without choosing where to go next). */
   _teardownSimulation() {
     this.running = false;
-    if (
-      this
-        ._animFrameId
-    ) {
-      cancelAnimationFrame(
-        this
-          ._animFrameId,
-      );
-      this._animFrameId =
-        null;
+    if (this._animFrameId) {
+      cancelAnimationFrame(this._animFrameId);
+      this._animFrameId = null;
     }
 
     // Unbind capture key
-    if (
-      this
-        ._captureKeyHandler
-    ) {
-      window.removeEventListener(
-        'keydown',
-        this
-          ._captureKeyHandler,
-      );
-      this._captureKeyHandler =
-        null;
+    if (this._captureKeyHandler) {
+      window.removeEventListener('keydown', this._captureKeyHandler);
+      this._captureKeyHandler = null;
     }
-    if (
-      this
-        ._captureKeyUpHandler
-    ) {
-      window.removeEventListener(
-        'keyup',
-        this
-          ._captureKeyUpHandler,
-      );
-      this._captureKeyUpHandler =
-        null;
+    if (this._captureKeyUpHandler) {
+      window.removeEventListener('keyup', this._captureKeyUpHandler);
+      this._captureKeyUpHandler = null;
     }
     this._fireHeld = false;
 
     // Disconnect live stream if active
-    if (
-      this
-        ._liveClient
-    ) {
+    if (this._liveClient) {
       this._liveClient.disconnect();
     }
 
@@ -1782,111 +748,50 @@ export class App {
     this.collector.stopSession();
 
     // Clean up scrolling text, radio, and engine
-    if (
-      this
-        ._scrollText
-    )
-      this._scrollText.cleanup();
-    if (
-      this
-        ._radio
-    ) {
+    if (this._scrollText) this._scrollText.cleanup();
+    if (this._radio) {
       this._radio.dispose();
-      this._radio =
-        null;
+      this._radio = null;
     }
-    if (
-      this
-        ._engine
-    ) {
+    if (this._engine) {
       this._engine.dispose();
-      this._engine =
-        null;
+      this._engine = null;
     }
-    this._updateRadioHud(
-      false,
-    );
-    if (
-      this
-        ._hexHud
-    )
-      this._hexHud.hide();
+    this._updateRadioHud(false);
+    if (this._hexHud) this._hexHud.hide();
 
     // Multiplayer cleanup (leave lobby, drop ghosts, unsubscribe)
-    if (
-      this
-        ._multiplayer
-    )
-      this._teardownMultiplayer();
+    if (this._multiplayer) this._teardownMultiplayer();
 
     // Story Mode cleanup (dispose engine + overlays, drop pursuit hook)
-    if (
-      this
-        ._story
-    ) {
+    if (this._story) {
       this._story.dispose();
-      this._story =
-        null;
+      this._story = null;
     }
     this._storyActive = false;
 
     // Gameplay HUD + mobile controls + pursuit cleanup
-    if (
-      this
-        ._mission
-    ) {
-      this._mission.setStoryMode(
-        false,
-      );
-      this._mission.onEvent =
-        null;
-      this._mission.setContract(
-        null,
-      );
+    if (this._mission) {
+      this._mission.setStoryMode(false);
+      this._mission.onEvent = null;
+      this._mission.setContract(null);
       this._mission.suspend();
     }
     window.dispatchEvent(
-      new CustomEvent(
-        'velum2099:sim',
-        {
-          detail:
-            {
-              active: false,
-            },
+      new CustomEvent('velum2099:sim', {
+        detail: {
+          active: false,
         },
-      ),
+      }),
     );
-    if (
-      this
-        ._gameHud
-    )
-      this._gameHud.hide();
-    if (
-      this
-        ._minimap
-    )
-      this._minimap.hide();
-    if (
-      this
-        ._mobileControls
-    )
-      this._mobileControls.hide();
+    if (this._gameHud) this._gameHud.hide();
+    if (this._minimap) this._minimap.hide();
+    if (this._mobileControls) this._mobileControls.hide();
 
     // Hide canvas, VHS overlay, and FPS counter
-    this.canvasEl.style.display =
-      'none';
-    if (
-      this
-        ._vhsEl
-    )
-      this._vhsEl.style.display =
-        'none';
-    if (
-      this
-        ._fpsEl
-    )
-      this._fpsEl.style.display =
-        'none';
+    this.canvasEl.style.display = 'none';
+    if (this._vhsEl) this._vhsEl.style.display = 'none';
+    if (this._fpsEl) this._fpsEl.style.display = 'none';
   }
 
   _stopSimulation() {
@@ -1895,218 +800,98 @@ export class App {
   }
 
   async _exportData() {
-    const data =
-      this.collector.getData();
-    await Exporter.exportZip(
-      data,
-    );
+    const data = this.collector.getData();
+    await Exporter.exportZip(data);
   }
 
-  _updateRadioHud(
-    mode,
-  ) {
-    if (
-      !this
-        ._radioHud
-    ) {
-      this._radioHud =
-        document.createElement(
-          'div',
-        );
+  _updateRadioHud(mode) {
+    if (!this._radioHud) {
+      this._radioHud = document.createElement('div');
       this._radioHud.style.cssText =
         'position:fixed;top:calc(8px + var(--safe-top));right:calc(12px + var(--safe-right));font-family:"VT323",monospace;font-size:16px;color:#0ff;letter-spacing:2px;z-index:200;pointer-events:none;text-shadow:0 0 6px rgba(0,255,255,0.4),1px 0 0 rgba(255,40,40,0.3),-1px 0 0 rgba(40,40,255,0.2);opacity:0.85;white-space:pre;';
-      this._container.appendChild(
-        this
-          ._radioHud,
-      );
+      this._container.appendChild(this._radioHud);
     }
-    if (
-      mode ===
-      'lofi'
-    ) {
-      this._radioHud.textContent =
-        '\uD83D\uDCFB NEURODRIVE FM \u2014 \u266A lo-fi beats';
-      this._radioHud.style.display =
-        'block';
-    } else if (
-      mode ===
-      'jazz'
-    ) {
-      this._radioHud.textContent =
-        '\uD83D\uDCFB NEURODRIVE FM \u2014 \uD83C\uDFB7 jazz session';
-      this._radioHud.style.display =
-        'block';
+    if (mode === 'lofi') {
+      this._radioHud.textContent = '\uD83D\uDCFB NEURODRIVE FM \u2014 \u266A lo-fi beats';
+      this._radioHud.style.display = 'block';
+    } else if (mode === 'jazz') {
+      this._radioHud.textContent = '\uD83D\uDCFB NEURODRIVE FM \u2014 \uD83C\uDFB7 jazz session';
+      this._radioHud.style.display = 'block';
     } else {
-      this._radioHud.style.display =
-        'none';
+      this._radioHud.style.display = 'none';
     }
   }
 
   _applySettings() {
-    const s =
-      this.settings.getAll();
+    const s = this.settings.getAll();
 
     // Camera
-    this.scene.camera.fov =
-      s.fov;
+    this.scene.camera.fov = s.fov;
     this.scene.camera.updateProjectionMatrix();
-    this.scene.camDist =
-      s.cameraDistance;
-    this.scene.camHeight =
-      s.cameraHeight;
+    this.scene.camDist = s.cameraDistance;
+    this.scene.camHeight = s.cameraHeight;
 
     // Palette
-    this.scene.setPalettePool(
-      s.paletteMode,
-    );
-    this.scene.setPalette(
-      s.palette,
-    );
-    this.scene.setPaletteLock(
-      s.paletteLock,
-    );
+    this.scene.setPalettePool(s.paletteMode);
+    this.scene.setPalette(s.palette);
+    this.scene.setPaletteLock(s.paletteLock);
 
     // Bloom — passes[1] is UnrealBloomPass
-    const bloomPass =
-      this
-        .scene
-        .composer
-        .passes[1];
-    if (
-      bloomPass
-    ) {
-      bloomPass.strength =
-        s.bloomStrength;
-      bloomPass.threshold =
-        s.bloomThreshold;
+    const bloomPass = this.scene.composer.passes[1];
+    if (bloomPass) {
+      bloomPass.strength = s.bloomStrength;
+      bloomPass.threshold = s.bloomThreshold;
     }
 
     // Retro shader (scanlines + chromatic aberration)
-    if (
-      this
-        .scene
-        .retroPass
-    ) {
-      this.scene.retroPass.uniforms.scanlineIntensity.value =
-        s.scanlines
-          ? 0.06
-          : 0;
-      this.scene.retroPass.uniforms.chromaticAberration.value =
-        s.chromaticAberration;
+    if (this.scene.retroPass) {
+      this.scene.retroPass.uniforms.scanlineIntensity.value = s.scanlines ? 0.06 : 0;
+      this.scene.retroPass.uniforms.chromaticAberration.value = s.chromaticAberration;
     }
 
     // Vehicle
-    this.vehicle.maxSpeed =
-      s.maxSpeed;
-    this.vehicle.driftLateralKick =
-      s.driftKick;
-    if (
-      this
-        .vehicle
-        ._bodyMat
-    ) {
-      this.vehicle._bodyMat.emissiveIntensity =
-        s.vehicleEmissive;
+    this.vehicle.maxSpeed = s.maxSpeed;
+    this.vehicle.driftLateralKick = s.driftKick;
+    if (this.vehicle._bodyMat) {
+      this.vehicle._bodyMat.emissiveIntensity = s.vehicleEmissive;
     }
-    if (
-      this
-        .vehicle
-        ._underglow
-    ) {
-      this.vehicle._underglow.material.color.set(
-        s.neonUnderglow,
-      );
+    if (this.vehicle._underglow) {
+      this.vehicle._underglow.material.color.set(s.neonUnderglow);
     }
 
     // Building edges
-    if (
-      this
-        .scene
-    )
-      this.scene.setEdgesVisible(
-        s.buildingEdges,
-      );
+    if (this.scene) this.scene.setEdgesVisible(s.buildingEdges);
 
     // Data collection
-    this.collector.setMode(
-      s.dataMode,
-    );
-    this.collector.continuousInterval =
-      s.dataCaptureInterval;
+    this.collector.setMode(s.dataMode);
+    this.collector.continuousInterval = s.dataCaptureInterval;
 
     // Radio volume (applied when radio starts)
-    this._radioVolume =
-      s.radioVolume;
+    this._radioVolume = s.radioVolume;
   }
 
   _playSeatbeltChime() {
-    const ctx =
-      getAudioContext();
-    if (
-      !ctx
-    )
-      return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
     resumeAudioContext();
-    this._chimeCtx =
-      ctx;
-    const now =
-      ctx.currentTime;
-    const playTone =
-      (
-        freq,
-        t,
-      ) => {
-        const osc =
-          ctx.createOscillator();
-        osc.type =
-          'sine';
-        osc.frequency.value =
-          freq;
-        const env =
-          ctx.createGain();
-        env.gain.setValueAtTime(
-          0,
-          t,
-        );
-        env.gain.linearRampToValueAtTime(
-          0.06,
-          t +
-            0.02,
-        );
-        env.gain.setValueAtTime(
-          0.06,
-          t +
-            0.15,
-        );
-        env.gain.exponentialRampToValueAtTime(
-          0.001,
-          t +
-            0.4,
-        );
-        osc.connect(
-          env,
-        );
-        env.connect(
-          ctx.destination,
-        );
-        osc.start(
-          t,
-        );
-        osc.stop(
-          t +
-            0.45,
-        );
-      };
-    playTone(
-      523.25,
-      now +
-        0.1,
-    ); // C5
-    playTone(
-      659.25,
-      now +
-        0.35,
-    ); // E5
+    this._chimeCtx = ctx;
+    const now = ctx.currentTime;
+    const playTone = (freq, t) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(0.06, t + 0.02);
+      env.gain.setValueAtTime(0.06, t + 0.15);
+      env.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      osc.connect(env);
+      env.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.45);
+    };
+    playTone(523.25, now + 0.1); // C5
+    playTone(659.25, now + 0.35); // E5
     // The oscillators stop themselves; the context is shared and must not
     // be closed (closing is permanent and would mute the whole page).
   }
@@ -2114,132 +899,60 @@ export class App {
   _openConsole() {
     // Pause game loop
     this.running = false;
-    if (
-      this
-        ._animFrameId
-    ) {
-      cancelAnimationFrame(
-        this
-          ._animFrameId,
-      );
-      this._animFrameId =
-        null;
+    if (this._animFrameId) {
+      cancelAnimationFrame(this._animFrameId);
+      this._animFrameId = null;
     }
 
     // Unbind simulation keys
-    if (
-      this
-        ._captureKeyHandler
-    ) {
-      window.removeEventListener(
-        'keydown',
-        this
-          ._captureKeyHandler,
-      );
+    if (this._captureKeyHandler) {
+      window.removeEventListener('keydown', this._captureKeyHandler);
     }
-    if (
-      this
-        ._captureKeyUpHandler
-    ) {
-      window.removeEventListener(
-        'keyup',
-        this
-          ._captureKeyUpHandler,
-      );
+    if (this._captureKeyUpHandler) {
+      window.removeEventListener('keyup', this._captureKeyUpHandler);
     }
     this._fireHeld = false;
 
     // Hide gameplay HUD/controls while the console is open
-    if (
-      this
-        ._gameHud
-    )
-      this._gameHud.hide();
-    if (
-      this
-        ._minimap
-    )
-      this._minimap.hide();
-    if (
-      this
-        ._mobileControls
-    )
-      this._mobileControls.hide();
+    if (this._gameHud) this._gameHud.hide();
+    if (this._minimap) this._minimap.hide();
+    if (this._mobileControls) this._mobileControls.hide();
 
     // Show terminal as overlay (canvas stays visible behind)
-    this.terminalEl.classList.add(
-      'overlay-mode',
-    );
-    this.terminalEl.style.display =
-      'flex';
+    this.terminalEl.classList.add('overlay-mode');
+    this.terminalEl.style.display = 'flex';
 
     // Enter settings mode with overlay flag
-    this.terminal.enterSettingsMode(
-      this
-        .settings,
-      {
-        overlay: true,
-        onClose:
-          () =>
-            this._closeConsole(),
-      },
-    );
+    this.terminal.enterSettingsMode(this.settings, {
+      overlay: true,
+      onClose: () => this._closeConsole(),
+    });
   }
 
   _closeConsole() {
     // Hide terminal overlay
-    this.terminalEl.style.display =
-      'none';
-    this.terminalEl.classList.remove(
-      'overlay-mode',
-    );
+    this.terminalEl.style.display = 'none';
+    this.terminalEl.classList.remove('overlay-mode');
 
     // Re-apply settings to scene/vehicle
     this._applySettings();
 
     // Restore gameplay HUD/controls
-    if (
-      this
-        ._gameHud
-    )
-      this._gameHud.show();
-    if (
-      this
-        ._minimap
-    )
-      this._minimap.show();
-    if (
-      this
-        ._mobileControls
-    )
-      this._mobileControls.show();
+    if (this._gameHud) this._gameHud.show();
+    if (this._minimap) this._minimap.show();
+    if (this._mobileControls) this._mobileControls.show();
 
     // Rebind simulation keys
-    if (
-      this
-        ._captureKeyHandler
-    ) {
-      window.addEventListener(
-        'keydown',
-        this
-          ._captureKeyHandler,
-      );
+    if (this._captureKeyHandler) {
+      window.addEventListener('keydown', this._captureKeyHandler);
     }
-    if (
-      this
-        ._captureKeyUpHandler
-    ) {
-      window.addEventListener(
-        'keyup',
-        this
-          ._captureKeyUpHandler,
-      );
+    if (this._captureKeyUpHandler) {
+      window.addEventListener('keyup', this._captureKeyUpHandler);
     }
 
     // Resume game loop
     this.running = true;
-    this._lastTime =
-      performance.now();
+    this._lastTime = performance.now();
     this._gameLoop();
   }
 
@@ -2248,221 +961,110 @@ export class App {
     this._destroyed = true;
     this.running = false;
 
-    if (
-      this
-        ._animFrameId
-    ) {
-      cancelAnimationFrame(
-        this
-          ._animFrameId,
-      );
-      this._animFrameId =
-        null;
+    if (this._animFrameId) {
+      cancelAnimationFrame(this._animFrameId);
+      this._animFrameId = null;
     }
 
     // Remove event listeners
-    if (
-      this
-        ._captureKeyHandler
-    ) {
-      window.removeEventListener(
-        'keydown',
-        this
-          ._captureKeyHandler,
-      );
-      this._captureKeyHandler =
-        null;
+    if (this._captureKeyHandler) {
+      window.removeEventListener('keydown', this._captureKeyHandler);
+      this._captureKeyHandler = null;
     }
-    if (
-      this
-        ._captureKeyUpHandler
-    ) {
-      window.removeEventListener(
-        'keyup',
-        this
-          ._captureKeyUpHandler,
-      );
-      this._captureKeyUpHandler =
-        null;
+    if (this._captureKeyUpHandler) {
+      window.removeEventListener('keyup', this._captureKeyUpHandler);
+      this._captureKeyUpHandler = null;
     }
 
     // Stop audio
-    if (
-      this
-        ._radio
-    ) {
+    if (this._radio) {
       this._radio.dispose();
-      this._radio =
-        null;
+      this._radio = null;
     }
-    if (
-      this
-        ._engine
-    ) {
+    if (this._engine) {
       this._engine.dispose();
-      this._engine =
-        null;
+      this._engine = null;
     }
     // Shared context — drop the reference, don't close it.
-    this._chimeCtx =
-      null;
+    this._chimeCtx = null;
 
     // Disconnect live stream
-    if (
-      this
-        ._liveClient
-    ) {
+    if (this._liveClient) {
       this._liveClient.disconnect();
     }
 
     // Clean up scrolling text
-    if (
-      this
-        ._scrollText
-    ) {
+    if (this._scrollText) {
       this._scrollText.cleanup();
-      this._scrollText =
-        null;
+      this._scrollText = null;
     }
 
     // Clean up dynamic DOM elements
-    if (
-      this
-        ._fpsEl
-    ) {
+    if (this._fpsEl) {
       this._fpsEl.remove();
-      this._fpsEl =
-        null;
+      this._fpsEl = null;
     }
-    if (
-      this
-        ._radioHud
-    ) {
+    if (this._radioHud) {
       this._radioHud.remove();
-      this._radioHud =
-        null;
+      this._radioHud = null;
     }
 
     // Clean up multiplayer (lobby overlay + networking + ghosts)
-    if (
-      this
-        ._lobby
-    ) {
+    if (this._lobby) {
       this._lobby.dispose();
-      this._lobby =
-        null;
+      this._lobby = null;
     }
-    if (
-      this
-        ._multiplayer ||
-      this
-        ._mpClient
-    )
-      this._teardownMultiplayer();
+    if (this._multiplayer || this._mpClient) this._teardownMultiplayer();
 
     // Clean up Story Mode (engine overlays + pre-game menu)
-    if (
-      this
-        ._story
-    ) {
+    if (this._story) {
       this._story.dispose();
-      this._story =
-        null;
+      this._story = null;
     }
-    if (
-      this
-        ._storyMenu
-    ) {
+    if (this._storyMenu) {
       this._storyMenu.dispose();
-      this._storyMenu =
-        null;
+      this._storyMenu = null;
     }
 
     // Clean up gameplay systems
-    if (
-      this
-        ._weapon
-    ) {
+    if (this._weapon) {
       this._weapon.dispose();
-      this._weapon =
-        null;
+      this._weapon = null;
     }
-    if (
-      this
-        ._onTakeContract
-    ) {
-      window.removeEventListener(
-        'velum2099:take-contract',
-        this
-          ._onTakeContract,
-      );
-      this._onTakeContract =
-        null;
+    if (this._onTakeContract) {
+      window.removeEventListener('velum2099:take-contract', this._onTakeContract);
+      this._onTakeContract = null;
     }
-    if (
-      this
-        ._mission
-    ) {
+    if (this._mission) {
       this._mission.dispose();
-      this._mission =
-        null;
+      this._mission = null;
     }
-    if (
-      this
-        ._gameHud
-    ) {
+    if (this._gameHud) {
       this._gameHud.dispose();
-      this._gameHud =
-        null;
+      this._gameHud = null;
     }
-    if (
-      this
-        ._minimap
-    ) {
+    if (this._minimap) {
       this._minimap.dispose();
-      this._minimap =
-        null;
+      this._minimap = null;
     }
-    if (
-      this
-        ._mobileControls
-    ) {
+    if (this._mobileControls) {
       this._mobileControls.dispose();
-      this._mobileControls =
-        null;
+      this._mobileControls = null;
     }
 
     // Dispose Three.js resources
-    if (
-      this
-        .scene
-    ) {
-      if (
-        typeof this
-          .scene
-          .releaseRenderer ===
-        'function'
-      )
-        this.scene.releaseRenderer();
-      else
-        this.scene
-          .getRenderer()
-          ?.dispose();
+    if (this.scene) {
+      if (typeof this.scene.releaseRenderer === 'function') this.scene.releaseRenderer();
+      else this.scene.getRenderer()?.dispose();
     }
 
     // Unbind vehicle keyboard listeners
-    if (
-      this
-        .vehicle
-    ) {
+    if (this.vehicle) {
       this.vehicle.unbindInput();
     }
 
     // Unbind terminal keyboard listeners
-    if (
-      this
-        .terminal
-    ) {
+    if (this.terminal) {
       this.terminal._unbindKeys();
     }
   }

@@ -5,13 +5,5 @@
  * importing them from the page component would pull the whole wallet UI into
  * the bundle every page loads.
  */
-export const WALLET_TABS =
-  [
-    'goals',
-    'earn',
-    'statement',
-    'community',
-    'gifts',
-  ] as const;
-export type WalletTab =
-  (typeof WALLET_TABS)[number];
+export const WALLET_TABS = ['goals', 'earn', 'statement', 'community', 'gifts'] as const;
+export type WalletTab = (typeof WALLET_TABS)[number];

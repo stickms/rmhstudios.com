@@ -202,8 +202,11 @@ async function main() {
     if (gotTrue && gotNull) break;
     const r = await gql(PROFILE_FLAG, { userId: real });
     const prof = r.body?.data?.getCycleTrackProfileByUserId;
-    const shape = r.body?.errors ? `errors:${JSON.stringify(r.body.errors.map((e: any) => e.extensions?.code ?? e.message))}` :
-      prof === null ? 'profile-null' : `md_phd=${JSON.stringify(prof?.md_phd)}`;
+    const shape = r.body?.errors
+      ? `errors:${JSON.stringify(r.body.errors.map((e: any) => e.extensions?.code ?? e.message))}`
+      : prof === null
+        ? 'profile-null'
+        : `md_phd=${JSON.stringify(prof?.md_phd)}`;
     shapes.set(shape, (shapes.get(shape) ?? 0) + 1);
     if (prof?.md_phd === true && !gotTrue) {
       save('profile-flag-true.json', r.body);

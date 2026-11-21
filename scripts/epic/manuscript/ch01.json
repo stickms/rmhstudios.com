@@ -6,14 +6,8 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": [
-      "桃花血色結三義",
-      "玄圭寒光照九爐"
-    ],
-    "en": [
-      "Peach blossoms, blood-red, bind three sworn souls",
-      "The dark jade gleams cold across the Nine Furnaces"
-    ]
+    "zh": ["桃花血色結三義", "玄圭寒光照九爐"],
+    "en": ["Peach blossoms, blood-red, bind three sworn souls", "The dark jade gleams cold across the Nine Furnaces"]
   },
   "passages": [
     {
@@ -102,10 +96,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "素華獨坐窗前夜，燈影搖搖字亦斜。",
-        "苑外歡聲傳義氣，苑中墨淚潤梅花。"
-      ],
+      "zh": ["素華獨坐窗前夜，燈影搖搖字亦斜。", "苑外歡聲傳義氣，苑中墨淚潤梅花。"],
       "en": [
         "Suhua sits alone before her window in the night; the lamp's shadow wavers, and her characters lean.",
         "Outside the garden, sounds of joy carry the breath of brotherhood; within, ink-tears moisten the plum blossoms."

@@ -81,7 +81,8 @@ function ResetPasswordPage() {
           <div className="space-y-3 text-center">
             <p role="status" className="text-sm text-site-text-muted">
               {t('reset-done', {
-                defaultValue: 'Your password is changed, and you are signed out on every device. Sign in with the new one.',
+                defaultValue:
+                  'Your password is changed, and you are signed out on every device. Sign in with the new one.',
               })}
             </p>
             <Button asChild variant="primary" size="lg" className="w-full">

@@ -1,45 +1,8 @@
 # Image Manifest — _Indonesia: A Comprehensive History_
 
-**Append-only.**
-One
-row
-per
-image
-downloaded
-into
-`assets/img/`.
-Source
-must
-be
-Wikimedia
-Commons
-with
-a
-verified
-**public-domain,
-CC0,
-CC-BY,
-or
-CC-BY-SA**
-license.
-This
-table
-feeds
-the
-back-matter
-**Image
-Credits
-&
-Licenses**
-appendix.
-The
-`filename`
-is
-what
-fragments
-reference
-as
-`src="img/<filename>"`.
+**Append-only.** One row per image downloaded into `assets/img/`. Source must be Wikimedia Commons with a verified
+**public-domain, CC0, CC-BY, or CC-BY-SA** license. This table feeds the back-matter **Image Credits & Licenses**
+appendix. The `filename` is what fragments reference as `src="img/<filename>"`.
 
 | filename                   | source URL                                                                      | creator      | license       | caption / used in                                                                             |
 | -------------------------- | ------------------------------------------------------------------------------- | ------------ | ------------- | --------------------------------------------------------------------------------------------- |

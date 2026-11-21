@@ -8,21 +8,12 @@ import {
   type ReactNode,
   type MutableRefObject,
 } from 'react';
-import {
-  useFrame,
-  useLoader,
-} from '@react-three/fiber';
+import { useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type * as THREE from 'three';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
-import {
-  FIGHTER_ASSET_DIR,
-  RIG_FILE,
-} from '@/lib/kowloon-knockout/render/fighter/clips';
-import {
-  chooseFighterView,
-  type FighterFailures,
-} from '@/lib/kowloon-knockout/render/fighter/fighterView';
+import { FIGHTER_ASSET_DIR, RIG_FILE } from '@/lib/kowloon-knockout/render/fighter/clips';
+import { chooseFighterView, type FighterFailures } from '@/lib/kowloon-knockout/render/fighter/fighterView';
 import { sanitizeFighterModelId } from '@/lib/kowloon-knockout/render/fighter/models';
 import { useModelAvailability } from '@/lib/kowloon-knockout/render/fighter/useFighterRoster';
 import FighterTrappings from './FighterTrappings';
@@ -31,10 +22,7 @@ import SkeletalFighter from './SkeletalFighter';
 import SourceFighter from './SourceFighter';
 import { clearSourceModel } from '@/lib/kowloon-knockout/render/fighter/sourceModels';
 
-type FramesRef =
-  MutableRefObject<
-    RenderFighter[]
-  >;
+type FramesRef = MutableRefObject<RenderFighter[]>;
 
 /** Reports a load failure upward. The first failure of a renderer is retried once (a
  *  transient network blip must not demote the fighter for the whole match); the
@@ -50,11 +38,10 @@ class FighterBoundary extends Component<
     attempt: number;
   }
 > {
-  state =
-    {
-      error: false,
-      attempt: 0,
-    };
+  state = {
+    error: false,
+    attempt: 0,
+  };
   static getDerivedStateFromError() {
     return {
       error: true,
@@ -66,54 +53,20 @@ class FighterBoundary extends Component<
       componentStack?: string;
     },
   ) {
-    console.warn(
-      '[Fighter] load failed:',
-      error,
-      info?.componentStack,
-    );
-    if (
-      this
-        .state
-        .attempt <
-      1
-    ) {
+    console.warn('[Fighter] load failed:', error, info?.componentStack);
+    if (this.state.attempt < 1) {
       this.props.onRetryReset?.();
-      this.setState(
-        (
-          s,
-        ) => ({
-          error: false,
-          attempt:
-            s.attempt +
-            1,
-        }),
-      );
+      this.setState((s) => ({
+        error: false,
+        attempt: s.attempt + 1,
+      }));
     } else {
       this.props.onFail();
     }
   }
   render() {
-    if (
-      this
-        .state
-        .error
-    )
-      return null;
-    return (
-      <Fragment
-        key={
-          this
-            .state
-            .attempt
-        }
-      >
-        {
-          this
-            .props
-            .children
-        }
-      </Fragment>
-    );
+    if (this.state.error) return null;
+    return <Fragment key={this.state.attempt}>{this.props.children}</Fragment>;
   }
 }
 
@@ -129,73 +82,23 @@ function LoadingPlaceholder({
   framesRef: FramesRef;
   showNameplate: boolean;
 }) {
-  const root =
-    useRef<THREE.Group>(
-      null,
-    );
-  const shadow =
-    useRef<THREE.Mesh>(
-      null,
-    );
-  const initial =
-    framesRef.current.find(
-      (
-        f,
-      ) =>
-        f.seat ===
-        seat,
-    );
-  useFrame(
-    () => {
-      const rf =
-        framesRef.current.find(
-          (
-            f,
-          ) =>
-            f.seat ===
-            seat,
-        );
-      const r =
-        root.current;
-      if (
-        !rf ||
-        !r
-      )
-        return;
-      r.position.x +=
-        (rf.x -
-          r
-            .position
-            .x) *
-        0.5;
-      r.position.z +=
-        (rf.z -
-          r
-            .position
-            .z) *
-        0.5;
-    },
-  );
+  const root = useRef<THREE.Group>(null);
+  const shadow = useRef<THREE.Mesh>(null);
+  const initial = framesRef.current.find((f) => f.seat === seat);
+  useFrame(() => {
+    const rf = framesRef.current.find((f) => f.seat === seat);
+    const r = root.current;
+    if (!rf || !r) return;
+    r.position.x += (rf.x - r.position.x) * 0.5;
+    r.position.z += (rf.z - r.position.z) * 0.5;
+  });
   return (
-    <group
-      ref={
-        root
-      }
-    >
+    <group ref={root}>
       <FighterTrappings
-        showNameplate={
-          showNameplate
-        }
-        plateColor={
-          initial?.isLocal
-            ? '#ffcc00'
-            : (initial?.accent ??
-              '#ffffff')
-        }
+        showNameplate={showNameplate}
+        plateColor={initial?.isLocal ? '#ffcc00' : (initial?.accent ?? '#ffffff')}
         plateLabel={`P${seat + 1}`}
-        shadowRef={
-          shadow
-        }
+        shadowRef={shadow}
       />
     </group>
   );
@@ -212,137 +115,49 @@ export default function Fighter({
   framesRef: FramesRef;
   showNameplate?: boolean;
 }) {
-  const modelId =
-    sanitizeFighterModelId(
-      framesRef.current.find(
-        (
-          f,
-        ) =>
-          f.seat ===
-          seat,
-      )
-        ?.modelId,
-    );
-  const [
-    failed,
-    setFailed,
-  ] =
-    useState<FighterFailures>(
-      {
-        source: false,
-        skeletal: false,
-      },
-    );
+  const modelId = sanitizeFighterModelId(framesRef.current.find((f) => f.seat === seat)?.modelId);
+  const [failed, setFailed] = useState<FighterFailures>({
+    source: false,
+    skeletal: false,
+  });
   // A different model gets a fresh chance.
   useEffect(() => {
-    setFailed(
-      {
-        source: false,
-        skeletal: false,
-      },
-    );
-  }, [
-    modelId,
-  ]);
+    setFailed({
+      source: false,
+      skeletal: false,
+    });
+  }, [modelId]);
 
   // A model R2 is known not to hold is skipped without a load attempt (no thrown error, no
   // console noise); while that is still being looked up, show the placeholder.
-  const availability =
-    useModelAvailability(
-      modelId,
-    );
-  const view =
-    chooseFighterView(
-      modelId,
-      availability ===
-        'no'
-        ? {
-            ...failed,
-            source: true,
-          }
-        : failed,
-    );
-  const placeholder =
-    (
-      <LoadingPlaceholder
-        seat={
-          seat
+  const availability = useModelAvailability(modelId);
+  const view = chooseFighterView(
+    modelId,
+    availability === 'no'
+      ? {
+          ...failed,
+          source: true,
         }
-        framesRef={
-          framesRef
-        }
-        showNameplate={
-          showNameplate
-        }
-      />
-    );
-  if (
-    view ===
-      'source' &&
-    availability ===
-      'unknown'
-  )
-    return placeholder;
+      : failed,
+  );
+  const placeholder = <LoadingPlaceholder seat={seat} framesRef={framesRef} showNameplate={showNameplate} />;
+  if (view === 'source' && availability === 'unknown') return placeholder;
 
-  if (
-    view ===
-    'stick'
-  )
-    return (
-      <StickFighter
-        seat={
-          seat
-        }
-        framesRef={
-          framesRef
-        }
-        showNameplate={
-          showNameplate
-        }
-      />
-    );
-  if (
-    view ===
-    'source'
-  ) {
+  if (view === 'stick') return <StickFighter seat={seat} framesRef={framesRef} showNameplate={showNameplate} />;
+  if (view === 'source') {
     return (
       <FighterBoundary
         key={`source-${modelId}`}
         onFail={() =>
-          setFailed(
-            (
-              f,
-            ) => ({
-              ...f,
-              source: true,
-            }),
-          )
+          setFailed((f) => ({
+            ...f,
+            source: true,
+          }))
         }
-        onRetryReset={() =>
-          clearSourceModel(
-            modelId,
-          )
-        }
+        onRetryReset={() => clearSourceModel(modelId)}
       >
-        <Suspense
-          fallback={
-            placeholder
-          }
-        >
-          <SourceFighter
-            seat={
-              seat
-            }
-            framesRef={
-              framesRef
-            }
-            modelId={
-              modelId
-            }
-            showNameplate={
-              showNameplate
-            }
-          />
+        <Suspense fallback={placeholder}>
+          <SourceFighter seat={seat} framesRef={framesRef} modelId={modelId} showNameplate={showNameplate} />
         </Suspense>
       </FighterBoundary>
     );
@@ -351,38 +166,17 @@ export default function Fighter({
     <FighterBoundary
       key="skeletal"
       onFail={() =>
-        setFailed(
-          (
-            f,
-          ) => ({
-            ...f,
-            skeletal: true,
-          }),
-        )
+        setFailed((f) => ({
+          ...f,
+          skeletal: true,
+        }))
       }
       onRetryReset={() => {
-        useLoader.clear(
-          GLTFLoader,
-          `${FIGHTER_ASSET_DIR}/${RIG_FILE}`,
-        );
+        useLoader.clear(GLTFLoader, `${FIGHTER_ASSET_DIR}/${RIG_FILE}`);
       }}
     >
-      <Suspense
-        fallback={
-          placeholder
-        }
-      >
-        <SkeletalFighter
-          seat={
-            seat
-          }
-          framesRef={
-            framesRef
-          }
-          showNameplate={
-            showNameplate
-          }
-        />
+      <Suspense fallback={placeholder}>
+        <SkeletalFighter seat={seat} framesRef={framesRef} showNameplate={showNameplate} />
       </Suspense>
     </FighterBoundary>
   );

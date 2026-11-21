@@ -62,9 +62,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
         nextOrder.current = null;
         toast.error(t('reorder-failed', { defaultValue: 'Could not save the new order' }));
         const rank = new Map(savedOrder.current.map((id, i) => [id, i]));
-        setCards((prev) =>
-          [...prev].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)),
-        );
+        setCards((prev) => [...prev].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)));
       }
     }
     saving.current = false;
@@ -233,11 +231,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
         </section>
 
         <section {...panel('settings')}>
-          <SettingsForm
-            deckId={deckId}
-            meta={meta}
-            onSaved={(next) => setMeta((m) => ({ ...m, ...next }))}
-          />
+          <SettingsForm deckId={deckId} meta={meta} onSaved={(next) => setMeta((m) => ({ ...m, ...next }))} />
         </section>
       </div>
     </PageLayout>
@@ -261,9 +255,7 @@ function SettingsForm({
   const [busy, setBusy] = useState(false);
 
   const dirty =
-    title.trim() !== meta.title ||
-    description.trim() !== (meta.description ?? '') ||
-    isPublic !== meta.isPublic;
+    title.trim() !== meta.title || description.trim() !== (meta.description ?? '') || isPublic !== meta.isPublic;
 
   async function save() {
     if (!title.trim() || busy) return;
@@ -295,9 +287,7 @@ function SettingsForm({
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`${uid}-description`}>
-          {t('deck-description', { defaultValue: 'Description' })}
-        </Label>
+        <Label htmlFor={`${uid}-description`}>{t('deck-description', { defaultValue: 'Description' })}</Label>
         <Textarea
           id={`${uid}-description`}
           dir="auto"

@@ -17,12 +17,7 @@
 
 export interface State {
   /** pointerId → the note that pointer is holding. */
-  pointers: Readonly<
-    Record<
-      number,
-      number
-    >
-  >;
+  pointers: Readonly<Record<number, number>>;
   /** Pointers pressed on the keyboard and not yet lifted or gone off it (they may slide onto keys). */
   down: readonly number[];
   /** Notes held by keyboard focus. */
@@ -90,209 +85,81 @@ export type Effect =
       midi: number;
     };
 
-export const initial: State =
-  {
-    pointers:
-      {},
-    down: [],
-    focus:
-      [],
-  };
+export const initial: State = {
+  pointers: {},
+  down: [],
+  focus: [],
+};
 
-const PLAY_KEYS =
-  new Set(
-    [
-      ' ',
-      'Enter',
-    ],
-  );
+const PLAY_KEYS = new Set([' ', 'Enter']);
 
 /** Every note held by anyone. */
-export function held(
-  s: State,
-): Set<number> {
-  const out =
-    new Set<number>(
-      s.focus,
-    );
-  for (const midi of Object.values(
-    s.pointers,
-  ))
-    out.add(
-      midi,
-    );
+export function held(s: State): Set<number> {
+  const out = new Set<number>(s.focus);
+  for (const midi of Object.values(s.pointers)) out.add(midi);
   return out;
 }
 
-function withPointer(
-  s: State,
-  pointer: number,
-  midi:
-    | number
-    | null,
-): State {
-  const pointers =
-    {
-      ...s.pointers,
-    };
-  if (
-    midi ===
-    null
-  )
-    delete pointers[
-      pointer
-    ];
-  else
-    pointers[
-      pointer
-    ] =
-      midi;
+function withPointer(s: State, pointer: number, midi: number | null): State {
+  const pointers = {
+    ...s.pointers,
+  };
+  if (midi === null) delete pointers[pointer];
+  else pointers[pointer] = midi;
   return {
     ...s,
     pointers,
   };
 }
 
-function next(
-  s: State,
-  e: Event,
-): State {
-  switch (
-    e.type
-  ) {
+function next(s: State, e: Event): State {
+  switch (e.type) {
     case 'pointer-down':
-      if (
-        !e.primary
-      )
-        return s;
+      if (!e.primary) return s;
       return {
-        ...withPointer(
-          s,
-          e.pointer,
-          e.midi,
-        ),
-        down: s.down.includes(
-          e.pointer,
-        )
-          ? s.down
-          : [
-              ...s.down,
-              e.pointer,
-            ],
+        ...withPointer(s, e.pointer, e.midi),
+        down: s.down.includes(e.pointer) ? s.down : [...s.down, e.pointer],
       };
     case 'pointer-enter':
       // A glissando: only a pointer pressed on the keyboard, and still pressed, plays.
-      if (
-        !e.pressed ||
-        !s.down.includes(
-          e.pointer,
-        ) ||
-        s
-          .pointers[
-          e
-            .pointer
-        ] ===
-          e.midi
-      )
-        return s;
-      return withPointer(
-        s,
-        e.pointer,
-        e.midi,
-      );
+      if (!e.pressed || !s.down.includes(e.pointer) || s.pointers[e.pointer] === e.midi) return s;
+      return withPointer(s, e.pointer, e.midi);
     case 'pointer-off':
-      return s
-        .pointers[
-        e
-          .pointer
-      ] ===
-        e.midi
-        ? withPointer(
-            s,
-            e.pointer,
-            null,
-          )
-        : s;
+      return s.pointers[e.pointer] === e.midi ? withPointer(s, e.pointer, null) : s;
     case 'pointer-lift':
     case 'pointer-exit':
-      return s.down.includes(
-        e.pointer,
-      )
+      return s.down.includes(e.pointer)
         ? {
             ...s,
-            down: s.down.filter(
-              (
-                p,
-              ) =>
-                p !==
-                e.pointer,
-            ),
+            down: s.down.filter((p) => p !== e.pointer),
           }
         : s;
     case 'key-down':
-      if (
-        !PLAY_KEYS.has(
-          e.key,
-        ) ||
-        e.repeat ||
-        s.focus.includes(
-          e.midi,
-        )
-      )
-        return s;
+      if (!PLAY_KEYS.has(e.key) || e.repeat || s.focus.includes(e.midi)) return s;
       return {
         ...s,
-        focus:
-          [
-            ...s.focus,
-            e.midi,
-          ],
+        focus: [...s.focus, e.midi],
       };
     case 'key-up':
       // Only the keys that press a note release it: a stray keyup must not let go of a held one.
-      if (
-        !PLAY_KEYS.has(
-          e.key,
-        )
-      )
-        return s;
-      return s.focus.includes(
-        e.midi,
-      )
+      if (!PLAY_KEYS.has(e.key)) return s;
+      return s.focus.includes(e.midi)
         ? {
             ...s,
-            focus:
-              s.focus.filter(
-                (
-                  m,
-                ) =>
-                  m !==
-                  e.midi,
-              ),
+            focus: s.focus.filter((m) => m !== e.midi),
           }
         : s;
     case 'blur':
-      return s.focus.includes(
-        e.midi,
-      )
+      return s.focus.includes(e.midi)
         ? {
             ...s,
-            focus:
-              s.focus.filter(
-                (
-                  m,
-                ) =>
-                  m !==
-                  e.midi,
-              ),
+            focus: s.focus.filter((m) => m !== e.midi),
           }
         : s;
     case 'release-all':
       return initial;
     default:
-      return unreachable(
-        e,
-      );
+      return unreachable(e);
   }
 }
 
@@ -303,93 +170,46 @@ export function step(
   state: State;
   effects: Effect[];
 } {
-  const state =
-    next(
-      s,
-      e,
-    );
-  if (
-    state ===
-    s
-  )
+  const state = next(s, e);
+  if (state === s)
     return {
       state,
-      effects:
-        [],
+      effects: [],
     };
-  const before =
-    held(
-      s,
-    );
-  const after =
-    held(
-      state,
-    );
-  const effects: Effect[] =
-    [];
+  const before = held(s);
+  const after = held(state);
+  const effects: Effect[] = [];
   for (const midi of before)
-    if (
-      !after.has(
+    if (!after.has(midi))
+      effects.push({
+        type: 'release',
         midi,
-      )
-    )
-      effects.push(
-        {
-          type: 'release',
-          midi,
-        },
-      );
+      });
   for (const midi of after)
-    if (
-      !before.has(
+    if (!before.has(midi))
+      effects.push({
+        type: 'press',
         midi,
-      )
-    )
-      effects.push(
-        {
-          type: 'press',
-          midi,
-        },
-      );
+      });
   return {
     state,
     effects,
   };
 }
 
-export function transition(
-  s: State,
-  e: Event,
-): State {
-  return step(
-    s,
-    e,
-  )
-    .state;
+export function transition(s: State, e: Event): State {
+  return step(s, e).state;
 }
 
-export function effects(
-  prev: State,
-  _next: State,
-  e: Event,
-): Effect[] {
-  return step(
-    prev,
-    e,
-  )
-    .effects;
+export function effects(prev: State, _next: State, e: Event): Effect[] {
+  return step(prev, e).effects;
 }
 
-export const keyHoldsMachine =
-  {
-    initial,
-    step,
-  };
+export const keyHoldsMachine = {
+  initial,
+  step,
+};
 
-function unreachable(
-  x: never,
-): never {
-  throw new Error(
-    `key-holds: unhandled ${JSON.stringify(x)}`,
-  );
+function unreachable(x: never): never {
+  throw new Error(`key-holds: unhandled ${JSON.stringify(x)}`);
 }

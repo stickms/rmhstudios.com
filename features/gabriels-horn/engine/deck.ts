@@ -10,26 +10,19 @@
  * `Math.random` itself, so a test can hand it a deterministic source.
  */
 
-import {
-  COLORS,
-  RANKS,
-  type Card,
-} from './constants';
+import { COLORS, RANKS, type Card } from './constants';
 
 /** A fresh, ordered deck. Ids are positional and stable for the life of a game. */
 export function buildDeck(): Card[] {
-  const deck: Card[] =
-    [];
+  const deck: Card[] = [];
   let n = 0;
   for (const color of COLORS) {
     for (const rank of RANKS) {
-      deck.push(
-        {
-          id: `c${n++}`,
-          color,
-          rank,
-        },
-      );
+      deck.push({
+        id: `c${n++}`,
+        color,
+        rank,
+      });
     }
   }
   return deck;
@@ -42,40 +35,10 @@ export function buildDeck(): Card[] {
  * in tests.
  */
 // eslint-disable-next-line no-restricted-syntax -- shuffles IN PLACE and returns the same array; the server handler relies on it
-export function shuffle(
-  cards: Card[],
-  random: () => number = Math.random,
-): Card[] {
-  for (
-    let i =
-      cards.length -
-      1;
-    i >
-    0;
-    i--
-  ) {
-    const j =
-      Math.floor(
-        random() *
-          (i +
-            1),
-      );
-    [
-      cards[
-        i
-      ],
-      cards[
-        j
-      ],
-    ] =
-      [
-        cards[
-          j
-        ],
-        cards[
-          i
-        ],
-      ];
+export function shuffle(cards: Card[], random: () => number = Math.random): Card[] {
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
   }
   return cards;
 }
@@ -85,39 +48,10 @@ export function shuffle(
  * sevens pulled to the front of their colour because they are the only rank
  * anyone is looking for.
  */
-export function sortHand(
-  cards: readonly Card[],
-): Card[] {
-  const colorIndex =
-    (
-      card: Card,
-    ): number =>
-      COLORS.indexOf(
-        card.color,
-      );
-  return [
-    ...cards,
-  ].sort(
-    (
-      a,
-      b,
-    ) => {
-      if (
-        a.color !==
-        b.color
-      )
-        return (
-          colorIndex(
-            a,
-          ) -
-          colorIndex(
-            b,
-          )
-        );
-      return (
-        a.rank -
-        b.rank
-      );
-    },
-  );
+export function sortHand(cards: readonly Card[]): Card[] {
+  const colorIndex = (card: Card): number => COLORS.indexOf(card.color);
+  return [...cards].sort((a, b) => {
+    if (a.color !== b.color) return colorIndex(a) - colorIndex(b);
+    return a.rank - b.rank;
+  });
 }

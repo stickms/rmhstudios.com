@@ -22,11 +22,7 @@
  * Client-safe: a profile badge needs to say "Season 7" without asking a server.
  */
 
-import {
-  SEASON_LENGTH_DAYS as CLOCK_SEASON_LENGTH_DAYS,
-  seasonBounds,
-  seasonNumberAt,
-} from '@/lib/seasons/clock';
+import { SEASON_LENGTH_DAYS as CLOCK_SEASON_LENGTH_DAYS, seasonBounds, seasonNumberAt } from '@/lib/seasons/clock';
 
 /*
  * ## One season clock (2026-11-19)
@@ -54,12 +50,7 @@ export const SEASON_LENGTH_DAYS = CLOCK_SEASON_LENGTH_DAYS;
  * Where season 1 began on the legacy ranked calendar. Fixed forever — moving
  * it renumbers seasons 1-6, including the ones printed on profiles.
  */
-export const SEASON_EPOCH =
-  Date.UTC(
-    2026,
-    0,
-    5,
-  ); // Monday 5 January 2026
+export const SEASON_EPOCH = Date.UTC(2026, 0, 5); // Monday 5 January 2026
 
 const DAY_MS = 86_400_000;
 const LEGACY_SEASON_MS = SEASON_LENGTH_DAYS * DAY_MS;
@@ -69,121 +60,43 @@ export const LAST_LEGACY_SEASON = 6;
 /** The shared-clock season that ranked season `LAST_LEGACY_SEASON + 1` is. */
 const FIRST_SHARED_CLOCK_SEASON = 4;
 /** Ranked season = shared-clock season + this, from the cutover on. */
-export const RANKED_SEASON_OFFSET =
-  LAST_LEGACY_SEASON +
-  1 -
-  FIRST_SHARED_CLOCK_SEASON;
+export const RANKED_SEASON_OFFSET = LAST_LEGACY_SEASON + 1 - FIRST_SHARED_CLOCK_SEASON;
 /** When ranked joins the shared clock: 2026-12-22T00:00:00Z. */
-export const RANKED_CUTOVER =
-  seasonBounds(
-    FIRST_SHARED_CLOCK_SEASON,
-  ).start;
+export const RANKED_CUTOVER = seasonBounds(FIRST_SHARED_CLOCK_SEASON).start;
 
 /** The season number containing `at`. 1-based; never less than 1. */
-export function seasonFor(
-  at: Date = new Date(),
-): number {
-  const ms =
-    at.getTime();
-  if (
-    ms >=
-    RANKED_CUTOVER
-  )
-    return (
-      seasonNumberAt(
-        ms,
-      ) +
-      RANKED_SEASON_OFFSET
-    );
-  const elapsed =
-    ms -
-    SEASON_EPOCH;
-  if (
-    elapsed <
-    0
-  )
-    return 1;
-  return Math.min(
-    LAST_LEGACY_SEASON,
-    Math.floor(
-      elapsed /
-        LEGACY_SEASON_MS,
-    ) +
-      1,
-  );
+export function seasonFor(at: Date = new Date()): number {
+  const ms = at.getTime();
+  if (ms >= RANKED_CUTOVER) return seasonNumberAt(ms) + RANKED_SEASON_OFFSET;
+  const elapsed = ms - SEASON_EPOCH;
+  if (elapsed < 0) return 1;
+  return Math.min(LAST_LEGACY_SEASON, Math.floor(elapsed / LEGACY_SEASON_MS) + 1);
 }
 
 /** When a season starts and ends (end exclusive). */
-export function seasonWindow(
-  season: number,
-): {
+export function seasonWindow(season: number): {
   start: Date;
   end: Date;
 } {
-  if (
-    season >
-    LAST_LEGACY_SEASON
-  ) {
-    const { start, end } =
-      seasonBounds(
-        season -
-          RANKED_SEASON_OFFSET,
-      );
+  if (season > LAST_LEGACY_SEASON) {
+    const { start, end } = seasonBounds(season - RANKED_SEASON_OFFSET);
     return {
-      start:
-        new Date(
-          start,
-        ),
-      end: new Date(
-        end,
-      ),
+      start: new Date(start),
+      end: new Date(end),
     };
   }
-  const start =
-    SEASON_EPOCH +
-    (season -
-      1) *
-      LEGACY_SEASON_MS;
+  const start = SEASON_EPOCH + (season - 1) * LEGACY_SEASON_MS;
   return {
-    start:
-      new Date(
-        start,
-      ),
-    end: new Date(
-      season ===
-        LAST_LEGACY_SEASON
-        ? RANKED_CUTOVER
-        : start +
-            LEGACY_SEASON_MS,
-    ),
+    start: new Date(start),
+    end: new Date(season === LAST_LEGACY_SEASON ? RANKED_CUTOVER : start + LEGACY_SEASON_MS),
   };
 }
 
 /** Fraction of the current season elapsed, 0–1. Drives the "ends in" chip. */
-export function seasonProgress(
-  at: Date = new Date(),
-): number {
-  const {
-    start,
-    end,
-  } =
-    seasonWindow(
-      seasonFor(
-        at,
-      ),
-    );
-  const span =
-    end.getTime() -
-    start.getTime();
-  return Math.min(
-    1,
-    Math.max(
-      0,
-      (at.getTime() -
-        start.getTime()) /
-        span,
-    ),
-  );
+export function seasonProgress(at: Date = new Date()): number {
+  const { start, end } = seasonWindow(seasonFor(at));
+  const span = end.getTime() - start.getTime();
+  return Math.min(1, Math.max(0, (at.getTime() - start.getTime()) / span));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -200,23 +113,13 @@ export const PLACEMENT_MATCHES = 5;
  * settled 32 the lifetime ladder already uses. Without this, placement is five
  * matches of moving 32 points from a fixed start, which finds nobody's level.
  */
-export function kFactorFor(
-  placementsLeft: number,
-): number {
-  return placementsLeft >
-    0
-    ? 64
-    : 32;
+export function kFactorFor(placementsLeft: number): number {
+  return placementsLeft > 0 ? 64 : 32;
 }
 
 /** Is this rating still provisional (and therefore hidden from the ladder)? */
-export function isProvisional(
-  placementsLeft: number,
-): boolean {
-  return (
-    placementsLeft >
-    0
-  );
+export function isProvisional(placementsLeft: number): boolean {
+  return placementsLeft > 0;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -256,59 +159,28 @@ export function applyDecay(
   rating: number;
   shed: number;
 } {
-  if (
-    rating <=
-    DECAY_FLOOR
-  )
+  if (rating <= DECAY_FLOOR)
     return {
       rating,
       shed: 0,
     };
-  const overdue =
-    Math.floor(
-      idleDays,
-    ) -
-    DECAY_AFTER_DAYS;
-  if (
-    overdue <=
-    0
-  )
+  const overdue = Math.floor(idleDays) - DECAY_AFTER_DAYS;
+  if (overdue <= 0)
     return {
       rating,
       shed: 0,
     };
-  const shed =
-    Math.min(
-      overdue *
-        DECAY_PER_DAY,
-      rating -
-        DECAY_FLOOR,
-    );
+  const shed = Math.min(overdue * DECAY_PER_DAY, rating - DECAY_FLOOR);
   return {
-    rating:
-      rating -
-      shed,
+    rating: rating - shed,
     shed,
   };
 }
 
 /** Whole days between two instants, floored at zero. */
-export function idleDays(
-  lastPlayedAt: Date | null,
-  now: Date = new Date(),
-): number {
-  if (
-    !lastPlayedAt
-  )
-    return 0;
-  return Math.max(
-    0,
-    Math.floor(
-      (now.getTime() -
-        lastPlayedAt.getTime()) /
-        DAY_MS,
-    ),
-  );
+export function idleDays(lastPlayedAt: Date | null, now: Date = new Date()): number {
+  if (!lastPlayedAt) return 0;
+  return Math.max(0, Math.floor((now.getTime() - lastPlayedAt.getTime()) / DAY_MS));
 }
 
 /**
@@ -326,35 +198,18 @@ export function displayRating(
   },
   now: Date = new Date(),
 ): {
-  rating:
-    | number
-    | null;
+  rating: number | null;
   shed: number;
   provisional: boolean;
 } {
-  if (
-    isProvisional(
-      row.placementsLeft,
-    )
-  ) {
+  if (isProvisional(row.placementsLeft)) {
     return {
-      rating:
-        null,
+      rating: null,
       shed: 0,
       provisional: true,
     };
   }
-  const {
-    rating,
-    shed,
-  } =
-    applyDecay(
-      row.rating,
-      idleDays(
-        row.lastPlayedAt,
-        now,
-      ),
-    );
+  const { rating, shed } = applyDecay(row.rating, idleDays(row.lastPlayedAt, now));
   return {
     rating,
     shed,

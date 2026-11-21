@@ -114,11 +114,10 @@ export type Effect =
       type: 'close';
     };
 
-export const initial: Rest =
-  {
-    kind: 'intro',
-    seq: 0,
-  };
+export const initial: Rest = {
+  kind: 'intro',
+  seq: 0,
+};
 
 const LIMIT_MS = 500;
 
@@ -129,272 +128,153 @@ export function step(
   state: State;
   effects: Effect[];
 } {
-  const same =
-    {
-      state:
-        s,
-      effects:
-        [] as Effect[],
-    };
-  switch (
-    e.type
-  ) {
+  const same = {
+    state: s,
+    effects: [] as Effect[],
+  };
+  switch (e.type) {
     case 'start': {
-      if (
-        s.kind !==
-          'intro' &&
-        s.kind !==
-          'done' &&
-        s.kind !==
-          'retry'
-      )
-        return same;
-      const token =
-        s.seq +
-        1;
+      if (s.kind !== 'intro' && s.kind !== 'done' && s.kind !== 'retry') return same;
+      const token = s.seq + 1;
       return {
-        state:
+        state: {
+          kind: 'preparing',
+          seq: token,
+          token,
+          shown: s,
+        },
+        effects: [
           {
-            kind: 'preparing',
-            seq: token,
+            type: 'prepare',
             token,
-            shown:
-              s,
           },
-        effects:
-          [
-            {
-              type: 'prepare',
-              token,
-            },
-          ],
+        ],
       };
     }
     case 'prepared':
-      if (
-        s.kind !==
-          'preparing' ||
-        s.token !==
-          e.token
-      )
-        return same;
+      if (s.kind !== 'preparing' || s.token !== e.token) return same;
       return e.ok
         ? {
-            state:
-              s,
-            effects:
-              [
-                {
-                  type: 'schedule',
-                  token:
-                    s.token,
-                },
-              ],
+            state: s,
+            effects: [
+              {
+                type: 'schedule',
+                token: s.token,
+              },
+            ],
           }
         : {
-            state:
-              {
-                kind: 'no-audio',
-                seq: s.seq,
-              },
-            effects:
-              [],
+            state: {
+              kind: 'no-audio',
+              seq: s.seq,
+            },
+            effects: [],
           };
     case 'scheduled':
-      if (
-        s.kind !==
-          'preparing' ||
-        s.token !==
-          e.token
-      )
-        return same;
+      if (s.kind !== 'preparing' || s.token !== e.token) return same;
       return {
-        state:
-          {
-            kind: 'running',
-            seq: s.seq,
-            token:
-              s.token,
-            clicks:
-              e.clicks,
-            responses:
-              [],
-            beat: -1,
-          },
-        effects:
-          [],
+        state: {
+          kind: 'running',
+          seq: s.seq,
+          token: s.token,
+          clicks: e.clicks,
+          responses: [],
+          beat: -1,
+        },
+        effects: [],
       };
     case 'beat':
-      if (
-        s.kind !==
-          'running' ||
-        s.token !==
-          e.token
-      )
-        return same;
+      if (s.kind !== 'running' || s.token !== e.token) return same;
       return {
-        state:
-          {
-            ...s,
-            beat: e.i,
-          },
-        effects:
-          [],
+        state: {
+          ...s,
+          beat: e.i,
+        },
+        effects: [],
       };
     case 'tap':
-      if (
-        s.kind !==
-        'running'
-      )
-        return same;
+      if (s.kind !== 'running') return same;
       return {
-        state:
-          {
-            ...s,
-            responses:
-              [
-                ...s.responses,
-                e.time,
-              ],
-          },
-        effects:
-          [],
+        state: {
+          ...s,
+          responses: [...s.responses, e.time],
+        },
+        effects: [],
       };
     case 'finished': {
-      if (
-        s.kind !==
-          'running' ||
-        s.token !==
-          e.token
-      )
-        return same;
-      const ms =
-        medianOffset(
-          [
-            ...s.clicks,
-          ],
-          [
-            ...s.responses,
-          ],
-        );
-      if (
-        ms ===
-        null
-      )
+      if (s.kind !== 'running' || s.token !== e.token) return same;
+      const ms = medianOffset([...s.clicks], [...s.responses]);
+      if (ms === null)
         return {
-          state:
-            {
-              kind: 'retry',
-              seq: s.seq,
-              beat: s.beat,
-            },
-          effects:
-            [],
-        };
-      return {
-        state:
-          {
-            kind: 'done',
+          state: {
+            kind: 'retry',
             seq: s.seq,
-            ms: Math.max(
-              -LIMIT_MS,
-              Math.min(
-                LIMIT_MS,
-                ms,
-              ),
-            ),
             beat: s.beat,
           },
-        effects:
-          [
-            {
-              type: 'save',
-              ms,
-            },
-          ],
+          effects: [],
+        };
+      return {
+        state: {
+          kind: 'done',
+          seq: s.seq,
+          ms: Math.max(-LIMIT_MS, Math.min(LIMIT_MS, ms)),
+          beat: s.beat,
+        },
+        effects: [
+          {
+            type: 'save',
+            ms,
+          },
+        ],
       };
     }
     case 'skip':
     case 'dispose': {
-      const effects: Effect[] =
-        [
-          {
-            type: 'cancel-audio',
-          },
-        ];
-      if (
-        e.type ===
-        'skip'
-      )
-        effects.push(
-          {
-            type: 'close',
-          },
-        );
+      const effects: Effect[] = [
+        {
+          type: 'cancel-audio',
+        },
+      ];
+      if (e.type === 'skip')
+        effects.push({
+          type: 'close',
+        });
       return {
-        state:
-          {
-            kind: 'intro',
-            seq: s.seq,
-          },
+        state: {
+          kind: 'intro',
+          seq: s.seq,
+        },
         effects,
       };
     }
     default:
-      return unreachable(
-        e,
-      );
+      return unreachable(e);
   }
 }
 
 /** The state a screen shows: a run being prepared still shows what was there before. */
-export function shown(
-  s: State,
-): Exclude<
+export function shown(s: State): Exclude<
   State,
   {
     kind: 'preparing';
   }
 > {
-  return s.kind ===
-    'preparing'
-    ? s.shown
-    : s;
+  return s.kind === 'preparing' ? s.shown : s;
 }
 
-export function transition(
-  s: State,
-  e: Event,
-): State {
-  return step(
-    s,
-    e,
-  )
-    .state;
+export function transition(s: State, e: Event): State {
+  return step(s, e).state;
 }
 
-export function effects(
-  prev: State,
-  _next: State,
-  e: Event,
-): Effect[] {
-  return step(
-    prev,
-    e,
-  )
-    .effects;
+export function effects(prev: State, _next: State, e: Event): Effect[] {
+  return step(prev, e).effects;
 }
 
-export const calibrationMachine =
-  {
-    initial,
-    step,
-  };
+export const calibrationMachine = {
+  initial,
+  step,
+};
 
-function unreachable(
-  x: never,
-): never {
-  throw new Error(
-    `calibration: unhandled ${JSON.stringify(x)}`,
-  );
+function unreachable(x: never): never {
+  throw new Error(`calibration: unhandled ${JSON.stringify(x)}`);
 }

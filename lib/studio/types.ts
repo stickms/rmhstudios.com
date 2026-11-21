@@ -4,15 +4,9 @@ export interface Project {
   id: string;
   name: string;
   bpm: number;
-  timeSignature: [
-    number,
-    number,
-  ];
+  timeSignature: [number, number];
   tracks: Track[];
-  clips: Record<
-    string,
-    Clip
-  >;
+  clips: Record<string, Clip>;
   patterns: Pattern[];
   masterVolume: number;
   createdAt: number;
@@ -27,10 +21,7 @@ export interface ProjectMeta {
 
 // ─── Track Types ────────────────────────────────────────────────────────────
 
-export type TrackType =
-  | 'audio'
-  | 'midi'
-  | 'automation';
+export type TrackType = 'audio' | 'midi' | 'automation';
 
 export interface Send {
   busId: string;
@@ -55,11 +46,7 @@ export interface Track {
 
 // ─── Clip Types ─────────────────────────────────────────────────────────────
 
-export type ClipType =
-  | 'audio'
-  | 'midi'
-  | 'automation'
-  | 'pattern';
+export type ClipType = 'audio' | 'midi' | 'automation' | 'pattern';
 
 export interface BaseClip {
   id: string;
@@ -95,11 +82,7 @@ export interface PatternClipData extends BaseClip {
   patternId: string;
 }
 
-export type Clip =
-  | AudioClipData
-  | MidiClipData
-  | AutomationClipData
-  | PatternClipData;
+export type Clip = AudioClipData | MidiClipData | AutomationClipData | PatternClipData;
 
 // ─── MIDI Types ─────────────────────────────────────────────────────────────
 
@@ -114,10 +97,7 @@ export interface MidiNote {
 export interface AutomationPoint {
   beat: number;
   value: number; // 0–1 normalized
-  curve:
-    | 'linear'
-    | 'exponential'
-    | 'step';
+  curve: 'linear' | 'exponential' | 'step';
 }
 
 // ─── Pattern Types ──────────────────────────────────────────────────────────
@@ -143,9 +123,7 @@ export interface Pattern {
 
 // ─── Plugin Types ───────────────────────────────────────────────────────────
 
-export type PluginType =
-  | 'instrument'
-  | 'effect';
+export type PluginType = 'instrument' | 'effect';
 
 export interface PluginParam {
   id: string;
@@ -160,23 +138,15 @@ export interface PluginParam {
 export interface PluginPreset {
   id: string;
   name: string;
-  params: Record<
-    string,
-    number
-  >;
+  params: Record<string, number>;
 }
 
 export interface PluginInstance {
   id: string;
   pluginId: string; // e.g., 'rmh-synth', 'studio-reverb'
   type: PluginType;
-  params: Record<
-    string,
-    number
-  >;
-  preset:
-    | string
-    | null;
+  params: Record<string, number>;
+  preset: string | null;
   bypassed: boolean;
 }
 
@@ -186,10 +156,7 @@ export interface PluginDescriptor {
   type: PluginType;
   category: string;
   description: string;
-  defaultPreset: Record<
-    string,
-    number
-  >;
+  defaultPreset: Record<string, number>;
   params: PluginParam[];
   presets: PluginPreset[];
 }
@@ -211,14 +178,7 @@ export interface SamplePack {
   id: string;
   name: string;
   description: string;
-  category:
-    | 'drums'
-    | 'bass'
-    | 'keys'
-    | 'fx'
-    | 'loops'
-    | 'ir'
-    | 'misc';
+  category: 'drums' | 'bass' | 'keys' | 'fx' | 'loops' | 'ir' | 'misc';
   samples: SamplePackEntry[];
   license: string;
   source: string;
@@ -232,17 +192,8 @@ export interface SamplePackEntry {
 
 // ─── UI State Types ─────────────────────────────────────────────────────────
 
-export type ViewMode =
-  | 'arrangement'
-  | 'pianoRoll'
-  | 'mixer'
-  | 'pattern';
-export type ToolMode =
-  | 'select'
-  | 'draw'
-  | 'erase'
-  | 'slice'
-  | 'mute';
+export type ViewMode = 'arrangement' | 'pianoRoll' | 'mixer' | 'pattern';
+export type ToolMode = 'select' | 'draw' | 'erase' | 'slice' | 'mute';
 
 // ─── Keybind Types ──────────────────────────────────────────────────────────
 
@@ -255,24 +206,15 @@ export interface KeybindAction {
   allowInTypingKeyboard: boolean;
 }
 
-export type KeybindMap =
-  Record<
-    string,
-    string[]
-  >;
+export type KeybindMap = Record<string, string[]>;
 
 // ─── Settings ───────────────────────────────────────────────────────────────
 
 export interface StudioSettings {
-  audioDeviceId:
-    | string
-    | null;
+  audioDeviceId: string | null;
   bufferSize: number;
   defaultBpm: number;
-  defaultTimeSignature: [
-    number,
-    number,
-  ];
+  defaultTimeSignature: [number, number];
   recentProjects: ProjectMeta[];
   keybindOverrides: KeybindMap;
   typingKeyboardVelocity: number; // 0–127

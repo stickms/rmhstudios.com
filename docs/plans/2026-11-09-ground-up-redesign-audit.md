@@ -1,333 +1,43 @@
 # Ground-up redesign audit — rmhstudios.com (2026-11-09)
 
-> **What
-> this
-> is.**
-> A
-> whole-platform
-> audit
-> written
-> as
-> a
-> _redesign
-> brief_:
-> if
-> the
-> site
-> were
-> rebuilt
-> and
-> refactored
-> from
-> the
-> ground
-> up,
-> starting
-> from
-> how
-> it
-> is
-> structured
-> **today**,
-> what
-> would
-> change,
-> in
-> what
-> order,
-> and
-> why.
-> It
-> is
-> ranked
-> by
-> gain
-> (performance,
-> appearance,
-> code
-> structure,
-> best
-> practice)
-> and
-> every
-> item
-> carries
-> evidence
-> from
-> the
-> tree,
-> a
-> target
-> shape,
-> implementation
-> steps
-> and
-> a
-> code
-> stub.
+> **What this is.** A whole-platform audit written as a _redesign brief_: if the site were rebuilt and refactored from
+> the ground up, starting from how it is structured **today**, what would change, in what order, and why. It is ranked
+> by gain (performance, appearance, code structure, best practice) and every item carries evidence from the tree, a
+> target shape, implementation steps and a code stub.
 >
-> **Who
-> it
-> is
-> for.**
-> Humans
-> planning
-> the
-> work,
-> and
-> coding
-> agents
-> executing
-> it.
-> It
-> is
-> deliberately
-> LLM-friendly:
-> every
-> item
-> has
-> a
-> stable
-> ID
-> (`A1`,
-> `B3`,
-> …),
-> the
-> same
-> fixed
-> fields,
-> explicit
-> file
-> paths,
-> and
-> a
-> "done
-> when"
-> that
-> a
-> script
-> can
-> check.
-> An
-> agent
-> should
-> be
-> able
-> to
-> take
-> one
-> item
-> ID
-> and
-> run
-> with
-> it.
+> **Who it is for.** Humans planning the work, and coding agents executing it. It is deliberately LLM-friendly: every
+> item has a stable ID (`A1`, `B3`, …), the same fixed fields, explicit file paths, and a "done when" that a script can
+> check. An agent should be able to take one item ID and run with it.
 >
-> **Status.**
-> Approved
-> by
-> the
-> owner
-> on
-> 2026-11-09
-> except
-> D1
-> (see
-> [§1.7](#17-owner-decisions-2026-11-09));
-> being
-> implemented
-> in
-> order
-> of
-> Part
-> G.
-> Owner
-> decisions
-> recorded
-> in
-> `CLAUDE.md`
-> (Plasmatic
-> Jelly
-> identity,
-> no
-> eyebrows,
-> the
-> phone
-> top
-> bar,
-> the
-> accepted
-> CSS-first
-> jelly
-> trade-offs)
-> are
-> treated
-> as
-> **constraints**,
-> not
-> targets
-> for
-> change.
-> The
-> July
-> rewrite
-> decision
-> to
-> **keep
-> the
-> stack**
-> (`docs/full-rewrite-design-2026-07-18.md`
-> §11)
-> is
-> upheld.
-> This
-> is
-> a
-> re-architecture
-> _inside_
-> TanStack
-> Start +
-> React
-> 19 +
-> Prisma,
-> not
-> a
-> framework
-> migration.
+> **Status.** Approved by the owner on 2026-11-09 except D1 (see [§1.7](#17-owner-decisions-2026-11-09)); being
+> implemented in order of Part G. Owner decisions recorded in `CLAUDE.md` (Plasmatic Jelly identity, no eyebrows, the
+> phone top bar, the accepted CSS-first jelly trade-offs) are treated as **constraints**, not targets for change. The
+> July rewrite decision to **keep the stack** (`docs/full-rewrite-design-2026-07-18.md` §11) is upheld. This is a
+> re-architecture _inside_ TanStack Start + React 19 + Prisma, not a framework migration.
 
 ---
 
 ## How to read an item
 
-Every
-recommendation
-uses
-this
-schema
-so
-it
-can
-be
-parsed
-mechanically:
+Every recommendation uses this schema so it can be parsed mechanically:
 
 ```yaml
 id: A1 # stable; reference it in commits/PRs ("refs redesign-audit A1")
-title:
-  One-line
-  name
-gain:
-  perf
-  |
-  appearance
-  |
-  structure
-  |
-  practice # primary axis (others listed after)
-impact:
-  S
-  |
-  M
-  |
-  L
-  |
-  XL # size of the win if fully done
-effort:
-  S
-  |
-  M
-  |
-  L
-  |
-  XL # S ≈ a day, M ≈ a week, L ≈ a month, XL ≈ a quarter (one engineer + agents)
-risk:
-  low
-  |
-  med
-  |
-  high
-depends:
-  [
-    ids,
-  ] # must land first
-evidence:
-  facts
-  from
-  the
-  tree,
-  with
-  paths
-  and
-  counts
-target:
-  what
-  "after"
-  looks
-  like
-steps:
-  ordered,
-  each
-  independently
-  shippable
-stub:
-  code
-  sketch
-  (illustrative
-  —
-  adapt
-  names
-  to
-  the
-  code
-  you
-  find)
-done-when:
-  a
-  check
-  that
-  is
-  true
-  only
-  when
-  finished
-  (prefer
-  a
-  command)
+title: One-line name
+gain: perf | appearance | structure | practice # primary axis (others listed after)
+impact: S | M | L | XL # size of the win if fully done
+effort: S | M | L | XL # S ≈ a day, M ≈ a week, L ≈ a month, XL ≈ a quarter (one engineer + agents)
+risk: low | med | high
+depends: [ids] # must land first
+evidence: facts from the tree, with paths and counts
+target: what "after" looks like
+steps: ordered, each independently shippable
+stub: code sketch (illustrative — adapt names to the code you find)
+done-when: a check that is true only when finished (prefer a command)
 ```
 
-Numbers
-marked
-`≈`
-come
-from
-regex
-scans
-and
-can
-be
-off
-by
-a
-few
-percent.
-"Unverified"
-means
-the
-repo
-cannot
-show
-it
-(production
-host
-state,
-live
-config)
-and
-someone
-must
-check
-by
-hand.
+Numbers marked `≈` come from regex scans and can be off by a few percent. "Unverified" means the repo cannot show it
+(production host state, live config) and someone must check by hand.
 
 ---
 
@@ -353,111 +63,15 @@ hand.
 
 ## 0. Executive summary: the 15 biggest gains
 
-The
-platform
-works.
-It
-is
-fast
-where
-it
-has
-been
-measured,
-well
-defended,
-and
-guarded
-by
-a
-lot
-of
-tests.
-Its
-problem
-is
-**shape,
-not
-quality**.
-Six
-things
-grew
-by
-accretion
-and
-now
-cost
-more
-than
-they
-return:
+The platform works. It is fast where it has been measured, well defended, and guarded by a lot of tests. Its problem is
+**shape, not quality**. Six things grew by accretion and now cost more than they return:
 
-1. One
-   route
-   tree
-   holds
-   a
-   social
-   network,
-   18
-   games
-   and
-   12
-   apps.
-2. Every
-   feature
-   is
-   scattered
-   across
-   four
-   to
-   six
-   root
-   directories.
-3. There
-   are
-   two
-   parallel
-   token
-   contracts
-   plus
-   about
-   49
-   exempt
-   visual
-   languages.
-4. Client
-   and
-   server
-   talk
-   through
-   840
-   raw
-   `fetch('/api…')`
-   strings.
-5. Two
-   languages
-   share
-   one
-   schema,
-   kept
-   in
-   step
-   by
-   hand-mirrored
-   SQL.
-6. Consistency
-   is
-   enforced
-   by
-   about
-   77
-   source-scanning
-   tests
-   instead
-   of
-   by
-   structure.
+1. One route tree holds a social network, 18 games and 12 apps.
+2. Every feature is scattered across four to six root directories.
+3. There are two parallel token contracts plus about 49 exempt visual languages.
+4. Client and server talk through 840 raw `fetch('/api…')` strings.
+5. Two languages share one schema, kept in step by hand-mirrored SQL.
+6. Consistency is enforced by about 77 source-scanning tests instead of by structure.
 
 | Rank | ID                                                                             | Gain                                                                                                                    | Primary axis           | Impact | Effort |
 | ---: | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ---------------------- | :----: | :----: |
@@ -477,77 +91,16 @@ return:
 |   14 | [C3](#c3--modular-prisma-schema-and-a-thinner-user)                            | Modular Prisma schema: 511 models / 13.3k lines in one file, a 614-line `User`, 32 redundant indexes                    | structure/perf         |   M    |   M    |
 |   15 | [F6](#f6--get-binary-weight-out-of-git)                                        | Get binary weight out of git: 583 MB pack; `docs/indonesia-history` 232 MB, `public/` 256 MB, `data/balatro` 96 MB      | practice               |   M    |   S    |
 
-**If
-you
-do
-only
-three
-things:**
-B3
-(a
-week,
-immediate
-perf),
-D1
-(removes
-a
-total-loss
-risk),
-and
-the
-first
-slice
-of
-A1 +
-B1
-together
-(move
-one
-self-contained
-game,
-say
-Balatro,
-into
-`features/balatro`
-as
-its
-own
-island).
-That
-slice
-proves
-the
-target
-architecture
-on
-real
-code
-before
-anyone
-commits
-to
-the
-whole
-migration.
+**If you do only three things:** B3 (a week, immediate perf), D1 (removes a total-loss risk), and the first slice of
+A1 + B1 together (move one self-contained game, say Balatro, into `features/balatro` as its own island). That slice
+proves the target architecture on real code before anyone commits to the whole migration.
 
 ---
 
 ## 1. Baseline: the platform in numbers
 
-Snapshot
-at
-commit
-`c9c721c0`,
-refreshed
-against
-`d971bf46`
-(main,
-2026-11-09;
-see
-[§1.6](#16-changes-on-main-since-the-first-snapshot)).
-Re-run
-[Appendix 2](#appendix-2--regenerate-every-metric)
-to
+Snapshot at commit `c9c721c0`, refreshed against `d971bf46` (main, 2026-11-09; see
+[§1.6](#16-changes-on-main-since-the-first-snapshot)). Re-run [Appendix 2](#appendix-2--regenerate-every-metric) to
 refresh.
 
 ### 1.1 Size
@@ -632,200 +185,27 @@ refresh.
 
 ### 1.6 Changes on main since the first snapshot
 
-Between
-`c9c721c0`
-and
-`d971bf46`
-(7
-merges,
-140
-files,
-+16k
-lines):
+Between `c9c721c0` and `d971bf46` (7 merges, 140 files, +16k lines):
 
-- **RMH
-  Music
-  learn
-  mode**
-  (#1525–#1527):
-  about
-  20
-  new
-  components
-  and
-  state
-  machines
-  under
-  `components/rmhmusic/learn/`
-  and
-  `lib/rmhmusic/learn/`,
-  plus
-  a
-  root-level
-  `RMHMUSIC_ROADMAP.md`.
-  This
-  adds
-  34
-  test
-  files
-  (1,037
-  →
-  1,071)
-  and
-  8
-  more
-  `'use client'`
-  files
-  (1,528
-  →
-  1,536).
-  It
-  changes
-  no
-  conclusion
-  here.
-  The
-  root-level
-  roadmap
-  is
-  one
-  more
-  doc
-  outside
-  `docs/`
-  (F4).
-- **Jobs
-  registration
-  is
-  table-driven**
-  (#1522,
-  `server/jobs/registry.ts`):
-  registrations
-  are
-  isolated,
-  cron
-  polling
-  is
-  slower,
-  sweeps
-  are
-  staggered
-  and
-  SDKs
-  are
-  lazy.
-  This
-  is
-  the
-  seam
-  that
-  D4's
-  `defineJob`
-  registry
-  builds
-  on.
-  D4
-  now
-  extends
-  `registry.ts`
-  rather
-  than
-  replacing
-  it.
-- **Deploy
-  resilience**
-  (#1521,
-  #1523):
-  the
-  jobs
-  container
-  has
-  more
-  headroom,
-  a
-  heap
-  cap,
-  a
-  longer
-  stop
-  grace
-  and
-  a
-  boot
-  retry,
-  so
-  a
-  single
-  worker
-  restart
-  no
-  longer
-  rolls
-  back
-  a
-  deploy.
-  D5's
-  "health-gated
-  rollout
-  for
-  every
-  service"
-  still
-  stands;
-  this
-  narrows
-  its
-  most
-  frequent
-  failure.
-- **Globe**
-  (#1524):
-  the
-  refracted
-  picture
-  is
-  placed
-  once
-  per
-  display
-  frame
-  while
-  scrolling.
-  B3's
-  "poster
-  until
-  first
-  interaction"
-  for
-  the
-  docked
-  globe
-  is
-  unaffected.
+- **RMH Music learn mode** (#1525–#1527): about 20 new components and state machines under `components/rmhmusic/learn/`
+  and `lib/rmhmusic/learn/`, plus a root-level `RMHMUSIC_ROADMAP.md`. This adds 34 test files (1,037 → 1,071) and 8 more
+  `'use client'` files (1,528 → 1,536). It changes no conclusion here. The root-level roadmap is one more doc outside
+  `docs/` (F4).
+- **Jobs registration is table-driven** (#1522, `server/jobs/registry.ts`): registrations are isolated, cron polling is
+  slower, sweeps are staggered and SDKs are lazy. This is the seam that D4's `defineJob` registry builds on. D4 now
+  extends `registry.ts` rather than replacing it.
+- **Deploy resilience** (#1521, #1523): the jobs container has more headroom, a heap cap, a longer stop grace and a boot
+  retry, so a single worker restart no longer rolls back a deploy. D5's "health-gated rollout for every service" still
+  stands; this narrows its most frequent failure.
+- **Globe** (#1524): the refracted picture is placed once per display frame while scrolling. B3's "poster until first
+  interaction" for the docked globe is unaffected.
 
-Every
-other
-headline
-number
-(routes,
-API
-files,
-models,
-raw
-fetches,
-`routeTree.gen.ts`,
-CSS,
-namespaces,
-workflows)
-is
+Every other headline number (routes, API files, models, raw fetches, `routeTree.gen.ts`, CSS, namespaces, workflows) is
 unchanged.
 
 ### 1.7 Owner decisions (2026-11-09)
 
-The
-owner
-answered
-[Appendix 3](#appendix-3--open-questions-for-the-owner):
+The owner answered [Appendix 3](#appendix-3--open-questions-for-the-owner):
 
 | Question                          | Decision                                                    | Effect on items                                                                                                                                                                                             |
 | --------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -840,297 +220,31 @@ answered
 
 ## 2. Diagnosis: why it got this way
 
-Understanding
-the
-causes
-matters
-because
-a
-redesign
-that
-only
-treats
-symptoms
-grows
-them
-back.
+Understanding the causes matters because a redesign that only treats symptoms grows them back.
 
-1. **One
-   deployable,
-   many
-   products.**
-   A
-   social
-   network,
-   18
-   games,
-   12
-   apps,
-   a
-   newsroom
-   and
-   a
-   developer
-   API
-   share
-   one
-   `package.json`
-   (167
-   deps),
-   one
-   Vite
-   graph
-   (8
-   GB
-   heap
-   to
-   build),
-   one
-   route
-   tree
-   and
-   one
-   CSS
-   manifest.
-   Every
-   new
-   game
-   adds
-   weight
-   to
-   every
-   other
-   page:
-   its
-   `head()`
-   lands
-   in
-   the
-   entry,
-   its
-   directory
-   gets
-   an
-   `@source not`
-   line,
-   and
-   its
-   route
-   gets
-   a
-   `THEME_EXCLUDED_ROUTES`
-   entry.
-   The
-   entry
-   budget
-   history
-   is
-   a
-   list
-   of
-   games.
+1. **One deployable, many products.** A social network, 18 games, 12 apps, a newsroom and a developer API share one
+   `package.json` (167 deps), one Vite graph (8 GB heap to build), one route tree and one CSS manifest. Every new game
+   adds weight to every other page: its `head()` lands in the entry, its directory gets an `@source not` line, and its
+   route gets a `THEME_EXCLUDED_ROUTES` entry. The entry budget history is a list of games.
 
-2. **Layer-first
-   folders.**
-   Code
-   is
-   organised
-   by
-   technical
-   layer
-   (`lib/`,
-   `components/`,
-   `app/routes/`,
-   `app/routes/api/`,
-   `server/socket-server/handlers/`),
-   so
-   one
-   feature
-   is
-   spread
-   across
-   four
-   to
-   six
-   roots.
-   Nobody
-   owns
-   a
-   feature
-   as
-   a
-   unit,
-   so
-   sharing
-   happens
-   by
-   copying:
-   40
-   `clamp`s,
-   8
-   `mulberry32`s,
-   3
-   identical
-   `BanListModal`s.
+2. **Layer-first folders.** Code is organised by technical layer (`lib/`, `components/`, `app/routes/`,
+   `app/routes/api/`, `server/socket-server/handlers/`), so one feature is spread across four to six roots. Nobody owns
+   a feature as a unit, so sharing happens by copying: 40 `clamp`s, 8 `mulberry32`s, 3 identical `BanListModal`s.
 
-3. **Conventions
-   enforced
-   by
-   scanning,
-   not
-   by
-   construction.**
-   The
-   design
-   language
-   is
-   a
-   set
-   of
-   rules
-   about
-   strings
-   in
-   source
-   files,
-   so
-   it
-   is
-   enforced
-   by
-   tests
-   that
-   read
-   source
-   files:
-   77
-   gate
-   tests,
-   `design-consistency.test.ts`
-   at
-   1,111
-   lines,
-   and
-   a
-   590-line
-   bash
-   pre-scan
-   that
-   duplicates
-   them.
-   This
-   works,
-   but
-   it
-   is
-   the
-   most
-   expensive
-   way
-   to
-   get
-   consistency,
-   and
-   it
-   fights
-   the
-   49-directory
-   exemption
-   list.
+3. **Conventions enforced by scanning, not by construction.** The design language is a set of rules about strings in
+   source files, so it is enforced by tests that read source files: 77 gate tests, `design-consistency.test.ts` at 1,111
+   lines, and a 590-line bash pre-scan that duplicates them. This works, but it is the most expensive way to get
+   consistency, and it fights the 49-directory exemption list.
 
-4. **Migrations
-   that
-   stop
-   at
-   80%.**
-   Liquid
-   →
-   jelly,
-   raw
-   handlers
-   →
-   `defineHandler`,
-   hand-rolled
-   sockets
-   →
-   `lib/shared/realtime/client`,
-   React
-   Query
-   out
-   of
-   the
-   shell,
-   Go
-   gateway
-   →
-   Node
-   hubs.
-   Each
-   one
-   left
-   a
-   tail:
-   aliases
-   (`data-liquid-*`,
-   `data-fluid-*`),
-   allowlists,
-   dormant
-   services,
-   a
-   parity
-   test.
-   The
-   tails
-   add
-   up
-   to
-   a
-   second
+4. **Migrations that stop at 80%.** Liquid → jelly, raw handlers → `defineHandler`, hand-rolled sockets →
+   `lib/shared/realtime/client`, React Query out of the shell, Go gateway → Node hubs. Each one left a tail: aliases
+   (`data-liquid-*`, `data-fluid-*`), allowlists, dormant services, a parity test. The tails add up to a second
    architecture.
 
-5. **Docs
-   as
-   a
-   diary.**
-   195
-   dated
-   docs
-   and
-   9
-   performance
-   audits
-   record
-   what
-   happened,
-   while
-   the
-   living
-   docs
-   (`CLAUDE.md`,
-   `testing.md`,
-   `architecture.md`)
-   hold
-   hand-written
-   counts
-   that
-   are
-   now
-   wrong
-   by
-   a
-   factor
-   of
-   1.5–4
-   ([Appendix 1](#appendix-1--documentation-drift-found-during-this-audit)).
-   Agents
-   read
-   the
-   stale
-   counts
-   and
-   plan
-   against
-   them.
+5. **Docs as a diary.** 195 dated docs and 9 performance audits record what happened, while the living docs
+   (`CLAUDE.md`, `testing.md`, `architecture.md`) hold hand-written counts that are now wrong by a factor of 1.5–4
+   ([Appendix 1](#appendix-1--documentation-drift-found-during-this-audit)). Agents read the stale counts and plan
+   against them.
 
 ---
 
@@ -1138,252 +252,26 @@ back.
 
 **Principles**
 
-- **P1:
-  The
-  feature
-  is
-  the
-  unit.**
-  A
-  game
-  or
-  app
-  is
-  one
-  directory
-  you
-  can
-  delete.
-  Shared
-  code
-  is
-  imported
-  _by_
-  features
-  and
-  never
-  imports
-  _from_
-  them.
-- **P2:
-  Make
-  the
-  wrong
-  thing
-  impossible,
-  then
-  delete
-  the
-  test.**
-  Prefer
-  a
-  type,
-  a
-  primitive
-  or
-  a
-  lint
-  rule
-  to
-  a
-  source-scanning
-  test.
-  Each
-  structural
-  fix
-  should
-  retire
-  at
-  least
-  one
-  gate
-  test.
-- **P3:
-  One
-  of
-  each.**
-  One
-  token
-  contract,
-  one
-  API
-  contract,
-  one
-  realtime
-  core,
-  one
-  scheduler,
-  one
-  cache
-  helper,
-  one
-  motion
-  source,
-  one
-  prefetch
-  mechanism.
-  When
-  there
-  are
-  two,
-  either
-  name
-  the
-  second
-  as
-  a
-  deliberate
-  exception
-  or
-  delete
+- **P1: The feature is the unit.** A game or app is one directory you can delete. Shared code is imported _by_ features
+  and never imports _from_ them.
+- **P2: Make the wrong thing impossible, then delete the test.** Prefer a type, a primitive or a lint rule to a
+  source-scanning test. Each structural fix should retire at least one gate test.
+- **P3: One of each.** One token contract, one API contract, one realtime core, one scheduler, one cache helper, one
+  motion source, one prefetch mechanism. When there are two, either name the second as a deliberate exception or delete
   it.
-- **P4:
-  The
-  page
-  at
-  rest
-  does
-  nothing.**
-  This
-  is
-  already
-  the
-  jelly
-  rule.
-  Extend
-  it
-  to
-  the
-  whole
-  shell:
-  nothing
-  is
-  fetched,
-  constructed
-  or
-  warmed
-  until
-  intent.
-- **P5:
-  Generated
-  facts,
-  written
-  reasons.**
-  Counts
-  and
-  inventories
-  in
-  docs
-  are
-  generated.
-  Humans
-  write
-  only
-  _why_.
-- **P6:
-  Every
-  migration
-  ships
-  its
-  own
-  tail-deletion.**
-  A
-  migration
-  PR
-  is
-  not
-  done
-  until
-  the
-  alias,
-  allowlist
-  entry
-  or
-  compat
-  shim
-  it
-  introduced
-  has
-  an
-  owner
-  and
-  a
-  removal
-  date.
+- **P4: The page at rest does nothing.** This is already the jelly rule. Extend it to the whole shell: nothing is
+  fetched, constructed or warmed until intent.
+- **P5: Generated facts, written reasons.** Counts and inventories in docs are generated. Humans write only _why_.
+- **P6: Every migration ships its own tail-deletion.** A migration PR is not done until the alias, allowlist entry or
+  compat shim it introduced has an owner and a removal date.
 
 **Non-goals**
 
-- No
-  framework
-  change
-  (TanStack
-  Start,
-  React
-  19,
-  Prisma,
-  Better
-  Auth
-  stay).
-- No
-  change
-  to
-  the
-  Plasmatic
-  Jelly
-  identity
-  or
-  to
-  the
-  owner
-  decisions
-  recorded
-  in
-  `CLAUDE.md`.
-  Appearance
-  work
-  here
-  is
-  about
-  _consistency
-  and
-  reach_,
-  not
-  a
-  new
-  look.
-- No
-  rewrite
-  of
-  game
-  engines
-  for
-  their
-  own
-  sake.
-  Games
-  move;
-  their
-  insides
-  change
-  only
-  where
-  they
-  duplicate
-  core
-  code.
-- No
-  big-bang.
-  Every
-  item
-  below
-  is
-  shippable
-  in
-  slices
-  behind
-  the
-  current
-  site.
+- No framework change (TanStack Start, React 19, Prisma, Better Auth stay).
+- No change to the Plasmatic Jelly identity or to the owner decisions recorded in `CLAUDE.md`. Appearance work here is
+  about _consistency and reach_, not a new look.
+- No rewrite of game engines for their own sake. Games move; their insides change only where they duplicate core code.
+- No big-bang. Every item below is shippable in slices behind the current site.
 
 ---
 
@@ -1393,207 +281,30 @@ back.
 
 ```yaml
 id: A1
-gain:
-  structure
-  (+
-  perf
-  via
-  B1,
-  +
-  practice
-  via
-  ownership)
+gain: structure (+ perf via B1, + practice via ownership)
 impact: XL
 effort: XL
 risk: med
-depends:
-  [
-    A5
-    for
-    enforcement;
-    pairs
-    with
-    B1,
-  ]
+depends: [A5 for enforcement; pairs with B1]
 ```
 
 **Evidence**
 
-- A
-  feature
-  lives
-  in
-  four
-  to
-  six
-  roots.
-  tf2
-  alone
-  covers
-  `lib/`
-  520
-  files
-  /
-  165,765
-  lines,
-  `components/`
-  129
-  /
-  27,614,
-  `app/routes`
-  12
-  pages +
-  27
-  API
-  routes,
-  `server/`
-  7
-  files
-  and
-  108
-  test
-  files.
-  Slice
-  It
-  covers
-  `lib/`
-  112,
-  `components/`
-  45,
-  5
-  page
-  routes,
-  36
-  API
-  routes,
-  `server/socket-server/handlers/slice-it.ts`
-  (2,301
-  lines)
-  and
-  13
-  tests.
-- `lib/`
-  has
-  189
-  subdirectories
-  plus
-  179
-  loose
-  files.
-  Seventeen
-  names
-  exist
-  both
-  as
-  a
-  file
-  and
-  as
-  a
-  directory
-  (`lib/profile.ts` +
-  `lib/profile/`,
-  `lib/seo.ts`
-  - `lib/seo/`,
-    and
-    the
-    same
-    for
-    auth,
-    notifications,
-    moderation,
-    games
-    and
-    messages).
-- The
-  lib/components
-  line
-  is
-  blurred.
-  168
-  non-React
-  `.ts`
-  files
-  (30k
-  lines)
-  sit
-  under
-  `components/`;
-  most
-  of
-  it
-  is
-  `components/velum2099/game/`
-  (12k
-  lines
-  of
-  imperative
-  three.js).
-  11
-  `.tsx`
-  files
-  sit
-  in
-  `lib/`.
-  22
-  imports
-  run
-  from
-  lib
-  into
-  components;
-  the
-  worst
-  is
-  `lib/rmhbox/history-display-registrations.ts`,
-  which
-  imports
-  9
-  minigame
-  components.
-- Feature
-  code
-  also
-  sits
-  in
-  shared
-  folders:
-  six
-  `hooks/useDoctrine*`
-  hooks
-  and
-  `stores/doctrineStore.ts`;
-  the
-  casino
-  (holdem,
-  roulette,
-  baccarat,
-  blackjack)
-  is
-  hosted
-  inside
-  `components/rmhcoins`
-  (60
-  edges).
-- The
-  workspace
-  is
-  nominal.
-  `pnpm-workspace.yaml`
-  lists
-  `.`,
-  `cli`
-  and
-  `docs/*/build`.
-  `packages/sdk`
-  is
-  not
-  even
-  a
+- A feature lives in four to six roots. tf2 alone covers `lib/` 520 files / 165,765 lines, `components/` 129 / 27,614,
+  `app/routes` 12 pages + 27 API routes, `server/` 7 files and 108 test files. Slice It covers `lib/` 112, `components/`
+  45, 5 page routes, 36 API routes, `server/socket-server/handlers/slice-it.ts` (2,301 lines) and 13 tests.
+- `lib/` has 189 subdirectories plus 179 loose files. Seventeen names exist both as a file and as a directory
+  (`lib/profile.ts` + `lib/profile/`, `lib/seo.ts`
+  - `lib/seo/`, and the same for auth, notifications, moderation, games and messages).
+- The lib/components line is blurred. 168 non-React `.ts` files (30k lines) sit under `components/`; most of it is
+  `components/velum2099/game/` (12k lines of imperative three.js). 11 `.tsx` files sit in `lib/`. 22 imports run from
+  lib into components; the worst is `lib/rmhbox/history-display-registrations.ts`, which imports 9 minigame components.
+- Feature code also sits in shared folders: six `hooks/useDoctrine*` hooks and `stores/doctrineStore.ts`; the casino
+  (holdem, roulette, baccarat, blackjack) is hosted inside `components/rmhcoins` (60 edges).
+- The workspace is nominal. `pnpm-workspace.yaml` lists `.`, `cli` and `docs/*/build`. `packages/sdk` is not even a
   member.
 
-**Target
-layout**
+**Target layout**
 
 ```
 apps/
@@ -1623,336 +334,91 @@ features/
 
 **Steps**
 
-1. Create
-   `features/`
-   and
-   the
-   `feature.ts`
-   manifest
-   type
-   in
-   `packages/core`.
-   Add
-   a
-   path
-   alias
-   `@features/*`.
-   Change
-   no
+1. Create `features/` and the `feature.ts` manifest type in `packages/core`. Add a path alias `@features/*`. Change no
    behaviour.
-2. Move
-   the
-   self-contained
-   features
-   first.
-   Each
-   has
-   near-zero
-   cross-feature
-   edges:
-   **balatro,
-   hearthworks,
-   slice-it,
-   altair,
-   void-breaker,
-   nightrail**.
-   Each
-   move
-   is
-   one
-   PR:
-   `git mv` +
-   an
-   import
-   codemod +
-   a
-   thin
-   route
-   re-export.
-3. Move
-   the
-   socket
-   handler
-   for
-   each
-   moved
-   feature
-   out
-   of
-   `server/socket-server/handlers/<x>.ts`
-   into
-   `features/<x>/server/`,
-   and
-   register
-   it
-   from
-   the
-   hub
-   with
-   a
-   feature-registry
-   loop
-   (stub
-   below).
-4. Pull
-   the
-   casino
-   out
-   of
-   `components/rmhcoins`
-   into
-   `features/casino`,
-   and
-   doctrine
-   out
-   of
-   `hooks/`/`stores/`
-   into
+2. Move the self-contained features first. Each has near-zero cross-feature edges: **balatro, hearthworks, slice-it,
+   altair, void-breaker, nightrail**. Each move is one PR: `git mv` + an import codemod + a thin route re-export.
+3. Move the socket handler for each moved feature out of `server/socket-server/handlers/<x>.ts` into
+   `features/<x>/server/`, and register it from the hub with a feature-registry loop (stub below).
+4. Pull the casino out of `components/rmhcoins` into `features/casino`, and doctrine out of `hooks/`/`stores/` into
    `features/doctrine`.
-5. Fold
-   the
-   179
-   loose
-   `lib/*.ts`
-   files
-   into
-   domain
-   folders
-   inside
-   `packages/platform`
-   (`lib/feed-*.ts`
-   →
-   `platform/feed/`).
-   Resolve
-   the
-   17
-   file/directory
-   collisions.
-6. Split
-   `package.json`
-   per
-   app/package
-   once
-   the
-   moves
-   are
-   done,
-   so
-   server-only
-   deps
-   (socket.io,
-   pg-boss,
-   sharp,
-   `@napi-rs/canvas`,
-   satori,
-   resvg)
-   leave
-   the
-   web
-   package.
-7. Generate
-   `lib/catalog`
-   from
-   the
-   `feature.ts`
-   manifests
-   and
-   delete
-   the
-   hand-kept
-   catalog
-   files.
-   Unify
-   it
-   with
-   `lib/game/registry.ts`
-   (two
-   catalogs
-   today).
+5. Fold the 179 loose `lib/*.ts` files into domain folders inside `packages/platform` (`lib/feed-*.ts` →
+   `platform/feed/`). Resolve the 17 file/directory collisions.
+6. Split `package.json` per app/package once the moves are done, so server-only deps (socket.io, pg-boss, sharp,
+   `@napi-rs/canvas`, satori, resvg) leave the web package.
+7. Generate `lib/catalog` from the `feature.ts` manifests and delete the hand-kept catalog files. Unify it with
+   `lib/game/registry.ts` (two catalogs today).
 
-**Stub:
-feature
-manifest**
+**Stub: feature manifest**
 
 ```ts
 // packages/core/src/feature.ts
 import { z } from 'zod';
 
-export const FeatureManifest =
-  z.object(
-    {
-      id: z
-        .string()
-        .regex(
-          /^[a-z0-9-]+$/,
-        ),
-      kind: z.enum(
-        [
-          'game',
-          'app',
-          'site',
-        ],
-      ),
-      /** Route prefix this feature owns, e.g. '/balatro'. Used by B1 to decide island vs shell. */
-      basePath:
-        z
-          .string()
-          .startsWith(
-            '/',
-          ),
-      /** 'island' = separately built client bundle (B1); 'shell' = rendered inside _site. */
-      delivery:
-        z.enum(
-          [
-            'island',
-            'shell',
-          ],
-        ),
-      namespaces:
-        z.array(
-          z.string(),
-        ),
-      catalog:
-        z
-          .object(
-            {
-              title:
-                z.string(),
-              blurb:
-                z.string(),
-              image:
-                z.string(),
-              tags: z.array(
-                z.string(),
-              ),
-            },
-          )
-          .optional(),
-      listed:
-        z
-          .boolean()
-          .default(
-            true,
-          ), // hidden/unlisted features say so explicitly (Appendix 3)
-    },
-  );
-export type FeatureManifest =
-  z.infer<
-    typeof FeatureManifest
-  >;
-export const defineFeature =
-  (
-    m: z.input<
-      typeof FeatureManifest
-    >,
-  ) =>
-    FeatureManifest.parse(
-      m,
-    );
+export const FeatureManifest = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  kind: z.enum(['game', 'app', 'site']),
+  /** Route prefix this feature owns, e.g. '/balatro'. Used by B1 to decide island vs shell. */
+  basePath: z.string().startsWith('/'),
+  /** 'island' = separately built client bundle (B1); 'shell' = rendered inside _site. */
+  delivery: z.enum(['island', 'shell']),
+  namespaces: z.array(z.string()),
+  catalog: z
+    .object({
+      title: z.string(),
+      blurb: z.string(),
+      image: z.string(),
+      tags: z.array(z.string()),
+    })
+    .optional(),
+  listed: z.boolean().default(true), // hidden/unlisted features say so explicitly (Appendix 3)
+});
+export type FeatureManifest = z.infer<typeof FeatureManifest>;
+export const defineFeature = (m: z.input<typeof FeatureManifest>) => FeatureManifest.parse(m);
 ```
 
 ```ts
 // features/balatro/feature.ts
 import { defineFeature } from '@rmh/core/feature';
-export default defineFeature(
-  {
-    id: 'balatro',
-    kind: 'game',
-    basePath:
-      '/balatro',
-    delivery:
-      'island',
-    namespaces:
-      [
-        'g-balatro',
-      ],
-    listed: false, // currently routed but absent from lib/catalog — owner decision needed
-  },
-);
+export default defineFeature({
+  id: 'balatro',
+  kind: 'game',
+  basePath: '/balatro',
+  delivery: 'island',
+  namespaces: ['g-balatro'],
+  listed: false, // currently routed but absent from lib/catalog — owner decision needed
+});
 ```
 
-**Stub:
-the
-hub
-registers
-features
-instead
-of
-importing
-32
-handler
-files**
+**Stub: the hub registers features instead of importing 32 handler files**
 
 ```ts
 // apps/realtime/src/features.ts
 import type { Namespace } from 'socket.io';
-const modules =
-  import.meta.glob(
-    '../../../features/*/server/index.ts',
-    {
-      eager: true,
-    },
-  );
+const modules = import.meta.glob('../../../features/*/server/index.ts', {
+  eager: true,
+});
 // with esbuild/tsx: replace with a generated features.gen.ts listing the same paths.
 
 export interface FeatureServer {
   id: string;
   namespace: string; // e.g. '/slice-it'
-  register(
-    nsp: Namespace,
-    deps: HubDeps,
-  ): void | Promise<void>;
+  register(nsp: Namespace, deps: HubDeps): void | Promise<void>;
 }
-export function registerAll(
-  io: import('socket.io').Server,
-  deps: HubDeps,
-) {
-  for (const m of Object.values(
-    modules,
-  ) as {
+export function registerAll(io: import('socket.io').Server, deps: HubDeps) {
+  for (const m of Object.values(modules) as {
     default: FeatureServer;
   }[]) {
-    m.default.register(
-      io.of(
-        m
-          .default
-          .namespace,
-      ),
-      deps,
-    );
+    m.default.register(io.of(m.default.namespace), deps);
   }
 }
 ```
 
-**Done
-when**
+**Done when**
 
-- `find features -maxdepth 1 -mindepth 1 -type d | wc -l`
-  ≥
-  30,
-  and
-  `ls server/socket-server/handlers`
-  is
-  empty
-  or
-  gone.
-- `lib/`
-  no
-  longer
-  exists
-  as
-  a
-  grab-bag:
-  `find lib -maxdepth 1 -type f | wc -l`
-  is 0.
-- A5's
-  boundary
-  rules
-  pass
-  with
-  an
-  empty
-  allowlist.
+- `find features -maxdepth 1 -mindepth 1 -type d | wc -l` ≥ 30, and `ls server/socket-server/handlers` is empty or gone.
+- `lib/` no longer exists as a grab-bag: `find lib -maxdepth 1 -type f | wc -l` is 0.
+- A5's boundary rules pass with an empty allowlist.
 
 ---
 
@@ -1969,286 +435,68 @@ depends: []
 
 **Evidence**
 
-- Routed
-  but
-  not
-  in
-  the
-  catalog:
-  balatro
-  (26.5k
-  lines),
-  elections,
-  lights-out,
-  pf2ecal,
-  sohumtracker,
-  kaikai-debt,
-  signal-forge
-  (`/secret/`),
-  and
-  tf2-game
-  (reachable
-  only
-  through
-  the
-  `rmh-tf2-hud`
-  app).
-- One-off
-  pages:
-  `covid.tsx`,
-  `kaikaidebtcounter.tsx`,
-  `_site/alexdebtcounter.tsx`,
-  `black-lives-matter.tsx`,
-  `sohumbum.tsx`,
-  `sohumbum2/*`,
-  `sohumtracker/*`,
-  `breaches.tsx`,
-  `csgo.tsx`,
-  `half-life-2.tsx`,
-  `gabriels-horn.tsx`,
-  `dunesday.tsx`,
-  `services.rebar-rutabaga.tsx`.
-- Design
-  labs:
-  `jelly.tsx`
-  (565
-  lines),
-  `liquid-glass.tsx`
-  (a
-  redirect),
-  `eversion-lab.tsx`,
-  `design.tsx`,
+- Routed but not in the catalog: balatro (26.5k lines), elections, lights-out, pf2ecal, sohumtracker, kaikai-debt,
+  signal-forge (`/secret/`), and tf2-game (reachable only through the `rmh-tf2-hud` app).
+- One-off pages: `covid.tsx`, `kaikaidebtcounter.tsx`, `_site/alexdebtcounter.tsx`, `black-lives-matter.tsx`,
+  `sohumbum.tsx`, `sohumbum2/*`, `sohumtracker/*`, `breaches.tsx`, `csgo.tsx`, `half-life-2.tsx`, `gabriels-horn.tsx`,
+  `dunesday.tsx`, `services.rebar-rutabaga.tsx`.
+- Design labs: `jelly.tsx` (565 lines), `liquid-glass.tsx` (a redirect), `eversion-lab.tsx`, `design.tsx`,
   `optimization.tsx`.
-- 30
-  redirect-only
-  stub
-  pages.
-- Each
-  page
-  costs
-  entry
-  bytes
-  (its
-  `head()`),
-  a
-  `site-tier.css`
-  `@source not`
-  line,
-  a
-  `THEME_EXCLUDED_ROUTES`
-  entry,
-  and
-  often
-  its
-  own
-  i18n
-  namespace
-  (`c-kaikai-debt`,
-  `c-elections`,
-  …).
-- About
-  27
-  files
-  (4,344
-  lines)
-  have
-  no
-  static
-  importer
-  and
-  no
-  reference
-  by
-  basename
-  anywhere.
-  Examples:
+- 30 redirect-only stub pages.
+- Each page costs entry bytes (its `head()`), a `site-tier.css` `@source not` line, a `THEME_EXCLUDED_ROUTES` entry, and
+  often its own i18n namespace (`c-kaikai-debt`, `c-elections`, …).
+- About 27 files (4,344 lines) have no static importer and no reference by basename anywhere. Examples:
   `components/site/{FriendsRail,FriendsSheet,NotificationsPopover}.tsx`,
-  `components/home/{WidgetStack,WidgetEditSheet}.tsx`,
-  `hooks/{useUndoableAction,useResource,useHistoryBeat}.ts`,
-  `stores/focusStore.ts`,
-  `components/ui/liquid-morph.tsx`
-  (392
-  lines;
-  it
-  is
-  mentioned
-  only
-  in
-  a
-  comment).
-- `internal/ledger`
-  in
-  Go
-  (755
-  lines)
-  is
-  wired
-  into
-  no
-  binary.
+  `components/home/{WidgetStack,WidgetEditSheet}.tsx`, `hooks/{useUndoableAction,useResource,useHistoryBeat}.ts`,
+  `stores/focusStore.ts`, `components/ui/liquid-morph.tsx` (392 lines; it is mentioned only in a comment).
+- `internal/ledger` in Go (755 lines) is wired into no binary.
 
 **Steps**
 
-1. The
-   owner
-   sorts
-   every
-   page
-   into
-   one
-   of
-   four
-   buckets:
-   **keep-listed**,
-   **keep-unlisted**
-   (`listed: false`
-   in
-   its
-   manifest),
-   **archive**
-   (move
-   to
-   an
-   `archive/`
-   git
-   tag
-   and
-   delete),
-   or
-   **redirect**
-   (a
-   server
-   rule,
-   not
-   a
-   page).
-   See
+1. The owner sorts every page into one of four buckets: **keep-listed**, **keep-unlisted** (`listed: false` in its
+   manifest), **archive** (move to an `archive/` git tag and delete), or **redirect** (a server rule, not a page). See
    [Appendix 3](#appendix-3--open-questions-for-the-owner).
-2. Replace
-   the
-   30
-   redirect
-   stub
-   pages
-   with
-   one
-   data-driven
-   redirect
-   table
-   served
-   by
-   a
-   Nitro
-   route
-   rule
-   (stub
-   below).
-   That
-   makes
-   30
-   fewer
-   modules
-   in
-   `routeTree.gen.ts`.
-3. Delete
-   the
-   zero-reference
-   files
-   after
-   a
-   build-level
-   check:
-   build
-   with
-   sourcemaps,
-   then
-   confirm
-   the
-   file
-   is
-   absent
-   from
-   every
-   chunk's
-   `sources`.
+2. Replace the 30 redirect stub pages with one data-driven redirect table served by a Nitro route rule (stub below).
+   That makes 30 fewer modules in `routeTree.gen.ts`.
+3. Delete the zero-reference files after a build-level check: build with sourcemaps, then confirm the file is absent
+   from every chunk's `sources`.
 
-**Stub:
-redirect
-table
-instead
-of
-30
-route
-files**
+**Stub: redirect table instead of 30 route files**
 
 ```ts
 // apps/web/redirects.ts — one table, typed, testable
 export const REDIRECTS: ReadonlyArray<{
   from: string;
   to: string;
-  status?:
-    | 301
-    | 302
-    | 308;
-}> =
-  [
-    {
-      from: '/liquid-glass',
-      to: '/jelly',
-      status: 301,
-    },
-    // … the other 29, generated once from the stub routes' beforeLoad redirects
-  ];
+  status?: 301 | 302 | 308;
+}> = [
+  {
+    from: '/liquid-glass',
+    to: '/jelly',
+    status: 301,
+  },
+  // … the other 29, generated once from the stub routes' beforeLoad redirects
+];
 ```
 
 ```ts
 // vite.config.ts → nitro({ routeRules })
 import { REDIRECTS } from './redirects';
-const routeRules =
-  Object.fromEntries(
-    REDIRECTS.map(
-      (
-        r,
-      ) => [
-        r.from,
-        {
-          redirect:
-            {
-              to: r.to,
-              statusCode:
-                r.status ??
-                301,
-            },
-        },
-      ],
-    ),
-  );
+const routeRules = Object.fromEntries(
+  REDIRECTS.map((r) => [
+    r.from,
+    {
+      redirect: {
+        to: r.to,
+        statusCode: r.status ?? 301,
+      },
+    },
+  ]),
+);
 ```
 
-**Done
-when:**
-`grep -l "throw redirect" app/routes --include=*.tsx -r | wc -l`
-covers
-only
-real
-conditional
-redirects
-(auth
-gates),
-and
-every
-route
-directory
-maps
-to
-a
-feature
-manifest
-or
-to
-the
-site
-core.
+**Done when:** `grep -l "throw redirect" app/routes --include=*.tsx -r | wc -l` covers only real conditional redirects
+(auth gates), and every route directory maps to a feature manifest or to the site core.
 
 ---
 
@@ -2263,41 +511,9 @@ risk: med (large, well-tested code: 108 test files)
 depends: [A1]
 ```
 
-**Evidence:**
-csgo-game
-→
-tf2-game
-has
-213
-import
-edges;
-sp-game
-→
-tf2-game
-has
-146;
-tf2
-→
-sp/csgo
-has
-18
-back-edges.
-Two
-Rapier
-bindings
-coexist
-(`@dimforge/rapier3d-compat`
-in
-sp-game,
-`@react-three/rapier`
-in
-temple-of-joy).
-`lib/tf2-game/sim/*`
-contains
-a
-21-file
-import
-cycle.
+**Evidence:** csgo-game → tf2-game has 213 import edges; sp-game → tf2-game has 146; tf2 → sp/csgo has 18 back-edges.
+Two Rapier bindings coexist (`@dimforge/rapier3d-compat` in sp-game, `@react-three/rapier` in temple-of-joy).
+`lib/tf2-game/sim/*` contains a 21-file import cycle.
 
 **Target**
 
@@ -2310,72 +526,12 @@ packages/engines/source/
 features/tf2/   features/sp/   features/csgo/     ← adapters: game modes, data, UI
 ```
 
-**Steps:**
-(1)
-Pull
-out
-the
-modules
-that
-both
-csgo
-and
-sp
-import
-into
-`packages/engines/source`
-unchanged.
-(2)
-Invert
-the
-18
-back-edges
-by
-introducing
-interfaces
-in
-the
-engine
-that
-tf2
-implements.
-(3)
-Break
-the
-`sim/*`
-cycle
-by
-moving
-shared
-types
-into
-`sim/types.ts`.
-(4)
-Pick
-one
-Rapier
-binding.
+**Steps:** (1) Pull out the modules that both csgo and sp import into `packages/engines/source` unchanged. (2) Invert
+the 18 back-edges by introducing interfaces in the engine that tf2 implements. (3) Break the `sim/*` cycle by moving
+shared types into `sim/types.ts`. (4) Pick one Rapier binding.
 
-**Done
-when:**
-`features/csgo`
-and
-`features/sp`
-import
-nothing
-from
-`features/tf2`,
-and
-the
-engine
-package
-has
-no
-import
-cycles
-(A5's
-`import/no-cycle`
-rule).
+**Done when:** `features/csgo` and `features/sp` import nothing from `features/tf2`, and the engine package has no
+import cycles (A5's `import/no-cycle` rule).
 
 ---
 
@@ -2390,10 +546,7 @@ risk: low
 depends: []
 ```
 
-**Evidence
-(definitions
-outside
-tests)**
+**Evidence (definitions outside tests)**
 
 | Helper                                   |                          Copies | Examples                                                                                                                                                                 |
 | ---------------------------------------- | ------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -2412,307 +565,86 @@ tests)**
 | `localStorage` touched directly          |                        98 files | no shared persistence wrapper                                                                                                                                            |
 | `window.matchMedia` direct               |                   24 components | alongside `useIsMobile`/`useIsDesktop`/`useMediaQuery`                                                                                                                   |
 
-Caveat:
-some
-same-named
-helpers
-mean
-different
-things
-(for
-example,
-`formatTime`
-taking
-milliseconds
-in
-one
-place
-and
-seconds
-in
-another).
-The
-codemod
-must
-check
-each
-call
-site.
+Caveat: some same-named helpers mean different things (for example, `formatTime` taking milliseconds in one place and
+seconds in another). The codemod must check each call site.
 
-**Target
-modules
-(`packages/core/src/`)**
+**Target modules (`packages/core/src/`)**
 
 ```ts
 // math.ts
-export const clamp =
-  (
-    v: number,
-    lo: number,
-    hi: number,
-  ) =>
-    v <
-    lo
-      ? lo
-      : v >
-          hi
-        ? hi
-        : v;
-export const clamp01 =
-  (
-    v: number,
-  ) =>
-    clamp(
-      v,
-      0,
-      1,
-    );
-export const lerp =
-  (
-    a: number,
-    b: number,
-    t: number,
-  ) =>
-    a +
-    (b -
-      a) *
-      t;
-export const invLerp =
-  (
-    a: number,
-    b: number,
-    v: number,
-  ) =>
-    a ===
-    b
-      ? 0
-      : (v -
-          a) /
-        (b -
-          a);
-export const remap =
-  (
-    v: number,
-    a0: number,
-    a1: number,
-    b0: number,
-    b1: number,
-  ) =>
-    lerp(
-      b0,
-      b1,
-      invLerp(
-        a0,
-        a1,
-        v,
-      ),
-    );
+export const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+export const clamp01 = (v: number) => clamp(v, 0, 1);
+export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+export const invLerp = (a: number, b: number, v: number) => (a === b ? 0 : (v - a) / (b - a));
+export const remap = (v: number, a0: number, a1: number, b0: number, b1: number) => lerp(b0, b1, invLerp(a0, a1, v));
 
 // rng.ts — the ONE seeded RNG. Go parity tests (doctrine) point here until D3 deletes the Go copy.
-export function mulberry32(
-  seed: number,
-): () => number {
-  let a =
-    seed >>>
-    0;
+export function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
   return () => {
-    a =
-      (a +
-        0x6d2b79f5) >>>
-      0;
-    let t =
-      a;
-    t =
-      Math.imul(
-        t ^
-          (t >>>
-            15),
-        t |
-          1,
-      );
-    t ^=
-      t +
-      Math.imul(
-        t ^
-          (t >>>
-            7),
-        t |
-          61,
-      );
-    return (
-      ((t ^
-        (t >>>
-          14)) >>>
-        0) /
-      4294967296
-    );
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-export function shuffle<
-  T,
->(
-  arr: readonly T[],
-  rand: () => number = Math.random,
-): T[] {
-  const out =
-    arr.slice();
-  for (
-    let i =
-      out.length -
-      1;
-    i >
-    0;
-    i--
-  ) {
-    const j =
-      Math.floor(
-        rand() *
-          (i +
-            1),
-      );
-    [
-      out[
-        i
-      ],
-      out[
-        j
-      ],
-    ] =
-      [
-        out[
-          j
-        ]!,
-        out[
-          i
-        ]!,
-      ];
+export function shuffle<T>(arr: readonly T[], rand: () => number = Math.random): T[] {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
   }
   return out;
 }
 
 // format.ts — unit in the NAME, never ambiguous
-export const formatDurationMs =
-  (
-    ms: number,
-    locale?: string,
-  ) => {
-    /* Intl.DurationFormat w/ fallback */
-  };
-export const formatClockSeconds =
-  (
-    s: number,
-  ) => {
-    /* m:ss / h:mm:ss */
-  };
-export const formatCompact =
-  (
-    n: number,
-    locale?: string,
-  ) =>
-    new Intl.NumberFormat(
-      locale,
-      {
-        notation:
-          'compact',
-        maximumFractionDigits: 1,
-      },
-    ).format(
-      n,
-    );
-export const formatRelative =
-  (
-    date:
-      | Date
-      | number,
-    locale?: string,
-  ) => {
-    /* Intl.RelativeTimeFormat */
-  };
+export const formatDurationMs = (ms: number, locale?: string) => {
+  /* Intl.DurationFormat w/ fallback */
+};
+export const formatClockSeconds = (s: number) => {
+  /* m:ss / h:mm:ss */
+};
+export const formatCompact = (n: number, locale?: string) =>
+  new Intl.NumberFormat(locale, {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(n);
+export const formatRelative = (date: Date | number, locale?: string) => {
+  /* Intl.RelativeTimeFormat */
+};
 
 // loop.ts — the one fixed-step loop, driven by the single frame driver (lib/jelly/frame.ts drive())
-export function fixedStep(opts: {
-  hz: number;
-  update(
-    dt: number,
-  ): void;
-  render(
-    alpha: number,
-  ): void;
-}) {
-  const step =
-    1 /
-    opts.hz;
+export function fixedStep(opts: { hz: number; update(dt: number): void; render(alpha: number): void }) {
+  const step = 1 / opts.hz;
   let acc = 0;
   let last = 0;
-  return (
-    now: number,
-  ) => {
-    const dt =
-      Math.min(
-        0.25,
-        last
-          ? (now -
-              last) /
-              1000
-          : 0,
-      );
-    last =
-      now;
-    acc +=
-      dt;
-    while (
-      acc >=
-      step
-    ) {
-      opts.update(
-        step,
-      );
-      acc -=
-        step;
+  return (now: number) => {
+    const dt = Math.min(0.25, last ? (now - last) / 1000 : 0);
+    last = now;
+    acc += dt;
+    while (acc >= step) {
+      opts.update(step);
+      acc -= step;
     }
-    opts.render(
-      acc /
-        step,
-    );
+    opts.render(acc / step);
   };
 }
 
 // persist.ts — the one localStorage wrapper: try/catch, versioned, zod-validated
-export function persisted<
-  T,
->(
-  key: string,
-  schema: import('zod').ZodType<T>,
-  fallback: T,
-) {
+export function persisted<T>(key: string, schema: import('zod').ZodType<T>, fallback: T) {
   return {
     get(): T {
       try {
-        const raw =
-          localStorage.getItem(
-            key,
-          );
-        return raw
-          ? schema.parse(
-              JSON.parse(
-                raw,
-              ),
-            )
-          : fallback;
+        const raw = localStorage.getItem(key);
+        return raw ? schema.parse(JSON.parse(raw)) : fallback;
       } catch {
         return fallback;
       }
     },
-    set(
-      v: T,
-    ) {
+    set(v: T) {
       try {
-        localStorage.setItem(
-          key,
-          JSON.stringify(
-            v,
-          ),
-        );
+        localStorage.setItem(key, JSON.stringify(v));
       } catch {
         /* quota/private mode */
       }
@@ -2721,96 +653,16 @@ export function persisted<
 }
 ```
 
-**Steps:**
-(1)
-Land
-`packages/core`
-with
-tests.
-(2)
-Codemod
-one
-helper
-at
-a
-time
-with
-`jscodeshift`
-(the
-canonical
-import
-replaces
-the
-local
-definition,
-and
-the
-local
-definition
-is
-deleted).
-(3)
-Turn
-on
-an
-ESLint
-`no-restricted-syntax`
-rule
-that
-bans
-top-level
-`function clamp|lerp|mulberry32|shuffle|formatDuration`
-outside
-`packages/core`.
-(4)
-Move
-the
-11
-hand-rolled
-socket
-clients
-onto
-`lib/shared/realtime/client.ts`,
-which
-becomes
-`packages/core/realtime-client`.
-(5)
-Build
-one
-`AudioBus`
-on
-`getAudioContext()`
-and
-drop
-howler
-(5
-files).
-(6)
-Build
-a
-`createLeaderboard(featureId, scoreSchema)`
-factory
-that
-produces
-both
-the
-API
-handler
-and
-a
-`<Leaderboard>`
-component.
+**Steps:** (1) Land `packages/core` with tests. (2) Codemod one helper at a time with `jscodeshift` (the canonical
+import replaces the local definition, and the local definition is deleted). (3) Turn on an ESLint `no-restricted-syntax`
+rule that bans top-level `function clamp|lerp|mulberry32|shuffle|formatDuration` outside `packages/core`. (4) Move the
+11 hand-rolled socket clients onto `lib/shared/realtime/client.ts`, which becomes `packages/core/realtime-client`. (5)
+Build one `AudioBus` on `getAudioContext()` and drop howler (5 files). (6) Build a
+`createLeaderboard(featureId, scoreSchema)` factory that produces both the API handler and a `<Leaderboard>` component.
 
-**Done
-when:**
-`rg -c "^(export )?(const|function) (clamp|clamp01|lerp|mulberry32|shuffle)\b" --glob '!packages/core/**'`
-returns
-nothing,
-and
-`rg "from 'socket.io-client'" -l`
-lists
-only
-`packages/core`.
+**Done when:**
+`rg -c "^(export )?(const|function) (clamp|clamp01|lerp|mulberry32|shuffle)\b" --glob '!packages/core/**'` returns
+nothing, and `rg "from 'socket.io-client'" -l` lists only `packages/core`.
 
 ---
 
@@ -2831,82 +683,12 @@ depends:
   ]
 ```
 
-**Evidence:**
-There
-are
-52
-strongly
-connected
-components
-(223
-files;
-this
-count
-includes
-type-only
-edges).
-The
-largest
-are
-`features/hearthworks/engine/world/*`
-(28
-files),
-`components/dunesday/os/apps/*`
-(22)
-and
-`lib/tf2-game/sim/*`
-(21).
-There
-is
-also
-an
-8-file
-shell
-cycle:
-`components/site/CommandPalette`
-↔
-`feed/ComposeModal`
-↔
-`call/CallMount`
-↔
-`site/PlaytimeTracker`
-….
-127
-edges
-run
-from
-shared
-code
-into
-features.
-`eslint.config.mjs`
-has
-no
-`import/no-cycle`,
-no
-boundaries
-plugin
-and
-no
-restricted
-paths.
-The
-`.server`
-boundary
-is
-enforced
-only
-by
-the
-Vite
-stub
-plugin,
-which
-finds
-export
-names
-by
-regex.
+**Evidence:** There are 52 strongly connected components (223 files; this count includes type-only edges). The largest
+are `features/hearthworks/engine/world/*` (28 files), `components/dunesday/os/apps/*` (22) and `lib/tf2-game/sim/*`
+(21). There is also an 8-file shell cycle: `components/site/CommandPalette` ↔ `feed/ComposeModal` ↔ `call/CallMount` ↔
+`site/PlaytimeTracker` …. 127 edges run from shared code into features. `eslint.config.mjs` has no `import/no-cycle`, no
+boundaries plugin and no restricted paths. The `.server` boundary is enforced only by the Vite stub plugin, which finds
+export names by regex.
 
 **Stub**
 
@@ -2917,228 +699,121 @@ import importX from 'eslint-plugin-import-x';
 
 export default [
   {
-    plugins:
-      {
-        boundaries,
-        'import-x':
-          importX,
-      },
-    settings:
-      {
-        'boundaries/elements':
-          [
+    plugins: {
+      boundaries,
+      'import-x': importX,
+    },
+    settings: {
+      'boundaries/elements': [
+        {
+          type: 'core',
+          pattern: 'packages/core/**',
+        },
+        {
+          type: 'ui',
+          pattern: 'packages/ui/**',
+        },
+        {
+          type: 'platform',
+          pattern: 'packages/platform/**',
+        },
+        {
+          type: 'engine',
+          pattern: 'packages/engines/*/**',
+          capture: ['engine'],
+        },
+        {
+          type: 'feature',
+          pattern: 'features/*/**',
+          capture: ['feature'],
+        },
+        {
+          type: 'app',
+          pattern: 'apps/*/**',
+        },
+      ],
+    },
+    rules: {
+      'boundaries/element-types': [
+        'error',
+        {
+          default: 'disallow',
+          rules: [
             {
-              type: 'core',
-              pattern:
-                'packages/core/**',
+              from: 'core',
+              allow: ['core'],
             },
             {
-              type: 'ui',
-              pattern:
-                'packages/ui/**',
+              from: 'ui',
+              allow: ['core', 'ui'],
             },
             {
-              type: 'platform',
-              pattern:
-                'packages/platform/**',
+              from: 'platform',
+              allow: ['core', 'platform'],
             },
             {
-              type: 'engine',
-              pattern:
-                'packages/engines/*/**',
-              capture:
-                [
-                  'engine',
-                ],
+              from: 'engine',
+              allow: ['core', 'engine'],
             },
             {
-              type: 'feature',
-              pattern:
-                'features/*/**',
-              capture:
+              from: 'feature',
+              allow: [
+                'core',
+                'ui',
+                'platform',
+                'engine',
                 [
                   'feature',
-                ],
-            },
-            {
-              type: 'app',
-              pattern:
-                'apps/*/**',
-            },
-          ],
-      },
-    rules:
-      {
-        'boundaries/element-types':
-          [
-            'error',
-            {
-              default:
-                'disallow',
-              rules:
-                [
                   {
-                    from: 'core',
-                    allow:
-                      [
-                        'core',
-                      ],
-                  },
-                  {
-                    from: 'ui',
-                    allow:
-                      [
-                        'core',
-                        'ui',
-                      ],
-                  },
-                  {
-                    from: 'platform',
-                    allow:
-                      [
-                        'core',
-                        'platform',
-                      ],
-                  },
-                  {
-                    from: 'engine',
-                    allow:
-                      [
-                        'core',
-                        'engine',
-                      ],
-                  },
-                  {
-                    from: 'feature',
-                    allow:
-                      [
-                        'core',
-                        'ui',
-                        'platform',
-                        'engine',
-                        [
-                          'feature',
-                          {
-                            feature:
-                              '${from.feature}',
-                          },
-                        ],
-                      ],
-                  },
-                  {
-                    from: 'app',
-                    allow:
-                      [
-                        'core',
-                        'ui',
-                        'platform',
-                        'feature',
-                      ],
+                    feature: '${from.feature}',
                   },
                 ],
+              ],
             },
-          ],
-        'import-x/no-cycle':
-          [
-            'error',
             {
-              maxDepth: 6,
-              ignoreExternal: true,
+              from: 'app',
+              allow: ['core', 'ui', 'platform', 'feature'],
             },
           ],
-        // Client code may only TYPE-import .server modules:
-        'no-restricted-imports':
-          [
-            'error',
+        },
+      ],
+      'import-x/no-cycle': [
+        'error',
+        {
+          maxDepth: 6,
+          ignoreExternal: true,
+        },
+      ],
+      // Client code may only TYPE-import .server modules:
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
             {
-              patterns:
-                [
-                  {
-                    regex:
-                      '\\.server(\\.ts)?$',
-                    allowTypeImports: true,
-                    message:
-                      'Value imports of *.server modules belong in server functions/handlers only.',
-                  },
-                ],
+              regex: '\\.server(\\.ts)?$',
+              allowTypeImports: true,
+              message: 'Value imports of *.server modules belong in server functions/handlers only.',
             },
           ],
-      },
+        },
+      ],
+    },
   },
   // Server-side files may value-import .server modules:
   {
-    files:
-      [
-        '**/*.server.ts',
-        'apps/realtime/**',
-        'apps/workers/**',
-        '**/api/**',
-      ],
-    rules:
-      {
-        'no-restricted-imports':
-          'off',
-      },
+    files: ['**/*.server.ts', 'apps/realtime/**', 'apps/workers/**', '**/api/**'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
   },
 ];
 ```
 
-**Steps:**
-(1)
-Add
-the
-rules
-at
-`warn`,
-and
-record
-a
-baseline
-file
-with
-the
-current
-violations
-(the
-jelly-coverage
-ratchet
-pattern
-already
-exists).
-(2)
-A
-CI
-check
-fails
-if
-the
-violation
-count
-goes
-_up_.
-(3)
-Burn
-the
-baseline
-down
-as
-A1
-moves
-features.
+**Steps:** (1) Add the rules at `warn`, and record a baseline file with the current violations (the jelly-coverage
+ratchet pattern already exists). (2) A CI check fails if the violation count goes _up_. (3) Burn the baseline down as A1
+moves features.
 
-**Done
-when:**
-the
-baseline
-file
-is
-empty
-and
-both
-rules
-are
-at
-`error`.
+**Done when:** the baseline file is empty and both rules are at `error`.
 
 ---
 
@@ -3166,56 +841,11 @@ depends: []
 | `components/Providers.tsx`                            |         1,036 | see B2                                                                                             |
 | `app/routes/__root.tsx`                               |           785 | see B2 (generated pre-paint script)                                                                |
 
-**Rule
-of
-thumb
-for
-the
-split:**
-pure
-logic
-moves
-to
-`engine/`
-with
-unit
-tests,
-the
-transport
-is
-a
-thin
-adapter,
-and
-the
-React
-component
-keeps
-only
-wiring.
-Target
-≤
-600
-lines
-per
-file,
-and
-add
-a
-`max-lines`
-lint
-at
-`warn`
-(800)
-with
-a
+**Rule of thumb for the split:** pure logic moves to `engine/` with unit tests, the transport is a thin adapter, and the
+React component keeps only wiring. Target ≤ 600 lines per file, and add a `max-lines` lint at `warn` (800) with a
 baseline.
 
-**Done
-when:**
-`git ls-files '*.ts' '*.tsx' | xargs wc -l | awk '$1>1500' | grep -v -E 'data/|\.gen\.'`
-is
-empty.
+**Done when:** `git ls-files '*.ts' '*.tsx' | xargs wc -l | awk '$1>1500' | grep -v -E 'data/|\.gen\.'` is empty.
 
 ---
 
@@ -3236,179 +866,24 @@ depends:
   ]
 ```
 
-**Evidence:**
-`strict: true`
-is
-on,
-but
-`noUncheckedIndexedAccess`,
-`exactOptionalPropertyTypes`,
-`noImplicitOverride`
-and
-`noFallthroughCasesInSwitch`
-are
-off.
-There
-are
-210
-`: any`
-and
-103
-`as any`
-(hotspots:
-`rmhtype.ts`
-18,
-`altair.ts`
-16,
-`blackjack.ts`
-9).
-**26
-files
-use
-`@ts-nocheck`,
-all
-in
-`components/velum2099/game/`**,
-so
-about
-12k
-lines
-are
-untyped.
-There
-are
-176
-`eslint-disable`s,
-95
-of
-them
-`react-hooks/exhaustive-deps`.
-`no-explicit-any`
-is
-downgraded
-to
-warn.
-`tsconfig.server.json`
-includes
-`server/recap/**`,
-which
-no
-longer
-exists.
-Two
-compilers
-run
-(`typescript`
-6
-for
-typescript-eslint,
-`typescript-native`
-7
-for
-`typecheck`).
+**Evidence:** `strict: true` is on, but `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`
+and `noFallthroughCasesInSwitch` are off. There are 210 `: any` and 103 `as any` (hotspots: `rmhtype.ts` 18, `altair.ts`
+16, `blackjack.ts` 9). **26 files use `@ts-nocheck`, all in `components/velum2099/game/`**, so about 12k lines are
+untyped. There are 176 `eslint-disable`s, 95 of them `react-hooks/exhaustive-deps`. `no-explicit-any` is downgraded to
+warn. `tsconfig.server.json` includes `server/recap/**`, which no longer exists. Two compilers run (`typescript` 6 for
+typescript-eslint, `typescript-native` 7 for `typecheck`).
 
 **Steps**
 
-1. Give
-   each
-   package/feature
-   its
-   own
-   `tsconfig.json`
-   that
-   `extends`
-   a
-   strict
-   base.
-   Turn
-   on
-   `noUncheckedIndexedAccess`
-   in
-   `packages/*`
-   immediately
-   (new
-   code)
-   and
-   in
-   features
-   one
-   at
-   a
-   time.
-2. Quarantine
-   velum2099:
-   move
-   it
-   to
-   `features/velum2099`
-   with
-   its
-   own
-   tsconfig
-   (`strict: false`),
-   and
-   delete
-   the
-   26
-   `@ts-nocheck`
-   comments
-   in
-   favour
-   of
-   that
-   config.
-   The
-   debt
-   becomes
-   visible
-   in
-   one
-   place.
-3. Use
-   TS
-   project
-   references
-   (`composite: true`)
-   so
-   `tsc -b`
-   is
-   incremental
-   per
-   package.
-   This
-   is
-   the
-   real
-   fix
-   for
-   type-check
-   time,
-   rather
-   than
-   two
-   compilers.
-4. Fix
-   `tsconfig.server.json`,
-   or
-   delete
-   it
-   once
-   `apps/realtime`
-   has
-   its
-   own
-   config.
+1. Give each package/feature its own `tsconfig.json` that `extends` a strict base. Turn on `noUncheckedIndexedAccess` in
+   `packages/*` immediately (new code) and in features one at a time.
+2. Quarantine velum2099: move it to `features/velum2099` with its own tsconfig (`strict: false`), and delete the 26
+   `@ts-nocheck` comments in favour of that config. The debt becomes visible in one place.
+3. Use TS project references (`composite: true`) so `tsc -b` is incremental per package. This is the real fix for
+   type-check time, rather than two compilers.
+4. Fix `tsconfig.server.json`, or delete it once `apps/realtime` has its own config.
 
-**Done
-when:**
-every
-`tsconfig.json`
-under
-`packages/`
-has
-`noUncheckedIndexedAccess: true`,
-and
-`rg -c "@ts-nocheck"`
+**Done when:** every `tsconfig.json` under `packages/` has `noUncheckedIndexedAccess: true`, and `rg -c "@ts-nocheck"`
 returns 0.
 
 ---
@@ -3427,75 +902,20 @@ depends:
   ]
 ```
 
-**Evidence:**
-1,536
-files
-start
-with
-`'use client'`,
-which
-is
-a
-Next.js
-directive
-and
-does
-nothing
-in
-TanStack
-Start.
-It
-misleads
-every
-agent
-that
-reads
-it
-("this
-is
-a
-client
-component,
-so
-the
-others
-are
-server
-components"),
-which
-is
-false
-here.
-CLAUDE.md
-already
-warns
-that
-Next.js
-references
-are
-stale.
+**Evidence:** 1,536 files start with `'use client'`, which is a Next.js directive and does nothing in TanStack Start. It
+misleads every agent that reads it ("this is a client component, so the others are server components"), which is false
+here. CLAUDE.md already warns that Next.js references are stale.
 
-**Stub:
-one-shot
-codemod**
+**Stub: one-shot codemod**
 
 ```bash
 git ls-files '*.ts' '*.tsx' | xargs grep -lE "^['\"]use client['\"];?\s*$" \
   | xargs sed -i -E "1{/^['\"]use client['\"];?\s*$/d}"
 ```
 
-Then
-add
-`no-restricted-syntax`
-for
-a
-top-level
-`ExpressionStatement > Literal[value='use client']`.
+Then add `no-restricted-syntax` for a top-level `ExpressionStatement > Literal[value='use client']`.
 
-**Done
-when:**
-`rg -l "^['\"]use client" | wc -l`
-returns 0.
+**Done when:** `rg -l "^['\"]use client" | wc -l` returns 0.
 
 ---
 
@@ -3514,274 +934,31 @@ depends: [A1 for the first features; A2 shrinks the set]
 
 **Evidence**
 
-- `routeTree.gen.ts`:
-  30,507
-  lines,
-  1.3
-  MB,
-  imports
-  every
-  one
-  of
-  1,383
-  route
-  modules,
-  including
-  all
-  988
-  API
-  modules
-  (whether
-  API
-  handler
-  bodies
-  reach
-  the
-  client
-  graph
-  is
-  unverified;
-  Start
-  strips
-  `server.handlers`,
-  but
-  the
-  modules
-  are
-  still
-  in
-  the
-  graph).
-  In
-  July
-  it
-  was
-  616
-  routes
-  and
-  13,731
-  lines.
-- The
-  comment
-  in
-  `vite.config.ts`
-  (≈line 245)
-  says
-  Start's
-  splitter
-  "only
-  lifts
-  out
-  route
-  COMPONENTS".
-  So
-  every
-  route's
-  `head()`,
-  `validateSearch`
-  and
-  top-level
-  imports
-  are
-  entry
-  weight.
-  The
-  entry
-  budget
-  history
-  (`check-bundle-budget.ts`)
-  is
-  a
-  list
-  of
-  games
-  whose
-  `head()`
-  landed
-  in
-  the
-  entry
-  (Rebar
-  &
-  Rutabaga,
-  Dunesday,
-  Slice
-  It!).
-- `holdUntilCrawlEnd: false`
-  (`vite.config.ts:476`)
-  is
-  a
-  workaround
-  for
-  the
-  eager
-  route
-  crawl,
-  per
-  the
-  July
-  rewrite
-  doc.
-- The
-  build
-  needs
-  `--max-old-space-size=8192`.
-- The
-  app
-  tier
-  exists
-  _because_
-  full-screen
-  apps
-  share
-  the
-  site's
-  CSS
-  and
-  shell:
-  `site-tier.css`
-  is
-  a
-  205-line
-  `@source not`
-  manifest,
-  and
-  there
-  is
-  a
-  `THEME_EXCLUDED_ROUTES`
-  duplication
-  between
-  `__root.tsx`'s
-  inline
-  script
-  and
+- `routeTree.gen.ts`: 30,507 lines, 1.3 MB, imports every one of 1,383 route modules, including all 988 API modules
+  (whether API handler bodies reach the client graph is unverified; Start strips `server.handlers`, but the modules are
+  still in the graph). In July it was 616 routes and 13,731 lines.
+- The comment in `vite.config.ts` (≈line 245) says Start's splitter "only lifts out route COMPONENTS". So every route's
+  `head()`, `validateSearch` and top-level imports are entry weight. The entry budget history (`check-bundle-budget.ts`)
+  is a list of games whose `head()` landed in the entry (Rebar & Rutabaga, Dunesday, Slice It!).
+- `holdUntilCrawlEnd: false` (`vite.config.ts:476`) is a workaround for the eager route crawl, per the July rewrite doc.
+- The build needs `--max-old-space-size=8192`.
+- The app tier exists _because_ full-screen apps share the site's CSS and shell: `site-tier.css` is a 205-line
+  `@source not` manifest, and there is a `THEME_EXCLUDED_ROUTES` duplication between `__root.tsx`'s inline script and
   `Providers.tsx:326`.
 
 **Target**
 
-- `apps/web`
-  keeps
-  the
-  **site**
-  (≈203
-  `_site`
-  pages,
-  auth,
-  legal,
-  API).
-- Each
-  `delivery: 'island'`
-  feature
-  is
-  built
-  as
-  its
-  own
-  Vite
-  **client
-  entry**
-  with
-  its
-  own
-  CSS.
-  It
-  is
-  mounted
-  by
-  a
-  single
-  generic
-  shell
-  route:
-  `app/routes/$island.tsx`
-  (or
-  a
-  static
-  per-island
-  route
-  generated
-  from
-  the
-  manifests).
-  That
-  route
-  server-renders
-  a
-  minimal
-  document
-  (head
-  from
-  the
-  manifest,
-  a
-  loading
-  frame)
-  and
-  loads
+- `apps/web` keeps the **site** (≈203 `_site` pages, auth, legal, API).
+- Each `delivery: 'island'` feature is built as its own Vite **client entry** with its own CSS. It is mounted by a
+  single generic shell route: `app/routes/$island.tsx` (or a static per-island route generated from the manifests). That
+  route server-renders a minimal document (head from the manifest, a loading frame) and loads
   `/<island>/entry.[hash].js`.
-- Islands
-  share
-  `packages/ui`,
-  `packages/core`
-  and
-  the
-  auth
-  session
-  cookie.
-  They
-  do
-  **not**
-  share
-  the
-  radial
-  shell,
-  the
-  site
-  providers
-  or
-  the
-  site
-  CSS.
-- Island
-  `head()`
-  comes
-  from
-  `feature.ts`,
-  which
-  is
-  plain
-  data
-  with
-  no
-  imports,
-  so
-  it
-  costs
-  a
-  few
-  hundred
-  bytes
-  in
-  a
-  generated
-  head
-  table,
-  not
-  a
-  module
-  in
-  the
-  entry.
+- Islands share `packages/ui`, `packages/core` and the auth session cookie. They do **not** share the radial shell, the
+  site providers or the site CSS.
+- Island `head()` comes from `feature.ts`, which is plain data with no imports, so it costs a few hundred bytes in a
+  generated head table, not a module in the entry.
 
-**Stub:
-per-island
-build
-(Vite
-multi-entry,
-no
-framework
-change)**
+**Stub: per-island build (Vite multi-entry, no framework change)**
 
 ```ts
 // apps/web/vite.islands.config.ts
@@ -3790,44 +967,18 @@ import react from '@vitejs/plugin-react';
 import tailwind from '@tailwindcss/vite';
 import { manifests } from './features.gen'; // generated from features/*/feature.ts
 
-const islands =
-  manifests.filter(
-    (
-      m,
-    ) =>
-      m.delivery ===
-      'island',
-  );
+const islands = manifests.filter((m) => m.delivery === 'island');
 
-export default defineConfig(
-  {
-    plugins:
-      [
-        react(),
-        tailwind(),
-      ],
-    build:
-      {
-        outDir:
-          '.output/public/islands',
-        manifest: true,
-        rollupOptions:
-          {
-            input:
-              Object.fromEntries(
-                islands.map(
-                  (
-                    m,
-                  ) => [
-                    m.id,
-                    `features/${m.id}/island.tsx`,
-                  ],
-                ),
-              ),
-          },
-      },
+export default defineConfig({
+  plugins: [react(), tailwind()],
+  build: {
+    outDir: '.output/public/islands',
+    manifest: true,
+    rollupOptions: {
+      input: Object.fromEntries(islands.map((m) => [m.id, `features/${m.id}/island.tsx`])),
+    },
   },
-);
+});
 ```
 
 ```tsx
@@ -3837,11 +988,7 @@ import { IslandProviders } from '@rmh/ui/island'; // QueryClient + i18n + toasts
 import { BalatroApp } from './ui/BalatroApp';
 import './ui/balatro.css';
 
-createRoot(
-  document.getElementById(
-    'island',
-  )!,
-).render(
+createRoot(document.getElementById('island')!).render(
   <IslandProviders feature="balatro">
     <BalatroApp />
   </IslandProviders>,
@@ -3850,171 +997,38 @@ createRoot(
 
 ```tsx
 // apps/web/app/routes/$island.tsx: one route serves every island
-export const Route =
-  createFileRoute(
-    '/$island',
-  )(
-    {
-      beforeLoad:
-        ({
-          params,
-        }) => {
-          if (
-            !ISLANDS[
-              params
-                .island
-            ]
-          )
-            throw notFound();
-        },
-      head: ({
-        params,
-      }) =>
-        islandHead(
-          params.island,
-        ), // from the generated table: data, not imports
-      component:
-        () => {
-          const {
-            island,
-          } =
-            Route.useParams();
-          const entry =
-            ISLAND_ASSETS[
-              island
-            ]; // from the Vite manifest
-          return (
-            <>
-              <div
-                id="island"
-                data-jelly-zone="playfield"
-              />
-              <link
-                rel="stylesheet"
-                href={
-                  entry.css
-                }
-              />
-              <script
-                type="module"
-                src={
-                  entry.js
-                }
-              />
-            </>
-          );
-        },
-    },
-  );
+export const Route = createFileRoute('/$island')({
+  beforeLoad: ({ params }) => {
+    if (!ISLANDS[params.island]) throw notFound();
+  },
+  head: ({ params }) => islandHead(params.island), // from the generated table: data, not imports
+  component: () => {
+    const { island } = Route.useParams();
+    const entry = ISLAND_ASSETS[island]; // from the Vite manifest
+    return (
+      <>
+        <div id="island" data-jelly-zone="playfield" />
+        <link rel="stylesheet" href={entry.css} />
+        <script type="module" src={entry.js} />
+      </>
+    );
+  },
+});
 ```
 
 **Steps**
 
-1. Build
-   the
-   island
-   pipeline
-   with
-   **one**
-   game
-   (Balatro:
-   1
-   page
-   route,
-   1
-   API
-   route,
-   self-contained).
-   Measure
-   entry
-   bytes
-   before
-   and
-   after.
-2. Migrate
-   the
-   178
-   full-screen
-   pages
-   feature
-   by
-   feature.
-   Each
-   migration
-   deletes
-   its
-   `@source not`
-   line,
-   its
-   `THEME_EXCLUDED_ROUTES`
-   entry
-   and
-   its
-   `FULLSCREEN_ROUTE_SEGMENTS`
-   entry.
-3. When
-   the
-   last
-   app-tier
-   page
-   has
-   moved,
-   delete
-   `app/app-tier.css`,
-   `lib/style-tier.ts`
-   and
-   the
-   tier-preload
-   installer,
-   and
-   retire
-   `holdUntilCrawlEnd: false`.
-4. Lower
-   the
-   entry
-   budget
-   after
-   each
-   migration
-   (a
-   ratchet
-   _down_).
-   CI
-   fails
-   if
-   the
-   measured
-   entry
-   exceeds
-   the
-   recorded
-   value
-   by
-   more
-   than
-   1%.
+1. Build the island pipeline with **one** game (Balatro: 1 page route, 1 API route, self-contained). Measure entry bytes
+   before and after.
+2. Migrate the 178 full-screen pages feature by feature. Each migration deletes its `@source not` line, its
+   `THEME_EXCLUDED_ROUTES` entry and its `FULLSCREEN_ROUTE_SEGMENTS` entry.
+3. When the last app-tier page has moved, delete `app/app-tier.css`, `lib/style-tier.ts` and the tier-preload installer,
+   and retire `holdUntilCrawlEnd: false`.
+4. Lower the entry budget after each migration (a ratchet _down_). CI fails if the measured entry exceeds the recorded
+   value by more than 1%.
 
-**Done
-when:**
-`criticalPathBrotli`
-≤
-300
-KB
-(the
-July
-target)
-and
-the
-budget
-file's
-history
-shows
-only
-decreases
-since
-this
-item
-started.
+**Done when:** `criticalPathBrotli` ≤ 300 KB (the July target) and the budget file's history shows only decreases since
+this item started.
 
 ---
 
@@ -4039,281 +1053,39 @@ depends:
   ]
 ```
 
-**Evidence
-(from
-`app/routes/__root.tsx`,
-`components/Providers.tsx`,
-`app/routes/_site.tsx`)**
+**Evidence (from `app/routes/__root.tsx`, `components/Providers.tsx`, `app/routes/_site.tsx`)**
 
-- **11
-  inline
-  scripts:**
-  platform,
-  media-reveal,
-  account
-  seed,
-  theme,
-  access,
-  delight,
-  locale,
-  cookie-consent,
-  speculation
-  rules,
-  JSON-LD,
-  plus
-  the
-  body
-  theme
-  script.
-  The
-  theme
-  script
-  is
-  a
-  ≈4
-  KB
-  single
-  line
-  of
-  ES5
-  that
-  re-implements
-  `isAppThemeRoute`,
-  which
-  `Providers.tsx:326`
-  must
-  keep
-  in
-  sync
-  by
-  hand.
-- **Providers
-  (1,036
-  lines):**
-  - 9
-    contexts:
-    Query,
-    I18n,
-    LazyMotion,
-    MotionConfig,
-    Session,
-    AppTier,
-    ResolvedUser,
-    Confirm,
-    Toaster.
-  - 9
-    global
-    mounts:
-    CommandPalette,
-    RecentsTracker,
-    PlaytimeTracker,
-    PatchNotes,
-    ThemePreviewBar,
-    CallMount,
-    GroupCallMount,
-    AccessMount,
-    DelightMount.
-  - 16
-    separate
-    `useThemeStore`
-    selectors
-    (lines
-    ≈359–373)
-    and
-    about
-    18
-    `useEffect`s.
-  - Global
-    hooks:
-    `useSpatialParallax`
-    (a
-    capture-phase
-    scroll
-    listener),
-    `useLiquidBackground`
-    (rAF +
-    `deviceorientation`),
-    `useLiquidInteractions`,
-    `useSoftRenderSettle`,
-    `useIdleReady`.
-- **After
-  hydration,
-  for
-  a
-  signed-in
-  viewer:**
-  - `GET /api/profile/me`
-    (`Providers.tsx:519`),
-    although
-    the
-    root
-    loader
-    already
-    resolved
-    the
-    user;
-  - `GET /api/preferences/appearance`
-    (`:855`);
-  - a
-    socket.io
-    connection
-    for
-    incoming
-    calls
-    (`CallMount`
-    →
-    `lib/call/store`);
-  - an
-    `EventSource`
-    on
-    `/api/messages/stream`
-    with
-    a
-    15s
-    polling
-    fallback;
-  - the
-    notification
-    pulse.
-- `_site.tsx`
-  mounts
-  an
-  eager
-  `CookieConsent`
-  plus
-  6
-  lazy
-  modals/banners.
+- **11 inline scripts:** platform, media-reveal, account seed, theme, access, delight, locale, cookie-consent,
+  speculation rules, JSON-LD, plus the body theme script. The theme script is a ≈4 KB single line of ES5 that
+  re-implements `isAppThemeRoute`, which `Providers.tsx:326` must keep in sync by hand.
+- **Providers (1,036 lines):**
+  - 9 contexts: Query, I18n, LazyMotion, MotionConfig, Session, AppTier, ResolvedUser, Confirm, Toaster.
+  - 9 global mounts: CommandPalette, RecentsTracker, PlaytimeTracker, PatchNotes, ThemePreviewBar, CallMount,
+    GroupCallMount, AccessMount, DelightMount.
+  - 16 separate `useThemeStore` selectors (lines ≈359–373) and about 18 `useEffect`s.
+  - Global hooks: `useSpatialParallax` (a capture-phase scroll listener), `useLiquidBackground` (rAF +
+    `deviceorientation`), `useLiquidInteractions`, `useSoftRenderSettle`, `useIdleReady`.
+- **After hydration, for a signed-in viewer:**
+  - `GET /api/profile/me` (`Providers.tsx:519`), although the root loader already resolved the user;
+  - `GET /api/preferences/appearance` (`:855`);
+  - a socket.io connection for incoming calls (`CallMount` → `lib/call/store`);
+  - an `EventSource` on `/api/messages/stream` with a 15s polling fallback;
+  - the notification pulse.
+- `_site.tsx` mounts an eager `CookieConsent` plus 6 lazy modals/banners.
 
 **Target**
 
-- **One
-  generated
-  pre-paint
-  script.**
-  The
-  TypeScript
-  modules
-  that
-  own
-  theme,
-  access,
-  locale,
-  delight,
-  platform
-  and
-  consent
-  export
-  a
-  `prepaint(ctx)`
-  function.
-  A
-  build
-  step
-  bundles
-  them
-  into
-  one
-  minified
-  IIFE,
-  and
-  its
-  hash
-  goes
-  into
-  the
-  CSP
-  (see
-  F5).
-  The
-  hand-written
-  ES5
-  copy
-  goes
-  away.
-- **The
-  shell
-  provider
-  holds
-  only
-  what
-  every
-  page
-  reads:**
-  session,
-  i18n,
-  QueryClient,
-  toasts.
-  Everything
-  else
-  mounts
-  **on
-  first
-  intent**:
-  the
-  command
-  palette
-  on
-  ⌘K
-  or
-  a
-  search
-  focus,
-  calls
-  when
-  a
-  call
-  event
-  arrives
-  over
-  the
-  single
-  realtime
-  connection,
-  the
-  theme
-  preview
-  bar
-  only
-  on
-  `/settings/appearance`.
-- **One
-  realtime
-  connection
-  per
-  tab**,
-  multiplexing
-  messages,
-  notifications,
-  calls
-  and
-  presence.
-  Today
-  it
-  is
-  SSE +
-  a
-  socket +
-  polling
-  (pairs
-  with
-  D2).
-- **The
-  root
-  loader
-  result
-  is
-  the
-  user.**
-  `/api/profile/me`
-  is
-  not
-  fetched
-  again.
+- **One generated pre-paint script.** The TypeScript modules that own theme, access, locale, delight, platform and
+  consent export a `prepaint(ctx)` function. A build step bundles them into one minified IIFE, and its hash goes into
+  the CSP (see F5). The hand-written ES5 copy goes away.
+- **The shell provider holds only what every page reads:** session, i18n, QueryClient, toasts. Everything else mounts
+  **on first intent**: the command palette on ⌘K or a search focus, calls when a call event arrives over the single
+  realtime connection, the theme preview bar only on `/settings/appearance`.
+- **One realtime connection per tab**, multiplexing messages, notifications, calls and presence. Today it is SSE + a
+  socket + polling (pairs with D2).
+- **The root loader result is the user.** `/api/profile/me` is not fetched again.
 
-**Stub:
-generated
-pre-paint**
+**Stub: generated pre-paint**
 
 ```ts
 // packages/platform/src/prepaint/index.ts: real TS, unit-tested, tree-shaken
@@ -4330,21 +1102,10 @@ import { access } from './access';
 import { locale } from './locale';
 import { delight } from './delight';
 import { consent } from './consent';
-export function prepaint(
-  ctx: PrepaintCtx,
-) {
-  for (const step of [
-    platform,
-    locale,
-    theme,
-    access,
-    delight,
-    consent,
-  ]) {
+export function prepaint(ctx: PrepaintCtx) {
+  for (const step of [platform, locale, theme, access, delight, consent]) {
     try {
-      step(
-        ctx,
-      );
+      step(ctx);
     } catch {
       /* never block paint */
     }
@@ -4356,36 +1117,16 @@ export function prepaint(
 // scripts/build-prepaint.ts: emits app/generated/prepaint.ts { code, sha256 }
 import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
-const out =
-  await build(
-    {
-      entryPoints:
-        [
-          'packages/platform/src/prepaint/entry.ts',
-        ], // calls prepaint({doc: document, …})
-      bundle: true,
-      minify: true,
-      format:
-        'iife',
-      target:
-        'es2017',
-      write: false,
-    },
-  );
-const code =
-  out
-    .outputFiles[0]
-    .text;
-const sha256 =
-  createHash(
-    'sha256',
-  )
-    .update(
-      code,
-    )
-    .digest(
-      'base64',
-    );
+const out = await build({
+  entryPoints: ['packages/platform/src/prepaint/entry.ts'], // calls prepaint({doc: document, …})
+  bundle: true,
+  minify: true,
+  format: 'iife',
+  target: 'es2017',
+  write: false,
+});
+const code = out.outputFiles[0].text;
+const sha256 = createHash('sha256').update(code).digest('base64');
 // write `export const PREPAINT = { code, csp: "'sha256-${sha256}'" }`
 ```
 
@@ -4394,9 +1135,7 @@ const sha256 =
 scripts: [{ children: PREPAINT.code }, jsonLdScript([organizationSchema(), websiteSchema()])],
 ```
 
-**Stub:
-intent-mounted
-globals**
+**Stub: intent-mounted globals**
 
 ```tsx
 // packages/ui/src/intent-mount.tsx
@@ -4404,102 +1143,28 @@ export function IntentMount({
   when,
   load,
 }: {
-  when: (
-    fire: () => void,
-  ) => () => void;
+  when: (fire: () => void) => () => void;
   load: () => Promise<{
     default: React.ComponentType;
   }>;
 }) {
-  const [
-    C,
-    setC,
-  ] =
-    useState<React.ComponentType | null>(
-      null,
-    );
-  useEffect(
-    () =>
-      when(
-        () =>
-          load().then(
-            (
-              m,
-            ) =>
-              setC(
-                () =>
-                  m.default,
-              ),
-          ),
-      ),
-    [],
-  );
-  return C ? (
-    <C />
-  ) : null;
+  const [C, setC] = useState<React.ComponentType | null>(null);
+  useEffect(() => when(() => load().then((m) => setC(() => m.default))), []);
+  return C ? <C /> : null;
 }
 // usage: the palette loads on the first ⌘K, not on every page
 <IntentMount
-  when={(
-    fire,
-  ) =>
-    onKey(
-      (
-        e,
-      ) =>
-        (e.metaKey ||
-          e.ctrlKey) &&
-        e.key ===
-          'k',
-      fire,
-    )
-  }
-  load={() =>
-    import('@/components/site/CommandPalette')
-  }
+  when={(fire) => onKey((e) => (e.metaKey || e.ctrlKey) && e.key === 'k', fire)}
+  load={() => import('@/components/site/CommandPalette')}
 />;
 ```
 
-**Done
-when**
+**Done when**
 
-- The
-  document
-  contains
-  ≤
-  2
-  inline
-  scripts
-  (pre-paint
-  and
-  JSON-LD).
-- `Providers.tsx`
-  is
-  ≤
-  300
-  lines.
-- A
-  HAR
-  of
-  a
-  signed-in
-  home
-  load
-  shows
-  no
-  `/api/profile/me`
-  and
-  at
-  most
-  one
-  long-lived
-  realtime
-  connection.
-- The
-  `fouc-contract`
-  tests
-  pass
-  unchanged.
+- The document contains ≤ 2 inline scripts (pre-paint and JSON-LD).
+- `Providers.tsx` is ≤ 300 lines.
+- A HAR of a signed-in home load shows no `/api/profile/me` and at most one long-lived realtime connection.
+- The `fouc-contract` tests pass unchanged.
 
 ---
 
@@ -4525,389 +1190,56 @@ depends:
 
 **Evidence**
 
-- **Eversion.**
-  `EversionRoot`
-  warms
-  the
-  eversion
-  800
-  ms
-  after
-  idle
-  on
-  every
-  `_site`
-  page
-  (`EversionRoot.tsx:59–72`;
-  `EVERSION_ENABLED = true`
-  in
-  `lib/eversion/flags.ts:16`).
-  `lib/eversion/prefetch.ts:96–129`
-  then
-  imports
-  the
-  WebGL2
-  host
-  and
-  renderer,
-  the
-  capture
-  module,
-  `modern-screenshot`
-  and
-  the
-  bridge,
-  and
-  constructs
-  the
-  render
-  worker.
-  That
-  is
-  all
-  for
-  a
-  navigation
-  effect
-  the
-  visitor
-  may
-  never
-  trigger.
-- **Docked
-  globe.**
-  On
-  desktop
-  the
-  globe
-  mounts
-  by
-  default
-  (`RadialGlobeDock.tsx`),
-  and
-  its
-  worker
-  renders
-  at
-  a
-  15
-  Hz
-  floor
-  (7
-  Hz
-  on
-  handhelds)
-  whenever
-  it
-  is
-  on
-  screen
-  and
-  the
-  tab
-  is
-  focused.
-  `RadialHub`
-  also
-  preloads
-  `LiquidGlobe`
-  on
-  an
-  idle/timer
-  race
-  (`RadialHub.tsx:369–395`).
-- **English
-  backfill.**
-  After
-  idle,
-  every
-  client
-  calls
-  `backfillEn()`
-  (`lib/i18n/instances.ts:48,162`).
-  It
-  imports
-  `resources.en.ts`,
-  which
-  statically
-  imports
-  all
-  132
-  English
-  namespaces
-  (1.3
-  MB
-  raw),
-  even
-  for
-  English
-  visitors
-  whose
-  strings
-  already
-  render
-  from
-  `defaultValue`.
-- **Speculation
-  Rules.**
-  Speculation
-  Rules
-  document
-  prefetch
-  on
-  hover
-  (`__root.tsx`
-  ≈357–392)
-  fetches
-  a
-  full
-  SSR
-  document
-  that
-  a
-  client-side
-  navigation
-  usually
-  never
-  uses
-  (cost
-  unmeasured).
-  Its
-  exclusion
-  list
-  documents
-  8
-  GET
-  handlers
-  that
-  write
-  data,
-  which
-  is
-  itself
-  a
-  bug
-  class
-  (see
-  C2).
+- **Eversion.** `EversionRoot` warms the eversion 800 ms after idle on every `_site` page (`EversionRoot.tsx:59–72`;
+  `EVERSION_ENABLED = true` in `lib/eversion/flags.ts:16`). `lib/eversion/prefetch.ts:96–129` then imports the WebGL2
+  host and renderer, the capture module, `modern-screenshot` and the bridge, and constructs the render worker. That is
+  all for a navigation effect the visitor may never trigger.
+- **Docked globe.** On desktop the globe mounts by default (`RadialGlobeDock.tsx`), and its worker renders at a 15 Hz
+  floor (7 Hz on handhelds) whenever it is on screen and the tab is focused. `RadialHub` also preloads `LiquidGlobe` on
+  an idle/timer race (`RadialHub.tsx:369–395`).
+- **English backfill.** After idle, every client calls `backfillEn()` (`lib/i18n/instances.ts:48,162`). It imports
+  `resources.en.ts`, which statically imports all 132 English namespaces (1.3 MB raw), even for English visitors whose
+  strings already render from `defaultValue`.
+- **Speculation Rules.** Speculation Rules document prefetch on hover (`__root.tsx` ≈357–392) fetches a full SSR
+  document that a client-side navigation usually never uses (cost unmeasured). Its exclusion list documents 8 GET
+  handlers that write data, which is itself a bug class (see C2).
 
 **Steps**
 
-1. **Eversion
-   on
-   intent.**
-   Prefetch
-   the
-   eversion
-   chunk
-   on
-   `pointerdown`
-   or
-   `focus`
-   of
-   an
-   eversion
-   trigger
-   (or
-   on
-   the
-   first
-   back-navigation
-   gesture),
-   not
-   after
-   idle.
-   Construct
-   the
-   worker
-   on
-   the
-   first
-   use.
-2. **Globe
-   on
-   intent.**
-   Render
-   the
-   docked
-   globe
-   as
-   a
-   static
-   poster:
-   a
-   CSS
-   or
-   pre-rendered
-   image,
-   which
-   `LiquidGlobe`
-   already
-   has
-   as
-   a
-   CSS
-   fallback
-   for
-   software
-   renderers.
-   Start
-   the
-   worker
-   on
-   first
-   hover,
-   focus
-   or
-   press.
-   Keep
-   the
-   60
-   Hz
-   "engaged"
-   clock
-   exactly
-   as
-   it
-   is.
-3. **No
-   English
-   backfill
-   for
-   English
-   visitors.**
-   Make
-   the
-   backfill
-   per-namespace
-   (B6)
-   and
-   skip
-   it
-   entirely
-   when
+1. **Eversion on intent.** Prefetch the eversion chunk on `pointerdown` or `focus` of an eversion trigger (or on the
+   first back-navigation gesture), not after idle. Construct the worker on the first use.
+2. **Globe on intent.** Render the docked globe as a static poster: a CSS or pre-rendered image, which `LiquidGlobe`
+   already has as a CSS fallback for software renderers. Start the worker on first hover, focus or press. Keep the 60 Hz
+   "engaged" clock exactly as it is.
+3. **No English backfill for English visitors.** Make the backfill per-namespace (B6) and skip it entirely when
    `lng === 'en'`.
-4. **Pick
-   one
-   prefetch
-   mechanism.**
-   Keep
-   the
-   router's
-   intent
-   preload,
-   which
-   fetches
-   data +
-   chunks.
-   Drop
-   the
-   Speculation
-   Rules
-   document
-   prefetch
-   for
-   same-app
-   links,
-   or
-   limit
-   it
-   to
-   links
-   that
-   leave
-   the
-   SPA
-   (islands,
-   B1).
-   Measure
-   before
-   and
-   after
-   with
-   `scripts/perf/*`.
+4. **Pick one prefetch mechanism.** Keep the router's intent preload, which fetches data + chunks. Drop the Speculation
+   Rules document prefetch for same-app links, or limit it to links that leave the SPA (islands, B1). Measure before and
+   after with `scripts/perf/*`.
 
 **Stub**
 
 ```ts
 // lib/eversion/prefetch.ts: replace the idle warm-up with an intent warm-up
-let warm: Promise<unknown> | null =
-  null;
-export function warmEversionOnIntent(
-  el: HTMLElement,
-) {
-  const go =
-    () =>
-      (warm ??=
-        import('./host').then(
-          (
-            m,
-          ) =>
-            m.prepare(),
-        ));
-  el.addEventListener(
-    'pointerdown',
-    go,
-    {
-      once: true,
-      passive: true,
-    },
-  );
-  el.addEventListener(
-    'focusin',
-    go,
-    {
-      once: true,
-    },
-  );
+let warm: Promise<unknown> | null = null;
+export function warmEversionOnIntent(el: HTMLElement) {
+  const go = () => (warm ??= import('./host').then((m) => m.prepare()));
+  el.addEventListener('pointerdown', go, {
+    once: true,
+    passive: true,
+  });
+  el.addEventListener('focusin', go, {
+    once: true,
+  });
   return () => {
-    el.removeEventListener(
-      'pointerdown',
-      go,
-    );
-    el.removeEventListener(
-      'focusin',
-      go,
-    );
+    el.removeEventListener('pointerdown', go);
+    el.removeEventListener('focusin', go);
   };
 }
 ```
 
-**Done
-when:**
-a
-cold
-`/`
-load
-followed
-by
-10
-s
-idle
-on
-desktop
-Chrome
-shows
-**zero**
-Worker
-constructions,
-no
-`modern-screenshot`
-chunk
-and
-no
-`resources.en`
-chunk
-in
-the
-network
-panel.
-Make
-this
-a
-Playwright
-assertion
-in
+**Done when:** a cold `/` load followed by 10 s idle on desktop Chrome shows **zero** Worker constructions, no
+`modern-screenshot` chunk and no `resources.en` chunk in the network panel. Make this a Playwright assertion in
 `testing/e2e`.
 
 ---
@@ -4916,209 +1248,43 @@ in
 
 ```yaml
 id: B4
-gain:
-  perf
-  (SSR
-  first
-  paint,
-  fewer
-  waterfalls)
-  +
-  structure
+gain: perf (SSR first paint, fewer waterfalls) + structure
 impact: L
 effort: L
 risk: med
-depends:
-  [
-    C1,
-  ]
+depends: [C1]
 ```
 
-**Evidence:**
-Only
-94
-of
-381
-pages
-(25%)
-have
-a
-`loader`.
-231
-component
-files
-combine
-`useEffect`
-with
-`fetch('/api`.
-In
-a
-sample
-of
-20
-routes,
-route
-files
-were
-thin
-(13–211
-lines)
-and
-pushed
-data
-fetching
-into
-components.
-Wallet
-fetches
-inside
-`components/wallet/WalletPage.tsx:51`;
-login
-and
-tournaments
-fetch
-in
-`useEffect`.
-The
-post
-page
-is
-client-rendered
-on
-a
-cold
-URL
-load
-(`performance-audit-2026-10-21.md`).
-The
-July
-plan
-to
-take
-React
-Query
-out
-of
-the
-shell
-went
-the
-other
-way:
-it
-is
-now
-used
-by
-54
-files.
+**Evidence:** Only 94 of 381 pages (25%) have a `loader`. 231 component files combine `useEffect` with `fetch('/api`. In
+a sample of 20 routes, route files were thin (13–211 lines) and pushed data fetching into components. Wallet fetches
+inside `components/wallet/WalletPage.tsx:51`; login and tournaments fetch in `useEffect`. The post page is
+client-rendered on a cold URL load (`performance-audit-2026-10-21.md`). The July plan to take React Query out of the
+shell went the other way: it is now used by 54 files.
 
-**Target
-rule:**
-_The
-page's
-primary
-data
-is
-fetched
-in
-the
-route
-loader
-(SSR,
-intent-preloadable).
-React
-Query
-is
-for
-client-owned,
-interactive
-state:
-infinite
-scroll,
-optimistic
-mutations,
-polling._
-Loaders
-seed
-the
-query
-cache,
-so
-there
-is
-no
-double
-fetch.
+**Target rule:** _The page's primary data is fetched in the route loader (SSR, intent-preloadable). React Query is for
+client-owned, interactive state: infinite scroll, optimistic mutations, polling._ Loaders seed the query cache, so there
+is no double fetch.
 
-**Stub:
-loader
-seeds
-the
-query
-cache
-(the
-pattern
-every
-page
-copies)**
+**Stub: loader seeds the query cache (the pattern every page copies)**
 
 ```ts
 // features/wallet/api/queries.ts
-export const walletQuery =
-  (
-    userId: string,
-  ) =>
-    queryOptions(
-      {
-        queryKey:
-          [
-            'wallet',
-            userId,
-          ],
-        queryFn:
-          () =>
-            api.wallet.get(),
-        staleTime: 30_000,
-      },
-    );
+export const walletQuery = (userId: string) =>
+  queryOptions({
+    queryKey: ['wallet', userId],
+    queryFn: () => api.wallet.get(),
+    staleTime: 30_000,
+  });
 
 // apps/web/app/routes/_site/wallet.tsx
-export const Route =
-  createFileRoute(
-    '/_site/wallet',
-  )(
-    {
-      loader:
-        ({
-          context,
-        }) =>
-          context.queryClient.ensureQueryData(
-            walletQuery(
-              context
-                .user
-                .id,
-            ),
-          ),
-      component:
-        WalletPage, // uses useSuspenseQuery(walletQuery(id)): no loading state on first paint
-    },
-  );
+export const Route = createFileRoute('/_site/wallet')({
+  loader: ({ context }) => context.queryClient.ensureQueryData(walletQuery(context.user.id)),
+  component: WalletPage, // uses useSuspenseQuery(walletQuery(id)): no loading state on first paint
+});
 ```
 
-**Done
-when:**
-`rg -l "useEffect" | xargs rg -l "fetch\\(['\"\`]/api"
-|
-wc
--l`is ≤ 20 (genuinely interactive cases), and every`_site`
-page
-with
-primary
-data
-has
-a
-loader.
+**Done when:** `rg -l "useEffect" | xargs rg -l "fetch\\(['\"\`]/api" | wc
+-l`is ≤ 20 (genuinely interactive cases), and every`_site` page with primary data has a loader.
 
 ---
 
@@ -5126,110 +1292,21 @@ loader.
 
 ```yaml
 id: B5
-gain:
-  perf
-  (render-blocking
-  bytes)
-  +
-  appearance
-  (maintainability)
+gain: perf (render-blocking bytes) + appearance (maintainability)
 impact: M
 effort: M
 risk: low
-depends:
-  [
-    E4;
-    B1
-    removes
-    app-tier
-    CSS,
-  ]
+depends: [E4; B1 removes app-tier CSS]
 ```
 
-**Evidence:**
-`globals.css`
-grew
-from
-2,129
-lines
-(July)
-to
-6,666,
-and
-`radial.css`
-(4,083)
-is
-render-blocking
-on
-every
-`_site`
-page.
-The
-site
-CSS
-budget
-is
-48
-KB
-brotli
-against
-a
-July
-target
-of
-≤
-40
-KB;
-the
-stricter
-`scripts/ci/perf-budgets.json`
-is
-advisory
-only.
+**Evidence:** `globals.css` grew from 2,129 lines (July) to 6,666, and `radial.css` (4,083) is render-blocking on every
+`_site` page. The site CSS budget is 48 KB brotli against a July target of ≤ 40 KB; the stricter
+`scripts/ci/perf-budgets.json` is advisory only.
 
-**Steps:**
-do
-the
-prune
-and
-split
-in
-E4.
-Load
-per-feature
-CSS
-with
-the
-feature
-chunk,
-not
-from
-globals.
-Move
-`radial.css`'s
-globe-only
-rules
-into
-a
-sheet
-that
-loads
-with
-`LiquidGlobe`.
-Make
-the
-40
-KB
-budget
-blocking.
+**Steps:** do the prune and split in E4. Load per-feature CSS with the feature chunk, not from globals. Move
+`radial.css`'s globe-only rules into a sheet that loads with `LiquidGlobe`. Make the 40 KB budget blocking.
 
-**Done
-when:**
-`siteCssBrotli`
-≤
-40
-KB,
-enforced.
+**Done when:** `siteCssBrotli` ≤ 40 KB, enforced.
 
 ---
 
@@ -5252,220 +1329,42 @@ depends:
 
 **Evidence**
 
-- `resources.<locale>.ts`
-  statically
-  imports
-  _all_
-  of
-  a
-  locale's
-  namespaces
-  into
-  one
-  chunk,
-  so
-  a
-  German
-  visitor
-  downloads
-  every
-  game's
-  strings
-  when
-  German
-  activates.
-- 132
-  namespaces,
-  of
-  which
-  12
-  are
-  core.
-- 16
-  `PENDING_LOCALES`
-  are
-  machine-translated,
-  not
-  shipped,
-  and
-  still
-  cost
-  translation
-  runs.
-- `i18n:extract`
-  scans
-  only
-  `app/**`
-  and
-  `components/**`,
-  not
-  `lib/`,
-  `hooks/`
-  or
-  `stores/`.
-- Every
-  English
-  string
-  exists
-  twice
-  (`defaultValue`
-  in
-  code +
-  `locales/en`),
-  enforced
-  equal
-  by
+- `resources.<locale>.ts` statically imports _all_ of a locale's namespaces into one chunk, so a German visitor
+  downloads every game's strings when German activates.
+- 132 namespaces, of which 12 are core.
+- 16 `PENDING_LOCALES` are machine-translated, not shipped, and still cost translation runs.
+- `i18n:extract` scans only `app/**` and `components/**`, not `lib/`, `hooks/` or `stores/`.
+- Every English string exists twice (`defaultValue` in code + `locales/en`), enforced equal by
   `i18n-default-drift.test.ts`.
 
-**Stub:
-per-namespace
-lazy
-backend**
+**Stub: per-namespace lazy backend**
 
 ```ts
 // packages/platform/src/i18n/backend.ts
-const loaders =
-  import.meta.glob<{
-    default: Record<
-      string,
-      unknown
-    >;
-  }>(
-    '/locales/*/*.json',
-  );
-export const lazyBackend =
-  {
-    type: 'backend' as const,
-    read(
-      lng: string,
-      ns: string,
-      cb: (
-        err: unknown,
-        data?: unknown,
-      ) => void,
-    ) {
-      if (
-        lng ===
-        'en'
-      )
-        return cb(
-          null,
-          {},
-        ); // English renders from defaultValue
-      const load =
-        loaders[
-          `/locales/${lng}/${ns}.json`
-        ];
-      if (
-        !load
-      )
-        return cb(
-          null,
-          {},
-        ); // untranslated namespace → defaultValue
-      load().then(
-        (
-          m,
-        ) =>
-          cb(
-            null,
-            m.default,
-          ),
-        (
-          e,
-        ) =>
-          cb(
-            e,
-          ),
-      );
-    },
-  };
+const loaders = import.meta.glob<{
+  default: Record<string, unknown>;
+}>('/locales/*/*.json');
+export const lazyBackend = {
+  type: 'backend' as const,
+  read(lng: string, ns: string, cb: (err: unknown, data?: unknown) => void) {
+    if (lng === 'en') return cb(null, {}); // English renders from defaultValue
+    const load = loaders[`/locales/${lng}/${ns}.json`];
+    if (!load) return cb(null, {}); // untranslated namespace → defaultValue
+    load().then(
+      (m) => cb(null, m.default),
+      (e) => cb(e),
+    );
+  },
+};
 // features declare their namespaces in feature.ts; the route's loader calls i18n.loadNamespaces(ns)
 ```
 
-**Steps:**
-(1)
-Use
-the
-lazy
-backend
-above.
-Features
-declare
-their
-namespaces
-in
-the
-manifest,
-and
-the
-island
-or
-route
-loads
-them.
-(2)
-Stop
-translating
-pending
-locales
-until
-one
-is
-promoted.
-(3)
-Add
-`lib/**`,
-`hooks/**`
-and
-`features/**`
-to
-`i18next-parser.config.js`.
-(4)
-Decide
-on
-a
-single
-source
-for
-English
-(see
-Appendix
-3:
-either
-`defaultValue`
-is
-the
-source
-and
-`locales/en`
-is
-generated,
-or
-the
-reverse).
+**Steps:** (1) Use the lazy backend above. Features declare their namespaces in the manifest, and the island or route
+loads them. (2) Stop translating pending locales until one is promoted. (3) Add `lib/**`, `hooks/**` and `features/**`
+to `i18next-parser.config.js`. (4) Decide on a single source for English (see Appendix 3: either `defaultValue` is the
+source and `locales/en` is generated, or the reverse).
 
-**Done
-when:**
-a
-German
-visitor
-on
-`/`
-downloads
-only
-the
-core
-namespaces
-plus
-the
-namespaces
-of
-the
-route
-they
-are
-on.
+**Done when:** a German visitor on `/` downloads only the core namespaces plus the namespaces of the route they are on.
 
 ---
 
@@ -5473,144 +1372,26 @@ on.
 
 ```yaml
 id: B7
-gain:
-  perf
-  (INP,
-  nav
-  smoothness)
+gain: perf (INP, nav smoothness)
 impact: M
 effort: M
 risk: med
-depends:
-  [
-    B2,
-  ]
+depends: [B2]
 ```
 
-**Evidence:**
-`docs/ui-perf-audit-2026-10-09.md`
-found
-that
-page
-switches
-are
-main-thread
-bound:
-one
-≈880
-ms
-task
-on
-`/games`
-at
-4×
-CPU,
-and
-100–300
-ms
-to
-leave
-a
-big
-page.
-Router
-updates
-go
-through
-`useSyncExternalStore`
-and
-cannot
-be
-time-sliced.
-`performance-audit-2026-10-21.md`
-lists
-rail
-switches
-as
-still
-render-bound
-at
-100–230
-ms
-frames.
+**Evidence:** `docs/ui-perf-audit-2026-10-09.md` found that page switches are main-thread bound: one ≈880 ms task on
+`/games` at 4× CPU, and 100–300 ms to leave a big page. Router updates go through `useSyncExternalStore` and cannot be
+time-sliced. `performance-audit-2026-10-21.md` lists rail switches as still render-bound at 100–230 ms frames.
 
 **Steps**
 
-1. Wrap
-   outgoing
-   heavy
-   pages'
-   unmount
-   in
-   `startTransition`
-   and
-   keep
-   them
-   in
-   a
-   `<Activity mode="hidden">`
-   (React
-   19.2+)
-   boundary
-   for
-   back-navigation
-   instead
-   of
-   remounting.
-2. Virtualise
-   long
-   rails
-   and
-   grids
-   (`@tanstack/react-virtual`
-   is
-   already
-   a
-   dependency).
-3. Memoise
-   the
-   radial
-   shell's
-   subtree
-   off
-   router
-   state.
-   Read
-   only
-   the
-   pathname,
-   through
-   a
-   selector.
-4. Add
-   an
-   INP
-   budget
-   to
-   `synthetic-perf.yml`
-   on
-   `/`,
-   `/games`
-   and
-   `/explore`.
+1. Wrap outgoing heavy pages' unmount in `startTransition` and keep them in a `<Activity mode="hidden">` (React 19.2+)
+   boundary for back-navigation instead of remounting.
+2. Virtualise long rails and grids (`@tanstack/react-virtual` is already a dependency).
+3. Memoise the radial shell's subtree off router state. Read only the pathname, through a selector.
+4. Add an INP budget to `synthetic-perf.yml` on `/`, `/games` and `/explore`.
 
-**Done
-when:**
-p75
-INP
-on
-the
-RUM
-endpoint
-(`/api/rum`)
-is
-≤
-200
-ms
-for
-4
-consecutive
-weeks.
+**Done when:** p75 INP on the RUM endpoint (`/api/rum`) is ≤ 200 ms for 4 consecutive weeks.
 
 ---
 
@@ -5620,534 +1401,142 @@ weeks.
 
 ```yaml
 id: C1
-gain:
-  structure
-  +
-  practice
-  (+
-  perf
-  through
-  B4)
+gain: structure + practice (+ perf through B4)
 impact: XL
 effort: L
 risk: med
-depends:
-  [
-    A1
-    helps
-    but
-    is
-    not
-    required,
-  ]
+depends: [A1 helps but is not required]
 ```
 
 **Evidence**
 
-- The
-  client
-  calls
-  the
-  API
-  through
-  **840
-  `fetch('/api…')`
-  sites
-  in
-  432
-  files**.
-  Only
-  20
-  files
-  use
-  `lib/http.ts`
-  `fetchJson<T>`,
-  and
-  there
-  `T`
-  is
-  simply
-  asserted.
-- There
-  are
-  no
-  shared
-  response
-  types.
-  The
-  client
-  re-declares
-  shapes
-  by
-  hand.
-- Two
-  RPC
-  styles
-  coexist:
-  988
-  REST
-  route
-  files,
-  and
-  123
-  `createServerFn`
-  calls
-  in
-  109
-  files.
-- 12
-  shared
-  `lib/*-schema.ts`
-  zod
-  files.
-  134
-  non-server
-  lib
-  files
-  import
-  zod.
-- OpenAPI
-  exists
-  only
-  for
-  `/api/v1`
-  (`lib/api/openapi.ts`).
-- `defineHandler`
-  (`lib/api/handler.server.ts`,
-  808
-  lines)
-  already
-  holds
-  the
-  zod
-  schemas
-  for
-  body
-  and
-  query.
-  The
-  contract
-  exists
-  on
-  the
-  server
-  and
-  is
-  thrown
-  away
-  at
-  the
-  wire.
+- The client calls the API through **840 `fetch('/api…')` sites in 432 files**. Only 20 files use `lib/http.ts`
+  `fetchJson<T>`, and there `T` is simply asserted.
+- There are no shared response types. The client re-declares shapes by hand.
+- Two RPC styles coexist: 988 REST route files, and 123 `createServerFn` calls in 109 files.
+- 12 shared `lib/*-schema.ts` zod files. 134 non-server lib files import zod.
+- OpenAPI exists only for `/api/v1` (`lib/api/openapi.ts`).
+- `defineHandler` (`lib/api/handler.server.ts`, 808 lines) already holds the zod schemas for body and query. The
+  contract exists on the server and is thrown away at the wire.
 
-**Target:**
-every
-site
-endpoint
-is
-declared
-**once**,
-as
-a
-contract
-object
-(method,
-path,
-params,
-query,
-body,
-response,
-auth,
-rateLimit,
-cache).
-The
-server
-handler
-is
-typed
-from
-it,
-and
-the
-client
-gets
-a
-generated,
-fully
-typed
-`api.*`
-object.
-`defineHandler`
-keeps
-its
-ordering
-logic
-and
-simply
-accepts
-a
-contract.
+**Target:** every site endpoint is declared **once**, as a contract object (method, path, params, query, body, response,
+auth, rateLimit, cache). The server handler is typed from it, and the client gets a generated, fully typed `api.*`
+object. `defineHandler` keeps its ordering logic and simply accepts a contract.
 
-**Stub:
-the
-contract**
+**Stub: the contract**
 
 ```ts
 // packages/contract/src/define.ts
-import type {
-  z,
-  ZodType,
-} from 'zod';
+import type { z, ZodType } from 'zod';
 export interface Endpoint<
-  P extends
-    ZodType =
-    ZodType,
-  Q extends
-    ZodType =
-    ZodType,
-  B extends
-    ZodType =
-    ZodType,
-  R extends
-    ZodType =
-    ZodType,
+  P extends ZodType = ZodType,
+  Q extends ZodType = ZodType,
+  B extends ZodType = ZodType,
+  R extends ZodType = ZodType,
 > {
-  method:
-    | 'GET'
-    | 'POST'
-    | 'PUT'
-    | 'PATCH'
-    | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   path: string; // '/api/wallet/:userId/transfers'
   params?: P;
   query?: Q;
   body?: B;
   response: R;
-  auth?:
-    | 'required'
-    | 'optional'
-    | 'admin'
-    | 'none';
-  rateLimit?:
-    | 'read'
-    | 'write'
-    | 'ai'
-    | 'upload';
+  auth?: 'required' | 'optional' | 'admin' | 'none';
+  rateLimit?: 'read' | 'write' | 'ai' | 'upload';
   cache?: {
     maxAge: number;
-    scope:
-      | 'public'
-      | 'private';
+    scope: 'public' | 'private';
   };
 }
-export const endpoint =
-  <
-    P extends
-      ZodType,
-    Q extends
-      ZodType,
-    B extends
-      ZodType,
-    R extends
-      ZodType,
-  >(
-    e: Endpoint<
-      P,
-      Q,
-      B,
-      R
-    >,
-  ) =>
-    e;
+export const endpoint = <P extends ZodType, Q extends ZodType, B extends ZodType, R extends ZodType>(
+  e: Endpoint<P, Q, B, R>,
+) => e;
 ```
 
 ```ts
 // features/wallet/api/contract.ts
 import { z } from 'zod';
 import { endpoint } from '@rmh/contract';
-export const Transfer =
-  z.object(
-    {
-      id: z.string(),
-      amount:
-        z
-          .number()
-          .int(),
+export const Transfer = z.object({
+  id: z.string(),
+  amount: z.number().int(),
+  to: z.string(),
+  at: z.string(),
+});
+export const wallet = {
+  get: endpoint({
+    method: 'GET',
+    path: '/api/wallet',
+    auth: 'required',
+    response: z.object({
+      balance: z.number().int(),
+      recent: z.array(Transfer),
+    }),
+  }),
+  transfer: endpoint({
+    method: 'POST',
+    path: '/api/wallet/transfer',
+    auth: 'required',
+    rateLimit: 'write',
+    body: z.object({
       to: z.string(),
-      at: z.string(),
-    },
-  );
-export const wallet =
-  {
-    get: endpoint(
-      {
-        method:
-          'GET',
-        path: '/api/wallet',
-        auth: 'required',
-        response:
-          z.object(
-            {
-              balance:
-                z
-                  .number()
-                  .int(),
-              recent:
-                z.array(
-                  Transfer,
-                ),
-            },
-          ),
-      },
-    ),
-    transfer:
-      endpoint(
-        {
-          method:
-            'POST',
-          path: '/api/wallet/transfer',
-          auth: 'required',
-          rateLimit:
-            'write',
-          body: z.object(
-            {
-              to: z.string(),
-              amount:
-                z
-                  .number()
-                  .int()
-                  .positive()
-                  .max(
-                    1_000_000,
-                  ),
-            },
-          ),
-          response:
-            Transfer,
-        },
-      ),
-  };
+      amount: z.number().int().positive().max(1_000_000),
+    }),
+    response: Transfer,
+  }),
+};
 ```
 
 ```ts
 // server side: the handler is typed by the contract; defineHandler keeps its ordering
 // apps/web/app/routes/api/wallet/transfer.ts
-export const Route =
-  createFileRoute(
-    '/api/wallet/transfer',
-  )(
-    {
-      server:
-        {
-          handlers:
-            {
-              POST: implement(
-                wallet.transfer,
-                async ({
-                  userId,
-                  body,
-                }) =>
-                  transferCoins(
-                    userId,
-                    body,
-                  ),
-              ),
-            },
-        },
+export const Route = createFileRoute('/api/wallet/transfer')({
+  server: {
+    handlers: {
+      POST: implement(wallet.transfer, async ({ userId, body }) => transferCoins(userId, body)),
     },
-  );
+  },
+});
 // implement() = defineHandler(contract options) + response.parse() in dev/test (strip in prod)
 ```
 
 ```ts
 // client side: generated or derived at type level; zero hand-written URLs
 // packages/contract/src/client.ts
-export function makeClient<
-  T extends
-    Record<
-      string,
-      Record<
-        string,
-        Endpoint
-      >
-    >,
->(
-  contracts: T,
-) {
-  return new Proxy(
-    {} as ClientOf<T>,
-    {
-      /* build URL from path+params, JSON body, parse response in dev */
-    },
-  );
+export function makeClient<T extends Record<string, Record<string, Endpoint>>>(contracts: T) {
+  return new Proxy({} as ClientOf<T>, {/* build URL from path+params, JSON body, parse response in dev */});
 }
-export const api =
-  makeClient(
-    {
-      wallet,
-      feed,
-      profile /* … from features.gen.ts */,
-    },
-  );
+export const api = makeClient({
+  wallet,
+  feed,
+  profile /* … from features.gen.ts */,
+});
 // usage
-const {
-  balance,
-} =
-  await api.wallet.get();
-await api.wallet.transfer(
-  {
-    body: {
-      to,
-      amount,
-    },
+const { balance } = await api.wallet.get();
+await api.wallet.transfer({
+  body: {
+    to,
+    amount,
   },
-);
+});
 ```
 
 **Steps**
 
-1. Land
-   `packages/contract`
-   and
-   `implement()`.
-   `implement`
-   delegates
-   to
-   `defineHandler`,
-   so
-   the
-   ordering
-   stays
-   in
-   one
+1. Land `packages/contract` and `implement()`. `implement` delegates to `defineHandler`, so the ordering stays in one
    place.
-2. Migrate
-   the
-   endpoints
-   with
-   the
-   most
-   call
-   sites
-   first
-   (`grep -o "fetch('/api/[a-z-]*" | sort | uniq -c | sort -rn`).
-3. Ban
-   new
-   raw
-   fetches
-   with
-   an
-   ESLint
-   `no-restricted-syntax`
-   on
-   `CallExpression[callee.name='fetch'] > Literal[value=/^\/api\//]`,
-   using
-   a
-   baseline
-   and
-   ratchet.
-4. Generate
-   the
-   OpenAPI
-   document
-   for
-   **all**
-   contracts,
-   not
-   only
-   `/v1`.
-   The
-   developer
-   SDK
-   generator
-   (`scripts/generate-sdk.ts`)
-   already
-   does
-   this
-   for
-   `/v1`.
-5. Decide
-   `createServerFn`
-   vs
-   REST
-   by
-   audience
-   (stated
-   rule,
-   below),
-   then
-   collapse
-   the
-   cases
-   that
-   break
-   it:
-   - **REST
-     contracts**
-     for
-     anything
-     called
-     from
-     more
-     than
-     one
-     place,
-     from
-     islands,
-     from
-     the
-     Go/hub
-     tier
-     or
-     from
+2. Migrate the endpoints with the most call sites first (`grep -o "fetch('/api/[a-z-]*" | sort | uniq -c | sort -rn`).
+3. Ban new raw fetches with an ESLint `no-restricted-syntax` on
+   `CallExpression[callee.name='fetch'] > Literal[value=/^\/api\//]`, using a baseline and ratchet.
+4. Generate the OpenAPI document for **all** contracts, not only `/v1`. The developer SDK generator
+   (`scripts/generate-sdk.ts`) already does this for `/v1`.
+5. Decide `createServerFn` vs REST by audience (stated rule, below), then collapse the cases that break it:
+   - **REST contracts** for anything called from more than one place, from islands, from the Go/hub tier or from
      outside.
-   - **`createServerFn`**
-     only
-     for
-     route
-     loaders
-     private
-     to
-     one
-     route.
-6. Finish
-   the
-   remaining
-   ≈98
-   hand-rolled
-   routes.
-   `KNOWN_UNWRAPPED`
-   in
-   `api-handler-adoption.test.ts`
-   is
-   the
-   list.
-   Several
-   (`admin/library/*`,
-   `tournaments/$id/*`)
-   have
-   no
-   zod
-   parsing
-   and
-   no
-   rate
-   limit.
+   - **`createServerFn`** only for route loaders private to one route.
+6. Finish the remaining ≈98 hand-rolled routes. `KNOWN_UNWRAPPED` in `api-handler-adoption.test.ts` is the list. Several
+   (`admin/library/*`, `tournaments/$id/*`) have no zod parsing and no rate limit.
 
-**Done
-when:**
-the
-raw-fetch
-baseline
-is
-0,
-`KNOWN_UNWRAPPED`
-is
-empty,
-and
-`/api/openapi.json`
-lists
-every
-site
+**Done when:** the raw-fetch baseline is 0, `KNOWN_UNWRAPPED` is empty, and `/api/openapi.json` lists every site
 endpoint.
 
 ---
@@ -6169,135 +1558,25 @@ depends:
   ]
 ```
 
-**Evidence:**
-The
-Speculation
-Rules
-exclusion
-list
-in
-`__root.tsx`
-exists
-because
-**8
-GET
-handlers
-write
-data**
-(mark-as-read,
-unsubscribe,
-AI
-spend,
-and
-others).
-Any
-prefetcher,
-crawler,
-link-preview
-bot
-or
-browser
-extension
-can
-trigger
-them.
+**Evidence:** The Speculation Rules exclusion list in `__root.tsx` exists because **8 GET handlers write data**
+(mark-as-read, unsubscribe, AI spend, and others). Any prefetcher, crawler, link-preview bot or browser extension can
+trigger them.
 
-**Steps:**
-(1)
-List
-them
-by
-grepping
-the
-exclusion
-list,
-then
-audit
-for
-`prisma.*.(update|create|delete|upsert)`
-inside
-GET
-handlers.
-(2)
-Turn
-each
-into
-a
-POST.
-Email
-unsubscribe
-links
-land
-on
-a
-GET
-page
-that
-POSTs
-on
-confirmation,
-and
-also
-support
-`List-Unsubscribe-Post`
-(RFC
-8058).
-(3)
-Add
-a
-`defineHandler`
-dev-mode
-assertion:
-a
-GET
-handler
-that
-opens
-a
-write
-transaction
-throws
-in
-tests.
+**Steps:** (1) List them by grepping the exclusion list, then audit for `prisma.*.(update|create|delete|upsert)` inside
+GET handlers. (2) Turn each into a POST. Email unsubscribe links land on a GET page that POSTs on confirmation, and also
+support `List-Unsubscribe-Post` (RFC 8058). (3) Add a `defineHandler` dev-mode assertion: a GET handler that opens a
+write transaction throws in tests.
 
 **Stub**
 
 ```ts
 // lib/api/handler.server.ts (dev/test only): flag writes inside safe methods
-if (
-  process
-    .env
-    .NODE_ENV !==
-    'production' &&
-  (method ===
-    'GET' ||
-    method ===
-      'HEAD')
-) {
-  return prismaReadOnly.run(
-    () =>
-      handler(
-        ctx,
-      ),
-  ); // AsyncLocalStorage flag checked by a Prisma $extends query hook
+if (process.env.NODE_ENV !== 'production' && (method === 'GET' || method === 'HEAD')) {
+  return prismaReadOnly.run(() => handler(ctx)); // AsyncLocalStorage flag checked by a Prisma $extends query hook
 }
 ```
 
-**Done
-when:**
-the
-Speculation
-Rules
-exclusion
-list
-contains
-no
-API
-paths,
-because
-none
-need
-excluding.
+**Done when:** the Speculation Rules exclusion list contains no API paths, because none need excluding.
 
 ---
 
@@ -6325,360 +1604,40 @@ depends:
 
 **Evidence**
 
-- One
-  `schema.prisma`:
-  13,297
-  lines,
-  **511
-  models**
-  (CLAUDE.md
-  says
-  323;
-  architecture.md
-  says
-  234),
-  82
-  enums,
-  277
+- One `schema.prisma`: 13,297 lines, **511 models** (CLAUDE.md says 323; architecture.md says 234), 82 enums, 277
   migrations.
-- 123
-  `Json`
-  columns.
-  92
-  denormalised
-  `*Count`
-  columns
-  repaired
-  by
-  `scripts/reconcile-{feed,social}-counts.ts`.
-- `User`
-  spans
-  lines
-  12–626,
-  almost
-  all
-  of
-  it
-  back-relations.
-- About
-  32
-  redundant
-  single-column
-  indexes
-  that
-  a
-  composite
-  or
-  unique
-  index
-  already
-  covers
-  as
-  a
-  prefix:
-  `RMHark[userId]`,
-  `RMHark[createdAt]`,
-  `Session[userId]`,
-  `RMHarkReaction[rmheetId]`,
-  and
-  others.
-- Up
-  to
-  107
-  FKs
-  with
-  no
-  index
-  that
-  leads
-  with
-  the
-  FK.
-  This
-  is
-  an
-  upper
-  bound,
-  because
-  some
-  are
-  covered
-  by
-  raw-SQL
-  partial
-  indexes
-  in
-  migrations.
-- Soft
-  delete
-  is
-  inconsistent:
-  4
-  models
-  use
-  `deletedAt`,
-  and
-  RMHark
-  adds
-  `deletedBy`
-  and
-  `deletedByAdmin`.
-- Legacy
-  table
-  names
-  (`@@map("rmheet")`
-  for
-  `RMHark`).
+- 123 `Json` columns. 92 denormalised `*Count` columns repaired by `scripts/reconcile-{feed,social}-counts.ts`.
+- `User` spans lines 12–626, almost all of it back-relations.
+- About 32 redundant single-column indexes that a composite or unique index already covers as a prefix:
+  `RMHark[userId]`, `RMHark[createdAt]`, `Session[userId]`, `RMHarkReaction[rmheetId]`, and others.
+- Up to 107 FKs with no index that leads with the FK. This is an upper bound, because some are covered by raw-SQL
+  partial indexes in migrations.
+- Soft delete is inconsistent: 4 models use `deletedAt`, and RMHark adds `deletedBy` and `deletedByAdmin`.
+- Legacy table names (`@@map("rmheet")` for `RMHark`).
 
 **Steps**
 
-1. **Split
-   the
-   schema
-   into
-   one
-   file
-   per
-   domain**
-   using
-   Prisma's
-   multi-file
-   schema
-   (`prisma/schema/*.prisma`;
-   GA
-   since
-   Prisma
-   6.7).
-   Use
-   one
-   file
-   per
-   feature
-   or
-   domain,
-   for
-   example
-   `feed.prisma`,
-   `economy.prisma`
-   and
-   `games/balatro.prisma`.
-   This
-   is
-   a
-   pure
-   move;
-   `prisma format`
-   verifies
-   it.
-2. **Thin
-   `User`.**
-   Game
-   and
-   app
-   state
-   that
-   hangs
-   off
-   `User`
-   moves
-   to
-   per-feature
-   profile
-   tables
-   (`BalatroProfile { userId @id }`).
-   Relation
-   fields
-   remain
-   only
-   where
-   the
-   user
-   side
-   really
-   navigates
-   them.
-   Prisma
-   requires
-   back-relation
-   fields
-   on
-   both
-   sides;
-   moving
-   the
-   relation
-   to
-   a
-   1:1
-   profile
-   model
-   is
-   what
-   removes
-   them
-   from
+1. **Split the schema into one file per domain** using Prisma's multi-file schema (`prisma/schema/*.prisma`; GA since
+   Prisma 6.7). Use one file per feature or domain, for example `feed.prisma`, `economy.prisma` and
+   `games/balatro.prisma`. This is a pure move; `prisma format` verifies it.
+2. **Thin `User`.** Game and app state that hangs off `User` moves to per-feature profile tables
+   (`BalatroProfile { userId @id }`). Relation fields remain only where the user side really navigates them. Prisma
+   requires back-relation fields on both sides; moving the relation to a 1:1 profile model is what removes them from
    `User`.
-3. **Index
-   pass.**
-   Generate
-   the
-   redundant-index
-   list
-   and
-   the
-   unindexed-FK
-   list
-   from
-   the
-   live
-   database,
-   not
-   the
-   schema:
-   `pg_stat_user_indexes`
-   with
-   `idx_scan = 0`
-   over
-   30
-   days,
-   and
-   FK
-   columns
-   without
-   a
-   leading
-   index.
-   Drop
-   indexes
-   with
-   `DROP INDEX CONCURRENTLY`
-   and
-   add
-   them
-   with
-   `CREATE INDEX CONCURRENTLY`,
-   in
-   raw-SQL
-   migrations.
-4. **Counters.**
-   For
-   each
-   `*Count`
-   column,
-   decide
-   between
-   (a)
-   keeping
-   it
-   denormalised
-   but
-   updating
-   it
-   in
-   the
-   same
-   transaction
-   through
-   one
-   helper
-   (`bumpCount(model, id, field, delta)`)
-   and
-   running
-   the
-   reconciler
-   nightly
-   from
-   pg-boss,
-   or
-   (b)
-   dropping
-   it
-   for
-   a
-   covered
-   `COUNT(*)`
-   that
-   is
-   cheap
-   at
-   the
-   current
-   scale.
-   Measure
-   with
-   `EXPLAIN ANALYZE`
-   first.
-5. **Soft
-   delete.**
-   Adopt
-   one
-   convention
-   (`deletedAt timestamptz NULL` +
-   a
-   partial
-   index
-   `WHERE deletedAt IS NULL`)
-   and
-   one
-   Prisma
-   `$extends`
-   that
-   filters
-   it.
-   Only
-   user-generated
-   content
-   gets
-   soft
-   delete.
-6. **Json
-   columns.**
-   Classify
-   the
-   123:
-   keep
-   **opaque
-   blobs**
-   (game
-   saves,
-   settings)
-   as
-   `Json`
-   with
-   a
-   zod
-   schema
-   next
-   to
-   them;
-   promote
-   **queried
-   fields**
-   to
-   columns.
-7. Rename
-   legacy
-   tables
-   only
-   if
-   the
-   rename
-   is
-   free
-   (Prisma
-   `@@map`
-   hides
-   them).
-   Leave
-   this
-   as
-   the
-   last
-   item.
+3. **Index pass.** Generate the redundant-index list and the unindexed-FK list from the live database, not the schema:
+   `pg_stat_user_indexes` with `idx_scan = 0` over 30 days, and FK columns without a leading index. Drop indexes with
+   `DROP INDEX CONCURRENTLY` and add them with `CREATE INDEX CONCURRENTLY`, in raw-SQL migrations.
+4. **Counters.** For each `*Count` column, decide between (a) keeping it denormalised but updating it in the same
+   transaction through one helper (`bumpCount(model, id, field, delta)`) and running the reconciler nightly from
+   pg-boss, or (b) dropping it for a covered `COUNT(*)` that is cheap at the current scale. Measure with
+   `EXPLAIN ANALYZE` first.
+5. **Soft delete.** Adopt one convention (`deletedAt timestamptz NULL` + a partial index `WHERE deletedAt IS NULL`) and
+   one Prisma `$extends` that filters it. Only user-generated content gets soft delete.
+6. **Json columns.** Classify the 123: keep **opaque blobs** (game saves, settings) as `Json` with a zod schema next to
+   them; promote **queried fields** to columns.
+7. Rename legacy tables only if the rename is free (Prisma `@@map` hides them). Leave this as the last item.
 
-**Stub:
-schema
-folder**
+**Stub: schema folder**
 
 ```
 prisma/
@@ -6693,38 +1652,13 @@ prisma/
 
 ```ts
 // prisma.config.ts
-export default defineConfig(
-  {
-    schema:
-      'prisma/schema',
-  },
-);
+export default defineConfig({
+  schema: 'prisma/schema',
+});
 ```
 
-**Done
-when:**
-no
-`.prisma`
-file
-exceeds
-1,500
-lines,
-`User`
-is
-under
-80
-lines,
-and
-the
-unused-index
-query
-returns
-no
-rows
-older
-than
-30
-days.
+**Done when:** no `.prisma` file exceeds 1,500 lines, `User` is under 80 lines, and the unused-index query returns no
+rows older than 30 days.
 
 ---
 
@@ -6745,152 +1679,33 @@ depends:
   ]
 ```
 
-**Evidence:**
-There
-are
-at
-least
-six
-cache
-layers:
+**Evidence:** There are at least six cache layers:
 
-- `lib/cache.ts`
-  `apiCache`:
-  L1
-  only,
-  54
-  importers.
-- `lib/cached.server.ts`:
-  L1 +
-  Redis
-  L2 +
-  pub/sub
-  invalidation,
-  37
-  importers.
-- The
-  `defineHandler`
-  response
-  micro-cache
-  (≤
-  30
-  s),
-  with
-  80
-  routes
-  declaring
-  `cache:`.
-- `lru-cache`,
-  in
-  4
-  files.
-- **About
-  101
-  files
-  with
-  ad-hoc
-  `TTL_MS`
-  maps.**
-- Nitro
-  `anon-html-cache.ts`.
-  It
-  is
-  inert
-  unless
-  a
-  Cloudflare
-  rule
-  exists,
-  and
-  `deploy/apply-cloudflare-cache-rules.sh`
-  scopes
-  that
-  rule
-  to
-  `/`
-  only.
+- `lib/cache.ts` `apiCache`: L1 only, 54 importers.
+- `lib/cached.server.ts`: L1 + Redis L2 + pub/sub invalidation, 37 importers.
+- The `defineHandler` response micro-cache (≤ 30 s), with 80 routes declaring `cache:`.
+- `lru-cache`, in 4 files.
+- **About 101 files with ad-hoc `TTL_MS` maps.**
+- Nitro `anon-html-cache.ts`. It is inert unless a Cloudflare rule exists, and `deploy/apply-cloudflare-cache-rules.sh`
+  scopes that rule to `/` only.
 
-There
-is
-no
-`/api`
-edge
-caching,
-although
-`defineHandler`
-already
-refuses
-`public`
-caching
-on
-authenticated
-routes
-when
-the
-module
-loads.
+There is no `/api` edge caching, although `defineHandler` already refuses `public` caching on authenticated routes when
+the module loads.
 
 **Target**
 
-- **One
-  helper**,
-  `cached(key, ttl, fn, { tags })`
-  (today's
-  `cached.server.ts`),
-  with
-  tag-based
-  invalidation
-  over
-  the
-  Redis
-  bus.
-- `apiCache`
-  and
-  the
-  TTL
-  maps
-  are
-  codemodded
-  onto
-  it.
-- **Edge:**
-  every
-  handler
-  that
-  declares
-  `cache: { scope: 'public' }`
-  gets
-  `Cache-Control: public, s-maxage=N, stale-while-revalidate=M`.
-  One
-  Cloudflare
-  cache
-  rule
-  respects
-  origin
-  headers
-  for
-  `/api/*`.
-  Anonymous
-  HTML
-  extends
-  past
-  `/`
-  to
-  catalog
-  pages:
-  `/games`,
-  `/apps`,
-  blog
-  and
-  news.
+- **One helper**, `cached(key, ttl, fn, { tags })` (today's `cached.server.ts`), with tag-based invalidation over the
+  Redis bus.
+- `apiCache` and the TTL maps are codemodded onto it.
+- **Edge:** every handler that declares `cache: { scope: 'public' }` gets
+  `Cache-Control: public, s-maxage=N, stale-while-revalidate=M`. One Cloudflare cache rule respects origin headers for
+  `/api/*`. Anonymous HTML extends past `/` to catalog pages: `/games`, `/apps`, blog and news.
 
 **Stub**
 
 ```ts
 // packages/platform/src/cache.server.ts
-export async function cached<
-  T,
->(
+export async function cached<T>(
   key: string,
   ttlMs: number,
   fn: () => Promise<T>,
@@ -6898,58 +1713,20 @@ export async function cached<
     tags?: string[];
   } = {},
 ) {
-  const hit =
-    l1.get(
-      key,
-    ) ??
-    (await l2.get<T>(
-      key,
-    ));
-  if (
-    hit !==
-    undefined
-  )
-    return hit;
-  const val =
-    await singleflight(
-      key,
-      fn,
-    ); // collapse concurrent misses
-  l1.set(
-    key,
-    val,
-    ttlMs,
-  );
-  await l2.set(
-    key,
-    val,
-    ttlMs,
-    opts.tags,
-  );
+  const hit = l1.get(key) ?? (await l2.get<T>(key));
+  if (hit !== undefined) return hit;
+  const val = await singleflight(key, fn); // collapse concurrent misses
+  l1.set(key, val, ttlMs);
+  await l2.set(key, val, ttlMs, opts.tags);
   return val;
 }
-export const invalidateTag =
-  (
-    tag: string,
-  ) =>
-    bus.publish(
-      'cache:invalidate',
-      {
-        tag,
-      },
-    );
+export const invalidateTag = (tag: string) =>
+  bus.publish('cache:invalidate', {
+    tag,
+  });
 ```
 
-**Done
-when:**
-`rg -l "TTL_MS|ttlMs" --glob '!packages/platform/**' | wc -l`
-is
-≤
-10,
-and
-`lib/cache.ts`
-is
-deleted.
+**Done when:** `rg -l "TTL_MS|ttlMs" --glob '!packages/platform/**' | wc -l` is ≤ 10, and `lib/cache.ts` is deleted.
 
 ---
 
@@ -6976,299 +1753,33 @@ depends:
 
 **Evidence**
 
-- Production
-  is
-  **one
-  ARM
-  VPS**
-  running
-  Postgres
-  (on
-  the
-  host),
-  Redis,
-  all
-  hubs,
-  all
-  workers
-  and
-  Apache.
-- Backups
-  are
-  a
-  nightly
-  `pg_dump`
-  to
-  R2
-  (`deploy/backup/pg-backup.sh`,
-  30
-  daily
-  and
-  12
-  monthly)
-  plus
-  `restore-drill.sh`,
-  both
-  installed
-  **by
-  hand**
-  as
-  systemd
-  units.
-  WAL/PITR
-  is
-  documented
-  as
-  "host
-  provisioning,
-  not
-  repo
-  code",
-  so
-  the
-  repo
-  cannot
-  show
-  it.
-  **Assume
-  up
-  to
-  24
-  h
-  RPO.**
-- PgBouncer
-  is
-  defined
-  but
-  **dormant**
-  (compose
-  profile).
-  `docker-compose.yml:236–244`
-  adds
-  up
-  the
-  connection
-  budget
-  to
-  **165
-  of
-  197**
-  usable
-  connections:
-  2
-  workers
-  ×
-  22
-  ×
-  2
-  blue/green
-  containers,
-  plus
-  hubs,
-  jobs
-  and
-  Go.
-- `redis-state`
-  (noeviction +
-  AOF)
-  is
-  **dormant**,
-  so
-  rate-limit
-  counters
-  and
-  dirty
-  view/counter
-  buffers
-  live
-  on
-  the
-  `allkeys-lru`
-  cache
-  (320
-  MB)
-  and
-  can
-  be
-  evicted.
-- Better
-  Auth's
-  rate
-  limiter
-  uses
-  `storage: 'memory'`
-  unless
-  `BETTER_AUTH_RATE_LIMIT_DB=1`
-  (`lib/auth.ts:83`).
-  The
-  effective
-  limit
-  is
-  therefore
-  ×
-  2
-  workers,
-  and
-  ×
-  2
-  again
-  during
-  blue/green.
+- Production is **one ARM VPS** running Postgres (on the host), Redis, all hubs, all workers and Apache.
+- Backups are a nightly `pg_dump` to R2 (`deploy/backup/pg-backup.sh`, 30 daily and 12 monthly) plus `restore-drill.sh`,
+  both installed **by hand** as systemd units. WAL/PITR is documented as "host provisioning, not repo code", so the repo
+  cannot show it. **Assume up to 24 h RPO.**
+- PgBouncer is defined but **dormant** (compose profile). `docker-compose.yml:236–244` adds up the connection budget to
+  **165 of 197** usable connections: 2 workers × 22 × 2 blue/green containers, plus hubs, jobs and Go.
+- `redis-state` (noeviction + AOF) is **dormant**, so rate-limit counters and dirty view/counter buffers live on the
+  `allkeys-lru` cache (320 MB) and can be evicted.
+- Better Auth's rate limiter uses `storage: 'memory'` unless `BETTER_AUTH_RATE_LIMIT_DB=1` (`lib/auth.ts:83`). The
+  effective limit is therefore × 2 workers, and × 2 again during blue/green.
 
-**Steps
-(in
-order;
-each
-is
-a
-config
-change,
-not
-a
-rewrite)**
+**Steps (in order; each is a config change, not a rewrite)**
 
-1. **Today:**
-   turn
-   on
-   `redis-state`
-   and
-   point
-   rate
-   limits,
-   counters
-   and
-   lobbies
-   at
-   it.
-   Set
-   `BETTER_AUTH_RATE_LIMIT_DB=1`,
-   or
-   move
-   Better
-   Auth's
-   limiter
-   onto
-   Redis
-   secondary
-   storage.
-2. **This
-   week:**
-   turn
-   on
-   the
-   PgBouncer
-   profile
-   in
-   transaction
-   mode.
-   Prisma
-   with
-   `@prisma/adapter-pg`
-   works
-   with
-   transaction
-   pooling.
-   Keep
-   a
-   direct
-   URL
-   for
-   migrations
-   and
-   for
-   `LISTEN/NOTIFY`
-   (pg-boss).
-3. **This
-   month:**
-   move
-   Postgres
-   to
-   a
-   managed
-   service
-   with
-   PITR
-   and
-   a
-   read
-   replica,
-   in
-   the
-   same
-   region
-   as
-   the
-   VPS.
-   `DATABASE_REPLICA_URL`
-   support
-   already
-   exists
-   in
-   `lib/prisma.server.ts`.
-   Run
-   the
-   restore
-   drill
-   against
-   the
-   managed
-   instance
-   monthly
-   from
-   CI,
-   not
-   by
-   hand.
-4. **Later:**
-   a
-   second
-   app
-   host
-   behind
-   Cloudflare
-   load
-   balancing
-   becomes
-   possible
-   once
-   D2
-   (realtime
-   backplane)
-   is
-   done.
+1. **Today:** turn on `redis-state` and point rate limits, counters and lobbies at it. Set
+   `BETTER_AUTH_RATE_LIMIT_DB=1`, or move Better Auth's limiter onto Redis secondary storage.
+2. **This week:** turn on the PgBouncer profile in transaction mode. Prisma with `@prisma/adapter-pg` works with
+   transaction pooling. Keep a direct URL for migrations and for `LISTEN/NOTIFY` (pg-boss).
+3. **This month:** move Postgres to a managed service with PITR and a read replica, in the same region as the VPS.
+   `DATABASE_REPLICA_URL` support already exists in `lib/prisma.server.ts`. Run the restore drill against the managed
+   instance monthly from CI, not by hand.
+4. **Later:** a second app host behind Cloudflare load balancing becomes possible once D2 (realtime backplane) is done.
 
-**Done
-when**
+**Done when**
 
-- `docker compose --profile pgbouncer --profile redis-state config`
-  is
-  the
-  production
-  command
-  in
-  `deploy.sh`.
-- A
-  documented
-  PITR
-  restore
-  to
-  an
-  arbitrary
-  minute
-  has
-  been
-  performed.
-- `deploy/backup`
-  runs
-  from
-  a
-  scheduled
-  workflow
-  with
-  an
-  alert
-  on
-  failure.
+- `docker compose --profile pgbouncer --profile redis-state config` is the production command in `deploy.sh`.
+- A documented PITR restore to an arbitrary minute has been performed.
+- `deploy/backup` runs from a scheduled workflow with an alert on failure.
 
 ---
 
@@ -7276,237 +1787,36 @@ when**
 
 ```yaml
 id: D2
-gain:
-  practice
-  (reliability,
-  horizontal
-  scale)
-  +
-  structure
+gain: practice (reliability, horizontal scale) + structure
 impact: L
 effort: L
-risk:
-  high
-  (live
-  games
-  and
-  calls)
-depends:
-  [
-    D1
-    step
-    1
-    (redis-state),
-  ]
+risk: high (live games and calls)
+depends: [D1 step 1 (redis-state)]
 ```
 
 **Evidence**
 
-- There
-  are
-  three
-  Socket.IO
-  hubs:
-  socket-server
-  (32,679
-  lines,
-  32
-  handlers),
-  rmhbox
-  (17,310)
-  and
-  rmhtube
-  (3,885).
-- **Each
-  validates
-  sessions
-  on
-  its
-  own**:
-  `server/socket-server/index.ts:109–175`,
-  `server/rmhbox/auth.ts`
-  (251
-  lines,
-  which
-  also
-  does
-  Discord
-  Activity
-  OAuth)
-  and
-  `server/rmhtube/auth.ts`
-  (165).
-  Go
-  `pkg/auth`
-  and
-  Better
-  Auth
-  make
-  four
-  to
-  five
-  implementations
-  of
-  one
-  check.
-- There
-  is
-  **no
-  `@socket.io/redis-adapter`.**
-  All
-  state
-  lives
-  in
-  module-level
-  `Map`s,
-  so
-  an
-  rmhbox
-  restart
-  drops
-  every
-  lobby.
-  Casino
-  stakes
-  live
-  in
-  memory
-  behind
-  a
-  refund-on-shutdown
-  contract
+- There are three Socket.IO hubs: socket-server (32,679 lines, 32 handlers), rmhbox (17,310) and rmhtube (3,885).
+- **Each validates sessions on its own**: `server/socket-server/index.ts:109–175`, `server/rmhbox/auth.ts` (251 lines,
+  which also does Discord Activity OAuth) and `server/rmhtube/auth.ts` (165). Go `pkg/auth` and Better Auth make four to
+  five implementations of one check.
+- There is **no `@socket.io/redis-adapter`.** All state lives in module-level `Map`s, so an rmhbox restart drops every
+  lobby. Casino stakes live in memory behind a refund-on-shutdown contract
   (`features/casino/server/casino-shutdown.ts`).
-- **Hubs
-  have
-  no
-  blue/green.**
-  They
-  restart
-  in
-  place
-  on
-  every
-  deploy.
-- The
-  web
-  tier
-  also
-  runs
-  14
-  SSE
-  endpoints,
-  so
-  the
-  site
-  uses
-  two
-  transports.
+- **Hubs have no blue/green.** They restart in place on every deploy.
+- The web tier also runs 14 SSE endpoints, so the site uses two transports.
 
-**Target:**
-one
-`apps/realtime`
-process
-type,
-horizontally
-scalable,
-with:
+**Target:** one `apps/realtime` process type, horizontally scalable, with:
 
-- **one
-  auth
-  middleware**,
-  using
-  `packages/platform/auth/session.server.ts`
-  (also
-  used
-  by
-  the
-  web
-  tier);
-- **the
-  Redis
-  adapter**
-  for
-  cross-instance
-  rooms;
-- **a
-  durable
-  room
-  store**
-  (`redis-state`)
-  for
-  anything
-  that
-  must
-  survive
-  a
-  restart:
-  lobbies,
-  seats,
-  stakes,
-  match
-  state
+- **one auth middleware**, using `packages/platform/auth/session.server.ts` (also used by the web tier);
+- **the Redis adapter** for cross-instance rooms;
+- **a durable room store** (`redis-state`) for anything that must survive a restart: lobbies, seats, stakes, match state
   snapshots;
-- **graceful
-  drain:**
-  on
-  SIGTERM,
-  stop
-  accepting
-  connections,
-  emit
-  `server:draining`,
-  let
-  clients
-  reconnect
-  elsewhere
-  and
-  restore
-  from
-  the
-  room
-  store;
-- **one
-  transport
-  for
-  the
-  site.**
-  The
-  SSE
-  streams
-  (messages,
-  feed,
-  notifications)
-  become
-  namespaces
-  on
-  the
-  same
-  connection.
-  Alternatively,
-  SSE
-  stays
-  the
-  only
-  transport
-  for
-  site
-  push
-  and
-  sockets
-  are
-  kept
-  for
-  games;
-  either
-  way,
-  pick
-  one
-  per
-  use
-  and
-  write
-  it
-  down.
+- **graceful drain:** on SIGTERM, stop accepting connections, emit `server:draining`, let clients reconnect elsewhere
+  and restore from the room store;
+- **one transport for the site.** The SSE streams (messages, feed, notifications) become namespaces on the same
+  connection. Alternatively, SSE stays the only transport for site push and sockets are kept for games; either way, pick
+  one per use and write it down.
 
 **Stub**
 
@@ -7518,186 +1828,53 @@ import { redisState } from '@rmh/platform/redis.server';
 import { resolveSession } from '@rmh/platform/auth/session.server'; // the ONE session check
 import { registerAll } from './features';
 
-const io =
-  new Server(
-    {
-      path: '/rt',
-      cors: {
-        origin:
-          ORIGINS,
-        credentials: true,
-      },
-    },
-  );
-const pub =
-  redisState.duplicate();
-const sub =
-  redisState.duplicate();
-io.adapter(
-  createAdapter(
-    pub,
-    sub,
-  ),
-);
-
-io.use(
-  async (
-    socket,
-    next,
-  ) => {
-    const session =
-      await resolveSession(
-        socket
-          .handshake
-          .headers
-          .cookie,
-      ); // cached, ≤ 30 s TTL
-    socket.data.userId =
-      session
-        ?.user
-        .id ??
-      null; // soft auth; namespaces may require
-    next();
+const io = new Server({
+  path: '/rt',
+  cors: {
+    origin: ORIGINS,
+    credentials: true,
   },
-);
+});
+const pub = redisState.duplicate();
+const sub = redisState.duplicate();
+io.adapter(createAdapter(pub, sub));
 
-registerAll(
-  io,
-  {
-    rooms:
-      durableRooms(
-        redisState,
-      ),
-    prisma,
-    log,
-  },
-);
+io.use(async (socket, next) => {
+  const session = await resolveSession(socket.handshake.headers.cookie); // cached, ≤ 30 s TTL
+  socket.data.userId = session?.user.id ?? null; // soft auth; namespaces may require
+  next();
+});
 
-process.on(
-  'SIGTERM',
-  async () => {
-    io.emit(
-      'server:draining',
-    );
-    io.close(); // stop accepting; existing sockets get a reconnect hint
-    await durableRooms(
-      redisState,
-    ).flush();
-    process.exit(
-      0,
-    );
-  },
-);
+registerAll(io, {
+  rooms: durableRooms(redisState),
+  prisma,
+  log,
+});
+
+process.on('SIGTERM', async () => {
+  io.emit('server:draining');
+  io.close(); // stop accepting; existing sockets get a reconnect hint
+  await durableRooms(redisState).flush();
+  process.exit(0);
+});
 ```
 
 ```ts
 // packages/core/src/realtime/durable-room.ts: what replaces module-level Maps
-export interface DurableRoom<
-  S,
-> {
-  load(
-    id: string,
-  ): Promise<S | null>;
-  save(
-    id: string,
-    s: S,
-    ttlSec?: number,
-  ): Promise<void>;
+export interface DurableRoom<S> {
+  load(id: string): Promise<S | null>;
+  save(id: string, s: S, ttlSec?: number): Promise<void>;
   /** optimistic concurrency: WATCH/MULTI or a version field */
-  update(
-    id: string,
-    fn: (
-      s: S,
-    ) => S,
-  ): Promise<S>;
+  update(id: string, fn: (s: S) => S): Promise<S>;
 }
 ```
 
-**Steps:**
-(1)
-Extract
-the
-shared
-session
-check
-and
-use
-it
-in
-all
-three
-hubs.
-(2)
-Add
-the
-adapter +
-room
-store
-to
-rmhbox
-first;
-its
-restart
-pain
-is
-the
-highest.
-(3)
-Merge
-the
-hubs
-into
-one
-process
-type
-with
-namespaces,
-so
-each
-feature's
-`server/`
-registers
-itself
-(A1).
-(4)
-Add
-drain +
-rolling
-restart
-to
-`deploy.sh`.
-(5)
-Decide
-the
-SSE
-question.
+**Steps:** (1) Extract the shared session check and use it in all three hubs. (2) Add the adapter + room store to rmhbox
+first; its restart pain is the highest. (3) Merge the hubs into one process type with namespaces, so each feature's
+`server/` registers itself (A1). (4) Add drain + rolling restart to `deploy.sh`. (5) Decide the SSE question.
 
-**Done
-when:**
-`docker compose up --scale realtime=2`
-works
-with
-a
-sticky
-cookie
-at
-the
-proxy,
-a
-deploy
-restarts
-hubs
-without
-dropping
-an
-rmhbox
-lobby,
-and
-`rg "handshake.*cookie|session.*JOIN" apps/realtime -l`
-finds
-a
-single
-file.
+**Done when:** `docker compose up --scale realtime=2` works with a sticky cookie at the proxy, a deploy restarts hubs
+without dropping an rmhbox lobby, and `rg "handshake.*cookie|session.*JOIN" apps/realtime -l` finds a single file.
 
 ---
 
@@ -7705,339 +1882,70 @@ file.
 
 ```yaml
 id: D3
-gain:
-  structure
-  (one
-  language
-  for
-  app
-  logic,
-  one
-  build
-  system)
+gain: structure (one language for app logic, one build system)
 impact: L
 effort: L
 risk: med
-depends:
-  [
-    D4,
-  ]
+depends: [D4]
 ```
 
 **Evidence**
 
-- Go
-  has
-  30,428
-  non-test
-  lines.
-  The
-  workers:
-  discordbot
-  11,017,
-  botworker
-  3,323,
-  recap
-  991,
-  doctrine
-  719,
-  vibeworker
-  604,
-  streaksaver 284.
-  Status
-  is
-  10,406
-  lines.
-- **Bazel
-  is
-  used
-  only
-  for
-  CI
-  unit
-  tests**
-  (30
-  `BUILD.bazel`
-  files).
-  Production
-  builds
-  with
-  plain
-  `go build`
-  in
-  the
-  Dockerfile,
-  so
-  30k
-  lines
-  have
-  two
-  build
-  systems.
-- **Go
-  writes
-  ≈43
-  tables
-  with
-  raw
-  SQL**
-  against
-  `pkg/db/models.go`,
-  which
-  hand-mirrors
-  Prisma
-  column
-  casing.
-- Ported
-  logic
-  is
-  duplicated
-  in
-  both
-  languages:
-  - Doctrine
-    puzzle
-    generation:
-    TS +
-    Go,
-    kept
-    "bit-exact
-    mulberry32"
-    by
-    a
-    parity
-    test.
-  - DeepSeek
-    clients:
-    `lib/ai/*`
-    and
-    `internal/discordbot/deepseek.go`.
-  - Streaks:
-    `lib/streak.server.ts`
-    and
-    `internal/streaksaver`.
-  - Recap:
-    `lib/recap.server.ts`
-    and
-    `internal/recap`.
-  - Session
-    validation.
-- Go
-  calls
-  back
-  into
-  the
-  web
-  tier
-  over
-  HTTP
-  for
-  push
-  (`/api/internal/streak-push`,
-  `notify-message`,
-  `notify-typing`).
-- `internal/ledger`
-  (755
-  lines)
-  is
-  dead.
-- These
-  are
-  I/O-bound
-  cron
-  and
-  bot
-  workers,
-  so
-  Go
-  buys
-  no
-  performance
-  here.
+- Go has 30,428 non-test lines. The workers: discordbot 11,017, botworker 3,323, recap 991, doctrine 719, vibeworker
+  604, streaksaver 284. Status is 10,406 lines.
+- **Bazel is used only for CI unit tests** (30 `BUILD.bazel` files). Production builds with plain `go build` in the
+  Dockerfile, so 30k lines have two build systems.
+- **Go writes ≈43 tables with raw SQL** against `pkg/db/models.go`, which hand-mirrors Prisma column casing.
+- Ported logic is duplicated in both languages:
+  - Doctrine puzzle generation: TS + Go, kept "bit-exact mulberry32" by a parity test.
+  - DeepSeek clients: `lib/ai/*` and `internal/discordbot/deepseek.go`.
+  - Streaks: `lib/streak.server.ts` and `internal/streaksaver`.
+  - Recap: `lib/recap.server.ts` and `internal/recap`.
+  - Session validation.
+- Go calls back into the web tier over HTTP for push (`/api/internal/streak-push`, `notify-message`, `notify-typing`).
+- `internal/ledger` (755 lines) is dead.
+- These are I/O-bound cron and bot workers, so Go buys no performance here.
 
-**Keep
-in
-Go:**
-`status`,
-which
-is
-designed
-to
-survive
-the
-platform
-being
-down.
-The
-same
-argument
-favours
-running
-it
-**off-box**
-(see
-D6).
-`assets`
-(148
-lines)
-can
-stay
-or
-move;
-it
-is
-trivial
-either
-way.
+**Keep in Go:** `status`, which is designed to survive the platform being down. The same argument favours running it
+**off-box** (see D6). `assets` (148 lines) can stay or move; it is trivial either way.
 
-**Steps
-(one
-worker
-per
-PR,
-smallest
-first)**
+**Steps (one worker per PR, smallest first)**
 
-1. streaksaver
-   →
-   `features/streaks/jobs/save.ts`
-   (pg-boss
-   cron),
-   reusing
-   `lib/streak.server.ts`.
-   Delete
-   the
-   Go
-   copy.
-2. recap
-   →
-   the
-   existing
-   TS
-   recap.
-   doctrine
-   →
-   the
-   TS
-   engine;
-   delete
-   the
-   parity
-   test
-   and
-   the
-   Go
-   seed.
-3. vibeworker,
-   then
-   botworker.
-4. discordbot
-   (11k
-   lines)
-   last.
-   Rewrite
-   on
-   `discord.js`
-   inside
-   `apps/workers`,
-   or
-   keep
-   it
-   as
-   the
-   single
-   remaining
-   Go
-   binary
-   if
-   the
-   gateway
-   client
-   is
-   the
-   valuable
-   part.
-   Decide
-   on
-   cost.
-5. Delete
-   `MODULE.bazel`,
-   `BUILD.bazel`,
-   `bazel/`,
-   `pkg/db/models.go`
-   and
-   the
-   `go-microservices.yml`
-   workflow
-   once
-   only
-   `status`
-   remains.
-   It
-   then
-   needs
-   only
-   `go test ./...`.
+1. streaksaver → `features/streaks/jobs/save.ts` (pg-boss cron), reusing `lib/streak.server.ts`. Delete the Go copy.
+2. recap → the existing TS recap. doctrine → the TS engine; delete the parity test and the Go seed.
+3. vibeworker, then botworker.
+4. discordbot (11k lines) last. Rewrite on `discord.js` inside `apps/workers`, or keep it as the single remaining Go
+   binary if the gateway client is the valuable part. Decide on cost.
+5. Delete `MODULE.bazel`, `BUILD.bazel`, `bazel/`, `pkg/db/models.go` and the `go-microservices.yml` workflow once only
+   `status` remains. It then needs only `go test ./...`.
 
-**Stub:
-a
-pg-boss
-job
-replacing
-a
-Go
-ticker**
+**Stub: a pg-boss job replacing a Go ticker**
 
 ```ts
 // features/streaks/jobs/save.ts
 import { defineJob } from '@rmh/platform/jobs.server';
-export default defineJob(
-  {
-    name: 'streaks.save-at-risk',
-    cron: '*/15 * * * *', // UTC; pg-boss schedule()
-    singleton: true, // one runner cluster-wide
-    retry:
-      {
-        limit: 3,
-        backoffSec: 30,
-      },
-    async run({
-      log,
-    }) {
-      const atRisk =
-        await findAtRiskStreaks(); // was internal/streaksaver SQL
-      for (const s of atRisk)
-        await sendStreakPush(
-          s,
-        ); // direct call, no HTTP hop back into web
-      log.info(
-        {
-          count:
-            atRisk.length,
-        },
-        'streak pushes sent',
-      );
-    },
+export default defineJob({
+  name: 'streaks.save-at-risk',
+  cron: '*/15 * * * *', // UTC; pg-boss schedule()
+  singleton: true, // one runner cluster-wide
+  retry: {
+    limit: 3,
+    backoffSec: 30,
   },
-);
+  async run({ log }) {
+    const atRisk = await findAtRiskStreaks(); // was internal/streaksaver SQL
+    for (const s of atRisk) await sendStreakPush(s); // direct call, no HTTP hop back into web
+    log.info(
+      {
+        count: atRisk.length,
+      },
+      'streak pushes sent',
+    );
+  },
+});
 ```
 
-**Done
-when:**
-`go-services/`
-contains
-only
-`cmd/status`
-and
-its
-packages,
-and
-nothing
-in
-the
-repo
-invokes
-`bazel`.
+**Done when:** `go-services/` contains only `cmd/status` and its packages, and nothing in the repo invokes `bazel`.
 
 ---
 
@@ -8062,149 +1970,29 @@ depends:
   ]
 ```
 
-**Evidence:**
-Six
-mechanisms
-coexist:
+**Evidence:** Six mechanisms coexist:
 
-1. pg-boss
-   (`server/jobs`,
-   producers
-   in
-   18
-   lib
-   files,
-   ≈37
-   queues).
-2. node-cron
-   (ladder-worker,
-   homes-worker,
-   `lib/rmhladder/scheduler.ts`).
-3. The
-   Go
-   supervisor
-   (12
-   files
-   with
-   tickers
-   or
-   cron).
-4. **`setInterval`
-   in
-   45
-   web-tier
-   files**,
-   which
-   conflicts
-   with
-   the
-   "no
-   cron
-   in
-   the
-   web
-   tier"
-   rule.
-   Some
-   of
-   these
-   are
-   cache
-   GC.
-5. Host
-   systemd
-   timers.
-6. An
-   HTTP
-   cron
-   route
-   (`api/cron/webhooks.ts`).
+1. pg-boss (`server/jobs`, producers in 18 lib files, ≈37 queues).
+2. node-cron (ladder-worker, homes-worker, `lib/rmhladder/scheduler.ts`).
+3. The Go supervisor (12 files with tickers or cron).
+4. **`setInterval` in 45 web-tier files**, which conflicts with the "no cron in the web tier" rule. Some of these are
+   cache GC.
+5. Host systemd timers.
+6. An HTTP cron route (`api/cron/webhooks.ts`).
 
-Locking
-differs
-per
-mechanism
-(a
-hand
-lease
-via
-`$queryRawUnsafe`
-in
-`lib/rmhladder/worker-lease.ts`,
-pg-boss
-singletons,
-Go
-errgroup).
+Locking differs per mechanism (a hand lease via `$queryRawUnsafe` in `lib/rmhladder/worker-lease.ts`, pg-boss
+singletons, Go errgroup).
 
-**Target:**
-all
-application
-work
-runs
-as
-pg-boss
-jobs
-registered
-by
-`features/*/jobs`
-and
-run
-by
-`apps/workers`.
-Host-level
-chores
-(backups,
-disk
-cleanup)
-stay
-as
-systemd
-timers,
-or
-move
-to
-CI
-schedules
-if
-D1
-moves
-the
-database
-off-box.
-In-process
-`setInterval`
-is
-allowed
-only
-for
-per-process
-housekeeping
-(cache
-GC)
-and
-is
-wrapped
-in
-a
-named
-helper
-so
-it
-can
-be
-found.
+**Target:** all application work runs as pg-boss jobs registered by `features/*/jobs` and run by `apps/workers`.
+Host-level chores (backups, disk cleanup) stay as systemd timers, or move to CI schedules if D1 moves the database
+off-box. In-process `setInterval` is allowed only for per-process housekeeping (cache GC) and is wrapped in a named
+helper so it can be found.
 
-**Stub:
-the
-job
-registry**
+**Stub: the job registry**
 
 ```ts
 // packages/platform/src/jobs.server.ts
-export interface JobDef<
-  P =
-    void,
-> {
+export interface JobDef<P = void> {
   name: string;
   cron?: string;
   singleton?: boolean;
@@ -8212,88 +2000,37 @@ export interface JobDef<
     limit: number;
     backoffSec: number;
   };
-  run(ctx: {
-    data: P;
-    log: Logger;
-    signal: AbortSignal;
-  }): Promise<void>;
+  run(ctx: { data: P; log: Logger; signal: AbortSignal }): Promise<void>;
 }
-export const defineJob =
-  <
-    P,
-  >(
-    j: JobDef<P>,
-  ) =>
-    j;
+export const defineJob = <P>(j: JobDef<P>) => j;
 
 // apps/workers/src/index.ts
-const jobs =
-  await loadFeatureJobs(); // features/*/jobs/*.ts via features.gen.ts
+const jobs = await loadFeatureJobs(); // features/*/jobs/*.ts via features.gen.ts
 for (const j of jobs) {
-  await boss.createQueue(
-    j.name,
-  );
-  if (
-    j.cron
-  )
-    await boss.schedule(
-      j.name,
-      j.cron,
-      undefined,
-      {
-        singletonKey:
-          j.singleton
-            ? j.name
-            : undefined,
-      },
-    );
+  await boss.createQueue(j.name);
+  if (j.cron)
+    await boss.schedule(j.name, j.cron, undefined, {
+      singletonKey: j.singleton ? j.name : undefined,
+    });
   await boss.work(
     j.name,
     {
       batchSize: 1,
     },
-    ([
-      job,
-    ]) =>
-      j.run(
-        {
-          data: job.data,
-          log: log.child(
-            {
-              job: j.name,
-            },
-          ),
-          signal,
-        },
-      ),
+    ([job]) =>
+      j.run({
+        data: job.data,
+        log: log.child({
+          job: j.name,
+        }),
+        signal,
+      }),
   );
 }
 ```
 
-**Done
-when:**
-`rg -l "node-cron" | wc -l`
-returns
-0,
-`rg -l "setInterval" lib app features --glob '!**/*.test.*'`
-lists
-only
-UI
-timers
-and
-the
-GC
-helper,
-and
-`/admin/jobs`
-shows
-every
-scheduled
-job
-with
-its
-last
-run.
+**Done when:** `rg -l "node-cron" | wc -l` returns 0, `rg -l "setInterval" lib app features --glob '!**/*.test.*'` lists
+only UI timers and the GC helper, and `/admin/jobs` shows every scheduled job with its last run.
 
 ---
 
@@ -8301,272 +2038,41 @@ run.
 
 ```yaml
 id: D5
-gain:
-  practice
-  (reliability,
-  deploy
-  speed)
+gain: practice (reliability, deploy speed)
 impact: M
 effort: M
 risk: med
-depends:
-  [
-    D2
-    for
-    hub
-    rollouts,
-  ]
+depends: [D2 for hub rollouts]
 ```
 
 **Evidence**
 
-- `deploy.sh`
-  is
-  1,554
-  lines
-  (31
-  functions),
-  and
-  `deploy/hotswap-web.sh`
-  is 430.
-  Deploys
-  run
-  `git reset --hard`
-  on
-  the
+- `deploy.sh` is 1,554 lines (31 functions), and `deploy/hotswap-web.sh` is 430. Deploys run `git reset --hard` on the
   host.
-- **Rollback
-  covers
-  web
-  only.**
-- `deploy.sh:964`
-  auto-marks
-  a
-  failed
-  `P3009`
-  migration
-  as
-  rolled
-  back
-  and
-  retries
-  it,
-  which
-  assumes
-  migrations
-  are
-  transactional.
-  Multi-statement
-  migrations
-  break
-  that
-  assumption
-  (`build-deploy-audit-2026-10-23.md`
-  §11).
-- `deploy.yml`
-  re-runs
-  web-ci's
-  typecheck,
-  test,
-  build
-  and
-  integration
-  jobs
-  after
-  merge,
-  although
-  `merge_group`
-  already
-  gated
-  them.
-- Push-to-live
-  median
-  is
-  192
-  s
-  (p95
-  361
-  s).
-- The
-  Apache
-  vhost
-  (and
-  with
-  it
-  the
-  CSP)
-  is
-  **hand-installed**,
-  so
-  the
-  live
-  config
-  can
-  drift
-  from
-  the
-  repo.
+- **Rollback covers web only.**
+- `deploy.sh:964` auto-marks a failed `P3009` migration as rolled back and retries it, which assumes migrations are
+  transactional. Multi-statement migrations break that assumption (`build-deploy-audit-2026-10-23.md` §11).
+- `deploy.yml` re-runs web-ci's typecheck, test, build and integration jobs after merge, although `merge_group` already
+  gated them.
+- Push-to-live median is 192 s (p95 361 s).
+- The Apache vhost (and with it the CSP) is **hand-installed**, so the live config can drift from the repo.
 
 **Steps**
 
-1. **Never
-   auto-retry
-   a
-   failed
-   migration.**
-   Fail
-   the
-   deploy,
-   page,
-   and
-   require
-   a
-   human
-   `prisma migrate resolve`.
-   Adopt
-   **expand/contract**
-   migrations,
-   so
-   that
-   every
-   migration
-   is
-   safe
-   to
-   run
-   while
-   the
-   old
-   code
-   is
-   live.
-2. **Health-gated
-   rollout
-   for
-   every
-   service.**
-   Either
-   (a)
-   keep
-   Compose
-   and
-   generalise
-   `hotswap-web.sh`
-   into
-   `rollout <service>`
-   (start
-   new,
-   wait
-   for
-   `/ready`,
-   drain
-   old),
-   or
-   (b)
-   move
-   to
-   a
-   small
-   orchestrator:
-   Kamal
-   2
-   or
-   Docker
-   Swarm
-   on
-   the
-   same
-   VPS,
-   both
-   of
-   which
-   do
-   health-gated
-   rolling
-   deploys
-   natively.
-   Option
-   (b)
-   deletes
-   most
-   of
+1. **Never auto-retry a failed migration.** Fail the deploy, page, and require a human `prisma migrate resolve`. Adopt
+   **expand/contract** migrations, so that every migration is safe to run while the old code is live.
+2. **Health-gated rollout for every service.** Either (a) keep Compose and generalise `hotswap-web.sh` into
+   `rollout <service>` (start new, wait for `/ready`, drain old), or (b) move to a small orchestrator: Kamal 2 or Docker
+   Swarm on the same VPS, both of which do health-gated rolling deploys natively. Option (b) deletes most of
    `deploy.sh`.
-3. **Artifacts,
-   not
-   checkouts.**
-   The
-   host
-   pulls
-   images
-   and
-   one
-   versioned
-   `compose.yml`
-   and
-   does
-   not
-   `git reset`
-   a
-   working
-   tree.
-4. **Deploy
-   the
-   Apache
-   vhost**
-   (or
-   move
-   headers
-   into
-   Nitro)
-   from
-   CI,
-   with
-   a
-   `apachectl configtest` +
-   diff
-   step.
-5. **`deploy.yml`
-   depends
-   on
-   the
-   merge_group
-   run's
-   result**
-   (a
-   reusable
-   workflow,
-   or
-   `workflow_run`)
-   instead
-   of
-   re-running
-   it.
+3. **Artifacts, not checkouts.** The host pulls images and one versioned `compose.yml` and does not `git reset` a
+   working tree.
+4. **Deploy the Apache vhost** (or move headers into Nitro) from CI, with a `apachectl configtest` + diff step.
+5. **`deploy.yml` depends on the merge_group run's result** (a reusable workflow, or `workflow_run`) instead of
+   re-running it.
 
-**Done
-when:**
-`deploy.sh`
-is
-under
-300
-lines,
-a
-forced
-failure
-in
-any
-service's
-`/ready`
-rolls
-that
-service
-back
-automatically,
-and
-deploy.yml
-has
-no
-test
-jobs.
+**Done when:** `deploy.sh` is under 300 lines, a forced failure in any service's `/ready` rolls that service back
+automatically, and deploy.yml has no test jobs.
 
 ---
 
@@ -8586,227 +2092,28 @@ depends:
 
 **Evidence**
 
-- Structured
-  JSON
-  logs
-  exist
-  (`server/shared/logger.ts`;
-  Go
-  `pkg/log`
-  uses
-  the
-  same
-  fields),
-  but
-  Docker
-  keeps
-  only
-  `json-file`
-  10
-  MB
-  ×
-  3
-  per
-  container.
-  **There
-  is
-  no
-  aggregation.**
-- W3C
-  trace-context
-  correlation
-  exists
-  (`lib/otel/trace.ts`),
-  deliberately
-  without
-  the
-  OTel
-  SDK,
-  and
-  **nothing
-  exports
+- Structured JSON logs exist (`server/shared/logger.ts`; Go `pkg/log` uses the same fields), but Docker keeps only
+  `json-file` 10 MB × 3 per container. **There is no aggregation.**
+- W3C trace-context correlation exists (`lib/otel/trace.ts`), deliberately without the OTel SDK, and **nothing exports
   it**.
-- Go
-  exposes
-  Prometheus
-  on
-  :9090
-  and
-  **nothing
-  scrapes
-  it**
-  (a
-  July
-  audit
-  finding
-  that
-  is
-  still
-  open).
-- There
-  is
-  no
-  error-tracking
-  service.
-  Client
-  errors
-  go
-  to
-  a
-  home-grown
-  inbox
-  (`/api/client-error`
-  →
+- Go exposes Prometheus on :9090 and **nothing scrapes it** (a July audit finding that is still open).
+- There is no error-tracking service. Client errors go to a home-grown inbox (`/api/client-error` →
   `lib/ops/error-inbox.server`).
-- The
-  `status`
-  service
-  runs
-  on
-  the
-  same
-  box
-  it
-  reports
-  on.
-  An
-  off-box
-  Cloudflare
-  watchdog
-  exists
+- The `status` service runs on the same box it reports on. An off-box Cloudflare watchdog exists
   (`deploy/oncall-watchdog`).
-- No
-  `deploy/production`
-  GitHub
-  statuses
-  appeared
-  on
-  24
-  runs.
+- No `deploy/production` GitHub statuses appeared on 24 runs.
 
 **Steps**
 
-1. Ship
-   logs
-   to
-   a
-   hosted
-   sink
-   (Grafana
-   Cloud
-   Loki,
-   Better
-   Stack,
-   Axiom;
-   any
-   is
-   fine)
-   with
-   a
-   Docker
-   logging
-   driver
-   or
-   a
-   Vector
-   sidecar.
-2. Add
-   the
-   OTel
-   SDK
-   behind
-   the
-   existing
-   trace
-   module.
-   That
-   module
-   was
-   designed
-   for
-   exactly
-   this;
-   it
-   speaks
-   W3C
-   `traceparent`,
-   so
-   this
-   is
-   additive.
-   Export
-   to
-   the
-   same
-   vendor.
-3. Scrape
-   `/internal/metrics`
-   and
-   Go
-   `:9090`
-   with
-   that
-   vendor's
-   agent.
-4. Adopt
-   Sentry
-   (or
-   GlitchTip,
-   self-hosted)
-   for
-   client
-   and
-   server
-   errors,
-   and
-   keep
-   the
-   inbox
-   as
-   a
-   view
-   if
-   wanted.
-5. Run
-   `status`
-   off-box,
-   as
-   a
-   Cloudflare
-   Worker
-   or
-   a
-   $5
-   VM,
-   so
-   the
-   status
-   page
-   is
-   up
-   when
-   the
-   box
-   is
-   down.
+1. Ship logs to a hosted sink (Grafana Cloud Loki, Better Stack, Axiom; any is fine) with a Docker logging driver or a
+   Vector sidecar.
+2. Add the OTel SDK behind the existing trace module. That module was designed for exactly this; it speaks W3C
+   `traceparent`, so this is additive. Export to the same vendor.
+3. Scrape `/internal/metrics` and Go `:9090` with that vendor's agent.
+4. Adopt Sentry (or GlitchTip, self-hosted) for client and server errors, and keep the inbox as a view if wanted.
+5. Run `status` off-box, as a Cloudflare Worker or a $5 VM, so the status page is up when the box is down.
 
-**Done
-when:**
-"show
-me
-p95
-latency
-and
-errors
-for
-`/api/feed`
-yesterday
-at
-14:00"
-is
-a
-single
-query.
+**Done when:** "show me p95 latency and errors for `/api/feed` yesterday at 14:00" is a single query.
 
 ---
 
@@ -8824,119 +2131,21 @@ depends:
   ]
 ```
 
-**Evidence:**
-`nitro`
-is
-pinned
-to
-`3.0.260903-beta`,
-`@tanstack/react-start`
-to
-`1.169.4`
-and
-`@tanstack/react-router`
-to
-`1.170.46`.
-That
-means
-SSR
-runs
-on
-a
-beta.
-The
-pins
-sit
-beside
-two
-`patchedDependencies`
-(`@discord/embedded-app-sdk`
-and
-`@react-three/drei`).
+**Evidence:** `nitro` is pinned to `3.0.260903-beta`, `@tanstack/react-start` to `1.169.4` and `@tanstack/react-router`
+to `1.170.46`. That means SSR runs on a beta. The pins sit beside two `patchedDependencies` (`@discord/embedded-app-sdk`
+and `@react-three/drei`).
 
-**Steps:**
-Add
-a
-monthly
-Renovate
-group
-for
-`@tanstack/*` +
-`nitro`,
-with
-the
-integration
-suite
-as
-the
-gate.
-Record
-in
-`docs/architecture.md`
-why
-each
-pin
-exists.
-Before
-B1
-relies
-on
-multi-entry
-builds,
-confirm
-that
-the
-island
-build
-does
-not
-depend
-on
-Start
-internals.
+**Steps:** Add a monthly Renovate group for `@tanstack/*` + `nitro`, with the integration suite as the gate. Record in
+`docs/architecture.md` why each pin exists. Before B1 relies on multi-entry builds, confirm that the island build does
+not depend on Start internals.
 
 ---
 
 ## Part E — Appearance and the design system
 
-> These
-> items
-> keep
-> the
-> Plasmatic
-> Jelly
-> identity
-> exactly
-> as
-> specified
-> in
-> `CLAUDE.md`
-> and
-> `docs/archive/2026/plasmatic-jelly-system.md`.
-> They
-> are
-> about
-> **reach**
-> (more
-> of
-> the
-> site
-> actually
-> uses
-> the
-> system)
-> and
-> **cost**
-> (the
-> system
-> takes
-> fewer
-> lines
-> and
-> fewer
-> tests
-> to
-> hold).
+> These items keep the Plasmatic Jelly identity exactly as specified in `CLAUDE.md` and
+> `docs/archive/2026/plasmatic-jelly-system.md`. They are about **reach** (more of the site actually uses the system)
+> and **cost** (the system takes fewer lines and fewer tests to hold).
 
 ### E1 — One token contract with a tier modifier
 
@@ -8964,190 +2173,22 @@ depends:
 
 **Evidence**
 
-- The
-  main
-  site
-  uses
-  `--site-*`:
-  120
-  names,
-  defined
-  570
-  times
-  across
-  theme
-  blocks,
-  with
-  34
-  `--color-site-*`
-  mappings
-  in
+- The main site uses `--site-*`: 120 names, defined 570 times across theme blocks, with 34 `--color-site-*` mappings in
   `@theme inline`.
-- Full-screen
-  apps
-  use
-  a
-  **parallel**
-  `--app-*`
-  contract
-  (`components/shared/app-theme.css`:
-  68
-  names,
-  defined
-  491
-  times).
-  It
-  has
-  its
-  own
-  type
-  stack
-  (Inter +
-  JetBrains
-  Mono,
-  against
-  Geist),
-  its
-  own
-  radii
-  (12/8
-  px
-  against
-  32/24
-  px),
-  its
-  own
-  hex
-  dark
-  ramp,
-  its
-  own
-  `.app-high-contrast`
-  and
-  a
-  `prefers-reduced-motion`
-  path
-  the
-  site
-  retired.
-- The
-  two
-  are
-  bridged
-  by
-  an
-  **adapter**:
-  `app-theme.css`
-  lines
-  681–715
-  re-point
-  17
-  `--site-*`
-  and
-  5
-  `--jelly-*`
-  variables
-  on
-  every
-  `.glass-*`
-  host
-  inside
-  `.app-theme`.
-  A
-  further
-  17
-  `--app-gel|jelly|glass-*`
-  mirror
-  tokens
-  restate
-  the
-  material.
-- `--app-*`
-  is
-  not
-  registered
-  in
-  `@theme`,
-  so
-  it
-  is
-  written
-  as
-  **≈4,550
-  escaped
-  arbitrary
-  utilities**
+- Full-screen apps use a **parallel** `--app-*` contract (`components/shared/app-theme.css`: 68 names, defined 491
+  times). It has its own type stack (Inter + JetBrains Mono, against Geist), its own radii (12/8 px against 32/24 px),
+  its own hex dark ramp, its own `.app-high-contrast` and a `prefers-reduced-motion` path the site retired.
+- The two are bridged by an **adapter**: `app-theme.css` lines 681–715 re-point 17 `--site-*` and 5 `--jelly-*`
+  variables on every `.glass-*` host inside `.app-theme`. A further 17 `--app-gel|jelly|glass-*` mirror tokens restate
+  the material.
+- `--app-*` is not registered in `@theme`, so it is written as **≈4,550 escaped arbitrary utilities**
   (`bg-(--app-surface)`).
-- Eleven
-  palette
-  classes
-  sit
-  on
-  top
-  (`.altair-theme`,
-  `.rmhtube-theme`,
-  …).
-- `useIsAppTier()`
-  is
-  read
-  by
-  exactly
-  one
-  primitive
-  (`liquid-tabs.tsx`).
+- Eleven palette classes sit on top (`.altair-theme`, `.rmhtube-theme`, …).
+- `useIsAppTier()` is read by exactly one primitive (`liquid-tabs.tsx`).
 
-**Target:**
-one
-semantic
-contract,
-`--site-*`,
-under
-its
-current
-names.
-A
-**tier**
-is
-a
-set
-of
-_overrides_
-on
-a
-scope
-(`[data-tier="app"]`),
-exactly
-as
-a
-theme
-is
-a
-set
-of
-overrides
-on
-`.style-*`.
-Per-app
-palettes
-are
-scoped
-overrides
-of
-the
-same
-names.
-The
-material
-never
-needs
-an
-adapter
-because
-it
-only
-ever
-reads
-`--site-*`.
+**Target:** one semantic contract, `--site-*`, under its current names. A **tier** is a set of _overrides_ on a scope
+(`[data-tier="app"]`), exactly as a theme is a set of overrides on `.style-*`. Per-app palettes are scoped overrides of
+the same names. The material never needs an adapter because it only ever reads `--site-*`.
 
 **Stub**
 
@@ -9155,139 +2196,38 @@ reads
 /* packages/ui/src/tokens/tiers.css */
 [data-tier='app'] {
   /* density + chrome differences ARE the tier; colours come from the theme */
-  --site-radius: var(
-    --radius-4
-  ); /* 16px; was --app 12px — pick one step of the 8px scale */
-  --site-radius-sm: var(
-    --radius-2
-  ); /* 8px */
-  --site-font-sans: var(
-    --font-geist
-  ); /* one family (E8) */
+  --site-radius: var(--radius-4); /* 16px; was --app 12px — pick one step of the 8px scale */
+  --site-radius-sm: var(--radius-2); /* 8px */
+  --site-font-sans: var(--font-geist); /* one family (E8) */
   --site-density: 0.875;
 }
 [data-tier='app'].rmhtube-theme {
-  --site-accent: oklch(
-    0.68
-      0.2
-      25
-  );
+  --site-accent: oklch(0.68 0.2 25);
 } /* palettes are overrides, not contracts */
 ```
 
 ```css
 /* @theme registration: every token becomes a first-class utility, no escaped arbitraries */
 @theme inline {
-  --color-surface: var(
-    --site-surface
-  );
-  --color-surface-2: var(
-    --site-surface-2
-  );
-  --color-ink: var(
-    --site-text
-  );
-  --color-ink-muted: var(
-    --site-text-muted
-  );
-  --color-accent: var(
-    --site-accent
-  );
-  --radius-card: var(
-    --site-radius
-  );
-  --radius-control: var(
-    --site-radius-sm
-  );
+  --color-surface: var(--site-surface);
+  --color-surface-2: var(--site-surface-2);
+  --color-ink: var(--site-text);
+  --color-ink-muted: var(--site-text-muted);
+  --color-accent: var(--site-accent);
+  --radius-card: var(--site-radius);
+  --radius-control: var(--site-radius-sm);
 }
 ```
 
-**Codemod:**
-`bg-(--app-surface)`
-→
-`bg-surface`,
-`text-(--app-text)`
-→
-`text-ink`.
-Generate
-the
-mapping
-table
-from
-`app-theme.css`
-once,
-and
-apply
-it
-with
-a
-regex
-codemod
-over
-className
-strings.
-≈4,550
-sites,
-about
-one
-PR
-per
-feature.
+**Codemod:** `bg-(--app-surface)` → `bg-surface`, `text-(--app-text)` → `text-ink`. Generate the mapping table from
+`app-theme.css` once, and apply it with a regex codemod over className strings. ≈4,550 sites, about one PR per feature.
 
-**Steps:**
-(1)
-Define
-the
-tier
-overrides
-and
-register
-the
-utilities.
-(2)
-Make
-`.app-theme`
-set
-`data-tier="app"`
-and
-alias
-`--app-x: var(--site-x)`
-for
-the
-transition.
-(3)
-Codemod
-feature
-by
-feature.
-(4)
-Delete
-the
-adapter
-block,
-the
-mirror
-tokens
-and
-`--app-*`.
+**Steps:** (1) Define the tier overrides and register the utilities. (2) Make `.app-theme` set `data-tier="app"` and
+alias `--app-x: var(--site-x)` for the transition. (3) Codemod feature by feature. (4) Delete the adapter block, the
+mirror tokens and `--app-*`.
 
-**Done
-when:**
-`rg -c -- "--app-" --glob '*.{css,tsx,ts}'`
-returns
-0,
-and
-`app-theme.css`
-holds
-only
-the
-tier
-overrides
-and
-palettes
-(≤
-150
-lines).
+**Done when:** `rg -c -- "--app-" --glob '*.{css,tsx,ts}'` returns 0, and `app-theme.css` holds only the tier overrides
+and palettes (≤ 150 lines).
 
 ---
 
@@ -9299,85 +2239,14 @@ gain: appearance
 impact: M
 effort: M
 risk: low
-depends:
-  [
-    E1,
-  ]
+depends: [E1]
 ```
 
-**Evidence:**
-≈564
-arbitrary
-text
-sizes:
-`text-[10px]`
-×237,
-`text-[11px]`
-×172,
-`text-[9px]`
-×57,
-`text-[8px]`
-×20
-and
-`text-[7px]`
-×9.
-Text
-under
-11
-px
-was
-also
-a
-mobile
-finding
-in
-`ui-audit-2026-10-31.md`.
-There
-are
-≈536
-arbitrary
-hex
-colours,
-38
-arbitrary
-radii,
-31
-`z-[N]`
-with
-11
-distinct
-values,
-58
-distinct
-`z-index`
-values
-in
-CSS,
-and
-1,511
-`style={{`
-in
-`components/`.
-The
-scale
-is
-missing,
-not
-just
-ignored:
-people
-reach
-for
-10
-px
-because
-the
-scale
-has
-no
-step
-for
-"caption-small".
+**Evidence:** ≈564 arbitrary text sizes: `text-[10px]` ×237, `text-[11px]` ×172, `text-[9px]` ×57, `text-[8px]` ×20 and
+`text-[7px]` ×9. Text under 11 px was also a mobile finding in `ui-audit-2026-10-31.md`. There are ≈536 arbitrary hex
+colours, 38 arbitrary radii, 31 `z-[N]` with 11 distinct values, 58 distinct `z-index` values in CSS, and 1,511
+`style={{` in `components/`. The scale is missing, not just ignored: people reach for 10 px because the scale has no
+step for "caption-small".
 
 **Stub**
 
@@ -9389,24 +2258,9 @@ for
   --text-small: 0.8125rem; /* 13px */
   --text-body: 0.9375rem; /* 15px */
   --text-lead: 1.0625rem; /* 17px */
-  --text-title: clamp(
-    1.25rem,
-    1.1rem +
-      0.6vw,
-    1.5rem
-  );
-  --text-display: clamp(
-    1.75rem,
-    1.4rem +
-      1.6vw,
-    2.5rem
-  );
-  --text-hero: clamp(
-    2.25rem,
-    1.6rem +
-      3vw,
-    3.5rem
-  );
+  --text-title: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --text-display: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
+  --text-hero: clamp(2.25rem, 1.6rem + 3vw, 3.5rem);
 
   /* z: named layers only */
   --z-base: 0;
@@ -9420,58 +2274,10 @@ for
 }
 ```
 
-**Gate:**
-extend
-the
-design-consistency
-rule
-as
-a
-**lint
-rule**
-(F1)
-that
-bans
-`text-[Npx]`,
-`z-[N]`
-and
-`-[#hex]`
-in
-site-tier
-code.
-Games
-inside
-islands
-are
-exempt
-by
-directory,
-through
-the
-island's
-own
-lint
-config.
+**Gate:** extend the design-consistency rule as a **lint rule** (F1) that bans `text-[Npx]`, `z-[N]` and `-[#hex]` in
+site-tier code. Games inside islands are exempt by directory, through the island's own lint config.
 
-**Done
-when:**
-the
-arbitrary
-text-size
-count
-in
-site-tier
-code
-is
-0,
-and
-the
-`z-index`
-values
-in
-CSS
-are
-all
+**Done when:** the arbitrary text-size count in site-tier code is 0, and the `z-index` values in CSS are all
 `var(--z-*)`.
 
 ---
@@ -9480,85 +2286,20 @@ all
 
 ```yaml
 id: E3
-gain:
-  appearance
-  (reach)
+gain: appearance (reach)
 impact: L
 effort: L
 risk: low
-depends:
-  [
-    E1,
-    B1,
-  ]
+depends: [E1, B1]
 ```
 
-**Evidence:**
-`FULLSCREEN_TIER_DIRS`
-exempts
-**49
-of
-133**
-component
-directories,
-and
-`FULLSCREEN_ROUTE_SEGMENTS`
-exempts
-33
-routes.
-The
-directories
-include
-`shared`
-and
-`studio`,
-and
-many
-non-games:
-elections,
-steam,
-dunesday,
-pf2ecal,
-sohumtracker,
-covid,
-doctrine,
-history.
-Components
-declare
-≈49
-bespoke
-token
-prefixes
-(`--toj-`
-101,
-`--ds-`
-73,
-`--pf2e-`
-65,
-…).
-There
-are
-20
-scheme
-docs
-in
-`docs/game-design-schemes/`.
-About
-1,239
-raw
-palette
-classes
-sit
-almost
-entirely
-in
-exempt
-directories.
+**Evidence:** `FULLSCREEN_TIER_DIRS` exempts **49 of 133** component directories, and `FULLSCREEN_ROUTE_SEGMENTS`
+exempts 33 routes. The directories include `shared` and `studio`, and many non-games: elections, steam, dunesday,
+pf2ecal, sohumtracker, covid, doctrine, history. Components declare ≈49 bespoke token prefixes (`--toj-` 101, `--ds-`
+73, `--pf2e-` 65, …). There are 20 scheme docs in `docs/game-design-schemes/`. About 1,239 raw palette classes sit
+almost entirely in exempt directories.
 
-**Rule
-for
-the
-redesign:**
+**Rule for the redesign:**
 
 | Kind                                                        | Visual language                                       | Lint                                                                                                     |
 | ----------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -9567,20 +2308,7 @@ redesign:**
 | **Games**                                                   | Own scheme, inside an island                          | own config; must still use `packages/ui` for overlays, settings and leaderboards so menus are consistent |
 | Novelty/one-off pages                                       | Decide via A2: archive or move into an island         | n/a                                                                                                      |
 
-**Done
-when:**
-`FULLSCREEN_TIER_DIRS`
-lists
-only
-game
-directories
-(≈18)
-and
-`shared`/`studio`
-are
-on
-the
-strict
+**Done when:** `FULLSCREEN_TIER_DIRS` lists only game directories (≈18) and `shared`/`studio` are on the strict
 contract.
 
 ---
@@ -9604,136 +2332,23 @@ depends:
   ]
 ```
 
-**Evidence
-(from
-`app/globals.css`,
-6,666
-lines,
-about
-34%
-comments)**
+**Evidence (from `app/globals.css`, 6,666 lines, about 34% comments)**
 
-- **Four
-  unregistered
-  full
-  palettes:**
-  `.style-light`
-  (≈L1016–1108),
-  `.style-sepia`
-  (1210–1289),
-  `.style-nocturne`
-  (1293–1380)
-  and
-  `.style-ultra`
-  (1383–1506),
-  plus
-  their
-  colour-vision
-  selectors.
-  That
-  is
-  about
-  400
-  lines.
-  Only
-  2
-  themes
-  are
-  registered
-  (`stores/themeStore.ts`
-  `SITE_STYLES`).
-  The
-  dead
-  palettes
-  are
-  referenced
-  **only
-  by
-  tests**
-  (`jelly-tokens.test.ts:88`,
-  `jelly-legibility.test.ts:188`,
-  `fouc-contract.test.ts:170`),
-  which
-  keep
-  them
-  alive.
-- **Ghost
-  comments:**
-  `.style-high-contrast`
-  is
-  referenced
-  at
-  L739,
-  L827
-  and
-  L6592,
-  but
-  no
-  such
-  block
-  exists
-  (it
-  was
-  removed
-  2026-10-27).
-- `.style-graphite`
-  is
-  defined
-  in
-  three
-  places
-  (L1109,
-  L1118,
-  L1906).
-- **Retired
-  effects:**
-  the
-  "HIGH
-  ENERGY
-  ANIMATIONS"
-  section
-  (`rainbow-text`,
-  `glitch-text`,
-  `shake`).
-- **About
-  15
-  unreferenced
-  selectors**
-  (`glass-sheen-hover`,
-  `media-scrim(-full)`,
-  `site-reveal`,
-  `tab-sheet-scroll`,
-  `style-liquid-glass`,
-  …).
-- **25
-  `@keyframes`
-  in
-  globals
-  and
-  14
-  in
-  radial**,
-  against
-  the
-  rule
-  "the
-  only
-  sanctioned
-  keyframes
-  are
-  `jelly-drift`".
-  There
-  are
-  also
-  22
-  `infinite`
-  animations.
-- **118
-  `!important`.**
+- **Four unregistered full palettes:** `.style-light` (≈L1016–1108), `.style-sepia` (1210–1289), `.style-nocturne`
+  (1293–1380) and `.style-ultra` (1383–1506), plus their colour-vision selectors. That is about 400 lines. Only 2 themes
+  are registered (`stores/themeStore.ts` `SITE_STYLES`). The dead palettes are referenced **only by tests**
+  (`jelly-tokens.test.ts:88`, `jelly-legibility.test.ts:188`, `fouc-contract.test.ts:170`), which keep them alive.
+- **Ghost comments:** `.style-high-contrast` is referenced at L739, L827 and L6592, but no such block exists (it was
+  removed 2026-10-27).
+- `.style-graphite` is defined in three places (L1109, L1118, L1906).
+- **Retired effects:** the "HIGH ENERGY ANIMATIONS" section (`rainbow-text`, `glitch-text`, `shake`).
+- **About 15 unreferenced selectors** (`glass-sheen-hover`, `media-scrim(-full)`, `site-reveal`, `tab-sheet-scroll`,
+  `style-liquid-glass`, …).
+- **25 `@keyframes` in globals and 14 in radial**, against the rule "the only sanctioned keyframes are `jelly-drift`".
+  There are also 22 `infinite` animations.
+- **118 `!important`.**
 
-**Target
-structure
-(`packages/ui/src/styles/`)**
+**Target structure (`packages/ui/src/styles/`)**
 
 ```
 tokens/        primitives.css (raw scales) · semantic.css (--site-*) · themes/{graphite,daylight}.css · tiers.css
@@ -9743,147 +2358,17 @@ components/    one file per primitive that needs CSS (dialog.css, tabs.css …)
 shell/         radial-core.css (always) · radial-globe.css (lazy, with LiquidGlobe)
 ```
 
-Feature
-CSS
-lives
-in
-`features/<x>/ui/*.css`
-and
-loads
-with
-the
-feature.
-A
-`@layer`
-order
-(`tokens, base, material, components, shell, feature, utilities`)
-replaces
-most
-of
-the
-`!important`
-declarations.
+Feature CSS lives in `features/<x>/ui/*.css` and loads with the feature. A `@layer` order
+(`tokens, base, material, components, shell, feature, utilities`) replaces most of the `!important` declarations.
 
-**Steps:**
-(1)
-Delete
-the
-dead
-palettes
-and
-update
-the
-three
-tests
-so
-they
-list
-only
-registered
-themes.
-(2)
-Delete
-the
-ghost
-comments,
-the
-HIGH
-ENERGY
-section
-and
-the
-unreferenced
-selectors.
-Verify
-with
-a
-coverage
-run
-in
-Chrome
-DevTools
-on
-the
-top
-30
-routes,
-or
-with
-`pnpm audit:pages`.
-(3)
-Turn
-history
-comments
-into
-a
-link
-to
-the
-doc
-or
-commit,
-and
-keep
-only
-_why_
-comments.
-(4)
-Split
-the
-files
-as
-above.
-(5)
-Reconcile
-the
-keyframes:
-either
-they
-become
-transitions
-with
-`@starting-style`
-(the
-documented
-pattern)
-or
-they
-are
-listed
-as
-sanctioned
-in
-the
-jelly
-spec.
+**Steps:** (1) Delete the dead palettes and update the three tests so they list only registered themes. (2) Delete the
+ghost comments, the HIGH ENERGY section and the unreferenced selectors. Verify with a coverage run in Chrome DevTools on
+the top 30 routes, or with `pnpm audit:pages`. (3) Turn history comments into a link to the doc or commit, and keep only
+_why_ comments. (4) Split the files as above. (5) Reconcile the keyframes: either they become transitions with
+`@starting-style` (the documented pattern) or they are listed as sanctioned in the jelly spec.
 
-**Done
-when:**
-no
-stylesheet
-exceeds
-1,500
-lines,
-`rg -c "!important"`
-is
-≤
-20
-outside
-games,
-and
-every
-`@keyframes`
-name
-appears
-in
-a
-sanctioned
-list
-that
-a
-lint
-rule
-checks.
+**Done when:** no stylesheet exceeds 1,500 lines, `rg -c "!important"` is ≤ 20 outside games, and every `@keyframes`
+name appears in a sanctioned list that a lint rule checks.
 
 ---
 
@@ -9905,83 +2390,16 @@ depends:
   ]
 ```
 
-**Evidence:**
-These
-files
-still
-carry
-"liquid"
-in
-the
-name:
-`ui/liquid-tabs.tsx`
-(the
-sanctioned
-tab
-strip),
-`ui/liquid-glass.tsx`
-(`GlassPane`,
-2
-users,
-with
-a
-no-op
-`liquid`
-prop),
-`ui/liquid-morph.tsx`
-(**dead**,
-392
-lines),
-`app/liquid-glass.css`
-(live),
-`app/routes/liquid-glass.tsx`
-(a
-redirect),
-`hooks/useLiquid{Background,Interactions,Link}`,
-`lib/liquid/`
-(18
-files;
-it
-now
-mostly
-serves
-the
-globe),
-`lib/fluid.ts`
-and
-`hooks/useFluidDrag.ts`.
+**Evidence:** These files still carry "liquid" in the name: `ui/liquid-tabs.tsx` (the sanctioned tab strip),
+`ui/liquid-glass.tsx` (`GlassPane`, 2 users, with a no-op `liquid` prop), `ui/liquid-morph.tsx` (**dead**, 392 lines),
+`app/liquid-glass.css` (live), `app/routes/liquid-glass.tsx` (a redirect),
+`hooks/useLiquid{Background,Interactions,Link}`, `lib/liquid/` (18 files; it now mostly serves the globe),
+`lib/fluid.ts` and `hooks/useFluidDrag.ts`.
 
-Three
-attribute
-vocabularies
-name
-the
-same
-switches:
-`data-jelly*`
-(≈150),
-`data-fluid-press*`
-(31)
-and
-`data-liquid-*`
-(13).
-`design-language.md`
-uses
-"liquid"
-42
-times.
-Agents
-reading
-these
-names
-keep
-reintroducing
-the
-retired
-concepts.
+Three attribute vocabularies name the same switches: `data-jelly*` (≈150), `data-fluid-press*` (31) and `data-liquid-*`
+(13). `design-language.md` uses "liquid" 42 times. Agents reading these names keep reintroducing the retired concepts.
 
-**Rename
-map**
+**Rename map**
 
 | From                                 | To                                                |
 | ------------------------------------ | ------------------------------------------------- |
@@ -9994,19 +2412,8 @@ map**
 | `lib/liquid/`                        | `features/globe/` (it is the globe)               |
 | `data-fluid-press*`, `data-liquid-*` | `data-jelly-*`                                    |
 
-**Done
-when:**
-`rg -il "liquid|fluid" packages features apps --glob '!**/globe/**'`
-returns
-nothing,
-and
-the
-alias
-table
-in
-`components/CLAUDE.md`
-is
-deleted.
+**Done when:** `rg -il "liquid|fluid" packages features apps --glob '!**/globe/**'` returns nothing, and the alias table
+in `components/CLAUDE.md` is deleted.
 
 ---
 
@@ -10014,18 +2421,11 @@ deleted.
 
 ```yaml
 id: E6
-gain:
-  appearance
-  (consistency)
-  +
-  structure
+gain: appearance (consistency) + structure
 impact: M
 effort: M
 risk: low
-depends:
-  [
-    E1,
-  ]
+depends: [E1]
 ```
 
 **Evidence**
@@ -10040,112 +2440,19 @@ depends:
 | Select         |                              92 `ui/select` | 37 native `<select>`                                                                                                                                                                                                                    |
 | Radix          |                                  9 in `ui/` | 21 direct Radix imports outside `ui/`                                                                                                                                                                                                   |
 
-`components/ui/`
-has
-55
-files
-with
-mixed
-naming
-(11
-PascalCase,
-44
-kebab-case).
+`components/ui/` has 55 files with mixed naming (11 PascalCase, 44 kebab-case).
 
 **Steps**
 
-1. Rename
-   `ui/`
-   files
-   to
-   one
-   convention
-   (kebab-case,
-   matching
-   the
-   majority).
-2. Make
-   the
-   tier-aware
-   `Dialog`/`Sheet`
-   the
-   only
-   portal
-   user.
-   Add
-   a
-   lint
-   rule:
-   `createPortal`
-   and
-   `@radix-ui/*`
-   may
-   be
-   imported
-   only
-   inside
-   `packages/ui`.
-3. Build
-   a
-   generic
-   `<BanListModal store={…} />`
-   (or
-   move
-   it
-   into
-   `packages/ui/moderation`)
-   and
-   delete
-   the
-   three
-   copies.
-4. Raw
-   `<button>`
-   is
-   fine
-   for
-   unstyled
-   hit
-   targets.
-   Add
-   a
-   lint
-   rule
-   that
-   flags
-   `<button className=…>`
-   carrying
-   **visual**
-   classes
-   (`bg-*`,
-   `rounded-*`,
-   `border`)
-   outside
-   `packages/ui`.
-5. `<Spinner>`,
-   `<CopyButton>`
-   and
-   `<Select>`
-   become
-   the
-   only
-   implementations;
-   codemod
-   the
-   rest.
+1. Rename `ui/` files to one convention (kebab-case, matching the majority).
+2. Make the tier-aware `Dialog`/`Sheet` the only portal user. Add a lint rule: `createPortal` and `@radix-ui/*` may be
+   imported only inside `packages/ui`.
+3. Build a generic `<BanListModal store={…} />` (or move it into `packages/ui/moderation`) and delete the three copies.
+4. Raw `<button>` is fine for unstyled hit targets. Add a lint rule that flags `<button className=…>` carrying
+   **visual** classes (`bg-*`, `rounded-*`, `border`) outside `packages/ui`.
+5. `<Spinner>`, `<CopyButton>` and `<Select>` become the only implementations; codemod the rest.
 
-**Done
-when:**
-each
-row's
-"hand-rolled"
-column
-is
-under
-5%
-of
-its
-total.
+**Done when:** each row's "hand-rolled" column is under 5% of its total.
 
 ---
 
@@ -10167,103 +2474,16 @@ depends:
   ]
 ```
 
-**Evidence:**
-framer-motion
-is
-in
-155
-files,
-with
-392
-`<motion.*>`,
-177
-inline
-`transition={{`
-and
-129
-inline
-`duration:`.
-**About
-118
-of
-those
-files
-never
-import
-`lib/motion.ts`**
-(which
-is
-used
-by
-46).
-CSS
-has
-69
-raw
-`cubic-bezier(`
-with
-**27
-distinct
-curves**,
-beside
-126
-uses
-of
-`var(--ease-smooth)`.
+**Evidence:** framer-motion is in 155 files, with 392 `<motion.*>`, 177 inline `transition={{` and 129 inline
+`duration:`. **About 118 of those files never import `lib/motion.ts`** (which is used by 46). CSS has 69 raw
+`cubic-bezier(` with **27 distinct curves**, beside 126 uses of `var(--ease-smooth)`.
 
-**Steps:**
-(1)
-Ban
-inline
-`transition={{…}}`
-objects
-(lint:
-JSX
-attribute
-`transition`
-with
-an
-`ObjectExpression`
-value
-outside
-`lib/motion.ts`).
-Every
-use
-names
-a
-token
-(`transition={MOTION.spring.soft}`).
-(2)
-Ban
-`cubic-bezier(`
-outside
-the
-token
-file
-(Stylelint
-`declaration-property-value-disallowed-list`).
-(3)
-Map
-the
-27
-curves
-to
-the
-3–4
-tokens
-that
+**Steps:** (1) Ban inline `transition={{…}}` objects (lint: JSX attribute `transition` with an `ObjectExpression` value
+outside `lib/motion.ts`). Every use names a token (`transition={MOTION.spring.soft}`). (2) Ban `cubic-bezier(` outside
+the token file (Stylelint `declaration-property-value-disallowed-list`). (3) Map the 27 curves to the 3–4 tokens that
 exist.
 
-**Done
-when:**
-`rg -c "cubic-bezier\\(" --glob '*.css'`
-lists
-only
-the
-token
-file,
-and
-`rg "transition=\\{\\{" -l`
+**Done when:** `rg -c "cubic-bezier\\(" --glob '*.css'` lists only the token file, and `rg "transition=\\{\\{" -l`
 returns 0.
 
 ---
@@ -10279,108 +2499,15 @@ risk: low
 depends: [E1, B1]
 ```
 
-**Evidence:**
-There
-are
-19
-font
-packages.
-The
-site
-uses
-Geist
-/
-Geist
-Mono.
-The
-app
-tier
-uses
-Inter
-/
-JetBrains
-Mono.
-Games
-and
-bespoke
-pages
-use
-Spectral
-(32
-import
-refs),
-IBM
-Plex
-Mono
-(21),
-Bangers,
-Press
-Start
-2P,
-Great
-Vibes,
-Cinzel
-and
-others.
-15
-component
-sheets
-set
-`font-family`
-directly.
+**Evidence:** There are 19 font packages. The site uses Geist / Geist Mono. The app tier uses Inter / JetBrains Mono.
+Games and bespoke pages use Spectral (32 import refs), IBM Plex Mono (21), Bangers, Press Start 2P, Great Vibes, Cinzel
+and others. 15 component sheets set `font-family` directly.
 
-**Steps:**
-Make
-Geist
-/
-Geist
-Mono
-the
-only
-site
-and
-app
-families
-(E1
-already
-moves
-the
-app
-tier
-onto
-Geist).
-Move
-display
-faces
-into
-the
-`package.json`
-of
-the
-island
-that
-uses
-them.
-Delete
-Inter
-and
-JetBrains
-Mono
-from
-the
-shared
+**Steps:** Make Geist / Geist Mono the only site and app families (E1 already moves the app tier onto Geist). Move
+display faces into the `package.json` of the island that uses them. Delete Inter and JetBrains Mono from the shared
 contract.
 
-**Done
-when:**
-the
-web
-app's
-`package.json`
-lists
-two
-font
-packages.
+**Done when:** the web app's `package.json` lists two font packages.
 
 ---
 
@@ -10408,111 +2535,16 @@ depends:
 
 **Evidence**
 
-- **77
-  of
-  288
-  files
-  in
-  `lib/__tests__`
-  read
-  source
-  from
-  disk**
-  to
-  enforce
-  conventions.
-  The
-  largest
-  are
-  `design-consistency`
-  (1,111
-  lines),
-  `i18n-catalogs`
-  (1,204),
-  `api-handler-adoption`
-  (421)
-  and
-  `jelly-coverage`
-  (411,
-  plus
-  baseline
-  JSON
-  shards).
-- `scripts/check-consistency.sh`
-  is
-  590
-  lines,
-  and
-  its
-  own
-  comments
-  call
-  its
-  regex
-  scans
-  "previews
-  of
-  the
-  vitest
-  gates".
-  **The
-  same
-  rules
-  are
-  implemented
-  twice,
-  in
-  bash
-  and
-  in
-  vitest.**
-- `eslint-local-rules/`
-  has
-  **2
-  rules**
-  (`no-adhoc-user-select`,
-  `no-lucide-namespace-import`).
-  There
-  is
-  no
-  Stylelint.
-- `.claude/hooks/commit-gate.sh`
-  runs
-  on
-  every
-  Bash
-  call
-  and
-  string-matches
-  "git
-  commit".
-- Gate
-  runtime
-  is
-  unmeasured.
-  `docs/testing.md`
-  says
-  ≈3
-  s,
-  which
-  is
-  not
-  credible
-  for
-  ≈80
-  test
-  files
-  plus
-  `tsc`.
+- **77 of 288 files in `lib/__tests__` read source from disk** to enforce conventions. The largest are
+  `design-consistency` (1,111 lines), `i18n-catalogs` (1,204), `api-handler-adoption` (421) and `jelly-coverage` (411,
+  plus baseline JSON shards).
+- `scripts/check-consistency.sh` is 590 lines, and its own comments call its regex scans "previews of the vitest gates".
+  **The same rules are implemented twice, in bash and in vitest.**
+- `eslint-local-rules/` has **2 rules** (`no-adhoc-user-select`, `no-lucide-namespace-import`). There is no Stylelint.
+- `.claude/hooks/commit-gate.sh` runs on every Bash call and string-matches "git commit".
+- Gate runtime is unmeasured. `docs/testing.md` says ≈3 s, which is not credible for ≈80 test files plus `tsc`.
 
-**Target:**
-each
-convention
-lives
-in
-exactly
-**one**
-place:
+**Target:** each convention lives in exactly **one** place:
 
 | Convention kind                                                                                                                                    | Home                                   | Why                                                      |
 | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------------- |
@@ -10521,35 +2553,10 @@ place:
 | Cross-file facts (every namespace registered, every route has head, catalog completeness, handler adoption ratchet)                                | a **small** set of vitest "repo" tests | genuinely global, so keep them                           |
 | Generated-file freshness                                                                                                                           | `pnpm *:check` scripts in CI           | already exist                                            |
 
-The
-commit
-gate
-becomes
-`lint-staged`
-(eslint +
-stylelint
-on
-staged
-files) +
-`tsc -b`
-(incremental).
-That
-should
-take
-seconds,
-not
-tens
-of
-seconds.
+The commit gate becomes `lint-staged` (eslint + stylelint on staged files) + `tsc -b` (incremental). That should take
+seconds, not tens of seconds.
 
-**Stub:
-a
-lint
-rule
-replacing
-a
-regex
-gate**
+**Stub: a lint rule replacing a regex gate**
 
 ```js
 // eslint-local-rules/no-raw-palette.js
@@ -10559,82 +2566,29 @@ export default {
   meta: {
     type: 'problem',
     docs: {
-      description:
-        'Use --site-* token utilities, not raw palette colours (design-language §13)',
+      description: 'Use --site-* token utilities, not raw palette colours (design-language §13)',
     },
-    schema:
-      [],
+    schema: [],
   },
-  create(
-    ctx,
-  ) {
-    const check =
-      (
-        node,
-        value,
-      ) => {
-        const m =
-          RAW.exec(
-            value,
-          );
-        if (
-          m
-        )
-          ctx.report(
-            {
-              node,
-              message: `Raw palette class "${m[0]}": use a site token utility.`,
-            },
-          );
-      };
-    return {
-      JSXAttribute(
-        node,
-      ) {
-        if (
-          node
-            .name
-            .name !==
-            'className' ||
-          !node.value
-        )
-          return;
-        if (
-          node
-            .value
-            .type ===
-          'Literal'
-        )
-          check(
-            node,
-            String(
-              node
-                .value
-                .value,
-            ),
-          );
-      },
-      TemplateElement(
-        node,
-      ) {
-        check(
+  create(ctx) {
+    const check = (node, value) => {
+      const m = RAW.exec(value);
+      if (m)
+        ctx.report({
           node,
-          node
-            .value
-            .raw,
-        );
+          message: `Raw palette class "${m[0]}": use a site token utility.`,
+        });
+    };
+    return {
+      JSXAttribute(node) {
+        if (node.name.name !== 'className' || !node.value) return;
+        if (node.value.type === 'Literal') check(node, String(node.value.value));
       },
-      'CallExpression[callee.name=/^(cn|clsx|cva)$/] Literal'(
-        node,
-      ) {
-        if (
-          typeof node.value ===
-          'string'
-        )
-          check(
-            node,
-            node.value,
-          );
+      TemplateElement(node) {
+        check(node, node.value.raw);
+      },
+      'CallExpression[callee.name=/^(cn|clsx|cva)$/] Literal'(node) {
+        if (typeof node.value === 'string') check(node, node.value);
       },
     };
   },
@@ -10646,82 +2600,12 @@ export default {
 { files: ['features/*/**'], ignores: GAME_FEATURES.map((g) => `features/${g}/**`), rules: { 'local/no-raw-palette': 'error' } }
 ```
 
-**Steps:**
-(1)
-Port
-one
-gate
-at
-a
-time
-and
-delete
-its
-vitest +
-bash
-twin
-in
-the
-same
-PR
-(P2).
-(2)
-Measure
-the
-gate
-before
-and
-after,
-and
-publish
-the
-numbers
-in
-`docs/testing.md`
-(generated,
-F4).
-(3)
-Make
-the
-Claude
-hook
-match
-`^git commit`
-on
-the
-parsed
-command,
-not
-a
-substring.
+**Steps:** (1) Port one gate at a time and delete its vitest + bash twin in the same PR (P2). (2) Measure the gate
+before and after, and publish the numbers in `docs/testing.md` (generated, F4). (3) Make the Claude hook match
+`^git commit` on the parsed command, not a substring.
 
-**Done
-when:**
-`scripts/check-consistency.sh`
-is
-under
-80
-lines,
-fewer
-than
-15
-`lib/__tests__`
-files
-read
-source
-from
-disk,
-and
-`pnpm check:consistency --fast`
-runs
-in
-under
-10
-s
-on
-a
-warm
-cache.
+**Done when:** `scripts/check-consistency.sh` is under 80 lines, fewer than 15 `lib/__tests__` files read source from
+disk, and `pnpm check:consistency --fast` runs in under 10 s on a warm cache.
 
 ---
 
@@ -10748,257 +2632,65 @@ depends:
 
 **Evidence**
 
-- **No
-  test
-  exercises
-  the
-  Stripe
-  webhook
-  or
-  checkout.**
-  Stripe
-  runs
-  through
-  the
-  Better
-  Auth
-  plugin.
-  `grep -il stripe`
-  over
-  the
-  test
-  files
-  finds
-  only
-  incidental
-  matches
-  (ladder
-  job-source
-  adapters,
-  permissions
-  policy).
-  The
-  integration
-  suite
-  _seeds_
-  a
-  subscription
-  row
-  instead
-  of
-  going
-  through
-  Stripe.
-- The
-  integration
-  suite
-  has
-  5
-  files
-  and
-  390
-  lines.
-- Browser
-  E2E
-  is
-  hand-rolled
-  Playwright
-  `.mjs`
-  (29
-  files)
-  and
-  covers
-  only
-  visual
-  material
-  and
-  games.
-  **No
-  E2E
-  covers
-  a
-  user
-  flow**
-  (sign-up,
-  post,
-  purchase).
-- `new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_unconfigured')`
-  fails
-  quietly.
+- **No test exercises the Stripe webhook or checkout.** Stripe runs through the Better Auth plugin. `grep -il stripe`
+  over the test files finds only incidental matches (ladder job-source adapters, permissions policy). The integration
+  suite _seeds_ a subscription row instead of going through Stripe.
+- The integration suite has 5 files and 390 lines.
+- Browser E2E is hand-rolled Playwright `.mjs` (29 files) and covers only visual material and games. **No E2E covers a
+  user flow** (sign-up, post, purchase).
+- `new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_unconfigured')` fails quietly.
 
-**Stub:
-`@playwright/test`
-flow
-suite**
+**Stub: `@playwright/test` flow suite**
 
 ```ts
 // testing/flows/checkout.spec.ts
-import {
-  test,
-  expect,
-} from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { stripeTrigger } from './helpers/stripe'; // stripe-mock or Stripe test mode + `stripe trigger`
 
-test('member checkout grants entitlements', async ({
-  page,
-  request,
-}) => {
-  await page.goto(
-    '/login?e2e=alice',
-  ); // test-only sign-in route, compiled out of prod
-  await page.goto(
-    '/membership',
-  );
+test('member checkout grants entitlements', async ({ page, request }) => {
+  await page.goto('/login?e2e=alice'); // test-only sign-in route, compiled out of prod
+  await page.goto('/membership');
   await page
-    .getByRole(
-      'button',
-      {
-        name: /subscribe/i,
-      },
-    )
+    .getByRole('button', {
+      name: /subscribe/i,
+    })
     .click();
-  await expect(
-    page,
-  ).toHaveURL(
-    /checkout\.stripe\.com|\/e2e\/checkout/,
-  );
-  await stripeTrigger(
-    'checkout.session.completed',
-    {
-      customerEmail:
-        'alice@e2e.test',
-    },
-  );
+  await expect(page).toHaveURL(/checkout\.stripe\.com|\/e2e\/checkout/);
+  await stripeTrigger('checkout.session.completed', {
+    customerEmail: 'alice@e2e.test',
+  });
   await expect
-    .poll(
-      async () =>
-        (
-          await request.get(
-            '/api/entitlements',
-          )
-        ).json(),
-    )
-    .toMatchObject(
-      {
-        tier: 'member',
-      },
-    );
+    .poll(async () => (await request.get('/api/entitlements')).json())
+    .toMatchObject({
+      tier: 'member',
+    });
 });
 
-test('webhook is idempotent', async ({
-  request,
-}) => {
-  const evt =
-    await stripeTrigger(
-      'invoice.paid',
-      {
-        replay: true,
-      },
-    );
-  const r1 =
-    await request.post(
-      '/api/auth/stripe/webhook',
-      {
-        data: evt.body,
-        headers:
-          evt.headers,
-      },
-    );
-  const r2 =
-    await request.post(
-      '/api/auth/stripe/webhook',
-      {
-        data: evt.body,
-        headers:
-          evt.headers,
-      },
-    );
-  expect(
-    r1.ok() &&
-      r2.ok(),
-  ).toBe(
-    true,
-  );
+test('webhook is idempotent', async ({ request }) => {
+  const evt = await stripeTrigger('invoice.paid', {
+    replay: true,
+  });
+  const r1 = await request.post('/api/auth/stripe/webhook', {
+    data: evt.body,
+    headers: evt.headers,
+  });
+  const r2 = await request.post('/api/auth/stripe/webhook', {
+    data: evt.body,
+    headers: evt.headers,
+  });
+  expect(r1.ok() && r2.ok()).toBe(true);
   // assert the ledger row count did not double
 });
 ```
 
-**Flows
-to
-cover
-first:**
-sign-up
-→
-onboarding
-→
-first
-post;
-follow
-→
-feed
-shows
-the
-post;
-coin
-tip/transfer
-(ledger
-balances
-on
-both
-sides);
-Stripe
-checkout
-→
-entitlement
-→
-cancel
-→
-downgrade;
-webhook
-replay
-is
-idempotent;
-account
-deletion
-removes
-PII.
+**Flows to cover first:** sign-up → onboarding → first post; follow → feed shows the post; coin tip/transfer (ledger
+balances on both sides); Stripe checkout → entitlement → cancel → downgrade; webhook replay is idempotent; account
+deletion removes PII.
 
-**Also:**
-make
-the
-Stripe
-client
-throw
-at
-boot
-in
-production
-when
-the
-key
-is
-missing.
+**Also:** make the Stripe client throw at boot in production when the key is missing.
 
-**Done
-when:**
-these
-flows
-run
-as
-a
-blocking
-job
-in
-`web-ci.yml`
-against
-the
-throwaway
-Postgres
-the
-integration
-suite
-already
-provisions.
+**Done when:** these flows run as a blocking job in `web-ci.yml` against the throwaway Postgres the integration suite
+already provisions.
 
 ---
 
@@ -11022,177 +2714,26 @@ depends:
 
 **Evidence**
 
-- There
-  are
-  20
-  workflows,
-  about
-  3,600
-  lines
-  in
-  total.
-- `deploy.yml`
-  copy-pastes
-  and
-  **re-runs**
-  web-ci's
-  typecheck,
-  eslint,
-  audit,
-  test
-  shards
-  and
-  integration
-  jobs
-  after
+- There are 20 workflows, about 3,600 lines in total.
+- `deploy.yml` copy-pastes and **re-runs** web-ci's typecheck, eslint, audit, test shards and integration jobs after
   merge.
-- `tf2-assets-sync`
-  (706
-  lines)
-  and
-  `csgo-assets-sync`
-  (395)
-  follow
-  the
-  same
-  pattern,
-  written
-  twice.
-- The
-  Prisma
-  checks
-  are
-  split
-  across
-  two
-  workflows.
-- `tf2-effect-diagnostics`
-  has
-  a
-  push
-  trigger
-  pinned
-  to
-  a
-  dead
-  branch
-  (`claude/intelligent-pasteur-1ebvf7`).
-- **`senior-review.yml`
-  gates
-  only
-  PRs
-  authored
-  by
-  one
-  user,
-  and
-  fails
-  open**:
-  an
-  API
-  error,
-  a
-  timeout
-  or
-  an
-  unparseable
-  verdict
-  all
-  count
-  as
-  PASS.
+- `tf2-assets-sync` (706 lines) and `csgo-assets-sync` (395) follow the same pattern, written twice.
+- The Prisma checks are split across two workflows.
+- `tf2-effect-diagnostics` has a push trigger pinned to a dead branch (`claude/intelligent-pasteur-1ebvf7`).
+- **`senior-review.yml` gates only PRs authored by one user, and fails open**: an API error, a timeout or an unparseable
+  verdict all count as PASS.
 
 **Steps**
 
-1. `deploy.yml`
-   uses
-   `needs:`
-   on
-   a
-   reusable
-   `ci.yml`,
-   or
-   reads
-   the
-   `merge_group`
-   check-suite
-   result.
-   It
-   does
-   not
-   re-run
+1. `deploy.yml` uses `needs:` on a reusable `ci.yml`, or reads the `merge_group` check-suite result. It does not re-run
    tests.
-2. Extract
-   the
-   shared
-   asset-sync
-   logic
-   into
-   one
-   reusable
-   workflow
-   with
-   a
-   `game:`
-   input.
-3. Merge
-   `prisma-validate`
-   and
-   `prisma-migrate-status`
-   into
-   one
-   workflow.
-4. Delete
-   the
-   dead-branch
-   trigger.
-5. `senior-review`:
-   either
-   apply
-   it
-   to
-   all
-   authors
-   as
-   **advisory**
-   (a
-   comment,
-   not
-   a
-   check),
-   or
-   remove
-   it.
-   A
-   gate
-   that
-   fails
-   open
-   and
-   applies
-   to
-   one
-   person
-   is
-   policy,
-   not
-   quality.
+2. Extract the shared asset-sync logic into one reusable workflow with a `game:` input.
+3. Merge `prisma-validate` and `prisma-migrate-status` into one workflow.
+4. Delete the dead-branch trigger.
+5. `senior-review`: either apply it to all authors as **advisory** (a comment, not a check), or remove it. A gate that
+   fails open and applies to one person is policy, not quality.
 
-**Done
-when:**
-there
-are
-≤
-12
-workflows
-and
-no
-job
-definition
-appears
-in
-two
-files.
+**Done when:** there are ≤ 12 workflows and no job definition appears in two files.
 
 ---
 
@@ -11219,276 +2760,50 @@ depends:
 
 **Evidence**
 
-- `docs/`
-  has
-  957
-  files
-  and
-  432
-  `.md`
-  files
-  (≈192k
-  lines).
-  **195
-  are
-  date-stamped**,
-  **37
-  have
-  "audit"
-  in
-  the
-  name**
-  (including
-  9
-  performance-audit
-  files),
-  `superpowers/`
-  has
-  111
-  and
-  `plans/`
-  has 32.
-- Sphinx
-  publishes
-  all
-  of
-  it,
-  including
-  every
-  dated
-  audit
-  and
-  plan.
-- "16
-  languages"
-  covers
-  ≈11
-  translated
-  pages
-  (`docs/locale`:
-  15
-  languages
-  ×
-  11
-  `.po`
-  files).
-- Living
-  docs
-  carry
-  hand-written
-  counts
-  that
-  are
-  wrong
+- `docs/` has 957 files and 432 `.md` files (≈192k lines). **195 are date-stamped**, **37 have "audit" in the name**
+  (including 9 performance-audit files), `superpowers/` has 111 and `plans/` has 32.
+- Sphinx publishes all of it, including every dated audit and plan.
+- "16 languages" covers ≈11 translated pages (`docs/locale`: 15 languages × 11 `.po` files).
+- Living docs carry hand-written counts that are wrong
   ([Appendix 1](#appendix-1--documentation-drift-found-during-this-audit)).
-- `AGENTS.md`
-  claims
-  to
-  mirror
-  `CLAUDE.md`,
-  but
-  it
-  is
-  120
-  lines
-  against 429.
-- There
-  are
-  four
-  design
-  docs
-  totalling
-  ≈3.1k
-  lines
-  (`design.md`,
-  `design-language.md`,
-  `plasmatic-jelly-system.md`,
-  `page-consistency.md`),
-  and
-  `design-language.md`
-  keeps
-  superseded
-  sections
-  (§5.1.1,
-  §5.1.2).
+- `AGENTS.md` claims to mirror `CLAUDE.md`, but it is 120 lines against 429.
+- There are four design docs totalling ≈3.1k lines (`design.md`, `design-language.md`, `plasmatic-jelly-system.md`,
+  `page-consistency.md`), and `design-language.md` keeps superseded sections (§5.1.1, §5.1.2).
 
 **Steps**
 
-1. `git mv`
-   every
-   dated
-   doc
-   into
-   `docs/archive/YYYY/`
-   and
-   exclude
-   `archive/`
-   from
-   Sphinx.
-   Keep
-   one
-   living
-   page
-   per
-   topic:
-   architecture,
-   testing,
-   design,
-   i18n,
-   deploy,
-   security.
-2. **Generate
-   the
-   counts.**
-   Add
-   a
-   `scripts/gen-repo-facts.ts`
-   that
-   writes
-   `docs/_generated/facts.json`
-   (models,
-   routes,
-   namespaces,
-   test
-   files,
-   …).
-   Living
-   docs
-   reference
-   facts
-   through
-   a
-   MyST
-   substitution
-   (`{{ facts.models }}`).
-   `CLAUDE.md`
-   says
-   "see
-   facts.json"
-   instead
-   of
-   hard
-   numbers.
-   Add
-   a
-   `facts:check`
-   freshness
-   gate.
-3. Replace
-   `AGENTS.md`
-   with
-   a
-   symlink
-   to
-   `CLAUDE.md`.
-4. Merge
-   the
-   four
-   design
-   docs
-   into
-   one
-   spec
-   plus
-   one
-   checklist.
-   Delete
-   the
-   superseded
-   sections;
-   git
-   history
-   keeps
-   them.
-5. Publish
-   the
-   translated
-   docs
-   set
-   honestly
-   ("API
-   reference
-   in
-   16
-   languages").
+1. `git mv` every dated doc into `docs/archive/YYYY/` and exclude `archive/` from Sphinx. Keep one living page per
+   topic: architecture, testing, design, i18n, deploy, security.
+2. **Generate the counts.** Add a `scripts/gen-repo-facts.ts` that writes `docs/_generated/facts.json` (models, routes,
+   namespaces, test files, …). Living docs reference facts through a MyST substitution (`{{ facts.models }}`).
+   `CLAUDE.md` says "see facts.json" instead of hard numbers. Add a `facts:check` freshness gate.
+3. Replace `AGENTS.md` with a symlink to `CLAUDE.md`.
+4. Merge the four design docs into one spec plus one checklist. Delete the superseded sections; git history keeps them.
+5. Publish the translated docs set honestly ("API reference in 16 languages").
 
 **Stub**
 
 ```ts
 // scripts/gen-repo-facts.ts
-const facts =
-  {
-    generatedAt:
-      new Date()
-        .toISOString()
-        .slice(
-          0,
-          10,
-        ),
-    prismaModels:
-      count(
-        /^model /m,
-        'prisma/**/*.prisma',
-      ),
-    prismaEnums:
-      count(
-        /^enum /m,
-        'prisma/**/*.prisma',
-      ),
-    routeFiles:
-      glob(
-        'apps/web/app/routes/**/*.{ts,tsx}',
-      )
-        .length,
-    apiRoutes:
-      glob(
-        'apps/web/app/routes/api/**/*.ts',
-      )
-        .length,
-    i18nNamespaces:
-      NAMESPACES.length,
-    testFiles:
-      glob(
-        '**/*.test.{ts,tsx}',
-        {
-          ignore:
-            [
-              'node_modules/**',
-            ],
-        },
-      )
-        .length,
-    workflows:
-      glob(
-        '.github/workflows/*.yml',
-      )
-        .length,
-  };
-await writeJson(
-  'docs/_generated/facts.json',
-  facts,
-  {
-    check:
-      process.argv.includes(
-        '--check',
-      ),
-  },
-);
+const facts = {
+  generatedAt: new Date().toISOString().slice(0, 10),
+  prismaModels: count(/^model /m, 'prisma/**/*.prisma'),
+  prismaEnums: count(/^enum /m, 'prisma/**/*.prisma'),
+  routeFiles: glob('apps/web/app/routes/**/*.{ts,tsx}').length,
+  apiRoutes: glob('apps/web/app/routes/api/**/*.ts').length,
+  i18nNamespaces: NAMESPACES.length,
+  testFiles: glob('**/*.test.{ts,tsx}', {
+    ignore: ['node_modules/**'],
+  }).length,
+  workflows: glob('.github/workflows/*.yml').length,
+};
+await writeJson('docs/_generated/facts.json', facts, {
+  check: process.argv.includes('--check'),
+});
 ```
 
-**Done
-when:**
-`docs/`
-top
-level
-has
-≤
-30
-files,
-and
-`rg -n "\\b(323|234|67) (models|namespaces)" CLAUDE.md docs/*.md`
-returns
-nothing.
+**Done when:** `docs/` top level has ≤ 30 files, and `rg -n "\\b(323|234|67) (models|namespaces)" CLAUDE.md docs/*.md`
+returns nothing.
 
 ---
 
@@ -11496,309 +2811,41 @@ nothing.
 
 ```yaml
 id: F5
-gain:
-  practice
-  (security)
+gain: practice (security)
 impact: M
 effort: M
-risk:
-  med
-  (CSP
-  breakage,
-  so
-  ship
-  report-only
-  first)
-depends:
-  [
-    B2
-    for
-    the
-    hashed
-    pre-paint
-    script,
-  ]
+risk: med (CSP breakage, so ship report-only first)
+depends: [B2 for the hashed pre-paint script]
 ```
 
 **Evidence**
 
-- The
-  CSP
-  in
-  `deploy/apache/rmhstudios.conf:204`
-  keeps
-  **`script-src 'unsafe-inline'`**
-  (plus
-  AdSense
-  hosts
-  and
-  `'wasm-unsafe-eval'`)
-  and
-  `style-src 'unsafe-inline'`.
-  The
-  vhost
-  is
-  hand-installed.
-- Better
-  Auth
-  `cookieCache.maxAge: 300`
-  (`lib/auth.ts:72`)
-  means
-  a
-  revoked
-  or
-  banned
-  session
-  can
-  still
-  read
-  for
-  up
-  to
-  5
-  minutes,
-  and
-  each
-  hub
-  adds
-  its
-  own
-  auth-cache
-  TTL
-  on
-  top.
-- The
-  auth
-  rate
-  limiter
-  is
-  per-process
-  memory
-  (D1).
-- `LimitRequestBody`
-  is
-  1.5
-  GB
-  ("deliberately
-  loose").
-- There
-  are
-  7
-  `dangerouslySetInnerHTML`
-  sites
-  (not
-  individually
-  reviewed
-  here)
-  and
-  one
-  `sanitize-html`
-  importer.
-- An
-  open
-  item
-  from
-  `server-perf/06-report.md`
-  is
-  unverified:
-  a
-  probable
-  production
-  500
-  on
-  `/api/auth/*`
-  with
-  `x-forwarded-for`,
-  caused
-  by
-  a
-  zod
-  peer
-  mismatch.
+- The CSP in `deploy/apache/rmhstudios.conf:204` keeps **`script-src 'unsafe-inline'`** (plus AdSense hosts and
+  `'wasm-unsafe-eval'`) and `style-src 'unsafe-inline'`. The vhost is hand-installed.
+- Better Auth `cookieCache.maxAge: 300` (`lib/auth.ts:72`) means a revoked or banned session can still read for up to 5
+  minutes, and each hub adds its own auth-cache TTL on top.
+- The auth rate limiter is per-process memory (D1).
+- `LimitRequestBody` is 1.5 GB ("deliberately loose").
+- There are 7 `dangerouslySetInnerHTML` sites (not individually reviewed here) and one `sanitize-html` importer.
+- An open item from `server-perf/06-report.md` is unverified: a probable production 500 on `/api/auth/*` with
+  `x-forwarded-for`, caused by a zod peer mismatch.
 
 **Steps**
 
-1. **CSP
-   with
-   hashes.**
-   After
-   B2
-   there
-   is
-   one
-   generated
-   pre-paint
-   script
-   plus
-   JSON-LD.
-   Hash
-   both
-   at
-   build
-   time
-   (`'sha256-…'`)
-   and
-   drop
-   `'unsafe-inline'`
-   from
-   `script-src`.
-   Emit
-   the
-   policy
-   from
-   Nitro
-   (`security-headers.ts`
-   already
-   does
-   report-only),
-   so
-   it
-   ships
-   with
-   the
-   code.
-   Run
-   report-only
-   for
-   two
-   weeks,
-   then
-   enforce.
-   AdSense
-   needs
-   `'strict-dynamic'` +
-   a
-   nonce,
-   so
-   put
-   ad
-   pages
-   behind
-   the
-   nonce
-   path
-   if
-   needed.
-2. **Revocation.**
-   Keep
-   the
-   cookie
-   cache
-   but
-   publish
-   a
-   `session:revoked`
-   event
-   on
-   the
-   Redis
-   bus.
-   Web
-   workers
-   and
-   the
-   realtime
-   gateway
-   evict
-   on
-   receipt,
-   so
-   the
-   5
-   minutes
-   becomes
-   about
-   1
-   second.
-3. **Body
-   limits
-   per
-   route.**
-   Apache
-   gets
-   a
-   sane
-   global
-   cap
-   (e.g.
-   50
-   MB),
-   and
-   the
-   upload
-   routes
-   that
-   need
-   more
-   get
-   their
-   own
-   `<Location>`
-   blocks
-   or
-   presigned
-   direct-to-R2
-   uploads.
-4. Review
-   the
-   7
-   `dangerouslySetInnerHTML`
-   sites.
-   Each
-   one
-   either
-   renders
-   build-time
-   constants
-   (fine,
-   so
-   add
-   a
-   comment),
-   or
-   goes
-   through
-   `sanitize-html`
-   with
-   a
-   shared
-   allowlist.
-5. Verify
-   the
-   `x-forwarded-for`
-   auth
-   issue
-   against
-   production
-   and
-   close
-   it.
+1. **CSP with hashes.** After B2 there is one generated pre-paint script plus JSON-LD. Hash both at build time
+   (`'sha256-…'`) and drop `'unsafe-inline'` from `script-src`. Emit the policy from Nitro (`security-headers.ts`
+   already does report-only), so it ships with the code. Run report-only for two weeks, then enforce. AdSense needs
+   `'strict-dynamic'` + a nonce, so put ad pages behind the nonce path if needed.
+2. **Revocation.** Keep the cookie cache but publish a `session:revoked` event on the Redis bus. Web workers and the
+   realtime gateway evict on receipt, so the 5 minutes becomes about 1 second.
+3. **Body limits per route.** Apache gets a sane global cap (e.g. 50 MB), and the upload routes that need more get their
+   own `<Location>` blocks or presigned direct-to-R2 uploads.
+4. Review the 7 `dangerouslySetInnerHTML` sites. Each one either renders build-time constants (fine, so add a comment),
+   or goes through `sanitize-html` with a shared allowlist.
+5. Verify the `x-forwarded-for` auth issue against production and close it.
 
-**Done
-when:**
-the
-production
-`Content-Security-Policy`
-header
-contains
-no
-`'unsafe-inline'`
-in
-`script-src`,
-and
-revoking
-a
-session
-in
-`/settings/security`
-logs
-out
-the
-other
-tab
-within
-5
-s.
+**Done when:** the production `Content-Security-Policy` header contains no `'unsafe-inline'` in `script-src`, and
+revoking a session in `/settings/security` logs out the other tab within 5 s.
 
 ---
 
@@ -11821,145 +2868,17 @@ depends:
   ]
 ```
 
-**Evidence:**
-The
-git
-pack
-is
-**582.9
-MB**.
-The
-working
-tree
-carries
-`docs/indonesia-history/`
-at
-**232
-MB**
-(291
-tracked
-files),
-`public/`
-at
-256
-MB
-(`music`
-82
-MB,
-`images`
-69
-MB,
-`tf2-hud`
-57
-MB,
-`sprites`
-29
-MB),
-`data/balatro`
-at
-96
-MB
-with
-`data/balatro-pack`
-at
-another
-24
-MB,
-and
-`locales/`
-at
-37
-MB.
-`public/`
-also
-holds
-PDFs
-and
-an
-HTML
-board
-book
-(`RMH Capital — Operating Atlas 2026.pdf`,
-`rmh-capital-board-book.html`).
+**Evidence:** The git pack is **582.9 MB**. The working tree carries `docs/indonesia-history/` at **232 MB** (291
+tracked files), `public/` at 256 MB (`music` 82 MB, `images` 69 MB, `tf2-hud` 57 MB, `sprites` 29 MB), `data/balatro` at
+96 MB with `data/balatro-pack` at another 24 MB, and `locales/` at 37 MB. `public/` also holds PDFs and an HTML board
+book (`RMH Capital — Operating Atlas 2026.pdf`, `rmh-capital-board-book.html`).
 
-**Steps:**
-(1)
-Move
-media
-to
-R2
-behind
-the
-existing
-`assets`
-service
-or
-a
-Cloudflare-cached
-bucket.
-The
-`media:migrate`
-and
-`albums:migrate`
-scripts
-show
-this
-was
-already
-done
-once
-for
-user
-content.
-(2)
-Track
-what
-must
-stay
-in
-git
-with
-Git
-LFS.
-(3)
-Move
-`docs/indonesia-history`
-(a
-book
-project)
-to
-its
-own
-repository.
-(4)
-Optionally
-run
-a
-history
-rewrite
-(`git filter-repo`)
-in
-a
-planned
-maintenance
-window.
-That
-needs
-owner
-sign-off
-and
-force-push
-coordination.
+**Steps:** (1) Move media to R2 behind the existing `assets` service or a Cloudflare-cached bucket. The `media:migrate`
+and `albums:migrate` scripts show this was already done once for user content. (2) Track what must stay in git with Git
+LFS. (3) Move `docs/indonesia-history` (a book project) to its own repository. (4) Optionally run a history rewrite
+(`git filter-repo`) in a planned maintenance window. That needs owner sign-off and force-push coordination.
 
-**Done
-when:**
-a
-fresh
-`git clone --depth 1`
-is
-under
-100
-MB.
+**Done when:** a fresh `git clone --depth 1` is under 100 MB.
 
 ---
 
@@ -11979,110 +2898,17 @@ depends:
 
 **Evidence**
 
-- **Completed
-  one-off
-  migrations:**
-  `migrate-albums-to-storage`,
-  `migrate-avatars-to-r2`,
-  `migrate-media-to-r2`,
-  `migrate-blogs`
-  (still
-  referenced
-  by
-  the
-  Dockerfile),
-  `backfill-handles`
-  and
-  `backfill-vibe-thumbs`.
-- **Zero
-  references:**
-  `scripts/api-cache-triage.ts`,
-  `scripts/perf-ws6/`
-  and
-  `scripts/pf2ecal-visual-audit.mjs`.
-- `fix-ssr-css-hash.mjs`
-  patches
-  build
-  output
-  inside
-  the
-  Dockerfile,
-  which
-  points
-  to
-  a
-  build
-  bug
-  and
-  should
-  be
-  fixed
-  at
-  the
-  source.
-- **Dependencies:**
-  `ws`
-  has
-  0
-  imports.
-  `@types/d3`
-  and
-  `@types/matter-js`
-  are
-  installed
-  although
-  no
-  site
-  code
-  imports
-  d3
-  or
-  matter.
-  `immer`,
-  `uuid`
-  and
-  `lodash-es`
-  are
-  runtime
-  deps
-  used
-  only
-  by
-  the
-  RMHVibe
-  sandbox
-  bundler,
-  so
-  they
-  belong
-  to
-  `packages/vibe-runtime`
-  (A1).
-- `pnpm-workspace.yaml`
-  `allowBuilds:`
-  still
-  holds
-  pnpm's
-  placeholder
-  values.
+- **Completed one-off migrations:** `migrate-albums-to-storage`, `migrate-avatars-to-r2`, `migrate-media-to-r2`,
+  `migrate-blogs` (still referenced by the Dockerfile), `backfill-handles` and `backfill-vibe-thumbs`.
+- **Zero references:** `scripts/api-cache-triage.ts`, `scripts/perf-ws6/` and `scripts/pf2ecal-visual-audit.mjs`.
+- `fix-ssr-css-hash.mjs` patches build output inside the Dockerfile, which points to a build bug and should be fixed at
+  the source.
+- **Dependencies:** `ws` has 0 imports. `@types/d3` and `@types/matter-js` are installed although no site code imports
+  d3 or matter. `immer`, `uuid` and `lodash-es` are runtime deps used only by the RMHVibe sandbox bundler, so they
+  belong to `packages/vibe-runtime` (A1).
+- `pnpm-workspace.yaml` `allowBuilds:` still holds pnpm's placeholder values.
 
-**Done
-when:**
-`knip`
-(add
-it)
-reports
-no
-unused
-files,
-exports
-or
-deps
-outside
-an
-explicit
-ignore
-list.
+**Done when:** `knip` (add it) reports no unused files, exports or deps outside an explicit ignore list.
 
 ---
 
@@ -12102,150 +2928,21 @@ depends:
 
 **Evidence**
 
-- About
-  90
-  `createFileRoute`
-  `.tsx`
-  files
-  have
-  no
-  `head()`.
-  Some
-  of
-  these
-  are
-  layouts,
-  so
-  the
-  exact
-  gap
-  is
-  uncertain.
-- `ui-audit-2026-10-31.md`
-  found
-  tap
-  targets
-  under
-  36
-  px:
-  the
-  settings
-  back
-  link
-  (53×20)
-  on
-  11
-  pages,
-  toggles
-  at
-  40×24,
-  and
-  chips
-  at
-  24×24
-  (×42).
-  It
-  also
-  found
-  bare-text
-  empty
-  states
-  on
-  9
-  pages
-  and
-  text
-  under
-  11
-  px.
-- jsx-a11y
-  runs
-  at
-  `warn`.
+- About 90 `createFileRoute` `.tsx` files have no `head()`. Some of these are layouts, so the exact gap is uncertain.
+- `ui-audit-2026-10-31.md` found tap targets under 36 px: the settings back link (53×20) on 11 pages, toggles at 40×24,
+  and chips at 24×24 (×42). It also found bare-text empty states on 9 pages and text under 11 px.
+- jsx-a11y runs at `warn`.
 
-**Steps:**
-(1)
-A
-route-level
-rule:
-every
-page
-route
-either
-exports
-`head()`
-or
-is
-a
-layout
-(`_*.tsx`).
-Make
-it
-a
-lint
-rule
-rather
-than
-a
-source-scanning
-test.
-(2)
-A
-`--hit-min: 44px`
-token
-and
-a
-`<Hit>`
-wrapper
-for
-small
-visual
-controls,
-with
-`@media (pointer: coarse)`
-expanding
-the
-hit
-area
-without
-changing
-layout.
-(3)
-An
-`<EmptyState>`
-primitive
-as
-the
-only
-empty-state
-pattern.
-(4)
-Raise
-jsx-a11y
-to
-`error`
-for
-new
-code
-(baseline +
-ratchet).
+**Steps:** (1) A route-level rule: every page route either exports `head()` or is a layout (`_*.tsx`). Make it a lint
+rule rather than a source-scanning test. (2) A `--hit-min: 44px` token and a `<Hit>` wrapper for small visual controls,
+with `@media (pointer: coarse)` expanding the hit area without changing layout. (3) An `<EmptyState>` primitive as the
+only empty-state pattern. (4) Raise jsx-a11y to `error` for new code (baseline + ratchet).
 
 ---
 
 ## Part G — Sequenced roadmap
 
-Each
-phase
-leaves
-the
-site
-shippable.
-IDs
-refer
-to
-the
-items
-above.
+Each phase leaves the site shippable. IDs refer to the items above.
 
 ```mermaid
 gantt
@@ -12281,9 +2978,7 @@ gantt
   D5 declarative deploy          :p3f, 2027-04-19, 20d
 ```
 
-**Phase
-exit
-criteria**
+**Phase exit criteria**
 
 | Phase | Exit when                                                                                                                                                                                                                                     |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -12292,69 +2987,15 @@ criteria**
 | 2     | ≥ 10 features are islands. `criticalPathBrotli` ≤ 300 KB. Hubs survive a deploy without dropping lobbies. Stripe flows tested. Shell has ≤ 2 inline scripts.                                                                                  |
 | 3     | Go = `status` only; Bazel gone. One scheduler. Schema split, `User` < 80 lines. Exemption list = games only. CSP without `unsafe-inline`. Every service has a health-gated rollout.                                                           |
 
-**Metrics
-to
-track
-every
-phase**
-(all
-scriptable,
-see
-Appendix
-2):
-entry
-and
-critical-path
-brotli,
-site
-CSS
-brotli,
-p75
-LCP/INP
-from
-`/api/rum`,
-the
-raw
-fetch
-count,
-the
-boundary-violation
-count,
-the
-cycle
-count,
-gate
-runtime,
-`--app-*`
-count,
-arbitrary-value
-count,
-files >
-1,500
-lines,
-`deploy.sh`
-lines,
-CI
-minutes
-per
-PR.
+**Metrics to track every phase** (all scriptable, see Appendix 2): entry and critical-path brotli, site CSS brotli, p75
+LCP/INP from `/api/rum`, the raw fetch count, the boundary-violation count, the cycle count, gate runtime, `--app-*`
+count, arbitrary-value count, files > 1,500 lines, `deploy.sh` lines, CI minutes per PR.
 
 ---
 
 ## Appendix 1 — Documentation drift found during this audit
 
-Fix
-these
-at
-once.
-They
-mislead
-every
-agent
-that
-reads
-the
-docs.
+Fix these at once. They mislead every agent that reads the docs.
 
 | Doc                                                        | Claims                                                                | Actual (2026-11-09)                            |
 | ---------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------- |
@@ -12376,23 +3017,7 @@ docs.
 
 ## Appendix 2 — Regenerate every metric
 
-Run
-from
-the
-repo
-root.
-These
-are
-the
-commands
-behind
-the
-numbers
-above.
-Wire
-them
-into
-`scripts/gen-repo-facts.ts`
+Run from the repo root. These are the commands behind the numbers above. Wire them into `scripts/gen-repo-facts.ts`
 (F4).
 
 ```bash
@@ -12447,365 +3072,44 @@ pnpm build:frontend && pnpm check:bundle-budget
 
 ## Appendix 3 — Open questions for the owner
 
-These
-block
-or
-shape
-items
-above.
-Each
-needs
-a
-yes/no
-or
-a
-choice.
+These block or shape items above. Each needs a yes/no or a choice.
 
-1. **A2
-   page
-   triage:**
-   for
-   each
-   of
-   covid,
-   kaikaidebtcounter,
-   alexdebtcounter,
-   black-lives-matter,
-   sohumbum,
-   sohumbum2,
-   sohumtracker,
-   breaches,
-   csgo,
-   half-life-2,
-   gabriels-horn,
-   pf2ecal,
-   dunesday,
-   rebar-rutabaga,
-   elections,
-   signal-forge,
-   lights-out,
-   balatro,
-   choose
-   **keep-listed
-   /
-   keep-unlisted
-   /
-   archive
-   /
-   redirect**.
-2. **Design
-   labs**
-   (`/jelly`,
-   `/design`,
-   `/eversion-lab`,
-   `/optimization`):
-   keep
-   them
-   public,
-   put
-   them
-   behind
-   admin,
-   or
-   move
-   them
-   to
-   a
-   Storybook-style
-   internal
-   island?
-3. **Eversion:**
-   it
-   is
-   warmed
-   on
-   every
-   `_site`
-   page
-   today.
-   Is
-   it
-   core
-   identity
-   (keep,
-   but
-   load
-   on
-   intent
-   per
-   B3)
-   or
-   an
-   experiment
-   (flag
-   it
-   off
-   by
-   default)?
-4. **Docked
-   globe
-   on
-   desktop:**
-   is
-   a
-   static
-   poster
-   until
-   first
-   interaction
-   (B3)
-   acceptable
-   visually?
-5. **Go:**
-   keep
-   `discordbot`
-   in
-   Go
-   as
-   the
-   one
-   exception,
-   or
-   port
-   it
-   (D3)?
-6. **Hosting
-   budget:**
-   managed
-   Postgres
-   with
-   PITR
-   (D1)
-   is
-   the
-   single
-   biggest
-   reliability
-   purchase.
-   Is
-   the
-   spend
+1. **A2 page triage:** for each of covid, kaikaidebtcounter, alexdebtcounter, black-lives-matter, sohumbum, sohumbum2,
+   sohumtracker, breaches, csgo, half-life-2, gabriels-horn, pf2ecal, dunesday, rebar-rutabaga, elections, signal-forge,
+   lights-out, balatro, choose **keep-listed / keep-unlisted / archive / redirect**.
+2. **Design labs** (`/jelly`, `/design`, `/eversion-lab`, `/optimization`): keep them public, put them behind admin, or
+   move them to a Storybook-style internal island?
+3. **Eversion:** it is warmed on every `_site` page today. Is it core identity (keep, but load on intent per B3) or an
+   experiment (flag it off by default)?
+4. **Docked globe on desktop:** is a static poster until first interaction (B3) acceptable visually?
+5. **Go:** keep `discordbot` in Go as the one exception, or port it (D3)?
+6. **Hosting budget:** managed Postgres with PITR (D1) is the single biggest reliability purchase. Is the spend
    approved?
-7. **senior-review.yml:**
-   make
-   it
-   advisory
-   for
-   everyone,
-   or
-   remove
-   it
-   (F3)?
-8. **English
-   source
-   of
-   truth:**
-   should
-   `defaultValue`
-   in
-   code
-   or
-   `locales/en/*.json`
-   be
-   canonical,
-   with
-   the
-   other
-   generated
-   (B6)?
-9. **Pending
-   locales:**
-   stop
-   machine-translating
-   the
-   16
-   unshipped
-   locales
-   until
-   one
-   is
-   promoted?
-10. **History
-    rewrite**
-    to
-    shed
-    the
-    583
-    MB
-    pack
-    (F6):
-    approve
-    a
-    maintenance
-    window
-    and
-    force-push?
+7. **senior-review.yml:** make it advisory for everyone, or remove it (F3)?
+8. **English source of truth:** should `defaultValue` in code or `locales/en/*.json` be canonical, with the other
+   generated (B6)?
+9. **Pending locales:** stop machine-translating the 16 unshipped locales until one is promoted?
+10. **History rewrite** to shed the 583 MB pack (F6): approve a maintenance window and force-push?
 
 ---
 
 ## Appendix 4 — Agent execution protocol
 
-For
-a
-coding
-agent
-picking
-up
-an
-item
-from
-this
-document:
+For a coding agent picking up an item from this document:
 
-1. **Claim
-   one
-   item
-   ID**
-   (or
-   one
-   numbered
-   step
-   of
-   it).
-   Never
-   mix
-   items
-   in
-   one
-   PR,
-   except
-   A1+B1
-   for
-   the
-   same
-   feature.
-2. **Re-measure
-   first.**
-   Run
-   the
-   item's
-   `done-when`
-   check
-   and
-   the
-   relevant
-   Appendix
-   2
-   commands,
-   and
-   paste
-   the
-   _before_
-   numbers
-   into
-   the
-   PR.
-   This
-   document
-   is
-   a
-   snapshot;
-   the
-   tree
-   moves.
-3. **Follow
-   the
-   repo's
-   rules.**
-   These
-   come
-   from
-   `CLAUDE.md`
-   and
-   still
-   apply:
-   - `pnpm check:consistency`
-     before
-     every
-     commit;
-   - no
-     hand
-     edits
-     to
-     `routeTree.gen.ts`
-     or
-     `resources.<locale>.ts`;
-   - `defineHandler`
-     for
-     routes;
-   - `t()`
-     for
-     strings;
-   - jelly
-     through
-     role
-     classes
-     only.
-4. **Ship
-   the
-   tail
-   with
-   the
-   change
-   (P6).**
-   If
-   you
-   add
-   an
-   alias,
-   an
-   allowlist
-   entry
-   or
-   a
-   compat
-   shim,
-   the
-   same
-   PR
-   records
-   its
-   removal
-   condition
-   in
-   `docs/_generated/tails.json`,
-   or
-   in
-   the
-   item's
-   checklist
-   here.
-5. **Retire
-   a
-   gate
-   when
-   the
-   structure
-   makes
-   it
-   moot
-   (P2).**
-   Name
-   the
-   deleted
-   test
-   in
-   the
-   commit
-   message.
-6. **Report
-   after
-   numbers**
-   in
-   the
-   PR,
-   and
-   update
-   the
-   item's
-   status
-   line
-   here:
+1. **Claim one item ID** (or one numbered step of it). Never mix items in one PR, except A1+B1 for the same feature.
+2. **Re-measure first.** Run the item's `done-when` check and the relevant Appendix 2 commands, and paste the _before_
+   numbers into the PR. This document is a snapshot; the tree moves.
+3. **Follow the repo's rules.** These come from `CLAUDE.md` and still apply:
+   - `pnpm check:consistency` before every commit;
+   - no hand edits to `routeTree.gen.ts` or `resources.<locale>.ts`;
+   - `defineHandler` for routes;
+   - `t()` for strings;
+   - jelly through role classes only.
+4. **Ship the tail with the change (P6).** If you add an alias, an allowlist entry or a compat shim, the same PR records
+   its removal condition in `docs/_generated/tails.json`, or in the item's checklist here.
+5. **Retire a gate when the structure makes it moot (P2).** Name the deleted test in the commit message.
+6. **Report after numbers** in the PR, and update the item's status line here:
    `status: in-progress (PR link) | done (date)`.
 
 ```yaml

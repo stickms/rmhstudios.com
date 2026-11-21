@@ -75,7 +75,9 @@ export function ResponseView({ state }: { state: ResponseState }) {
   } else if (state.phase === 'sending') {
     status = t('response-sending', { defaultValue: 'Sending' });
   } else if (state.phase === 'failed') {
-    status = t('response-failed', { defaultValue: 'The request did not complete. Check your connection and try again.' });
+    status = t('response-failed', {
+      defaultValue: 'The request did not complete. Check your connection and try again.',
+    });
   } else {
     status = '';
   }

@@ -5,32 +5,16 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  friendProgressSchema,
-  friendsQuery,
-  friendsRes,
-} from '@/lib/rmhmusic/learn/social/friends-schema';
+import type { friendProgressSchema, friendsQuery, friendsRes } from '@/lib/rmhmusic/learn/social/friends-schema';
 
-export type FriendsProgress =
-  z.infer<
-    typeof friendsRes
-  >;
-export type FriendProgress =
-  z.infer<
-    typeof friendProgressSchema
-  >;
+export type FriendsProgress = z.infer<typeof friendsRes>;
+export type FriendProgress = z.infer<typeof friendProgressSchema>;
 
 /** Mutual follows who share their progress (empty unless the viewer's own friends switch is on). */
-export const friendsApi =
-  endpoint<{
-    query: z.infer<
-      typeof friendsQuery
-    >;
-    res: FriendsProgress;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmhmusic/friends',
-    },
-  );
+export const friendsApi = endpoint<{
+  query: z.infer<typeof friendsQuery>;
+  res: FriendsProgress;
+}>()({
+  method: 'GET',
+  path: '/api/rmhmusic/friends',
+});

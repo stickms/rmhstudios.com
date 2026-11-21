@@ -2,52 +2,9 @@
 
 ## Summary
 
-This
-PR
-implements
-all
-remediation
-items
-from
-**SECURITY-AUDIT-REPORT.md**
-(findings
-F1–F10)
-and
-adds
-a
-**10
-GB
-site-wide
-cap**
-on
-total
-uploaded
-song
-storage.
-It
-does
-not
-change
-Better
-Auth
-or
-Prisma
-internals;
-rate
-limiting
-continues
-to
-use
-the
-in-memory
-store
-(F11/Redis
-remains
-optional
-for
-production
-at
-scale).
+This PR implements all remediation items from **SECURITY-AUDIT-REPORT.md** (findings F1–F10) and adds a **10 GB
+site-wide cap** on total uploaded song storage. It does not change Better Auth or Prisma internals; rate limiting
+continues to use the in-memory store (F11/Redis remains optional for production at scale).
 
 ---
 
@@ -64,77 +21,17 @@ scale).
 
 ## Slice It! — PATCH and comments
 
-- **PATCH**
-  (`/api/slice-it/songs/[id]`):
-  Rate
-  limit
-  10/60s
-  per
-  IP
-  (`slice-patch`).
-  New
-  cover
-  file
-  validated
-  with
-  `validateImageBuffer()`
-  (magic
-  bytes,
-  5
-  MB)
-  before
-  writing.
-- **Comments
-  POST**
-  (`/api/slice-it/songs/[id]/comments`):
-  Rate
-  limit
-  10/60s
-  per
-  IP
-  (`slice-comments`).
-  Max
-  length
-  2000
-  characters;
-  400
-  with
-  clear
-  message
-  when
-  exceeded.
+- **PATCH** (`/api/slice-it/songs/[id]`): Rate limit 10/60s per IP (`slice-patch`). New cover file validated with
+  `validateImageBuffer()` (magic bytes, 5 MB) before writing.
+- **Comments POST** (`/api/slice-it/songs/[id]/comments`): Rate limit 10/60s per IP (`slice-comments`). Max length 2000
+  characters; 400 with clear message when exceeded.
 
 ---
 
 ## Username sanitization
 
-- **Slice
-  It!
-  score**
-  and
-  **Laundry
-  Sort
-  score**:
-  Same
-  allowlist
-  as
-  Echoes
-  —
-  `a-zA-Z0-9_\-. `
-  (space
-  allowed),
-  max
-  length
-  24,
-  min 2.
-  Invalid
-  or
-  empty
-  result
-  after
-  sanitization
-  is
-  rejected.
+- **Slice It! score** and **Laundry Sort score**: Same allowlist as Echoes — `a-zA-Z0-9_\-. ` (space allowed), max
+  length 24, min 2. Invalid or empty result after sanitization is rejected.
 
 ---
 
@@ -154,163 +51,31 @@ scale).
 
 ## Signal Forge save — body size
 
-- Before
-  parsing
-  JSON,
-  request
-  is
-  rejected
-  with
-  413
-  if
-  `Content-Length`
-  is
-  present
-  and
-  &gt;
-  500
-  KB
-  (512000
-  bytes).
-  Prevents
-  unbounded
-  JSON
-  from
-  being
-  stored
-  (F6).
+- Before parsing JSON, request is rejected with 413 if `Content-Length` is present and &gt; 500 KB (512000 bytes).
+  Prevents unbounded JSON from being stored (F6).
 
 ---
 
 ## Socket.IO server
 
-- **CORS**:
-  `origin`
-  is
-  now
-  `process.env.SOCKET_CORS_ORIGIN || "*"`.
-  Set
-  `SOCKET_CORS_ORIGIN`
-  (e.g.
-  `https://rmhstudios.com`)
-  in
-  production
-  to
-  restrict
-  origins.
+- **CORS**: `origin` is now `process.env.SOCKET_CORS_ORIGIN || "*"`. Set `SOCKET_CORS_ORIGIN` (e.g.
+  `https://rmhstudios.com`) in production to restrict origins.
 - **Validation**:
-  - `join_lobby`:
-    `lobbyId`
-    sanitized
-    (alphanumeric +
-    hyphen
-    only,
-    max
-    64
-    chars);
-    `userName`
-    sanitized
-    with
-    Echoes-style
-    allowlist,
-    max
-    32
-    chars.
-    Defaults
-    used
-    for
-    missing/invalid.
-  - All
-    events
-    that
-    take
-    `lobbyId`
-    use
-    the
-    same
-    sanitizer
-    before
-    lookup.
-  - `update_difficulty`:
-    `difficulty`
-    object
-    validated;
-    numeric
-    and
-    boolean
-    fields
-    type-checked,
-    `level`
-    string
-    length
-    capped
-    at 32.
+  - `join_lobby`: `lobbyId` sanitized (alphanumeric + hyphen only, max 64 chars); `userName` sanitized with Echoes-style
+    allowlist, max 32 chars. Defaults used for missing/invalid.
+  - All events that take `lobbyId` use the same sanitizer before lookup.
+  - `update_difficulty`: `difficulty` object validated; numeric and boolean fields type-checked, `level` string length
+    capped at 32.
 
 ---
 
 ## Documentation and client
 
-- **SECURITY.md**:
-  File
-  size
-  limits
-  section
-  updated
-  to
-  state
-  50
-  MB
-  per
-  audio
-  file,
-  5
-  MB
-  per
-  cover,
-  and
-  **10
-  GB
-  total
-  song
-  storage**
-  site-wide;
-  rejection
-  occurs
-  before
-  any
-  file
-  is
-  written.
-- **SECURITY-AUDIT-REPORT.md**:
-  New
-  “Remediation”
-  subsection
-  at
-  top
-  listing
-  how
-  F1–F10
-  were
-  addressed;
-  F11
-  (Redis)
-  noted
-  as
-  optional
-  future
-  improvement.
-- **SongLibrary.tsx**:
-  Client-side
-  audio
-  size
-  check
-  updated
-  to
-  50
-  MB
-  to
-  match
-  server.
+- **SECURITY.md**: File size limits section updated to state 50 MB per audio file, 5 MB per cover, and **10 GB total
+  song storage** site-wide; rejection occurs before any file is written.
+- **SECURITY-AUDIT-REPORT.md**: New “Remediation” subsection at top listing how F1–F10 were addressed; F11 (Redis) noted
+  as optional future improvement.
+- **SongLibrary.tsx**: Client-side audio size check updated to 50 MB to match server.
 
 ---
 
@@ -333,112 +98,18 @@ scale).
 
 ## Migration
 
-- **Migration**:
-  `20260219220000_add_song_file_size_bytes`
-  —
-  adds
-  nullable
-  `Song.fileSizeBytes`.
-- **After
-  merge**:
-  Run
-  `npx prisma migrate deploy`
-  (or
-  `prisma migrate dev`)
-  when
-  the
-  database
-  is
-  available.
-  Existing
-  songs
-  have
-  `fileSizeBytes === null`
-  and
-  are
-  counted
-  as
-  0
-  toward
-  the
-  10
-  GB
-  cap
-  until
-  backfilled
-  (optional).
+- **Migration**: `20260219220000_add_song_file_size_bytes` — adds nullable `Song.fileSizeBytes`.
+- **After merge**: Run `npx prisma migrate deploy` (or `prisma migrate dev`) when the database is available. Existing
+  songs have `fileSizeBytes === null` and are counted as 0 toward the 10 GB cap until backfilled (optional).
 
 ---
 
 ## Testing suggestions
 
-- [ ] Upload
-      an
-      audio
-      file
-      (verify
-      magic-byte
-      validation
-      and
-      50
-      MB
-      limit).
-- [ ] Upload
-      with
-      cover
-      (verify
-      5
-      MB
-      cover
-      limit).
-- [ ] Confirm
-      429
-      on
-      upload/comment/PATCH
-      when
-      rate
-      limit
-      exceeded.
-- [ ] Post
-      a
-      comment
-      &gt;
-      2000
-      characters
-      (expect
-      400).
-- [ ] Submit
-      Slice
-      It!
-      /
-      Laundry
-      score
-      with
-      special
-      characters
-      in
-      username
-      (verify
-      sanitization).
-- [ ] Signal
-      Forge
-      save
-      with
-      body
-      &gt;
-      500
-      KB
-      (expect
-      413
-      if
-      Content-Length
-      set).
-- [ ] Socket.IO:
-      join
-      lobby
-      with
-      invalid
-      `userName`/`lobbyId`
-      (verify
-      sanitized
-      values).
+- [ ] Upload an audio file (verify magic-byte validation and 50 MB limit).
+- [ ] Upload with cover (verify 5 MB cover limit).
+- [ ] Confirm 429 on upload/comment/PATCH when rate limit exceeded.
+- [ ] Post a comment &gt; 2000 characters (expect 400).
+- [ ] Submit Slice It! / Laundry score with special characters in username (verify sanitization).
+- [ ] Signal Forge save with body &gt; 500 KB (expect 413 if Content-Length set).
+- [ ] Socket.IO: join lobby with invalid `userName`/`lobbyId` (verify sanitized values).

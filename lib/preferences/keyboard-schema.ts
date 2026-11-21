@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import { SITE_SHORTCUTS } from '@/lib/shortcuts/registry';
-import {
-  MAX_OVERRIDES,
-  MAX_SEQUENCE_STEPS,
-  isValidKeystroke,
-  validateOverrides,
-} from '@/lib/shortcuts/bindings';
+import { MAX_OVERRIDES, MAX_SEQUENCE_STEPS, isValidKeystroke, validateOverrides } from '@/lib/shortcuts/bindings';
 
 /**
  * Body of `PUT /api/preferences/keyboard`: the full keyboard preferences. Ids
@@ -17,10 +12,7 @@ export const keyboardPrefsSchema = z
     singleKeys: z.enum(['on', 'off', 'alt']),
     overrides: z.record(
       z.string().max(64),
-      z
-        .array(z.string().refine(isValidKeystroke, 'Not a valid key'))
-        .min(1)
-        .max(MAX_SEQUENCE_STEPS),
+      z.array(z.string().refine(isValidKeystroke, 'Not a valid key')).min(1).max(MAX_SEQUENCE_STEPS),
     ),
   })
   .superRefine((value, ctx) => {

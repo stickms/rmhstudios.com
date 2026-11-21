@@ -5,7 +5,12 @@ import { asData, CHARACTER_ADVISOR, systemFor } from '@/lib/ai/prompts';
 import { isAiConfigured, jsonFromModelText, runTask } from '@/lib/ai/provider.server';
 import { AppError } from '@/lib/errors/codes';
 import { ADVISOR_LIMITS } from '@features/rmhcharacters/engine/advisor-limits';
-import { advisorBody, advisorResponse, modelReply, RECOMMENDATION_KINDS } from '@features/rmhcharacters/engine/advisor-schema';
+import {
+  advisorBody,
+  advisorResponse,
+  modelReply,
+  RECOMMENDATION_KINDS,
+} from '@features/rmhcharacters/engine/advisor-schema';
 import type { AdvisorReply } from '@features/rmhcharacters/engine/advisor.contract';
 import { askAdvisorApi } from '@features/rmhcharacters/engine/advisor.contract';
 
@@ -59,9 +64,7 @@ export const route = apiRoute('/api/rmhcharacters/advisor', {
     async ({ userId, body }) => {
       if (!isAiConfigured()) throw new AppError('AI_UNAVAILABLE');
       await assertAiBudget(userId);
-      const history = body.history
-        .map((t) => `${t.role === 'user' ? 'Player' : 'Advisor'}: ${t.content}`)
-        .join('\n\n');
+      const history = body.history.map((t) => `${t.role === 'user' ? 'Player' : 'Advisor'}: ${t.content}`).join('\n\n');
       const user = [
         `GAME: ${GAME[body.system]}`,
         '',

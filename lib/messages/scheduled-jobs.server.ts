@@ -8,17 +8,11 @@
 import type { PgBoss } from 'pg-boss';
 import { runDueScheduledMessages } from '@/lib/messages/scheduled.server';
 
-export const SEND_SCHEDULED_QUEUE =
-  'messages.send-scheduled';
-export const SEND_SCHEDULED_CRON =
-  '* * * * *';
+export const SEND_SCHEDULED_QUEUE = 'messages.send-scheduled';
+export const SEND_SCHEDULED_CRON = '* * * * *';
 
-export async function registerSendScheduledMessagesCron(
-  boss: PgBoss,
-): Promise<void> {
-  await boss.createQueue(
-    SEND_SCHEDULED_QUEUE,
-  );
+export async function registerSendScheduledMessagesCron(boss: PgBoss): Promise<void> {
+  await boss.createQueue(SEND_SCHEDULED_QUEUE);
   await boss.schedule(
     SEND_SCHEDULED_QUEUE,
     SEND_SCHEDULED_CRON,
@@ -27,10 +21,7 @@ export async function registerSendScheduledMessagesCron(
       tz: 'UTC',
     },
   );
-  await boss.work(
-    SEND_SCHEDULED_QUEUE,
-    async () => {
-      await runDueScheduledMessages();
-    },
-  );
+  await boss.work(SEND_SCHEDULED_QUEUE, async () => {
+    await runDueScheduledMessages();
+  });
 }

@@ -86,7 +86,11 @@ function resolve5e(rec: Recommendation, c: Dnd5eCharacter, d: Dnd5eData): Resolv
       const has = d5.allFeats(c, d).some((x) => x.feat.id === f.id);
       return {
         rec,
-        details: { title: f.name, meta: `${f.category} feat${f.prerequisite ? ` · ${f.prerequisite}` : ''}`, text: f.text },
+        details: {
+          title: f.name,
+          meta: `${f.category} feat${f.prerequisite ? ` · ${f.prerequisite}` : ''}`,
+          text: f.text,
+        },
         action: {
           label: 'add-feat',
           done: has,
@@ -98,7 +102,8 @@ function resolve5e(rec: Recommendation, c: Dnd5eCharacter, d: Dnd5eData): Resolv
             }
             // The first unspent improvement slot takes it; otherwise it becomes a note to place by hand.
             const free = d5.asiSlots(x, d).find((slot) => !x.asi.some((a) => a.slot === slot));
-            if (free && f.category !== 'origin') return { ...x, asi: [...x.asi, { slot: free, kind: 'feat', featId: f.id, featAbilities: [] }] };
+            if (free && f.category !== 'origin')
+              return { ...x, asi: [...x.asi, { slot: free, kind: 'feat', featId: f.id, featAbilities: [] }] };
             return note(rec, 'Feat').apply(x);
           },
         },
@@ -113,9 +118,23 @@ function resolve5e(rec: Recommendation, c: Dnd5eCharacter, d: Dnd5eData): Resolv
     const ref = w ?? a ?? g;
     if (ref) {
       const details: RecDetails = w
-        ? { title: w.name, meta: `${w.category} ${w.kind} weapon · ${w.damage} ${w.damageType} · mastery ${w.mastery} · ${w.cost}`, text: [w.properties.join(', '), w.range ? `Range ${w.range}` : '', w.versatile ? `Versatile ${w.versatile}` : ''].filter(Boolean).join(' · ') }
+        ? {
+            title: w.name,
+            meta: `${w.category} ${w.kind} weapon · ${w.damage} ${w.damageType} · mastery ${w.mastery} · ${w.cost}`,
+            text: [
+              w.properties.join(', '),
+              w.range ? `Range ${w.range}` : '',
+              w.versatile ? `Versatile ${w.versatile}` : '',
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          }
         : a
-          ? { title: a.name, meta: `${a.category} · AC ${a.ac}${a.dexCap === undefined ? ' + Dex' : a.dexCap ? ` + Dex (max ${a.dexCap})` : ''} · ${a.cost}`, text: `${a.strength ? `Strength ${a.strength}. ` : ''}${a.stealthDisadvantage ? 'Disadvantage on Stealth. ' : ''}${a.weight} lb.` }
+          ? {
+              title: a.name,
+              meta: `${a.category} · AC ${a.ac}${a.dexCap === undefined ? ' + Dex' : a.dexCap ? ` + Dex (max ${a.dexCap})` : ''} · ${a.cost}`,
+              text: `${a.strength ? `Strength ${a.strength}. ` : ''}${a.stealthDisadvantage ? 'Disadvantage on Stealth. ' : ''}${a.weight} lb.`,
+            }
           : { title: g!.name, meta: `${g!.cost} · ${g!.weight} lb`, text: g!.text ?? '' };
       return {
         rec,
@@ -126,24 +145,70 @@ function resolve5e(rec: Recommendation, c: Dnd5eCharacter, d: Dnd5eData): Resolv
           apply: (x) =>
             x.inventory.some((i) => i.refId === ref.id)
               ? x
-              : { ...x, inventory: [...x.inventory, { id: newId(), name: ref.name, quantity: 1, equipped: false, refId: ref.id, weight: ref.weight }] },
+              : {
+                  ...x,
+                  inventory: [
+                    ...x.inventory,
+                    { id: newId(), name: ref.name, quantity: 1, equipped: false, refId: ref.id, weight: ref.weight },
+                  ],
+                },
         },
       };
     }
     if (kind !== 'other') return { rec, details: null, action: addCustomItem(rec, c) };
   }
   const klass = kind === 'class' || kind === 'other' ? matchByName(d.classes, rec.name) : undefined;
-  if (klass) return { rec, details: { title: klass.name, meta: `d${klass.hitDie} · primary ${klass.primaryAbility.join('/').toUpperCase()} · saves ${klass.saves.join('/').toUpperCase()}`, text: klass.features.filter((f) => f.level <= 3).map((f) => `${f.name} (${f.level}): ${f.text}`).join('\n') }, action: null };
+  if (klass)
+    return {
+      rec,
+      details: {
+        title: klass.name,
+        meta: `d${klass.hitDie} · primary ${klass.primaryAbility.join('/').toUpperCase()} · saves ${klass.saves.join('/').toUpperCase()}`,
+        text: klass.features
+          .filter((f) => f.level <= 3)
+          .map((f) => `${f.name} (${f.level}): ${f.text}`)
+          .join('\n'),
+      },
+      action: null,
+    };
   if (kind === 'subclass' || kind === 'other') {
     for (const k of d.classes) {
       const sub = matchByName(k.subclasses, rec.name);
-      if (sub) return { rec, details: { title: sub.name, meta: `${k.name} subclass`, text: `${sub.summary}\n\n${sub.features.map((f) => `${f.name} (${f.level}): ${f.text}`).join('\n')}` }, action: null };
+      if (sub)
+        return {
+          rec,
+          details: {
+            title: sub.name,
+            meta: `${k.name} subclass`,
+            text: `${sub.summary}\n\n${sub.features.map((f) => `${f.name} (${f.level}): ${f.text}`).join('\n')}`,
+          },
+          action: null,
+        };
     }
   }
-  const sp = kind === 'species' || kind === 'ancestry' || kind === 'other' ? matchByName(d.species, rec.name) : undefined;
-  if (sp) return { rec, details: { title: sp.name, meta: `${sp.sizes.join(' or ')} · speed ${sp.speed} ft${sp.darkvision ? ` · darkvision ${sp.darkvision} ft` : ''}`, text: sp.traits.map((t) => `${t.name}: ${t.text}`).join('\n') }, action: null };
+  const sp =
+    kind === 'species' || kind === 'ancestry' || kind === 'other' ? matchByName(d.species, rec.name) : undefined;
+  if (sp)
+    return {
+      rec,
+      details: {
+        title: sp.name,
+        meta: `${sp.sizes.join(' or ')} · speed ${sp.speed} ft${sp.darkvision ? ` · darkvision ${sp.darkvision} ft` : ''}`,
+        text: sp.traits.map((t) => `${t.name}: ${t.text}`).join('\n'),
+      },
+      action: null,
+    };
   const bg = kind === 'background' || kind === 'other' ? matchByName(d.backgrounds, rec.name) : undefined;
-  if (bg) return { rec, details: { title: bg.name, meta: `${bg.abilities.join('/').toUpperCase()} · ${bg.skills.join(', ')}`, text: `Origin feat: ${d.feats.find((f) => f.id === bg.featId)?.name ?? bg.featId}. Tool: ${bg.tool}. ${bg.equipment}` }, action: null };
+  if (bg)
+    return {
+      rec,
+      details: {
+        title: bg.name,
+        meta: `${bg.abilities.join('/').toUpperCase()} · ${bg.skills.join(', ')}`,
+        text: `Origin feat: ${d.feats.find((f) => f.id === bg.featId)?.name ?? bg.featId}. Tool: ${bg.tool}. ${bg.equipment}`,
+      },
+      action: null,
+    };
   return { rec, details: null, action: null };
 }
 
@@ -153,7 +218,10 @@ const addCustomItem = (rec: Recommendation, c?: Character): RecAction => ({
   apply: (x) =>
     x.inventory.some((i) => i.name.toLowerCase() === rec.name.toLowerCase())
       ? x
-      : { ...x, inventory: [...x.inventory, { id: newId(), name: rec.name, quantity: 1, equipped: false, notes: rec.why }] },
+      : {
+          ...x,
+          inventory: [...x.inventory, { id: newId(), name: rec.name, quantity: 1, equipped: false, notes: rec.why }],
+        },
 });
 
 /* -------------------------------------------------------------------------- */
@@ -171,12 +239,29 @@ function resolvePf(rec: Recommendation, c: Pf2eCharacter, d: Pf2eData): Resolved
         details: {
           title: s.name,
           meta: `${s.focus ? 'Focus ' : ''}${s.rank === 0 ? 'Cantrip' : `Rank ${s.rank}`} · ${s.actions} · ${s.traditions.join(', ')} · ${s.traits.join(', ')}`,
-          text: [[s.range && `Range ${s.range}`, s.area && `Area ${s.area}`, s.targets && `Targets ${s.targets}`, s.defense && `Defense ${s.defense}`, s.duration && `Duration ${s.duration}`].filter(Boolean).join(' · '), s.text, s.heightened ?? ''].filter(Boolean).join('\n\n'),
+          text: [
+            [
+              s.range && `Range ${s.range}`,
+              s.area && `Area ${s.area}`,
+              s.targets && `Targets ${s.targets}`,
+              s.defense && `Defense ${s.defense}`,
+              s.duration && `Duration ${s.duration}`,
+            ]
+              .filter(Boolean)
+              .join(' · '),
+            s.text,
+            s.heightened ?? '',
+          ]
+            .filter(Boolean)
+            .join('\n\n'),
         },
         action: {
           label: 'add-spell',
           done: c.spells[list].includes(s.id),
-          apply: (x) => (x.system !== 'pf2e' || x.spells[list].includes(s.id) ? x : { ...x, spells: { ...x.spells, [list]: [...x.spells[list], s.id] } }),
+          apply: (x) =>
+            x.system !== 'pf2e' || x.spells[list].includes(s.id)
+              ? x
+              : { ...x, spells: { ...x.spells, [list]: [...x.spells[list], s.id] } },
         },
       };
     }
@@ -187,7 +272,11 @@ function resolvePf(rec: Recommendation, c: Pf2eCharacter, d: Pf2eData): Resolved
     if (f) {
       return {
         rec,
-        details: { title: f.name, meta: `${f.type} feat ${f.level}${f.actions ? ` · [${f.actions}]` : ''}${f.traits.length ? ` · ${f.traits.join(', ')}` : ''}`, text: `${f.prerequisites ? `Prerequisites: ${f.prerequisites}\n\n` : ''}${f.text}` },
+        details: {
+          title: f.name,
+          meta: `${f.type} feat ${f.level}${f.actions ? ` · [${f.actions}]` : ''}${f.traits.length ? ` · ${f.traits.join(', ')}` : ''}`,
+          text: `${f.prerequisites ? `Prerequisites: ${f.prerequisites}\n\n` : ''}${f.text}`,
+        },
         action: {
           label: 'add-feat',
           done: c.feats.some((x) => x.featId === f.id),
@@ -195,14 +284,21 @@ function resolvePf(rec: Recommendation, c: Pf2eCharacter, d: Pf2eData): Resolved
             if (x.system !== 'pf2e') return x;
             // The first open slot this feat is legal in; otherwise a note to place by hand.
             const filled = new Set(x.feats.filter((y) => y.featId || y.customName).map((y) => y.slot));
-            const slot = p2.featSlots(x, d).find((s) => !filled.has(s.slot) && p2.eligibleFeats(x, d, s).some((e) => e.id === f.id));
-            if (slot) return { ...x, feats: [...x.feats.filter((y) => y.slot !== slot.slot), { slot: slot.slot, featId: f.id }] };
+            const slot = p2
+              .featSlots(x, d)
+              .find((s) => !filled.has(s.slot) && p2.eligibleFeats(x, d, s).some((e) => e.id === f.id));
+            if (slot)
+              return {
+                ...x,
+                feats: [...x.feats.filter((y) => y.slot !== slot.slot), { slot: slot.slot, featId: f.id }],
+              };
             return note(rec, 'Feat').apply(x);
           },
         },
       };
     }
-    if (kind !== 'other') return { rec, details: null, action: note(rec, kind === 'archetype' ? 'Archetype' : 'Feat', c) };
+    if (kind !== 'other')
+      return { rec, details: null, action: note(rec, kind === 'archetype' ? 'Archetype' : 'Feat', c) };
   }
   if (kind === 'item' || kind === 'weapon' || kind === 'armor' || kind === 'other') {
     const w = matchByName(d.weapons, rec.name);
@@ -212,9 +308,17 @@ function resolvePf(rec: Recommendation, c: Pf2eCharacter, d: Pf2eData): Resolved
     if (ref) {
       const bulk = (b: number) => (b === 0 ? '—' : b < 1 ? 'L' : String(b));
       const details: RecDetails = w
-        ? { title: w.name, meta: `${w.category} ${w.kind} · ${w.damage} ${w.damageType} · ${w.group} · ${w.price}`, text: `${w.traits.join(', ')} · hands ${w.hands}${w.range ? ` · range ${w.range} ft` : ''} · bulk ${bulk(w.bulk)}` }
+        ? {
+            title: w.name,
+            meta: `${w.category} ${w.kind} · ${w.damage} ${w.damageType} · ${w.group} · ${w.price}`,
+            text: `${w.traits.join(', ')} · hands ${w.hands}${w.range ? ` · range ${w.range} ft` : ''} · bulk ${bulk(w.bulk)}`,
+          }
         : a
-          ? { title: a.name, meta: `${a.category} · +${a.acBonus} AC${a.dexCap !== undefined ? ` · Dex cap ${a.dexCap}` : ''} · ${a.price}`, text: `${a.strength !== undefined ? `Str +${a.strength} · ` : ''}check ${a.checkPenalty} · speed ${a.speedPenalty} · ${a.traits.join(', ')} · bulk ${bulk(a.bulk)}` }
+          ? {
+              title: a.name,
+              meta: `${a.category} · +${a.acBonus} AC${a.dexCap !== undefined ? ` · Dex cap ${a.dexCap}` : ''} · ${a.price}`,
+              text: `${a.strength !== undefined ? `Str +${a.strength} · ` : ''}check ${a.checkPenalty} · speed ${a.speedPenalty} · ${a.traits.join(', ')} · bulk ${bulk(a.bulk)}`,
+            }
           : { title: g!.name, meta: `${g!.price} · bulk ${bulk(g!.bulk)}`, text: g!.text ?? '' };
       return {
         rec,
@@ -222,29 +326,73 @@ function resolvePf(rec: Recommendation, c: Pf2eCharacter, d: Pf2eData): Resolved
         action: {
           label: 'add-item',
           done: c.inventory.some((i) => i.refId === ref.id),
-          apply: (x) => (x.inventory.some((i) => i.refId === ref.id) ? x : { ...x, inventory: [...x.inventory, { id: newId(), name: ref.name, quantity: 1, equipped: false, refId: ref.id, bulk: ref.bulk }] }),
+          apply: (x) =>
+            x.inventory.some((i) => i.refId === ref.id)
+              ? x
+              : {
+                  ...x,
+                  inventory: [
+                    ...x.inventory,
+                    { id: newId(), name: ref.name, quantity: 1, equipped: false, refId: ref.id, bulk: ref.bulk },
+                  ],
+                },
         },
       };
     }
     if (kind !== 'other') return { rec, details: null, action: addCustomItem(rec, c) };
   }
   const klass = kind === 'class' || kind === 'other' ? matchByName(d.classes, rec.name) : undefined;
-  if (klass) return { rec, details: { title: klass.name, meta: `${klass.hp} + Con HP per level · key ${klass.keyAbility.join('/').toUpperCase()}`, text: klass.features.filter((f) => f.level <= 3).map((f) => `${f.name} (${f.level}): ${f.text}`).join('\n') }, action: null };
-  const anc = kind === 'ancestry' || kind === 'species' || kind === 'other' ? matchByName(d.ancestries, rec.name) : undefined;
-  if (anc) return { rec, details: { title: anc.name, meta: `${anc.hp} HP · ${anc.size} · ${anc.speed} ft${anc.senses ? ` · ${anc.senses}` : ''}`, text: anc.features.map((f) => `${f.name}: ${f.text}`).join('\n') }, action: null };
+  if (klass)
+    return {
+      rec,
+      details: {
+        title: klass.name,
+        meta: `${klass.hp} + Con HP per level · key ${klass.keyAbility.join('/').toUpperCase()}`,
+        text: klass.features
+          .filter((f) => f.level <= 3)
+          .map((f) => `${f.name} (${f.level}): ${f.text}`)
+          .join('\n'),
+      },
+      action: null,
+    };
+  const anc =
+    kind === 'ancestry' || kind === 'species' || kind === 'other' ? matchByName(d.ancestries, rec.name) : undefined;
+  if (anc)
+    return {
+      rec,
+      details: {
+        title: anc.name,
+        meta: `${anc.hp} HP · ${anc.size} · ${anc.speed} ft${anc.senses ? ` · ${anc.senses}` : ''}`,
+        text: anc.features.map((f) => `${f.name}: ${f.text}`).join('\n'),
+      },
+      action: null,
+    };
   if (kind === 'heritage' || kind === 'other') {
-    const all = [...d.ancestries.flatMap((a) => a.heritages.map((h) => ({ ...h, of: a.name }))), ...d.versatileHeritages.map((h) => ({ ...h, of: 'Versatile' }))];
+    const all = [
+      ...d.ancestries.flatMap((a) => a.heritages.map((h) => ({ ...h, of: a.name }))),
+      ...d.versatileHeritages.map((h) => ({ ...h, of: 'Versatile' })),
+    ];
     const h = matchByName(all, rec.name);
     if (h) return { rec, details: { title: h.name, meta: `${h.of} heritage`, text: h.text }, action: null };
   }
   if (kind === 'subclass' || kind === 'other') {
     for (const k of d.classes) {
       const sub = matchByName(k.subclasses ?? [], rec.name);
-      if (sub) return { rec, details: { title: sub.name, meta: `${k.name} ${k.subclassLabel ?? 'option'}`, text: sub.text }, action: null };
+      if (sub)
+        return {
+          rec,
+          details: { title: sub.name, meta: `${k.name} ${k.subclassLabel ?? 'option'}`, text: sub.text },
+          action: null,
+        };
     }
   }
   const bg = kind === 'background' || kind === 'other' ? matchByName(d.backgrounds, rec.name) : undefined;
-  if (bg) return { rec, details: { title: bg.name, meta: `${bg.skills.join(', ')} · ${bg.lore}`, text: bg.text }, action: null };
+  if (bg)
+    return {
+      rec,
+      details: { title: bg.name, meta: `${bg.skills.join(', ')} · ${bg.lore}`, text: bg.text },
+      action: null,
+    };
   return { rec, details: null, action: null };
 }
 
