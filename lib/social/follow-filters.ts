@@ -47,14 +47,13 @@ function pick<T extends string>(allowed: readonly T[], value: unknown, fallback:
   return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
 }
 
+// eslint-disable-next-line no-control-regex -- the point is to drop them
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/g;
+
 /** A search string as the server will use it: trimmed, bounded, no control characters. */
 export function normalizeSearch(raw: unknown): string {
   if (typeof raw !== 'string') return '';
-  // eslint-disable-next-line no-control-regex -- the point is to drop them
-  return raw
-    .replace(/[\u0000-\u001f\u007f]/g, ' ')
-    .trim()
-    .slice(0, MAX_QUERY_LENGTH);
+  return raw.replace(CONTROL_CHARACTERS, ' ').trim().slice(0, MAX_QUERY_LENGTH);
 }
 
 /** Read a query string (router search params or `URLSearchParams` values) into a well-formed query. */
