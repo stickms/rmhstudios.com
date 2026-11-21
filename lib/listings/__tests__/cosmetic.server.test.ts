@@ -488,6 +488,8 @@ const db: any =
             );
           },
       },
+    // No play-limits row, so the ledger's spending-budget check finds no budget.
+    userPlayLimits: { findUnique: async () => null },
     userProfile:
       {
         findUnique:

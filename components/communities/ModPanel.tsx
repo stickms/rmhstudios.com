@@ -18,18 +18,22 @@ import { ModOnboarding } from '@/components/communities/ModOnboarding';
 import { ModRules } from '@/components/communities/ModRules';
 import { ModQueue } from '@/components/communities/ModQueue';
 import { ModSettings } from '@/components/communities/ModSettings';
+import { HandoverPanel } from '@/components/communities/HandoverPanel';
 import { ModSisters } from '@/components/communities/ModSisters';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 
 export default function ModPanel({
   slug,
   isPrivate = false,
+  isOwner = false,
   extras,
   onExtrasChange,
 }: {
   slug: string;
   /** Private communities get the Requests and Invites tabs. */
   isPrivate?: boolean;
+  /** The owner also sees the Ownership section under Posting rules. */
+  isOwner?: boolean;
   extras: CommunityExtrasDTO | null;
   onExtrasChange: () => void;
 }) {
@@ -281,6 +285,15 @@ export default function ModPanel({
             }
             onChange={
               onExtrasChange
+            }
+          />
+        )}
+      {sub ===
+        'settings' &&
+        isOwner && (
+          <HandoverPanel
+            slug={
+              slug
             }
           />
         )}

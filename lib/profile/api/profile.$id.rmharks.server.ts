@@ -13,6 +13,8 @@ import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { mapQuotedOriginal, type QuotedOriginalRow } from '@/lib/feed/quoted-original';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
 import { isExpired } from '@/lib/posts-plus/constants';
+import { redactCounts } from '@/lib/feed/quiet-counts';
+import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 
 function pollInclude(userId: string | null) {
   return {
@@ -39,7 +41,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
-    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
+    ...pollLifecycleView(poll),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -172,7 +174,7 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
 
     // Map own RMHarks to FeedItems
     const ownItems: FeedItem[] = rmharks.map((r: any) =>
-      applyLock(
+      redactCounts(applyLock(
         {
           id: r.id,
           type: 'rmhark' as const,
@@ -199,13 +201,13 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
         },
         r,
         viewerId,
-      ),
+      ), viewerId),
     );
 
     // Map reposts to FeedItems with repostedBy
     const repostItems: FeedItem[] = reposts.map((rp: any) => {
       const r = rp.rmhark;
-      return applyLock(
+      return redactCounts(applyLock(
         {
           id: `repost:${rp.id}`,
           type: 'rmhark' as const,
@@ -233,7 +235,7 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
         },
         r,
         viewerId,
-      );
+      ), viewerId);
     });
 
     // Merge and sort by createdAt descending, take limit
@@ -249,7 +251,7 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
     if (!cursorDate) {
       if (pinned) {
         const p: any = pinned;
-        const pinnedItem: FeedItem = applyLock(
+        const pinnedItem: FeedItem = redactCounts(applyLock(
           {
             id: p.id,
             type: 'rmhark',
@@ -277,7 +279,7 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
           },
           p,
           viewerId,
-        );
+        ), viewerId);
         items = [pinnedItem, ...merged.filter((it) => (it.actualId ?? it.id) !== p.id)];
       }
     }

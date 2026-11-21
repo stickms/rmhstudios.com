@@ -30,6 +30,7 @@ model Chat {
   members           ChatMember[]
   messages          ChatMessage[]
   scheduledMessages ScheduledChatMessage[]
+  messageRequest    MessageRequest?
 
   @@index([ownerId])
   @@map("chat")
@@ -750,4 +751,29 @@ model CalendarFeed {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("calendar_feed")
+}
+
+/// A first message from someone the recipient's DM privacy refuses, held in the
+/// recipient's Requests folder (sprint 04 #16). One row per chat: a pending
+/// request hides the chat from the recipient and blocks every further send;
+/// accepting makes it an ordinary conversation, declining hides it and starts a
+/// 30-day cooldown (`decidedAt`) during which the sender gets the usual privacy
+/// refusal. After the cooldown the same row is reset to pending for a new request.
+model MessageRequest {
+  id          String    @id @default(cuid())
+  chatId      String    @unique
+  senderId    String
+  recipientId String
+  /// 'draft' (chat opened, no message yet; visible to nobody else) | 'pending' | 'accepted' | 'declined'
+  status      String    @default("pending") @db.VarChar(10)
+  createdAt   DateTime  @default(now())
+  decidedAt   DateTime?
+
+  chat      Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User @relation("MessageRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("MessageRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, status, createdAt(sort: Desc)])
+  @@index([senderId, recipientId, decidedAt])
+  @@map("message_request")
 }

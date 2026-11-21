@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCopyFallback } from '@/components/ui/copy-fallback';
 import { toast } from '@/lib/toast';
 import { Link2, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ export function RunPanel({
   signedIn: boolean;
 }) {
   const { t } = useTranslation('f-arcade');
+  const showCopy = useCopyFallback();
   const run = useArcadeRun((s) => s.run);
   const [board, setBoard] = useState<Row[] | null>(null);
   // The board is fetched after the result shows: it fades in when it lands (M9).
@@ -104,7 +106,7 @@ export function RunPanel({
       await navigator.clipboard.writeText(url);
       toast.success(t('link-copied', { defaultValue: 'Seed link copied' }));
     } catch {
-      window.prompt(t('copy-link', { defaultValue: 'Copy this link:' }), url);
+      showCopy({ title: t('copy-link', { defaultValue: 'Copy this link:' }), text: url });
     }
   }
 

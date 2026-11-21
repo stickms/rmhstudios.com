@@ -99,3 +99,22 @@ model RmhboxPackReport {
   @@index([reporterId])
   @@map("rmhbox_pack_report")
 }
+
+/// A host's named settings for one minigame. `values` is validated against the minigame's
+/// own schema on save and again on apply; at most one row per (user, minigame) is the default.
+model RmhboxSettingsPreset {
+  id         String   @id @default(cuid())
+  userId     String
+  minigameId String   @db.VarChar(40)
+  name       String   @db.VarChar(40)
+  values     Json
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, minigameId, name])
+  @@index([userId, minigameId])
+  @@map("rmhbox_settings_preset")
+}

@@ -26,6 +26,7 @@ import {
   type FeedSignalsView,
 } from '@/lib/feed/signals';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { QuietCountsSection } from '@/components/settings/QuietCountsSection';
 
 async function mutate(
   method:
@@ -223,6 +224,7 @@ export function FeedControlsSettings() {
 
   return (
     <>
+      <QuietCountsSection />
       <TagSection
         title={t(
           'muted-tags',

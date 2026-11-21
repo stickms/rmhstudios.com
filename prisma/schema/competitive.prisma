@@ -136,6 +136,8 @@ model Tournament {
   seasonId       String?          @db.VarChar(64) // optional live-ops season link
   swissRounds    Int? // SWISS only: total rounds, fixed at start
   startsAt       DateTime?
+  checkInMinutes Int? // null = no check-in; else 10, 15, 30 or 60 minutes before startsAt
+  checkInNoticeAt DateTime? // when entrants were told check-in opened (claimed once by the cron)
   startedAt      DateTime?
   completedAt    DateTime?
   createdAt      DateTime         @default(now())
@@ -148,6 +150,7 @@ model Tournament {
   picks     BracketPick[]
 
   @@index([status, startsAt])
+  @@index([status, checkInNoticeAt, startsAt])
   @@index([gameId, status])
   @@map("tournament")
 }
@@ -162,6 +165,7 @@ model TournamentEntrant {
   losses       Int       @default(0)
   eliminatedAt DateTime?
   joinedAt     DateTime  @default(now())
+  checkedInAt  DateTime? // set when the entrant (or the host) checks them in
 
   tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -11,7 +11,8 @@ const ERROR_MAP: Record<ReplayErrorCode, [string, number]> = {
   INVALID_DATA: ['Invalid replay data', 400],
   TOO_LARGE: ['Replay too large', 413],
   VERIFY_FAILED: ['Replay failed verification', 422],
-  FORBIDDEN: ['Forbidden', 403],
+  SPEEDRUN_PROOF: ['This replay is the proof for a speedrun entry', 409],
+  GHOST: ['A race ghost cannot be made public', 409],
 };
 
 /**

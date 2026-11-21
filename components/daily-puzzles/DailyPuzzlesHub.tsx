@@ -32,6 +32,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { DESK_MODES, type DeskMode } from '@/lib/daily-puzzles/desk-modes';
+import { deskModeText } from '@/components/daily-puzzles/mode-labels';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
 import {
   getResult,
@@ -168,6 +169,7 @@ export function DailyPuzzlesHub({
   panelId?: string;
 } = {}) {
   const { t } = useTranslation('c-daily-puzzles');
+  const modeText = deskModeText(t);
   const navigate = useNavigate();
   const quit = useQuitGame();
   const reduced = useReducedMotion();
@@ -511,8 +513,8 @@ export function DailyPuzzlesHub({
                   labelMoves={t('moves-suffix', { defaultValue: 'moves' })}
                   ctaPlay={t('play', { defaultValue: 'Play' })}
                   ctaView={t('view-results-short', { defaultValue: 'View' })}
-                  title={t(`mode-title-${mode.id}`, { defaultValue: mode.title })}
-                  description={t(mode.descriptionKey, { defaultValue: mode.descriptionDefault })}
+                  title={modeText[mode.id]?.title ?? mode.title}
+                  description={modeText[mode.id]?.description ?? mode.descriptionDefault}
                 />
               </motion.div>
             ))}

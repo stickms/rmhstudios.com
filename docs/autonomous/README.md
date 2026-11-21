@@ -37,8 +37,9 @@ of
 what
 shipped.
 
-| Sprint | Theme                                                               | Index                                                                       |
-| ------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| 01     | The Toolbox: twenty private, client-side utilities under `/tools`   | [sprint-01/README.md](sprint-01/README.md)                                  |
-| 02     | Deeper product surfaces: twenty features in existing apps and pages | [sprint-02/README.md](sprint-02/README.md)                                  |
-| 03     | Community, moderation, messaging and the apps: twenty features      | [sprint-03/README.md](sprint-03/README.md), [summary](sprint-03/summary.md) |
+| Sprint | Theme                                                                     | Index                                                                       |
+| ------ | ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 01     | The Toolbox: twenty private, client-side utilities under `/tools`         | [sprint-01/README.md](sprint-01/README.md)                                  |
+| 02     | Deeper product surfaces: twenty features in existing apps and pages       | [sprint-02/README.md](sprint-02/README.md)                                  |
+| 03     | Community, moderation, messaging and the apps: twenty features            | [sprint-03/README.md](sprint-03/README.md), [summary](sprint-03/summary.md) |
+| 04     | Games, builds, coins, the feed and the gaps between them: twenty features | [sprint-04/README.md](sprint-04/README.md), [summary](sprint-04/summary.md) |

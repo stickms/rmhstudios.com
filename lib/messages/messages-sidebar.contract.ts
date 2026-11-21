@@ -19,6 +19,8 @@ export const messagesSidebarApi =
     res: {
       recent: MessagesSidebarUser[];
       suggested: MessagesSidebarUser[];
+      /** Message requests waiting for the viewer: the "Requests (n)" row (s04-16). */
+      requestCount: number;
     };
   }>()(
     {

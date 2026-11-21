@@ -9,8 +9,8 @@ import type { eventRecurrenceSchema } from '@/lib/calendar/schema';
 import type {
   EventDTO,
   EventVenueKindValue,
+  RsvpRequest,
   RsvpResult,
-  RsvpStatus,
 } from '@/lib/events.server';
 
 /** Wire shape of the create body: dates are ISO strings, parsed with `z.coerce.date()` server-side. */
@@ -55,11 +55,11 @@ export const createEventApi =
     },
   );
 
-/** RSVP going / maybe. 409 when the event is full or canceled. */
+/** RSVP going / maybe, or `waitlist` on a full one-off event. 409 when the event is full, canceled or its waitlist is closed. */
 export const rsvpEventApi =
   endpoint<{
     body: {
-      status: RsvpStatus;
+      status: RsvpRequest;
       everyTime?:
         | boolean
         | undefined;

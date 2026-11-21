@@ -5,6 +5,7 @@ import {
   Palette,
   Pin,
 } from 'lucide-react';
+import { GroupManageLine } from '@/components/feed/group-chat/GroupManageLine';
 import type { SystemAction } from '@/lib/chat-plus/types';
 
 /**
@@ -60,6 +61,19 @@ export function ChatSystemLine({
                 'Someone',
             },
           ));
+
+  // s04-10: a group's rename, add, remove and owner lines read from their own namespace.
+  if (
+    action &&
+    typeof action === 'object' &&
+    'action' in action &&
+    (action.action === 'rename' ||
+      action.action === 'add' ||
+      action.action === 'remove' ||
+      action.action === 'owner')
+  ) {
+    return <GroupManageLine action={action} viewerId={viewerId} nameOf={nameOf} />;
+  }
 
   let text =
     fallback;

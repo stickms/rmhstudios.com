@@ -611,6 +611,25 @@ model User {
   // s03-17 ladder-offers
   ladderOffers LadderOffer[]
 
+  // Sprint 04 back-relations (one block per feature, docs/autonomous/sprint-04/plan.md)
+  // s04-06 coin-adjustments
+  coinAdjustments      CoinAdjustment[] @relation("CoinAdjustmentUser")
+  coinAdjustmentsMade  CoinAdjustment[] @relation("CoinAdjustmentAdmin")
+
+  // s04-09 reading-sync
+  readerMarks LibraryReaderMark[]
+
+  // s04-13 rmhbox-presets
+  rmhboxPresets RmhboxSettingsPreset[]
+
+  // s04-16 message-requests
+  messageRequestsSent     MessageRequest[] @relation("MessageRequestSender")
+  messageRequestsReceived MessageRequest[] @relation("MessageRequestRecipient")
+
+  // s04-17 community-handover
+  handoversOffered  CommunityHandover[] @relation("CommunityHandoverFrom")
+  handoversReceived CommunityHandover[] @relation("CommunityHandoverTo")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the
@@ -961,6 +980,18 @@ model UserPlayLimits {
   /// a null `pendingCap` is a meaningful request, not an empty slot.
   pendingCap   Int?
   pendingCapAt DateTime?
+
+  /// Monthly spending budget (s04-07): most coins the member may spend per UTC
+  /// calendar month on PURCHASE, TIP, GIFT, MEMBERSHIP and MARKET debits. Null =
+  /// no budget. Enforced in the ledger (`lib/economy/spend-budget-core.ts`),
+  /// under a per-member advisory lock. Raising or removing it waits 24 hours in
+  /// `pendingSpendCap`/`pendingSpendCapAt`, with the same rule as `pendingCap`
+  /// (`pendingSpendCapAt != null` is the only test for "a change is in flight").
+  monthlySpendCap   Int?
+  pendingSpendCap   Int?
+  pendingSpendCapAt DateTime?
+  /// The `YYYY-MM` the 80% notice was last sent for, so it goes out once a month.
+  spendNoticeMonth  String?   @db.VarChar(7)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

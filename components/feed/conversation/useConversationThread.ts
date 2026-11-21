@@ -13,6 +13,7 @@ import {
   messageThreadApi,
 } from '@/lib/messages/message-actions.contract';
 import { subscribeMessageStream } from '@/hooks/useUnreadCount';
+import type { SenderRequestState } from '@/lib/messages/requests';
 import type { ReactionRow } from '@/lib/social/reactions';
 import {
   MUTATION_SYNC_INTERVAL_MS,
@@ -110,6 +111,16 @@ export function useConversationThread({
       false,
     );
 
+  // s04-16: what the sender's composer shows while they can only ask ('compose') or have asked ('sent').
+  const [
+    requestState,
+    setRequestState,
+  ] =
+    useState<
+      SenderRequestState | null
+    >(
+      null,
+    );
   const initialFetched =
     useRef(
       false,
@@ -235,6 +246,10 @@ export function useConversationThread({
           ) {
             setMessages(
               data.messages,
+            );
+            setRequestState(
+              data.request ??
+                null,
             );
             setHasOlder(
               data.hasMore,
@@ -726,6 +741,8 @@ export function useConversationThread({
     loadingOlder,
     otherUser,
     notFound,
+    requestState,
+    setRequestState,
     historyIds,
     applyMutation,
     handleLoadOlder,

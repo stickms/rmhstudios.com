@@ -569,16 +569,13 @@ export function EventComposer({
           </div>
 
           <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
-            {t(
-              venue.refLabel ===
-                'URL'
-                ? 'event-venue-url'
-                : 'event-venue-ref',
-              {
-                defaultValue:
-                  venue.refLabel,
-              },
-            )}
+            {{
+              IRL: t('event-venue-ref-irl', { defaultValue: 'Location' }),
+              URL: t('event-venue-url', { defaultValue: 'URL' }),
+              SPACE: t('event-venue-ref-space', { defaultValue: 'Space ID' }),
+              TOURNAMENT: t('event-venue-ref-tournament', { defaultValue: 'Tournament ID' }),
+              GAME: t('event-venue-ref-game', { defaultValue: 'Game' }),
+            }[venue.value]}
             <Input
               type={
                 venueKind ===

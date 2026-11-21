@@ -7,13 +7,12 @@ import type { UserThemeView } from '@/lib/themes/tokens';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   COLOR_VISION_MODES,
-  COLOR_VISION_LABELS,
-  COLOR_VISION_HINTS,
   type ColorVisionMode,
   JELLY_MOTION_LEVELS,
   isJellyMotion,
   type JellyMotion,
 } from '@/lib/appearance/prefs';
+import { colorVisionText } from '@/components/settings/color-vision-labels';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import {
@@ -55,6 +54,7 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
     void persist({ jellyMotion: value });
   }
 
+  const colorVision = colorVisionText(t);
   const globeMotionLabels: Record<JellyMotion, string> = {
     lively: t('globe-motion-on', { defaultValue: 'On' }),
     still: t('globe-motion-still', { defaultValue: 'Still' }),
@@ -71,14 +71,12 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
         <ThemePicker owned={ownedThemes} />
         <SettingsSelectRow
           label={t('color-vision', { defaultValue: 'Colour vision' })}
-          hint={t(`color-vision-${store.colorVision}-hint`, {
-            defaultValue: COLOR_VISION_HINTS[store.colorVision],
-          })}
+          hint={colorVision[store.colorVision].hint}
           value={store.colorVision}
           onChange={(v) => setColorVision(v as ColorVisionMode)}
           options={COLOR_VISION_MODES.map((mode) => ({
             value: mode,
-            label: t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] }),
+            label: colorVision[mode].label,
           }))}
         />
         <ToggleRow

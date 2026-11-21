@@ -23,6 +23,7 @@
 
 import { REMOVED_POST_TEXT } from '@/lib/moderation/removed-text';
 import type { FeedItem } from '@/lib/feed-types';
+import { redactCounts } from '@/lib/feed/quiet-counts';
 import {
   postCardShowsContent,
   type PostCardSubject,
@@ -232,7 +233,8 @@ export function mapQuotedOriginal(
       0 &&
     o.audience ===
       'PUBLIC';
-  return {
+  // The quoted author's "hide counts on my posts" switch applies to the card too.
+  return redactCounts({
     ...cardBase(
       o,
       user,
@@ -260,7 +262,7 @@ export function mapQuotedOriginal(
       showMedia
         ? o.imageAlts
         : undefined,
-  };
+  }, viewerId);
 }
 
 /**

@@ -23,6 +23,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { toast } from '@/lib/toast';
 import {
   api,
   errorField,
@@ -130,7 +131,7 @@ export function BookContextMenu({
       if (
         err
       ) {
-        window.alert(
+        toast.error(
           err,
         );
         return;

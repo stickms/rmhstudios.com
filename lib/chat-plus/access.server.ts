@@ -9,6 +9,7 @@
 import { findDmFor, findGroupMembership } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
 import { publishGroupEvent } from '@/lib/group-events';
+import type { RequestFacts } from '@/lib/messages/requests';
 import { scopeKeyOf, type ChatKind, type ChatUpdate } from '@/lib/chat-plus/types';
 
 export interface ChatAccess {
@@ -25,6 +26,8 @@ export interface ChatAccess {
   isSelf: boolean;
   disappearAfterSec: number | null;
   themeKey: string | null;
+  /** DMs only: the message request on this chat, if it has one (s04-16). */
+  request?: RequestFacts | null;
 }
 
 /** The chat, if `userId` is a participant / member. Null reads as "not found". */
@@ -47,6 +50,7 @@ export async function getChatAccess(
       isSelf: c.participantOneId === c.participantTwoId,
       disappearAfterSec: c.disappearAfterSec,
       themeKey: c.themeKey,
+      request: c.request ?? null,
     };
   }
   const m = await findGroupMembership(id, userId, {

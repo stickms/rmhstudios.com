@@ -4,6 +4,7 @@
  */
 
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { countsHiddenFrom } from '@/lib/feed/quiet-counts';
 
 /** The Prisma select for an author block on any post/comment/list item. */
 export const apiAuthorSelect = userDisplaySelect;
@@ -44,8 +45,15 @@ export function page<T>(items: T[], limit: number, cursorOf: (last: T) => string
   return { data: items, nextCursor };
 }
 
-/** Metrics block shared by post serializers. */
-export function metrics(p: { likeCount: number; commentCount: number; repostCount: number; viewCount: number }) {
+/**
+ * Metrics block shared by post serializers. `hidden` is the author's "hide counts on my posts" switch as it
+ * applies to this caller (`countsHiddenFrom`): every figure is then `null`, never the real number.
+ */
+export function metrics(
+  p: { likeCount: number; commentCount: number; repostCount: number; viewCount: number },
+  hidden = false,
+) {
+  if (hidden) return { likes: null, comments: null, reposts: null, views: null };
   return { likes: p.likeCount, comments: p.commentCount, reposts: p.repostCount, views: p.viewCount };
 }
 
@@ -77,8 +85,8 @@ export function serializeOwnPost(p: PostRow & { audience: string }) {
   };
 }
 
-/** A public post with its author block. */
-export function serializePublicPost(p: PostRow & { user: ResolvableUser }) {
+/** A public post with its author block, its metrics withheld when the author hides them from `viewerId`. */
+export function serializePublicPost(p: PostRow & { user: ResolvableUser }, viewerId: string | null) {
   return {
     id: p.id,
     content: p.content,
@@ -87,6 +95,6 @@ export function serializePublicPost(p: PostRow & { user: ResolvableUser }) {
     pinnedReplyId: p.pinnedCommentId ?? null,
     createdAt: p.createdAt,
     author: serializeAuthor(p.user),
-    metrics: metrics(p),
+    metrics: metrics(p, countsHiddenFrom(p.user.id, p.user.profile?.hideCountsOnMine, viewerId)),
   };
 }

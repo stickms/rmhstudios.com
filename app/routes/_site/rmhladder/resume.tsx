@@ -18,6 +18,7 @@ import { prisma } from '@/lib/prisma.server';
 import { listUserResumes, type ResumePrisma } from '@/lib/rmhladder/resume/service.server';
 import type { CandidateProfile } from '@/lib/rmhladder/resume/schemas';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -46,6 +47,7 @@ function formatBytes(bytes: number): string {
 
 function ResumePage() {
   const { t } = useTranslation('site');
+  const confirm = useConfirm();
   const loaded = Route.useLoaderData();
   const router = useRouter();
   const [resumes, setResumes] = useState<ResumeRow[]>(loaded.resumes);
@@ -92,7 +94,7 @@ function ResumePage() {
   }
 
   async function remove(resume: ResumeRow) {
-    if (!window.confirm(t('ladder.resume.confirmDelete', { defaultValue: 'Delete this resume and every private version?' }))) return;
+    if (!(await confirm({ title: t('ladder.resume.confirmDelete', { defaultValue: 'Delete this resume and every private version?' }), danger: true }))) return;
     setBusyId(`delete-${resume.id}`);
     try {
       await api(deleteLadderResumeApi, { params: { id: resume.id } }).catch((e: unknown) => {

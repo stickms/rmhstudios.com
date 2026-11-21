@@ -129,7 +129,7 @@ import ItemTile from './ItemTile';
 import ItemPreviewModal from './ItemPreviewModal';
 import { IconButton } from '@/components/ui/icon-button';
 import WarningList from './WarningList';
-import { CLASS_DEFAULT } from './labels';
+import { CLASS_DEFAULT, tfClassLabels } from './labels';
 import { useArrival } from '@/components/ui/arrive';
 
 const SITE =
@@ -312,6 +312,7 @@ function Builder({
     useTranslation(
       'c-tf2-hud',
     );
+  const classLabels = tfClassLabels(t);
   const navigate =
     useNavigate();
   const {
@@ -1280,15 +1281,7 @@ function Builder({
       ) => ({
         id: c,
         label:
-          t(
-            `class-${c}`,
-            {
-              defaultValue:
-                CLASS_DEFAULT[
-                  c
-                ],
-            },
-          ),
+          classLabels[c],
         disabled:
           Boolean(
             remote,

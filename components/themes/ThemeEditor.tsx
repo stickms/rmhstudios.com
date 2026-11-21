@@ -28,6 +28,8 @@ import {
 } from '@/lib/themes/tokens';
 import { useThemeStore } from '@/stores/themeStore';
 import { ThemeMiniShell } from './ThemeMiniShell';
+import { contrastPairLabels } from './contrast-labels';
+import { knownLabel } from '@/lib/i18n/known-label';
 
 type ColorKey =
   | 'canvasBase'
@@ -55,14 +57,6 @@ const INK_FIELDS: { key: ColorKey; label: string }[] = [
   { key: 'border', label: 'Border' },
 ];
 
-// Friendly fallbacks for the (dynamic) contrast-pair keys — i18next uses these
-// when the per-locale translation is absent.
-const CONTRAST_LABEL: Record<string, string> = {
-  'text-on-glass': 'Text on glass',
-  'muted-on-glass': 'Muted text on glass',
-  'accentFg-on-accent': 'Accent label on accent',
-};
-
 export function ThemeEditor({
   initial,
   onDone,
@@ -71,6 +65,7 @@ export function ThemeEditor({
   onDone: () => void;
 }) {
   const { t } = useTranslation('theme-studio');
+  const pairLabels = contrastPairLabels(t);
   const [name, setName] = useState(initial?.name ?? 'My theme');
   const [tokens, setTokens] = useState<ThemeTokens>(initial?.tokens ?? DEFAULT_THEME_TOKENS);
   const [price, setPrice] = useState(initial?.priceCoins ?? 500);
@@ -166,7 +161,7 @@ export function ThemeEditor({
             <ul className="rounded-site border border-site-warning/40 bg-site-warning/5 p-4 text-xs text-site-warning">
               {issues.map((i) => (
                 <li key={i.pair}>
-                  {t(`contrast-${i.pair}`, { defaultValue: CONTRAST_LABEL[i.pair] ?? i.pair })}:{' '}
+                  {knownLabel(pairLabels, i.pair) ?? i.pair}:{' '}
                   {i.ratio}:1 ({t('contrast-need', { defaultValue: 'need' })} {i.need}:1)
                 </li>
               ))}

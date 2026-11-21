@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Settings, Volume2, VolumeX, Sun, Moon, X } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
+import ManagePresets from './ManagePresets';
 
 interface SettingsMenuProps {
   /** Current theme: 'dark' | 'light' */
@@ -143,6 +144,10 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
                   onChange={(v) => handleVolumeChange('musicVolume', v)}
                 />
               </div>
+
+              <hr style={{ borderColor: 'var(--app-border)' }} />
+
+              <ManagePresets />
             </div>
           </div>
         </>,

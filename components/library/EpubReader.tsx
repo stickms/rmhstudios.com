@@ -20,6 +20,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { epubThemeLabels } from '@/components/library/epub-theme-labels';
 import { Link } from '@tanstack/react-router';
 import {
   ArrowLeft,
@@ -39,7 +40,9 @@ import {
   type EpubTheme,
   type EpubToc,
 } from '@/lib/library/epub-raster';
-import { useBookState } from '@/lib/library/reader-store';
+import { useSyncedBookState } from '@/lib/library/reader-store';
+import { useSession } from '@/components/Providers';
+import { ContinuedNotice } from './ContinuedNotice';
 import { isFindShortcut, shouldOpenFind } from '@/lib/library/reader-keys';
 import type { FindTarget } from '@/lib/library/find';
 import type { FindSource } from '@/lib/library/find-index';
@@ -232,9 +235,20 @@ export function EpubReader({
       null,
     );
 
+  // The reader's personal state for this book: on the device first, synced to their account when signed in.
+  const session =
+    useSession();
   const marks =
-    useBookState(
+    useSyncedBookState(
       book.slug,
+      {
+        signedIn:
+          Boolean(
+            session.data,
+          ),
+        pages:
+          numPages,
+      },
     );
   const storeRef =
     useRef<EpubRasterStore | null>(
@@ -1156,6 +1170,7 @@ export function EpubReader({
           </a>
         </div>
       </header>
+      <ContinuedNotice page={marks.continuedFrom} />
 
       <div className="lib-reader__stage">
         {status ===
@@ -1324,6 +1339,9 @@ export function EpubReader({
               false,
             )
           }
+          sync={
+            marks.sync
+          }
         />
       )}
     </main>
@@ -1346,6 +1364,7 @@ function ThemeMenu({
     useTranslation(
       'c-library',
     );
+  const themeLabels = epubThemeLabels(t);
   return (
     <Dropdown
       icon={
@@ -1399,13 +1418,7 @@ function ThemeMenu({
                       );
                       close();
                     }}
-                    aria-label={t(
-                      `theme-${th}`,
-                      {
-                        defaultValue:
-                          th,
-                      },
-                    )}
+                    aria-label={themeLabels[th]}
                   />
                 ),
               )}

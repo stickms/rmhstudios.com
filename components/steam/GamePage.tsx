@@ -21,6 +21,8 @@ import type { PatchNoteItem } from '@/lib/arcade/updates';
 import type { FollowState } from '@/lib/arcade/updates.contract';
 import { SteamCommunity, SteamFriends } from './SteamPeople';
 import { SteamReviews } from './SteamReviews';
+import { ReplayBoard } from '@/components/replays/ReplayBoard';
+import type { BoardReplay } from '@/lib/game/replay-library';
 import { TitleArt } from './TitleArt';
 
 export type GamePageData = {
@@ -44,6 +46,8 @@ export type GamePageData = {
   extras: LibraryExtras;
   alsoPlayed: AlsoPlayed[];
   updates: { notes: PatchNoteItem[]; follow: FollowState } | null;
+  /** Top public replays; null when the title records none. */
+  replays: BoardReplay[] | null;
 };
 
 /**
@@ -176,6 +180,7 @@ export function GamePage({ data }: { data: GamePageData }) {
                 initialAgg={data.agg}
               />
               <SteamGuides gameId={data.gameId} guides={data.guides} signedIn={data.signedIn} />
+              {data.replays ? <ReplayBoard gameId={data.gameId} initial={data.replays} /> : null}
               {data.aiEnabled ? (
                 <div className="stm-legacy">
                   <HowToPlay gameId={data.gameId} />

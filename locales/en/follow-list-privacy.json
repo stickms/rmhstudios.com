@@ -1,0 +1,12 @@
+{
+  "counts-stay-visible": "Your counts stay visible",
+  "everyone": "Everyone",
+  "everyone-hint": "Anyone can browse these lists.",
+  "keeps-private": "{{name}} keeps this list private",
+  "keeps-private-anon": "This list is private",
+  "legend": "Who can see your followers and following",
+  "me": "Only me",
+  "me-hint": "Nobody else can browse these lists.",
+  "mutuals": "People I follow back",
+  "mutuals-hint": "Only people who follow you and whom you follow can browse these lists."
+}

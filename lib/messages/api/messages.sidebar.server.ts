@@ -2,7 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { messagesSidebarApi } from '@/lib/messages/messages-sidebar.contract';
 import { prisma } from '@/lib/prisma.server';
-import { dmKeyOf, dmsOf } from '@/lib/chat/chat.server';
+import { dmKeyOf, dmsOf, inboxVisibleTo } from '@/lib/chat/chat.server';
+import { countPendingRequests } from '@/lib/messages/requests.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 /** GET /api/messages/sidebar — previously messaged + suggested users */
@@ -11,13 +12,15 @@ export const route = apiRoute('/api/messages/sidebar', {
   GET: implement(messagesSidebarApi, { auth: 'optional' }, async ({ userId }) => {
     try {
       if (!userId) {
-        return Response.json({ recent: [], suggested: [] });
+        return Response.json({ recent: [], suggested: [], requestCount: 0 });
       }
 
       // Previously messaged: users from recent conversations
       const conversations = await prisma.chat.findMany({
         where: {
           ...dmsOf(userId),
+          // A request waiting for this viewer is not someone they have messaged.
+          AND: [inboxVisibleTo(userId)],
           // Saved Messages (a conversation with yourself) is not a person to message.
           NOT: { dmKey: dmKeyOf(userId, userId) },
         },
@@ -90,10 +93,12 @@ export const route = apiRoute('/api/messages/sidebar', {
         };
       });
 
-      return Response.json({ recent, suggested });
+      const requestCount = await countPendingRequests(userId);
+
+      return Response.json({ recent, suggested, requestCount });
     } catch (error) {
       console.error('Messages sidebar error:', error);
-      return Response.json({ recent: [], suggested: [] });
+      return Response.json({ recent: [], suggested: [], requestCount: 0 });
     }
   }),
 });

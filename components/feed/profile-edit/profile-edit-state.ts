@@ -63,6 +63,8 @@ export interface SavedProfileData extends Partial<ProfileSongData> {
     | null;
   showLikes?: boolean;
   dmPrivacy?: string;
+  followListVisibility?: string;
+  dmRequests?: boolean;
 }
 
 export interface ProfileEditInitial extends ProfileSongData {
@@ -92,6 +94,8 @@ export interface ProfileEditInitial extends ProfileSongData {
   links?: ProfileLink[];
   showLikes: boolean;
   dmPrivacy: string;
+  followListVisibility?: string;
+  dmRequests?: boolean;
   tipGoal?:
     | number
     | null;
@@ -178,6 +182,8 @@ export interface ProfileDraft {
   links: ProfileLink[];
   showLikes: boolean;
   dmPrivacy: string;
+  followListVisibility: string;
+  dmRequests: boolean;
   tipGoal: string;
   tipGoalLabel: string;
   membershipPrice: string;
@@ -336,6 +342,12 @@ export function isDirty(
     draft.dmPrivacy !==
       (initial.dmPrivacy ??
         'EVERYONE') ||
+    draft.followListVisibility !==
+      (initial.followListVisibility ??
+        'everyone') ||
+    draft.dmRequests !==
+      (initial.dmRequests ??
+        false) ||
     draft.tipGoal !==
       coinsToField(
         initial.tipGoal,
@@ -442,6 +454,10 @@ export function buildProfilePatch(
       draft.showLikes,
     dmPrivacy:
       draft.dmPrivacy,
+    followListVisibility:
+      draft.followListVisibility,
+    dmRequests:
+      draft.dmRequests,
     profileSongSpotifyId:
       draft
         .selectedSong

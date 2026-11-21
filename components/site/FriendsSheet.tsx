@@ -5,6 +5,7 @@ import {
 } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { presenceContextLabels } from '@/components/site/presence-labels';
 import { ArrowRight } from 'lucide-react';
 
 import {
@@ -17,7 +18,6 @@ import {
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useActiveFriends } from '@/hooks/useActiveFriends';
 import {
-  contextVerb,
   sameActiveFriend,
   type ActiveFriend,
 } from '@/lib/presence-types';
@@ -271,6 +271,7 @@ const FriendSheetRow =
         useTranslation(
           'site',
         );
+  const contextLabels = presenceContextLabels(t);
       const {
         user,
         activity,
@@ -350,15 +351,7 @@ const FriendSheetRow =
                 }
                 className="surface-press shrink-0 rounded-full bg-site-bg-subtle px-3 py-1.5 text-xs font-semibold text-site-accent"
               >
-                {t(
-                  `presence-context-${activity.kind}`,
-                  {
-                    defaultValue:
-                      contextVerb(
-                        activity.kind,
-                      ),
-                  },
-                )}
+                {contextLabels[activity.kind]}
               </Link>
             </SheetClose>
           ) : null}

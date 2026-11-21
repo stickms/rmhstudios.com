@@ -22,6 +22,7 @@ import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
@@ -49,6 +50,8 @@ export function PasskeyManager() {
     );
   const confirm =
     useConfirm();
+  const prompt =
+    usePrompt();
   const [
     passkeys,
     setPasskeys,
@@ -211,16 +214,20 @@ export function PasskeyManager() {
       pk: PasskeyRow,
     ) => {
       const name =
-        window.prompt(
-          t(
-            'passkey-rename-prompt',
-            {
-              defaultValue:
-                'New name for this passkey:',
-            },
-          ),
-          pk.name ??
-            '',
+        await prompt(
+          {
+            title:
+              t(
+                'passkey-rename-prompt',
+                {
+                  defaultValue:
+                    'New name for this passkey:',
+                },
+              ),
+            initialValue:
+              pk.name ??
+              '',
+          },
         );
       if (
         !name ||

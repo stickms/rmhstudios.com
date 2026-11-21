@@ -191,7 +191,9 @@ export async function searchPostsScored(
           id: row.id,
           content: row.content,
           createdAt: row.createdAt.toISOString(),
-          likeCount: row.likeCount,
+          // Ranked on the real number above; shown only when the author has not hidden it. Search results are
+          // shared across viewers, so an author's switch withholds the figure from the author too.
+          likeCount: user.hideCounts ? null : row.likeCount,
           user,
           score: boosted,
           confidence: confidenceOf(boosted),

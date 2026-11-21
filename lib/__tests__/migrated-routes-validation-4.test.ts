@@ -196,7 +196,7 @@ describe('optional-session readers keep their quiet signed-out answers', () => {
     h.getSession.mockResolvedValue(null);
     const fn = await handler('@/lib/messages/api/messages.sidebar.server', 'GET');
     const res = await fn({ params: {}, request: req('GET', undefined, false) });
-    await expect(res.json()).resolves.toEqual({ recent: [], suggested: [] });
+    await expect(res.json()).resolves.toEqual({ recent: [], suggested: [], requestCount: 0 });
   });
 
   it('users search answers an empty list for a blank query', async () => {

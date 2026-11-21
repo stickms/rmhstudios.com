@@ -90,13 +90,7 @@ export function ActivityLine({
         aria-hidden
       />
       <span className="truncate">
-        {t(
-          `presence-activity-${activity.kind}`,
-          {
-            defaultValue:
-              activity.label,
-          },
-        )}
+        {activity.label}
       </span>
     </span>
   );

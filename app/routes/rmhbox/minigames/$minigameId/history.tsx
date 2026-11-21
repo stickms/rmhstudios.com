@@ -8,7 +8,7 @@
  * Reference: docs/rmhbox/design-spec/core.md §14A.4
  */
 
-import { createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,7 @@ import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
 // From `history-display`, not the bare registry: it loads the registrations
 // too, and keeps them with this route's component chunk (see that module).
-import { getHistoryDisplay } from '@/lib/rmhbox/history-display';
+import { getHistoryDisplay, type GameLog } from '@/lib/rmhbox/history-display';
 import { api } from '@/lib/contract/client';
 import { listRmhboxMatchesApi, type RmhboxMatchSummary } from '@/lib/rmhbox/rmhbox-reads.contract';
 import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
@@ -55,7 +55,11 @@ function SortButton({
 
 function MinigameHistoryPage() {
   const { minigameId } = Route.useParams();
+  // `player` narrows the list to one member's matches (the server applies their privacy setting);
+  // `match` opens that match's row.
+  const { player, match: openMatch } = Route.useSearch();
   const { t } = useTranslation('r-rmhbox');
+  const { t: ts } = useTranslation('rmhbox-stats');
   const game = MINIGAME_REGISTRY[minigameId];
   const historyConfig = getHistoryDisplay(minigameId);
 
@@ -65,7 +69,7 @@ function MinigameHistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(openMatch ?? null);
   const [offset, setOffset] = useState(0);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const limit = 20;
@@ -74,7 +78,9 @@ function MinigameHistoryPage() {
   const fetchMatches = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api(listRmhboxMatchesApi, { query: { minigame: minigameId, limit, offset } });
+      const data = await api(listRmhboxMatchesApi, {
+        query: { minigame: minigameId, limit, offset, ...(player ? { userId: player } : {}) },
+      });
       setMatches(data.matches ?? []);
       setTotal(data.total ?? 0);
     } catch {
@@ -82,7 +88,7 @@ function MinigameHistoryPage() {
     } finally {
       setLoading(false);
     }
-  }, [minigameId, offset]);
+  }, [minigameId, offset, player]);
 
   useEffect(() => {
     fetchMatches();
@@ -91,6 +97,24 @@ function MinigameHistoryPage() {
   const handleExpand = useCallback((matchId: string) => {
     setExpandedId((prev) => (prev === matchId ? null : matchId));
   }, []);
+
+  // The list carries no game log. Opening a row asks for that one match; the server
+  // returns the log only to the match's players and admins, so anyone else gets null
+  // and the row says it is not available.
+  const [logs, setLogs] = useState<Record<string, GameLog | null>>({});
+  useEffect(() => {
+    if (!expandedId || expandedId in logs) return;
+    let live = true;
+    api(listRmhboxMatchesApi, { query: { matchId: expandedId } })
+      .then((data) => (data as unknown as { match?: { gameLog?: GameLog | null } }).match?.gameLog ?? null)
+      .catch(() => null)
+      .then((log) => {
+        if (live) setLogs((prev) => ({ ...prev, [expandedId]: log }));
+      });
+    return () => {
+      live = false;
+    };
+  }, [expandedId, logs]);
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -226,6 +250,19 @@ function MinigameHistoryPage() {
       />
 
       <main className="mx-auto w-full max-w-4xl px-4 pt-4 pb-12 md:px-8 md:pt-8">
+          {player && (
+            <p className="mb-4 flex flex-wrap items-center gap-x-3 px-1 text-sm text-app-text-muted">
+              <span>{ts('player-filter', { defaultValue: 'Showing one player\'s matches.' })}</span>
+              <Link
+                to="/rmhbox/minigames/$minigameId/history"
+                params={{ minigameId }}
+                className="inline-flex min-h-11 items-center font-medium text-app-accent underline"
+              >
+                {ts('player-filter-clear', { defaultValue: 'Show everyone' })}
+              </Link>
+            </p>
+          )}
+
           {/* Search bar */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-app-text-muted" aria-hidden />
@@ -343,6 +380,8 @@ function MinigameHistoryPage() {
               {filteredMatches.map((match) => {
                 const winner = match.players.find((p) => p.rank === 1);
                 const isExpanded = expandedId === match.id;
+                const log = match.gameLog ?? logs[match.id] ?? null;
+                const logPending = !log && !(match.id in logs);
 
                 return (
                   <div
@@ -397,7 +436,7 @@ function MinigameHistoryPage() {
                     {/* Expanded detail */}
                     {isExpanded && (
                       <div className="border-t border-app-border p-4 bg-app-bg">
-                        {match.gameLog && DetailComponent ? (
+                        {log && DetailComponent ? (
                           // Detail views are registered lazily (see
                           // lib/rmhbox/history-display-registrations.ts) so they
                           // stay off the site-wide entry chunk; this boundary
@@ -410,15 +449,19 @@ function MinigameHistoryPage() {
                             }
                           >
                             <DetailComponent
-                              gameLog={match.gameLog}
+                              gameLog={log}
                               currentUserId=""
                               players={match.players}
                             />
                           </ArrivalSuspense>
-                        ) : match.gameLog ? (
+                        ) : log ? (
                           <pre className="text-xs overflow-auto text-app-text-muted max-h-64">
-                            {JSON.stringify(match.gameLog, null, 2)}
+                            {JSON.stringify(log, null, 2)}
                           </pre>
+                        ) : logPending ? (
+                          <p className="text-sm text-center py-4 text-app-text-muted">
+                            {t('loading-detail', { defaultValue: 'Loading details…' })}
+                          </p>
                         ) : (
                           <p className="text-sm text-center py-4 text-app-text-muted">
                             {t('game-log-unavailable', { defaultValue: 'Game log not available.' })}
@@ -466,5 +509,9 @@ function MinigameHistoryPage() {
 
 export const Route = createFileRoute('/rmhbox/minigames/$minigameId/history')({
   head: () => noindexHead('Minigame History'),
+  validateSearch: (search: Record<string, unknown>): { player?: string; match?: string } => ({
+    ...(typeof search.player === 'string' && search.player ? { player: search.player.slice(0, 64) } : {}),
+    ...(typeof search.match === 'string' && search.match ? { match: search.match.slice(0, 64) } : {}),
+  }),
   component: MinigameHistoryPage,
 });

@@ -11,6 +11,7 @@ import { Spine, SpineItem } from '@/components/ui/spine';
 import { HandleInput } from './HandleInput';
 import { ColumnHeader } from './ColumnHeader';
 import { useTranslation } from 'react-i18next';
+import { useRefusedToast } from './group-chat/useRefusedToast';
 import { SearchField } from '@/components/ui/search-field';
 import { ChatFolderBar } from '@/components/chat-plus/ChatFolderBar';
 import { api } from '@/lib/contract/client';
@@ -30,6 +31,7 @@ export function GroupChatsColumn({
   initialData?: { groups: GroupRow[]; signedIn: boolean } | null;
 } = {}) {
   const { t } = useTranslation('feed');
+  const refusedToast = useRefusedToast();
   const navigate = useNavigate();
   const seeded = useRef(initialData !== undefined && initialData !== null);
   const [groups, setGroups] = useState<GroupRow[]>(initialData?.groups ?? []);
@@ -100,6 +102,7 @@ export function GroupChatsColumn({
       const data = await api(createGroupChatApi, {
         body: { name: name.trim(), members: memberList },
       });
+      refusedToast(data.refused);
       navigate({ to: `/groups/${data.id}` as string });
     } catch (e) {
       setError(serverError(e) ?? t('could-not-create', { defaultValue: 'Could not create' }));

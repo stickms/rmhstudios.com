@@ -86,6 +86,10 @@ const PAGE_PARAMS: ApiParam[] =
     },
   ];
 
+/** Appended to every endpoint description that returns another member's posts (sprint 04 #14). */
+const QUIET_COUNTS_NOTE =
+  '`metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.';
+
 const POST_OBJECT =
   {
     id: 'ck_post123',
@@ -203,7 +207,8 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'List your bookmarks',
       description:
-        'Posts you have bookmarked, newest first.',
+        'Posts you have bookmarked, newest first. ' +
+        QUIET_COUNTS_NOTE,
       paginated: true,
       params:
         PAGE_PARAMS,
@@ -373,7 +378,8 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'Get a post',
       description:
-        'Fetch a single post by id. Returns public posts and your own posts; otherwise 404.',
+        'Fetch a single post by id. Returns public posts and your own posts; otherwise 404. '+
+        QUIET_COUNTS_NOTE,
       params:
         [
           {
@@ -436,7 +442,7 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'Like a post',
       description:
-        'Like a post. Idempotent — liking an already-liked post is a no-op.',
+        'Like a post. Idempotent — liking an already-liked post is a no-op. `likeCount` is `null` when the post’s author hides the counts on their posts.',
       params:
         [
           {
@@ -672,7 +678,8 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'Get the public feed',
       description:
-        'The public global feed. Only public, free, non-community posts are returned.',
+        'The public global feed. Only public, free, non-community posts are returned. ' +
+        QUIET_COUNTS_NOTE,
       responseExample:
         {
           data: [
@@ -747,7 +754,8 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'List a user’s public posts',
       description:
-        'A user’s public posts, newest first.',
+        'A user’s public posts, newest first. ' +
+        QUIET_COUNTS_NOTE,
       params:
         [
           {
@@ -787,7 +795,7 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'List a user’s followers',
       description:
-        'Users who follow this user.',
+        'Users who follow this user. Answers 403 `list_private` when the member keeps the list private from the key’s account. Blocked accounts are left out.',
       params:
         [
           {
@@ -823,7 +831,7 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'List who a user follows',
       description:
-        'Users this user follows.',
+        'Users this user follows. Answers 403 `list_private` when the member keeps the list private from the key’s account. Blocked accounts are left out.',
       params:
         [
           {
@@ -1019,7 +1027,7 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'Get a build',
       description:
-        'A single public build, including its readme.',
+        'A single public build, including its readme and its latest releases (up to 20, newest first). `versions` is deprecated: it carries the same releases without `commitHash`; read `releases` instead.',
       params:
         [
           {
@@ -1056,6 +1064,30 @@ export const ENDPOINTS: ApiEndpoint[] =
               comments: 1,
               views: 90,
             },
+          versions:
+            [
+              {
+                version:
+                  '1.1',
+                changelog:
+                  'Faster loading.',
+                createdAt:
+                  '2026-11-20T12:00:00.000Z',
+              },
+            ],
+          releases:
+            [
+              {
+                version:
+                  '1.1',
+                changelog:
+                  'Faster loading.',
+                commitHash:
+                  '3f2a9c1',
+                createdAt:
+                  '2026-11-20T12:00:00.000Z',
+              },
+            ],
         },
     },
     {

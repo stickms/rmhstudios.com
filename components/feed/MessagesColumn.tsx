@@ -19,6 +19,7 @@ import { subscribeMessageStream } from '@/hooks/useUnreadCount';
 import { toast } from '@/lib/toast';
 import { ChatFolderBar } from '@/components/chat-plus/ChatFolderBar';
 import { SavedMessagesRow } from '@/components/chat-plus/SavedMessagesRow';
+import { RequestsEntry } from '@/components/messages/RequestsEntry';
 import { SavedMessagesLabel } from '@/components/chat-plus/MessageBadges';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 import { ScheduledClock, useScheduledChatIds } from '@/components/messages/ScheduledClock';
@@ -363,6 +364,7 @@ export function MessagesColumn({
         <>
           {/* Saved Messages (M2) is always there, even in an empty inbox. */}
           <Spine className={listArrival}>
+            <RequestsEntry />
             <SavedMessagesRow />
           </Spine>
           <EmptyState
@@ -382,6 +384,7 @@ export function MessagesColumn({
         <>
           {/* One dot per unread thread (section 10, Inbox): the rows hang on the spine, read ones with no dot. */}
           <Spine className={listArrival}>
+            {folder === 'all' && <RequestsEntry />}
             {folder === 'all' && <SavedMessagesRow />}
             {conversations.map((conv) => (
               <ConversationRow

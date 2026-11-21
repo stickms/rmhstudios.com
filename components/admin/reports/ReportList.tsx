@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
+import { BanDialog } from '@/components/admin/BanDialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
 import { QueueError } from '@/components/admin/reports/QueueError';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -263,6 +265,19 @@ export function ReportList({
       }
     };
 
+  const prompt =
+    usePrompt();
+  const [
+    banTarget,
+    setBanTarget,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+
   const moderateUser =
     async (
       userId: string,
@@ -270,94 +285,106 @@ export function ReportList({
         | 'strike'
         | 'ban',
     ) => {
+      if (
+        kind ===
+        'ban'
+      ) {
+        setBanTarget(
+          userId,
+        );
+        return;
+      }
       const reason =
-        prompt(
-          kind ===
-            'ban'
-            ? t(
-                'ban-reason-prompt',
-                {
-                  defaultValue:
-                    'Ban reason:',
-                },
-              )
-            : t(
+        await prompt(
+          {
+            title:
+              t(
                 'strike-reason-prompt',
                 {
                   defaultValue:
                     'Strike reason:',
                 },
               ),
+          },
         );
       if (
         !reason
       )
         return;
       try {
-        if (
-          kind ===
-          'ban'
-        ) {
-          const durationDays =
-            parseInt(
-              prompt(
-                t(
-                  'ban-length-prompt',
-                  {
-                    defaultValue:
-                      'Ban length in days (blank = permanent):',
-                  },
-                ),
-              ) ||
-                '',
-              10,
-            ) ||
-            null;
-          await api(
-            banAdminUserApi,
-            {
-              params:
-                {
-                  id: userId,
-                },
-              body: {
-                reason,
-                durationDays,
-              },
-            },
-          );
-          toast.success(
-            t(
-              'user-banned',
+        await api(
+          strikeAdminUserApi,
+          {
+            params:
               {
-                defaultValue:
-                  'User banned',
+                id: userId,
               },
-            ),
-          );
-        } else {
-          await api(
-            strikeAdminUserApi,
-            {
-              params:
-                {
-                  id: userId,
-                },
-              body: {
-                reason,
-              },
+            body: {
+              reason,
             },
-          );
-          toast.success(
-            t(
-              'strike-issued',
+          },
+        );
+        toast.success(
+          t(
+            'strike-issued',
+            {
+              defaultValue:
+                'Strike issued',
+            },
+          ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'action-failed-appeals',
+            {
+              defaultValue:
+                'Action failed',
+            },
+          ),
+        );
+      }
+    };
+
+  const banUser =
+    async (
+      reason: string,
+      durationDays:
+        | number
+        | null,
+    ) => {
+      const userId =
+        banTarget;
+      setBanTarget(
+        null,
+      );
+      if (
+        !userId
+      )
+        return;
+      try {
+        await api(
+          banAdminUserApi,
+          {
+            params:
               {
-                defaultValue:
-                  'Strike issued',
+                id: userId,
               },
-            ),
-          );
-        }
+            body: {
+              reason,
+              durationDays,
+            },
+          },
+        );
+        toast.success(
+          t(
+            'user-banned',
+            {
+              defaultValue:
+                'User banned',
+            },
+          ),
+        );
       } catch {
         toast.error(
           t(
@@ -373,6 +400,25 @@ export function ReportList({
 
   return (
     <>
+      <BanDialog
+        open={
+          banTarget !==
+          null
+        }
+        onOpenChange={(
+          open,
+        ) => {
+          if (
+            !open
+          )
+            setBanTarget(
+              null,
+            );
+        }}
+        onSubmit={
+          banUser
+        }
+      />
       {loading ? (
         <div className="flex justify-center py-16">
           <Spinner />

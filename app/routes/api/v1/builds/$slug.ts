@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
+import { RELEASES_PAGE } from '@/lib/builds/releases';
 import { apiAuthorSelect, serializeAuthor } from '@/lib/api/serializers.server';
 
-/** GET /api/v1/builds/{slug} — a single public build, including its readme. */
+/** GET /api/v1/builds/{slug} — a single public build, including its readme and its latest releases (newest first). */
 export const Route = createFileRoute('/api/v1/builds/$slug')({
   server: {
     handlers: {
@@ -22,7 +23,7 @@ export const Route = createFileRoute('/api/v1/builds/$slug')({
                 category: { select: { slug: true, name: true } },
                 user: { select: apiAuthorSelect },
                 tags: { select: { name: true } },
-                versions: { orderBy: { createdAt: 'desc' }, take: 20, select: { version: true, changelog: true, createdAt: true } },
+                versions: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: RELEASES_PAGE, select: { version: true, changelog: true, commitHash: true, createdAt: true } },
               },
             });
             if (!build || build.visibility !== 'PUBLIC') return error('not_found', 'Build not found.', 404);
@@ -41,7 +42,9 @@ export const Route = createFileRoute('/api/v1/builds/$slug')({
               category: build.category,
               price: build.price,
               metrics: { likes: build.likeCount, comments: build.commentCount, views: build.viewCount },
-              versions: build.versions,
+              // Deprecated: the old shape, kept so existing clients keep working. Use `releases`.
+              versions: build.versions.map(({ version, changelog, createdAt }) => ({ version, changelog, createdAt })),
+              releases: build.versions,
               createdAt: build.createdAt,
               publishedAt: build.publishedAt,
             });

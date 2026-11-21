@@ -22,6 +22,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { templeTabLabels } from './temple-labels';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type {
@@ -38,7 +39,6 @@ import { computeAlerts } from './panels/alerts';
 interface TabDef {
   id: TabId;
   glyph: string;
-  label: string;
   /** Hide until the mechanic behind it exists. */
   visible?: (
     s: GameState,
@@ -60,29 +60,21 @@ const TABS: TabDef[] =
       id: 'temple',
       glyph:
         '⛪',
-      label:
-        'Temple',
     },
     {
       id: 'sources',
       glyph:
         '🕯️',
-      label:
-        'Sources',
     },
     {
       id: 'blessings',
       glyph:
         '✨',
-      label:
-        'Blessings',
     },
     {
       id: 'garden',
       glyph:
         '🌱',
-      label:
-        'Garden',
       visible:
         (
           s,
@@ -95,8 +87,6 @@ const TABS: TabDef[] =
       id: 'choir',
       glyph:
         '🎼',
-      label:
-        'Choir',
       visible:
         (
           s,
@@ -109,8 +99,6 @@ const TABS: TabDef[] =
       id: 'exchange',
       glyph:
         '📈',
-      label:
-        'Exchange',
       visible:
         (
           s,
@@ -123,8 +111,6 @@ const TABS: TabDef[] =
       id: 'hours',
       glyph:
         '📖',
-      label:
-        'Hours',
       visible:
         (
           s,
@@ -137,8 +123,6 @@ const TABS: TabDef[] =
       id: 'legacy',
       glyph:
         '☁️',
-      label:
-        'Ladder',
       visible:
         (
           s,
@@ -152,15 +136,11 @@ const TABS: TabDef[] =
       id: 'trophies',
       glyph:
         '🏆',
-      label:
-        'Trophies',
     },
     {
       id: 'settings',
       glyph:
         '⚙️',
-      label:
-        'Settings',
     },
   ];
 
@@ -330,6 +310,7 @@ export function TempleTabs({
     useTranslation(
       'c-temple-of-joy',
     );
+  const tabLabels = templeTabLabels(t);
   const active =
     useTempleValue(
       (
@@ -511,13 +492,7 @@ export function TempleTabs({
             are grid cells of equal width, and only a real box can be told
             to ellipsise the one locale where "Blessings" is two words. */}
           <span className="toj-tab-label">
-            {t(
-              `tab-${tab.id}`,
-              {
-                defaultValue:
-                  tab.label,
-              },
-            )}
+            {tabLabels[tab.id]}
           </span>
           {alerts.has(
             tab.id,
@@ -691,6 +666,7 @@ function MoreSheet({
     useTranslation(
       'c-temple-of-joy',
     );
+  const tabLabels = templeTabLabels(t);
 
   // The Radix dialog primitive in the temple's clothes (see TempleDialogs'
   // Scrim): Escape, outside press, focus trap, focus return and scroll lock.
@@ -762,13 +738,7 @@ function MoreSheet({
                     </Glyph>
                   </span>
                   <span>
-                    {t(
-                      `tab-${tab.id}`,
-                      {
-                        defaultValue:
-                          tab.label,
-                      },
-                    )}
+                    {tabLabels[tab.id]}
                   </span>
                   {alerts.has(
                     tab.id,

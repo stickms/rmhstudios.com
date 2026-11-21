@@ -45,7 +45,7 @@ export const Route = createFileRoute('/api/v1/me/bookmarks')({
             const byId = new Map(posts.filter((p) => !isLocked(p, userId)).map((p) => [p.id, p]));
             const data = rows
               .filter((r) => byId.has(r.entityId))
-              .map((r) => ({ ...serializePublicPost(byId.get(r.entityId)!), bookmarkedAt: r.createdAt }));
+              .map((r) => ({ ...serializePublicPost(byId.get(r.entityId)!, userId), bookmarkedAt: r.createdAt }));
             const nextCursor = rows.length === limit ? rows[rows.length - 1].createdAt.toISOString() : null;
             return json({ data, nextCursor });
           },

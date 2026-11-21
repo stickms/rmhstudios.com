@@ -48,6 +48,7 @@ model Community {
   rules                CommunityRule[]
   modActions           CommunityModAction[]
   memberEvents         CommunityMemberEvent[]
+  handovers            CommunityHandover[]
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -581,4 +582,26 @@ model CommunityMemberEvent {
 
   @@index([communityId, createdAt])
   @@map("community_member_event")
+}
+
+/// s04-17 — an offer of a community from its owner to one of its moderators. One pending offer per
+/// community (taken under an advisory lock in the offer transaction); it expires after 7 days (read as
+/// expired, no job). `status`: pending | accepted | declined | cancelled. A community record, not exported.
+model CommunityHandover {
+  id          String    @id @default(cuid())
+  communityId String
+  fromId      String
+  toId        String
+  status      String    @default("pending") @db.VarChar(10)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  decidedAt   DateTime?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  from      User      @relation("CommunityHandoverFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        User      @relation("CommunityHandoverTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, status])
+  @@index([toId, status])
+  @@map("community_handover")
 }

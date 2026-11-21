@@ -3,8 +3,12 @@ import {
   BookOpen,
   X,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LibraryBook } from '@/lib/library/library';
+import type { ReaderSyncControls } from '@/lib/library/reader-store';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import '@/components/library/library.css';
 
 type ReaderChapter =
@@ -22,6 +26,7 @@ export function ReaderDetails({
   returnFocus,
   onJump,
   onClose,
+  sync,
 }: {
   book: LibraryBook;
   numPages: number;
@@ -32,6 +37,8 @@ export function ReaderDetails({
     page: number,
   ) => void;
   onClose: () => void;
+  /** Present for a signed-in reader: the place-and-notes sync controls. */
+  sync?: ReaderSyncControls;
 }) {
   const {
     t,
@@ -39,6 +46,9 @@ export function ReaderDetails({
     useTranslation(
       'c-library',
     );
+  const { t: ts } = useTranslation('reading-sync');
+  // Removing the synced copy asks first, in place.
+  const [removal, setRemoval] = useState<'idle' | 'confirming' | 'working' | 'done' | 'failed'>('idle');
   const uploader =
     book
       .uploadedBy
@@ -280,6 +290,83 @@ export function ReaderDetails({
                 ),
               )}
             </nav>
+          )}
+          {sync?.available && (
+            <section
+              className="mt-8 border-t border-site-border pt-5"
+              aria-labelledby="reader-sync-heading"
+            >
+              <h3
+                id="reader-sync-heading"
+                className="t-label"
+              >
+                {ts('sync-heading', { defaultValue: 'Place and notes' })}
+              </h3>
+              <div className="mt-3 flex items-center justify-between gap-4">
+                <span id="reader-sync-off-label" className="t-body text-site-text">
+                  {ts('device-only-label', {
+                    defaultValue: 'Keep my place and notes on this device only',
+                  })}
+                </span>
+                <Switch
+                  checked={sync.off}
+                  onCheckedChange={sync.setOff}
+                  aria-labelledby="reader-sync-off-label"
+                  aria-describedby="reader-sync-off-hint"
+                />
+              </div>
+              <p id="reader-sync-off-hint" className="t-meta mt-2">
+                {sync.off
+                  ? ts('device-only-on-hint', {
+                      defaultValue: 'Nothing from this book is sent to your account from this device.',
+                    })
+                  : ts('device-only-off-hint', {
+                      defaultValue: 'Your place, bookmarks and notes follow you to your other devices.',
+                    })}
+              </p>
+              <div className="mt-4">
+                {removal === 'confirming' || removal === 'working' ? (
+                  <div role="group" aria-labelledby="reader-sync-remove-question">
+                    <p id="reader-sync-remove-question" className="t-body text-site-text">
+                      {ts('remove-question', {
+                        defaultValue:
+                          'Remove the synced place and notes for this book from your account? Copies on your devices stay, and syncing turns off on this one.',
+                      })}
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="danger"
+                        disabled={removal === 'working'}
+                        onClick={async () => {
+                          setRemoval('working');
+                          setRemoval((await sync.removeSynced()) ? 'done' : 'failed');
+                        }}
+                      >
+                        {ts('remove-confirm', { defaultValue: 'Remove' })}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        disabled={removal === 'working'}
+                        onClick={() => setRemoval('idle')}
+                      >
+                        {ts('remove-cancel', { defaultValue: 'Cancel' })}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button variant="default" onClick={() => setRemoval('confirming')}>
+                    {ts('remove-synced', { defaultValue: 'Remove synced place and notes' })}
+                  </Button>
+                )}
+                <p role="status" aria-live="polite" className="t-meta mt-2">
+                  {removal === 'done'
+                    ? ts('remove-done', { defaultValue: 'Removed from your account.' })
+                    : removal === 'failed'
+                      ? ts('remove-failed', { defaultValue: 'Could not remove them. Try again.' })
+                      : null}
+                </p>
+              </div>
+            </section>
           )}
         </Dialog.Content>
       </Dialog.Portal>

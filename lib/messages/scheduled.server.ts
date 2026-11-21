@@ -29,6 +29,8 @@ import {
   type SendFailCode,
 } from '@/lib/messages/send.server';
 import type { SentMessage } from '@/lib/messages/scheduled';
+import { requestGate } from '@/lib/messages/requests.server';
+import { gateRefusalCopy } from '@/lib/messages/requests';
 import {
   MAX_ATTEMPTS,
   MAX_PENDING,
@@ -294,6 +296,42 @@ export async function scheduleMessage(
       403,
       'You can no longer message this person',
     );
+  }
+  // s04-16: a message request is one text message sent now. Nothing is scheduled into one, or into a
+  // conversation that would only become one; every other privacy answer is still left to delivery.
+  if (
+    target.kind ===
+    'dm'
+  ) {
+    const gate =
+      await requestGate(
+        userId,
+        target.otherId,
+      );
+    if (
+      gate.outcome ===
+      'request'
+    ) {
+      return refuse(
+        403,
+        'A message request cannot be scheduled. Send it now.',
+      );
+    }
+    if (
+      gate.outcome ===
+        'refused' &&
+      (gate.reason ===
+        'pending' ||
+        gate.reason ===
+          'incoming')
+    ) {
+      return refuse(
+        403,
+        gateRefusalCopy(
+          gate.reason,
+        ),
+      );
+    }
   }
   if (
     input.imageUrls?.some(
@@ -647,6 +685,7 @@ export function failCodeFor(
     case 'invalid-image':
       return 'invalid-image';
     case 'empty':
+    case 'request-text-only':
     case 'alt-mismatch':
     case 'alt-required':
       return 'invalid';

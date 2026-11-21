@@ -593,3 +593,34 @@ model ReadingFanoutCursor {
 
   @@map("reading_fanout_cursor")
 }
+
+/// s04-09 — a signed-in reader's place, bookmarks and page notes for one book, so
+/// they follow the member across devices. `kind` is `place` (one row per book,
+/// `clientId` fixed to "place"), `bookmark` or `note`. `page` is the 1-based PDF page
+/// (or the EPUB chapter-level page), `location` the EPUB fine location. A bookmark's
+/// caption is `label`; a note's text is `body` and its colour token rides in `label`.
+/// `updatedAt` is the edit time the merge compares (client time clamped to the server's
+/// clock on write), not a database `@updatedAt`. Deletions are tombstones (`deletedAt`)
+/// kept 30 days so other devices learn of them. Private to the owner: no endpoint reads
+/// another member's rows, the uploader's included.
+model LibraryReaderMark {
+  id        String    @id @default(cuid())
+  userId    String
+  docSlug   String    @db.VarChar(200)
+  clientId  String    @db.VarChar(40)
+  kind      String    @db.VarChar(8)
+  page      Int
+  location  String?   @db.VarChar(200)
+  label     String?   @db.VarChar(120)
+  body      String?   @db.VarChar(2000)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, docSlug, clientId])
+  @@index([userId, docSlug])
+  @@index([userId, kind, updatedAt(sort: Desc)])
+  @@map("library_reader_mark")
+}

@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { knownLabel } from '@/lib/i18n/known-label';
+import { ladderNavLabels } from '@/components/rmhladder/ladder-nav-labels';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,7 +34,7 @@ type NavItem =
     icon: LucideIcon;
   };
 
-const PUBLIC_NAV: NavItem[] =
+export const PUBLIC_NAV: NavItem[] =
   [
     {
       label:
@@ -48,7 +50,7 @@ const PUBLIC_NAV: NavItem[] =
     },
   ];
 
-const PERSONAL_NAV: NavItem[] =
+export const PERSONAL_NAV: NavItem[] =
   [
     {
       label:
@@ -94,7 +96,7 @@ const PERSONAL_NAV: NavItem[] =
     },
   ];
 
-const ADMIN_NAV: NavItem[] =
+export const ADMIN_NAV: NavItem[] =
   [
     {
       label:
@@ -165,6 +167,7 @@ export default function RmhLadderShell({
         'ladder-insights',
       ],
     );
+  const navLabels = ladderNavLabels(t);
   const pathname =
     useRouterState(
       {
@@ -244,13 +247,7 @@ export default function RmhLadderShell({
                       'Insights',
                   },
                 )
-              : t(
-                  `ladder.nav.${label.toLowerCase()}`,
-                  {
-                    defaultValue:
-                      label,
-                  },
-                ),
+              : knownLabel(navLabels, label.toLowerCase()) ?? label,
         icon,
       }),
     );

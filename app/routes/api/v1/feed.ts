@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/v1/feed')({
       GET: ({ request }) =>
         withDeveloperApi(
           request,
-          async ({ json }) => {
+          async ({ userId, json }) => {
             const { limit, cursor } = parsePage(new URL(request.url));
             const posts = await prisma.rMHark.findMany({
               where: {
@@ -46,7 +46,7 @@ export const Route = createFileRoute('/api/v1/feed')({
               },
             });
             return json(
-              page(posts.map(serializePublicPost), limit, (p) => p.createdAt.toISOString()),
+              page(posts.map((p) => serializePublicPost(p, userId)), limit, (p) => p.createdAt.toISOString()),
             );
           },
           // Feed assembly is heavier than a single-row read; weight it modestly.

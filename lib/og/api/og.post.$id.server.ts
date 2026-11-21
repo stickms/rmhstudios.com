@@ -54,6 +54,7 @@ export const route = apiRoute('/api/og/post/$id', {
     });
 
     const author = post?.user ? resolveUser(post.user) : null;
+    const hidesCounts = author?.hideCounts === true;
     const quoted = post?.original?.user ? resolveUser(post.original.user) : null;
 
     // Only public, visible, free, unflagged posts get a content card;
@@ -72,7 +73,7 @@ export const route = apiRoute('/api/og/post/$id', {
       // The quote is part of the card, so its state is part of the key: a quoted
       // original that goes private / deleted / edited must not keep its text on
       // a cached card.
-      revision: `${post?.updatedAt?.getTime() ?? 0}:${showContent ? 1 : 0}:${communityName ? 1 : 0}:${
+      revision: `${post?.updatedAt?.getTime() ?? 0}:${showContent ? 1 : 0}:${communityName ? 1 : 0}:${hidesCounts ? 'q' : 'c'}:${
         showQuote ? `q${post?.original?.updatedAt?.getTime() ?? 0}` : 'n'
       }`,
       content: showContent ? (post?.content ?? '') : '',
@@ -81,9 +82,15 @@ export const route = apiRoute('/api/og/post/$id', {
       authorImage: author?.image ?? null,
       authorVerified: author?.isVerified ?? false,
       createdAt: post?.createdAt ?? null,
-      likeCount: post?.likeCount ?? 0,
-      commentCount: post?.commentCount ?? 0,
-      repostCount: post?.repostCount ?? 0,
+      // The card is public and cached, so it has no viewer: an author who hides their counts gets a card drawn
+      // without them (lib/feed/quiet-counts).
+      ...(hidesCounts
+        ? { likeCount: null, commentCount: null, repostCount: null }
+        : {
+            likeCount: post?.likeCount ?? 0,
+            commentCount: post?.commentCount ?? 0,
+            repostCount: post?.repostCount ?? 0,
+          }),
       // The pictures themselves, not a sentence about them. Suppressed with
       // the text for anything that isn't public and free.
       images: showContent ? (post?.imageUrls ?? []) : [],

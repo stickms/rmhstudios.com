@@ -6,6 +6,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { games } from '@/lib/catalog';
+import { getBook } from '@/lib/library/library.server';
 import type { HistoryEntityType } from '@/lib/history/constants';
 
 export interface HistoryView {
@@ -120,6 +121,16 @@ async function hydrateHistory(rows: HistoryRow[]): Promise<HistoryView[]> {
     for (const s of songs) songMap.set(s.id, { title: s.title, artist: s.artist, coverUrl: s.coverUrl });
   }
 
+  // Library books the reader has open or finished: one lookup each, hidden ones resolve to nothing.
+  const bookSlugs = [...new Set(rows.filter((r) => r.entityType === 'library_doc').map((r) => r.entityId))];
+  const bookMap = new Map<string, NonNullable<Awaited<ReturnType<typeof getBook>>>>();
+  await Promise.all(
+    bookSlugs.map(async (slug) => {
+      const book = await getBook(slug).catch(() => undefined);
+      if (book) bookMap.set(slug, book);
+    }),
+  );
+
   return rows.map((r): HistoryView => {
     const base = {
       id: r.id,
@@ -137,6 +148,16 @@ async function hydrateHistory(rows: HistoryRow[]): Promise<HistoryView[]> {
         subtitle: s?.artist ?? null,
         href: null,
         thumbnail: s?.coverUrl ?? null,
+      };
+    }
+    if (r.entityType === 'library_doc') {
+      const b = bookMap.get(r.entityId);
+      return {
+        ...base,
+        title: b?.title ?? r.entityId,
+        subtitle: null,
+        href: b ? `/library/${encodeURIComponent(b.slug)}` : null,
+        thumbnail: b?.coverUrl ?? null,
       };
     }
     if (r.entityType === 'game') {

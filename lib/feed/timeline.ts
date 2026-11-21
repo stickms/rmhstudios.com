@@ -29,6 +29,7 @@ import { getHiddenAuthorIds, getBlockedAuthorIds } from '../moderation.server';
 import { getFollowingIds } from '../social/follow-graph.server';
 import { audienceWhere, circleOwnerIds } from './audience.server';
 import { mapQuotedOriginal } from './quoted-original';
+import { redactCounts } from './quiet-counts';
 import { getSignals } from './signals.server';
 import { mutedTagWhere } from './signals';
 import { applyLock, loadBookmarkedPostIds } from './map-feed-item.server';
@@ -44,6 +45,7 @@ import {
 } from '../cached.server';
 import { reconcileCachedPage } from './page-reconcile.server';
 import { isExpired } from '../posts-plus/constants';
+import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 
 export { deduplicateReposts };
 
@@ -164,7 +166,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
-    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
+    ...pollLifecycleView(poll),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -609,7 +611,10 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap, qv)),
   ]);
 
-  const items = deduplicateReposts(merged).slice(0, limit);
+  // Quiet counts: an author who hides their numbers shows them to nobody else (after any ordering).
+  const items = deduplicateReposts(merged)
+    .slice(0, limit)
+    .map((i) => redactCounts(i, userId));
 
   const pagePostIds = items.map((i) => i.actualId ?? i.id);
   const [summaries, bookmarked] = await Promise.all([
@@ -748,6 +753,8 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
     };
     // Ranking seam (Phase 5) — personalized For-You ordering (#11).
     dbItems = rankCandidates(dbItems, rankCtx);
+    // Ranked on the real numbers; only then are an author's hidden counts withheld (lib/feed/quiet-counts).
+    dbItems = dbItems.map((i) => redactCounts(i, userId));
 
     attachReactions(dbItems, await reactionsPromise);
     attachBookmarks(dbItems, await bookmarksPromise);
