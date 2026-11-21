@@ -224,6 +224,7 @@ export function ProfileHero({
               @{profile.handle}
             </p>
           ) : null}
+        </div>
       </div>
       <div className="col-start-2! row-span-[20] flex shrink-0 flex-col items-end gap-1 self-start">
         {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
