@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { deckReviewQueueApi } from '@/lib/study/decks.contract';
 import { prisma } from '@/lib/prisma.server';
+import { isCardKind } from '@/lib/study/card-types';
+import { CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 
 /** GET /api/study/decks/$id/review — the viewer's due cards for this deck. */
 export const route = apiRoute('/api/study/decks/$id/review', {
@@ -17,12 +19,16 @@ export const route = apiRoute('/api/study/decks/$id/review', {
       return Response.json({ error: 'Not found' }, { status: 404 });
 
     const cards = await prisma.flashcard.findMany({
-      where: { deckId: params.id },
-      orderBy: { position: 'asc' },
+      // Reviewable cards only: an authored cloze card is the text its generated cards are made from.
+      where: { deckId: params.id, ...REVIEWABLE_WHERE },
+      orderBy: CARD_ORDER,
       select: {
         id: true,
         front: true,
         back: true,
+        kind: true,
+        sourceId: true,
+        clozeIndex: true,
         reviews: { where: { userId }, select: { dueAt: true } },
       },
     });
@@ -34,7 +40,14 @@ export const route = apiRoute('/api/study/decks/$id/review', {
         return !r || r.dueAt.getTime() <= now;
       })
       .slice(0, 50)
-      .map((c) => ({ id: c.id, front: c.front, back: c.back }));
+      .map((c) => ({
+        id: c.id,
+        front: c.front,
+        back: c.back,
+        kind: isCardKind(c.kind) ? c.kind : ('basic' as const),
+        clozeIndex: c.clozeIndex,
+        sourceId: c.sourceId,
+      }));
 
     return { due };
   }),

@@ -16,6 +16,8 @@ const exportRows = vi.hoisted(() => ({
 }));
 const queries = vi.hoisted(() => ({ values: [] as unknown[][] }));
 
+const reminderReset = vi.hoisted(() => ({ updateMany: vi.fn(async (_args: unknown) => ({ count: 0 })) }));
+
 vi.mock('@/lib/prisma.server', () => {
   const tx = {
     flashcardReview: {
@@ -39,6 +41,7 @@ vi.mock('@/lib/prisma.server', () => {
   return {
     prisma: {
       ...tx,
+      flashcardReminder: reminderReset,
       $queryRaw: rawQuery,
       $transaction: vi.fn(async (fn: (t: typeof tx) => Promise<void>) => {
         const snapshot = { reviews: [...db.reviews], logs: [...db.logs] };
@@ -69,6 +72,7 @@ beforeEach(() => {
   db.logs = [];
   failLog.on = false;
   queries.values = [];
+  reminderReset.updateMany.mockClear();
 });
 
 describe('saveReview', () => {
@@ -80,6 +84,24 @@ describe('saveReview', () => {
     ]);
   });
 
+  it('still saves the review when the reminder reset fails', async () => {
+    reminderReset.updateMany.mockRejectedValueOnce(new Error('db down'));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(
+      saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next }),
+    ).resolves.toBeUndefined();
+    expect(db.reviews).toHaveLength(1);
+    spy.mockRestore();
+  });
+
+  it('resets the reminder no-review counter, once the review is saved', async () => {
+    await saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next });
+    expect(reminderReset.updateMany).toHaveBeenCalledWith({
+      where: { userId: 'u1', sentSinceReview: { gt: 0 } },
+      data: { sentSinceReview: 0 },
+    });
+  });
+
   it('rolls the state back when the log write fails', async () => {
     failLog.on = true;
     await expect(
@@ -87,6 +109,7 @@ describe('saveReview', () => {
     ).rejects.toThrow('log write failed');
     expect(db.reviews).toHaveLength(0);
     expect(db.logs).toHaveLength(0);
+    expect(reminderReset.updateMany).not.toHaveBeenCalled();
   });
 });
 

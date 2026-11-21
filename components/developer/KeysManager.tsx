@@ -43,6 +43,7 @@ import {
 import { developerKeysQuery } from '@/lib/developer/developer.queries';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const EXPIRY_OPTIONS = [
   { key: 'keys-expiry-never', label: 'Never', days: 0 },
@@ -51,7 +52,7 @@ const EXPIRY_OPTIONS = [
   { key: 'keys-expiry-365', label: '1 year', days: 365 },
 ];
 
-export function KeysManager() {
+export function KeysManager() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-devplatform');
   const { t: tr } = useTranslation('key-restrictions');
   const confirm = useConfirm();
@@ -343,7 +344,7 @@ export function KeysManager() {
                       {k.lastUsedAt
                         ? t('keys-last-used', {
                             defaultValue: 'last used {{date}}',
-                            date: new Date(k.lastUsedAt).toLocaleDateString(),
+                            date: fmt.date(new Date(k.lastUsedAt)),
                           })
                         : t('keys-never-used', { defaultValue: 'never used' })}
                       {k.expiresAt && (
@@ -354,7 +355,7 @@ export function KeysManager() {
                             ? t('keys-expired', { defaultValue: 'expired' })
                             : t('keys-expires-on', {
                                 defaultValue: 'expires {{date}}',
-                                date: new Date(k.expiresAt).toLocaleDateString(),
+                                date: fmt.date(new Date(k.expiresAt)),
                               })}
                         </span>
                       )}

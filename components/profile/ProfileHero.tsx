@@ -32,6 +32,7 @@ import { CompareProfileLink } from '@/components/achievements/CompareProfileLink
 import type { ProfileData } from './profile-types';
 import { ProfileBanner } from './ProfileBanner';
 import './profile.css';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
 
@@ -177,15 +178,13 @@ export function ProfileHero({
   onJoinMembership,
   onShowSocial,
   onShowAchievements,
-}: ProfileHeroProps) {
+}: ProfileHeroProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('feed');
   const name = displayName || profile.username || t('user', { defaultValue: 'User' });
   // The banner box holds the uploaded picture; without one, the equipped banner cosmetic, or else the equipped theme's
   // backdrop. Steel phase 5 dropped the element that drew this value and left the line that computed it.
   const headerBackdrop = profile.cosmetics?.banner?.gradient ?? profile.cosmetics?.theme?.gradient;
-  const joined = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(
-    new Date(profile.createdAt),
-  );
+  const joined = fmt.date(new Date(profile.createdAt), { month: 'long', year: 'numeric' });
   const shareUrl = `${SITE_URL}/u/${profile.handle || profile.id}`;
   // A link the site pins to this profile, distinct from the owner-editable
   // `profile.links`. Null for everyone who isn't in the registry.
@@ -204,7 +203,7 @@ export function ProfileHero({
     : profile.cosmetics?.nameColor?.color
       ? { color: profile.cosmetics.nameColor.color }
       : undefined;
-  const count = (n: number) => n.toLocaleString();
+  const count = (n: number) => fmt.number(n);
 
   // The head row ends in a column: the profile song, then the share card and the link copy under it, or in the song's
   // place when there is none. The facts line (location, website, joined) leads each fact with a decorative icon.
@@ -542,7 +541,7 @@ export function ProfileHero({
               {profile.tipGoalLabel || t('tip-goal', { defaultValue: 'Tip goal' })}
             </h2>
             <span className="t-meta tabular-nums">
-              {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}
+              {fmt.number((profile.tipsThisMonth ?? 0))} / {fmt.number(profile.tipGoal)}
             </span>
           </div>
           <div

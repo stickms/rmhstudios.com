@@ -34,6 +34,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -250,7 +251,7 @@ function ApplicationEditor({
   onPatch: (patch: ApplicationPatch) => void;
   onRecordOffer: () => void;
   onClose: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation(['site', 'ladder-offers']);
   const job = app.job as AnyRow | undefined;
 
@@ -423,13 +424,13 @@ function ApplicationEditor({
               key={`${date.toISOString()}-${index}`}
               className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-bg-subtle py-1 pr-1 pl-3 text-sm"
             >
-              {date.toLocaleString()}
+              {fmt.dateTime(date)}
               <button
                 type="button"
                 className="touch-target inline-flex size-8 items-center justify-center rounded-site-sm text-site-text-muted transition-colors hover:text-site-text"
                 aria-label={t('ladder.pipeline.removeInterview', {
                   defaultValue: 'Remove interview {{date}}',
-                  date: date.toLocaleString(),
+                  date: fmt.dateTime(date),
                 })}
                 onClick={() =>
                   onPatch({

@@ -6,7 +6,8 @@ import { createNotification } from '@/lib/notifications.server';
 import { creditCoins, debitCoins, EscrowError, recordWagerTxn } from '@/lib/wager/escrow.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
 import { TOURNAMENT_RAKE_BPS } from '@/lib/wager/constants';
-import { generateBracket, resolveBracketRows } from './bracket';
+import { MIN_DOUBLE_ELIM_PLAYERS } from './tournament-schema';
+import { generateBracket, rankDoubleElim, resolveBracketRows } from './bracket';
 import { pairRound, recommendedRounds, type Pairing } from './swiss';
 import {
   computePayouts,
@@ -15,22 +16,14 @@ import {
 } from './swiss-flow';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { checkInShortfall, isCheckInOpen, isCheckInMinutes, noShows, checkInOpensAt } from './checkin';
+import { TournamentError } from './tournament-error';
+import { orderForStart } from './seeding.server';
+import { ratingSeedingAvailable, type SeedingMethod } from './seeding';
 import { randomUUID } from 'node:crypto';
 
 type Db = PrismaClient;
 
-export class TournamentError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly status: number = 400,
-    /** Numbers the client words itself (a refused start reports `checkedIn` and `needed`). */
-    public readonly details?: Record<string, number>,
-  ) {
-    super(message);
-    this.name = 'TournamentError';
-  }
-}
+export { TournamentError };
 
 /** Reporting a result for a match its tournament's cancellation closed. */
 function matchCancelledError(): TournamentError {
@@ -48,12 +41,14 @@ export async function createTournament(
     createdById: string;
     name: string;
     gameId: string;
-    format: 'SINGLE_ELIM' | 'ROUND_ROBIN' | 'SWISS';
+    format: 'SINGLE_ELIM' | 'DOUBLE_ELIM' | 'ROUND_ROBIN' | 'SWISS';
     entryFeeCoins: number;
     seedPoolCoins?: number;
     maxPlayers: number;
     startsAt?: string | null;
     checkInMinutes?: number | null;
+    /** How the field is seeded at the start; sign-up order when left out. */
+    seeding?: SeedingMethod;
   },
   db: Db = prisma,
 ): Promise<string> {
@@ -62,6 +57,9 @@ export async function createTournament(
   }
   if (opts.checkInMinutes != null && (!isCheckInMinutes(opts.checkInMinutes) || !opts.startsAt)) {
     throw new TournamentError('Check-in needs a start time', 'NO_START_TIME', 400);
+  }
+  if (opts.seeding === 'rating' && !ratingSeedingAvailable(opts.gameId)) {
+    throw new TournamentError('Rating seeding is only for ranked games', 'RATING_UNAVAILABLE', 400);
   }
   const seed = opts.seedPoolCoins ?? 0;
   try {
@@ -80,9 +78,11 @@ export async function createTournament(
           prizePoolCoins: seed,
           rakeBps: TOURNAMENT_RAKE_BPS,
           maxPlayers: opts.maxPlayers,
+          minPlayers: opts.format === 'DOUBLE_ELIM' ? MIN_DOUBLE_ELIM_PLAYERS : undefined,
           createdById: opts.createdById,
           startsAt: opts.startsAt ? new Date(opts.startsAt) : null,
           checkInMinutes: opts.checkInMinutes ?? null,
+          seeding: opts.seeding ?? 'join',
           status: 'REGISTRATION',
         },
       });
@@ -277,6 +277,8 @@ export async function startTournament(
   // The per-tournament advisory lock serialises the start with check-ins and
   // settings changes, which take the same lock.
   const removedUserIds: string[] = [];
+  // The method is read under the lock, so a change racing the start is either seen or refused.
+  let seeding: string | undefined;
   const takeField = async (tx: Prisma.TransactionClient) => {
     const all = await tx.tournamentEntrant.findMany({
       where: { tournamentId: t.id },
@@ -284,8 +286,9 @@ export async function startTournament(
     });
     const live = await tx.tournament.findUnique({
       where: { id: t.id },
-      select: { startsAt: true, checkInMinutes: true },
+      select: { startsAt: true, checkInMinutes: true, seeding: true },
     });
+    seeding = live?.seeding;
     const now = new Date();
     const dropped = live ? noShows(live, all, now) : [];
     if (live && isCheckInOpen(live, now)) {
@@ -324,7 +327,8 @@ export async function startTournament(
       // Lock first (rounds are fixed after reading entrants, under the lock).
       await lockKey(tx, `tournament:${t.id}`);
       await claimStart(tx, {});
-      const entrants = await takeField(tx);
+      const field = await takeField(tx);
+      const entrants = await orderForStart(tx, { gameId: t.gameId, seeding }, field);
       assertEnough(entrants.length);
       const orderedIds = entrants.map((e) => e.id);
       const pairs = pairRound(orderedIds, []);
@@ -345,15 +349,17 @@ export async function startTournament(
   await db.$transaction(async (tx) => {
     await lockKey(tx, `tournament:${t.id}`);
     await claimStart(tx, {});
-    const entrants = await takeField(tx);
+    const field = await takeField(tx);
+    const entrants = await orderForStart(tx, { gameId: t.gameId, seeding }, field);
     assertEnough(entrants.length);
 
-    // Seed by join order, then build the bracket over entrant ids. Match ids
+    // Seed by the tournament's method (sign-up order unless the host chose
+    // another), then build the bracket over entrant ids. Match ids
     // are minted here rather than discovered from the database, so the whole
     // bracket — including every nextMatchId link — is fully resolved before
     // anything is written (see resolveBracketRows).
     const orderedIds = entrants.map((e) => e.id);
-    const bracket = generateBracket(t.format as 'SINGLE_ELIM' | 'ROUND_ROBIN', orderedIds);
+    const bracket = generateBracket(t.format as 'SINGLE_ELIM' | 'DOUBLE_ELIM' | 'ROUND_ROBIN', orderedIds);
     const matchRows = resolveBracketRows(bracket.matches, randomUUID);
 
     // Assign seeds.
@@ -371,7 +377,7 @@ export async function startTournament(
     // connection — comfortably past Prisma's default 5s interactive-transaction
     // timeout, i.e. starting a large tournament could not succeed at all.
     // Chunked so a very large bracket stays clear of Postgres' bind-parameter
-    // ceiling (~65535 per statement, and each row binds 9).
+    // ceiling (~65535 per statement, and each row binds 12).
     const CHUNK = 1000;
     for (let i = 0; i < matchRows.length; i += CHUNK) {
       await tx.tournamentMatch.createMany({
@@ -385,6 +391,9 @@ export async function startTournament(
           state: m.state === 'BYE' ? 'BYE' : m.state === 'READY' ? 'READY' : 'PENDING',
           nextMatchId: m.nextMatchId,
           nextSlot: m.nextSlot,
+          bracket: m.bracket,
+          loserNextMatchId: m.loserNextMatchId,
+          loserNextSlot: m.loserNextSlot,
         })),
       });
     }
@@ -487,19 +496,32 @@ async function advanceSwiss(tournamentId: string, db: Db): Promise<boolean> {
 
 // ─── Match settlement + bracket advance ─────────────────────────────────────
 
+/** Put an entrant into one slot of a match; the match is READY once both slots are filled. */
+async function fillSlot(
+  tx: Prisma.TransactionClient,
+  matchId: string,
+  slot: number | null,
+  entrantId: string,
+): Promise<void> {
+  const data = slot === 1 ? { entrantBId: entrantId } : { entrantAId: entrantId };
+  await tx.tournamentMatch.update({ where: { id: matchId }, data });
+  const next = await tx.tournamentMatch.findUnique({ where: { id: matchId } });
+  if (next && next.entrantAId && next.entrantBId && next.state === 'PENDING') {
+    await tx.tournamentMatch.update({ where: { id: next.id }, data: { state: 'READY' } });
+  }
+}
+
 async function advanceIntoNext(
   tx: Prisma.TransactionClient,
   match: TournamentMatch,
   winnerEntrantId: string,
+  loserId: string | null,
 ): Promise<void> {
-  if (!match.nextMatchId) return; // final — no onward flow
-  const data =
-    match.nextSlot === 1 ? { entrantBId: winnerEntrantId } : { entrantAId: winnerEntrantId };
-  await tx.tournamentMatch.update({ where: { id: match.nextMatchId }, data });
-  // If both slots are now filled, mark the next match READY.
-  const next = await tx.tournamentMatch.findUnique({ where: { id: match.nextMatchId } });
-  if (next && next.entrantAId && next.entrantBId && next.state === 'PENDING') {
-    await tx.tournamentMatch.update({ where: { id: next.id }, data: { state: 'READY' } });
+  if (match.nextMatchId) await fillSlot(tx, match.nextMatchId, match.nextSlot, winnerEntrantId);
+  // Double elimination: a winners-bracket loser drops into the losers bracket.
+  // A bye has no loser, so nothing is routed for one.
+  if (match.loserNextMatchId && loserId) {
+    await fillSlot(tx, match.loserNextMatchId, match.loserNextSlot, loserId);
   }
 }
 
@@ -533,6 +555,13 @@ export async function settleMatch(
       throw new TournamentError('Tournament is not live', 'NOT_LIVE', 409);
     }
     const swiss = tournament.format === 'SWISS';
+    const double = tournament.format === 'DOUBLE_ELIM';
+    // Double elimination: the winners champion's first grand-final loss is not an
+    // elimination (the bracket reset follows) and nobody leaves from the winners
+    // bracket; every other loss in every non-Swiss format does eliminate.
+    const resetFollows =
+      double && match.bracket === 'GF' && opts.winnerEntrantId === match.entrantBId;
+    const eliminates = !swiss && !resetFollows && !(double && match.bracket === 'W');
 
     // CAS on "still open": a concurrent settle of the same match (two reports,
     // or a report racing the hub) sees count 0 and changes nothing, so
@@ -555,13 +584,29 @@ export async function settleMatch(
     if (loserId) {
       await tx.tournamentEntrant.update({
         where: { id: loserId },
-        data: swiss
-          ? { losses: { increment: 1 } }
-          : { losses: { increment: 1 }, eliminatedAt: new Date() },
+        data: eliminates
+          ? { losses: { increment: 1 }, eliminatedAt: new Date() }
+          : { losses: { increment: 1 } },
       });
     }
-    await advanceIntoNext(tx, match, opts.winnerEntrantId);
-    const isFinal = match.nextMatchId == null;
+    await advanceIntoNext(tx, match, opts.winnerEntrantId, loserId);
+    if (resetFollows) {
+      // The losers champion beat the winners champion: the same two play again,
+      // and whoever wins that decides the tournament. Only the settle that won
+      // the claim above gets here, so the reset is created once.
+      await tx.tournamentMatch.create({
+        data: {
+          tournamentId: opts.tournamentId,
+          round: match.round + 1,
+          slot: 0,
+          bracket: 'GR',
+          entrantAId: match.entrantAId,
+          entrantBId: match.entrantBId,
+          state: 'READY',
+        },
+      });
+    }
+    const isFinal = match.nextMatchId == null && !resetFollows;
     return { settled: true, isFinal, swiss };
   });
 
@@ -602,10 +647,15 @@ async function maybeCompleteTournament(tournamentId: string, db: Db): Promise<bo
     const entrants = await tx.tournamentEntrant.findMany({ where: { tournamentId } });
 
     // Rank entrants: Swiss by standings (points, Buchholz, seed), round-robin
-    // by wins; single-elim by last-eliminated + wins.
+    // by wins; single-elim by last-eliminated + wins; double-elim by the final, then the
+    // losers-bracket round each player fell in (rankDoubleElim).
     let ranked = [...entrants];
     let swissAmounts: Map<string, number> | null = null;
-    if (t.format === 'SWISS') {
+    if (t.format === 'DOUBLE_ELIM') {
+      const matches = await tx.tournamentMatch.findMany({ where: { tournamentId } });
+      const byId = new Map(entrants.map((e) => [e.id, e]));
+      ranked = rankDoubleElim(entrants, matches).map((id) => byId.get(id)!);
+    } else if (t.format === 'SWISS') {
       const matches = await tx.tournamentMatch.findMany({ where: { tournamentId } });
       const bySeed = [...entrants].sort((a, b) => (a.seed ?? 0) - (b.seed ?? 0));
       const settlement = swissSettlement(
@@ -850,6 +900,8 @@ export interface SerializedTournament {
   checkInMinutes: number | null;
   /** When check-in opens (ISO), or null when there is none. */
   checkInOpensAt: string | null;
+  /** How the field is seeded at the start: join, rating, random or manual. */
+  seeding: string;
   createdAt: string;
   entrants?: {
     id: string;
@@ -868,6 +920,9 @@ export interface SerializedTournament {
     entrantBId: string | null;
     winnerEntrantId: string | null;
     state: TournamentMatch['state'];
+    /** W winners, L losers, GF grand final, GR bracket reset (W for non-double-elimination formats). */
+    bracket: string;
+    loserNextMatchId: string | null;
   }[];
   payouts?: { userId: string; placement: number; amountCoins: number }[];
   viewerEntered?: boolean;
@@ -896,6 +951,7 @@ function serializeSummary(t: Tournament & { _count: { entrants: number } }): Ser
     startsAt: t.startsAt?.toISOString() ?? null,
     checkInMinutes: t.checkInMinutes,
     checkInOpensAt: checkInOpensAt(t)?.toISOString() ?? null,
+    seeding: t.seeding,
     createdAt: t.createdAt.toISOString(),
   };
 }
@@ -952,6 +1008,8 @@ export async function getTournament(
       entrantBId: m.entrantBId,
       winnerEntrantId: m.winnerEntrantId,
       state: m.state,
+      bracket: m.bracket,
+      loserNextMatchId: m.loserNextMatchId,
     })),
     payouts: t.payouts.map((p) => ({
       userId: p.userId,

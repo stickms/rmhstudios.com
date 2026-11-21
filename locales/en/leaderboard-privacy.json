@@ -1,0 +1,7 @@
+{
+  "load-failed": "Could not load this setting. Reload the page to try again.",
+  "save-failed": "Could not save that setting",
+  "show-me": "Show me on game leaderboards",
+  "show-me-hint": "When this is off, your scores stay yours but you are left off every public board. You still see your own best and where it would rank.",
+  "title": "Leaderboards"
+}

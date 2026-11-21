@@ -6,6 +6,7 @@ import {
   MAX_TOURNAMENT_SEED,
   MIN_TOURNAMENT_PLAYERS,
 } from '@/lib/wager/constants';
+import { seedingMethodSchema } from './seeding-schema';
 
 /** The check-in windows a host can pick: minutes before the start (s04-03). */
 const checkInMinutesSchema = z.union([z.literal(10), z.literal(15), z.literal(30), z.literal(60)]);
@@ -20,6 +21,9 @@ export const hostCheckInSchema = z.object({
   checkedIn: z.boolean(),
 });
 export type HostCheckInInput = z.infer<typeof hostCheckInSchema>;
+
+/** A double-elimination bracket needs at least four players to have a losers bracket worth playing. */
+export const MIN_DOUBLE_ELIM_PLAYERS = 4;
 
 export const createTournamentSchema =
   z.object(
@@ -40,6 +44,7 @@ export const createTournamentSchema =
         z.enum(
           [
             'SINGLE_ELIM',
+            'DOUBLE_ELIM',
             'ROUND_ROBIN',
             'SWISS',
           ],
@@ -85,8 +90,12 @@ export const createTournamentSchema =
         checkInMinutesSchema
           .nullable()
           .optional(),
+      seeding: seedingMethodSchema.optional(),
     },
-  ).refine(
+  ).refine((v) => v.format !== 'DOUBLE_ELIM' || v.maxPlayers >= MIN_DOUBLE_ELIM_PLAYERS, {
+    message: 'Double elimination needs at least 4 players',
+    path: ['maxPlayers'],
+  }).refine(
     (v) => v.checkInMinutes == null || !!v.startsAt,
     { message: 'Check-in needs a start time', path: ['checkInMinutes'] },
   ).refine(

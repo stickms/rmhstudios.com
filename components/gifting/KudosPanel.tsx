@@ -5,7 +5,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/lib/toast';
 import { Heart, Trash2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
@@ -19,8 +18,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { apiJson } from '@/components/wallet/api';
 import { KUDOS_REASON_MAX, type KudosPage } from '@/lib/gifting/kudos';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
-export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOwner: boolean }) {
+export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOwner: boolean }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-gifting');
   const { data: session } = useSession();
   const me = session?.user?.id ?? null;
@@ -150,7 +150,7 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
                   ) : (
                     (k.from.name ?? '')
                   )}{' '}
-                  · {formatDistanceToNow(new Date(k.createdAt), { addSuffix: true })}
+                  · {fmt.relative(new Date(k.createdAt))}
                 </p>
               </div>
               {isOwner || k.from.id === me ? (

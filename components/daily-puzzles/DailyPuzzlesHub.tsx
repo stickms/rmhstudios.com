@@ -58,6 +58,7 @@ import { StatsLink } from '@/components/daily-puzzles/StatsLink';
 import { useSession } from '@/components/Providers';
 import { apiQuery } from '@/lib/contract/client';
 import { getDailyStatsApi } from '@/lib/daily-puzzles/stats.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const LIGHTS_OUT = 'lights-out';
 const GENERIC_MODES = DESK_MODES.filter((m) => m.id !== LIGHTS_OUT);
@@ -167,7 +168,7 @@ export function DailyPuzzlesHub({
   sectionTabs?: ReactNode;
   /** The tabpanel id the strip's Puzzles tab controls. */
   panelId?: string;
-} = {}) {
+} = {}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-daily-puzzles');
   const modeText = deskModeText(t);
   const navigate = useNavigate();
@@ -182,8 +183,8 @@ export function DailyPuzzlesHub({
   const todayKey = useMemo(() => formatDateKey(today), [today]);
   const puzzleNumber = useMemo(() => getPuzzleNumber(today), [today]);
   const dateLabel = useMemo(
-    () => today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
-    [today],
+    () => fmt.date(today, { weekday: 'long', month: 'long', day: 'numeric' }),
+    [today, fmt],
   );
 
   const [mounted, setMounted] = useState(false);

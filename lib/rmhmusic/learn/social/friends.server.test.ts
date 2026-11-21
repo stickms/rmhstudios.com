@@ -531,6 +531,11 @@ vi.mock(
   }),
 );
 
+// s05-01: game boards (scopeFilter) leave hidden and banned members off; none here.
+vi.mock('@/lib/game/leaderboard-privacy.server', () => ({
+  leaderboardHiddenUserIds: async () => new Set<string>(),
+}));
+
 import { loadFriendsProgress } from './friends.server';
 
 const NOW =

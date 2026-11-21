@@ -24,6 +24,7 @@ import { BUY_GROUPS, buyCatalog, type BuyEntry, type BuyGroupId } from '@/lib/cs
 import { csWeapon, hasCsWeaponData } from '@/lib/csgo-game/data/weapon-data';
 import { CS_TEAM_CT, CS_TEAM_T, CS_WIN_BOMB_DEFUSED, CS_WIN_TARGET_BOMBED, CS_WIN_TARGET_SAVED } from '@/lib/csgo-game/constants';
 import './cs-hud.css';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const clock = (s: number | null): string => {
   if (s === null || !Number.isFinite(s)) return '';
@@ -47,7 +48,7 @@ export default function CsHud({
   store: HudStore;
   input?: InputState;
   onCapture?: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-tf2-game');
   const cs = state.cs;
   const local = state.local;
@@ -131,7 +132,7 @@ export default function CsHud({
       </div>
 
       <div className="csg-money">
-        <span>${cs.money.toLocaleString()}</span>
+        <span>${fmt.number(cs.money)}</span>
         {cs.canBuy ? (
           <button type="button" className="csg-buy-cue" onClick={() => setBuyOpen(true)}>
             {t('cs_buy_open', { defaultValue: 'Buy (B)' })}
@@ -287,7 +288,7 @@ interface WheelSlice {
  * item wheel up; right click, Backspace or the centre's Back returns to the categories. The centre
  * shows the hovered item's name and price, otherwise our money and the buy time left.
  */
-function BuyMenu({ team, cs, input, onBuy, onClose }: { team: number; cs: HudCs; input?: InputState; onBuy: (cmd: string) => void; onClose: () => void }) {
+function BuyMenu({ team, cs, input, onBuy, onClose }: { team: number; cs: HudCs; input?: InputState; onBuy: (cmd: string) => void; onClose: () => void }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-tf2-game');
   const catalog = useMemo(() => buyCatalog(team, cs.money), [team, cs.money]);
   const [group, setGroup] = useState<BuyGroupId | null>(null);
@@ -395,7 +396,7 @@ function BuyMenu({ team, cs, input, onBuy, onClose }: { team: number; cs: HudCs;
             const a0 = start + i * sweep;
             const [x, y] = polar(a0 + sweep / 2, WHEEL.label);
             const item = s.price !== undefined;
-            const label = item ? t('cs_buy_item', { defaultValue: '{{name}}, ${{price}}', name: s.name, price: (s.price ?? 0).toLocaleString() }) : s.name;
+            const label = item ? t('cs_buy_item', { defaultValue: '{{name}}, ${{price}}', name: s.name, price: fmt.number((s.price ?? 0)) }) : s.name;
             return (
               <g
                 key={s.id}
@@ -441,7 +442,7 @@ function BuyMenu({ team, cs, input, onBuy, onClose }: { team: number; cs: HudCs;
                   </text>
                   {item ? (
                     <text className="csg-wheel-price" x={num(x)} y={num(y + 13)}>
-                      ${(s.price ?? 0).toLocaleString()}
+                      ${fmt.number((s.price ?? 0))}
                     </text>
                   ) : null}
                 </g>
@@ -458,12 +459,12 @@ function BuyMenu({ team, cs, input, onBuy, onClose }: { team: number; cs: HudCs;
             <>
               <span className="csg-wheel-item">{shown.name}</span>
               <span className="csg-wheel-money" data-short={shown.disabled || undefined}>
-                ${shown.price.toLocaleString()}
+                ${fmt.number(shown.price)}
               </span>
             </>
           ) : (
             <>
-              <span className="csg-wheel-money">${cs.money.toLocaleString()}</span>
+              <span className="csg-wheel-money">${fmt.number(cs.money)}</span>
               <span className="csg-wheel-time">{t('cs_buy_time', { defaultValue: '{{s}} s left', s: Math.ceil(cs.buyTimeLeft) })}</span>
             </>
           )}

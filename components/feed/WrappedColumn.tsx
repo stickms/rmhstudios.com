@@ -22,6 +22,7 @@ import { PinnedHero } from'@/components/feed/PinnedHero';
 import { api } from'@/lib/contract/client';
 import { getWrappedApi } from'@/lib/wrapped/wrapped.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Wrapped {
  year: number;
@@ -44,8 +45,6 @@ interface Wrapped {
  } | null;
  blurb: string;
 }
-
-const fmt = (n: number) => n.toLocaleString();
 /** Seconds as hours with one decimal; under an hour, minutes. */
 const hours = (s: number) => (s < 3600 ? `${Math.floor(s / 60)} min` : `${(s / 3600).toFixed(1)} h`);
 
@@ -54,7 +53,7 @@ export function WrappedColumn({
 }: {
  /** Current-year Wrapped prefetched by the route loader; `null`when signed out. */
  initialData?: Wrapped | null;
-} = {}) {
+} = {}) { const fmt = useLocaleFormat().number; 
  const { t } = useTranslation('feed');
  // Seed from the loader when provided so the summary paints immediately.
  const seeded = useRef(initialData !== undefined && initialData !== null);

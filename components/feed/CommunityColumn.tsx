@@ -12,8 +12,8 @@ import {
  Send,
  Gamepad2,
 } from'lucide-react';
-import { formatDistanceToNow } from'date-fns';
 import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
+import { PostAlertsControl } from'@/components/communities/PostAlertsControl';
 import { RulesAgreementDialog } from'@/components/communities/CommunityRules';
 import { getRulesApi } from'@/lib/communities/rules.contract';
 import type { CommunityRuleDTO } from'@/lib/communities/rules';
@@ -46,6 +46,7 @@ import {
 import { useArrival } from '@/components/ui/arrive';
 import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Announcement {
  id: string;
@@ -94,7 +95,7 @@ export function CommunityColumn({
  initialCommunity?: CommunityData | null;
  /** First page of posts prefetched by the route loader. */
  initialItems?: FeedItem[] | null;
-}) {
+}) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
  const { data: session } = useSession();
  const seeded = useRef(initialCommunity !== undefined);
@@ -268,6 +269,7 @@ export function CommunityColumn({
  <FindATimeLink communityId={community.id} variant="button"/>
  )}
  {session && community.joined && <WatchControl kind="community"targetId={community.id}/>}
+ {session && community.joined && <PostAlertsControl slug={slug} />}
  {session && (
  <Button size="sm"variant="default"onClick={() => setMembersOpen(true)}>
  {t('members-button', { defaultValue:'Members'})}
@@ -352,7 +354,7 @@ export function CommunityColumn({
  </span>
  <span>·</span>
  <span>
- {formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })}
+ {fmt.relative(new Date(a.createdAt))}
  </span>
  </div>
  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text">

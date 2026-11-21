@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 /* ═══════════════════════════════════════════
    VELUM2099: GHOST ROUTE — Story HUD
    In-game DOM overlays for Story Mode:
@@ -472,7 +473,7 @@ export class StoryHud {
           <h2>路线完成 · ROUTE COMPLETE</h2>
           <div class="sub">${_esc(info.title || '')}</div>
           <div class="vs-stats">
-            <span>Credits <b>+¥${(info.credits || 0).toLocaleString()}</b></span>
+            <span>Credits <b>+¥${formatNumber((info.credits || 0), currentDocumentLocale())}</b></span>
             <span>Evidence <b>${info.evidenceCount || 0}</b></span>
             <span>Vela <b>${Math.round(info.vela || 0)}%</b></span>
             <span>Alert <b>${Math.round(info.alert || 0)}%</b></span>

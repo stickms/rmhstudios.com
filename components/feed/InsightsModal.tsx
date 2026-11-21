@@ -8,6 +8,7 @@ import { postInsightsApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Insights {
  createdAt: string;
@@ -30,9 +31,7 @@ interface InsightsModalProps {
  postId: string;
 }
 
-const fmt = (n: number) => n.toLocaleString();
-
-export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
+export function InsightsModal({ open, onClose, postId }: InsightsModalProps) { const lfmt = useLocaleFormat(); const fmt = lfmt.number; 
  const { t } = useTranslation('feed');
  const [data, setData] = useState<Insights | null>(null);
  // Mounted open: loading from the first render, so "Could not load" never flashes before the fetch starts.
@@ -139,7 +138,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  />
  </div>
  <span className="text-tiny text-site-text-muted">
- {new Date(d.date).toLocaleDateString(undefined, { weekday:'narrow'})}
+ {lfmt.date(new Date(d.date), { weekday:'narrow'})}
  </span>
  </div>
  ))}
@@ -147,7 +146,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  </div>
 
  <p className="mt-4 text-center text-xs text-site-text-muted">
- {t('posted-date', { date: new Date(data.createdAt).toLocaleString(), defaultValue:'Posted {{date}}'})}
+ {t('posted-date', { date: lfmt.dateTime(new Date(data.createdAt)), defaultValue:'Posted {{date}}'})}
  </p>
  </div>
  )}

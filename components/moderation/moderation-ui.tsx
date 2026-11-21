@@ -14,7 +14,6 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldAlert } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import {
@@ -50,6 +49,7 @@ import {
   type RestrictableFeature,
 } from '@/lib/moderation/restrictions';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export {
   RESTRICTABLE_FEATURES,
@@ -187,7 +187,7 @@ export function RestrictionList({
   liftingId?:
     | string
     | null;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -253,14 +253,9 @@ export function RestrictionList({
                           'Ends',
                       },
                     )}{' '}
-                    {formatDistanceToNow(
-                      new Date(
+                    {fmt.relative(new Date(
                         r.expiresAt,
-                      ),
-                      {
-                        addSuffix: true,
-                      },
-                    )}
+                      ))}
                   </>
                 ) : (
                   t(

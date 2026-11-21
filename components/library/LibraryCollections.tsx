@@ -36,6 +36,7 @@ import {
   removeLibraryCollectionBookApi,
   updateLibraryCollectionApi,
 } from '@/lib/library/collections.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Cover image styled to fill the 3D book cover (absolute inset-0), with blur-up. */
 const COVER_WRAP = 'absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]';
@@ -433,7 +434,7 @@ function ViewModal({
 }
 
 /** A compact, non-editable book card (link to the reader). */
-function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => void }) {
+function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => void }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('library');
   const style = { '--book-hue': String(book.hue) } as React.CSSProperties;
   return (
@@ -463,7 +464,7 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
             <span className="lib-book__title">{book.title}</span>
           )}
           {book.pages > 0 && (
-            <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>
+            <span className="lib-book__pages-badge">{fmt.number(book.pages)} pp</span>
           )}
           {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
         </div>

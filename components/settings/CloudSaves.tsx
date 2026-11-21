@@ -20,7 +20,6 @@ import {
   History,
   Upload,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import {
   api,
   apiQuery,
@@ -54,6 +53,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function backupError(
   t: TFunction,
@@ -131,7 +131,7 @@ function SaveRow({
   open: boolean;
   onToggle: () => void;
   onRestored: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -486,14 +486,9 @@ function SaveRow({
                 'saved-at',
                 {
                   relative:
-                    formatDistanceToNow(
-                      new Date(
+                    fmt.relative(new Date(
                         save.savedAt,
-                      ),
-                      {
-                        addSuffix: true,
-                      },
-                    ),
+                      )),
                   exact:
                     formatWhen(
                       save.savedAt,

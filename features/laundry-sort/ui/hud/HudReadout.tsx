@@ -24,6 +24,7 @@ import {
   Flame,
 } from 'lucide-react';
 import type { LaundryMatch } from '@features/laundry-sort/engine/match';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Props {
   matchRef: React.RefObject<LaundryMatch | null>;
@@ -54,7 +55,7 @@ function formatClock(
 export function HudReadout({
   matchRef,
   running,
-}: Props) {
+}: Props) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -129,7 +130,7 @@ export function HudReadout({
           lastScore =
             score;
           scoreRef.current.textContent =
-            score.toLocaleString();
+            fmt.number(score);
         }
 
         const clock =
@@ -187,6 +188,7 @@ export function HudReadout({
   }, [
     matchRef,
     running,
+    fmt,
   ]);
 
   // One announcement a second, not sixty.

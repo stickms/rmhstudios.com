@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface GlobalLeaderboardProps {
   currentUserId?: string;
@@ -32,7 +33,7 @@ export const GlobalLeaderboard: React.FC<
   compact = false,
   autoRefresh = false,
   refreshKey = 0,
-}) => {
+}) => { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -326,7 +327,7 @@ export const GlobalLeaderboard: React.FC<
                   <span
                     className={`ss-glb-score ${isNewBest ? 'ss-glb-score-new' : ''}`}
                   >
-                    {entry.highScore.toLocaleString()}
+                    {fmt.number(entry.highScore)}
                   </span>
                 </div>
               );

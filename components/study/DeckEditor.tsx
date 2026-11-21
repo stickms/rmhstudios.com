@@ -9,12 +9,17 @@ import { SortableList } from '@/components/ui/sortable-list';
 import { Switch } from '@/components/ui/switch';
 import { Tabs } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { CardForm } from '@/components/study/CardForm';
 import { CardRow, type EditorCard } from '@/components/study/CardRow';
 import { ExportMenu } from '@/components/study/ExportMenu';
 import { ImportPanel } from '@/components/study/ImportPanel';
 import { api } from '@/lib/contract/client';
 import { toast } from '@/lib/toast';
+import { clozePlainText, type CardInput } from '@/lib/study/card-types';
+import type { ParsedCard } from '@/lib/study/import';
+import { MAX_DECK_CARDS } from '@/lib/study/limits';
 import {
+  addDeckCardApi,
   deleteCardApi,
   getDeckApi,
   importCardsApi,
@@ -32,10 +37,14 @@ const UNDO_MS = 8000;
 /** The owner's editor for one deck: cards, import and export, deck settings. */
 export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckDetail }) {
   const { t } = useTranslation('study-editor');
+  const { t: ts } = useTranslation('flashcard-types');
   const base = useId();
   const [tab, setTab] = useState<TabId>('cards');
   const [meta, setMeta] = useState(initial.deck);
   const [cards, setCards] = useState<EditorCard[]>(initial.cards);
+  // Authored cards are listed; the deck holds more rows than that (reverse and cloze cards are
+  // generated) and the 2,000-card cap counts every row.
+  const [counts, setCounts] = useState({ review: initial.reviewCount, rows: initial.rowCount });
 
   // Order saves are coalesced: one in flight, the latest order waiting behind it.
   const savedOrder = useRef(initial.cards.map((c) => c.id));
@@ -84,7 +93,17 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
     saveOrder(next.map((c) => c.id));
   }
 
-  async function saveCard(id: string, next: { front: string; back: string }): Promise<boolean> {
+  /** Generated cards come and go with an edit: read the counts back (the list itself is already right). */
+  async function refreshCounts() {
+    try {
+      const fresh = await api(getDeckApi, { params: { id: deckId } });
+      setCounts({ review: fresh.reviewCount, rows: fresh.rowCount });
+    } catch {
+      /* the counts catch up on the next change */
+    }
+  }
+
+  async function saveCard(id: string, next: CardInput): Promise<boolean> {
     try {
       await api(updateCardApi, { params: { id }, body: next });
     } catch {
@@ -92,7 +111,21 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
       return false;
     }
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...next } : c)));
+    void refreshCounts();
     return true;
+  }
+
+  async function addCard(card: CardInput): Promise<boolean> {
+    try {
+      const res = await api(addDeckCardApi, { params: { id: deckId }, body: card });
+      setCards((prev) => [...prev, res.card]);
+      savedOrder.current = [...savedOrder.current, res.card.id];
+      void refreshCounts();
+      return true;
+    } catch {
+      toast.error(t('card-add-failed', { defaultValue: 'Could not add the card' }));
+      return false;
+    }
   }
 
   function deleteCard(card: EditorCard) {
@@ -125,6 +158,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
         await api(deleteCardApi, { params: { id: card.id } });
         savedOrder.current = savedOrder.current.filter((id) => id !== card.id);
         pendingDeletes.current.delete(card.id);
+        void refreshCounts();
       } catch {
         pendingDeletes.current.delete(card.id);
         restore();
@@ -147,12 +181,13 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
     });
   }
 
-  async function importCards(batch: { front: string; back: string }[]): Promise<boolean> {
+  async function importCards(batch: ParsedCard[]): Promise<boolean> {
     try {
       const res = await api(importCardsApi, { params: { id: deckId }, body: { cards: batch } });
       const fresh = await api(getDeckApi, { params: { id: deckId } });
       setCards(fresh.cards);
       setMeta(fresh.deck);
+      setCounts({ review: fresh.reviewCount, rows: fresh.rowCount });
       savedOrder.current = fresh.cards.map((c) => c.id);
       toast.success(
         t('imported', {
@@ -201,33 +236,58 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
 
       <div className="pt-4">
         <section {...panel('cards')}>
-          {cards.length === 0 ? (
-            <EmptyState
-              title={t('no-cards', { defaultValue: 'No cards yet' })}
-              description={t('no-cards-hint', {
-                defaultValue: 'Paste a list in Import, or add cards one at a time from the deck page.',
+          <div className="flex flex-col gap-4">
+            <p className="t-meta">
+              {ts('card-count', {
+                count: cards.length,
+                defaultValue_one: '{{count}} card',
+                defaultValue: '{{count}} cards',
               })}
-              action={
-                <Button variant="default" onClick={() => setTab('import')}>
-                  {t('go-import', { defaultValue: 'Import cards' })}
-                </Button>
-              }
-            />
-          ) : (
-            <SortableList
-              items={cards}
-              onReorder={reorder}
-              itemLabel={(c) => c.front}
-              className="gap-0 divide-y divide-site-border border-y border-site-border"
-              renderItem={(card) => <CardRow card={card} onSave={saveCard} onDelete={deleteCard} />}
-            />
-          )}
+              {' · '}
+              {ts('review-count', { count: counts.review, defaultValue: '{{count}} to review' })}
+              {' · '}
+              {ts('rows-left', {
+                count: Math.max(0, MAX_DECK_CARDS - counts.rows),
+                defaultValue_one: 'Room for {{count}} more card',
+                defaultValue: 'Room for {{count}} more cards',
+              })}
+            </p>
+            <div className="flex flex-col gap-2 border-b border-site-border pb-4">
+              <h2 className="t-heading">{ts('add-card', { defaultValue: 'Add a card' })}</h2>
+              <CardForm
+                submitLabel={ts('add-card-submit', { defaultValue: 'Add card' })}
+                resetOnSave
+                onSubmit={addCard}
+              />
+            </div>
+            {cards.length === 0 ? (
+              <EmptyState
+                title={t('no-cards', { defaultValue: 'No cards yet' })}
+                description={t('no-cards-hint', {
+                  defaultValue: 'Paste a list in Import, or add cards one at a time from the deck page.',
+                })}
+                action={
+                  <Button variant="default" onClick={() => setTab('import')}>
+                    {t('go-import', { defaultValue: 'Import cards' })}
+                  </Button>
+                }
+              />
+            ) : (
+              <SortableList
+                items={cards}
+                onReorder={reorder}
+                itemLabel={(c) => (c.kind === 'cloze' ? clozePlainText(c.front) : c.front)}
+                className="gap-0 divide-y divide-site-border border-y border-site-border"
+                renderItem={(card) => <CardRow card={card} onSave={saveCard} onDelete={deleteCard} />}
+              />
+            )}
+          </div>
         </section>
 
         <section {...panel('import')}>
           <ImportPanel
             existingFronts={cards.map((c) => c.front)}
-            cardCount={cards.length + pendingDeletes.current.size}
+            cardCount={counts.rows}
             onImport={importCards}
           />
         </section>

@@ -78,6 +78,7 @@ model Event {
   host      User?      @relation("EventHosted", fields: [hostId], references: [id], onDelete: Cascade)
   community Community? @relation("CommunityEvents", fields: [communityId], references: [id], onDelete: Cascade)
   rsvps     Rsvp[]
+  cohosts   EventCohost[]
 
   @@index([communityId, startsAt])
   @@index([hostId, startsAt])
@@ -113,4 +114,24 @@ model Rsvp {
   @@index([userId, occurrenceAt])
   @@index([userId, createdAt])
   @@map("rsvp")
+}
+
+/// A member the host invited to help run a member-hosted event (s05-05). `invited` has no rights and is
+/// visible only to the host and the invitee; `accepted` may edit the event and look after its guests and
+/// waitlist, but never cancels it or manages co-hosts. At most five rows per event (lib/events/cohosts.ts).
+/// Declining or stepping down deletes the row. Account erasure deletes the member's rows explicitly.
+model EventCohost {
+  eventId     String
+  userId      String
+  /// 'invited' | 'accepted'
+  status      String    @default("invited") @db.VarChar(9)
+  invitedAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation("EventCohosts", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@index([userId, status])
+  @@map("event_cohost")
 }

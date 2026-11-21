@@ -220,9 +220,12 @@ import { Route as SiteAdminEmailRouteImport } from './routes/_site/admin/email'
 import { Route as SiteAdminEmojiPacksRouteImport } from './routes/_site/admin/emoji-packs'
 import { Route as SiteAdminFlagsRouteImport } from './routes/_site/admin/flags'
 import { Route as SiteAdminInsightsRouteImport } from './routes/_site/admin/insights'
+import { Route as SiteAdminJobsRouteImport } from './routes/_site/admin/jobs'
 import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/library'
+import { Route as SiteAdminLookupRouteImport } from './routes/_site/admin/lookup'
 import { Route as SiteAdminMarketRouteImport } from './routes/_site/admin/market'
 import { Route as SiteAdminMedschoolsRouteImport } from './routes/_site/admin/medschools'
+import { Route as SiteAdminOutboxRouteImport } from './routes/_site/admin/outbox'
 import { Route as SiteAdminPatchNotesRouteImport } from './routes/_site/admin/patch-notes'
 import { Route as SiteAdminPerformanceRouteImport } from './routes/_site/admin/performance'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
@@ -311,6 +314,7 @@ import { Route as SiteServicesCarsRouteImport } from './routes/_site/services/ca
 import { Route as SiteServicesFashionRouteImport } from './routes/_site/services/fashion'
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
+import { Route as SiteSettingsBlockedRouteImport } from './routes/_site/settings/blocked'
 import { Route as SiteSettingsCloudSavesRouteImport } from './routes/_site/settings/cloud-saves'
 import { Route as SiteSettingsContentRouteImport } from './routes/_site/settings/content'
 import { Route as SiteSettingsKeyboardRouteImport } from './routes/_site/settings/keyboard'
@@ -1601,9 +1605,19 @@ const SiteAdminInsightsRoute = SiteAdminInsightsRouteImport.update({
   path: '/insights',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminJobsRoute = SiteAdminJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminLibraryRoute = SiteAdminLibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminLookupRoute = SiteAdminLookupRouteImport.update({
+  id: '/lookup',
+  path: '/lookup',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminMarketRoute = SiteAdminMarketRouteImport.update({
@@ -1614,6 +1628,11 @@ const SiteAdminMarketRoute = SiteAdminMarketRouteImport.update({
 const SiteAdminMedschoolsRoute = SiteAdminMedschoolsRouteImport.update({
   id: '/medschools',
   path: '/medschools',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminOutboxRoute = SiteAdminOutboxRouteImport.update({
+  id: '/outbox',
+  path: '/outbox',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminPatchNotesRoute = SiteAdminPatchNotesRouteImport.update({
@@ -2062,6 +2081,11 @@ const SiteSettingsIndexRoute = SiteSettingsIndexRouteImport.update({
 const SiteSettingsAppearanceRoute = SiteSettingsAppearanceRouteImport.update({
   id: '/settings/appearance',
   path: '/settings/appearance',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsBlockedRoute = SiteSettingsBlockedRouteImport.update({
+  id: '/settings/blocked',
+  path: '/settings/blocked',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSettingsCloudSavesRoute = SiteSettingsCloudSavesRouteImport.update({
@@ -3478,9 +3502,12 @@ export interface FileRoutesByFullPath {
   '/admin/emoji-packs': typeof SiteAdminEmojiPacksRoute
   '/admin/flags': typeof SiteAdminFlagsRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
+  '/admin/jobs': typeof SiteAdminJobsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
+  '/admin/lookup': typeof SiteAdminLookupRoute
   '/admin/market': typeof SiteAdminMarketRoute
   '/admin/medschools': typeof SiteAdminMedschoolsRoute
+  '/admin/outbox': typeof SiteAdminOutboxRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/admin/performance': typeof SiteAdminPerformanceRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -3548,6 +3575,7 @@ export interface FileRoutesByFullPath {
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/settings/blocked': typeof SiteSettingsBlockedRoute
   '/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/settings/content': typeof SiteSettingsContentRoute
   '/settings/keyboard': typeof SiteSettingsKeyboardRoute
@@ -3988,9 +4016,12 @@ export interface FileRoutesByTo {
   '/admin/emoji-packs': typeof SiteAdminEmojiPacksRoute
   '/admin/flags': typeof SiteAdminFlagsRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
+  '/admin/jobs': typeof SiteAdminJobsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
+  '/admin/lookup': typeof SiteAdminLookupRoute
   '/admin/market': typeof SiteAdminMarketRoute
   '/admin/medschools': typeof SiteAdminMedschoolsRoute
+  '/admin/outbox': typeof SiteAdminOutboxRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/admin/performance': typeof SiteAdminPerformanceRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -4058,6 +4089,7 @@ export interface FileRoutesByTo {
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/settings/blocked': typeof SiteSettingsBlockedRoute
   '/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/settings/content': typeof SiteSettingsContentRoute
   '/settings/keyboard': typeof SiteSettingsKeyboardRoute
@@ -4526,9 +4558,12 @@ export interface FileRoutesById {
   '/_site/admin/emoji-packs': typeof SiteAdminEmojiPacksRoute
   '/_site/admin/flags': typeof SiteAdminFlagsRoute
   '/_site/admin/insights': typeof SiteAdminInsightsRoute
+  '/_site/admin/jobs': typeof SiteAdminJobsRoute
   '/_site/admin/library': typeof SiteAdminLibraryRoute
+  '/_site/admin/lookup': typeof SiteAdminLookupRoute
   '/_site/admin/market': typeof SiteAdminMarketRoute
   '/_site/admin/medschools': typeof SiteAdminMedschoolsRoute
+  '/_site/admin/outbox': typeof SiteAdminOutboxRoute
   '/_site/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/_site/admin/performance': typeof SiteAdminPerformanceRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -4596,6 +4631,7 @@ export interface FileRoutesById {
   '/_site/services/cars': typeof SiteServicesCarsRoute
   '/_site/services/fashion': typeof SiteServicesFashionRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/_site/settings/blocked': typeof SiteSettingsBlockedRoute
   '/_site/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/_site/settings/content': typeof SiteSettingsContentRoute
   '/_site/settings/keyboard': typeof SiteSettingsKeyboardRoute
@@ -5064,9 +5100,12 @@ export interface FileRouteTypes {
     | '/admin/emoji-packs'
     | '/admin/flags'
     | '/admin/insights'
+    | '/admin/jobs'
     | '/admin/library'
+    | '/admin/lookup'
     | '/admin/market'
     | '/admin/medschools'
+    | '/admin/outbox'
     | '/admin/patch-notes'
     | '/admin/performance'
     | '/admin/predictions'
@@ -5134,6 +5173,7 @@ export interface FileRouteTypes {
     | '/services/cars'
     | '/services/fashion'
     | '/settings/appearance'
+    | '/settings/blocked'
     | '/settings/cloud-saves'
     | '/settings/content'
     | '/settings/keyboard'
@@ -5574,9 +5614,12 @@ export interface FileRouteTypes {
     | '/admin/emoji-packs'
     | '/admin/flags'
     | '/admin/insights'
+    | '/admin/jobs'
     | '/admin/library'
+    | '/admin/lookup'
     | '/admin/market'
     | '/admin/medschools'
+    | '/admin/outbox'
     | '/admin/patch-notes'
     | '/admin/performance'
     | '/admin/predictions'
@@ -5644,6 +5687,7 @@ export interface FileRouteTypes {
     | '/services/cars'
     | '/services/fashion'
     | '/settings/appearance'
+    | '/settings/blocked'
     | '/settings/cloud-saves'
     | '/settings/content'
     | '/settings/keyboard'
@@ -6111,9 +6155,12 @@ export interface FileRouteTypes {
     | '/_site/admin/emoji-packs'
     | '/_site/admin/flags'
     | '/_site/admin/insights'
+    | '/_site/admin/jobs'
     | '/_site/admin/library'
+    | '/_site/admin/lookup'
     | '/_site/admin/market'
     | '/_site/admin/medschools'
+    | '/_site/admin/outbox'
     | '/_site/admin/patch-notes'
     | '/_site/admin/performance'
     | '/_site/admin/predictions'
@@ -6181,6 +6228,7 @@ export interface FileRouteTypes {
     | '/_site/services/cars'
     | '/_site/services/fashion'
     | '/_site/settings/appearance'
+    | '/_site/settings/blocked'
     | '/_site/settings/cloud-saves'
     | '/_site/settings/content'
     | '/_site/settings/keyboard'
@@ -8101,11 +8149,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminInsightsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/jobs': {
+      id: '/_site/admin/jobs'
+      path: '/jobs'
+      fullPath: '/admin/jobs'
+      preLoaderRoute: typeof SiteAdminJobsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/library': {
       id: '/_site/admin/library'
       path: '/library'
       fullPath: '/admin/library'
       preLoaderRoute: typeof SiteAdminLibraryRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/lookup': {
+      id: '/_site/admin/lookup'
+      path: '/lookup'
+      fullPath: '/admin/lookup'
+      preLoaderRoute: typeof SiteAdminLookupRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/market': {
@@ -8120,6 +8182,13 @@ declare module '@tanstack/react-router' {
       path: '/medschools'
       fullPath: '/admin/medschools'
       preLoaderRoute: typeof SiteAdminMedschoolsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/outbox': {
+      id: '/_site/admin/outbox'
+      path: '/outbox'
+      fullPath: '/admin/outbox'
+      preLoaderRoute: typeof SiteAdminOutboxRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/patch-notes': {
@@ -8736,6 +8805,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/appearance'
       fullPath: '/settings/appearance'
       preLoaderRoute: typeof SiteSettingsAppearanceRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/blocked': {
+      id: '/_site/settings/blocked'
+      path: '/settings/blocked'
+      fullPath: '/settings/blocked'
+      preLoaderRoute: typeof SiteSettingsBlockedRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/settings/cloud-saves': {
@@ -10394,9 +10470,12 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminEmojiPacksRoute: typeof SiteAdminEmojiPacksRoute
   SiteAdminFlagsRoute: typeof SiteAdminFlagsRoute
   SiteAdminInsightsRoute: typeof SiteAdminInsightsRoute
+  SiteAdminJobsRoute: typeof SiteAdminJobsRoute
   SiteAdminLibraryRoute: typeof SiteAdminLibraryRoute
+  SiteAdminLookupRoute: typeof SiteAdminLookupRoute
   SiteAdminMarketRoute: typeof SiteAdminMarketRoute
   SiteAdminMedschoolsRoute: typeof SiteAdminMedschoolsRoute
+  SiteAdminOutboxRoute: typeof SiteAdminOutboxRoute
   SiteAdminPatchNotesRoute: typeof SiteAdminPatchNotesRoute
   SiteAdminPerformanceRoute: typeof SiteAdminPerformanceRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
@@ -10436,9 +10515,12 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminEmojiPacksRoute: SiteAdminEmojiPacksRoute,
   SiteAdminFlagsRoute: SiteAdminFlagsRoute,
   SiteAdminInsightsRoute: SiteAdminInsightsRoute,
+  SiteAdminJobsRoute: SiteAdminJobsRoute,
   SiteAdminLibraryRoute: SiteAdminLibraryRoute,
+  SiteAdminLookupRoute: SiteAdminLookupRoute,
   SiteAdminMarketRoute: SiteAdminMarketRoute,
   SiteAdminMedschoolsRoute: SiteAdminMedschoolsRoute,
+  SiteAdminOutboxRoute: SiteAdminOutboxRoute,
   SiteAdminPatchNotesRoute: SiteAdminPatchNotesRoute,
   SiteAdminPerformanceRoute: SiteAdminPerformanceRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
@@ -10635,6 +10717,7 @@ interface SiteRouteChildren {
   SiteSafetyPileOnRoute: typeof SiteSafetyPileOnRoute
   SiteSeriesIdRoute: typeof SiteSeriesIdRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
+  SiteSettingsBlockedRoute: typeof SiteSettingsBlockedRoute
   SiteSettingsCloudSavesRoute: typeof SiteSettingsCloudSavesRoute
   SiteSettingsContentRoute: typeof SiteSettingsContentRoute
   SiteSettingsKeyboardRoute: typeof SiteSettingsKeyboardRoute
@@ -10783,6 +10866,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSafetyPileOnRoute: SiteSafetyPileOnRoute,
   SiteSeriesIdRoute: SiteSeriesIdRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
+  SiteSettingsBlockedRoute: SiteSettingsBlockedRoute,
   SiteSettingsCloudSavesRoute: SiteSettingsCloudSavesRoute,
   SiteSettingsContentRoute: SiteSettingsContentRoute,
   SiteSettingsKeyboardRoute: SiteSettingsKeyboardRoute,

@@ -42,8 +42,14 @@ import { recordSecurityEvent } from '@/lib/auth/security-log.server';
 import { deleteFollowEventsFor } from '@/lib/social/follow-events.server';
 import { adjustmentErasureOps } from '@/lib/economy/adjustments.server';
 import { releaseSeatsOf } from '@/lib/events/waitlist.server';
+import { cohostErasureOps } from '@/lib/events/cohosts.server';
+import { jamTeamErasureOps } from '@/lib/competitive/jam-teams.server';
 import { replayErasureOps } from '@/lib/replays.server';
 import { leaveAllGroups } from '@/lib/group-chat/manage.server';
+import { repostMuteErasureOps } from '@/lib/feed/repost-mutes.server';
+import { blockMuteErasureOps } from '@/lib/moderation/blocked-muted.server';
+import { savedReplyErasureOps } from '@/lib/messages/saved-replies.server';
+import { leaderboardErasureOps } from '@/lib/game/leaderboard-privacy.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -426,6 +432,53 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.communityHandover.deleteMany({
       where: { status: 'pending', OR: [{ fromId: userId }, { toId: userId }] },
     }),
+
+    // Sprint 05 erasures (docs/autonomous/sprint-05/plan.md §Anchors): each feature adds its
+    // operations under its own line.
+    // s05-01 leaderboard-privacy
+    // Every game player table and the shared GameStat go with the account, and a co-op run loses its host.
+    // The cascade never fires on an anonymised account, so a chosen username would stay on every board.
+    ...leaderboardErasureOps(userId),
+
+    // s05-04 personal-bests
+    // The record history is the member's own; the cascade never fires on an anonymised account.
+    prisma.gamePersonalBest.deleteMany({ where: { userId } }),
+
+    // s05-05 event-cohosts
+    // The member's co-host rows, and every row on the events they host (the cascade never fires on an anonymised account).
+    ...cohostErasureOps(userId),
+
+    // s05-06 studio-projects
+    // Cloud copies of Studio projects (the cascade never fires for an anonymised member).
+    prisma.studioProject.deleteMany({ where: { userId } }),
+
+    // s05-07 repost-mutes
+    // Rows where the member is either side: the cascade never fires for an anonymised account.
+    ...repostMuteErasureOps(userId),
+
+    // s05-13 saved-replies
+    // Private saved replies (the cascade never fires for an anonymised account).
+    ...savedReplyErasureOps(userId),
+
+    // s05-14 blocked-muted-accounts
+    // The member's own block and mute lists only; rows where others blocked or muted them stay (their safety decisions).
+    ...blockMuteErasureOps(userId),
+
+    // s05-15 jam-teams
+    // The member's team rows and pending invitations on their entries (the cascade never fires on an anonymised account); entries stay.
+    ...jamTeamErasureOps(userId),
+
+    // s05-17 community-post-alerts
+    // Memberships survive an anonymised account, so the alert choice is reset: a deleted account never receives one.
+    prisma.communityMember.updateMany({ where: { userId }, data: { postAlerts: 'off' } }),
+
+    // s05-19 profile-pins
+    // The member's pinned posts stay (posts are not erased here) but stop being pinned: the cascade never fires on an
+    // anonymised account, and a pin is a choice made on a profile that no longer exists.
+    prisma.rMHark.updateMany({ where: { userId, pinnedAt: { not: null } }, data: { pinnedAt: null } }),
+
+    // s05-20 flashcard-reminders
+    prisma.flashcardReminder.deleteMany({ where: { userId } }),
 
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({

@@ -28,7 +28,6 @@ import {
  VolumeX,
  Bookmark,
  Coins,
- Pin,
  Pencil,
  Languages,
  TrendingUp,
@@ -36,6 +35,7 @@ import {
  ShieldAlert,
  CircleStop,
  CalendarPlus,
+ ImagePlus,
 } from'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
@@ -46,13 +46,15 @@ import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { cn } from'@/lib/utils';
 import { PostMenuTrigger } from './PostMenuTrigger';
+import { RepostMuteMenuItem } from './RepostMuteMenuItem';
+import { PinMenuItems } from './PinMenuItems';
 import {
  MuteConversationChoices,
  MuteConversationItem,
  useConversationMute,
 } from './MuteConversationMenu';
 import type { FeedItem } from'@/lib/feed-types';
-import { bookmarkPostApi, pinPostApi, deletePostApi } from '@/lib/feed/rmhark-actions.contract';
+import { bookmarkPostApi, deletePostApi } from '@/lib/feed/rmhark-actions.contract';
 import { endPollApi } from '@/lib/feed/poll-lifecycle.contract';
 import type { PollLifecycleView } from '@/lib/feed/poll-lifecycle';
 import { api } from '@/lib/contract/client';
@@ -72,6 +74,9 @@ const TipDialog = lazy(() =>
 );
 const EditPostModal = lazy(() =>
  import('./EditPostModal').then((m) => ({ default: m.EditPostModal })),
+);
+const EditAltTextDialog = lazy(() =>
+ import('./EditAltTextDialog').then((m) => ({ default: m.EditAltTextDialog })),
 );
 const EngagementListModal = lazy(() =>
  import('./EngagementListModal').then((m) => ({ default: m.EngagementListModal })),
@@ -186,18 +191,17 @@ export function RMHarkOverflowPanel({
  const [remindOpen, setRemindOpen] = useState(false);
  const [moderateOpen, setModerateOpen] = useState(false);
  const [extendOpen, setExtendOpen] = useState(false);
+ const [altOpen, setAltOpen] = useState(false);
  // Conversation mute: the choice loads when the menu opens; the four options are a small menu of their own.
  const [muteChoicesOpen, setMuteChoicesOpen] = useState(false);
  const conversationMute = useConversationMute(actualId, menuOpen && !!session);
- const [pinned, setPinned] = useState(!!item.pinned);
  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
  const { run: runBookmark } = useOptimisticAction();
- const { run: runPin } = useOptimisticAction();
 
  // Latch: mount a lazy modal the first time it opens, then keep it mounted so
  // its close animation still runs (a bare `open && <Modal/>`would unmount
  // mid-animation). The lazy import fires on first open, not at hydration.
- const mounted = useRef({ share: false, report: false, tip: false, edit: false, remind: false, moderate: false, extend: false });
+ const mounted = useRef({ share: false, report: false, tip: false, edit: false, remind: false, moderate: false, extend: false, alt: false });
  mounted.current.moderate ||= moderateOpen;
  mounted.current.extend ||= extendOpen;
  mounted.current.remind ||= remindOpen;
@@ -205,6 +209,7 @@ export function RMHarkOverflowPanel({
  mounted.current.report ||= reportOpen;
  mounted.current.tip ||= tipOpen;
  mounted.current.edit ||= editOpen;
+ mounted.current.alt ||= altOpen;
 
  // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
  // close animation all live in AnchoredMenu now. This file used to carry its own
@@ -262,28 +267,6 @@ export function RMHarkOverflowPanel({
  });
  };
 
- const handlePin = () => {
- setMenuOpen(false);
- const next = !pinned;
- runPin({
- apply: () => setPinned(next),
- rollback: () => setPinned(!next),
- commit: async () => {
- const data = await api(pinPostApi, { params: { id: actualId } });
- setPinned(!!data.pinned);
- onUpdate?.({ pinned: !!data.pinned });
- toast.success(
- data.pinned
- ? t('pinned-success', { defaultValue:'Pinned to your profile'})
- : t('unpinned-success', { defaultValue:'Unpinned'}),
- );
- },
- onError: (err) => {
- toast.error(serverError(err) || t('pin-error', { defaultValue:'Could not pin post'}));
- },
- });
- };
-
  const handleDelete = async () => {
  setMenuOpen(false);
  if (
@@ -300,6 +283,9 @@ export function RMHarkOverflowPanel({
  // ignore — surface handles its own error UX
  }
  };
+
+ // Own post with pictures: descriptions can be added or fixed after posting (s05-16).
+ const hasImages = (item.imageUrls?.length ?? 0) > 0;
 
  // The author's poll actions. An ended poll offers neither; an untimed one can only be ended.
  const poll = item.poll;
@@ -455,6 +441,13 @@ export function RMHarkOverflowPanel({
  >
  {t('rermharkd-by', { defaultValue:"reRMHark'd by"})}
  </MenuItem>
+ {isAuthor && item.repostedBy && item.repostedBy.id !== session?.user?.id && (
+ <>
+ <MenuSeparator />
+ {/* A repost of the member's own post by someone else: the person to turn off is the reposter (s05-07). */}
+ <RepostMuteMenuItem item={item} enabled={menuOpen} onDone={() => setMenuOpen(false)} />
+ </>
+ )}
  {isAuthor && (
  <>
  <MenuSeparator />
@@ -476,6 +469,17 @@ export function RMHarkOverflowPanel({
  >
  {t('edit', { defaultValue:'Edit'})}
  </MenuItem>
+ {hasImages && (
+ <MenuItem
+ icon={ImagePlus}
+ onSelect={() => {
+ setMenuOpen(false);
+ setAltOpen(true);
+ }}
+ >
+ {t('menu-item', { ns: 'alt-text-editing', defaultValue: 'Edit image descriptions' })}
+ </MenuItem>
+ )}
  {pollOpen && (
  <>
  <MenuItem icon={CircleStop} onSelect={handleEndPoll}>
@@ -494,15 +498,7 @@ export function RMHarkOverflowPanel({
  )}
  </>
  )}
- <MenuItem
- icon={Pin}
- iconClassName={pinned ?'fill-site-accent text-site-accent': undefined}
- onSelect={handlePin}
- >
- {pinned
- ? t('unpin-from-profile', { defaultValue:'Unpin from profile'})
- : t('pin-to-profile', { defaultValue:'Pin to profile'})}
- </MenuItem>
+ <PinMenuItems item={item} enabled={menuOpen} onDone={() => setMenuOpen(false)} onUpdate={onUpdate} />
  <MenuSeparator />
  <MenuItem icon={Trash2} tone="danger" onSelect={handleDelete}>
  {t('delete', { defaultValue:'Delete'})}
@@ -539,6 +535,7 @@ export function RMHarkOverflowPanel({
  <MenuItem icon={VolumeX} onSelect={handleMute}>
  {t('mute', { defaultValue:'Mute'})}
  </MenuItem>
+ <RepostMuteMenuItem item={item} enabled={menuOpen} onDone={() => setMenuOpen(false)} />
  <MenuItem icon={Ban} tone="danger" onSelect={handleBlock}>
  {t('block', { defaultValue:'Block'})}
  </MenuItem>
@@ -655,6 +652,20 @@ export function RMHarkOverflowPanel({
  onSaved={(content, gifUrl) =>
  onUpdate?.({ content, gifUrl: gifUrl ?? undefined, edited: true })
  }
+ />
+ </Suspense>
+ )}
+
+ {isAuthor && hasImages && mounted.current.alt && (
+ <Suspense fallback={null}>
+ <EditAltTextDialog
+ open={altOpen}
+ onOpenChange={setAltOpen}
+ postId={actualId}
+ imageUrls={item.imageUrls ?? []}
+ imageAlts={item.imageAlts}
+ restoreFocusTo={() => anchorRef.current}
+ onSaved={(imageAlts) => onUpdate?.({ imageAlts })}
  />
  </Suspense>
  )}

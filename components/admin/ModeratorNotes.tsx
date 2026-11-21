@@ -15,7 +15,6 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNow } from 'date-fns';
 import {
   Pencil,
   Pin,
@@ -48,6 +47,7 @@ import {
   MAX_PINNED_NOTES,
   splitNoteText,
 } from '@/lib/moderation/notes';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const NO_LINK =
   '';
@@ -105,7 +105,7 @@ export function ModeratorNotes({
 }: {
   userId: string;
   /** Scroll the section into view once it has loaded. */ reveal?: boolean;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -545,29 +545,21 @@ export function ModeratorNotes({
     (
       iso: string,
     ) =>
-      formatDistanceToNow(
-        new Date(
+      fmt.relative(new Date(
           iso,
-        ),
-        {
-          addSuffix: true,
-        },
-      );
+        ));
   const day =
     (
       iso: string,
     ) =>
-      new Date(
+      fmt.date(new Date(
         iso,
-      ).toLocaleDateString(
-        undefined,
-        {
+      ), {
           day: 'numeric',
           month:
             'short',
           year: 'numeric',
-        },
-      );
+        });
 
   const choices =
     first?.choices;
@@ -968,9 +960,9 @@ export function ModeratorNotes({
                       dateTime={
                         n.createdAt
                       }
-                      title={new Date(
+                      title={fmt.dateTime(new Date(
                         n.createdAt,
-                      ).toLocaleString()}
+                      ))}
                     >
                       {ago(
                         n.createdAt,

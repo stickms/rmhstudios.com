@@ -31,6 +31,7 @@ import { MusicManager } from '@/lib/house-always-wins/music';
 import { SfxManager } from '@/lib/house-always-wins/sfx';
 import { useHouseAlwaysWinsStore } from '@/lib/store/houseAlwaysWinsStore';
 import './haw-menu.css';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type ItemId =
   | 'play'
@@ -578,7 +579,7 @@ function DebtMarker({
   extra,
 }: {
   extra: number;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -655,9 +656,7 @@ function DebtMarker({
           }
         >
           $
-          {balance.toLocaleString(
-            'en-US',
-          )}
+          {fmt.number(balance)}
         </span>
       </p>
       <p className="haw-marker__fine">

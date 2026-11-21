@@ -15,6 +15,7 @@ import { api } from '@/lib/contract/client';
 import { getRmhboxLeaderboardApi } from '@/lib/rmhbox/rmhbox-reads.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface MinigameLeaderboardModalProps {
   minigameId: string;
@@ -30,7 +31,7 @@ export default function MinigameLeaderboardModal({
   displayName,
   isOpen,
   onClose,
-}: MinigameLeaderboardModalProps) {
+}: MinigameLeaderboardModalProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("c-rmhbox");
   const [activePeriod, setActivePeriod] = useState<Period>('all-time');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -126,7 +127,7 @@ export default function MinigameLeaderboardModal({
                   <td className="py-1.5 pr-2 font-bold text-app-accent">{entry.rank}</td>
                   <td className="py-1.5 pr-2 text-app-text">{entry.userName}</td>
                   <td className="py-1.5 text-right font-mono text-app-text">
-                    {entry.value.toLocaleString()}
+                    {fmt.number(entry.value)}
                   </td>
                 </tr>
               ))}

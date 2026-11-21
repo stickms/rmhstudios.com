@@ -599,7 +599,7 @@ export async function deleteOwnPost(userId: string, postId: string): Promise<Del
   if (!post) return { ok: false, found: false };
   if (post.userId !== userId) return { ok: false, found: true, forbidden: true };
   if (!post.deletedAt) {
-    await prisma.rMHark.update({ where: { id: postId }, data: { deletedAt: new Date() } });
+    await prisma.rMHark.update({ where: { id: postId }, data: { deletedAt: new Date(), pinnedAt: null } });
     void enqueueProgression({
       actorId: userId,
       webhook: { event: 'post.deleted', data: { postId } },

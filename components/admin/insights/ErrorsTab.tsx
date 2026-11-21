@@ -10,6 +10,7 @@ import {
   send,
   useInsight,
 } from './api';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Group {
   id: string;
@@ -26,7 +27,7 @@ interface Group {
   regressed: boolean;
 }
 
-export function ErrorsTab() {
+export function ErrorsTab() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -175,14 +176,14 @@ export function ErrorsTab() {
                   defaultValue:
                     'First seen {{first}} in {{firstRelease}} - last seen {{last}} in {{lastRelease}}',
                   first:
-                    new Date(
+                    fmt.date(new Date(
                       g.firstSeenAt,
-                    ).toLocaleDateString(),
+                    )),
                   firstRelease:
                     g.firstRelease,
-                  last: new Date(
+                  last: fmt.dateTime(new Date(
                     g.lastSeenAt,
-                  ).toLocaleString(),
+                  )),
                   lastRelease:
                     g.lastRelease,
                 },

@@ -30,6 +30,7 @@ import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { UserModerationPanel } from '@/components/admin/UserModerationPanel';
 import { CoinAdjustButton } from '@/components/admin/CoinAdjustDialog';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type AccountFilter = 'all' | 'people' | 'bots';
 
@@ -64,7 +65,7 @@ export const Route = createFileRoute('/_site/admin/users')({
   component: AdminUsersPage,
 });
 
-function AdminUsersPage() {
+function AdminUsersPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("admin");
   const confirm = useConfirm();
   const prompt = usePrompt();
@@ -322,7 +323,7 @@ function AdminUsersPage() {
                     <div className="t-meta flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1 sm:order-last sm:w-24 sm:flex-none sm:flex-col sm:items-end">
                       <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
                       <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
-                      <span className="flex items-center gap-1"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
+                      <span className="flex items-center gap-1"><Coins className="size-3" aria-hidden />{fmt.number((user.profile?.coins ?? 0))}</span>
                       <span className={cn(user.activeStrikes > 0 && 'text-site-danger')}>
                         {t("user-strikes", { count: user.activeStrikes, defaultValue_one: "{{count}} strike", defaultValue: "{{count}} strikes" })}
                       </span>

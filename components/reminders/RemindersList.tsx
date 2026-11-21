@@ -20,13 +20,14 @@ import {
 import type { ReminderView } from '@/lib/reminders/shared';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * Pending reminders, soonest first (plan U7). Rendered by the Saves hub.
  * The list is fetched after mount, so formatting times in the viewer's own
  * locale and zone cannot mismatch a server render.
  */
-export function RemindersList() {
+export function RemindersList() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -208,11 +209,9 @@ export function RemindersList() {
                     }
                   </span>
                   <span className="block truncate text-xs text-site-text-muted">
-                    {new Date(
+                    {fmt.dateTime(new Date(
                       r.remindAt,
-                    ).toLocaleString(
-                      undefined,
-                      {
+                    ), {
                         weekday:
                           'short',
                         month:
@@ -221,8 +220,7 @@ export function RemindersList() {
                         hour: 'numeric',
                         minute:
                           '2-digit',
-                      },
-                    )}
+                      })}
                     {r.note
                       ? ` · ${r.note}`
                       : ''}

@@ -99,7 +99,7 @@ export async function getStudyStats(
              (count(*) FILTER (WHERE r.id IS NOT NULL AND r."intervalDays" >= 21))::int AS mature,
              (count(*) FILTER (WHERE r.id IS NULL OR r."dueAt" <= now()))::int AS due_today
       FROM flashcard_deck d
-      JOIN flashcard c ON c."deckId" = d.id
+      JOIN flashcard c ON c."deckId" = d.id AND NOT (c.kind = 'cloze' AND c."sourceId" IS NULL)
       LEFT JOIN flashcard_review r ON r."cardId" = c.id AND r."userId" = ${userId}
       WHERE (d."isPublic" OR d."userId" = ${userId})
         AND (d."userId" = ${userId}

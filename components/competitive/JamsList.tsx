@@ -18,6 +18,7 @@ import { serverError } from '@/lib/http';
 import { createJamApi } from '@/lib/competitive/jams.contract';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface JamSummary {
   slug: string;
@@ -115,7 +116,7 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-export function JamsList() {
+export function JamsList() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-competitive');
   const { data: session } = useSession();
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
@@ -170,8 +171,8 @@ export function JamsList() {
               </div>
               <p className="text-sm text-site-text-muted line-clamp-2">{j.description}</p>
               <p className="text-xs text-site-text-muted">
-                {new Date(j.startsAt).toLocaleString()} →{' '}
-                {new Date(j.submitEndsAt).toLocaleString()}
+                {fmt.dateTime(new Date(j.startsAt))} →{' '}
+                {fmt.dateTime(new Date(j.submitEndsAt))}
               </p>
             </Card>
           </Link>

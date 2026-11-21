@@ -15,6 +15,7 @@ import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-ite
 import { isExpired } from '@/lib/posts-plus/constants';
 import { redactCounts } from '@/lib/feed/quiet-counts';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { PIN_LIMIT } from '@/lib/feed/profile-pins';
 
 function pollInclude(userId: string | null) {
   return {
@@ -119,13 +120,15 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
     const repostedVisible = await viewerVisiblePostWhere(viewerId);
 
     // Fetch user's own RMHarks and their reposts in parallel (exclude deleted)
-    // perf: the pinned post (first page only) rides in the same parallel batch
+    // perf: the pinned posts (first page only) ride in the same parallel batch
     // instead of a serial query after the merge.
     const [rmharksRaw, repostsRaw, pinned] = await Promise.all([
       prisma.rMHark.findMany({
         where: {
           userId,
           deletedAt: null,
+          // Pinned posts show first on page one and nowhere else, so no page repeats one.
+          pinnedAt: null,
           ...aud,
           ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
         },
@@ -148,10 +151,20 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
           },
         },
       }),
+      // Up to three, in the member's order, under the same visibility as every other post on this page.
       cursorDate
-        ? Promise.resolve(null)
-        : prisma.rMHark.findFirst({
-            where: { userId, deletedAt: null, pinnedAt: { not: null }, ...aud },
+        ? Promise.resolve([])
+        : prisma.rMHark.findMany({
+            where: {
+              userId,
+              deletedAt: null,
+              pinnedAt: { not: null },
+              // Past its expiry a pin is gone (it does not use up one of the three).
+              AND: [{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }],
+              ...aud,
+            },
+            orderBy: [{ pinnedAt: 'asc' }, { id: 'asc' }],
+            take: PIN_LIMIT,
             include: rmharkInclude(viewerId),
           }),
     ]);
@@ -167,13 +180,13 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
       [
         ...rmharks.map((r: any) => r.id),
         ...reposts.map((rp: any) => rp.rmhark.id),
-        ...(pinned ? [pinned.id] : []),
+        ...pinned.map((p) => p.id),
       ],
       viewerId,
     );
 
-    // Map own RMHarks to FeedItems
-    const ownItems: FeedItem[] = rmharks.map((r: any) =>
+    // One mapping for a member's own post, whether it comes up in the timeline or as a pin.
+    const mapOwn = (r: any): FeedItem =>
       redactCounts(applyLock(
         {
           id: r.id,
@@ -201,8 +214,9 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
         },
         r,
         viewerId,
-      ), viewerId),
-    );
+      ), viewerId);
+
+    const ownItems: FeedItem[] = rmharks.map(mapOwn);
 
     // Map reposts to FeedItems with repostedBy
     const repostItems: FeedItem[] = reposts.map((rp: any) => {
@@ -245,43 +259,13 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
 
     const nextCursor = merged.length === limit ? merged[merged.length - 1].createdAt : null;
 
-    // On the first page, surface the user's pinned post at the very top
-    // (deduped from the regular list below it).
+    // On the first page, the member's pinned posts lead in their order; the timeline follows without them (the
+    // query leaves pinned posts out), and a repost of a pinned post is not shown twice.
     let items = merged;
-    if (!cursorDate) {
-      if (pinned) {
-        const p: any = pinned;
-        const pinnedItem: FeedItem = redactCounts(applyLock(
-          {
-            id: p.id,
-            type: 'rmhark',
-            createdAt: p.createdAt.toISOString(),
-            content: p.content,
-            user: resolveUser(p.user),
-            likeCount: p.likeCount,
-            commentCount: p.commentCount,
-            repostCount: p.repostCount,
-            viewCount: p.viewCount,
-            liked: viewerId ? p.likes.length > 0 : false,
-            reposted: viewerId ? p.reposts.length > 0 : false,
-            edited: !!p.editedAt,
-            pinned: true,
-            original: quote(p.original),
-            poll: mapPoll(p.poll),
-            gifUrl: p.gifUrl ?? undefined,
-            imageUrls: p.imageUrls ?? undefined,
-            imageAlts: p.imageAlts ?? undefined,
-            isSensitive: p.isSensitive ?? false,
-            isTake: p.isTake || undefined,
-            seriesId: p.seriesId ?? undefined,
-            expiresAt: p.expiresAt?.toISOString(),
-            reactions: reactionSummaries.get(p.id) ?? [],
-          },
-          p,
-          viewerId,
-        ), viewerId);
-        items = [pinnedItem, ...merged.filter((it) => (it.actualId ?? it.id) !== p.id)];
-      }
+    if (pinned.length > 0) {
+      const pinnedIds = new Set(pinned.map((p) => p.id));
+      const pinnedItems = pinned.map((p, i) => ({ ...mapOwn(p), pinned: true, pinnedOrder: i + 1 }));
+      items = [...pinnedItems, ...merged.filter((it) => !pinnedIds.has(it.actualId ?? it.id))];
     }
 
     return Response.json({

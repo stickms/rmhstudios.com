@@ -22,6 +22,8 @@ import {
 } from '@/lib/wager/constants';
 import { isCheckInMinutes } from '@/lib/tournaments/checkin';
 import { CheckInCreateFields } from '@/components/tournaments/CheckInPanel';
+import { SeedingMethodField } from '@/components/tournaments/SeedingPanel';
+import { ratingSeedingAvailable, type SeedingMethod } from '@/lib/tournaments/seeding';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createTournamentApi } from '@/lib/tournaments/tournaments.contract';
@@ -72,6 +74,7 @@ export function CreateTournamentDialog({
   ] =
     useState<
       | 'SINGLE_ELIM'
+      | 'DOUBLE_ELIM'
       | 'ROUND_ROBIN'
       | 'SWISS'
     >(
@@ -108,6 +111,10 @@ export function CreateTournamentDialog({
   // Local wall-clock `datetime-local` value; '' = no start time.
   const [startsAtLocal, setStartsAtLocal] = useState('');
   const [checkInValue, setCheckInValue] = useState('');
+  const [seeding, setSeeding] = useState<SeedingMethod>('join');
+  // Rating seeding needs a ranked game; fall back to sign-up order when the game changes.
+  // (adjusted while rendering, so the form never shows a method the game cannot use)
+  if (seeding === 'rating' && !ratingSeedingAvailable(gameId)) setSeeding('join');
   const startsAtDate = startsAtLocal ? new Date(startsAtLocal) : null;
   const startsAtIso =
     startsAtDate && !Number.isNaN(startsAtDate.getTime()) ? startsAtDate.toISOString() : null;
@@ -136,6 +143,7 @@ export function CreateTournamentDialog({
                 maxPlayers,
                 startsAt: startsAtIso,
                 checkInMinutes: checkInChoice,
+                seeding,
               },
             },
           );
@@ -324,6 +332,7 @@ export function CreateTournamentDialog({
                       .target
                       .value as
                       | 'SINGLE_ELIM'
+                      | 'DOUBLE_ELIM'
                       | 'ROUND_ROBIN'
                       | 'SWISS',
                   )
@@ -338,6 +347,9 @@ export function CreateTournamentDialog({
                     },
                   )}
                 </option>
+                <option value="DOUBLE_ELIM">
+                  {t('double-elim', { ns: 'double-elimination', defaultValue: 'Double elimination' })}
+                </option>
                 <option value="ROUND_ROBIN">
                   {t(
                     'round-robin',
@@ -349,6 +361,15 @@ export function CreateTournamentDialog({
                 </option>
                 <SwissFormatOption />
               </Select>
+              {format === 'DOUBLE_ELIM' && (
+                <p className="t-meta">
+                  {t('double-elim-help', {
+                    ns: 'double-elimination',
+                    defaultValue:
+                      'A player is out after a second loss. Needs at least 4 players. Pick\'em is for single elimination only.',
+                  })}
+                </p>
+              )}
             </div>
           </div>
 
@@ -500,6 +521,8 @@ export function CreateTournamentDialog({
             onCheckInChange={setCheckInValue}
             hasStart={!!startsAtIso}
           />
+
+          <SeedingMethodField id="t-seeding" value={seeding} gameId={gameId} onChange={setSeeding} />
         </div>
 
         <DialogFooter>

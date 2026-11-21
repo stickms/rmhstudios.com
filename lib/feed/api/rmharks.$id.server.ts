@@ -177,7 +177,7 @@ export const route = apiRoute('/api/rmharks/$id', {
       await tx.rMHark.update({
         where: { id },
         // An admin's delete is moderation: not restorable by the author from the bin.
-        data: { deletedAt, deletedByAdmin, ...(deletedByAdmin ? { deletedBy: 'moderator' } : {}) },
+        data: { deletedAt, deletedByAdmin, pinnedAt: null, ...(deletedByAdmin ? { deletedBy: 'moderator' } : {}) },
       });
       if (firstDelete) {
         // Drop the post's hashtag links (keeps trending counts accurate).

@@ -13,6 +13,8 @@ import { RequestComposeLabel, RequestSentNotice } from '@/components/messages/Re
 import type { SenderRequestState } from '@/lib/messages/requests';
 import { ScheduledStrip } from '@/components/messages/ScheduledStrip';
 import { SendLaterMenu } from '@/components/messages/SendLaterMenu';
+import { useSavedReplies } from '@/components/messages/useSavedReplies';
+import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
 import { PendingMessageImages } from '../PendingMessageImages';
 import { GhostTextArea } from '../GhostTextArea';
 import { SmartReplies } from '../SmartReplies';
@@ -29,6 +31,7 @@ export function ComposerBar({
   composer: c,
   replyToMessageId,
   requestState = null,
+  recipientName = null,
 }: {
   conversationId: string;
   chatRef: { kind: 'dm'; id: string };
@@ -37,6 +40,8 @@ export function ComposerBar({
   replyToMessageId: string | null;
   /** s04-16: `compose` while the other person takes message requests (text only, no extras), `sent` once one is out. */
   requestState?: SenderRequestState | null;
+  /** The other person's display name: what `{{name}}` in a saved reply becomes. */
+  recipientName?: string | null;
 }) {
   const { t } = useTranslation('feed');
   const {
@@ -73,6 +78,15 @@ export function ComposerBar({
     stopTyping,
   } = c;
   const composing = requestState === 'compose';
+  const savedReplies = useSavedReplies({
+    chatKind: 'dm',
+    recipientName,
+    draft: input,
+    setDraft: setInput,
+    inputRef,
+    maxLength: MESSAGE_MAX_LENGTH,
+    buttonClassName: 'h-[42px]',
+  });
 
   // The request is out: nothing to write until they accept.
   if (requestState === 'sent') return <RequestSentNotice />;
@@ -180,18 +194,21 @@ export function ComposerBar({
                   }}
                   onBlur={stopTyping}
                   onKeyDown={(e) => {
+                    if (savedReplies.onKeyDown(e)) return;
                     if (slash.onKeyDown(e)) return;
                     if (shortcodes.onKeyDown(e)) return;
                     handleKeyDown(e);
                   }}
                   placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
                   rows={1}
-                  maxLength={2000}
+                  maxLength={MESSAGE_MAX_LENGTH}
+                  {...savedReplies.fieldProps}
                   className="surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site px-3 py-2 resize-none max-h-32 overflow-y-auto"
                   style={{ minHeight: '42px' }}
                 />
                 {shortcodes.menu}
                 {slash.popover}
+                {savedReplies.popover}
                 <ComposerLengthCounter used={input.length} />
               </div>
               {!composing && (
@@ -202,6 +219,7 @@ export function ComposerBar({
                 onSelect={insertEmoji}
                 className="flex h-[42px] shrink-0 items-center"
               />
+              {savedReplies.menu}
               {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer; a message request is text only. */}
               {!composing && (
                 <div className="relative shrink-0">

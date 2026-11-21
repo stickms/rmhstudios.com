@@ -69,6 +69,8 @@ interface PostRow {
   imageAlts?: string[];
   /** The reply the author pinned, when the query selected it. */
   pinnedCommentId?: string | null;
+  /** The post's place among its author's pinned posts, when the route looked it up (`pinnedOrderFor`); absent otherwise. */
+  pinnedOrder?: number | null;
 }
 
 /** A post owned by the caller (includes audience). */
@@ -80,6 +82,7 @@ export function serializeOwnPost(p: PostRow & { audience: string }) {
     imageUrls: p.imageUrls ?? [],
     imageAlts: p.imageAlts ?? [],
     pinnedReplyId: p.pinnedCommentId ?? null,
+    ...(p.pinnedOrder !== undefined ? { pinnedOrder: p.pinnedOrder } : {}),
     createdAt: p.createdAt,
     metrics: metrics(p),
   };
@@ -93,6 +96,7 @@ export function serializePublicPost(p: PostRow & { user: ResolvableUser }, viewe
     imageUrls: p.imageUrls ?? [],
     imageAlts: p.imageAlts ?? [],
     pinnedReplyId: p.pinnedCommentId ?? null,
+    ...(p.pinnedOrder !== undefined ? { pinnedOrder: p.pinnedOrder } : {}),
     createdAt: p.createdAt,
     author: serializeAuthor(p.user),
     metrics: metrics(p, countsHiddenFrom(p.user.id, p.user.profile?.hideCountsOnMine, viewerId)),

@@ -15,6 +15,8 @@ import { getFollowingIds, friendsLeaderboardKey } from '@/lib/social/follow-grap
 import { cached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { levelFromXp } from '@/lib/xp/levels';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export type LeaderboardScope = 'global' | 'friends';
 
@@ -63,8 +65,11 @@ async function buildEntries(
   viewerId: string | null,
 ): Promise<LeaderboardEntry[]> {
   // Leaderboards tolerate replica lag (they are already cached 30-60 s).
+  // Members who left the leaderboards (switch off, or banned now) are not ranked; `AND` so the
+  // friends board's own `userId: { in }` is kept (sprint 05 #01).
+  const hidden = await leaderboardHiddenUserIds();
   const rows = await prismaRead.userProfile.findMany({
-    where: { ...where, xp: { gt: 0 } },
+    where: { ...where, xp: { gt: 0 }, AND: [userNotHiddenWhere(hidden)] },
     orderBy: [{ xp: 'desc' }, { userId: 'asc' }],
     take: LIMIT,
     select: { userId: true, xp: true, coins: true, user: { select: userDisplaySelect } },
@@ -95,7 +100,7 @@ async function buildNearby(
     select: { xp: true },
   });
   if (!me || me.xp <= 0) return null;
-  const human = { user: { isBot: false } };
+  const human = { user: { isBot: false }, AND: [userNotHiddenWhere(await leaderboardHiddenUserIds())] };
   const ahead = {
     ...human,
     OR: [{ xp: { gt: me.xp } }, { xp: me.xp, userId: { lt: viewerId } }],

@@ -21,7 +21,6 @@ import {
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { api, apiUrl } from '@/lib/contract/client';
 import {
   exportSecurityActivityApi,
@@ -39,6 +38,7 @@ import { Tabs } from '@/components/ui/tabs';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { useLiveNow } from '@/components/ui/RelativeTime';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const ICONS: Record<SecurityEventKind, LucideIcon> = {
   sign_in: LogIn,
@@ -163,17 +163,17 @@ function notYouLine(text: string): ReactNode[] {
   return out;
 }
 
-function ActivityTime({ iso }: { iso: string }) {
+function ActivityTime({ iso }: { iso: string }) { const fmt = useLocaleFormat(); 
   const now = useLiveNow();
   const ms = new Date(iso).getTime();
   if (Number.isNaN(ms)) return null;
   return (
     <time
       dateTime={new Date(ms).toISOString()}
-      title={new Date(ms).toLocaleString()}
+      title={fmt.dateTime(new Date(ms))}
       className="t-meta text-site-text-muted"
     >
-      {now === null ? iso.slice(0, 10) : formatDistanceToNow(ms, { addSuffix: true })}
+      {now === null ? iso.slice(0, 10) : fmt.relative(ms)}
     </time>
   );
 }

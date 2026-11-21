@@ -2,6 +2,8 @@ import { pageSize } from '@/lib/pagination';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 export const route = apiRoute('/api/games/synapse-storm/leaderboard', {
@@ -18,10 +20,11 @@ export const route = apiRoute('/api/games/synapse-storm/leaderboard', {
       const limitParam = searchParams.get('limit');
       const limit = pageSize(limitParam, 20, 50);
 
+      const hidden = await leaderboardHiddenUserIds();
       const entries = await prisma.synapseStormPlayer.findMany({
         orderBy: { highScore: 'desc' },
         take: limit,
-        where: { highScore: { gt: 0 } },
+        where: { highScore: { gt: 0 }, ...userNotHiddenWhere(hidden) },
         select: {
           userId: true,
           highScore: true,

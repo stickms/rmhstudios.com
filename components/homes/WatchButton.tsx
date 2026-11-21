@@ -25,6 +25,7 @@ import type {
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createHomeWatchApi } from '@/lib/homes/homes.contract';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 interface WatchButtonProps {
   filters: SearchFilters;
@@ -75,7 +76,7 @@ function summarize(
       null
   ) {
     parts.push(
-      `$${filters.minPrice?.toLocaleString() ?? '0'}–${filters.maxPrice?.toLocaleString() ?? '∞'}`,
+      `$${(filters.minPrice != null ? formatNumber(filters.minPrice, currentDocumentLocale()) : undefined) ?? '0'}–${(filters.maxPrice != null ? formatNumber(filters.maxPrice, currentDocumentLocale()) : undefined) ?? '∞'}`,
     );
   }
   if (

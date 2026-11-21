@@ -84,6 +84,7 @@ import { CreditScore } from './CreditScore';
 import { api } from '@/lib/contract/client';
 import { debtStatsApi } from '@/lib/kaikai-debt/kaikai-debt.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type TabId =
   | 'overview'
@@ -98,7 +99,7 @@ export function DebtAnalytics({
   snapshot,
 }: {
   snapshot: DebtSnapshot;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -247,15 +248,14 @@ export function DebtAnalytics({
             value:
               stat.count >
               0
-                ? stat.count.toLocaleString(
-                    'en-US',
-                  )
+                ? fmt.number(stat.count)
                 : undefined,
           }),
         ),
       [
         stats.categories,
         t,
+        fmt,
       ],
     );
 

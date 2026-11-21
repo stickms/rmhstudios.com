@@ -16,6 +16,7 @@ import { createNotification } from '@/lib/notifications.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { EventError } from '@/lib/events/event-error';
 import { scheduleEventReminders } from '@/lib/events/reminders.server';
+import { canManageEvent } from '@/lib/events/cohosts.server';
 import {
   MAX_WAITLIST,
   freeSeats,
@@ -146,13 +147,14 @@ async function releaseHeld(userId: string, held: { eventId: string; status: stri
   }
 }
 
-/** The host or a site admin; anyone else is told the event does not exist. */
+/** The host, an accepted co-host (s05-05) or a site admin; anyone else is told the event does not exist. */
 async function assertHostOrAdmin(eventId: string, actorId: string, isAdmin: boolean) {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     select: { id: true, hostId: true, startsAt: true, recurrence: true },
   });
-  if (!event || event.recurrence || (event.hostId !== actorId && !isAdmin)) throw new EventError('NOT_FOUND');
+  if (!event || event.recurrence) throw new EventError('NOT_FOUND');
+  if (!isAdmin && !(await canManageEvent(event, actorId))) throw new EventError('NOT_FOUND');
   return event;
 }
 

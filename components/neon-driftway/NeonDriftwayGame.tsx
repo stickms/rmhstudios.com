@@ -62,6 +62,7 @@ import { NeonDriftwayTouchControls } from './NeonDriftwayTouchControls';
 import { NeonDriftwayHud, type HudHandle } from './NeonDriftwayHud';
 import { NDWMultiplayerLobby } from './NDWMultiplayerLobby';
 import { NDWMultiplayerClient } from '@/lib/neon-driftway/multiplayer';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const VR_KEY = 'neon-driftway.vr';
 
@@ -113,7 +114,7 @@ function motionPlausible(): boolean {
   return coarse && 'DeviceOrientationEvent' in window;
 }
 
-export function NeonDriftwayGame() {
+export function NeonDriftwayGame() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-neon-driftway');
   // Which tracks are open follows the account when there is one.
   const cloud = useCloudSave(neonDriftwaySave, {
@@ -872,7 +873,7 @@ export function NeonDriftwayGame() {
                     {t('your-score', { defaultValue: 'Your Score' })}
                   </div>
                   <div className="text-3xl font-black tabular-nums text-cyan-400">
-                    {runStats.score.toLocaleString()}
+                    {fmt.number(runStats.score)}
                   </div>
                 </div>
               </div>
@@ -899,7 +900,7 @@ export function NeonDriftwayGame() {
                           {r.name} {isSelf ? t('you-label', { defaultValue: '(You)' }) : ''}
                         </span>
                       </div>
-                      <span className="font-bold tabular-nums text-cyan-300">{r.score.toLocaleString()}</span>
+                      <span className="font-bold tabular-nums text-cyan-300">{fmt.number(r.score)}</span>
                     </div>
                   );
                 })}

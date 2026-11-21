@@ -3,6 +3,7 @@ import { lazy, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { ExternalLink, Gift } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
@@ -24,10 +25,6 @@ import {
 const MixtapeEditor = lazy(() => import('@/components/gifting/MixtapeEditor'));
 
 const who = (u: ExchangeUser) => u.name ?? (u.handle ? `@${u.handle}` : '?');
-const when = (iso: string) =>
-  new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
-    new Date(iso),
-  );
 
 function MixtapePlayer({ tracks }: { tracks: MixtapeTrack[] }) {
   const { t } = useTranslation('f-gifting');
@@ -60,6 +57,8 @@ function MixtapePlayer({ tracks }: { tracks: MixtapeTrack[] }) {
 
 export default function ExchangeDetail({ id }: { id: string }) {
   const { t } = useTranslation('f-gifting');
+  const lf = useLocaleFormat();
+  const when = (iso: string) => lf.dateTime(iso, { dateStyle: 'medium', timeStyle: 'short' });
   const qc = useQueryClient();
   const key = ['gift-exchange', id] as const;
   const {

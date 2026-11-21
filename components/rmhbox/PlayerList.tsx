@@ -22,6 +22,7 @@ import {
   ArrowRightLeft,
 } from 'lucide-react';
 import type { ClientPlayerInfo } from '@/lib/rmhbox/types';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface PlayerListProps {
   players: ClientPlayerInfo[];
@@ -43,7 +44,7 @@ export default function PlayerList({
   myUserId,
   onKick,
   onTransferHost,
-}: PlayerListProps) {
+}: PlayerListProps) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -148,7 +149,7 @@ export default function PlayerList({
               {player.score >
                 0 && (
                 <span className="shrink-0 rounded-full bg-app-accent/15 px-2 py-0.5 text-xs font-bold tabular-nums text-app-accent">
-                  {player.score.toLocaleString()}
+                  {fmt.number(player.score)}
                 </span>
               )}
 

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
 import type { PoemRecord, Grade } from '@/lib/versecraft/types';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const GRADE_COLORS: Record<Grade, string> = {
   S: '#FFD700', A: '#4CAF50', B: '#2196F3',
@@ -14,7 +15,7 @@ function PoemCard({ poem, isSelected, onClick }: {
   poem: PoemRecord;
   isSelected: boolean;
   onClick: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   return (
     <motion.button
       className="w-full text-left px-3 py-2 rounded transition-colors"
@@ -36,7 +37,7 @@ function PoemCard({ poem, isSelected, onClick }: {
           {poem.grade}
         </span>
         <span className="text-xs" style={{ color: '#666' }}>
-          {new Date(poem.timestamp).toLocaleDateString()}
+          {fmt.date(new Date(poem.timestamp))}
         </span>
       </div>
       <p
@@ -49,7 +50,7 @@ function PoemCard({ poem, isSelected, onClick }: {
   );
 }
 
-export function PoemJournal() {
+export function PoemJournal() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("c-versecraft");
   const poemHistory = useGameStore(s => s.poemHistory);
   const settings = useGameStore(s => s.settings);
@@ -154,7 +155,7 @@ export function PoemJournal() {
                       {selectedPoem.puzzleType.replace(/_/g, ' ')} | {selectedPoem.chapter}
                     </p>
                     <p className="text-xs" style={{ color: '#555' }}>
-                      {new Date(selectedPoem.timestamp).toLocaleString()}
+                      {fmt.dateTime(new Date(selectedPoem.timestamp))}
                     </p>
                   </div>
                 </div>

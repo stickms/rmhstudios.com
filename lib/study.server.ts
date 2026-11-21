@@ -1,4 +1,8 @@
 import { prisma } from '@/lib/prisma.server';
+import { isCardKind, isReviewable, noteIdOf, type CardKind } from '@/lib/study/card-types';
+import { AUTHORED_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { insertCards } from '@/lib/study/deck-editor.server';
+import type { TestCard } from '@/lib/study/practice-test';
 
 export interface DeckSummary {
   id: string;
@@ -143,7 +147,12 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       isPublic: true,
       title: true,
       description: true,
-      cards: { orderBy: { position: 'asc' }, select: { front: true, back: true } },
+      // Authored cards only: the clone's siblings are generated again, so they get their own ids.
+      cards: {
+        where: AUTHORED_WHERE,
+        orderBy: CARD_ORDER,
+        select: { kind: true, front: true, back: true },
+      },
     },
   });
   if (!source || !source.isPublic) return { ok: false, error: 'Deck not found', status: 404 };
@@ -159,27 +168,41 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
   const count = await prisma.flashcardDeck.count({ where: { userId } });
   if (count >= MAX_DECKS) return { ok: false, error: 'Too many decks', status: 400 };
 
-  const deck = await prisma.flashcardDeck.create({
-    data: {
-      userId,
-      title: source.title.slice(0, 100),
-      description: source.description?.slice(0, 500) ?? null,
-      isPublic: false,
-      clonedFromId: sourceId,
-      cardCount: source.cards.length,
-      cards: source.cards.length
-        ? { create: source.cards.map((c, i) => ({ front: c.front, back: c.back, position: i })) }
-        : undefined,
-    },
-    select: { id: true },
+  const deck = await prisma.$transaction(async (tx) => {
+    const created = await tx.flashcardDeck.create({
+      data: {
+        userId,
+        title: source.title.slice(0, 100),
+        description: source.description?.slice(0, 500) ?? null,
+        isPublic: false,
+        clonedFromId: sourceId,
+        cardCount: source.cards.length,
+      },
+      select: { id: true },
+    });
+    if (source.cards.length > 0) {
+      await insertCards(
+        tx,
+        created.id,
+        source.cards.map((c) => ({ kind: cardKind(c.kind), front: c.front, back: c.back })),
+      );
+    }
+    return created;
   });
   return { ok: true, id: deck.id, alreadyOwned: false };
 }
 
+const cardKind = (kind: string): CardKind => (isCardKind(kind) ? kind : 'basic');
+
+/** An authored card as the deck page, the editor and export read it. */
 export interface DeckCard {
   id: string;
   front: string;
   back: string;
+  kind: CardKind;
+  /** Always null for an authored card; set on the generated cards review returns. */
+  clozeIndex: number | null;
+  sourceId: string | null;
 }
 
 export interface DeckDetail {
@@ -189,15 +212,21 @@ export interface DeckDetail {
     description: string | null;
     isPublic: boolean;
     isOwner: boolean;
+    /** Authored cards: what the owner wrote. */
     cardCount: number;
   };
+  /** The authored cards, in deck order. */
   cards: DeckCard[];
+  /** Cards a member studies: authored plus generated, minus authored cloze text. */
+  reviewCount: number;
+  /** Every row in the deck, generated cards included: what the 2,000-card cap counts. */
+  rowCount: number;
   dueCount: number;
   signedIn: boolean;
 }
 
 /**
- * Resolve a single deck (with cards + this viewer's due count) for the given
+ * Resolve a single deck (with its authored cards + this viewer's due count) for the given
  * viewer. Shared by the `/api/study/decks/$id` GET handler and the
  * `/study/$deckId` route loader. Returns `null` when the deck does not exist or
  * is private and the viewer is not its owner (the caller maps that to a 404 /
@@ -208,24 +237,27 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
     where: { id: deckId },
     select: {
       id: true, title: true, description: true, isPublic: true, userId: true, cardCount: true,
-      cards: { orderBy: { position: 'asc' }, select: { id: true, front: true, back: true } },
+      cards: {
+        orderBy: CARD_ORDER,
+        select: { id: true, front: true, back: true, kind: true, sourceId: true, clozeIndex: true },
+      },
     },
   });
   if (!deck) return null;
   const isOwner = viewer.id === deck.userId;
   if (!deck.isPublic && !isOwner) return null;
 
-  // Count due cards for this viewer.
+  // Due cards are counted over what is reviewed (generated cards included), not what is listed.
+  const reviewable = deck.cards.filter(isReviewable);
   let dueCount = 0;
   if (viewer.id) {
-    const cardIds = deck.cards.map((c) => c.id);
     const reviewed = await prisma.flashcardReview.findMany({
-      where: { userId: viewer.id, cardId: { in: cardIds } },
+      where: { userId: viewer.id, cardId: { in: reviewable.map((c) => c.id) } },
       select: { cardId: true, dueAt: true },
     });
     const reviewedMap = new Map(reviewed.map((r) => [r.cardId, r.dueAt]));
     const now = Date.now();
-    for (const c of deck.cards) {
+    for (const c of reviewable) {
       const due = reviewedMap.get(c.id);
       if (!due || due.getTime() <= now) dueCount++;
     }
@@ -233,8 +265,32 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
 
   return {
     deck: { id: deck.id, title: deck.title, description: deck.description, isPublic: deck.isPublic, isOwner, cardCount: deck.cardCount },
-    cards: isOwner ? deck.cards : deck.cards.map((c) => ({ id: c.id, front: c.front, back: c.back })),
+    cards: deck.cards
+      .filter((c) => c.sourceId === null)
+      .map((c) => ({ id: c.id, front: c.front, back: c.back, kind: cardKind(c.kind), clozeIndex: null, sourceId: null })),
+    reviewCount: reviewable.length,
+    rowCount: deck.cards.length,
     dueCount,
     signedIn: !!viewer.id,
   };
+}
+
+/**
+ * The cards a practice test draws from: reviewable cards only, each with the note it belongs to
+ * so a test never asks about the same fact twice. The caller has already checked the viewer may
+ * read the deck.
+ */
+export async function getTestCards(deckId: string): Promise<TestCard[]> {
+  const rows = await prisma.flashcard.findMany({
+    where: { deckId, ...REVIEWABLE_WHERE },
+    orderBy: CARD_ORDER,
+    select: { id: true, front: true, back: true, sourceId: true, clozeIndex: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    front: r.front,
+    back: r.back,
+    clozeIndex: r.clozeIndex,
+    noteId: noteIdOf(r),
+  }));
 }

@@ -26,6 +26,8 @@
 import type { Prisma } from '@prisma/client';
 import { prisma, prismaRead } from '@/lib/prisma.server';
 import { getGameScoreRules, type GameScoreRules } from '@/lib/game/registry';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 // Type-only on purpose: `adapters.server.ts` imports this module for its value,
 // so a value import back would be a runtime cycle. `import type` is erased at
 // compile time, which leaves the dependency one-directional at runtime while
@@ -161,8 +163,11 @@ export async function genericLeaderboardRows(
 
   // Board reads are lag-tolerant (the public route caches them 60 s) and never
   // feed a write; rank-after-submit (`rankOf`) stays on the primary.
+  // Members who turned the leaderboard switch off, and banned ones, are left off. `AND` rather than a
+  // spread, because a scope's own `userId: { in }` must not be overwritten (sprint 05 #01).
+  const hidden = await leaderboardHiddenUserIds();
   const rows = await prismaRead.gameStat.findMany({
-    where: { gameId, ...(opts.where ?? {}) },
+    where: { gameId, ...(opts.where ?? {}), ...(hidden.size > 0 ? { AND: [userNotHiddenWhere(hidden)] } : {}) },
     // `updatedAt asc` breaks ties: whoever reached the score first outranks
     // whoever matched it later. Without a second key the order is whatever the
     // planner returns, which makes paging silently drop and repeat rows.
@@ -252,8 +257,10 @@ export function genericAdapter(gameId: string): GameAdapter {
     },
 
     async rankOf(score: number): Promise<number> {
+      // Listed players only, so a hidden member's own rank matches the board they are not on.
+      const hidden = await leaderboardHiddenUserIds();
       const better = await prisma.gameStat.count({
-        where: { gameId, score: lowerIsBetter ? { lt: score } : { gt: score } },
+        where: { gameId, score: lowerIsBetter ? { lt: score } : { gt: score }, ...userNotHiddenWhere(hidden) },
       });
       return better + 1;
     },

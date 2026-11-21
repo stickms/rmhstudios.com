@@ -42,6 +42,7 @@ import {
   pointerInViewBox,
   useHoverIndex,
 } from './chart-kit';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const PLOT =
   makePlot(
@@ -131,7 +132,7 @@ export function RhythmHeatmap({
 }: {
   rhythm: readonly RhythmCell[];
   nowMs: number;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -591,9 +592,7 @@ export function RhythmHeatmap({
                   'Lines',
               },
             )}
-            value={active.count.toLocaleString(
-              'en-US',
-            )}
+            value={fmt.number(active.count)}
           />
           <ReadoutRow
             label={t(

@@ -31,6 +31,7 @@ import { lruL1 } from '@/lib/cached.server';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
 import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
 import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
+import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
 import { derivePostKind } from '@/lib/communities/automod';
 import { listFlairs } from '@/lib/communities/flairs.server';
 import { challengeEntryError } from '@/lib/communities/challenge.server';
@@ -450,6 +451,9 @@ export const route = apiRoute('/api/rmharks', {
           { status: 202 },
         );
       }
+
+      // A visible community post: queue the opted-in members' alerts (the fan-out runs in the jobs worker).
+      if (communityId) void enqueuePostAlert(rmhark.id);
 
       // Fire-and-forget AI pre-screen for policy violations. Never blocks or
       // delays the post; only files a report for human review if clearly abusive.

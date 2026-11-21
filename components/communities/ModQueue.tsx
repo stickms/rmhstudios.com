@@ -4,7 +4,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Inbox } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -21,6 +20,7 @@ import { MacroField } from '@/components/safety/MacroField';
 import { Select } from '@/components/ui/select';
 import type { ModItemDTO } from '@/lib/communities/plus';
 import type { CommunityRuleDTO } from '@/lib/communities/rules';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function ModQueue({
   slug,
@@ -31,7 +31,7 @@ export function ModQueue({
   /** s03-14: opens the Log tab, the full record of moderation actions. */
   onOpenLog?: () => void;
   /** The community's rules, for citing one on a removal. */ rules?: CommunityRuleDTO[];
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -453,14 +453,9 @@ export function ModQueue({
                   </span>{' '}
                   <span>
                     {' '}
-                    {formatDistanceToNow(
-                      new Date(
+                    {fmt.relative(new Date(
                         i.createdAt,
-                      ),
-                      {
-                        addSuffix: true,
-                      },
-                    )}
+                      ))}
                   </span>
                 </div>
                 <p className="whitespace-pre-wrap break-words text-sm text-site-text">

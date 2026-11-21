@@ -6,6 +6,7 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import type { FeedItem } from '@/lib/feed-types';
+import { PROFILE_PINS_CHANGED } from '@/lib/feed/profile-pins';
 import type { ProfileData } from '@/components/profile/profile-types';
 import { useUserDisplayStore } from '@/stores/userDisplayStore';
 import { profilePostsFirstPageUrl } from '@/lib/feed/profile-prefetch';
@@ -90,6 +91,9 @@ export function useProfilePosts(
     useRef(
       false,
     );
+  // Set by a pin change: the next first-page load replaces the list instead of appending to it.
+  const replaceOnNextLoad = useRef(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Liked items state
   const [
@@ -230,14 +234,9 @@ export function useProfilePosts(
             .setUsers(
               users,
             );
-        setItems(
-          (
-            prev,
-          ) => [
-            ...prev,
-            ...data.items,
-          ],
-        );
+        const replace = replaceOnNextLoad.current;
+        replaceOnNextLoad.current = false;
+        setItems((prev) => (replace ? data.items : [...prev, ...data.items]));
         setCursor(
           data.nextCursor,
         );
@@ -335,6 +334,20 @@ export function useProfilePosts(
       loadingLiked,
     ]);
 
+  // A pin was added, removed or moved from a post menu: load page one again so the pinned posts lead in their new
+  // order. The list stays on screen until the new page replaces it.
+  useEffect(() => {
+    const onChanged = () => {
+      replaceOnNextLoad.current = true;
+      initialFetched.current = false;
+      setCursor(null);
+      setHasMore(true);
+      setReloadKey((k) => k + 1);
+    };
+    window.addEventListener(PROFILE_PINS_CHANGED, onChanged);
+    return () => window.removeEventListener(PROFILE_PINS_CHANGED, onChanged);
+  }, []);
+
   // Initial fetch for RMHarks
   useEffect(() => {
     if (
@@ -349,6 +362,7 @@ export function useProfilePosts(
     loading,
     profile,
     fetchRMHarks,
+    reloadKey,
   ]);
 
   // Infinite scroll for RMHarks

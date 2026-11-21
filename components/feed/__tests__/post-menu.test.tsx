@@ -55,7 +55,10 @@ describe('where the dots are', () => {
       expect(i, needle).toBeGreaterThan(-1);
       return i;
     };
-    expect(at('icon={Pin}')).toBeLessThan(at('icon={Trash2} tone="danger"'));
+    // The pin rows live in PinMenuItems (s05-19 profile-pins: up to three, with Move up / Move down); the group
+    // still ends with Delete.
+    expect(at('<PinMenuItems')).toBeLessThan(at('icon={Trash2} tone="danger"'));
+    expect(read('PinMenuItems.tsx')).toMatch(/icon=\{\s*Pin\s*\}/);
     expect(at('icon={Flag}')).toBeLessThan(at('icon={VolumeX}'));
     expect(at('icon={VolumeX}')).toBeLessThan(at('icon={Ban} tone="danger"'));
   });

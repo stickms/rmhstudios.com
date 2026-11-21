@@ -9,6 +9,7 @@ import type { ReleaseNoteView } from '@/lib/developer/release-notes';
 import { api } from '@/lib/contract/client';
 import { releaseNotesApi } from '@/lib/site-reads.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * The published release notes, newest first, as rows on rules. It is the
@@ -16,7 +17,7 @@ import { useArrival } from '@/components/ui/arrive';
  * 2026-11-19 consolidation): the first `limit` notes show, and the rest are one
  * press away.
  */
-export function ChangelogList({ limit }: { limit?: number }) {
+export function ChangelogList({ limit }: { limit?: number }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-devplatform');
   const [notes, setNotes] = useState<ReleaseNoteView[] | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -57,7 +58,7 @@ export function ChangelogList({ limit }: { limit?: number }) {
               <h3 className="t-heading text-site-text">{n.title}</h3>
               <span className="t-meta shrink-0">
                 {n.version}
-                {n.publishedAt ? ` · ${new Date(n.publishedAt).toLocaleDateString()}` : ''}
+                {n.publishedAt ? ` · ${fmt.date(new Date(n.publishedAt))}` : ''}
               </span>
             </div>
             <NoteBody body={n.body} />

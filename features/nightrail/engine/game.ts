@@ -74,6 +74,7 @@ import type {
   TrickDirection,
 } from './types';
 import { clamp } from '@/lib/core/math';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 /**
  * Something worth reacting to that happened during a step.
@@ -329,7 +330,7 @@ function bankCombo(state: RunState): void {
     state.stats.bestComboMultiplier = combo.multiplier;
   }
   state.events.push({ type: 'combo', points, multiplier: combo.multiplier });
-  addPopup(state, `+${points.toLocaleString()}`, '#7dd3fc', Math.min(3, combo.multiplier / 4));
+  addPopup(state, `+${formatNumber(points, currentDocumentLocale())}`, '#7dd3fc', Math.min(3, combo.multiplier / 4));
   combo.pending = 0;
   combo.multiplier = 1;
   combo.chain = [];

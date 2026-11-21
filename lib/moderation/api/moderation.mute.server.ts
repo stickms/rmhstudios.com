@@ -2,14 +2,16 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateHiddenAuthors } from '@/lib/moderation.server';
+import { toggleAction } from '@/lib/moderation/blocked-muted-schema';
 import { z } from 'zod';
 
 /**
  * POST /api/moderation/mute — toggle a mute on another user. Muting hides their
  * content from your feed without unfollowing them or notifying them.
+ * An explicit `mute` boolean (the settings list, s05-14) says which way to go; absent flips the current state.
  * GET — list the ids the current user has muted.
  */
-const muteSchema = z.object({ targetUserId: z.string().min(1).max(64) });
+const muteSchema = z.object({ targetUserId: z.string().min(1).max(64), mute: z.boolean().optional() });
 
 export const route = apiRoute('/api/moderation/mute', {
   GET: defineHandler({}, async ({ session }) => {
@@ -36,6 +38,9 @@ export const route = apiRoute('/api/moderation/mute', {
       const existing = await prisma.userMute.findUnique({
         where: { muterId_mutedId: { muterId, mutedId } },
       });
+
+      const action = toggleAction(existing !== null, body.mute);
+      if (action === 'none') return Response.json({ success: true, muted: existing !== null });
 
       if (existing) {
         await prisma.userMute.delete({ where: { id: existing.id } });

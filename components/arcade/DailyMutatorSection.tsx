@@ -10,6 +10,7 @@ import { SEEDED_GAMES } from '@/lib/arcade/seeded';
 import { dailyMutatorQuery } from '@/lib/arcade/daily.queries';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function untilReset(): string {
   const ms = 86_400_000 - (Date.now() % 86_400_000);
@@ -23,7 +24,7 @@ function untilReset(): string {
  * `/daily-mutator` page until the 2026-11-19 consolidation put the daily things
  * on one page.
  */
-export function DailyMutatorSection() {
+export function DailyMutatorSection() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-arcade');
   const session = useSession();
   const signedIn = !!session.data?.user;
@@ -89,7 +90,7 @@ export function DailyMutatorSection() {
                     {data.mine?.score != null
                       ? t('your-score', {
                           defaultValue: 'Your score: {{score}}',
-                          score: data.mine.score.toLocaleString(),
+                          score: fmt.number(data.mine.score),
                         })
                       : t('attempt-open', {
                           defaultValue: 'Attempt started. Finish the run to post it.',
@@ -124,7 +125,7 @@ export function DailyMutatorSection() {
                           {r.rank}. {r.user.name ?? r.user.handle}
                         </span>
                         <span className="font-mono text-sm text-site-text">
-                          {r.score.toLocaleString()}
+                          {fmt.number(r.score)}
                         </span>
                       </Card>
                     </li>

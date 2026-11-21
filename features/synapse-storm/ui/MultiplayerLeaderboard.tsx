@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from "react-i18next";
 import type { SSLeaderboardEntry } from '../engine/multiplayerClient';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface MultiplayerLeaderboardProps {
     leaderboard: SSLeaderboardEntry[];
@@ -10,7 +11,7 @@ interface MultiplayerLeaderboardProps {
 
 export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
     leaderboard, currentUserId, compact = false,
-}) => {
+}) => { const fmt = useLocaleFormat(); 
     const { t } = useTranslation("c-synapse-storm");
     const sorted = [...leaderboard].sort((a, b) => b.score - a.score);
 
@@ -25,7 +26,7 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
                     >
                         <span className="ss-lb-rank">#{i + 1}</span>
                         <span className="ss-lb-name">{entry.displayName}</span>
-                        <span className="ss-lb-score">{entry.score.toLocaleString()}</span>
+                        <span className="ss-lb-score">{fmt.number(entry.score)}</span>
                     </div>
                 ))}
             </div>
@@ -52,7 +53,7 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
                                 <span>{t("missed", { defaultValue: "Missed:" })} {entry.puzzlesMissed}</span>
                             </div>
                         </div>
-                        <div className="ss-lb-full-score">{entry.score.toLocaleString()}</div>
+                        <div className="ss-lb-full-score">{fmt.number(entry.score)}</div>
                     </div>
                 ))}
             </div>

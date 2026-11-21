@@ -17,6 +17,7 @@ import {
 import { APPS } from './apps';
 import type { IconName } from './icons';
 import type { AppId } from './store';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 export function iconFor(
   node: VNode,
@@ -206,5 +207,5 @@ export function sizeLabel(
         )
           .size
       : 0;
-  return `${Math.max(1, Math.ceil(bytes / 1024)).toLocaleString()} KB`;
+  return `${formatNumber(Math.max(1, Math.ceil(bytes / 1024)), currentDocumentLocale())} KB`;
 }

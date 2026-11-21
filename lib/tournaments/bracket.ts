@@ -26,11 +26,21 @@ export interface BracketMatch {
     | 'READY'
     | 'PENDING'
     | 'BYE';
+  /** Double elimination only (absent = winners bracket): which bracket the match belongs to. */
+  bracket?: BracketId;
+  /** Double elimination only: key `${round}:${slot}` the loser of this match drops into. */
+  loserKey?: string | null;
+  /** Double elimination only: which slot of that match the loser takes. */
+  loserSlot?: 0 | 1 | null;
 }
+
+/** W winners bracket, L losers bracket, GF grand final, GR bracket reset. */
+export type BracketId = 'W' | 'L' | 'GF' | 'GR';
 
 export interface Bracket {
   format:
     | 'SINGLE_ELIM'
+    | 'DOUBLE_ELIM'
     | 'ROUND_ROBIN';
   rounds: number;
   matches: BracketMatch[];
@@ -320,17 +330,185 @@ export function generateRoundRobin(
 export function generateBracket(
   format:
     | 'SINGLE_ELIM'
+    | 'DOUBLE_ELIM'
     | 'ROUND_ROBIN',
   entrantIdsBySeed: string[],
 ): Bracket {
-  return format ===
-    'ROUND_ROBIN'
-    ? generateRoundRobin(
-        entrantIdsBySeed,
-      )
-    : generateSingleElim(
-        entrantIdsBySeed,
-      );
+  if (format === 'ROUND_ROBIN') return generateRoundRobin(entrantIdsBySeed);
+  if (format === 'DOUBLE_ELIM') return generateDoubleElim(entrantIdsBySeed);
+  return generateSingleElim(entrantIdsBySeed);
+}
+
+/**
+ * Double elimination for 4 or more entrants.
+ *
+ * Round numbering keeps `@@unique([tournamentId, round, slot])` valid across the
+ * three brackets. With W = log2(bracket size):
+ *   - winners bracket   rounds 1 .. W                 (exactly single elimination)
+ *   - losers bracket    rounds W+1 .. 3W-2            (2(W-1) rounds, in play order)
+ *   - grand final       round 3W-1, slot 0
+ *   - bracket reset     round 3W, slot 0              (created lazily, never here)
+ * `bracket` ('W' | 'L' | 'GF' | 'GR') says which one a round belongs to.
+ *
+ * Losers round 2j-1 (consolidation) pairs the survivors of the round before it
+ * (round 1 pairs the winners-bracket round-1 losers); losers round 2j (drop-in)
+ * pairs each survivor with the loser of winners round j+1, taken in reverse
+ * order so a player does not meet someone they just lost to.
+ *
+ * A bye has no loser, so a losers match with fewer than two possible entrants is
+ * not a match: it is left out and the one possible entrant is routed straight to
+ * whatever the match would have fed (a match with none is dropped altogether).
+ * Every other winners match carries a loser link, so at most 2n - 1 matches exist
+ * up front and the champion of the losers bracket meets the winners champion in
+ * the grand final (winners champion in slot A).
+ */
+export function generateDoubleElim(entrantIdsBySeed: string[]): Bracket {
+  if (entrantIdsBySeed.length < 4) {
+    return { format: 'DOUBLE_ELIM', rounds: 0, matches: [] };
+  }
+  const winners = generateSingleElim(entrantIdsBySeed);
+  const W = winners.rounds;
+  const keyOf = (round: number, slot: number) => `${round}:${slot}`;
+  const matches: BracketMatch[] = winners.matches.map((m) => ({
+    ...m,
+    bracket: 'W' as const,
+    loserKey: null,
+    loserSlot: null,
+  }));
+  const byKey = new Map(matches.map((m) => [keyOf(m.round, m.slot), m]));
+
+  // A producer is "the winner of match K" or "the loser of match K".
+  type Producer = { kind: 'winner' | 'loser'; key: string } | null;
+  const feed = (producer: Producer, key: string, slot: 0 | 1) => {
+    const source = producer && byKey.get(producer.key);
+    if (!producer || !source) return;
+    if (producer.kind === 'winner') {
+      source.nextKey = key;
+      source.nextSlot = slot;
+    } else {
+      source.loserKey = key;
+      source.loserSlot = slot;
+    }
+  };
+
+  // Round-1 losers exist only for matches that are not byes.
+  const round1Loser = (slot: number): Producer => {
+    const m = byKey.get(keyOf(1, slot));
+    return m && m.state !== 'BYE' ? { kind: 'loser', key: keyOf(1, slot) } : null;
+  };
+
+  const losersRounds = 2 * (W - 1);
+  let previous: Producer[] = [];
+  for (let k = 1; k <= losersRounds; k++) {
+    const j = Math.ceil(k / 2);
+    const count = 2 ** W / 2 ** (j + 1);
+    const round = W + k;
+    const current: Producer[] = [];
+    for (let i = 0; i < count; i++) {
+      let a: Producer;
+      let b: Producer;
+      if (k === 1) {
+        a = round1Loser(2 * i);
+        b = round1Loser(2 * i + 1);
+      } else if (k % 2 === 1) {
+        a = previous[2 * i] ?? null;
+        b = previous[2 * i + 1] ?? null;
+      } else {
+        a = previous[i] ?? null;
+        b = { kind: 'loser', key: keyOf(j + 1, count - 1 - i) };
+      }
+      const key = keyOf(round, i);
+      if (a && b) {
+        matches.push({
+          round,
+          slot: i,
+          entrantAId: null,
+          entrantBId: null,
+          nextKey: null,
+          nextSlot: null,
+          state: 'PENDING',
+          bracket: 'L',
+          loserKey: null,
+          loserSlot: null,
+        });
+        byKey.set(key, matches[matches.length - 1]);
+        feed(a, key, 0);
+        feed(b, key, 1);
+        current.push({ kind: 'winner', key });
+      } else {
+        // Pass-through (one possible entrant) or empty (none): no match is made.
+        current.push(a ?? b);
+      }
+    }
+    previous = current;
+  }
+
+  const grandFinal = keyOf(3 * W - 1, 0);
+  matches.push({
+    round: 3 * W - 1,
+    slot: 0,
+    entrantAId: null,
+    entrantBId: null,
+    nextKey: null,
+    nextSlot: null,
+    state: 'PENDING',
+    bracket: 'GF',
+    loserKey: null,
+    loserSlot: null,
+  });
+  feed({ kind: 'winner', key: keyOf(W, 0) }, grandFinal, 0);
+  feed(previous[0] ?? null, grandFinal, 1);
+
+  return { format: 'DOUBLE_ELIM', rounds: 3 * W - 1, matches };
+}
+
+/** The elimination data `rankDoubleElim` reads from a settled match. */
+export interface DoubleElimMatchRow {
+  round: number;
+  bracket: string;
+  state: string;
+  entrantAId: string | null;
+  entrantBId: string | null;
+  winnerEntrantId: string | null;
+}
+
+/**
+ * Final order of a finished double-elimination tournament, best first: the
+ * champion (winner of the bracket reset if one was played, else of the grand
+ * final), the other finalist, then everyone else by the losers-bracket round in
+ * which they fell (later is better: the losers final loser is third, the losers
+ * semifinal loser fourth), ties broken by more wins, then the better seed.
+ */
+export function rankDoubleElim(
+  entrants: readonly { id: string; wins: number; seed: number | null }[],
+  matches: readonly DoubleElimMatchRow[],
+): string[] {
+  const finalMatch =
+    matches.find((m) => m.bracket === 'GR' && m.state === 'COMPLETE') ??
+    matches.find((m) => m.bracket === 'GF' && m.state === 'COMPLETE');
+  const champion = finalMatch?.winnerEntrantId ?? null;
+  const runnerUp =
+    finalMatch && champion
+      ? ([finalMatch.entrantAId, finalMatch.entrantBId].find((id) => id && id !== champion) ?? null)
+      : null;
+
+  const fellIn = new Map<string, number>();
+  for (const m of matches) {
+    if (m.bracket !== 'L' || m.state !== 'COMPLETE' || !m.winnerEntrantId) continue;
+    const loser = [m.entrantAId, m.entrantBId].find((id) => id && id !== m.winnerEntrantId);
+    if (loser) fellIn.set(loser, m.round);
+  }
+
+  const rest = entrants
+    .filter((e) => e.id !== champion && e.id !== runnerUp)
+    .sort(
+      (a, b) =>
+        (fellIn.get(b.id) ?? 0) - (fellIn.get(a.id) ?? 0) ||
+        b.wins - a.wins ||
+        (a.seed ?? Infinity) - (b.seed ?? Infinity),
+    )
+    .map((e) => e.id);
+  return [champion, runnerUp, ...rest].filter((id): id is string => id != null);
 }
 
 /** A bracket match with its row id assigned and `nextKey` resolved to that id. */
@@ -353,6 +531,15 @@ export interface PersistableMatch {
     | string
     | null;
   nextSlot:
+    | 0
+    | 1
+    | null;
+  bracket: BracketId;
+  /** Row id the loser of this match drops into (double elimination), else null. */
+  loserNextMatchId:
+    | string
+    | null;
+  loserNextSlot:
     | 0
     | 1
     | null;
@@ -443,6 +630,22 @@ export function resolveBracketRows(
           m.nextKey,
         )
           ? m.nextSlot
+          : null,
+      bracket:
+        m.bracket ?? 'W',
+      loserNextMatchId:
+        m.loserKey
+          ? (idByKey.get(
+              m.loserKey,
+            ) ??
+            null)
+          : null,
+      loserNextSlot:
+        m.loserKey &&
+        idByKey.get(
+          m.loserKey,
+        )
+          ? (m.loserSlot ?? null)
           : null,
     }),
   );

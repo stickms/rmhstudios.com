@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { lockKey } from '@/lib/db/advisory-lock.server';
 
 /** The only live playlist kind. Legacy `music` rows are ignored everywhere. */
 export const PLAYLIST_KIND = 'video';
@@ -195,6 +196,72 @@ export async function addItem(
     }),
   ]);
   return { ok: true, duplicate: false };
+}
+
+export type AddItemsResult =
+  | { ok: true; added: number; duplicates: number; skipped: number }
+  | { ok: false; error: string; status: number };
+
+/**
+ * Append several items in one transaction (the room queue saved as a playlist).
+ * The same rules as `addItem`: owner or collaborator only, de-duped by
+ * `externalId` (against the playlist and within the batch), and at most
+ * `MAX_ITEMS`; items that would pass the cap are counted in `skipped`. The cap
+ * check and the write sit under one advisory lock so two saves cannot both pass it.
+ */
+export async function addItems(
+  playlistId: string,
+  userId: string,
+  items: NewItem[],
+): Promise<AddItemsResult> {
+  if (!(await canEditPlaylist(userId, playlistId))) {
+    return { ok: false, error: 'Playlist not found', status: 404 };
+  }
+  return prisma.$transaction(async (tx) => {
+    await lockKey(tx, `playlist-items:${playlistId}`);
+    const pl = await tx.playlist.findUnique({
+      where: { id: playlistId },
+      select: { itemCount: true },
+    });
+    if (!pl) return { ok: false as const, error: 'Playlist not found', status: 404 };
+    const existing = await tx.playlistItem.findMany({
+      where: { playlistId },
+      select: { externalId: true },
+    });
+    const have = new Set(existing.map((e) => e.externalId));
+    const fresh: NewItem[] = [];
+    let duplicates = 0;
+    for (const item of items) {
+      const externalId = item.externalId.slice(0, 255);
+      if (have.has(externalId)) {
+        duplicates += 1;
+        continue;
+      }
+      have.add(externalId);
+      fresh.push(item);
+    }
+    const room = Math.max(0, MAX_ITEMS - pl.itemCount);
+    const take = fresh.slice(0, room);
+    if (take.length > 0) {
+      await tx.playlistItem.createMany({
+        data: take.map((item, i) => ({
+          playlistId,
+          position: pl.itemCount + i,
+          externalId: item.externalId.slice(0, 255),
+          title: item.title.slice(0, 300),
+          subtitle: item.subtitle?.slice(0, 300) ?? null,
+          thumbnail: item.thumbnail?.slice(0, 500) ?? null,
+          url: item.url?.slice(0, 1000) ?? null,
+          durationMs: item.durationMs ?? null,
+        })),
+      });
+      await tx.playlist.update({
+        where: { id: playlistId },
+        data: { itemCount: { increment: take.length } },
+      });
+    }
+    return { ok: true as const, added: take.length, duplicates, skipped: fresh.length - take.length };
+  });
 }
 
 export async function removeItem(

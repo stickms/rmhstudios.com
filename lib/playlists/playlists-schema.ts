@@ -126,3 +126,10 @@ export const addPlaylistItemBody =
           .nullable(),
     },
   );
+
+/** The most items one bulk add takes (the room queue saved as a playlist). */
+export const MAX_BULK_ITEMS = 200;
+
+export const addPlaylistItemsBulkBody = z.object({
+  items: z.array(addPlaylistItemBody).min(1).max(MAX_BULK_ITEMS),
+});

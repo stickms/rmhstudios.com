@@ -9,8 +9,9 @@
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { useLaundryStore } from '@features/laundry-sort/engine/store';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
-export function VersusTicker() {
+export function VersusTicker() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -132,7 +133,7 @@ export function VersusTicker() {
                     />
                   ) : null}
                   <span className="ls-numeric shrink-0 tabular-nums">
-                    {entry.score.toLocaleString()}
+                    {fmt.number(entry.score)}
                   </span>
                 </li>
               );

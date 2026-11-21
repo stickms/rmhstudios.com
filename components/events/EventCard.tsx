@@ -12,8 +12,11 @@ import { useSession } from '@/components/Providers';
 import type { EventDTO, EventVenueKindValue, RsvpResult } from '@/lib/events.server';
 import { EventTime } from './EventTime';
 import { RsvpButton } from './RsvpButton';
+import { CohostsPanel } from './CohostsPanel';
+import { EventComposer } from './EventComposer';
 import { WaitlistPanel } from './WaitlistPanel';
 import { EventRecurrenceInfo } from '@/components/calendar/EventRecurrenceInfo';
+import { canManage, cohostLabels, type CohostEntryDTO, type CohostPersonDTO, type EventViewerRole } from '@/lib/events/cohosts';
 
 const VENUE_META: Record<
   EventVenueKindValue,
@@ -26,9 +29,17 @@ const VENUE_META: Record<
   IRL: { icon: MapPin, labelKey: 'venue-irl', label: 'In person' },
 };
 
-export function EventCard({ event, className }: { event: EventDTO; className?: string }) {
+export function EventCard({ event: initial, className }: { event: EventDTO; className?: string }) {
   const { t } = useTranslation('site');
   const { t: tr } = useTranslation('event-waitlist');
+  const { t: tc, i18n } = useTranslation('event-cohosts');
+  // An edit made here (by the host or a co-host) replaces what the list handed down.
+  const [edited, setEdited] = useState<EventDTO | null>(null);
+  const event = edited ?? initial;
+  const [role, setRole] = useState<EventViewerRole>(initial.viewerRole);
+  const [cohosts, setCohosts] = useState<CohostPersonDTO[]>(initial.cohosts);
+  const [editing, setEditing] = useState(false);
+  const [cohostsOpen, setCohostsOpen] = useState(false);
   const { data: session } = useSession();
   // Local RSVP state so the button + counts update without a full refetch.
   const [going, setGoing] = useState(event.goingCount);
@@ -60,7 +71,27 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
     setPlace(r.viewerWaitlistPosition ?? null);
   };
 
-  const isHost = !!session && session.user.id === event.hostId;
+  // The host and an accepted co-host manage the event; an invited member has no rights until they accept.
+  const manager = canManage(role);
+  const isHost = role === 'host';
+  const viewerId = session?.user.id ?? null;
+  const hostedBy = (() => {
+    const others = cohostLabels(cohosts);
+    const host = event.host.name ?? (event.host.handle ? `@${event.host.handle}` : null);
+    if (others.length === 0 || !host) return null;
+    const list = new Intl.ListFormat(i18n.language || undefined, { style: 'long', type: 'conjunction' }).format(others);
+    return tc('hosted-by', { host, others: list, defaultValue: 'Hosted by {{host}} with {{others}}' });
+  })();
+  const onRole = (next: EventViewerRole) => {
+    setRole(next);
+    if (next === 'cohost' && session) {
+      const me = { id: session.user.id, name: session.user.name ?? null, handle: null, image: session.user.image ?? null };
+      setCohosts((list) => (list.some((c) => c.id === me.id) ? list : [...list, me]));
+    } else if (next === null && session) {
+      setCohosts((list) => list.filter((c) => c.id !== session.user.id));
+    }
+  };
+  const onEntries = (entries: CohostEntryDTO[]) => setCohosts(entries.filter((c) => c.status === 'accepted'));
   const waitlistLine =
     viewerRsvp === 'waitlist' && place != null
       ? tr('card-waitlisted', { count: place, defaultValue: 'Waitlisted, number {{count}}' })
@@ -96,6 +127,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
             )}
           </div>
           <h3 className="mt-2 truncate text-base font-semibold text-site-text">{event.title}</h3>
+          {hostedBy && <p className="t-meta mt-1">{hostedBy}</p>}
           {/* Always the viewer's zone, always labelled — plus the organiser's
               in parentheses when the two clocks differ (B24). */}
           <p className="mt-1 flex items-center gap-2 text-sm text-site-text-muted">
@@ -183,7 +215,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
           )}
         </div>
       </div>
-      {isHost && !event.recurrence && waiting > 0 && (
+      {manager && !event.recurrence && waiting > 0 && (
         <div>
           <Button
             size="sm"
@@ -202,6 +234,44 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
             </div>
           )}
         </div>
+      )}
+      {manager && !canceled && (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
+            {tc('edit', { defaultValue: 'Edit event' })}
+          </Button>
+          {isHost && (
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-expanded={cohostsOpen}
+              aria-controls={`cohosts-${event.id}`}
+              onClick={() => setCohostsOpen((open) => !open)}
+            >
+              {cohostsOpen ? tc('hide', { defaultValue: 'Hide co-hosts' }) : tc('show', { defaultValue: 'Co-hosts' })}
+            </Button>
+          )}
+        </div>
+      )}
+      {viewerId && (role === 'invited' || role === 'cohost' || (isHost && cohostsOpen)) && (
+        <div id={`cohosts-${event.id}`}>
+          <CohostsPanel
+            eventId={event.id}
+            viewerId={viewerId}
+            hostId={event.hostId}
+            role={role}
+            onRole={onRole}
+            onEntries={onEntries}
+          />
+        </div>
+      )}
+      {editing && (
+        <EventComposer
+          open
+          event={event}
+          onOpenChange={setEditing}
+          onUpdated={(updated) => setEdited(updated)}
+        />
       )}
       {event.recurrence && !canceled && !past && (
         <EventRecurrenceInfo event={{ ...event, viewerRsvp }} onChange={onChange} />

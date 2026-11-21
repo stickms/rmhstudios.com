@@ -2,7 +2,7 @@ import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import { BadgeCheck, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, Pin, ShieldCheck } from 'lucide-react';
 import { AutomatedBadge } from './AutomatedBadge';
 import { toast } from '@/lib/toast';
 import { RMHarkOverflowMenu } from './RMHarkOverflowMenu';
@@ -266,7 +266,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         <span aria-hidden className="post-flair" style={{ background: postFlair }} />
       ) : null}
       {/* Pinned and reposted-by labels: plain `t-meta` lines above the author. */}
-      {item.pinned && <p className="t-meta mb-2">{t('pinned', { defaultValue: 'Pinned' })}</p>}
+      {item.pinned && (
+        <p className="t-meta mb-2 inline-flex items-center gap-1">
+          <Pin className="h-3 w-3" aria-hidden />
+          {t('pinned-label', { ns: 'profile-pins', defaultValue: 'Pinned' })}
+        </p>
+      )}
       {freshRepostedBy && (
         <p className="t-meta mb-2">
           <Link to={userProfileHref(freshRepostedBy)} className="hover:underline">

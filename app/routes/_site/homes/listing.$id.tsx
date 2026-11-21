@@ -10,6 +10,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { ListingDetailView } from '@/components/homes/ListingDetailView';
 import { getListing } from '@/lib/homes/listings.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 /**
  * A meta-only loader. `ListingDetailView` still fetches the listing itself
@@ -49,7 +50,7 @@ export const Route = createFileRoute('/_site/homes/listing/$id')({
     }
     const { title, city, state, price, beds, baths, listingType, status } = loaderData;
     const rent = listingType === 'RENT' ? '/mo' : '';
-    const summary = `${beds} bed · ${baths} bath · $${price.toLocaleString()}${rent} · ${city}, ${state}.`;
+    const summary = `${beds} bed · ${baths} bath · $${formatNumber(price, currentDocumentLocale())}${rent} · ${city}, ${state}.`;
     const body = loaderData.description.replace(/\s+/g, ' ').trim();
     return {
       meta: [

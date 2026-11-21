@@ -16,8 +16,10 @@ import { cn } from '@/lib/utils';
 import { memberDisplayName } from './group-chat-state';
 import type { Group, Msg } from '@/lib/group-chat/types';
 import { PollView } from './PollView';
+import { formatDate } from '@/lib/core/format';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
-const formatDay = (iso: string, t: ReturnType<typeof useTranslation>['t']) => {
+const formatDay = (iso: string, t: ReturnType<typeof useTranslation>['t'], locale: string) => {
   const d = new Date(iso);
   const today = new Date();
   const yesterday = new Date(today);
@@ -25,7 +27,7 @@ const formatDay = (iso: string, t: ReturnType<typeof useTranslation>['t']) => {
   if (d.toDateString() === today.toDateString()) return t('today', { defaultValue: 'Today' });
   if (d.toDateString() === yesterday.toDateString())
     return t('yesterday', { defaultValue: 'Yesterday' });
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return formatDate(d, locale, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
 /**
@@ -60,6 +62,7 @@ export function GroupMessageRow({
   className?: string | undefined;
 }) {
   const { t } = useTranslation('feed');
+  const { locale } = useLocaleFormat();
   const mine = m.sender.id === currentUserId;
   // The sender's "Edit descriptions": the saved list shows at once, whether or not the realtime event arrives.
   const [altsEditing, setAltsEditing] = useState(false);
@@ -69,7 +72,7 @@ export function GroupMessageRow({
     !prevMessage ||
     new Date(m.createdAt).toDateString() !== new Date(prevMessage.createdAt).toDateString();
   const station = newDay ? (
-    <SpineStation className={className}>{formatDay(m.createdAt, t)}</SpineStation>
+    <SpineStation className={className}>{formatDay(m.createdAt, t, locale)}</SpineStation>
   ) : null;
   // P04: lines (timer, pin, tip…) and card kinds (dice, checklist…).
   if (isLineKind(m.kind)) {

@@ -326,6 +326,10 @@ describe('resolveBracketRows', () => {
             wired
               ? m.nextSlot
               : null,
+          // Single elimination and round robin have no losers bracket.
+          bracket: 'W',
+          loserNextMatchId: null,
+          loserNextSlot: null,
         };
       },
     );

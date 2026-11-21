@@ -313,6 +313,7 @@ async function removePost(
             deletedByAdmin: true,
             deletedBy:
               'moderator',
+            pinnedAt: null,
           },
         },
       );
@@ -448,6 +449,7 @@ async function removeCommunity(
             deletedByAdmin: true,
             deletedBy:
               'moderator',
+            pinnedAt: null,
           },
         },
       );

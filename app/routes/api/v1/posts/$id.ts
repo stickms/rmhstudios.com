@@ -4,6 +4,7 @@ import { canReadThread } from '@/lib/feed/audience.server';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
 import { apiAuthorSelect, serializePublicPost } from '@/lib/api/serializers.server';
+import { pinnedOrderFor } from '@/lib/feed/profile-pins.server';
 import { deleteOwnPost } from '@/lib/social/engagement.server';
 
 /**
@@ -24,7 +25,7 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
               where: { id: params.id },
               select: {
                 id: true, userId: true, content: true, audience: true, communityId: true, createdAt: true, deletedAt: true,
-                likeCount: true, commentCount: true, repostCount: true, viewCount: true, imageUrls: true, pinnedCommentId: true,
+                likeCount: true, commentCount: true, repostCount: true, viewCount: true, imageUrls: true, imageAlts: true, pinnedCommentId: true,
                 unlockPrice: true, unlocks: { where: { userId }, select: { id: true } },
                 user: { select: apiAuthorSelect },
               },
@@ -39,7 +40,8 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
             if (isLocked(post, userId)) {
               return error('forbidden', 'This post is locked. Unlock it on RMH Studios to read it.', 403);
             }
-            return json(serializePublicPost(post, userId));
+            const pinnedOrder = (await pinnedOrderFor([post.id])).get(post.id) ?? null;
+            return json(serializePublicPost({ ...post, pinnedOrder }, userId));
           },
           { scope: 'read:posts' }
         ),

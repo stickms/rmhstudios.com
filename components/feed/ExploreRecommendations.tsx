@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import type { FeedItem } from '@/lib/feed-types';
 import { useArrival } from '@/components/ui/arrive';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Avatar / community tile size on the Explore rows, in px. */
 const AVATAR_SIZE = 40;
@@ -123,7 +124,7 @@ export function ExploreRecommendations({
   officialBuilds = [],
   userBuilds = [],
   blogPosts = [],
-}: ExploreRecommendationsProps) {
+}: ExploreRecommendationsProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('feed');
   const seeded = useRef(initialData != null);
   const [data, setData] = useState<DiscoveryData | null>(initialData ?? null);
@@ -285,7 +286,7 @@ export function ExploreRecommendations({
                       {l.user.name || l.user.handle}
                     </span>
                   </span>
-                  <span className="t-meta">{l.total.toLocaleString()}</span>
+                  <span className="t-meta">{fmt.number(l.total)}</span>
                 </Link>
               </SpineItem>
             ))}
@@ -365,7 +366,7 @@ export function ExploreRecommendations({
                 <SpineItem key={p.slug}>
                   <Link to={`/blog/${p.slug}` as string} className="block">
                     <p className="t-body truncate font-semibold">{p.title}</p>
-                    <p className="t-meta truncate">{new Date(p.date).toLocaleDateString()}</p>
+                    <p className="t-meta truncate">{fmt.date(new Date(p.date))}</p>
                   </Link>
                 </SpineItem>
               ))}

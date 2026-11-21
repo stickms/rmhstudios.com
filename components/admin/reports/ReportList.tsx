@@ -5,7 +5,6 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
 import {
   Flag,
   ExternalLink,
@@ -32,6 +31,7 @@ import {
 } from '@/lib/admin/admin-ops.contract';
 import { cn } from '@/lib/utils';
 import { REMOVABLE_REPORT_ENTITY_TYPES } from '@/lib/moderation/report-schema';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Status =
   | 'PENDING'
@@ -110,7 +110,7 @@ export function ReportList({
       number
     >,
   ) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -498,14 +498,9 @@ export function ReportList({
                       </Badge>
                     )}
                     <span className="t-meta">
-                      {formatDistanceToNow(
-                        new Date(
+                      {fmt.relative(new Date(
                           r.createdAt,
-                        ),
-                        {
-                          addSuffix: true,
-                        },
-                      )}
+                        ))}
                     </span>
                     {link && (
                       <a

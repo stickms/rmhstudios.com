@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { Link } from '@tanstack/react-router';
 import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
 import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
@@ -57,6 +58,7 @@ export function PostArticle({
   onRemove,
 }: PostArticleProps) {
   const { t } = useTranslation('feed');
+  const { locale } = useLocaleFormat();
   const linkPreviewUrl = useMemo(() => postLinkPreviewUrl(post), [post]);
   const { translatedText, showTranslated, translating, handleTranslate } = translation;
 
@@ -206,7 +208,7 @@ export function PostArticle({
 
       {/* The full time */}
       <p className="t-meta mt-3">
-        {formatFullDate(post.createdAt)}
+        {formatFullDate(post.createdAt, locale)}
         {post.edited && !post.deletedAt ? <EditHistoryButton postId={postId} /> : null}
       </p>
 

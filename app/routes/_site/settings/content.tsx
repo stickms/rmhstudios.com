@@ -8,6 +8,8 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { FeedControlsSettings } from '@/components/settings/FeedControlsSettings';
 import { RequireAltTextSetting } from '@/components/settings/RequireAltTextSetting';
 import { AutoDeleteSetting } from '@/components/posts-plus/AutoDeleteSetting';
+import { RepostMutesSection } from '@/components/settings/RepostMutesSection';
+import { MissingAltTextSection } from '@/components/settings/MissingAltTextSection';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/content')({
@@ -42,6 +44,8 @@ function ContentSettingsPage() {
         <RequireAltTextSetting />
         <AutoDeleteSetting />
         <FeedControlsSettings />
+        <RepostMutesSection />
+        <MissingAltTextSection />
       </SettingsPageBody>
     </PageLayout>
   );

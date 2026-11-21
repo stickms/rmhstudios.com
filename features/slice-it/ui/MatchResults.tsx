@@ -8,6 +8,7 @@ import { gradeFor } from '@features/slice-it/engine/scoring';
 import * as net from '@features/slice-it/engine/net/client';
 import type { FinalStanding, TeamId, TeamTotal } from '@features/slice-it/engine/net/events';
 import type { GameEngine } from '@features/slice-it/engine/engine';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * The multiplayer results card.
@@ -173,7 +174,7 @@ function TeamBadge({ team }: { team: TeamId }) {
  * one screen congratulates Team A while the screen beside it congratulates Team
  * B, each from arithmetic it did correctly on a roster that was a packet behind.
  */
-function TeamScoreboard({ teams }: { teams: TeamTotal[] }) {
+function TeamScoreboard({ teams }: { teams: TeamTotal[] }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
   const drawn = teams.every((team) => team.place === 1);
 
@@ -187,7 +188,7 @@ function TeamScoreboard({ teams }: { teams: TeamTotal[] }) {
             data-win={(team.place === 1 && !drawn) || undefined}
           >
             <TeamBadge team={team.team} />
-            <span className="slice-mr__team-score">{team.score.toLocaleString()}</span>
+            <span className="slice-mr__team-score">{fmt.number(team.score)}</span>
             <span className="slice-mr__meta">
               {(team.accuracy * 100).toFixed(1)}% ·{' '}
               {t('mp-team-players', {
@@ -207,7 +208,7 @@ function TeamScoreboard({ teams }: { teams: TeamTotal[] }) {
   );
 }
 
-function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: boolean }) {
+function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: boolean }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-game');
   const place = standing.place;
 
@@ -239,7 +240,7 @@ function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: bo
       </span>
 
       <span className="slice-mr__score">
-        <span className="slice-mr__figure">{standing.score.toLocaleString()}</span>
+        <span className="slice-mr__figure">{fmt.number(standing.score)}</span>
         <span className="slice-mr__meta">
           {gradeFor(standing.accuracy)} · {(standing.accuracy * 100).toFixed(1)}% ·{' '}
           {standing.maxCombo}x

@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/ui/CoinIcon';
 import { apiJson } from './api';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export interface PickedItem {
   id: string;
@@ -32,7 +33,7 @@ export function ItemPicker({
   picked: PickedItem | null;
   onPick: (item: PickedItem | null) => void;
   label: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-economy-plus');
   const [text, setText] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -56,7 +57,7 @@ export function ItemPicker({
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-site-text">{picked.name}</p>
           <p className="flex items-center gap-1 text-xs text-site-text-muted">
-            <CoinIcon className="size-3.5" /> {picked.price.toLocaleString()}
+            <CoinIcon className="size-3.5" /> {fmt.number(picked.price)}
           </p>
         </div>
         <button
@@ -106,7 +107,7 @@ export function ItemPicker({
               >
                 <span className="min-w-0 truncate text-sm text-site-text">{row.name}</span>
                 <span className="flex shrink-0 items-center gap-1 text-xs tabular-nums text-site-text-muted">
-                  <CoinIcon className="size-3.5" /> {row.price.toLocaleString()}
+                  <CoinIcon className="size-3.5" /> {fmt.number(row.price)}
                 </span>
               </button>
             </li>

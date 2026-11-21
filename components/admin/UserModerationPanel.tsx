@@ -16,7 +16,6 @@ import { AdminOwnedCommunities } from '@/components/communities/AdminOwnedCommun
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import {
@@ -41,6 +40,7 @@ import {
 } from '@/components/moderation/moderation-ui';
 import { cn } from '@/lib/utils';
 import { ModeratorNotes } from '@/components/admin/ModeratorNotes';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Form =
   | 'strike'
@@ -65,7 +65,7 @@ export function UserModerationPanel({
     activeRestrictions: number;
     banned: boolean;
   }) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -496,14 +496,9 @@ export function UserModerationPanel({
                 },
               )}
             </span>{' '}
-            {formatDistanceToNow(
-              new Date(
+            {fmt.relative(new Date(
                 data.bannedUntil,
-              ),
-              {
-                addSuffix: true,
-              },
-            )}
+              ))}
           </>
         )}
       </p>
@@ -936,14 +931,9 @@ export function UserModerationPanel({
                     }
                   </p>
                   <p className="t-meta mt-1">
-                    {formatDistanceToNow(
-                      new Date(
+                    {fmt.relative(new Date(
                         s.createdAt,
-                      ),
-                      {
-                        addSuffix: true,
-                      },
-                    )}
+                      ))}
                     {s.entityType &&
                       ` · ${s.entityType}`}
                     {s.appealStatus ===

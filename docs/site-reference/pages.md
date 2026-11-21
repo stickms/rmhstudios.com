@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 390 routes. 202 render inside the standard site shell (sidebar, nav, context rail); 188 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 394 routes. 206 render inside the standard site shell (sidebar, nav, context rail); 188 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -40,9 +40,12 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/emoji-packs` | Emoji Pack Review | admin | `app/routes/_site/admin/emoji-packs.tsx` |
 | `/admin/flags` | Feature Flags | admin | `app/routes/_site/admin/flags.tsx` |
 | `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
+| `/admin/jobs` | Background Jobs \| Admin | admin | `app/routes/_site/admin/jobs.tsx` |
 | `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |
+| `/admin/lookup` | Lookup \| Admin | admin | `app/routes/_site/admin/lookup.tsx` |
 | `/admin/market` | Marketplace Review | admin | `app/routes/_site/admin/market.tsx` |
 | `/admin/medschools` | Med Schools aliases \| Admin | admin | `app/routes/_site/admin/medschools.tsx` |
+| `/admin/outbox` | Outbox \| Admin | admin | `app/routes/_site/admin/outbox.tsx` |
 | `/admin/patch-notes` | Patch Notes \| Admin | admin | `app/routes/_site/admin/patch-notes.tsx` |
 | `/admin/performance` | Performance | admin | `app/routes/_site/admin/performance.tsx` |
 | `/admin/predictions` | Prediction Markets \| Admin | admin | `app/routes/_site/admin/predictions.tsx` |
@@ -164,6 +167,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/services/fashion` | RMH Fashion | public | `app/routes/_site/services/fashion.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
 | `/settings/appearance` | Appearance | public | `app/routes/_site/settings/appearance.tsx` |
+| `/settings/blocked` | — | public | `app/routes/_site/settings/blocked.tsx` |
 | `/settings/cloud-saves` | Cloud saves | public | `app/routes/_site/settings/cloud-saves.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
 | `/settings/keyboard` | Keyboard | public | `app/routes/_site/settings/keyboard.tsx` |

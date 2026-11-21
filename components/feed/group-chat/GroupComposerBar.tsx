@@ -9,6 +9,8 @@ import { ChecklistComposer } from '@/components/chat-plus/ChecklistComposer';
 import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
 import { ScheduledStrip } from '@/components/messages/ScheduledStrip';
 import { SendLaterMenu } from '@/components/messages/SendLaterMenu';
+import { useSavedReplies } from '@/components/messages/useSavedReplies';
+import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import { MentionTextarea } from '../MentionTextarea';
@@ -53,6 +55,14 @@ export function GroupComposerBar({
     send,
     canSend,
   } = composer;
+  const savedReplies = useSavedReplies({
+    chatKind: 'group',
+    draft: input,
+    setDraft: setInput,
+    inputRef,
+    maxLength: MESSAGE_MAX_LENGTH,
+    buttonClassName: 'h-9',
+  });
   // Chat members get priority in @-mention autocomplete.
   const suggestions = useMemo(() => memberSuggestions(group.members), [group.members]);
   // A poll is not schedulable; text, a GIF and images are.
@@ -140,6 +150,7 @@ export function GroupComposerBar({
           onSelect={insertEmoji}
           className="flex h-9 items-center"
         />
+        {savedReplies.menu}
         <ChecklistComposer
           chat={chatRef}
           onPosted={(raw) => appendMessages([raw as Msg])}
@@ -147,12 +158,14 @@ export function GroupComposerBar({
         />
         <div className="order-first min-w-full flex-1 sm:order-none sm:min-w-0">
           {slash.popover}
+          {savedReplies.popover}
           <MentionTextarea
             ref={inputRef}
             value={input}
             onChange={setInput}
             priorityUsers={suggestions}
             onKeyDown={(e) => {
+              if (savedReplies.onKeyDown(e)) return;
               if (slash.onKeyDown(e)) return;
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -164,7 +177,8 @@ export function GroupComposerBar({
               defaultValue: 'Message {{name}}…',
             })}
             rows={1}
-            maxLength={2000}
+            maxLength={MESSAGE_MAX_LENGTH}
+            {...savedReplies.fieldProps}
             className="max-h-32 w-full resize-none rounded-site surface-field px-3 py-2 text-sm text-site-text"
           />
           <ComposerLengthCounter used={input.length} />

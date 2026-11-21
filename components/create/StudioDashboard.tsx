@@ -9,6 +9,7 @@ import { cn, relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { TierEditor } from '@/components/creator/TierEditor';
 import type { StudioOverview } from '@/lib/creator/studio.server';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * StudioDashboard — the monetization dashboard that used to live at the
@@ -53,7 +54,7 @@ function StatTile({
   label: string;
   value: number;
   icon?: typeof Coins;
-}) {
+}) { const fmt = useLocaleFormat(); 
   // L1 fill, not a pane: a stat tile is repeated content, and repeated content
   // carries no backdrop blur (design-language §5 budget) — each blurred tile
   // was re-blurred on every scroll frame (perf audit 2026-10-08, scroll).
@@ -62,13 +63,13 @@ function StatTile({
       <div className="text-xs font-medium text-site-text-muted">{label}</div>
       <div className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
         {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}
-        {value.toLocaleString()}
+        {fmt.number(value)}
       </div>
     </Card>
   );
 }
 
-function OverviewSection({ overview }: { overview: StudioOverview | null }) {
+function OverviewSection({ overview }: { overview: StudioOverview | null }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('site');
 
   if (!overview) {
@@ -138,7 +139,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                 {label}
               </div>
               <div className="mt-1 text-xl font-semibold tabular-nums text-site-text">
-                {bySource[key].toLocaleString()}
+                {fmt.number(bySource[key])}
               </div>
             </div>
           ))}
@@ -149,12 +150,9 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
           <div className="space-y-2 pt-1">
             {monthly.map((m) => {
               const [y, mo] = m.month.split('-');
-              const monthLabel = new Date(Date.UTC(Number(y), Number(mo) - 1, 1)).toLocaleString(
-                undefined,
-                {
+              const monthLabel = fmt.dateTime(new Date(Date.UTC(Number(y), Number(mo) - 1, 1)), {
                   month: 'short',
-                },
-              );
+                });
               return (
                 <div key={m.month} className="flex items-center gap-3">
                   <span className="w-9 shrink-0 text-xs text-site-text-muted tabular-nums">
@@ -177,7 +175,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                     </div>
                   </div>
                   <span className="w-14 shrink-0 text-right text-xs tabular-nums text-site-text-muted">
-                    {m.total.toLocaleString()}
+                    {fmt.number(m.total)}
                   </span>
                 </div>
               );
@@ -220,7 +218,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="flex items-center gap-1 text-sm font-semibold tabular-nums text-site-text">
                     <Coins className="size-4 text-site-warning" aria-hidden />
-                    {tip.amount.toLocaleString()}
+                    {fmt.number(tip.amount)}
                   </span>
                   <span className="text-xs font-medium text-site-text-muted"><RelativeTime date={tip.createdAt} format={relativeTimeShort} /></span>
                 </div>

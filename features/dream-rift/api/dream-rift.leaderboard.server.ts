@@ -1,6 +1,8 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 const DIFFICULTY_FIELDS = {
   easy: 'highScoreEasy',
@@ -29,7 +31,9 @@ export const route = apiRoute('/api/dream-rift/leaderboard', {
           difficultyParam in DIFFICULTY_FIELDS ? (difficultyParam as Difficulty) : 'normal';
         const scoreField = DIFFICULTY_FIELDS[difficulty];
 
+        const hidden = await leaderboardHiddenUserIds();
         const rows = await prisma.dreamRiftPlayer.findMany({
+          where: notHiddenWhere(hidden),
           take: 20,
           orderBy: { [scoreField]: 'desc' },
           select: {

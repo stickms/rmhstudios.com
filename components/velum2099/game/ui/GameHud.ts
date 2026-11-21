@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 /* ═══════════════════════════════════════════
    NEURODRIVE — Gameplay HUD
    DOM overlay showing the active objective,
@@ -288,8 +289,8 @@ export class GameHud {
     }
 
     // Credits / wanted
-    e.credits.textContent = `¥${state.credits.toLocaleString()}`;
-    e.best.textContent = `BEST ¥${state.best.toLocaleString()}`;
+    e.credits.textContent = `¥${formatNumber(state.credits, currentDocumentLocale())}`;
+    e.best.textContent = `BEST ¥${formatNumber(state.best, currentDocumentLocale())}`;
     if (
       state.heat >
       0

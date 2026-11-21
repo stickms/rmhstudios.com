@@ -55,8 +55,9 @@ import {
   Glyph,
 } from '../ui';
 import { EfficiencyBoard } from '../EfficiencyBoard';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
-export function OverviewPanel() {
+export function OverviewPanel() { const lfmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -639,9 +640,7 @@ export function OverviewPanel() {
               'Offerings by hand',
           },
         ),
-        s.touches.toLocaleString(
-          'en-US',
-        ),
+        lfmt.number(s.touches),
       ],
       [
         t(
@@ -651,9 +650,7 @@ export function OverviewPanel() {
               'Halos caught',
           },
         ),
-        s.halos.toLocaleString(
-          'en-US',
-        ),
+        lfmt.number(s.halos),
       ],
       ...(s.haloStreak >
       0
@@ -683,9 +680,7 @@ export function OverviewPanel() {
               'Sinners struck',
           },
         ),
-        s.sinners.toLocaleString(
-          'en-US',
-        ),
+        lfmt.number(s.sinners),
       ],
       ...(s.harvest >
       0

@@ -7,6 +7,8 @@ export interface AuditFilters {
   /** Matches actions that START with this ("user." finds user.ban, user.unban…). */
   action?: string;
   targetType?: string;
+  /** One target's own history (the lookup page links here). */
+  targetId?: string;
   /** Inclusive range; `to` covers the whole of that UTC day. */
   from?: Date;
   to?: Date;
@@ -83,6 +85,13 @@ export function parseAuditFilters(
         ),
         32,
       ),
+    targetId:
+      clean(
+        params.get(
+          'targetId',
+        ),
+        64,
+      ),
     from: parseDay(
       params.get(
         'from',
@@ -116,6 +125,12 @@ export function buildAuditWhere(
       ? {
           targetType:
             f.targetType,
+        }
+      : {}),
+    ...(f.targetId
+      ? {
+          targetId:
+            f.targetId,
         }
       : {}),
     ...(f.from ||

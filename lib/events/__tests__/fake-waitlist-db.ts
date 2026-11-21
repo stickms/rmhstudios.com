@@ -141,9 +141,26 @@ export function createFakeDb(seed: { events: FakeEvent[]; rsvps?: Partial<FakeRs
     },
   };
 
+  // Co-hosts (s05-05): nobody is one in these seat tests, so the host-only paths stay exactly as they were.
+  const eventCohost = {
+    async findUnique() {
+      await tick();
+      return null;
+    },
+    async findMany() {
+      await tick();
+      return [];
+    },
+    async count() {
+      await tick();
+      return 0;
+    },
+  };
+
   const db = {
     rsvp,
     event,
+    eventCohost,
     async $transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T> {
       const held: (() => void)[] = [];
       const tx = {

@@ -15,6 +15,7 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { voteRequestApi } from '@/lib/requests/requests.contract';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface RequestCardProps {
   request: FeatureRequestDTO;
@@ -46,7 +47,7 @@ export function RequestCard({
   onChanged,
   onVoted,
   className,
-}: RequestCardProps) {
+}: RequestCardProps) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -169,7 +170,7 @@ export function RequestCard({
             aria-hidden
           />
           <span className="font-mono text-xs">
-            {request.voteCount.toLocaleString()}
+            {fmt.number(request.voteCount)}
           </span>
         </Button>
 

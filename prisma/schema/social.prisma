@@ -909,3 +909,20 @@ model MarathonList {
   @@index([userId, updatedAt])
   @@map("marathon_list")
 }
+
+/// "Turn off reposts from X": the viewer no longer sees X's reposts on the Following and For You timelines. X's own
+/// posts, quote posts and replies are unaffected and the reposts stay on X's profile. At most 1,000 rows per member.
+model RepostMute {
+  id        String   @id @default(cuid())
+  userId    String
+  targetId  String
+  createdAt DateTime @default(now())
+
+  user   User @relation("RepostMuteMuter", fields: [userId], references: [id], onDelete: Cascade)
+  target User @relation("RepostMuteTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([targetId])
+  @@map("repost_mute")
+}

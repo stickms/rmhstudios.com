@@ -72,6 +72,7 @@ import {
   adminLibraryMigrateApi,
   adminLibraryReorderApi,
 } from '@/lib/library/admin-library.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
@@ -804,7 +805,7 @@ function BookSpine({
   onInspect: () => void;
   onChanged: () => void;
   dnd?: BookDnd;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('library');
   const revealRef = useReveal();
   const menu = useContextMenu();
@@ -816,7 +817,7 @@ function BookSpine({
   const uploader = book.uploadedBy?.handle
     ? `@${book.uploadedBy.handle}`
     : (book.uploadedBy?.name ?? null);
-  const date = book.createdAt ? new Date(book.createdAt).toLocaleDateString() : null;
+  const date = book.createdAt ? fmt.date(new Date(book.createdAt)) : null;
 
   const wrapClass = [
     'lib-book__wrap',
@@ -881,7 +882,7 @@ function BookSpine({
               <span className="lib-book__title">{book.title}</span>
             )}
             {book.pages > 0 && (
-              <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>
+              <span className="lib-book__pages-badge">{fmt.number(book.pages)} pp</span>
             )}
             {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
             {book.reported && isAdmin && (

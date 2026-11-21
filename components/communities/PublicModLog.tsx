@@ -7,7 +7,6 @@ import {
   useCallback,
   useState,
 } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +27,7 @@ import { api } from '@/lib/contract/client';
 import { cn } from '@/lib/utils';
 import { getModLogApi } from '@/lib/communities/modlog.contract';
 import type { PublicModLogEntryDTO } from '@/lib/communities/modlog';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function PublicModLog({
   slug,
@@ -39,7 +39,7 @@ export function PublicModLog({
   className?:
     | string
     | undefined;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -422,14 +422,9 @@ export function PublicModLog({
                             e.createdAt
                           }
                         >
-                          {formatDistanceToNow(
-                            new Date(
+                          {fmt.relative(new Date(
                               e.createdAt,
-                            ),
-                            {
-                              addSuffix: true,
-                            },
-                          )}
+                            ))}
                         </time>
                       </p>
                     </li>

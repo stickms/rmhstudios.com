@@ -17,6 +17,7 @@ import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
 import { createNotification } from '@/lib/notifications.server';
+import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
 
 interface PollPayload {
   question: string;
@@ -105,6 +106,9 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
     });
     return row?.publishedId ?? null;
   }
+
+  // A scheduled community post is visible from now: queue the opted-in members' alerts.
+  if (sp.communityId) void enqueuePostAlert(created.id);
 
   // Z7: tell the author their time capsule has opened (best-effort).
   if (sp.isCapsule) {

@@ -39,6 +39,7 @@ import { serverError } from '@/lib/http';
 import { createListingApi } from '@/lib/market/market.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface OwnedItem {
   id: string;
@@ -65,7 +66,7 @@ export function SellSheet({
   ) => void;
   /** Called after a successful listing so the parent can refresh the grid. */
   onListed?: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -215,7 +216,7 @@ export function SellSheet({
             'market-price-bounds',
             {
               min: floor,
-              max: MAX_PRICE.toLocaleString(),
+              max: fmt.number(MAX_PRICE),
               defaultValue:
                 'Enter a whole number between {{min}} and {{max}} coins',
             },
@@ -391,9 +392,9 @@ export function SellSheet({
                         {t(
                           'market-price-floor',
                           {
-                            min: minPriceFor(
+                            min: fmt.number(minPriceFor(
                               item.id,
-                            ).toLocaleString(),
+                            )),
                             defaultValue:
                               'from {{min}}',
                           },

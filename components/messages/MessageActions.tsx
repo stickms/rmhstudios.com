@@ -9,12 +9,14 @@ import {
   MoreHorizontal,
   Pencil,
   Reply,
+  Save,
   Undo2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { EditDescriptionsMenuItem } from '@/components/feed/EditDescriptionsMenuItem';
+import { SavedRepliesDialog } from '@/components/messages/SavedRepliesDialog';
 import { cn } from '@/lib/utils';
 import {
   canEdit,
@@ -81,9 +83,23 @@ export function MessageActions({
     useTranslation(
       'feed',
     );
+  const {
+    t: tReplies,
+  } =
+    useTranslation(
+      'saved-replies',
+    );
   const triggerRef =
     useRef<HTMLButtonElement | null>(
       null,
+    );
+  // s05-13: "Save as reply" opens the saved-replies editor on this message's text.
+  const [
+    savingAsReply,
+    setSavingAsReply,
+  ] =
+    useState(
+      false,
     );
   const [
     open,
@@ -285,6 +301,31 @@ export function MessageActions({
           </MenuItem>
         )}
 
+        {isSender &&
+          copyable && (
+            <MenuItem
+              icon={
+                Save
+              }
+              onSelect={() => {
+                setOpen(
+                  false,
+                );
+                setSavingAsReply(
+                  true,
+                );
+              }}
+            >
+              {tReplies(
+                'save-as-reply',
+                {
+                  defaultValue:
+                    'Save as reply',
+                },
+              )}
+            </MenuItem>
+          )}
+
         {extra?.(
           () =>
             setOpen(
@@ -336,6 +377,17 @@ export function MessageActions({
             </MenuItem>
           )}
       </AnchoredMenu>
+      {savingAsReply && (
+        <SavedRepliesDialog
+          open
+          onOpenChange={
+            setSavingAsReply
+          }
+          prefill={
+            message.content
+          }
+        />
+      )}
     </>
   );
 }

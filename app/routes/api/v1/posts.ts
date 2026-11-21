@@ -5,6 +5,7 @@ import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.serve
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-schema';
 import { createPost } from '@/lib/social/engagement.server';
 import { parsePage, page, serializeOwnPost } from '@/lib/api/serializers.server';
+import { pinnedOrderFor } from '@/lib/feed/profile-pins.server';
 
 const createSchema = z
   .object({
@@ -34,9 +35,16 @@ export const Route = createFileRoute('/api/v1/posts')({
               where: { userId, deletedAt: null, ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}) },
               orderBy: { createdAt: 'desc' },
               take: limit,
-              select: { id: true, content: true, createdAt: true, likeCount: true, commentCount: true, repostCount: true, viewCount: true, audience: true, imageUrls: true, pinnedCommentId: true },
+              select: { id: true, content: true, createdAt: true, likeCount: true, commentCount: true, repostCount: true, viewCount: true, audience: true, imageUrls: true, imageAlts: true, pinnedCommentId: true },
             });
-            return json(page(posts.map(serializeOwnPost), limit, (p) => p.createdAt.toISOString()));
+            const pinnedOrder = await pinnedOrderFor(posts.map((p) => p.id));
+            return json(
+              page(
+                posts.map((p) => ({ ...p, pinnedOrder: pinnedOrder.get(p.id) ?? null })).map(serializeOwnPost),
+                limit,
+                (p) => p.createdAt.toISOString(),
+              ),
+            );
           },
           { scope: 'read:posts' }
         ),

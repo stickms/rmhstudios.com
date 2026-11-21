@@ -38,6 +38,7 @@
  * the rail and the player end up disagreeing about whether you watched it.
  */
 
+import { REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { games } from '@/lib/catalog';
@@ -415,8 +416,16 @@ async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]>
 
   const decks = await prisma.flashcardDeck.findMany({
     where: { id: { in: [...tally.keys()] } },
-    select: { id: true, title: true, cardCount: true },
+    select: { id: true, title: true },
   });
+  // The deck's size is what a member studies (generated cards included), the same rows `tally`
+  // counts; `cardCount` is authored cards only and would understate progress.
+  const sizes = await prisma.flashcard.groupBy({
+    by: ['deckId'],
+    where: { deckId: { in: decks.map((d) => d.id) }, ...REVIEWABLE_WHERE },
+    _count: { _all: true },
+  });
+  const size = new Map(sizes.map((r) => [r.deckId, r._count._all]));
 
   return decks
     .flatMap((deck) => {
@@ -425,10 +434,8 @@ async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]>
       // Progress is how much of the deck is currently in good standing, so a
       // deck you have kept up with reads as nearly full and a lapsed one as
       // nearly empty — which is the shape of the work left, not of the work done.
-      const progress =
-        deck.cardCount > 0
-          ? Math.min(1, Math.max(0, (deck.cardCount - entry.count) / deck.cardCount))
-          : undefined;
+      const total = size.get(deck.id) ?? 0;
+      const progress = total > 0 ? Math.min(1, Math.max(0, (total - entry.count) / total)) : undefined;
       return [
         card('deck', {
           title: deck.title,

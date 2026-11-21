@@ -8,6 +8,7 @@ import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { giftSubApi } from '@/lib/gifting/gift.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface GiftSubDialogProps {
   open: boolean;
@@ -20,7 +21,7 @@ interface GiftSubDialogProps {
 const PRICES = { starter: 600, pro: 1800 } as const;
 const MONTH_OPTIONS = [1, 3, 6, 12];
 
-export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }: GiftSubDialogProps) {
+export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }: GiftSubDialogProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("c-economy");
   const [tier, setTier] = useState<'starter' | 'pro'>('starter');
   const [months, setMonths] = useState(1);
@@ -81,7 +82,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                 >
                   {tierOpt === 'pro' ? 'Pro' : 'HARD-R'}
                   <span className="mt-0.5 flex items-center justify-center gap-0.5 text-caption text-site-text-muted">
-                    <CoinIcon className="h-3 w-3" /> {PRICES[tierOpt].toLocaleString()}/mo
+                    <CoinIcon className="h-3 w-3" /> {fmt.number(PRICES[tierOpt])}/mo
                   </span>
                 </button>
               ))}
@@ -111,7 +112,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
         <DialogFooter>
           <Button variant="default" loading={submitting} onClick={submit} className="gap-1.5">
             {!submitting && <Gift className="h-4 w-4" />}
-            {t('gift-for', { defaultValue: 'Gift for' })} <CoinIcon className="h-4 w-4" /> {cost.toLocaleString()}
+            {t('gift-for', { defaultValue: 'Gift for' })} <CoinIcon className="h-4 w-4" /> {fmt.number(cost)}
           </Button>
         </DialogFooter>
       </DialogContent>

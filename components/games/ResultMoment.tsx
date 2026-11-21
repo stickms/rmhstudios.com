@@ -15,6 +15,7 @@ import { m as motion } from 'framer-motion';
 import { useCelebration } from '@/hooks/useCelebration';
 import { SPRING } from '@/lib/app-motion';
 import type { ScoreMomentView } from './result-moment-slot';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const ShareMomentSheet = lazy(() =>
   import('@/components/share/ShareMomentSheet').then((m) => ({ default: m.ShareMomentSheet })),
@@ -28,7 +29,7 @@ export default function ResultMoment({
   moment: ScoreMomentView;
   gameName: string;
   onDismiss: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-game');
   const celebrate = useCelebration();
   const [sharing, setSharing] = useState(false);
@@ -37,7 +38,7 @@ export default function ResultMoment({
     void celebrate({ origin: { y: 0.25 } });
   }, [celebrate]);
 
-  const score = moment.score.toLocaleString();
+  const score = fmt.number(moment.score);
   const headline =
     moment.kind === 'first-score'
       ? t('moment-first', { defaultValue: 'First score on the board' })
@@ -46,11 +47,11 @@ export default function ResultMoment({
     moment.previous !== null
       ? t('moment-previous', {
           defaultValue: 'Previous best {{value}}',
-          value: moment.previous.toLocaleString(),
+          value: fmt.number(moment.previous),
         })
       : null,
     moment.rank !== null
-      ? t('moment-rank', { defaultValue: 'Rank #{{rank}}', rank: moment.rank.toLocaleString() })
+      ? t('moment-rank', { defaultValue: 'Rank #{{rank}}', rank: fmt.number(moment.rank) })
       : null,
   ]
     .filter(Boolean)

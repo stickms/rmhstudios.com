@@ -8,7 +8,6 @@ import {
 import { flushSync } from 'react-dom';
 import {
   format,
-  formatDistanceToNow,
 } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
@@ -28,6 +27,7 @@ import {
   plusFetch,
 } from '@/components/communities/plus-api';
 import type { InviteDTO } from '@/lib/communities/invites.server';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Expiry choices, in days; `''` = never. Mirrors INVITE_LIMITS.maxExpiryDays (90). */
 const EXPIRY_OPTIONS =
@@ -45,7 +45,7 @@ export function ModInvites({
   slug,
 }: {
   slug: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -621,14 +621,9 @@ export function ModInvites({
                                   'Someone',
                               },
                             ),
-                          when: formatDistanceToNow(
-                            new Date(
+                          when: fmt.relative(new Date(
                               i.createdAt,
-                            ),
-                            {
-                              addSuffix: true,
-                            },
-                          ),
+                            )),
                           defaultValue:
                             'Created by {{name}} {{when}}',
                         },

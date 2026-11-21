@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HourlyPoint } from '@/lib/ai/deepseek-balance';
 import { fmtHour, fmtMoney } from './format';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const W = 640;
 const H = 220;
@@ -18,7 +19,7 @@ interface BalanceChartProps {
  * flat line otherwise, and the axis labels carry the scale. Hovering (or
  * touching) shows the nearest hour.
  */
-export function BalanceChart({ points, currency }: BalanceChartProps) {
+export function BalanceChart({ points, currency }: BalanceChartProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-deepseek');
   const [active, setActive] = useState<number | null>(null);
 
@@ -112,7 +113,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
               className="text-site-text-muted"
               fill="currentColor"
             >
-              {v.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              {fmt.number(v, { maximumFractionDigits: 2 })}
             </text>
           </g>
         ))}

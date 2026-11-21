@@ -21,6 +21,7 @@ import {
 } from'@/lib/ranked/ranked.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Rating {
  game: string;
@@ -49,8 +50,6 @@ interface LbRow {
  draws: number;
  user: { id: string; name: string | null; handle: string | null; image: string | null };
 }
-
-const fmt = (n: number) => n.toLocaleString();
 
 /** Small colored pill for a ranked tier (Bronze → Master). */
 function TierBadge({ tier }: { tier?: RankTier }) {
@@ -83,7 +82,7 @@ export function RankedColumn({
  incoming: ChallengeRow[];
  outgoing: ChallengeRow[];
  } | null;
-} = {}) {
+} = {}) { const fmt = useLocaleFormat().number; 
  // Seed from the loader when provided so the page paints immediately.
  const seeded = useRef(initialData !== undefined && initialData !== null);
  const [games, setGames] = useState<GameDef[]>(initialData?.games ?? []);

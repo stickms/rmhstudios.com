@@ -68,18 +68,30 @@ model FlashcardDeck {
 }
 
 model Flashcard {
-  id        String   @id @default(cuid())
-  deckId    String
-  front     String   @db.Text
-  back      String   @db.Text
-  position  Int      @default(0)
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  deckId     String
+  front      String   @db.Text
+  back       String   @db.Text
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  /// basic | reversible | cloze. An authored card (`sourceId` null) carries the
+  /// kind the owner chose; generated siblings carry `reversible` (the reverse
+  /// side) or `cloze` (one per deletion index). An authored cloze row is never
+  /// reviewed; its siblings are.
+  kind       String   @default("basic") @db.VarChar(10)
+  /// The authored card this row was generated from; null for an authored card.
+  sourceId   String?
+  /// The cloze deletion index (cN) a cloze sibling hides; null otherwise.
+  clozeIndex Int?
 
   deck       FlashcardDeck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  source     Flashcard?           @relation("FlashcardSiblings", fields: [sourceId], references: [id], onDelete: Cascade)
+  siblings   Flashcard[]          @relation("FlashcardSiblings")
   reviews    FlashcardReview[]
   reviewLogs FlashcardReviewLog[]
 
   @@index([deckId])
+  @@index([sourceId])
   @@map("flashcard")
 }
 
@@ -122,6 +134,29 @@ model FlashcardReviewLog {
   @@index([userId, reviewedAt])
   @@index([userId, deckId, reviewedAt])
   @@map("flashcard_review_log")
+}
+
+/// A member's opt-in daily "cards are due" reminder (one row per member). `nextAt` is the UTC
+/// instant of the next send, precomputed from `localTime` in `timeZone` so the per-minute sweep
+/// reads only due rows. `lastSentDay` (the member's local day key) is the compare-and-set that
+/// keeps it to one reminder a day; after 14 reminders with no review in between the reminder
+/// pauses until the member resumes it.
+model FlashcardReminder {
+  userId          String   @id
+  enabled         Boolean  @default(false)
+  /// HH:MM on a 15-minute grid, read in `timeZone`.
+  localTime       String   @db.VarChar(5)
+  timeZone        String   @db.VarChar(64)
+  nextAt          DateTime?
+  lastSentDay     String?  @db.VarChar(10)
+  sentSinceReview Int      @default(0)
+  paused          Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([enabled, nextAt])
+  @@map("flashcard_reminder")
 }
 
 /// One finished practice test (/study/$deckId/test): append-only, separate from SM-2 state, so

@@ -630,6 +630,29 @@ model User {
   handoversOffered  CommunityHandover[] @relation("CommunityHandoverFrom")
   handoversReceived CommunityHandover[] @relation("CommunityHandoverTo")
 
+  // Sprint 05 back-relations (one block per feature, docs/autonomous/sprint-05/plan.md)
+  // s05-04 personal-bests
+  gamePersonalBests GamePersonalBest[]
+
+  // s05-05 event-cohosts
+  eventCohosts EventCohost[] @relation("EventCohosts")
+
+  // s05-06 studio-projects
+  studioProjects StudioProject[]
+
+  // s05-07 repost-mutes
+  repostMutesMade     RepostMute[] @relation("RepostMuteMuter")
+  repostMutesReceived RepostMute[] @relation("RepostMuteTarget")
+
+  // s05-13 saved-replies
+  savedReplies SavedReply[]
+
+  // s05-15 jam-teams
+  jamTeamMemberships GameJamTeamMember[]
+
+  // s05-20 flashcard-reminders
+  flashcardReminder FlashcardReminder?
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

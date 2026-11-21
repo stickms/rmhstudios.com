@@ -136,6 +136,8 @@ export interface FeedItem {
   reposted?: boolean;
   bookmarked?: boolean;
   pinned?: boolean;
+  /** 1-based place among the author's pins on their profile (1 leads). Set on the profile's first page. */
+  pinnedOrder?: number;
   edited?: boolean;
   // Paid post: locked = content hidden until unlocked with coins.
   locked?: boolean;

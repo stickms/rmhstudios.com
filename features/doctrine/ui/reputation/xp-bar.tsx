@@ -1,12 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { RANKS } from '@features/doctrine/engine/constants';
 import { getRank } from '@features/doctrine/engine/reputation';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface XpBarProps {
   totalXp: number;
 }
 
-export function XpBar({ totalXp }: XpBarProps) {
+export function XpBar({ totalXp }: XpBarProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("c-doctrine");
   const currentRank = getRank(totalXp);
   const currentIndex = RANKS.findIndex(r => r.name === currentRank.name);
@@ -24,7 +25,7 @@ export function XpBar({ totalXp }: XpBarProps) {
         </span>
         {nextRank && (
           <span className="text-white/60">
-            {t("xp-progress", { defaultValue: "{{current}} / {{max}} XP", current: totalXp.toLocaleString(), max: nextRank.minXp.toLocaleString() })}
+            {t("xp-progress", { defaultValue: "{{current}} / {{max}} XP", current: fmt.number(totalXp), max: fmt.number(nextRank.minXp) })}
           </span>
         )}
       </div>
@@ -39,7 +40,7 @@ export function XpBar({ totalXp }: XpBarProps) {
       </div>
       {nextRank && (
         <p className="text-xs text-white/50">
-          {t("xp-to-next-rank", { defaultValue: "{{xp}} XP to {{badge}} {{name}}", xp: (nextRank.minXp - totalXp).toLocaleString(), badge: nextRank.badge, name: nextRank.name })}
+          {t("xp-to-next-rank", { defaultValue: "{{xp}} XP to {{badge}} {{name}}", xp: fmt.number((nextRank.minXp - totalXp)), badge: nextRank.badge, name: nextRank.name })}
         </p>
       )}
     </div>

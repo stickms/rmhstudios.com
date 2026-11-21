@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getVoidBreakerLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export const route = apiRoute('/api/void-breaker/leaderboard', {
   GET: implement(
@@ -20,7 +22,9 @@ export const route = apiRoute('/api/void-breaker/leaderboard', {
     },
     async () => {
       try {
+        const hidden = await leaderboardHiddenUserIds();
         const leaderboard = await prisma.voidBreakerPlayer.findMany({
+          where: notHiddenWhere(hidden),
           take: 10,
           orderBy: { highScore: 'desc' },
           select: { username: true, highScore: true },

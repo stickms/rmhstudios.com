@@ -22,6 +22,14 @@
 import { prisma } from '@/lib/prisma.server';
 import { getGameScoreRules, scoredGameIds } from '@/lib/game/registry';
 import { genericAdapter } from '@/lib/game/generic-adapter.server';
+import {
+  excludeHidden,
+  fetchSize,
+  notHiddenWhere,
+  userNotHiddenWhere,
+  type OwnedRow,
+} from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 /** One row as the unified leaderboard renders it. */
 export interface LeaderboardRow {
@@ -83,6 +91,20 @@ export interface GameAdapter {
 /** Fallback display name when a game doesn't collect one. */
 const ANON = 'Player';
 
+/**
+ * Read a public board without the members who are left off it (sprint 05 #01: the ones who turned
+ * the leaderboard switch off, and the ones banned right now). `read` gets a row count that makes
+ * room for the hidden rows; what comes back is at most `limit` listed rows, ranked from 1 with no
+ * gaps. A legacy score with no account stays.
+ */
+async function visibleBoard<T extends OwnedRow>(
+  limit: number,
+  read: (take: number) => Promise<T[]>,
+): Promise<Array<T & { rank: number }>> {
+  const hidden = await leaderboardHiddenUserIds();
+  return excludeHidden(await read(fetchSize(limit, hidden.size)), hidden, limit);
+}
+
 const voidBreaker: GameAdapter = {
   metric: 'highScore',
   async personalBest(userId) {
@@ -90,7 +112,14 @@ const voidBreaker: GameAdapter = {
     return row?.highScore ?? null;
   },
   async rankOf(score) {
-    return 1 + (await prisma.voidBreakerPlayer.count({ where: { highScore: { gt: score } } }));
+    // Counts listed players only, so a hidden member's "you would be 14th" matches the board.
+    const hidden = await leaderboardHiddenUserIds();
+    return (
+      1 +
+      (await prisma.voidBreakerPlayer.count({
+        where: { highScore: { gt: score }, ...notHiddenWhere(hidden) },
+      }))
+    );
   },
   async submit({ userId, score, progress, username, durationMs }) {
     const existing = await prisma.voidBreakerPlayer.findUnique({ where: { userId } });
@@ -120,13 +149,15 @@ const voidBreaker: GameAdapter = {
     });
   },
   async leaderboard(limit) {
-    const rows = await prisma.voidBreakerPlayer.findMany({
-      take: limit,
-      orderBy: { highScore: 'desc' },
-      select: { username: true, highScore: true, bestWave: true, userId: true },
-    });
-    return rows.map((r, i) => ({
-      rank: i + 1,
+    const rows = await visibleBoard(limit, (take) =>
+      prisma.voidBreakerPlayer.findMany({
+        take,
+        orderBy: { highScore: 'desc' },
+        select: { username: true, highScore: true, bestWave: true, userId: true },
+      }),
+    );
+    return rows.map((r) => ({
+      rank: r.rank,
       username: r.username,
       score: r.highScore,
       progress: r.bestWave,
@@ -142,7 +173,14 @@ const neonDriftway: GameAdapter = {
     return row?.highScore ?? null;
   },
   async rankOf(score) {
-    return 1 + (await prisma.neonDriftwayPlayer.count({ where: { highScore: { gt: score } } }));
+    // Counts listed players only, so a hidden member's "you would be 14th" matches the board.
+    const hidden = await leaderboardHiddenUserIds();
+    return (
+      1 +
+      (await prisma.neonDriftwayPlayer.count({
+        where: { highScore: { gt: score }, ...notHiddenWhere(hidden) },
+      }))
+    );
   },
   async submit({ userId, score, progress, username, durationMs, meta }) {
     // Difficulty level (1-3); tracked as a personal best alongside the score.
@@ -176,13 +214,15 @@ const neonDriftway: GameAdapter = {
     });
   },
   async leaderboard(limit) {
-    const rows = await prisma.neonDriftwayPlayer.findMany({
-      take: limit,
-      orderBy: { highScore: 'desc' },
-      select: { username: true, highScore: true, bestDistance: true, userId: true },
-    });
-    return rows.map((r, i) => ({
-      rank: i + 1,
+    const rows = await visibleBoard(limit, (take) =>
+      prisma.neonDriftwayPlayer.findMany({
+        take,
+        orderBy: { highScore: 'desc' },
+        select: { username: true, highScore: true, bestDistance: true, userId: true },
+      }),
+    );
+    return rows.map((r) => ({
+      rank: r.rank,
       username: r.username,
       score: r.highScore,
       progress: r.bestDistance,
@@ -198,7 +238,14 @@ const nightrail: GameAdapter = {
     return row?.highScore ?? null;
   },
   async rankOf(score) {
-    return 1 + (await prisma.nightrailPlayer.count({ where: { highScore: { gt: score } } }));
+    // Counts listed players only, so a hidden member's "you would be 14th" matches the board.
+    const hidden = await leaderboardHiddenUserIds();
+    return (
+      1 +
+      (await prisma.nightrailPlayer.count({
+        where: { highScore: { gt: score }, ...notHiddenWhere(hidden) },
+      }))
+    );
   },
   async submit({ userId, score, progress, username, meta }) {
     // Level 1-5, and the peak combo multiplier the run reached. The multiplier
@@ -242,13 +289,15 @@ const nightrail: GameAdapter = {
     });
   },
   async leaderboard(limit) {
-    const rows = await prisma.nightrailPlayer.findMany({
-      take: limit,
-      orderBy: { highScore: 'desc' },
-      select: { username: true, highScore: true, bestDistance: true, userId: true },
-    });
-    return rows.map((r, i) => ({
-      rank: i + 1,
+    const rows = await visibleBoard(limit, (take) =>
+      prisma.nightrailPlayer.findMany({
+        take,
+        orderBy: { highScore: 'desc' },
+        select: { username: true, highScore: true, bestDistance: true, userId: true },
+      }),
+    );
+    return rows.map((r) => ({
+      rank: r.rank,
       username: r.username,
       score: r.highScore,
       progress: r.bestDistance,
@@ -264,7 +313,14 @@ const signalForge: GameAdapter = {
     return row?.highScore ?? null;
   },
   async rankOf(score) {
-    return 1 + (await prisma.signalForgePlayer.count({ where: { highScore: { gt: score } } }));
+    // Counts listed players only, so a hidden member's "you would be 14th" matches the board.
+    const hidden = await leaderboardHiddenUserIds();
+    return (
+      1 +
+      (await prisma.signalForgePlayer.count({
+        where: { highScore: { gt: score }, ...notHiddenWhere(hidden) },
+      }))
+    );
   },
   async submit({ userId, score, progress, username }) {
     const existing = await prisma.signalForgePlayer.findUnique({ where: { userId } });
@@ -291,13 +347,15 @@ const signalForge: GameAdapter = {
     });
   },
   async leaderboard(limit) {
-    const rows = await prisma.signalForgePlayer.findMany({
-      take: limit,
-      orderBy: { highScore: 'desc' },
-      select: { username: true, highScore: true, floorReached: true, userId: true },
-    });
-    return rows.map((r, i) => ({
-      rank: i + 1,
+    const rows = await visibleBoard(limit, (take) =>
+      prisma.signalForgePlayer.findMany({
+        take,
+        orderBy: { highScore: 'desc' },
+        select: { username: true, highScore: true, floorReached: true, userId: true },
+      }),
+    );
+    return rows.map((r) => ({
+      rank: r.rank,
       username: r.username,
       score: r.highScore,
       progress: r.floorReached,
@@ -313,7 +371,13 @@ const synapseStorm: GameAdapter = {
     return row?.highScore ?? null;
   },
   async rankOf(score) {
-    return 1 + (await prisma.synapseStormPlayer.count({ where: { highScore: { gt: score } } }));
+    const hidden = await leaderboardHiddenUserIds();
+    return (
+      1 +
+      (await prisma.synapseStormPlayer.count({
+        where: { highScore: { gt: score }, ...userNotHiddenWhere(hidden) },
+      }))
+    );
   },
   // No `username` column — this table joins to the account for its display name.
   async submit({ userId, score, progress, durationMs, meta }) {
@@ -356,18 +420,20 @@ const synapseStorm: GameAdapter = {
     });
   },
   async leaderboard(limit) {
-    const rows = await prisma.synapseStormPlayer.findMany({
-      take: limit,
-      orderBy: { highScore: 'desc' },
-      select: {
-        userId: true,
-        highScore: true,
-        maxCombo: true,
-        user: { select: { name: true, handle: true } },
-      },
-    });
-    return rows.map((r, i) => ({
-      rank: i + 1,
+    const rows = await visibleBoard(limit, (take) =>
+      prisma.synapseStormPlayer.findMany({
+        take,
+        orderBy: { highScore: 'desc' },
+        select: {
+          userId: true,
+          highScore: true,
+          maxCombo: true,
+          user: { select: { name: true, handle: true } },
+        },
+      }),
+    );
+    return rows.map((r) => ({
+      rank: r.rank,
       username: r.user?.name ?? r.user?.handle ?? ANON,
       score: r.highScore,
       progress: r.maxCombo,
@@ -386,13 +452,15 @@ const synapseStorm: GameAdapter = {
 const vega: GameAdapter = {
   metric: 'highestLevel',
   async leaderboard(limit) {
-    const rows = await prisma.vegaPlayer.findMany({
-      take: limit,
-      orderBy: { highestLevel: 'desc' },
-      select: { username: true, highestLevel: true, highestLoop: true, userId: true },
-    });
-    return rows.map((r, i) => ({
-      rank: i + 1,
+    const rows = await visibleBoard(limit, (take) =>
+      prisma.vegaPlayer.findMany({
+        take,
+        orderBy: { highestLevel: 'desc' },
+        select: { username: true, highestLevel: true, highestLoop: true, userId: true },
+      }),
+    );
+    return rows.map((r) => ({
+      rank: r.rank,
       username: r.username,
       score: r.highestLevel,
       progress: r.highestLoop,
@@ -404,13 +472,15 @@ const vega: GameAdapter = {
 const laundrySort: GameAdapter = {
   metric: 'highScore',
   async leaderboard(limit) {
-    const rows = await prisma.laundryPlayer.findMany({
-      take: limit,
-      orderBy: { highScore: 'desc' },
-      select: { username: true, highScore: true, gamesPlayed: true, userId: true },
-    });
-    return rows.map((r, i) => ({
-      rank: i + 1,
+    const rows = await visibleBoard(limit, (take) =>
+      prisma.laundryPlayer.findMany({
+        take,
+        orderBy: { highScore: 'desc' },
+        select: { username: true, highScore: true, gamesPlayed: true, userId: true },
+      }),
+    );
+    return rows.map((r) => ({
+      rank: r.rank,
       username: r.username,
       score: r.highScore,
       progress: r.gamesPlayed,
@@ -422,13 +492,15 @@ const laundrySort: GameAdapter = {
 const sliceIt: GameAdapter = {
   metric: 'totalScore',
   async leaderboard(limit) {
-    const rows = await prisma.player.findMany({
-      take: limit,
-      orderBy: { totalScore: 'desc' },
-      select: { username: true, totalScore: true, gamesPlayed: true, userId: true },
-    });
-    return rows.map((r, i) => ({
-      rank: i + 1,
+    const rows = await visibleBoard(limit, (take) =>
+      prisma.player.findMany({
+        take,
+        orderBy: { totalScore: 'desc' },
+        select: { username: true, totalScore: true, gamesPlayed: true, userId: true },
+      }),
+    );
+    return rows.map((r) => ({
+      rank: r.rank,
       username: r.username,
       score: r.totalScore,
       progress: r.gamesPlayed,

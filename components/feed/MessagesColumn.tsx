@@ -32,6 +32,7 @@ import {
   searchConversationsApi,
   sendMessageApi,
 } from '@/lib/messages/messages.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export interface ConversationItem {
   id: string;
@@ -67,7 +68,7 @@ export function MessagesColumn({
     nextCursor: string | null;
     hasMore: boolean;
   } | null;
-} = {}) {
+} = {}) { const fmt = useLocaleFormat(); 
   const [conversations, setConversations] = useState<ConversationItem[]>(
     initialData?.conversations ?? [],
   );
@@ -284,7 +285,7 @@ export function MessagesColumn({
     if (diffMins < 60) return t('time-minutes', { count: diffMins, defaultValue: '{{count}}m' });
     if (diffHours < 24) return t('time-hours', { count: diffHours, defaultValue: '{{count}}h' });
     if (diffDays < 7) return t('time-days', { count: diffDays, defaultValue: '{{count}}d' });
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return fmt.date(d, { month: 'short', day: 'numeric' });
   };
 
   if (!session) {

@@ -18,7 +18,7 @@
 
 ### `GET /api/v1/posts`
 
-Your recent posts, newest first.
+Your recent posts, newest first. `pinnedOrder` is the post’s place among its author’s pinned profile posts (1 is the top, at most 3), or `null` when it is not pinned.
 
 **Scope:** `read:posts` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyPosts`
 
@@ -42,7 +42,8 @@ Your recent posts, newest first.
         "comments": 1,
         "reposts": 0,
         "views": 42
-      }
+      },
+      "pinnedOrder": null
     }
   ],
   "nextCursor": "2026-06-20T10:00:00.000Z"
@@ -83,7 +84,7 @@ Create a post on your account. Awards XP and progresses quests exactly like the 
 
 ### `GET /api/v1/posts/{id}`
 
-Fetch a single post by id. Returns public posts and your own posts; otherwise 404. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
+Fetch a single post by id. Returns public posts and your own posts; otherwise 404. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema. `pinnedOrder` is the post’s place among its author’s pinned profile posts (1 is the top, at most 3), or `null` when it is not pinned.
 
 **Scope:** `read:posts` · **Success:** `200` · **Operation id:** `getPost`
 
@@ -105,6 +106,7 @@ Fetch a single post by id. Returns public posts and your own posts; otherwise 40
     "reposts": 0,
     "views": 42
   },
+  "pinnedOrder": null,
   "author": {
     "id": "ck_user123",
     "name": "Ada",

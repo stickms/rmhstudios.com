@@ -1,0 +1,21 @@
+/// A member's RMH Studio project saved to their account ("Save to account").
+/// The id is the client's own project id (at most 64 characters), so the same project
+/// is recognised on every device; an id owned by another member is refused, never reused.
+/// `data` is the project JSON without audio (user samples stay on the device).
+model StudioProject {
+  id        String   @id @db.VarChar(64)
+  userId    String
+  name      String   @db.VarChar(80)
+  data      Json
+  /// Serialised size of `data` in bytes, so the list never has to read the blob.
+  sizeBytes Int
+  /// Bumped by every save; a save names the revision it was based on and a stale one is refused.
+  revision  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("studio_project")
+}

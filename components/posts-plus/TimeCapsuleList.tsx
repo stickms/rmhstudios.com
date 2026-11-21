@@ -21,6 +21,7 @@ import {
 } from '@/lib/scheduled/scheduled.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Capsule {
   id: string;
@@ -43,7 +44,7 @@ interface Capsule {
  * Opening is done by the publish job, so a capsule opens on its date whether or
  * not this page is ever visited.
  */
-export function TimeCapsuleList() {
+export function TimeCapsuleList() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -309,9 +310,9 @@ export function TimeCapsuleList() {
                     {
                       defaultValue:
                         'Opens {{date}} · in {{countdown}}',
-                      date: new Date(
+                      date: fmt.dateTime(new Date(
                         c.openAt,
-                      ).toLocaleString(),
+                      )),
                       countdown:
                         formatCountdown(
                           c.openAt,
@@ -372,9 +373,9 @@ export function TimeCapsuleList() {
                     {
                       defaultValue:
                         'Opened {{date}}',
-                      date: new Date(
+                      date: fmt.date(new Date(
                         c.openAt,
-                      ).toLocaleDateString(),
+                      )),
                     },
                   )}
                   {c.postId && (

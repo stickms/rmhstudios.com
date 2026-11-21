@@ -20,6 +20,7 @@ import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { getProfileApi } from '@/lib/profile/profile.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface HoverProfile {
  id: string;
@@ -43,7 +44,7 @@ export function ProfileHoverCard({
  /** User id or handle — anything /api/profile/$id resolves. */
  userId: string;
  children: React.ReactNode;
-}) {
+}) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
  const navigate = useNavigate();
  const { data: session } = useSession();
@@ -155,11 +156,11 @@ export function ProfileHoverCard({
  )}
  <div className="mt-2 flex gap-4 text-sm">
  <span>
- <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-semibold text-site-text"/>{' '}
+ <AnimatedCount value={profile.followingCount} format={(n) => fmt.number(n)} className="font-semibold text-site-text"/>{' '}
  <span className="text-site-text-muted">{t('following-label', { defaultValue:'Following'})}</span>
  </span>
  <span>
- <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-semibold text-site-text"/>{' '}
+ <AnimatedCount value={profile.followerCount} format={(n) => fmt.number(n)} className="font-semibold text-site-text"/>{' '}
  <span className="text-site-text-muted">{t('followers-label', { defaultValue:'Followers'})}</span>
  </span>
  </div>

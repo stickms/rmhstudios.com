@@ -63,6 +63,10 @@ export function settingsNavText(t: TFunction): Record<string, SettingsNavText> {
       label: t('settings-nav-replays', { ns: 'feed', defaultValue: 'Replays' }),
       hint: t('settings-nav-replays-hint', { ns: 'feed', defaultValue: 'Your saved game replays: make one public or unlisted, or delete it' }),
     },
+    'blocked': {
+      label: t('settings-nav-blocked', { ns: 'feed', defaultValue: 'Blocked and muted' }),
+      hint: t('settings-nav-blocked-hint', { ns: 'feed', defaultValue: 'Everyone you blocked or muted, with the date, and unblock or unmute them' }),
+    },
     'privacy': {
       label: t('settings-nav-privacy', { ns: 'feed', defaultValue: 'Privacy & data' }),
       hint: t('settings-nav-privacy-hint', { ns: 'feed', defaultValue: 'Who sees you, close friends, calls, muted words, and your data' }),

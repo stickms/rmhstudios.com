@@ -32,6 +32,7 @@ import {
   type CommunityGoalView,
 } from '@/lib/economy/community-goal';
 import { ApiError, apiJson, errorCode, newIdempotencyKey } from './api';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const KEY = ['economy-plus', 'community-goals'] as const;
 
@@ -137,7 +138,7 @@ function GoalCard({
   goal: CommunityGoalView;
   isAdmin: boolean;
   onChanged: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t, i18n } = useTranslation('f-economy-plus');
   const confirm = useConfirm();
   const [coins, setCoins] = useState('');
@@ -234,11 +235,11 @@ function GoalCard({
         </div>
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums text-site-text-muted">
           <span className="flex items-center gap-1">
-            <CoinIcon className="size-3.5" /> {g.raisedCoins.toLocaleString()} /{' '}
-            {g.targetCoins.toLocaleString()} ({pct}%)
+            <CoinIcon className="size-3.5" /> {fmt.number(g.raisedCoins)} /{' '}
+            {fmt.number(g.targetCoins)} ({pct}%)
           </span>
           <span>
-            {t('cg-pledgers', { defaultValue: '{{n}} pledgers', n: g.pledgers.toLocaleString() })}
+            {t('cg-pledgers', { defaultValue: '{{n}} pledgers', n: fmt.number(g.pledgers) })}
             {' · '}
             {g.status === 'OPEN'
               ? t('cg-deadline', {
@@ -254,7 +255,7 @@ function GoalCard({
         <p className="text-xs font-semibold text-site-text">
           {t('cg-mine', {
             defaultValue: 'Your pledge: {{n}} coins',
-            n: g.myPledge.toLocaleString(),
+            n: fmt.number(g.myPledge),
           })}
         </p>
       ) : null}
@@ -262,7 +263,7 @@ function GoalCard({
         <p className="text-xs text-site-text-muted">
           {t('cg-refunded', {
             defaultValue: 'Refunded to you: {{n}} coins',
-            n: g.myRefunded.toLocaleString(),
+            n: fmt.number(g.myRefunded),
           })}
         </p>
       ) : null}

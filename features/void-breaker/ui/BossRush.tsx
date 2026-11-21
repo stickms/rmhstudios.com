@@ -9,6 +9,7 @@ import { BOSS_RUSH_GAME_ID, isBossRushUnlocked } from '@features/void-breaker/en
 import type { RunStats } from '@features/void-breaker/engine/types';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Row = { rank: number; username: string; score: number; progress: number | null };
 
@@ -24,7 +25,7 @@ async function fetchBoard(): Promise<Row[]> {
   }
 }
 
-function Board({ rows }: { rows: Row[] }) {
+function Board({ rows }: { rows: Row[] }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-action');
   // The board is fetched after the menu or the result shows: it fades in when it lands (M9).
   const arrival = useArrival(rows.length > 0);
@@ -39,7 +40,7 @@ function Board({ rows }: { rows: Row[] }) {
           <span className="text-zinc-500">
             #{r.rank} {r.username}
           </span>
-          <span className="font-bold tabular-nums text-[#d4af37]">{r.score.toLocaleString()}</span>
+          <span className="font-bold tabular-nums text-[#d4af37]">{fmt.number(r.score)}</span>
         </div>
       ))}
     </div>

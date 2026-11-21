@@ -15,6 +15,7 @@ import { saveExisting, saveNew, validateForCloud, type Progress } from '@/lib/tf
 import { useEditor } from '@/lib/tf2-hud/store';
 import { useTf2HudPrefs } from '@/lib/tf2-hud/prefs';
 import { Btn, Modal, SelectField, TextField, Toggle } from './ui';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
 
@@ -24,7 +25,7 @@ export default function SaveShareDialog({
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-tf2-hud');
   const { data: session } = useSession();
   const meta = useEditor((s) => s.meta);
@@ -327,7 +328,7 @@ export default function SaveShareDialog({
                   v{v.number} · {v.message || t('no-note', { defaultValue: 'no note' })}
                 </span>
                 <span className="shrink-0 text-app-text-dim">
-                  {new Date(v.createdAt).toLocaleString()}
+                  {fmt.dateTime(new Date(v.createdAt))}
                 </span>
                 <Btn
                   size="xs"

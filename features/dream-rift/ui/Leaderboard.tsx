@@ -18,6 +18,7 @@ import type { PlayerId } from '@features/dream-rift/engine/types';
 import { formatClockSeconds } from '@/lib/core/format';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Account {
   id: string;
@@ -269,7 +270,7 @@ export function Leaderboard({
   onBack,
 }: {
   onBack: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const [
     mode,
     setMode,
@@ -660,12 +661,12 @@ export function Leaderboard({
                         )}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-gold)]">
-                        {Number(
+                        {fmt.number(Number(
                           e[
                             field
                           ] ??
                             0,
-                        ).toLocaleString()}
+                        ))}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-cream-dim)]">
                         {
@@ -779,7 +780,7 @@ export function Leaderboard({
                     <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-gold)]">
                       {metric ===
                       'combined'
-                        ? e.combinedScore.toLocaleString()
+                        ? fmt.number(e.combinedScore)
                         : formatClockSeconds(
                             e.timeSurvived,
                           )}
@@ -790,7 +791,7 @@ export function Leaderboard({
                         ? formatClockSeconds(
                             e.timeSurvived,
                           )
-                        : e.combinedScore.toLocaleString()}
+                        : fmt.number(e.combinedScore)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-cream-dim)]">
                       {

@@ -11,6 +11,7 @@ import {
   send,
   useInsight,
 } from './api';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Cohorts {
   cohorts: {
@@ -38,7 +39,7 @@ const WEEKS =
       i,
   );
 
-export function CohortsTab() {
+export function CohortsTab() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -122,9 +123,9 @@ export function CohortsTab() {
                 {
                   defaultValue:
                     'Last computed {{date}}.',
-                  date: new Date(
+                  date: fmt.dateTime(new Date(
                     data.computedAt,
-                  ).toLocaleString(),
+                  )),
                 },
               )}
             </span>

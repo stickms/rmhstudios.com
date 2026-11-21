@@ -22,11 +22,12 @@ import { SAVINGS_CUSTOM_MAX } from '@/lib/economy/savings-goal-schema';
 import { apiJson, errorCode } from './api';
 import { ItemPicker, type PickedItem } from './ItemPicker';
 import { ProgressRing } from './ProgressRing';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const KEY = ['economy-plus', 'savings-goals'] as const;
 type Kind = 'shop_item' | 'market_cosmetic' | 'custom';
 
-export default function SavingsGoalsPanel() {
+export default function SavingsGoalsPanel() { const fmt = useLocaleFormat(); 
   const { t, i18n } = useTranslation('f-economy-plus');
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
@@ -109,7 +110,7 @@ export default function SavingsGoalsPanel() {
       defaultValue: 'About {{days}} days · around {{date}} · +{{perDay}}/day',
       days: p.daysLeft,
       date: g.etaDate ? fmtDate.format(new Date(`${g.etaDate}T00:00:00Z`)) : '',
-      perDay: Math.round(p.perDay).toLocaleString(),
+      perDay: fmt.number(Math.round(p.perDay)),
     });
   }
 
@@ -153,8 +154,8 @@ export default function SavingsGoalsPanel() {
                 <p className="truncate text-sm font-semibold text-site-text">{g.title}</p>
                 <p className="mt-0.5 flex items-center gap-1 text-xs tabular-nums text-site-text-muted">
                   <CoinIcon className="size-3.5" />
-                  {Math.min(data.balance, g.targetCoins).toLocaleString()} /{' '}
-                  {g.targetCoins.toLocaleString()}
+                  {fmt.number(Math.min(data.balance, g.targetCoins))} /{' '}
+                  {fmt.number(g.targetCoins)}
                 </p>
                 <p className="mt-1 text-xs text-site-text-muted">{eta(g)}</p>
                 {g.projection.status === 'reached' && g.kind !== 'custom' ? (

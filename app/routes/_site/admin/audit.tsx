@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useMemo, useState } from 'react';
 import { Download } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +14,12 @@ import { api } from '@/lib/contract/client';
 import { listAuditLogApi, type AuditLogEntry } from '@/lib/admin/admin-tools.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 export const Route = createFileRoute('/_site/admin/audit')({
   head: () => ({ meta: [{ title: 'Audit Log | RMH Studios' }] }),
+  // The lookup page links here with one target's id, so its history opens already filtered.
+  validateSearch: (search: Record<string, unknown>): { targetId?: string } =>
+    typeof search.targetId === 'string' && search.targetId ? { targetId: search.targetId.slice(0, 64) } : {},
   component: AuditLogPage,
 });
 
@@ -30,13 +33,15 @@ interface Entry {
   admin: { name: string | null; image: string | null; handle: string | null };
 }
 
-function AuditLogPage() {
+function AuditLogPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const [items, setItems] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const arrival = useArrival(!loading);
   const [action, setAction] = useState('');
   const [targetType, setTargetType] = useState('');
+  const linked = Route.useSearch();
+  const [targetId, setTargetId] = useState(linked.targetId ?? '');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -46,10 +51,11 @@ function AuditLogPage() {
     const p = new URLSearchParams();
     if (action.trim()) p.set('action', action.trim());
     if (targetType.trim()) p.set('targetType', targetType.trim());
+    if (targetId.trim()) p.set('targetId', targetId.trim());
     if (from) p.set('from', from);
     if (to) p.set('to', to);
     return p.toString();
-  }, [action, targetType, from, to]);
+  }, [action, targetType, targetId, from, to]);
   const filtered = query !== '';
 
   useEffect(() => {
@@ -69,7 +75,7 @@ function AuditLogPage() {
   return (
     <PageLayout title={t('audit-log', { defaultValue: 'Audit Log' })} wide backTo="/admin">
       <AdminBody width="narrow">
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
           <Input
             value={action}
             onChange={(e) => setAction(e.target.value)}
@@ -81,6 +87,12 @@ function AuditLogPage() {
             onChange={(e) => setTargetType(e.target.value)}
             placeholder={t('audit-filter-target', { defaultValue: 'Target type' })}
             aria-label={t('audit-filter-target', { defaultValue: 'Target type' })}
+          />
+          <Input
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            placeholder={t('audit-filter-target-id', { defaultValue: 'Target id' })}
+            aria-label={t('audit-filter-target-id', { defaultValue: 'Target id' })}
           />
           <Input
             type="date"
@@ -111,6 +123,7 @@ function AuditLogPage() {
               onClick={() => {
                 setAction('');
                 setTargetType('');
+                setTargetId('');
                 setFrom('');
                 setTo('');
               }}
@@ -148,7 +161,7 @@ function AuditLogPage() {
                       {e.admin.name || e.admin.handle}
                     </span>
                     <span className="t-meta shrink-0">
-                      {formatDistanceToNow(new Date(e.createdAt), { addSuffix: true })}
+                      {fmt.relative(new Date(e.createdAt))}
                     </span>
                   </p>
                   <p className="t-body text-site-text-muted mt-1 break-words">

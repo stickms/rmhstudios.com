@@ -43,6 +43,7 @@ import {
   type DebtStats,
 } from '@/lib/kaikai-debt/stats';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** A round number worth naming a date for — the next power of ten past the total. */
 function nextMilestoneCents(
@@ -66,26 +67,13 @@ function nextMilestoneCents(
   );
 }
 
-const DATE_LABEL =
-  new Intl.DateTimeFormat(
-    'en-US',
-    {
-      month:
-        'short',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone:
-        'UTC',
-    },
-  );
-
 export function StatTiles({
   stats,
   nowMs,
 }: {
   stats: DebtStats;
   nowMs: number;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -227,9 +215,7 @@ export function StatTiles({
               'Lines on the books',
           },
         )}
-        value={stats.totals.count.toLocaleString(
-          'en-US',
-        )}
+        value={fmt.number(stats.totals.count)}
         detail={t(
           'stats.tile.linesDetail',
           {
@@ -252,9 +238,7 @@ export function StatTiles({
               'People involved',
           },
         )}
-        value={stats.totals.creditorCount.toLocaleString(
-          'en-US',
-        )}
+        value={fmt.number(stats.totals.creditorCount)}
         detail={t(
           'stats.tile.peopleDetail',
           {
@@ -407,10 +391,11 @@ export function StatTiles({
         )}
         value={
           derived.milestoneAtMs
-            ? DATE_LABEL.format(
+            ? fmt.date(
                 new Date(
                   derived.milestoneAtMs,
                 ),
+                { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' },
               )
             : t(
                 'stats.tile.milestoneNever',

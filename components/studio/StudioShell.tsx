@@ -25,7 +25,6 @@ import {
   Eraser,
   Scissors,
   VolumeX,
-  Save,
 } from 'lucide-react';
 import { Select } from '@/components/ui/select';
 import {
@@ -44,6 +43,13 @@ import { PianoRollView } from '@/components/studio/piano-roll/PianoRollView';
 import { PatternView } from '@/components/studio/pattern/PatternView';
 import { SampleBrowser } from '@/components/studio/SampleBrowser';
 import { KeybindSettings } from '@/components/studio/KeybindSettings';
+import { ProjectsMenu } from '@/components/studio/ProjectsMenu';
+import { OpenProjectDialog } from '@/components/studio/OpenProjectDialog';
+import { ProjectConflictDialog } from '@/components/studio/ProjectConflictDialog';
+import {
+  useProjectSession,
+  type ProjectSession,
+} from '@/components/studio/useProjectSession';
 import { StudioCreativeButtons } from '@/components/studio/creative/StudioCreativeButtons';
 import {
   MIN_BPM,
@@ -60,9 +66,11 @@ import type {
 function TransportBar({
   compact = false,
   onSettingsToggle,
+  session,
 }: {
   compact?: boolean;
   onSettingsToggle?: () => void;
+  session: ProjectSession;
 }) {
   const {
     isPlaying,
@@ -269,7 +277,7 @@ function TransportBar({
         </div>
 
         {expandedMobile && (
-          <div className="flex items-center gap-3 border-t border-app-border px-3 py-2">
+          <div className="flex flex-wrap items-center gap-3 border-t border-app-border px-3 py-2">
             <button
               onClick={() =>
                 setLoopEnabled(
@@ -329,6 +337,9 @@ function TransportBar({
               {
                 timeSignature[1]
               }
+            </div>
+            <div className="w-full min-w-0">
+              <ProjectsMenu session={session} />
             </div>
           </div>
         )}
@@ -493,20 +504,6 @@ function TransportBar({
           <FolderOpen className="h-4 w-4" />
         </button>
 
-        {/* Save */}
-        <button
-          className="rounded-app-sm p-1.5 text-app-text-muted hover:bg-app-surface-hover hover:text-app-text"
-          title={t(
-            'save-project',
-            {
-              defaultValue:
-                'Save Project (Ctrl+S)',
-            },
-          )}
-        >
-          <Save className="h-4 w-4" />
-        </button>
-
         {/* Settings */}
         <button
           onClick={
@@ -530,7 +527,7 @@ function TransportBar({
 
 // ─── Toolbar ────────────────────────────────────────────────────────────────
 
-function Toolbar() {
+function Toolbar({ session }: { session: ProjectSession }) {
   const {
     t,
   } =
@@ -837,6 +834,13 @@ function Toolbar() {
           ),
         )}
       </Select>
+
+      <div className="mx-2 h-5 w-px bg-app-border" />
+
+      {/* Project: name, saved state and the Projects menu */}
+      <div className="ml-auto min-w-0">
+        <ProjectsMenu session={session} />
+      </div>
     </div>
   );
 }
@@ -1099,8 +1103,14 @@ export default function StudioShell() {
       false,
     );
 
-  // Initialize keybinds and transport bridge
-  useKeybinds();
+  // Initialize keybinds and transport bridge; Ctrl/Cmd+S and Ctrl+Shift+S are the project session's
+  const session =
+    useProjectSession();
+  useKeybinds(
+    undefined,
+    undefined,
+    session.onProjectAction,
+  );
   useTransport();
 
   // Initialize audio engine on first user interaction
@@ -1177,6 +1187,35 @@ export default function StudioShell() {
     initEngine,
   ]);
 
+  const projectDialogs =
+    (
+      <>
+        {session.openDialog ? (
+          <OpenProjectDialog
+            key={
+              session.openDialog
+            }
+            session={
+              session
+            }
+            tab={
+              session.openDialog
+            }
+          />
+        ) : null}
+        {session.conflict ? (
+          <ProjectConflictDialog
+            conflict={
+              session.conflict
+            }
+            session={
+              session
+            }
+          />
+        ) : null}
+      </>
+    );
+
   // ─── Mobile Layout ──────────────────────────────────────────────────────
   if (
     isMobile
@@ -1188,6 +1227,9 @@ export default function StudioShell() {
       >
         <TransportBar
           compact
+          session={
+            session
+          }
           onSettingsToggle={() =>
             setSettingsOpen(
               !settingsOpen,
@@ -1217,6 +1259,9 @@ export default function StudioShell() {
             settingsOpen
           }
         />
+        {
+          projectDialogs
+        }
       </div>
     );
   }
@@ -1228,13 +1273,20 @@ export default function StudioShell() {
       data-fluid-press-scope
     >
       <TransportBar
+        session={
+          session
+        }
         onSettingsToggle={() =>
           setSettingsOpen(
             !settingsOpen,
           )
         }
       />
-      <Toolbar />
+      <Toolbar
+        session={
+          session
+        }
+      />
 
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup orientation="horizontal">
@@ -1321,6 +1373,9 @@ export default function StudioShell() {
           Studio
         </div>
       </div>
+      {
+        projectDialogs
+      }
     </div>
   );
 }

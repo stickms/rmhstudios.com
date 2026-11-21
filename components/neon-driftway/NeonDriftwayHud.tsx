@@ -17,6 +17,7 @@ import { useEffect, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { BOOST_MAX, KMH_PER_UNIT, STREAK_WINDOW_MS, V_MAX_NORMAL } from '@/lib/neon-driftway/constants';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const MAX_HP_PIPS = 3;
 const MAX_ABILITY_PIPS = 3;
@@ -46,7 +47,7 @@ function formatClock(ms: number): string {
 }
 
 export const NeonDriftwayHud = function NeonDriftwayHud({ stereo, visible, ref }: Props & { ref?: React.Ref<HudHandle> }
-) {
+) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-neon-driftway');
   const rootRef = useRef<HTMLDivElement>(null);
   const cache = useRef(new Map<string, HTMLElement[]>());
@@ -87,8 +88,8 @@ export const NeonDriftwayHud = function NeonDriftwayHud({ stereo, visible, ref }
         const playing = game.state === 'playing' || game.state === 'paused';
 
         show('run', playing);
-        write('score', Math.round(game.score).toLocaleString());
-        write('distance', `${Math.round(game.distance).toLocaleString()} m`);
+        write('score', fmt.number(Math.round(game.score)));
+        write('distance', `${fmt.number(Math.round(game.distance))} m`);
         write('time', formatClock(game.elapsedMs));
         write('speed', String(Math.round(car.speed * KMH_PER_UNIT)));
 
@@ -158,7 +159,7 @@ export const NeonDriftwayHud = function NeonDriftwayHud({ stereo, visible, ref }
             rows[i].style.display = '';
             rows[i].style.color = entry.self ? '#22d3ee' : '#d4d4d8';
             if (names[i]) names[i].textContent = `${(i % SCOREBOARD_ROWS) + 1}. ${entry.name}`;
-            if (values[i]) values[i].textContent = entry.score.toLocaleString();
+            if (values[i]) values[i].textContent = fmt.number(entry.score);
           }
         }
 
@@ -180,7 +181,7 @@ export const NeonDriftwayHud = function NeonDriftwayHud({ stereo, visible, ref }
         }
       },
     };
-  }, [t]);
+  }, [t, fmt]);
 
   const panel = (eye: 'left' | 'right' | 'mono') => (
     <div

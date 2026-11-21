@@ -21,6 +21,7 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
         content: true,
         gifUrl: true,
         imageUrls: true,
+        imageAlts: true,
         audience: true,
         unlockPrice: true,
         isSensitive: true,
@@ -73,7 +74,13 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
 
     // What the card will actually show, so the image has a text alternative
     // that describes the picture rather than repeating the title.
-    const imageAlt = showContent
+    // The author's own description of the first image wins when there is one (sprint 05 #16).
+    const firstAlt = showContent
+      ? (rmhark.imageAlts ?? []).find((a) => a.trim().length > 0)?.trim()
+      : undefined;
+    const imageAlt = firstAlt
+      ? `Post by ${userName} on RMH: ${firstAlt.length > 200 ? `${firstAlt.slice(0, 199)}…` : firstAlt}`
+      : showContent
       ? imageCount
         ? `Post by ${userName} on RMH, with ${imageCount} attached ${imageCount === 1 ? 'image' : 'images'}.`
         : `Post by ${userName} on RMH.`

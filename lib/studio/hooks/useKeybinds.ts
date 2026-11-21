@@ -33,7 +33,24 @@ export function useKeybinds(
   onNoteOff?: (
     midiNote: number,
   ) => void,
+  onProjectAction?: (
+    action:
+      | 'save'
+      | 'saveAs',
+  ) => void,
 ) {
+  // The shell's save handlers change identity; the key listener below is attached once.
+  const projectActionRef =
+    useRef(
+      onProjectAction,
+    );
+  useEffect(() => {
+    projectActionRef.current =
+      onProjectAction;
+  }, [
+    onProjectAction,
+  ]);
+
   const activeKeysRef =
     useRef(
       new Set<string>(),
@@ -188,6 +205,18 @@ export function useKeybinds(
             store.setTypingKeyboardOctave(
               store.typingKeyboardOctave -
                 1,
+            );
+            break;
+
+          // Project
+          case 'project.save':
+            projectActionRef.current?.(
+              'save',
+            );
+            break;
+          case 'project.saveAs':
+            projectActionRef.current?.(
+              'saveAs',
             );
             break;
 

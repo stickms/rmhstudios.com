@@ -1,0 +1,17 @@
+{
+  "limit-reached": "You can pin up to {{max}} posts. Unpin one first.",
+  "move-down": "Move down",
+  "move-down-label": "Move down, pinned {{position}} of {{total}}",
+  "move-error": "Could not move the pin",
+  "move-up": "Move up",
+  "move-up-label": "Move up, pinned {{position}} of {{total}}",
+  "moved-down": "Moved down",
+  "moved-up": "Moved up",
+  "pin": "Pin to profile",
+  "pin-error": "Could not change the pin",
+  "pin-slot": "Pin to profile ({{position}} of {{max}})",
+  "pinned": "Pinned to your profile",
+  "pinned-label": "Pinned",
+  "unpin": "Unpin from profile",
+  "unpinned": "Unpinned from your profile"
+}

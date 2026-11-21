@@ -594,6 +594,28 @@ model GameStat {
   @@map("game_stat")
 }
 
+/// One row each time a score through `submitGameScore` set a first score or a new personal best
+/// (sprint 05 #04). The adapters keep only the current best; this is the history of how it moved.
+/// Private to the member: no endpoint reads another member's rows. At most 100 per (user, game);
+/// `lib/game/personal-bests.server.ts` prunes the oldest on insert. The unique key makes a retried
+/// submission a no-op, because a score can only be a new best once.
+model GamePersonalBest {
+  id        BigInt   @id @default(autoincrement())
+  userId    String
+  gameId    String   @db.VarChar(60)
+  score     Int
+  /// The best before this run; null for the first score.
+  previous  Int?
+  progress  Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId, score])
+  @@index([userId, gameId, createdAt(sort: Desc)])
+  @@map("game_personal_best")
+}
+
 // ─── Rebar & Rutabaga — reservations (W1, 2026-09-19) ─────────────────────
 // The first piece of state behind any of the eleven /services and /ventures
 // microsites. Before this the whole section was brochureware: a signed-in

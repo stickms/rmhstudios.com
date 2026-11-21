@@ -34,6 +34,7 @@ import {
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { setReminderApi } from '@/lib/reminders/reminders.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export interface RemindTarget {
   kind: ReminderKind;
@@ -71,7 +72,7 @@ export default function RemindMeDialog({
     open: boolean,
   ) => void;
   target: RemindTarget;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -120,16 +121,13 @@ export default function RemindMeDialog({
         },
       );
       const when =
-        at.toLocaleString(
-          undefined,
-          {
+        fmt.dateTime(at, {
             weekday:
               'short',
             hour: 'numeric',
             minute:
               '2-digit',
-          },
-        );
+          });
       toast.success(
         t(
           'remind-set',
@@ -276,18 +274,15 @@ export default function RemindMeDialog({
                 disabled={
                   saving
                 }
-                hint={resolvePreset(
+                hint={fmt.dateTime(resolvePreset(
                   p.id,
-                ).toLocaleString(
-                  undefined,
-                  {
+                ), {
                     weekday:
                       'short',
                     hour: 'numeric',
                     minute:
                       '2-digit',
-                  },
-                )}
+                  })}
                 onSelect={() =>
                   void save(
                     resolvePreset(

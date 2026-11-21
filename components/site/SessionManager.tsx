@@ -18,7 +18,6 @@ import {
   Smartphone,
   Tablet,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -28,6 +27,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface SessionRow {
   id: string;
@@ -143,7 +143,7 @@ function describeDevice(
   };
 }
 
-export function SessionManager() {
+export function SessionManager() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -499,14 +499,9 @@ export function SessionManager() {
                               {
                                 defaultValue:
                                   'Active {{when}}',
-                                when: formatDistanceToNow(
-                                  new Date(
+                                when: fmt.relative(new Date(
                                     s.updatedAt,
-                                  ),
-                                  {
-                                    addSuffix: true,
-                                  },
-                                ),
+                                  )),
                               },
                             )
                           : null}

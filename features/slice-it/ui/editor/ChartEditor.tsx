@@ -74,6 +74,7 @@ import { Timeline } from './Timeline';
 import { Toolbar } from './Toolbar';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Autosave cadence. See the note on the effect below. */
 const AUTOSAVE_MS = 20_000;
@@ -101,7 +102,7 @@ export function ChartEditor({
   songId,
 }: {
   songId: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -1108,9 +1109,9 @@ export function ChartEditor({
                   {
                     defaultValue:
                       'Saved {{time}}',
-                    time: new Date(
+                    time: fmt.time(new Date(
                       lastSavedAt,
-                    ).toLocaleTimeString(),
+                    )),
                   },
                 )
               : t(
