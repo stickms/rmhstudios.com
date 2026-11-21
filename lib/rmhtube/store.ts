@@ -30,6 +30,9 @@ import type {
   VideoState,
   RoomHistoryEntry,
 } from './types';
+import type { PlaylistQueueResult } from './playlist-queue';
+
+let playlistResultSeq = 0;
 
 /** Turn a broadcast queue into this viewer's queue (see `QueueBroadcastItem`). */
 function adoptQueue(
@@ -179,6 +182,9 @@ export interface RmhTubeStore {
   lastSeq: number;
   settings: RmhTubeUserSettings;
   systemMessages: SystemMessage[];
+  /** What the last playlist add did for this member; cleared by the notice that shows it. */
+  playlistResult: (PlaylistQueueResult & { id: number }) | null;
+  setPlaylistResult: (result: PlaylistQueueResult | null) => void;
 
   setConnectionStatus: (
     status: RmhTubeStore['connectionStatus'],
@@ -206,6 +212,7 @@ export interface RmhTubeStore {
   addSystemMessage: (
     event: SystemMessage['event'],
     content: string,
+    data?: Pick<SystemMessage, 'playlistQueued'>,
   ) => void;
   leaveRoom: () => void;
   reset: () => void;
@@ -242,6 +249,9 @@ export const useRmhTubeStore =
           },
         systemMessages:
           [],
+        playlistResult: null,
+        setPlaylistResult: (result) =>
+          set({ playlistResult: result ? { ...result, id: ++playlistResultSeq } : null }),
 
         setConnectionStatus:
           (
@@ -414,6 +424,7 @@ export const useRmhTubeStore =
           (
             event,
             content,
+            data,
           ) => {
             if (
               !get()
@@ -427,6 +438,7 @@ export const useRmhTubeStore =
                 type: 'system',
                 event,
                 content,
+                ...data,
                 createdAt:
                   Date.now(),
               };
@@ -902,6 +914,26 @@ export function applyRoomAction(
           },
         ],
       };
+
+    case 'QUEUE_PLAYLIST_ADDED': {
+      // One action for the whole batch: the queue changes once, and the chat
+      // line is worded by each viewer's own language from this typed data.
+      const count = data.count as number;
+      const playlistName = data.playlistName as string;
+      const userName = data.userName as string;
+      store?.addSystemMessage(
+        'playlist_queued',
+        `${userName} queued ${count} videos from ${playlistName}`,
+        { playlistQueued: { userName, playlistName, count } },
+      );
+      return {
+        ...room,
+        queue: [
+          ...room.queue,
+          ...adoptQueue(data.items as QueueBroadcastItem[], room.myUserId),
+        ],
+      };
+    }
 
     case 'QUEUE_ITEM_ADDED':
       return {

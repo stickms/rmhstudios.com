@@ -356,7 +356,7 @@ async function resolvePost(
       // CAS on "still live": a concurrent delete already did the counter work.
       const removed = await tx.rMHark.updateMany({
         where: { id: postId, deletedAt: null },
-        data: { deletedAt: new Date(), deletedBy: 'moderator' },
+        data: { deletedAt: new Date(), deletedBy: 'moderator', pinnedAt: null },
       });
       if (removed.count === 0) return;
       await unlinkPostHashtags(tx, postId);

@@ -4,6 +4,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { isValidMonthDay } from '@/lib/gifting/birthday';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
 export default function BirthdaySettings() {
+  const lf = useLocaleFormat();
   const {
     t,
   } =
@@ -94,15 +96,7 @@ export default function BirthdaySettings() {
         _,
         i,
       ) =>
-        new Intl.DateTimeFormat(
-          undefined,
-          {
-            month:
-              'long',
-            timeZone:
-              'UTC',
-          },
-        ).format(
+        lf.date(
           new Date(
             Date.UTC(
               2024,
@@ -110,6 +104,12 @@ export default function BirthdaySettings() {
               1,
             ),
           ),
+          {
+            month:
+              'long',
+            timeZone:
+              'UTC',
+          },
         ),
     );
   const valid =

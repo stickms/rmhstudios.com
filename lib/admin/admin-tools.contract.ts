@@ -70,6 +70,9 @@ export const listAuditLogApi =
       targetType?:
         | string
         | undefined;
+      targetId?:
+        | string
+        | undefined;
       from?:
         | string
         | undefined;

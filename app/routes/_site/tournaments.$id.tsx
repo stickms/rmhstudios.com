@@ -16,6 +16,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import { BracketView } from '@/components/tournaments/BracketView';
 import { CheckInPanel, EntrantCheckIn, useStartRefusal } from '@/components/tournaments/CheckInPanel';
+import { SeedingPanel } from '@/components/tournaments/SeedingPanel';
 import { SwissStandings } from '@/components/competitive/SwissStandings';
 import { PickemPanel } from '@/components/competitive/PickemPanel';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
@@ -328,6 +329,8 @@ function TournamentDetailPage() {
 
         <CheckInPanel tourney={tourney} viewerId={viewerId} canManage={canManage} onChanged={load} />
 
+        <SeedingPanel tourney={tourney} canManage={canManage} onChanged={load} />
+
         {/* Bracket (live / complete, or cancelled after it started: its open matches read "Cancelled") */}
         {(tourney.status === 'LIVE' ||
           tourney.status === 'COMPLETE' ||
@@ -390,6 +393,11 @@ function TournamentDetailPage() {
                   fallbackName={e.user?.name ?? '?'}
                 />
                 <span className="truncate text-sm">{e.user?.name}</span>
+                {e.placement != null && e.seed != null && (tourney.format === 'SINGLE_ELIM' || tourney.format === 'DOUBLE_ELIM') && (
+                  <span className="t-meta">
+                    {t('seed-label', { ns: 'tournament-seeding', defaultValue: 'Seed {{seed}}', seed: e.seed })}
+                  </span>
+                )}
                 <EntrantCheckIn tourney={tourney} entrant={e} canManage={canManage} onChanged={load} />
                 {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
                   <span className="ml-auto text-xs text-site-text-muted">

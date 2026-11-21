@@ -24,8 +24,15 @@ const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const key = (k: string) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : JSON.stringify(k));
 
 /** Structural TS type of an example value. */
+// Example values that are `null` say nothing about the type, so the nullable
+// fields of the API are named here.
+const NULLABLE: Record<string, string> = {
+  nextCursor: 'string | null',
+  pinnedOrder: 'number | null',
+};
+
 function tsOf(v: unknown, k = ''): string {
-  if (v === null) return k === 'nextCursor' ? 'string | null' : 'unknown';
+  if (v === null) return NULLABLE[k] ?? 'unknown';
   if (Array.isArray(v)) return v.length ? `${tsOf(v[0])}[]` : 'unknown[]';
   if (typeof v === 'object') {
     const entries = Object.entries(v as Json).map(([k, x]) => `${key(k)}: ${tsOf(x, k)}`);

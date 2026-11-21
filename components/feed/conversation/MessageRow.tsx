@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Reply } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { SwipeRow } from '@/components/ui/swipe-row';
 import { SpineItem, SpineStation } from '@/components/ui/spine';
 import { cn } from '@/lib/utils';
@@ -78,6 +79,7 @@ export function MessageRow({
   className?: string | undefined;
 }) {
   const { t } = useTranslation('feed');
+  const { locale } = useLocaleFormat();
   // The sender's "Edit descriptions": the saved list shows at once, whether or not the realtime event arrives.
   const [altsEditing, setAltsEditing] = useState(false);
   const [savedAlts, setSavedAlts] = useState<string[] | null>(null);
@@ -253,7 +255,7 @@ export function MessageRow({
               </div>
               {!isEditing && !deleted && (
                 <p className="t-meta mt-1">
-                  {formatTime(msg.createdAt)}
+                  {formatTime(msg.createdAt, locale)}
                   {msg.editedAt && <> · {t('edited', { defaultValue: 'edited' })}</>}
                 </p>
               )}

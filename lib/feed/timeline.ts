@@ -44,6 +44,7 @@ import {
   VIEWER_FEED_PREFIX,
 } from '../cached.server';
 import { reconcileCachedPage } from './page-reconcile.server';
+import { getRepostMutedIds } from './repost-mutes.server';
 import { isExpired } from '../posts-plus/constants';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 
@@ -526,11 +527,12 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     return { items: [], nextCursor: null, hasMore: false, empty: true };
   }
 
-  const [followingAll, hiddenIds, viewerCircleOwnerIds, blockedIds] = await Promise.all([
+  const [followingAll, hiddenIds, viewerCircleOwnerIds, blockedIds, repostMutedIds] = await Promise.all([
     getFollowingIds(userId),
     getHiddenAuthorIds(userId),
     circleOwnerIds(userId),
     getBlockedAuthorIds(userId),
+    getRepostMutedIds(userId),
   ]);
   const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
   // Exclude muted/blocked authors even if still followed.
@@ -578,7 +580,7 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     }),
     prisma.rMHarkRepost.findMany({
       where: {
-        userId: { in: followingIds },
+        userId: { in: followingIds, ...(repostMutedIds.length ? { notIn: repostMutedIds } : {}) },
         // The reposted post's author is not necessarily followed, so its
         // audience is checked in full (same fragment the For-You repost query
         // uses). Previously only `deletedAt` was checked, so a repost of a
@@ -659,13 +661,14 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
   // start. Everything else is NOT an input to the query — the interest profile
   // only reorders the returned page, and announcements are interleaved afterward
   // — so those stay off this batch and run alongside the query instead.
-  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds] =
+  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds, repostMutedIds] =
     await Promise.all([
       getHiddenAuthorIds(userId),
       userId ? getFollowingIds(userId) : Promise.resolve([] as string[]),
       circleOwnerIds(userId),
       getSignals(userId),
       getBlockedAuthorIds(userId),
+      getRepostMutedIds(userId),
     ]);
   const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
 
@@ -716,7 +719,10 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
             ...audWhere,
             ...tagWhere,
           },
-          ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
+          // Reposts by someone the viewer turned reposts off for go too; their own posts stay (the query above).
+          ...(hiddenIds.length || repostMutedIds.length
+            ? { userId: { notIn: [...hiddenIds, ...repostMutedIds] } }
+            : {}),
           ...keyset,
         },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],

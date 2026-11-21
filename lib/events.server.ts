@@ -46,6 +46,8 @@ import {
 import type { EventRecurrenceDTO } from '@/lib/calendar/types';
 import { EVENT_KIND, WHOLE_EVENT } from '@/lib/calendar/event-model';
 import { SITE_URL } from '@/lib/seo';
+import { canManageEvent } from '@/lib/events/cohosts.server';
+import { resolveRole, type CohostPersonDTO, type EventViewerRole } from '@/lib/events/cohosts';
 import {
   canJoinWaitlist,
   waitlistPosition,
@@ -108,6 +110,10 @@ export interface EventDTO {
   viewerWaitlistPosition: number | null;
   /** K4 — set on a repeating event; `startsAt`/`host`/counts then describe the shown occurrence. */
   recurrence?: EventRecurrenceDTO | null;
+  /** Accepted co-hosts, in the order they were invited ("Hosted by A with B and C"). */
+  cohosts: CohostPersonDTO[];
+  /** What the viewer is to this event: host, accepted co-host, invited co-host, or nothing. */
+  viewerRole: EventViewerRole;
 }
 
 export interface RsvpResult {
@@ -139,6 +145,7 @@ export interface CreateEventInput {
 
 export interface UpdateEventInput {
   id: string;
+  /** The member making the edit: the host, or an accepted co-host (s05-05). */
   hostId: string;
   title?: string;
   description?: string | null;
@@ -302,6 +309,8 @@ async function canViewPrivateEvent(
 ): Promise<boolean> {
   if (!viewerId) return false;
   if (row.hostId === viewerId) return true;
+  // A co-host (invited or accepted) sees the event they were asked to help run, and nobody else gains sight of it.
+  if ((await prisma.eventCohost.count({ where: { eventId: row.id, userId: viewerId } })) > 0) return true;
   const answered = await prisma.rsvp.count({ where: { eventId: row.id, userId: viewerId } });
   if (answered > 0) return true;
   if (!row.pollId) return false;
@@ -403,6 +412,20 @@ async function attachAndMap(
     }
   }
 
+  // Co-hosts: the accepted ones for the card, plus the viewer's own row (an invitation shows its Accept / Decline).
+  // At most MAX_COHOSTS rows exist per event, so the read is bounded.
+  const cohostRows = await prisma.eventCohost.findMany({
+    where: { eventId: { in: ids }, OR: [{ status: 'accepted' }, ...(viewerId ? [{ userId: viewerId }] : [])] },
+    orderBy: [{ invitedAt: 'asc' }, { userId: 'asc' }],
+    select: { eventId: true, userId: true, status: true, user: { select: userDisplaySelect } },
+  });
+  const cohostsOf = new Map<string, CohostPersonDTO[]>();
+  const myCohostStatus = new Map<string, string>();
+  for (const r of cohostRows) {
+    if (r.status === 'accepted') cohostsOf.set(r.eventId, [...(cohostsOf.get(r.eventId) ?? []), toPerson(r.user)]);
+    if (r.userId === viewerId) myCohostStatus.set(r.eventId, r.status);
+  }
+
   const mapped: EventDTO[] = rows.map((row) => {
     const c = counts.get(row.id) ?? { going: 0, maybe: 0, waiting: 0 };
     return {
@@ -436,6 +459,8 @@ async function attachAndMap(
       viewerRsvp: viewerRsvps.get(row.id) ?? null,
       waitlistCount: c.waiting,
       viewerWaitlistPosition: viewerPlaces.get(row.id) ?? null,
+      cohosts: cohostsOf.get(row.id) ?? [],
+      viewerRole: resolveRole(row.hostId, viewerId, myCohostStatus.get(row.id)),
     };
   });
   // K4 — repeating events show their next occurrence (time, host, attendance).
@@ -706,7 +731,10 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
     },
   });
   if (!event) throw new EventError('NOT_FOUND');
-  if (event.hostId !== input.hostId) throw new EventError('FORBIDDEN');
+  const role = await canManageEvent(event, input.hostId);
+  if (!role) throw new EventError('FORBIDDEN');
+  // The repeat rule (and its host rotation) is the host's; a co-host edits the details.
+  if (role === 'cohost' && input.recurrence !== undefined) throw new EventError('FORBIDDEN');
 
   const data: {
     recurrence?: string | null;
@@ -758,7 +786,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
   } else if (input.recurrence) {
     const checked = await checkRecurrence(input.recurrence, {
       communityId: event.communityId,
-      hostId: input.hostId,
+      hostId: event.hostId ?? input.hostId,
       startsAt: effectiveStart,
     });
     if (!checked.ok) throw new EventError('INVALID_RECURRENCE');

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { Link } from '@tanstack/react-router';
 import {
   Pencil,
@@ -28,6 +29,7 @@ export default function NowModule({
   userId: string;
   isOwner: boolean;
 }) {
+  const lf = useLocaleFormat();
   const {
     t,
   } =
@@ -55,16 +57,14 @@ export default function NowModule({
     );
   const updated =
     view?.nowUpdatedAt
-      ? new Intl.DateTimeFormat(
-          undefined,
+      ? lf.date(
+          new Date(
+            view.nowUpdatedAt,
+          ),
           {
             dateStyle:
               'medium',
           },
-        ).format(
-          new Date(
-            view.nowUpdatedAt,
-          ),
         )
       : null;
 

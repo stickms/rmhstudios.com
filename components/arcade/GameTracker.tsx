@@ -27,6 +27,7 @@ import {
 import { api } from '@/lib/contract/client';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function formatMinutes(
   m: number,
@@ -47,7 +48,7 @@ export function GameTracker({
 }: {
   gameId: string;
   signedIn: boolean;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -493,13 +494,13 @@ export function GameTracker({
                   rank: rival
                     .rival
                     .rank,
-                  gap: Math.abs(
+                  gap: fmt.number(Math.abs(
                     rival
                       .rival
                       .score -
                       (rival.myScore ??
                         0),
-                  ).toLocaleString(),
+                  )),
                 },
               )}
         </p>

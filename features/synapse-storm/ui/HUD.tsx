@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { GameState } from '../engine/types';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface HUDProps {
   state: GameState;
@@ -10,7 +11,7 @@ export const HUD: React.FC<
   HUDProps
 > = ({
   state,
-}) => {
+}) => { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -35,7 +36,7 @@ export const HUD: React.FC<
           )}
         </span>
         <span className="hud-value score-value">
-          {state.score.toLocaleString()}
+          {fmt.number(state.score)}
         </span>
       </div>
 

@@ -1,4 +1,5 @@
-// Formatting for the DeepSeek balance page. Locale-aware; currency codes are
+
+import { currentDocumentLocale, formatDateTime, formatNumber } from '@/lib/core/format';// Formatting for the DeepSeek balance page. Locale-aware; currency codes are
 // ISO symbols from the API, so no translation is needed.
 
 const DASH =
@@ -23,9 +24,7 @@ export function fmtMoney(
   )
     return DASH;
   try {
-    return n.toLocaleString(
-      undefined,
-      {
+    return formatNumber(n, currentDocumentLocale(), {
         style:
           'currency',
         currency,
@@ -36,10 +35,9 @@ export function fmtMoney(
           ),
         maximumFractionDigits:
           digits,
-      },
-    );
+      });
   } catch {
-    return `${n.toLocaleString(undefined, { maximumFractionDigits: digits })} ${currency}`;
+    return `${formatNumber(n, currentDocumentLocale(), { maximumFractionDigits: digits })} ${currency}`;
   }
 }
 
@@ -128,17 +126,14 @@ export function fmtHour(
     d.getTime(),
   )
     ? DASH
-    : d.toLocaleString(
-        undefined,
-        {
+    : formatDateTime(d, currentDocumentLocale(), {
           month:
             'short',
           day: 'numeric',
           hour: 'numeric',
           minute:
             undefined,
-        },
-      );
+        });
 }
 
 export function fmtDateTime(
@@ -160,5 +155,5 @@ export function fmtDateTime(
     d.getTime(),
   )
     ? DASH
-    : d.toLocaleString();
+    : formatDateTime(d, currentDocumentLocale());
 }

@@ -13,6 +13,7 @@ import type { TrashItem } from '@/lib/trash/types';
 import { DELETED_POST_GRACE_MS } from '@/lib/media/sweep-policy';
 import { refusalCopy } from '@/components/trash/copy';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface TrashRowProps {
   item: TrashItem;
@@ -41,7 +42,7 @@ export function TrashRow({
   onRestore,
   onPurge,
   className,
-}: TrashRowProps) {
+}: TrashRowProps) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -135,9 +136,9 @@ export function TrashRow({
                 {t(
                   'trash-deleted-on',
                   {
-                    date: new Date(
+                    date: fmt.date(new Date(
                       item.deletedAt,
-                    ).toLocaleDateString(),
+                    )),
                     defaultValue:
                       'Deleted {{date}}',
                   },

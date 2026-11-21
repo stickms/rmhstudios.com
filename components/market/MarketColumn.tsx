@@ -44,6 +44,7 @@ import {
 } from '@/lib/market/market.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Tiny inline SVG sparkline of recent sale prices. */
 function Sparkline({
@@ -136,7 +137,7 @@ export function MarketColumn({
   coins:
     | number
     | null;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -522,9 +523,9 @@ export function MarketColumn({
                     {
                       count:
                         history.count,
-                      low: history.low?.toLocaleString(),
-                      high: history.high?.toLocaleString(),
-                      avg: history.average?.toLocaleString(),
+                      low: (history.low != null ? fmt.number(history.low) : undefined),
+                      high: (history.high != null ? fmt.number(history.high) : undefined),
+                      avg: (history.average != null ? fmt.number(history.average) : undefined),
                       defaultValue:
                         '{{count}} sales · low {{low}} · avg {{avg}} · high {{high}}',
                     },

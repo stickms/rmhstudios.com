@@ -240,6 +240,7 @@ export function ConversationView({
         composer={composer}
         replyToMessageId={replyToMessageId}
         requestState={requestState}
+        recipientName={otherUser?.name ?? null}
       />
 
       <ChatPlusHost viewerId={session.user.id} />

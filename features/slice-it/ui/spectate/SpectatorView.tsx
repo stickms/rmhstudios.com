@@ -8,6 +8,7 @@ import * as net from '@features/slice-it/engine/net/client';
 import type { TeamId } from '@features/slice-it/engine/net/events';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * The spectator screen (`N1`).
@@ -35,7 +36,7 @@ import { cn } from '@/lib/utils';
  * to the roster: names, sides and readiness, which is what the room actually
  * consists of at that moment.
  */
-export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => void }) {
+export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => void }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
   const lobby = useSliceItStore((s) => s.lobby);
   const liveScores = useSliceItStore((s) => s.liveScores);
@@ -126,7 +127,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
               >
                 <TeamBadge team={total.team} />
                 <span className="block mt-1 text-2xl font-black tabular-nums text-slice-text">
-                  {total.score.toLocaleString()}
+                  {fmt.number(total.score)}
                 </span>
               </div>
             ))}
@@ -185,7 +186,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
                   {playing && (
                     <AnimatedCount
                       value={row.score}
-                      format={(n) => n.toLocaleString()}
+                      format={(n) => fmt.number(n)}
                       durationMs={200}
                       className="text-lg font-black text-blue-600 tabular-nums shrink-0"
                     />
@@ -212,7 +213,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
                   >
                     <TeamBadge team={total.team} />
                     <span className="block text-xl font-black tabular-nums">
-                      {total.score.toLocaleString()}
+                      {fmt.number(total.score)}
                     </span>
                     <span className="block text-[10px] font-bold text-slice-text-light font-mono">
                       {(total.accuracy * 100).toFixed(1)}% ·{' '}
@@ -236,7 +237,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
                     #{standing.place}
                   </span>
                   <span className="flex-1 min-w-0 font-bold truncate">{standing.name}</span>
-                  <span className="font-black tabular-nums">{standing.score.toLocaleString()}</span>
+                  <span className="font-black tabular-nums">{fmt.number(standing.score)}</span>
                 </li>
               ))}
             </ol>

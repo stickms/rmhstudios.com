@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { GameState } from '../engine/types';
 import type { SSLeaderboardEntry } from '../engine/multiplayerClient';
 import { MultiplayerLeaderboard } from './MultiplayerLeaderboard';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface MultiplayerGameOverProps {
     gameState: GameState;
@@ -15,7 +16,7 @@ interface MultiplayerGameOverProps {
 
 export const MultiplayerGameOver: React.FC<MultiplayerGameOverProps> = ({
     gameState, leaderboard, currentUserId, isHost, onBackToLobby, onPlayAgain,
-}) => {
+}) => { const fmt = useLocaleFormat(); 
     const { t } = useTranslation("c-synapse-storm");
     const myEntry = leaderboard.find(e => e.userId === currentUserId);
     const myRank = leaderboard
@@ -37,7 +38,7 @@ export const MultiplayerGameOver: React.FC<MultiplayerGameOverProps> = ({
                 <div className="ss-mp-go-rank">
                     {myRank === 1 ? '🥇' : myRank === 2 ? '🥈' : myRank === 3 ? '🥉' : `#${myRank}`}
                 </div>
-                <div className="go-final-score">{(myEntry?.score ?? gameState.score).toLocaleString()}</div>
+                <div className="go-final-score">{fmt.number((myEntry?.score ?? gameState.score))}</div>
 
                 <div className="go-stats-grid">
                     <div className="go-stat">

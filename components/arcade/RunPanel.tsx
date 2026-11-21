@@ -10,6 +10,7 @@ import { api } from '@/lib/contract/client';
 import { getSeedBoardApi, submitArcadeRunApi } from '@/lib/arcade/arcade.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Row {
   rank: number;
@@ -30,7 +31,7 @@ export function RunPanel({
   score: number;
   detail?: Record<string, number>;
   signedIn: boolean;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-arcade');
   const showCopy = useCopyFallback();
   const run = useArcadeRun((s) => s.run);
@@ -142,7 +143,7 @@ export function RunPanel({
               <span>
                 {r.rank}. {r.user.name ?? r.user.handle}
               </span>
-              <span className="font-mono">{r.score.toLocaleString()}</span>
+              <span className="font-mono">{fmt.number(r.score)}</span>
             </li>
           ))}
         </ol>

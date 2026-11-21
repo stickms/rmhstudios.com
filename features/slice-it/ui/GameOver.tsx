@@ -16,6 +16,7 @@ import type { TimingSummary } from '@features/slice-it/engine/integrity';
 import { Button } from '@/components/ui/button';
 import { Wand2 } from 'lucide-react';
 import { offsetAdvice } from '@features/slice-it/engine/timing-advice';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface GameOverProps {
   onRetry?: () => void;
@@ -27,7 +28,7 @@ interface GameOverProps {
   engine?: GameEngine | null;
 }
 
-export function GameOver({ onRetry, engine }: GameOverProps) {
+export function GameOver({ onRetry, engine }: GameOverProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
   const { score, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
@@ -136,7 +137,7 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
 
           <div className="slice-results__score">
             <div className="slice-label">{t('final-score', { defaultValue: 'Final Score' })}</div>
-            <div className="slice-results__figure">{score.toLocaleString()}</div>
+            <div className="slice-results__figure">{fmt.number(score)}</div>
             {bestDelta !== null ? (
               <div
                 className={`slice-figure text-sm ${bestDelta > 0 ? 'text-slice-primary' : 'text-slice-text-muted'}`}
@@ -144,11 +145,11 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
                 {bestDelta > 0
                   ? ts('best-delta-up', {
                       defaultValue: '+{{delta}} on your best',
-                      delta: bestDelta.toLocaleString(),
+                      delta: fmt.number(bestDelta),
                     })
                   : ts('best-delta-down', {
                       defaultValue: '{{delta}} from your best',
-                      delta: Math.abs(bestDelta).toLocaleString(),
+                      delta: fmt.number(Math.abs(bestDelta)),
                     })}
               </div>
             ) : (
@@ -156,7 +157,7 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
                 <div className="slice-figure text-sm text-slice-text-muted">
                   {t('previous-best', {
                     defaultValue: 'Best: {{score}}',
-                    score: previousBest.toLocaleString(),
+                    score: fmt.number(previousBest),
                   })}
                 </div>
               )

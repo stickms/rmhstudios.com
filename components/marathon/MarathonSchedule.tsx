@@ -8,6 +8,7 @@ import {
   formatMinutes,
   localToday,
 } from '@/lib/dunesday/schedule';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Day-by-day output of the marathon planner for a custom list. */
 export function MarathonSchedule({
@@ -16,7 +17,7 @@ export function MarathonSchedule({
 }: {
   items: MarathonItem[];
   deadline: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -134,18 +135,15 @@ export function MarathonSchedule({
               >
                 <h3 className="mb-2 flex justify-between text-sm font-semibold">
                   <span>
-                    {new Date(
+                    {fmt.date(new Date(
                       `${d.date}T00:00:00`,
-                    ).toLocaleDateString(
-                      undefined,
-                      {
+                    ), {
                         weekday:
                           'short',
                         month:
                           'short',
                         day: 'numeric',
-                      },
-                    )}
+                      })}
                   </span>
                   <span className="font-normal text-site-text-muted">
                     {formatMinutes(

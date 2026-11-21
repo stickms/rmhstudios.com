@@ -42,6 +42,8 @@ import {
   type BotWorkerSettingsInput,
   type PostingEstimate,
 } from '@/lib/rmhark-ai/bot-stats';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 interface SettingsView extends BotWorkerSettingsInput {
   saved: boolean;
@@ -169,16 +171,16 @@ const fmt =
   (
     n: number,
   ) =>
-    Math.round(
+    formatNumber(Math.round(
       n,
-    ).toLocaleString();
+    ), currentDocumentLocale());
 
 /**
  * /admin/bots — tune the bot-worker's pool size, mint rate and posting
  * rate, and watch what the bots are actually producing. Saves land in the
  * bot_worker_settings row, which the worker re-reads every minute.
  */
-export function BotAdminPage() {
+export function BotAdminPage() { const lfmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -689,7 +691,7 @@ export function BotAdminPage() {
                     defaultValue:
                       '{{total}} all time',
                     total:
-                      stats.botPostsTotal.toLocaleString(),
+                      lfmt.number(stats.botPostsTotal),
                   },
                 )}
               />

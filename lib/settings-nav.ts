@@ -19,6 +19,7 @@
 
 import {
   Bell,
+  UserX,
   CloudUpload,
   Clapperboard,
   Keyboard,
@@ -210,6 +211,19 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       hint: 'Your saved game replays: make one public or unlisted, or delete it',
       keywords:
         'replay run recording ghost speedrun proof lights out slice it visibility public unlisted delete',
+      requiresAuth: true,
+    },
+    {
+      id: 'blocked',
+      to: '/settings/blocked',
+      group:
+        'account',
+      icon: UserX,
+      label:
+        'Blocked and muted',
+      hint: 'Everyone you blocked or muted, with the date, and unblock or unmute them',
+      keywords:
+        'block unblock mute unmute blocked muted people accounts safety hide',
       requiresAuth: true,
     },
     {

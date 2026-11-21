@@ -2,6 +2,7 @@
   "back": "Back",
   "back-to-deck": "Back to deck",
   "cancel": "Cancel",
+  "card-add-failed": "Could not add the card",
   "card-delete-failed": "Could not delete the card",
   "card-deleted": "Card deleted",
   "card-save-failed": "Could not save the card",

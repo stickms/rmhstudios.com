@@ -10,7 +10,6 @@ import {
 } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/lib/toast';
 import {
   BookOpen,
@@ -39,6 +38,7 @@ import {
   type GuestbookMode,
   type GuestbookPage,
 } from '@/lib/guestbook/schema';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export default function GuestbookPanel({
   ownerId,
@@ -49,7 +49,7 @@ export default function GuestbookPanel({
   onModeChange?: (
     mode: GuestbookMode,
   ) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -762,14 +762,9 @@ export default function GuestbookPanel({
                         }
                       </Link>{' '}
                       <span className="text-xs text-site-text-muted">
-                        {formatDistanceToNow(
-                          new Date(
+                        {fmt.relative(new Date(
                             entry.createdAt,
-                          ),
-                          {
-                            addSuffix: true,
-                          },
-                        )}
+                          ))}
                       </span>
                     </p>
                     <p className="mt-0.5 whitespace-pre-line break-words text-sm text-site-text">

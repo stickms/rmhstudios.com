@@ -13,6 +13,7 @@ import { LookEditor } from './LookEditor';
 import { PersonAvatar } from './SteamPeople';
 import { ShowcaseEditor } from './ShowcaseEditor';
 import { TitleArt } from './TitleArt';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** A player's profile, laid out as steamcommunity.com lays out one. */
 export function ProfilePage({
@@ -22,7 +23,7 @@ export function ProfilePage({
 }: {
   profile: SteamProfile;
   signedIn: boolean;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -30,17 +31,14 @@ export function ProfilePage({
       'games-hub',
     );
   const joined =
-    new Date(
+    fmt.date(new Date(
       p.joinedAt,
-    ).toLocaleDateString(
-      undefined,
-      {
+    ), {
         year: 'numeric',
         month:
           'long',
         day: 'numeric',
-      },
-    );
+      });
 
   return (
     <div

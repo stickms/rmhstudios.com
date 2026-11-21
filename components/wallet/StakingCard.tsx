@@ -11,6 +11,7 @@ import { Spinner } from'@/components/ui/spinner';
 import { CoinIcon } from'@/components/ui/CoinIcon';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Stake {
  principal: number;
@@ -20,9 +21,7 @@ interface Stake {
  balance: number;
 }
 
-const fmt = (n: number) => n.toLocaleString();
-
-export function StakingCard() {
+export function StakingCard() { const fmt = useLocaleFormat().number; 
  const { t } = useTranslation('feed');
  const [data, setData] = useState<Stake | null>(null);
  const [loading, setLoading] = useState(true);

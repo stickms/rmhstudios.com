@@ -18,6 +18,7 @@ import {
 } from '@/lib/safety/safety.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type State =
   PileOnState;
@@ -45,7 +46,7 @@ export default function PileOnPage({
   postId,
 }: {
   postId: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -258,9 +259,9 @@ export default function PileOnPage({
                         defaultValue:
                           'Only people you follow can reply until {{time}}.',
                         time: state.expiresAt
-                          ? new Date(
+                          ? fmt.dateTime(new Date(
                               state.expiresAt,
-                            ).toLocaleString()
+                            ))
                           : '',
                       },
                     )

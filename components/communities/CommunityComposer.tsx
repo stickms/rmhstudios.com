@@ -5,7 +5,8 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { formatDurationLong } from '@/lib/core/format';
 import { ShieldAlert } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { ComposeBox } from '@/components/feed/ComposeBox';
@@ -30,15 +31,15 @@ function PostingNotice({
     useTranslation(
       'f-communities-plus',
     );
+  const lf =
+    useLocaleFormat();
   const wait =
     posting.remainingMs &&
     posting.remainingMs >
       0
-      ? formatDistanceToNowStrict(
-          new Date(
-            Date.now() +
-              posting.remainingMs,
-          ),
+      ? formatDurationLong(
+          posting.remainingMs,
+          lf.locale,
         )
       : '';
   let text: string;

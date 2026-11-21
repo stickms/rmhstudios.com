@@ -39,8 +39,9 @@ import {
   ARRIVE,
 } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
-export default function Tf2HudMine() {
+export default function Tf2HudMine() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -512,9 +513,9 @@ export default function Tf2HudMine() {
                       }
                     </Link>
                     <span className="shrink-0 text-xs text-app-text-dim">
-                      {new Date(
+                      {fmt.dateTime(new Date(
                         d.updatedAt,
-                      ).toLocaleString()}
+                      ))}
                     </span>
                     <IconBtn
                       icon={

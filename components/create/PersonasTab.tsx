@@ -27,6 +27,7 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createPersonaApi, listPersonasApi } from '@/lib/personas/personas.contract';
 import '@/components/create/storefront.css';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Persona {
   id: string;
@@ -39,9 +40,7 @@ interface Persona {
   isPublic?: boolean;
 }
 
-const fmt = (n: number) => n.toLocaleString();
-
-export function PersonasTab() {
+export function PersonasTab() { const fmt = useLocaleFormat().number; 
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -139,7 +138,7 @@ export function PersonasTab() {
         )}
       </span>
     ),
-    [t],
+    [t, fmt],
   );
 
   const items: StoreItem[] = useMemo(

@@ -156,6 +156,9 @@ model UserProfile {
   // member's own browsing preference (applied on the client).
   hideCountsOnMine      Boolean   @default(false)
   hideCountsInFeed      Boolean   @default(false)
+  // Sprint 05 #01: leave this member off every public game board (their own best and rank keep working).
+  // Read through leaderboardHiddenUserIds (lib/game/leaderboard-privacy.server).
+  hideFromLeaderboards  Boolean   @default(false)
   // Profile guestbook (plan U15): who may sign — 'off' (default), 'following'
   // (people this user follows) or 'everyone'. Opt-in by design.
   guestbookMode         String    @default("off") @db.VarChar(12)

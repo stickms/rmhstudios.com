@@ -21,6 +21,7 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { setReminderApi } from '@/lib/reminders/reminders.contract';
 import { runChatCommandApi } from '@/lib/chat-plus/chat.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * M4 — slash commands for a chat composer.
@@ -64,7 +65,7 @@ export function useSlashCommands({
   tryRun: (
     text: string,
   ) => Promise<boolean>;
-} {
+} { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -313,15 +314,12 @@ export function useSlashCommands({
               t(
                 'remind-set',
                 {
-                  when: parsed.value.remindAt.toLocaleString(
-                    undefined,
-                    {
+                  when: fmt.dateTime(parsed.value.remindAt, {
                       dateStyle:
                         'medium',
                       timeStyle:
                         'short',
-                    },
-                  ),
+                    }),
                   defaultValue:
                     'Reminder set for {{when}}',
                 },
@@ -389,6 +387,7 @@ export function useSlashCommands({
         onPosted,
         setDraft,
         t,
+        fmt,
       ],
     );
 

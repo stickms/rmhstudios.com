@@ -55,6 +55,19 @@ export function systemLabels(t: TFunction): Record<string, string> {
     'watch-build-release': t('system-label-watch-build-release', { ns: 'feed', defaultValue: 'User Builds' }),
     group_chat: t('system-label-group_chat', { ns: 'feed', defaultValue: 'Group chats' }),
     community_handover: t('system-label-community_handover', { ns: 'feed', defaultValue: 'Communities' }),
+    // Sprint 05 system labels (docs/autonomous/sprint-05/plan.md §Anchors)
+    // s05-05 event-cohosts
+    event_cohost: t('system-label-event_cohost', { ns: 'feed', defaultValue: 'Events' }),
+
+    // s05-15 jam-teams
+    jam_team: t('system-label-jam_team', { ns: 'feed', defaultValue: 'Game jams' }),
+
+    // s05-17 community-post-alerts
+    community_post: t('system-label-community_post', { ns: 'feed', defaultValue: 'Communities' }),
+
+    // s05-20 flashcard-reminders
+    study_due: t('system-label-study_due', { ns: 'feed', defaultValue: 'Study' }),
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

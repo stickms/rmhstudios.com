@@ -295,6 +295,8 @@ vi.mock('@/lib/prisma.server', () => {
         }),
       findFirst: () => lazy(() => state.events[0] ?? null),
     },
+    // The block endpoint also clears the blocker's repost-mute row for the person (s05-07).
+    repostMute: { deleteMany: () => lazy(() => ({ count: 0 })) },
     userBlock: {
       findUnique: () => lazy(() => null),
       create: ({

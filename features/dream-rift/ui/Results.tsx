@@ -24,6 +24,7 @@ import {
   submitDreamRiftCoopApi,
   submitDreamRiftScoreApi,
 } from '@features/dream-rift/engine/dream-rift.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function ResultScreen({
   onRetry,
@@ -33,7 +34,7 @@ export function ResultScreen({
   onRetry: () => void;
   onMenu: () => void;
   onLeaderboard: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const result =
     useDreamRift(
       (
@@ -286,13 +287,13 @@ export function ResultScreen({
         />
         <Row
           label="Score"
-          value={result.score.toLocaleString()}
+          value={fmt.number(result.score)}
           highlight
         />
         {coop && (
           <Row
             label="Combined Score"
-            value={result.combinedScore.toLocaleString()}
+            value={fmt.number(result.combinedScore)}
             highlight
           />
         )}
@@ -304,7 +305,7 @@ export function ResultScreen({
         />
         <Row
           label="Graze"
-          value={result.graze.toLocaleString()}
+          value={fmt.number(result.graze)}
         />
         <Row
           label="Spell Cards"
@@ -366,7 +367,7 @@ export function ResultScreen({
                     }
                   </span>
                   <span className="font-mono text-[color:var(--dr-cream)]">
-                    {p.score.toLocaleString()}
+                    {fmt.number(p.score)}
                   </span>
                 </div>
               ),

@@ -19,6 +19,7 @@ import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { recordPong, beginClockSyncBurst, resetClock } from './clock';
 import { CLOCK_SYNC_SAMPLES, CLOCK_SYNC_INTERVAL_MS } from './constants';
 import type { VideoState } from './types';
+import type { PlaylistQueueResult } from './playlist-queue';
 
 let client: RealtimeClient | null = null;
 let clockSyncTimer: ReturnType<typeof setInterval> | null = null;
@@ -134,6 +135,9 @@ function registerHandlers(socket: Socket) {
   // ─── Room state ───────────────────────────────────────────────────────
   socket.on(S2C.ROOM_STATE_SNAPSHOT, (fullState) => store().applyFullSync(fullState));
   socket.on(S2C.ROOM_ACTION, (action) => store().applyAction(action));
+  socket.on(S2C.QUEUE_PLAYLIST_RESULT, (result: PlaylistQueueResult) =>
+    store().setPlaylistResult(result),
+  );
 
   socket.on(S2C.PEERS_WAITING, (waiting: PeerWaitState | null) =>
     store().setPeersWaiting(waiting?.peers?.length ? waiting : null),

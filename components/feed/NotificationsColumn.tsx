@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNow } from 'date-fns';
 import { AlarmClock, Bell } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
@@ -35,6 +34,7 @@ import { games } from '@/lib/catalog';
 import { gameIdOfLink } from '@/lib/arcade/updates';
 import { knownLabel } from '@/lib/i18n/known-label';
 import { notificationVerbs, systemLabels } from '@/components/feed/notification-labels';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 
@@ -152,7 +152,7 @@ export function NotificationsColumn({
   embedded?: boolean;
   /** First page prefetched by the route loader; `null`when signed out. */
   initialData?: { items: NotificationItem[]; nextCursor: string | null } | null;
-} = {}) {
+} = {}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('feed');
   const { t: tn } = useTranslation('notifications-inbox');
   const verbs = notificationVerbs(t);
@@ -661,7 +661,7 @@ export function NotificationsColumn({
                           <span className="sr-only">{tn('unread-sr', { defaultValue: 'Unread' })}</span>
                         )}
                         <p className="t-meta mt-1">
-                          {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                          {fmt.relative(new Date(n.createdAt))}
                         </p>
                       </div>
                     </button>

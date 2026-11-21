@@ -594,7 +594,7 @@ export async function softDeletePostAsAuthor(
   await prisma.$transaction(async (tx) => {
     const { count } = await tx.rMHark.updateMany({
       where: { id: postId, userId, deletedAt: null },
-      data: { deletedAt: now, deletedBy: 'author' },
+      data: { deletedAt: now, deletedBy: 'author', pinnedAt: null },
     });
     // Lost the race with another delete — leave the one-shot side effects to
     // whoever won it, or the counters double-decrement.

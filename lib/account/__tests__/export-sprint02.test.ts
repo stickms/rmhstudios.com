@@ -12,6 +12,9 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const deckFindMany = vi.fn(async (_args: unknown) => [
+  { id: 'd1', title: 'Verbs', cards: [{ id: 'c1', kind: 'basic', front: 'a', back: 'b', position: 0 }] },
+]);
 const followEventFindMany = vi.fn(async (_args: unknown) => [{ followingId: 'u2', kind: 'follow', createdAt: new Date(0) }]);
 
 // Any model, any method: an empty list (or null for a single-row read).
@@ -30,7 +33,7 @@ vi.mock('@/lib/prisma.server', () => ({
       get: (_t, model: string) => {
         if (model === 'followEvent') return { findMany: followEventFindMany };
         if (model === 'flashcardDeck')
-          return { findMany: vi.fn(async () => [{ id: 'd1', title: 'Verbs', cards: [{ id: 'c1', front: 'a', back: 'b', position: 0 }] }]) };
+          return { findMany: deckFindMany };
         return emptyModel;
       },
     },
@@ -82,6 +85,16 @@ describe('account export: sprint 02 data', () => {
     for (const key of ['keyboardPreference', 'achievementTracks', 'followEvents', 'rmhStudy']) {
       expect(body).toHaveProperty(key);
     }
+  });
+
+  it('exports the cards a member authored, with their kind, and not the generated siblings', async () => {
+    deckFindMany.mockClear();
+    await runExport();
+    const args = deckFindMany.mock.calls[0]![0] as {
+      include: { cards: { where: unknown; select: Record<string, unknown> } };
+    };
+    expect(args.include.cards.where).toEqual({ sourceId: null });
+    expect(args.include.cards.select).toMatchObject({ kind: true, front: true, back: true });
   });
 
   it('exports only follow events the member made, never who unfollowed them', async () => {

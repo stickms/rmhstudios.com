@@ -29,6 +29,8 @@ const ALLOWED =
   new Set(
     [
       'lib/admin/api/admin.blog.server.ts',
+      // s05-10 admin lookup: `auth: 'admin'`, resolves a pasted /blog/<slug> to the Log and says when it is a draft.
+      'lib/admin/lookup.server.ts',
       'lib/blog/publication.ts',
       'lib/blog/publication.server.ts',
     ],

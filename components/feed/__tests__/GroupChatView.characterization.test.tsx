@@ -49,6 +49,11 @@ vi.mock('@/components/ui/confirm-dialog', () => ({ useConfirm: () => async () =>
 // scheduled; they are stubbed to nothing so the markup below stays the pre-feature composer.
 vi.mock('@/components/messages/SendLaterMenu', () => ({ SendLaterMenu: () => null }));
 vi.mock('@/components/messages/ScheduledStrip', () => ({ ScheduledStrip: () => null }));
+// s05-13: saved replies read a QueryClient and draw only a tool-row button and a `/` listbox; stubbed to nothing so the
+// markup below stays the pre-feature composer.
+vi.mock('@/components/messages/useSavedReplies', () => ({
+  useSavedReplies: () => ({ menu: null, popover: null, onKeyDown: () => false, fieldProps: {} }),
+}));
 vi.mock('@/components/ui/anchored-menu', () => ({
   AnchoredMenu: ({
     open,

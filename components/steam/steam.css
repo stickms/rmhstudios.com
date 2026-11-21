@@ -2662,3 +2662,63 @@ html[dir='rtl'] .stm-drawer-panel {
   width: 100%;
   margin-top: 6px;
 }
+
+/* Your bests (sprint 05 #04): the record history card on a game's page. */
+.stm-pb {
+  --chart-ink: var(--stm-text);
+  --chart-ink-2: var(--stm-muted);
+  --chart-rule: var(--stm-line);
+  padding: 12px 16px 0;
+}
+.stm-pb-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin: 0 0 8px;
+}
+.stm-pb-best {
+  color: var(--stm-bright);
+  font-size: 22px;
+  font-weight: 600;
+}
+.stm-pb-note {
+  color: var(--stm-muted);
+  font-size: 13px;
+}
+.stm-pb-rows {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-pb-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: baseline;
+  min-height: 36px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--stm-line);
+  font-size: 13px;
+}
+.stm-pb-date {
+  color: var(--stm-muted);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+}
+.stm-pb-score {
+  color: var(--stm-bright);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stm-pb-change {
+  min-width: 6ch;
+  color: var(--stm-muted);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.stm-pb-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0 0;
+}

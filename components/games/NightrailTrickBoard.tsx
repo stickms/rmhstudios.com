@@ -23,12 +23,13 @@ import type {
 } from '@/lib/trick-week/trick-week';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function TrickLine({
   trick,
 }: {
   trick: TrickView;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -58,7 +59,7 @@ function TrickLine({
                 },
               ),
             points:
-              trick.score.toLocaleString(),
+              fmt.number(trick.score),
             mult: trick.multiplier,
             level:
               trick.level,

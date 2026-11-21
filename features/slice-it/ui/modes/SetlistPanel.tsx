@@ -68,6 +68,7 @@ import {
 import { searchSongsApi } from '@features/slice-it/engine/play.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 const LIKED_ID = 'liked';
 
 interface SetlistPanelProps {
@@ -85,7 +86,7 @@ interface RunProgress {
   score: number;
 }
 
-export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
+export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
   const [index, setIndex] = React.useState<SetlistIndex | null>(null);
   const [open, setOpen] = React.useState<ResolvedSetlist | null>(null);
@@ -356,7 +357,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
             </span>
           )}
           <span className="ml-auto text-sm font-black tabular-nums text-slice-text">
-            {progress.score.toLocaleString()}
+            {fmt.number(progress.score)}
           </span>
         </div>
       )}

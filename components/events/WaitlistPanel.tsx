@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,8 +11,6 @@ import { serverError } from '@/lib/http';
 import { removeFromWaitlist, waitlistQuery } from '@/lib/events/waitlist.queries';
 import type { WaitlistViewDTO } from '@/lib/events/waitlist';
 
-const joinedFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-
 /**
  * The host's view of an event's waitlist: the queue in order, who joined when, and
  * a way to take someone off it. Rows on rules; the times are `t-meta`. Once the
@@ -19,6 +18,7 @@ const joinedFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', t
  */
 export function WaitlistPanel({ eventId, onChange }: { eventId: string; onChange?: (waiting: number) => void }) {
   const { t } = useTranslation('event-waitlist');
+  const lf = useLocaleFormat();
   const queryClient = useQueryClient();
   const query = useQuery(waitlistQuery(eventId));
   const view: WaitlistViewDTO | null = query.data ?? null;
@@ -81,7 +81,7 @@ export function WaitlistPanel({ eventId, onChange }: { eventId: string; onChange
                   <p className="t-meta">
                     <time dateTime={entry.waitlistedAt}>
                       {t('joined', {
-                        time: joinedFormat.format(new Date(entry.waitlistedAt)),
+                        time: lf.dateTime(new Date(entry.waitlistedAt), { dateStyle: 'medium', timeStyle: 'short' }),
                         defaultValue: 'Joined {{time}}',
                       })}
                     </time>

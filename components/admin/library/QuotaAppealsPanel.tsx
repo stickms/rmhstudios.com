@@ -8,7 +8,6 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { Check, Inbox, X } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +23,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type QuotaRequest = {
   id: string;
@@ -39,7 +39,7 @@ type QuotaRequest = {
   };
 };
 
-export function QuotaAppealsPanel() {
+export function QuotaAppealsPanel() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const prompt = usePrompt();
   const [requests, setRequests] = useState<QuotaRequest[]>([]);
@@ -145,7 +145,7 @@ export function QuotaAppealsPanel() {
                   <p className="t-body mt-2 whitespace-pre-wrap text-site-text">{req.reason}</p>
                 )}
                 <p className="mt-2 t-body text-site-text-muted">
-                  {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}
+                  {fmt.relative(new Date(req.createdAt))}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">

@@ -6,6 +6,7 @@ import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-limits';
 import { bumpCount } from '@/lib/feed/quiet-counts';
 import { extractFirstUrl } from '../RMHarkContent';
 import type { Comment } from '../CommentItem';
+import { currentDocumentLocale, formatDate } from '@/lib/core/format';
 
 /**
  * Pure state helpers for the single-post page: nested reply edits, the comment
@@ -259,14 +260,13 @@ export function withResolvedIdentity<
 
 export function formatFullDate(
   dateStr: string,
+  locale: string = currentDocumentLocale(),
 ): string {
   const d =
     new Date(
       dateStr,
     );
-  return d.toLocaleDateString(
-    'en-US',
-    {
+  return formatDate(d, locale, {
       month:
         'long',
       day: 'numeric',
@@ -274,8 +274,7 @@ export function formatFullDate(
       hour: 'numeric',
       minute:
         '2-digit',
-    },
-  );
+    });
 }
 
 /** One reply on a top-level reply's nested spine, with who it answers when that is not the reply above it in the thread. */

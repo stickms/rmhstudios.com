@@ -31,6 +31,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Health =
   {
@@ -56,7 +57,7 @@ export function StorageHealthPanel({
   onRefreshStateChange?: (
     loading: boolean,
   ) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -241,7 +242,7 @@ export function StorageHealthPanel({
                 'Books',
             },
           )}
-          value={health.total.toLocaleString()}
+          value={fmt.number(health.total)}
         />
         <StatTile
           icon={
@@ -254,7 +255,7 @@ export function StorageHealthPanel({
                 'Missing files',
             },
           )}
-          value={health.missing.length.toLocaleString()}
+          value={fmt.number(health.missing.length)}
           tone={
             health
               .missing

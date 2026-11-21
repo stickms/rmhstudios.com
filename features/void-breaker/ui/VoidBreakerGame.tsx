@@ -31,6 +31,7 @@ import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@features/void-breaker/engine/saveSystem';
 import { ABILITY_COOLDOWNS } from '@features/void-breaker/engine/abilityProgression';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** localStorage that never throws (Safari private mode / blocked site data). */
 const safeStore = {
@@ -75,7 +76,7 @@ const EMPTY_HUD: HUDState = {
   pendingUpgrades: [], upgradeIsBossReward: false,
 };
 
-export function VoidBreakerGame() {
+export function VoidBreakerGame() { const fmt = useLocaleFormat(); 
   const { t, i18n } = useTranslation('c-void-breaker');
   const cloud = useCloudSave(voidBreakerSave, {
     gameName: 'Void Breaker',
@@ -815,7 +816,7 @@ export function VoidBreakerGame() {
             {/* Score + multiplier */}
             <div className="mt-12 pointer-coarse:mt-14 bg-black/70 rounded px-2 py-1 sm:px-3 sm:py-1.5 border border-[#00f5ff]/20 backdrop-blur-sm">
               <div className="text-[#00f5ff] font-mono text-xs sm:text-sm font-bold tracking-wider drop-shadow-[0_0_8px_rgba(0,245,255,0.8)]">
-                {hud.score.toLocaleString().padStart(7, '0')}
+                {fmt.number(hud.score).padStart(7, '0')}
               </div>
               <div className={`font-mono text-[10px] sm:text-xs font-bold ${hud.multiplier > 4 ? 'text-[#ff00cc]' :
                 hud.multiplier > 2 ? 'text-[#d4af37]' : 'text-zinc-400'

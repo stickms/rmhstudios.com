@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from'react';
 import { toast } from '@/lib/toast';
 import { Link, useNavigate } from'@tanstack/react-router';
-import { Loader2, ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap, Check } from'lucide-react';
+import { ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
 import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -24,12 +24,10 @@ import { ExportMenu } from '@/components/study/ExportMenu';
 import { DeckStatsSummary } from '@/components/study/DeckStatsSummary';
 import { PracticeTestLink } from '@/components/study/PracticeTestLink';
 import { TestHistory } from '@/components/study/TestHistory';
-
-interface Card {
- id: string;
- front: string;
- back: string;
-}
+import { CardForm } from '@/components/study/CardForm';
+import { ClozeText } from '@/components/study/ClozeText';
+import { isReverseCard, type CardInput } from '@/lib/study/card-types';
+import type { DeckCard as Card } from '@/lib/study.server';
 interface Deck {
  id: string;
  title: string;
@@ -56,9 +54,10 @@ export function DeckStudyColumn({
  * private for this viewer; `undefined`means no loader supplied one → the
  * column fetches on mount.
  */
- initialData?: { deck: Deck; cards: Card[]; dueCount: number; signedIn: boolean } | null;
+ initialData?: { deck: Deck; cards: Card[]; reviewCount: number; dueCount: number; signedIn: boolean } | null;
 }) {
  const { t } = useTranslation('feed');
+ const { t: ts } = useTranslation('flashcard-types');
  const gradeLabels = deckGradeLabels(t);
  const confirm = useConfirm();
  const navigate = useNavigate();
@@ -68,6 +67,8 @@ export function DeckStudyColumn({
  const [deck, setDeck] = useState<Deck | null>(initialData?.deck ?? null);
  const [cards, setCards] = useState<Card[]>(initialData?.cards ?? []);
  const [dueCount, setDueCount] = useState(initialData?.dueCount ?? 0);
+ // Cards a member studies: the authored ones plus the generated reverse and cloze cards.
+ const [reviewCount, setReviewCount] = useState(initialData?.reviewCount ?? 0);
  const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
  const [loading, setLoading] = useState(initialData === undefined);
  const [notFound, setNotFound] = useState(initialData === null);
@@ -90,10 +91,6 @@ export function DeckStudyColumn({
  setQueue(null);
  };
 
- // Add card
- const [front, setFront] = useState('');
- const [back, setBack] = useState('');
- const [adding, setAdding] = useState(false);
  // Steel M9: a deck fetched here replaces the spinner; the loader's is there on first paint.
  const arrival = useArrival(!loading);
 
@@ -103,6 +100,7 @@ export function DeckStudyColumn({
  setDeck(data.deck);
  setCards(data.cards ?? []);
  setDueCount(data.dueCount ?? 0);
+ setReviewCount(data.reviewCount ?? 0);
  setSignedIn(!!data.signedIn);
  } catch (err) {
  // 404 is the not-found state; any other failure leaves the page as it was.
@@ -174,21 +172,16 @@ export function DeckStudyColumn({
  }
  }
 
- async function addCard() {
- if (!front.trim() || !back.trim()) return;
- setAdding(true);
+ async function addCard(card: CardInput): Promise<boolean> {
  try {
- const data = await api(addDeckCardApi, {
- params: { id: deckId },
- body: { front: front.trim(), back: back.trim() },
- });
+ const data = await api(addDeckCardApi, { params: { id: deckId }, body: card });
  setCards((c) => [...c, data.card]);
- setFront('');
- setBack('');
+ // A reversible or cloze card adds generated cards: the review and due counts move with it.
+ void load();
+ return true;
  } catch {
- /* the draft stays in the fields so it can be resent */
- } finally {
- setAdding(false);
+ /* the draft stays in the form so it can be resent */
+ return false;
  }
  }
 
@@ -248,11 +241,26 @@ export function DeckStudyColumn({
  </header>
  <div className="p-4">
  <div className="flex min-h-64 flex-col items-center justify-center rounded-site relative p-8 text-center">
+ {isReverseCard(card) && <p className="t-meta mb-2">{ts('reverse-label', { defaultValue:'Reverse'})}</p>}
+ {card.clozeIndex !== null ? (
+ <>
+ <ClozeText text={card.front} index={card.clozeIndex} reveal={false} className="text-lg text-site-text"/>
+ {revealed && (
+ <>
+ <div className="my-4 h-px w-16 bg-site-border"/>
+ <ClozeText text={card.front} index={card.clozeIndex} reveal className="text-site-text"/>
+ </>
+ )}
+ </>
+ ) : (
+ <>
  <p className="text-lg font-semibold text-site-text">{card.front}</p>
  {revealed && (
  <>
  <div className="my-4 h-px w-16 bg-site-border"/>
  <p className="whitespace-pre-wrap text-site-text-muted">{card.back}</p>
+ </>
+ )}
  </>
  )}
  </div>
@@ -316,7 +324,7 @@ export function DeckStudyColumn({
  <Button
  variant="default"
  className="w-full gap-2"
- disabled={cards.length === 0}
+ disabled={reviewCount === 0}
  loading={startingReview}
  onClick={startReview}
  >
@@ -335,43 +343,11 @@ export function DeckStudyColumn({
  {signedIn && <TestHistory deckId={deckId} />}
 
  {deck.isOwner && (
- <div className={`rounded-site relative p-4`}>
+ <div className="rounded-site relative p-4">
  <p className="mb-2 flex items-center gap-1.5 site-section-label">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}
  </p>
- <div className="space-y-2">
- <input
- value={front}
- onChange={(e) => setFront(e.target.value)}
- placeholder={t('front-placeholder', { defaultValue:'Front (question)'})}
- maxLength={500}
- className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
- />
- <textarea
- value={back}
- onChange={(e) => setBack(e.target.value)}
- placeholder={t('back-placeholder', { defaultValue:'Back (answer)'})}
- maxLength={500}
- rows={2}
- className="surface-field border w-full resize-none rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
- />
- <div className="flex justify-end">
- <Button
- size="sm"
- variant="default"
- disabled={adding || !front.trim() || !back.trim()}
- onClick={addCard}
- className="gap-1"
- >
- {adding ? (
- <Loader2 className="h-3.5 w-3.5 animate-spin"/>
- ) : (
- <Check className="h-3.5 w-3.5"/>
- )}{''}
- {t('add', { defaultValue:'Add'})}
- </Button>
- </div>
- </div>
+ <CardForm submitLabel={t('add', { defaultValue:'Add'})} resetOnSave onSubmit={addCard}/>
  </div>
  )}
 
@@ -380,14 +356,23 @@ export function DeckStudyColumn({
  <RotateCcw className="h-3.5 w-3.5"/>{''}
  {t('card-count', { count: cards.length, defaultValue_one:'{{count}} card', defaultValue:'{{count}} cards'})}
  </h2>
+ <p className="t-meta mb-2">
+ {ts('review-count', { count: reviewCount, defaultValue:'{{count}} to review'})}
+ </p>
  <div className="space-y-1">
  {cards.map((c) => (
  <div
  key={c.id}
  className={`rounded-site-sm relative p-3`}
  >
+ {c.kind === 'cloze' ? (
+ <ClozeText text={c.front} index={null} reveal className="text-sm text-site-text"/>
+ ) : (
+ <>
  <p className="text-sm font-medium text-site-text">{c.front}</p>
  <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>
+ </>
+ )}
  </div>
  ))}
  </div>

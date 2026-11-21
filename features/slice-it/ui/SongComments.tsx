@@ -20,6 +20,7 @@ import {
 } from '@features/slice-it/engine/slice-it.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Comment {
   id: string;
@@ -42,7 +43,7 @@ interface SongCommentsProps {
 
 export function SongComments({
   songId,
-}: SongCommentsProps) {
+}: SongCommentsProps) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -285,9 +286,9 @@ export function SongComments({
                       }
                     </span>
                     <span className="text-[10px] text-slice-text-light">
-                      {new Date(
+                      {fmt.date(new Date(
                         comment.createdAt,
-                      ).toLocaleDateString()}
+                      ))}
                     </span>
                   </div>
                   <p className="text-slice-text-darker text-xs leading-relaxed">

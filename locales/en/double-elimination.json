@@ -1,0 +1,12 @@
+{
+  "bracket-reset": "Bracket reset",
+  "double-elim": "Double elimination",
+  "double-elim-help": "A player is out after a second loss. Needs at least 4 players. Pick'em is for single elimination only.",
+  "double-elim-label": "Double elim",
+  "final": "Final",
+  "grand-final": "Grand final",
+  "losers": "Losers",
+  "losers-round": "Losers round {{n}}",
+  "winners": "Winners",
+  "winners-final": "Winners final"
+}

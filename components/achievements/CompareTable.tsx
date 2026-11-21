@@ -1,5 +1,6 @@
 import { Coins, Gamepad2, Hammer, Lock, Sparkles, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { TrackToggle } from '@/components/achievements/TrackToggle';
 import type { AchievementCategory } from '@/lib/achievements/catalog';
 import type { CompareRow, SideState } from '@/lib/achievements/compare';
@@ -25,9 +26,10 @@ function formatShare(share: number, locale?: string): string {
 /** A member's state in words: "Unlocked 3 May 2026", "3 / 10" or "Locked". Never a symbol alone. */
 function StateText({ side, target }: { side: SideState; target: number }) {
   const { t } = useTranslation('achievement-compare');
+  const lf = useLocaleFormat();
   if (side.unlocked) {
     const date = side.unlockedAt
-      ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(side.unlockedAt))
+      ? lf.date(new Date(side.unlockedAt), { dateStyle: 'medium' })
       : null;
     return (
       <>

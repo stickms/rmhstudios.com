@@ -127,13 +127,15 @@ const S = {
   cursor: 10,
   hasMore: 11,
   loadingItems: 12,
-  likedItems: 13,
-  likedCursor: 14,
-  likedHasMore: 15,
-  loadingLiked: 16,
-  membershipBusy: 17,
-  messageSending: 18,
-  messageError: 19,
+  // s05-19 profile-pins: bumped to refetch the first page after a pin change.
+  reloadKey: 13,
+  likedItems: 14,
+  likedCursor: 15,
+  likedHasMore: 16,
+  loadingLiked: 17,
+  membershipBusy: 18,
+  messageSending: 19,
+  messageError: 20,
 } as const;
 
 const base = {

@@ -24,6 +24,7 @@ import { BasketPanel } from '@/components/arcade/BasketPanel';
 import { useArcadeRun } from '@/lib/arcade/run-client';
 import { useSession } from '@/components/Providers';
 import { laundryNet } from '@features/laundry-sort/engine/net/client';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const PLACE_COLOR =
   [
@@ -38,7 +39,7 @@ export function ResultsPanel({
 }: {
   onPlayAgain: () => void;
   onMenu: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -191,7 +192,7 @@ export function ResultsPanel({
                         )}
                       </span>
                       <span className="ls-accent ls-numeric shrink-0 font-black">
-                        {entry.score.toLocaleString()}
+                        {fmt.number(entry.score)}
                       </span>
                     </li>
                   );
@@ -201,7 +202,7 @@ export function ResultsPanel({
           ) : soloResult ? (
             <div className="space-y-3">
               <p className="ls-numeric text-center text-5xl font-black">
-                {soloResult.stats.score.toLocaleString()}
+                {fmt.number(soloResult.stats.score)}
               </p>
 
               {soloResult.personalBest ? (

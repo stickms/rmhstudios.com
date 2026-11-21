@@ -26,13 +26,14 @@ import {
   callMutesQuery,
   callPrivacyQuery,
 } from '@/lib/settings/prefs.queries';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * CallPrivacyControls — who may ring this account. Sits in Settings → Privacy
  * beside presence. Saves to /api/calls/privacy; the rule itself is enforced on
  * the socket hub (a block still beats every option here), never in this form.
  */
-export function CallPrivacyControls() {
+export function CallPrivacyControls() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -343,17 +344,14 @@ export function CallPrivacyControls() {
                           {
                             defaultValue:
                               'Until {{time}}',
-                            time: new Date(
+                            time: fmt.dateTime(new Date(
                               m.until,
-                            ).toLocaleString(
-                              undefined,
-                              {
+                            ), {
                                 dateStyle:
                                   'medium',
                                 timeStyle:
                                   'short',
-                              },
-                            ),
+                              }),
                           },
                         )}
                       </span>

@@ -46,6 +46,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
 const memberName =
   (
@@ -1224,17 +1225,14 @@ const stamp =
   (
     iso: string,
   ) =>
-    new Date(
+    formatDateTime(new Date(
       iso,
-    ).toLocaleString(
-      undefined,
-      {
+    ), currentDocumentLocale(), {
         dateStyle:
           'medium',
         timeStyle:
           'short',
-      },
-    );
+      });
 
 function History({
   flagKey,

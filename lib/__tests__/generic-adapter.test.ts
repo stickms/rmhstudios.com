@@ -79,6 +79,10 @@ const {
     }),
   );
 
+// Who is left off public boards (sprint 05 #01) has its own tests; here nobody is hidden.
+vi.mock('@/lib/game/leaderboard-privacy.server', () => ({
+  leaderboardHiddenUserIds: async () => new Set<string>(),
+}));
 vi.mock(
   '@/lib/prisma.server',
   () => ({

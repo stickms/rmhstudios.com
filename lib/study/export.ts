@@ -6,6 +6,8 @@
 export interface ExportCard {
   front: string;
   back: string;
+  /** Basic when absent. A cloze card's text is its front, unchanged, and its back is empty. */
+  kind?: string | undefined;
 }
 
 export interface ExportDeck {
@@ -27,9 +29,21 @@ function tsvCell(cell: string): string {
   return /[\t\r\n"]/.test(cell) ? quote(cell) : cell;
 }
 
+/**
+ * Authored cards carry a `type` column (basic, reversible, cloze) as soon as the deck holds one that is not
+ * basic, which is what lets the importer rebuild a mixed deck exactly. An all-basic deck keeps its two columns.
+ */
+function typed(cards: readonly ExportCard[]): boolean {
+  return cards.some((c) => c.kind !== undefined && c.kind !== 'basic');
+}
+const typeOf = (c: ExportCard): string => c.kind ?? 'basic';
+
 /** Quoted only where a tab, newline or quote would break the row; reads back exactly. */
 export function toTsv(cards: ExportCard[]): string {
-  return cards.map((c) => `${tsvCell(c.front)}\t${tsvCell(c.back)}\n`).join('');
+  const withType = typed(cards);
+  return cards
+    .map((c) => `${tsvCell(c.front)}\t${tsvCell(c.back)}${withType ? `\t${typeOf(c)}` : ''}\n`)
+    .join('');
 }
 
 function csvCell(cell: string): string {
@@ -39,8 +53,12 @@ function csvCell(cell: string): string {
 
 /** RFC 4180: CRLF rows, a header row, quotes where needed; formula-looking cells get a leading `'`. */
 export function toCsv(cards: ExportCard[]): string {
-  const rows = [['front', 'back'], ...cards.map((c) => [c.front, c.back])];
-  return rows.map((r) => `${csvCell(r[0])},${csvCell(r[1])}\r\n`).join('');
+  const withType = typed(cards);
+  const rows = [
+    withType ? ['front', 'back', 'type'] : ['front', 'back'],
+    ...cards.map((c) => (withType ? [c.front, c.back, typeOf(c)] : [c.front, c.back])),
+  ];
+  return rows.map((r) => `${r.map((cell) => csvCell(cell)).join(',')}\r\n`).join('');
 }
 
 export function toJson(deck: ExportDeck): string {
@@ -48,7 +66,9 @@ export function toJson(deck: ExportDeck): string {
     {
       title: deck.title,
       description: deck.description ?? '',
-      cards: deck.cards.map((c) => ({ front: c.front, back: c.back })),
+      cards: deck.cards.map((c) =>
+        typed(deck.cards) ? { front: c.front, back: c.back, type: typeOf(c) } : { front: c.front, back: c.back },
+      ),
     },
     null,
     2,

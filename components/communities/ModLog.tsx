@@ -4,7 +4,6 @@ import {
   useState,
 } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
@@ -36,6 +35,7 @@ import type {
   ModLogGroup,
   ModLogUserDTO,
 } from '@/lib/communities/modlog';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type GroupFilter =
   | 'all'
@@ -453,7 +453,7 @@ export function ModLog({
   slug,
 }: {
   slug: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -896,18 +896,13 @@ export function ModLog({
                       dateTime={
                         e.createdAt
                       }
-                      title={new Date(
+                      title={fmt.dateTime(new Date(
                         e.createdAt,
-                      ).toLocaleString()}
+                      ))}
                     >
-                      {formatDistanceToNow(
-                        new Date(
+                      {fmt.relative(new Date(
                           e.createdAt,
-                        ),
-                        {
-                          addSuffix: true,
-                        },
-                      )}
+                        ))}
                     </time>
                   </p>
                 </li>

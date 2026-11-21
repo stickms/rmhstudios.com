@@ -13,6 +13,7 @@ import { prisma } from '@/lib/prisma.server';
 import { exportVibeData } from '@/lib/rmhvibe/account-data.server';
 import { exportMusicData } from '@/lib/rmhmusic/learn/account-data.server';
 import { cardListingsForExport } from '@/lib/listings/listings.server';
+import { exportStudyReminder } from '@/lib/study/reminders.server';
 import { exportStudyStatsData } from '@/lib/study/stats.server';
 import { exportStudyTestData } from '@/lib/study/tests.server';
 import { exportLessonProgress } from '@/lib/rmhtype/lessons.server';
@@ -29,6 +30,14 @@ import { exportReplays } from '@/lib/replays.server';
 import { exportReaderMarks } from '@/lib/library/reader-sync.server';
 import { exportRmhboxPresets } from '@/lib/rmhbox/presets.server';
 import { exportMessageRequests } from '@/lib/messages/requests.server';
+import { exportRepostMutes } from '@/lib/feed/repost-mutes.server';
+import { exportEventCohosts } from '@/lib/events/cohosts.server';
+import { exportBlocksMutes } from '@/lib/moderation/blocked-muted.server';
+import { exportJamTeamMemberships } from '@/lib/competitive/jam-teams.server';
+import { exportPersonalBests } from '@/lib/game/personal-bests.server';
+import { exportSavedReplies } from '@/lib/messages/saved-replies.server';
+import { exportStudioProjects } from '@/lib/studio/cloud-projects.server';
+import { exportPostAlerts } from '@/lib/communities/post-alerts.server';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -274,14 +283,18 @@ export const route = apiRoute('/api/account/export', {
             take: CAP,
             orderBy: { createdAt: 'asc' },
             include: {
+              // Authored cards only: the generated siblings are derived, and re-importing the
+              // authored card regenerates them.
               cards: {
+                where: { sourceId: null },
                 orderBy: { position: 'asc' },
-                select: { id: true, front: true, back: true, position: true, createdAt: true },
+                select: { id: true, kind: true, front: true, back: true, position: true, createdAt: true },
               },
             },
           }),
           exportStudyStatsData(userId),
           exportStudyTestData(userId),
+          exportStudyReminder(userId),
           exportLessonProgress(userId),
           prisma.rmhTypeDailyEntry.findMany({ where: { userId }, take: CAP, orderBy: { day: 'desc' } }),
           prisma.rmhStudyProfile.findUnique({ where: { userId } }),
@@ -319,6 +332,22 @@ export const route = apiRoute('/api/account/export', {
           exportReaderMarks(userId),
           exportRmhboxPresets(userId),
           exportMessageRequests(userId),
+          // People whose reposts the member turned off (s05-07).
+          exportRepostMutes(userId),
+          // Co-host roles on events, invited and accepted (s05-05).
+          exportEventCohosts(userId),
+          // The history of each game's personal best (s05-04).
+          exportPersonalBests(userId),
+          // Private saved message replies (s05-13).
+          exportSavedReplies(userId),
+          // Game jam team invitations and credits (s05-15).
+          exportJamTeamMemberships(userId),
+          // Their own block and mute lists (s05-14).
+          exportBlocksMutes(userId),
+          // Communities they asked to be alerted for on every new post (s05-17).
+          exportPostAlerts(userId),
+          // RMH Studio projects saved to the account, with their project data (s05-06).
+          exportStudioProjects(userId),
         ]),
       ]);
 
@@ -326,6 +355,7 @@ export const route = apiRoute('/api/account/export', {
         flashcardDecks,
         flashcardReviews,
         flashcardTests,
+        studyReminder,
         rmhTypeLessons,
         rmhTypeDaily,
         rmhStudyProfile,
@@ -350,6 +380,14 @@ export const route = apiRoute('/api/account/export', {
         readerMarks,
         rmhboxPresets,
         messageRequests,
+        repostMutes,
+        eventCohosts,
+        personalBests,
+        savedReplies,
+        jamTeams,
+        blocksMutes,
+        postAlerts,
+        studioProjects,
       ] = sprint03;
 
       const [
@@ -407,6 +445,7 @@ export const route = apiRoute('/api/account/export', {
           decks: flashcardDecks,
           ...flashcardReviews,
           ...flashcardTests,
+          reminder: studyReminder,
         },
         rmhType: { lessons: rmhTypeLessons, daily: rmhTypeDaily },
         rmhStudy: rmhStudyProfile
@@ -428,6 +467,14 @@ export const route = apiRoute('/api/account/export', {
         libraryReaderMarks: readerMarks,
         rmhboxPresets,
         messageRequests,
+        repostMutes,
+        eventCohosts,
+        personalBests,
+        savedReplies,
+        jamTeams,
+        blocksMutes,
+        postAlerts,
+        studioProjects,
         rmhLadder: {
           preferences: ladderPrefs,
           // Salary expectations, work authorization and EEO answers — the

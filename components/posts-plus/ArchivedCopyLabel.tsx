@@ -1,6 +1,7 @@
 import { Archive } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { waybackTimestampToIso } from '@/lib/posts-plus/wayback';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * X11 - shown on a link card whose page has gone and which now points at its
@@ -12,7 +13,7 @@ export function ArchivedCopyLabel({
   archivedAt?:
     | string
     | null;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -37,9 +38,9 @@ export function ArchivedCopyLabel({
             {
               defaultValue:
                 'Archived copy · saved {{date}}',
-              date: new Date(
+              date: fmt.date(new Date(
                 iso,
-              ).toLocaleDateString(),
+              )),
             },
           )
         : t(

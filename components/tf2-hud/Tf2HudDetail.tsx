@@ -50,6 +50,7 @@ import {
 } from './ui';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export default function Tf2HudDetail({
   slug,
@@ -57,7 +58,7 @@ export default function Tf2HudDetail({
 }: {
   slug?: string;
   token?: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -834,9 +835,9 @@ export default function Tf2HudDetail({
                   </dt>
                   <dd>
                     {detail
-                      ? new Date(
+                      ? fmt.date(new Date(
                           detail.updatedAt,
-                        ).toLocaleDateString()
+                        ))
                       : '–'}
                   </dd>
                 </div>

@@ -5,14 +5,18 @@ import { prisma } from '@/lib/prisma.server';
 import { invalidateHiddenAuthors } from '@/lib/moderation.server';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import { invalidateAudience, recordFollowEvent } from '@/lib/social/follow-events.server';
+import { clearRepostMuteForBlock, invalidateRepostMutes } from '@/lib/feed/repost-mutes.server';
+import { toggleAction } from '@/lib/moderation/blocked-muted-schema';
 import { z } from 'zod';
 
 /**
  * POST /api/moderation/block — toggle a block on another user.
  * Blocking also removes any follow relationship in both directions.
+ * An explicit `block` boolean (the settings list, s05-14) says which way to go, so a stale list never blocks someone it
+ * meant to unblock; absent flips the current state.
  * GET — list the ids the current user has blocked.
  */
-const blockSchema = z.object({ targetUserId: z.string().min(1).max(64) });
+const blockSchema = z.object({ targetUserId: z.string().min(1).max(64), block: z.boolean().optional() });
 
 export const route = apiRoute('/api/moderation/block', {
   GET: implement(listBlockedUsersApi, {}, async ({ session }) => {
@@ -41,6 +45,9 @@ export const route = apiRoute('/api/moderation/block', {
         where: { blockerId_blockedId: { blockerId, blockedId } },
       });
 
+      const action = toggleAction(existing !== null, body.block);
+      if (action === 'none') return Response.json({ success: true, blocked: existing !== null });
+
       if (existing) {
         await prisma.userBlock.delete({ where: { id: existing.id } });
         // Both users' hidden-author sets change when a block is lifted.
@@ -61,6 +68,8 @@ export const route = apiRoute('/api/moderation/block', {
       // block removes is logged as `blocked` in the same transaction.
       await prisma.$transaction(async (tx) => {
         await tx.userBlock.create({ data: { blockerId, blockedId } });
+        // A block already hides everything, so the blocker's "reposts off" row for this person is dead weight.
+        await clearRepostMuteForBlock(tx, blockerId, blockedId);
         const edges = await tx.follow.findMany({
           where: {
             OR: [
@@ -94,6 +103,7 @@ export const route = apiRoute('/api/moderation/block', {
       // A block mutates both users' hidden-author sets and can drop follows
       // in both directions — invalidate both caches so neither feed is stale.
       invalidateHiddenAuthors(blockerId, blockedId);
+      invalidateRepostMutes(blockerId);
       invalidateFollowingIds(blockerId);
       invalidateFollowingIds(blockedId);
       invalidateAudience(blockerId);

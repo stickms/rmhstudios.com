@@ -10,6 +10,7 @@ import { Trophy, Crown, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ClientPlayerInfo } from '@/lib/rmhbox/types';
 import type { MatchupData } from './WitWarGame';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface WitWarResultsProps {
   scores: Record<string, number>;
@@ -27,7 +28,7 @@ export default function WitWarResults({
   totalRounds,
   isGameOver,
   players,
-}: WitWarResultsProps) {
+}: WitWarResultsProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("c-rmhbox");
   const ranked = Object.entries(scores)
     .map(([userId, score]) => {
@@ -82,7 +83,7 @@ export default function WitWarResults({
             <span className={`text-lg font-bold ${
               idx === 0 ? 'text-app-warning' : 'text-app-text'
             }`}>
-              {entry.score.toLocaleString()}
+              {fmt.number(entry.score)}
             </span>
           </motion.div>
         ))}

@@ -27,6 +27,7 @@ import {
 } from '@/lib/dunesday/schedule';
 import { DUNESDAY } from '@/lib/dunesday/titles';
 import { sfx } from './sound';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function useNow(): Date | null {
   const [
@@ -56,7 +57,7 @@ function useNow(): Date | null {
   return now;
 }
 
-export function Clock() {
+export function Clock() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -92,7 +93,7 @@ export function Clock() {
         role="img"
         aria-label={
           now
-            ? now.toLocaleTimeString()
+            ? fmt.time(now)
             : t(
                 'clock',
                 {

@@ -1,5 +1,6 @@
 /** Time formatting for the watch-party views: the viewer's zone and locale, computed when the view renders. */
 import { relativeStart } from '@/lib/rmhtube/parties';
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
 /** The party's time in the viewer's own zone and locale (`Intl` defaults to both). */
 export function formatPartyTime(
@@ -21,9 +22,9 @@ export function formatPartyTime(
       ),
     );
   } catch {
-    return new Date(
+    return formatDateTime(new Date(
       iso,
-    ).toLocaleString();
+    ), currentDocumentLocale());
   }
 }
 

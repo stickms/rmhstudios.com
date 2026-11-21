@@ -21,6 +21,7 @@ import { api } from '@/lib/contract/client';
 import { laundryLeaderboardApi } from '@features/laundry-sort/engine/laundry.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Row {
   username: string;
@@ -41,7 +42,7 @@ export function LeaderboardPanel({
   refreshKey = 0,
 }: {
   refreshKey?: number;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -306,7 +307,7 @@ export function LeaderboardPanel({
                     </>
                   ) : (
                     <span className="ls-accent ls-numeric shrink-0 font-bold">
-                      {row.highScore.toLocaleString()}
+                      {fmt.number(row.highScore)}
                     </span>
                   )}
                 </li>

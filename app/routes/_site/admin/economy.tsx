@@ -26,6 +26,7 @@ import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { adminEconomyQuery } from '@/lib/admin/admin-ops.queries';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export const Route = createFileRoute('/_site/admin/economy')({
   head: () => ({ meta: [{ title: 'Coin Economy | RMH Studios' }] }),
@@ -58,9 +59,9 @@ interface Snapshot {
 
 const WINDOWS = ['7', '30', '90'] as const;
 
-const nf = new Intl.NumberFormat('en-US');
 
 function AdminEconomyPage() {
+  const nf = { format: useLocaleFormat().number };
   const { t } = useTranslation('admin');
   const [days, setDays] = useState<string>('30');
   // The response is `{ snapshot, flows, shape }`; the page reads the snapshot.

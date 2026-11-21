@@ -23,6 +23,7 @@ import { api } from '@/lib/contract/client';
 import { listRmhboxMatchesApi, type RmhboxMatchSummary } from '@/lib/rmhbox/rmhbox-reads.contract';
 import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 
 type SortKey = 'date' | 'score' | 'rank' | 'duration';
@@ -53,7 +54,7 @@ function SortButton({
   );
 }
 
-function MinigameHistoryPage() {
+function MinigameHistoryPage() { const fmt = useLocaleFormat(); 
   const { minigameId } = Route.useParams();
   // `player` narrows the list to one member's matches (the server applies their privacy setting);
   // `match` opens that match's row.
@@ -221,7 +222,7 @@ function MinigameHistoryPage() {
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
+    return fmt.date(d, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

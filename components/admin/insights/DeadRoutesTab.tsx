@@ -3,6 +3,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useInsight } from './api';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface RouteViews {
   trackingSince:
@@ -136,7 +137,7 @@ function RouteTable({
     route: string;
     views: number;
   }[];
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -176,7 +177,7 @@ function RouteTable({
               }
             </span>
             <span className="text-site-text-muted">
-              {r.views.toLocaleString()}
+              {fmt.number(r.views)}
             </span>
           </li>
         ),

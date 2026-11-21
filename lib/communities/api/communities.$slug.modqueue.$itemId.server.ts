@@ -7,6 +7,7 @@ import { createNotification } from '@/lib/notifications.server';
 import { AutomodError, resolveModItem } from '@/lib/communities/automod.server';
 import { getRule, recordCitation } from '@/lib/communities/rules.server';
 import { removalNoticeText } from '@/lib/communities/rules';
+import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
 
 /**
  * POST /api/communities/$slug/modqueue/$itemId — approve or remove a queued item.
@@ -35,6 +36,16 @@ export const route = apiRoute('/api/communities/$slug/modqueue/$itemId', {
             ? { rule: rule ? { id: rule.id, title: rule.title } : null, reason: body.message ?? null }
             : {},
         );
+        // A held post that a moderator approves becomes visible now: its alerts go out on approval, not on creation.
+        if (!removing) {
+          const approved = await prisma.communityModItem.findUnique({
+            where: { id: params.itemId },
+            select: { action: true, entityType: true, entityId: true },
+          });
+          if (approved?.action === 'hold' && approved.entityType === 'rmhark' && approved.entityId) {
+            await enqueuePostAlert(approved.entityId);
+          }
+        }
         if (removing && (body.message || rule)) {
           const item = await prisma.communityModItem.findUnique({
             where: { id: params.itemId },

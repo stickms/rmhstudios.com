@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { markReviewed } from '@/lib/study/reminders.server';
 import type { SrsState } from '@/lib/rmhstudy/srs';
 
 /**
@@ -35,5 +36,9 @@ export async function saveReview(input: {
         easeFactor: next.easeFactor,
       },
     });
+  });
+  // A review ends the idle run the reminder counts. Best-effort: the review is already saved.
+  await markReviewed(userId).catch((err: unknown) => {
+    console.error('[study-reminders] markReviewed failed:', err);
   });
 }

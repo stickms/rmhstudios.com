@@ -25,6 +25,7 @@ import { loadCorsImage } from '@features/altair/engine/engine/sprites/cors-image
 import CodexPanel, {
   CodexOpenButton,
 } from '../CodexPanel';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 // Sprite paths (matching sprite-defs.ts)
 const ENEMY_SPRITE_PATH: Record<
@@ -804,7 +805,7 @@ function EnemyDetail({
     killed: number;
     killedBy: number;
   };
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -882,7 +883,7 @@ function EnemyDetail({
                 defaultValue:
                   '{{count}} encountered',
                 count:
-                  s.encountered.toLocaleString(),
+                  fmt.number(s.encountered),
               },
             )}
           </span>
@@ -900,7 +901,7 @@ function EnemyDetail({
                 defaultValue:
                   '{{count}} killed',
                 count:
-                  s.killed.toLocaleString(),
+                  fmt.number(s.killed),
               },
             )}
           </span>
@@ -1186,7 +1187,7 @@ function BossDetail({
     killed: number;
     killedBy: number;
   };
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -1260,7 +1261,7 @@ function BossDetail({
                 defaultValue:
                   '{{count}} encountered',
                 count:
-                  s.encountered.toLocaleString(),
+                  fmt.number(s.encountered),
               },
             )}
           </span>
@@ -1278,7 +1279,7 @@ function BossDetail({
                 defaultValue:
                   '{{count}} defeated',
                 count:
-                  s.killed.toLocaleString(),
+                  fmt.number(s.killed),
               },
             )}
           </span>

@@ -2,9 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { ITEMS } from '@features/hearthworks/engine/content';
 import { hearthworksStore, useHearthworks } from '@features/hearthworks/engine/store';
 import { customerPremium } from '@features/hearthworks/engine/world';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Who is waiting at your stalls, what they want, and what they will pay. Serving needs you close by. */
-export function Customers() {
+export function Customers() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-hearthworks');
   const world = useHearthworks((s) => s.world);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
@@ -38,7 +39,7 @@ export function Customers() {
                     hearthworksStore.getState().dispatch({ type: 'serve', npcId: n.id })
                   }
                 >
-                  {t('serve', { defaultValue: 'Serve' })} · +{pay.toLocaleString()}
+                  {t('serve', { defaultValue: 'Serve' })} · +{fmt.number(pay)}
                 </button>
               </li>
             );

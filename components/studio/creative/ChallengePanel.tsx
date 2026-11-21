@@ -31,6 +31,7 @@ import type {
 } from '@/lib/studio/challenge/shared';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const post =
   (
@@ -291,7 +292,7 @@ function Detail({
 }: {
   id: string;
   onBack: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -546,12 +547,12 @@ function Detail({
               defaultValue:
                 'Submissions close {{close}}. Voting ends {{vote}}.',
               close:
-                new Date(
+                fmt.dateTime(new Date(
                   c.endsAt,
-                ).toLocaleString(),
-              vote: new Date(
+                )),
+              vote: fmt.dateTime(new Date(
                 c.votingEndsAt,
-              ).toLocaleString(),
+              )),
             },
           )}
         </p>

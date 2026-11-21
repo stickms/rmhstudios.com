@@ -152,13 +152,26 @@ model CommunityMember {
   roleTags         String[]      @default([])
   // s03-13: when the member ticked the community's rules (set only on a join that agreed).
   rulesAcceptedAt  DateTime?
+  /// s05-17: "off" (default) or "all" — notify this member of every new visible post in the community.
+  postAlerts       String        @default("off") @db.VarChar(4)
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([communityId, userId])
   @@index([userId])
+  // The post-alert fan-out reads a community's opted-in members. Built CONCURRENTLY in its own migration.
+  @@index([communityId, postAlerts])
   @@map("community_member")
+}
+
+/// s05-17 — one row per post whose new-post alerts have been claimed by the fan-out job (insert-if-absent), so a
+/// retried or duplicated job never notifies twice. Not a member's data (no user column), so not exported or erased.
+model CommunityPostAlertRun {
+  postId    String   @id
+  claimedAt DateTime @default(now())
+
+  @@map("community_post_alert_run")
 }
 
 // ─── RMHEvents (§6) ────────────────────────────────────────────────────────

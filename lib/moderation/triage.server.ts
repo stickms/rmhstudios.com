@@ -121,6 +121,8 @@ export async function takedownReportedContent(
             data: {
               deletedAt:
                 now,
+              pinnedAt:
+                null,
             },
           },
         ),

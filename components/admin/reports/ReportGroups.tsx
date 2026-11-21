@@ -3,7 +3,6 @@ import {
   useState,
 } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
 import {
   Check,
   ChevronDown,
@@ -47,6 +46,7 @@ import {
   listReportGroupsApi,
   type ReportGroupRow,
 } from '@/lib/moderation/triage.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Decision =
   | 'resolve'
@@ -70,7 +70,7 @@ export function ReportGroups({
       number
     >,
   ) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -774,22 +774,12 @@ export function ReportGroups({
                         'group-times',
                         {
                           first:
-                            formatDistanceToNow(
-                              new Date(
+                            fmt.relative(new Date(
                                 g.firstAt,
-                              ),
-                              {
-                                addSuffix: true,
-                              },
-                            ),
-                          last: formatDistanceToNow(
-                            new Date(
+                              )),
+                          last: fmt.relative(new Date(
                               g.lastAt,
-                            ),
-                            {
-                              addSuffix: true,
-                            },
-                          ),
+                            )),
                           defaultValue:
                             'First report {{first}}, latest {{last}}',
                         },
@@ -962,14 +952,9 @@ export function ReportGroups({
                                     </Badge>
                                   )}
                                   <span className="t-meta">
-                                    {formatDistanceToNow(
-                                      new Date(
+                                    {fmt.relative(new Date(
                                         r.createdAt,
-                                      ),
-                                      {
-                                        addSuffix: true,
-                                      },
-                                    )}
+                                      ))}
                                   </span>
                                 </div>
                                 {r.details && (

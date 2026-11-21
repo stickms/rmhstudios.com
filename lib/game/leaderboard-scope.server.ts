@@ -30,6 +30,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { getRole } from '@/lib/communities/access.server';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export const LEADERBOARD_SCOPES = ['global', 'friends', 'community', 'country'] as const;
 export type LeaderboardScope = (typeof LEADERBOARD_SCOPES)[number];
@@ -68,12 +69,17 @@ export type ScopeFilterResult =
     }
   | { supported: false; status: 400 | 401 | 403; reason: string };
 
-/** Turn a resolved audience into both output shapes. */
-function audience(ids: string[] | null): ScopeFilterResult {
+/**
+ * Turn a resolved audience into both output shapes. Members left off public boards (switch off, or
+ * banned now) are taken out of the audience here, so a friends or community board never names them
+ * and they do not use up a slot of the capped list (sprint 05 #01).
+ */
+function audience(ids: string[] | null, hidden?: ReadonlySet<string>): ScopeFilterResult {
+  const listed = ids === null || !hidden ? ids : ids.filter((id) => !hidden.has(id));
   return {
     supported: true,
-    where: ids === null ? {} : { userId: { in: ids } },
-    audience: ids,
+    where: listed === null ? {} : { userId: { in: listed } },
+    audience: listed,
   };
 }
 
@@ -109,7 +115,8 @@ export async function scopeFilter(
       // that is a different, older surface and is deliberately not changed
       // here.)
       const following = await getFollowingIds(viewerId);
-      if (following.length === 0) return audience([viewerId]);
+      const hidden = await leaderboardHiddenUserIds();
+      if (following.length === 0) return audience([viewerId], hidden);
 
       // Same shape as `getActiveFriends` in `lib/presence.server.ts`: ask for
       // the back-edges of the follow list rather than loading both directions
@@ -122,7 +129,7 @@ export async function scopeFilter(
 
       // The viewer is always on their own friends board — a ranking that hides
       // where you stand answers the wrong question.
-      return audience([viewerId, ...backEdges.map((f) => f.followerId)]);
+      return audience([viewerId, ...backEdges.map((f) => f.followerId)], hidden);
     }
 
     case 'community': {
@@ -165,7 +172,10 @@ export async function scopeFilter(
         orderBy: { joinedAt: 'asc' },
         take: AUDIENCE_CAP,
       });
-      return audience(members.map((m) => m.userId));
+      return audience(
+        members.map((m) => m.userId),
+        await leaderboardHiddenUserIds(),
+      );
     }
 
     case 'country':

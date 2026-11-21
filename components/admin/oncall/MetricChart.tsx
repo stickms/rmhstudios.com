@@ -5,6 +5,7 @@ import type {
   ChartSeries,
   DeployMarker,
 } from '@/lib/ops/series';
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
 // The SVG draws only lines and is stretched to the plot box
 // (preserveAspectRatio="none" + non-scaling strokes); every label and the
@@ -51,11 +52,9 @@ const fmtTime =
     t: number,
     withDate: boolean,
   ) =>
-    new Date(
+    formatDateTime(new Date(
       t,
-    ).toLocaleString(
-      undefined,
-      {
+    ), currentDocumentLocale(), {
         ...(withDate
           ? {
               month:
@@ -66,8 +65,7 @@ const fmtTime =
         hour: 'numeric',
         minute:
           '2-digit',
-      },
-    );
+      });
 
 /**
  * One metric over time as an inline-SVG line, with each alarm rule's threshold

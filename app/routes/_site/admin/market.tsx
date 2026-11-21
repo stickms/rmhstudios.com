@@ -15,6 +15,7 @@ import { HttpError, serverError } from '@/lib/http';
 import { listAdminHeldListingsApi, resolveAdminHeldListingApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export const Route = createFileRoute('/_site/admin/market')({
   head: () => ({ meta: [{ title: 'Marketplace Review | RMH Studios' }] }),
@@ -41,7 +42,7 @@ type Action = 'release' | 'cancel';
  * reviewed price (the frozen buy is not replayed); cancel closes it and returns
  * the item to the seller.
  */
-function AdminMarketPage() {
+function AdminMarketPage() { const fmt = useLocaleFormat(); 
   const { t, i18n } = useTranslation('admin');
   const [rows, setRows] = useState<HeldListingRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,7 +143,7 @@ function AdminMarketPage() {
                       variant="default"
                       icon={<Coins className="text-site-warning" aria-hidden />}
                     >
-                      {r.priceCoins.toLocaleString()}
+                      {fmt.number(r.priceCoins)}
                     </Badge>
                   </div>
                   <p className="t-body text-site-text-muted break-words">
@@ -152,7 +153,7 @@ function AdminMarketPage() {
                         })
                       : t('market-review-median', {
                           defaultValue: '30-day median {{median}} coins over {{sales}} sales',
-                          median: Math.round(r.medianCoins).toLocaleString(),
+                          median: fmt.number(Math.round(r.medianCoins)),
                           sales: r.recentSales,
                         })}
                   </p>

@@ -21,6 +21,7 @@ import {
   splitLines,
   summarise,
 } from '@/lib/toolbox/diff';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Changed lines shown for one revision; the rest are counted, not drawn. */
 const MAX_DIFF_LINES = 300;
@@ -46,7 +47,7 @@ export function BlogRevisions({
   slug,
   current,
   onRestore,
-}: Props) {
+}: Props) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -246,9 +247,9 @@ export function BlogRevisions({
                     className="flex min-h-9 w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2 text-start pointer-coarse:min-h-11"
                   >
                     <span className="t-body min-w-0 break-words text-site-text">
-                      {new Date(
+                      {fmt.dateTime(new Date(
                         rev.createdAt,
-                      ).toLocaleString()}
+                      ))}
                       <span className="text-site-text-muted">
                         {
                           ' · '

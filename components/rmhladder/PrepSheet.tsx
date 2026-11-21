@@ -41,6 +41,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export interface PrepSheetProps {
   applicationId: string;
@@ -67,7 +68,7 @@ const CATEGORY_LABELS: Record<
 export function PrepSheet({
   applicationId,
   initialSheet = null,
-}: PrepSheetProps) {
+}: PrepSheetProps) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -316,9 +317,9 @@ export function PrepSheet({
                   },
                 )}
                 <span className="text-site-text-muted">
-                  {new Date(
+                  {fmt.date(new Date(
                     sheet.nextInterviewAt,
-                  ).toLocaleDateString()}
+                  ))}
                 </span>
               </p>
             )}

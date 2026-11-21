@@ -20,6 +20,7 @@ import {
 } from '@/lib/admin/email.contract';
 import { cn } from '@/lib/utils';
 import { categoryName } from '@/components/admin/email/labels';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function statusBadge(
   t: TFunction,
@@ -72,7 +73,7 @@ export function CampaignHistory({
   refreshKey,
 }: {
   refreshKey: number;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -307,9 +308,9 @@ export function CampaignHistory({
                     )}
                   </p>
                   <p className="t-meta">
-                    {new Date(
+                    {fmt.dateTime(new Date(
                       r.createdAt,
-                    ).toLocaleString()}
+                    ))}
                     {r.author
                       ? ` · ${r.author}`
                       : ''}

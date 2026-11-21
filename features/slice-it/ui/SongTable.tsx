@@ -20,6 +20,7 @@ import {
 } from '@features/slice-it/engine/library-filters';
 import type { SliceSong } from '@features/slice-it/engine/types';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface SongTableProps {
   songs: LibrarySong[];
@@ -92,7 +93,7 @@ export function SongTable({
   readOnly = false,
   selectAction = 'play',
   className,
-}: SongTableProps) {
+}: SongTableProps) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -468,11 +469,11 @@ export function SongTable({
                   <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
                     {song.bestScore !==
                     null
-                      ? song.bestScore.toLocaleString()
+                      ? fmt.number(song.bestScore)
                       : '—'}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
-                    {song.plays.toLocaleString()}
+                    {fmt.number(song.plays)}
                   </td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">
                     {!readOnly && (

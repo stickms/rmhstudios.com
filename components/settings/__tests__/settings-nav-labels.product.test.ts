@@ -19,4 +19,10 @@ describe('settings hub labels', () => {
     }
     expect(Object.keys(text).sort()).toEqual(SETTINGS_DESTINATIONS.map((d) => d.id).sort());
   });
+
+  it('lists Blocked and muted under account, signed-in only', () => {
+    const d = SETTINGS_DESTINATIONS.find((x) => x.id === 'blocked');
+    expect(d).toMatchObject({ to: '/settings/blocked', group: 'account', requiresAuth: true, label: 'Blocked and muted' });
+    expect(settingsNavText(echoDefault)['blocked']).toEqual({ label: d!.label, hint: d!.hint });
+  });
 });

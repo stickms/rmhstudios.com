@@ -3,6 +3,7 @@ import type {
   ReactNode,
 } from 'react';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * A ledger of headline numbers: two columns on a phone, four from `sm`. Each
@@ -56,7 +57,7 @@ export function StatTile({
     | 'good'
     | 'bad';
   className?: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const toneClass =
     tone ===
     'good'
@@ -85,7 +86,7 @@ export function StatTile({
       >
         {typeof value ===
         'number'
-          ? value.toLocaleString()
+          ? fmt.number(value)
           : value}
       </p>
       {hint ? (

@@ -16,6 +16,7 @@ import { api } from '@/lib/contract/client';
 import { getAltairLeaderboardApi } from '@features/altair/engine/altair.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 interface MenuScreenProps {
   onPlay: () => void;
@@ -218,10 +219,10 @@ function formatTime(seconds: number): string {
 
 function formatValue(entry: LeaderboardEntry, category: LeaderboardCategory): string {
   switch (category) {
-    case 'gold': return entry.totalGold.toLocaleString();
-    case 'xp': return entry.totalXP.toLocaleString();
+    case 'gold': return formatNumber(entry.totalGold, currentDocumentLocale());
+    case 'xp': return formatNumber(entry.totalXP, currentDocumentLocale());
     case 'survival': return formatTime(entry.totalTimeSurvived);
-    case 'kills': return entry.totalKills.toLocaleString();
+    case 'kills': return formatNumber(entry.totalKills, currentDocumentLocale());
     case 'time': return formatTime(entry.bestTime);
   }
 }

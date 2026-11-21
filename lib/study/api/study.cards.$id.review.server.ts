@@ -3,6 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { reviewCardApi } from '@/lib/study/decks.contract';
 import { reviewCardBody } from '@/lib/study/decks-schema';
 import { prisma } from '@/lib/prisma.server';
+import { isReviewable } from '@/lib/study/card-types';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { nextState, type Grade } from '@/lib/rmhstudy/srs';
 import { saveReview } from '@/lib/study/review-log.server';
@@ -29,9 +30,11 @@ export const route = apiRoute('/api/study/cards/$id/review', {
 
       const card = await prisma.flashcard.findUnique({
         where: { id: params.id },
-        select: { id: true, deckId: true, deck: { select: { isPublic: true, userId: true } } },
+        select: { id: true, deckId: true, kind: true, sourceId: true, deck: { select: { isPublic: true, userId: true } } },
       });
       if (!card) return Response.json({ error: 'Not found' }, { status: 404 });
+      // An authored cloze card is never reviewed; its generated cards are.
+      if (!isReviewable(card)) return Response.json({ error: 'Not found' }, { status: 404 });
       if (!card.deck.isPublic && card.deck.userId !== userId) {
         return Response.json({ error: 'Not found' }, { status: 404 });
       }

@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { useArrival } from '@/components/ui/arrive';
 import { api } from '@/lib/contract/client';
 import { getRankedOverviewApi } from '@/lib/ranked/ranked.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Rating {
   game: string;
@@ -37,13 +38,7 @@ interface GameDef {
   name: string;
 }
 
-const fmt =
-  (
-    n: number,
-  ) =>
-    n.toLocaleString();
-
-export function RankedSummary() {
+export function RankedSummary() { const fmt = useLocaleFormat().number;
   const {
     t,
   } =

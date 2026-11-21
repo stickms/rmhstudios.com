@@ -25,6 +25,7 @@ import { CallPrivacyControls } from '@/components/settings/CallPrivacyControls';
 import { CallAnswerControls } from '@/components/settings/CallAnswerControls';
 import { PlayLimitsPanel } from '@/components/settings/PlayLimitsPanel';
 import { PlaytimePrivacyControls } from '@/components/settings/PlaytimePrivacyControls';
+import { LeaderboardPrivacyControls } from '@/components/settings/LeaderboardPrivacyControls';
 import { MusicPrivacyControls } from '@/components/settings/MusicPrivacyControls';
 import { CookieConsentControls } from '@/components/site/CookieConsentControls';
 import { useSession } from '@/components/Providers';
@@ -87,6 +88,7 @@ function PrivacySettingsPage() {
             <CallPrivacyControls />
             <CallAnswerControls />
             <PlaytimePrivacyControls />
+            <LeaderboardPrivacyControls />
             <MusicPrivacyControls />
             <MutedWordsPanel />
             <PlayLimitsPanel />

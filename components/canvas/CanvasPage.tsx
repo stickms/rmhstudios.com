@@ -31,6 +31,7 @@ import {
   useArrival,
 } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const CanvasBoard =
   lazy(
@@ -114,7 +115,7 @@ function fmt(
 }
 
 /** Z5 — /canvas: the community pixel canvas, live while an event runs and a timelapse after. */
-export function CanvasPage() {
+export function CanvasPage() { const lfmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -380,9 +381,9 @@ export function CanvasPage() {
                       {
                         defaultValue:
                           'Opens {{date}}',
-                        date: new Date(
+                        date: lfmt.dateTime(new Date(
                           event.startsAt,
-                        ).toLocaleString(),
+                        )),
                       },
                     )
                   : live
@@ -391,9 +392,9 @@ export function CanvasPage() {
                         {
                           defaultValue:
                             'Closes {{date}}',
-                          date: new Date(
+                          date: lfmt.dateTime(new Date(
                             event.endsAt,
-                          ).toLocaleString(),
+                          )),
                         },
                       )
                     : t(

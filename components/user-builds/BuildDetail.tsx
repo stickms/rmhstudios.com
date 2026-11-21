@@ -52,6 +52,8 @@ import {
   viewUserBuildApi,
 } from '@/lib/user-builds.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { formatDate as formatDateLocale } from '@/lib/core/format';
 
 interface BuildDetailProps {
   build: Build;
@@ -59,18 +61,16 @@ interface BuildDetailProps {
 
 function formatDate(
   dateStr: string,
+  locale: string,
 ): string {
-  return new Date(
+  return formatDateLocale(new Date(
     dateStr,
-  ).toLocaleDateString(
-    'en-US',
-    {
+  ), locale, {
       year: 'numeric',
       month:
         'long',
       day: 'numeric',
-    },
-  );
+    });
 }
 
 /**
@@ -80,7 +80,7 @@ function formatDate(
 export function BuildDetail({
   build:
     initialBuild,
-}: BuildDetailProps) {
+}: BuildDetailProps) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -506,6 +506,7 @@ export function BuildDetail({
             {formatDate(
               build.publishedAt ||
                 build.createdAt,
+              fmt.locale,
             )}
           </span>
 
@@ -853,10 +854,10 @@ export function BuildDetail({
                       defaultValue:
                         'Unlock for {{price}}',
                       price:
-                        (
+                        fmt.number((
                           build.price ??
                           0
-                        ).toLocaleString(),
+                        )),
                     },
                   )
                 : t(

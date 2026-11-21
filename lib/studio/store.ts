@@ -259,6 +259,11 @@ export interface StudioStore {
   markDirty: () => void;
   markClean: () => void;
   newProject: () => void;
+  /** Name (and, on first save or Save as, id) the open project, without touching its content. */
+  setProjectIdentity: (
+    id: string | null,
+    name: string,
+  ) => void;
 }
 
 // ─── Store Creation ─────────────────────────────────────────────────────────
@@ -1123,6 +1128,19 @@ export const useStudioStore =
             set(
               {
                 projectDirty: false,
+              },
+            ),
+        setProjectIdentity:
+          (
+            id,
+            name,
+          ) =>
+            set(
+              {
+                projectId:
+                  id,
+                projectName:
+                  name,
               },
             ),
         newProject:

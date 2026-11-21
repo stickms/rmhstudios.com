@@ -8,3 +8,7 @@ export const MAX_IMPORT_CARDS = 500;
 export const MAX_DECK_CARDS = 2000;
 /** Largest import file the browser will read, in bytes. */
 export const MAX_IMPORT_FILE_BYTES = 1024 * 1024;
+/** Characters allowed in a cloze card's text (all its deletions included). */
+export const CLOZE_TEXT_MAX = 1000;
+/** Distinct deletion indices (c1, c2, …) one cloze card may use. */
+export const CLOZE_MAX_INDICES = 20;

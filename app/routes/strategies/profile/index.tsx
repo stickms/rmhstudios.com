@@ -10,13 +10,14 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export const Route = createFileRoute('/strategies/profile/')({
   head: () => noindexHead('Strategies Profile'),
   component: ProfilePage,
 });
 
-function ProfilePage() {
+function ProfilePage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("r-strategies");
   const { data: rep, isLoading } = useDoctrineReputation();
   const arrival = useArrival(!isLoading);
@@ -54,7 +55,7 @@ function ProfilePage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-2 md:gap-3">
-            <StatCard label={t("total-xp", { defaultValue: "Total XP" })} value={rep.totalXp.toLocaleString()} />
+            <StatCard label={t("total-xp", { defaultValue: "Total XP" })} value={fmt.number(rep.totalXp)} />
             <StatCard label={t("sahur-count", { defaultValue: "Sahur Count" })} value={String(rep.sahurCount)} />
             <StatCard label={t("coalition", { defaultValue: "Coalition" })} value={`${rep.coalitionScore.toFixed(1)}x`} />
           </div>

@@ -1,4 +1,5 @@
-/** Sizes and times in the language the page is shown in (the app's locale, not the browser's). */
+
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';/** Sizes and times in the language the page is shown in (the app's locale, not the browser's). */
 
 /** `1536` -> "2 kB", `5 * 1024 * 1024` -> "5.0 MB", in `locale`. */
 export function formatBytes(
@@ -67,8 +68,8 @@ export function formatTime(
       ms,
     );
   } catch {
-    return new Date(
+    return formatDateTime(new Date(
       ms,
-    ).toLocaleString();
+    ), currentDocumentLocale());
   }
 }

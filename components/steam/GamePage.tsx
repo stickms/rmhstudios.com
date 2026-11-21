@@ -24,6 +24,8 @@ import { SteamReviews } from './SteamReviews';
 import { ReplayBoard } from '@/components/replays/ReplayBoard';
 import type { BoardReplay } from '@/lib/game/replay-library';
 import { TitleArt } from './TitleArt';
+import { PersonalBests } from './PersonalBests';
+import { scoredGameIds } from '@/lib/game/registry';
 
 export type GamePageData = {
   gameId: string;
@@ -161,6 +163,9 @@ export function GamePage({ data }: { data: GamePageData }) {
           {offSite ? null : <SteamAchievements items={extras.achievements} signedIn={data.signedIn} />}
           {extras.cards ? (
             <SteamCards gameId={data.gameId} title={data.title} hue={data.hue} cards={extras.cards} />
+          ) : null}
+          {isGame && data.signedIn && scoredGameIds().includes(data.gameId) ? (
+            <PersonalBests gameId={data.gameId} />
           ) : null}
           {data.gameId === 'nightrail' ? (
             <div className="stm-legacy">

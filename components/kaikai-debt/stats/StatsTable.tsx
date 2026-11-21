@@ -24,6 +24,7 @@ import {
 import { CATEGORY_ORDER } from '@/lib/kaikai-debt/stats';
 import { Swatch } from './chart-kit';
 import { categoryLabel } from './CompositionCharts';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function StatsTable({
   stats,
@@ -31,7 +32,7 @@ export function StatsTable({
 }: {
   stats: DebtStats;
   nowMs: number;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -203,9 +204,7 @@ export function StatsTable({
                       )}
                     </td>
                     <td className="py-1.5 pr-3 text-right text-site-text-muted tabular-nums">
-                      {stat.count.toLocaleString(
-                        'en-US',
-                      )}
+                      {fmt.number(stat.count)}
                     </td>
                     <td className="py-1.5 pr-3 text-right text-site-text-muted tabular-nums">
                       {formatDebt(
@@ -250,9 +249,7 @@ export function StatsTable({
                 )}
               </td>
               <td className="py-1.5 pr-3 text-right tabular-nums">
-                {stats.totals.count.toLocaleString(
-                  'en-US',
-                )}
+                {fmt.number(stats.totals.count)}
               </td>
               <td className="py-1.5 pr-3 text-right tabular-nums">
                 {formatDebt(

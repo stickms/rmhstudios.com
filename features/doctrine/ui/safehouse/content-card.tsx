@@ -2,6 +2,7 @@ import type { ReactionCount } from '@features/doctrine/engine/types';
 import { ReactionBar } from '../reaction-bar';
 import { DivisivenessBadge } from '../divisiveness-badge';
 import { TIERS } from '@features/doctrine/engine/constants';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface ContentCardProps {
   id: string;
@@ -81,7 +82,7 @@ export function ContentCard({
   minTier,
   publishedAt,
   reactions,
-}: ContentCardProps) {
+}: ContentCardProps) { const fmt = useLocaleFormat(); 
   const typeInfo =
     TYPE_LABELS[
       type
@@ -142,9 +143,9 @@ export function ContentCard({
         />
         {publishedAt && (
           <span className="ml-auto text-xs md:text-xs text-white/50">
-            {new Date(
+            {fmt.date(new Date(
               publishedAt,
-            ).toLocaleDateString()}
+            ))}
           </span>
         )}
       </div>

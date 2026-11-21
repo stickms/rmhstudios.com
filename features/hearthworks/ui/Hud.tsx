@@ -64,6 +64,7 @@ import { Customers } from './Customers';
 import { MultiplayerPanel } from './MultiplayerPanel';
 import { ViewToggle, WalkControls } from './ViewControls';
 import { Wardrobe } from './Wardrobe';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const BUILDING_ICON: Record<BuildingId, LucideIcon> = {
   road: Route,
@@ -123,7 +124,7 @@ function ToolButton({
  * `onMainMenu` returns to the main menu (progress persists); `togetherSignal` opens the multiplayer panel each time the
  * menu's "Play together" bumps it.
  */
-export function Hud({ onMainMenu, togetherSignal = 0 }: { onMainMenu: () => void; togetherSignal?: number }) {
+export function Hud({ onMainMenu, togetherSignal = 0 }: { onMainMenu: () => void; togetherSignal?: number }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-hearthworks');
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
@@ -220,7 +221,7 @@ export function Hud({ onMainMenu, togetherSignal = 0 }: { onMainMenu: () => void
           aria-label={t('money-label', { defaultValue: 'Money' })}
         >
           <Coins aria-hidden size={18} />
-          <span className="hw-chip__value">{money.toLocaleString()}</span>
+          <span className="hw-chip__value">{fmt.number(money)}</span>
         </div>
         <ViewToggle />
         <button
@@ -320,7 +321,7 @@ export function Hud({ onMainMenu, togetherSignal = 0 }: { onMainMenu: () => void
                           hearthworksStore.getState().dispatch({ type: 'sell', item: id, qty: n ?? 0 })
                         }
                       >
-                        {t('sell-all', { defaultValue: 'Sell all' })} · {(ITEMS[id].price * (n ?? 0)).toLocaleString()}
+                        {t('sell-all', { defaultValue: 'Sell all' })} · {fmt.number((ITEMS[id].price * (n ?? 0)))}
                       </button>
                     )}
                   </li>

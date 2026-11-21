@@ -9,7 +9,6 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { Gavel, ShieldCheck, ShieldX, Clock } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +27,7 @@ import { serverError } from '@/lib/http';
 import { decideAdminAppealApi, getAdminAppealsApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export const Route = createFileRoute('/_site/admin/appeals')({
   head: () => ({ meta: [{ title: 'Strike Appeals | RMH Studios' }] }),
@@ -60,7 +60,7 @@ interface Appeal {
   decidedBy: QueueUser | null;
 }
 
-function AdminAppealsPage() {
+function AdminAppealsPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const [view, setView] = useState<View>('PENDING');
   const [items, setItems] = useState<Appeal[]>([]);
@@ -181,7 +181,7 @@ function AdminAppealsPage() {
                   <span className="t-meta">
                     {t('issued-ago', {
                       defaultValue: 'issued {{when}}',
-                      when: formatDistanceToNow(new Date(a.createdAt), { addSuffix: true }),
+                      when: fmt.relative(new Date(a.createdAt)),
                     })}
                   </span>
                   {a.appealedAt && (
@@ -189,7 +189,7 @@ function AdminAppealsPage() {
                       ·{' '}
                       {t('appealed-ago', {
                         defaultValue: 'appealed {{when}}',
-                        when: formatDistanceToNow(new Date(a.appealedAt), { addSuffix: true }),
+                        when: fmt.relative(new Date(a.appealedAt)),
                       })}
                     </span>
                   )}

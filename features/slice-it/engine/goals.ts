@@ -26,6 +26,7 @@ import type {
   RunStats,
   Slice,
 } from './types';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 /* ─── The goal vocabulary ────────────────────────────────────────────────── */
 
@@ -163,7 +164,7 @@ export function describeGoal(
     case 'accuracy':
       return `${(goal.min * 100).toFixed(1)}% accuracy`;
     case 'score':
-      return `${goal.min.toLocaleString()} points`;
+      return `${formatNumber(goal.min, currentDocumentLocale())} points`;
     case 'combo':
       return `${goal.min} combo`;
     case 'fc':

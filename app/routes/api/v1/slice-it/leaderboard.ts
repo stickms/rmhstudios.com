@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { apiOptions, withDeveloperApi } from '@/lib/api/with-developer-api.server';
 import { prisma } from '@/lib/prisma.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { DIFFICULTIES } from '@features/slice-it/engine/constants';
 import { MOD_POOLS } from '@features/slice-it/engine/pools';
 
@@ -61,8 +63,10 @@ export const Route = createFileRoute('/api/v1/slice-it/leaderboard')({
             });
             if (!song) return error('not_found', 'No such public song.', 404);
 
+            // Members who left the leaderboards (switch off, or banned now) are not listed.
+            const hidden = await leaderboardHiddenUserIds();
             const rows = await prisma.songLeaderboard.findMany({
-              where: { songId, difficulty, modPool },
+              where: { songId, difficulty, modPool, ...userNotHiddenWhere(hidden) },
               orderBy: { score: 'desc' },
               take: limit,
               select: {

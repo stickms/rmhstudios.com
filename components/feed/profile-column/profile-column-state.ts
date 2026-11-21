@@ -8,6 +8,7 @@ import type {
   ProfileEditInitial,
   SavedProfileData,
 } from '../profile-edit/profile-edit-state';
+import { currentDocumentLocale, formatDate } from '@/lib/core/format';
 
 /**
  * Pure state helpers for the profile column: tab ids, which tabs a viewer may
@@ -539,14 +540,11 @@ export function groupPostsByPeriod(
         'month';
       key = `m-${at.getFullYear()}-${at.getMonth()}`;
       text =
-        at.toLocaleDateString(
-          'en-US',
-          {
+        formatDate(at, currentDocumentLocale(), {
             month:
               'long',
             year: 'numeric',
-          },
-        );
+          });
     }
     const last =
       out[

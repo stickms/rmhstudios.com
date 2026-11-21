@@ -6,6 +6,7 @@ import { createCombatControls } from '@features/hearthworks/engine/combat-input'
 import { runtime } from '@features/hearthworks/engine/runtime-instance';
 import { hearthworksStore, useHearthworks } from '@features/hearthworks/engine/store';
 import { HEAT_MAX, HUSTLE_MARKUP, MAX_HP, WANTED_HEAT } from '@features/hearthworks/engine/world';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * Heat cooling and health regrowing happen on ticks that announce nothing, so the store never signals them; re-read
@@ -114,7 +115,7 @@ export function Vitals() {
 }
 
 /** The back-alley and the armoury: street deals for a markup (and heat), and guns with their prices and stats. */
-export function Armory() {
+export function Armory() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-hearthworks');
   useVitalsRefresh();
   const me = useHearthworks((s) => s.world.players[s.playerId]);
@@ -177,7 +178,7 @@ export function Armory() {
                   onClick={() => dispatch({ type: 'hustle', item: id, qty: n ?? 0 })}
                 >
                   {t('hustle', { defaultValue: 'Hustle' })} ·{' '}
-                  {Math.floor(ITEMS[id].price * (n ?? 0) * HUSTLE_MARKUP).toLocaleString()}
+                  {fmt.number(Math.floor(ITEMS[id].price * (n ?? 0) * HUSTLE_MARKUP))}
                 </button>
               </li>
             ) : null,
@@ -227,7 +228,7 @@ export function Armory() {
                   {gun
                     ? t('gun-ammo', { defaultValue: 'Buy magazine' })
                     : t('gun-buy', { defaultValue: 'Buy' })}{' '}
-                  · {price.toLocaleString()}
+                  · {fmt.number(price)}
                 </button>
                 {gun && (
                   <button

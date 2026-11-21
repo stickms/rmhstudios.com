@@ -90,6 +90,10 @@ const PAGE_PARAMS: ApiParam[] =
 const QUIET_COUNTS_NOTE =
   '`metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.';
 
+/** Appended to the endpoints that return a post by id or the caller's own posts (sprint 05 #19). */
+const PIN_NOTE =
+  '`pinnedOrder` is the post’s place among its author’s pinned profile posts (1 is the top, at most 3), or `null` when it is not pinned.';
+
 const POST_OBJECT =
   {
     id: 'ck_post123',
@@ -294,14 +298,18 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'List your posts',
       description:
-        'Your recent posts, newest first.',
+        'Your recent posts, newest first. '+
+        PIN_NOTE,
       paginated: true,
       params:
         PAGE_PARAMS,
       responseExample:
         {
           data: [
-            POST_OBJECT,
+            {
+              ...POST_OBJECT,
+              pinnedOrder: null,
+            },
           ],
           nextCursor:
             '2026-06-20T10:00:00.000Z',
@@ -379,7 +387,9 @@ export const ENDPOINTS: ApiEndpoint[] =
         'Get a post',
       description:
         'Fetch a single post by id. Returns public posts and your own posts; otherwise 404. '+
-        QUIET_COUNTS_NOTE,
+        QUIET_COUNTS_NOTE+
+        ' '+
+        PIN_NOTE,
       params:
         [
           {
@@ -394,6 +404,7 @@ export const ENDPOINTS: ApiEndpoint[] =
       responseExample:
         {
           ...POST_OBJECT,
+          pinnedOrder: null,
           author:
             AUTHOR_OBJECT,
         },

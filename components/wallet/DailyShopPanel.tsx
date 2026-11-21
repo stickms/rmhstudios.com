@@ -56,6 +56,7 @@ import {
   newIdempotencyKey,
 } from './api';
 import { ShopWishButton } from './ShopWishButton';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const DAILY_KEY =
   [
@@ -72,7 +73,7 @@ export default function DailyShopPanel({
   signedIn,
 }: {
   signedIn: boolean;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -528,10 +529,10 @@ export default function DailyShopPanel({
                     ' · '
                   }
                   <s>
-                    {listPrice.toLocaleString()}
+                    {fmt.number(listPrice)}
                   </s>{' '}
                   <span className="font-medium text-site-text">
-                    {discounted.toLocaleString()}
+                    {fmt.number(discounted)}
                   </span>
                 </>
               ) : null}
@@ -559,7 +560,7 @@ export default function DailyShopPanel({
                       defaultValue:
                         'Buy bundle for {{price}} coins',
                       price:
-                        discounted.toLocaleString(),
+                        fmt.number(discounted),
                     },
                   )
                 : t(

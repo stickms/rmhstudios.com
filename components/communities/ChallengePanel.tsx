@@ -23,22 +23,20 @@ import {
 } from '@/components/communities/plus-api';
 import type { ChallengeDTO } from '@/lib/communities/plus';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
 const fmt =
   (
     iso: string,
   ) =>
-    new Date(
+    formatDateTime(new Date(
       iso,
-    ).toLocaleString(
-      undefined,
-      {
+    ), currentDocumentLocale(), {
         dateStyle:
           'medium',
         timeStyle:
           'short',
-      },
-    );
+      });
 
 /** `<input type="datetime-local">` value for `hours` from now. */
 const localInput =

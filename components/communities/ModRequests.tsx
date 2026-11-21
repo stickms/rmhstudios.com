@@ -6,7 +6,6 @@ import {
   useState,
 } from 'react';
 import { flushSync } from 'react-dom';
-import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { UserPlus } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -21,12 +20,13 @@ import {
   plusFetch,
 } from '@/components/communities/plus-api';
 import type { JoinRequestDTO } from '@/lib/communities/join-requests.server';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function ModRequests({
   slug,
 }: {
   slug: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -245,14 +245,9 @@ export function ModRequests({
                     }
                   </p>
                   <p className="text-xs text-site-text-muted">
-                    {formatDistanceToNow(
-                      new Date(
+                    {fmt.relative(new Date(
                         r.createdAt,
-                      ),
-                      {
-                        addSuffix: true,
-                      },
-                    )}
+                      ))}
                   </p>
                 </div>
                 <div className="ml-auto flex gap-2">

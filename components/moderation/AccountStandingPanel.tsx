@@ -12,7 +12,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { formatDistanceToNow } from 'date-fns';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -32,6 +31,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { RestrictionList } from '@/components/moderation/moderation-ui';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type AppealStatus =
   | 'NONE'
@@ -115,7 +115,7 @@ function entityHref(
   return null;
 }
 
-export function AccountStandingPanel() {
+export function AccountStandingPanel() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -465,14 +465,9 @@ export function AccountStandingPanel() {
                   {
                     defaultValue:
                       'Ends {{when}}',
-                    when: formatDistanceToNow(
-                      new Date(
+                    when: fmt.relative(new Date(
                         standing.bannedUntil,
-                      ),
-                      {
-                        addSuffix: true,
-                      },
-                    ),
+                      )),
                   },
                 )}
               </p>
@@ -624,14 +619,9 @@ export function AccountStandingPanel() {
                         </Badge>
                       )}
                       <span className="text-xs text-site-text-muted">
-                        {formatDistanceToNow(
-                          new Date(
+                        {fmt.relative(new Date(
                             s.createdAt,
-                          ),
-                          {
-                            addSuffix: true,
-                          },
-                        )}
+                          ))}
                       </span>
                       {href && (
                         <Link
@@ -679,14 +669,9 @@ export function AccountStandingPanel() {
                               {
                                 defaultValue:
                                   'Expires {{when}}',
-                                when: formatDistanceToNow(
-                                  new Date(
+                                when: fmt.relative(new Date(
                                     s.expiresAt,
-                                  ),
-                                  {
-                                    addSuffix: true,
-                                  },
-                                ),
+                                  )),
                               },
                             )
                           : t(
@@ -694,14 +679,9 @@ export function AccountStandingPanel() {
                               {
                                 defaultValue:
                                   'Expired {{when}}',
-                                when: formatDistanceToNow(
-                                  new Date(
+                                when: fmt.relative(new Date(
                                     s.expiresAt,
-                                  ),
-                                  {
-                                    addSuffix: true,
-                                  },
-                                ),
+                                  )),
                               },
                             )}
                       </p>

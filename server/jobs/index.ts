@@ -32,8 +32,10 @@ import { registerArcadeCrons } from '@/lib/arcade/jobs.server';
 import { GAME_UPDATE_FANOUT_QUEUE, registerGameUpdateFanoutWorker } from '@/lib/arcade/updates-jobs.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
 import { registerCommunityCrons } from '@/lib/communities/jobs.server';
+import { POST_ALERT_QUEUE, registerCommunityPostAlertWorker } from '@/lib/communities/post-alerts.server';
 import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
 import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
+import { STUDY_REMINDER_QUEUE, registerStudyReminderCron } from '@/lib/study/reminders.server';
 import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@features/slice-it/engine/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@features/slice-it/engine/regen.server';
@@ -219,6 +221,15 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // s04-08 poll-lifecycle
   // s04-08: every minute, tell the author and the voters of each poll that has just ended (once).
   { queue: POLL_ENDED_QUEUE, register: registerPollEndedCron },
+
+  // Sprint 05 (docs/autonomous/sprint-05/plan.md §Anchors)
+  // s05-17 community-post-alerts
+  // s05-17: a work queue (not a cron) fed by a community post becoming visible; tells members who turned alerts on.
+  { queue: POST_ALERT_QUEUE, register: registerCommunityPostAlertWorker },
+
+  // s05-20 flashcard-reminders
+  // s05-20: every minute, send the daily "flashcards are due" reminder to members whose chosen local time has come (once a day).
+  { queue: STUDY_REMINDER_QUEUE, register: registerStudyReminderCron },
 
 ];
 

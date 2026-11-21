@@ -44,6 +44,7 @@ import {
   RarityMark,
   rarityLabel,
 } from './RarityMark';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * The Shop tab of /store: the cosmetics catalog as a grid of product tiles.
@@ -68,7 +69,7 @@ export function ShopPanel({
   };
   /** The category to open on (`/store?kind=`), e.g. Settings' link to the site themes. */
   initialKind?: ShopItemKind;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -722,7 +723,7 @@ export function ShopPanel({
                       count:
                         short,
                       formatted:
-                        short.toLocaleString(),
+                        fmt.number(short),
                       defaultValue_one:
                         'You need {{formatted}} more coin.',
                       defaultValue:
@@ -830,7 +831,7 @@ export function ShopPanel({
                   'shop-buy-for',
                   {
                     price:
-                      open.price.toLocaleString(),
+                      fmt.number(open.price),
                     defaultValue:
                       'Buy for {{price}} coins',
                   },

@@ -19,7 +19,7 @@ import type {
 } from '@/lib/events.server';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { createEventApi } from '@/lib/events.contract';
+import { createEventApi, updateEventApi } from '@/lib/events.contract';
 import {
   NO_RECURRENCE,
   RecurrenceFields,
@@ -39,6 +39,23 @@ interface EventComposerProps {
   onCreated?: (
     event: EventDTO,
   ) => void;
+  /**
+   * Edit mode (the host, or an accepted co-host): the composer opens on this event, saves it with a PATCH and
+   * answers `onUpdated`. Mount it only while editing, so its fields start from the event as it is then.
+   * The repeat rule is not editable here, and a repeating event's time is not either (it is the series').
+   */
+  event?: EventDTO | null;
+  onUpdated?: (
+    event: EventDTO,
+  ) => void;
+}
+
+/** An ISO instant as the wall-clock string a `datetime-local` field takes. */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 const VENUE_KINDS: {
@@ -116,6 +133,8 @@ export function EventComposer({
   onOpenChange,
   communityId,
   onCreated,
+  event,
+  onUpdated,
 }: EventComposerProps) {
   const {
     t,
@@ -123,54 +142,57 @@ export function EventComposer({
     useTranslation(
       'site',
     );
+  const { t: te } = useTranslation('event-cohosts');
+  const editing = !!event;
+  const seriesTime = !!event?.recurrence;
   const [
     title,
     setTitle,
   ] =
     useState(
-      '',
+      event?.title ?? '',
     );
   const [
     description,
     setDescription,
   ] =
     useState(
-      '',
+      event?.description ?? '',
     );
   const [
     startsAt,
     setStartsAt,
   ] =
     useState(
-      '',
+      toLocalInput(event?.startsAt ?? null),
     );
   const [
     endsAt,
     setEndsAt,
   ] =
     useState(
-      '',
+      toLocalInput(event?.endsAt ?? null),
     );
   const [
     venueKind,
     setVenueKind,
   ] =
     useState<EventVenueKindValue>(
-      'IRL',
+      event?.venueKind ?? 'IRL',
     );
   const [
     venueRef,
     setVenueRef,
   ] =
     useState(
-      '',
+      event?.venueRef ?? '',
     );
   const [
     capacity,
     setCapacity,
   ] =
     useState(
-      '',
+      event?.capacity != null ? String(event.capacity) : '',
     );
   const [
     recurrence,
@@ -257,6 +279,24 @@ export function EventComposer({
         true,
       );
       try {
+        if (event) {
+          const saved = await api(updateEventApi, {
+            params: { id: event.id },
+            body: {
+              title: title.trim(),
+              description: description.trim(),
+              // A repeating event's time is the series', which this form does not move.
+              ...(seriesTime ? {} : { startsAt: startIso, endsAt: endIso ?? null }),
+              venueKind,
+              venueRef: venueRef.trim() || null,
+              capacity: capacity ? Number(capacity) : null,
+            },
+          });
+          toast.success(te('event-saved', { defaultValue: 'Event saved.' }));
+          onUpdated?.(saved.event);
+          onOpenChange(false);
+          return;
+        }
         const data =
           await api(
             createEventApi,
@@ -312,13 +352,15 @@ export function EventComposer({
           serverError(
             e,
           ) ||
-            t(
+            (editing
+              ? te('event-save-error', { defaultValue: 'Could not save the event.' })
+              : t(
               'event-create-error',
               {
                 defaultValue:
                   'Could not create event',
               },
-            ),
+            )),
         );
       } finally {
         setSubmitting(
@@ -342,7 +384,9 @@ export function EventComposer({
       >
         <DialogHeader>
           <DialogTitle>
-            {t(
+            {editing
+              ? te('edit-event-title', { defaultValue: 'Edit event' })
+              : t(
               'create-event-title',
               {
                 defaultValue:
@@ -351,7 +395,9 @@ export function EventComposer({
             )}
           </DialogTitle>
           <DialogDescription>
-            {t(
+            {editing
+              ? te('edit-event-desc', { defaultValue: 'Change the details. Guests see them straight away.' })
+              : t(
               'create-event-desc',
               {
                 defaultValue:
@@ -428,6 +474,7 @@ export function EventComposer({
             }
           />
 
+          {!seriesTime && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
               {t(
@@ -482,6 +529,7 @@ export function EventComposer({
               />
             </label>
           </div>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
@@ -604,14 +652,16 @@ export function EventComposer({
             />
           </label>
 
-          <RecurrenceFields
-            value={
-              recurrence
-            }
-            onChange={
-              setRecurrence
-            }
-          />
+          {!editing && (
+            <RecurrenceFields
+              value={
+                recurrence
+              }
+              onChange={
+                setRecurrence
+              }
+            />
+          )}
         </div>
 
         <DialogFooter>
@@ -646,7 +696,9 @@ export function EventComposer({
               submitting
             }
           >
-            {t(
+            {editing
+              ? te('save-event', { defaultValue: 'Save' })
+              : t(
               'create-button',
               {
                 defaultValue:

@@ -15,16 +15,24 @@ import { serverError } from '@/lib/http';
 import { enterJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
 import { jamQuery } from '@/lib/competitive/jams.queries';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
+import type { TeamPersonDTO, ViewerTeamState } from '@/lib/competitive/jam-teams';
+import { EntryCredit, JamTeamPanel } from './JamTeamPanel';
 import { PhaseBadge } from './JamsList';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Scores = Record<JamCategory, number>;
 interface Entry {
   id: string;
   own: boolean;
   build: { slug: string; title: string; description: string; thumbnailUrl: string | null };
-  user: { name?: string | null };
+  user: TeamPersonDTO;
+  /** Accepted teammates, credited beside the submitter. */
+  team: TeamPersonDTO[];
+  viewerTeamState: ViewerTeamState;
+  /** The server's answer to whether the viewer may rate this entry. */
+  rateable: boolean;
   averages: Scores | null;
   ratingCount: number;
   score: number;
@@ -40,6 +48,8 @@ interface Jam {
   phase: 'upcoming' | 'open' | 'rating' | 'done';
   entries: Entry[];
   myEntryId: string | null;
+  /** The entry the viewer is credited on as a teammate; they cannot submit their own. */
+  teamEntryId: string | null;
   myRatings: Record<string, Scores>;
   myBuilds: { id: string; title: string }[];
   results: boolean;
@@ -108,7 +118,7 @@ function RateForm({
   );
 }
 
-export function JamDetail({ slug }: { slug: string }) {
+export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-competitive');
   const { data: session } = useSession();
   const signedIn = !!session?.user?.id;
@@ -147,7 +157,7 @@ export function JamDetail({ slug }: { slug: string }) {
     }
   };
 
-  const canRate = jam.phase === 'open' || jam.phase === 'rating';
+  const viewerId = session?.user?.id ?? '';
   return (
     <div className={cn('space-y-4 max-w-3xl', arrival)}>
       <Card className="gap-3 px-4 py-4" pane>
@@ -162,16 +172,16 @@ export function JamDetail({ slug }: { slug: string }) {
           </strong>
         </p>
         <p className="text-xs text-site-text-muted">
-          {new Date(jam.startsAt).toLocaleString()} → {new Date(jam.submitEndsAt).toLocaleString()}{' '}
+          {fmt.dateTime(new Date(jam.startsAt))} → {fmt.dateTime(new Date(jam.submitEndsAt))}{' '}
           ·{' '}
           {t('jam-rating-until', {
             defaultValue: 'rating until {{when}}',
-            when: new Date(jam.ratingEndsAt).toLocaleString(),
+            when: fmt.dateTime(new Date(jam.ratingEndsAt)),
           })}
         </p>
       </Card>
 
-      {jam.phase === 'open' && signedIn && (
+      {jam.phase === 'open' && signedIn && !jam.teamEntryId && (
         <Card className="gap-3 px-4 py-4" pane>
           <h2 className="site-section-label">
             {t('jam-submit', { defaultValue: 'Submit a build' })}
@@ -236,7 +246,7 @@ export function JamDetail({ slug }: { slug: string }) {
                 {jam.results && <span className="font-medium">{e.score.toFixed(2)}</span>}
               </div>
               <p className="text-xs text-site-text-muted">
-                {e.user.name}
+                <EntryCredit owner={e.user} team={e.team} />
                 {jam.results &&
                   ` · ${t('jam-ratings', { defaultValue: '{{n}} ratings', n: e.ratingCount })}`}
               </p>
@@ -245,8 +255,18 @@ export function JamDetail({ slug }: { slug: string }) {
                   {JAM_CATEGORIES.map((c) => `${c} ${e.averages![c].toFixed(1)}`).join(' · ')}
                 </p>
               )}
-              {canRate && signedIn && !e.own && (
+              {e.rateable && (
                 <RateForm slug={slug} entry={e} initial={jam.myRatings[e.id]} onSaved={load} />
+              )}
+              {signedIn && (
+                <JamTeamPanel
+                  slug={slug}
+                  entryId={e.id}
+                  state={e.viewerTeamState}
+                  open={jam.phase === 'open'}
+                  viewerId={viewerId}
+                  onChanged={() => void load()}
+                />
               )}
             </Card>
           ))}

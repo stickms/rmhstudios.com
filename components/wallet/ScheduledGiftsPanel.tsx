@@ -29,6 +29,7 @@ import GiftingLinks from '@/components/gifting/GiftingLinks';
 import BirthdayGiftButton from '@/components/gifting/BirthdayGiftButton';
 import { ApiError, apiJson, errorCode, newIdempotencyKey } from './api';
 import { ItemPicker, type PickedItem } from './ItemPicker';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const KEY = ['economy-plus', 'scheduled-gifts'] as const;
 
@@ -185,7 +186,7 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
   );
 }
 
-function SentRow({ gift }: { gift: SentGiftView }) {
+function SentRow({ gift }: { gift: SentGiftView }) { const fmt = useLocaleFormat(); 
   const { t, i18n } = useTranslation('f-economy-plus');
   const qc = useQueryClient();
   const when = new Intl.DateTimeFormat(i18n.language, {
@@ -230,7 +231,7 @@ function SentRow({ gift }: { gift: SentGiftView }) {
           {gift.itemName} → {partyName(gift.recipient)}
         </p>
         <p className="flex items-center gap-1 text-xs text-site-text-muted">
-          <CoinIcon className="size-3.5" /> {gift.price.toLocaleString()} · {when}
+          <CoinIcon className="size-3.5" /> {fmt.number(gift.price)} · {when}
         </p>
       </div>
       {badge}
@@ -248,7 +249,7 @@ function SentRow({ gift }: { gift: SentGiftView }) {
   );
 }
 
-function SendGiftForm() {
+function SendGiftForm() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-economy-plus');
   const qc = useQueryClient();
   const [item, setItem] = useState<PickedItem | null>(null);
@@ -371,7 +372,7 @@ function SendGiftForm() {
             {item
               ? t('send-submit-price', {
                   defaultValue: 'Send for {{price}} coins',
-                  price: item.price.toLocaleString(),
+                  price: fmt.number(item.price),
                 })
               : t('send-submit', { defaultValue: 'Send gift' })}
           </Button>

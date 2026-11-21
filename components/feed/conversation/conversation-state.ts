@@ -6,6 +6,7 @@
 import type { ReactionRow } from '@/lib/social/reactions';
 import type { PollView } from '@/lib/chat-plus/types';
 import type { SentVoiceMessage } from '@/lib/messages/voice.contract';
+import { currentDocumentLocale, formatDate, formatTime as formatTimeLocale } from '@/lib/core/format';
 
 export interface Message {
   id: string;
@@ -573,19 +574,17 @@ export function shouldShowDateSeparator(
 
 export function formatTime(
   dateStr: string,
+  locale: string = currentDocumentLocale(),
 ): string {
   const d =
     new Date(
       dateStr,
     );
-  return d.toLocaleTimeString(
-    'en-US',
-    {
+  return formatTimeLocale(d, locale, {
       hour: 'numeric',
       minute:
         '2-digit',
-    },
-  );
+    });
 }
 
 /** Which label a day divider carries: relative to now, or a calendar date. */
@@ -632,14 +631,11 @@ export function dateSeparatorKind(
     };
   return {
     kind: 'date',
-    text: d.toLocaleDateString(
-      'en-US',
-      {
+    text: formatDate(d, currentDocumentLocale(), {
         month:
           'short',
         day: 'numeric',
         year: 'numeric',
-      },
-    ),
+      }),
   };
 }

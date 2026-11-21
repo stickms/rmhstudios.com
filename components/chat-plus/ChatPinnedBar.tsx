@@ -17,6 +17,7 @@ import { setChatPinApi } from '@/lib/chat-plus/chat.contract';
 import { chatMetaKey, useChatMeta } from './hooks';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * M6 — the pinned-messages bar under the chat header. Shows the most recent pin
@@ -87,7 +88,7 @@ function PinsSheet({
   pins: PinView[];
   nameOf: (userId: string, fallback: string | null) => string;
   onClose: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-messaging');
   const qc = useQueryClient();
 
@@ -123,7 +124,7 @@ function PinsSheet({
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-site-text-muted">
                     {nameOf(p.senderId, p.senderName)} ·{' '}
-                    {new Date(p.createdAt).toLocaleDateString()}
+                    {fmt.date(new Date(p.createdAt))}
                   </p>
                   <p className="mt-0.5 flex items-center gap-1.5 break-words text-sm text-site-text">
                     {p.hasMedia && (

@@ -100,7 +100,7 @@ enum TournamentFormat {
   SINGLE_ELIM
   ROUND_ROBIN
   SWISS
-  DOUBLE_ELIM // reserved — not yet implemented by the bracket engine
+  DOUBLE_ELIM // winners + losers bracket and a grand final (bracket reset created lazily)
 }
 
 enum TournamentStatus {
@@ -138,6 +138,7 @@ model Tournament {
   startsAt       DateTime?
   checkInMinutes Int? // null = no check-in; else 10, 15, 30 or 60 minutes before startsAt
   checkInNoticeAt DateTime? // when entrants were told check-in opened (claimed once by the cron)
+  seeding        String           @default("join") @db.VarChar(8) // join | rating | random | manual; applied at start
   startedAt      DateTime?
   completedAt    DateTime?
   createdAt      DateTime         @default(now())
@@ -166,6 +167,7 @@ model TournamentEntrant {
   eliminatedAt DateTime?
   joinedAt     DateTime  @default(now())
   checkedInAt  DateTime? // set when the entrant (or the host) checks them in
+  manualSeed   Int? // the host's order before start (1 = first); used when Tournament.seeding is manual
 
   tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -192,6 +194,12 @@ model TournamentMatch {
   // Prisma self-relation, to keep the bracket-linking simple.
   nextMatchId     String?
   nextSlot        Int?
+  // Double elimination: the bracket this match belongs to (W winners, L losers,
+  // GF grand final, GR bracket reset; W for every other format) and where the
+  // LOSER drops to (winners-bracket matches only).
+  bracket          String               @default("W") @db.VarChar(2)
+  loserNextMatchId String?
+  loserNextSlot    Int?
   gameSessionRef  String?              @db.VarChar(96)
   resultSource    String?              @db.VarChar(24)
   scheduledAt     DateTime?
@@ -371,11 +379,30 @@ model GameJamEntry {
   user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   build   UserBuild       @relation(fields: [buildId], references: [id], onDelete: Cascade)
   ratings GameJamRating[]
+  team    GameJamTeamMember[]
 
   @@unique([jamId, userId])
   @@unique([jamId, buildId])
   @@index([userId])
   @@map("game_jam_entry")
+}
+
+/// A teammate credited on a jam entry (s05-15). The submitter owns the entry and invites up to three;
+/// `jamId` is copied from the entry so "one entry per member per jam" is one indexed read.
+model GameJamTeamMember {
+  entryId     String
+  userId      String
+  jamId       String
+  status      String    @default("invited") @db.VarChar(9) // invited|accepted
+  invitedAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  entry GameJamEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, userId])
+  @@index([jamId, userId])
+  @@map("game_jam_team_member")
 }
 
 /// One member's 1-5 scores for one entry in four categories.

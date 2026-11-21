@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { fetchJson } from '@/lib/http';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Era {
   id: string;
@@ -19,7 +20,7 @@ interface Era {
 }
 
 /** Z3 — /museum: the site's eras, newest first. */
-export function MuseumPage() {
+export function MuseumPage() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -112,18 +113,15 @@ export function MuseumPage() {
                       e.eraDate
                     }
                   >
-                    {new Date(
+                    {fmt.date(new Date(
                       `${e.eraDate}T00:00:00Z`,
-                    ).toLocaleDateString(
-                      undefined,
-                      {
+                    ), {
                         year: 'numeric',
                         month:
                           'long',
                         timeZone:
                           'UTC',
-                      },
-                    )}
+                      })}
                   </time>
                   <h2 className="text-lg font-semibold text-site-text">
                     {

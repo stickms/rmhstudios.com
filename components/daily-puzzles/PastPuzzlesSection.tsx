@@ -27,6 +27,7 @@ import {
 } from '@/lib/daily-puzzles/persistence';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface PastPuzzlesSectionProps {
   gameMode: string;
@@ -45,7 +46,7 @@ export function PastPuzzlesSection({
   selectedDateKey,
   onSelectDate,
   renderScore,
-}: PastPuzzlesSectionProps) {
+}: PastPuzzlesSectionProps) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -139,13 +140,10 @@ export function PastPuzzlesSection({
             d,
           );
         const weekday =
-          d.toLocaleDateString(
-            'en-US',
-            {
+          fmt.date(d, {
               weekday:
                 'short',
-            },
-          );
+            });
         entries.push(
           {
             dateKey:
@@ -155,7 +153,7 @@ export function PastPuzzlesSection({
         );
       }
       return entries;
-    }, []);
+    }, [fmt]);
 
   return (
     <div className="mt-6 flex flex-col gap-3">

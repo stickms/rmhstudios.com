@@ -17,7 +17,6 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -27,6 +26,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface PasskeyRow {
   id: string;
@@ -41,7 +41,7 @@ interface PasskeyRow {
     | null;
 }
 
-export function PasskeyManager() {
+export function PasskeyManager() { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -455,14 +455,9 @@ export function PasskeyManager() {
                           {
                             defaultValue:
                               'Added {{when}}',
-                            when: formatDistanceToNow(
-                              new Date(
+                            when: fmt.relative(new Date(
                                 pk.createdAt,
-                              ),
-                              {
-                                addSuffix: true,
-                              },
-                            ),
+                              )),
                           },
                         )
                       : null}
