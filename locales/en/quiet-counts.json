@@ -1,0 +1,8 @@
+{
+  "hide-in-feed-hint": "Leave out the numbers beside the like, repost, reply and view buttons on every post, including yours.",
+  "hide-in-feed-title": "Hide counts while browsing",
+  "hide-on-mine-hint": "Other people see your posts without like, repost, reply or view numbers. You still see them, and your insights.",
+  "hide-on-mine-title": "Hide counts on my posts",
+  "load-failed": "Could not load this setting. Reload the page to try again.",
+  "save-failed": "Could not save that setting"
+}

@@ -1,0 +1,18 @@
+{
+  "cancel": "Cancel",
+  "cancelled": "The pending change is cancelled.",
+  "deferred": "Saved. Because this gives you more room, it takes effect {{when}}.",
+  "hint": "Shop, unlocks, tips, gifts, memberships and market buys, per calendar month (UTC). Leave blank for no budget. Allowed: {{min}} to {{max}} coins.",
+  "label": "Monthly spending budget",
+  "left-this-month": "{{left}} of {{cap}} left this month",
+  "meter-label": "Monthly spending budget",
+  "off": "Off",
+  "overBudget": "This would go over your monthly budget ({{remaining}} coins left)",
+  "pending-raise": "Rises to {{cap}} on {{when}}.",
+  "pending-remove": "Your budget is removed on {{when}}.",
+  "save": "Save budget",
+  "save-error": "Could not save that. Try again.",
+  "saved": "Saved.",
+  "spent-of-cap": "{{spent}} of {{cap}} coins spent in {{month}}",
+  "will-defer": "This gives you more room, so it takes effect in 24 hours."
+}

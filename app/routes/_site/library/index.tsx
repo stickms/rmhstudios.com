@@ -29,6 +29,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from '@/lib/toast';
 import { type TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { SearchField } from '@/components/ui/search-field';
@@ -45,6 +46,7 @@ import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
 import { BookLeaves } from '@/components/library/BookLeaves';
 import { LibraryReadingMount } from '@/components/reading/LibraryReadingMount';
+import { ContinueReading } from '@/components/library/ContinueReading';
 import { MyReadingView } from '@/components/reading/MyReadingView';
 import { parseReadingTab, type ReadingTab } from '@/lib/reading/tabs';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
@@ -435,10 +437,9 @@ function Library() {
         defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
       });
       const reasons =
-        Array.isArray(summary.errors) && summary.errors.length
-          ? `\n\n${summary.errors.join('\n')}`
-          : '';
-      window.alert(base + reasons);
+        Array.isArray(summary.errors) && summary.errors.length ? summary.errors.join('; ') : null;
+      if (reasons) toast.error(base, { description: reasons });
+      else toast.success(base);
       void refresh();
     }
   }
@@ -538,6 +539,8 @@ function Library() {
               )
             }
           />
+
+          {shows('books') ? <ContinueReading /> : null}
 
           {shows('books') ? <LibraryReadingMount /> : null}
 

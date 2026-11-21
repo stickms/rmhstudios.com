@@ -19,6 +19,8 @@ import type { PatchNoteItem } from '@/lib/arcade/updates';
 import type { FollowState } from '@/lib/arcade/updates.contract';
 import { getTrickOfTheWeek } from '@/lib/trick-week/trick-week.server';
 import type { TrickView } from '@/lib/trick-week/trick-week';
+import { boardForGame } from '@/lib/replays.server';
+import type { BoardReplay } from '@/lib/game/replay-library';
 
 interface HubPayload {
   gameId: string;
@@ -48,6 +50,8 @@ interface HubPayload {
   alsoPlayed: AlsoPlayed[];
   /** The latest three patch notes and the viewer's follow state; null for an app or an off-site title. */
   updates: { notes: PatchNoteItem[]; follow: FollowState } | null;
+  /** The game's top public replays; null when the title records no replays (no Replays section). */
+  replays: BoardReplay[] | null;
 }
 
 const NO_RATINGS: RatingAgg = { average: 0, count: 0 };
@@ -65,7 +69,7 @@ const fetchHub = createServerFn({ method: 'GET' })
     const session = await getRequestSession();
     const viewerId = session?.user.id ?? null;
     const hasUpdates = kind === 'game' && !!updatesGame(gameId);
-    const [reviews, agg, guides, trickOfTheWeek, extras, alsoPlayed, updates] = await Promise.all([
+    const [reviews, agg, guides, trickOfTheWeek, extras, alsoPlayed, updates, replays] = await Promise.all([
       kind === 'game' ? listReviews(gameId, viewerId) : [],
       kind === 'game' ? getRatingAgg(gameId) : NO_RATINGS,
       kind === 'game' ? listGuides(gameId, viewerId) : [],
@@ -78,6 +82,7 @@ const fetchHub = createServerFn({ method: 'GET' })
             follow,
           }))
         : null,
+      kind === 'game' ? boardForGame(gameId, viewerId) : null,
     ]);
     return {
       gameId,
@@ -100,6 +105,7 @@ const fetchHub = createServerFn({ method: 'GET' })
       extras,
       alsoPlayed,
       updates,
+      replays,
     };
   });
 

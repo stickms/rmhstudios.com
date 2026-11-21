@@ -55,6 +55,7 @@ export default {
       'app/**/*.{ts,tsx}',
       'components/**/*.{ts,tsx}',
       'features/medschools/**/*.{ts,tsx}',
+      'features/casino/**/*.{ts,tsx}',
     ],
   output:
     'locales/$LOCALE/$NAMESPACE.json',

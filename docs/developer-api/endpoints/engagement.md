@@ -20,7 +20,7 @@
 
 ### `POST /api/v1/posts/{id}/like`
 
-Like a post. Idempotent — liking an already-liked post is a no-op.
+Like a post. Idempotent — liking an already-liked post is a no-op. `likeCount` is `null` when the post’s author hides the counts on their posts.
 
 **Scope:** `write:likes` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `likePost`
 

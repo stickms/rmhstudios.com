@@ -642,6 +642,10 @@ model FeatureFlag {
   rolloutPercent Int      @default(100)
   description    String   @default("") @db.VarChar(280)
   updatedBy      String?
+  /// Member ids the flag is always on for while enabled (s04-20). At most 200; never sent to a client.
+  allowUserIds   String[] @default([])
+  /// Member ids the flag is always off for (beats the allow list). At most 200; never sent to a client.
+  denyUserIds    String[] @default([])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

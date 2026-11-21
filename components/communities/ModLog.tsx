@@ -232,6 +232,27 @@ export function actionSentence(
                 '{{actor}} removed {{target}} as a moderator',
             },
           );
+    case 'ownership_transferred':
+      return e
+        .detail
+        ?.via ===
+        'admin'
+        ? t(
+            'ownership-assigned',
+            {
+              target,
+              defaultValue:
+                'A site admin gave ownership to {{target}}',
+            },
+          )
+        : t(
+            'ownership-passed',
+            {
+              target,
+              defaultValue:
+                'Ownership passed to {{target}}',
+            },
+          );
     case 'join_request_approved':
       return t(
         'request-approved',
@@ -819,6 +840,8 @@ export function ModLog({
                       'member_removed' ||
                       e.action ===
                         'member_role_changed' ||
+                      e.action ===
+                        'ownership_transferred' ||
                       e.action ===
                         'join_request_approved' ||
                       e.action ===

@@ -2,6 +2,7 @@
 export function formatCount(
   n:
     | number
+    | null
     | undefined,
 ): string {
   if (

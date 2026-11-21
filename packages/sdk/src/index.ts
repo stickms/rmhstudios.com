@@ -263,7 +263,7 @@ export interface GetBuildArgs {
   slug: string;
 }
 
-export type GetBuildResponse = { slug: string; title: string; description: string; readme: string; repoUrl: unknown; demoUrl: unknown; author: { id: string; name: string; handle: string; image: string }; technologies: string[]; metrics: { likes: number; comments: number; views: number } };
+export type GetBuildResponse = { slug: string; title: string; description: string; readme: string; repoUrl: unknown; demoUrl: unknown; author: { id: string; name: string; handle: string; image: string }; technologies: string[]; metrics: { likes: number; comments: number; views: number }; versions: { version: string; changelog: string; createdAt: string }[]; releases: { version: string; changelog: string; commitHash: string; createdAt: string }[] };
 
 export interface ListBlogArgs {
   /** Page size, 1–50 (default 20). */

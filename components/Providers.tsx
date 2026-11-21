@@ -60,6 +60,8 @@ import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
+import { PromptProvider } from '@/components/ui/prompt-dialog';
+import { CopyFallbackProvider } from '@/components/ui/copy-fallback';
 import type { Locale } from '@/lib/i18n/config';
 import type { LocaleBundle } from '@/lib/i18n/resources';
 import { recoverViewTransition } from '@/lib/view-transition';
@@ -586,6 +588,8 @@ export function Providers({
                     value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
                   >
                     <ConfirmProvider>
+                    <PromptProvider>
+                    <CopyFallbackProvider>
                       {children}
                       {/* Globally-mounted, non-critical chrome. Isolate it so a throw
                         in the command palette / recents tracker / theme-preview bar
@@ -605,6 +609,8 @@ export function Providers({
                           </Suspense>
                         ) : null}
                       </SilentErrorBoundary>
+                    </CopyFallbackProvider>
+                    </PromptProvider>
                     </ConfirmProvider>
                   </ResolvedUserCtx>
                   <ToastHost theme={style === 'graphite' ? 'dark' : 'light'} />

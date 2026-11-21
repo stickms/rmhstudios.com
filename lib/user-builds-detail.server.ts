@@ -22,13 +22,14 @@
  * round trip. See `BuildDetail.tsx`.
  */
 import { prisma } from '@/lib/prisma.server';
+import { RELEASES_PAGE } from '@/lib/builds/releases';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 const buildInclude = {
   user: { select: userDisplaySelect },
   category: { select: { id: true, name: true, slug: true, color: true, iconName: true } },
   tags: { select: { name: true } },
-  versions: { orderBy: { createdAt: 'desc' as const }, take: 10 },
+  versions: { orderBy: [{ createdAt: 'desc' as const }, { id: 'desc' as const }], take: RELEASES_PAGE },
 };
 
 /** Resolve a build by id, then by slug — the order the API route has always used. */

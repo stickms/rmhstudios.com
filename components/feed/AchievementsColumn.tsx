@@ -23,6 +23,7 @@ import { AchievementProgress } from '@/components/achievements/AchievementProgre
 import { ClosestStrip } from '@/components/achievements/ClosestStrip';
 import { TrackedStrip, type StripRow } from '@/components/achievements/TrackedStrip';
 import { TrackToggle } from '@/components/achievements/TrackToggle';
+import { CompareWithField } from '@/components/achievements/CompareWithField';
 import {
  TRACKED_ACHIEVEMENTS_KEY,
  setAchievementTracked,
@@ -214,6 +215,7 @@ export function AchievementsColumn({
  </>
  )}
 
+ {own && <CompareWithField />}
  {own && trackedQuery.isPending && <Skeleton className="mt-6 h-24 w-full" />}
  {own && trackedQuery.isError && (
  <p className="t-meta pt-6">

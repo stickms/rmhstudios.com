@@ -19,16 +19,17 @@ import { PageTabs } from '@/components/feed/PageTabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import {
   grantAdminMembershipApi,
-  setAdminUserCoinsApi,
   updateAdminUserApi,
 } from '@/lib/admin/admin-ops.contract';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { UserModerationPanel } from '@/components/admin/UserModerationPanel';
+import { CoinAdjustButton } from '@/components/admin/CoinAdjustDialog';
 
 type AccountFilter = 'all' | 'people' | 'bots';
 
@@ -66,6 +67,7 @@ export const Route = createFileRoute('/_site/admin/users')({
 function AdminUsersPage() {
   const { t } = useTranslation("admin");
   const confirm = useConfirm();
+  const prompt = usePrompt();
   const { data: session } = useSession();
   const navigate = useNavigate();
   const linked = Route.useSearch();
@@ -155,14 +157,14 @@ function AdminUsersPage() {
   };
 
   const grantMembership = async (userId: string) => {
-    const choice = prompt(t("prompt-grant-membership", { defaultValue: 'Grant membership — enter "starter" or "pro" (or "revoke" to remove):' }), 'pro');
+    const choice = await prompt({ title: t("prompt-grant-membership", { defaultValue: 'Grant membership — enter "starter" or "pro" (or "revoke" to remove):' }), initialValue: 'pro' });
     if (!choice) return;
     const action = choice.trim().toLowerCase();
     let body: { revoke: true } | { tier: 'starter' | 'pro'; months: number };
     if (action === 'revoke') {
       body = { revoke: true };
     } else if (action === 'starter' || action === 'pro') {
-      const monthsStr = prompt(t("prompt-how-many-months", { defaultValue: 'How many months?' }), '1');
+      const monthsStr = await prompt({ title: t("prompt-how-many-months", { defaultValue: 'How many months?' }), initialValue: '1' });
       const months = Math.max(1, Math.min(24, parseInt(monthsStr || '1', 10) || 1));
       body = { tier: action, months };
     } else {
@@ -178,29 +180,6 @@ function AdminUsersPage() {
       } catch (e) {
         // An HTTP refusal reports the server's message; anything else is "can't connect".
         if (e instanceof HttpError) toast.error(t("alert-membership-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
-        else throw e;
-      }
-    } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
-  };
-
-  const setCoins = async (user: User) => {
-    const current = user.profile?.coins ?? 0;
-    const input = prompt(t("prompt-set-coins", { defaultValue: "Set RMH coin balance for this user:" }), String(current));
-    if (input === null) return;
-    const coins = parseInt(input.trim(), 10);
-    if (!Number.isFinite(coins) || coins < 0) {
-      toast.error(t("alert-invalid-coins", { defaultValue: "Enter a whole number of 0 or more." }));
-      return;
-    }
-    if (updating !== null) return;
-    setUpdating(user.id);
-    try {
-      try {
-        const data = await api(setAdminUserCoinsApi, { params: { id: user.id }, body: { coins } });
-        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, profile: { coins: data.coins } } : u));
-        toast.success(t("alert-coins-updated", { defaultValue: "Coin balance updated." }));
-      } catch (e) {
-        if (e instanceof HttpError) toast.error(t("alert-set-coins-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
         else throw e;
       }
     } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
@@ -377,7 +356,7 @@ function AdminUsersPage() {
                         aria-expanded={moderating === user.id}
                         label={t("title-moderation", { defaultValue: "Strikes and timeouts" })}
                       />
-                      <IconButton icon={Coins} size="icon-sm" variant="default" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
+                      <CoinAdjustButton userId={user.id} userName={user.name} balance={user.profile?.coins ?? 0} disabled={busy} onBalanceChange={(coins) => setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, profile: { coins } } : u)))} />
                       <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
                       <IconButton
                         icon={Shield}

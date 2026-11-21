@@ -20,6 +20,7 @@
 import {
   Bell,
   CloudUpload,
+  Clapperboard,
   Keyboard,
   KeyRound,
   LayoutDashboard,
@@ -196,6 +197,19 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       hint: 'Back up, restore or delete your game saves, and see earlier versions',
       keywords:
         'game save backup restore download snapshot history progress void breaker neon driftway balatro',
+      requiresAuth: true,
+    },
+    {
+      id: 'replays',
+      to: '/settings/replays',
+      group:
+        'account',
+      icon: Clapperboard,
+      label:
+        'Replays',
+      hint: 'Your saved game replays: make one public or unlisted, or delete it',
+      keywords:
+        'replay run recording ghost speedrun proof lights out slice it visibility public unlisted delete',
       requiresAuth: true,
     },
     {

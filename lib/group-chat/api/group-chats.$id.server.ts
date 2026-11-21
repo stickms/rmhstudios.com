@@ -46,6 +46,7 @@ export const route = apiRoute('/api/group-chats/$id', {
         id: group.id,
         name: group.name ?? '',
         isOwner: group.ownerId === userId,
+        ownerId: group.ownerId,
         members: group.members.map((m) => resolveUser(m.user)),
         messages: await serializeGroupMessages(group.messages, userId),
       },

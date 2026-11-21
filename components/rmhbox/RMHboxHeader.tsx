@@ -32,11 +32,13 @@ import {
   Infinity as InfinityIcon,
   Pause,
   Play,
+  UserRound,
 } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { useSession } from '@/components/Providers';
 import SettingsMenu from './SettingsMenu';
 import HostControlModal from './HostControlModal';
 
@@ -293,6 +295,9 @@ export default function RMHboxHeader({
       ) =>
         s.lobby,
     );
+  const { t: ts } = useTranslation('rmhbox-stats');
+  const { data: session } = useSession();
+  const myId = session?.user?.id ?? null;
   const navigate =
     useNavigate();
   const goBack =
@@ -532,6 +537,17 @@ export default function RMHboxHeader({
           </span>
         )}
         <>
+          {myId && (
+            <Link
+              to="/rmhbox/players/$userId"
+              params={{ userId: myId }}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-app-border bg-app-surface text-app-text-muted transition-colors hover:text-app-text"
+              aria-label={ts('my-stats', { defaultValue: 'My stats' })}
+              title={ts('my-stats', { defaultValue: 'My stats' })}
+            >
+              <UserRound className="h-5 w-5" aria-hidden />
+            </Link>
+          )}
           <HostControlModal />
           <SettingsMenu
             theme={

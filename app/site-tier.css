@@ -116,7 +116,9 @@
 @source not "../components/optimization";
 @source not "../components/rebar-rutabaga";
 @source not "../components/render";
-@source not "../components/replays";
+@source not "../components/replays/GameReplayPlayer.tsx";
+@source not "../components/replays/SaveReplayButton.tsx";
+@source not "../components/replays/ReplayBoard.tsx";
 @source not "../components/rmh-capital";
 @source not "../components/rmh-pmc";
 @source not "../components/rmh-research";

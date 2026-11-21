@@ -6,6 +6,7 @@
 
 import { getActiveBan } from '@/lib/admin-audit.server';
 import { getChatAccess, type ChatAccess } from '@/lib/chat-plus/access.server';
+import { requestWriteRefusal } from '@/lib/messages/requests.server';
 import { chatKindSchema } from '@/lib/chat-plus/types-schema';
 
 export async function requireChat(
@@ -19,6 +20,11 @@ export async function requireChat(
   if (!access) return Response.json({ error: 'Not found' }, { status: 404 });
   if (opts.write && (await getActiveBan(userId))) {
     return Response.json({ error: 'Your account is suspended' }, { status: 403 });
+  }
+  // A DM that is still a message request takes nothing but its one text message (s04-16).
+  if (opts.write && access.kind === 'dm' && access.otherId && !access.isSelf) {
+    const refusal = await requestWriteRefusal(userId, access.otherId, access.request);
+    if (refusal) return Response.json({ error: refusal }, { status: 403 });
   }
   return access;
 }

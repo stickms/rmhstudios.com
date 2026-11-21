@@ -4,14 +4,33 @@ import { implement } from '@/lib/api/implement.server';
 import { listConversationsApi, sendMessageApi } from '@/lib/messages/messages.contract';
 import { sendMessageSchema } from '@/lib/messages/messages-schema';
 import { prisma } from '@/lib/prisma.server';
-import { upsertDm } from '@/lib/chat/chat.server';
-import { guardImageAlts, isBlockedPair } from '@/lib/messages/send.server';
+import { findDmByPair, upsertDm } from '@/lib/chat/chat.server';
+import { guardImageAlts, isBlockedPair, sendRequestMessage } from '@/lib/messages/send.server';
+import { clearStaleDraft, openRequest, requestGate } from '@/lib/messages/requests.server';
+import { gateRefusalCopy } from '@/lib/messages/requests';
 import { normalizeImageAlts } from '@/lib/messages/image-alts';
 import { notifyUser } from '@/lib/message-events';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listConversations } from '@/lib/messages.server';
 import { adjustDmUnread } from '@/lib/chat-plus/unread.server';
 import { messageStamp } from '@/lib/chat-plus/post.server';
+
+/** A lost race on opening a request answers as the gate would have (s04-16). */
+function requestRefusal(reason: 'NONE' | 'FOLLOWERS' | 'pending' | 'cap'): Response {
+  if (reason === 'NONE') {
+    return Response.json({ error: 'This user is not accepting messages.' }, { status: 403 });
+  }
+  if (reason === 'FOLLOWERS') {
+    return Response.json(
+      { error: 'This user only accepts messages from people they follow.' },
+      { status: 403 },
+    );
+  }
+  return Response.json(
+    { error: gateRefusalCopy(reason) },
+    { status: reason === 'cap' ? 429 : 403 },
+  );
+}
 
 /** GET /api/messages — list conversations for current user */
 
@@ -58,13 +77,10 @@ export const route = apiRoute('/api/messages', {
       if (altFailure) return altFailure.response;
       const hasMedia = !!gifUrl || (imageUrls?.length ?? 0) > 0;
 
-      // Check recipient exists and DM privacy
+      // Check the recipient exists
       const recipient = await prisma.user.findUnique({
         where: { id: recipientId },
-        select: {
-          id: true,
-          profile: { select: { dmPrivacy: true } },
-        },
+        select: { id: true },
       });
 
       if (!recipient) {
@@ -79,38 +95,57 @@ export const route = apiRoute('/api/messages', {
         );
       }
 
-      const dmPrivacy = recipient.profile?.dmPrivacy ?? 'EVERYONE';
-
-      if (dmPrivacy === 'NONE') {
-        return Response.json({ error: 'This user is not accepting messages.' }, { status: 403 });
-      }
-
-      if (dmPrivacy === 'FOLLOWERS') {
-        // Check if recipient follows the sender
-        const follows = await prisma.follow.findUnique({
-          where: {
-            followerId_followingId: {
-              followerId: recipientId,
-              followingId: senderId,
-            },
-          },
-        });
-        if (!follows) {
-          return Response.json(
-            {
-              error: 'This user only accepts messages from people they follow.',
-            },
-            { status: 403 },
-          );
-        }
-      }
-
       // Normalize participant order (alphabetical) for unique constraint
       const [pOne, pTwo] =
         senderId < recipientId ? [senderId, recipientId] : [recipientId, senderId];
 
+      // DM privacy and message requests (s04-16): one gate for every way a DM is written. Nothing is
+      // created for a sender it refuses.
+      const existing = await findDmByPair(pOne, pTwo);
+      const gate = await requestGate(senderId, recipientId, { request: existing?.request ?? null });
+      if (gate.outcome === 'refused') {
+        switch (gate.reason) {
+          case 'NONE':
+            return Response.json({ error: 'This user is not accepting messages.' }, { status: 403 });
+          case 'FOLLOWERS':
+            return Response.json(
+              { error: 'This user only accepts messages from people they follow.' },
+              { status: 403 },
+            );
+          case 'cap':
+            return Response.json({ error: gateRefusalCopy('cap') }, { status: 429 });
+          default:
+            return Response.json({ error: gateRefusalCopy(gate.reason) }, { status: 403 });
+        }
+      }
+
       // Find or create conversation
-      const conversation = await upsertDm(pOne, pTwo);
+      const conversation = existing ?? (await upsertDm(pOne, pTwo));
+
+      if (gate.outcome === 'request') {
+        // The recipient takes requests: one text message, held in their Requests folder. Without a
+        // message the chat is only a draft the composer opens on ("Send a request").
+        if (!content && !hasMedia) {
+          const opened = await openRequest({
+            senderId,
+            chatId: conversation.id,
+            privacy: gate.privacy,
+          });
+          if (!opened.ok) return requestRefusal(opened.reason);
+          return { conversationId: conversation.id };
+        }
+        const sent = await sendRequestMessage({
+          userId: senderId,
+          conversationId: conversation.id,
+          input: { content: content ?? '', gifUrl, imageUrls },
+          disappearAfterSec: conversation.disappearAfterSec,
+          privacy: gate.privacy,
+        });
+        if (!sent.ok) return sent.response;
+        return { conversationId: conversation.id, message: sent.value.message };
+      }
+
+      await clearStaleDraft(existing?.request, conversation.id);
 
       // If content or media provided, create the message and bump lastMessageAt.
       if (content || hasMedia) {

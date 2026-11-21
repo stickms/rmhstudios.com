@@ -13,6 +13,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
 import {
   Crown,
   Wifi,
@@ -117,11 +118,18 @@ export default function PlayerList({
 
               {/* Name + host crown */}
               <div className="flex min-w-[6rem] flex-1 items-center gap-2">
-                <span className="truncate font-medium text-app-text">
+                <Link
+                  to="/rmhbox/players/$userId"
+                  params={{
+                    userId:
+                      player.userId,
+                  }}
+                  className="truncate font-medium text-app-text hover:text-app-accent hover:underline"
+                >
                   {
                     player.userName
                   }
-                </span>
+                </Link>
                 {isPlayerHost && (
                   <Crown
                     className="h-4 w-4 shrink-0 text-app-warning"

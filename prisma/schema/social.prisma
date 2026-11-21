@@ -284,16 +284,24 @@ model RMHarkRepost {
 }
 
 model RMHarkPoll {
-  id          String    @id @default(cuid())
-  rmheetId    String    @unique
-  question    String    @db.VarChar(200)
-  multiSelect Boolean   @default(false)
-  closesAt    DateTime? // optional scheduled close; null = never closes
-  createdAt   DateTime  @default(now())
+  id            String    @id @default(cuid())
+  rmheetId      String    @unique
+  question      String    @db.VarChar(200)
+  multiSelect   Boolean   @default(false)
+  closesAt      DateTime? // optional scheduled close; null = never closes
+  createdAt     DateTime  @default(now())
+  /// s04-08: set when the author ends the poll early. The effective end is `closedAt ?? closesAt`.
+  closedAt      DateTime?
+  /// s04-08: set when the author extended the poll (the post's "Extended" marker).
+  extendedAt    DateTime?
+  /// s04-08: claimed (compare-and-set) by the per-minute job before it tells the author and the voters.
+  endNotifiedAt DateTime?
 
   rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   options RMHarkPollOption[]
 
+  @@index([endNotifiedAt, closesAt])
+  @@index([endNotifiedAt, closedAt])
   @@map("rmheet_poll")
 }
 

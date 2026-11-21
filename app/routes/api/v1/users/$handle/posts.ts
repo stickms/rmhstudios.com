@@ -12,7 +12,7 @@ export const Route = createFileRoute('/api/v1/users/$handle/posts')({
       GET: ({ request, params }) =>
         withDeveloperApi(
           request,
-          async ({ json, error }) => {
+          async ({ userId, json, error }) => {
             const handle = params.handle.replace(/^@/, '');
             const user = await prisma.user.findUnique({ where: { handle }, select: { id: true } });
             if (!user) return error('not_found', 'User not found.', 404);
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/api/v1/users/$handle/posts')({
                 repostCount: true, viewCount: true, imageUrls: true, pinnedCommentId: true, user: { select: apiAuthorSelect },
               },
             });
-            return json(page(posts.map(serializePublicPost), limit, (p) => p.createdAt.toISOString()));
+            return json(page(posts.map((p) => serializePublicPost(p, userId)), limit, (p) => p.createdAt.toISOString()));
           },
           { scope: 'read:users' }
         ),

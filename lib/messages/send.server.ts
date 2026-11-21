@@ -40,6 +40,13 @@ import {
   serializeGroupMessages,
 } from '@/lib/group-chat/serialize.server';
 import type { SentDirectMessage } from '@/lib/messages/messages.contract';
+import { clearStaleDraft, openRequest, requestGate } from '@/lib/messages/requests.server';
+import {
+  gateRefusalCopy,
+  hiddenFromRecipient,
+  requestContentProblem,
+  type GateDecision,
+} from '@/lib/messages/requests';
 
 export type SendFailCode =
   | 'restricted'
@@ -49,6 +56,7 @@ export type SendFailCode =
   | 'alt-mismatch'
   | 'alt-required'
   | 'cannot-message'
+  | 'request-text-only'
   | 'blocked'
   | 'rate-limited'
   | 'empty';
@@ -165,10 +173,34 @@ export interface SendDirectOptions {
   /** The per-(sender to recipient) flood limit. On for a hand-sent message; the cron bounds volume by the 20-pending cap instead. */
   pairRateLimit: boolean;
   /** Already loaded and checked by `guardDirect` (the endpoint does so before it reads the body); skips the second lookup. */
-  conversation?: DirectConversation;
+  conversation?: GuardedConversation;
+  /**
+   * May a refused sender's first text message become a message request? On for the
+   * send endpoint; off for scheduled delivery, which never creates one (s04-16).
+   */
+  allowRequest?: boolean;
 }
 
 export type DirectConversation = NonNullable<Awaited<ReturnType<typeof findDm>>>;
+
+/** A conversation `guardDirect` let through, with what the request gate decided. */
+export type GuardedConversation = DirectConversation & { gate?: GateDecision };
+
+/** The refusal a path answers for a refused gate; the privacy texts are the ones it always gave. */
+function gateFailure(
+  reason: 'NONE' | 'FOLLOWERS' | 'pending' | 'incoming' | 'cap',
+): SendFailure {
+  switch (reason) {
+    case 'NONE':
+      return fail('cannot-message', 'This user is no longer accepting messages.', 403);
+    case 'FOLLOWERS':
+      return fail('cannot-message', 'This user only accepts messages from people they follow.', 403);
+    case 'cap':
+      return fail('rate-limited', gateRefusalCopy('cap'), 429);
+    default:
+      return fail('cannot-message', gateRefusalCopy(reason), 403);
+  }
+}
 
 /** A block in either direction between two people (yourself never blocks). The one check every DM path shares. */
 export async function isBlockedPair(
@@ -188,17 +220,26 @@ export async function isBlockedPair(
   return !!hit;
 }
 
-/** The restriction, existence and participant checks, in the order the endpoint always ran them. */
+/**
+ * The restriction, existence, participant, block and request-gate checks, in the
+ * order the endpoint always ran them. The gate (s04-16) is the recipient's DM
+ * privacy and message-request rule: a refused sender is turned away here, and a
+ * sender who may open a request passes with `gate.outcome === 'request'`.
+ */
 export async function guardDirect(
   userId: string,
   conversationId: string,
-): Promise<SendResult<DirectConversation>> {
+): Promise<SendResult<GuardedConversation>> {
   const restricted = await restrictionResponse(userId, 'message');
   if (restricted) return { ok: false, code: 'restricted', response: restricted };
   const conversation = await findDm(conversationId);
   if (!conversation) return fail('not-found', 'Conversation not found', 404);
   if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
     return fail('not-member', 'Forbidden', 403);
+  }
+  // A request waiting for this person is answered from the Requests folder; the chat does not exist for them yet.
+  if (hiddenFromRecipient(conversation.request, userId)) {
+    return fail('not-found', 'Conversation not found', 404);
   }
   // A block in either direction ends the conversation for sending (Saved Messages never blocks).
   const otherId =
@@ -208,7 +249,9 @@ export async function guardDirect(
   if (await isBlockedPair(userId, otherId)) {
     return fail('blocked', 'You can no longer message this person', 403);
   }
-  return { ok: true, value: conversation };
+  const gate = await requestGate(userId, otherId, { request: conversation.request ?? null });
+  if (gate.outcome === 'refused') return gateFailure(gate.reason);
+  return { ok: true, value: { ...conversation, gate } };
 }
 
 /**
@@ -309,73 +352,24 @@ export async function sendDirectMessage(
     }
   }
 
-  const recipient =
-    isSavedChat
-      ? null
-      : await prisma.user.findUnique(
-          {
-            where:
-              {
-                id: recipientId,
-              },
-            select:
-              {
-                profile:
-                  {
-                    select:
-                      {
-                        dmPrivacy: true,
-                      },
-                  },
-              },
-          },
-        );
+  // The recipient's DM privacy and message-request rule, decided by `guardDirect`
+  // (or here, for a caller that arrives without it).
+  const gate: GateDecision = isSavedChat
+    ? { outcome: 'allowed' }
+    : (conversation.gate ??
+      (await requestGate(userId, recipientId, { request: conversation.request ?? null })));
+  if (gate.outcome === 'refused') return gateFailure(gate.reason);
 
-  const dmPrivacy =
-    recipient
-      ?.profile
-      ?.dmPrivacy ??
-    'EVERYONE';
-
-  if (
-    dmPrivacy ===
-    'NONE'
-  ) {
-    return fail(
-      'cannot-message',
-      'This user is no longer accepting messages.',
-      403,
-    );
-  }
-
-  if (
-    dmPrivacy ===
-    'FOLLOWERS'
-  ) {
-    const follows =
-      await prisma.follow.findUnique(
-        {
-          where:
-            {
-              followerId_followingId:
-                {
-                  followerId:
-                    recipientId,
-                  followingId:
-                    userId,
-                },
-            },
-        },
-      );
-    if (
-      !follows
-    ) {
-      return fail(
-        'cannot-message',
-        'This user only accepts messages from people they follow.',
-        403,
-      );
-    }
+  if (gate.outcome === 'request') {
+    // Scheduled delivery never opens a request: the recipient's rule changed after the message was scheduled.
+    if (!opts.allowRequest) return gateFailure(gate.privacy);
+    return sendRequestMessage({
+      userId,
+      conversationId,
+      input,
+      disappearAfterSec: conversation.disappearAfterSec,
+      privacy: gate.privacy,
+    });
   }
 
   const [
@@ -426,6 +420,9 @@ export async function sendDirectMessage(
         ),
       ],
     );
+
+  // A draft left from when this sender could only have asked is stale now that they may write.
+  await clearStaleDraft(conversation.request, conversationId);
 
   const messagePayload: SentDirectMessage =
     {
@@ -479,6 +476,70 @@ export async function sendDirectMessage(
         message:
           messagePayload,
       },
+  };
+}
+
+/**
+ * A refused sender's one text message, held as a message request. Stored as
+ * read so it never counts as unread for the recipient while it waits, and no
+ * push, realtime event or counter is touched: the recipient finds out when they
+ * open Requests. Accepting turns it unread.
+ */
+export async function sendRequestMessage(args: {
+  userId: string;
+  conversationId: string;
+  input: Pick<DirectMessageInput, 'content' | 'gifUrl' | 'imageUrls'>;
+  disappearAfterSec: number | null;
+  privacy: 'FOLLOWERS' | 'NONE';
+}): Promise<SendResult<{ message: SentDirectMessage }>> {
+  const { userId, conversationId, input, privacy } = args;
+  const problem = requestContentProblem(input);
+  if (problem === 'text-only') {
+    return fail('request-text-only', 'A message request can only contain text.', 400);
+  }
+  if (problem === 'empty') return fail('empty', 'Empty message', 400);
+
+  const opened = await openRequest({
+    senderId: userId,
+    chatId: conversationId,
+    privacy,
+    message: async (tx) => {
+      const created = await tx.chatMessage.create({
+        data: {
+          chatId: conversationId,
+          senderId: userId,
+          content: input.content,
+          read: true,
+          ...messageStamp(args.disappearAfterSec, input),
+        },
+      });
+      await tx.chat.update({
+        where: { id: conversationId },
+        data: { lastMessageAt: new Date() },
+      });
+      return created;
+    },
+  });
+  if (!opened.ok) return gateFailure(opened.reason);
+  const message = opened.value;
+  if (!message) throw new Error('message request was opened without its message');
+  return {
+    ok: true,
+    value: {
+      message: {
+        id: message.id,
+        conversationId,
+        content: message.content,
+        senderId: message.senderId,
+        read: false,
+        createdAt: message.createdAt.toISOString(),
+        gifUrl: null,
+        imageUrls: [],
+        imageAlts: [],
+        reactions: [],
+        expiresAt: message.expiresAt?.toISOString() ?? null,
+      },
+    },
   };
 }
 

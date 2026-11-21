@@ -28,6 +28,7 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { PresenceDot } from './PresenceDot';
 import { BadgeMark } from '@/components/shop/art/BadgeMark';
 import { PetMark } from '@/components/shop/art/PetMark';
+import { CompareProfileLink } from '@/components/achievements/CompareProfileLink';
 import type { ProfileData } from './profile-types';
 import { ProfileBanner } from './ProfileBanner';
 import './profile.css';
@@ -129,6 +130,33 @@ export interface ProfileHeroProps {
   onJoinMembership: () => void;
   onShowSocial: (type: 'followers' | 'following') => void;
   onShowAchievements: () => void;
+}
+
+/** A public count. It opens its list only when `onOpen` is given: a viewer who may not browse the list sees the number as text. */
+function SocialCount({
+  value,
+  label,
+  format,
+  onOpen,
+}: {
+  value: number;
+  label: string;
+  format: (n: number) => string;
+  onOpen?: () => void;
+}) {
+  const body = (
+    <>
+      <AnimatedCount value={value} format={format} className="font-semibold text-site-text" />{' '}
+      <span className="text-site-text-muted">{label}</span>
+    </>
+  );
+  return onOpen ? (
+    <button type="button" onClick={onOpen} className="text-start">
+      {body}
+    </button>
+  ) : (
+    <span>{body}</span>
+  );
 }
 
 export function ProfileHero({
@@ -320,6 +348,7 @@ export function ProfileHero({
               }}
             />
             <OfficeHoursProfileButton userId={profile.id} />
+            <CompareProfileLink handle={profile.handle} id={profile.id} />
             <Button variant="ghost" onClick={onTip}>
               {t('send-a-tip', { defaultValue: 'Send a tip' })}
             </Button>
@@ -354,26 +383,18 @@ export function ProfileHero({
         className="t-body mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-1"
         aria-label={t('profile-stats', { defaultValue: 'Profile stats' })}
       >
-        <button type="button" onClick={() => onShowSocial('followers')} className="text-start">
-          <AnimatedCount
-            value={profile.followerCount}
-            format={count}
-            className="font-semibold text-site-text"
-          />{' '}
-          <span className="text-site-text-muted">
-            {t('followers-label', { defaultValue: 'Followers' })}
-          </span>
-        </button>
-        <button type="button" onClick={() => onShowSocial('following')} className="text-start">
-          <AnimatedCount
-            value={profile.followingCount}
-            format={count}
-            className="font-semibold text-site-text"
-          />{' '}
-          <span className="text-site-text-muted">
-            {t('following-label', { defaultValue: 'Following' })}
-          </span>
-        </button>
+        <SocialCount
+          value={profile.followerCount}
+          label={t('followers-label', { defaultValue: 'Followers' })}
+          format={count}
+          onOpen={profile.canSeeFollowLists === false ? undefined : () => onShowSocial('followers')}
+        />
+        <SocialCount
+          value={profile.followingCount}
+          label={t('following-label', { defaultValue: 'Following' })}
+          format={count}
+          onOpen={profile.canSeeFollowLists === false ? undefined : () => onShowSocial('following')}
+        />
         <span>
           <AnimatedCount
             value={profile.rmharkCount}

@@ -42,12 +42,13 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { games } from '@/lib/catalog';
 import { shouldResume, progressRatio, RESUME_MAX_RATIO } from '@/lib/history/constants';
+import { listContinueReading } from '@/lib/library/reader-sync.server';
 
 /* -------------------------------------------------------------------------- */
 /* Contract                                                                   */
 /* -------------------------------------------------------------------------- */
 
-export type ResumeKind = 'game' | 'watch' | 'draft' | 'deck';
+export type ResumeKind = 'game' | 'watch' | 'draft' | 'deck' | 'book';
 
 /**
  * One fact about where the user stopped, in a form the rail can translate.
@@ -442,6 +443,27 @@ async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]>
 }
 
 /* -------------------------------------------------------------------------- */
+/* Source: library books with a synced place                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The reader restores the newest synced place when the book opens, so the card links at
+ * the book itself. The percent is the state; the rail words it "Continue reading {title}".
+ */
+async function libraryCards(userId: string, take: number): Promise<ResumeCard[]> {
+  const books = await listContinueReading(userId, take);
+  return books.map((b) =>
+    card('book', {
+      title: b.title,
+      href: `/library/${encodeURIComponent(b.slug)}`,
+      state: [{ at: 'percent', value: b.percent }],
+      progress: b.percent / 100,
+      updatedAt: new Date(b.updatedAt),
+    }),
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Entry point                                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -475,6 +497,7 @@ export async function resumeCards(
     source('watch-history', () => watchHistoryCards(userId, take)),
     source('drafts', () => draftCards(userId, take)),
     source('due-decks', () => dueDeckCards(userId, take)),
+    source('library', () => libraryCards(userId, take)),
   ]);
 
   return rankResumeCards(groups.flat(), take);

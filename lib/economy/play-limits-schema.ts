@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_SPEND_CAP, MIN_SPEND_CAP } from '@/lib/economy/spend-budget';
 import {
   MAX_COOL_OFF_DAYS,
   MAX_DAILY_CAP,
@@ -22,6 +23,26 @@ export const playLimitsChangeSchema =
               MAX_DAILY_CAP,
             )
             .nullable()
+            .optional(),
+        /** Monthly spending budget (s04-07). `null` removes it (a loosening, so it waits). */
+        monthlySpendCap:
+          z
+            .number()
+            .int()
+            .min(
+              MIN_SPEND_CAP,
+            )
+            .max(
+              MAX_SPEND_CAP,
+            )
+            .nullable()
+            .optional(),
+        /** Drop a raise or removal of the budget that is still waiting. */
+        cancelPendingSpendCap:
+          z
+            .literal(
+              true,
+            )
             .optional(),
         excludeForDays:
           z
@@ -56,9 +77,27 @@ export const playLimitsChangeSchema =
         v.excludeForDays !==
           undefined ||
         v.coolOffForDays !==
-          undefined,
+          undefined ||
+        v.monthlySpendCap !==
+          undefined ||
+        v.cancelPendingSpendCap ===
+          true,
       {
         message:
           'Nothing to change',
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        !(
+          v.monthlySpendCap !==
+            undefined &&
+          v.cancelPendingSpendCap
+        ),
+      {
+        message:
+          'Set the budget or cancel the pending change, not both',
       },
     );

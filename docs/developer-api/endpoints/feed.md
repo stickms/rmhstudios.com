@@ -15,7 +15,7 @@
 
 ### `GET /api/v1/feed`
 
-The public global feed. Only public, free, non-community posts are returned.
+The public global feed. Only public, free, non-community posts are returned. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
 
 **Scope:** `read:feed` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `getFeed`
 

@@ -34,6 +34,8 @@ import {
  TrendingUp,
  AlarmClock,
  ShieldAlert,
+ CircleStop,
+ CalendarPlus,
 } from'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
@@ -51,6 +53,8 @@ import {
 } from './MuteConversationMenu';
 import type { FeedItem } from'@/lib/feed-types';
 import { bookmarkPostApi, pinPostApi, deletePostApi } from '@/lib/feed/rmhark-actions.contract';
+import { endPollApi } from '@/lib/feed/poll-lifecycle.contract';
+import type { PollLifecycleView } from '@/lib/feed/poll-lifecycle';
 import { api } from '@/lib/contract/client';
 import { getRulesApi } from '@/lib/communities/rules.contract';
 import type { ReportableRules } from '@/lib/communities/rules';
@@ -76,6 +80,9 @@ const InsightsModal = lazy(() =>
  import('./InsightsModal').then((m) => ({ default: m.InsightsModal })),
 );
 const ShareModal = lazy(() => import('./ShareModal').then((m) => ({ default: m.ShareModal })));
+const PollExtendDialog = lazy(() =>
+ import('./PollExtendDialog').then((m) => ({ default: m.PollExtendDialog })),
+);
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 const ModerateContentDialog = lazy(() =>
  import('@/components/moderation/moderation-ui').then((m) => ({ default: m.ModerateContentDialog })),
@@ -178,6 +185,7 @@ export function RMHarkOverflowPanel({
  const [insightsOpen, setInsightsOpen] = useState(false);
  const [remindOpen, setRemindOpen] = useState(false);
  const [moderateOpen, setModerateOpen] = useState(false);
+ const [extendOpen, setExtendOpen] = useState(false);
  // Conversation mute: the choice loads when the menu opens; the four options are a small menu of their own.
  const [muteChoicesOpen, setMuteChoicesOpen] = useState(false);
  const conversationMute = useConversationMute(actualId, menuOpen && !!session);
@@ -189,8 +197,9 @@ export function RMHarkOverflowPanel({
  // Latch: mount a lazy modal the first time it opens, then keep it mounted so
  // its close animation still runs (a bare `open && <Modal/>`would unmount
  // mid-animation). The lazy import fires on first open, not at hydration.
- const mounted = useRef({ share: false, report: false, tip: false, edit: false, remind: false, moderate: false });
+ const mounted = useRef({ share: false, report: false, tip: false, edit: false, remind: false, moderate: false, extend: false });
  mounted.current.moderate ||= moderateOpen;
+ mounted.current.extend ||= extendOpen;
  mounted.current.remind ||= remindOpen;
  mounted.current.share ||= shareModalOpen;
  mounted.current.report ||= reportOpen;
@@ -289,6 +298,35 @@ export function RMHarkOverflowPanel({
  onRemove?.();
  } catch {
  // ignore — surface handles its own error UX
+ }
+ };
+
+ // The author's poll actions. An ended poll offers neither; an untimed one can only be ended.
+ const poll = item.poll;
+ const pollOpen = !!poll && !poll.ended && !(poll.closesAt && new Date(poll.closesAt).getTime() <= Date.now());
+ const pollTimed = pollOpen && !!poll?.closesAt;
+ const applyPollView = (view: PollLifecycleView) => {
+ if (poll) onUpdate?.({ poll: { ...poll, ...view } });
+ };
+
+ const handleEndPoll = async () => {
+ setMenuOpen(false);
+ if (
+ !(await confirm({
+ title: t('end-confirm-title', { ns: 'poll-lifecycle', defaultValue: 'End this poll now?' }),
+ description: t('end-confirm-description', { ns: 'poll-lifecycle',
+ defaultValue: 'It shows its final results and takes no more votes. This cannot be undone.',
+ }),
+ confirmLabel: t('end-confirm-action', { ns: 'poll-lifecycle', defaultValue: 'End poll' }),
+ danger: true,
+ }))
+ )
+ return;
+ try {
+ applyPollView(await api(endPollApi, { params: { id: actualId } }));
+ toast.success(t('end-done', { ns: 'poll-lifecycle', defaultValue: 'Poll ended' }));
+ } catch (e) {
+ toast.error(serverError(e) || t('end-error', { ns: 'poll-lifecycle', defaultValue: 'Could not end the poll' }));
  }
  };
 
@@ -438,6 +476,24 @@ export function RMHarkOverflowPanel({
  >
  {t('edit', { defaultValue:'Edit'})}
  </MenuItem>
+ {pollOpen && (
+ <>
+ <MenuItem icon={CircleStop} onSelect={handleEndPoll}>
+ {t('end-poll', { ns: 'poll-lifecycle', defaultValue: 'End poll now' })}
+ </MenuItem>
+ {pollTimed && (
+ <MenuItem
+ icon={CalendarPlus}
+ onSelect={() => {
+ setMenuOpen(false);
+ setExtendOpen(true);
+ }}
+ >
+ {t('extend-poll', { ns: 'poll-lifecycle', defaultValue: 'Extend poll' })}
+ </MenuItem>
+ )}
+ </>
+ )}
  <MenuItem
  icon={Pin}
  iconClassName={pinned ?'fill-site-accent text-site-accent': undefined}
@@ -599,6 +655,18 @@ export function RMHarkOverflowPanel({
  onSaved={(content, gifUrl) =>
  onUpdate?.({ content, gifUrl: gifUrl ?? undefined, edited: true })
  }
+ />
+ </Suspense>
+ )}
+
+ {isAuthor && pollTimed && mounted.current.extend && (
+ <Suspense fallback={null}>
+ <PollExtendDialog
+ open={extendOpen}
+ onOpenChange={setExtendOpen}
+ postId={actualId}
+ allowedDays={poll?.extendDays ?? []}
+ onExtended={applyPollView}
  />
  </Suspense>
  )}

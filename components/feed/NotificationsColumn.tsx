@@ -33,6 +33,8 @@ import { api } from '@/lib/contract/client';
 import { cn } from '@/lib/utils';
 import { games } from '@/lib/catalog';
 import { gameIdOfLink } from '@/lib/arcade/updates';
+import { knownLabel } from '@/lib/i18n/known-label';
+import { notificationVerbs, systemLabels } from '@/components/feed/notification-labels';
 
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 
@@ -57,54 +59,20 @@ interface NotificationItem {
   actor: NotificationActor | null;
 }
 
-const TYPE_META: Record<NotificationType, { verb: string }> = {
-  LIKE: { verb: 'liked your post' },
-  COMMENT: { verb: 'commented on your post' },
-  REPLY: { verb: 'replied to you' },
-  FOLLOW: { verb: 'followed you' },
-  MENTION: { verb: 'mentioned you' },
-  REPOST: { verb: 'reposted your post' },
-  SYSTEM: { verb: '' },
-};
-
 // The label of a system notification (no human actor), keyed by the entity the notification refers to.
-function systemIdentity(entityType: string | null, link: string | null): { label: string } {
-  switch (entityType) {
-    // A game's patch note or newly published guide is labelled with the game's name (its link names the game).
-    case 'game_update':
-    case 'game_guide': {
-      const id = gameIdOfLink(link);
-      const game = id ? games.find((g) => g.id === id) : undefined;
-      return { label: game?.title ?? (entityType === 'game_update' ? 'Game update' : 'Game guide') };
-    }
-    case 'achievement':
-      return { label: 'Achievement' };
-    case 'level':
-      return { label: 'Level up' };
-    case 'membership':
-      return { label: 'Membership' };
-    case 'ride':
-      return { label: 'RMH Rideshare' };
-    case 'ride_request':
-      return { label: 'New ride request' };
-    case 'ride_message':
-      return { label: 'Ride message' };
-    case 'ladder_job':
-      return { label: 'RMH Ladder' };
-    case 'rmhtube_party':
-      return { label: 'RMHTube' };
-    case 'moderation':
-    case 'strike':
-      return { label: 'Site moderation' };
-    case 'report_outcome':
-      return { label: 'Safety' };
-    case 'blog_post':
-      return { label: 'Logs' };
-    case 'news_article':
-      return { label: 'News' };
-    default:
-      return { label: 'RMH Studios' };
+// `labels` is `systemLabels(t)`: every entity type has its own literal translation key there.
+function systemIdentity(
+  labels: Record<string, string>,
+  entityType: string | null,
+  link: string | null,
+): { label: string } {
+  // A game's patch note or newly published guide is labelled with the game's name (its link names the game).
+  if (entityType === 'game_update' || entityType === 'game_guide') {
+    const id = gameIdOfLink(link);
+    const game = id ? games.find((g) => g.id === id) : undefined;
+    return { label: game?.title ?? labels[entityType]! };
   }
+  return { label: (entityType ? knownLabel(labels, entityType) : undefined) ?? labels.default! };
 }
 
 /**
@@ -187,6 +155,8 @@ export function NotificationsColumn({
 } = {}) {
   const { t } = useTranslation('feed');
   const { t: tn } = useTranslation('notifications-inbox');
+  const verbs = notificationVerbs(t);
+  const sysLabels = systemLabels(t);
   const navigate = useNavigate();
   const push = usePushSubscription(true);
   // Seed from the loader when provided so the list paints immediately.
@@ -613,11 +583,11 @@ export function NotificationsColumn({
           {groups.map((g) => {
             const n = g.newest;
             const grouped = g.count > 1;
-            const meta = TYPE_META[n.type];
+            const verb = n.type === 'SYSTEM' ? '' : verbs[n.type];
             const clickable = resolveLink(n) !== null;
             // System notifications have no human actor: lead with the message.
             const isSystem = n.type === 'SYSTEM' || !n.actor;
-            const sys = isSystem ? systemIdentity(n.entityType, n.link) : null;
+            const sys = isSystem ? systemIdentity(sysLabels, n.entityType, n.link) : null;
             const firstName =
               n.actor?.name || n.actor?.handle || t('someone', { defaultValue: 'Someone' });
             const actorName = grouped
@@ -633,7 +603,7 @@ export function NotificationsColumn({
                 targetId: n.id,
                 label:
                   n.preview?.slice(0, 120) ||
-                  `${actorName} ${t(`notification-verb-${n.type.toLowerCase()}`, { defaultValue: meta.verb })}`,
+                  `${actorName} ${verb}`,
                 // A reminder only ever opens a same-site path (the route enforces it).
                 url: (() => {
                   const link = resolveLink(n);
@@ -643,7 +613,7 @@ export function NotificationsColumn({
             const rowSummary =
               n.preview && sys
                 ? n.preview
-                : `${actorName} ${t(`notification-verb-${n.type.toLowerCase()}`, { defaultValue: meta.verb })}`.trim();
+                : `${actorName} ${verb}`.trim();
             // One dot per unread item (section 10): a read notification is a plain row.
             return (
               <SpineItem
@@ -670,19 +640,14 @@ export function NotificationsColumn({
                       <div className="min-w-0 flex-1">
                         {sys ? (
                           <p className="t-body font-semibold text-site-text">
-                            {n.preview ||
-                              t(`system-label-${n.entityType ?? 'default'}`, {
-                                defaultValue: sys.label,
-                              })}
+                            {n.preview || sys.label}
                           </p>
                         ) : (
                           <>
                             <p className={`t-body text-site-text ${g.read ? '' : 'font-semibold'}`}>
                               <span className="font-semibold">{actorName}</span>{' '}
                               <span className={g.read ? 'text-site-text-muted' : ''}>
-                                {t(`notification-verb-${n.type.toLowerCase()}`, {
-                                  defaultValue: meta.verb,
-                                })}
+                                {verb}
                               </span>
                             </p>
                             {n.preview && (

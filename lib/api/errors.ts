@@ -48,6 +48,8 @@ export const ERROR_TYPES: Record<
       'authorization_error',
     ip_not_allowed:
       'authorization_error',
+    list_private:
+      'authorization_error',
     not_found:
       'not_found_error',
     method_not_allowed:
@@ -83,6 +85,7 @@ export const DEFAULT_STATUS: Record<
     feature_not_available: 403,
     forbidden: 403,
     ip_not_allowed: 403,
+    list_private: 403,
     not_found: 404,
     method_not_allowed: 405,
     conflict: 409,

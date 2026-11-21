@@ -19,6 +19,7 @@ import { enqueueProgression } from '@/lib/social/engagement-effects.server';
 import { resolveMediaForPost } from '@/lib/media/attach.server';
 import { userDisplaySelect } from '@/lib/user-display';
 import { canReadThread } from '@/lib/feed/audience.server';
+import { countsHiddenFrom } from '@/lib/feed/quiet-counts';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import { invalidateAudience, recordFollowEvent } from '@/lib/social/follow-events.server';
 import type { RMHarkAudience } from '@prisma/client';
@@ -34,8 +35,11 @@ export interface LikeResult {
   /** False when the target post does not exist. */
   found: boolean;
   liked: boolean;
-  /** Absent when the caller can no longer read the post (an undo must not reveal its count). */
-  likeCount?: number;
+  /**
+   * Absent when the caller can no longer read the post (an undo must not reveal its count); `null` when the
+   * post's author hides their counts from this caller (lib/feed/quiet-counts).
+   */
+  likeCount?: number | null;
 }
 
 /**
@@ -65,19 +69,22 @@ async function applyPostLike(
         audience: true,
         communityId: true,
         deletedAt: true,
-        user: { select: { handle: true } },
+        user: { select: { handle: true, profile: { select: { hideCountsOnMine: true } } } },
       },
     }),
     prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } }),
   ]);
   if (!post) return { ok: false, found: false, liked: false, likeCount: 0 };
   const liked = desired === 'toggle' ? !existing : desired;
+  // The caller is liking someone else's post: a hidden author's number is not theirs to learn from this reply.
+  const quiet = countsHiddenFrom(post.userId, post.user?.profile?.hideCountsOnMine, userId);
+  const shownCount = (n: number | undefined) => (quiet ? null : n);
 
   // Already in the requested state — no-op.
   // The count is only returned for a post the caller can still read.
   if ((liked && existing) || (!liked && !existing)) {
     const readable = await canReadThread(post, userId);
-    return { ok: true, found: true, liked, likeCount: readable ? post.likeCount : undefined };
+    return { ok: true, found: true, liked, likeCount: readable ? shownCount(post.likeCount) : undefined };
   }
 
   if (liked) {
@@ -124,7 +131,7 @@ async function applyPostLike(
       questKey: 'like_given',
       webhook: { event: 'like.created', data: { postId } },
     });
-    return { ok: true, found: true, liked: true, likeCount: updated.likeCount };
+    return { ok: true, found: true, liked: true, likeCount: shownCount(updated.likeCount) };
   }
 
   const [, updated] = await prisma.$transaction([
@@ -151,7 +158,7 @@ async function applyPostLike(
   });
   // Removing your own like always works; the count only goes back for a readable post.
   const readable = await canReadThread(post, userId);
-  return { ok: true, found: true, liked: false, likeCount: readable ? updated.likeCount : undefined };
+  return { ok: true, found: true, liked: false, likeCount: readable ? shownCount(updated.likeCount) : undefined };
 }
 
 /** Toggle a like (used by the in-app web route). */

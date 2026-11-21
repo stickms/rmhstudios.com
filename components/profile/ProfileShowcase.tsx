@@ -42,6 +42,7 @@ import type { UserStatus } from '@/lib/profile/status';
 import type { WishlistItemView } from '@/lib/wishlist/types';
 import { SliceItModule } from '@/components/profile/modules/SliceItModule';
 import { api } from '@/lib/contract/client';
+import { profileModuleLabels } from '@/components/profile/module-labels';
 import { setProfileLayoutApi } from '@/lib/profile/profile-extras.contract';
 
 import { getPublicWishlistApi } from '@/lib/wishlist/wishlist.contract';
@@ -103,6 +104,7 @@ export function ProfileShowcase({
     useTranslation(
       'c-profile-modules',
     );
+  const moduleLabels = profileModuleLabels(t);
   const [
     modules,
     setModules,
@@ -428,17 +430,7 @@ export function ProfileShowcase({
                   it,
                 ) => {
                   const label =
-                    t(
-                      `module-${it.module.kind}`,
-                      {
-                        defaultValue:
-                          MODULE_LABELS[
-                            it
-                              .module
-                              .kind
-                          ],
-                      },
-                    );
+                    moduleLabels[it.module.kind];
                   const picked =
                     selection.isSelected(
                       it.id,
@@ -622,15 +614,7 @@ export function ProfileShowcase({
                       className="h-4 w-4"
                       aria-hidden
                     />
-                    {t(
-                      `module-${k}`,
-                      {
-                        defaultValue:
-                          MODULE_LABELS[
-                            k
-                          ],
-                      },
-                    )}
+                    {moduleLabels[k]}
                   </Button>
                 ),
               )}
@@ -677,17 +661,9 @@ function ModuleBlock({
     useTranslation(
       'c-profile-modules',
     );
+  const moduleLabels = profileModuleLabels(t);
   const title =
-    t(
-      `module-${module.kind}`,
-      {
-        defaultValue:
-          MODULE_LABELS[
-            module
-              .kind
-          ],
-      },
-    );
+    moduleLabels[module.kind];
 
   if (
     module.kind ===

@@ -83,7 +83,7 @@ Create a post on your account. Awards XP and progresses quests exactly like the 
 
 ### `GET /api/v1/posts/{id}`
 
-Fetch a single post by id. Returns public posts and your own posts; otherwise 404.
+Fetch a single post by id. Returns public posts and your own posts; otherwise 404. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
 
 **Scope:** `read:posts` · **Success:** `200` · **Operation id:** `getPost`
 

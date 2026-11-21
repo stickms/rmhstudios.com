@@ -53,6 +53,8 @@ export const userDisplaySelect =
           {
             displayName: true,
             customImage: true,
+            // Quiet counts (sprint 04 #14): rides with the author so no post read needs another query.
+            hideCountsOnMine: true,
           },
       },
     inventory:
@@ -120,6 +122,9 @@ type UserWithProfile =
       customImage?:
         | string
         | null;
+      hideCountsOnMine?:
+        | boolean
+        | null;
     } | null;
   };
 
@@ -175,6 +180,11 @@ export interface ResolvedUser {
   isAdmin: boolean;
   /** Flagged automated account (D4). */
   isBot?: boolean;
+  /**
+   * The author hides the counts on their posts from everyone else. Present only when true; read by
+   * `redactCounts` (lib/feed/quiet-counts.ts), never a reason to render anything.
+   */
+  hideCounts?: true;
   cosmetics?: EquippedCosmetics;
 }
 
@@ -223,6 +233,14 @@ export function resolveUser(
     isBot:
       user.isBot ??
       false,
+    ...(user.profile
+      ?.hideCountsOnMine ===
+    true
+      ? {
+          hideCounts:
+            true as const,
+        }
+      : {}),
     ...(cosmetics &&
     Object.keys(
       cosmetics,

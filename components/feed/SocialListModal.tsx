@@ -10,6 +10,7 @@ import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { PrivateListNotice } from './PrivateListNotice';
 import { ManageFollowsLink } from '@/components/follows/ManageFollowsLink';
 
 interface SocialUser {
@@ -29,13 +30,17 @@ interface SocialListModalProps {
  type:'followers'|'following';
  /** Set on the member's own profile: shows a link to the follow manager. */
  canManage?: boolean;
+ /** Whose lists these are, for the private notice. */
+ ownerName?: string | null;
 }
 
-export function SocialListModal({ open, onClose, userId, type, canManage }: SocialListModalProps) {
+export function SocialListModal({ open, onClose, userId, type, canManage, ownerName }: SocialListModalProps) {
  const [users, setUsers] = useState<SocialUser[]>([]);
  const [cursor, setCursor] = useState<string | null>(null);
  const [hasMore, setHasMore] = useState(true);
  const [loading, setLoading] = useState(false);
+ // The owner keeps this list private from the viewer (403 LIST_PRIVATE): a notice, never rows.
+ const [isPrivate, setIsPrivate] = useState(false);
  const [followingInProgress, setFollowingInProgress] = useState<Set<string>>(new Set());
  const sentinelRef = useRef<HTMLDivElement>(null);
  const initialFetched = useRef(false);
@@ -54,6 +59,7 @@ export function SocialListModal({ open, onClose, userId, type, canManage }: Soci
  setUsers([]);
  setCursor(null);
  setHasMore(true);
+ setIsPrivate(false);
  initialFetched.current = false;
  fetchingRef.current = false;
  }
@@ -67,6 +73,11 @@ export function SocialListModal({ open, onClose, userId, type, canManage }: Soci
  const params = new URLSearchParams({ limit:'20'});
  if (currentCursor) params.set('cursor', currentCursor);
  const res = await fetch(`${endpoint}?${params}`);
+ if (res.status === 403) {
+ setIsPrivate(true);
+ setHasMore(false);
+ return;
+ }
  if (!res.ok) return;
  const data = await res.json();
  setUsers((prev) => [...prev, ...data.users]);
@@ -151,7 +162,9 @@ export function SocialListModal({ open, onClose, userId, type, canManage }: Soci
 
  {/* List */}
  <div className="overflow-y-auto flex-1">
- {users.length === 0 && !loading && (
+ {isPrivate && <PrivateListNotice ownerName={ownerName} className={arrival} />}
+
+ {users.length === 0 && !loading && !isPrivate && (
  <div className={cn('flex flex-col items-center justify-center py-12 px-5 text-center', arrival)}>
  <p className="text-site-text font-medium mb-1">{t('no-list-yet', { defaultValue:'No {{title}} yet', title: title.toLowerCase() })}</p>
  <p className="text-sm text-site-text-muted">

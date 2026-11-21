@@ -15,6 +15,7 @@ import { badgeKey } from '@/lib/games/showcase';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
 import { levelInfo } from '@/lib/xp/levels';
+import { filterBlocked } from '@/lib/social/follow-list-privacy.server';
 import type {
   GroupRef,
   PersonRef,
@@ -88,12 +89,15 @@ export async function getSteamProfile(
       take: 6,
       select: { community: { select: GROUP_SELECT } },
     }),
-    prisma.follow.findMany({
-      where: { followerId: ownerId },
-      orderBy: { createdAt: 'desc' },
-      take: 9,
-      select: { following: { select: userDisplaySelect } },
-    }),
+    // "Friends" is the owner's following list, so it answers to the same privacy setting as the list itself.
+    profile.canSeeFollowLists
+      ? prisma.follow.findMany({
+          where: { followerId: ownerId },
+          orderBy: { createdAt: 'desc' },
+          take: 9,
+          select: { following: { select: userDisplaySelect } },
+        })
+      : Promise.resolve([]),
     prisma.gameReview.count({ where: { userId: ownerId } }),
     prisma.gameBadge.findMany({
       where: { userId: ownerId },
@@ -104,6 +108,14 @@ export async function getSteamProfile(
     getShowcase(ownerId),
     getLook(ownerId),
   ]);
+
+  const shownIds = new Set(
+    await filterBlocked(
+      viewerId,
+      follows.map((f) => f.following.id),
+    ),
+  );
+  const friendRows = follows.filter((f) => shownIds.has(f.following.id));
 
   const setting = isPlaytimePrivacy(owner?.playtimePrivacy) ? owner.playtimePrivacy : 'private';
   const viewerFollowsOwner = profile.isFollowing;
@@ -224,7 +236,7 @@ export async function getSteamProfile(
     achievementsTotal: ACHIEVEMENTS.length,
     recentAchievements,
     games,
-    friends: follows.map((f) => personRef(f.following as DisplayUser)),
+    friends: friendRows.map((f) => personRef(f.following as DisplayUser)),
     groups: memberships.map((m) => groupRef(m.community)),
     badges: shownBadges.map(({ key: _key, ...b }) => b),
     reviewCount,

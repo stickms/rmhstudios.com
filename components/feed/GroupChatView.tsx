@@ -85,7 +85,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   return (
     <div className={cn('conversation', arrival)} style={chatTheme.rootStyle}>
       <NoGlobe />
-      <GroupHeader group={group} chatRef={chatRef} onLeave={leave} />
+      <GroupHeader
+        group={group}
+        chatRef={chatRef}
+        currentUserId={currentUserId}
+        onLeave={leave}
+        onChanged={thread.reloadGroup}
+      />
       <ChatPinnedBar
         chat={chatRef}
         viewerId={currentUserId}

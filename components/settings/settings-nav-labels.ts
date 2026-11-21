@@ -59,6 +59,10 @@ export function settingsNavText(t: TFunction): Record<string, SettingsNavText> {
       label: t('settings-nav-cloud-saves', { ns: 'feed', defaultValue: 'Cloud saves' }),
       hint: t('settings-nav-cloud-saves-hint', { ns: 'feed', defaultValue: 'Back up, restore or delete your game saves, and see earlier versions' }),
     },
+    'replays': {
+      label: t('settings-nav-replays', { ns: 'feed', defaultValue: 'Replays' }),
+      hint: t('settings-nav-replays-hint', { ns: 'feed', defaultValue: 'Your saved game replays: make one public or unlisted, or delete it' }),
+    },
     'privacy': {
       label: t('settings-nav-privacy', { ns: 'feed', defaultValue: 'Privacy & data' }),
       hint: t('settings-nav-privacy-hint', { ns: 'feed', defaultValue: 'Who sees you, close friends, calls, muted words, and your data' }),

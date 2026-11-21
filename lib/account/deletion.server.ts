@@ -27,6 +27,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { removeMemberFromFlagLists } from '@/lib/flags/targeting.server';
 import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
 import { partyErasureOps } from '@/lib/rmhtube/parties.server';
 import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
@@ -39,6 +40,10 @@ import { DELETED_USER_ID } from '@/lib/account/deleted-user';
 import { deleteActiveCardListingsOf } from '@/lib/listings/listings.server';
 import { recordSecurityEvent } from '@/lib/auth/security-log.server';
 import { deleteFollowEventsFor } from '@/lib/social/follow-events.server';
+import { adjustmentErasureOps } from '@/lib/economy/adjustments.server';
+import { releaseSeatsOf } from '@/lib/events/waitlist.server';
+import { replayErasureOps } from '@/lib/replays.server';
+import { leaveAllGroups } from '@/lib/group-chat/manage.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -211,6 +216,18 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   // The shared "Deleted user" owner of orphaned vibes is itself a tombstone and must never be
   // scrubbed, scheduled or re-pointed at itself.
   if (userId === DELETED_USER_ID) return;
+  // Sprint 04 pre-erasure steps: logic that must read before it writes (each idempotent, so a re-run
+  // of a failed sweep is safe). docs/autonomous/sprint-04/plan.md §Anchors.
+  // s04-02 event-waitlist
+  await releaseSeatsOf(userId);
+
+  // s04-10 group-chat-admin
+  await leaveAllGroups(userId);
+
+  // s04-20 flag-targeting
+  // Flag allow and deny lists hold member ids in arrays, so no cascade reaches them; read, then rewrite.
+  await removeMemberFromFlagLists(userId);
+
   await prisma.$transaction([
     // 1. Destroy every way to authenticate as this account. Re-run safe: by the
     //    time the sweep fires these are usually already gone (the schedule step
@@ -368,6 +385,47 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // s03-03 conversation-controls: per-conversation notification choices (muted posts, muted chats). The cascade never
     // fires here, and a leftover row would keep naming the posts the erased account had muted.
     prisma.conversationPref.deleteMany({ where: { userId } }),
+
+    // Sprint 04 erasures (docs/autonomous/sprint-04/plan.md §Anchors): each feature adds its
+    // operations under its own line.
+    // s04-01 replay-library: saved replays, except the proofs behind speedrun entries (those stay as board history
+    // under the tombstone, like the entry). The cascade never fires here.
+    ...(await replayErasureOps(userId)),
+
+    // s04-05 build-insights
+    // A first view is a count on the creator's insights, not the viewer's data: the row stays, without its viewer, so
+    // totals do not change. Its `ipHash` is already the one-way hash the view recorder stores.
+    prisma.buildView.updateMany({ where: { userId }, data: { userId: null } }),
+
+    // s04-06 coin-adjustments
+    // Adjustments are financial records and stay with the ledger rows they explain; the admin's free-text note about
+    // the member goes.
+    ...adjustmentErasureOps(userId),
+
+    // s04-07 spending-budget
+    // The whole play-limits row: staking caps, cool-off and exclusion dates, the monthly budget and its notice month.
+    prisma.userPlayLimits.deleteMany({ where: { userId } }),
+
+    // s04-09 reading-sync: synced places, bookmarks and notes (and their tombstones). The cascade never fires here.
+    prisma.libraryReaderMark.deleteMany({ where: { userId } }),
+
+    // s04-13 rmhbox-presets
+    // Saved game settings; the cascade never fires for an anonymised member.
+    prisma.rmhboxSettingsPreset.deleteMany({ where: { userId } }),
+
+    // s04-16 message-requests
+    // Requests the member sent or received: the cascade never fires here. A request of theirs still waiting has its
+    // chat deleted with it, so the one message it held cannot surface in the recipient's inbox as "Deleted user".
+    prisma.chat.deleteMany({
+      where: { messageRequest: { is: { senderId: userId, status: { in: ['draft', 'pending'] } } } },
+    }),
+    prisma.messageRequest.deleteMany({ where: { OR: [{ senderId: userId }, { recipientId: userId }] } }),
+
+    // s04-17 community-handover
+    // Open ownership offers to or from the member. The cascade never fires here; a decided offer only names the tombstone.
+    prisma.communityHandover.deleteMany({
+      where: { status: 'pending', OR: [{ fromId: userId }, { toId: userId }] },
+    }),
 
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({

@@ -39,7 +39,7 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
             if (isLocked(post, userId)) {
               return error('forbidden', 'This post is locked. Unlock it on RMH Studios to read it.', 403);
             }
-            return json(serializePublicPost(post));
+            return json(serializePublicPost(post, userId));
           },
           { scope: 'read:posts' }
         ),

@@ -83,6 +83,7 @@ model BuildUnlock {
 
   @@unique([userId, buildId])
   @@index([buildId])
+  @@index([buildId, createdAt])
   @@map("build_unlock")
 }
 
@@ -100,6 +101,7 @@ model BuildVersion {
   manifest BuildManifestRecord?
 
   @@unique([buildId, version])
+  @@index([buildId, createdAt(sort: Desc)])
   @@map("build_version")
 }
 
@@ -139,6 +141,7 @@ model BuildLike {
   user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([buildId, userId])
+  @@index([buildId, createdAt])
   @@map("build_like")
 }
 
@@ -172,6 +175,7 @@ model BuildView {
 
   @@unique([buildId, userId])
   @@unique([buildId, ipHash])
+  @@index([buildId, createdAt])
   @@map("build_view")
 }
 

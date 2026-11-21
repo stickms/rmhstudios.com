@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma.server';
 import { findDm } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
 import { isValidReactionEmoji } from '@/lib/social/reactions';
+import { hiddenFromRecipient, requestOut } from '@/lib/messages/requests';
 import { toggleDmReaction } from '@/lib/social/reactions.server';
 
 /** POST /api/messages/$conversationId/react — toggle an emoji reaction on a DM. */
@@ -28,6 +29,13 @@ export const route = apiRoute('/api/messages/$conversationId/react', {
         return Response.json({ error: 'Forbidden' }, { status: 403 });
       }
 
+      // s04-16: a message request waiting for this viewer is not theirs to react to, and the sender's
+      // reactions inside a request that is out never reach the recipient.
+      if (hiddenFromRecipient(conversation.request, userId)) {
+        return Response.json({ error: 'Conversation not found' }, { status: 404 });
+      }
+      const requestOpen = requestOut(conversation.request, userId);
+
       const body = await request.json().catch(() => null);
       const parsed = reactMessageBody.safeParse(body);
       if (!parsed.success || !isValidReactionEmoji(parsed.data.emoji)) {
@@ -47,7 +55,7 @@ export const route = apiRoute('/api/messages/$conversationId/react', {
           ? conversation.participantTwoId
           : conversation.participantOneId;
 
-      notifyUser(otherParticipantId, {
+      if (!requestOpen) notifyUser(otherParticipantId, {
         type: 'message-reaction',
         conversationId,
         messageId: parsed.data.messageId,

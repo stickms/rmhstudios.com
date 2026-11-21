@@ -56,6 +56,8 @@ export interface Group {
   id: string;
   name: string;
   isOwner: boolean;
+  /** The owner's id, for the member list's Owner mark. */
+  ownerId: string | null;
   members: Sender[];
   messages: Msg[];
 }

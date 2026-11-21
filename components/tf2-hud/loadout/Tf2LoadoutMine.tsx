@@ -35,7 +35,7 @@ import {
 } from '@/lib/tf2-loadout/catalog-types';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import LoadoutCard from './LoadoutCard';
-import { CLASS_DEFAULT } from './labels';
+import { tfClassLabels } from './labels';
 import {
   useArrival,
   useArrivingKeys,
@@ -50,6 +50,7 @@ export default function Tf2LoadoutMine() {
     useTranslation(
       'c-tf2-hud',
     );
+  const classLabels = tfClassLabels(t);
   const {
     data: session,
     isPending,
@@ -391,15 +392,7 @@ export default function Tf2LoadoutMine() {
                     c
                   }
                 >
-                  {t(
-                    `class-${c}`,
-                    {
-                      defaultValue:
-                        CLASS_DEFAULT[
-                          c
-                        ],
-                    },
-                  )}
+                  {classLabels[c]}
                 </option>
               ),
             )}

@@ -4,7 +4,7 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
-import { Boxes, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Boxes, Plus, Edit, Trash2, Eye, ChartColumn } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -194,6 +194,16 @@ function ManageContent() {
                       title={t('view', { defaultValue: 'View' })}
                     >
                       <Eye aria-hidden />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="icon">
+                    <Link
+                      to="/create/builds/$slug/insights"
+                      params={{ slug: build.slug }}
+                      aria-label={t('link', { ns: 'build-insights', defaultValue: 'Insights' })}
+                      title={t('link', { ns: 'build-insights', defaultValue: 'Insights' })}
+                    >
+                      <ChartColumn aria-hidden />
                     </Link>
                   </Button>
                   <Button asChild variant="ghost" size="icon">

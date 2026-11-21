@@ -4,6 +4,8 @@ import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
+import { redactCounts } from '@/lib/feed/quiet-counts';
+import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -28,7 +30,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
-    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
+    ...pollLifecycleView(poll),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -122,7 +124,7 @@ export async function listBookmarks(
 
   const items: FeedItem[] = page.map((bm) => {
     const r: any = bm.rmhark;
-    return applyLock(
+    return redactCounts(applyLock(
       {
         id: r.id,
         type: 'rmhark' as const,
@@ -143,7 +145,7 @@ export async function listBookmarks(
       },
       r,
       viewerId,
-    );
+    ), viewerId);
   });
 
   return {

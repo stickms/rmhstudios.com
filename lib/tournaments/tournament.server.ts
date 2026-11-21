@@ -13,6 +13,8 @@ import {
   resultsFromMatches as resultsFromRows,
   swissSettlement,
 } from './swiss-flow';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import { checkInShortfall, isCheckInOpen, isCheckInMinutes, noShows, checkInOpensAt } from './checkin';
 import { randomUUID } from 'node:crypto';
 
 type Db = PrismaClient;
@@ -22,6 +24,8 @@ export class TournamentError extends Error {
     message: string,
     public readonly code: string,
     public readonly status: number = 400,
+    /** Numbers the client words itself (a refused start reports `checkedIn` and `needed`). */
+    public readonly details?: Record<string, number>,
   ) {
     super(message);
     this.name = 'TournamentError';
@@ -49,11 +53,15 @@ export async function createTournament(
     seedPoolCoins?: number;
     maxPlayers: number;
     startsAt?: string | null;
+    checkInMinutes?: number | null;
   },
   db: Db = prisma,
 ): Promise<string> {
   if (!getWagerGame(opts.gameId)) {
     throw new TournamentError('Game is not eligible', 'INELIGIBLE_GAME', 400);
+  }
+  if (opts.checkInMinutes != null && (!isCheckInMinutes(opts.checkInMinutes) || !opts.startsAt)) {
+    throw new TournamentError('Check-in needs a start time', 'NO_START_TIME', 400);
   }
   const seed = opts.seedPoolCoins ?? 0;
   try {
@@ -74,6 +82,7 @@ export async function createTournament(
           maxPlayers: opts.maxPlayers,
           createdById: opts.createdById,
           startsAt: opts.startsAt ? new Date(opts.startsAt) : null,
+          checkInMinutes: opts.checkInMinutes ?? null,
           status: 'REGISTRATION',
         },
       });
@@ -152,8 +161,14 @@ export async function registerForTournament(
           note: 'Tournament entry fee',
         });
       }
+      // Registering once the check-in window is open counts as checking in.
+      const now = new Date();
       await tx.tournamentEntrant.create({
-        data: { tournamentId: t.id, userId: opts.userId },
+        data: {
+          tournamentId: t.id,
+          userId: opts.userId,
+          checkedInAt: isCheckInOpen(t, now) ? now : null,
+        },
       });
     });
   } catch (err) {
@@ -188,25 +203,52 @@ export async function withdrawFromTournament(
       where: { tournamentId_userId: { tournamentId: t.id, userId: opts.userId } },
     });
     if (!entrant) return;
-    // Conditional delete: two racing withdrawals refund once.
-    const removed = await tx.tournamentEntrant.deleteMany({ where: { id: entrant.id } });
-    if (removed.count === 0) return;
-    if (t.entryFeeCoins > 0) {
-      await creditCoins(tx, opts.userId, t.entryFeeCoins);
-      await tx.tournament.update({
-        where: { id: t.id },
-        data: { prizePoolCoins: { decrement: t.entryFeeCoins } },
-      });
-      await recordWagerTxn(tx, {
-        recipientId: opts.userId,
-        amount: t.entryFeeCoins,
-        entityType: 'tournament',
-        entityId: t.id,
-        note: 'Tournament withdrawal refund',
-        idempotencyKey: `tournament:entrant:${entrant.id}:withdraw`,
-      });
-    }
+    await refundEntrant(tx, t, entrant, 'withdraw');
   });
+}
+
+/** Why an entrant leaves before the start; names the ledger note and idempotency key. */
+export type RefundReason = 'withdraw' | 'no-show';
+
+const REFUND_NOTES: Record<RefundReason, string> = {
+  withdraw: 'Tournament withdrawal refund',
+  'no-show': 'Tournament no-show refund',
+};
+
+/**
+ * Remove one entrant from a tournament that has not drawn its bracket and hand
+ * back their entry fee. The one place a leaving entrant is refunded, so a
+ * withdrawal and a no-show drop can never diverge: the entrant is deleted with a
+ * conditional `deleteMany` (a racing second removal matches nothing and refunds
+ * nothing), then the coins are credited, the pool is lowered and the ledger row
+ * is written under `tournament:entrant:<id>:<reason>` (its unique index aborts
+ * the surrounding transaction on a repeat). Call inside a transaction that has
+ * already claimed the tournament row. Answers whether this call removed them.
+ */
+export async function refundEntrant(
+  tx: Prisma.TransactionClient,
+  t: Pick<Tournament, 'id' | 'entryFeeCoins'>,
+  entrant: { id: string; userId: string },
+  reason: RefundReason,
+): Promise<boolean> {
+  const removed = await tx.tournamentEntrant.deleteMany({ where: { id: entrant.id } });
+  if (removed.count === 0) return false;
+  if (t.entryFeeCoins > 0) {
+    await creditCoins(tx, entrant.userId, t.entryFeeCoins);
+    await tx.tournament.update({
+      where: { id: t.id },
+      data: { prizePoolCoins: { decrement: t.entryFeeCoins } },
+    });
+    await recordWagerTxn(tx, {
+      recipientId: entrant.userId,
+      amount: t.entryFeeCoins,
+      entityType: 'tournament',
+      entityId: t.id,
+      note: REFUND_NOTES[reason],
+      idempotencyKey: `tournament:entrant:${entrant.id}:${reason}`,
+    });
+  }
+  return true;
 }
 
 // ─── Start (generate bracket) ───────────────────────────────────────────────
@@ -227,8 +269,43 @@ export async function startTournament(
   // REGISTRATION → LIVE transition (CAS). Two racing starts can no longer both
   // build a bracket, and the entrant list is read after the claim, so a
   // registration racing the start is either in the bracket or refused.
-  const loadEntrants = (tx: Prisma.TransactionClient) =>
-    tx.tournamentEntrant.findMany({ where: { tournamentId: t.id }, orderBy: { joinedAt: 'asc' } });
+  //
+  // With check-in on and its window open, the field is the checked-in entrants:
+  // the rest are removed and refunded in this same transaction (after the claim,
+  // so a failed claim refunds nobody), and a start with too few left throws
+  // before the bracket is written, which rolls the claim and every refund back.
+  // The per-tournament advisory lock serialises the start with check-ins and
+  // settings changes, which take the same lock.
+  const removedUserIds: string[] = [];
+  const takeField = async (tx: Prisma.TransactionClient) => {
+    const all = await tx.tournamentEntrant.findMany({
+      where: { tournamentId: t.id },
+      orderBy: { joinedAt: 'asc' },
+    });
+    const live = await tx.tournament.findUnique({
+      where: { id: t.id },
+      select: { startsAt: true, checkInMinutes: true },
+    });
+    const now = new Date();
+    const dropped = live ? noShows(live, all, now) : [];
+    if (live && isCheckInOpen(live, now)) {
+      const kept = all.length - dropped.length;
+      const short = checkInShortfall(kept, t.minPlayers);
+      if (short) {
+        throw new TournamentError(
+          `Only ${short.checkedIn} of the ${short.needed} players needed have checked in`,
+          'TOO_FEW_CHECKED_IN',
+          400,
+          { ...short },
+        );
+      }
+    }
+    for (const e of dropped) {
+      if (await refundEntrant(tx, t, e, 'no-show')) removedUserIds.push(e.userId);
+    }
+    const droppedIds = new Set(dropped.map((e) => e.id));
+    return all.filter((e) => !droppedIds.has(e.id));
+  };
   const claimStart = async (tx: Prisma.TransactionClient, extra: { swissRounds?: number }) => {
     const claimed = await tx.tournament.updateMany({
       where: { id: t.id, status: 'REGISTRATION' },
@@ -245,8 +322,9 @@ export async function startTournament(
   if (t.format === 'SWISS') {
     await db.$transaction(async (tx) => {
       // Lock first (rounds are fixed after reading entrants, under the lock).
+      await lockKey(tx, `tournament:${t.id}`);
       await claimStart(tx, {});
-      const entrants = await loadEntrants(tx);
+      const entrants = await takeField(tx);
       assertEnough(entrants.length);
       const orderedIds = entrants.map((e) => e.id);
       const pairs = pairRound(orderedIds, []);
@@ -260,12 +338,14 @@ export async function startTournament(
         data: { swissRounds: Math.max(1, recommendedRounds(orderedIds.length)) },
       });
     });
+    await notifyRemovedNoShows(t, removedUserIds);
     return;
   }
 
   await db.$transaction(async (tx) => {
+    await lockKey(tx, `tournament:${t.id}`);
     await claimStart(tx, {});
-    const entrants = await loadEntrants(tx);
+    const entrants = await takeField(tx);
     assertEnough(entrants.length);
 
     // Seed by join order, then build the bracket over entrant ids. Match ids
@@ -310,6 +390,8 @@ export async function startTournament(
     }
   });
 
+  await notifyRemovedNoShows(t, removedUserIds);
+
   // Resolve first-round byes: walk each BYE match and advance its lone entrant.
   const byes = await db.tournamentMatch.findMany({
     where: { tournamentId: t.id, state: 'BYE' },
@@ -323,6 +405,25 @@ export async function startTournament(
       );
     }
   }
+}
+
+/** Tell the entrants a start removed for not checking in (best-effort, after the commit that refunded them). */
+async function notifyRemovedNoShows(
+  t: Pick<Tournament, 'id' | 'name'>,
+  userIds: readonly string[],
+): Promise<void> {
+  await Promise.allSettled(
+    userIds.map((userId) =>
+      createNotification({
+        userId,
+        type: 'SYSTEM',
+        entityType: 'tournament_checkin',
+        entityId: t.id,
+        preview: `You were removed from ${t.name} because you did not check in`,
+        link: `/tournaments/${t.id}`,
+      }),
+    ),
+  );
 }
 
 /** Persist one Swiss round; a bye is recorded as an already-won match. */
@@ -745,9 +846,14 @@ export interface SerializedTournament {
   playerCount: number;
   createdById: string;
   startsAt: string | null;
+  /** Minutes before `startsAt` that check-in opens; null when the tournament has none. */
+  checkInMinutes: number | null;
+  /** When check-in opens (ISO), or null when there is none. */
+  checkInOpensAt: string | null;
   createdAt: string;
   entrants?: {
     id: string;
+    checkedIn: boolean;
     seed: number | null;
     placement: number | null;
     wins: number;
@@ -765,6 +871,7 @@ export interface SerializedTournament {
   }[];
   payouts?: { userId: string; placement: number; amountCoins: number }[];
   viewerEntered?: boolean;
+  viewerCheckedIn?: boolean;
 }
 
 const LIST_INCLUDE = { _count: { select: { entrants: true } } } as const;
@@ -787,6 +894,8 @@ function serializeSummary(t: Tournament & { _count: { entrants: number } }): Ser
     playerCount: t._count.entrants,
     createdById: t.createdById,
     startsAt: t.startsAt?.toISOString() ?? null,
+    checkInMinutes: t.checkInMinutes,
+    checkInOpensAt: checkInOpensAt(t)?.toISOString() ?? null,
     createdAt: t.createdAt.toISOString(),
   };
 }
@@ -828,6 +937,7 @@ export async function getTournament(
     ...base,
     entrants: t.entrants.map((e) => ({
       id: e.id,
+      checkedIn: e.checkedInAt != null,
       seed: e.seed,
       placement: e.placement,
       wins: e.wins,
@@ -849,6 +959,9 @@ export async function getTournament(
       amountCoins: p.amountCoins,
     })),
     viewerEntered: viewerId ? t.entrants.some((e) => e.userId === viewerId) : false,
+    viewerCheckedIn: viewerId
+      ? t.entrants.some((e) => e.userId === viewerId && e.checkedInAt != null)
+      : false,
   };
 }
 

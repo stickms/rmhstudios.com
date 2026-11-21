@@ -7,6 +7,20 @@ import {
   MIN_TOURNAMENT_PLAYERS,
 } from '@/lib/wager/constants';
 
+/** The check-in windows a host can pick: minutes before the start (s04-03). */
+const checkInMinutesSchema = z.union([z.literal(10), z.literal(15), z.literal(30), z.literal(60)]);
+
+/** Host settings change: turn check-in on (a window) or off (null) while registration is open. */
+export const checkInSettingsSchema = z.object({ checkInMinutes: checkInMinutesSchema.nullable() });
+export type CheckInSettingsInput = z.infer<typeof checkInSettingsSchema>;
+
+/** Host action on one entrant: check them in, or undo it. */
+export const hostCheckInSchema = z.object({
+  userId: z.string().min(1).max(64),
+  checkedIn: z.boolean(),
+});
+export type HostCheckInInput = z.infer<typeof hostCheckInSchema>;
+
 export const createTournamentSchema =
   z.object(
     {
@@ -67,7 +81,24 @@ export const createTournamentSchema =
           .datetime()
           .nullable()
           .optional(),
+      checkInMinutes:
+        checkInMinutesSchema
+          .nullable()
+          .optional(),
     },
+  ).refine(
+    (v) => v.checkInMinutes == null || !!v.startsAt,
+    { message: 'Check-in needs a start time', path: ['checkInMinutes'] },
+  ).refine(
+    // A start time must be ahead (a minute of clock skew allowed) and within a year:
+    // a past one would open check-in the moment the tournament is created.
+    (v) => {
+      if (!v.startsAt) return true;
+      const at = Date.parse(v.startsAt);
+      const now = Date.now();
+      return at >= now - 60_000 && at <= now + 366 * 24 * 60 * 60_000;
+    },
+    { message: 'Start time must be within the next year', path: ['startsAt'] },
   );
 export type CreateTournamentInput =
   z.infer<

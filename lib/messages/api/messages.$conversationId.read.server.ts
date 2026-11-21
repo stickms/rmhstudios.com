@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { findDm } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
 import { redisDel } from '@/lib/redis.server';
+import { hiddenFromRecipient } from '@/lib/messages/requests';
 import { getPairPrivacy } from '@/lib/chat-plus/receipts.server';
 
 /** POST /api/messages/[conversationId]/read — mark messages as read */
@@ -23,6 +24,11 @@ export const route = apiRoute('/api/messages/$conversationId/read', {
 
     if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // A message request waiting for this viewer is read from the Requests folder; nothing here marks it read (s04-16).
+    if (hiddenFromRecipient(conversation.request, userId)) {
+      return Response.json({ error: 'Conversation not found' }, { status: 404 });
     }
 
     const marked = await prisma.chatMessage.updateMany({

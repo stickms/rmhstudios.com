@@ -20,6 +20,8 @@ import {
   MAX_TOURNAMENT_PLAYERS,
   MIN_TOURNAMENT_PLAYERS,
 } from '@/lib/wager/constants';
+import { isCheckInMinutes } from '@/lib/tournaments/checkin';
+import { CheckInCreateFields } from '@/components/tournaments/CheckInPanel';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createTournamentApi } from '@/lib/tournaments/tournaments.contract';
@@ -103,6 +105,15 @@ export function CreateTournamentDialog({
     useState(
       false,
     );
+  // Local wall-clock `datetime-local` value; '' = no start time.
+  const [startsAtLocal, setStartsAtLocal] = useState('');
+  const [checkInValue, setCheckInValue] = useState('');
+  const startsAtDate = startsAtLocal ? new Date(startsAtLocal) : null;
+  const startsAtIso =
+    startsAtDate && !Number.isNaN(startsAtDate.getTime()) ? startsAtDate.toISOString() : null;
+  const checkInMinutes = Number(checkInValue);
+  const checkInChoice =
+    startsAtIso && isCheckInMinutes(checkInMinutes) ? checkInMinutes : null;
 
   const submit =
     async () => {
@@ -123,6 +134,8 @@ export function CreateTournamentDialog({
                 seedPoolCoins:
                   seedPool,
                 maxPlayers,
+                startsAt: startsAtIso,
+                checkInMinutes: checkInChoice,
               },
             },
           );
@@ -479,6 +492,14 @@ export function CreateTournamentDialog({
               )}
             </Select>
           </div>
+
+          <CheckInCreateFields
+            startsAtLocal={startsAtLocal}
+            onStartsAtChange={setStartsAtLocal}
+            checkInValue={checkInValue}
+            onCheckInChange={setCheckInValue}
+            hasStart={!!startsAtIso}
+          />
         </div>
 
         <DialogFooter>

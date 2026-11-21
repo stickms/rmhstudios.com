@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { rsvp, unrsvp, EventError } from '@/lib/events.server';
 
 const rsvpSchema = z.object({
-  status: z.enum(['going', 'maybe']),
+  // 'waitlist' joins the waitlist of a full one-off event; a plain 'going' on a full event is still refused.
+  status: z.enum(['going', 'maybe', 'waitlist']),
   // K4 — repeating events: carry the RSVP over to every occurrence, or pin it to one date.
   everyTime: z.boolean().optional(),
   occurrenceAt: z.coerce.date().optional(),
@@ -20,6 +21,10 @@ function mapEventError(err: EventError): [string, number] {
       return ['Not found', 404];
     case 'CAPACITY_FULL':
       return ['This event is full', 409];
+    case 'WAITLIST_CLOSED':
+      return ['The waitlist is closed', 409];
+    case 'WAITLIST_FULL':
+      return ['The waitlist is full', 409];
     case 'CANCELED':
       return ['This event was canceled', 409];
     default:
@@ -28,7 +33,7 @@ function mapEventError(err: EventError): [string, number] {
 }
 
 /**
- * POST   /api/events/$id/rsvp — RSVP going/maybe (schedules reminders on 'going').
+ * POST   /api/events/$id/rsvp — RSVP going/maybe, or join the waitlist of a full event (schedules reminders on 'going').
  * DELETE /api/events/$id/rsvp — withdraw RSVP.
  */
 export const route = apiRoute('/api/events/$id/rsvp', {

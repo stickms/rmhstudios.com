@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 385 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 187 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 390 routes. 202 render inside the standard site shell (sidebar, nav, context rail); 188 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -74,6 +74,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/connections/u/:id` | Connections Grid | public | `app/routes/_site/connections.u.$id.tsx` |
 | `/create` | Create | public | `app/routes/_site/create/index.tsx` |
 | `/create/builds` | User Builds | public | `app/routes/_site/create/builds.tsx` |
+| `/create/builds/:slug/insights` | Build insights | public | `app/routes/_site/create_.builds.$slug.insights.tsx` |
 | `/create/builds/manage` | Manage builds | public | `app/routes/_site/create_.builds.manage.tsx` |
 | `/create/builds/submit` | Submit a build | public | `app/routes/_site/create_.builds.submit.tsx` |
 | `/create/earnings` | Earnings | public | `app/routes/_site/create/earnings.tsx` |
@@ -108,6 +109,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/marathon/:shareId` | — | public | `app/routes/_site/marathon.$shareId.tsx` |
 | `/messages` | Inbox | public | `app/routes/_site/messages/index.tsx` |
 | `/messages/:conversationId` | Conversation | public | `app/routes/_site/messages/$conversationId.tsx` |
+| `/messages/requests` | Message requests | public | `app/routes/_site/messages/requests.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/museum` | Site museum | public | `app/routes/_site/museum.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
@@ -121,6 +123,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/predictions` | Predictions | public | `app/routes/_site/predictions.tsx` |
 | `/profile/:id` | redirects to `/u/$userid` | public | `app/routes/_site/profile/$id.tsx` |
 | `/progress` | Progress | public | `app/routes/_site/progress.tsx` |
+| `/progress/compare` | — | public | `app/routes/_site/progress_.compare.tsx` |
 | `/psychology` | redirects to `/rmh-research/psychology` | public | `app/routes/_site/psychology.tsx` |
 | `/qotd` | Question of the Day | public | `app/routes/_site/qotd.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
@@ -168,6 +171,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |
 | `/settings/privacy` | Privacy & data | public | `app/routes/_site/settings/privacy.tsx` |
 | `/settings/profile` | Profile customization | public | `app/routes/_site/settings/profile.tsx` |
+| `/settings/replays` | — | public | `app/routes/_site/settings/replays.tsx` |
 | `/settings/security` | Security | public | `app/routes/_site/settings/security.tsx` |
 | `/settings/themes` | Theme Studio | public | `app/routes/_site/settings/themes.tsx` |
 | `/share` | Share to RMH Studios | public | `app/routes/_site/share.tsx` |
@@ -324,6 +328,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhbox/:lobbyId` | — | sign-in | `app/routes/rmhbox/$lobbyId.tsx` |
 | `/rmhbox/minigames` | RMHbox minigames | sign-in | `app/routes/rmhbox/minigames/index.tsx` |
 | `/rmhbox/minigames/:minigameId/history` | — | sign-in | `app/routes/rmhbox/minigames/$minigameId/history.tsx` |
+| `/rmhbox/players/:userId` | — | sign-in | `app/routes/rmhbox/players.$userId.tsx` |
 | `/rmhcalculator` | RMHCalculator | sign-in | `app/routes/rmhcalculator.tsx` |
 | `/rmhcharacters` | — | public | `app/routes/rmhcharacters.tsx` |
 | `/rmhcode` | — | public | `app/routes/rmhcode/index.tsx` |

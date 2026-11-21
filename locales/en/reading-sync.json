@@ -1,0 +1,18 @@
+{
+  "continue-error": "Could not load your books.",
+  "continue-heading": "Continue reading",
+  "continue-progress": "{{percent}} read",
+  "continue-retry": "Try again",
+  "continued-from": "Continued from your other device (page {{page}})",
+  "device-only-label": "Keep my place and notes on this device only",
+  "device-only-off-hint": "Your place, bookmarks and notes follow you to your other devices.",
+  "device-only-on-hint": "Nothing from this book is sent to your account from this device.",
+  "remove-cancel": "Cancel",
+  "remove-confirm": "Remove",
+  "remove-done": "Removed from your account.",
+  "remove-failed": "Could not remove them. Try again.",
+  "remove-question": "Remove the synced place and notes for this book from your account? Copies on your devices stay, and syncing turns off on this one.",
+  "remove-synced": "Remove synced place and notes",
+  "resume-continue": "Continue reading {{title}}",
+  "sync-heading": "Place and notes"
+}

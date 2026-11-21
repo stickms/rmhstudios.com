@@ -1,5 +1,10 @@
 # Changelog
 
+## Build releases — 2026-11
+
+- `GET /api/v1/builds/{slug}` adds `releases` (up to 20, newest first; each has `version`, `changelog`, `commitHash`, `createdAt`).
+- `versions` on the same response is deprecated. It still carries the same releases in its old shape (no `commitHash`); move to `releases`.
+
 ## Games — 2026-11
 
 - New scope `read:games` (group Games).

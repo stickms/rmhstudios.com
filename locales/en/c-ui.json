@@ -27,6 +27,7 @@
   "next-page": "Next page",
   "page-of": "Page {{page}} of {{total}}",
   "prev-page": "Previous page",
+  "prompt-unavailable": "Couldn't open the dialog. Check your connection and try again.",
   "schedule-button": "Schedule",
   "schedule-past-error": "Pick a time in the future.",
   "schedule-publish-at": "Publish at",

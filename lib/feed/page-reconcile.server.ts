@@ -33,6 +33,7 @@ import type { FeedItem } from '../feed-types';
 import { getHiddenAuthorIds, getBlockedAuthorIds } from '../moderation.server';
 import { quotedOriginalVisibleTo, withholdQuotedOriginal } from './quoted-original';
 import { getSignals } from './signals.server';
+import { countsHiddenFrom, nullPostCounts } from './quiet-counts';
 
 type Surface = 'following' | 'foryou';
 
@@ -44,6 +45,8 @@ interface PostRow {
   communityId: string | null;
   hashtags: { hashtag: { tag: string } }[];
   unlocks: { id: string }[];
+  /** The author's quiet-counts switch as it is NOW (the cached card may predate a change). */
+  user?: { profile?: { hideCountsOnMine?: boolean } | null } | null;
 }
 
 export interface ReconcileResult {
@@ -84,6 +87,7 @@ export async function reconcileCachedPage(
             isSensitive: true,
             communityId: true,
             community: { select: { isPrivate: true } },
+            user: { select: { profile: { select: { hideCountsOnMine: true } } } },
           },
           take: quotedIds.length,
         })
@@ -98,6 +102,7 @@ export async function reconcileCachedPage(
         communityId: true,
         hashtags: { select: { hashtag: { select: { tag: true } } } },
         unlocks: { where: { userId: viewerId }, select: { id: true } },
+        user: { select: { profile: { select: { hideCountsOnMine: true } } } },
       },
       take: postIds.length,
     }) as Promise<PostRow[]>,
@@ -170,17 +175,32 @@ export async function reconcileCachedPage(
         if (!own) return false;
     }
     if (item.locked && row.unlocks.length > 0) needsRefresh = true;
+    // A card whose numbers were withheld for an author who has since shown them again is stale.
+    if (item.likeCount === null && row.user?.profile?.hideCountsOnMine === false) needsRefresh = true;
     return true;
   });
 
   // A quoted original that has since gone private, been deleted or removed, or
   // whose author was blocked: keep the quote, withhold the original's content.
-  const reconciled = kept.map((item) => {
+  const quoteChecked = kept.map((item) => {
     if (item.type !== 'rmhark' || !item.original) return item;
     const q = quotedById.get(item.original.id);
     if (!q || q.deletedAt) return { ...item, original: withholdQuotedOriginal(item.original, true) };
-    if (quotedOriginalVisibleTo(q, viewerId, blocked)) return item;
+    if (quotedOriginalVisibleTo(q, viewerId, blocked)) {
+      // The quoted author's switch, as it is now, applies to the cached card too.
+      return countsHiddenFrom(q.userId, q.user?.profile?.hideCountsOnMine, viewerId)
+        ? { ...item, original: nullPostCounts(item.original) }
+        : item;
+    }
     return { ...item, original: withholdQuotedOriginal(item.original, false) };
+  });
+
+  // Counts are cached with the page (up to 60s), but an author's "hide counts" choice is a privacy setting:
+  // re-apply it from the row's current value so turning it on takes effect for every cached page at once.
+  const reconciled = quoteChecked.map((item) => {
+    if (item.type !== 'rmhark') return item;
+    const row = byId.get(item.actualId ?? item.id);
+    return countsHiddenFrom(row?.userId, row?.user?.profile?.hideCountsOnMine, viewerId) ? nullPostCounts(item) : item;
   });
 
   return { items: reconciled, needsRefresh };

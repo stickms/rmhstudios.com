@@ -1,25 +1,15 @@
 /**
  * Can `senderId` message `recipientId`? The same rule the DM send routes apply
- * (`UserProfile.dmPrivacy`), for the P04 paths that write DMs on the sender's
- * behalf (forwarding). A note-to-self is always allowed.
+ * (`UserProfile.dmPrivacy`, and the message-request gate of s04-16), for the P04
+ * paths that write DMs on the sender's behalf (forwarding, call auto-replies). A
+ * note-to-self is always allowed. A refused sender who could only open a message
+ * request is not allowed here: a request is one text message from the composer.
  */
 
-import { prisma } from '@/lib/prisma.server';
+import { requestGate } from '@/lib/messages/requests.server';
 
 export async function canDirectMessage(senderId: string, recipientId: string): Promise<boolean> {
   if (senderId === recipientId) return true;
-  const recipient = await prisma.user.findUnique({
-    where: { id: recipientId },
-    select: { profile: { select: { dmPrivacy: true } } },
-  });
-  const privacy = recipient?.profile?.dmPrivacy ?? 'EVERYONE';
-  if (privacy === 'NONE') return false;
-  if (privacy === 'FOLLOWERS') {
-    const follows = await prisma.follow.findUnique({
-      where: { followerId_followingId: { followerId: recipientId, followingId: senderId } },
-      select: { followerId: true },
-    });
-    return !!follows;
-  }
-  return true;
+  const gate = await requestGate(senderId, recipientId);
+  return gate.outcome === 'allowed';
 }

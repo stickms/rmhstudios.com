@@ -16,6 +16,7 @@ import { cn, relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
 import { useLocaleStore } from '@/stores/localeStore';
 import { ARRIVE } from '@/components/ui/arrive';
+import { feedKickerLabel } from '@/components/feed/kicker-labels';
 
 /** The post menu's rows and dialogs: fetched the first time a row's three dots are used, never with the feed. */
 const loadFeedRowMenu = () => import('@/components/feed/FeedRowMenu');
@@ -55,7 +56,7 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
   const [clamped, setClamped] = useState(false);
   const isRmhark = item.type === 'rmhark';
   const rawKicker = item.category || item.type;
-  const kicker = t(`kicker.${rawKicker}`, { defaultValue: humanizeKicker(rawKicker) });
+  const kicker = feedKickerLabel(t, rawKicker) ?? humanizeKicker(rawKicker);
   const href = hrefFor(item);
   const external = href.startsWith('http');
   // An optimistic post has a temporary id: there is nothing to open and nothing to like until the server answers.

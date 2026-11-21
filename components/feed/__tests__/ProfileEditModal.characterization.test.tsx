@@ -105,6 +105,7 @@ const S = {
   bannerCrop: 24,
   bannerPicture: 25,
   bannerLoading: 26,
+  followListVisibility: 27,
 } as const;
 
 const INITIAL = {
@@ -241,6 +242,11 @@ describe('ProfileEditModal characterization', () => {
       expect(render({ section: 'privacy', dmPrivacy })).toMatchSnapshot();
     }
     expect(render({ section: 'privacy', showLikes: false })).toMatchSnapshot();
+  });
+  it('privacy section for each follow-list setting', () => {
+    for (const followListVisibility of ['everyone', 'mutuals', 'me']) {
+      expect(render({ section: 'privacy', followListVisibility })).toMatchSnapshot();
+    }
   });
   it('is deterministic', () => {
     expect(render({ section: 'links' })).toBe(render({ section: 'links' }));

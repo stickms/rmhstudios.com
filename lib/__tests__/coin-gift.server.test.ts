@@ -96,6 +96,8 @@ function makeWallet(
         : balance;
   const tx =
     {
+      // No play-limits row, so the ledger's spending-budget check finds no budget.
+      userPlayLimits: { findUnique: vi.fn(async () => null) },
       userProfile:
         {
           upsert:

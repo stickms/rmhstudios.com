@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins } from '@/lib/economy/ledger.server';
+import { isAppError } from '@/lib/errors/codes';
 
 const PERIOD_DAYS = 30;
 
@@ -102,6 +103,9 @@ export async function joinOrRenewMembership(
     if (error instanceof Error && error.message === 'INSUFFICIENT_COINS') {
       return { ok: false, error: 'Not enough coins', status: 400 };
     }
+    // A refusal the member asked for (the monthly budget) carries its own code
+    // and numbers; let the handler answer with them rather than a bare 500.
+    if (isAppError(error)) throw error;
     console.error('Membership join error:', error);
     return { ok: false, error: 'Internal Server Error', status: 500 };
   }

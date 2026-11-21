@@ -18,6 +18,7 @@
 import { memo } from 'react';
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { globesetColorLabels } from './color-labels';
 import {
   DOT_COLORS,
   dotsOf,
@@ -176,6 +177,7 @@ function GlobeSetCardImpl({
     useTranslation(
       'c-daily-puzzles',
     );
+  const colorNames = globesetColorLabels(t);
 
   /**
    * The card names its own dots.
@@ -193,13 +195,7 @@ function GlobeSetCardImpl({
         (
           dot,
         ) =>
-          t(
-            `globeset-color-${dot.id}`,
-            {
-              defaultValue:
-                dot.id,
-            },
-          ),
+          colorNames[dot.id],
       )
       .join(
         ', ',

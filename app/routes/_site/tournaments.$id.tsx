@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import { BracketView } from '@/components/tournaments/BracketView';
+import { CheckInPanel, EntrantCheckIn, useStartRefusal } from '@/components/tournaments/CheckInPanel';
 import { SwissStandings } from '@/components/competitive/SwissStandings';
 import { PickemPanel } from '@/components/competitive/PickemPanel';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
@@ -92,6 +93,7 @@ export const Route = createFileRoute('/_site/tournaments/$id')({
 
 function TournamentDetailPage() {
   const { t } = useTranslation('c-tournaments');
+  const startRefusal = useStartRefusal();
   const { id } = Route.useParams();
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
@@ -123,7 +125,11 @@ function TournamentDetailPage() {
       const res = await fetch(path, { method: 'POST' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? t('failed', { defaultValue: 'Something went wrong' }));
+        toast.error(
+          startRefusal(data.code, data.details) ??
+            data.error ??
+            t('failed', { defaultValue: 'Something went wrong' }),
+        );
         return;
       }
       toast.success(okMsg);
@@ -320,6 +326,8 @@ function TournamentDetailPage() {
           )}
         </div>
 
+        <CheckInPanel tourney={tourney} viewerId={viewerId} canManage={canManage} onChanged={load} />
+
         {/* Bracket (live / complete, or cancelled after it started: its open matches read "Cancelled") */}
         {(tourney.status === 'LIVE' ||
           tourney.status === 'COMPLETE' ||
@@ -382,6 +390,7 @@ function TournamentDetailPage() {
                   fallbackName={e.user?.name ?? '?'}
                 />
                 <span className="truncate text-sm">{e.user?.name}</span>
+                <EntrantCheckIn tourney={tourney} entrant={e} canManage={canManage} onChanged={load} />
                 {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
                   <span className="ml-auto text-xs text-site-text-muted">
                     {e.wins}–{e.losses}

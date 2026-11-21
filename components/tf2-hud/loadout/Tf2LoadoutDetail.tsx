@@ -25,12 +25,13 @@ import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import ItemTile from './ItemTile';
 import PlayerViewer from './PlayerViewer';
 import { tauntEffectOf, tauntItemOf, wornItems } from './worn';
-import { CLASS_DEFAULT } from './labels';
+import { tfClassLabels } from './labels';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
   const { t } = useTranslation('c-tf2-hud');
+  const classLabels = tfClassLabels(t);
   const navigate = useNavigate();
   const { data: session } = useSession();
   const { copy } = useClipboard();
@@ -144,7 +145,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="tf2hud-title text-4xl">{detail.title}</h2>
                 <Pill tone="accent">
-                  {t(`class-${detail.tfClass}`, { defaultValue: CLASS_DEFAULT[detail.tfClass] })}
+                  {classLabels[detail.tfClass]}
                 </Pill>
               </div>
               <p className="text-sm text-app-text-dim">

@@ -3,6 +3,7 @@ import type {
   FeedItemUser,
 } from '@/lib/feed-types';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-limits';
+import { bumpCount } from '@/lib/feed/quiet-counts';
 import { extractFirstUrl } from '../RMHarkContent';
 import type { Comment } from '../CommentItem';
 
@@ -103,11 +104,9 @@ export function withCommentDelta(
     ? {
         ...post,
         commentCount:
-          Math.max(
-            0,
-            (post.commentCount ??
-              0) +
-              delta,
+          bumpCount(
+            post.commentCount,
+            delta,
           ),
       }
     : post;

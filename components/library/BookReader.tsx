@@ -19,6 +19,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { readerQualityLabels } from '@/components/library/reader-quality-labels';
 import { Link } from '@tanstack/react-router';
 import {
   ArrowLeft,
@@ -44,7 +45,9 @@ import { PageStore } from '@/lib/library/page-store';
 import { isFindShortcut, isReaderKeyBlocked, shouldOpenFind } from '@/lib/library/reader-keys';
 import type { FindTarget } from '@/lib/library/find';
 import type { FindSource } from '@/lib/library/find-index';
-import { useBookState, type Bookmark as BookmarkT, type Note } from '@/lib/library/reader-store';
+import { useSyncedBookState, type Bookmark as BookmarkT, type Note } from '@/lib/library/reader-store';
+import { useSession } from '@/components/Providers';
+import { ContinuedNotice } from './ContinuedNotice';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { BookCanvas } from './BookCanvas';
 import { ReaderDetails } from './ReaderDetails';
@@ -87,11 +90,6 @@ const QUALITY_CAP: Record<PageQuality, number> = {
   low: 1600,
   medium: 2600,
   high: 3600,
-};
-const QUALITY_LABEL: Record<PageQuality, string> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
 };
 const QUALITY_ORDER: PageQuality[] = ['high', 'medium', 'low'];
 const DEFAULT_QUALITY: PageQuality = 'high';
@@ -188,8 +186,9 @@ export function BookReader({ book }: { book: LibraryBook }) {
 
   const hasToc = book.toc.length > 0;
 
-  // The reader's personal, device-local state for this book.
-  const marks = useBookState(book.slug);
+  // The reader's personal state for this book: on the device first, synced to their account when signed in.
+  const session = useSession();
+  const marks = useSyncedBookState(book.slug, { signedIn: Boolean(session.data), pages: numPages });
 
   // The page-raster pipeline. Created once the PDF is open; owns all page textures.
   const storeRef = useRef<PageStore | null>(null);
@@ -522,6 +521,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           </a>
         </div>
       </header>
+      <ContinuedNotice page={marks.continuedFrom} />
 
       {/* §5.48 liquid-open hero — the shelf book cover morphs into this stage
           (no DOM cover in the WebGL reader, so the stage container is the closest
@@ -586,6 +586,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           returnFocus={detailsTriggerRef.current}
           onJump={goToPage}
           onClose={() => setDetailsOpen(false)}
+          sync={marks.sync}
         />
       )}
     </main>
@@ -901,6 +902,7 @@ export function MarksMenu({
 /** Dropdown to pick the page raster quality (sharpness vs. memory). Defaults high. */
 function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q: PageQuality) => void }) {
   const { t } = useTranslation("c-library");
+  const qualityLabels = readerQualityLabels(t);
   return (
     <Dropdown icon={<SlidersHorizontal size={16} />} label={t('page-quality', { defaultValue: 'Page quality' })}>
       {(close) => (
@@ -917,7 +919,7 @@ function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q
                   close();
                 }}
               >
-                <span className="lib-reader__chapter-title">{t(`quality-${q}`, { defaultValue: QUALITY_LABEL[q] })}</span>
+                <span className="lib-reader__chapter-title">{qualityLabels[q]}</span>
                 {q === quality && <Check size={14} className="lib-reader__chapter-page" />}
               </button>
             </li>
