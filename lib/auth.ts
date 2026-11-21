@@ -201,7 +201,10 @@ export const auth = betterAuth({
     revokeSessionsOnPasswordReset: true,
     // A reset by email is how an account is recovered, so it starts the 72-hour economy hold (no tips, gifts or
     // redemptions) and tells the inbox it happened. Neither may fail the reset itself.
-    onPasswordReset: async ({ user }) => {
+    // Also logged for the member (their security log, "Not you?"). Only the account and the request's device and
+    // network are stored: never the token. The record never throws and is not awaited.
+    onPasswordReset: async ({ user }, request) => {
+      void recordSecurityEvent({ userId: user.id, kind: 'password_reset_completed', request });
       await startRecoveryHold(user.id, 'password reset by email').catch((err) =>
         console.error('[auth] recovery hold failed:', err),
       );
@@ -222,7 +225,10 @@ export const auth = betterAuth({
     // reset for an unknown address without sending, so waiting on the send
     // would make a real address answer slower and give it away. sendEmail
     // never throws, so nothing is lost by not waiting.
-    sendResetPassword: async ({ user, url }) => {
+    // The request is logged for the member the same way (existing accounts only, since this hook runs only for
+    // them): fire-and-forget, with no URL or token stored.
+    sendResetPassword: async ({ user, url }, request) => {
+      void recordSecurityEvent({ userId: user.id, kind: 'password_reset_requested', request });
       void sendEmail({
         to: user.email,
         subject: 'Reset your RMH Studios password',

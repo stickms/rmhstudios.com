@@ -9,6 +9,9 @@ import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
 import { VoiceComposer } from '@/components/voice/VoiceComposer';
 import { ChecklistComposer } from '@/components/chat-plus/ChecklistComposer';
+import { ScheduledStrip } from '@/components/messages/ScheduledStrip';
+import { SendLaterMenu } from '@/components/messages/SendLaterMenu';
+import { PendingMessageImages } from '../PendingMessageImages';
 import { GhostTextArea } from '../GhostTextArea';
 import { SmartReplies } from '../SmartReplies';
 import { MAX_DM_IMAGES } from './conversation-state';
@@ -44,6 +47,7 @@ export function ComposerBar({
     setGifUrl,
     imageUrls,
     setImageUrls,
+    imageAlts,
     uploading,
     voiceActive,
     setVoiceActive,
@@ -76,6 +80,7 @@ export function ComposerBar({
       {/* Input. `--safe-bottom` keeps the send row clear of the home indicator and
           iOS Safari's floating tab bar — this row is the bottom edge of the column
           now that the column stops at the viewport. */}
+      <ScheduledStrip chatId={conversationId} onDelivered={appendPosted} />
       <div className="conversation__composer">
         {showGifPicker && !voiceActive && (
           <GifPicker
@@ -90,34 +95,28 @@ export function ComposerBar({
         )}
 
         {/* Pending media preview */}
-        {!voiceActive && (imageUrls.length > 0 || gifUrl) && (
+        {!voiceActive && imageUrls.length > 0 && (
+          <PendingMessageImages
+            imageUrls={imageUrls}
+            alts={imageAlts.alts}
+            missing={imageAlts.missing}
+            onSetAlt={imageAlts.setAlt}
+            onRemove={(url) => setImageUrls((prev) => prev.filter((u) => u !== url))}
+          />
+        )}
+        {!voiceActive && gifUrl && (
           <div className="mb-2 flex flex-wrap gap-2">
-            {imageUrls.map((url) => (
-              <div key={url} className="relative">
-                <img src={url} alt="" className="h-20 w-20 rounded-site-sm object-cover" />
-                <button
-                  type="button"
-                  aria-label={t('remove-image', { defaultValue: 'Remove image' })}
-                  onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
-                  className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-            {gifUrl && (
-              <div className="relative">
-                <img src={gifUrl} alt="" className="h-20 w-auto rounded-site-sm" />
-                <button
-                  type="button"
-                  aria-label={t('remove-gif', { defaultValue: 'Remove GIF' })}
-                  onClick={() => setGifUrl(null)}
-                  className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
+            <div className="relative">
+              <img src={gifUrl} alt="" className="h-20 w-auto rounded-site-sm" />
+              <button
+                type="button"
+                aria-label={t('remove-gif', { defaultValue: 'Remove GIF' })}
+                onClick={() => setGifUrl(null)}
+                className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -246,14 +245,37 @@ export function ComposerBar({
           />
 
           {!voiceActive && (
-            <Button
-              variant="primary"
-              disabled={(!input.trim() && !gifUrl && imageUrls.length === 0) || sending}
-              onClick={handleSend}
-              className="h-[42px]"
-            >
-              {t('conversation-send', { defaultValue: 'Send' })}
-            </Button>
+            <>
+              <Button
+                variant="primary"
+                disabled={
+                  (!input.trim() && !gifUrl && imageUrls.length === 0) ||
+                  sending ||
+                  imageAlts.missing.length > 0
+                }
+                onClick={handleSend}
+                className="h-[42px]"
+              >
+                {t('conversation-send', { defaultValue: 'Send' })}
+              </Button>
+              <SendLaterMenu
+                chatId={conversationId}
+                disabled={
+                  (!input.trim() && !gifUrl && imageUrls.length === 0) ||
+                  sending ||
+                  uploading ||
+                  imageAlts.missing.length > 0
+                }
+                getDraft={() => ({ content: input, gifUrl, imageUrls, imageAlts: imageAlts.alts })}
+                onScheduled={() => {
+                  setInput('');
+                  setGifUrl(null);
+                  setImageUrls([]);
+                  stopTyping();
+                }}
+                className="h-[42px]"
+              />
+            </>
           )}
         </div>
       </div>

@@ -17,6 +17,8 @@ import { feedEventBus } from "@/lib/feed-sse";
 import { createNotification } from "@/lib/notifications.server";
 import { parseHandles } from "@/lib/feed/mentions";
 import { canViewPost } from "@/lib/feed/audience.server";
+import { postConversationKey } from "@/lib/feed/conversation-controls.server";
+import { getConversationPrefs, shouldDeliver } from "@/lib/notify/conversation-prefs.server";
 
 export interface MentionAuthor {
   id: string;
@@ -48,10 +50,10 @@ export async function notifyMentions(input: NotifyMentionsInput): Promise<void> 
   // posts previously notified every @mentioned user regardless.
   const post = await prisma.rMHark.findUnique({
     where: { id: input.postId },
-    select: { userId: true, audience: true, communityId: true },
+    select: { id: true, userId: true, threadRootId: true, audience: true, communityId: true },
   });
   if (!post) return;
-  const recipients =
+  const readers =
     post.audience === "PUBLIC" && !post.communityId
       ? mentioned
       : (
@@ -59,6 +61,15 @@ export async function notifyMentions(input: NotifyMentionsInput): Promise<void> 
             mentioned.map(async (m) => ((await canViewPost(post, m.id)) ? m : null)),
           )
         ).filter((m): m is (typeof mentioned)[number] => m !== null);
+
+  // A mention is always addressed to its recipient, so only a full mute (None) silences it: look every recipient's choice
+  // for this conversation up in one query, before the live toast as well as the stored notification.
+  const conversationKey = postConversationKey(post);
+  const prefs = await getConversationPrefs(
+    readers.map((m) => m.id),
+    conversationKey,
+  );
+  const recipients = readers.filter((m) => shouldDeliver(prefs.get(m.id), true));
   if (recipients.length === 0) return;
 
   // Live toast for any mentioned user with an open stream.

@@ -5,10 +5,13 @@ import { revokeDeveloperKeyApi, updateDeveloperKeyApi } from '@/lib/developer/ke
 import { patchKeyBody } from '@/lib/developer/keys-schema';
 import { generateApiKey } from '@/lib/api/developer-auth.server';
 import { normalizeScopes } from '@/lib/api/scopes';
+import { tierMinuteLimit } from '@/lib/api/tier-limits';
+import { getUserTier } from '@/lib/entitlements';
 
 /**
- * PATCH  /api/developer/keys/$id — rename, re-scope, change expiry, or rotate
- *        the secret of one of your keys. Rotating returns a new plaintext once.
+ * PATCH  /api/developer/keys/$id — rename, re-scope, change expiry, restrict the
+ *        allowed addresses or per-minute limit, or rotate the secret of one of your keys.
+ *        Every request re-reads the key, so a change applies to the next request. Rotating returns a new plaintext once.
  * DELETE /api/developer/keys/$id — revoke one of your API keys.
  */
 export const route = apiRoute('/api/developer/keys/$id', {
@@ -29,7 +32,21 @@ export const route = apiRoute('/api/developer/keys/$id', {
         return Response.json({ error: 'Not found' }, { status: 404 });
       if (key.revokedAt) return Response.json({ error: 'Key has been revoked' }, { status: 400 });
 
+      // A key's own limit can only lower the tier's. Checked against the tier the
+      // owner holds now (a lapsed plan is refused at request time anyway).
+      if (body.rateLimitPerMinute != null) {
+        const maxLimit = tierMinuteLimit(await getUserTier(session.user.id));
+        if (body.rateLimitPerMinute > maxLimit) {
+          return Response.json(
+            { error: `Requests per minute can be at most ${maxLimit} on your plan.` },
+            { status: 400 },
+          );
+        }
+      }
+
       const data: Record<string, unknown> = {};
+      if (body.allowedCidrs !== undefined) data.allowedCidrs = body.allowedCidrs;
+      if (body.rateLimitPerMinute !== undefined) data.rateLimitPerMinute = body.rateLimitPerMinute;
       if (body.name !== undefined) data.name = body.name.trim();
       if (body.scopes !== undefined) data.scopes = normalizeScopes(body.scopes);
       if (body.expiresInDays !== undefined) {
@@ -60,6 +77,8 @@ export const route = apiRoute('/api/developer/keys/$id', {
           expiresAt: true,
           lastUsedAt: true,
           createdAt: true,
+          allowedCidrs: true,
+          rateLimitPerMinute: true,
         },
       });
       return Response.json(plaintext ? { ...updated, key: plaintext } : updated);

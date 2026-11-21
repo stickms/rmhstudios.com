@@ -172,6 +172,8 @@ export interface FeedItem {
   hasEmbed?: boolean;
   /** A vibe page is pinned to the post (RMH Vibes). */
   hasVibe?: boolean;
+  /** s03-13: the community this post was read from (community feed only), for "breaks a rule" reports. */
+  communitySlug?: string;
   /** N1: community post flair (community feeds only). */
   communityFlair?: {
     id: string;
@@ -182,6 +184,8 @@ export interface FeedItem {
   seriesId?: string;
   /** posts-plus X8: ISO time after which the post disappears (author-chosen TTL). */
   expiresAt?: string;
+  /** The reply the author pinned to the top of this post's conversation (post detail only). */
+  pinnedReplyId?: string | null;
 
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];

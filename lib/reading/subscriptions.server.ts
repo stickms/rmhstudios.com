@@ -13,6 +13,7 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { createNotification } from '@/lib/notifications.server';
 import { sendOnce } from '@/lib/email/deliveries.server';
 import { signUnsubToken } from '@/lib/email/unsubscribe';
@@ -255,6 +256,9 @@ export async function createSubscription(
               tags: {
                 has: target,
               },
+              ...publishedLogWhere(
+                new Date(),
+              ),
             },
           select:
             {
@@ -644,7 +648,10 @@ async function attachStories<
   );
 }
 
-/** Logs created in `(after, until]`, oldest first. */
+/**
+ * Live Logs published in `[after, until]`, oldest first. A Log counts as new from the moment it went live
+ * (`publishedAt`), so a draft is never seen and a scheduled Log is seen once, when the publish job sets it.
+ */
 async function newBlogItems(
   db: Pick<
     Prisma.TransactionClient,
@@ -664,20 +671,27 @@ async function newBlogItems(
       {
         where:
           {
-            createdAt:
+            AND: [
+              publishedLogWhere(
+                new Date(),
+              ),
               {
-                gte: after,
-                ...(until
-                  ? {
-                      lte: until,
-                    }
-                  : {}),
+                publishedAt:
+                  {
+                    gte: after,
+                    ...(until
+                      ? {
+                          lte: until,
+                        }
+                      : {}),
+                  },
               },
+            ],
           },
         orderBy:
           [
             {
-              createdAt:
+              publishedAt:
                 order,
             },
             {
@@ -692,18 +706,31 @@ async function newBlogItems(
             title: true,
             description: true,
             tags: true,
-            createdAt: true,
+            publishedAt: true,
           },
       },
     );
-  return rows.map(
+  return rows.flatMap(
     (
       r,
-    ) => ({
-      ...r,
-      source:
-        'blog' as const,
-    }),
+    ) =>
+      r.publishedAt
+        ? [
+            {
+              id: r.id,
+              slug: r.slug,
+              title:
+                r.title,
+              description:
+                r.description,
+              tags: r.tags,
+              createdAt:
+                r.publishedAt,
+              source:
+                'blog' as const,
+            },
+          ]
+        : [],
   );
 }
 

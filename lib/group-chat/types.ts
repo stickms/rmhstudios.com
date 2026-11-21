@@ -39,6 +39,7 @@ export interface Msg {
     | string
     | null;
   imageUrls?: string[];
+  imageAlts?: string[];
   poll?: Poll | null;
   reactions?: ReactionRow[];
   /** P04 — message kind (text when absent), structured payload, forward hops, thread replies, expiry. */

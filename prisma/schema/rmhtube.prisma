@@ -29,9 +29,29 @@ model RmhTubeRoom {
   members  RmhTubeRoomMember[]
   messages RmhTubeChatMessage[]
   queue    RmhTubeQueueItem[]
+  rsvps    RmhTubeRoomRsvp[]
 
   @@index([isPublic, closedAt])
+  // The landing's "Upcoming parties" list: public rooms by start time.
+  @@index([isPublic, scheduledFor])
   @@map("rmhtube_room")
+}
+
+/// A member's "Going" on a scheduled watch party. The two stamps are claimed by the reminder job with a
+/// conditional update, so each reminder goes out at most once.
+model RmhTubeRoomRsvp {
+  roomId            String
+  userId            String
+  createdAt         DateTime  @default(now())
+  remindedAt        DateTime?
+  startedNotifiedAt DateTime?
+
+  room RmhTubeRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User        @relation("RmhTubeRoomRsvps", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, userId])
+  @@index([userId])
+  @@map("rmhtube_room_rsvp")
 }
 
 model RmhTubeRoomMember {

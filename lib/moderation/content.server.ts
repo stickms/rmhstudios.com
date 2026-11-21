@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { clearPinnedForComment } from '@/lib/feed/conversation-controls.server';
 import { feedEventBus } from '@/lib/feed-sse';
 import {
   unlinkPostHashtags,
@@ -533,6 +534,7 @@ async function removeContent(
           },
         },
       );
+      await clearPinnedForComment(id);
       return;
     case 'community':
       return removeCommunity(

@@ -32,6 +32,12 @@ export function ModSettings({
     useTranslation(
       'f-communities-plus',
     );
+  const {
+    t: tl,
+  } =
+    useTranslation(
+      'community-modlog',
+    );
   const [
     level,
     setLevel,
@@ -59,6 +65,13 @@ export function ModSettings({
   ] =
     useState(
       extras.flairRequired,
+    );
+  const [
+    publicLog,
+    setPublicLog,
+  ] =
+    useState(
+      extras.publicModLog,
     );
   const [
     threshold,
@@ -103,6 +116,8 @@ export function ModSettings({
                   1
                 : 0,
             flairRequired,
+            publicModLog:
+              publicLog,
             starThreshold:
               Math.min(
                 STAR_THRESHOLD_MAX,
@@ -314,6 +329,40 @@ export function ModSettings({
         />
       </div>
 
+      <div className="flex items-center justify-between gap-3 text-sm text-site-text">
+        <span>
+          <span
+            id="public-modlog-label"
+            className="block font-semibold"
+          >
+            {tl(
+              'public-switch-title',
+              {
+                defaultValue:
+                  'Public moderation log',
+              },
+            )}
+          </span>
+          <span className="text-xs text-site-text-muted">
+            {tl(
+              'public-switch-note',
+              {
+                defaultValue:
+                  'Members can see removals and approvals with their rule and reason. Moderators and members are never named.',
+              },
+            )}
+          </span>
+        </span>
+        <Switch
+          checked={
+            publicLog
+          }
+          onCheckedChange={
+            setPublicLog
+          }
+          aria-labelledby="public-modlog-label"
+        />
+      </div>
       <label className="flex flex-col gap-1 text-sm font-semibold text-site-text">
         {t(
           'star-title',

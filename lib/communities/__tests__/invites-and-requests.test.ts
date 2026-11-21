@@ -19,6 +19,8 @@ const h = vi.hoisted(() => ({
     updateMany: vi.fn(),
     deleteMany: vi.fn(),
   },
+  modAction: { create: vi.fn(), deleteMany: vi.fn() },
+  memberEvent: { create: vi.fn() },
   executeRaw: vi.fn(),
   notify: vi.fn(),
 }));
@@ -30,6 +32,8 @@ vi.mock('@/lib/prisma.server', () => {
     communityMember: h.member,
     community: h.community,
     communityJoinRequest: h.request,
+    communityModAction: h.modAction,
+    communityMemberEvent: h.memberEvent,
     $executeRaw: h.executeRaw,
   });
   return {
@@ -69,6 +73,7 @@ beforeEach(() => {
     for (const fn of Object.values(group)) (fn as ReturnType<typeof vi.fn>).mockReset();
   }
   h.executeRaw.mockReset();
+  h.modAction.create.mockReset().mockResolvedValue({ id: 1n });
   h.notify.mockReset().mockResolvedValue(undefined);
   h.member.findUnique.mockResolvedValue(null);
 });

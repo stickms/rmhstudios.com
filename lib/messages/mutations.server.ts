@@ -52,6 +52,7 @@ const messageSelect = {
   createdAt: true,
   gifUrl: true,
   imageUrls: true,
+  imageAlts: true,
   editedAt: true,
   deletedAt: true,
   deletedBy: true,
@@ -218,7 +219,12 @@ export async function listMutationsSince(args: {
     where: {
       chatId: args.conversationId,
       AND: [liveMessages()],
-      OR: [{ editedAt: { gt: args.since } }, { deletedAt: { gt: args.since } }],
+      OR: [
+        { editedAt: { gt: args.since } },
+        { deletedAt: { gt: args.since } },
+        // Description edits leave editedAt alone; they need their own mark to be caught up.
+        { altsEditedAt: { gt: args.since } },
+      ],
     },
     orderBy: { createdAt: 'asc' },
     take: 100,
@@ -251,7 +257,7 @@ async function isLatestMessage(conversationId: string, messageId: string): Promi
   return latest?.id === messageId;
 }
 
-async function publishMutation(
+export async function publishMutation(
   type: 'message-edited' | 'message-deleted',
   args: {
     conversation: Participants;
@@ -265,8 +271,11 @@ async function publishMutation(
       deletedBy: string | null;
       gifUrl: string | null;
       imageUrls: string[];
+      imageAlts?: string[];
       audioUrl: string | null;
     };
+    /** Set when the change is to image descriptions: carried so open clients patch them in place. */
+    imageAlts?: string[];
   },
 ): Promise<MessageMutationPayload> {
   const view = toMessageView({ ...args.row, senderId: args.actorId, createdAt: new Date() });
@@ -274,6 +283,7 @@ async function publishMutation(
     conversationId: args.row.conversationId,
     messageId: args.row.id,
     content: view.content,
+    ...(args.imageAlts ? { imageAlts: args.imageAlts } : {}),
     editedAt: view.editedAt,
     deletedAt: view.deletedAt,
     deletedBy: view.deletedBy,

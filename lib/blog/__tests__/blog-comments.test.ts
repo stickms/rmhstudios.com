@@ -361,10 +361,15 @@ describe('GET /api/blog/$slug/comments', () => {
       expect.objectContaining(
         {
           where:
-            {
-              slug: 'hello',
-              announcement: true,
-            },
+            expect.objectContaining(
+              {
+                slug: 'hello',
+                announcement: true,
+                // a draft or scheduled announcement has no discussion yet (s03-05)
+                status:
+                  'published',
+              },
+            ),
         },
       ),
     );

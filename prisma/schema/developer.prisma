@@ -22,10 +22,16 @@ model DeveloperApiKey {
   createdAt  DateTime  @default(now())
   /// P16 D1: `rmh_test_` sandbox key. Reads return fixtures, writes are no-ops.
   testMode   Boolean   @default(false)
+  /// Source-address allowlist: IPv4/IPv6 addresses or CIDR ranges (at most 20).
+  /// Empty means any address. Validated by `lib/api/ip-allowlist.ts` on save.
+  allowedCidrs       String[] @default([])
+  /// Optional per-minute request limit below the tier's. Null = the tier limit.
+  rateLimitPerMinute Int?
 
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   idempotencyKeys ApiIdempotencyKey[]
   usage           ApiUsageDaily[]
+  refusals        ApiKeyRefusalDaily[]
 
   @@index([userId])
   @@map("developer_api_key")
@@ -60,6 +66,22 @@ model ApiUsageDaily {
   @@unique([keyId, day])
   @@index([keyId, day(sort: Desc)])
   @@map("api_usage_daily")
+}
+
+/// Requests refused because the client address was outside the key's allowlist,
+/// per key per UTC day. Never holds a full address: `lastPrefix` is masked
+/// (IPv4 last octet, IPv6 last 80 bits), so the owner can spot a leak.
+model ApiKeyRefusalDaily {
+  keyId      String
+  /// UTC day, `YYYY-MM-DD`.
+  day        String   @db.VarChar(10)
+  count      Int      @default(0)
+  lastPrefix String?  @db.VarChar(64)
+
+  key DeveloperApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@id([keyId, day])
+  @@map("api_key_refusal_daily")
 }
 
 /// Stores the first response produced for a given (key, Idempotency-Key) so a

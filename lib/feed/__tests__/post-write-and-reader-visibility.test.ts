@@ -90,6 +90,8 @@ vi.mock('@/lib/prisma.server', () => {
       findMany: find(() => h.posts as Row[]),
       update: write('post.update'),
     },
+    // Per-conversation mute lookups for the mentioned users: nobody has muted anything here.
+    conversationPref: { findMany: async () => [] },
     community: {
       findUnique: async (a: { where: { id: string } }) => {
         const p = posts().find((x) => x.communityId === a.where.id);

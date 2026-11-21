@@ -59,6 +59,8 @@ interface PostRow {
   viewCount: number;
   imageUrls?: string[];
   imageAlts?: string[];
+  /** The reply the author pinned, when the query selected it. */
+  pinnedCommentId?: string | null;
 }
 
 /** A post owned by the caller (includes audience). */
@@ -69,6 +71,7 @@ export function serializeOwnPost(p: PostRow & { audience: string }) {
     audience: p.audience,
     imageUrls: p.imageUrls ?? [],
     imageAlts: p.imageAlts ?? [],
+    pinnedReplyId: p.pinnedCommentId ?? null,
     createdAt: p.createdAt,
     metrics: metrics(p),
   };
@@ -81,6 +84,7 @@ export function serializePublicPost(p: PostRow & { user: ResolvableUser }) {
     content: p.content,
     imageUrls: p.imageUrls ?? [],
     imageAlts: p.imageAlts ?? [],
+    pinnedReplyId: p.pinnedCommentId ?? null,
     createdAt: p.createdAt,
     author: serializeAuthor(p.user),
     metrics: metrics(p),

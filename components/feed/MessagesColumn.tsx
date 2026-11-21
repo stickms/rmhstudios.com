@@ -21,6 +21,7 @@ import { ChatFolderBar } from '@/components/chat-plus/ChatFolderBar';
 import { SavedMessagesRow } from '@/components/chat-plus/SavedMessagesRow';
 import { SavedMessagesLabel } from '@/components/chat-plus/MessageBadges';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
+import { ScheduledClock, useScheduledChatIds } from '@/components/messages/ScheduledClock';
 import { api } from '@/lib/contract/client';
 import { searchUsersApi } from '@/lib/discovery/explore.contract';
 import { HttpError, serverError } from '@/lib/http';
@@ -94,6 +95,7 @@ export function MessagesColumn({
   const listArrival = useArrival(!loading);
   const searchArrival = useArrival(!searching);
   const isNew = useArrivingKeys(loading ? [] : conversations.map((c) => c.id));
+  const scheduledChats = useScheduledChatIds(!!session);
 
   const fetchConversations = useCallback(
     async (isInitial = false) => {
@@ -341,6 +343,7 @@ export function MessagesColumn({
               <ConversationRow
                 key={conv.id}
                 conv={conv}
+                hasScheduled={scheduledChats.has(conv.id)}
                 currentUserId={session.user.id}
                 t={t}
                 formatTime={formatTime}
@@ -385,6 +388,7 @@ export function MessagesColumn({
                 key={conv.id}
                 className={isNew(conv.id) ? ARRIVE : undefined}
                 conv={conv}
+                hasScheduled={scheduledChats.has(conv.id)}
                 currentUserId={session.user.id}
                 t={t}
                 formatTime={formatTime}
@@ -426,12 +430,14 @@ type TFn = ReturnType<typeof useTranslation>['t'];
 
 function ConversationRow({
   conv,
+  hasScheduled,
   currentUserId,
   t,
   formatTime,
   className,
 }: {
   conv: ConversationItem;
+  hasScheduled: boolean;
   currentUserId: string;
   t: TFn;
   formatTime: (s: string) => string;
@@ -476,6 +482,7 @@ function ConversationRow({
               {conv.otherUser.isBot && <AutomatedBadge />}
             </div>
             <div className="flex shrink-0 items-baseline gap-2">
+              {hasScheduled && <ScheduledClock />}
               {conv.lastMessage && (
                 <span className="t-meta">{formatTime(conv.lastMessage.createdAt)}</span>
               )}

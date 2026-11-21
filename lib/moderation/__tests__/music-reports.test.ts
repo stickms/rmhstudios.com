@@ -110,7 +110,7 @@ describe('RMH Music in the moderation queue', () => {
   it('every removable type is reportable and has a takedown branch', () => {
     const takedown =
       read(
-        'lib/admin/api/admin.reports.$id.server.ts',
+        'lib/moderation/triage.server.ts',
       );
     const body =
       takedown.slice(
@@ -145,7 +145,7 @@ describe('RMH Music in the moderation queue', () => {
   it('the admin page offers removal from the one list, and the report route resolves music owners', () => {
     expect(
       read(
-        'app/routes/_site/admin/reports.tsx',
+        'components/admin/reports/ReportGroups.tsx',
       ),
     ).toContain(
       'REMOVABLE_REPORT_ENTITY_TYPES',

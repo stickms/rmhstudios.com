@@ -34,6 +34,7 @@
   "post-updated-successfully": "Post updated successfully!",
   "preview-hint": "Start typing to see the preview or click Refresh.",
   "refresh": "Refresh",
+  "revision-restored": "Version restored in the editor. Save to make it current.",
   "save-post": "Save Post",
   "saving": "Saving...",
   "show-preview": "Show Preview",

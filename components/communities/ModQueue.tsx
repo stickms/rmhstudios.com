@@ -18,18 +18,50 @@ import {
   plusFetch,
 } from '@/components/communities/plus-api';
 import { MacroField } from '@/components/safety/MacroField';
+import { Select } from '@/components/ui/select';
 import type { ModItemDTO } from '@/lib/communities/plus';
+import type { CommunityRuleDTO } from '@/lib/communities/rules';
 
 export function ModQueue({
   slug,
+  rules = [],
+  onOpenLog,
 }: {
   slug: string;
+  /** s03-14: opens the Log tab, the full record of moderation actions. */
+  onOpenLog?: () => void;
+  /** The community's rules, for citing one on a removal. */ rules?: CommunityRuleDTO[];
 }) {
   const {
     t,
   } =
     useTranslation(
       'f-communities-plus',
+    );
+  const {
+    t: tr,
+  } =
+    useTranslation(
+      'community-rules',
+    );
+  const {
+    t: tl,
+  } =
+    useTranslation(
+      'community-modlog',
+    );
+  // s03-13: the rule a moderator cites for each item they remove.
+  const [
+    cited,
+    setCited,
+  ] =
+    useState<
+      Record<
+        string,
+        string
+      >
+    >(
+      {},
     );
   const [
     view,
@@ -139,6 +171,15 @@ export function ModQueue({
                   ]?.trim() ||
                   undefined
                 : undefined,
+            ruleId:
+              decision ===
+              'remove'
+                ? cited[
+                    item
+                      .id
+                  ] ||
+                  undefined
+                : undefined,
           },
         );
       setBusy(
@@ -196,13 +237,22 @@ export function ModQueue({
                   'Flagged',
               },
             )
-          : t(
-              'queue-action-remove',
-              {
-                defaultValue:
-                  'Removed',
-              },
-            );
+          : a ===
+              'report'
+            ? tr(
+                'queue-action-report',
+                {
+                  defaultValue:
+                    'Reported',
+                },
+              )
+            : t(
+                'queue-action-remove',
+                {
+                  defaultValue:
+                    'Removed',
+                },
+              );
 
   return (
     <div className="flex flex-col gap-3">
@@ -251,6 +301,23 @@ export function ModQueue({
             },
           )}
         </Button>
+        {onOpenLog && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={
+              onOpenLog
+            }
+          >
+            {tl(
+              'queue-full-log',
+              {
+                defaultValue:
+                  'Full moderation log',
+              },
+            )}
+          </Button>
+        )}
       </div>
       {!items ? (
         <div className="flex justify-center py-8">
@@ -328,25 +395,64 @@ export function ModQueue({
                     ·
                   </span>
                   <span>
-                    {actionLabel(
-                      i.action,
-                    )}
-                    {
-                      ' · '
-                    }
-                    {t(
-                      'queue-rule',
-                      {
-                        rule: i.ruleName,
-                        defaultValue:
-                          'rule: {{rule}}',
-                      },
+                    {i.action ===
+                    'report' ? (
+                      tr(
+                        'queue-reported-rule',
+                        {
+                          rule: i.ruleName,
+                          defaultValue:
+                            'Reported: {{rule}}',
+                        },
+                      )
+                    ) : (
+                      <>
+                        {actionLabel(
+                          i.action,
+                        )}{' '}
+                        {
+                          ' · '
+                        }{' '}
+                        {t(
+                          'queue-rule',
+                          {
+                            rule: i.ruleName,
+                            defaultValue:
+                              'rule: {{rule}}',
+                          },
+                        )}
+                      </>
                     )}
                   </span>
+                  {i.action ===
+                    'report' &&
+                    (i.reporters ??
+                      0) >
+                      1 && (
+                      <>
+                        <span>
+                          {' '}
+                          ·{' '}
+                        </span>
+                        <span>
+                          {tr(
+                            'queue-reporters',
+                            {
+                              count:
+                                i.reporters,
+                              defaultValue:
+                                '{{count}} members reported this',
+                            },
+                          )}
+                        </span>
+                      </>
+                    )}
                   <span>
-                    ·
-                  </span>
+                    {' '}
+                    ·{' '}
+                  </span>{' '}
                   <span>
+                    {' '}
                     {formatDistanceToNow(
                       new Date(
                         i.createdAt,
@@ -403,6 +509,85 @@ export function ModQueue({
                     }
                   />
                 )}
+                {i.status ===
+                  'PENDING' &&
+                  rules.length >
+                    0 && (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor={`cite-${i.id}`}
+                        className="t-meta shrink-0"
+                      >
+                        {tr(
+                          'cite-label',
+                          {
+                            defaultValue:
+                              'Cite a rule',
+                          },
+                        )}
+                      </label>
+                      <Select
+                        id={`cite-${i.id}`}
+                        value={
+                          cited[
+                            i
+                              .id
+                          ] ??
+                          ''
+                        }
+                        onChange={(
+                          e,
+                        ) =>
+                          setCited(
+                            (
+                              c,
+                            ) => ({
+                              ...c,
+                              [i.id]:
+                                e
+                                  .target
+                                  .value,
+                            }),
+                          )
+                        }
+                      >
+                        <option value="">
+                          {tr(
+                            'cite-none',
+                            {
+                              defaultValue:
+                                'No rule',
+                            },
+                          )}
+                        </option>
+                        {rules.map(
+                          (
+                            r,
+                          ) => (
+                            <option
+                              key={
+                                r.id
+                              }
+                              value={
+                                r.id
+                              }
+                            >
+                              {tr(
+                                'cite-option',
+                                {
+                                  n: r.position,
+                                  title:
+                                    r.title,
+                                  defaultValue:
+                                    '{{n}}. {{title}}',
+                                },
+                              )}
+                            </option>
+                          ),
+                        )}
+                      </Select>
+                    </div>
+                  )}
                 {i.status ===
                 'PENDING' ? (
                   <div className="flex justify-end gap-2">
@@ -480,13 +665,28 @@ export function ModQueue({
                               'Approved',
                           },
                         )
-                      : t(
-                          'queue-status-removed',
-                          {
-                            defaultValue:
-                              'Removed',
-                          },
-                        )}
+                      : i.citedRule
+                        ? tr(
+                            'queue-status-removed-cited',
+                            {
+                              n: i
+                                .citedRule
+                                .position,
+                              title:
+                                i
+                                  .citedRule
+                                  .title,
+                              defaultValue:
+                                'Removed for breaking rule {{n}}: {{title}}',
+                            },
+                          )
+                        : t(
+                            'queue-status-removed',
+                            {
+                              defaultValue:
+                                'Removed',
+                            },
+                          )}
                   </p>
                 )}
               </li>

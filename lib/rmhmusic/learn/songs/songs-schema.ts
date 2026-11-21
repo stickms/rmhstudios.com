@@ -4,6 +4,7 @@
  * `checkSongRun`, applied by `songs.server.ts`.
  */
 import { z } from 'zod';
+import { durationMsSchema } from '@/lib/rmhmusic/history-schema';
 import { ZERO_MS } from '../scoring/timing';
 import { isSongId } from './catalog';
 import { MAX_WRONG } from './scoring';
@@ -120,6 +121,9 @@ export const songBestBody =
     {
       songId,
       run: songRunSchema,
+      /** How long the run took, from the client's clock; recorded in the practice log. */
+      durationMs:
+        durationMsSchema,
     },
   );
 

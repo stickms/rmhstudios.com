@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import { getArticleTakeawaysApi } from '@/lib/ai/ai.contract';
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { cached } from '@/lib/cached.server';
 import { articleTakeaways, isAITextConfigured } from '@/lib/ai/text.server';
 
@@ -31,8 +32,8 @@ export const route = apiRoute('/api/ai/takeaways', {
     getArticleTakeawaysApi,
     { auth: 'none', rateLimit: 'ai', query },
     async ({ query }) => {
-      const post = await prisma.blogPost.findUnique({
-        where: { slug: query.slug },
+      const post = await prisma.blogPost.findFirst({
+        where: { slug: query.slug, ...publishedLogWhere(new Date()) },
         select: { title: true, content: true, updatedAt: true },
       });
       if (!post) return Response.json({ error: 'Not found' }, { status: 404 });

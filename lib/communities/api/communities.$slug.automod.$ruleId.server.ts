@@ -20,7 +20,7 @@ export const route = apiRoute('/api/communities/$slug/automod/$ruleId', {
       const guard = await requireMod(params.slug, userId);
       if (!guard.ok) return guard.response;
       try {
-        await updateAutomodRule(guard.value.id, params.ruleId, body);
+        await updateAutomodRule(guard.value.id, params.ruleId, body, userId);
         return Response.json({ success: true });
       } catch (e) {
         if (e instanceof AutomodError) {
@@ -34,7 +34,7 @@ export const route = apiRoute('/api/communities/$slug/automod/$ruleId', {
     const guard = await requireMod(params.slug, userId);
     if (!guard.ok) return guard.response;
     try {
-      await deleteAutomodRule(guard.value.id, params.ruleId);
+      await deleteAutomodRule(guard.value.id, params.ruleId, userId);
       return Response.json({ success: true });
     } catch (e) {
       if (e instanceof AutomodError) {

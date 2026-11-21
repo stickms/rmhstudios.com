@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Reply } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SwipeRow } from '@/components/ui/swipe-row';
 import { SpineItem, SpineStation } from '@/components/ui/spine';
 import { cn } from '@/lib/utils';
-import { PostImageGrid } from '../PostImageGrid';
+import { MessageAltsDialog } from '../MessageAltsDialog';
+import { MessageImages } from '../MessageImages';
+import { canEditImageAlts } from '@/lib/messages/image-alts';
 import ChatMediaEmbed, {
   stripEmbedUrls,
   extractMediaEmbeds,
@@ -75,6 +78,10 @@ export function MessageRow({
   className?: string | undefined;
 }) {
   const { t } = useTranslation('feed');
+  // The sender's "Edit descriptions": the saved list shows at once, whether or not the realtime event arrives.
+  const [altsEditing, setAltsEditing] = useState(false);
+  const [savedAlts, setSavedAlts] = useState<string[] | null>(null);
+  const imageAlts = savedAlts ?? msg.imageAlts;
 
   const formatDateSeparator = (dateStr: string) => {
     const label = dateSeparatorKind(dateStr);
@@ -153,7 +160,7 @@ export function MessageRow({
           )}
           {/* Structured rich media. */}
           {msg.imageUrls && msg.imageUrls.length > 0 && (
-            <PostImageGrid urls={msg.imageUrls} className="mt-2 rounded-site overflow-hidden" />
+            <MessageImages urls={msg.imageUrls} alts={imageAlts} className="mt-2" />
           )}
           {msg.gifUrl && (
             <img
@@ -172,6 +179,16 @@ export function MessageRow({
     <>
       {showDate && (
         <SpineStation className={className}>{formatDateSeparator(msg.createdAt)}</SpineStation>
+      )}
+      {altsEditing && msg.imageUrls && (
+        <MessageAltsDialog
+          chatId={chatRef.id}
+          messageId={msg.id}
+          imageUrls={msg.imageUrls}
+          imageAlts={imageAlts ?? []}
+          onSaved={setSavedAlts}
+          onClose={() => setAltsEditing(false)}
+        />
       )}
       {isLine ? (
         <SpineItem dot={false} className={cn('spine-item--tight', className)}>
@@ -211,6 +228,9 @@ export function MessageRow({
                     }}
                     viewerId={viewerId}
                     onEdit={() => setEditingId(msg.id)}
+                    onEditAlts={
+                      canEditImageAlts(msg, viewerId) ? () => setAltsEditing(true) : undefined
+                    }
                     onUnsend={() => onUnsend(msg.id)}
                     onHide={() => onHide(msg.id)}
                     onReply={isVoice ? undefined : () => quoteReply(msg.content)}

@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/v1/users/$handle/posts')({
               take: limit,
               select: {
                 id: true, content: true, createdAt: true, likeCount: true, commentCount: true,
-                repostCount: true, viewCount: true, imageUrls: true, user: { select: apiAuthorSelect },
+                repostCount: true, viewCount: true, imageUrls: true, pinnedCommentId: true, user: { select: apiAuthorSelect },
               },
             });
             return json(page(posts.map(serializePublicPost), limit, (p) => p.createdAt.toISOString()));

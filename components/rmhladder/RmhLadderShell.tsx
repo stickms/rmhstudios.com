@@ -6,11 +6,13 @@ import {
   Bell,
   BriefcaseBusiness,
   Building2,
+  ChartColumn,
   FileText,
   Gauge,
   GitPullRequestArrow,
   Handshake,
   LayoutDashboard,
+  Scale,
   Settings,
   ShieldCheck,
 } from 'lucide-react';
@@ -65,6 +67,18 @@ const PERSONAL_NAV: NavItem[] =
         'Pipeline',
       to: '/rmhladder/pipeline',
       icon: GitPullRequestArrow,
+    },
+    {
+      label:
+        'Offers',
+      to: '/rmhladder/offers',
+      icon: Scale,
+    },
+    {
+      label:
+        'Insights',
+      to: '/rmhladder/insights',
+      icon: ChartColumn,
     },
     {
       label:
@@ -145,7 +159,11 @@ export default function RmhLadderShell({
     t,
   } =
     useTranslation(
-      'site',
+      [
+        'site',
+        'ladder-offers',
+        'ladder-insights',
+      ],
     );
   const pathname =
     useRouterState(
@@ -206,13 +224,33 @@ export default function RmhLadderShell({
       }) => ({
         id: to,
         label:
-          t(
-            `ladder.nav.${label.toLowerCase()}`,
-            {
-              defaultValue:
-                label,
-            },
-          ),
+          to ===
+          '/rmhladder/offers'
+            ? t(
+                'nav.offers',
+                {
+                  ns: 'ladder-offers',
+                  defaultValue:
+                    'Offers',
+                },
+              )
+            : to ===
+                '/rmhladder/insights'
+              ? t(
+                  'nav.insights',
+                  {
+                    ns: 'ladder-insights',
+                    defaultValue:
+                      'Insights',
+                  },
+                )
+              : t(
+                  `ladder.nav.${label.toLowerCase()}`,
+                  {
+                    defaultValue:
+                      label,
+                  },
+                ),
         icon,
       }),
     );

@@ -12,7 +12,7 @@ export const route = apiRoute('/api/communities/$slug/flairs/$flairId', {
       const guard = await requireMod(params.slug, userId);
       if (!guard.ok) return guard.response;
       try {
-        const flair = await updateFlair(guard.value.id, params.flairId, body);
+        const flair = await updateFlair(guard.value.id, params.flairId, body, userId);
         return Response.json({ flair });
       } catch (e) {
         if (e instanceof FlairError) {
@@ -26,7 +26,7 @@ export const route = apiRoute('/api/communities/$slug/flairs/$flairId', {
     const guard = await requireMod(params.slug, userId);
     if (!guard.ok) return guard.response;
     try {
-      await deleteFlair(guard.value.id, params.flairId);
+      await deleteFlair(guard.value.id, params.flairId, userId);
       return Response.json({ success: true });
     } catch (e) {
       if (e instanceof FlairError) {

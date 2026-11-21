@@ -4,6 +4,8 @@ import * as C from '@/lib/communities/communities.contract';
 import { joinCommunityBody } from '@/lib/communities/communities-schema';
 import { prisma } from '@/lib/prisma.server';
 import { acceptInvite } from '@/lib/communities/invites.server';
+import { agreementRequired } from '@/lib/communities/rules.server';
+import { recordMemberEvent } from '@/lib/communities/member-events.server';
 
 /**
  * POST /api/communities/$slug/join — toggle membership (join-only with an invite).
@@ -64,16 +66,33 @@ export const route = apiRoute('/api/communities/$slug/join', {
             where: { id: community.id },
             data: { memberCount: { decrement: 1 } },
           }),
+          recordMemberEvent(prisma, community.id, userId, 'leave'),
         ]);
         return Response.json({ success: true, joined: false });
       }
 
+      // "Require agreement": the Join only completes once the member ticked the rules.
+      // (A private community's invite join cannot show them first, so it is not gated.)
+      if (!body?.acceptRules && (await agreementRequired(community.id))) {
+        return Response.json(
+          { error: 'Read and accept the community rules to join', code: 'rules-agreement-required' },
+          { status: 400 },
+        );
+      }
+
       await prisma.$transaction([
-        prisma.communityMember.create({ data: { communityId: community.id, userId } }),
+        prisma.communityMember.create({
+          data: {
+            communityId: community.id,
+            userId,
+            ...(body?.acceptRules ? { rulesAcceptedAt: new Date() } : {}),
+          },
+        }),
         prisma.community.update({
           where: { id: community.id },
           data: { memberCount: { increment: 1 } },
         }),
+        recordMemberEvent(prisma, community.id, userId, 'join'),
       ]);
       return Response.json({ success: true, joined: true });
     },

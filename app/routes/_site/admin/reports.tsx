@@ -1,130 +1,40 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { useEffect, useState, useCallback } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { Flag, ExternalLink } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { PageTabs } from '@/components/feed/PageTabs';
-import { Spinner } from '@/components/ui/spinner';
-import { EmptyState } from '@/components/ui/empty-state';
-import { UserAvatar } from '@/components/ui/UserAvatar';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/lib/toast';
-import { useTranslation } from 'react-i18next';
-import { MacroField } from '@/components/safety/MacroField';
-import { api } from '@/lib/contract/client';
-import {
-  actOnAdminReportApi,
-  banAdminUserApi,
-  getAdminReportsApi,
-  strikeAdminUserApi,
-} from '@/lib/admin/admin-ops.contract';
-import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
-import { REMOVABLE_REPORT_ENTITY_TYPES } from '@/lib/moderation/report-schema';
+import { ReportFilters } from '@/components/admin/reports/ReportFilters';
+import { ReportGroups } from '@/components/admin/reports/ReportGroups';
+import { ReportList } from '@/components/admin/reports/ReportList';
+import { DEFAULT_STATUS, parseTriageSearch, type TriageSearch } from '@/lib/moderation/triage';
+import { TRIAGE_STATUSES } from '@/lib/moderation/triage-constants';
 
 export const Route = createFileRoute('/_site/admin/reports')({
   head: () => ({ meta: [{ title: 'Moderation Queue | RMH Studios' }] }),
+  // Filters live in the URL so a view can be linked: ?status=&reasons=SPAM,HATE&type=&min=&sort=&flat=true
+  validateSearch: (search: Record<string, unknown>): TriageSearch => parseTriageSearch(search),
   component: AdminReportsPage,
 });
 
-type Status = 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'DISMISSED';
-
-interface ReportUser {
-  id: string;
-  name: string | null;
-  image: string | null;
-  handle: string | null;
-}
-interface Report {
-  id: string;
-  reason: string;
-  details: string | null;
-  entityType: string;
-  entityId: string;
-  status: Status;
-  createdAt: string;
-  reporter: ReportUser;
-  targetUser: ReportUser | null;
-}
-
-const STATUS_TABS: Status[] = ['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'];
-
-function entityLink(r: Report): string | null {
-  if (r.entityType === 'rmhark' && r.targetUser?.handle) return `/u/${r.targetUser.handle}/post/${r.entityId}`;
-  if (r.entityType === 'user' && r.targetUser?.handle) return `/u/${r.targetUser.handle}`;
-  if (r.entityType === 'build') return `/builds/${r.entityId}`;
-  return null;
-}
-
 function AdminReportsPage() {
   const { t } = useTranslation('admin');
-  const STATUS_LABELS: Record<Status, string> = {
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const status = search.status ?? DEFAULT_STATUS;
+
+  const STATUS_LABELS = {
     PENDING: t('status-pending', { defaultValue: 'Pending' }),
     REVIEWING: t('status-reviewing', { defaultValue: 'Reviewing' }),
     RESOLVED: t('status-resolved', { defaultValue: 'Resolved' }),
     DISMISSED: t('status-dismissed', { defaultValue: 'Dismissed' }),
-  };
-  const [status, setStatus] = useState<Status>('PENDING');
-  const [reports, setReports] = useState<Report[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const arrival = useArrival(!loading);
-  // S4: per-report message to the author, filled from a macro.
-  const [messages, setMessages] = useState<Record<string, string>>({});
+  } as const;
 
-  const load = useCallback(async (s: Status) => {
-    setLoading(true);
-    try {
-      const data = await api(getAdminReportsApi, { query: { status: s }, retries: 0 });
-      setReports(data.items);
-      setCounts(data.counts ?? {});
-    } catch {
-      // A failed load leaves the queue as it was (the old code ignored non-2xx).
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load(status);
-  }, [status, load]);
-
-  const act = async (id: string, action: 'review' | 'resolve' | 'dismiss', deleteContent = false) => {
-    setBusyId(id);
-    try {
-      await api(actOnAdminReportApi, {
-        params: { id },
-        body: { action, deleteContent, message: messages[id]?.trim() || undefined },
-      });
-      // Remove from the current view when it leaves this status bucket.
-      setReports((prev) => prev.filter((r) => r.id !== id));
-      load(status);
-    } catch {
-      // A refused action (409, 500) leaves the row where it is.
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const moderateUser = async (userId: string, kind: 'strike' | 'ban') => {
-    const reason = prompt(kind === 'ban' ? t('ban-reason-prompt', { defaultValue: 'Ban reason:' }) : t('strike-reason-prompt', { defaultValue: 'Strike reason:' }));
-    if (!reason) return;
-    try {
-      if (kind === 'ban') {
-        const durationDays = parseInt(prompt(t('ban-length-prompt', { defaultValue: 'Ban length in days (blank = permanent):' })) || '', 10) || null;
-        await api(banAdminUserApi, { params: { id: userId }, body: { reason, durationDays } });
-        toast.success(t('user-banned', { defaultValue: 'User banned' }));
-      } else {
-        await api(strikeAdminUserApi, { params: { id: userId }, body: { reason } });
-        toast.success(t('strike-issued', { defaultValue: 'Strike issued' }));
-      }
-    } catch {
-      toast.error(t('action-failed-appeals', { defaultValue: 'Action failed' }));
-    }
-  };
+  const setSearch = useCallback(
+    (next: TriageSearch) => void navigate({ search: parseTriageSearch({ ...next }), replace: true }),
+    [navigate],
+  );
 
   return (
     <PageLayout
@@ -134,115 +44,22 @@ function AdminReportsPage() {
       backTo="/admin"
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
     >
-        {/* An exclusive switcher IS a tab strip, whatever it is built from — an
-            accent pill row with no `role` is still one, and this one had no
-            `aria-pressed` either, so a screen reader could not tell which status
-            was showing. `Tabs` brings the roving focus, the selected
-            state and the shared capsule; `count` is the badge this was drawing
-            by hand. */}
-        <PageTabs
-          tabs={STATUS_TABS.map((s) => ({
-            id: s,
-            label: STATUS_LABELS[s],
-            count: counts[s] || undefined,
-          }))}
-          value={status}
-          onChange={(id) => setStatus(id as (typeof STATUS_TABS)[number])}
-          aria-label={t('moderation-queue', { defaultValue: 'Moderation queue' })}
-        />
+      <PageTabs
+        tabs={TRIAGE_STATUSES.map((s) => ({ id: s, label: STATUS_LABELS[s], count: counts[s] || undefined }))}
+        value={status}
+        onChange={(id) => setSearch({ ...search, status: id as (typeof TRIAGE_STATUSES)[number] })}
+        aria-label={t('moderation-queue', { defaultValue: 'Moderation queue' })}
+      />
 
       <AdminBody>
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <Spinner />
-          </div>
-        ) : reports.length === 0 ? (
-          <EmptyState className={arrival} icon={Flag} title={t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })} />
-        ) : (
-          <ul className={cn('divide-y divide-site-border', arrival)}>
-            {reports.map((r) => {
-              const link = entityLink(r);
-              return (
-                <li key={r.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="danger">{r.reason.replace('_', ' ')}</Badge>
-                    <Badge variant="default">{r.entityType}</Badge>
-                    <span className="t-meta">
-                      {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
-                    </span>
-                    {link && (
-                      <a
-                        href={link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="t-body ms-auto inline-flex items-center gap-1 text-site-text underline"
-                      >
-                        {t('view-content', { defaultValue: 'View content' })} <ExternalLink className="size-3" aria-hidden />
-                      </a>
-                    )}
-                  </div>
-
-                  {r.details && <p className="t-body text-site-text">{r.details}</p>}
-
-                  <div className="t-body flex flex-wrap items-center gap-x-4 gap-y-2 text-site-text-muted">
-                    <span className="inline-flex items-center gap-2">
-                      <UserAvatar src={r.reporter.image} alt={r.reporter.name || t('reporter', { defaultValue: 'Reporter' })} size={20} fallbackName={r.reporter.name || 'R'} />
-                      {t('reported-by', { defaultValue: 'reported by' })} <strong className="font-semibold text-site-text">{r.reporter.name || r.reporter.handle}</strong>
-                    </span>
-                    {r.targetUser && (
-                      <span className="inline-flex items-center gap-2">
-                        <UserAvatar src={r.targetUser.image} alt={r.targetUser.name || t('user', { defaultValue: 'User' })} size={20} fallbackName={r.targetUser.name || 'U'} />
-                        {t('against', { defaultValue: 'against' })} <strong className="font-semibold text-site-text">{r.targetUser.name || r.targetUser.handle}</strong>
-                      </span>
-                    )}
-                  </div>
-
-                  {(status === 'PENDING' || status === 'REVIEWING') && r.targetUser && (
-                    <div>
-                      <MacroField
-                        scope={{ kind: 'admin' }}
-                        vars={{ user: r.targetUser.name || r.targetUser.handle || undefined, reason: r.reason.replace('_', ' ').toLowerCase() }}
-                        value={messages[r.id] ?? ''}
-                        onChange={(v) => setMessages((m) => ({ ...m, [r.id]: v }))}
-                      />
-                    </div>
-                  )}
-
-                  {(status === 'PENDING' || status === 'REVIEWING') && (
-                    <div className="flex flex-wrap gap-2">
-                      {status === 'PENDING' && (
-                        <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'review')}>
-                          {t('mark-reviewing', { defaultValue: 'Mark reviewing' })}
-                        </Button>
-                      )}
-                      <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve')}>
-                        {t('resolve', { defaultValue: 'Resolve' })}
-                      </Button>
-                      {(REMOVABLE_REPORT_ENTITY_TYPES as readonly string[]).includes(r.entityType) && (
-                        <Button size="sm" variant="danger" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve', true)}>
-                          {t('resolve-and-remove-content', { defaultValue: 'Resolve & remove content' })}
-                        </Button>
-                      )}
-                      <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'dismiss')}>
-                        {t('dismiss', { defaultValue: 'Dismiss' })}
-                      </Button>
-                      {r.targetUser && (
-                        <>
-                          <Button size="sm" variant="default" onClick={() => moderateUser(r.targetUser!.id, 'strike')}>
-                            {t('strike-author', { defaultValue: 'Strike author' })}
-                          </Button>
-                          <Button size="sm" variant="danger" onClick={() => moderateUser(r.targetUser!.id, 'ban')}>
-                            {t('ban-author', { defaultValue: 'Ban author' })}
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <div className="space-y-4">
+          <ReportFilters search={search} onChange={setSearch} />
+          {search.flat ? (
+            <ReportList status={status} onCounts={setCounts} />
+          ) : (
+            <ReportGroups status={status} search={search} onCounts={setCounts} />
+          )}
+        </div>
       </AdminBody>
     </PageLayout>
   );

@@ -25,6 +25,10 @@ model Community {
   flairRequired     Boolean  @default(false)
   // N2: ⭐ reactions needed for the hall of fame.
   starThreshold     Int      @default(5)
+  // s03-13: joining needs the member to tick "I have read the rules".
+  rulesRequireAgreement Boolean @default(false)
+  // s03-14: members may read the content part of the moderation log.
+  publicModLog      Boolean  @default(false)
   createdById       String
   createdAt         DateTime @default(now())
   /// Catalog id of the game/app this community is the home of (shown on that
@@ -41,6 +45,9 @@ model Community {
   contributorScoresP06 CommunityContributorScore[]
   sistersOutP06        CommunitySister[]             @relation("CommunitySisterFrom")
   sistersInP06         CommunitySister[]             @relation("CommunitySisterTo")
+  rules                CommunityRule[]
+  modActions           CommunityModAction[]
+  memberEvents         CommunityMemberEvent[]
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -142,6 +149,8 @@ model CommunityMember {
   // granted by onboarding answers. Labels never carry permissions.
   followedFlairIds String[]      @default([])
   roleTags         String[]      @default([])
+  // s03-13: when the member ticked the community's rules (set only on a join that agreed).
+  rulesAcceptedAt  DateTime?
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -512,4 +521,64 @@ model QotdAnswer {
   @@index([dayKey, createdAt(sort: Desc)])
   @@index([userId, dayKey])
   @@map("qotd_answer")
+}
+
+/// s03-13 — a community's written rules, in the order moderators set (position 0 first).
+/// A removal or a report quotes the title as a copy, so deleting a rule never rewrites history.
+model CommunityRule {
+  id          String   @id @default(cuid())
+  communityId String
+  position    Int
+  title       String   @db.VarChar(60)
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, position])
+  @@map("community_rule")
+}
+
+/// s03-14 — one row per community moderation action, written in the action's own
+/// transaction by `logModAction`. Append-only. `actorId` / `targetUserId` are plain
+/// columns (no relation to User): account deletion anonymises in place and nulls them.
+model CommunityModAction {
+  id           BigInt   @id @default(autoincrement())
+  communityId  String
+  actorId      String?
+  /// A code from `MOD_ACTIONS` (lib/communities/modlog.ts), never English.
+  action       String   @db.VarChar(32)
+  targetUserId String?
+  targetType   String?  @db.VarChar(16)
+  targetId     String?  @db.VarChar(64)
+  ruleId       String?
+  ruleTitle    String?  @db.VarChar(60)
+  reason       String?  @db.VarChar(300)
+  detail       Json?
+  createdAt    DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt(sort: Desc)])
+  @@index([communityId, actorId, createdAt])
+  @@map("community_mod_action")
+}
+
+/// s03-15 — one row per membership change (join, leave, removed), written in the change's own
+/// transaction by `recordMemberEvent`. Append-only; the Insights tab counts them. `userId` is a plain
+/// column (no relation to User): account deletion anonymises in place and sets it to null, so the totals
+/// stay right and nothing links a row to a person. Before the first row existed only joins can be known.
+model CommunityMemberEvent {
+  id          BigInt   @id @default(autoincrement())
+  communityId String
+  userId      String?
+  /// join | leave | removed (`MEMBER_EVENT_KINDS` in lib/communities/insights.ts).
+  kind        String   @db.VarChar(8)
+  createdAt   DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt])
+  @@map("community_member_event")
 }

@@ -10,6 +10,7 @@ import { listFlairs } from '@/lib/communities/flairs.server';
 import { getSisters } from '@/lib/communities/sisters.server';
 import { getUnansweredQuestions } from '@/lib/communities/onboarding.server';
 import { getCommunitySettings } from '@/lib/communities/settings.server';
+import { listRules } from '@/lib/communities/rules.server';
 import { checkVerification } from '@/lib/communities/verification';
 import type { CommunityExtrasDTO, PostingStatusDTO } from '@/lib/communities/plus';
 
@@ -19,14 +20,15 @@ export async function getCommunityExtras(
 ): Promise<CommunityExtrasDTO | null> {
   const community = await prisma.community.findUnique({
     where: { slug },
-    select: { id: true, isPrivate: true },
+    select: { id: true, isPrivate: true, rulesRequireAgreement: true, publicModLog: true },
   });
   if (!community) return null;
 
-  const [settings, flairs, sisters, member, user] = await Promise.all([
+  const [settings, flairs, sisters, rules, member, user] = await Promise.all([
     getCommunitySettings(community.id),
     listFlairs(community.id),
     getSisters(community.id),
+    listRules(community.id),
     viewerId
       ? prisma.communityMember.findUnique({
           where: { communityId_userId: { communityId: community.id, userId: viewerId } },
@@ -72,9 +74,11 @@ export async function getCommunityExtras(
     verification: settings.verification,
     posting,
     sisters,
+    rules,
+    rulesRequireAgreement: community.rulesRequireAgreement,
+    publicModLog: community.publicModLog,
     member: member
-      ? {
-          followedFlairIds: member.followedFlairIds,
+      ? { joinedAt: member.joinedAt.toISOString(), followedFlairIds: member.followedFlairIds,
           roleTags: member.roleTags,
           onboarding,
         }

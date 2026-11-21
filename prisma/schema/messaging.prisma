@@ -26,12 +26,44 @@ model Chat {
   /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
   themeKey          String?  @db.VarChar(24)
 
-  owner    User?         @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members  ChatMember[]
-  messages ChatMessage[]
+  owner             User?                  @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members           ChatMember[]
+  messages          ChatMessage[]
+  scheduledMessages ScheduledChatMessage[]
 
   @@index([ownerId])
   @@map("chat")
+}
+
+/// A direct or group message held for later (s03-12). Delivered by the
+/// `messages.send-scheduled` cron through the same send function the endpoints
+/// use, so every check runs again at delivery; the row is deleted once sent and
+/// kept as `failed` (with `failCode`) when a check no longer passes. The
+/// recipient never sees a pending row: nothing is published before delivery.
+model ScheduledChatMessage {
+  id        String   @id @default(cuid())
+  chatId    String
+  senderId  String
+  content   String   @db.VarChar(2000)
+  gifUrl    String?  @db.Text
+  imageUrls String[] @default([])
+  /// Image descriptions, index-aligned with imageUrls ('' = none).
+  imageAlts String[] @default([])
+  sendAt    DateTime
+  /// 'pending' | 'sending' | 'failed'
+  status    String   @default("pending") @db.VarChar(10)
+  failCode  String?  @db.VarChar(24)
+  /// Delivery attempts; a row stuck in 'sending' is retried once, then failed.
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User @relation("ScheduledChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([status, sendAt])
+  @@index([senderId, chatId])
+  @@map("scheduled_chat_message")
 }
 
 /// A person in a chat. Deleting either participant's account deletes a DM
@@ -65,6 +97,10 @@ model ChatMessage {
   // Optional rich media: a single GIF and/or up to 4 feed images the sender owns.
   gifUrl          String?   @db.Text
   imageUrls       String[]  @default([])
+  /// Image descriptions (alt text), index-aligned with imageUrls ('' = none).
+  imageAlts       String[]  @default([])
+  /// When the descriptions were last changed after sending; keeps offline catch-up honest (editedAt stays put).
+  altsEditedAt    DateTime?
   /// Group inline poll: a question + 2–6 option labels (votes in ChatPollVote).
   pollQuestion    String?   @db.VarChar(300)
   pollOptions     String[]  @default([])

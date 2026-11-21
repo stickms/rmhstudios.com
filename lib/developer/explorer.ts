@@ -19,6 +19,7 @@ const DOCUMENTED_GROUPS: ReadonlySet<string> = new Set([
   'content',
   'engagement',
   'feed',
+  'games',
   'media',
   'meta',
   'posts',

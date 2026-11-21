@@ -287,6 +287,7 @@
   "publish": "Publish",
   "publishing": "Publishing…",
   "queue-empty": "Nothing here. The queue is clear.",
+  "report-withdrawn": "Withdrawn by the reporter",
   "quota-approved": "Approved — cap set to {{total}}.",
   "quota-decide-failed": "Could not update the request.",
   "quota-denied": "Request denied.",

@@ -15,6 +15,7 @@ import {
 import { toast } from '@/lib/toast';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
+import { EditDescriptionsMenuItem } from '@/components/feed/EditDescriptionsMenuItem';
 import { cn } from '@/lib/utils';
 import {
   isPlainKind,
@@ -254,12 +255,15 @@ export function GroupMessageMenu({
   chat,
   message,
   extra,
+  onEditAlts,
   className,
 }: {
   chat: ChatRef;
   message: PlusMessage;
   /** Extra rows from the host (e.g. Copy). */
   extra?: ReactNode;
+  /** Open the image-description editor; given only while the sender may still change them (24 hours). */
+  onEditAlts?: (() => void) | undefined;
   className?: string;
 }) {
   const {
@@ -268,6 +272,7 @@ export function GroupMessageMenu({
     useTranslation(
       'f-messaging',
     );
+
   const triggerRef =
     useRef<HTMLButtonElement | null>(
       null,
@@ -348,6 +353,16 @@ export function GroupMessageMenu({
             )
           }
         />
+        {onEditAlts && (
+          <EditDescriptionsMenuItem
+            onSelect={() => {
+              setOpen(
+                false,
+              );
+              onEditAlts();
+            }}
+          />
+        )}
         {
           extra
         }

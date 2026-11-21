@@ -28,6 +28,8 @@ export type MessagePayload =
       | string
       | null;
     imageUrls?: string[];
+    /** Image descriptions, index-aligned with `imageUrls`. */
+    imageAlts?: string[];
     /** Raw reaction rows, grouped client-side so SSE updates stay cheap. */
     reactions?: ReactionRow[];
     /** Voice note (H2). Peaks let the bubble draw a waveform without fetching audio. */
@@ -71,6 +73,8 @@ export type MessageMutationPayload =
     messageId: string;
     /** Empty string on a tombstone. */
     content: string;
+    /** Present when the edit changed image descriptions; the patched list, index-aligned with the images. */
+    imageAlts?: string[];
     editedAt:
       | string
       | null;

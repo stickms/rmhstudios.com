@@ -58,7 +58,9 @@ const BLOG: DocCorpus = {
   kind: 'blog',
   href: (slug) => `/blog/${slug}`,
   table: 'blog_post',
-  visible: Prisma.sql`true`, // existence is the whole rule: a deleted post must vanish
+  // Live Logs only (s03-05): a draft, a scheduled Log and a deleted post must all vanish. Raw SQL, so this is
+  // `publishedLogWhere` spelled in the table's own column names (asserted in log-publication.test.ts).
+  visible: Prisma.sql`status = 'published' AND "publishedAt" <= now()`,
   query: (terms) => Prisma.sql`
     SELECT id, slug, title, description,
            left("content", ${BODY_SCAN_CHARS}) AS body,
@@ -68,7 +70,8 @@ const BLOG: DocCorpus = {
            0 AS popularity,
            "createdAt" AS created_at
     FROM "blog_post"
-    WHERE ${fuzzyAny(
+    WHERE status = 'published' AND "publishedAt" <= now()
+      AND ${fuzzyAny(
       [
         Prisma.sql`title`,
         Prisma.sql`description`,

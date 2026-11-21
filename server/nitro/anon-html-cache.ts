@@ -158,8 +158,13 @@ export const CACHEABLE_ANON_PATHS =
  * about this file. Only add a prefix whose entire route subtree you have read.
  *
  *   `/blog/` subtree, in full:
- *     app/routes/_site/blog/$slug.tsx     — `getPostBySlug()`, no session read;
- *                                           the only client-side fetch is
+ *     app/routes/_site/blog/$slug.tsx     — `getPostBySlug()`; the session is read
+ *                                           only to let an ADMIN see a draft, and
+ *                                           that needs a session cookie, which
+ *                                           this cache bypasses (an admin's draft
+ *                                           view also sets `private, no-store`;
+ *                                           an anonymous request sees live Logs
+ *                                           only). The only client-side fetch is
  *                                           `<ArticleTakeaways>`, which is not
  *                                           part of the SSR HTML.
  *     app/routes/blog.rss[.]xml.ts        — `/blog/rss.xml`, served as XML, so

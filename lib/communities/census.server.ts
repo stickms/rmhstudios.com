@@ -5,6 +5,7 @@
  * answers), so no row anywhere links a member to a choice.
  */
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import {
   CENSUS_MIN_RESPONSES,
   buildCensusQuestions,
@@ -58,12 +59,27 @@ export async function createCensus(
   return row;
 }
 
-export async function closeCensus(communityId: string, censusId: string): Promise<void> {
-  const res = await prisma.communityCensus.updateMany({
-    where: { id: censusId, communityId, closedAt: null },
-    data: { closedAt: new Date() },
+export async function closeCensus(
+  communityId: string,
+  censusId: string,
+  actorId: string,
+): Promise<void> {
+  const closed = await prisma.$transaction(async (tx) => {
+    const res = await tx.communityCensus.updateMany({
+      where: { id: censusId, communityId, closedAt: null },
+      data: { closedAt: new Date() },
+    });
+    if (res.count === 0) return false;
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'census_closed',
+      targetType: 'census',
+      targetId: censusId,
+    });
+    return true;
   });
-  if (res.count === 0) throw new CensusError('Census not found or already closed', 404);
+  if (!closed) throw new CensusError('Census not found or already closed', 404);
 }
 
 export async function answerCensus(

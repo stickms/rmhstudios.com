@@ -4,6 +4,7 @@ import { markSitewideAnnouncementSeenApi } from '@/lib/sitewide-announcement.con
 import { markSeenSchema } from '@/lib/sitewide-announcement-schema';
 import { markAnnouncementSeen } from '@/lib/sitewide-announcement.server';
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 
 /** POST /api/sitewide-announcement/seen — remember a member dismissed the popup (no-op when signed out). */
 export const route = apiRoute('/api/sitewide-announcement/seen', {
@@ -14,7 +15,7 @@ export const route = apiRoute('/api/sitewide-announcement/seen', {
       if (!userId) return Response.json({ ok: true as const });
       // Only real announcement posts can be marked, so this can't spray rows.
       const post = await prisma.blogPost.findFirst({
-        where: { id: body.id, announcement: true },
+        where: { id: body.id, announcement: true, ...publishedLogWhere(new Date()) },
         select: { id: true },
       });
       if (post) await markAnnouncementSeen(userId, post.id);

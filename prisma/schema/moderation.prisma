@@ -59,6 +59,11 @@ model ContentReport {
   resolvedAt    DateTime?
   moderatorNote String?      @db.VarChar(1000)
 
+  /// s03-16: set once, in the same write that claims the right to tell the reporter the outcome.
+  reporterNotifiedAt DateTime?
+  /// s03-16: the reporter took the report back while it was still PENDING (status is DISMISSED).
+  withdrawnAt        DateTime?
+
   createdAt DateTime @default(now())
 
   reporter   User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
@@ -67,6 +72,9 @@ model ContentReport {
   @@index([status, createdAt(sort: Desc)])
   @@index([entityType, entityId])
   @@index([reporterId])
+  @@index([reporterId, createdAt(sort: Desc)])
+  /// s03-20: the grouped moderation queue counts open reports per target.
+  @@index([status, entityType, entityId])
   @@map("content_report")
 }
 
@@ -478,4 +486,31 @@ model StudioChallengeVote {
   @@index([entryId])
   @@index([voterId])
   @@map("studio_challenge_vote")
+}
+
+// ─── Moderator notes (s03-04) ─────────────────────────────────────────────
+// Internal, admin-only notes on a member's account. Never in a member-facing serializer or the
+// member's export (they are the site's records, like AdminAuditLog); erased with the member.
+model ModeratorNote {
+  id          String    @id @default(cuid())
+  subjectId   String
+  /// Null once the author's account is erased ("Deleted user").
+  authorId    String?
+  body        String    @db.VarChar(2000)
+  /// Earlier texts of an edited note, oldest first, so a note cannot be silently rewritten.
+  editedFrom  String[]  @default([])
+  /// Optional pointers to one of the member's own reports or strikes.
+  reportId    String?
+  strikeId    String?
+  pinned      Boolean   @default(false)
+  deletedAt   DateTime?
+  deletedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  subject User  @relation("ModeratorNoteSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  author  User? @relation("ModeratorNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([subjectId, pinned, createdAt(sort: Desc)])
+  @@map("moderator_note")
 }

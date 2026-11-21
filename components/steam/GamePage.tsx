@@ -15,6 +15,10 @@ import { CollectionMenu } from './CollectionMenu';
 import { SteamCards } from './SteamCards';
 import type { AlsoPlayed } from '@/lib/games/store-types';
 import { SteamGuides } from './SteamGuides';
+import { FollowGameButton } from './FollowGameButton';
+import { SteamUpdates, UpdatesLabel } from './GameUpdates';
+import type { PatchNoteItem } from '@/lib/arcade/updates';
+import type { FollowState } from '@/lib/arcade/updates.contract';
 import { SteamCommunity, SteamFriends } from './SteamPeople';
 import { SteamReviews } from './SteamReviews';
 import { TitleArt } from './TitleArt';
@@ -39,6 +43,7 @@ export type GamePageData = {
   trickOfTheWeek: TrickView | null;
   extras: LibraryExtras;
   alsoPlayed: AlsoPlayed[];
+  updates: { notes: PatchNoteItem[]; follow: FollowState } | null;
 };
 
 /**
@@ -90,6 +95,9 @@ export function GamePage({ data }: { data: GamePageData }) {
           {data.cta || t('play', { defaultValue: 'Play' })}
         </a>
         <CollectionMenu gameId={data.gameId} />
+        {data.updates ? (
+          <FollowGameButton gameId={data.gameId} signedIn={data.signedIn} initial={data.updates.follow} />
+        ) : null}
         {offSite ? null : (
           <dl className="stm-stats">
             {data.signedIn ? (
@@ -135,6 +143,7 @@ export function GamePage({ data }: { data: GamePageData }) {
         {total > 0 ? <a href="#achievements">{t('steam-achievements', { defaultValue: 'Achievements' })}</a> : null}
         {extras.cards ? <a href="#cards">{t('steam-trading-cards', { defaultValue: 'Trading Cards' })}</a> : null}
         {offSite ? null : <a href="#friends">{t('steam-friends-short', { defaultValue: 'Friends' })}</a>}
+        {data.updates ? <a href="#updates"><UpdatesLabel /></a> : null}
         {isGame ? <a href="#reviews">{t('reviews', { defaultValue: 'Reviews' })}</a> : null}
         {isGame ? <a href="#guides">{t('guides', { defaultValue: 'Player guides' })}</a> : null}
         <Link to="/games/hub/$gameId" params={{ gameId: data.gameId }}>
@@ -154,6 +163,7 @@ export function GamePage({ data }: { data: GamePageData }) {
               <NightrailTrickBoard winner={data.trickOfTheWeek ?? null} signedIn={data.signedIn} />
             </div>
           ) : null}
+          {data.updates ? <SteamUpdates gameId={data.gameId} notes={data.updates.notes} /> : null}
           {isGame ? (
             <>
               <div className="stm-legacy">

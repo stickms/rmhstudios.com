@@ -7,6 +7,7 @@
  * reportGameResult adoption. v1 allows one review per signed-in user per game.
  */
 import { prisma } from '@/lib/prisma.server';
+import { enqueueGameUpdateFanout } from '@/lib/arcade/updates-jobs.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { games } from '@/lib/catalog';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -324,6 +325,15 @@ export async function publishGuide(
   id: string,
   published: boolean,
 ): Promise<void> {
+  const before = await prisma.gameGuide.findFirst({
+    where: { id, authorId },
+    select: { gameId: true, published: true },
+  });
   const res = await prisma.gameGuide.updateMany({ where: { id, authorId }, data: { published } });
-  if (res.count === 0) throw new GameMetaError('NOT_FOUND');
+  if (res.count === 0 || !before) throw new GameMetaError('NOT_FOUND');
+  // A guide becoming public is news to the game's followers (its author is left out by the fan-out). Only the
+  // change from draft to published counts, and the fan-out never notifies one guide twice.
+  if (published && !before.published) {
+    await enqueueGameUpdateFanout({ kind: 'guide', gameId: before.gameId, guideId: id });
+  }
 }

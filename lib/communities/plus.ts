@@ -4,6 +4,7 @@
  * every feed card, so this module is on the feed, tag, thread and profile
  * routes. The API input schemas are in `./plus-schema`.
  */
+import type { CommunityRuleDTO } from '@/lib/communities/rules';
 import type { VERIFICATION_LEVELS } from '@/lib/communities/verification';
 import type { ChallengePhase } from '@/lib/communities/challenge';
 import type {
@@ -126,9 +127,21 @@ export interface ModItemDTO {
   action:
     | 'flag'
     | 'hold'
-    | 'remove';
+    | 'remove'
+    | 'report';
   ruleName: string;
   snapshot: string;
+  /** `report` items: how many members reported it (never who). */
+  reporters?:
+    | number
+    | undefined;
+  /** The rule a moderator cited when removing it. */
+  citedRule?:
+    | {
+        position: number;
+        title: string;
+      }
+    | undefined;
   status:
     | 'PENDING'
     | 'APPROVED'
@@ -194,8 +207,15 @@ export interface CommunityExtrasDTO {
   /** Whether the viewer may post right now (S2). Mods always can. */
   posting: PostingStatusDTO;
   sisters: SisterDTO[];
+  /** s03-13: the community's rules, in order. */
+  rules: CommunityRuleDTO[];
+  /** Joining needs the member to tick the rules. */
+  rulesRequireAgreement: boolean;
+  /** s03-14: members may read the content part of the moderation log. */
+  publicModLog: boolean;
   /** Present for members only. */
   member: {
+    /** When the viewer joined (ISO); the rules sheet is for people who just did. */ joinedAt: string;
     followedFlairIds: string[];
     roleTags: string[];
     /** Onboarding questions the member has not answered yet. */

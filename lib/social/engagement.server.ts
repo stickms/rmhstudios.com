@@ -13,6 +13,7 @@ import { prisma } from '@/lib/prisma.server';
 import { feedEventBus } from '@/lib/feed-sse';
 import { createNotification, removeNotification } from '@/lib/notifications.server';
 import { notifyMentions } from '@/lib/feed/notify-mentions.server';
+import { postConversationKey } from '@/lib/feed/conversation-controls.server';
 import { progressAchievement } from '@/lib/achievements/engine.server';
 import { enqueueProgression } from '@/lib/social/engagement-effects.server';
 import { resolveMediaForPost } from '@/lib/media/attach.server';
@@ -58,6 +59,7 @@ async function applyPostLike(
       where: { id: postId },
       select: {
         userId: true,
+        threadRootId: true,
         content: true,
         likeCount: true,
         audience: true,
@@ -113,6 +115,7 @@ async function applyPostLike(
       preview: post.content ?? null,
       link: postLink(post.user?.handle, post.userId, postId),
       dedupeUnread: true,
+      conversationKey: postConversationKey({ id: postId, threadRootId: post.threadRootId }),
     });
     void enqueueProgression({
       actorId: userId,
@@ -195,6 +198,7 @@ export async function createComment(args: {
     select: {
       id: true,
       userId: true,
+      threadRootId: true,
       audience: true,
       communityId: true,
       deletedAt: true,
@@ -232,6 +236,8 @@ export async function createComment(args: {
   void (async () => {
     try {
       const link = postLink(post.user?.handle, post.userId, postId);
+      // Each member's mute / Mentions only for this conversation is applied inside createNotification.
+      const conversationKey = postConversationKey(post);
       let parentAuthorId: string | null = null;
       if (args.parentId) {
         const parent = await prisma.rMHarkComment.findUnique({
@@ -248,6 +254,9 @@ export async function createComment(args: {
             entityId: comment.id,
             preview: content,
             link,
+            conversationKey,
+            // A direct reply to their reply: it addresses them, so Mentions only still lets it through.
+            addressed: true,
           });
         }
       }
@@ -260,6 +269,7 @@ export async function createComment(args: {
           entityId: postId,
           preview: content,
           link,
+          conversationKey,
         });
       }
       await notifyMentions({

@@ -16,6 +16,7 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { getBook } from '@/lib/library/library.server';
@@ -57,7 +58,10 @@ export async function docExists(kind: ReadingDocKind, key: string): Promise<bool
     return a !== null && a.status === 'PUBLISHED';
   }
   return (
-    (await prisma.blogPost.findUnique({ where: { slug: key }, select: { id: true } })) !== null
+    (await prisma.blogPost.findFirst({
+      where: { slug: key, ...publishedLogWhere(new Date()) },
+      select: { id: true },
+    })) !== null
   );
 }
 
@@ -366,7 +370,7 @@ async function documentTitles(
   const [blog, news, lib] = await Promise.all([
     slugsOf('blog').length
       ? prisma.blogPost.findMany({
-          where: { slug: { in: slugsOf('blog') } },
+          where: { slug: { in: slugsOf('blog') }, ...publishedLogWhere(new Date()) },
           select: { slug: true, title: true },
         })
       : [],

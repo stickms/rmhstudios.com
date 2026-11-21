@@ -434,12 +434,19 @@ describe('history is scoped to the session user', () => {
     ).toBe(
       360,
     );
+    // s03-08: the current streak is derived from the session days (one day here), not the stored
+    // `currentStreak`, which was stale for every profile written before the streak fix; the stored
+    // longest streak still counts for runs older than the window.
     expect(
       h.streak,
     ).toEqual(
       {
-        current: 3,
+        current: 1,
         longest: 9,
+        days: [
+          today,
+        ],
+        studiedToday: true,
       },
     );
     expect(

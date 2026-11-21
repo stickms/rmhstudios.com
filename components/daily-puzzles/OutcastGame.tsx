@@ -1194,6 +1194,7 @@ function OutcastGameContent({
               )}
 
               <PuzzleShareRow
+                gameMode="outcast"
                 shareText={
                   shareText
                 }

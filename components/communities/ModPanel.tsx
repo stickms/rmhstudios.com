@@ -7,9 +7,15 @@ import {
 } from '@/components/ui/tabs';
 import { ModAutomod } from '@/components/communities/ModAutomod';
 import { ModFlairs } from '@/components/communities/ModFlairs';
+import { ModLog } from '@/components/communities/ModLog';
+import {
+  ModInsights,
+  useInsightsTabLabel,
+} from '@/components/communities/ModInsights';
 import { ModInvites } from '@/components/communities/ModInvites';
 import { ModRequests } from '@/components/communities/ModRequests';
 import { ModOnboarding } from '@/components/communities/ModOnboarding';
+import { ModRules } from '@/components/communities/ModRules';
 import { ModQueue } from '@/components/communities/ModQueue';
 import { ModSettings } from '@/components/communities/ModSettings';
 import { ModSisters } from '@/components/communities/ModSisters';
@@ -33,6 +39,20 @@ export default function ModPanel({
     useTranslation(
       'f-communities-plus',
     );
+  const {
+    t: tr,
+  } =
+    useTranslation(
+      'community-rules',
+    );
+  const {
+    t: tl,
+  } =
+    useTranslation(
+      'community-modlog',
+    );
+  const insightsLabel =
+    useInsightsTabLabel();
   const [
     sub,
     setSub,
@@ -54,6 +74,22 @@ export default function ModPanel({
           ),
       },
       {
+        id: 'log',
+        label:
+          tl(
+            'mod-tab',
+            {
+              defaultValue:
+                'Log',
+            },
+          ),
+      },
+      {
+        id: 'insights',
+        label:
+          insightsLabel,
+      },
+      {
         id: 'automod',
         label:
           t(
@@ -72,6 +108,17 @@ export default function ModPanel({
             {
               defaultValue:
                 'Flairs',
+            },
+          ),
+      },
+      {
+        id: 'rules',
+        label:
+          tr(
+            'mod-tab',
+            {
+              defaultValue:
+                'Rules',
             },
           ),
       },
@@ -161,6 +208,31 @@ export default function ModPanel({
           slug={
             slug
           }
+          rules={
+            extras?.rules ??
+            []
+          }
+          onOpenLog={() =>
+            setSub(
+              'log',
+            )
+          }
+        />
+      )}
+      {sub ===
+        'log' && (
+        <ModLog
+          slug={
+            slug
+          }
+        />
+      )}
+      {sub ===
+        'insights' && (
+        <ModInsights
+          slug={
+            slug
+          }
         />
       )}
       {sub ===
@@ -180,6 +252,17 @@ export default function ModPanel({
           flairs={
             extras?.flairs ??
             []
+          }
+          onChange={
+            onExtrasChange
+          }
+        />
+      )}
+      {sub ===
+        'rules' && (
+        <ModRules
+          slug={
+            slug
           }
           onChange={
             onExtrasChange

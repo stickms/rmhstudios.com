@@ -11,7 +11,7 @@ export const route = apiRoute('/api/communities/$slug/invites/$id', {
     if (!/^\d{1,18}$/.test(params.id)) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
-    const revoked = await revokeInvite(guard.value.id, BigInt(params.id));
+    const revoked = await revokeInvite(guard.value.id, BigInt(params.id), userId);
     return Response.json({ success: true, revoked });
   }),
 });

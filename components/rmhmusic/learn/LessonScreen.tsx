@@ -69,6 +69,7 @@ import {
 import { useLearnerShape } from './useLearnerShape';
 import { useInputRelease } from './useLearnInput';
 import { useArrival } from '@/components/ui/arrive';
+import { beginActivity } from '@/lib/rmhmusic/learn/activity-clock';
 
 export function Shell({
   title,
@@ -83,7 +84,8 @@ export function Shell({
   back?: {
     to:
       | '/rmhmusic/songs'
-      | '/rmhmusic/sprint';
+      | '/rmhmusic/sprint'
+      | '/rmhmusic/history';
     label: string;
   };
   /** The lesson is still loading: the main region says so to screen readers. */
@@ -633,6 +635,15 @@ export function LessonScreen({
     known,
     soundId,
   ]);
+
+  // The lesson is open: its length, for the practice log, counts from here.
+  useEffect(
+    () =>
+      beginActivity(),
+    [
+      lessonId,
+    ],
+  );
 
   // The store is empty until `load()` runs in the browser (a no-op when the home already loaded it).
   useEffect(() => {

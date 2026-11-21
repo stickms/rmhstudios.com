@@ -1,15 +1,23 @@
+import { z } from 'zod';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { encodeCsv } from '@/lib/rmhladder/csv';
+import { offersToCsv } from '@/lib/rmhladder/offers';
+import { exportLadderOffers } from '@/lib/rmhladder/offers.server';
+
+const exportQuery = z.object({
+  kind: z.enum(['applications', 'saved', 'offers']).default('applications'),
+});
 
 export const route = apiRoute('/api/rmhladder/export', {
-  GET: defineHandler({}, async ({ request, session }) => {
-    const url = new URL(request.url);
-    const kind = url.searchParams.get('kind') ?? 'applications';
+  GET: defineHandler({ query: exportQuery }, async ({ query, session }) => {
+    const { kind } = query;
     let csv: string;
 
-    if (kind === 'saved') {
+    if (kind === 'offers') {
+      csv = offersToCsv(await exportLadderOffers(session.user.id));
+    } else if (kind === 'saved') {
       const rows = await prisma.ladderJobAction.findMany({
         where: { userId: session.user.id, action: 'saved' },
         include: { job: { include: { company: true } } },

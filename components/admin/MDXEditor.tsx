@@ -46,6 +46,15 @@ import {
   type BusinessId,
 } from '@/lib/businesses';
 import { ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS } from '@/lib/sitewide-announcement';
+import { ScheduleControl } from '@/components/ui/schedule-control';
+import { BlogRevisions } from '@/components/admin/BlogRevisions';
+import { BlogStatusControls } from '@/components/admin/BlogStatusControls';
+import {
+  isLogStatus,
+  validateSchedule,
+  type LogStatus,
+} from '@/lib/blog/publication';
+import type { RevisionDetail } from '@/lib/blog/publication.server';
 
 /** The loader's post: every field is optional and untyped on the wire, so each is narrowed where it is read. */
 type InitialData =
@@ -111,6 +120,12 @@ export function MDXEditor({
   } =
     useTranslation(
       'c-admin',
+    );
+  const {
+    t: ts,
+  } =
+    useTranslation(
+      'log-drafts',
     );
 
   const [
@@ -235,13 +250,52 @@ export function MDXEditor({
     useState(
       false,
     );
+
+  // s03-05: the Log's saved state (null until it is first saved), the action in flight and the schedule field.
   const [
-    isSubmitting,
-    setIsSubmitting,
+    status,
+  ] =
+    useState<LogStatus | null>(
+      isLogStatus(
+        initialData?.status,
+      )
+        ? initialData.status
+        : isEdit
+          ? 'published'
+          : null,
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState<
+      | LogStatus
+      | 'unpublish'
+      | null
+    >(
+      null,
+    );
+  const [
+    scheduleOpen,
+    setScheduleOpen,
   ] =
     useState(
       false,
     );
+  const [
+    scheduleLocal,
+    setScheduleLocal,
+  ] =
+    useState(
+      isoToLocalInput(
+        initialData?.publishAt,
+      ),
+    );
+  const publishAtIso =
+    typeof initialData?.publishAt ===
+    'string'
+      ? initialData.publishAt
+      : null;
 
   const handleChange =
     (
@@ -426,15 +480,63 @@ export function MDXEditor({
       );
     };
 
-  const handleSubmit =
-    async (
-      e: React.FormEvent,
+  const handleRestore =
+    (
+      revision: RevisionDetail,
     ) => {
-      e.preventDefault();
-      setIsSubmitting(
-        true,
+      setFormData(
+        (
+          prev,
+        ) => ({
+          ...prev,
+          title:
+            revision.title,
+          description:
+            revision.description,
+          tags: revision.tags.join(
+            ', ',
+          ),
+        }),
       );
+      setContent(
+        revision.content,
+      );
+      toast.success(
+        t(
+          'revision-restored',
+          {
+            defaultValue:
+              'Version restored in the editor. Save to make it current.',
+          },
+        ),
+      );
+    };
 
+  const formRef =
+    useRef<HTMLFormElement>(
+      null,
+    );
+
+  /** Save the Log as `target` (and, for `scheduled`, to go out at `publishAt`, an ISO instant). */
+  const save =
+    async (
+      target: LogStatus,
+      publishAt?: string,
+      action:
+        | LogStatus
+        | 'unpublish' = target,
+    ) => {
+      if (
+        !formRef.current?.reportValidity()
+      )
+        return;
+      if (
+        !content.trim()
+      )
+        return;
+      setBusy(
+        action,
+      );
       try {
         const payload =
           {
@@ -445,15 +547,23 @@ export function MDXEditor({
               )
               .map(
                 (
-                  t: string,
+                  tag: string,
                 ) =>
-                  t.trim(),
+                  tag.trim(),
               )
               .filter(
                 Boolean,
               ),
             content,
             isEdit,
+            status:
+              target,
+            publishAt:
+              target ===
+              'scheduled'
+                ? (publishAt ??
+                  null)
+                : null,
             announcement,
             business,
             announcementExpiresAt:
@@ -464,7 +574,6 @@ export function MDXEditor({
                   ).toISOString()
                 : null,
           };
-
         try {
           await api(
             saveBlogPostApi,
@@ -490,42 +599,45 @@ export function MDXEditor({
             },
           );
         }
-
         toast.success(
-          <div>
-            {isEdit
-              ? t(
-                  'post-updated-successfully',
-                  {
-                    defaultValue:
-                      'Post updated successfully!',
-                  },
-                )
-              : t(
-                  'post-created-successfully',
-                  {
-                    defaultValue:
-                      'Post created successfully!',
-                  },
-                )}
-            <p className="mt-1 t-body text-site-text-muted">
-              {t(
-                'changes-now-live',
+          action ===
+            'unpublish'
+            ? ts(
+                'saved-unpublished',
                 {
                   defaultValue:
-                    'Your changes are now live.',
+                    'Unpublished. The Log is a draft again.',
                 },
-              )}
-            </p>
-          </div>,
-          {
-            duration: 8000,
-          },
+              )
+            : target ===
+                'scheduled'
+              ? ts(
+                  'saved-scheduled',
+                  {
+                    defaultValue:
+                      'Scheduled. It goes out at the time you set.',
+                  },
+                )
+              : target ===
+                  'draft'
+                ? ts(
+                    'saved-draft',
+                    {
+                      defaultValue:
+                        'Draft saved. Only admins can see it.',
+                    },
+                  )
+                : ts(
+                    'saved-published',
+                    {
+                      defaultValue:
+                        'Saved. The Log is live.',
+                    },
+                  ),
         );
-
         navigate(
           {
-            to: '/admin',
+            to: '/admin/blog',
           },
         );
       } catch (error) {
@@ -542,10 +654,74 @@ export function MDXEditor({
             ),
         );
       } finally {
-        setIsSubmitting(
-          false,
+        setBusy(
+          null,
         );
       }
+    };
+
+  // Enter in a field saves, and never publishes by accident: a live Log is updated, anything else is kept as a draft.
+  const handleFormSubmit =
+    (
+      e: React.FormEvent,
+    ) => {
+      e.preventDefault();
+      // A scheduled Log stays scheduled (Enter must not silently pull it back to a draft); if its time is now
+      // too close to re-validate, say so instead of changing its state.
+      if (
+        status ===
+          'scheduled' &&
+        publishAtIso
+      ) {
+        handleSchedule(
+          publishAtIso,
+        );
+        return;
+      }
+      void save(
+        status ===
+          'published'
+          ? 'published'
+          : 'draft',
+      );
+    };
+
+  const handleSchedule =
+    (
+      iso: string,
+    ) => {
+      const check =
+        validateSchedule(
+          iso,
+          new Date(),
+        );
+      if (
+        !check.ok
+      ) {
+        toast.error(
+          check.reason ===
+            'too-soon'
+            ? ts(
+                'schedule-too-soon',
+                {
+                  defaultValue:
+                    'Schedule at least 5 minutes ahead.',
+                },
+              )
+            : ts(
+                'schedule-invalid',
+                {
+                  defaultValue:
+                    'Pick a date and time within the next year.',
+                },
+              ),
+        );
+        return;
+      }
+      void save(
+        'scheduled',
+        iso,
+      );
     };
 
   // PORTALLED to <body>. This is a full-screen takeover (its own header carries
@@ -665,42 +841,45 @@ export function MDXEditor({
                   },
                 )}
           </Button>
-          <Button
-            type="submit"
-            form="blog-form"
+          <BlogStatusControls
+            status={
+              status
+            }
+            publishAt={
+              publishAtIso
+            }
             disabled={
               !content.trim()
             }
-            size="sm"
-            variant="default"
-            loading={
-              isSubmitting
+            busy={
+              busy
             }
-          >
-            {isSubmitting
-              ? t(
-                  'saving',
-                  {
-                    defaultValue:
-                      'Saving...',
-                  },
-                )
-              : isEdit
-                ? t(
-                    'update-post',
-                    {
-                      defaultValue:
-                        'Update Post',
-                    },
-                  )
-                : t(
-                    'save-post',
-                    {
-                      defaultValue:
-                        'Save Post',
-                    },
-                  )}
-          </Button>
+            scheduleOpen={
+              scheduleOpen
+            }
+            onSave={(
+              target,
+            ) =>
+              void save(
+                target,
+              )
+            }
+            onUnpublish={() =>
+              void save(
+                'draft',
+                undefined,
+                'unpublish',
+              )
+            }
+            onToggleSchedule={() =>
+              setScheduleOpen(
+                (
+                  open,
+                ) =>
+                  !open,
+              )
+            }
+          />
         </div>
       </div>
 
@@ -731,10 +910,48 @@ export function MDXEditor({
                   )}
                 </h2>
               </div>
+              {scheduleOpen &&
+                status !==
+                  'published' && (
+                  <ScheduleControl
+                    id="log-schedule"
+                    value={
+                      scheduleLocal
+                    }
+                    onChange={
+                      setScheduleLocal
+                    }
+                    onSubmit={
+                      handleSchedule
+                    }
+                    disabled={
+                      !content.trim()
+                    }
+                    submitting={
+                      busy ===
+                      'scheduled'
+                    }
+                    submitLabel={ts(
+                      'schedule-confirm',
+                      {
+                        defaultValue:
+                          'Schedule it',
+                      },
+                    )}
+                    onCancel={() => {
+                      setScheduleOpen(
+                        false,
+                      );
+                    }}
+                  />
+                )}
               <form
                 id="blog-form"
+                ref={
+                  formRef
+                }
                 onSubmit={
-                  handleSubmit
+                  handleFormSubmit
                 }
                 className="space-y-4 shrink-0"
               >
@@ -817,15 +1034,11 @@ export function MDXEditor({
                             'Date',
                         },
                       )}{' '}
-                      <span className="text-site-danger">
-                        *
-                      </span>
                     </Label>
                     <Input
                       id="date"
                       name="date"
                       type="date"
-                      required
                       value={
                         formData.date
                       }
@@ -1214,6 +1427,25 @@ export function MDXEditor({
                   }
                   className="mt-3"
                 />
+                {isEdit &&
+                initialData?.slug ? (
+                  <BlogRevisions
+                    slug={asString(
+                      initialData.slug,
+                    )}
+                    current={{
+                      title:
+                        formData.title,
+                      description:
+                        formData.description,
+                      tags: formData.tags,
+                      content,
+                    }}
+                    onRestore={
+                      handleRestore
+                    }
+                  />
+                ) : null}
               </div>
             </div>
           </ResizablePanel>

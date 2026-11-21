@@ -14,6 +14,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
+import { EditDescriptionsMenuItem } from '@/components/feed/EditDescriptionsMenuItem';
 import { cn } from '@/lib/utils';
 import {
   canEdit,
@@ -44,6 +45,7 @@ export function MessageActions({
   message,
   viewerId,
   onEdit,
+  onEditAlts,
   onUnsend,
   onHide,
   onReply,
@@ -61,6 +63,8 @@ export function MessageActions({
   };
   viewerId: string;
   onEdit: () => void;
+  /** Open the image-description editor; given only while the sender may still change them (24 hours). */
+  onEditAlts?: (() => void) | undefined;
   onUnsend: () => void;
   onHide: () => void;
   /** Quote this message into the composer — the menu twin of swipe-to-reply. */
@@ -222,6 +226,17 @@ export function MessageActions({
               )}
             </p>
           )}
+
+        {onEditAlts && (
+          <EditDescriptionsMenuItem
+            onSelect={() => {
+              setOpen(
+                false,
+              );
+              onEditAlts();
+            }}
+          />
+        )}
 
         {copyable &&
           onReply && (

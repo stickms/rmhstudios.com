@@ -201,8 +201,39 @@ beforeEach(
     mocks.find.mockResolvedValue(
       null,
     );
-    mocks.tx.mockResolvedValue(
-      [],
+    // The save runs in an interactive transaction: hand its callback the same client.
+    mocks.tx.mockImplementation(
+      async (
+        run: unknown,
+      ) =>
+        typeof run ===
+        'function'
+          ? run(
+              {
+                blogPost:
+                  {
+                    create:
+                      mocks.create,
+                    update:
+                      mocks.update,
+                  },
+                blogAnnouncementSeen:
+                  {
+                    deleteMany:
+                      vi.fn(),
+                  },
+                blogPostRevision:
+                  {
+                    create:
+                      vi.fn(),
+                    findMany:
+                      async () => [],
+                    deleteMany:
+                      vi.fn(),
+                  },
+              },
+            )
+          : [],
     );
   },
 );

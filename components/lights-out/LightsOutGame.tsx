@@ -533,7 +533,7 @@ export function LightsOutGame() {
                                 </PuzzleSection>
                             )}
 
-                            <PuzzleShareRow shareText={shareText} disabled={!shareText} />
+                            <PuzzleShareRow gameMode="lights-out" shareText={shareText} disabled={!shareText} />
                             <PuzzleFootnote>
                                 {isToday
                                     ? t("new-puzzle-tomorrow", { defaultValue: "A new puzzle unlocks tomorrow — same for everyone worldwide." })

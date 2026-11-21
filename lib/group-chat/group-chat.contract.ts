@@ -49,6 +49,7 @@ export const sendGroupMessageApi =
       content?: string;
       gifUrl?: string;
       imageUrls?: string[];
+      imageAlts?: string[];
       poll?: {
         question: string;
         options: string[];

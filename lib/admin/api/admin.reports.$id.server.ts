@@ -1,14 +1,8 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/admin/admin-ops.contract';
-import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
-import type { ReportStatus } from '@prisma/client';
-import { logAdminAction } from '@/lib/admin-audit.server';
-import { takedownStamp } from '@/lib/profile/stamps.server';
-import { createNotification } from '@/lib/notifications.server';
-import { takedownRing } from '@/lib/profile/webrings.server';
-import { hideMusicContent } from '@/lib/rmhmusic/learn/moderation.server';
+import { decideReports } from '@/lib/moderation/triage.server';
 
 /**
  * POST /api/admin/reports/$id — act on a report. Admin only.
@@ -24,71 +18,6 @@ const actionSchema = z.object({
   deleteContent: z.boolean().optional(),
 });
 
-const STATUS_BY_ACTION = {
-  review: 'REVIEWING',
-  resolve: 'RESOLVED',
-  dismiss: 'DISMISSED',
-} as const;
-
-/**
- * The report lifecycle: PENDING → REVIEWING → RESOLVED | DISMISSED (PENDING may
- * skip straight to either terminal state). RESOLVED and DISMISSED are terminal.
- */
-const ALLOWED_FROM: Record<
-  (typeof STATUS_BY_ACTION)[keyof typeof STATUS_BY_ACTION],
-  readonly ReportStatus[]
-> = {
-  REVIEWING: ['PENDING'],
-  RESOLVED: ['PENDING', 'REVIEWING'],
-  DISMISSED: ['PENDING', 'REVIEWING'],
-};
-
-/**
- * Take reported content down. Throws on a real failure so the caller can leave
- * the report open; content that is already gone is not a failure. A post or
- * comment is stamped `deletedBy: 'moderator'` as well as `deletedByAdmin`, so a
- * row the author had already put in the bin stops being restorable from it.
- */
-async function takedownReportedContent(entityType: string, entityId: string): Promise<void> {
-  const now = new Date();
-  if (entityType === 'rmhark') {
-    await prisma.$transaction([
-      prisma.rMHark.updateMany({
-        where: { id: entityId, deletedAt: null },
-        data: { deletedAt: now },
-      }),
-      prisma.rMHark.updateMany({
-        where: { id: entityId },
-        data: { deletedByAdmin: true, deletedBy: 'moderator' },
-      }),
-    ]);
-  } else if (entityType === 'comment') {
-    await prisma.$transaction([
-      prisma.rMHarkComment.updateMany({
-        where: { id: entityId, deletedAt: null },
-        data: { deletedAt: now },
-      }),
-      prisma.rMHarkComment.updateMany({
-        where: { id: entityId },
-        data: { deletedByAdmin: true, deletedBy: 'moderator' },
-      }),
-    ]);
-  } else if (entityType === 'stamp') {
-    await takedownStamp(entityId);
-  } else if (entityType === 'webring') {
-    await takedownRing(entityId);
-  } else if (entityType === 'ladder-interview') {
-    await prisma.ladderInterviewReport.updateMany({
-      where: { id: entityId },
-      data: { status: 'hidden' },
-    });
-  } else if (entityType === 'music-score' || entityType === 'music-share') {
-    // RMH Music: a Daily score leaves every board (kept as the learner's result); a shared
-    // result link and its card go dark.
-    await hideMusicContent(entityType, entityId, now);
-  }
-}
-
 export const route = apiRoute('/api/admin/reports/$id', {
   POST: implement(
     C.actOnAdminReportApi,
@@ -99,67 +28,25 @@ export const route = apiRoute('/api/admin/reports/$id', {
       allowEmptyBody: true,
     },
     async ({ params, session, body }) => {
-      const report = await prisma.contentReport.findUnique({ where: { id: params.id } });
-      if (!report) return Response.json({ error: 'Report not found' }, { status: 404 });
-
-      const newStatus = STATUS_BY_ACTION[body.action];
-      const terminal = newStatus === 'RESOLVED' || newStatus === 'DISMISSED';
-      const from = ALLOWED_FROM[newStatus];
-      if (!from.includes(report.status)) {
-        return Response.json(
-          { error: `Report is already ${report.status.toLowerCase()}` },
-          { status: 409 },
-        );
-      }
-
-      // Optionally take the reported content down when resolving. A failed
-      // takedown fails the request and leaves the report open: marking it
-      // RESOLVED with the content still up would drop it from the queue.
-      if (body.deleteContent && body.action === 'resolve') {
-        try {
-          await takedownReportedContent(report.entityType, report.entityId);
-        } catch (e) {
-          console.error('Report content takedown failed:', e);
-          return Response.json(
-            { error: 'Content takedown failed; the report was left open' },
-            { status: 500 },
-          );
-        }
-      }
-
-      // CAS on the status we validated: two moderators acting at once (or a
-      // stale tab) cannot move a report out of a terminal state.
-      const claimed = await prisma.contentReport.updateMany({
-        where: { id: params.id, status: { in: [...from] } },
-        data: {
-          status: newStatus,
-          moderatorNote: body.note?.trim() || body.message || report.moderatorNote,
-          // REVIEWING is not a resolution: never carry a resolver/time on it.
-          resolvedById: terminal ? session.user.id : null,
-          resolvedAt: terminal ? new Date() : null,
-        },
+      // The decision itself (status check, takedown, compare-and-set, messages, notifications, audit) is
+      // `decideReports`, shared with the grouped queue.
+      const result = await decideReports([params.id], {
+        action: body.action,
+        moderatorId: session.user.id,
+        note: body.note,
+        message: body.message,
+        deleteContent: body.deleteContent,
       });
-      if (claimed.count === 0) {
-        return Response.json({ error: 'Report was updated by someone else' }, { status: 409 });
+      if (result.missing.length > 0) return Response.json({ error: 'Report not found' }, { status: 404 });
+      if (result.takedownFailed.length > 0) {
+        return Response.json({ error: 'Content takedown failed; the report was left open' }, { status: 500 });
       }
-
-      if (body.message && body.action === 'resolve' && report.targetUserId) {
-        await createNotification({
-          userId: report.targetUserId,
-          type: 'SYSTEM',
-          entityType: 'report',
-          entityId: report.id,
-          preview: body.message,
-        });
+      const skipped = result.skipped[0];
+      if (skipped?.status) {
+        return Response.json({ error: `Report is already ${skipped.status.toLowerCase()}` }, { status: 409 });
       }
-
-      await logAdminAction(session.user.id, `report.${body.action}`, {
-        targetType: report.entityType,
-        targetId: report.entityId,
-        detail: body.deleteContent ? 'content removed' : undefined,
-      });
-
-      return Response.json({ success: true, status: newStatus });
+      if (skipped) return Response.json({ error: 'Report was updated by someone else' }, { status: 409 });
+      return Response.json({ success: true, status: result.status });
     },
   ),
 });

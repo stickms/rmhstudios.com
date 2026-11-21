@@ -34,6 +34,7 @@ Non-2xx responses use a stable envelope:
 | `invalid_key` | `authentication_error` | `401` |
 | `invalid_media` | `invalid_request_error` | `400` |
 | `invalid_request` | `invalid_request_error` | `400` |
+| `ip_not_allowed` | `authorization_error` | `403` |
 | `key_expired` | `authentication_error` | `401` |
 | `method_not_allowed` | `invalid_request_error` | `405` |
 | `missing_key` | `authentication_error` | `401` |

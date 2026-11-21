@@ -25,6 +25,11 @@ interface PostImageGridProps {
  * pass it.
  */
  priority?: boolean;
+ /**
+ * Draw the visual ALT chip on described images (default). A message row turns it
+ * off because it renders its own ALT button, which names itself and shows the text.
+ */
+ altChip?: boolean;
 }
 
 // A lone image is capped at this share of the viewport height, matching the
@@ -38,6 +43,7 @@ export function PostImageGrid({
  className ='',
  heroName,
  priority = false,
+ altChip = true,
 }: PostImageGridProps) {
  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
  // §5.48: liquidly expand the clicked thumbnail into the lightbox (same-document
@@ -62,6 +68,7 @@ export function PostImageGrid({
  // Only the first tile — a second priority image would halve the
  // bandwidth advantage this one was granted.
  priority={priority && i === 0}
+ altChip={altChip}
  onOpen={(el) => runLiquidOpen(el, imgVTName(i), () => setLightboxIndex(i))}
  />
  ))}
@@ -87,6 +94,7 @@ function GridImage({
  single,
  heroName,
  priority = false,
+ altChip = true,
  onOpen,
 }: {
  url: string;
@@ -94,6 +102,7 @@ function GridImage({
  single: boolean;
  heroName?: string;
  priority?: boolean;
+ altChip?: boolean;
  onOpen: (el: HTMLElement) => void;
 }) {
  const { t } = useTranslation('feed');
@@ -139,7 +148,7 @@ function GridImage({
  imgClassName="transition-transform duration-site group-hover:scale-[1.02]"
  priority={priority}
  />
- <AltChip alt={alt} />
+ {altChip && <AltChip alt={alt} />}
  </button>
  );
  }
@@ -169,7 +178,7 @@ function GridImage({
  className="w-full"
  priority={priority}
  />
- <AltChip alt={alt} />
+ {altChip && <AltChip alt={alt} />}
  </button>
  );
  }
@@ -198,7 +207,7 @@ function GridImage({
  onNaturalSize={onNaturalSize}
  priority={priority}
  />
- <AltChip alt={alt} />
+ {altChip && <AltChip alt={alt} />}
  </button>
  );
 }

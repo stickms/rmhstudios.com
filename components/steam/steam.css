@@ -2602,3 +2602,63 @@ html[dir='rtl'] .stm-drawer-panel {
 .stm-shop > p {
   margin: 0 0 16px;
 }
+
+/* ─── Game updates (patch notes) ──────────────────────────────────────────── */
+
+.stm-updates {
+  margin: 0;
+  padding: 0;
+}
+.stm-update {
+  padding: 12px 16px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-update:first-child {
+  border-top: 0;
+}
+.stm-update-title {
+  margin: 0;
+  color: var(--stm-bright);
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.stm-update-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 2px 0 0;
+  color: var(--stm-muted);
+  font-size: 12px;
+}
+.stm-update-body {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.stm-updates-page .stm-updates {
+  background: var(--stm-pane-deep);
+  border-radius: var(--stm-radius);
+}
+.stm-updates-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 0 0 12px;
+}
+.stm-updates-bar p {
+  margin: 0;
+}
+.stm-updates-more {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 0;
+}
+.stm-capsule-action {
+  width: 100%;
+  margin-top: 6px;
+}

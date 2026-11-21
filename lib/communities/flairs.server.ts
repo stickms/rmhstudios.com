@@ -2,6 +2,7 @@
  * N1 — community post flair (server-only).
  */
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import {
   CHALLENGE_WINNER_FLAIR,
@@ -52,17 +53,28 @@ export class FlairError extends Error {
 export async function createFlair(
   communityId: string,
   input: { name: string; color: FlairColor },
+  actorId: string,
 ): Promise<FlairDTO> {
   const count = await prisma.communityFlair.count({ where: { communityId } });
   if (count >= FLAIR_MAX_PER_COMMUNITY) {
     throw new FlairError(`A community can have at most ${FLAIR_MAX_PER_COMMUNITY} flairs`, 400);
   }
   try {
-    const row = await prisma.communityFlair.create({
-      data: { communityId, name: input.name, color: input.color, position: count },
-      select: { id: true, name: true, color: true },
+    return await prisma.$transaction(async (tx) => {
+      const row = await tx.communityFlair.create({
+        data: { communityId, name: input.name, color: input.color, position: count },
+        select: { id: true, name: true, color: true },
+      });
+      await logModAction(tx, {
+        communityId,
+        actorId,
+        action: 'flair_created',
+        targetType: 'flair',
+        targetId: row.id,
+        detail: { name: row.name },
+      });
+      return toDTO(row);
     });
-    return toDTO(row);
   } catch (e) {
     if ((e as { code?: string }).code === 'P2002') {
       throw new FlairError('A flair with that name already exists', 409);
@@ -77,6 +89,7 @@ export async function updateFlair(
   communityId: string,
   flairId: string,
   input: { name: string; color: FlairColor },
+  actorId: string,
 ): Promise<FlairDTO> {
   const existing = await prisma.communityFlair.findFirst({
     where: { id: flairId, communityId },
@@ -84,12 +97,22 @@ export async function updateFlair(
   });
   if (!existing) throw new FlairError('Flair not found', 404);
   try {
-    const row = await prisma.communityFlair.update({
-      where: { id: flairId },
-      data: { name: input.name, color: input.color },
-      select: { id: true, name: true, color: true },
+    return await prisma.$transaction(async (tx) => {
+      const row = await tx.communityFlair.update({
+        where: { id: flairId },
+        data: { name: input.name, color: input.color },
+        select: { id: true, name: true, color: true },
+      });
+      await logModAction(tx, {
+        communityId,
+        actorId,
+        action: 'flair_updated',
+        targetType: 'flair',
+        targetId: row.id,
+        detail: { name: row.name },
+      });
+      return toDTO(row);
     });
-    return toDTO(row);
   } catch (e) {
     if ((e as { code?: string }).code === 'P2002') {
       throw new FlairError('A flair with that name already exists', 409);
@@ -100,10 +123,30 @@ export async function updateFlair(
   }
 }
 
-export async function deleteFlair(communityId: string, flairId: string): Promise<void> {
-  const res = await prisma.communityFlair.deleteMany({ where: { id: flairId, communityId } });
+export async function deleteFlair(
+  communityId: string,
+  flairId: string,
+  actorId: string,
+): Promise<void> {
+  const deleted = await prisma.$transaction(async (tx) => {
+    const flair = await tx.communityFlair.findFirst({
+      where: { id: flairId, communityId },
+      select: { id: true, name: true },
+    });
+    if (!flair) return false;
+    await tx.communityFlair.delete({ where: { id: flair.id } });
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'flair_deleted',
+      targetType: 'flair',
+      targetId: flair.id,
+      detail: { name: flair.name },
+    });
+    return true;
+  });
   bustFlairs(communityId);
-  if (res.count === 0) throw new FlairError('Flair not found', 404);
+  if (!deleted) throw new FlairError('Flair not found', 404);
 }
 
 /** Does this flair belong to the community? (Used to validate a composer pick.) */

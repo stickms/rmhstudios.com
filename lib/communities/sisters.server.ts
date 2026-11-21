@@ -4,6 +4,7 @@
  * rail (their existence is not secret, their relationships are).
  */
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { SISTERS_MAX, type SisterDTO } from '@/lib/communities/plus';
 
@@ -64,7 +65,11 @@ export async function getSisters(communityId: string): Promise<SisterDTO[]> {
 }
 
 /** Replace this community's outgoing links with exactly `slugs` (≤ 5). */
-export async function setSisters(communityId: string, slugs: string[]): Promise<SisterDTO[]> {
+export async function setSisters(
+  communityId: string,
+  slugs: string[],
+  actorId: string,
+): Promise<SisterDTO[]> {
   const unique = [...new Set(slugs)];
   if (unique.length > SISTERS_MAX) {
     throw new SisterError(`Link at most ${SISTERS_MAX} communities`, 400);
@@ -83,16 +88,22 @@ export async function setSisters(communityId: string, slugs: string[]): Promise<
     throw new SisterError("Private communities can't be linked", 400);
   }
   const bySlug = new Map(targets.map((t) => [t.slug, t.id]));
-  await prisma.$transaction([
-    prisma.communitySister.deleteMany({ where: { communityId } }),
-    prisma.communitySister.createMany({
+  await prisma.$transaction(async (tx) => {
+    await tx.communitySister.deleteMany({ where: { communityId } });
+    await tx.communitySister.createMany({
       data: unique.map((slug, i) => ({
         communityId,
         relatedCommunityId: bySlug.get(slug) as string,
         position: i,
       })),
-    }),
-  ]);
+    });
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'sisters_changed',
+      detail: { slugs: unique },
+    });
+  });
   // Mutual badges on the other side depend on this community's links.
   void invalidateCached(key(communityId));
   for (const t of targets) void invalidateCached(key(t.id));

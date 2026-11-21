@@ -17,6 +17,8 @@ export interface Message {
     | string
     | null;
   imageUrls?: string[];
+  /** Descriptions, index-aligned with `imageUrls` ('' = none). */
+  imageAlts?: string[];
   reactions?: ReactionRow[];
   /** H1 — non-null once edited; the bubble renders an "edited" marker. */
   editedAt?:
@@ -52,6 +54,8 @@ export interface MessageMutation {
   conversationId: string;
   messageId: string;
   content: string;
+  /** Present when the change was to image descriptions. */
+  imageAlts?: string[];
   editedAt:
     | string
     | null;
@@ -119,6 +123,12 @@ export function applyMutationTo(
         ...m,
         content:
           mutation.content,
+        ...(mutation.imageAlts
+          ? {
+              imageAlts:
+                mutation.imageAlts,
+            }
+          : {}),
         editedAt:
           mutation.editedAt,
         deletedAt:
@@ -132,6 +142,8 @@ export function applyMutationTo(
               gifUrl:
                 null,
               imageUrls:
+                [],
+              imageAlts:
                 [],
               audioUrl:
                 null,
@@ -165,6 +177,9 @@ export interface SyncPatch {
     | string
     | null;
   imageUrls?:
+    | string[]
+    | null;
+  imageAlts?:
     | string[]
     | null;
   audioUrl?:
@@ -226,6 +241,9 @@ export function applySyncPatches(
             null,
           imageUrls:
             patch.imageUrls ??
+            [],
+          imageAlts:
+            patch.imageAlts ??
             [],
           audioUrl:
             patch.audioUrl ??
@@ -473,6 +491,8 @@ export function fromStreamMessage(
       msg.gifUrl,
     imageUrls:
       msg.imageUrls,
+    imageAlts:
+      msg.imageAlts,
     editedAt:
       msg.editedAt ??
       null,

@@ -40,9 +40,13 @@ export interface AdminReportRow {
   entityType: string;
   entityId: string;
   status: AdminReportStatus;
+  /** The reporter took it back before anyone picked it up. */
+  withdrawn: boolean;
   createdAt: string;
   reporter: AdminQueueUser;
   targetUser: AdminQueueUser | null;
+  /** s03-04: moderator notes on the reported member (0 when there is no member). */
+  targetNoteCount: number;
 }
 
 /** The moderation queue for one status (default PENDING) plus per-status counts. */

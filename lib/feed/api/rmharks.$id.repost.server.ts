@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { feedEventBus } from '@/lib/feed-sse';
 import { createNotification, removeNotification } from '@/lib/notifications.server';
+import { postConversationKey } from '@/lib/feed/conversation-controls.server';
 import { canReadPostThread, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { repostPostApi } from '@/lib/feed/rmhark-actions.contract';
 
@@ -96,7 +97,7 @@ export const route = apiRoute('/api/rmharks/$id/repost', {
         // Tell the author (dedupes repeated toggle spam; skips self-reposts).
         const reposted = await prisma.rMHark.findUnique({
           where: { id },
-          select: { userId: true, content: true },
+          select: { id: true, userId: true, threadRootId: true, content: true },
         });
         if (reposted) {
           void createNotification({
@@ -107,6 +108,7 @@ export const route = apiRoute('/api/rmharks/$id/repost', {
             entityId: id,
             preview: reposted.content?.slice(0, 140) || null,
             dedupeUnread: true,
+            conversationKey: postConversationKey(reposted),
           });
         }
 

@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/v1/me/bookmarks')({
               where: { id: { in: rows.map((r) => r.entityId) }, ...(await viewerVisiblePostWhere(userId)) },
               select: {
                 id: true, userId: true, content: true, createdAt: true, deletedAt: true, likeCount: true,
-                commentCount: true, repostCount: true, viewCount: true, imageUrls: true,
+                commentCount: true, repostCount: true, viewCount: true, imageUrls: true, pinnedCommentId: true,
                 unlockPrice: true, unlocks: { where: { userId }, select: { id: true } },
                 user: { select: apiAuthorSelect },
               },

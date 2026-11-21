@@ -5,6 +5,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { getBusiness, type BusinessId } from '@/lib/businesses';
 import { announcementExpiry, type SitewideAnnouncementSummary } from '@/lib/sitewide-announcement';
@@ -19,7 +20,7 @@ export type CurrentAnnouncement = SitewideAnnouncementSummary & { content: strin
 async function loadCurrentAnnouncement(): Promise<CurrentAnnouncement | null> {
   const now = Date.now();
   const rows = await prisma.blogPost.findMany({
-    where: { announcement: true, announcedAt: { not: null } },
+    where: { announcement: true, announcedAt: { not: null }, ...publishedLogWhere(new Date(now)) },
     orderBy: { announcedAt: 'desc' },
     take: CANDIDATE_LIMIT,
     select: {

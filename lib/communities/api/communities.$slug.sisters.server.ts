@@ -12,7 +12,7 @@ export const route = apiRoute('/api/communities/$slug/sisters', {
       const guard = await requireMod(params.slug, userId);
       if (!guard.ok) return guard.response;
       try {
-        return Response.json({ sisters: await setSisters(guard.value.id, body.slugs) });
+        return Response.json({ sisters: await setSisters(guard.value.id, body.slugs, userId) });
       } catch (e) {
         if (e instanceof SisterError) {
           return Response.json({ error: e.message }, { status: e.status });

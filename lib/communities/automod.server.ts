@@ -10,6 +10,8 @@
  * post/comment; any edit busts the entry in this process.
  */
 import { prisma } from '@/lib/prisma.server';
+import { clearPinnedForComment } from '@/lib/feed/conversation-controls.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { createComment } from '@/lib/social/engagement.server';
@@ -24,6 +26,7 @@ import {
 } from '@/lib/communities/automod';
 import type { ModItemDTO } from '@/lib/communities/plus';
 import { AUTOMOD_HOLD } from '@/lib/trash/types';
+import { citedRule, reporterCount } from '@/lib/communities/rules.server';
 
 /** `deletedBy` marker for a post AutoMod is holding (VarChar(12)). */
 export const HELD_BY = AUTOMOD_HOLD;
@@ -81,21 +84,33 @@ export async function getAutomodRules(communityId: string): Promise<StoredRule[]
 export async function createAutomodRule(
   communityId: string,
   input: AutomodRuleInput,
+  actorId: string,
 ): Promise<StoredRule> {
   const count = await prisma.communityAutomodRule.count({ where: { communityId } });
   if (count >= AUTOMOD_MAX_RULES) {
     throw new AutomodError(`A community can have at most ${AUTOMOD_MAX_RULES} AutoMod rules`, 400);
   }
-  const row = await prisma.communityAutomodRule.create({
-    data: {
+  const row = await prisma.$transaction(async (tx) => {
+    const created = await tx.communityAutomodRule.create({
+      data: {
+        communityId,
+        name: input.name,
+        enabled: input.enabled,
+        appliesTo: input.appliesTo,
+        action: input.action,
+        conditions: input.conditions,
+        position: count,
+      },
+    });
+    await logModAction(tx, {
       communityId,
-      name: input.name,
-      enabled: input.enabled,
-      appliesTo: input.appliesTo,
-      action: input.action,
-      conditions: input.conditions,
-      position: count,
-    },
+      actorId,
+      action: 'automod_created',
+      targetType: 'automod',
+      targetId: created.id,
+      detail: { name: created.name },
+    });
+    return created;
   });
   bustAutomod(communityId);
   return {
@@ -113,25 +128,58 @@ export async function updateAutomodRule(
   communityId: string,
   ruleId: string,
   input: Partial<AutomodRuleInput>,
+  actorId: string,
 ): Promise<void> {
-  const res = await prisma.communityAutomodRule.updateMany({
-    where: { id: ruleId, communityId },
-    data: {
-      ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
-      ...(input.appliesTo !== undefined ? { appliesTo: input.appliesTo } : {}),
-      ...(input.action !== undefined ? { action: input.action } : {}),
-      ...(input.conditions !== undefined ? { conditions: input.conditions } : {}),
-    },
+  const found = await prisma.$transaction(async (tx) => {
+    const res = await tx.communityAutomodRule.updateMany({
+      where: { id: ruleId, communityId },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
+        ...(input.appliesTo !== undefined ? { appliesTo: input.appliesTo } : {}),
+        ...(input.action !== undefined ? { action: input.action } : {}),
+        ...(input.conditions !== undefined ? { conditions: input.conditions } : {}),
+      },
+    });
+    if (res.count === 0) return false;
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'automod_updated',
+      targetType: 'automod',
+      targetId: ruleId,
+      detail: { fields: Object.keys(input) },
+    });
+    return true;
   });
   bustAutomod(communityId);
-  if (res.count === 0) throw new AutomodError('Rule not found', 404);
+  if (!found) throw new AutomodError('Rule not found', 404);
 }
 
-export async function deleteAutomodRule(communityId: string, ruleId: string): Promise<void> {
-  const res = await prisma.communityAutomodRule.deleteMany({ where: { id: ruleId, communityId } });
+export async function deleteAutomodRule(
+  communityId: string,
+  ruleId: string,
+  actorId: string,
+): Promise<void> {
+  const found = await prisma.$transaction(async (tx) => {
+    const rule = await tx.communityAutomodRule.findFirst({
+      where: { id: ruleId, communityId },
+      select: { id: true, name: true },
+    });
+    if (!rule) return false;
+    await tx.communityAutomodRule.delete({ where: { id: rule.id } });
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'automod_deleted',
+      targetType: 'automod',
+      targetId: rule.id,
+      detail: { name: rule.name },
+    });
+    return true;
+  });
   bustAutomod(communityId);
-  if (res.count === 0) throw new AutomodError('Rule not found', 404);
+  if (!found) throw new AutomodError('Rule not found', 404);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -186,6 +234,8 @@ export async function listModItems(
     action: r.action as ModItemDTO['action'],
     ruleName: r.ruleName,
     snapshot: r.snapshot,
+    reporters: r.action === 'report' ? reporterCount(r.payload) : undefined,
+    citedRule: citedRule(r.payload),
     status: r.status as ModItemDTO['status'],
     createdAt: r.createdAt.toISOString(),
     author: resolveUser(r.author),
@@ -206,6 +256,8 @@ export async function resolveModItem(
   itemId: string,
   decision: 'approve' | 'remove',
   moderatorId: string,
+  /** What the log records beside the decision: the rule a removal cites and its reason. */
+  note: { rule?: { id: string; title: string } | null; reason?: string | null } = {},
 ): Promise<{ status: 'APPROVED' | 'REMOVED' }> {
   const item = await prisma.communityModItem.findFirst({
     where: { id: itemId, communityId },
@@ -214,15 +266,36 @@ export async function resolveModItem(
   if (item.status !== 'PENDING') throw new AutomodError('Already resolved', 409);
 
   const status = decision === 'approve' ? 'APPROVED' : 'REMOVED';
-  const claimed = await prisma.communityModItem.updateMany({
-    where: { id: itemId, status: 'PENDING' },
-    data: { status, resolvedById: moderatorId, resolvedAt: new Date() },
+  // The claim and its log row commit together; the content change below can still
+  // fail, and then the claim and the row are both taken back.
+  const logId = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.communityModItem.updateMany({
+      where: { id: itemId, status: 'PENDING' },
+      data: { status, resolvedById: moderatorId, resolvedAt: new Date() },
+    });
+    if (claimed.count === 0) return null;
+    return logModAction(tx, {
+      communityId,
+      actorId: moderatorId,
+      action: decision === 'approve' ? 'content_approved' : 'content_removed',
+      targetUserId: item.authorId,
+      targetType: item.entityType === 'comment' ? 'comment' : 'post',
+      targetId: item.entityId,
+      ruleId: note.rule?.id ?? null,
+      ruleTitle: note.rule?.title ?? null,
+      reason: note.reason ?? null,
+    });
   });
-  if (claimed.count === 0) throw new AutomodError('Already resolved', 409);
+  if (logId === null) throw new AutomodError('Already resolved', 409);
 
   try {
     if (item.entityType === 'rmhark' && item.entityId) {
-      await resolvePost(item.entityId, communityId, item.action as AutomodAction, decision);
+      await resolvePost(
+        item.entityId,
+        communityId,
+        item.action === 'report' ? 'flag' : (item.action as AutomodAction),
+        decision,
+      );
     } else if (item.entityType === 'comment') {
       await resolveComment(item, decision);
     }
@@ -230,9 +303,12 @@ export async function resolveModItem(
     // Put the item back so a transient failure doesn't lose it from the queue —
     // only if it is still the resolution this call wrote (never clobber a
     // different moderator's later decision).
-    await prisma.communityModItem.updateMany({
-      where: { id: itemId, status, resolvedById: moderatorId },
-      data: { status: 'PENDING', resolvedById: null, resolvedAt: null },
+    await prisma.$transaction(async (tx) => {
+      const reverted = await tx.communityModItem.updateMany({
+        where: { id: itemId, status, resolvedById: moderatorId },
+        data: { status: 'PENDING', resolvedById: null, resolvedAt: null },
+      });
+      if (reverted.count > 0) await tx.communityModAction.deleteMany({ where: { id: logId } });
     });
     throw e;
   }
@@ -335,5 +411,6 @@ async function resolveComment(
       where: { id: item.entityId, deletedAt: null },
       data: { deletedAt: new Date(), deletedBy: 'moderator' },
     });
+    await clearPinnedForComment(item.entityId);
   }
 }

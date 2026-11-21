@@ -211,8 +211,12 @@ function operationFor(
     {
       $ref: '#/components/schemas/Error',
     };
+  // Every endpoint outside Meta needs a key, scoped or not (the games
+  // catalogue needs only a valid key), so it can answer 401 and 403.
   if (
-    ep.scope
+    ep.scope ||
+    ep.group !==
+      'Meta'
   ) {
     responses[
       '401'
@@ -234,7 +238,7 @@ function operationFor(
     ] =
       {
         description:
-          'Insufficient scope or entitlement',
+          'Insufficient scope or entitlement, or the key is not allowed from this address (`ip_not_allowed`)',
         content:
           {
             'application/json':

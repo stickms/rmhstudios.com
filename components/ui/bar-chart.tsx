@@ -79,23 +79,26 @@ export function BarChart({
           <span>{last.label}</span>
         </div>
       ) : null}
-      <table className="sr-only">
-        <caption>{label}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{columns.label}</th>
-            <th scope="col">{columns.value}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {bars.map((bar) => (
-            <tr key={bar.label}>
-              <th scope="row">{bar.label}</th>
-              <td>{show(bar.value)}</td>
+      {/* A table ignores a 1px width, so the clipping box is a wrapper, not the table itself. */}
+      <div className="sr-only">
+        <table>
+          <caption>{label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{columns.label}</th>
+              <th scope="col">{columns.value}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {bars.map((bar) => (
+              <tr key={bar.label}>
+                <th scope="row">{bar.label}</th>
+                <td>{show(bar.value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

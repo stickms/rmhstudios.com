@@ -128,6 +128,8 @@ export const route = apiRoute('/api/rmharks/$id', {
       hasVibe: rmhark.hasVibe || undefined,
       seriesId: rmhark.seriesId ?? undefined,
       expiresAt: rmhark.expiresAt?.toISOString(),
+      // The reply the author pinned to the top of the conversation (X: conversation controls).
+      pinnedReplyId: rmhark.pinnedCommentId ?? null,
       locked,
       unlockPrice: rmhark.unlockPrice ?? undefined,
       deletedAt: rmhark.deletedAt?.toISOString() || null,

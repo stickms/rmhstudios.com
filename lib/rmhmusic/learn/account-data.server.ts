@@ -30,6 +30,7 @@ export async function exportMusicData(
     songBests,
     social,
     shares,
+    practice,
   ] =
     await Promise.all(
       [
@@ -112,6 +113,20 @@ export async function exportMusicData(
               },
           },
         ),
+        // The practice log, newest first (oldest entries go first when a log outgrows the cap).
+        prisma.musicPracticeEntry.findMany(
+          {
+            where:
+              {
+                userId,
+              },
+            take: CAP,
+            orderBy:
+              {
+                id: 'desc',
+              },
+          },
+        ),
       ],
     );
   return {
@@ -123,6 +138,16 @@ export async function exportMusicData(
     songBests,
     social,
     shares,
+    // BigInt ids become strings: the export is JSON.
+    practice:
+      practice.map(
+        (
+          e,
+        ) => ({
+          ...e,
+          id: e.id.toString(),
+        }),
+      ),
   };
 }
 
@@ -189,6 +214,15 @@ export function musicErasureOps(
     ),
     // Shared links go dark with the account: their pages and cards read as gone.
     prisma.musicShare.deleteMany(
+      {
+        where:
+          {
+            userId,
+          },
+      },
+    ),
+    // The practice log is personal history: gone with the account.
+    prisma.musicPracticeEntry.deleteMany(
       {
         where:
           {

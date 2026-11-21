@@ -144,6 +144,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       {(composer.imageUrls.length > 0 || composer.gifUrl) && (
         <PendingMedia
           imageUrls={composer.imageUrls}
+          imageAlts={composer.imageAlts.alts}
+          missingAlts={composer.imageAlts.missing}
+          onSetAlt={composer.imageAlts.setAlt}
           gifUrl={composer.gifUrl}
           onRemoveImage={(url) => composer.setImageUrls((prev) => prev.filter((u) => u !== url))}
           onRemoveGif={() => composer.setGifUrl(null)}

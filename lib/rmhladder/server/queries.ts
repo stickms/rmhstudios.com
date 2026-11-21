@@ -490,7 +490,7 @@ export async function getSettings(prisma: QueriesPrisma, userId: string) {
 export async function listApplications(prisma: QueriesPrisma, userId: string) {
   return prisma.ladderApplication.findMany({
     where: { userId },
-    include: { job: { include: { company: true } } },
+    include: { job: { include: { company: true } }, offer: { select: { id: true } } },
   });
 }
 

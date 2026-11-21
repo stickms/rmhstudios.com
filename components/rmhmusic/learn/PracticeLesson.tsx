@@ -54,6 +54,7 @@ import {
   FlashcardSkeleton,
   Shell,
 } from './LessonScreen';
+import { beginActivity } from '@/lib/rmhmusic/learn/activity-clock';
 import { useInputRelease } from './useLearnInput';
 import { useArrival } from '@/components/ui/arrive';
 
@@ -99,6 +100,12 @@ function Practice({
     useTranslation(
       'c-rmhmusic',
     );
+  // The session is on screen: its length is measured from here (the practice log).
+  useEffect(
+    () =>
+      beginActivity(),
+    [],
+  );
   // The learner's sound, in its own sound session (as a lesson: loading, then samples or the tone).
   const soundId =
     useLearnerSound();

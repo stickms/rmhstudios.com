@@ -11,6 +11,8 @@ model RmhStudyProfile {
   lastStudyDate     DateTime?
   /// Weekly focus goal in minutes (30 to 3,000); null when none is set.
   weeklyGoalMinutes Int?
+  /// The member's IANA zone, sent on joining a room and validated by the hub; streak days are counted in it (UTC when null).
+  timeZone          String?           @db.VarChar(40)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   sessions          RmhStudySession[]

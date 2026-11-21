@@ -20,6 +20,7 @@ import { checkRateLimit } from '../rate-limit';
 import { config } from '../config';
 import { awardAppProgress } from '../economy';
 import { nextStudyStreak } from '../../../lib/rmhstudy/streak';
+import { isValidTimeZone } from '../../../lib/calendar/tz';
 
 // ─── Interfaces ───
 
@@ -963,7 +964,7 @@ function persistWorkSession(
  * reading it after the upsert had already stamped `lastStudyDate` with now is why the streak
  * used to stay at 1 forever.
  */
-async function persistMemberWorkSession(
+export async function persistMemberWorkSession(
   userId: string,
   roomCode: string,
   focusTimeMs: number,
@@ -984,6 +985,7 @@ async function persistMemberWorkSession(
             currentStreak: true,
             longestStreak: true,
             lastStudyDate: true,
+            timeZone: true,
           },
         },
       );
@@ -991,6 +993,7 @@ async function persistMemberWorkSession(
       nextStudyStreak(
         previous,
         now,
+        previous?.timeZone,
       );
     const profile =
       await db.rmhStudyProfile.upsert(
@@ -1050,6 +1053,71 @@ async function persistMemberWorkSession(
       {
         event:
           'rmhstudy_db_persist_session_failed',
+        userId,
+        error: (
+          err as Error
+        ).message,
+      },
+    );
+  }
+}
+
+/** The longest zone name the profile column holds. */
+const MAX_TIME_ZONE_LENGTH =
+  40;
+
+/**
+ * The IANA zone a client sent on joining, or null when it is not a string or not a zone the
+ * runtime knows. The client's word is never trusted beyond that: it only decides which local
+ * day a real, recorded session falls on.
+ */
+export function validTimeZone(
+  raw: unknown,
+): string | null {
+  return typeof raw ===
+    'string' &&
+    raw.length <=
+      MAX_TIME_ZONE_LENGTH &&
+    isValidTimeZone(
+      raw,
+    )
+    ? raw
+    : null;
+}
+
+/** Remember the member's zone for their streak; a missing or invalid zone changes nothing. */
+export async function rememberTimeZone(
+  userId: string,
+  raw: unknown,
+): Promise<void> {
+  const timeZone =
+    validTimeZone(
+      raw,
+    );
+  if (
+    !timeZone
+  )
+    return;
+  try {
+    await getPrismaClient().rmhStudyProfile.upsert(
+      {
+        where: {
+          userId,
+        },
+        create: {
+          userId,
+          timeZone,
+        },
+        update: {
+          timeZone,
+        },
+      },
+    );
+  } catch (err) {
+    logger.warn(
+      {
+        event:
+          'rmhstudy_db_persist_timezone_failed',
         userId,
         error: (
           err as Error
@@ -1742,6 +1810,7 @@ export function registerRmhStudyHandlers(
       matchId?: string;
       userId?: string;
       userName?: string;
+      timeZone?: string;
     }) => {
       if (
         !checkRateLimit(
@@ -1911,6 +1980,11 @@ export function registerRmhStudyHandlers(
           oldSocketId,
         );
       }
+
+      void rememberTimeZone(
+        userId,
+        payload?.timeZone,
+      );
 
       // Preserve existing tasks on reconnect
       const existingMember =

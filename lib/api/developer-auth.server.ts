@@ -17,6 +17,7 @@ import { createHash, randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma.server';
 import { getUserTier, hasApiAccess, type Tier } from '@/lib/entitlements';
 import { getActiveBan } from '@/lib/admin-audit.server';
+import { isDeletedAccount } from '@/lib/account-lifecycle';
 
 export const KEY_PREFIX = 'rmh_live_';
 export const TEST_KEY_PREFIX = 'rmh_test_';
@@ -45,6 +46,10 @@ export interface ApiAuthSuccess {
   scopes: string[];
   /** `rmh_test_` sandbox key: the wrapper answers with fixtures, never real data. */
   testMode: boolean;
+  /** Addresses/ranges the key may be used from; empty means any address. */
+  allowedCidrs: string[];
+  /** The key's own per-minute limit, or null for the tier's. */
+  rateLimitPerMinute: number | null;
 }
 export interface ApiAuthFailure {
   ok: false;
@@ -73,6 +78,15 @@ function extractKey(request: Request): string | null {
 }
 
 /**
+ * Best-effort last-used stamp. Called by the wrapper once a request has passed
+ * every refusal that is about the caller (not about load), so a refused request
+ * never marks the key used.
+ */
+export function touchApiKeyLastUsed(keyId: string): void {
+  prisma.developerApiKey.update({ where: { id: keyId }, data: { lastUsedAt: new Date() } }).catch(() => {});
+}
+
+/**
  * Resolve and authorize a developer API request. Returns the owner + tier +
  * scopes on success, or a structured failure (caller turns it into a Response).
  */
@@ -87,13 +101,29 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthSucce
 
   const record = await prisma.developerApiKey.findUnique({
     where: { hashedKey: hashApiKey(plaintext) },
-    select: { id: true, userId: true, revokedAt: true, expiresAt: true, scopes: true, testMode: true },
+    select: {
+      id: true,
+      userId: true,
+      revokedAt: true,
+      expiresAt: true,
+      scopes: true,
+      testMode: true,
+      allowedCidrs: true,
+      rateLimitPerMinute: true,
+      user: { select: { id: true, banReason: true } },
+    },
   });
   if (!record || record.revokedAt) {
     return { ok: false, status: 401, code: 'invalid_key', message: 'API key is invalid or has been revoked.' };
   }
   if (record.expiresAt && record.expiresAt.getTime() <= Date.now()) {
     return { ok: false, status: 401, code: 'key_expired', message: 'This API key has expired. Create a new one.' };
+  }
+
+  // Defence in depth: erasure deletes the owner's keys, but a key that survived (a failed or
+  // half-finished sweep, a restored backup) must never authenticate for an erased account.
+  if (record.user && isDeletedAccount(record.user)) {
+    return { ok: false, status: 401, code: 'invalid_key', message: 'API key is invalid or has been revoked.' };
   }
 
   // Re-check entitlement on every request so lapsed subscriptions lose access.
@@ -107,8 +137,14 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthSucce
     return { ok: false, status: 403, code: 'account_suspended', message: 'This account is suspended.' };
   }
 
-  // Best-effort last-used stamp.
-  prisma.developerApiKey.update({ where: { id: record.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
-
-  return { ok: true, userId: record.userId, tier, keyId: record.id, scopes: record.scopes, testMode: record.testMode };
+  return {
+    ok: true,
+    userId: record.userId,
+    tier,
+    keyId: record.id,
+    scopes: record.scopes,
+    testMode: record.testMode,
+    allowedCidrs: record.allowedCidrs,
+    rateLimitPerMinute: record.rateLimitPerMinute,
+  };
 }

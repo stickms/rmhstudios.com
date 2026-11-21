@@ -14,7 +14,7 @@ export const route = apiRoute('/api/communities/$slug/settings', {
     async ({ params, userId, body }) => {
       const guard = await requireMod(params.slug, userId);
       if (!guard.ok) return guard.response;
-      const settings = await updateCommunitySettings(guard.value.id, body);
+      const settings = await updateCommunitySettings(guard.value.id, body, userId);
       if (!settings) return Response.json({ error: 'Not found' }, { status: 404 });
       return Response.json({ settings });
     },

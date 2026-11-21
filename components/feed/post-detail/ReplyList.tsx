@@ -7,6 +7,7 @@ import { CommentItem } from '../CommentItem';
 import type { Comment } from '../CommentItem';
 import { HiddenRepliesGroup } from '../HiddenReplies';
 import { ThreadSummary } from '../ThreadSummary';
+import { orderReplies } from '@/lib/feed/conversation-controls';
 import type { ReplyThread } from './useReplyThread';
 
 type ReplySessionUser = NonNullable<React.ComponentProps<typeof CommentItem>['sessionUser']>;
@@ -14,6 +15,8 @@ type ReplySessionUser = NonNullable<React.ComponentProps<typeof CommentItem>['se
 interface ReplyListProps {
   postId: string;
   postAuthorId: string | undefined;
+  /** The reply the author pinned: it is shown first, with its label. */
+  pinnedReplyId?: string | null;
   comments: Comment[];
   loadingComments: boolean;
   sessionUser: ReplySessionUser | undefined;
@@ -28,13 +31,14 @@ interface ReplyListProps {
 export function ReplyList({
   postId,
   postAuthorId,
+  pinnedReplyId,
   comments,
   loadingComments,
   sessionUser,
   thread,
 }: ReplyListProps) {
   const { t } = useTranslation('feed');
-  const { handleHiddenChange, handleReplyAdded, handleCommentRemoved } = thread;
+  const { handleHiddenChange, handleReplyAdded, handleCommentRemoved, handlePinnedChange } = thread;
   // Steel M9: the replies replace the spinner. They are items on the caller's spine, so they fade through a
   // `display: contents` group (the spine's only child selector is on a nested spine, not this one).
   const arrival = useArrival(!loadingComments);
@@ -47,12 +51,15 @@ export function ReplyList({
       postId={postId}
       postAuthorId={postAuthorId}
       onHiddenChange={handleHiddenChange}
+      pinnedReplyId={pinnedReplyId}
+      onPinnedChange={handlePinnedChange}
       sessionUser={sessionUser}
       onReplyAdded={handleReplyAdded}
       onCommentRemoved={handleCommentRemoved}
     />
   );
-  const hidden = comments.filter((c) => c.hidden);
+  // The pinned reply first among the visible ones; hidden replies still go to the disclosure.
+  const { visible, hidden } = orderReplies(comments, pinnedReplyId);
   if (loadingComments) {
     return (
       <SpineItem dot={false} className="flex justify-center">
@@ -73,7 +80,7 @@ export function ReplyList({
     ) : (
       <>
         <ThreadSummary postId={postId} commentCount={comments.length} />
-        {comments.filter((c) => !c.hidden).map(renderComment)}
+        {visible.map(renderComment)}
         <HiddenRepliesGroup count={hidden.length}>{hidden.map(renderComment)}</HiddenRepliesGroup>
       </>
     ),

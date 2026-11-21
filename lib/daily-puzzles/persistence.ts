@@ -327,6 +327,17 @@ export function saveResultWithSync(
     } else {
       body.score =
         result.score;
+      // GlobeSet's `dnf` is "the auto-solver was used": the run is stored but is not a solve.
+      if (
+        gameMode ===
+        'globeset'
+      ) {
+        body.dnf =
+          result
+            .resultJson
+            ?.solverUsed ===
+          true;
+      }
     }
 
     // One retry: a flaky mobile connection otherwise silently drops the score/streak.

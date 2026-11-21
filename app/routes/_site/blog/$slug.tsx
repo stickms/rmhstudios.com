@@ -13,6 +13,8 @@
 
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { setResponseHeader } from '@tanstack/react-start/server';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { useTranslation } from 'react-i18next';
 import { readingTimeMinutes } from '@/lib/reading-time';
 
@@ -35,22 +37,39 @@ import { liquidVTName } from '@/lib/view-transition';
 const fetchPost = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
+    // A draft or scheduled Log exists only for admins: everyone else gets the same 404 as a Log that was never
+    // written, and an admin's view is never stored by a shared cache (s03-05, FR-2/FR-3). The session is read
+    // only when there is a session cookie (`getRequestSession` short-circuits an anonymous request).
+    const session = await getRequestSession();
+    const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin === true;
     // `getPostBySlug` throws on a missing row; convert that into the router's
     // 404 so the shell renders `components/errors/NotFound` instead of the
     // error boundary (page-consistency.md §3 "States").
     try {
-      const post = await getPostBySlug(slug, [
-        'title',
-        'date',
-        'description',
-        'content',
-        'image',
-        'tags',
-        'announcement',
-        'business',
-      ]);
+      const post = await getPostBySlug(
+        slug,
+        [
+          'title',
+          'date',
+          'description',
+          'content',
+          'image',
+          'tags',
+          'announcement',
+          'business',
+          'status',
+          'publishAt',
+        ],
+        { admin: isAdmin },
+      );
+      if (post.status !== 'published') {
+        setResponseHeader('Cache-Control', 'private, no-store');
+      }
       return post;
     } catch {
+      // Also never cached: a 404 held at the edge would keep a Log that is scheduled for later from appearing
+      // when it publishes.
+      setResponseHeader('Cache-Control', 'private, no-store');
       throw notFound();
     }
   });
@@ -118,6 +137,7 @@ function BlogPost() {
   const post = Route.useLoaderData();
   const { slug } = Route.useParams();
   const { t } = useTranslation('pages');
+  const { t: ts } = useTranslation('log-drafts');
 
   const tags = (post.tags as string[] | undefined) ?? [];
   const image = post.image as string | undefined;
@@ -135,6 +155,17 @@ function BlogPost() {
       wrapTitle
     >
       <article className="space-y-6 pb-12">
+        {/* Admins only: a Log that is not live shows to them at its real address, under this banner. Nobody
+            else can reach it (the loader answers 404), and the page is never cached. */}
+        {post.status !== 'published' ? (
+          <p role="status" className="t-label border-b border-site-border pb-3 text-site-text">
+            {post.status === 'scheduled'
+              ? ts('blog-scheduled-banner', {
+                  defaultValue: 'Scheduled — only admins can see this until it publishes',
+                })
+              : ts('blog-draft-banner', { defaultValue: 'Draft — only admins can see this' })}
+          </p>
+        ) : null}
         {/* The byline: date, reading time and tags in `t-meta`, with Share at the end. */}
         <div
           className="flex flex-wrap items-center gap-x-4 gap-y-2"

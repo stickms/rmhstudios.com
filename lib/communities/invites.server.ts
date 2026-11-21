@@ -13,6 +13,8 @@
  */
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
+import { recordMemberEvent } from '@/lib/communities/member-events.server';
 
 /** Bounds on what a moderator may create. */
 export const INVITE_LIMITS = {
@@ -102,15 +104,28 @@ export async function createInvite(
   });
   if (active >= INVITE_LIMITS.activePerCommunity) return { ok: false, reason: 'limit' };
 
-  const row = await prisma.communityInvite.create({
-    data: {
+  const row = await prisma.$transaction(async (tx) => {
+    const created = await tx.communityInvite.create({
+      data: {
+        communityId,
+        createdById,
+        code: generateInviteCode(),
+        maxUses: opts.maxUses ?? null,
+        expiresAt: opts.expiresInDays
+          ? new Date(now.getTime() + opts.expiresInDays * DAY_MS)
+          : null,
+      },
+      select: SELECT,
+    });
+    await logModAction(tx, {
       communityId,
-      createdById,
-      code: generateInviteCode(),
-      maxUses: opts.maxUses ?? null,
-      expiresAt: opts.expiresInDays ? new Date(now.getTime() + opts.expiresInDays * DAY_MS) : null,
-    },
-    select: SELECT,
+      actorId: createdById,
+      action: 'invite_created',
+      targetType: 'invite',
+      targetId: String(created.id),
+      detail: { maxUses: opts.maxUses ?? null, expiresInDays: opts.expiresInDays ?? null },
+    });
+    return created;
   });
   return { ok: true, invite: toDTO(row, now) };
 }
@@ -128,12 +143,26 @@ export async function listInvites(communityId: string): Promise<InviteDTO[]> {
 }
 
 /** Revoke one link. Idempotent: `false` when it was already revoked or is not this community's. */
-export async function revokeInvite(communityId: string, id: bigint): Promise<boolean> {
-  const res = await prisma.communityInvite.updateMany({
-    where: { id, communityId, revokedAt: null },
-    data: { revokedAt: new Date() },
+export async function revokeInvite(
+  communityId: string,
+  id: bigint,
+  actorId: string,
+): Promise<boolean> {
+  return prisma.$transaction(async (tx) => {
+    const res = await tx.communityInvite.updateMany({
+      where: { id, communityId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    if (res.count === 0) return false;
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'invite_revoked',
+      targetType: 'invite',
+      targetId: String(id),
+    });
+    return true;
   });
-  return res.count > 0;
 }
 
 export type AcceptInviteResult =
@@ -194,6 +223,7 @@ export async function acceptInvite(
         where: { id: communityId },
         data: { memberCount: { increment: 1 } },
       });
+      await recordMemberEvent(tx, communityId, userId, 'join');
       // A pending request is answered by being let in.
       await tx.communityJoinRequest.updateMany({
         where: { communityId, userId, status: 'PENDING' },

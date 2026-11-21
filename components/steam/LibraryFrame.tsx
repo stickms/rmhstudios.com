@@ -14,12 +14,19 @@ export function LibraryFrame({
   signedIn,
   kind,
   onKindChange,
+  following,
+  followedIds,
+  onFollowingChange,
   children,
 }: {
   recentIds: string[];
   collections: Collection[];
   signedIn: boolean;
   kind: LibraryKind;
+  /** Show only the games the member follows. */
+  following: boolean;
+  followedIds: string[];
+  onFollowingChange: (on: boolean) => void;
   onKindChange: (
     k: LibraryKind,
   ) => void;
@@ -57,6 +64,9 @@ export function LibraryFrame({
         onKindChange={
           onKindChange
         }
+        following={following}
+        followedIds={followedIds}
+        onFollowingChange={onFollowingChange}
         recentIds={
           recentIds
         }

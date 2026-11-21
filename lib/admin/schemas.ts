@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { handleSchema } from '@/lib/handle-schema';
+import { LOG_STATUSES } from '@/lib/blog/publication';
 import { saveAnnouncementFieldsSchema } from '@/lib/sitewide-announcement-schema';
 
 export const adminUserUpdateSchema =
@@ -78,11 +79,9 @@ export const blogPostSchema =
             2048,
           )
           .nullish(),
+      // May be empty: publishing fills in the publish day (s03-05, FR-7).
       date: z
         .string()
-        .min(
-          1,
-        )
         .max(
           50,
         ),
@@ -138,6 +137,24 @@ export const blogPostSchema =
           .default(
             false,
           ),
+      // s03-05: what this save does to the Log's state. `publishAt` (an ISO instant) is read for `scheduled` only.
+      status:
+        z
+          .enum(
+            LOG_STATUSES,
+          )
+          .default(
+            'published',
+          ),
+      publishAt:
+        z
+          .string()
+          .datetime(
+            {
+              offset: true,
+            },
+          )
+          .nullish(),
       ...saveAnnouncementFieldsSchema.shape,
     },
   );

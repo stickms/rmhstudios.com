@@ -19,6 +19,11 @@ import { exportLessonProgress } from '@/lib/rmhtype/lessons.server';
 import { exportSecurityEvents } from '@/lib/auth/security-log.server';
 import { exportReadingSubscriptions } from '@/lib/reading/subscriptions.server';
 import { exportCloudSaveSnapshots } from '@/lib/game-saves/snapshots.server';
+import { exportMyReports } from '@/lib/moderation/my-reports.server';
+import { exportScheduledMessages } from '@/lib/messages/scheduled.server';
+import { exportLadderOffers } from '@/lib/rmhladder/offers.server';
+import { exportWatchPartyRsvps } from '@/lib/rmhtube/parties.server';
+import { exportGameFollows } from '@/lib/arcade/updates.server';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -72,6 +77,7 @@ export const route = apiRoute('/api/account/export', {
         rmhMusic,
         vibes,
         sprint02,
+        sprint03,
       ] = await Promise.all([
         prisma.user.findUnique({
           where: { id: userId },
@@ -289,6 +295,17 @@ export const route = apiRoute('/api/account/export', {
             select: { followingId: true, kind: true, createdAt: true },
           }),
         ]),
+        // Sprint 03: reports the person made, messages they scheduled, offers
+        // they recorded, watch parties they said they would join, games they follow.
+        Promise.all([
+          exportMyReports(userId),
+          exportScheduledMessages(userId),
+          exportLadderOffers(userId),
+          exportWatchPartyRsvps(userId),
+          exportGameFollows(userId),
+          // Per-conversation notification choices, including muted post threads (s03-03).
+          prisma.conversationPref.findMany({ where: { userId }, take: CAP }),
+        ]),
       ]);
 
       const [
@@ -306,6 +323,15 @@ export const route = apiRoute('/api/account/export', {
         achievementTracks,
         followEvents,
       ] = sprint02;
+
+      const [
+        myReports,
+        scheduledMessages,
+        ladderOffers,
+        watchPartyRsvps,
+        gameFollows,
+        conversationPrefs,
+      ] = sprint03;
 
       const [
         ladderPrefs,
@@ -373,6 +399,11 @@ export const route = apiRoute('/api/account/export', {
         keyboardPreference,
         achievementTracks,
         followEvents,
+        reportsMade: myReports,
+        scheduledMessages,
+        watchPartyRsvps,
+        gameFollows,
+        conversationPrefs,
         rmhLadder: {
           preferences: ladderPrefs,
           // Salary expectations, work authorization and EEO answers — the
@@ -388,6 +419,7 @@ export const route = apiRoute('/api/account/export', {
           resumeReviews: ladderResumeReviews,
           matches: ladderMatches,
           alerts: ladderAlerts,
+          offers: ladderOffers,
           note: 'Private resume binaries are available through the authenticated RMHLadder download endpoint and are not embedded in this JSON export.',
         },
       };

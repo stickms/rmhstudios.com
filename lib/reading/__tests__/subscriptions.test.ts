@@ -159,18 +159,27 @@ const fake =
                   db.locked,
               },
             ],
+          // Logs are read by when they went live (`publishedAt`, in a status-and-range `AND`); the fixtures'
+          // `createdAt` stands for that moment, and a fixture with `status: 'draft'` is not live.
           blogPost:
             {
               findMany:
                 async (a: {
                   where: {
-                    createdAt: {
-                      gte?: Date;
-                      lte?: Date;
-                    };
+                    AND: [
+                      {
+                        status: string;
+                      },
+                      {
+                        publishedAt: {
+                          gte?: Date;
+                          lte?: Date;
+                        };
+                      },
+                    ];
                   };
                   orderBy: {
-                    createdAt:
+                    publishedAt:
                       | 'asc'
                       | 'desc';
                   }[];
@@ -181,20 +190,37 @@ const fake =
                       (
                         p,
                       ) =>
+                        (p.status ??
+                          'published') ===
+                          a
+                            .where
+                            .AND[0]
+                            .status &&
                         inRange(
                           p.createdAt,
                           a
                             .where
-                            .createdAt,
+                            .AND[1]
+                            .publishedAt,
                         ),
                     ),
                     a
                       .orderBy[0]!
-                      .createdAt,
-                  ).slice(
-                    0,
-                    a.take,
-                  ),
+                      .publishedAt,
+                  )
+                    .slice(
+                      0,
+                      a.take,
+                    )
+                    .map(
+                      (
+                        p,
+                      ) => ({
+                        ...p,
+                        publishedAt:
+                          p.createdAt,
+                      }),
+                    ),
             },
           newsArticle:
             {
@@ -700,6 +726,124 @@ beforeEach(
 );
 
 describe('fan-out', () => {
+  // A Log is "new" from the moment it went live (`publishedAt`; the fixture's `createdAt` stands for it), and a
+  // draft or scheduled Log is not live (s03-05).
+  it('never notifies for a draft or scheduled Log', async () => {
+    sub(
+      'u1',
+      'blog',
+    );
+    db.posts.push(
+      {
+        ...post(
+          'd1',
+          5,
+        ),
+        status:
+          'draft',
+      },
+      {
+        ...post(
+          's1',
+          6,
+        ),
+        status:
+          'scheduled',
+      },
+    );
+    const run =
+      await fanOutNewItems(
+        at(
+          15,
+        ),
+      );
+    expect(
+      run.notified,
+    ).toBe(
+      0,
+    );
+    expect(
+      db.notifications,
+    ).toEqual(
+      [],
+    );
+  });
+
+  it('notifies once when a scheduled Log is published after earlier runs passed it by', async () => {
+    sub(
+      'u1',
+      'blog',
+    );
+    const scheduled =
+      {
+        ...post(
+          's1',
+          5,
+        ),
+        status:
+          'scheduled',
+      };
+    db.posts.push(
+      scheduled,
+    );
+    expect(
+      (
+        await fanOutNewItems(
+          at(
+            15,
+          ),
+        )
+      )
+        .notified,
+    ).toBe(
+      0,
+    );
+
+    // The publish job goes live at minute 20: status flips and `publishedAt` is that moment.
+    scheduled.status =
+      'published';
+    scheduled.createdAt =
+      at(
+        20,
+      );
+    expect(
+      (
+        await fanOutNewItems(
+          at(
+            30,
+          ),
+        )
+      )
+        .notified,
+    ).toBe(
+      1,
+    );
+    expect(
+      (
+        await fanOutNewItems(
+          at(
+            45,
+          ),
+        )
+      )
+        .notified,
+    ).toBe(
+      0,
+    );
+    expect(
+      db.notifications.map(
+        (
+          n,
+        ) =>
+          n.entityId,
+      ),
+    ).toEqual(
+      [
+        's1',
+      ],
+    );
+  });
+
   it('creates each notification once when it runs twice', async () => {
     sub(
       'u1',

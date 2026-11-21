@@ -14,6 +14,7 @@ import { feedEventBus } from '@/lib/feed-sse';
 import { linkPostHashtags } from '@/lib/tags-extract.server';
 import { notifyMentions } from '@/lib/feed/notify-mentions.server';
 import { createNotification } from '@/lib/notifications.server';
+import { postConversationKey } from '@/lib/feed/conversation-controls.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
 import { getActiveBan } from '@/lib/admin-audit.server';
 import { awardXp } from '@/lib/xp/engine.server';
@@ -540,6 +541,7 @@ export const route = apiRoute('/api/rmharks', {
             deletedAt: true,
             deletedByAdmin: true,
             userId: true,
+            threadRootId: true,
             communityId: true,
             community: { select: { isPrivate: true } },
             user: { select: userDisplaySelect },
@@ -565,6 +567,7 @@ export const route = apiRoute('/api/rmharks', {
             entityId: item.id,
             preview: content.trim().slice(0, 140) || null,
             link: `/u/${item.user?.handle ?? '_'}/post/${item.id}`,
+            conversationKey: postConversationKey(orig),
           });
         }
       }

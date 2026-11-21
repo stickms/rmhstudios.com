@@ -32,6 +32,8 @@ export interface SentDirectMessage {
     | string
     | null;
   imageUrls: string[];
+  /** One description per image ('' = none); absent on rows from before descriptions. */
+  imageAlts?: string[];
   reactions: {
     emoji: string;
     userId: string;

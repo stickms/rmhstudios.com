@@ -14,6 +14,7 @@
  * `lib/sitemap.server.ts`.
  */
 
+import { isOffSite } from '@/lib/games/library';
 import { currentCycle } from '@/lib/elections/calendar';
 import { isFeedWindow } from '@/lib/elections/feed';
 import {
@@ -536,6 +537,17 @@ export function catalogRoutes(): SitemapEntry[] {
         priority: 0.6,
       },
     );
+    // Its patch notes; an app, or a title played elsewhere, has none.
+    if (!isOffSite(g.href)) {
+      entries.push(
+        {
+          loc: `/games/${g.id}/updates`,
+          changefreq:
+            'weekly',
+          priority: 0.4,
+        },
+      );
+    }
     // Curated-build detail pages mirror the catalog and carry the long copy.
     entries.push(
       {
@@ -638,6 +650,8 @@ export const EXCLUDED_ROUTES: Record<
     // ── personal / auth-gated ──
     '/analytics':
       'personal',
+    '/daily/stats':
+      'personal',
     '/create/earnings':
       'personal', // the viewer's own coins, views and payouts
     '/drafts':
@@ -684,6 +698,8 @@ export const EXCLUDED_ROUTES: Record<
       'auth-gated', // the tuner and note reader, inside the signed-in app
     '/rmhmusic/songs':
       'personal', // the songbook with the learner's own best scores, behind sign-in
+    '/rmhmusic/history':
+      'personal', // the learner's own practice log and song attempts, behind sign-in
     '/messages':
       'personal',
     '/progress':
@@ -726,6 +742,10 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/rmhladder/settings':
       'personal',
+    '/rmhladder/offers':
+      'personal', // s03-17 ladder-offers (a static path, so it is here and not under the dynamic-route anchor)
+    '/rmhladder/insights':
+      'personal', // s03-18 ladder-insights (a static path, so it is here and not under the dynamic-route anchor)
     '/account/connect':
       'personal', // the account-merge step after a new sign-in; needs a session
     '/settings':
@@ -1193,6 +1213,23 @@ export const DYNAMIC_ROUTES: Record<
       null,
     '/ref/$code':
       null, // referral link; redirects and is noindex
+    // Sprint 03 (docs/autonomous/sprint-03/plan.md §Anchors)
+    // s03-01 music-history
+
+    // s03-02 daily-stats
+
+    // s03-09 watch-parties
+    '/rmhtube/party/$roomId':
+      null, // one party, behind the RMHTube sign-in; reached by its link
+
+    // s03-10 game-updates
+    '/games/$gameId/updates':
+      'pages', // each game's patch notes, from the catalog (see catalogRoutes), not the DB
+
+    // s03-17 ladder-offers
+
+    // s03-18 ladder-insights
+
   };
 
 // ──────────────────────────── XML rendering ────────────────────────────

@@ -31,6 +31,8 @@ import { MAX_NOTIFICATION_BATCH } from '@/lib/notifications/filters';
 import { NOTIFICATION_FILTERS, type NotificationFilter } from '@/lib/notifications/filters';
 import { api } from '@/lib/contract/client';
 import { cn } from '@/lib/utils';
+import { games } from '@/lib/catalog';
+import { gameIdOfLink } from '@/lib/arcade/updates';
 
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 
@@ -66,8 +68,15 @@ const TYPE_META: Record<NotificationType, { verb: string }> = {
 };
 
 // The label of a system notification (no human actor), keyed by the entity the notification refers to.
-function systemIdentity(entityType: string | null): { label: string } {
+function systemIdentity(entityType: string | null, link: string | null): { label: string } {
   switch (entityType) {
+    // A game's patch note or newly published guide is labelled with the game's name (its link names the game).
+    case 'game_update':
+    case 'game_guide': {
+      const id = gameIdOfLink(link);
+      const game = id ? games.find((g) => g.id === id) : undefined;
+      return { label: game?.title ?? (entityType === 'game_update' ? 'Game update' : 'Game guide') };
+    }
     case 'achievement':
       return { label: 'Achievement' };
     case 'level':
@@ -82,9 +91,13 @@ function systemIdentity(entityType: string | null): { label: string } {
       return { label: 'Ride message' };
     case 'ladder_job':
       return { label: 'RMH Ladder' };
+    case 'rmhtube_party':
+      return { label: 'RMHTube' };
     case 'moderation':
     case 'strike':
       return { label: 'Site moderation' };
+    case 'report_outcome':
+      return { label: 'Safety' };
     case 'blog_post':
       return { label: 'Logs' };
     case 'news_article':
@@ -439,7 +452,11 @@ export function NotificationsColumn({
 
   const handleClick = (n: NotificationItem) => {
     const link = resolveLink(n);
-    if (link) navigate({ to: link });
+    if (!link) return;
+    // A stored link may point at a section of the page (`/settings/security#your-reports`).
+    const at = link.indexOf('#');
+    if (at === -1) navigate({ to: link });
+    else navigate({ to: link.slice(0, at), hash: link.slice(at + 1) });
   };
 
   const loadMore = async () => {
@@ -600,7 +617,7 @@ export function NotificationsColumn({
             const clickable = resolveLink(n) !== null;
             // System notifications have no human actor: lead with the message.
             const isSystem = n.type === 'SYSTEM' || !n.actor;
-            const sys = isSystem ? systemIdentity(n.entityType) : null;
+            const sys = isSystem ? systemIdentity(n.entityType, n.link) : null;
             const firstName =
               n.actor?.name || n.actor?.handle || t('someone', { defaultValue: 'Someone' });
             const actorName = grouped

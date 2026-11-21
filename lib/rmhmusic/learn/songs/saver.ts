@@ -9,6 +9,10 @@
  */
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
+import {
+  activityDurationMs,
+  endActivity,
+} from '../activity-clock';
 import type { SongSaveOutcome } from './machine';
 import type { SongRunRecord } from './scoring';
 import {
@@ -72,6 +76,8 @@ export function createApiSongSaver(): SongSaver {
       run,
     ) => {
       try {
+        const durationMs =
+          activityDurationMs();
         const res =
           await api(
             songBestApi,
@@ -79,9 +85,16 @@ export function createApiSongSaver(): SongSaver {
               body: {
                 songId,
                 run,
+                ...(durationMs ===
+                undefined
+                  ? {}
+                  : {
+                      durationMs,
+                    }),
               },
             },
           );
+        endActivity();
         return {
           outcome:
             'saved',

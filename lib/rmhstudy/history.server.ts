@@ -10,9 +10,14 @@ import {
   msToMinutes,
   records,
   weekBounds,
+  weekBreaks,
   weekFrom,
   weekTotal,
 } from '@/lib/rmhstudy/history';
+import {
+  currentStreakDays,
+  longestRun,
+} from '@/lib/rmhstudy/streak';
 import {
   addDays,
   dayKeyInZone,
@@ -21,6 +26,8 @@ import {
 interface DayRow {
   day: string;
   minutes: number;
+  breakMinutes: number;
+  tracked: boolean;
 }
 
 /**
@@ -87,7 +94,9 @@ export async function getFocusHistory(
           DayRow[]
         >`
       SELECT to_char((("startedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${timeZone}::text)::date, 'YYYY-MM-DD') AS day,
-             round(sum("focusTimeMs") / 60000.0)::int AS minutes
+             round(sum("focusTimeMs") / 60000.0)::int AS minutes,
+             round(sum("breakTimeMs") / 60000.0)::int AS "breakMinutes",
+             bool_or("endedAt" IS NOT NULL) AS tracked
       FROM rmhstudy_session
       WHERE "userId" = ${userId} AND "startedAt" >= ${since}
       GROUP BY 1`,
@@ -115,7 +124,6 @@ export async function getFocusHistory(
             select:
               {
                 weeklyGoalMinutes: true,
-                currentStreak: true,
                 longestStreak: true,
               },
           },
@@ -164,6 +172,21 @@ export async function getFocusHistory(
       ),
     );
 
+  // Streaks come from the session days themselves, so they are right where the stored profile
+  // value is stale (rows from before the streak fix); the stored longest streak still counts for
+  // runs older than the window.
+  const dayKeys =
+    days.map(
+      (
+        d,
+      ) =>
+        d.date,
+    );
+  const streakDays =
+    currentStreakDays(
+      dayKeys,
+      today,
+    );
   const previousWeek =
     weekFrom(
       addDays(
@@ -212,12 +235,38 @@ export async function getFocusHistory(
     streak:
       {
         current:
-          profile?.currentStreak ??
-          0,
+          streakDays.length,
         longest:
-          profile?.longestStreak ??
-          0,
+          Math.max(
+            longestRun(
+              dayKeys,
+            ),
+            profile?.longestStreak ??
+              0,
+          ),
+        days: streakDays,
+        studiedToday:
+          byDay.has(
+            today,
+          ),
       },
+    thisWeekBreaks:
+      weekBreaks(
+        dayRows.map(
+          (
+            r,
+          ) => ({
+            date: r.day,
+            focusMinutes:
+              r.minutes,
+            breakMinutes:
+              r.breakMinutes,
+            tracked:
+              r.tracked,
+          }),
+        ),
+        thisWeek,
+      ),
     week: {
       start:
         selected.start,

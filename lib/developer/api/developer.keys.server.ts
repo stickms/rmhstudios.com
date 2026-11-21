@@ -8,6 +8,7 @@ import { getUserTier, hasApiAccess } from '@/lib/entitlements';
 import { listDeveloperKeysView } from '@/lib/developer/keys-list.server';
 import { generateApiKey } from '@/lib/api/developer-auth.server';
 import { normalizeScopes, DEFAULT_SCOPES, ALL_SCOPES } from '@/lib/api/scopes';
+import { tierMinuteLimit } from '@/lib/api/tier-limits';
 
 const MAX_KEYS = 10;
 
@@ -33,6 +34,14 @@ export const route = apiRoute('/api/developer/keys', {
         return Response.json(
           { error: 'A HARD-R subscription or higher is required to use the developer API.' },
           { status: 403 },
+        );
+      }
+
+      const maxLimit = tierMinuteLimit(tier);
+      if (body.rateLimitPerMinute != null && body.rateLimitPerMinute > maxLimit) {
+        return Response.json(
+          { error: `Requests per minute can be at most ${maxLimit} on your plan.` },
+          { status: 400 },
         );
       }
 
@@ -68,6 +77,8 @@ export const route = apiRoute('/api/developer/keys', {
           scopes,
           expiresAt,
           testMode: body.testMode === true,
+          allowedCidrs: body.allowedCidrs ?? [],
+          rateLimitPerMinute: body.rateLimitPerMinute ?? null,
         },
         select: {
           id: true,
@@ -77,6 +88,8 @@ export const route = apiRoute('/api/developer/keys', {
           scopes: true,
           expiresAt: true,
           createdAt: true,
+          allowedCidrs: true,
+          rateLimitPerMinute: true,
         },
       });
 

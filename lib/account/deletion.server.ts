@@ -28,6 +28,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
+import { partyErasureOps } from '@/lib/rmhtube/parties.server';
 import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
 import {
   DELETED_ACCOUNT_BAN_REASON,
@@ -218,6 +219,39 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.account.deleteMany({ where: { userId } }),
     prisma.passkey.deleteMany({ where: { userId } }),
     prisma.pushSubscription.deleteMany({ where: { userId } }),
+    // 1b. Credentials and outbound access that live in their own tables. The user row is anonymised,
+    //     not removed, so their `onDelete: Cascade` never fires and each of these would otherwise stay
+    //     live for a tombstone. (Stripe billing rows stay for accounting: `subscription` and
+    //     `user.stripeCustomerId` hold no secret and cannot authenticate anyone.)
+    //     Developer API keys: hashed bearer secrets for /api/v1/**. Deleting a key cascades its usage,
+    //     refusal and idempotency rows (and the stored response bodies).
+    prisma.developerApiKey.deleteMany({ where: { userId } }),
+    //     Webhook endpoints: would keep POSTing this account's events to third-party URLs, signed with
+    //     the stored secret. Deleting an endpoint cascades its queued deliveries and their payloads.
+    prisma.webhookEndpoint.deleteMany({ where: { userId } }),
+    //     rmhcode CLI tokens (hashed bearer tokens checked by /api/rmhcode/auth/validate).
+    prisma.rmhCodeToken.deleteMany({ where: { userId } }),
+    //     Account-recovery material: single-use codes, in-flight recovery requests (their token hash),
+    //     and the vouch graph in both directions (as the owner, and as someone else's contact).
+    prisma.recoveryCode.deleteMany({ where: { userId } }),
+    prisma.recoveryRequest.deleteMany({ where: { userId } }),
+    prisma.trustedContact.deleteMany({ where: { OR: [{ userId }, { contactId: userId }] } }),
+    //     Better Auth verification rows (password-reset tokens) carry the user id as `value`.
+    prisma.verification.deleteMany({ where: { value: userId } }),
+    //     Private calendar feed: the URL token is the only credential calendar apps send.
+    prisma.calendarFeed.deleteMany({ where: { userId } }),
+    //     Invite links this account created (community invites grant entry without approval) and its
+    //     Doctrine recruitment codes.
+    prisma.communityInvite.deleteMany({ where: { createdById: userId } }),
+    prisma.doctrineRecruitmentCode.deleteMany({ where: { recruiterId: userId } }),
+    //     Read-only share tokens on the TF2 HUDs they own (the HUDs themselves stay as site content).
+    prisma.tf2HudShare.deleteMany({ where: { hud: { ownerId: userId } } }),
+    //     Mail still queued for this account in an email campaign: the address is nulled below, and the
+    //     row must not be picked up as "pending" by a later send.
+    prisma.emailCampaignRecipient.updateMany({
+      where: { userId, status: { in: ['pending', 'claimed'] } },
+      data: { status: 'skipped' },
+    }),
     // 2. Private RMHLadder data (résumés, applications, salary/EEO answers).
     //    `ladderAnswerBank` has an onDelete: Cascade relation that never fires,
     //    because step 3 anonymises the user row instead of removing it.
@@ -285,6 +319,56 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.gameThread.deleteMany({ where: { authorId: userId } }),
     // RMH Music: every learning table (owner decision Q4); the cascade never fires here either.
     ...musicErasureOps(userId),
+    // Sprint 03 erasures (docs/autonomous/sprint-03/plan.md §Anchors): each feature adds its
+    // operations under its own line.
+    // s03-04 mod-notes
+    // Moderators' notes about the member go with them. Notes they wrote, or deleted, as a moderator stay for the
+    // next moderator but no longer name the erased account.
+    prisma.moderatorNote.deleteMany({ where: { subjectId: userId } }),
+    prisma.moderatorNote.updateMany({ where: { authorId: userId }, data: { authorId: null } }),
+    prisma.moderatorNote.updateMany({ where: { deletedById: userId }, data: { deletedById: null } }),
+
+    // s03-05 log-drafts: an editor's id on Log revisions and on the Logs they last saved. The Logs and their
+    // history stay (they are the site's), but no longer name the erased account.
+    prisma.blogPostRevision.updateMany({ where: { authorId: userId }, data: { authorId: null } }),
+    prisma.blogPost.updateMany({ where: { updatedById: userId }, data: { updatedById: null } }),
+
+    // s03-09 watch-parties
+    // Going marks go (the cascade never fires here), and a party the member hosts and has not held is closed so it
+    // cannot open as the erased account.
+    ...partyErasureOps(userId),
+
+    // s03-10 game-updates
+    // Games the member follows: the cascade never fires here, and a row would keep notifying the erased account.
+    prisma.gameFollow.deleteMany({ where: { userId } }),
+
+    // s03-12 send-later
+    // Messages held for later: the cascade never fires here, and a pending row would still deliver as the erased account.
+    prisma.scheduledChatMessage.deleteMany({ where: { senderId: userId } }),
+
+    // s03-14 community-modlog
+    // The log keeps the action as "a deleted member" and the moderator's own reason text.
+    prisma.communityModAction.updateMany({ where: { actorId: userId }, data: { actorId: null } }),
+    prisma.communityModAction.updateMany({
+      where: { targetUserId: userId },
+      data: { targetUserId: null },
+    }),
+
+    // s03-15 community-insights
+    // The membership history keeps its counts and loses the person: nothing links an event to the account.
+    prisma.communityMemberEvent.updateMany({ where: { userId }, data: { userId: null } }),
+
+    // s03-16 my-reports: the free text a member typed on reports they filed (the report itself stays as the
+    // moderators' record of what was reported and why).
+    prisma.contentReport.updateMany({ where: { reporterId: userId }, data: { details: null } }),
+
+    // s03-17 ladder-offers
+    prisma.ladderOffer.deleteMany({ where: { userId } }),
+
+    // s03-03 conversation-controls: per-conversation notification choices (muted posts, muted chats). The cascade never
+    // fires here, and a leftover row would keep naming the posts the erased account had muted.
+    prisma.conversationPref.deleteMany({ where: { userId } }),
+
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
       where: { userId },

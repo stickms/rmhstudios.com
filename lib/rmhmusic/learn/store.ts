@@ -36,6 +36,10 @@ import type {
   Profile,
 } from './progress.server';
 import type { CardRow } from './content/practice';
+import {
+  activityDurationMs,
+  endActivity,
+} from './activity-clock';
 import * as data from './machines/learn-data';
 import type {
   CompleteOutcome,
@@ -803,12 +807,24 @@ export const useLearnStore =
         id: number,
         body: LessonCompleteInput,
       ) {
+        const durationMs =
+          activityDurationMs();
         const reply =
           await request(
             COMPLETE_URL,
             'POST',
-            body,
+            durationMs ===
+              undefined
+              ? body
+              : {
+                  ...body,
+                  durationMs,
+                },
           );
+        if (
+          reply.ok
+        )
+          endActivity();
         if (
           !reply.ok
         ) {
@@ -1083,14 +1099,26 @@ export const useLearnStore =
         async saveReviews(
           reviews,
         ) {
+          const durationMs =
+            activityDurationMs();
           const reply =
             await request(
               CARDS_URL,
               'POST',
               {
                 reviews,
+                ...(durationMs ===
+                undefined
+                  ? {}
+                  : {
+                      durationMs,
+                    }),
               },
             );
+          if (
+            reply.ok
+          )
+            endActivity();
           if (
             !reply.ok
           )

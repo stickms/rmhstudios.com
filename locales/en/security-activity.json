@@ -21,6 +21,8 @@
   "event-passkey-added": "Passkey added",
   "event-passkey-removed": "Passkey removed",
   "event-password-changed": "Password changed",
+  "event-password-reset-completed": "Password reset. Every device was signed out and coin transfers are paused for 72 hours",
+  "event-password-reset-requested": "Password reset requested",
   "event-session-revoked": "Session ended",
   "event-session-revoked-device": "Session ended on {{device}}",
   "event-sign-in": "Signed in",

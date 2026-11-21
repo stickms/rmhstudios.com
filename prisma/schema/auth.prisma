@@ -591,6 +591,26 @@ model User {
   gameThreads               GameThread[]
   gameThreadPosts           GameThreadPost[]
 
+  // Sprint 03 back-relations (one block per feature, docs/autonomous/sprint-03/plan.md)
+  // s03-01 music-history
+  musicPracticeEntries      MusicPracticeEntry[]
+
+  // s03-04 mod-notes
+  moderatorNotesAbout   ModeratorNote[] @relation("ModeratorNoteSubject")
+  moderatorNotesWritten ModeratorNote[] @relation("ModeratorNoteAuthor")
+
+  // s03-09 watch-parties
+  rmhTubeRoomRsvps RmhTubeRoomRsvp[] @relation("RmhTubeRoomRsvps")
+
+  // s03-10 game-updates
+  gameFollows GameFollow[]
+
+  // s03-12 send-later
+  scheduledChatMessages ScheduledChatMessage[] @relation("ScheduledChatMessageSender")
+
+  // s03-17 ladder-offers
+  ladderOffers LadderOffer[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

@@ -7,6 +7,7 @@
  * flairs the member will follow, which the community feed then prioritises.
  */
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { listFlairs } from '@/lib/communities/flairs.server';
 import {
@@ -75,6 +76,7 @@ export async function getOnboardingQuestions(
 export async function setOnboardingQuestions(
   communityId: string,
   input: z.infer<typeof onboardingSetSchema>,
+  actorId: string,
 ): Promise<OnboardingQuestionDTO[]> {
   const valid = new Set((await listFlairs(communityId)).map((f) => f.id));
   const questions = input.questions.map((q, qi) => ({
@@ -87,14 +89,20 @@ export async function setOnboardingQuestions(
       flairIds: [...new Set(o.flairIds)].filter((f) => valid.has(f)),
     })),
   }));
-  await prisma.$transaction([
-    prisma.communityOnboardingQuestion.deleteMany({ where: { communityId } }),
-    ...questions.map((q) =>
-      prisma.communityOnboardingQuestion.create({
+  await prisma.$transaction(async (tx) => {
+    await tx.communityOnboardingQuestion.deleteMany({ where: { communityId } });
+    for (const q of questions) {
+      await tx.communityOnboardingQuestion.create({
         data: { communityId, prompt: q.prompt, position: q.position, options: q.options },
-      }),
-    ),
-  ]);
+      });
+    }
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'onboarding_changed',
+      detail: { questions: questions.length },
+    });
+  });
   void invalidateCached(key(communityId));
   return getOnboardingQuestions(communityId);
 }

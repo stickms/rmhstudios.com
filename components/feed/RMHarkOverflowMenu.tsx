@@ -16,6 +16,7 @@
  */
 
 import { lazy, Suspense, useRef, useState, type RefObject } from'react';
+import { useQuery } from '@tanstack/react-query';
 import {
  Heart,
  Repeat,
@@ -43,9 +44,16 @@ import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { cn } from'@/lib/utils';
 import { PostMenuTrigger } from './PostMenuTrigger';
+import {
+ MuteConversationChoices,
+ MuteConversationItem,
+ useConversationMute,
+} from './MuteConversationMenu';
 import type { FeedItem } from'@/lib/feed-types';
 import { bookmarkPostApi, pinPostApi, deletePostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
+import { getRulesApi } from '@/lib/communities/rules.contract';
+import type { ReportableRules } from '@/lib/communities/rules';
 import { toggleBlockApi, toggleMuteApi } from '@/lib/moderation/moderation.contract';
 import { HttpError, serverError } from '@/lib/http';
 
@@ -152,11 +160,27 @@ export function RMHarkOverflowPanel({
  const [engagementModal, setEngagementModal] = useState<'likes'|'reposts'| null>(null);
  const [shareModalOpen, setShareModalOpen] = useState(false);
  const [reportOpen, setReportOpen] = useState(false);
+ // s03-13: a community post's report dialog also offers the community's own rules.
+ const communitySlug = item.communitySlug;
+ const { data: communityRules } = useQuery({
+ queryKey: ['community-rules', communitySlug],
+ enabled: reportOpen && !!communitySlug,
+ staleTime: 60_000,
+ // No rules option on failure: the site reasons still work.
+ retry: false,
+ queryFn: async (): Promise<ReportableRules> => {
+ const r = await api(getRulesApi, { params: { slug: communitySlug! } });
+ return { slug: r.community.slug, name: r.community.name, rules: r.rules };
+ },
+ });
  const [tipOpen, setTipOpen] = useState(false);
  const [editOpen, setEditOpen] = useState(false);
  const [insightsOpen, setInsightsOpen] = useState(false);
  const [remindOpen, setRemindOpen] = useState(false);
  const [moderateOpen, setModerateOpen] = useState(false);
+ // Conversation mute: the choice loads when the menu opens; the four options are a small menu of their own.
+ const [muteChoicesOpen, setMuteChoicesOpen] = useState(false);
+ const conversationMute = useConversationMute(actualId, menuOpen && !!session);
  const [pinned, setPinned] = useState(!!item.pinned);
  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
  const { run: runBookmark } = useOptimisticAction();
@@ -364,6 +388,16 @@ export function RMHarkOverflowPanel({
  : t('translate', { defaultValue:'Translate'})}
  </MenuItem>
  )}
+ {session && (
+ <MuteConversationItem
+ mute={conversationMute}
+ onChoices={() => {
+ setMenuOpen(false);
+ setMuteChoicesOpen(true);
+ }}
+ onDone={() => setMenuOpen(false)}
+ />
+ )}
  <MenuSeparator />
  <MenuItem
  icon={Heart}
@@ -471,6 +505,13 @@ export function RMHarkOverflowPanel({
  )}
  </AnchoredMenu>
 
+ <MuteConversationChoices
+ open={muteChoicesOpen}
+ onClose={() => setMuteChoicesOpen(false)}
+ anchorRef={anchorRef}
+ mute={conversationMute}
+ />
+
  {engagementModal && (
  <Suspense fallback={null}>
  <EngagementListModal
@@ -529,6 +570,7 @@ export function RMHarkOverflowPanel({
  onOpenChange={setReportOpen}
  entityType="rmhark"
  entityId={actualId}
+ community={communityRules ?? undefined}
  />
  </Suspense>
  )}

@@ -3,6 +3,7 @@
  * Contract: ./blog-comments.contract.ts
  */
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import {
   userDisplaySelect,
   resolveUser,
@@ -24,7 +25,7 @@ export interface CommentViewer {
   isAdmin: boolean;
 }
 
-/** The announcement post behind a slug, or null: an ordinary post has no discussion. */
+/** The live announcement post behind a slug, or null: an ordinary post, and a draft, have no discussion. */
 export async function findAnnouncementPost(
   slug: string,
 ): Promise<{
@@ -36,6 +37,9 @@ export async function findAnnouncementPost(
         {
           slug,
           announcement: true,
+          ...publishedLogWhere(
+            new Date(),
+          ),
         },
       select:
         {

@@ -264,4 +264,10 @@ export type ChatUpdate =
     | {
         op: 'read';
       }
+    | {
+        /** A sender changed the descriptions of a message's images. */
+        op: 'alts';
+        messageId: string;
+        imageAlts: string[];
+      }
   );

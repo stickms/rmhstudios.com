@@ -7,6 +7,7 @@
  * challenge art) and the CPU-profile download, which reads a blob.
  */
 import type { z } from 'zod';
+import type { LogStatus } from '@/lib/blog/publication';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { blogPostSchema } from '@/lib/admin/schemas';
 import type { reviewRedemption } from '@/lib/creator/earnings.server';
@@ -99,6 +100,7 @@ export const saveBlogPostApi =
     res: {
       success: true;
       slug: string;
+      status: LogStatus;
     };
   }>()(
     {

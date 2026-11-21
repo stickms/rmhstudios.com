@@ -8,6 +8,7 @@ import { useKeepScroll } from '@/hooks/useKeepScroll';
 import { useLibraryCollections } from '@/hooks/useLibraryCollections';
 import { FAVORITES, type Collection } from '@/lib/games/collections';
 import { TitleArt } from './TitleArt';
+import { FollowingEmpty, FollowingLabel } from './FollowingFilter';
 
 /**
  * The library's left list, the way Steam's is: Home, a search box, a kind filter,
@@ -17,6 +18,9 @@ import { TitleArt } from './TitleArt';
 export function LibraryList({
   kind,
   onKindChange,
+  following,
+  followedIds,
+  onFollowingChange,
   recentIds,
   collections: serverCollections,
   signedIn,
@@ -25,6 +29,9 @@ export function LibraryList({
 }: {
   kind: LibraryKind;
   onKindChange: (k: LibraryKind) => void;
+  following: boolean;
+  followedIds: string[];
+  onFollowingChange: (on: boolean) => void;
   recentIds: string[];
   collections: Collection[];
   signedIn: boolean;
@@ -41,7 +48,10 @@ export function LibraryList({
   const custom = collections.filter((c) => c.name !== FAVORITES);
 
   const all = useMemo(() => listCuratedBuilds(), []);
-  const visible = useMemo(() => filterRail(all, { kind, search }), [all, kind, search]);
+  const visible = useMemo(() => {
+    const items = filterRail(all, { kind, search });
+    return following ? items.filter((b) => followedIds.includes(b.id)) : items;
+  }, [all, kind, search, following, followedIds]);
   const favorites = useMemo(() => visible.filter((b) => favoriteIds.includes(b.id)), [visible, favoriteIds]);
   const { recent, rest } = useMemo(
     () =>
@@ -92,6 +102,11 @@ export function LibraryList({
               {k.label}
             </button>
           ))}
+          {signedIn ? (
+            <button type="button" aria-pressed={following} onClick={() => onFollowingChange(!following)}>
+              <FollowingLabel />
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -104,7 +119,7 @@ export function LibraryList({
         <Section label={t('steam-section-recent', { defaultValue: 'Recent' })} items={recent} {...{ activeId, favoriteIds, toggle }} />
         <Section label={restLabel} items={rest} {...{ activeId, favoriteIds, toggle }} />
         {visible.length === 0 ? (
-          <p className="stm-empty">{t('steam-empty', { defaultValue: 'Nothing matches that search.' })}</p>
+          <p className="stm-empty">{following && !search ? <FollowingEmpty /> : t('steam-empty', { defaultValue: 'Nothing matches that search.' })}</p>
         ) : null}
       </div>
     </nav>
