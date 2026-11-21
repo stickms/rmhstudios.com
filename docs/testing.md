@@ -2085,6 +2085,15 @@ workflows
 are
 path-filtered.
 
+#### The Toolbox suite (`vitest.toolbox.config.ts`)
+
+The twenty client-side utilities under `/tools` (`lib/toolbox/`, specified in
+`docs/autonomous/sprint-01/`) are pure parsers, converters and calculators whose
+worst failure is a wrong answer on screen, so their tests are not
+mission-critical and run in their own suite: `pnpm test:toolbox`, gated by the
+path-filtered `toolbox-tests.yml`. The main config excludes `lib/toolbox/**`,
+and `lib/__tests__/test-discovery.test.ts` holds that the two never overlap.
+
 ### 3. Go tests (Bazel)
 
 `make test`
@@ -3431,6 +3440,7 @@ miss):
 | `deploy.yml` (`integration`)               | same as web-ci's `integration`, on the **merged** commit                                                 | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
 | `web-ci.yml` (`steel-rest`)                | checked build → serve → `testing/e2e/steel-rest.mjs` (zero frames at rest, one GL context, the globe)    | non-blocking; **nightly + manual dispatch only** (not on PRs); see §6                                                                 |
 | `go-microservices.yml`                     | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`                  | blocks                                                                                                                                |
+| `toolbox-tests.yml`                        | `pnpm test:toolbox` (vitest.toolbox.config.ts), path-filtered to `lib/toolbox/**`                        | blocks                                                                                                                                |
 
 The
 deploy

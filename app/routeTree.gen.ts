@@ -314,6 +314,27 @@ import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckI
 import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse'
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteThreadRootIdRouteImport } from './routes/_site/thread/$rootId'
+import { Route as SiteToolsIndexRouteImport } from './routes/_site/tools/index'
+import { Route as SiteToolsBaseRouteImport } from './routes/_site/tools/base'
+import { Route as SiteToolsCaseRouteImport } from './routes/_site/tools/case'
+import { Route as SiteToolsContrastRouteImport } from './routes/_site/tools/contrast'
+import { Route as SiteToolsCronRouteImport } from './routes/_site/tools/cron'
+import { Route as SiteToolsCsvRouteImport } from './routes/_site/tools/csv'
+import { Route as SiteToolsDateCalcRouteImport } from './routes/_site/tools/date-calc'
+import { Route as SiteToolsDiceRouteImport } from './routes/_site/tools/dice'
+import { Route as SiteToolsDiffRouteImport } from './routes/_site/tools/diff'
+import { Route as SiteToolsEncodeRouteImport } from './routes/_site/tools/encode'
+import { Route as SiteToolsHashRouteImport } from './routes/_site/tools/hash'
+import { Route as SiteToolsIdsRouteImport } from './routes/_site/tools/ids'
+import { Route as SiteToolsJsonRouteImport } from './routes/_site/tools/json'
+import { Route as SiteToolsLoanRouteImport } from './routes/_site/tools/loan'
+import { Route as SiteToolsPasswordRouteImport } from './routes/_site/tools/password'
+import { Route as SiteToolsPickerRouteImport } from './routes/_site/tools/picker'
+import { Route as SiteToolsRegexRouteImport } from './routes/_site/tools/regex'
+import { Route as SiteToolsSplitBillRouteImport } from './routes/_site/tools/split-bill'
+import { Route as SiteToolsTextStatsRouteImport } from './routes/_site/tools/text-stats'
+import { Route as SiteToolsTimestampRouteImport } from './routes/_site/tools/timestamp'
+import { Route as SiteToolsTimezonesRouteImport } from './routes/_site/tools/timezones'
 import { Route as SiteTournamentsIdRouteImport } from './routes/_site/tournaments.$id'
 import { Route as SiteUserBuildsSlugRouteImport } from './routes/_site/user-builds/$slug'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
@@ -2032,6 +2053,111 @@ const SiteThreadRootIdRoute = SiteThreadRootIdRouteImport.update({
   path: '/thread/$rootId',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteToolsIndexRoute = SiteToolsIndexRouteImport.update({
+  id: '/tools/',
+  path: '/tools/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsBaseRoute = SiteToolsBaseRouteImport.update({
+  id: '/tools/base',
+  path: '/tools/base',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsCaseRoute = SiteToolsCaseRouteImport.update({
+  id: '/tools/case',
+  path: '/tools/case',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsContrastRoute = SiteToolsContrastRouteImport.update({
+  id: '/tools/contrast',
+  path: '/tools/contrast',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsCronRoute = SiteToolsCronRouteImport.update({
+  id: '/tools/cron',
+  path: '/tools/cron',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsCsvRoute = SiteToolsCsvRouteImport.update({
+  id: '/tools/csv',
+  path: '/tools/csv',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsDateCalcRoute = SiteToolsDateCalcRouteImport.update({
+  id: '/tools/date-calc',
+  path: '/tools/date-calc',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsDiceRoute = SiteToolsDiceRouteImport.update({
+  id: '/tools/dice',
+  path: '/tools/dice',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsDiffRoute = SiteToolsDiffRouteImport.update({
+  id: '/tools/diff',
+  path: '/tools/diff',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsEncodeRoute = SiteToolsEncodeRouteImport.update({
+  id: '/tools/encode',
+  path: '/tools/encode',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsHashRoute = SiteToolsHashRouteImport.update({
+  id: '/tools/hash',
+  path: '/tools/hash',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsIdsRoute = SiteToolsIdsRouteImport.update({
+  id: '/tools/ids',
+  path: '/tools/ids',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsJsonRoute = SiteToolsJsonRouteImport.update({
+  id: '/tools/json',
+  path: '/tools/json',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsLoanRoute = SiteToolsLoanRouteImport.update({
+  id: '/tools/loan',
+  path: '/tools/loan',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsPasswordRoute = SiteToolsPasswordRouteImport.update({
+  id: '/tools/password',
+  path: '/tools/password',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsPickerRoute = SiteToolsPickerRouteImport.update({
+  id: '/tools/picker',
+  path: '/tools/picker',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsRegexRoute = SiteToolsRegexRouteImport.update({
+  id: '/tools/regex',
+  path: '/tools/regex',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsSplitBillRoute = SiteToolsSplitBillRouteImport.update({
+  id: '/tools/split-bill',
+  path: '/tools/split-bill',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsTextStatsRoute = SiteToolsTextStatsRouteImport.update({
+  id: '/tools/text-stats',
+  path: '/tools/text-stats',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsTimestampRoute = SiteToolsTimestampRouteImport.update({
+  id: '/tools/timestamp',
+  path: '/tools/timestamp',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteToolsTimezonesRoute = SiteToolsTimezonesRouteImport.update({
+  id: '/tools/timezones',
+  path: '/tools/timezones',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteTournamentsIdRoute = SiteTournamentsIdRouteImport.update({
   id: '/tournaments/$id',
   path: '/tournaments/$id',
@@ -3258,6 +3384,26 @@ export interface FileRoutesByFullPath {
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/thread/$rootId': typeof SiteThreadRootIdRoute
+  '/tools/base': typeof SiteToolsBaseRoute
+  '/tools/case': typeof SiteToolsCaseRoute
+  '/tools/contrast': typeof SiteToolsContrastRoute
+  '/tools/cron': typeof SiteToolsCronRoute
+  '/tools/csv': typeof SiteToolsCsvRoute
+  '/tools/date-calc': typeof SiteToolsDateCalcRoute
+  '/tools/dice': typeof SiteToolsDiceRoute
+  '/tools/diff': typeof SiteToolsDiffRoute
+  '/tools/encode': typeof SiteToolsEncodeRoute
+  '/tools/hash': typeof SiteToolsHashRoute
+  '/tools/ids': typeof SiteToolsIdsRoute
+  '/tools/json': typeof SiteToolsJsonRoute
+  '/tools/loan': typeof SiteToolsLoanRoute
+  '/tools/password': typeof SiteToolsPasswordRoute
+  '/tools/picker': typeof SiteToolsPickerRoute
+  '/tools/regex': typeof SiteToolsRegexRoute
+  '/tools/split-bill': typeof SiteToolsSplitBillRoute
+  '/tools/text-stats': typeof SiteToolsTextStatsRoute
+  '/tools/timestamp': typeof SiteToolsTimestampRoute
+  '/tools/timezones': typeof SiteToolsTimezonesRoute
   '/tournaments/$id': typeof SiteTournamentsIdRoute
   '/user-builds/$slug': typeof SiteUserBuildsSlugRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -3367,6 +3513,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof SiteSettingsIndexRoute
   '/store/': typeof SiteStoreIndexRoute
   '/study/': typeof SiteStudyIndexRoute
+  '/tools/': typeof SiteToolsIndexRoute
   '/when/': typeof SiteWhenIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/games/': typeof GamesLibraryIndexRoute
@@ -3720,6 +3867,26 @@ export interface FileRoutesByTo {
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/thread/$rootId': typeof SiteThreadRootIdRoute
+  '/tools/base': typeof SiteToolsBaseRoute
+  '/tools/case': typeof SiteToolsCaseRoute
+  '/tools/contrast': typeof SiteToolsContrastRoute
+  '/tools/cron': typeof SiteToolsCronRoute
+  '/tools/csv': typeof SiteToolsCsvRoute
+  '/tools/date-calc': typeof SiteToolsDateCalcRoute
+  '/tools/dice': typeof SiteToolsDiceRoute
+  '/tools/diff': typeof SiteToolsDiffRoute
+  '/tools/encode': typeof SiteToolsEncodeRoute
+  '/tools/hash': typeof SiteToolsHashRoute
+  '/tools/ids': typeof SiteToolsIdsRoute
+  '/tools/json': typeof SiteToolsJsonRoute
+  '/tools/loan': typeof SiteToolsLoanRoute
+  '/tools/password': typeof SiteToolsPasswordRoute
+  '/tools/picker': typeof SiteToolsPickerRoute
+  '/tools/regex': typeof SiteToolsRegexRoute
+  '/tools/split-bill': typeof SiteToolsSplitBillRoute
+  '/tools/text-stats': typeof SiteToolsTextStatsRoute
+  '/tools/timestamp': typeof SiteToolsTimestampRoute
+  '/tools/timezones': typeof SiteToolsTimezonesRoute
   '/tournaments/$id': typeof SiteTournamentsIdRoute
   '/user-builds/$slug': typeof SiteUserBuildsSlugRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -3829,6 +3996,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SiteSettingsIndexRoute
   '/store': typeof SiteStoreIndexRoute
   '/study': typeof SiteStudyIndexRoute
+  '/tools': typeof SiteToolsIndexRoute
   '/when': typeof SiteWhenIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/games/market': typeof GamesMarketIndexRoute
@@ -4210,6 +4378,26 @@ export interface FileRoutesById {
   '/_site/study/browse': typeof SiteStudyBrowseRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
   '/_site/thread/$rootId': typeof SiteThreadRootIdRoute
+  '/_site/tools/base': typeof SiteToolsBaseRoute
+  '/_site/tools/case': typeof SiteToolsCaseRoute
+  '/_site/tools/contrast': typeof SiteToolsContrastRoute
+  '/_site/tools/cron': typeof SiteToolsCronRoute
+  '/_site/tools/csv': typeof SiteToolsCsvRoute
+  '/_site/tools/date-calc': typeof SiteToolsDateCalcRoute
+  '/_site/tools/dice': typeof SiteToolsDiceRoute
+  '/_site/tools/diff': typeof SiteToolsDiffRoute
+  '/_site/tools/encode': typeof SiteToolsEncodeRoute
+  '/_site/tools/hash': typeof SiteToolsHashRoute
+  '/_site/tools/ids': typeof SiteToolsIdsRoute
+  '/_site/tools/json': typeof SiteToolsJsonRoute
+  '/_site/tools/loan': typeof SiteToolsLoanRoute
+  '/_site/tools/password': typeof SiteToolsPasswordRoute
+  '/_site/tools/picker': typeof SiteToolsPickerRoute
+  '/_site/tools/regex': typeof SiteToolsRegexRoute
+  '/_site/tools/split-bill': typeof SiteToolsSplitBillRoute
+  '/_site/tools/text-stats': typeof SiteToolsTextStatsRoute
+  '/_site/tools/timestamp': typeof SiteToolsTimestampRoute
+  '/_site/tools/timezones': typeof SiteToolsTimezonesRoute
   '/_site/tournaments/$id': typeof SiteTournamentsIdRoute
   '/_site/user-builds/$slug': typeof SiteUserBuildsSlugRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -4319,6 +4507,7 @@ export interface FileRoutesById {
   '/_site/settings/': typeof SiteSettingsIndexRoute
   '/_site/store/': typeof SiteStoreIndexRoute
   '/_site/study/': typeof SiteStudyIndexRoute
+  '/_site/tools/': typeof SiteToolsIndexRoute
   '/_site/when/': typeof SiteWhenIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/games/_library/': typeof GamesLibraryIndexRoute
@@ -4700,6 +4889,26 @@ export interface FileRouteTypes {
     | '/study/browse'
     | '/tag/$tag'
     | '/thread/$rootId'
+    | '/tools/base'
+    | '/tools/case'
+    | '/tools/contrast'
+    | '/tools/cron'
+    | '/tools/csv'
+    | '/tools/date-calc'
+    | '/tools/dice'
+    | '/tools/diff'
+    | '/tools/encode'
+    | '/tools/hash'
+    | '/tools/ids'
+    | '/tools/json'
+    | '/tools/loan'
+    | '/tools/password'
+    | '/tools/picker'
+    | '/tools/regex'
+    | '/tools/split-bill'
+    | '/tools/text-stats'
+    | '/tools/timestamp'
+    | '/tools/timezones'
     | '/tournaments/$id'
     | '/user-builds/$slug'
     | '/user-builds/submit'
@@ -4809,6 +5018,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/store/'
     | '/study/'
+    | '/tools/'
     | '/when/'
     | '/altair/multiplayer/'
     | '/games/'
@@ -5162,6 +5372,26 @@ export interface FileRouteTypes {
     | '/study/browse'
     | '/tag/$tag'
     | '/thread/$rootId'
+    | '/tools/base'
+    | '/tools/case'
+    | '/tools/contrast'
+    | '/tools/cron'
+    | '/tools/csv'
+    | '/tools/date-calc'
+    | '/tools/dice'
+    | '/tools/diff'
+    | '/tools/encode'
+    | '/tools/hash'
+    | '/tools/ids'
+    | '/tools/json'
+    | '/tools/loan'
+    | '/tools/password'
+    | '/tools/picker'
+    | '/tools/regex'
+    | '/tools/split-bill'
+    | '/tools/text-stats'
+    | '/tools/timestamp'
+    | '/tools/timezones'
     | '/tournaments/$id'
     | '/user-builds/$slug'
     | '/user-builds/submit'
@@ -5271,6 +5501,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/store'
     | '/study'
+    | '/tools'
     | '/when'
     | '/altair/multiplayer'
     | '/games/market'
@@ -5651,6 +5882,26 @@ export interface FileRouteTypes {
     | '/_site/study/browse'
     | '/_site/tag/$tag'
     | '/_site/thread/$rootId'
+    | '/_site/tools/base'
+    | '/_site/tools/case'
+    | '/_site/tools/contrast'
+    | '/_site/tools/cron'
+    | '/_site/tools/csv'
+    | '/_site/tools/date-calc'
+    | '/_site/tools/dice'
+    | '/_site/tools/diff'
+    | '/_site/tools/encode'
+    | '/_site/tools/hash'
+    | '/_site/tools/ids'
+    | '/_site/tools/json'
+    | '/_site/tools/loan'
+    | '/_site/tools/password'
+    | '/_site/tools/picker'
+    | '/_site/tools/regex'
+    | '/_site/tools/split-bill'
+    | '/_site/tools/text-stats'
+    | '/_site/tools/timestamp'
+    | '/_site/tools/timezones'
     | '/_site/tournaments/$id'
     | '/_site/user-builds/$slug'
     | '/_site/user-builds/submit'
@@ -5760,6 +6011,7 @@ export interface FileRouteTypes {
     | '/_site/settings/'
     | '/_site/store/'
     | '/_site/study/'
+    | '/_site/tools/'
     | '/_site/when/'
     | '/altair/multiplayer/'
     | '/games/_library/'
@@ -8181,6 +8433,153 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteThreadRootIdRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/tools/': {
+      id: '/_site/tools/'
+      path: '/tools'
+      fullPath: '/tools/'
+      preLoaderRoute: typeof SiteToolsIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/base': {
+      id: '/_site/tools/base'
+      path: '/tools/base'
+      fullPath: '/tools/base'
+      preLoaderRoute: typeof SiteToolsBaseRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/case': {
+      id: '/_site/tools/case'
+      path: '/tools/case'
+      fullPath: '/tools/case'
+      preLoaderRoute: typeof SiteToolsCaseRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/contrast': {
+      id: '/_site/tools/contrast'
+      path: '/tools/contrast'
+      fullPath: '/tools/contrast'
+      preLoaderRoute: typeof SiteToolsContrastRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/cron': {
+      id: '/_site/tools/cron'
+      path: '/tools/cron'
+      fullPath: '/tools/cron'
+      preLoaderRoute: typeof SiteToolsCronRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/csv': {
+      id: '/_site/tools/csv'
+      path: '/tools/csv'
+      fullPath: '/tools/csv'
+      preLoaderRoute: typeof SiteToolsCsvRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/date-calc': {
+      id: '/_site/tools/date-calc'
+      path: '/tools/date-calc'
+      fullPath: '/tools/date-calc'
+      preLoaderRoute: typeof SiteToolsDateCalcRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/dice': {
+      id: '/_site/tools/dice'
+      path: '/tools/dice'
+      fullPath: '/tools/dice'
+      preLoaderRoute: typeof SiteToolsDiceRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/diff': {
+      id: '/_site/tools/diff'
+      path: '/tools/diff'
+      fullPath: '/tools/diff'
+      preLoaderRoute: typeof SiteToolsDiffRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/encode': {
+      id: '/_site/tools/encode'
+      path: '/tools/encode'
+      fullPath: '/tools/encode'
+      preLoaderRoute: typeof SiteToolsEncodeRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/hash': {
+      id: '/_site/tools/hash'
+      path: '/tools/hash'
+      fullPath: '/tools/hash'
+      preLoaderRoute: typeof SiteToolsHashRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/ids': {
+      id: '/_site/tools/ids'
+      path: '/tools/ids'
+      fullPath: '/tools/ids'
+      preLoaderRoute: typeof SiteToolsIdsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/json': {
+      id: '/_site/tools/json'
+      path: '/tools/json'
+      fullPath: '/tools/json'
+      preLoaderRoute: typeof SiteToolsJsonRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/loan': {
+      id: '/_site/tools/loan'
+      path: '/tools/loan'
+      fullPath: '/tools/loan'
+      preLoaderRoute: typeof SiteToolsLoanRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/password': {
+      id: '/_site/tools/password'
+      path: '/tools/password'
+      fullPath: '/tools/password'
+      preLoaderRoute: typeof SiteToolsPasswordRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/picker': {
+      id: '/_site/tools/picker'
+      path: '/tools/picker'
+      fullPath: '/tools/picker'
+      preLoaderRoute: typeof SiteToolsPickerRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/regex': {
+      id: '/_site/tools/regex'
+      path: '/tools/regex'
+      fullPath: '/tools/regex'
+      preLoaderRoute: typeof SiteToolsRegexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/split-bill': {
+      id: '/_site/tools/split-bill'
+      path: '/tools/split-bill'
+      fullPath: '/tools/split-bill'
+      preLoaderRoute: typeof SiteToolsSplitBillRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/text-stats': {
+      id: '/_site/tools/text-stats'
+      path: '/tools/text-stats'
+      fullPath: '/tools/text-stats'
+      preLoaderRoute: typeof SiteToolsTextStatsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/timestamp': {
+      id: '/_site/tools/timestamp'
+      path: '/tools/timestamp'
+      fullPath: '/tools/timestamp'
+      preLoaderRoute: typeof SiteToolsTimestampRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tools/timezones': {
+      id: '/_site/tools/timezones'
+      path: '/tools/timezones'
+      fullPath: '/tools/timezones'
+      preLoaderRoute: typeof SiteToolsTimezonesRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/tournaments/$id': {
       id: '/_site/tournaments/$id'
       path: '/tournaments/$id'
@@ -9723,6 +10122,26 @@ interface SiteRouteChildren {
   SiteStudyBrowseRoute: typeof SiteStudyBrowseRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
   SiteThreadRootIdRoute: typeof SiteThreadRootIdRoute
+  SiteToolsBaseRoute: typeof SiteToolsBaseRoute
+  SiteToolsCaseRoute: typeof SiteToolsCaseRoute
+  SiteToolsContrastRoute: typeof SiteToolsContrastRoute
+  SiteToolsCronRoute: typeof SiteToolsCronRoute
+  SiteToolsCsvRoute: typeof SiteToolsCsvRoute
+  SiteToolsDateCalcRoute: typeof SiteToolsDateCalcRoute
+  SiteToolsDiceRoute: typeof SiteToolsDiceRoute
+  SiteToolsDiffRoute: typeof SiteToolsDiffRoute
+  SiteToolsEncodeRoute: typeof SiteToolsEncodeRoute
+  SiteToolsHashRoute: typeof SiteToolsHashRoute
+  SiteToolsIdsRoute: typeof SiteToolsIdsRoute
+  SiteToolsJsonRoute: typeof SiteToolsJsonRoute
+  SiteToolsLoanRoute: typeof SiteToolsLoanRoute
+  SiteToolsPasswordRoute: typeof SiteToolsPasswordRoute
+  SiteToolsPickerRoute: typeof SiteToolsPickerRoute
+  SiteToolsRegexRoute: typeof SiteToolsRegexRoute
+  SiteToolsSplitBillRoute: typeof SiteToolsSplitBillRoute
+  SiteToolsTextStatsRoute: typeof SiteToolsTextStatsRoute
+  SiteToolsTimestampRoute: typeof SiteToolsTimestampRoute
+  SiteToolsTimezonesRoute: typeof SiteToolsTimezonesRoute
   SiteTournamentsIdRoute: typeof SiteTournamentsIdRoute
   SiteUserBuildsSlugRoute: typeof SiteUserBuildsSlugRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
@@ -9747,6 +10166,7 @@ interface SiteRouteChildren {
   SiteSettingsIndexRoute: typeof SiteSettingsIndexRoute
   SiteStoreIndexRoute: typeof SiteStoreIndexRoute
   SiteStudyIndexRoute: typeof SiteStudyIndexRoute
+  SiteToolsIndexRoute: typeof SiteToolsIndexRoute
   SiteWhenIndexRoute: typeof SiteWhenIndexRoute
   SiteConnectionsUIdRoute: typeof SiteConnectionsUIdRoute
   SiteCreateBuildsManageRoute: typeof SiteCreateBuildsManageRoute
@@ -9840,6 +10260,26 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteStudyBrowseRoute: SiteStudyBrowseRoute,
   SiteTagTagRoute: SiteTagTagRoute,
   SiteThreadRootIdRoute: SiteThreadRootIdRoute,
+  SiteToolsBaseRoute: SiteToolsBaseRoute,
+  SiteToolsCaseRoute: SiteToolsCaseRoute,
+  SiteToolsContrastRoute: SiteToolsContrastRoute,
+  SiteToolsCronRoute: SiteToolsCronRoute,
+  SiteToolsCsvRoute: SiteToolsCsvRoute,
+  SiteToolsDateCalcRoute: SiteToolsDateCalcRoute,
+  SiteToolsDiceRoute: SiteToolsDiceRoute,
+  SiteToolsDiffRoute: SiteToolsDiffRoute,
+  SiteToolsEncodeRoute: SiteToolsEncodeRoute,
+  SiteToolsHashRoute: SiteToolsHashRoute,
+  SiteToolsIdsRoute: SiteToolsIdsRoute,
+  SiteToolsJsonRoute: SiteToolsJsonRoute,
+  SiteToolsLoanRoute: SiteToolsLoanRoute,
+  SiteToolsPasswordRoute: SiteToolsPasswordRoute,
+  SiteToolsPickerRoute: SiteToolsPickerRoute,
+  SiteToolsRegexRoute: SiteToolsRegexRoute,
+  SiteToolsSplitBillRoute: SiteToolsSplitBillRoute,
+  SiteToolsTextStatsRoute: SiteToolsTextStatsRoute,
+  SiteToolsTimestampRoute: SiteToolsTimestampRoute,
+  SiteToolsTimezonesRoute: SiteToolsTimezonesRoute,
   SiteTournamentsIdRoute: SiteTournamentsIdRoute,
   SiteUserBuildsSlugRoute: SiteUserBuildsSlugRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
@@ -9864,6 +10304,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsIndexRoute: SiteSettingsIndexRoute,
   SiteStoreIndexRoute: SiteStoreIndexRoute,
   SiteStudyIndexRoute: SiteStudyIndexRoute,
+  SiteToolsIndexRoute: SiteToolsIndexRoute,
   SiteWhenIndexRoute: SiteWhenIndexRoute,
   SiteConnectionsUIdRoute: SiteConnectionsUIdRoute,
   SiteCreateBuildsManageRoute: SiteCreateBuildsManageRoute,

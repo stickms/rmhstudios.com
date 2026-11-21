@@ -72,6 +72,7 @@
     "media:migrate": "pnpm exec tsx scripts/migrate-media-to-r2.ts",
     "audit": "pnpm audit --audit-level=moderate",
     "test": "vitest run",
+    "test:toolbox": "vitest run --config vitest.toolbox.config.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:epic": "vitest run --config vitest.epic.config.ts",

@@ -20,6 +20,7 @@ import {
   games,
   apps,
 } from '@/lib/catalog';
+import { TOOLS } from '@/lib/toolbox/catalog';
 
 /** One `<url>` in a sitemap. */
 import {
@@ -61,6 +62,12 @@ export const SITEMAP_CHUNK_SIZE = 40_000;
  * secondary surfaces · 0.3 corporate/legal.
  */
 /** Every vertical page, derived from the one place a vertical is declared. */
+/** The Toolbox hub and every tool, derived from its catalog (lib/toolbox/catalog.ts). */
+const TOOLBOX_SITEMAP: SitemapEntry[] = [
+  { loc: '/tools', changefreq: 'monthly', priority: 0.5 },
+  ...TOOLS.map((tool): SitemapEntry => ({ loc: `/tools/${tool.slug}`, changefreq: 'yearly', priority: 0.4 })),
+];
+
 const VERTICAL_ROUTES: SitemapEntry[] =
   VERTICALS.flatMap(
     (
@@ -287,6 +294,8 @@ export const STATIC_ROUTES: SitemapEntry[] =
         'daily',
       priority: 0.5,
     },
+    // The Toolbox (docs/autonomous/sprint-01): the hub and its twenty client-side tools.
+    ...TOOLBOX_SITEMAP,
     // P18 delight: public timeline of site eras, and the daily nominated photo.
     {
       loc: '/museum',

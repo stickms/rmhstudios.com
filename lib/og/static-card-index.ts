@@ -258,6 +258,10 @@ export const STATIC_CARD_INDEX: readonly (readonly [
       'qotd',
     ],
     [
+      '/tools',
+      'tools',
+    ],
+    [
       '/photo-of-the-day',
       'photo-of-the-day',
     ],
