@@ -1199,9 +1199,11 @@ export class ChromeRenderer {
             this.envQueued = false;
             return;
           }
+          // The ROOT's background is the page ground: the site tier paints it (and a theme's wash) on <html> so it reaches
+          // the iOS safe areas, and <body> is transparent there, which read as black here.
           const background =
             win.getComputedStyle(
-              doc.body,
+              doc.documentElement,
             ).backgroundColor;
           painter =
             createEnvironmentPainter(
@@ -1359,7 +1361,7 @@ export class ChromeRenderer {
     const bg =
       parseColour(
         win.getComputedStyle(
-          doc.body,
+          doc.documentElement,
         )
           .backgroundColor,
       );
