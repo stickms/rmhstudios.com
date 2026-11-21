@@ -14,51 +14,27 @@ export interface Post {
 
 /** Slugs of the live Logs. */
 export async function getPostSlugs() {
-  const posts =
-    await prisma.blogPost.findMany(
-      {
-        where:
-          publishedLogWhere(
-            new Date(),
-          ),
-        select:
-          {
-            slug: true,
-          },
-      },
-    );
-  return posts.map(
-    (
-      p,
-    ) =>
-      p.slug,
-  );
+  const posts = await prisma.blogPost.findMany({
+    where: publishedLogWhere(new Date()),
+    select: {
+      slug: true,
+    },
+  });
+  return posts.map((p) => p.slug);
 }
 
-type Items =
-  Record<
-    string,
-    | string
-    | string[]
-    | boolean
-    | undefined
-    | null
-  >;
+type Items = Record<string, string | string[] | boolean | undefined | null>;
 
 interface PickablePost {
   slug: string;
   title: string;
   date: string;
   description: string;
-  image:
-    | string
-    | null;
+  image: string | null;
   tags: string[];
   content: string;
   announcement: boolean;
-  announcementPostId:
-    | string
-    | null;
+  announcementPostId: string | null;
   business: string;
   announcedAt: Date | null;
   announcementExpiresAt: Date | null;
@@ -66,66 +42,29 @@ interface PickablePost {
   publishAt: Date | null;
 }
 
-const iso =
-  (
-    d: Date | null,
-  ) =>
-    d
-      ? d.toISOString()
-      : null;
+const iso = (d: Date | null) => (d ? d.toISOString() : null);
 
 /** The requested fields of a Log, in the shape the routes read. */
-function pickFields(
-  post: PickablePost,
-  fields: string[],
-): Items {
-  const available: Items =
-    {
-      slug: post.slug,
-      content:
-        post.content,
-      title:
-        post.title,
-      date: post.date,
-      description:
-        post.description,
-      image:
-        post.image,
-      tags: post.tags,
-      announcement:
-        post.announcement,
-      announcementPostId:
-        post.announcementPostId,
-      business:
-        post.business,
-      announcedAt:
-        iso(
-          post.announcedAt,
-        ),
-      announcementExpiresAt:
-        iso(
-          post.announcementExpiresAt,
-        ),
-      status:
-        post.status,
-      publishAt:
-        iso(
-          post.publishAt,
-        ),
-    };
-  const items: Items =
-    {};
+function pickFields(post: PickablePost, fields: string[]): Items {
+  const available: Items = {
+    slug: post.slug,
+    content: post.content,
+    title: post.title,
+    date: post.date,
+    description: post.description,
+    image: post.image,
+    tags: post.tags,
+    announcement: post.announcement,
+    announcementPostId: post.announcementPostId,
+    business: post.business,
+    announcedAt: iso(post.announcedAt),
+    announcementExpiresAt: iso(post.announcementExpiresAt),
+    status: post.status,
+    publishAt: iso(post.publishAt),
+  };
+  const items: Items = {};
   for (const field of fields) {
-    if (
-      field in
-      available
-    )
-      items[
-        field
-      ] =
-        available[
-          field
-        ];
+    if (field in available) items[field] = available[field];
   }
   return items;
 }
@@ -141,105 +80,46 @@ export async function getPostBySlug(
     admin?: boolean;
   } = {},
 ) {
-  if (
-    !slug
-  )
-    throw new Error(
-      'Slug cannot be empty',
-    );
+  if (!slug) throw new Error('Slug cannot be empty');
 
-  const post =
-    opts.admin
-      ? await findLogForAdmin(
+  const post = opts.admin
+    ? await findLogForAdmin(slug)
+    : await prisma.blogPost.findFirst({
+        where: {
           slug,
-        )
-      : await prisma.blogPost.findFirst(
-          {
-            where:
-              {
-                slug,
-                ...publishedLogWhere(
-                  new Date(),
-                ),
-              },
-          },
-        );
+          ...publishedLogWhere(new Date()),
+        },
+      });
 
-  if (
-    !post
-  ) {
-    throw new Error(
-      `Post not found: ${slug}`,
-    );
+  if (!post) {
+    throw new Error(`Post not found: ${slug}`);
   }
-  return pickFields(
-    post,
-    fields,
-  );
+  return pickFields(post, fields);
 }
 
 /** The live Logs, newest first. */
-export async function getAllPosts(
-  fields: string[] = [],
-) {
-  const isAllEmpty =
-    fields.length ===
-    0;
+export async function getAllPosts(fields: string[] = []) {
+  const isAllEmpty = fields.length === 0;
 
-  const posts =
-    await prisma.blogPost.findMany(
-      {
-        where:
-          publishedLogWhere(
-            new Date(),
-          ),
-        orderBy:
-          {
-            date: 'desc',
-          },
-        select:
-          isAllEmpty
-            ? undefined
-            : {
-                slug: fields.includes(
-                  'slug',
-                ),
-                title:
-                  fields.includes(
-                    'title',
-                  ),
-                date: fields.includes(
-                  'date',
-                ),
-                description:
-                  fields.includes(
-                    'description',
-                  ),
-                image:
-                  fields.includes(
-                    'image',
-                  ),
-                tags: fields.includes(
-                  'tags',
-                ),
-                content:
-                  fields.includes(
-                    'content',
-                  ),
-                announcement:
-                  fields.includes(
-                    'announcement',
-                  ),
-                business:
-                  fields.includes(
-                    'business',
-                  ),
-              },
-      },
-    );
+  const posts = await prisma.blogPost.findMany({
+    where: publishedLogWhere(new Date()),
+    orderBy: {
+      date: 'desc',
+    },
+    select: isAllEmpty
+      ? undefined
+      : {
+          slug: fields.includes('slug'),
+          title: fields.includes('title'),
+          date: fields.includes('date'),
+          description: fields.includes('description'),
+          image: fields.includes('image'),
+          tags: fields.includes('tags'),
+          content: fields.includes('content'),
+          announcement: fields.includes('announcement'),
+          business: fields.includes('business'),
+        },
+  });
 
-  return posts as unknown as Record<
-    string,
-    any
-  >[];
+  return posts as unknown as Record<string, any>[];
 }

@@ -62,12 +62,8 @@ const MIME: Record<ExportFormat, string> = {
 };
 
 /** The file's text, MIME type and a filename made from the deck title. */
-export function buildExport(
-  format: ExportFormat,
-  deck: ExportDeck,
-): { text: string; mime: string; filename: string } {
-  const text =
-    format === 'tsv' ? toTsv(deck.cards) : format === 'csv' ? toCsv(deck.cards) : toJson(deck);
+export function buildExport(format: ExportFormat, deck: ExportDeck): { text: string; mime: string; filename: string } {
+  const text = format === 'tsv' ? toTsv(deck.cards) : format === 'csv' ? toCsv(deck.cards) : toJson(deck);
   const base =
     deck.title
       .normalize('NFKD')

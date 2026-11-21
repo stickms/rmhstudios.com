@@ -1,26 +1,17 @@
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { newDrive } from '@features/hearthworks/engine/skins/animator';
 import { createHearthworksStore } from '@features/hearthworks/engine/store';
 import type { WorldEvent } from '@features/hearthworks/engine/world';
-import {
-  driveFromEvents,
-  oneShotFor,
-} from './figure-events';
+import { driveFromEvents, oneShotFor } from './figure-events';
 
-const me =
-  {
-    kind: 'player',
-    id: 'me',
-  } as const;
-const cop =
-  {
-    kind: 'officer',
-    id: 7,
-  } as const;
+const me = {
+  kind: 'player',
+  id: 'me',
+} as const;
+const cop = {
+  kind: 'officer',
+  id: 7,
+} as const;
 
 describe('oneShotFor', () => {
   it('maps the player’s own shots, reloads, wounds and chores to clips', () => {
@@ -40,66 +31,51 @@ describe('oneShotFor', () => {
         },
         me,
       ),
-    ).toBe(
-      'shoot',
-    );
+    ).toBe('shoot');
     expect(
       oneShotFor(
         {
           type: 'reloading',
-          playerId:
-            'me',
-          weapon:
-            'pistol' as never,
+          playerId: 'me',
+          weapon: 'pistol' as never,
         },
         me,
       ),
-    ).toBe(
-      'reload',
-    );
+    ).toBe('reload');
     expect(
       oneShotFor(
         {
           type: 'playerHit',
-          playerId:
-            'me',
+          playerId: 'me',
           officerId: 7,
           damage: 3,
           hp: 90,
         },
         me,
       ),
-    ).toBe(
-      'hurt',
-    );
+    ).toBe('hurt');
     expect(
       oneShotFor(
         {
           type: 'harvested',
-          playerId:
-            'me',
+          playerId: 'me',
           item: 'wheat' as never,
           qty: 1,
         },
         me,
       ),
-    ).toBe(
-      'interact',
-    );
+    ).toBe('interact');
     expect(
       oneShotFor(
         {
           type: 'foraged',
-          playerId:
-            'me',
+          playerId: 'me',
           item: 'wheat' as never,
           qty: 1,
         },
         me,
       ),
-    ).toBe(
-      'interact',
-    );
+    ).toBe('interact');
   });
 
   it('ignores other people’s events', () => {
@@ -141,8 +117,7 @@ describe('oneShotFor', () => {
       oneShotFor(
         {
           type: 'playerHit',
-          playerId:
-            'you',
+          playerId: 'you',
           officerId: 7,
           damage: 3,
           hp: 90,
@@ -154,8 +129,7 @@ describe('oneShotFor', () => {
       oneShotFor(
         {
           type: 'joined',
-          playerId:
-            'me',
+          playerId: 'me',
         },
         me,
       ),
@@ -179,9 +153,7 @@ describe('oneShotFor', () => {
         },
         cop,
       ),
-    ).toBe(
-      'shoot',
-    );
+    ).toBe('shoot');
     expect(
       oneShotFor(
         {
@@ -210,9 +182,7 @@ describe('oneShotFor', () => {
         },
         cop,
       ),
-    ).toBe(
-      'hurt',
-    );
+    ).toBe('hurt');
     expect(
       oneShotFor(
         {
@@ -229,10 +199,8 @@ describe('oneShotFor', () => {
       oneShotFor(
         {
           type: 'reloading',
-          playerId:
-            'me',
-          weapon:
-            'pistol' as never,
+          playerId: 'me',
+          weapon: 'pistol' as never,
         },
         cop,
       ),
@@ -242,64 +210,32 @@ describe('oneShotFor', () => {
 
 describe('driveFromEvents', () => {
   it('queues clips on the drive when the store reports events, and stops when unsubscribed', () => {
-    const store =
-      createHearthworksStore(
+    const store = createHearthworksStore({
+      seed: 1,
+    });
+    const drive = newDrive();
+    const off = driveFromEvents(store, me, drive);
+    const e: WorldEvent = {
+      type: 'playerHit',
+      playerId: 'me',
+      officerId: 1,
+      damage: 1,
+      hp: 10,
+    };
+    store.setState({
+      lastEvents: [
+        e,
         {
-          seed: 1,
+          type: 'joined',
+          playerId: 'x',
         },
-      );
-    const drive =
-      newDrive();
-    const off =
-      driveFromEvents(
-        store,
-        me,
-        drive,
-      );
-    const e: WorldEvent =
-      {
-        type: 'playerHit',
-        playerId:
-          'me',
-        officerId: 1,
-        damage: 1,
-        hp: 10,
-      };
-    store.setState(
-      {
-        lastEvents:
-          [
-            e,
-            {
-              type: 'joined',
-              playerId:
-                'x',
-            },
-          ],
-      },
-    );
-    expect(
-      drive.triggers,
-    ).toEqual(
-      [
-        'hurt',
       ],
-    );
+    });
+    expect(drive.triggers).toEqual(['hurt']);
     off();
-    store.setState(
-      {
-        lastEvents:
-          [
-            e,
-          ],
-      },
-    );
-    expect(
-      drive.triggers,
-    ).toEqual(
-      [
-        'hurt',
-      ],
-    );
+    store.setState({
+      lastEvents: [e],
+    });
+    expect(drive.triggers).toEqual(['hurt']);
   });
 });

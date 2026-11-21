@@ -8,17 +8,8 @@
  */
 
 /** True when `pathname` is `base` or sits under it, on a SEGMENT boundary (`/rmhcodex` is not under `/rmhcode`). */
-export function pathUnder(
-  pathname: string,
-  base: string,
-): boolean {
-  return (
-    pathname ===
-      base ||
-    pathname.startsWith(
-      `${base}/`,
-    )
-  );
+export function pathUnder(pathname: string, base: string): boolean {
+  return pathname === base || pathname.startsWith(`${base}/`);
 }
 
 /**
@@ -27,36 +18,11 @@ export function pathUnder(
  * back for the site first.
  */
 export function isAppRoute(
-  pathname:
-    | string
-    | undefined
-    | null,
+  pathname: string | undefined | null,
   excluded: readonly string[],
   exceptions: readonly string[],
 ): boolean {
-  if (
-    !pathname
-  )
-    return false;
-  if (
-    exceptions.some(
-      (
-        b,
-      ) =>
-        pathUnder(
-          pathname,
-          b,
-        ),
-    )
-  )
-    return false;
-  return excluded.some(
-    (
-      b,
-    ) =>
-      pathUnder(
-        pathname,
-        b,
-      ),
-  );
+  if (!pathname) return false;
+  if (exceptions.some((b) => pathUnder(pathname, b))) return false;
+  return excluded.some((b) => pathUnder(pathname, b));
 }

@@ -24,63 +24,26 @@ import {
 } from './session';
 
 /** What a `rhythm-basics` lesson does, by lesson id; none for an id that is not a rhythm lesson. */
-export type RhythmActivity =
-  | 'values'
-  | 'meter'
-  | 'tap';
-const ACTIVITIES: Readonly<
-  Record<
-    string,
-    RhythmActivity
-  >
-> =
-  {
-    'rhythm-note-values':
-      'values',
-    'rhythm-44-vs-34':
-      'meter',
-    'rhythm-tap-the-beat':
-      'tap',
-  };
-export function rhythmActivity(
-  lessonId: string,
-): RhythmActivity | null {
-  return Object.hasOwn(
-    ACTIVITIES,
-    lessonId,
-  )
-    ? ACTIVITIES[
-        lessonId
-      ]
-    : null;
+export type RhythmActivity = 'values' | 'meter' | 'tap';
+const ACTIVITIES: Readonly<Record<string, RhythmActivity>> = {
+  'rhythm-note-values': 'values',
+  'rhythm-44-vs-34': 'meter',
+  'rhythm-tap-the-beat': 'tap',
+};
+export function rhythmActivity(lessonId: string): RhythmActivity | null {
+  return Object.hasOwn(ACTIVITIES, lessonId) ? ACTIVITIES[lessonId] : null;
 }
 
 /** The four note values of the lesson, longest first. */
-export type NoteValue =
-  | 'whole'
-  | 'half'
-  | 'quarter'
-  | 'eighth';
-export const NOTE_VALUES: readonly NoteValue[] =
-  [
-    'whole',
-    'half',
-    'quarter',
-    'eighth',
-  ];
+export type NoteValue = 'whole' | 'half' | 'quarter' | 'eighth';
+export const NOTE_VALUES: readonly NoteValue[] = ['whole', 'half', 'quarter', 'eighth'];
 /** How many beats each lasts (in a bar of quarter-note beats). */
-export const BEATS_OF: Readonly<
-  Record<
-    NoteValue,
-    number
-  >
-> =
-  {
-    whole: 4,
-    half: 2,
-    quarter: 1,
-    eighth: 0.5,
-  };
+export const BEATS_OF: Readonly<Record<NoteValue, number>> = {
+  whole: 4,
+  half: 2,
+  quarter: 1,
+  eighth: 0.5,
+};
 /** Questions in the note-values lesson: one per value. */
 export const VALUE_QUESTIONS = 4;
 /** Questions in the 4/4-versus-3/4 lesson. */
@@ -93,59 +56,22 @@ export interface ValueAnswer {
   beats: number;
 }
 
-export function dealValues(
-  rand: () => number,
-): ValueQuestion[] {
-  return shuffle(
-    [
-      ...NOTE_VALUES,
-    ],
-    rand,
-  ).map(
-    (
-      value,
-    ) => ({
-      value,
-    }),
-  );
+export function dealValues(rand: () => number): ValueQuestion[] {
+  return shuffle([...NOTE_VALUES], rand).map((value) => ({
+    value,
+  }));
 }
 
-const valueStep =
-  sessionStep<
-    ValueQuestion,
-    ValueAnswer
-  >(
-    (
-      q,
-      a,
-    ) =>
-      BEATS_OF[
-        q
-          .value
-      ] ===
-      a.beats,
-  );
+const valueStep = sessionStep<ValueQuestion, ValueAnswer>((q, a) => BEATS_OF[q.value] === a.beats);
 
 export function createValueMachine(
   questions: ValueQuestion[],
-): Machine<
-  SessionState<
-    ValueQuestion,
-    ValueAnswer
-  >,
-  SessionEvent<ValueAnswer>,
-  SessionEffect
-> {
-  return createSessionMachine(
-    questions,
-    valueStep,
-  );
+): Machine<SessionState<ValueQuestion, ValueAnswer>, SessionEvent<ValueAnswer>, SessionEffect> {
+  return createSessionMachine(questions, valueStep);
 }
 
 /** How many beats a bar of the pattern has. */
-export type BeatsPerBar =
-  | 3
-  | 4;
+export type BeatsPerBar = 3 | 4;
 
 export interface MeterQuestion {
   beatsPerBar: BeatsPerBar;
@@ -158,68 +84,25 @@ export interface MeterAnswer {
  * `count` questions, the two meters going round (so neither is ever more than one question ahead
  * of the other, and a coin-flip cannot get them all), in a random order.
  */
-export function dealMeters(
-  count: number,
-  rand: () => number,
-): MeterQuestion[] {
-  if (
-    !Number.isFinite(
-      count,
-    ) ||
-    count <
-      1
-  )
-    return [];
-  const r =
-    rand();
-  const first: BeatsPerBar =
-    Number.isFinite(
-      r,
-    ) &&
-    r >=
-      0.5
-      ? 4
-      : 3;
-  const meters =
-    Array.from(
-      {
-        length:
-          Math.floor(
-            count,
-          ),
-      },
-      (
-        _,
-        i,
-      ): BeatsPerBar => {
-        const odd =
-          i %
-            2 ===
-          1;
-        return odd ===
-          (first ===
-            3)
-          ? 4
-          : 3;
-      },
-    );
-  return shuffle(
-    meters,
-    rand,
-  ).map(
-    (
-      beatsPerBar,
-    ) => ({
-      beatsPerBar,
-    }),
+export function dealMeters(count: number, rand: () => number): MeterQuestion[] {
+  if (!Number.isFinite(count) || count < 1) return [];
+  const r = rand();
+  const first: BeatsPerBar = Number.isFinite(r) && r >= 0.5 ? 4 : 3;
+  const meters = Array.from(
+    {
+      length: Math.floor(count),
+    },
+    (_, i): BeatsPerBar => {
+      const odd = i % 2 === 1;
+      return odd === (first === 3) ? 4 : 3;
+    },
   );
+  return shuffle(meters, rand).map((beatsPerBar) => ({
+    beatsPerBar,
+  }));
 }
 
-type Base =
-  SessionState<
-    MeterQuestion,
-    MeterAnswer
-  >;
+type Base = SessionState<MeterQuestion, MeterAnswer>;
 
 export type MeterState =
   | Exclude<
@@ -256,18 +139,7 @@ export type MeterEffect =
       beatsPerBar: BeatsPerBar;
     };
 
-const meterBase =
-  sessionStep<
-    MeterQuestion,
-    MeterAnswer
-  >(
-    (
-      q,
-      a,
-    ) =>
-      q.beatsPerBar ===
-      a.beatsPerBar,
-  );
+const meterBase = sessionStep<MeterQuestion, MeterAnswer>((q, a) => q.beatsPerBar === a.beatsPerBar);
 
 function meterStep(
   s: MeterState,
@@ -276,132 +148,63 @@ function meterStep(
   state: MeterState;
   effects: MeterEffect[];
 } {
-  const same =
-    {
-      state:
-        s,
-      effects:
-        [] as MeterEffect[],
-    };
-  if (
-    e.type ===
-    'replay'
-  ) {
-    if (
-      s.kind !==
-        'asking' &&
-      s.kind !==
-        'feedback'
-    )
-      return same;
-    const q =
-      s
-        .cards[
-        s
-          .index
-      ];
-    if (
-      !q
-    )
-      return same;
+  const same = {
+    state: s,
+    effects: [] as MeterEffect[],
+  };
+  if (e.type === 'replay') {
+    if (s.kind !== 'asking' && s.kind !== 'feedback') return same;
+    const q = s.cards[s.index];
+    if (!q) return same;
     return {
-      state:
-        s,
-      effects:
-        [
-          {
-            type: 'play',
-            index:
-              s.index,
-            beatsPerBar:
-              q.beatsPerBar,
-          },
-        ],
-    };
-  }
-  if (
-    e.type ===
-    'played'
-  ) {
-    if (
-      s.kind !==
-        'asking' ||
-      s.index !==
-        e.index ||
-      s.heard
-    )
-      return same;
-    return {
-      state:
+      state: s,
+      effects: [
         {
-          ...s,
-          heard: true,
+          type: 'play',
+          index: s.index,
+          beatsPerBar: q.beatsPerBar,
         },
-      effects:
-        [],
+      ],
     };
   }
-  if (
-    e.type ===
-      'answer' &&
-    s.kind ===
-      'asking' &&
-    !s.heard
-  )
-    return same;
-  const r =
-    meterBase(
-      s,
-      e,
-    );
-  if (
-    r.state ===
-    s
-  )
+  if (e.type === 'played') {
+    if (s.kind !== 'asking' || s.index !== e.index || s.heard) return same;
     return {
-      state:
-        s,
-      effects:
-        r.effects,
+      state: {
+        ...s,
+        heard: true,
+      },
+      effects: [],
+    };
+  }
+  if (e.type === 'answer' && s.kind === 'asking' && !s.heard) return same;
+  const r = meterBase(s, e);
+  if (r.state === s)
+    return {
+      state: s,
+      effects: r.effects,
     };
   // A question reached by Next starts unheard.
-  const state =
-    (
-      r
-        .state
-        .kind ===
-      'asking'
-        ? {
-            ...r.state,
-            heard: false,
-          }
-        : r.state
-    ) as MeterState;
+  const state = (
+    r.state.kind === 'asking'
+      ? {
+          ...r.state,
+          heard: false,
+        }
+      : r.state
+  ) as MeterState;
   return {
     state,
-    effects:
-      r.effects,
+    effects: r.effects,
   };
 }
 
-export function createMeterMachine(
-  questions: MeterQuestion[],
-): Machine<
-  MeterState,
-  MeterEvent,
-  MeterEffect
-> {
+export function createMeterMachine(questions: MeterQuestion[]): Machine<MeterState, MeterEvent, MeterEffect> {
   return {
-    initial:
-      {
-        ...sessionInitial<
-          MeterQuestion,
-          MeterAnswer
-        >(
-          questions,
-        ),
-        heard: false,
-      } as MeterState,
+    initial: {
+      ...sessionInitial<MeterQuestion, MeterAnswer>(questions),
+      heard: false,
+    } as MeterState,
     step: meterStep,
   };
 }

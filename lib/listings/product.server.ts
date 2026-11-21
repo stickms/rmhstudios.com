@@ -206,10 +206,7 @@ export async function buyProduct(
  * `/store/$userid` route loader so the storefront is server-rendered /
  * prefetched instead of fetched client-side on mount.
  */
-export async function listStorefront(
-  userid: string,
-  viewerId: string | null,
-): Promise<StorefrontResult | null> {
+export async function listStorefront(userid: string, viewerId: string | null): Promise<StorefrontResult | null> {
   const creator = await prisma.user.findFirst({
     where: { OR: [{ id: userid }, { handle: userid }] },
     select: userDisplaySelect,

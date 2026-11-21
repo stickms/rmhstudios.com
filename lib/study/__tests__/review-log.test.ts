@@ -82,9 +82,9 @@ describe('saveReview', () => {
 
   it('rolls the state back when the log write fails', async () => {
     failLog.on = true;
-    await expect(
-      saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next }),
-    ).rejects.toThrow('log write failed');
+    await expect(saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next })).rejects.toThrow(
+      'log write failed',
+    );
     expect(db.reviews).toHaveLength(0);
     expect(db.logs).toHaveLength(0);
   });

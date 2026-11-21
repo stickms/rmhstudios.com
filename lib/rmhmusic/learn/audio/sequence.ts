@@ -24,11 +24,7 @@
 import { mulberry32 } from '@/lib/core/rng';
 import { strumOffsets } from './instruments/chord';
 import { INSTRUMENT_CATALOG } from './instruments/catalog';
-import {
-  playNote,
-  soundStatus,
-  type PlayOptions,
-} from './voice';
+import { playNote, soundStatus, type PlayOptions } from './voice';
 
 /**
  * How long one note of a melody sounds (ms). The synth's value: a sampled instrument passes its
@@ -47,23 +43,10 @@ export const INTERVAL_GAP_MS = 750;
  * The strum's humanise source when the caller passes none: seeded by the chord's notes, so the same
  * chord always strums the same way (plan §5.3: a deterministic +-3 ms from a seeded `rand`).
  */
-export function chordRand(
-  midis: readonly number[],
-): () => number {
+export function chordRand(midis: readonly number[]): () => number {
   let seed = 0x9e3779b9;
-  for (const m of midis)
-    seed =
-      Math.imul(
-        seed ^
-          Math.round(
-            m,
-          ),
-        0x85ebca6b,
-      ) >>>
-      0;
-  return mulberry32(
-    seed,
-  );
+  for (const m of midis) seed = Math.imul(seed ^ Math.round(m), 0x85ebca6b) >>> 0;
+  return mulberry32(seed);
 }
 
 export interface SequenceOptions extends PlayOptions {
@@ -73,9 +56,7 @@ export interface SequenceOptions extends PlayOptions {
   /** 0..1, for a strummed chord's humanise; default {@link chordRand} of the notes. */
   rand?: () => number;
   /** Note `index` (of the notes that are numbers) has started sounding. */
-  onNoteStart?: (
-    index: number,
-  ) => void;
+  onNoteStart?: (index: number) => void;
   /** Every note has started: the whole sound has been heard. Once; never after `cancel`. */
   onAllStarted?: () => void;
 }
@@ -87,12 +68,10 @@ export interface PlayingSequence {
   cancel(): void;
 }
 
-const NOT_STARTED: PlayingSequence =
-  {
-    started: false,
-    cancel:
-      () => {},
-  };
+const NOT_STARTED: PlayingSequence = {
+  started: false,
+  cancel: () => {},
+};
 
 export function playSequence(
   midis: readonly number[],
@@ -100,275 +79,88 @@ export function playSequence(
    * The gap between one note's start and the next (ms): one for every note, 0 for a chord; or a
    * melody's own gap after each note (`gapMs[i]` from note i to note i + 1), never a chord.
    */
-  gapMs:
-    | number
-    | readonly number[],
+  gapMs: number | readonly number[],
   opts: SequenceOptions = {},
 ): PlayingSequence {
-  if (
-    soundStatus() !==
-    'ready'
-  )
-    return NOT_STARTED;
-  const {
-    holdMs = DEFAULT_HOLD_MS,
-    holdsMs,
-    onNoteStart,
-    onAllStarted,
-    rand,
-    ...voice
-  } = opts;
-  const notes =
-    midis.filter(
-      Number.isFinite,
-    );
-  if (
-    notes.length ===
-    0
-  )
-    return NOT_STARTED;
-  const melody =
-    typeof gapMs !==
-    'number';
-  const gapAfter =
-    (
-      i: number,
-    ): number =>
-      Math.max(
-        0,
-        (melody
-          ? gapMs[
-              i
-            ]
-          : gapMs) ??
-          0,
-      );
+  if (soundStatus() !== 'ready') return NOT_STARTED;
+  const { holdMs = DEFAULT_HOLD_MS, holdsMs, onNoteStart, onAllStarted, rand, ...voice } = opts;
+  const notes = midis.filter(Number.isFinite);
+  if (notes.length === 0) return NOT_STARTED;
+  const melody = typeof gapMs !== 'number';
+  const gapAfter = (i: number): number => Math.max(0, (melody ? gapMs[i] : gapMs) ?? 0);
   // A melody is never a chord, whatever its gaps; `gap` only decides chord or one-by-one.
-  const gap =
-    melody
-      ? 1
-      : gapAfter(
-          0,
-        );
-  const timers =
-    new Set<
-      ReturnType<
-        typeof setTimeout
-      >
-    >();
-  const releases =
-    new Set<
-      () => void
-    >();
+  const gap = melody ? 1 : gapAfter(0);
+  const timers = new Set<ReturnType<typeof setTimeout>>();
+  const releases = new Set<() => void>();
   let cancelled = false;
   let begun = 0;
   // A chord (gap 0): every voice is trimmed by 1/sqrt(n), and a strummed instrument (the guitar)
   // spreads its strings a few ms apart, low to high. Each voice reports its own start.
-  const chord =
-    gap ===
-      0 &&
-    notes.length >
-      1;
-  const strumMs =
-    voice.instrument
-      ? INSTRUMENT_CATALOG[
-          voice
-            .instrument
-        ]
-          .strumMs
-      : 0;
-  const offsets =
-    chord
-      ? strumOffsets(
-          notes.length,
-          strumMs,
-          rand ??
-            chordRand(
-              notes,
-            ),
-        )
-      : [];
-  const order =
-    chord
-      ? notes
-          .map(
-            (
-              _,
-              i,
-            ) =>
-              i,
-          )
-          .sort(
-            (
-              a,
-              b,
-            ) =>
-              notes[
-                a
-              ] -
-              notes[
-                b
-              ],
-          )
-      : [];
+  const chord = gap === 0 && notes.length > 1;
+  const strumMs = voice.instrument ? INSTRUMENT_CATALOG[voice.instrument].strumMs : 0;
+  const offsets = chord ? strumOffsets(notes.length, strumMs, rand ?? chordRand(notes)) : [];
+  const order = chord ? notes.map((_, i) => i).sort((a, b) => notes[a] - notes[b]) : [];
 
   /** Ask for note `i`; everything else happens when the voice says it has started. */
-  const request =
-    (
-      i: number,
-    ) => {
-      let release: () => void =
-        () => {};
-      let once = false;
-      // One handle for the note whether it is let go by its hold or by `cancel`.
-      const letGo =
-        () => {
-          releases.delete(
-            letGo,
-          );
-          release();
-        };
-      releases.add(
-        letGo,
-      );
-      release =
-        playNote(
-          notes[
-            i
-          ],
-          {
-            ...voice,
-            ...(chord
-              ? {
-                  chordOf:
-                    notes.length,
-                  delayS:
-                    offsets[
-                      order.indexOf(
-                        i,
-                      )
-                    ],
-                }
-              : {}),
-            onStart:
-              () => {
-                if (
-                  cancelled ||
-                  once
-                )
-                  return;
-                once = true;
-                begun++;
-                const hold =
-                  setTimeout(
-                    () => {
-                      timers.delete(
-                        hold,
-                      );
-                      letGo();
-                    },
-                    holdsMs?.[
-                      i
-                    ] ??
-                      holdMs,
-                  );
-                timers.add(
-                  hold,
-                );
-                onNoteStart?.(
-                  i,
-                );
-                if (
-                  begun ===
-                  notes.length
-                )
-                  onAllStarted?.();
-                else if (
-                  gap >
-                    0 &&
-                  i +
-                    1 <
-                    notes.length
-                ) {
-                  const next =
-                    setTimeout(
-                      () => {
-                        timers.delete(
-                          next,
-                        );
-                        if (
-                          !cancelled
-                        )
-                          request(
-                            i +
-                              1,
-                          );
-                      },
-                      gapAfter(
-                        i,
-                      ),
-                    );
-                  timers.add(
-                    next,
-                  );
-                }
-              },
-          },
-        );
+  const request = (i: number) => {
+    let release: () => void = () => {};
+    let once = false;
+    // One handle for the note whether it is let go by its hold or by `cancel`.
+    const letGo = () => {
+      releases.delete(letGo);
+      release();
     };
+    releases.add(letGo);
+    release = playNote(notes[i], {
+      ...voice,
+      ...(chord
+        ? {
+            chordOf: notes.length,
+            delayS: offsets[order.indexOf(i)],
+          }
+        : {}),
+      onStart: () => {
+        if (cancelled || once) return;
+        once = true;
+        begun++;
+        const hold = setTimeout(() => {
+          timers.delete(hold);
+          letGo();
+        }, holdsMs?.[i] ?? holdMs);
+        timers.add(hold);
+        onNoteStart?.(i);
+        if (begun === notes.length) onAllStarted?.();
+        else if (gap > 0 && i + 1 < notes.length) {
+          const next = setTimeout(() => {
+            timers.delete(next);
+            if (!cancelled) request(i + 1);
+          }, gapAfter(i));
+          timers.add(next);
+        }
+      },
+    });
+  };
 
-  if (
-    gap >
-    0
-  )
-    request(
-      0,
-    );
-  else
-    notes.forEach(
-      (
-        _,
-        i,
-      ) =>
-        request(
-          i,
-        ),
-    );
+  if (gap > 0) request(0);
+  else notes.forEach((_, i) => request(i));
 
   return {
     started: true,
     cancel() {
-      if (
-        cancelled
-      )
-        return;
+      if (cancelled) return;
       cancelled = true;
-      for (const timer of timers)
-        clearTimeout(
-          timer,
-        );
+      for (const timer of timers) clearTimeout(timer);
       timers.clear();
-      for (const letGo of [
-        ...releases,
-      ])
-        letGo();
+      for (const letGo of [...releases]) letGo();
       releases.clear();
     },
   };
 }
 
 /** All the notes at once. */
-export function playChord(
-  midis: readonly number[],
-  opts: SequenceOptions = {},
-): PlayingSequence {
-  return playSequence(
-    midis,
-    0,
-    {
-      holdMs:
-        CHORD_HOLD_MS,
-      ...opts,
-    },
-  );
+export function playChord(midis: readonly number[], opts: SequenceOptions = {}): PlayingSequence {
+  return playSequence(midis, 0, {
+    holdMs: CHORD_HOLD_MS,
+    ...opts,
+  });
 }

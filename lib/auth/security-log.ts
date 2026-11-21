@@ -81,7 +81,10 @@ export function sanitizeDetail(detail: unknown): SecurityEventDetail | null {
   const providerId = clip(src.providerId);
   if (providerId) out.providerId = providerId;
   if (Array.isArray(src.providerIds)) {
-    const ids = src.providerIds.map(clip).filter((id): id is string => !!id).slice(0, 10);
+    const ids = src.providerIds
+      .map(clip)
+      .filter((id): id is string => !!id)
+      .slice(0, 10);
     if (ids.length) out.providerIds = ids;
   }
   const oldHandle = clip(src.oldHandle);
@@ -150,9 +153,7 @@ export function describeDetail(detail: unknown): string {
 }
 
 export function csvRow(row: CsvEventRow): string {
-  return [row.createdAt.toISOString(), row.kind, row.device, describeDetail(row.detail)]
-    .map(csvCell)
-    .join(',');
+  return [row.createdAt.toISOString(), row.kind, row.device, describeDetail(row.detail)].map(csvCell).join(',');
 }
 
 export function toCsv(rows: readonly CsvEventRow[]): string {

@@ -27,12 +27,7 @@ import { openCommandPalette } from '@/components/site/command-palette-bus';
 import { useSession } from '@/components/Providers';
 import { useEffectiveShortcuts } from '@/hooks/useEffectiveShortcuts';
 import { SEQUENCE_TIMEOUT_MS, isTypingTarget, type Shortcut } from '@/lib/shortcuts/registry';
-import {
-  eventMatchesKeystroke,
-  isModifierKey,
-  keyLabel,
-  type KeyPlatform,
-} from '@/lib/shortcuts/bindings';
+import { eventMatchesKeystroke, isModifierKey, keyLabel, type KeyPlatform } from '@/lib/shortcuts/bindings';
 import { useKeyboardPrefsStore } from '@/stores/keyboardPrefsStore';
 
 const ComposeModal = lazy(() =>
@@ -102,9 +97,7 @@ const SITE_ACTION_IDS: ReadonlySet<string> = new Set([
 ]);
 
 export function detectKeyPlatform(): KeyPlatform {
-  return typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
-    ? 'mac'
-    : 'other';
+  return typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? 'mac' : 'other';
 }
 
 function Kbd({ children }: { children: React.ReactNode }) {
@@ -115,22 +108,12 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ShortcutRow({
-  keys,
-  label,
-  platform,
-}: {
-  keys: string[];
-  label: string;
-  platform: KeyPlatform;
-}) {
+function ShortcutRow({ keys, label, platform }: { keys: string[]; label: string; platform: KeyPlatform }) {
   return (
     <li className="flex items-center justify-between gap-4 py-1.5">
       <span className="text-sm text-site-text-muted">{label}</span>
       <span className="flex items-center gap-1">
-        {keys.flatMap((step, i) =>
-          keyLabel(step, platform).map((cap, j) => <Kbd key={`${i}-${j}`}>{cap}</Kbd>),
-        )}
+        {keys.flatMap((step, i) => keyLabel(step, platform).map((cap, j) => <Kbd key={`${i}-${j}`}>{cap}</Kbd>))}
       </span>
     </li>
   );
@@ -188,10 +171,7 @@ export function KeyboardShortcuts() {
   // its own `run`, except games (each full-screen game owns its controls) and
   // `site.palette` (CommandPalette binds it from the same effective keys).
   const dispatchable = useMemo(
-    () =>
-      effective.filter(
-        (s) => !s.scope.startsWith('game:') && (s.run !== undefined || SITE_ACTION_IDS.has(s.id)),
-      ),
+    () => effective.filter((s) => !s.scope.startsWith('game:') && (s.run !== undefined || SITE_ACTION_IDS.has(s.id))),
     [effective],
   );
 
@@ -219,8 +199,7 @@ export function KeyboardShortcuts() {
       const live = pending && Date.now() - pending.at < SEQUENCE_TIMEOUT_MS ? pending : null;
       pending = null;
       // Mid-sequence the next key continues it; a key that fits nothing starts afresh.
-      const tryFrom = (list: Shortcut[], step: number) =>
-        list.filter((s) => eventMatchesKeystroke(s.keys[step], e));
+      const tryFrom = (list: Shortcut[], step: number) => list.filter((s) => eventMatchesKeystroke(s.keys[step], e));
       let step = live ? live.step : 0;
       let hits = tryFrom(live ? live.candidates : dispatchable, step);
       if (hits.length === 0 && live) {
@@ -253,9 +232,7 @@ export function KeyboardShortcuts() {
   }, []);
 
   const listed = effective.filter(
-    (s) =>
-      !s.scope.startsWith('game:') &&
-      (s.id === 'site.compose' ? signedIn : s.when ? s.when() : true),
+    (s) => !s.scope.startsWith('game:') && (s.id === 'site.compose' ? signedIn : s.when ? s.when() : true),
   );
   const general = listed.filter((s) => !s.id.startsWith('site.go.'));
   const goTo = listed.filter((s) => s.id.startsWith('site.go.'));
@@ -280,10 +257,7 @@ export function KeyboardShortcuts() {
       )}
       <DialogPrimitive.Root open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay
-            data-motion="fade"
-            className="fixed inset-0 z-hub-overlay glass-scrim"
-          />
+          <DialogPrimitive.Overlay data-motion="fade" className="fixed inset-0 z-hub-overlay glass-scrim" />
           <DialogPrimitive.Content
             aria-describedby={undefined}
             data-motion="rise"

@@ -18,25 +18,17 @@ export interface MusicSocialPrefs {
   friends: boolean;
 }
 
-export const DEFAULT_SOCIAL: Readonly<MusicSocialPrefs> =
-  {
-    board: false,
-    friends: false,
-  };
+export const DEFAULT_SOCIAL: Readonly<MusicSocialPrefs> = {
+  board: false,
+  friends: false,
+};
 
 /** The switches from a stored row (or none). */
-export function readSocial(
-  row:
-    | MusicSocialPrefs
-    | null
-    | undefined,
-): MusicSocialPrefs {
+export function readSocial(row: MusicSocialPrefs | null | undefined): MusicSocialPrefs {
   return row
     ? {
-        board:
-          row.board,
-        friends:
-          row.friends,
+        board: row.board,
+        friends: row.friends,
       }
     : {
         ...DEFAULT_SOCIAL,

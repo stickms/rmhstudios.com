@@ -4,13 +4,7 @@
  * so these pin that no stored id changes meaning.
  */
 import { describe, expect, it } from 'vitest';
-import {
-  SEASON_EPOCH,
-  SEASON_MS,
-  seasonBounds,
-  seasonNumberAt,
-  seasonWindowAt,
-} from '@/lib/seasons/clock';
+import { SEASON_EPOCH, SEASON_MS, seasonBounds, seasonNumberAt, seasonWindowAt } from '@/lib/seasons/clock';
 import { buildSeason, currentSeasonId } from '@/lib/battlepass/season';
 import {
   LAST_LEGACY_SEASON,

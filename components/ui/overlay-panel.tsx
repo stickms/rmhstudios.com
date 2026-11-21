@@ -51,10 +51,7 @@
  * faking them badly is worse than `Dialog` doing them properly.
  */
 
-import {
-  useEffect,
-  type ReactNode,
-} from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
@@ -70,99 +67,44 @@ export interface OverlayPanelProps {
   children: ReactNode;
 }
 
-export function OverlayPanel({
-  open,
-  onClose,
-  closeLabel,
-  className,
-  children,
-}: OverlayPanelProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-ui',
-    );
+export function OverlayPanel({ open, onClose, closeLabel, className, children }: OverlayPanelProps) {
+  const { t } = useTranslation('c-ui');
 
   // V8: the chrome reflects the panel and its scrim while they are on screen.
-  useOverlaySignal(
-    open,
-  );
+  useOverlaySignal(open);
 
   useEffect(() => {
-    if (
-      !open
-    )
-      return;
-    const onKey =
-      (
-        e: KeyboardEvent,
-      ) => {
-        if (
-          e.key !==
-          'Escape'
-        )
-          return;
-        e.stopPropagation();
-        onClose();
-      };
-    document.addEventListener(
-      'keydown',
-      onKey,
-      true,
-    );
-    return () =>
-      document.removeEventListener(
-        'keydown',
-        onKey,
-        true,
-      );
-  }, [
-    open,
-    onClose,
-  ]);
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      onClose();
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [open, onClose]);
 
-  if (
-    !open ||
-    typeof document ===
-      'undefined'
-  )
-    return null;
+  if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
     // z-50 is the body-level dialog band (globals.css §5.6). The callers'
     // `z-[100]` was not "higher" — it was a number measured inside a stacking
     // context it could never leave. At body level 50 is above the shell, which
     // `.radial-shell`'s `isolation: isolate` caps, and level with Dialog/Sheet.
-    <div
-      className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center p-4',
-        className,
-      )}
-    >
+    <div className={cn('fixed inset-0 z-50 flex items-center justify-center p-4', className)}>
       <button
         type="button"
-        tabIndex={
-          -1
-        }
+        tabIndex={-1}
         aria-label={
           closeLabel ??
-          t(
-            'close',
-            {
-              defaultValue:
-                'Close',
-            },
-          )
+          t('close', {
+            defaultValue: 'Close',
+          })
         }
         className="absolute inset-0 bg-site-media-scrim-strong"
-        onClick={
-          onClose
-        }
+        onClick={onClose}
       />
-      {
-        children
-      }
+      {children}
     </div>,
     document.body,
   );

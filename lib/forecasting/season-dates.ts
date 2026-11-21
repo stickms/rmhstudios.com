@@ -9,8 +9,7 @@ export function seasonDates(
   input: { startsAt?: string | undefined; endsAt?: string | undefined },
   now: Date = new Date(),
 ): { startsAt: Date; endsAt: Date } {
-  if (input.startsAt && input.endsAt)
-    return { startsAt: new Date(input.startsAt), endsAt: new Date(input.endsAt) };
+  if (input.startsAt && input.endsAt) return { startsAt: new Date(input.startsAt), endsAt: new Date(input.endsAt) };
   const { start, end } = seasonWindowAt(now);
   return { startsAt: start, endsAt: end };
 }

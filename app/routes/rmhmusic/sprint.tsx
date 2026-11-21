@@ -14,28 +14,15 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { SprintGame } from '@/components/rmhmusic/learn/sprint/SprintGame';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
-export const Route =
-  createFileRoute(
-    '/rmhmusic/sprint',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'RMHMusic Sight reading',
-        ),
-      component:
-        SprintRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhmusic/sprint')({
+  head: () => noindexHead('RMHMusic Sight reading'),
+  component: SprintRoute,
+});
 
 function SprintRoute() {
   return (
     <GameErrorBoundary gameName="RMH Music">
-      <ArrivalSuspense
-        fallback={
-          <GameLoadingFallback />
-        }
-      >
+      <ArrivalSuspense fallback={<GameLoadingFallback />}>
         <SprintGame />
       </ArrivalSuspense>
     </GameErrorBoundary>

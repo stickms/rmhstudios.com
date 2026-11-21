@@ -262,9 +262,7 @@ export function StatsPage({
                 }}
                 bars={stats.forecast.map((f) => ({ label: shortDate(f.date), value: f.count }))}
               />
-              <p className="t-meta">
-                {t('forecast-note', { defaultValue: 'Overdue cards count on today.' })}
-              </p>
+              <p className="t-meta">{t('forecast-note', { defaultValue: 'Overdue cards count on today.' })}</p>
             </section>
 
             <section className="space-y-3 border-t border-site-border pt-6" aria-labelledby="stats-retention">
@@ -291,9 +289,7 @@ export function StatsPage({
                 {t('decks-heading', { defaultValue: 'Decks' })}
               </h2>
               {rows.length === 0 ? (
-                <p className="t-body text-site-text-muted">
-                  {t('decks-none', { defaultValue: 'No decks to show.' })}
-                </p>
+                <p className="t-body text-site-text-muted">{t('decks-none', { defaultValue: 'No decks to show.' })}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[34rem] border-collapse text-left">

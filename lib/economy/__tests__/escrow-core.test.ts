@@ -160,9 +160,9 @@ describe('holdEscrow', () => {
   });
 
   it('propagates an overdraft from the ledger', async () => {
-    await expect(
-      holdEscrow('tx', ledger, { userId: 'a', amount: 1000, movement: { key: 'hold:x' } }),
-    ).rejects.toThrow('INSUFFICIENT_COINS');
+    await expect(holdEscrow('tx', ledger, { userId: 'a', amount: 1000, movement: { key: 'hold:x' } })).rejects.toThrow(
+      'INSUFFICIENT_COINS',
+    );
     expect(bal('a')).toBe(100);
   });
 });
@@ -316,7 +316,11 @@ describe('readSettledKeys', () => {
   });
 
   it('returns the values of the keys the ledger holds, in row order', async () => {
-    const { db, calls } = fakeDb([{ idempotencyKey: 'bj-return:s2' }, { idempotencyKey: null }, { idempotencyKey: 'bj-payout:s1' }]);
+    const { db, calls } = fakeDb([
+      { idempotencyKey: 'bj-return:s2' },
+      { idempotencyKey: null },
+      { idempotencyKey: 'bj-payout:s1' },
+    ]);
     const byKey = new Map([
       ['bj-payout:s1', 's1:paid'],
       ['bj-return:s1', 's1:returned'],

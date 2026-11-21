@@ -1,9 +1,6 @@
 // @ts-check
 import { createRequire } from 'node:module';
-import {
-  dirname,
-  join,
-} from 'node:path';
+import { dirname, join } from 'node:path';
 
 /**
  * Two framer-motion internals the site's own `<LazyMotion>` needs
@@ -21,27 +18,10 @@ import {
  * Types: lib/framer-motion-internal.d.ts.
  */
 /** @type {Record<string, string>} */
-export const FRAMER_MOTION_INTERNALS =
-  (() => {
-    const dir =
-      dirname(
-        createRequire(
-          import.meta
-            .url,
-        ).resolve(
-          'framer-motion/package.json',
-        ),
-      );
-    return {
-      'framer-motion-internal/lazy-context':
-        join(
-          dir,
-          'dist/es/context/LazyContext.mjs',
-        ),
-      'framer-motion-internal/load-features':
-        join(
-          dir,
-          'dist/es/motion/features/load-features.mjs',
-        ),
-    };
-  })();
+export const FRAMER_MOTION_INTERNALS = (() => {
+  const dir = dirname(createRequire(import.meta.url).resolve('framer-motion/package.json'));
+  return {
+    'framer-motion-internal/lazy-context': join(dir, 'dist/es/context/LazyContext.mjs'),
+    'framer-motion-internal/load-features': join(dir, 'dist/es/motion/features/load-features.mjs'),
+  };
+})();

@@ -7,15 +7,9 @@ import type { ReactionRow } from '@/lib/social/reactions';
 
 export interface Sender {
   id: string;
-  name:
-    | string
-    | null;
-  handle:
-    | string
-    | null;
-  image:
-    | string
-    | null;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
 }
 
 export interface Poll {
@@ -25,9 +19,7 @@ export interface Poll {
     votes: number;
   }[];
   totalVotes: number;
-  myVote:
-    | number
-    | null;
+  myVote: number | null;
 }
 
 export interface Msg {
@@ -35,9 +27,7 @@ export interface Msg {
   content: string;
   createdAt: string;
   sender: Sender;
-  gifUrl?:
-    | string
-    | null;
+  gifUrl?: string | null;
   imageUrls?: string[];
   imageAlts?: string[];
   poll?: Poll | null;
@@ -47,9 +37,7 @@ export interface Msg {
   meta?: unknown;
   forwardCount?: number;
   replyCount?: number;
-  expiresAt?:
-    | string
-    | null;
+  expiresAt?: string | null;
 }
 
 export interface Group {

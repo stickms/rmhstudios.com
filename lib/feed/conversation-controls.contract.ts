@@ -15,9 +15,7 @@ import type {
 export interface MuteState {
   mode: MuteMode;
   /** ISO time a timed mute ends; null for none, for mentions only and for an open-ended mute. */
-  muteUntil:
-    | string
-    | null;
+  muteUntil: string | null;
   /** Muted until the member turns it back on. */
   indefinite: boolean;
 }
@@ -34,90 +32,54 @@ export interface MutedConversation extends MuteState {
   } | null;
 }
 
-export const getConversationMuteApi =
-  endpoint<{
-    res: MuteState;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmharks/$id/mute',
-    },
-  );
+export const getConversationMuteApi = endpoint<{
+  res: MuteState;
+}>()({
+  method: 'GET',
+  path: '/api/rmharks/$id/mute',
+});
 
-export const setConversationMuteApi =
-  endpoint<{
-    body: z.infer<
-      typeof muteConversationBody
-    >;
-    res: MuteState;
-  }>()(
-    {
-      method:
-        'PUT',
-      path: '/api/rmharks/$id/mute',
-    },
-  );
+export const setConversationMuteApi = endpoint<{
+  body: z.infer<typeof muteConversationBody>;
+  res: MuteState;
+}>()({
+  method: 'PUT',
+  path: '/api/rmharks/$id/mute',
+});
 
-export const clearConversationMuteApi =
-  endpoint<{
-    res: MuteState;
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/rmharks/$id/mute',
-    },
-  );
+export const clearConversationMuteApi = endpoint<{
+  res: MuteState;
+}>()({
+  method: 'DELETE',
+  path: '/api/rmharks/$id/mute',
+});
 
-export const pinReplyApi =
-  endpoint<{
-    body: z.infer<
-      typeof pinReplyBody
-    >;
-    res: {
-      pinnedReplyId:
-        | string
-        | null;
-    };
-  }>()(
-    {
-      method:
-        'PUT',
-      path: '/api/rmharks/$id/pin-reply',
-    },
-  );
+export const pinReplyApi = endpoint<{
+  body: z.infer<typeof pinReplyBody>;
+  res: {
+    pinnedReplyId: string | null;
+  };
+}>()({
+  method: 'PUT',
+  path: '/api/rmharks/$id/pin-reply',
+});
 
-export const unpinReplyApi =
-  endpoint<{
-    res: {
-      pinnedReplyId:
-        | string
-        | null;
-    };
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/rmharks/$id/pin-reply',
-    },
-  );
+export const unpinReplyApi = endpoint<{
+  res: {
+    pinnedReplyId: string | null;
+  };
+}>()({
+  method: 'DELETE',
+  path: '/api/rmharks/$id/pin-reply',
+});
 
-export const listMutedConversationsApi =
-  endpoint<{
-    query: z.infer<
-      typeof mutedConversationsQuery
-    >;
-    res: {
-      items: MutedConversation[];
-      nextCursor:
-        | string
-        | null;
-    };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/settings/muted-conversations',
-    },
-  );
+export const listMutedConversationsApi = endpoint<{
+  query: z.infer<typeof mutedConversationsQuery>;
+  res: {
+    items: MutedConversation[];
+    nextCursor: string | null;
+  };
+}>()({
+  method: 'GET',
+  path: '/api/settings/muted-conversations',
+});

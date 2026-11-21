@@ -77,7 +77,10 @@ describe('no unkeyed identity hashing', () => {
 
   it('every allowlist entry still exists and still needs its entry', () => {
     for (const rel of Object.keys(ALLOWED)) {
-      expect(IDENTITY_HASH.test(readFileSync(join(ROOT, rel), 'utf8')), `${rel} no longer hashes an identity: remove it`).toBe(true);
+      expect(
+        IDENTITY_HASH.test(readFileSync(join(ROOT, rel), 'utf8')),
+        `${rel} no longer hashes an identity: remove it`,
+      ).toBe(true);
     }
   });
 });

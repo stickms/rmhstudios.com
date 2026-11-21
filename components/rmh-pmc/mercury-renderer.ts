@@ -94,7 +94,11 @@ function compile(gl: WebGLRenderingContext, type: number, src: string): WebGLSha
 }
 
 /** Any CSS colour → linear-ish [0..1] RGB, via the browser's own resolver. */
-function resolveColour(host: HTMLElement, cssVar: string, fallback: [number, number, number]): [number, number, number] {
+function resolveColour(
+  host: HTMLElement,
+  cssVar: string,
+  fallback: [number, number, number],
+): [number, number, number] {
   const probe = document.createElement('span');
   probe.style.cssText = `position:absolute;visibility:hidden;color:var(${cssVar})`;
   host.appendChild(probe);
@@ -161,7 +165,14 @@ export function mountMercury(host: HTMLElement, opts: MercuryOptions = {}): () =
   g.enableVertexAttribArray(loc);
   g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
   const U = (n: string) => g.getUniformLocation(prog, n);
-  const uRes = U('uRes'), uT = U('uT'), uB = U('uB'), uHi = U('uHi'), uSky = U('uSky'), uFloor = U('uFloor'), uMode = U('uMode'), uS = U('uS');
+  const uRes = U('uRes'),
+    uT = U('uT'),
+    uB = U('uB'),
+    uHi = U('uHi'),
+    uSky = U('uSky'),
+    uFloor = U('uFloor'),
+    uMode = U('uMode'),
+    uS = U('uS');
 
   const seed = opts.seed ?? 1;
   const count = Math.max(2, Math.min(6, opts.blobs ?? 5));
@@ -180,7 +191,12 @@ export function mountMercury(host: HTMLElement, opts: MercuryOptions = {}): () =
   }));
   const probe = { x: 0, y: 0, r: 0, tx: 0, ty: 0, tr: 0, vx: 0, vy: 0 };
   const data = new Float32Array(28);
-  let w = 0, h = 0, visible = false, raf = 0, last = 0, needsSize = true;
+  let w = 0,
+    h = 0,
+    visible = false,
+    raf = 0,
+    last = 0,
+    needsSize = true;
   // A seeded start so the first (still) frame is already a composed shape.
   let clock = 7 + seed * 3.1;
   let energy = 0;

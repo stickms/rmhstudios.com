@@ -1,31 +1,15 @@
 /** About: what rmhOS is built from, and where the files live. Facts: about-facts.ts. */
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  BUILD_SCRIPTS_URL,
-  KERNEL_TARBALL_URL,
-  KERNEL_VERSION,
-  packagesUrl,
-  V86_URL,
-} from './about-facts';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { BUILD_SCRIPTS_URL, KERNEL_TARBALL_URL, KERNEL_VERSION, packagesUrl, V86_URL } from './about-facts';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { CDN_BASE } from '@/lib/storage/asset';
-import StoredCopies, {
-  type StoredCopiesSource,
-} from './StoredCopies';
+import StoredCopies, { type StoredCopiesSource } from './StoredCopies';
 
 interface Props {
   open: boolean;
-  onOpenChange: (
-    open: boolean,
-  ) => void;
+  onOpenChange: (open: boolean) => void;
   container: HTMLElement | null;
   session: StoredCopiesSource;
   /** The current archive could not be read (corrupt boot state): name its download that way. */
@@ -39,56 +23,31 @@ interface Props {
   /** Asks the browser to keep the files; call it from the click. */
   onKeep?: () => void;
   /** The Linux user of the running desktop (the guest's own name for it); null with no machine. */
-  linuxUser?:
-    | string
-    | null;
+  linuxUser?: string | null;
 }
 
 /** "You are signed in to rmhOS as <user>." */
-export function AboutUser({
-  user,
-}: {
-  user: string;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhos',
-    );
+export function AboutUser({ user }: { user: string }) {
+  const { t } = useTranslation('c-rmhos');
   return (
     <p>
-      {t(
-        'about-user',
-        {
-          defaultValue:
-            'You are signed in to rmhOS as {{user}}.',
-          user,
-        },
-      )}
+      {t('about-user', {
+        defaultValue: 'You are signed in to rmhOS as {{user}}.',
+        user,
+      })}
     </p>
   );
 }
 
-function ExternalLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
+function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <a
-      href={
-        href
-      }
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       className="underline underline-offset-2 text-(--app-accent) [overflow-wrap:anywhere]"
     >
-      {
-        children
-      }
+      {children}
     </a>
   );
 }
@@ -105,190 +64,86 @@ export default function AboutDialog({
   onKeep,
   linuxUser = null,
 }: Props) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhos',
-    );
-  const manifest =
-    resolveImageManifest(
-      CDN_BASE ||
-        undefined,
-    );
-  const packages =
-    manifest
-      ? packagesUrl(
-          manifest,
-        )
-      : null;
+  const { t } = useTranslation('c-rmhos');
+  const manifest = resolveImageManifest(CDN_BASE || undefined);
+  const packages = manifest ? packagesUrl(manifest) : null;
   return (
-    <Dialog
-      open={
-        open
-      }
-      onOpenChange={
-        onOpenChange
-      }
-    >
-      <DialogContent
-        container={
-          container
-        }
-        className="max-w-xl"
-      >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent container={container} className="max-w-xl">
         <DialogHeader>
           <DialogTitle>
-            {t(
-              'about-title',
-              {
-                defaultValue:
-                  'About rmhOS',
-              },
-            )}
+            {t('about-title', {
+              defaultValue: 'About rmhOS',
+            })}
           </DialogTitle>
           <DialogDescription>
-            {t(
-              'files-kept',
-              {
-                defaultValue:
-                  'Files are kept in this browser on this device.',
-              },
-            )}
+            {t('files-kept', {
+              defaultValue: 'Files are kept in this browser on this device.',
+            })}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 text-sm">
-          {machineUp &&
-            linuxUser && (
-              <AboutUser
-                user={
-                  linuxUser
-                }
-              />
-            )}
+          {machineUp && linuxUser && <AboutUser user={linuxUser} />}
           <p>
-            {t(
-              'about-kernel',
-              {
-                defaultValue:
-                  'rmhOS is built on the Linux kernel, licensed under the GNU General Public License, version 2 (GPL-2.0).',
-              },
-            )}
+            {t('about-kernel', {
+              defaultValue:
+                'rmhOS is built on the Linux kernel, licensed under the GNU General Public License, version 2 (GPL-2.0).',
+            })}
           </p>
           <ul className="flex flex-col gap-2 ps-5 list-disc">
             <li>
-              {t(
-                'about-kernel-source',
-                {
-                  defaultValue:
-                    'Kernel source, version {{version}}:',
-                  version:
-                    KERNEL_VERSION,
-                },
-              )}{' '}
-              <ExternalLink
-                href={
-                  KERNEL_TARBALL_URL
-                }
-              >
-                {`linux-${KERNEL_VERSION}.tar.xz`}
-              </ExternalLink>
+              {t('about-kernel-source', {
+                defaultValue: 'Kernel source, version {{version}}:',
+                version: KERNEL_VERSION,
+              })}{' '}
+              <ExternalLink href={KERNEL_TARBALL_URL}>{`linux-${KERNEL_VERSION}.tar.xz`}</ExternalLink>
             </li>
             <li>
-              {t(
-                'about-build',
-                {
-                  defaultValue:
-                    'The kernel configuration and patches are in scripts/rmhos/ in the repository:',
-                },
-              )}{' '}
-              <ExternalLink
-                href={
-                  BUILD_SCRIPTS_URL
-                }
-              >
-                scripts/rmhos/
-              </ExternalLink>
+              {t('about-build', {
+                defaultValue: 'The kernel configuration and patches are in scripts/rmhos/ in the repository:',
+              })}{' '}
+              <ExternalLink href={BUILD_SCRIPTS_URL}>scripts/rmhos/</ExternalLink>
             </li>
             {packages && (
               <li>
-                {t(
-                  'about-userland',
-                  {
-                    defaultValue:
-                      'The rest of the system is Alpine Linux packages. Every package, with its version, is listed in',
-                  },
-                )}{' '}
-                <ExternalLink
-                  href={
-                    packages
-                  }
-                >
-                  packages.txt
-                </ExternalLink>
+                {t('about-userland', {
+                  defaultValue:
+                    'The rest of the system is Alpine Linux packages. Every package, with its version, is listed in',
+                })}{' '}
+                <ExternalLink href={packages}>packages.txt</ExternalLink>
               </li>
             )}
             <li>
-              {t(
-                'about-emulator',
-                {
-                  defaultValue:
-                    'The emulator is v86 (BSD-2-Clause):',
-                },
-              )}{' '}
-              <ExternalLink
-                href={
-                  V86_URL
-                }
-              >
-                v86
-              </ExternalLink>
+              {t('about-emulator', {
+                defaultValue: 'The emulator is v86 (BSD-2-Clause):',
+              })}{' '}
+              <ExternalLink href={V86_URL}>v86</ExternalLink>
             </li>
             <li>
-              {t(
-                'about-bios',
-                {
-                  defaultValue:
-                    'The PC firmware is SeaBIOS (GNU LGPL, version 3).',
-                },
-              )}
+              {t('about-bios', {
+                defaultValue: 'The PC firmware is SeaBIOS (GNU LGPL, version 3).',
+              })}
             </li>
           </ul>
           <p>
-            {t(
-              'about-source-offer',
-              {
-                defaultValue:
-                  "Source for the GPL and LGPL software in rmhOS, including the exact Linux kernel tarball and each package's licence record, is published beside every image, and is available on request for three years: see the written offer in NOTICE.md.",
-              },
-            )}
+            {t('about-source-offer', {
+              defaultValue:
+                "Source for the GPL and LGPL software in rmhOS, including the exact Linux kernel tarball and each package's licence record, is published beside every image, and is available on request for three years: see the written offer in NOTICE.md.",
+            })}
           </p>
           {evictionRisk && (
             <div className="flex flex-col gap-2">
               <p className="text-(--app-warning)">
-                {t(
-                  'eviction-line',
-                  {
-                    defaultValue:
-                      'This browser may delete these files to free space. Download a backup to keep them.',
-                  },
-                )}
+                {t('eviction-line', {
+                  defaultValue: 'This browser may delete these files to free space. Download a backup to keep them.',
+                })}
               </p>
               {onKeep && (
                 <div>
-                  <Button
-                    size="sm"
-                    onClick={
-                      onKeep
-                    }
-                  >
-                    {t(
-                      'keep-files',
-                      {
-                        defaultValue:
-                          'Keep my files in this browser',
-                      },
-                    )}
+                  <Button size="sm" onClick={onKeep}>
+                    {t('keep-files', {
+                      defaultValue: 'Keep my files in this browser',
+                    })}
                   </Button>
                 </div>
               )}
@@ -296,40 +151,24 @@ export default function AboutDialog({
           )}
           {open && (
             <StoredCopies
-              session={
-                session
-              }
-              container={
-                container
-              }
-              currentDamaged={
-                currentDamaged
-              }
-              readOnly={
-                readOnly
-              }
-              machineUp={
-                machineUp
-              }
+              session={session}
+              container={container}
+              currentDamaged={currentDamaged}
+              readOnly={readOnly}
+              machineUp={machineUp}
             />
           )}
           <p className="text-(--app-text-muted)">
-            {t(
-              'about-saving',
-              {
-                defaultValue:
-                  'Saved reflects the last save. Files changed by programs running in the background are saved at the next autosave, every 5 minutes, or when you press Save.',
-              },
-            )}
+            {t('about-saving', {
+              defaultValue:
+                'Saved reflects the last save. Files changed by programs running in the background are saved at the next autosave, every 5 minutes, or when you press Save.',
+            })}
           </p>
           <p className="text-(--app-text-muted)">
-            {t(
-              'about-keyboard',
-              {
-                defaultValue:
-                  'Keys go to rmhOS while its screen has focus. Press Ctrl+Alt+Shift+Escape, or click outside the screen, to use the page again.',
-              },
-            )}
+            {t('about-keyboard', {
+              defaultValue:
+                'Keys go to rmhOS while its screen has focus. Press Ctrl+Alt+Shift+Escape, or click outside the screen, to use the page again.',
+            })}
           </p>
         </div>
       </DialogContent>

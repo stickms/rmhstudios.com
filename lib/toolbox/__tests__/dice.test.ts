@@ -26,7 +26,10 @@ describe('parseDice', () => {
     expect(parseDice('1d1')).toMatchObject({ ok: false, error: 'too-many-sides' });
     expect(parseDice('4d6kh5')).toMatchObject({ ok: false, error: 'bad-keep' });
     expect(parseDice('4d6dl4')).toMatchObject({ ok: false, error: 'bad-keep' });
-    expect(parseDice(Array.from({ length: 21 }, () => '1').join('+'))).toMatchObject({ ok: false, error: 'too-many-terms' });
+    expect(parseDice(Array.from({ length: 21 }, () => '1').join('+'))).toMatchObject({
+      ok: false,
+      error: 'too-many-terms',
+    });
   });
 });
 

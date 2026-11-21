@@ -10,29 +10,14 @@ export function AchievementProgress({
   target: number;
   className?: string;
 }) {
-  const value =
-    Math.max(
-      0,
-      Math.min(
-        progress,
-        target,
-      ),
-    );
+  const value = Math.max(0, Math.min(progress, target));
   return (
     <div
       role="progressbar"
-      aria-label={
-        name
-      }
-      aria-valuemin={
-        0
-      }
-      aria-valuemax={
-        target
-      }
-      aria-valuenow={
-        value
-      }
+      aria-label={name}
+      aria-valuemin={0}
+      aria-valuemax={target}
+      aria-valuenow={value}
       className={`h-1.5 w-full overflow-hidden rounded-site-sm bg-site-bg-subtle ${className ?? ''}`}
     >
       <div

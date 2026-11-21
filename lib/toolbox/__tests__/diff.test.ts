@@ -33,7 +33,7 @@ describe('diffLines', () => {
 
   it('rebuilds both sides for random edits', () => {
     let seed = 3;
-    const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31;
     for (let run = 0; run < 50; run++) {
       const a = Array.from({ length: Math.floor(rnd() * 30) }, () => String(Math.floor(rnd() * 5)));
       const b = Array.from({ length: Math.floor(rnd() * 30) }, () => String(Math.floor(rnd() * 5)));

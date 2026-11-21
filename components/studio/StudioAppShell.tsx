@@ -8,22 +8,10 @@
 
 import AppShell from '@/components/shared/AppShell';
 
-export default function StudioAppShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function StudioAppShell({ children }: { children: React.ReactNode }) {
   return (
-    <AppShell
-      appClassName="studio-theme"
-      theme="dark"
-      toaster={
-        false
-      }
-    >
-      {
-        children
-      }
+    <AppShell appClassName="studio-theme" theme="dark" toaster={false}>
+      {children}
     </AppShell>
   );
 }

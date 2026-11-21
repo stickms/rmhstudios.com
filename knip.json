@@ -24,12 +24,6 @@
     "features/**/*.{ts,tsx}",
     "server/**/*.{ts,tsx}"
   ],
-  "ignore": [
-    "app/routeTree.gen.ts",
-    "lib/i18n/resources.*.ts"
-  ],
-  "ignoreWorkspaces": [
-    "rmhcode",
-    "docs/**"
-  ]
+  "ignore": ["app/routeTree.gen.ts", "lib/i18n/resources.*.ts"],
+  "ignoreWorkspaces": ["rmhcode", "docs/**"]
 }

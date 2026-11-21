@@ -15,7 +15,10 @@ import { seededWords } from '@/lib/toolbox/random';
 describe('generatePassword', () => {
   it('has the length and includes every chosen set', () => {
     for (let seed = 1; seed < 50; seed++) {
-      const p = generatePassword({ length: 12, sets: ['lower', 'upper', 'digits', 'symbols'], excludeAmbiguous: false }, seededWords(seed));
+      const p = generatePassword(
+        { length: 12, sets: ['lower', 'upper', 'digits', 'symbols'], excludeAmbiguous: false },
+        seededWords(seed),
+      );
       expect(p).toHaveLength(12);
       for (const set of Object.values(CHARSETS)) expect([...p].some((c) => set.includes(c))).toBe(true);
     }
@@ -37,7 +40,9 @@ describe('generatePassword', () => {
 
   it('reports exact entropy', () => {
     expect(passwordEntropy({ length: 10, sets: ['digits'], excludeAmbiguous: false })).toBeCloseTo(10 * Math.log2(10));
-    expect(passwordEntropy({ length: 16, sets: ['lower', 'upper', 'digits'], excludeAmbiguous: false })).toBeCloseTo(16 * Math.log2(62));
+    expect(passwordEntropy({ length: 16, sets: ['lower', 'upper', 'digits'], excludeAmbiguous: false })).toBeCloseTo(
+      16 * Math.log2(62),
+    );
   });
 });
 
@@ -49,7 +54,11 @@ describe('passphrases', () => {
   });
 
   it('joins the requested number of words', () => {
-    const p = generatePassphrase({ words: 5, separator: '-', capitalize: true, addDigit: true }, PASSPHRASE_WORDS, seededWords(9));
+    const p = generatePassphrase(
+      { words: 5, separator: '-', capitalize: true, addDigit: true },
+      PASSPHRASE_WORDS,
+      seededWords(9),
+    );
     const parts = p.split('-');
     expect(parts).toHaveLength(5);
     for (const part of parts) expect(part).toMatch(/^[A-Z][a-z]+\d?$/);

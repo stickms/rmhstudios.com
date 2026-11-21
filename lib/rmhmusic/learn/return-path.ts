@@ -8,66 +8,29 @@
  * from ever naming anything but RMH Music.
  */
 
-const HOME =
-  '/rmhmusic';
-const LESSON =
-  /^\/rmhmusic\/lesson\/[a-z0-9-]{1,64}$/;
-const PRACTICE =
-  '/rmhmusic/practice';
-const CREDITS =
-  '/rmhmusic/credits';
-const SPRINT =
-  '/rmhmusic/sprint';
-const TUNER =
-  '/rmhmusic/tuner';
-const DAILY =
-  '/rmhmusic/daily';
-const FRIENDS =
-  '/rmhmusic/friends';
-const SONGS =
-  '/rmhmusic/songs';
-const SONG =
-  /^\/rmhmusic\/songs\/[a-z0-9-]{1,64}$/;
+const HOME = '/rmhmusic';
+const LESSON = /^\/rmhmusic\/lesson\/[a-z0-9-]{1,64}$/;
+const PRACTICE = '/rmhmusic/practice';
+const CREDITS = '/rmhmusic/credits';
+const SPRINT = '/rmhmusic/sprint';
+const TUNER = '/rmhmusic/tuner';
+const DAILY = '/rmhmusic/daily';
+const FRIENDS = '/rmhmusic/friends';
+const SONGS = '/rmhmusic/songs';
+const SONG = /^\/rmhmusic\/songs\/[a-z0-9-]{1,64}$/;
 
-export function rmhmusicReturnPath(
-  input: unknown,
-): string {
-  if (
-    typeof input !==
-    'string'
-  )
-    return HOME;
-  const path =
-    input.length >
-      1 &&
-    input.endsWith(
-      '/',
-    )
-      ? input.slice(
-          0,
-          -1,
-        )
-      : input;
-  return LESSON.test(
-    path,
-  ) ||
-    path ===
-      PRACTICE ||
-    path ===
-      CREDITS ||
-    path ===
-      SPRINT ||
-    path ===
-      TUNER ||
-    path ===
-      DAILY ||
-    path ===
-      FRIENDS ||
-    path ===
-      SONGS ||
-    SONG.test(
-      path,
-    )
+export function rmhmusicReturnPath(input: unknown): string {
+  if (typeof input !== 'string') return HOME;
+  const path = input.length > 1 && input.endsWith('/') ? input.slice(0, -1) : input;
+  return LESSON.test(path) ||
+    path === PRACTICE ||
+    path === CREDITS ||
+    path === SPRINT ||
+    path === TUNER ||
+    path === DAILY ||
+    path === FRIENDS ||
+    path === SONGS ||
+    SONG.test(path)
     ? path
     : HOME;
 }

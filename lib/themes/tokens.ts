@@ -17,16 +17,10 @@
  * `./tokens-schema`) so existing drafts and purchases keep working — never a
  * breaking reject.
  */
-import {
-  parseHex,
-  toHex,
-  relativeLuminance,
-  contrastRatio,
-} from '@/lib/appearance/contrast';
+import { parseHex, toHex, relativeLuminance, contrastRatio } from '@/lib/appearance/contrast';
 import { clamp01 } from '@/lib/core/math';
 
-export const THEME_TOKENS_VERSION =
-  2 as const;
+export const THEME_TOKENS_VERSION = 2 as const;
 
 // NOTE — this module must stay zod-free (the schemas live in
 // `@/lib/themes/tokens-schema`, which imports FROM here). `Providers.tsx` needs
@@ -46,31 +40,13 @@ export const TINT_ALPHA_MAX_LIGHT = 0.65;
 const LIGHT_CANVAS_LUMINANCE = 0.5;
 
 /** The luminance-dependent tintAlpha ceiling for a base color (§14.1). */
-export function maxTintAlpha(
-  canvasBase: string,
-): number {
-  return relativeLuminance(
-    canvasBase,
-  ) >=
-    LIGHT_CANVAS_LUMINANCE
-    ? TINT_ALPHA_MAX_LIGHT
-    : TINT_ALPHA_MAX_DARK;
+export function maxTintAlpha(canvasBase: string): number {
+  return relativeLuminance(canvasBase) >= LIGHT_CANVAS_LUMINANCE ? TINT_ALPHA_MAX_LIGHT : TINT_ALPHA_MAX_DARK;
 }
 
 /** Clamp a tint alpha into the luminance-dependent legal range for a base color. */
-export function clampTintAlpha(
-  alpha: number,
-  canvasBase: string,
-): number {
-  return Math.min(
-    Math.max(
-      alpha,
-      TINT_ALPHA_MIN,
-    ),
-    maxTintAlpha(
-      canvasBase,
-    ),
-  );
+export function clampTintAlpha(alpha: number, canvasBase: string): number {
+  return Math.min(Math.max(alpha, TINT_ALPHA_MIN), maxTintAlpha(canvasBase));
 }
 
 /**
@@ -114,159 +90,61 @@ export interface ThemeTokensV1 {
 }
 
 /** A sensible starting palette (Glass-Dark-ish) for a new draft. */
-export const DEFAULT_THEME_TOKENS: ThemeTokens =
-  {
-    v: THEME_TOKENS_VERSION,
-    canvasBase:
-      '#0d1b2e',
-    glow1:
-      '#568cff',
-    glow2:
-      '#aa6cff',
-    glow3:
-      '#34d0bc',
-    tint: '#ffffff',
-    tintAlpha: 0.1,
-    glintStrength: 1,
-    text: '#f4f8ff',
-    textMuted:
-      '#c4d2ea',
-    border:
-      '#2b3d59',
-    accent:
-      '#6cc9ff',
-    accentFg:
-      '#042a41',
-    radius: 18,
-  };
+export const DEFAULT_THEME_TOKENS: ThemeTokens = {
+  v: THEME_TOKENS_VERSION,
+  canvasBase: '#0d1b2e',
+  glow1: '#568cff',
+  glow2: '#aa6cff',
+  glow3: '#34d0bc',
+  tint: '#ffffff',
+  tintAlpha: 0.1,
+  glintStrength: 1,
+  text: '#f4f8ff',
+  textMuted: '#c4d2ea',
+  border: '#2b3d59',
+  accent: '#6cc9ff',
+  accentFg: '#042a41',
+  radius: 18,
+};
 
 // ── color math (pure; deterministic hex/rgba, no color-mix) ──────────────────
 
 /** rgba() string for a hex color at a given alpha. */
-function rgba(
-  hexColor: string,
-  alpha: number,
-): string {
-  const {
-    r,
-    g,
-    b,
-  } =
-    parseHex(
-      hexColor,
-    );
+function rgba(hexColor: string, alpha: number): string {
+  const { r, g, b } = parseHex(hexColor);
   return `rgba(${r}, ${g}, ${b}, ${Math.round(clamp01(alpha) * 1000) / 1000})`;
 }
 
 /** Linear-RGB-ish blend of two hex colors, `t` of `b` into `a`. Returns hex. */
-function mix(
-  a: string,
-  b: string,
-  t: number,
-): string {
-  const ca =
-    parseHex(
-      a,
-    );
-  const cb =
-    parseHex(
-      b,
-    );
-  const k =
-    clamp01(
-      t,
-    );
-  return toHex(
-    {
-      r:
-        ca.r +
-        (cb.r -
-          ca.r) *
-          k,
-      g:
-        ca.g +
-        (cb.g -
-          ca.g) *
-          k,
-      b:
-        ca.b +
-        (cb.b -
-          ca.b) *
-          k,
-    },
-  );
+function mix(a: string, b: string, t: number): string {
+  const ca = parseHex(a);
+  const cb = parseHex(b);
+  const k = clamp01(t);
+  return toHex({
+    r: ca.r + (cb.r - ca.r) * k,
+    g: ca.g + (cb.g - ca.g) * k,
+    b: ca.b + (cb.b - ca.b) * k,
+  });
 }
 
 /** Composite a translucent `top` (at `alpha`) over an opaque `bottom`; hex out. */
-function over(
-  top: string,
-  alpha: number,
-  bottom: string,
-): string {
-  const ct =
-    parseHex(
-      top,
-    );
-  const cb =
-    parseHex(
-      bottom,
-    );
-  const k =
-    clamp01(
-      alpha,
-    );
-  const ch =
-    (
-      t: number,
-      b: number,
-    ): number =>
-      t *
-        k +
-      b *
-        (1 -
-          k);
-  return toHex(
-    {
-      r: ch(
-        ct.r,
-        cb.r,
-      ),
-      g: ch(
-        ct.g,
-        cb.g,
-      ),
-      b: ch(
-        ct.b,
-        cb.b,
-      ),
-    },
-  );
+function over(top: string, alpha: number, bottom: string): string {
+  const ct = parseHex(top);
+  const cb = parseHex(bottom);
+  const k = clamp01(alpha);
+  const ch = (t: number, b: number): number => t * k + b * (1 - k);
+  return toHex({
+    r: ch(ct.r, cb.r),
+    g: ch(ct.g, cb.g),
+    b: ch(ct.b, cb.b),
+  });
 }
 
 // ── derivation (§14.1) ───────────────────────────────────────────────────────
 
 /** The glow with the highest luminance — the brightest region of the canvas. */
-function brightestGlow(
-  t: ThemeTokens,
-): string {
-  return [
-    t.glow1,
-    t.glow2,
-    t.glow3,
-  ].reduce(
-    (
-      a,
-      b,
-    ) =>
-      relativeLuminance(
-        b,
-      ) >
-      relativeLuminance(
-        a,
-      )
-        ? b
-        : a,
-  );
+function brightestGlow(t: ThemeTokens): string {
+  return [t.glow1, t.glow2, t.glow3].reduce((a, b) => (relativeLuminance(b) > relativeLuminance(a) ? b : a));
 }
 
 /**
@@ -274,22 +152,9 @@ function brightestGlow(
  * the brightest aurora glow over the base. This is the worst-case legibility
  * backdrop the §14.3 contrast gate checks `text`/`textMuted` against.
  */
-export function effectiveTextBackdrop(
-  t: ThemeTokens,
-): string {
-  const glowLit =
-    over(
-      brightestGlow(
-        t,
-      ),
-      0.3,
-      t.canvasBase,
-    ); // radial stop ~0.30
-  return over(
-    t.tint,
-    t.tintAlpha,
-    glowLit,
-  );
+export function effectiveTextBackdrop(t: ThemeTokens): string {
+  const glowLit = over(brightestGlow(t), 0.3, t.canvasBase); // radial stop ~0.30
+  return over(t.tint, t.tintAlpha, glowLit);
 }
 
 /**
@@ -307,124 +172,52 @@ export function effectiveTextBackdrop(
  * AA, so the gradient can never cost a button its legibility. With no user theme neither variable is set and the
  * consumers fall back to the flat page.
  */
-export function themeCssVars(
-  tokens: ThemeTokens,
-): Record<
-  string,
-  string
-> {
-  const t =
-    tokens;
+export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
+  const t = tokens;
 
   // Surfaces — the tint composited onto the base, so every surface is opaque (R1: no translucency; an overlay over
   // content must stay readable). Same rising strength the v2 map used.
-  const surface =
-    over(
-      t.tint,
-      t.tintAlpha,
-      t.canvasBase,
-    );
-  const surfaceHover =
-    over(
-      t.tint,
-      Math.min(
-        t.tintAlpha *
-          1.7,
-        0.9,
-      ),
-      t.canvasBase,
-    );
-  const surfaceActive =
-    over(
-      t.tint,
-      Math.min(
-        t.tintAlpha *
-          2.4,
-        0.95,
-      ),
-      t.canvasBase,
-    );
+  const surface = over(t.tint, t.tintAlpha, t.canvasBase);
+  const surfaceHover = over(t.tint, Math.min(t.tintAlpha * 1.7, 0.9), t.canvasBase);
+  const surfaceActive = over(t.tint, Math.min(t.tintAlpha * 2.4, 0.95), t.canvasBase);
 
   return {
-    '--site-bg':
-      t.canvasBase,
-    '--site-bg-subtle':
-      over(
-        t.tint,
-        0.08,
-        t.canvasBase,
-      ),
-    '--site-surface':
-      surface,
-    '--site-surface-hover':
-      surfaceHover,
-    '--site-surface-active':
-      surfaceActive,
-    '--site-border':
-      t.border,
-    '--site-text':
-      t.text,
-    '--site-text-muted':
-      t.textMuted,
-    '--site-accent':
-      t.accent,
-    '--site-accent-fg':
-      t.accentFg,
+    '--site-bg': t.canvasBase,
+    '--site-bg-subtle': over(t.tint, 0.08, t.canvasBase),
+    '--site-surface': surface,
+    '--site-surface-hover': surfaceHover,
+    '--site-surface-active': surfaceActive,
+    '--site-border': t.border,
+    '--site-text': t.text,
+    '--site-text-muted': t.textMuted,
+    '--site-accent': t.accent,
+    '--site-accent-fg': t.accentFg,
     '--site-accent-hover': `color-mix(in oklab, ${t.accent} 82%, #000)`,
     '--site-radius': `${t.radius}px`,
     '--site-radius-sm': `${Math.round(t.radius * 0.66)}px`,
-    '--site-theme-wash':
-      themeWash(
-        t,
-      ),
-    '--site-accent-fill':
-      accentFill(
-        t,
-      ),
+    '--site-theme-wash': themeWash(t),
+    '--site-accent-fill': accentFill(t),
   };
 }
 
 /** A faint wash of the three glows behind the whole page ground, held to the viewport (R1 amendment). */
-function themeWash(
-  t: ThemeTokens,
-): string {
+function themeWash(t: ThemeTokens): string {
   return [
     `radial-gradient(60% 55% at 0% 0%, ${rgba(t.glow1, 0.22)}, transparent 70%)`,
     `radial-gradient(55% 50% at 100% 0%, ${rgba(t.glow2, 0.18)}, transparent 70%)`,
     `radial-gradient(70% 45% at 50% 100%, ${rgba(t.glow3, 0.12)}, transparent 70%)`,
-  ].join(
-    ', ',
-  );
+  ].join(', ');
 }
 
 /** The ink-primary sheen: accent into accent-plus-a-third-of-glow2, or `none` if that would fail AA. */
-function accentFill(
-  t: ThemeTokens,
-): string {
-  const end =
-    over(
-      t.glow2,
-      0.35,
-      t.accent,
-    );
-  if (
-    contrastRatio(
-      t.accentFg,
-      end,
-    ) <
-    4.5
-  )
-    return 'none';
+function accentFill(t: ThemeTokens): string {
+  const end = over(t.glow2, 0.35, t.accent);
+  if (contrastRatio(t.accentFg, end) < 4.5) return 'none';
   return `linear-gradient(135deg, ${t.accent}, ${end})`;
 }
 
 /** The `--site-*` variable NAMES a theme sets (so a removal can clear them all). */
-export const THEME_VAR_NAMES: readonly string[] =
-  Object.keys(
-    themeCssVars(
-      DEFAULT_THEME_TOKENS,
-    ),
-  );
+export const THEME_VAR_NAMES: readonly string[] = Object.keys(themeCssVars(DEFAULT_THEME_TOKENS));
 
 /**
  * A derived, cacheable blob for site-wide runtime application (§14.1): the id,
@@ -435,10 +228,7 @@ export const THEME_VAR_NAMES: readonly string[] =
 export interface AppliedUserTheme {
   id: string;
   bg: string;
-  vars: Record<
-    string,
-    string
-  >;
+  vars: Record<string, string>;
   /**
    * The derivation version that produced `vars` (THEME_DERIVATION_VERSION). The cache holds derived values only, so
    * when the derivation changes (the R1-amendment gradients, opaque surfaces) an older cache keeps painting the old
@@ -451,37 +241,22 @@ export interface AppliedUserTheme {
 export const THEME_DERIVATION_VERSION = 2;
 
 /** True when a cached applied theme was derived by an older (or unstamped) derivation. */
-export function isStaleAppliedTheme(
-  theme: AppliedUserTheme,
-): boolean {
-  return (
-    theme.dv !==
-    THEME_DERIVATION_VERSION
-  );
+export function isStaleAppliedTheme(theme: AppliedUserTheme): boolean {
+  return theme.dv !== THEME_DERIVATION_VERSION;
 }
 
-export function deriveAppliedTheme(
-  id: string,
-  tokens: ThemeTokens,
-): AppliedUserTheme {
+export function deriveAppliedTheme(id: string, tokens: ThemeTokens): AppliedUserTheme {
   return {
     id,
     bg: tokens.canvasBase,
-    vars: themeCssVars(
-      tokens,
-    ),
+    vars: themeCssVars(tokens),
     dv: THEME_DERIVATION_VERSION,
   };
 }
 
 /** Clear every `--site-*` a theme sets, restoring the underlying theme cascade. */
-export function clearThemeTokens(
-  el: HTMLElement,
-): void {
-  for (const name of THEME_VAR_NAMES)
-    el.style.removeProperty(
-      name,
-    );
+export function clearThemeTokens(el: HTMLElement): void {
+  for (const name of THEME_VAR_NAMES) el.style.removeProperty(name);
 }
 
 /**
@@ -491,9 +266,7 @@ export function clearThemeTokens(
  */
 export interface AppliedUserThemePreview extends AppliedUserTheme {
   name?: string;
-  priceCoins?:
-    | number
-    | null;
+  priceCoins?: number | null;
   purchasable?: boolean;
 }
 
@@ -505,60 +278,23 @@ export interface AppliedUserThemePreview extends AppliedUserTheme {
  * surface-vs-bg luminance delta (clamped to the base's legal range). Ink/accent
  * carry over 1:1. Pure and reversible enough for a round-trip test.
  */
-export function upcastV1(
-  v1: ThemeTokensV1,
-): ThemeTokens {
-  const delta =
-    Math.abs(
-      relativeLuminance(
-        v1.surface,
-      ) -
-        relativeLuminance(
-          v1.bg,
-        ),
-    );
+export function upcastV1(v1: ThemeTokensV1): ThemeTokens {
+  const delta = Math.abs(relativeLuminance(v1.surface) - relativeLuminance(v1.bg));
   return {
     v: THEME_TOKENS_VERSION,
-    canvasBase:
-      v1.bg,
-    glow1:
-      mix(
-        v1.bg,
-        v1.accent,
-        0.35,
-      ),
-    glow2:
-      mix(
-        v1.bg,
-        v1.accent,
-        0.2,
-      ),
-    glow3:
-      mix(
-        v1.bg,
-        v1.surface,
-        0.5,
-      ),
+    canvasBase: v1.bg,
+    glow1: mix(v1.bg, v1.accent, 0.35),
+    glow2: mix(v1.bg, v1.accent, 0.2),
+    glow3: mix(v1.bg, v1.surface, 0.5),
     tint: v1.surface,
-    tintAlpha:
-      clampTintAlpha(
-        0.1 +
-          delta *
-            1.5,
-        v1.bg,
-      ),
+    tintAlpha: clampTintAlpha(0.1 + delta * 1.5, v1.bg),
     glintStrength: 1,
     text: v1.text,
-    textMuted:
-      v1.textMuted,
-    border:
-      v1.border,
-    accent:
-      v1.accent,
-    accentFg:
-      v1.accentFg,
-    radius:
-      v1.radius,
+    textMuted: v1.textMuted,
+    border: v1.border,
+    accent: v1.accent,
+    accentFg: v1.accentFg,
+    radius: v1.radius,
   };
 }
 
@@ -577,77 +313,49 @@ export interface ThemeLintIssue {
  * text/muted against the glass tint over the brightest glow (the worst-case
  * legible backdrop) and accentFg against accent (§14.3).
  */
-export function lintThemeContrast(
-  tokens: ThemeTokens,
-): ThemeLintIssue[] {
-  const backdrop =
-    effectiveTextBackdrop(
-      tokens,
-    );
+export function lintThemeContrast(tokens: ThemeTokens): ThemeLintIssue[] {
+  const backdrop = effectiveTextBackdrop(tokens);
   const checks: {
     pair: string;
     a: string;
     b: string;
     need: number;
-  }[] =
-    [
-      {
-        pair: 'text-on-glass',
-        a: tokens.text,
-        b: backdrop,
-        need: AA,
-      },
-      {
-        pair: 'muted-on-glass',
-        a: tokens.textMuted,
-        b: backdrop,
-        need: AA_LARGE,
-      },
-      {
-        pair: 'accentFg-on-accent',
-        a: tokens.accentFg,
-        b: tokens.accent,
-        need: AA,
-      },
-    ];
-  const issues: ThemeLintIssue[] =
-    [];
+  }[] = [
+    {
+      pair: 'text-on-glass',
+      a: tokens.text,
+      b: backdrop,
+      need: AA,
+    },
+    {
+      pair: 'muted-on-glass',
+      a: tokens.textMuted,
+      b: backdrop,
+      need: AA_LARGE,
+    },
+    {
+      pair: 'accentFg-on-accent',
+      a: tokens.accentFg,
+      b: tokens.accent,
+      need: AA,
+    },
+  ];
+  const issues: ThemeLintIssue[] = [];
   for (const c of checks) {
-    const ratio =
-      Math.round(
-        contrastRatio(
-          c.a,
-          c.b,
-        ) *
-          10,
-      ) /
-      10;
-    if (
-      ratio <
-      c.need
-    )
-      issues.push(
-        {
-          pair: c.pair,
-          ratio,
-          need: c.need,
-        },
-      );
+    const ratio = Math.round(contrastRatio(c.a, c.b) * 10) / 10;
+    if (ratio < c.need)
+      issues.push({
+        pair: c.pair,
+        ratio,
+        need: c.need,
+      });
   }
   return issues;
 }
 
 /** True when a theme clears every AA pair — the publish gate (editor + server). */
-export function canPublish(
-  tokens: ThemeTokens,
-): boolean {
-  return (
-    lintThemeContrast(
-      tokens,
-    )
-      .length ===
-    0
-  );
+export function canPublish(tokens: ThemeTokens): boolean {
+  return lintThemeContrast(tokens).length === 0;
 }
 
 export const THEME_PRICE_MIN = 200;
@@ -658,17 +366,11 @@ export interface UserThemeView {
   name: string;
   tokens: ThemeTokens;
   status: string;
-  priceCoins:
-    | number
-    | null;
+  priceCoins: number | null;
   sales: number;
   author?: {
-    name:
-      | string
-      | null;
-    handle:
-      | string
-      | null;
+    name: string | null;
+    handle: string | null;
   };
   owned?: boolean;
   isAuthor?: boolean;

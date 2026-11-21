@@ -16,19 +16,12 @@ interface RequestFormProps {
   bodyCheck: JsonParse | null;
 }
 
-function ParamField({
-  param,
-  value,
-  onChange,
-}: {
-  param: ApiParam;
-  value: string;
-  onChange: (value: string) => void;
-}) {
+function ParamField({ param, value, onChange }: { param: ApiParam; value: string; onChange: (value: string) => void }) {
   const { t } = useTranslation('dev-explorer');
   const id = useId();
   const labelId = `${id}-label`;
-  const where = param.in === 'path' ? t('param-path', { defaultValue: 'path' }) : t('param-query', { defaultValue: 'query' });
+  const where =
+    param.in === 'path' ? t('param-path', { defaultValue: 'path' }) : t('param-query', { defaultValue: 'query' });
   const required = param.required || param.in === 'path';
   return (
     <div className="space-y-1">
@@ -75,13 +68,22 @@ export function RequestForm({ endpoint, params, onParam, body, onBody, bodyCheck
   const failure = bodyCheck && !bodyCheck.ok ? bodyCheck : null;
 
   if (list.length === 0 && !hasRequestBody(endpoint)) {
-    return <p className="t-body text-site-text-muted">{t('form-none', { defaultValue: 'This endpoint takes no parameters.' })}</p>;
+    return (
+      <p className="t-body text-site-text-muted">
+        {t('form-none', { defaultValue: 'This endpoint takes no parameters.' })}
+      </p>
+    );
   }
 
   return (
     <div className="space-y-4">
       {list.map((p) => (
-        <ParamField key={`${p.in}:${p.name}`} param={p} value={params[p.name] ?? ''} onChange={(v) => onParam(p.name, v)} />
+        <ParamField
+          key={`${p.in}:${p.name}`}
+          param={p}
+          value={params[p.name] ?? ''}
+          onChange={(v) => onParam(p.name, v)}
+        />
       ))}
       {hasRequestBody(endpoint) ? (
         <div className="space-y-1">

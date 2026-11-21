@@ -42,12 +42,7 @@ export interface CarriedEntity {
   angularVelocity: Vec3;
   skin: number;
   /** The original keyvalues (outputs kept), to re-create it. */
-  keyvalues: Array<
-    [
-      string,
-      string,
-    ]
-  >;
+  keyvalues: Array<[string, string]>;
 }
 
 export interface TransitionData {
@@ -56,8 +51,5 @@ export interface TransitionData {
   landmark: string;
   player: CarriedPlayer;
   entities: CarriedEntity[];
-  globals: Record<
-    string,
-    number
-  >;
+  globals: Record<string, number>;
 }

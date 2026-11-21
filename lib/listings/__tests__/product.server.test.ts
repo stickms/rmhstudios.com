@@ -41,8 +41,7 @@ const tx = {
     findUnique: vi.fn(
       async ({ where }: { where: { listingId_buyerId: { listingId: string; buyerId: string } } }) =>
         state.purchases.find(
-          (p) =>
-            p.listingId === where.listingId_buyerId.listingId && p.buyerId === where.listingId_buyerId.buyerId,
+          (p) => p.listingId === where.listingId_buyerId.listingId && p.buyerId === where.listingId_buyerId.buyerId,
         ) ?? null,
     ),
     create: vi.fn(async ({ data }: { data: { listingId: string; buyerId: string; pricePaid: number } }) => {

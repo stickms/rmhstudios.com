@@ -11,11 +11,7 @@ import { userDisplaySelect } from '@/lib/user-display';
  * none of which a card renders. The detail route (`/api/user-builds/$id`) is the
  * only place the readme is read.
  */
-export function buildCardSelect(
-  viewerId:
-    | string
-    | null,
-) {
+export function buildCardSelect(viewerId: string | null) {
   return {
     id: true,
     slug: true,
@@ -33,40 +29,32 @@ export function buildCardSelect(
     createdAt: true,
     publishedAt: true,
     user: {
-      select:
-        userDisplaySelect,
+      select: userDisplaySelect,
     },
-    category:
-      {
-        select:
-          {
-            id: true,
-            name: true,
-            slug: true,
-            color: true,
-            iconName: true,
-          },
+    category: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        color: true,
+        iconName: true,
       },
+    },
     tags: {
-      select:
-        {
-          name: true,
-        },
+      select: {
+        name: true,
+      },
     },
     ...(viewerId
       ? {
-          likes:
-            {
-              where:
-                {
-                  userId:
-                    viewerId,
-                },
-              select:
-                {
-                  id: true,
-                },
+          likes: {
+            where: {
+              userId: viewerId,
             },
+            select: {
+              id: true,
+            },
+          },
         }
       : {}),
   } satisfies Prisma.UserBuildSelect;

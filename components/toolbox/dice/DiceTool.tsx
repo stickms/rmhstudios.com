@@ -82,7 +82,8 @@ export function DiceTool() {
         {!parsed.ok && <FieldError>{errorText()}</FieldError>}
         <p className="t-meta">
           {t('dice-help', {
-            defaultValue: 'kh3 keeps the highest 3, kl1 the lowest, dl1 drops the lowest; ! rerolls and adds a maximum.',
+            defaultValue:
+              'kh3 keeps the highest 3, kl1 the lowest, dl1 drops the lowest; ! rerolls and adds a maximum.',
           })}
         </p>
       </form>
@@ -121,7 +122,10 @@ export function DiceTool() {
           </p>
           <ul>
             {latest.result.terms.map((tr, i) => (
-              <li key={i} className="flex flex-wrap items-baseline gap-x-2 border-b border-site-border py-2 last:border-b-0">
+              <li
+                key={i}
+                className="flex flex-wrap items-baseline gap-x-2 border-b border-site-border py-2 last:border-b-0"
+              >
                 <span className="t-label">{formatDice([{ ...tr.term, sign: 1 }])}</span>
                 {tr.dice.length === 0 ? (
                   <span className="font-mono text-sm">{tr.subtotal}</span>

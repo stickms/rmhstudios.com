@@ -26,7 +26,12 @@ export const rmhTypeDailyQuery = () =>
   contractQuery(RMHTYPE_DAILY_KEY, getRmhTypeDailyApi, { retries: 0 }, { staleTime: 0 });
 
 export const rmhTypeDailyBoardQuery = (day: string, scope: DailyScope) =>
-  contractQuery(['rmhtype', 'daily-board', day, scope], getRmhTypeDailyBoardApi, { query: { day, scope } }, { staleTime: 30_000 });
+  contractQuery(
+    ['rmhtype', 'daily-board', day, scope],
+    getRmhTypeDailyBoardApi,
+    { query: { day, scope } },
+    { staleTime: 30_000 },
+  );
 
 export const startDailyRun = () => api(startRmhTypeDailyApi);
 
@@ -40,8 +45,7 @@ export const RMHTYPE_LESSONS_KEY = ['rmhtype', 'lessons'] as const;
 export const lessonProgressQuery = () =>
   contractQuery(RMHTYPE_LESSONS_KEY, getLessonProgressApi, { retries: 0 }, { staleTime: 15_000 });
 
-export const recordLessonRun = (body: ApiInput<typeof recordLessonRunApi>['body']) =>
-  api(recordLessonRunApi, { body });
+export const recordLessonRun = (body: ApiInput<typeof recordLessonRunApi>['body']) => api(recordLessonRunApi, { body });
 
 /** The worst-keys practice text, generated on the server from the member's key statistics. */
 export const buildPracticeDrill = (length: number) => api(buildRmhTypePracticeTestApi, { body: { length } });
@@ -52,7 +56,12 @@ export const recordKeyStats = (body: ApiInput<typeof recordRmhTypeKeyStatsApi>['
 /* Progress */
 
 export const rmhTypeProgressQuery = (range: ProgressRange, mode: ProgressMode, tz: string) =>
-  contractQuery(['rmhtype', 'progress', range, mode, tz], getRmhTypeProgressApi, { query: { range, mode, tz } }, { staleTime: 30_000 });
+  contractQuery(
+    ['rmhtype', 'progress', range, mode, tz],
+    getRmhTypeProgressApi,
+    { query: { range, mode, tz } },
+    { staleTime: 30_000 },
+  );
 
 /** Runs newest first, 25 a page; `start` is the cursor a "show runs from this day" link jumps to. */
 export const rmhTypeRunsQuery = (mode: ProgressMode, start: string | null) =>

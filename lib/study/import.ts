@@ -9,14 +9,7 @@ import { CARD_SIDE_MAX } from '@/lib/study/limits';
 export type Separator = 'tab' | 'comma' | 'semicolon' | 'dash' | 'equals' | 'colon';
 
 /** Detection order: also the tie-break when two separators fit equally well. */
-export const SEPARATORS: readonly Separator[] = [
-  'tab',
-  'semicolon',
-  'dash',
-  'equals',
-  'colon',
-  'comma',
-];
+export const SEPARATORS: readonly Separator[] = ['tab', 'semicolon', 'dash', 'equals', 'colon', 'comma'];
 
 export type RejectReason = 'missing-front' | 'missing-back' | 'front-too-long' | 'back-too-long';
 
@@ -263,10 +256,7 @@ export function parseCards(text: string, options: ParseOptions = {}): ParseResul
     const first = r.fields[0].trim();
     // Tab files may carry extra columns (Anki tags); comma and semicolon rows
     // that hold an unquoted separator in the definition keep it.
-    const rest =
-      csvChar === undefined || separator === 'tab'
-        ? (r.fields[1] ?? '')
-        : r.fields.slice(1).join(csvChar);
+    const rest = csvChar === undefined || separator === 'tab' ? (r.fields[1] ?? '') : r.fields.slice(1).join(csvChar);
     const second = rest.trim();
     const front = options.swap ? second : first;
     const back = options.swap ? first : second;

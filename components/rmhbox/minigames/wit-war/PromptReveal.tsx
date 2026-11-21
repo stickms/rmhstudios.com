@@ -16,17 +16,8 @@ interface PromptRevealProps {
   totalRounds: number;
 }
 
-export default function PromptReveal({
-  prompts,
-  round,
-  totalRounds,
-}: PromptRevealProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhbox',
-    );
+export default function PromptReveal({ prompts, round, totalRounds }: PromptRevealProps) {
+  const { t } = useTranslation('c-rmhbox');
   return (
     <div className="flex flex-col items-center gap-6 py-8">
       <motion.div
@@ -45,15 +36,11 @@ export default function PromptReveal({
       >
         <Sparkles className="h-5 w-5" />
         <span>
-          {t(
-            'round-of',
-            {
-              defaultValue:
-                'Round {{round}} of {{totalRounds}}',
-              round,
-              totalRounds,
-            },
-          )}
+          {t('round-of', {
+            defaultValue: 'Round {{round}} of {{totalRounds}}',
+            round,
+            totalRounds,
+          })}
         </span>
       </motion.div>
 
@@ -72,62 +59,38 @@ export default function PromptReveal({
         }}
         className="text-2xl font-bold text-app-text"
       >
-        {t(
-          'your-prompts',
-          {
-            defaultValue:
-              'Your Prompts',
-          },
-        )}
+        {t('your-prompts', {
+          defaultValue: 'Your Prompts',
+        })}
       </motion.h2>
 
       <div className="flex flex-col gap-4 w-full">
-        {prompts.map(
-          (
-            prompt,
-            idx,
-          ) => (
-            <motion.div
-              key={
-                prompt.promptIndex
-              }
-              initial={{
-                opacity: 0,
-                x: -30,
-              }}
-              animate={{
-                opacity: 1,
-                x: 0,
-              }}
-              transition={{
-                delay:
-                  0.5 +
-                  idx *
-                    0.3,
-                duration: 0.4,
-              }}
-              className="app-glass rounded-app p-5"
-            >
-              <div className="text-xs font-medium text-app-text-muted mb-2">
-                {t(
-                  'prompt-number',
-                  {
-                    defaultValue:
-                      'Prompt {{number}}',
-                    number:
-                      idx +
-                      1,
-                  },
-                )}
-              </div>
-              <div className="text-lg font-medium text-app-text">
-                {
-                  prompt.promptText
-                }
-              </div>
-            </motion.div>
-          ),
-        )}
+        {prompts.map((prompt, idx) => (
+          <motion.div
+            key={prompt.promptIndex}
+            initial={{
+              opacity: 0,
+              x: -30,
+            }}
+            animate={{
+              opacity: 1,
+              x: 0,
+            }}
+            transition={{
+              delay: 0.5 + idx * 0.3,
+              duration: 0.4,
+            }}
+            className="app-glass rounded-app p-5"
+          >
+            <div className="text-xs font-medium text-app-text-muted mb-2">
+              {t('prompt-number', {
+                defaultValue: 'Prompt {{number}}',
+                number: idx + 1,
+              })}
+            </div>
+            <div className="text-lg font-medium text-app-text">{prompt.promptText}</div>
+          </motion.div>
+        ))}
       </div>
 
       <motion.p
@@ -143,13 +106,9 @@ export default function PromptReveal({
         }}
         className="text-sm text-app-text-muted text-center"
       >
-        {t(
-          'get-ready-to-write',
-          {
-            defaultValue:
-              'Get ready to write your answers...',
-          },
-        )}
+        {t('get-ready-to-write', {
+          defaultValue: 'Get ready to write your answers...',
+        })}
       </motion.p>
     </div>
   );

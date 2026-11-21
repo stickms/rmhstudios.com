@@ -55,13 +55,24 @@ describe('writeCsv', () => {
 
 describe('rowsToJson', () => {
   it('keys rows by a header, renaming duplicate and blank names', () => {
-    expect(rowsToJson([['id', 'id', ''], ['1', '2', '3']])).toEqual([{ id: '1', id_2: '2', column3: '3' }]);
+    expect(
+      rowsToJson([
+        ['id', 'id', ''],
+        ['1', '2', '3'],
+      ]),
+    ).toEqual([{ id: '1', id_2: '2', column3: '3' }]);
   });
 
   it('infers numbers, booleans and nulls when asked', () => {
-    expect(rowsToJson([['n', 'b', 'e', 's'], ['1.5', 'true', '', '007']], { infer: true })).toEqual([
-      { n: 1.5, b: true, e: null, s: '007' },
-    ]);
+    expect(
+      rowsToJson(
+        [
+          ['n', 'b', 'e', 's'],
+          ['1.5', 'true', '', '007'],
+        ],
+        { infer: true },
+      ),
+    ).toEqual([{ n: 1.5, b: true, e: null, s: '007' }]);
     expect(inferValue('12345678901234567890')).toBe('12345678901234567890');
   });
 

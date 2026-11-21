@@ -7,9 +7,7 @@ export interface VoiceSession {
   channelId: string;
   channelName: string;
   joinedAt: number;
-  leftAt:
-    | number
-    | null;
+  leftAt: number | null;
   endedReason: string;
   durationSec: number;
   mutedSec: number;
@@ -62,9 +60,7 @@ export interface PresenceSession {
   details: string;
   state: string;
   startedAt: number;
-  endedAt:
-    | number
-    | null;
+  endedAt: number | null;
   durationSec: number;
   heartbeatAt: number;
 }
@@ -81,9 +77,7 @@ export interface StatusSession {
   status: string;
   clients: ClientSet;
   startedAt: number;
-  endedAt:
-    | number
-    | null;
+  endedAt: number | null;
   durationSec: number;
   heartbeatAt: number;
 }
@@ -96,9 +90,7 @@ export interface TypingSession {
   channelName: string;
   startedAt: number;
   lastTypingAt: number;
-  settledAt:
-    | number
-    | null;
+  settledAt: number | null;
   durationSec: number;
   sent: boolean;
 }
@@ -149,10 +141,6 @@ export interface DayRollup {
   hourlyMessages: number[];
   hourlyVoiceSec: number[];
   hourlyGamingSec: number[];
-  firstSeenAt:
-    | number
-    | null;
-  lastSeenAt:
-    | number
-    | null;
+  firstSeenAt: number | null;
+  lastSeenAt: number | null;
 }

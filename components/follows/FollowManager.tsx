@@ -143,9 +143,7 @@ export function FollowManager({ query, onQueryChange }: FollowManagerProps) {
     try {
       await undoUnfollowRequest(row.id);
       notifyFollowChanged();
-      toast.success(
-        t('undo-done', { name: displayName(row), defaultValue: 'Following {{name}} again' }),
-      );
+      toast.success(t('undo-done', { name: displayName(row), defaultValue: 'Following {{name}} again' }));
       reload();
     } catch {
       toast.error(t('undo-failed', { defaultValue: "Couldn't undo. Follow them again from their profile." }));
@@ -243,9 +241,7 @@ export function FollowManager({ query, onQueryChange }: FollowManagerProps) {
     if (!ok) return;
     setBulkBusy(true);
     try {
-      const result = unfollowing
-        ? await unfollowAccounts(ids)
-        : await removeFollowers(ids);
+      const result = unfollowing ? await unfollowAccounts(ids) : await removeFollowers(ids);
       if (unfollowing) notifyFollowChanged();
       toast.success(
         unfollowing
@@ -389,9 +385,7 @@ export function FollowManager({ query, onQueryChange }: FollowManagerProps) {
           <EmptyState
             className={arrival}
             title={t('load-failed', { defaultValue: "Couldn't load this list" })}
-            action={
-              <Button onClick={reload}>{t('retry', { defaultValue: 'Try again' })}</Button>
-            }
+            action={<Button onClick={reload}>{t('retry', { defaultValue: 'Try again' })}</Button>}
           />
         ) : rows.length === 0 ? (
           <EmptyState

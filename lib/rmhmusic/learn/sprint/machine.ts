@@ -53,41 +53,21 @@ import type { NoteEvent } from '../input/events';
 import type { CompleteOutcome } from '../machines/learn-data';
 import type { Machine } from '../machines/runner';
 import type { Instrument } from '../schemas';
-import {
-  isChordAttempt,
-  pitchClasses,
-} from '../theory/chords';
-import {
-  promptMidis,
-  type SprintPrompt,
-} from './generate';
+import { isChordAttempt, pitchClasses } from '../theory/chords';
+import { promptMidis, type SprintPrompt } from './generate';
 import { micAllowed } from './levels';
-import {
-  promptPoints,
-  summarizeRun,
-  type PromptResult,
-  type RunSummary,
-} from './scoring';
+import { promptPoints, summarizeRun, type PromptResult, type RunSummary } from './scoring';
 
-export type SprintMode =
-  | 'freeplay'
-  | 'daily';
+export type SprintMode = 'freeplay' | 'daily';
 
 /**
  * How a save ended: a lesson's outcomes, plus `unsaved` (nothing keeps sprint results yet) and
  * `already-scored` (the day's challenge already has its scored run, from another tab or device).
  */
-export type SprintSaveOutcome =
-  | CompleteOutcome
-  | 'unsaved'
-  | 'already-scored';
+export type SprintSaveOutcome = CompleteOutcome | 'unsaved' | 'already-scored';
 
 /** Why a finished run was not kept. */
-export type CompleteWhy =
-  | 'practice'
-  | 'empty'
-  | 'unsaved'
-  | 'already-scored';
+export type CompleteWhy = 'practice' | 'empty' | 'unsaved' | 'already-scored';
 
 /** What every state carries: the run and what has been answered so far. */
 interface Run {
@@ -109,26 +89,19 @@ export type SprintState =
     })
   | (Run & {
       kind: 'countdown';
-      beat:
-        | 0
-        | 1
-        | 2;
+      beat: 0 | 1 | 2;
     })
   | (Run & {
       kind: 'asking';
       index: number;
       /** When the prompt was drawn; null until then (nothing answers). */
-      shownAt:
-        | number
-        | null;
+      shownAt: number | null;
       /** Chord: the notes in the open window. Bar: the notes played right so far. */
       got: readonly number[];
       /** Bar: when each note in `got` was played. Chord: when the last note went in. */
       times: readonly number[];
       /** Chord: when the open window opened; null when none is open. */
-      windowAt:
-        | number
-        | null;
+      windowAt: number | null;
       /** Chord: windows closed with too few notes on this prompt. */
       tooFew: number;
     })
@@ -164,14 +137,7 @@ export type SprintState =
       summary: RunSummary;
     });
 
-export type SprintNoteEvent =
-  Pick<
-    NoteEvent,
-    | 'type'
-    | 'midi'
-    | 'time'
-    | 'source'
-  >;
+export type SprintNoteEvent = Pick<NoteEvent, 'type' | 'midi' | 'time' | 'source'>;
 
 export type SprintEvent =
   | {
@@ -230,28 +196,20 @@ export type SprintEffect =
       results: readonly PromptResult[];
     };
 
-type Step =
-  {
-    state: SprintState;
-    effects: SprintEffect[];
-  };
+type Step = {
+  state: SprintState;
+  effects: SprintEffect[];
+};
 
-function runOf(
-  s: SprintState,
-): Run {
+function runOf(s: SprintState): Run {
   return {
     mode: s.mode,
-    prompts:
-      s.prompts,
-    targets:
-      s.targets,
-    instrument:
-      s.instrument,
-    scored:
-      s.scored,
+    prompts: s.prompts,
+    targets: s.targets,
+    instrument: s.instrument,
+    scored: s.scored,
     mic: s.mic,
-    results:
-      s.results,
+    results: s.results,
   };
 }
 
@@ -262,159 +220,86 @@ export function initial(opts: {
   mic: boolean;
   instrument?: Instrument;
 }): SprintState {
-  const instrument =
-    opts.instrument ??
-    'piano';
+  const instrument = opts.instrument ?? 'piano';
   return {
     kind: 'ready',
     mode: opts.mode,
-    prompts:
-      opts.prompts,
-    targets:
-      opts.prompts.map(
-        (
-          p,
-        ) =>
-          promptMidis(
-            p,
-            instrument,
-          ),
-      ),
+    prompts: opts.prompts,
+    targets: opts.prompts.map((p) => promptMidis(p, instrument)),
     instrument,
-    scored:
-      opts.scored,
+    scored: opts.scored,
     mic: opts.mic,
-    results:
-      [],
+    results: [],
   };
 }
 
-const same =
-  (
-    state: SprintState,
-  ): Step => ({
-    state,
-    effects:
-      [],
-  });
+const same = (state: SprintState): Step => ({
+  state,
+  effects: [],
+});
 
-const pc =
-  (
-    m: number,
-  ) =>
-    ((Math.round(
-      m,
-    ) %
-      12) +
-      12) %
-    12;
+const pc = (m: number) => ((Math.round(m) % 12) + 12) % 12;
 
 /** Whether a struck note is the wanted one: the exact pitch on MIDI, any octave otherwise. */
-export function sameNote(
-  source: NoteEvent['source'],
-  played: number,
-  wanted: number,
-): boolean {
-  return source ===
-    'midi'
-    ? played ===
-        wanted
-    : pc(
-        played,
-      ) ===
-        pc(
-          wanted,
-        );
+export function sameNote(source: NoteEvent['source'], played: number, wanted: number): boolean {
+  return source === 'midi' ? played === wanted : pc(played) === pc(wanted);
 }
 
 /** Whether this input must play the written octave (see the header). */
-export function exactOctave(
-  source: NoteEvent['source'],
-): boolean {
-  return (
-    source ===
-    'midi'
-  );
+export function exactOctave(source: NoteEvent['source']): boolean {
+  return source === 'midi';
 }
 
-const skippedResult =
-  (
-    p: SprintPrompt,
-  ): PromptResult => ({
-    level:
-      p.level,
-    kind: p.kind,
-    correct: false,
-    ms: null,
-    noteMs:
-      [],
-    points: 0,
-    skipped: true,
-  });
+const skippedResult = (p: SprintPrompt): PromptResult => ({
+  level: p.level,
+  kind: p.kind,
+  correct: false,
+  ms: null,
+  noteMs: [],
+  points: 0,
+  skipped: true,
+});
 
-function finished(
-  run: Run,
-  results: readonly PromptResult[],
-): Step {
-  const summary =
-    summarizeRun(
-      results,
-    );
-  const next: Run =
-    {
-      ...run,
-      results,
-    };
-  const complete: SprintEffect =
-    {
-      type: 'complete',
-      mode: run.mode,
-      scored:
-        run.scored,
-      summary,
-    };
-  if (
-    !run.scored ||
-    summary.played ===
-      0
-  ) {
+function finished(run: Run, results: readonly PromptResult[]): Step {
+  const summary = summarizeRun(results);
+  const next: Run = {
+    ...run,
+    results,
+  };
+  const complete: SprintEffect = {
+    type: 'complete',
+    mode: run.mode,
+    scored: run.scored,
+    summary,
+  };
+  if (!run.scored || summary.played === 0) {
     return {
-      state:
-        {
-          ...next,
-          kind: 'complete',
-          summary,
-          why:
-            summary.played ===
-            0
-              ? 'empty'
-              : 'practice',
-        },
-      effects:
-        [
-          complete,
-        ],
+      state: {
+        ...next,
+        kind: 'complete',
+        summary,
+        why: summary.played === 0 ? 'empty' : 'practice',
+      },
+      effects: [complete],
     };
   }
   return {
-    state:
+    state: {
+      ...next,
+      kind: 'saving',
+      summary,
+      attempt: 1,
+    },
+    effects: [
+      complete,
       {
-        ...next,
-        kind: 'saving',
-        summary,
+        type: 'save',
+        mode: run.mode,
         attempt: 1,
+        summary,
+        results,
       },
-    effects:
-      [
-        complete,
-        {
-          type: 'save',
-          mode: run.mode,
-          attempt: 1,
-          summary,
-          results,
-        },
-      ],
+    ],
   };
 }
 
@@ -422,85 +307,44 @@ function finished(
  * Ask prompt `index` — or, while the input is the microphone, skip the chords from there on —
  * or end the run past the last prompt.
  */
-function askFrom(
-  run: Run,
-  index: number,
-): Step {
-  let i =
-    index;
-  let results =
-    run.results;
+function askFrom(run: Run, index: number): Step {
+  let i = index;
+  let results = run.results;
   for (;;) {
-    const p =
-      run
-        .prompts[
-        i
-      ];
-    if (
-      !p ||
-      !run.mic ||
-      micAllowed(
-        p.kind,
-      )
-    )
-      break;
-    results =
-      [
-        ...results,
-        skippedResult(
-          p,
-        ),
-      ];
+    const p = run.prompts[i];
+    if (!p || !run.mic || micAllowed(p.kind)) break;
+    results = [...results, skippedResult(p)];
     i += 1;
   }
-  if (
-    i >=
-    run
-      .prompts
-      .length
-  )
-    return finished(
-      run,
-      results,
-    );
+  if (i >= run.prompts.length) return finished(run, results);
   return {
-    state:
-      {
-        ...run,
-        results,
-        ...freshPrompt(
-          i,
-        ),
-      },
-    effects:
-      [],
+    state: {
+      ...run,
+      results,
+      ...freshPrompt(i),
+    },
+    effects: [],
   };
 }
 
-function freshPrompt(
-  index: number,
-) {
+function freshPrompt(index: number) {
   return {
     kind: 'asking' as const,
     index,
-    shownAt:
-      null,
+    shownAt: null,
     got: [],
-    times:
-      [],
-    windowAt:
-      null,
+    times: [],
+    windowAt: null,
     tooFew: 0,
   };
 }
 
-type Asking =
-  Extract<
-    SprintState,
-    {
-      kind: 'asking';
-    }
-  >;
+type Asking = Extract<
+  SprintState,
+  {
+    kind: 'asking';
+  }
+>;
 
 function answer(
   s: Asking,
@@ -510,65 +354,29 @@ function answer(
   played: readonly number[],
   octaveOff = false,
 ): Step {
-  const p =
-    s
-      .prompts[
-      s
-        .index
-    ];
-  if (
-    !p ||
-    s.shownAt ===
-      null
-  )
-    return same(
-      s,
-    );
-  const ms =
-    Math.max(
-      0,
-      at -
-        s.shownAt,
-    );
-  const result: PromptResult =
-    {
-      level:
-        p.level,
-      kind: p.kind,
-      correct,
-      ms,
-      noteMs,
-      points:
-        promptPoints(
-          p.kind,
-          ms,
-          correct,
-          p
-            .notes
-            .length,
-        ),
-      skipped: false,
-    };
+  const p = s.prompts[s.index];
+  if (!p || s.shownAt === null) return same(s);
+  const ms = Math.max(0, at - s.shownAt);
+  const result: PromptResult = {
+    level: p.level,
+    kind: p.kind,
+    correct,
+    ms,
+    noteMs,
+    points: promptPoints(p.kind, ms, correct, p.notes.length),
+    skipped: false,
+  };
   return {
-    state:
-      {
-        ...runOf(
-          s,
-        ),
-        results:
-          [
-            ...s.results,
-            result,
-          ],
-        kind: 'feedback',
-        index:
-          s.index,
-        result,
-        played,
-        octaveOff,
-      },
-    effects:
-      [],
+    state: {
+      ...runOf(s),
+      results: [...s.results, result],
+      kind: 'feedback',
+      index: s.index,
+      result,
+      played,
+      octaveOff,
+    },
+    effects: [],
   };
 }
 
@@ -577,733 +385,256 @@ function answer(
  * level, its bass is the lowest), timed to the last note in; another attempt is wrong; too few is
  * not graded.
  */
-function closeWindow(
-  s: Asking,
-  at: number,
-): Step {
-  const p =
-    s
-      .prompts[
-      s
-        .index
-    ];
-  const target =
-    s
-      .targets[
-      s
-        .index
-    ];
-  if (
-    !p ||
-    !target
-  )
-    return same(
-      s,
-    );
-  const want =
-    pitchClasses(
-      target,
-    );
-  const have =
-    pitchClasses(
-      s.got,
-    );
-  const bass =
-    target[0];
-  const lowest =
-    Math.min(
-      ...s.got,
-    );
+function closeWindow(s: Asking, at: number): Step {
+  const p = s.prompts[s.index];
+  const target = s.targets[s.index];
+  if (!p || !target) return same(s);
+  const want = pitchClasses(target);
+  const have = pitchClasses(s.got);
+  const bass = target[0];
+  const lowest = Math.min(...s.got);
   const right =
-    want.length ===
-      have.length &&
-    want.every(
-      (
-        x,
-        i,
-      ) =>
-        x ===
-        have[
-          i
-        ],
-    ) &&
-    (p.level !==
-      'inversion' ||
-      (bass !==
-        undefined &&
-        pc(
-          lowest,
-        ) ===
-          pc(
-            bass,
-          )));
-  if (
-    right
-  )
-    return answer(
-      s,
-      true,
-      s
-        .times[
-        s
-          .times
-          .length -
-          1
-      ] ??
-        at,
-      [],
-      s.got,
-    );
-  if (
-    isChordAttempt(
-      s.got,
-    )
-  )
-    return answer(
-      s,
-      false,
-      at,
-      [],
-      s.got,
-    );
+    want.length === have.length &&
+    want.every((x, i) => x === have[i]) &&
+    (p.level !== 'inversion' || (bass !== undefined && pc(lowest) === pc(bass)));
+  if (right) return answer(s, true, s.times[s.times.length - 1] ?? at, [], s.got);
+  if (isChordAttempt(s.got)) return answer(s, false, at, [], s.got);
   return {
-    state:
-      {
-        ...s,
-        got: [],
-        times:
-          [],
-        windowAt:
-          null,
-        tooFew:
-          s.tooFew +
-          1,
-      },
-    effects:
-      [],
+    state: {
+      ...s,
+      got: [],
+      times: [],
+      windowAt: null,
+      tooFew: s.tooFew + 1,
+    },
+    effects: [],
   };
 }
 
-function onNote(
-  s: Asking,
-  e: SprintNoteEvent,
-): Step {
-  const p =
-    s
-      .prompts[
-      s
-        .index
-    ];
-  const target =
-    s
-      .targets[
-      s
-        .index
-    ];
-  if (
-    !p ||
-    !target
-  )
-    return same(
-      s,
-    );
-  if (
-    e.type !==
-      'on' ||
-    !Number.isFinite(
-      e.midi,
-    ) ||
-    !Number.isFinite(
-      e.time,
-    )
-  )
-    return same(
-      s,
-    );
-  if (
-    s.shownAt ===
-      null ||
-    e.time <
-      s.shownAt
-  )
-    return same(
-      s,
-    );
-  if (
-    e.source ===
-      'mic' &&
-    !micAllowed(
-      p.kind,
-    )
-  )
-    return same(
-      s,
-    );
-  const at =
-    e.time;
-  switch (
-    p.kind
-  ) {
+function onNote(s: Asking, e: SprintNoteEvent): Step {
+  const p = s.prompts[s.index];
+  const target = s.targets[s.index];
+  if (!p || !target) return same(s);
+  if (e.type !== 'on' || !Number.isFinite(e.midi) || !Number.isFinite(e.time)) return same(s);
+  if (s.shownAt === null || e.time < s.shownAt) return same(s);
+  if (e.source === 'mic' && !micAllowed(p.kind)) return same(s);
+  const at = e.time;
+  switch (p.kind) {
     case 'note':
     case 'accidental': {
-      const want =
-        target[0] ??
-        Number.NaN;
-      const right =
-        sameNote(
-          e.source,
-          e.midi,
-          want,
-        );
-      return answer(
-        s,
-        right,
-        at,
-        [
-          at -
-            s.shownAt,
-        ],
-        [
-          e.midi,
-        ],
-        !right &&
-          pc(
-            e.midi,
-          ) ===
-            pc(
-              want,
-            ),
-      );
+      const want = target[0] ?? Number.NaN;
+      const right = sameNote(e.source, e.midi, want);
+      return answer(s, right, at, [at - s.shownAt], [e.midi], !right && pc(e.midi) === pc(want));
     }
     case 'bar': {
-      const last =
-        s
-          .got[
-          s
-            .got
-            .length -
-            1
-        ];
-      if (
-        last ===
-        e.midi
-      )
-        return same(
-          s,
-        );
-      const shownAt =
-        s.shownAt;
-      const times =
-        [
-          ...s.times,
-          at,
-        ];
-      const noteMs =
-        times.map(
-          (
-            t,
-            i,
-          ) =>
-            t -
-            (times[
-              i -
-                1
-            ] ??
-              shownAt),
-        );
-      const want =
-        target[
-          s
-            .got
-            .length
-        ] ??
-        Number.NaN;
-      if (
-        !sameNote(
-          e.source,
-          e.midi,
-          want,
-        )
-      ) {
-        return answer(
-          s,
-          false,
-          at,
-          noteMs.slice(
-            0,
-            -1,
-          ),
-          [
-            ...s.got,
-            e.midi,
-          ],
-          pc(
-            e.midi,
-          ) ===
-            pc(
-              want,
-            ),
-        );
+      const last = s.got[s.got.length - 1];
+      if (last === e.midi) return same(s);
+      const shownAt = s.shownAt;
+      const times = [...s.times, at];
+      const noteMs = times.map((t, i) => t - (times[i - 1] ?? shownAt));
+      const want = target[s.got.length] ?? Number.NaN;
+      if (!sameNote(e.source, e.midi, want)) {
+        return answer(s, false, at, noteMs.slice(0, -1), [...s.got, e.midi], pc(e.midi) === pc(want));
       }
-      const got =
-        [
-          ...s.got,
-          e.midi,
-        ];
-      if (
-        got.length <
-        target.length
-      )
+      const got = [...s.got, e.midi];
+      if (got.length < target.length)
         return {
-          state:
-            {
-              ...s,
-              got,
-              times,
-            },
-          effects:
-            [],
+          state: {
+            ...s,
+            got,
+            times,
+          },
+          effects: [],
         };
-      return answer(
-        s,
-        true,
-        at,
-        noteMs,
-        got,
-      );
+      return answer(s, true, at, noteMs, got);
     }
     case 'chord': {
-      let cur: Asking =
-        s;
-      if (
-        cur.windowAt !==
-          null &&
-        at -
-          cur.windowAt >=
-          CHORD_WINDOW_MS
-      ) {
-        const closed =
-          closeWindow(
-            cur,
-            cur.windowAt +
-              CHORD_WINDOW_MS,
-          );
-        if (
-          closed
-            .state
-            .kind !==
-          'asking'
-        )
-          return closed;
-        cur =
-          closed.state;
+      let cur: Asking = s;
+      if (cur.windowAt !== null && at - cur.windowAt >= CHORD_WINDOW_MS) {
+        const closed = closeWindow(cur, cur.windowAt + CHORD_WINDOW_MS);
+        if (closed.state.kind !== 'asking') return closed;
+        cur = closed.state;
       }
-      if (
-        cur.got.includes(
-          e.midi,
-        )
-      )
-        return same(
-          cur,
-        );
+      if (cur.got.includes(e.midi)) return same(cur);
       return {
-        state:
-          {
-            ...cur,
-            got: [
-              ...cur.got,
-              e.midi,
-            ],
-            times:
-              [
-                at,
-              ],
-            windowAt:
-              cur.windowAt ??
-              at,
-          },
-        effects:
-          [],
+        state: {
+          ...cur,
+          got: [...cur.got, e.midi],
+          times: [at],
+          windowAt: cur.windowAt ?? at,
+        },
+        effects: [],
       };
     }
     default:
-      return unreachable(
-        p.kind,
-      );
+      return unreachable(p.kind);
   }
 }
 
-const isFinished =
-  (
-    s: SprintState,
-  ) =>
-    s.kind ===
-      'complete' ||
-    s.kind ===
-      'saved' ||
-    s.kind ===
-      'failed' ||
-    s.kind ===
-      'signed-out';
+const isFinished = (s: SprintState) =>
+  s.kind === 'complete' || s.kind === 'saved' || s.kind === 'failed' || s.kind === 'signed-out';
 
-export function step(
-  s: SprintState,
-  e: SprintEvent,
-): Step {
-  switch (
-    e.type
-  ) {
+export function step(s: SprintState, e: SprintEvent): Step {
+  switch (e.type) {
     case 'start':
-      if (
-        s.kind !==
-        'ready'
-      )
-        return same(
-          s,
-        );
+      if (s.kind !== 'ready') return same(s);
       return {
-        state:
-          {
-            ...runOf(
-              s,
-            ),
-            kind: 'countdown',
-            beat: 0,
-          },
-        effects:
-          [],
+        state: {
+          ...runOf(s),
+          kind: 'countdown',
+          beat: 0,
+        },
+        effects: [],
       };
     case 'tick':
-      if (
-        s.kind !==
-        'countdown'
-      )
-        return same(
-          s,
-        );
-      if (
-        s.beat <
-        2
-      )
+      if (s.kind !== 'countdown') return same(s);
+      if (s.beat < 2)
         return {
-          state:
-            {
-              ...s,
-              beat: (s.beat +
-                1) as
-                | 1
-                | 2,
-            },
-          effects:
-            [],
-        };
-      return askFrom(
-        runOf(
-          s,
-        ),
-        0,
-      );
-    case 'shown':
-      if (
-        s.kind !==
-          'asking' ||
-        s.shownAt !==
-          null ||
-        !Number.isFinite(
-          e.at,
-        )
-      )
-        return same(
-          s,
-        );
-      return {
-        state:
-          {
+          state: {
             ...s,
-            shownAt:
-              e.at,
+            beat: (s.beat + 1) as 1 | 2,
           },
-        effects:
-          [],
+          effects: [],
+        };
+      return askFrom(runOf(s), 0);
+    case 'shown':
+      if (s.kind !== 'asking' || s.shownAt !== null || !Number.isFinite(e.at)) return same(s);
+      return {
+        state: {
+          ...s,
+          shownAt: e.at,
+        },
+        effects: [],
       };
     case 'resume':
-      if (
-        s.kind !==
-          'asking' ||
-        s.shownAt ===
-          null
-      )
-        return same(
-          s,
-        );
+      if (s.kind !== 'asking' || s.shownAt === null) return same(s);
       return {
-        state:
-          {
-            ...s,
-            ...freshPrompt(
-              s.index,
-            ),
-            tooFew:
-              s.tooFew,
-          },
-        effects:
-          [],
+        state: {
+          ...s,
+          ...freshPrompt(s.index),
+          tooFew: s.tooFew,
+        },
+        effects: [],
       };
     case 'note':
-      return s.kind ===
-        'asking'
-        ? onNote(
-            s,
-            e.note,
-          )
-        : same(
-            s,
-          );
+      return s.kind === 'asking' ? onNote(s, e.note) : same(s);
     case 'close': {
-      if (
-        s.kind !==
-          'asking' ||
-        s.windowAt ===
-          null ||
-        !Number.isFinite(
-          e.at,
-        )
-      )
-        return same(
-          s,
-        );
-      if (
-        e.at -
-          s.windowAt <
-        CHORD_WINDOW_MS
-      )
-        return same(
-          s,
-        );
-      return closeWindow(
-        s,
-        s.windowAt +
-          CHORD_WINDOW_MS,
-      );
+      if (s.kind !== 'asking' || s.windowAt === null || !Number.isFinite(e.at)) return same(s);
+      if (e.at - s.windowAt < CHORD_WINDOW_MS) return same(s);
+      return closeWindow(s, s.windowAt + CHORD_WINDOW_MS);
     }
     case 'input': {
       // Fixed for a run: only before it starts or after it ends.
-      if (
-        s.mic ===
-          e.mic ||
-        (s.kind !==
-          'ready' &&
-          !isFinished(
-            s,
-          ))
-      )
-        return same(
-          s,
-        );
+      if (s.mic === e.mic || (s.kind !== 'ready' && !isFinished(s))) return same(s);
       return {
-        state:
-          {
-            ...s,
-            mic: e.mic,
-          },
-        effects:
-          [],
+        state: {
+          ...s,
+          mic: e.mic,
+        },
+        effects: [],
       };
     }
     case 'next':
-      if (
-        s.kind !==
-        'feedback'
-      )
-        return same(
-          s,
-        );
-      return askFrom(
-        runOf(
-          s,
-        ),
-        s.index +
-          1,
-      );
+      if (s.kind !== 'feedback') return same(s);
+      return askFrom(runOf(s), s.index + 1);
     case 'answered': {
-      if (
-        s.kind !==
-          'saving' ||
-        s.attempt !==
-          e.attempt
-      )
-        return same(
-          s,
-        );
-      const base =
-        {
-          ...runOf(
-            s,
-          ),
-          summary:
-            s.summary,
-        };
-      switch (
-        e.outcome
-      ) {
+      if (s.kind !== 'saving' || s.attempt !== e.attempt) return same(s);
+      const base = {
+        ...runOf(s),
+        summary: s.summary,
+      };
+      switch (e.outcome) {
         case 'saved':
           return {
-            state:
-              {
-                ...base,
-                kind: 'saved',
-              },
-            effects:
-              [],
+            state: {
+              ...base,
+              kind: 'saved',
+            },
+            effects: [],
           };
         case 'unsaved':
         case 'already-scored':
           return {
-            state:
-              {
-                ...base,
-                kind: 'complete',
-                why: e.outcome,
-              },
-            effects:
-              [],
+            state: {
+              ...base,
+              kind: 'complete',
+              why: e.outcome,
+            },
+            effects: [],
           };
         case 'unauthorized':
           return {
-            state:
-              {
-                ...base,
-                kind: 'signed-out',
-              },
-            effects:
-              [],
+            state: {
+              ...base,
+              kind: 'signed-out',
+            },
+            effects: [],
           };
         case 'failed':
         case 'invalid':
           return {
-            state:
-              {
-                ...base,
-                kind: 'failed',
-                attempt:
-                  s.attempt,
-              },
-            effects:
-              [],
+            state: {
+              ...base,
+              kind: 'failed',
+              attempt: s.attempt,
+            },
+            effects: [],
           };
         default:
-          return unreachable(
-            e.outcome,
-          );
+          return unreachable(e.outcome);
       }
     }
     case 'retry': {
-      if (
-        s.kind !==
-        'failed'
-      )
-        return same(
-          s,
-        );
-      const attempt =
-        s.attempt +
-        1;
+      if (s.kind !== 'failed') return same(s);
+      const attempt = s.attempt + 1;
       return {
-        state:
+        state: {
+          ...runOf(s),
+          kind: 'saving',
+          summary: s.summary,
+          attempt,
+        },
+        effects: [
           {
-            ...runOf(
-              s,
-            ),
-            kind: 'saving',
-            summary:
-              s.summary,
+            type: 'save',
+            mode: s.mode,
             attempt,
+            summary: s.summary,
+            results: s.results,
           },
-        effects:
-          [
-            {
-              type: 'save',
-              mode: s.mode,
-              attempt,
-              summary:
-                s.summary,
-              results:
-                s.results,
-            },
-          ],
+        ],
       };
     }
     case 'again': {
-      if (
-        !isFinished(
-          s,
-        )
-      )
-        return same(
-          s,
-        );
+      if (!isFinished(s)) return same(s);
       return {
-        state:
-          {
-            ...runOf(
-              s,
-            ),
-            kind: 'countdown',
-            beat: 0,
-            prompts:
-              e.prompts,
-            targets:
-              e.prompts.map(
-                (
-                  p,
-                ) =>
-                  promptMidis(
-                    p,
-                    s.instrument,
-                  ),
-              ),
-            scored:
-              s.mode ===
-              'daily'
-                ? false
-                : s.scored,
-            results:
-              [],
-          },
-        effects:
-          [],
+        state: {
+          ...runOf(s),
+          kind: 'countdown',
+          beat: 0,
+          prompts: e.prompts,
+          targets: e.prompts.map((p) => promptMidis(p, s.instrument)),
+          scored: s.mode === 'daily' ? false : s.scored,
+          results: [],
+        },
+        effects: [],
       };
     }
     default:
-      return unreachable(
-        e,
-      );
+      return unreachable(e);
   }
 }
 
 /** One run's machine, in the shape `createRunner` / `useMachine` take. */
 export function createSprintMachine(
-  opts: Parameters<
-    typeof initial
-  >[0],
-): Machine<
-  SprintState,
-  SprintEvent,
-  SprintEffect
-> {
+  opts: Parameters<typeof initial>[0],
+): Machine<SprintState, SprintEvent, SprintEffect> {
   return {
-    initial:
-      initial(
-        opts,
-      ),
+    initial: initial(opts),
     step,
   };
 }
 
-function unreachable(
-  x: never,
-): never {
-  throw new Error(
-    `sprint: unhandled ${JSON.stringify(x)}`,
-  );
+function unreachable(x: never): never {
+  throw new Error(`sprint: unhandled ${JSON.stringify(x)}`);
 }

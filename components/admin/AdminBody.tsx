@@ -1,17 +1,14 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-const WIDTHS =
-  {
-    /** Forms and queues read best in a narrow column. */
-    narrow:
-      'max-w-3xl',
-    /** The default admin measure: stat grids, lists, panels. */
-    default:
-      'max-w-4xl',
-    /** Wide data views (charts, dense tables). */
-    wide: 'max-w-6xl',
-  } as const;
+const WIDTHS = {
+  /** Forms and queues read best in a narrow column. */
+  narrow: 'max-w-3xl',
+  /** The default admin measure: stat grids, lists, panels. */
+  default: 'max-w-4xl',
+  /** Wide data views (charts, dense tables). */
+  wide: 'max-w-6xl',
+} as const;
 
 /**
  * The inner column every admin page renders inside `PageLayout`.
@@ -34,17 +31,9 @@ export function AdminBody({
 }) {
   return (
     <div
-      className={cn(
-        'mx-auto w-full min-w-0 space-y-[var(--site-section-gap)] pt-4 pb-12',
-        WIDTHS[
-          width
-        ],
-        className,
-      )}
+      className={cn('mx-auto w-full min-w-0 space-y-[var(--site-section-gap)] pt-4 pb-12', WIDTHS[width], className)}
     >
-      {
-        children
-      }
+      {children}
     </div>
   );
 }

@@ -6,13 +6,9 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { ProfilePayload } from '@/lib/profile.server';
 
-export const getProfileApi =
-  endpoint<{
-    res: ProfilePayload;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/profile/$id',
-    },
-  );
+export const getProfileApi = endpoint<{
+  res: ProfilePayload;
+}>()({
+  method: 'GET',
+  path: '/api/profile/$id',
+});

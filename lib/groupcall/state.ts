@@ -22,12 +22,7 @@
  * difference from the 1:1 machine and every other difference follows from it.
  */
 
-import {
-  canCall,
-  durationSeconds,
-  formatDuration,
-  type CallPrivacy,
-} from '@/lib/call/state';
+import { canCall, durationSeconds, formatDuration, type CallPrivacy } from '@/lib/call/state';
 import {
   MAX_GROUP_CALL_PARTICIPANTS,
   type GroupCallEndReason,
@@ -45,10 +40,7 @@ import {
  * in-call chrome uses. Re-exporting keeps the group UI from importing across to
  * `lib/call/*` for one function while getting everything else from here.
  */
-export {
-  durationSeconds,
-  formatDuration,
-};
+export { durationSeconds, formatDuration };
 export type { CallPrivacy };
 
 /* -------------------------------------------------------------------------- */
@@ -90,25 +82,15 @@ export type GroupCallPhase =
 export interface GroupCallState {
   phase: GroupCallPhase;
   /** `null` while a `START` is in flight — the server has not named the room yet. */
-  callId:
-    | string
-    | null;
+  callId: string | null;
   origin: GroupCallOrigin | null;
   /** Community/party id. `null` for `adhoc` and while idle. */
-  originId:
-    | string
-    | null;
+  originId: string | null;
   /** The DM thread an ad-hoc call started from, when it did. */
-  conversationId:
-    | string
-    | null;
-  hostId:
-    | string
-    | null;
+  conversationId: string | null;
+  hostId: string | null;
   /** Our own userId. Needed here because {@link shouldOffer} is one half of a compare. */
-  selfId:
-    | string
-    | null;
+  selfId: string | null;
   /**
    * The roster, keyed by userId.
    *
@@ -122,44 +104,28 @@ export interface GroupCallState {
    * order comes from {@link rosterList}, which sorts rather than relying on the
    * order things happened to arrive.
    */
-  participants: Record<
-    string,
-    GroupCallParticipantView
-  >;
+  participants: Record<string, GroupCallParticipantView>;
   /** Set only in the `ended` phase. */
   endReason: GroupCallEndReason | null;
   /** Epoch ms we entered the room, for the call timer. */
-  joinedAt:
-    | number
-    | null;
+  joinedAt: number | null;
   /** Our own mic state, as published to the room. */
   muted: boolean;
 }
 
-export const IDLE_GROUP_CALL: GroupCallState =
-  {
-    phase:
-      'idle',
-    callId:
-      null,
-    origin:
-      null,
-    originId:
-      null,
-    conversationId:
-      null,
-    hostId:
-      null,
-    selfId:
-      null,
-    participants:
-      {},
-    endReason:
-      null,
-    joinedAt:
-      null,
-    muted: false,
-  };
+export const IDLE_GROUP_CALL: GroupCallState = {
+  phase: 'idle',
+  callId: null,
+  origin: null,
+  originId: null,
+  conversationId: null,
+  hostId: null,
+  selfId: null,
+  participants: {},
+  endReason: null,
+  joinedAt: null,
+  muted: false,
+};
 
 export type GroupCallEvent =
   /**
@@ -171,12 +137,8 @@ export type GroupCallEvent =
   | {
       type: 'start';
       origin: GroupCallOrigin;
-      originId:
-        | string
-        | null;
-      conversationId:
-        | string
-        | null;
+      originId: string | null;
+      conversationId: string | null;
       selfId: string;
     }
   /** An ad-hoc room is ringing us. */
@@ -184,12 +146,8 @@ export type GroupCallEvent =
       type: 'incoming';
       callId: string;
       origin: GroupCallOrigin;
-      originId:
-        | string
-        | null;
-      conversationId:
-        | string
-        | null;
+      originId: string | null;
+      conversationId: string | null;
       hostId: string;
       selfId: string;
       participants: GroupCallParticipantView[];
@@ -207,12 +165,8 @@ export type GroupCallEvent =
       type: 'joined';
       callId: string;
       origin: GroupCallOrigin;
-      originId:
-        | string
-        | null;
-      conversationId:
-        | string
-        | null;
+      originId: string | null;
+      conversationId: string | null;
       hostId: string;
       selfId: string;
       participants: GroupCallParticipantView[];
@@ -257,15 +211,8 @@ export type GroupCallEvent =
 /* -------------------------------------------------------------------------- */
 
 /** Phases in which a new call cannot be started or received. */
-export function isGroupCallBusy(
-  state: GroupCallState,
-): boolean {
-  return (
-    state.phase !==
-      'idle' &&
-    state.phase !==
-      'ended'
-  );
+export function isGroupCallBusy(state: GroupCallState): boolean {
+  return state.phase !== 'idle' && state.phase !== 'ended';
 }
 
 /**
@@ -275,15 +222,8 @@ export function isGroupCallBusy(
  * moment the user pressed Join, never to the moment somebody else's room started
  * ringing.
  */
-export function wantsMicrophone(
-  phase: GroupCallPhase,
-): boolean {
-  return (
-    phase ===
-      'joining' ||
-    phase ===
-      'active'
-  );
+export function wantsMicrophone(phase: GroupCallPhase): boolean {
+  return phase === 'joining' || phase === 'active';
 }
 
 /**
@@ -302,14 +242,8 @@ export function wantsMicrophone(
  * Returns `false` for `selfUserId === peerUserId` — nobody offers to themselves,
  * and a self-entry on the roster must never produce a peer connection.
  */
-export function shouldOffer(
-  selfUserId: string,
-  peerUserId: string,
-): boolean {
-  return (
-    selfUserId <
-    peerUserId
-  );
+export function shouldOffer(selfUserId: string, peerUserId: string): boolean {
+  return selfUserId < peerUserId;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -319,20 +253,9 @@ export function shouldOffer(
 /** Index a roster array by userId. Later entries win, so a snapshot is self-healing. */
 export function indexRoster(
   participants: readonly GroupCallParticipantView[],
-): Record<
-  string,
-  GroupCallParticipantView
-> {
-  const out: Record<
-    string,
-    GroupCallParticipantView
-  > =
-    {};
-  for (const p of participants)
-    out[
-      p.userId
-    ] =
-      p;
+): Record<string, GroupCallParticipantView> {
+  const out: Record<string, GroupCallParticipantView> = {};
+  for (const p of participants) out[p.userId] = p;
   return out;
 }
 
@@ -344,81 +267,25 @@ export function indexRoster(
  * reshuffling when a snapshot arrives in a different order from the deltas that
  * built the same roster.
  */
-export function rosterList(
-  state: GroupCallState,
-): GroupCallParticipantView[] {
-  return Object.values(
-    state.participants,
-  ).sort(
-    (
-      a,
-      b,
-    ) => {
-      if (
-        a.joinedAt ===
-          null &&
-        b.joinedAt ===
-          null
-      )
-        return a.userId <
-          b.userId
-          ? -1
-          : 1;
-      // Still ringing sorts last: the room is the people in it.
-      if (
-        a.joinedAt ===
-        null
-      )
-        return 1;
-      if (
-        b.joinedAt ===
-        null
-      )
-        return -1;
-      if (
-        a.joinedAt !==
-        b.joinedAt
-      )
-        return (
-          a.joinedAt -
-          b.joinedAt
-        );
-      return a.userId <
-        b.userId
-        ? -1
-        : 1;
-    },
-  );
+export function rosterList(state: GroupCallState): GroupCallParticipantView[] {
+  return Object.values(state.participants).sort((a, b) => {
+    if (a.joinedAt === null && b.joinedAt === null) return a.userId < b.userId ? -1 : 1;
+    // Still ringing sorts last: the room is the people in it.
+    if (a.joinedAt === null) return 1;
+    if (b.joinedAt === null) return -1;
+    if (a.joinedAt !== b.joinedAt) return a.joinedAt - b.joinedAt;
+    return a.userId < b.userId ? -1 : 1;
+  });
 }
 
 /** Everyone on the roster who is actually in the room. */
-export function joinedParticipants(
-  state: GroupCallState,
-): GroupCallParticipantView[] {
-  return rosterList(
-    state,
-  ).filter(
-    (
-      p,
-    ) =>
-      p.joinedAt !==
-      null,
-  );
+export function joinedParticipants(state: GroupCallState): GroupCallParticipantView[] {
+  return rosterList(state).filter((p) => p.joinedAt !== null);
 }
 
 /** Ad-hoc only: invited, still ringing, not in yet. */
-export function pendingInvitees(
-  state: GroupCallState,
-): GroupCallParticipantView[] {
-  return rosterList(
-    state,
-  ).filter(
-    (
-      p,
-    ) =>
-      p.joinedAt ===
-      null,
-  );
+export function pendingInvitees(state: GroupCallState): GroupCallParticipantView[] {
+  return rosterList(state).filter((p) => p.joinedAt === null);
 }
 
 /**
@@ -428,114 +295,51 @@ export function pendingInvitees(
  * because a room that is "full" of people who have not answered is a room nobody
  * can join.
  */
-export function participantCount(
-  state: GroupCallState,
-): number {
+export function participantCount(state: GroupCallState): number {
   let n = 0;
   for (const id in state.participants) {
-    if (
-      state
-        .participants[
-        id
-      ]
-        .joinedAt !==
-      null
-    )
-      n += 1;
+    if (state.participants[id].joinedAt !== null) n += 1;
   }
   return n;
 }
 
 /** Would one more person exceed {@link MAX_GROUP_CALL_PARTICIPANTS}? */
-export function isRosterFull(
-  stateOrCount:
-    | GroupCallState
-    | number,
-): boolean {
-  const count =
-    typeof stateOrCount ===
-    'number'
-      ? stateOrCount
-      : participantCount(
-          stateOrCount,
-        );
-  return (
-    count >=
-    MAX_GROUP_CALL_PARTICIPANTS
-  );
+export function isRosterFull(stateOrCount: GroupCallState | number): boolean {
+  const count = typeof stateOrCount === 'number' ? stateOrCount : participantCount(stateOrCount);
+  return count >= MAX_GROUP_CALL_PARTICIPANTS;
 }
 
 /** How many more people would fit. Never negative. */
-export function remainingSlots(
-  state: GroupCallState,
-): number {
-  return Math.max(
-    0,
-    MAX_GROUP_CALL_PARTICIPANTS -
-      participantCount(
-        state,
-      ),
-  );
+export function remainingSlots(state: GroupCallState): number {
+  return Math.max(0, MAX_GROUP_CALL_PARTICIPANTS - participantCount(state));
 }
 
 /** Everyone we should hold a peer connection to: joined, and not us. */
-export function meshPeers(
-  state: GroupCallState,
-): GroupCallParticipantView[] {
-  return joinedParticipants(
-    state,
-  ).filter(
-    (
-      p,
-    ) =>
-      p.userId !==
-      state.selfId,
-  );
+export function meshPeers(state: GroupCallState): GroupCallParticipantView[] {
+  return joinedParticipants(state).filter((p) => p.userId !== state.selfId);
 }
 
 /** Add or replace one roster row. Idempotent. */
 export function addParticipant(
-  participants: Record<
-    string,
-    GroupCallParticipantView
-  >,
+  participants: Record<string, GroupCallParticipantView>,
   participant: GroupCallParticipantView,
-): Record<
-  string,
-  GroupCallParticipantView
-> {
+): Record<string, GroupCallParticipantView> {
   return {
     ...participants,
-    [participant.userId]:
-      participant,
+    [participant.userId]: participant,
   };
 }
 
 /** Drop one roster row. A no-op — and the same object — if they were not there. */
 export function removeParticipant(
-  participants: Record<
-    string,
-    GroupCallParticipantView
-  >,
+  participants: Record<string, GroupCallParticipantView>,
   userId: string,
-): Record<
-  string,
-  GroupCallParticipantView
-> {
-  if (
-    !(
-      userId in
-      participants
-    )
-  )
-    return participants;
-  const next =
-    {
-      ...participants,
-    };
-  delete next[
-    userId
-  ];
+): Record<string, GroupCallParticipantView> {
+  if (!(userId in participants)) return participants;
+  const next = {
+    ...participants,
+  };
+  delete next[userId];
   return next;
 }
 
@@ -547,33 +351,18 @@ export function removeParticipant(
  * from a peer who has since left must not put them back on screen.
  */
 export function setParticipantMuted(
-  participants: Record<
-    string,
-    GroupCallParticipantView
-  >,
+  participants: Record<string, GroupCallParticipantView>,
   userId: string,
   muted: boolean,
-): Record<
-  string,
-  GroupCallParticipantView
-> {
-  const current =
-    participants[
-      userId
-    ];
-  if (
-    !current ||
-    current.muted ===
-      muted
-  )
-    return participants;
+): Record<string, GroupCallParticipantView> {
+  const current = participants[userId];
+  if (!current || current.muted === muted) return participants;
   return {
     ...participants,
-    [userId]:
-      {
-        ...current,
-        muted,
-      },
+    [userId]: {
+      ...current,
+      muted,
+    },
   };
 }
 
@@ -584,34 +373,18 @@ export function setParticipantMuted(
  * anyway; this exists for the client-side optimistic path and for tests.
  */
 export function markJoined(
-  participants: Record<
-    string,
-    GroupCallParticipantView
-  >,
+  participants: Record<string, GroupCallParticipantView>,
   userId: string,
   at: number,
-): Record<
-  string,
-  GroupCallParticipantView
-> {
-  const current =
-    participants[
-      userId
-    ];
-  if (
-    !current ||
-    current.joinedAt !==
-      null
-  )
-    return participants;
+): Record<string, GroupCallParticipantView> {
+  const current = participants[userId];
+  if (!current || current.joinedAt !== null) return participants;
   return {
     ...participants,
-    [userId]:
-      {
-        ...current,
-        joinedAt:
-          at,
-      },
+    [userId]: {
+      ...current,
+      joinedAt: at,
+    },
   };
 }
 
@@ -630,103 +403,56 @@ export function markJoined(
  * transition is a no-op that returns the previous state object unchanged, which
  * also means a store using reference equality re-renders nothing.
  */
-export function reduce(
-  state: GroupCallState,
-  event: GroupCallEvent,
-): GroupCallState {
-  switch (
-    event.type
-  ) {
+export function reduce(state: GroupCallState, event: GroupCallEvent): GroupCallState {
+  switch (event.type) {
     case 'start':
       // A second start while busy is dropped; the UI already shows the room.
-      if (
-        isGroupCallBusy(
-          state,
-        )
-      )
-        return state;
+      if (isGroupCallBusy(state)) return state;
       return {
         ...IDLE_GROUP_CALL,
-        phase:
-          'joining',
-        callId:
-          null,
-        origin:
-          event.origin,
-        originId:
-          event.originId,
-        conversationId:
-          event.conversationId,
-        selfId:
-          event.selfId,
+        phase: 'joining',
+        callId: null,
+        origin: event.origin,
+        originId: event.originId,
+        conversationId: event.conversationId,
+        selfId: event.selfId,
         // The host is a participant from the first instant, but the server owns
         // the roster and will send it with `joined`. Staying empty here keeps
         // one source of truth rather than two that have to agree.
-        participants:
-          {},
+        participants: {},
       };
 
     case 'incoming':
-      if (
-        isGroupCallBusy(
-          state,
-        )
-      )
-        return state;
+      if (isGroupCallBusy(state)) return state;
       return {
         ...IDLE_GROUP_CALL,
-        phase:
-          'incoming',
-        callId:
-          event.callId,
-        origin:
-          event.origin,
-        originId:
-          event.originId,
-        conversationId:
-          event.conversationId,
-        hostId:
-          event.hostId,
-        selfId:
-          event.selfId,
-        participants:
-          indexRoster(
-            event.participants,
-          ),
+        phase: 'incoming',
+        callId: event.callId,
+        origin: event.origin,
+        originId: event.originId,
+        conversationId: event.conversationId,
+        hostId: event.hostId,
+        selfId: event.selfId,
+        participants: indexRoster(event.participants),
       };
 
     case 'join':
       // From `incoming`: we accepted, and it must be the room that is ringing —
       // an accept aimed at a different callId is a stale click on a card that
       // has since been replaced.
-      if (
-        state.phase ===
-        'incoming'
-      ) {
-        if (
-          state.callId !==
-          event.callId
-        )
-          return state;
+      if (state.phase === 'incoming') {
+        if (state.callId !== event.callId) return state;
         return {
           ...state,
-          phase:
-            'joining',
+          phase: 'joining',
         };
       }
       // From `idle`/`ended`: walking into an open room we already know the id of.
-      if (
-        state.phase ===
-          'idle' ||
-        state.phase ===
-          'ended'
-      ) {
+      if (state.phase === 'idle' || state.phase === 'ended') {
         return {
           ...IDLE_GROUP_CALL,
-          phase:
-            'joining',
-          callId:
-            event.callId,
+          phase: 'joining',
+          callId: event.callId,
         };
       }
       // Already joining or active — a duplicate press, or a join aimed
@@ -736,73 +462,35 @@ export function reduce(
     case 'joined':
       // Only meaningful while we are trying to get in. A `joined` that lands
       // after we gave up (or after the room ended) must not resurrect it.
-      if (
-        state.phase !==
-        'joining'
-      )
-        return state;
+      if (state.phase !== 'joining') return state;
       return {
         ...state,
-        phase:
-          'active',
-        callId:
-          event.callId,
-        origin:
-          event.origin,
-        originId:
-          event.originId,
-        conversationId:
-          event.conversationId,
-        hostId:
-          event.hostId,
-        selfId:
-          event.selfId,
-        participants:
-          indexRoster(
-            event.participants,
-          ),
-        joinedAt:
-          event.at,
+        phase: 'active',
+        callId: event.callId,
+        origin: event.origin,
+        originId: event.originId,
+        conversationId: event.conversationId,
+        hostId: event.hostId,
+        selfId: event.selfId,
+        participants: indexRoster(event.participants),
+        joinedAt: event.at,
       };
 
     case 'roster':
       // Snapshots are only trusted for the room we believe we are in, and only
       // once we are in it — a snapshot cannot be what puts us on the roster.
-      if (
-        state.phase !==
-          'active' ||
-        state.callId !==
-          event.callId
-      )
-        return state;
+      if (state.phase !== 'active' || state.callId !== event.callId) return state;
       return {
         ...state,
-        participants:
-          indexRoster(
-            event.participants,
-          ),
+        participants: indexRoster(event.participants),
       };
 
     case 'peer-joined': {
       // `incoming` accepts them too, so the ringing card's "and 2 others" stays
       // right while the user decides.
-      if (
-        state.phase !==
-          'active' &&
-        state.phase !==
-          'incoming'
-      )
-        return state;
-      const participants =
-        addParticipant(
-          state.participants,
-          event.participant,
-        );
-      if (
-        participants ===
-        state.participants
-      )
-        return state;
+      if (state.phase !== 'active' && state.phase !== 'incoming') return state;
+      const participants = addParticipant(state.participants, event.participant);
+      if (participants === state.participants) return state;
       return {
         ...state,
         participants,
@@ -810,23 +498,9 @@ export function reduce(
     }
 
     case 'peer-left': {
-      if (
-        state.phase !==
-          'active' &&
-        state.phase !==
-          'incoming'
-      )
-        return state;
-      const participants =
-        removeParticipant(
-          state.participants,
-          event.userId,
-        );
-      if (
-        participants ===
-        state.participants
-      )
-        return state;
+      if (state.phase !== 'active' && state.phase !== 'incoming') return state;
+      const participants = removeParticipant(state.participants, event.userId);
+      if (participants === state.participants) return state;
       return {
         ...state,
         participants,
@@ -834,17 +508,8 @@ export function reduce(
     }
 
     case 'peer-muted': {
-      const participants =
-        setParticipantMuted(
-          state.participants,
-          event.userId,
-          event.muted,
-        );
-      if (
-        participants ===
-        state.participants
-      )
-        return state;
+      const participants = setParticipantMuted(state.participants, event.userId, event.muted);
+      if (participants === state.participants) return state;
       return {
         ...state,
         participants,
@@ -855,41 +520,22 @@ export function reduce(
       // Settable from `joining` as well as `active`: muting yourself before the
       // room finishes admitting you is a normal thing to want, and the value is
       // published when the join completes.
-      if (
-        state.phase !==
-          'joining' &&
-        state.phase !==
-          'active'
-      )
-        return state;
-      if (
-        state.muted ===
-        event.muted
-      )
-        return state;
+      if (state.phase !== 'joining' && state.phase !== 'active') return state;
+      if (state.muted === event.muted) return state;
       return {
         ...state,
-        muted:
-          event.muted,
+        muted: event.muted,
       };
 
     case 'end':
       // Terminal from anywhere except idle. Ending an already-ended room keeps
       // the FIRST reason: if we left and the host ended it in the same instant,
       // the reason the user already saw is the one that stays on screen.
-      if (
-        state.phase ===
-          'idle' ||
-        state.phase ===
-          'ended'
-      )
-        return state;
+      if (state.phase === 'idle' || state.phase === 'ended') return state;
       return {
         ...state,
-        phase:
-          'ended',
-        endReason:
-          event.reason,
+        phase: 'ended',
+        endReason: event.reason,
       };
 
     case 'reset':
@@ -935,13 +581,9 @@ export function canJoinGroupCall(args: {
     }
   | {
       allowed: false;
-      reason:
-        | 'blocked'
-        | 'privacy';
+      reason: 'blocked' | 'privacy';
     } {
-  return canCall(
-    args,
-  );
+  return canCall(args);
 }
 
 /**
@@ -974,31 +616,20 @@ export function canJoinOpenRoom(args: {
       allowed: false;
       reason: GroupCallRejectReason;
     } {
-  if (
-    args.banned
-  )
+  if (args.banned)
     return {
       allowed: false,
-      reason:
-        'blocked',
+      reason: 'blocked',
     };
-  if (
-    !args.isMember
-  )
+  if (!args.isMember)
     return {
       allowed: false,
-      reason:
-        'not-member',
+      reason: 'not-member',
     };
-  if (
-    isRosterFull(
-      args.participantCount,
-    )
-  )
+  if (isRosterFull(args.participantCount))
     return {
       allowed: false,
-      reason:
-        'full',
+      reason: 'full',
     };
   return {
     allowed: true,
@@ -1010,16 +641,8 @@ export function canJoinOpenRoom(args: {
 /* -------------------------------------------------------------------------- */
 
 /** Wire origin → the `GroupCallOrigin` Prisma enum. */
-export function persistedOrigin(
-  origin: GroupCallOrigin,
-):
-  | 'ADHOC'
-  | 'COMMUNITY'
-  | 'PARTY'
-  | 'PROFILE' {
-  switch (
-    origin
-  ) {
+export function persistedOrigin(origin: GroupCallOrigin): 'ADHOC' | 'COMMUNITY' | 'PARTY' | 'PROFILE' {
+  switch (origin) {
     case 'adhoc':
       return 'ADHOC';
     case 'community':
@@ -1041,20 +664,9 @@ export function persistedOrigin(
 export function persistedStatus(
   reason: GroupCallEndReason,
   everJoined: boolean,
-):
-  | 'RINGING'
-  | 'ACTIVE'
-  | 'ENDED'
-  | 'MISSED'
-  | 'DECLINED'
-  | 'FAILED' {
-  if (
-    everJoined
-  )
-    return 'ENDED';
-  switch (
-    reason
-  ) {
+): 'RINGING' | 'ACTIVE' | 'ENDED' | 'MISSED' | 'DECLINED' | 'FAILED' {
+  if (everJoined) return 'ENDED';
+  switch (reason) {
     case 'declined':
       return 'DECLINED';
     case 'unanswered':
@@ -1090,22 +702,9 @@ export function persistedParticipantStatus(args: {
   joined: boolean;
   left: boolean;
   reason?: GroupCallEndReason;
-}):
-  | 'INVITED'
-  | 'JOINED'
-  | 'LEFT'
-  | 'DECLINED'
-  | 'MISSED'
-  | 'FAILED' {
-  if (
-    args.joined
-  )
-    return args.left
-      ? 'LEFT'
-      : 'JOINED';
-  switch (
-    args.reason
-  ) {
+}): 'INVITED' | 'JOINED' | 'LEFT' | 'DECLINED' | 'MISSED' | 'FAILED' {
+  if (args.joined) return args.left ? 'LEFT' : 'JOINED';
+  switch (args.reason) {
     case 'declined':
       return 'DECLINED';
     case 'unanswered':
@@ -1115,8 +714,6 @@ export function persistedParticipantStatus(args: {
     default:
       // Rung and gone without answering — the room ended, or their device did.
       // From their side that is a missed call; `INVITED` is only the live ring.
-      return args.left
-        ? 'MISSED'
-        : 'INVITED';
+      return args.left ? 'MISSED' : 'INVITED';
   }
 }

@@ -34,15 +34,18 @@ export const abilityMod = (score: number) => Math.floor((score - 10) / 2);
 export const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
 export function totalLevel(c: Dnd5eCharacter): number {
-  return Math.max(1, c.classes.reduce((n, k) => n + k.level, 0));
+  return Math.max(
+    1,
+    c.classes.reduce((n, k) => n + k.level, 0),
+  );
 }
 
 export const proficiencyBonus = (level: number) => 2 + Math.floor((Math.max(1, level) - 1) / 4);
 
 /** XP thresholds for levels 1–20 (unchanged in 2024). */
 export const XP_FOR_LEVEL = [
-  0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000,
-  165000, 195000, 225000, 265000, 305000, 355000,
+  0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000,
+  265000, 305000, 355000,
 ];
 
 const byId = <T extends { id: string }>(xs: T[], id: string | undefined) =>
@@ -202,7 +205,10 @@ export function armorClass(c: Dnd5eCharacter, data: Dnd5eData): ArmorClassBreakd
     const sorc = c.classes.find((k) => k.classId === 'sorcerer');
     if (sorc?.subclassId === 'draconic-sorcery' && sorc.level >= 3) {
       const cha = abilityMod(s.cha);
-      candidates.push({ value: 10 + dex + cha, formula: `Draconic Resilience 10 ${signed(dex)} Dex ${signed(cha)} Cha` });
+      candidates.push({
+        value: 10 + dex + cha,
+        formula: `Draconic Resilience 10 ${signed(dex)} Dex ${signed(cha)} Cha`,
+      });
     }
   }
   const best = candidates.reduce((a, b) => (b.value > a.value ? b : a));
@@ -215,7 +221,8 @@ export function speed(c: Dnd5eCharacter, data: Dnd5eData): number {
   const armor = byId(data.armor, c.armorId);
   if (armor?.strength && abilityScores(c, data).str < armor.strength) feet -= 10;
   const monk = classLevel(c, 'monk');
-  if (monk >= 2 && !armor && !c.shield) feet += monk >= 18 ? 30 : monk >= 14 ? 25 : monk >= 10 ? 20 : monk >= 6 ? 15 : 10;
+  if (monk >= 2 && !armor && !c.shield)
+    feet += monk >= 18 ? 30 : monk >= 14 ? 25 : monk >= 10 ? 20 : monk >= 6 ? 15 : 10;
   const barb = classLevel(c, 'barbarian');
   if (barb >= 5 && armor?.category !== 'heavy') feet += 10;
   if (hasFeat(c, data, 'speedy')) feet += 10;
@@ -257,8 +264,26 @@ const SLOTS: number[][] = [
 
 /** Warlock Pact Magic: [slots, slot level] by warlock level. */
 const PACT: [number, number][] = [
-  [1, 1], [2, 1], [2, 2], [2, 2], [2, 3], [2, 3], [2, 4], [2, 4], [2, 5], [2, 5],
-  [3, 5], [3, 5], [3, 5], [3, 5], [3, 5], [3, 5], [4, 5], [4, 5], [4, 5], [4, 5],
+  [1, 1],
+  [2, 1],
+  [2, 2],
+  [2, 2],
+  [2, 3],
+  [2, 3],
+  [2, 4],
+  [2, 4],
+  [2, 5],
+  [2, 5],
+  [3, 5],
+  [3, 5],
+  [3, 5],
+  [3, 5],
+  [3, 5],
+  [3, 5],
+  [4, 5],
+  [4, 5],
+  [4, 5],
+  [4, 5],
 ];
 
 export interface CasterEntry {
@@ -417,9 +442,16 @@ export function features(c: Dnd5eCharacter, data: Dnd5eData): FeatureLine[] {
     for (const f of klass.features) if (f.level <= k.level) out.push({ ...f, source: klass.name });
     const sub = klass.subclasses.find((s) => s.id === k.subclassId);
     for (const f of sub?.features ?? []) if (f.level <= k.level) out.push({ ...f, source: sub?.name ?? '' });
-    if (k.customSubclass) out.push({ name: k.customSubclass, text: 'Subclass from another book; see Custom entries.', level: klass.subclassLevel, source: klass.name });
+    if (k.customSubclass)
+      out.push({
+        name: k.customSubclass,
+        text: 'Subclass from another book; see Custom entries.',
+        level: klass.subclassLevel,
+        source: klass.name,
+      });
   }
-  for (const { feat, source } of allFeats(c, data)) out.push({ name: feat.name, text: feat.text, level: 1, source: `Feat (${source})` });
+  for (const { feat, source } of allFeats(c, data))
+    out.push({ name: feat.name, text: feat.text, level: 1, source: `Feat (${source})` });
   return out;
 }
 
@@ -555,7 +587,8 @@ export function validate(c: Dnd5eCharacter, data: Dnd5eData): string[] {
   }
   if (c.abilityMethod === 'standard') {
     const sorted = ABILITIES.map((a) => c.baseAbilities[a]).sort((a, b) => b - a);
-    if (sorted.join() !== [...STANDARD_ARRAY].join()) issues.push('Standard array scores must be 15, 14, 13, 12, 10 and 8.');
+    if (sorted.join() !== [...STANDARD_ARRAY].join())
+      issues.push('Standard array scores must be 15, 14, 13, 12, 10 and 8.');
   }
   const bg = byId(data.backgrounds, c.backgroundId);
   // Imported final scores (manual, no increases recorded) already include the background's.
@@ -566,12 +599,16 @@ export function validate(c: Dnd5eCharacter, data: Dnd5eData): string[] {
     const counts = new Map<Ability, number>();
     for (const a of inc) counts.set(a, (counts.get(a) ?? 0) + 1);
     const shape = [...counts.values()].sort().join();
-    if (!(valid && (shape === '1,1,1' || shape === '1,2'))) issues.push(`Background increases must be +2/+1 or +1/+1/+1 among ${bg.abilities.map((a) => ABILITY_NAMES[a]).join(', ')}.`);
+    if (!(valid && (shape === '1,1,1' || shape === '1,2')))
+      issues.push(
+        `Background increases must be +2/+1 or +1/+1/+1 among ${bg.abilities.map((a) => ABILITY_NAMES[a]).join(', ')}.`,
+      );
   }
   for (const k of c.classes) {
     const klass = classOf(data, k.classId);
     if (!klass) continue;
-    if (k.level >= klass.subclassLevel && !k.subclassId && !k.customSubclass) issues.push(`${klass.name} ${k.level}: choose a subclass.`);
+    if (k.level >= klass.subclassLevel && !k.subclassId && !k.customSubclass)
+      issues.push(`${klass.name} ${k.level}: choose a subclass.`);
   }
   for (const k of c.classes) {
     const klass = classOf(data, k.classId);
@@ -579,25 +616,34 @@ export function validate(c: Dnd5eCharacter, data: Dnd5eData): string[] {
     if (style && !c.choices[`${k.classId}:fighting-style`]) issues.push(`${klass?.name}: choose a Fighting Style.`);
   }
   const masteries = c.classes.reduce((n, k) => n + (classOf(data, k.classId)?.weaponMastery?.[k.level - 1] ?? 0), 0);
-  if (c.weaponMasteries.length < masteries) issues.push(`Choose ${masteries - c.weaponMasteries.length} more Weapon Mastery weapon(s).`);
+  if (c.weaponMasteries.length < masteries)
+    issues.push(`Choose ${masteries - c.weaponMasteries.length} more Weapon Mastery weapon(s).`);
   const filled = new Set(c.asi.map((a) => a.slot));
-  for (const slot of asiSlots(c, data)) if (!filled.has(slot)) issues.push(`Unspent feat or ability improvement (${slot.replace(':', ' level ')}).`);
+  for (const slot of asiSlots(c, data))
+    if (!filled.has(slot)) issues.push(`Unspent feat or ability improvement (${slot.replace(':', ' level ')}).`);
   for (const a of c.asi) {
-    if (a.kind === 'asi' && (a.abilities?.length ?? 0) < 2) issues.push(`Pick both ability increases (${a.slot.replace(':', ' level ')}).`);
+    if (a.kind === 'asi' && (a.abilities?.length ?? 0) < 2)
+      issues.push(`Pick both ability increases (${a.slot.replace(':', ' level ')}).`);
     const f = a.kind === 'feat' ? featById(data, a.featId) : undefined;
     if (f?.abilityIncrease?.length && !a.featAbilities?.length) issues.push(`${f.name}: choose its ability increase.`);
   }
   const scores = abilityScores(c, data);
-  for (const a of ABILITIES) if (scores[a] > 20 && !c.asi.some((x) => featById(data, x.featId)?.category === 'epic-boon')) issues.push(`${ABILITY_NAMES[a]} is above 20.`);
+  for (const a of ABILITIES)
+    if (scores[a] > 20 && !c.asi.some((x) => featById(data, x.featId)?.category === 'epic-boon'))
+      issues.push(`${ABILITY_NAMES[a]} is above 20.`);
   const first = c.classes[0] && classOf(data, c.classes[0].classId);
   if (first) {
     const bgSkills = new Set(bg?.skills ?? []);
     const classPicked = c.skills.filter((s) => !bgSkills.has(s));
-    if (classPicked.length < first.skillChoices.count) issues.push(`Choose ${first.skillChoices.count - classPicked.length} more ${first.name} skill(s).`);
+    if (classPicked.length < first.skillChoices.count)
+      issues.push(`Choose ${first.skillChoices.count - classPicked.length} more ${first.name} skill(s).`);
   }
   for (const cast of casters(c, data)) {
-    const known = c.spells.prepared.filter((id) => data.spells.find((s) => s.id === id && s.level > 0 && s.classes.includes(cast.casting.list))).length;
-    if (known > cast.prepared && casters(c, data).length === 1) issues.push(`${cast.name}: ${known} spells prepared, the limit is ${cast.prepared}.`);
+    const known = c.spells.prepared.filter((id) =>
+      data.spells.find((s) => s.id === id && s.level > 0 && s.classes.includes(cast.casting.list)),
+    ).length;
+    if (known > cast.prepared && casters(c, data).length === 1)
+      issues.push(`${cast.name}: ${known} spells prepared, the limit is ${cast.prepared}.`);
   }
   return issues;
 }

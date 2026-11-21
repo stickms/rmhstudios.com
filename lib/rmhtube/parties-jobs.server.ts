@@ -6,23 +6,15 @@
 import type { PgBoss } from 'pg-boss';
 import { runPartyReminders } from '@/lib/rmhtube/parties.server';
 
-export const PARTY_REMINDERS_QUEUE =
-  'rmhtube.party-reminders';
-export const PARTY_REMINDERS_CRON =
-  '*/5 * * * *';
+export const PARTY_REMINDERS_QUEUE = 'rmhtube.party-reminders';
+export const PARTY_REMINDERS_CRON = '*/5 * * * *';
 
-export async function registerPartyRemindersCron(
-  boss: PgBoss,
-): Promise<void> {
+export async function registerPartyRemindersCron(boss: PgBoss): Promise<void> {
   // exclusive: at most one sweep queued or active at a time, however many workers run. The per-member
   // conditional claim in runPartyReminders is what makes a repeated sweep harmless.
-  await boss.createQueue(
-    PARTY_REMINDERS_QUEUE,
-    {
-      policy:
-        'exclusive',
-    },
-  );
+  await boss.createQueue(PARTY_REMINDERS_QUEUE, {
+    policy: 'exclusive',
+  });
   await boss.schedule(
     PARTY_REMINDERS_QUEUE,
     PARTY_REMINDERS_CRON,
@@ -31,10 +23,7 @@ export async function registerPartyRemindersCron(
       tz: 'UTC',
     },
   );
-  await boss.work(
-    PARTY_REMINDERS_QUEUE,
-    async () => {
-      await runPartyReminders();
-    },
-  );
+  await boss.work(PARTY_REMINDERS_QUEUE, async () => {
+    await runPartyReminders();
+  });
 }

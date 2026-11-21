@@ -4,11 +4,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import {
-  GitFork,
-  Heart,
-  Download,
-} from 'lucide-react';
+import { GitFork, Heart, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { HudSummary } from '@/lib/tf2-hud/api-types';
 import { Pill } from './ui';
@@ -23,12 +19,7 @@ export default function HudCard({
   actions?: React.ReactNode;
   className?: string;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-tf2-hud',
-    );
+  const { t } = useTranslation('c-tf2-hud');
   return (
     <article
       className={cn(
@@ -45,158 +36,76 @@ export default function HudCard({
             }}
             className="block truncate hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-app"
           >
-            {
-              hud.title
-            }
+            {hud.title}
           </Link>
         </h2>
-        {hud.visibility !==
-        'PUBLIC' ? (
-          <Pill
-            tone={
-              hud.visibility ===
-              'PRIVATE'
-                ? 'warning'
-                : 'info'
-            }
-          >
-            {hud.visibility ===
-            'PRIVATE'
-              ? t(
-                  'private',
-                  {
-                    defaultValue:
-                      'Private',
-                  },
-                )
-              : t(
-                  'unlisted',
-                  {
-                    defaultValue:
-                      'Unlisted',
-                  },
-                )}
+        {hud.visibility !== 'PUBLIC' ? (
+          <Pill tone={hud.visibility === 'PRIVATE' ? 'warning' : 'info'}>
+            {hud.visibility === 'PRIVATE'
+              ? t('private', {
+                  defaultValue: 'Private',
+                })
+              : t('unlisted', {
+                  defaultValue: 'Unlisted',
+                })}
           </Pill>
         ) : null}
       </div>
       <p className="text-xs text-app-text-dim">
         {hud.author
-          ? t(
-              'by',
-              {
-                defaultValue:
-                  'by {{name}}',
-                name: hud
-                  .author
-                  .name,
-              },
-            )
+          ? t('by', {
+              defaultValue: 'by {{name}}',
+              name: hud.author.name,
+            })
           : null}
-        {hud.forkOf
-          ? ` · ${t('fork-of', { defaultValue: 'fork of {{title}}', title: hud.forkOf.title })}`
-          : null}
+        {hud.forkOf ? ` · ${t('fork-of', { defaultValue: 'fork of {{title}}', title: hud.forkOf.title })}` : null}
       </p>
-      {hud.description ? (
-        <p className="line-clamp-2 text-sm text-app-text-muted">
-          {
-            hud.description
-          }
-        </p>
-      ) : null}
-      {hud
-        .tags
-        .length ? (
+      {hud.description ? <p className="line-clamp-2 text-sm text-app-text-muted">{hud.description}</p> : null}
+      {hud.tags.length ? (
         <ul
           className="flex flex-wrap gap-1"
-          aria-label={t(
-            'tags-label',
-            {
-              defaultValue:
-                'Tags',
-            },
-          )}
+          aria-label={t('tags-label', {
+            defaultValue: 'Tags',
+          })}
         >
-          {hud.tags.map(
-            (
-              tag,
-            ) => (
-              <li
-                key={
-                  tag
-                }
-              >
-                <Pill>
-                  {
-                    tag
-                  }
-                </Pill>
-              </li>
-            ),
-          )}
+          {hud.tags.map((tag) => (
+            <li key={tag}>
+              <Pill>{tag}</Pill>
+            </li>
+          ))}
         </ul>
       ) : null}
       <div className="mt-auto flex items-center justify-between gap-2 pt-1">
         <span className="flex items-center gap-3 text-xs text-app-text-muted">
           <span
             className="inline-flex items-center gap-1"
-            title={t(
-              'likes',
-              {
-                defaultValue:
-                  'Likes',
-              },
-            )}
+            title={t('likes', {
+              defaultValue: 'Likes',
+            })}
           >
-            <Heart
-              className="size-3.5"
-              aria-hidden
-            />
-            {
-              hud.likeCount
-            }
+            <Heart className="size-3.5" aria-hidden />
+            {hud.likeCount}
           </span>
           <span
             className="inline-flex items-center gap-1"
-            title={t(
-              'forks',
-              {
-                defaultValue:
-                  'Forks',
-              },
-            )}
+            title={t('forks', {
+              defaultValue: 'Forks',
+            })}
           >
-            <GitFork
-              className="size-3.5"
-              aria-hidden
-            />
-            {
-              hud.forkCount
-            }
+            <GitFork className="size-3.5" aria-hidden />
+            {hud.forkCount}
           </span>
           <span
             className="inline-flex items-center gap-1"
-            title={t(
-              'downloads',
-              {
-                defaultValue:
-                  'Downloads',
-              },
-            )}
+            title={t('downloads', {
+              defaultValue: 'Downloads',
+            })}
           >
-            <Download
-              className="size-3.5"
-              aria-hidden
-            />
-            {
-              hud.downloadCount
-            }
+            <Download className="size-3.5" aria-hidden />
+            {hud.downloadCount}
           </span>
         </span>
-        <div className="relative z-10 flex items-center gap-1">
-          {
-            actions
-          }
-        </div>
+        <div className="relative z-10 flex items-center gap-1">{actions}</div>
       </div>
     </article>
   );

@@ -65,7 +65,11 @@ describe('buildTest', () => {
   it('prefers distractors of similar length', () => {
     const cards: TestCard[] = [
       { id: 'x', front: 'q', back: 'aaaaaaaaaa' },
-      ...Array.from({ length: 12 }, (_, i) => ({ id: `s${i}`, front: `f${i}`, back: `${'b'.repeat(9 + (i % 3))}${i}` })),
+      ...Array.from({ length: 12 }, (_, i) => ({
+        id: `s${i}`,
+        front: `f${i}`,
+        back: `${'b'.repeat(9 + (i % 3))}${i}`,
+      })),
       ...Array.from({ length: 12 }, (_, i) => ({ id: `l${i}`, front: `g${i}`, back: `${'c'.repeat(80)}${i}` })),
     ];
     const qs = buildTest(cards, { count: 25, kinds: ['multiple-choice'], direction: 'back', onlyCardIds: ['x'] }, 9);

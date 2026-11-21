@@ -34,12 +34,7 @@ import { prefetchTarget } from '@/lib/viewport-prefetch';
  */
 
 /** The slice of the router this needs, kept narrow so tests can stub it. */
-export type ForesightRouter =
-  Pick<
-    AnyRouter,
-    | 'preloadRoute'
-    | 'subscribe'
-  >;
+export type ForesightRouter = Pick<AnyRouter, 'preloadRoute' | 'subscribe'>;
 
 /** The slice of `ForesightManager` this uses, so tests can stub the library. */
 export interface ForesightManagerLike {
@@ -54,8 +49,7 @@ export interface ForesightManagerLike {
   };
 }
 
-export type LoadForesight =
-  () => Promise<ForesightManagerLike>;
+export type LoadForesight = () => Promise<ForesightManagerLike>;
 
 /**
  * How many links are tracked at once. A long feed has hundreds of anchors, and
@@ -96,45 +90,24 @@ export const RESCAN_DELAY_MS = 1200;
 export const INPUT_RESCAN_INTERVAL_MS = 1000;
 
 /** Loads the library and configures its one global manager. */
-const loadForesight: LoadForesight =
-  async () => {
-    const {
-      ForesightManager,
-    } =
-      await import('js.foresight');
-    return ForesightManager.initialize(
-      {
-        touchDeviceStrategy:
-          'onTouchStart',
-      },
-    );
-  };
+const loadForesight: LoadForesight = async () => {
+  const { ForesightManager } = await import('js.foresight');
+  return ForesightManager.initialize({
+    touchDeviceStrategy: 'onTouchStart',
+  });
+};
 
-function atIdle(
-  fn: () => void,
-): void {
-  const idle =
-    (
-      window as {
-        requestIdleCallback?: Window['requestIdleCallback'];
-      }
-    )
-      .requestIdleCallback;
-  if (
-    idle
-  )
-    idle.call(
-      window,
-      fn,
-      {
-        timeout: 2000,
-      },
-    );
-  else
-    setTimeout(
-      fn,
-      200,
-    );
+function atIdle(fn: () => void): void {
+  const idle = (
+    window as {
+      requestIdleCallback?: Window['requestIdleCallback'];
+    }
+  ).requestIdleCallback;
+  if (idle)
+    idle.call(window, fn, {
+      timeout: 2000,
+    });
+  else setTimeout(fn, 200);
 }
 
 /**
@@ -143,158 +116,60 @@ function atIdle(
  *
  * No-ops on the server and whenever {@link shouldSpeculate} says no.
  */
-export function startForesightPrefetch(
-  router: ForesightRouter,
-  load: LoadForesight = loadForesight,
-): () => void {
-  const noop =
-    () => {};
-  if (
-    typeof document ===
-      'undefined' ||
-    typeof window ===
-      'undefined'
-  )
-    return noop;
-  if (
-    !shouldSpeculate()
-  )
-    return noop;
+export function startForesightPrefetch(router: ForesightRouter, load: LoadForesight = loadForesight): () => void {
+  const noop = () => {};
+  if (typeof document === 'undefined' || typeof window === 'undefined') return noop;
+  if (!shouldSpeculate()) return noop;
 
   let stopped = false;
-  let manager: ForesightManagerLike | null =
-    null;
-  const registered =
-    new Map<
-      HTMLAnchorElement,
-      () => void
-    >();
+  let manager: ForesightManagerLike | null = null;
+  const registered = new Map<HTMLAnchorElement, () => void>();
   let lastScan = 0;
-  let rescanTimer: ReturnType<
-    typeof setTimeout
-  > | null =
-    null;
+  let rescanTimer: ReturnType<typeof setTimeout> | null = null;
 
-  function preload(
-    el: HTMLAnchorElement,
-  ) {
+  function preload(el: HTMLAnchorElement) {
     // Re-checked at fire time: the page may have changed since registration.
-    const to =
-      prefetchTarget(
-        el,
-        window
-          .location
-          .pathname,
-      );
-    if (
-      to ===
-      null
-    )
-      return;
+    const to = prefetchTarget(el, window.location.pathname);
+    if (to === null) return;
     try {
       // Speculative: a 404 or an auth redirect is expected and stays silent.
       void Promise.resolve(
-        router.preloadRoute(
-          {
-            to,
-          },
-        ),
-      ).catch(
-        () => {},
-      );
+        router.preloadRoute({
+          to,
+        }),
+      ).catch(() => {});
     } catch {
       /* a synchronous throw from route matching is not the user's problem */
     }
   }
 
   function scan() {
-    if (
-      stopped ||
-      manager ===
-        null
-    )
-      return;
-    lastScan =
-      Date.now();
+    if (stopped || manager === null) return;
+    lastScan = Date.now();
 
     // Drop links the last page left behind. ForesightJS parks a detached
     // element instead of forgetting it, so without this a long session would
     // keep every page's links alive.
-    for (const [
-      el,
-      unregister,
-    ] of registered) {
-      if (
-        !el.isConnected ||
-        prefetchTarget(
-          el,
-          window
-            .location
-            .pathname,
-        ) ===
-          null
-      ) {
+    for (const [el, unregister] of registered) {
+      if (!el.isConnected || prefetchTarget(el, window.location.pathname) === null) {
         unregister();
-        registered.delete(
-          el,
-        );
+        registered.delete(el);
       }
     }
 
-    const anchors =
-      document.querySelectorAll<HTMLAnchorElement>(
-        'a[href]',
-      );
-    for (
-      let i = 0;
-      i <
-        anchors.length &&
-      registered.size <
-        MAX_REGISTERED;
-      i += 1
-    ) {
-      const el =
-        anchors[
-          i
-        ];
-      if (
-        !el ||
-        registered.has(
-          el,
-        )
-      )
-        continue;
-      if (
-        prefetchTarget(
-          el,
-          window
-            .location
-            .pathname,
-        ) ===
-        null
-      )
-        continue;
+    const anchors = document.querySelectorAll<HTMLAnchorElement>('a[href]');
+    for (let i = 0; i < anchors.length && registered.size < MAX_REGISTERED; i += 1) {
+      const el = anchors[i];
+      if (!el || registered.has(el)) continue;
+      if (prefetchTarget(el, window.location.pathname) === null) continue;
       try {
-        const result =
-          manager.register(
-            {
-              element:
-                el,
-              callback:
-                () =>
-                  preload(
-                    el,
-                  ),
-              reactivateAfter:
-                REACTIVATE_AFTER_MS,
-              hitSlop:
-                HIT_SLOP_PX,
-            },
-          );
-        registered.set(
-          el,
-          result.unregister,
-        );
+        const result = manager.register({
+          element: el,
+          callback: () => preload(el),
+          reactivateAfter: REACTIVATE_AFTER_MS,
+          hitSlop: HIT_SLOP_PX,
+        });
+        registered.set(el, result.unregister);
       } catch {
         /* an element the library refuses is simply not predicted */
       }
@@ -302,141 +177,63 @@ export function startForesightPrefetch(
   }
 
   function onInput() {
-    if (
-      Date.now() -
-        lastScan >=
-      INPUT_RESCAN_INTERVAL_MS
-    )
-      scan();
+    if (Date.now() - lastScan >= INPUT_RESCAN_INTERVAL_MS) scan();
   }
 
   function start() {
-    atIdle(
-      () => {
-        if (
-          stopped
-        )
-          return;
-        load()
-          .then(
-            (
-              m,
-            ) => {
-              if (
-                stopped
-              )
-                return;
-              manager =
-                m;
-              scan();
-              window.addEventListener(
-                'scroll',
-                onInput,
-                {
-                  passive: true,
-                },
-              );
-              window.addEventListener(
-                'pointermove',
-                onInput,
-                {
-                  passive: true,
-                },
-              );
-            },
-          )
-          .catch(
-            () => {
-              /* the chunk failed to load: intent preload still works */
-            },
-          );
-      },
-    );
+    atIdle(() => {
+      if (stopped) return;
+      load()
+        .then((m) => {
+          if (stopped) return;
+          manager = m;
+          scan();
+          window.addEventListener('scroll', onInput, {
+            passive: true,
+          });
+          window.addEventListener('pointermove', onInput, {
+            passive: true,
+          });
+        })
+        .catch(() => {
+          /* the chunk failed to load: intent preload still works */
+        });
+    });
   }
 
   // Never before `load`: the library chunk and the first predictions must not
   // compete with the landing page's own resources (same rule as OPT-33).
-  let removeLoadListener =
-    noop;
-  if (
-    document.readyState ===
-    'complete'
-  ) {
+  let removeLoadListener = noop;
+  if (document.readyState === 'complete') {
     start();
   } else {
-    const onLoad =
-      () =>
-        start();
-    window.addEventListener(
-      'load',
-      onLoad,
-      {
-        once: true,
-      },
-    );
-    removeLoadListener =
-      () =>
-        window.removeEventListener(
-          'load',
-          onLoad,
-        );
+    const onLoad = () => start();
+    window.addEventListener('load', onLoad, {
+      once: true,
+    });
+    removeLoadListener = () => window.removeEventListener('load', onLoad);
   }
 
-  let unsubscribe: () => void =
-    noop;
-  if (
-    typeof router.subscribe ===
-    'function'
-  ) {
-    unsubscribe =
-      router.subscribe(
-        'onResolved',
-        () => {
-          if (
-            stopped
-          )
-            return;
-          if (
-            rescanTimer !==
-            null
-          )
-            clearTimeout(
-              rescanTimer,
-            );
-          rescanTimer =
-            setTimeout(
-              () => {
-                rescanTimer =
-                  null;
-                scan();
-              },
-              RESCAN_DELAY_MS,
-            );
-        },
-      );
+  let unsubscribe: () => void = noop;
+  if (typeof router.subscribe === 'function') {
+    unsubscribe = router.subscribe('onResolved', () => {
+      if (stopped) return;
+      if (rescanTimer !== null) clearTimeout(rescanTimer);
+      rescanTimer = setTimeout(() => {
+        rescanTimer = null;
+        scan();
+      }, RESCAN_DELAY_MS);
+    });
   }
 
   return () => {
     stopped = true;
     removeLoadListener();
     unsubscribe();
-    if (
-      rescanTimer !==
-      null
-    )
-      clearTimeout(
-        rescanTimer,
-      );
-    window.removeEventListener(
-      'scroll',
-      onInput,
-    );
-    window.removeEventListener(
-      'pointermove',
-      onInput,
-    );
-    for (const unregister of registered.values())
-      unregister();
+    if (rescanTimer !== null) clearTimeout(rescanTimer);
+    window.removeEventListener('scroll', onInput);
+    window.removeEventListener('pointermove', onInput);
+    for (const unregister of registered.values()) unregister();
     registered.clear();
   };
 }

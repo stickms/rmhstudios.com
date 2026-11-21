@@ -25,11 +25,7 @@ import { SHOP_ITEMS, type Rarity, type ShopItem } from '@/lib/shop/catalog';
 import { seasonBounds, seasonNumberAt } from '@/lib/seasons/clock';
 
 export interface PassReward {
-  type:
-    | 'coins'
-    | 'item'
-    | 'xp'
-    | 'badge';
+  type: 'coins' | 'item' | 'xp' | 'badge';
   amount?: number;
   itemId?: string; // shop item id for 'item'
   label: string;
@@ -72,10 +68,10 @@ export const MAX_XP_SCALE = 2.5;
 export const PREMIUM_PRICE = 1200;
 
 /** Unscaled XP to finish the whole pass; the scale target is measured against it. */
-export const BASE_SEASON_XP = Array.from(
-  { length: TIER_COUNT },
-  (_, i) => BASE_TIER_XP + TIER_XP_STEP * i,
-).reduce((a, b) => a + b, 0);
+export const BASE_SEASON_XP = Array.from({ length: TIER_COUNT }, (_, i) => BASE_TIER_XP + TIER_XP_STEP * i).reduce(
+  (a, b) => a + b,
+  0,
+);
 
 const SEASON_NAMES = [
   'Genesis',
@@ -120,8 +116,7 @@ export const clampXpScale = (scale: number): number =>
 export const seasonIdFor = (n: number): string => `S${n}`;
 
 /** The id of the season running now (all `awardXp` needs). */
-export const currentSeasonId = (at: Date | number = Date.now()): string =>
-  seasonIdFor(seasonNumberAt(at));
+export const currentSeasonId = (at: Date | number = Date.now()): string => seasonIdFor(seasonNumberAt(at));
 
 /** Items a season may hand out: no site themes, nothing gated behind a membership. */
 function rewardPool(): Map<Rarity, ShopItem[]> {
@@ -162,10 +157,7 @@ function buildTiers(seasonNumber: number, xpScale: number): PassTier[] {
     const freeRarity = FREE_ITEM_TIERS[t];
     let free: PassReward | null = freeRarity ? pick(freeRarity) : null;
     if (!free) {
-      free =
-        t % 4 === 2
-          ? { type: 'xp', amount: 100 + 10 * t, label: `${100 + 10 * t} XP` }
-          : coins(40 + 8 * t);
+      free = t % 4 === 2 ? { type: 'xp', amount: 100 + 10 * t, label: `${100 + 10 * t} XP` } : coins(40 + 8 * t);
     }
 
     const premiumRarity = PREMIUM_ITEM_TIERS[t];

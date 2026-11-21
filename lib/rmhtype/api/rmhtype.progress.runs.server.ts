@@ -5,26 +5,13 @@ import { getRmhTypeRunsApi } from '@/lib/rmhtype/progress.contract';
 import { progressRunsQuery } from '@/lib/rmhtype/progress-schema';
 import { getRuns } from '@/lib/rmhtype/progress.server';
 
-export const route =
-  apiRoute(
-    '/api/rmhtype/progress/runs',
+export const route = apiRoute('/api/rmhtype/progress/runs', {
+  GET: implement(
+    getRmhTypeRunsApi,
     {
-      GET: implement(
-        getRmhTypeRunsApi,
-        {
-          rateLimit:
-            'read',
-          query:
-            progressRunsQuery,
-        },
-        async ({
-          userId,
-          query,
-        }) =>
-          getRuns(
-            userId,
-            query,
-          ),
-      ),
+      rateLimit: 'read',
+      query: progressRunsQuery,
     },
-  );
+    async ({ userId, query }) => getRuns(userId, query),
+  ),
+});

@@ -11,11 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/contract/client';
-import {
-  createWebhookApi,
-  updateWebhookApi,
-  type WebhookEndpointRow,
-} from '@/lib/developer/webhooks.contract';
+import { createWebhookApi, updateWebhookApi, type WebhookEndpointRow } from '@/lib/developer/webhooks.contract';
 import { WEBHOOK_EVENTS } from '@/lib/webhooks/events';
 import { failureText } from './format';
 

@@ -1,10 +1,6 @@
 /** The data of the crime route: heat, guns, police. Plain and serialisable like the rest of the world. */
 
-import type {
-  ItemId,
-  OfficerKind,
-  WeaponId,
-} from '../content';
+import type { ItemId, OfficerKind, WeaponId } from '../content';
 import type { Mover } from '../nav/mover';
 
 export interface GunState {
@@ -17,12 +13,7 @@ export interface GunState {
 /** A player's armoury and combat clocks (all ticks are absolute world ticks). */
 export interface Arms {
   equipped: WeaponId | null;
-  guns: Partial<
-    Record<
-      WeaponId,
-      GunState
-    >
-  >;
+  guns: Partial<Record<WeaponId, GunState>>;
   /** The first tick another shot may be fired. */
   readyAt: number;
   /** The tick a reload in progress finishes, or 0 when not reloading. */
@@ -43,12 +34,8 @@ export interface Officer {
   /** Where they are and the route they are walking (nav/mover.ts). */
   mover: Mover;
   /** The player being hunted. */
-  target:
-    | string
-    | null;
-  mode:
-    | 'hunt'
-    | 'leave';
+  target: string | null;
+  mode: 'hunt' | 'leave';
   /** The gate they came in by, and walk back to. */
   gateX: number;
   gateZ: number;
@@ -185,30 +172,14 @@ export type CrimeEvent =
       x: number;
       z: number;
       fine: number;
-      confiscated: Partial<
-        Record<
-          ItemId,
-          number
-        >
-      >;
+      confiscated: Partial<Record<ItemId, number>>;
     }
   | {
       type: 'arrested';
       playerId: string;
       officerId: number;
       fine: number;
-      confiscated: Partial<
-        Record<
-          ItemId,
-          number
-        >
-      >;
+      confiscated: Partial<Record<ItemId, number>>;
     };
 
-export type CrimeReject =
-  | 'contraband'
-  | 'unknown-weapon'
-  | 'no-weapon'
-  | 'no-ammo'
-  | 'bad-aim'
-  | 'downed';
+export type CrimeReject = 'contraband' | 'unknown-weapon' | 'no-weapon' | 'no-ammo' | 'bad-aim' | 'downed';

@@ -50,7 +50,10 @@ export function Written({
         <div className="space-y-2">
           <Verdict right={accepted}>
             {accepted
-              ? t('written-accepted', { defaultValue: 'Counted as correct. The card says: {{answer}}', answer: question.answer })
+              ? t('written-accepted', {
+                  defaultValue: 'Counted as correct. The card says: {{answer}}',
+                  answer: question.answer,
+                })
               : t('written-almost', { defaultValue: 'Almost. The card says: {{answer}}', answer: question.answer })}
           </Verdict>
           {!accepted && (

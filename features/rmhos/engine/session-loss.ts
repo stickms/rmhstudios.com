@@ -11,34 +11,18 @@
  * session is still being asked, a missing user is not yet a sign-out). `none` otherwise.
  */
 export function accountChange(
-  userId:
-    | string
-    | null,
-  machineUser:
-    | string
-    | null,
+  userId: string | null,
+  machineUser: string | null,
   sessionPending: boolean,
-):
-  | 'none'
-  | 'follow' {
-  if (
-    userId ===
-    machineUser
-  )
-    return 'none';
-  if (
-    sessionPending &&
-    !userId
-  )
-    return 'none';
+): 'none' | 'follow' {
+  if (userId === machineUser) return 'none';
+  if (sessionPending && !userId) return 'none';
   return 'follow';
 }
 
 /** The slice of HomeSession this needs. */
 export interface Leavable {
-  saveBeforeLeaving(
-    timeoutMs: number,
-  ): Promise<boolean>;
+  saveBeforeLeaving(timeoutMs: number): Promise<boolean>;
 }
 
 /**
@@ -52,39 +36,19 @@ export async function leaveAccount(
   isCancelled: () => boolean,
   handOver: () => void,
 ): Promise<{
-  saved:
-    | boolean
-    | null;
+  saved: boolean | null;
 }> {
-  const saved =
-    await attempt(
-      runner,
-      timeoutMs,
-    );
-  if (
-    !isCancelled()
-  )
-    handOver();
+  const saved = await attempt(runner, timeoutMs);
+  if (!isCancelled()) handOver();
   return {
     saved,
   };
 }
 
-async function attempt(
-  runner: Leavable | null,
-  timeoutMs: number,
-): Promise<
-  | boolean
-  | null
-> {
-  if (
-    !runner
-  )
-    return null;
+async function attempt(runner: Leavable | null, timeoutMs: number): Promise<boolean | null> {
+  if (!runner) return null;
   try {
-    return await runner.saveBeforeLeaving(
-      timeoutMs,
-    );
+    return await runner.saveBeforeLeaving(timeoutMs);
   } catch {
     return false;
   }
@@ -100,44 +64,19 @@ async function attempt(
  *  - `run`: build the machine.
  */
 export function machineStep(s: {
-  machineUser:
-    | string
-    | null;
+  machineUser: string | null;
   halted: boolean;
   enabled: boolean;
   sessionReady: boolean;
   hasScreen: boolean;
-}):
-  | 'idle'
-  | 'stopped'
-  | 'wait'
-  | 'run' {
-  if (
-    !s.machineUser
-  )
-    return 'idle';
-  if (
-    s.halted
-  )
-    return 'stopped';
-  if (
-    !s.enabled ||
-    !s.sessionReady ||
-    !s.hasScreen
-  )
-    return 'wait';
+}): 'idle' | 'stopped' | 'wait' | 'run' {
+  if (!s.machineUser) return 'idle';
+  if (s.halted) return 'stopped';
+  if (!s.enabled || !s.sessionReady || !s.hasScreen) return 'wait';
   return 'run';
 }
 
-const trimmed =
-  (
-    pathname: string,
-  ) =>
-    pathname.replace(
-      /\/+$/,
-      '',
-    ) ||
-    '/';
+const trimmed = (pathname: string) => pathname.replace(/\/+$/, '') || '/';
 
 /**
  * Whether a router navigation leaves the rmhOS page (the machine unmounts with it). A search
@@ -152,12 +91,5 @@ export function leavesRoute(
     pathname: string;
   },
 ): boolean {
-  return (
-    trimmed(
-      current.pathname,
-    ) !==
-    trimmed(
-      next.pathname,
-    )
-  );
+  return trimmed(current.pathname) !== trimmed(next.pathname);
 }

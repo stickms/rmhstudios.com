@@ -15,75 +15,49 @@
 
 import { SITE_URL } from '@/lib/seo';
 
-const ORG_NAME =
-  'RMH Studios';
+const ORG_NAME = 'RMH Studios';
 const LOGO_URL = `${SITE_URL}/favicon.svg`;
 const DEFAULT_IMAGE = `${SITE_URL}/images/og/default.png`;
 
-type Json =
-  Record<
-    string,
-    unknown
-  >;
+type Json = Record<string, unknown>;
 
 /** Wrap one or more schema objects into a head() script descriptor. */
-export function jsonLdScript(
-  schema:
-    | Json
-    | Json[],
-) {
-  const json =
-    JSON.stringify(
-      schema,
-    );
+export function jsonLdScript(schema: Json | Json[]) {
+  const json = JSON.stringify(schema);
   return {
     type: 'application/ld+json',
     // Escape `<` so a string value can't terminate the <script> element.
-    children:
-      json.replace(
-        /</g,
-        '\\u003c',
-      ),
+    children: json.replace(/</g, '\\u003c'),
   };
 }
 
 /** Site-wide publisher identity. Safe on every page. */
 export function organizationSchema(): Json {
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      'Organization',
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
     name: ORG_NAME,
     url: SITE_URL,
     logo: LOGO_URL,
-    description:
-      'RMH Studios — games, apps, a blog, and a social home for builders. The everything platform.',
+    description: 'RMH Studios — games, apps, a blog, and a social home for builders. The everything platform.',
   };
 }
 
 /** WebSite node with a SearchAction so Google can show a sitelinks search box. */
 export function websiteSchema(): Json {
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      'WebSite',
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
     name: ORG_NAME,
     url: SITE_URL,
-    potentialAction:
-      {
-        '@type':
-          'SearchAction',
-        target:
-          {
-            '@type':
-              'EntryPoint',
-            urlTemplate: `${SITE_URL}/explore?q={search_term_string}`,
-          },
-        'query-input':
-          'required name=search_term_string',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_URL}/explore?q={search_term_string}`,
       },
+      'query-input': 'required name=search_term_string',
+    },
   };
 }
 
@@ -96,10 +70,7 @@ interface ArticleInput {
   path: string;
   image?: string;
   /** schema.org type — 'BlogPosting' | 'NewsArticle' | 'Article'. */
-  type?:
-    | 'BlogPosting'
-    | 'NewsArticle'
-    | 'Article';
+  type?: 'BlogPosting' | 'NewsArticle' | 'Article';
   /** e.g. a news category. */
   section?: string;
 }
@@ -113,19 +84,11 @@ export function articleSchema({
   type = 'Article',
   section,
 }: ArticleInput): Json {
-  const url =
-    path.startsWith(
-      'http',
-    )
-      ? path
-      : `${SITE_URL}${path}`;
+  const url = path.startsWith('http') ? path : `${SITE_URL}${path}`;
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      type,
-    headline:
-      title,
+    '@context': 'https://schema.org',
+    '@type': type,
+    headline: title,
     ...(description
       ? {
           description,
@@ -138,44 +101,28 @@ export function articleSchema({
       : {}),
     ...(section
       ? {
-          articleSection:
-            section,
+          articleSection: section,
         }
       : {}),
-    image:
-      image
-        ? image.startsWith(
-            'http',
-          )
-          ? image
-          : `${SITE_URL}${image}`
-        : DEFAULT_IMAGE,
-    mainEntityOfPage:
-      {
-        '@type':
-          'WebPage',
-        '@id':
-          url,
-      },
+    image: image ? (image.startsWith('http') ? image : `${SITE_URL}${image}`) : DEFAULT_IMAGE,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': url,
+    },
     url,
-    author:
-      {
-        '@type':
-          'Organization',
-        name: ORG_NAME,
-        url: SITE_URL,
+    author: {
+      '@type': 'Organization',
+      name: ORG_NAME,
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: ORG_NAME,
+      logo: {
+        '@type': 'ImageObject',
+        url: LOGO_URL,
       },
-    publisher:
-      {
-        '@type':
-          'Organization',
-        name: ORG_NAME,
-        logo: {
-          '@type':
-            'ImageObject',
-          url: LOGO_URL,
-        },
-      },
+    },
   };
 }
 
@@ -187,18 +134,10 @@ interface BookInput {
   image?: string;
 }
 
-export function bookSchema({
-  name,
-  description,
-  path,
-  author,
-  image,
-}: BookInput): Json {
+export function bookSchema({ name, description, path, author, image }: BookInput): Json {
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      'Book',
+    '@context': 'https://schema.org',
+    '@type': 'Book',
     name,
     ...(description
       ? {
@@ -207,36 +146,23 @@ export function bookSchema({
       : {}),
     ...(author
       ? {
-          author:
-            {
-              '@type':
-                'Person',
-              name: author,
-            },
+          author: {
+            '@type': 'Person',
+            name: author,
+          },
         }
       : {}),
     ...(image
       ? {
-          image:
-            image.startsWith(
-              'http',
-            )
-              ? image
-              : `${SITE_URL}${image}`,
+          image: image.startsWith('http') ? image : `${SITE_URL}${image}`,
         }
       : {}),
-    url: path.startsWith(
-      'http',
-    )
-      ? path
-      : `${SITE_URL}${path}`,
-    publisher:
-      {
-        '@type':
-          'Organization',
-        name: ORG_NAME,
-        url: SITE_URL,
-      },
+    url: path.startsWith('http') ? path : `${SITE_URL}${path}`,
+    publisher: {
+      '@type': 'Organization',
+      name: ORG_NAME,
+      url: SITE_URL,
+    },
   };
 }
 
@@ -289,92 +215,53 @@ export function restaurantSchema({
   image,
 }: RestaurantInput): Json {
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      'Restaurant',
+    '@context': 'https://schema.org',
+    '@type': 'Restaurant',
     name,
     description,
-    url: path.startsWith(
-      'http',
-    )
-      ? path
-      : `${SITE_URL}${path}`,
-    image:
-      image
-        ? image.startsWith(
-            'http',
-          )
-          ? image
-          : `${SITE_URL}${image}`
-        : DEFAULT_IMAGE,
+    url: path.startsWith('http') ? path : `${SITE_URL}${path}`,
+    image: image ? (image.startsWith('http') ? image : `${SITE_URL}${image}`) : DEFAULT_IMAGE,
     telephone,
-    servesCuisine:
-      cuisine,
+    servesCuisine: cuisine,
     priceRange: `${price} ${currency}`,
     acceptsReservations: true,
-    openingHours:
-      hours,
-    address:
-      {
-        '@type':
-          'PostalAddress',
-        streetAddress:
-          street,
-        addressLocality:
-          locality,
-        postalCode,
-        addressCountry:
-          country,
+    openingHours: hours,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: street,
+      addressLocality: locality,
+      postalCode,
+      addressCountry: country,
+    },
+    hasMenu: {
+      '@type': 'Menu',
+      name: `${name} tasting menu`,
+      offers: {
+        '@type': 'Offer',
+        price,
+        priceCurrency: currency,
       },
-    hasMenu:
-      {
-        '@type':
-          'Menu',
-        name: `${name} tasting menu`,
-        offers:
-          {
-            '@type':
-              'Offer',
-            price,
-            priceCurrency:
-              currency,
-          },
-      },
-    parentOrganization:
-      {
-        '@type':
-          'Organization',
-        name: ORG_NAME,
-        url: SITE_URL,
-      },
+    },
+    parentOrganization: {
+      '@type': 'Organization',
+      name: ORG_NAME,
+      url: SITE_URL,
+    },
   };
 }
 
 interface PersonInput {
   name: string;
-  handle?:
-    | string
-    | null;
+  handle?: string | null;
   description?: string;
   path: string;
-  image?:
-    | string
-    | null;
+  image?: string | null;
 }
 
-export function personSchema({
-  name,
-  handle,
-  description,
-  path,
-  image,
-}: PersonInput): Json {
+export function personSchema({ name, handle, description, path, image }: PersonInput): Json {
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      'Person',
+    '@context': 'https://schema.org',
+    '@type': 'Person',
     name,
     ...(handle
       ? {
@@ -391,11 +278,7 @@ export function personSchema({
           image,
         }
       : {}),
-    url: path.startsWith(
-      'http',
-    )
-      ? path
-      : `${SITE_URL}${path}`,
+    url: path.startsWith('http') ? path : `${SITE_URL}${path}`,
   };
 }
 
@@ -404,33 +287,16 @@ interface Breadcrumb {
   path: string;
 }
 
-export function breadcrumbSchema(
-  items: Breadcrumb[],
-): Json {
+export function breadcrumbSchema(items: Breadcrumb[]): Json {
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      'BreadcrumbList',
-    itemListElement:
-      items.map(
-        (
-          item,
-          i,
-        ) => ({
-          '@type':
-            'ListItem',
-          position:
-            i +
-            1,
-          name: item.name,
-          item: item.path.startsWith(
-            'http',
-          )
-            ? item.path
-            : `${SITE_URL}${item.path}`,
-        }),
-      ),
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.name,
+      item: item.path.startsWith('http') ? item.path : `${SITE_URL}${item.path}`,
+    })),
   };
 }
 
@@ -462,88 +328,47 @@ interface VideoGameInput {
  * no ratings, since a zero-count rating is invalid structured data and gets the
  * whole block ignored.
  */
-export function videoGameSchema({
-  name,
-  description,
-  path,
-  image,
-  genres,
-  rating,
-}: VideoGameInput): Json {
-  const url =
-    path.startsWith(
-      'http',
-    )
-      ? path
-      : `${SITE_URL}${path}`;
+export function videoGameSchema({ name, description, path, image, genres, rating }: VideoGameInput): Json {
+  const url = path.startsWith('http') ? path : `${SITE_URL}${path}`;
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      'VideoGame',
+    '@context': 'https://schema.org',
+    '@type': 'VideoGame',
     name,
     description,
     url,
-    image:
-      image
-        ? image.startsWith(
-            'http',
-          )
-          ? image
-          : `${SITE_URL}${image}`
-        : DEFAULT_IMAGE,
-    applicationCategory:
-      'Game',
-    gamePlatform:
-      'Web browser',
-    operatingSystem:
-      'Any',
-    ...(genres &&
-    genres.length >
-      0
+    image: image ? (image.startsWith('http') ? image : `${SITE_URL}${image}`) : DEFAULT_IMAGE,
+    applicationCategory: 'Game',
+    gamePlatform: 'Web browser',
+    operatingSystem: 'Any',
+    ...(genres && genres.length > 0
       ? {
-          genre:
-            genres,
+          genre: genres,
         }
       : {}),
-    publisher:
-      {
-        '@type':
-          'Organization',
-        name: ORG_NAME,
-        url: SITE_URL,
-        logo: {
-          '@type':
-            'ImageObject',
-          url: LOGO_URL,
-        },
+    publisher: {
+      '@type': 'Organization',
+      name: ORG_NAME,
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: LOGO_URL,
       },
-    offers:
-      {
-        '@type':
-          'Offer',
-        price:
-          '0',
-        priceCurrency:
-          'USD',
-        availability:
-          'https://schema.org/InStock',
-      },
-    ...(rating &&
-    rating.count >
-      0
+    },
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+    },
+    ...(rating && rating.count > 0
       ? {
-          aggregateRating:
-            {
-              '@type':
-                'AggregateRating',
-              ratingValue:
-                rating.value,
-              ratingCount:
-                rating.count,
-              bestRating: 5,
-              worstRating: 1,
-            },
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: rating.value,
+            ratingCount: rating.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
         }
       : {}),
   };
@@ -579,38 +404,22 @@ export function jobPostingSchema({
   region,
   remote,
 }: JobPostingInput): Json {
-  const url =
-    path.startsWith(
-      'http',
-    )
-      ? path
-      : `${SITE_URL}${path}`;
-  const hasLocation =
-    Boolean(
-      city ||
-      region,
-    );
+  const url = path.startsWith('http') ? path : `${SITE_URL}${path}`;
+  const hasLocation = Boolean(city || region);
   return {
-    '@context':
-      'https://schema.org',
-    '@type':
-      'JobPosting',
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
     title,
     description,
-    identifier:
-      {
-        '@type':
-          'PropertyValue',
-        name: companyName,
-        value:
-          id,
-      },
-    hiringOrganization:
-      {
-        '@type':
-          'Organization',
-        name: companyName,
-      },
+    identifier: {
+      '@type': 'PropertyValue',
+      name: companyName,
+      value: id,
+    },
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: companyName,
+    },
     ...(datePosted
       ? {
           datePosted,
@@ -628,49 +437,38 @@ export function jobPostingSchema({
       : {}),
     ...(hasLocation
       ? {
-          jobLocation:
-            {
-              '@type':
-                'Place',
-              address:
-                {
-                  '@type':
-                    'PostalAddress',
-                  ...(city
-                    ? {
-                        addressLocality:
-                          city,
-                      }
-                    : {}),
-                  ...(region
-                    ? {
-                        addressRegion:
-                          region,
-                      }
-                    : {}),
-                  addressCountry:
-                    'US',
-                },
+          jobLocation: {
+            '@type': 'Place',
+            address: {
+              '@type': 'PostalAddress',
+              ...(city
+                ? {
+                    addressLocality: city,
+                  }
+                : {}),
+              ...(region
+                ? {
+                    addressRegion: region,
+                  }
+                : {}),
+              addressCountry: 'US',
             },
+          },
         }
       : {}),
     ...(remote
       ? {
-          jobLocationType:
-            'TELECOMMUTE',
-          applicantLocationRequirements:
-            {
-              '@type':
-                'Country',
-              name: 'United States',
-            },
+          jobLocationType: 'TELECOMMUTE',
+          applicantLocationRequirements: {
+            '@type': 'Country',
+            name: 'United States',
+          },
         }
       : {}),
     url,
     ...(sourceUrl
       ? {
-          sameAs:
-            sourceUrl,
+          sameAs: sourceUrl,
         }
       : {}),
     directApply: false,

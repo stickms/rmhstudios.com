@@ -120,7 +120,7 @@ export function PracticeTestResults({
                 <Answer
                   prompt={q.prompt}
                   given={q.options[response.choice] ?? ''}
-                  expected={right ? null : q.options[q.answerIndex] ?? ''}
+                  expected={right ? null : (q.options[q.answerIndex] ?? '')}
                 />
               )}
               {q.kind === 'written' && response.kind === 'written' && (
@@ -130,7 +130,10 @@ export function PracticeTestResults({
                   expected={right ? null : q.answer}
                   note={
                     right && gradeWritten(q.answer, response.text, locale) === 'almost'
-                      ? t('row-accepted', { defaultValue: 'Counted as correct. The card says: {{answer}}', answer: q.answer })
+                      ? t('row-accepted', {
+                          defaultValue: 'Counted as correct. The card says: {{answer}}',
+                          answer: q.answer,
+                        })
                       : undefined
                   }
                 />

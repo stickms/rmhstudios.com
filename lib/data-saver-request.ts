@@ -15,52 +15,16 @@
  */
 
 /** Also the localStorage key (`DATA_SAVER_KEY` in lib/network-quality). */
-export const DATA_SAVER_COOKIE =
-  'rmh-data-saver';
+export const DATA_SAVER_COOKIE = 'rmh-data-saver';
 
 /** The stored setting from a Cookie header: `on`, `off`, or null for none / `auto`. */
-export function dataSaverCookieValue(
-  cookieHeader:
-    | string
-    | null
-    | undefined,
-):
-  | 'on'
-  | 'off'
-  | null {
-  if (
-    !cookieHeader
-  )
-    return null;
-  for (const part of cookieHeader.split(
-    ';',
-  )) {
-    const [
-      name,
-      ...rest
-    ] =
-      part
-        .trim()
-        .split(
-          '=',
-        );
-    if (
-      name !==
-      DATA_SAVER_COOKIE
-    )
-      continue;
-    const value =
-      rest
-        .join(
-          '=',
-        )
-        .trim();
-    return value ===
-      'on' ||
-      value ===
-        'off'
-      ? value
-      : null;
+export function dataSaverCookieValue(cookieHeader: string | null | undefined): 'on' | 'off' | null {
+  if (!cookieHeader) return null;
+  for (const part of cookieHeader.split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+    if (name !== DATA_SAVER_COOKIE) continue;
+    const value = rest.join('=').trim();
+    return value === 'on' || value === 'off' ? value : null;
   }
   return null;
 }
@@ -70,30 +34,10 @@ export function dataSaverCookieValue(
  * setting wins either way; otherwise the browser's `Save-Data` header decides.
  */
 export function dataSaverFromRequest(
-  cookieHeader:
-    | string
-    | null
-    | undefined,
-  saveDataHeader:
-    | string
-    | null
-    | undefined,
+  cookieHeader: string | null | undefined,
+  saveDataHeader: string | null | undefined,
 ): boolean {
-  const setting =
-    dataSaverCookieValue(
-      cookieHeader,
-    );
-  if (
-    setting
-  )
-    return (
-      setting ===
-      'on'
-    );
-  return (
-    saveDataHeader
-      ?.trim()
-      .toLowerCase() ===
-    'on'
-  );
+  const setting = dataSaverCookieValue(cookieHeader);
+  if (setting) return setting === 'on';
+  return saveDataHeader?.trim().toLowerCase() === 'on';
 }

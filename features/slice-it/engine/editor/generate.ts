@@ -16,25 +16,10 @@
  */
 
 import { INPUT_COOLDOWN_MS } from '@features/slice-it/engine/constants';
-import {
-  buildCharts,
-  type QuantizedNote,
-} from '@features/slice-it/engine/beatmap/charter';
-import {
-  bundle,
-  replaceChartNotes,
-  sortNotes,
-  type Command,
-} from './commands';
-import {
-  repairNesting,
-  TIER_ORDER,
-} from './nesting';
-import type {
-  Charts,
-  Difficulty,
-  EditorNote,
-} from './types';
+import { buildCharts, type QuantizedNote } from '@features/slice-it/engine/beatmap/charter';
+import { bundle, replaceChartNotes, sortNotes, type Command } from './commands';
+import { repairNesting, TIER_ORDER } from './nesting';
+import type { Charts, Difficulty, EditorNote } from './types';
 
 export type GenerateScope =
   /** Whole chart, discard everything. The "start over" button. */
@@ -68,9 +53,7 @@ export type GenerateScope =
 
 export interface GenerateOptions {
   scope: GenerateScope;
-  difficulty:
-    | Difficulty
-    | 'all';
+  difficulty: Difficulty | 'all';
   /** −2…+2, the C10 density bias. 0 is the generator's own budget. */
   densityBias: number;
   /** Respect the nesting invariant when regenerating multiple tiers. */
@@ -84,16 +67,12 @@ export interface GenerateOptions {
 }
 
 /** The panel's starting position: the mode that cannot lose work. */
-export function defaultGenerateOptions(
-  seed: number,
-): GenerateOptions {
+export function defaultGenerateOptions(seed: number): GenerateOptions {
   return {
-    scope:
-      {
-        kind: 'auto-only',
-      },
-    difficulty:
-      'all',
+    scope: {
+      kind: 'auto-only',
+    },
+    difficulty: 'all',
     densityBias: 0,
     cascade: true,
     seed,
@@ -108,19 +87,9 @@ export function defaultGenerateOptions(
  * `__tests__/generate.test.ts` must agree on exactly one definition of "this
  * mode can eat my work".
  */
-export function scopeDiscardsAuthorWork(
-  scope: GenerateScope,
-): boolean {
-  if (
-    scope.kind ===
-    'replace-all'
-  )
-    return true;
-  if (
-    scope.kind ===
-    'range'
-  )
-    return !scope.preserveEdited;
+export function scopeDiscardsAuthorWork(scope: GenerateScope): boolean {
+  if (scope.kind === 'replace-all') return true;
+  if (scope.kind === 'range') return !scope.preserveEdited;
   return false;
 }
 
@@ -135,42 +104,18 @@ export function scopeDiscardsAuthorWork(
  * lose its selection and `markSaved`'s reference check (store.ts) would think
  * every save raced an edit.
  */
-function keptFor(
-  existing: readonly EditorNote[],
-  scope: GenerateScope,
-): EditorNote[] {
-  switch (
-    scope.kind
-  ) {
+function keptFor(existing: readonly EditorNote[], scope: GenerateScope): EditorNote[] {
+  switch (scope.kind) {
     case 'replace-all':
       return [];
     case 'auto-only':
-      return existing.filter(
-        (
-          note,
-        ) =>
-          !note.auto,
-      );
+      return existing.filter((note) => !note.auto);
     case 'range':
-      return existing.filter(
-        (
-          note,
-        ) => {
-          const inside =
-            note.time >=
-              scope.start &&
-            note.time <=
-              scope.end;
-          if (
-            !inside
-          )
-            return true;
-          return (
-            scope.preserveEdited &&
-            !note.auto
-          );
-        },
-      );
+      return existing.filter((note) => {
+        const inside = note.time >= scope.start && note.time <= scope.end;
+        if (!inside) return true;
+        return scope.preserveEdited && !note.auto;
+      });
     case 'fill-gaps':
       // Purely additive: nothing that exists is dropped, generated or not.
       return existing.slice();
@@ -196,89 +141,32 @@ export function mergeGenerated(
   generated: readonly EditorNote[],
   options: GenerateOptions,
 ): EditorNote[] {
-  const kept =
-    keptFor(
-      existing,
-      options.scope,
-    );
-  const guard =
-    INPUT_COOLDOWN_MS /
-    1000;
-  const scope =
-    options.scope;
+  const kept = keptFor(existing, options.scope);
+  const guard = INPUT_COOLDOWN_MS / 1000;
+  const scope = options.scope;
 
-  const accepted =
-    generated.filter(
-      (
-        candidate,
-      ) => {
-        if (
-          scope.kind ===
-          'range'
-        ) {
-          if (
-            candidate.time <
-              scope.start ||
-            candidate.time >
-              scope.end
-          )
-            return false;
-        }
-        if (
-          scope.kind ===
-          'fill-gaps'
-        ) {
-          // A gap is a gap in the chart, not in one lane: adding a note 40 ms after
-          // an existing one in the OTHER lane fills nothing and charts a burst the
-          // author never asked for.
-          const gap =
-            Math.max(
-              guard,
-              scope.minGapSeconds,
-            );
-          if (
-            kept.some(
-              (
-                note,
-              ) =>
-                Math.abs(
-                  note.time -
-                    candidate.time,
-                ) <
-                gap,
-            )
-          )
-            return false;
-        }
-        // Yield to the notes that would swallow this one.
-        return !kept.some(
-          (
-            note,
-          ) =>
-            note.lane ===
-              candidate.lane &&
-            Math.abs(
-              note.time -
-                candidate.time,
-            ) <
-              guard,
-        );
-      },
-    );
+  const accepted = generated.filter((candidate) => {
+    if (scope.kind === 'range') {
+      if (candidate.time < scope.start || candidate.time > scope.end) return false;
+    }
+    if (scope.kind === 'fill-gaps') {
+      // A gap is a gap in the chart, not in one lane: adding a note 40 ms after
+      // an existing one in the OTHER lane fills nothing and charts a burst the
+      // author never asked for.
+      const gap = Math.max(guard, scope.minGapSeconds);
+      if (kept.some((note) => Math.abs(note.time - candidate.time) < gap)) return false;
+    }
+    // Yield to the notes that would swallow this one.
+    return !kept.some((note) => note.lane === candidate.lane && Math.abs(note.time - candidate.time) < guard);
+  });
 
-  return sortNotes(
-    [
-      ...kept,
-      ...accepted.map(
-        (
-          note,
-        ) => ({
-          ...note,
-          auto: true,
-        }),
-      ),
-    ],
-  );
+  return sortNotes([
+    ...kept,
+    ...accepted.map((note) => ({
+      ...note,
+      auto: true,
+    })),
+  ]);
 }
 
 /* ─── Re-charting ────────────────────────────────────────────────────────── */
@@ -292,44 +180,22 @@ export function mergeGenerated(
  * seam this phase is allowed to touch. A real `densityBias` parameter on
  * `buildCharts` is filed in `docs/_handoff/editor-phase45-requests.md`.
  */
-const DENSITY_FACTORS: Record<
-  string,
-  number
-> =
-  {
-    '-2': 0.55,
-    '-1': 0.75,
-    '0': 1,
-    '1': 1.35,
-    '2': 1.8,
-  };
+const DENSITY_FACTORS: Record<string, number> = {
+  '-2': 0.55,
+  '-1': 0.75,
+  '0': 1,
+  '1': 1.35,
+  '2': 1.8,
+};
 
 /**
  * Bias to budget scale. Bounded below by the tier's minimum gap and above by the
  * pool: `+2` on a sparse track selects every onset there is and stops, because
  * the charter can only chart moments the analyser found.
  */
-export function densityFactor(
-  bias: number,
-): number {
-  const clamped =
-    Math.max(
-      -2,
-      Math.min(
-        2,
-        Math.round(
-          bias,
-        ),
-      ),
-    );
-  return (
-    DENSITY_FACTORS[
-      String(
-        clamped,
-      )
-    ] ??
-    1
-  );
+export function densityFactor(bias: number): number {
+  const clamped = Math.max(-2, Math.min(2, Math.round(bias)));
+  return DENSITY_FACTORS[String(clamped)] ?? 1;
 }
 
 /**
@@ -345,52 +211,21 @@ export function regenerate(
   pool: readonly QuantizedNote[],
   duration: number,
   options: GenerateOptions,
-): Record<
-  Difficulty,
-  EditorNote[]
-> {
-  const scaled =
-    Math.max(
-      1,
-      duration *
-        densityFactor(
-          options.densityBias,
-        ),
-    );
+): Record<Difficulty, EditorNote[]> {
+  const scaled = Math.max(1, duration * densityFactor(options.densityBias));
   const seed = `editor:${options.seed}`;
-  const {
-    slices,
-  } =
-    buildCharts(
-      pool.slice(),
-      scaled,
-      seed,
-    );
+  const { slices } = buildCharts(pool.slice(), scaled, seed);
 
-  const out =
-    {} as Record<
-      Difficulty,
-      EditorNote[]
-    >;
+  const out = {} as Record<Difficulty, EditorNote[]>;
   for (const difficulty of TIER_ORDER) {
-    out[
-      difficulty
-    ] =
-      slices[
-        difficulty
-      ].map(
-        (
-          slice,
-          index,
-        ) => ({
-          ...slice,
-          // Namespaced by seed so a regenerated note can never collide with an
-          // author's id (uuidv7) or with a note from a different run that the merge
-          // decided to keep.
-          id: `g${options.seed.toString(36)}-${difficulty}-${index}`,
-          auto: true,
-        }),
-      );
+    out[difficulty] = slices[difficulty].map((slice, index) => ({
+      ...slice,
+      // Namespaced by seed so a regenerated note can never collide with an
+      // author's id (uuidv7) or with a note from a different run that the merge
+      // decided to keep.
+      id: `g${options.seed.toString(36)}-${difficulty}-${index}`,
+      auto: true,
+    }));
   }
   return out;
 }
@@ -412,10 +247,7 @@ export interface DifficultyPlan {
 export interface GeneratePlan {
   options: GenerateOptions;
   charts: Charts;
-  byDifficulty: Record<
-    Difficulty,
-    DifficultyPlan
-  >;
+  byDifficulty: Record<Difficulty, DifficultyPlan>;
   /** Difficulties this plan actually rewrites. */
   targets: Difficulty[];
   totalGenerated: number;
@@ -423,17 +255,8 @@ export interface GeneratePlan {
   totalRemoved: number;
 }
 
-export function targetsOf(
-  options: GenerateOptions,
-): Difficulty[] {
-  return options.difficulty ===
-    'all'
-    ? [
-        ...TIER_ORDER,
-      ]
-    : [
-        options.difficulty,
-      ];
+export function targetsOf(options: GenerateOptions): Difficulty[] {
+  return options.difficulty === 'all' ? [...TIER_ORDER] : [options.difficulty];
 }
 
 /**
@@ -450,139 +273,59 @@ export function buildGeneratePlan(
   duration: number,
   options: GenerateOptions,
 ): GeneratePlan {
-  const generated =
-    regenerate(
-      pool,
-      duration,
-      options,
-    );
-  const targets =
-    targetsOf(
-      options,
-    );
+  const generated = regenerate(pool, duration, options);
+  const targets = targetsOf(options);
 
-  let next =
-    {
-      ...charts,
-    };
+  let next = {
+    ...charts,
+  };
   for (const difficulty of targets) {
-    const merged =
-      mergeGenerated(
-        charts[
-          difficulty
-        ]
-          .notes,
-        generated[
-          difficulty
-        ],
-        options,
-      );
-    next =
-      {
-        ...next,
-        [difficulty]:
-          {
-            ...next[
-              difficulty
-            ],
-            notes:
-              merged,
-            dirty: true,
-          },
-      };
+    const merged = mergeGenerated(charts[difficulty].notes, generated[difficulty], options);
+    next = {
+      ...next,
+      [difficulty]: {
+        ...next[difficulty],
+        notes: merged,
+        dirty: true,
+      },
+    };
   }
 
   // The nesting invariant is a cross-difficulty property (§7.2), so it can only
   // be restored after every target has been merged — repairing tier by tier
   // would push notes into a tier that the next merge then rewrites.
-  if (
-    options.cascade
-  ) {
-    const repair =
-      repairNesting(
-        next,
-      );
-    if (
-      repair
-    )
-      next =
-        repair.apply(
-          next,
-        );
+  if (options.cascade) {
+    const repair = repairNesting(next);
+    if (repair) next = repair.apply(next);
   }
 
-  const byDifficulty =
-    {} as Record<
-      Difficulty,
-      DifficultyPlan
-    >;
+  const byDifficulty = {} as Record<Difficulty, DifficultyPlan>;
   let totalGenerated = 0;
   let totalKeptAuthored = 0;
   let totalRemoved = 0;
 
   for (const difficulty of TIER_ORDER) {
-    const before =
-      charts[
-        difficulty
-      ]
-        .notes;
-    const after =
-      next[
-        difficulty
-      ]
-        .notes;
-    const {
+    const before = charts[difficulty].notes;
+    const after = next[difficulty].notes;
+    const { added, removed } = diffNotes(before, after);
+    const keptAuthored = after.filter((note) => !note.auto).length;
+    byDifficulty[difficulty] = {
+      difficulty,
+      next: after,
       added,
       removed,
-    } =
-      diffNotes(
-        before,
-        after,
-      );
-    const keptAuthored =
-      after.filter(
-        (
-          note,
-        ) =>
-          !note.auto,
-      ).length;
-    byDifficulty[
-      difficulty
-    ] =
-      {
-        difficulty,
-        next: after,
-        added,
-        removed,
-        keptAuthored,
-      };
-    if (
-      targets.includes(
-        difficulty,
-      ) ||
-      added.length >
-        0 ||
-      removed.length >
-        0
-    ) {
-      totalGenerated +=
-        after.filter(
-          (
-            note,
-          ) =>
-            note.auto,
-        ).length;
-      totalKeptAuthored +=
-        keptAuthored;
-      totalRemoved +=
-        removed.length;
+      keptAuthored,
+    };
+    if (targets.includes(difficulty) || added.length > 0 || removed.length > 0) {
+      totalGenerated += after.filter((note) => note.auto).length;
+      totalKeptAuthored += keptAuthored;
+      totalRemoved += removed.length;
     }
   }
 
   return {
     options,
-    charts:
-      next,
+    charts: next,
     byDifficulty,
     targets,
     totalGenerated,
@@ -599,43 +342,15 @@ export function buildGeneratePlan(
  * the author never asked for — the same reasoning `nesting.ts` gives for
  * bundling a cascaded placement.
  */
-export function planCommand(
-  charts: Charts,
-  plan: GeneratePlan,
-  label = 'Generate notes',
-): Command | null {
-  const parts: Command[] =
-    [];
+export function planCommand(charts: Charts, plan: GeneratePlan, label = 'Generate notes'): Command | null {
+  const parts: Command[] = [];
   for (const difficulty of TIER_ORDER) {
-    const before =
-      charts[
-        difficulty
-      ]
-        .notes;
-    const after =
-      plan
-        .byDifficulty[
-        difficulty
-      ]
-        .next;
-    if (
-      before ===
-      after
-    )
-      continue;
-    parts.push(
-      replaceChartNotes(
-        difficulty,
-        before,
-        after,
-        label,
-      ),
-    );
+    const before = charts[difficulty].notes;
+    const after = plan.byDifficulty[difficulty].next;
+    if (before === after) continue;
+    parts.push(replaceChartNotes(difficulty, before, after, label));
   }
-  return bundle(
-    label,
-    parts,
-  );
+  return bundle(label, parts);
 }
 
 /** Set difference by note id — what the preview draws in green and struck. */
@@ -646,42 +361,10 @@ export function diffNotes(
   added: EditorNote[];
   removed: EditorNote[];
 } {
-  const beforeIds =
-    new Set(
-      before.map(
-        (
-          note,
-        ) =>
-          note.id,
-      ),
-    );
-  const afterIds =
-    new Set(
-      after.map(
-        (
-          note,
-        ) =>
-          note.id,
-      ),
-    );
+  const beforeIds = new Set(before.map((note) => note.id));
+  const afterIds = new Set(after.map((note) => note.id));
   return {
-    added:
-      after.filter(
-        (
-          note,
-        ) =>
-          !beforeIds.has(
-            note.id,
-          ),
-      ),
-    removed:
-      before.filter(
-        (
-          note,
-        ) =>
-          !afterIds.has(
-            note.id,
-          ),
-      ),
+    added: after.filter((note) => !beforeIds.has(note.id)),
+    removed: before.filter((note) => !afterIds.has(note.id)),
   };
 }

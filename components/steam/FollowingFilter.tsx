@@ -11,109 +11,54 @@ import { unfollowGameApi } from '@/lib/arcade/updates.contract';
  * the library's `games-hub` ones.
  */
 export function FollowingLabel() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'game-updates',
-    );
+  const { t } = useTranslation('game-updates');
   return (
     <>
-      {t(
-        'following',
-        {
-          defaultValue:
-            'Following',
-        },
-      )}
+      {t('following', {
+        defaultValue: 'Following',
+      })}
     </>
   );
 }
 
 export function FollowingEmpty() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'game-updates',
-    );
+  const { t } = useTranslation('game-updates');
   return (
     <>
-      {t(
-        'following-empty',
-        {
-          defaultValue:
-            'You are not following any games yet.',
-        },
-      )}
+      {t('following-empty', {
+        defaultValue: 'You are not following any games yet.',
+      })}
     </>
   );
 }
 
 /** Unfollow `gameId` and refresh the library's loader so the capsule leaves the filter. */
-export function UnfollowButton({
-  gameId,
-  title,
-}: {
-  gameId: string;
-  title: string;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'game-updates',
-    );
-  const router =
-    useRouter();
-  const unfollow =
-    async () => {
-      try {
-        await api(
-          unfollowGameApi,
-          {
-            params:
-              {
-                gameId,
-              },
-          },
-        );
-        await router.invalidate();
-      } catch {
-        toast.error(
-          t(
-            'follow-failed',
-            {
-              defaultValue:
-                'Could not change that. Try again.',
-            },
-          ),
-        );
-      }
-    };
-  return (
-    <button
-      type="button"
-      className="stm-btn stm-btn-ghost stm-capsule-action"
-      onClick={() =>
-        void unfollow()
-      }
-    >
-      <BellOff
-        aria-hidden
-      />
-      {t(
-        'unfollow',
-        {
-          defaultValue:
-            'Unfollow',
+export function UnfollowButton({ gameId, title }: { gameId: string; title: string }) {
+  const { t } = useTranslation('game-updates');
+  const router = useRouter();
+  const unfollow = async () => {
+    try {
+      await api(unfollowGameApi, {
+        params: {
+          gameId,
         },
-      )}
-      <span className="stm-sr">
-        {
-          title
-        }
-      </span>
+      });
+      await router.invalidate();
+    } catch {
+      toast.error(
+        t('follow-failed', {
+          defaultValue: 'Could not change that. Try again.',
+        }),
+      );
+    }
+  };
+  return (
+    <button type="button" className="stm-btn stm-btn-ghost stm-capsule-action" onClick={() => void unfollow()}>
+      <BellOff aria-hidden />
+      {t('unfollow', {
+        defaultValue: 'Unfollow',
+      })}
+      <span className="stm-sr">{title}</span>
     </button>
   );
 }

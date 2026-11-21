@@ -6,23 +6,13 @@ import type { MedPrisma } from '../scrape/types';
 import { listAliasMisses } from './alias-admin.server';
 
 /** GET /api/admin/medschools/alias-misses — unresolved source names plus the schools to map them to. */
-export const route =
-  apiRoute(
-    '/api/admin/medschools/alias-misses',
+export const route = apiRoute('/api/admin/medschools/alias-misses', {
+  GET: implement(
+    listAliasMissesApi,
     {
-      GET: implement(
-        listAliasMissesApi,
-        {
-          auth: 'admin',
-          rateLimit:
-            'read',
-        },
-        async () =>
-          Response.json(
-            await listAliasMisses(
-              prisma as unknown as MedPrisma,
-            ),
-          ),
-      ),
+      auth: 'admin',
+      rateLimit: 'read',
     },
-  );
+    async () => Response.json(await listAliasMisses(prisma as unknown as MedPrisma)),
+  ),
+});

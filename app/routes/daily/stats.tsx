@@ -4,16 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { DailyStats } from '@/components/daily-puzzles/DailyStats';
 import { noindexHead } from '@/lib/seo';
 
-export const Route =
-  createFileRoute(
-    '/daily/stats',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'Daily puzzle statistics',
-        ),
-      component:
-        DailyStats,
-    },
-  );
+export const Route = createFileRoute('/daily/stats')({
+  head: () => noindexHead('Daily puzzle statistics'),
+  component: DailyStats,
+});

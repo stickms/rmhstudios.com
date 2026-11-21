@@ -21,10 +21,7 @@
  *   than a keystroke log (see the privacy note there).
  */
 
-import {
-  createKeyStatAccumulator,
-  type KeyStatAggregate,
-} from '@/lib/rmhtype/keystats';
+import { createKeyStatAccumulator, type KeyStatAggregate } from '@/lib/rmhtype/keystats';
 
 /** The fastest a person can type, as the progress endpoint bounds it. */
 export const MAX_WPM = 250;
@@ -57,215 +54,75 @@ export interface TypingRun {
   /** True once the text is full. */
   done(): boolean;
   /** Type one character at `at` (ms). Ignored once done. */
-  type(
-    char: string,
-    at: number,
-  ): void;
+  type(char: string, at: number): void;
   /** Remove the last character. Counted; ignored on an empty line or once the run is done. */
-  backspace(
-    at: number,
-  ): void;
+  backspace(at: number): void;
   /** Percent of keystrokes right so far (100 before the first). */
   liveAccuracy(): number;
   result(): TypingRunResult;
 }
 
-const round1 =
-  (
-    value: number,
-  ) =>
-    Math.round(
-      value *
-        10,
-    ) /
-    10;
+const round1 = (value: number) => Math.round(value * 10) / 10;
 
-export function createTypingRun(
-  text: string,
-): TypingRun {
-  const typed: string[] =
-    [];
-  const stats =
-    createKeyStatAccumulator();
-  let startedAt:
-    | number
-    | null =
-    null;
+export function createTypingRun(text: string): TypingRun {
+  const typed: string[] = [];
+  const stats = createKeyStatAccumulator();
+  let startedAt: number | null = null;
   let lastAt = 0;
   let keystrokes = 0;
   let errorKeystrokes = 0;
   let backspaces = 0;
 
-  const accuracy =
-    () =>
-      keystrokes ===
-      0
-        ? 100
-        : round1(
-            ((keystrokes -
-              errorKeystrokes) /
-              keystrokes) *
-              100,
-          );
+  const accuracy = () => (keystrokes === 0 ? 100 : round1(((keystrokes - errorKeystrokes) / keystrokes) * 100));
 
   return {
     text,
-    typed:
-      () =>
-        typed.join(
-          '',
-        ),
-    done: () =>
-      typed.length >=
-      text.length,
-    type(
-      char,
-      at,
-    ) {
-      if (
-        typed.length >=
-        text.length
-      )
-        return;
-      const expected =
-        text.charAt(
-          typed.length,
-        );
-      const correct =
-        char ===
-        expected;
+    typed: () => typed.join(''),
+    done: () => typed.length >= text.length,
+    type(char, at) {
+      if (typed.length >= text.length) return;
+      const expected = text.charAt(typed.length);
+      const correct = char === expected;
       // The first key has no gap before it: the clock starts on it.
-      const gap =
-        startedAt ===
-        null
-          ? 0
-          : at -
-            lastAt;
-      if (
-        startedAt ===
-        null
-      )
-        startedAt =
-          at;
-      lastAt =
-        at;
+      const gap = startedAt === null ? 0 : at - lastAt;
+      if (startedAt === null) startedAt = at;
+      lastAt = at;
       keystrokes += 1;
-      if (
-        !correct
-      )
-        errorKeystrokes += 1;
-      typed.push(
-        char,
-      );
-      stats.record(
-        expected,
-        gap,
-        correct,
-      );
+      if (!correct) errorKeystrokes += 1;
+      typed.push(char);
+      stats.record(expected, gap, correct);
     },
-    backspace(
-      at,
-    ) {
-      if (
-        typed.length ===
-          0 ||
-        typed.length >=
-          text.length
-      )
-        return;
-      if (
-        startedAt !==
-        null
-      )
-        lastAt =
-          at;
+    backspace(at) {
+      if (typed.length === 0 || typed.length >= text.length) return;
+      if (startedAt !== null) lastAt = at;
       typed.pop();
       backspaces += 1;
     },
-    liveAccuracy:
-      accuracy,
+    liveAccuracy: accuracy,
     result() {
       let correctChars = 0;
-      for (const [
-        i,
-        char,
-      ] of typed.entries())
-        if (
-          char ===
-          text.charAt(
-            i,
-          )
-        )
-          correctChars += 1;
-      const elapsedMs =
-        startedAt ===
-        null
-          ? 0
-          : Math.max(
-              0,
-              lastAt -
-                startedAt,
-            );
-      const minutes =
-        elapsedMs /
-        60_000;
-      const wpm =
-        minutes >
-        0
-          ? Math.min(
-              MAX_WPM,
-              round1(
-                correctChars /
-                  5 /
-                  minutes,
-              ),
-            )
-          : 0;
-      const keyStats =
-        stats.snapshot();
+      for (const [i, char] of typed.entries()) if (char === text.charAt(i)) correctChars += 1;
+      const elapsedMs = startedAt === null ? 0 : Math.max(0, lastAt - startedAt);
+      const minutes = elapsedMs / 60_000;
+      const wpm = minutes > 0 ? Math.min(MAX_WPM, round1(correctChars / 5 / minutes)) : 0;
+      const keyStats = stats.snapshot();
       return {
         wpm,
-        accuracy:
-          accuracy(),
+        accuracy: accuracy(),
         correctChars,
         keystrokes,
         errorKeystrokes,
         backspaces,
         elapsedMs,
         keyStats,
-        missed:
-          keyStats
-            .filter(
-              (
-                stat,
-              ) =>
-                stat.errors >
-                0,
-            )
-            .sort(
-              (
-                a,
-                b,
-              ) =>
-                b.errors -
-                  a.errors ||
-                a.key.localeCompare(
-                  b.key,
-                ),
-            )
-            .slice(
-              0,
-              5,
-            )
-            .map(
-              (
-                stat,
-              ) => ({
-                key: stat.key,
-                errors:
-                  stat.errors,
-              }),
-            ),
+        missed: keyStats
+          .filter((stat) => stat.errors > 0)
+          .sort((a, b) => b.errors - a.errors || a.key.localeCompare(b.key))
+          .slice(0, 5)
+          .map((stat) => ({
+            key: stat.key,
+            errors: stat.errors,
+          })),
       };
     },
   };

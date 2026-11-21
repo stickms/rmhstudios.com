@@ -38,12 +38,8 @@ export function DeckStatsSummary({ deckId }: { deckId: string }) {
 
   return (
     <p className={`t-meta flex flex-wrap items-center gap-x-3 gap-y-1 ${arrival ?? ''}`}>
-      <span>
-        {t('summary-due', { defaultValue: 'Due today: {{count}}', count: row.dueToday })}
-      </span>
-      <span>
-        {t('summary-mature', { defaultValue: 'Mature: {{share}}', share: percent.format(share) })}
-      </span>
+      <span>{t('summary-due', { defaultValue: 'Due today: {{count}}', count: row.dueToday })}</span>
+      <span>{t('summary-mature', { defaultValue: 'Mature: {{share}}', share: percent.format(share) })}</span>
       <Link to="/study/stats" search={{ deck: deckId }} className="underline">
         {t('summary-link', { defaultValue: 'Statistics' })}
       </Link>

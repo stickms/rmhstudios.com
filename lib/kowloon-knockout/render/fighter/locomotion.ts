@@ -23,93 +23,35 @@ export const MAX_CADENCE = 2.1;
 export const STAND_SPEED = 0.15;
 
 export interface Locomotion {
-  clip:
-    | 'walk'
-    | 'strafe';
+  clip: 'walk' | 'strafe';
   /** Playback speed; negative = the cycle runs backward. */
   timeScale: number;
 }
 
-const cadence =
-  (
-    speed: number,
-    ref: number,
-  ) =>
-    clamp(
-      speed /
-        ref,
-      MIN_CADENCE,
-      MAX_CADENCE,
-    );
+const cadence = (speed: number, ref: number) => clamp(speed / ref, MIN_CADENCE, MAX_CADENCE);
 
 /**
  * `fwd`: velocity along the facing direction (m/s, + = forward). `lat`: velocity toward the character's left
  * (+ = left). `canStrafe`: the model has the sideways clip.
  */
-export function locomotion(
-  fwd: number,
-  lat: number,
-  canStrafe: boolean,
-): Locomotion {
-  const speed =
-    Math.hypot(
-      fwd,
-      lat,
-    );
-  if (
-    !(
-      speed >
-      STAND_SPEED
-    )
-  )
+export function locomotion(fwd: number, lat: number, canStrafe: boolean): Locomotion {
+  const speed = Math.hypot(fwd, lat);
+  if (!(speed > STAND_SPEED))
     return {
       clip: 'walk',
       timeScale: 1,
     };
-  if (
-    canStrafe &&
-    Math.abs(
-      lat,
-    ) >
-      Math.abs(
-        fwd,
-      ) *
-        1.1
-  ) {
+  if (canStrafe && Math.abs(lat) > Math.abs(fwd) * 1.1) {
     return {
       clip: 'strafe',
-      timeScale:
-        (lat >=
-        0
-          ? 1
-          : -1) *
-        cadence(
-          speed,
-          STRAFE_REF_SPEED,
-        ),
+      timeScale: (lat >= 0 ? 1 : -1) * cadence(speed, STRAFE_REF_SPEED),
     };
   }
   // Mostly forward or back (or lateral on a model with no strafe clip, which just walks).
-  const backward =
-    fwd <
-      0 &&
-    Math.abs(
-      fwd,
-    ) >=
-      Math.abs(
-        lat,
-      ) *
-        0.8;
+  const backward = fwd < 0 && Math.abs(fwd) >= Math.abs(lat) * 0.8;
   return {
     clip: 'walk',
-    timeScale:
-      (backward
-        ? -1
-        : 1) *
-      cadence(
-        speed,
-        WALK_REF_SPEED,
-      ),
+    timeScale: (backward ? -1 : 1) * cadence(speed, WALK_REF_SPEED),
   };
 }
 
@@ -120,42 +62,18 @@ export interface Lean {
 
 /** Largest lean (radians): forward 11°, back 6°, sideways 7°. */
 const MAX_PITCH = 0.2,
-  MIN_PITCH =
-    -0.1,
+  MIN_PITCH = -0.1,
   MAX_ROLL = 0.12;
 
 /** Lean into the movement: forward into a dash, back when retreating, toward the side when strafing. */
-export function leanFor(
-  fwd: number,
-  lat: number,
-): Lean {
+export function leanFor(fwd: number, lat: number): Lean {
   return {
-    pitch:
-      clamp(
-        fwd *
-          0.04,
-        MIN_PITCH,
-        MAX_PITCH,
-      ),
-    roll: clamp(
-      -lat *
-        0.03,
-      -MAX_ROLL,
-      MAX_ROLL,
-    ), // +X is the character's left; a roll about +Z leans toward -X, so negate
+    pitch: clamp(fwd * 0.04, MIN_PITCH, MAX_PITCH),
+    roll: clamp(-lat * 0.03, -MAX_ROLL, MAX_ROLL), // +X is the character's left; a roll about +Z leans toward -X, so negate
   };
 }
 
 /** How much of the procedural stance bounce to show for a fighter this still (1 = standing, 0 = moving). */
-export function standingness(
-  speed: number,
-): number {
-  return clamp(
-    1 -
-      (speed -
-        STAND_SPEED) /
-        0.6,
-    0,
-    1,
-  );
+export function standingness(speed: number): number {
+  return clamp(1 - (speed - STAND_SPEED) / 0.6, 0, 1);
 }

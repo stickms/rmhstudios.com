@@ -9,132 +9,58 @@
 import type { ICSEvent } from '@/lib/events-ics';
 
 const MINUTE = 60_000;
-const HOUR =
-  60 *
-  MINUTE;
-const DAY =
-  24 *
-  HOUR;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
 
 /** A party starts at least this far ahead... */
-export const MIN_LEAD_MS =
-  15 *
-  MINUTE;
+export const MIN_LEAD_MS = 15 * MINUTE;
 /** ...and at most this far. */
-export const MAX_LEAD_MS =
-  30 *
-  DAY;
+export const MAX_LEAD_MS = 30 * DAY;
 /** Join opens this long before the start. */
-export const JOIN_OPENS_BEFORE_MS =
-  15 *
-  MINUTE;
+export const JOIN_OPENS_BEFORE_MS = 15 * MINUTE;
 /** The first reminder goes out this long before the start. */
-export const REMINDER_LEAD_MS =
-  15 *
-  MINUTE;
+export const REMINDER_LEAD_MS = 15 * MINUTE;
 /** A party nobody opened within this long of its start is closed by the reminder job. */
-export const EXPIRE_AFTER_MS =
-  3 *
-  HOUR;
+export const EXPIRE_AFTER_MS = 3 * HOUR;
 /** How long a party runs in a calendar (a party has no end time of its own). */
-export const CALENDAR_DURATION_MS =
-  2 *
-  HOUR;
+export const CALENDAR_DURATION_MS = 2 * HOUR;
 /** Parties one member may have upcoming at once. */
 export const MAX_UPCOMING_PER_HOST = 5;
 /** Parties one member may schedule in 24 hours. */
 export const MAX_SCHEDULED_PER_DAY = 5;
 /** The landing's Upcoming section shows public parties this far ahead. */
-export const UPCOMING_WINDOW_MS =
-  7 *
-  DAY;
+export const UPCOMING_WINDOW_MS = 7 * DAY;
 /** Going avatars the party page shows (and the most it ever reveals about who is going). */
 export const GOING_AVATARS = 5;
 /** The most parties the landing lists. */
 export const UPCOMING_LIMIT = 30;
 
-export type StartCheck =
-  | 'ok'
-  | 'too-soon'
-  | 'too-far'
-  | 'invalid';
+export type StartCheck = 'ok' | 'too-soon' | 'too-far' | 'invalid';
 
 /** Whether `startMs` falls in the window a party may be scheduled for. */
-export function checkStart(
-  startMs: number,
-  nowMs: number,
-): StartCheck {
-  if (
-    !Number.isFinite(
-      startMs,
-    )
-  )
-    return 'invalid';
-  if (
-    startMs <
-    nowMs +
-      MIN_LEAD_MS
-  )
-    return 'too-soon';
-  if (
-    startMs >
-    nowMs +
-      MAX_LEAD_MS
-  )
-    return 'too-far';
+export function checkStart(startMs: number, nowMs: number): StartCheck {
+  if (!Number.isFinite(startMs)) return 'invalid';
+  if (startMs < nowMs + MIN_LEAD_MS) return 'too-soon';
+  if (startMs > nowMs + MAX_LEAD_MS) return 'too-far';
   return 'ok';
 }
 
 /** When Join opens for a party starting at `startMs`. */
-export function joinOpensAt(
-  startMs: number,
-): number {
-  return (
-    startMs -
-    JOIN_OPENS_BEFORE_MS
-  );
+export function joinOpensAt(startMs: number): number {
+  return startMs - JOIN_OPENS_BEFORE_MS;
 }
 
-export function canJoin(
-  startMs: number,
-  nowMs: number,
-): boolean {
-  return (
-    nowMs >=
-    joinOpensAt(
-      startMs,
-    )
-  );
+export function canJoin(startMs: number, nowMs: number): boolean {
+  return nowMs >= joinOpensAt(startMs);
 }
 
 /** `soon`: the 15-minute reminder is due. `started`: the at-start one is. `expired`: close the room. */
-export type ReminderPhase =
-  | 'waiting'
-  | 'soon'
-  | 'started'
-  | 'expired';
+export type ReminderPhase = 'waiting' | 'soon' | 'started' | 'expired';
 
-export function reminderPhase(
-  startMs: number,
-  nowMs: number,
-): ReminderPhase {
-  if (
-    nowMs >=
-    startMs +
-      EXPIRE_AFTER_MS
-  )
-    return 'expired';
-  if (
-    nowMs >=
-    startMs
-  )
-    return 'started';
-  if (
-    nowMs >=
-    startMs -
-      REMINDER_LEAD_MS
-  )
-    return 'soon';
+export function reminderPhase(startMs: number, nowMs: number): ReminderPhase {
+  if (nowMs >= startMs + EXPIRE_AFTER_MS) return 'expired';
+  if (nowMs >= startMs) return 'started';
+  if (nowMs >= startMs - REMINDER_LEAD_MS) return 'soon';
   return 'waiting';
 }
 
@@ -158,121 +84,50 @@ export function selectReminders(
   soon: string[];
   started: string[];
 } {
-  const phase =
-    reminderPhase(
-      startMs,
-      nowMs,
-    );
-  if (
-    phase ===
-      'waiting' ||
-    phase ===
-      'expired'
-  )
+  const phase = reminderPhase(startMs, nowMs);
+  if (phase === 'waiting' || phase === 'expired')
     return {
       soon: [],
-      started:
-        [],
+      started: [],
     };
-  if (
-    phase ===
-    'soon'
-  ) {
+  if (phase === 'soon') {
     return {
-      soon: rsvps
-        .filter(
-          (
-            r,
-          ) =>
-            r.remindedAt ===
-            null,
-        )
-        .map(
-          (
-            r,
-          ) =>
-            r.userId,
-        ),
-      started:
-        [],
+      soon: rsvps.filter((r) => r.remindedAt === null).map((r) => r.userId),
+      started: [],
     };
   }
   return {
     soon: [],
-    started:
-      rsvps
-        .filter(
-          (
-            r,
-          ) =>
-            r.startedNotifiedAt ===
-            null,
-        )
-        .map(
-          (
-            r,
-          ) =>
-            r.userId,
-        ),
+    started: rsvps.filter((r) => r.startedNotifiedAt === null).map((r) => r.userId),
   };
 }
 
-export const partyPath =
-  (
-    roomId: string,
-  ): string =>
-    `/rmhtube/party/${roomId}`;
-export const roomPath =
-  (
-    roomId: string,
-  ): string =>
-    `/rmhtube/${roomId}`;
+export const partyPath = (roomId: string): string => `/rmhtube/party/${roomId}`;
+export const roomPath = (roomId: string): string => `/rmhtube/${roomId}`;
 
 export interface PartyCalendarInput {
   roomId: string;
-  name:
-    | string
-    | null;
-  description:
-    | string
-    | null;
+  name: string | null;
+  description: string | null;
   scheduledFor: Date;
   updatedAt: Date;
   closedAt: Date | null;
 }
 
 /** The calendar event for a party: a stable UID, a 15-minute alarm, and CANCELLED once the room is closed. */
-export function partyToIcsEvent(
-  party: PartyCalendarInput,
-  origin: string,
-  fallbackName: string,
-): ICSEvent {
-  const start =
-    party.scheduledFor.getTime();
+export function partyToIcsEvent(party: PartyCalendarInput, origin: string, fallbackName: string): ICSEvent {
+  const start = party.scheduledFor.getTime();
   return {
     id: `rmhtube-party-${party.roomId}`,
-    title:
-      party.name?.trim() ||
-      fallbackName,
-    description:
-      party.description,
-    startsAt:
-      party.scheduledFor,
-    endsAt:
-      new Date(
-        start +
-          CALENDAR_DURATION_MS,
-      ),
+    title: party.name?.trim() || fallbackName,
+    description: party.description,
+    startsAt: party.scheduledFor,
+    endsAt: new Date(start + CALENDAR_DURATION_MS),
     location: `RMHTube room ${party.roomId}`,
     url: `${origin}${partyPath(party.roomId)}`,
-    canceledAt:
-      party.closedAt,
+    canceledAt: party.closedAt,
     // A calendar replaces a held copy only when SEQUENCE rises: the row's updatedAt, in seconds, only ever grows.
-    sequence:
-      Math.floor(
-        party.updatedAt.getTime() /
-          1000,
-      ),
+    sequence: Math.floor(party.updatedAt.getTime() / 1000),
     alarmMinutes: 15,
   };
 }
@@ -280,65 +135,26 @@ export function partyToIcsEvent(
 export interface RelativeStart {
   /** The value and unit `Intl.RelativeTimeFormat.format` takes. */
   value: number;
-  unit:
-    | 'minute'
-    | 'hour'
-    | 'day';
+  unit: 'minute' | 'hour' | 'day';
 }
 
 /** How far `startMs` is from now, rounded to one unit. Computed when the page renders; nothing ticks. */
-export function relativeStart(
-  startMs: number,
-  nowMs: number,
-): RelativeStart {
-  const diff =
-    startMs -
-    nowMs;
-  const abs =
-    Math.abs(
-      diff,
-    );
-  const sign =
-    diff <
-    0
-      ? -1
-      : 1;
-  if (
-    abs <
-    HOUR
-  )
+export function relativeStart(startMs: number, nowMs: number): RelativeStart {
+  const diff = startMs - nowMs;
+  const abs = Math.abs(diff);
+  const sign = diff < 0 ? -1 : 1;
+  if (abs < HOUR)
     return {
-      value:
-        sign *
-        Math.max(
-          1,
-          Math.round(
-            abs /
-              MINUTE,
-          ),
-        ),
+      value: sign * Math.max(1, Math.round(abs / MINUTE)),
       unit: 'minute',
     };
-  if (
-    abs <
-    DAY
-  )
+  if (abs < DAY)
     return {
-      value:
-        sign *
-        Math.round(
-          abs /
-            HOUR,
-        ),
+      value: sign * Math.round(abs / HOUR),
       unit: 'hour',
     };
   return {
-    value:
-      sign *
-      Math.round(
-        abs /
-          DAY,
-      ),
+    value: sign * Math.round(abs / DAY),
     unit: 'day',
   };
 }

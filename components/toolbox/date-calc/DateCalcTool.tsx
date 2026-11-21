@@ -31,7 +31,14 @@ function CountField({ label, value, onChange }: { label: string; value: string; 
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type="number" inputMode="numeric" step={1} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        id={id}
+        type="number"
+        inputMode="numeric"
+        step={1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }
@@ -67,7 +74,9 @@ export function DateCalcTool() {
   const b = parsePlainDate(end);
   const num = (n: number) => new Intl.NumberFormat(locale).format(n);
   const long = (d: PlainDate) =>
-    new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(toDayNumber(d) * 86_400_000));
+    new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' }).format(
+      new Date(toDayNumber(d) * 86_400_000),
+    );
   const int = (s: string) => Math.trunc(Number(s) || 0);
 
   return (
@@ -93,46 +102,45 @@ export function DateCalcTool() {
             checked={inclusive}
             onCheckedChange={setInclusive}
           />
-          {a && b && (() => {
-            const diff = differenceBetween(a, b, inclusive);
-            const sign = diff.totalDays < 0 ? '−' : '';
-            return (
-              <ToolSection title={t('date-difference', { defaultValue: 'Difference' })}>
-                <p className="t-title font-mono" aria-live="polite">
-                  {t('date-days', { defaultValue: '{{count}} days', count: diff.totalDays })}
-                </p>
-                <div>
-                  <ResultRow
-                    label={t('date-calendar', { defaultValue: 'Years, months and days' })}
-                    mono={false}
-                    value={`${sign}${t('date-ymd', {
-                      defaultValue: '{{years}} y, {{months}} m, {{days}} d',
-                      years: diff.calendar.years,
-                      months: diff.calendar.months,
-                      days: diff.calendar.days,
-                    })}`}
-                  />
-                  <ResultRow
-                    label={t('date-weeks', { defaultValue: 'Weeks and days' })}
-                    mono={false}
-                    value={`${sign}${t('date-wd', {
-                      defaultValue: '{{weeks}} weeks, {{days}} days',
-                      weeks: diff.weeks,
-                      days: diff.remainderDays,
-                    })}`}
-                  />
-                  <ResultRow
-                    label={t('date-business', { defaultValue: 'Weekdays (Monday to Friday)' })}
-                    value={num(diff.businessDays)}
-                  />
-                  <ResultRow
-                    label={t('date-hours', { defaultValue: 'Hours' })}
-                    value={num(diff.totalDays * 24)}
-                  />
-                </div>
-              </ToolSection>
-            );
-          })()}
+          {a &&
+            b &&
+            (() => {
+              const diff = differenceBetween(a, b, inclusive);
+              const sign = diff.totalDays < 0 ? '−' : '';
+              return (
+                <ToolSection title={t('date-difference', { defaultValue: 'Difference' })}>
+                  <p className="t-title font-mono" aria-live="polite">
+                    {t('date-days', { defaultValue: '{{count}} days', count: diff.totalDays })}
+                  </p>
+                  <div>
+                    <ResultRow
+                      label={t('date-calendar', { defaultValue: 'Years, months and days' })}
+                      mono={false}
+                      value={`${sign}${t('date-ymd', {
+                        defaultValue: '{{years}} y, {{months}} m, {{days}} d',
+                        years: diff.calendar.years,
+                        months: diff.calendar.months,
+                        days: diff.calendar.days,
+                      })}`}
+                    />
+                    <ResultRow
+                      label={t('date-weeks', { defaultValue: 'Weeks and days' })}
+                      mono={false}
+                      value={`${sign}${t('date-wd', {
+                        defaultValue: '{{weeks}} weeks, {{days}} days',
+                        weeks: diff.weeks,
+                        days: diff.remainderDays,
+                      })}`}
+                    />
+                    <ResultRow
+                      label={t('date-business', { defaultValue: 'Weekdays (Monday to Friday)' })}
+                      value={num(diff.businessDays)}
+                    />
+                    <ResultRow label={t('date-hours', { defaultValue: 'Hours' })} value={num(diff.totalDays * 24)} />
+                  </div>
+                </ToolSection>
+              );
+            })()}
         </>
       ) : (
         <>
@@ -144,7 +152,10 @@ export function DateCalcTool() {
             <CountField label={t('date-add-days', { defaultValue: 'Days' })} value={days} onChange={setDays} />
           </div>
           <p className="t-meta">
-            {t('date-add-hint', { defaultValue: 'Use negative numbers to go back. Month ends are kept: 31 January plus one month is the end of February.' })}
+            {t('date-add-hint', {
+              defaultValue:
+                'Use negative numbers to go back. Month ends are kept: 31 January plus one month is the end of February.',
+            })}
           </p>
           {a && (
             <ToolSection title={t('date-result', { defaultValue: 'Result' })}>
@@ -159,7 +170,9 @@ export function DateCalcTool() {
               value={business}
               onChange={setBusiness}
             />
-            {a && <p className="t-body">{long(addBusinessDays(a, Math.max(-10_000, Math.min(10_000, int(business)))))}</p>}
+            {a && (
+              <p className="t-body">{long(addBusinessDays(a, Math.max(-10_000, Math.min(10_000, int(business)))))}</p>
+            )}
           </ToolSection>
         </>
       )}

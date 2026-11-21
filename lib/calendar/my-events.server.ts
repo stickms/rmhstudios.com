@@ -118,9 +118,7 @@ export async function myEventInputs(userId: string, from: Date, to: Date): Promi
   if (officeHours.length) {
     const guests = new Map(hosted.map((h) => [h.id, h.rsvps[0]?.userId ?? null]));
     const people = await loadPeople(
-      officeHours.flatMap((i) =>
-        [i.event.hostId, guests.get(i.event.id)].filter((x): x is string => !!x),
-      ),
+      officeHours.flatMap((i) => [i.event.hostId, guests.get(i.event.id)].filter((x): x is string => !!x)),
     );
     for (const i of officeHours) {
       const otherId = i.event.hostId === userId ? guests.get(i.event.id) : i.event.hostId;

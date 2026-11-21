@@ -75,7 +75,13 @@ export function amortize(input: LoanInput): LoanResult {
     balance -= principal;
     totalPaid += payment;
     totalInterest += interest;
-    schedule.push({ period, payment: payment / 100, principal: principal / 100, interest: interest / 100, balance: balance / 100 });
+    schedule.push({
+      period,
+      payment: payment / 100,
+      principal: principal / 100,
+      interest: interest / 100,
+      balance: balance / 100,
+    });
   }
   return {
     monthlyPayment: paymentCents / 100,
@@ -87,7 +93,9 @@ export function amortize(input: LoanInput): LoanResult {
 }
 
 /** Summed interest and principal per year of the loan, for a shorter table. */
-export function yearlyTotals(schedule: readonly ScheduleRow[]): { year: number; principal: number; interest: number; balance: number }[] {
+export function yearlyTotals(
+  schedule: readonly ScheduleRow[],
+): { year: number; principal: number; interest: number; balance: number }[] {
   const out: { year: number; principal: number; interest: number; balance: number }[] = [];
   for (const row of schedule) {
     const year = Math.ceil(row.period / 12);

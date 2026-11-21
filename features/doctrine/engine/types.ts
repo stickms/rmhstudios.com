@@ -6,10 +6,7 @@
 
 // ─── Tiers ──────────────────────────────────────────────────────────────────
 
-export type TierId =
-  | 'PUBLIC'
-  | 'INSIDER'
-  | 'OPERATOR';
+export type TierId = 'PUBLIC' | 'INSIDER' | 'OPERATOR';
 
 export interface TierDefinition {
   id: TierId;
@@ -39,12 +36,7 @@ export interface UserReputation {
 
 // ─── Puzzles ────────────────────────────────────────────────────────────────
 
-export type PuzzleMode =
-  | 'alibi'
-  | 'spectrum'
-  | 'outcast'
-  | 'chainlink'
-  | 'impostor';
+export type PuzzleMode = 'alibi' | 'spectrum' | 'outcast' | 'chainlink' | 'impostor';
 
 export interface PuzzleData {
   mode: PuzzleMode;
@@ -69,9 +61,7 @@ export interface PuzzleStats {
   totalAttempts: number;
   totalSolves: number;
   averageTimeMs: number;
-  firstSolveUserId:
-    | string
-    | null;
+  firstSolveUserId: string | null;
   firstSolveAt: Date | null;
 }
 
@@ -87,13 +77,7 @@ export interface PuzzleSubmission {
 
 // ─── Reactions ──────────────────────────────────────────────────────────────
 
-export type Reaction =
-  | 'fire'
-  | 'based'
-  | 'mid'
-  | 'cringe'
-  | 'trash'
-  | 'tung';
+export type Reaction = 'fire' | 'based' | 'mid' | 'cringe' | 'trash' | 'tung';
 
 export interface ReactionCount {
   fire: number;
@@ -104,26 +88,19 @@ export interface ReactionCount {
   tung: number;
 }
 
-export const EMPTY_REACTIONS: ReactionCount =
-  {
-    fire: 0,
-    based: 0,
-    mid: 0,
-    cringe: 0,
-    trash: 0,
-    tung: 0,
-  };
+export const EMPTY_REACTIONS: ReactionCount = {
+  fire: 0,
+  based: 0,
+  mid: 0,
+  cringe: 0,
+  trash: 0,
+  tung: 0,
+};
 
 // ─── Safehouse ──────────────────────────────────────────────────────────────
 
 export type SafehouseContentType =
-  | 'DEV_LOG'
-  | 'BUILD'
-  | 'POSTMORTEM'
-  | 'DECISION'
-  | 'RAW_FOOTAGE'
-  | 'FINANCIAL'
-  | 'VOTE';
+  'DEV_LOG' | 'BUILD' | 'POSTMORTEM' | 'DECISION' | 'RAW_FOOTAGE' | 'FINANCIAL' | 'VOTE';
 
 export interface SafehouseContent {
   id: string;
@@ -140,11 +117,7 @@ export interface SafehouseContent {
 
 // ─── Disclosures ────────────────────────────────────────────────────────────
 
-export type DisclosureStatus =
-  | 'CLASSIFIED'
-  | 'TEASED'
-  | 'DISCLOSED'
-  | 'ARCHIVED';
+export type DisclosureStatus = 'CLASSIFIED' | 'TEASED' | 'DISCLOSED' | 'ARCHIVED';
 
 export interface Disclosure {
   id: string;
@@ -177,24 +150,10 @@ export interface Recruitment {
 
 // ─── Incidents ──────────────────────────────────────────────────────────────
 
-export type IncidentSeverity =
-  | 'COSMETIC'
-  | 'DEGRADED'
-  | 'CRITICAL'
-  | 'CATASTROPHIC';
-export type IncidentStatus =
-  | 'ACTIVE'
-  | 'MITIGATED'
-  | 'RESOLVED'
-  | 'LEGENDARY';
+export type IncidentSeverity = 'COSMETIC' | 'DEGRADED' | 'CRITICAL' | 'CATASTROPHIC';
+export type IncidentStatus = 'ACTIVE' | 'MITIGATED' | 'RESOLVED' | 'LEGENDARY';
 
-export type IncidentEventType =
-  | 'detected'
-  | 'acknowledged'
-  | 'investigating'
-  | 'update'
-  | 'mitigated'
-  | 'resolved';
+export type IncidentEventType = 'detected' | 'acknowledged' | 'investigating' | 'update' | 'mitigated' | 'resolved';
 
 export interface Incident {
   id: string;
@@ -203,12 +162,8 @@ export interface Incident {
   title: string;
   narrative: string;
   status: IncidentStatus;
-  firstReporterId:
-    | string
-    | null;
-  postmortemId:
-    | string
-    | null;
+  firstReporterId: string | null;
+  postmortemId: string | null;
   timeline: IncidentEvent[];
   reactions: ReactionCount;
   createdAt: Date;
@@ -241,18 +196,11 @@ export interface SahurStatus {
 
 // ─── Feed ───────────────────────────────────────────────────────────────────
 
-export type FeedSortMode =
-  | 'recent'
-  | 'divisive'
-  | 'trending';
+export type FeedSortMode = 'recent' | 'divisive' | 'trending';
 
 export interface FeedItem {
   id: string;
-  type:
-    | 'safehouse'
-    | 'disclosure'
-    | 'incident'
-    | 'changelog';
+  type: 'safehouse' | 'disclosure' | 'incident' | 'changelog';
   title: string;
   preview: string;
   createdAt: Date;
@@ -264,11 +212,7 @@ export interface FeedItem {
 
 export interface ChangelogEntry {
   id: string;
-  type:
-    | 'disclosure'
-    | 'incident_resolved'
-    | 'phase_transition'
-    | 'feature_launch';
+  type: 'disclosure' | 'incident_resolved' | 'phase_transition' | 'feature_launch';
   codename: string;
   headline: string;
   narrative: string;

@@ -93,10 +93,7 @@ export function PracticeTestSetup({
           {TEST_KINDS.map((kind) => {
             const info = availability[kind];
             return (
-              <label
-                key={kind}
-                className="flex min-h-11 items-center gap-3 border-b border-site-border py-2"
-              >
+              <label key={kind} className="flex min-h-11 items-center gap-3 border-b border-site-border py-2">
                 <input
                   type="checkbox"
                   checked={info.available && kinds.includes(kind)}

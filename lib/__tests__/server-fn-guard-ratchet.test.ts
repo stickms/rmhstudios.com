@@ -32,7 +32,8 @@ const PRIVILEGED_FILES = [
  */
 const ALLOWED = new Set<string>(['lib/security-reports.ts:0']);
 
-const GUARD = /\b(?:requireAdminServerFn|requireAdminSession)\s*\(|\buser\b[^;]{0,40}\bisAdmin\b|\bisAdmin\b\s*(?:\)|!==|===|\?)|admin\??\.isAdmin/;
+const GUARD =
+  /\b(?:requireAdminServerFn|requireAdminSession)\s*\(|\buser\b[^;]{0,40}\bisAdmin\b|\bisAdmin\b\s*(?:\)|!==|===|\?)|admin\??\.isAdmin/;
 
 function stripComments(src: string): string {
   return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');

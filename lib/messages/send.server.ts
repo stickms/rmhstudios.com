@@ -15,30 +15,18 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import {
-  findDm,
-  findGroupMembership,
-} from '@/lib/chat/chat.server';
+import { findDm, findGroupMembership } from '@/lib/chat/chat.server';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { getActiveBan } from '@/lib/admin-audit.server';
 import { checkRateLimit } from '@/lib/rate-limit.server';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
-import {
-  imageAltsAligned,
-  normalizeImageAlts,
-} from '@/lib/messages/image-alts';
+import { imageAltsAligned, normalizeImageAlts } from '@/lib/messages/image-alts';
 import { notifyUser } from '@/lib/message-events';
-import {
-  publishGroupMessage,
-  type GroupMessagePayload,
-} from '@/lib/group-events';
+import { publishGroupMessage, type GroupMessagePayload } from '@/lib/group-events';
 import { messageStamp } from '@/lib/chat-plus/post.server';
 import { adjustDmUnread } from '@/lib/chat-plus/unread.server';
-import {
-  groupMessageSelect,
-  serializeGroupMessages,
-} from '@/lib/group-chat/serialize.server';
+import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
 import type { SentDirectMessage } from '@/lib/messages/messages.contract';
 
 export type SendFailCode =
@@ -60,9 +48,7 @@ export interface SendFailure {
   response: Response;
 }
 
-export type SendResult<
-  T,
-> =
+export type SendResult<T> =
   | {
       ok: true;
       value: T;
@@ -80,17 +66,16 @@ function fail(
   return {
     ok: false,
     code,
-    response:
-      Response.json(
-        {
-          error,
-          ...extra,
-        },
-        {
-          status,
-          headers,
-        },
-      ),
+    response: Response.json(
+      {
+        error,
+        ...extra,
+      },
+      {
+        status,
+        headers,
+      },
+    ),
   };
 }
 
@@ -102,43 +87,17 @@ function fail(
  */
 export async function guardImageAlts(
   userId: string,
-  imageUrls:
-    | string[]
-    | undefined,
-  imageAlts:
-    | string[]
-    | undefined,
+  imageUrls: string[] | undefined,
+  imageAlts: string[] | undefined,
 ): Promise<SendFailure | null> {
-  if (
-    !imageAltsAligned(
-      imageUrls,
-      imageAlts,
-    )
-  ) {
-    return fail(
-      'alt-mismatch',
-      'Provide exactly one description per image',
-      400,
-    );
+  if (!imageAltsAligned(imageUrls, imageAlts)) {
+    return fail('alt-mismatch', 'Provide exactly one description per image', 400);
   }
-  const violation =
-    await altTextViolation(
-      userId,
-      imageUrls,
-      imageAlts,
-    );
-  if (
-    violation
-  ) {
-    return fail(
-      'alt-required',
-      violation,
-      422,
-      undefined,
-      {
-        code: 'alt-text-required',
-      },
-    );
+  const violation = await altTextViolation(userId, imageUrls, imageAlts);
+  if (violation) {
+    return fail('alt-required', violation, 422, undefined, {
+      code: 'alt-text-required',
+    });
   }
   return null;
 }
@@ -146,16 +105,10 @@ export async function guardImageAlts(
 /** What a direct message carries: the parsed `sendToConversationBody`. */
 export interface DirectMessageInput {
   content: string;
-  gifUrl?:
-    | string
-    | undefined;
-  imageUrls?:
-    | string[]
-    | undefined;
+  gifUrl?: string | undefined;
+  imageUrls?: string[] | undefined;
   /** One description per image, same length as `imageUrls`. */
-  imageAlts?:
-    | string[]
-    | undefined;
+  imageAlts?: string[] | undefined;
 }
 
 export interface SendDirectOptions {
@@ -171,10 +124,7 @@ export interface SendDirectOptions {
 export type DirectConversation = NonNullable<Awaited<ReturnType<typeof findDm>>>;
 
 /** A block in either direction between two people (yourself never blocks). The one check every DM path shares. */
-export async function isBlockedPair(
-  userId: string,
-  otherId: string,
-): Promise<boolean> {
+export async function isBlockedPair(userId: string, otherId: string): Promise<boolean> {
   if (userId === otherId) return false;
   const hit = await prisma.userBlock.findFirst({
     where: {
@@ -189,10 +139,7 @@ export async function isBlockedPair(
 }
 
 /** The restriction, existence and participant checks, in the order the endpoint always ran them. */
-export async function guardDirect(
-  userId: string,
-  conversationId: string,
-): Promise<SendResult<DirectConversation>> {
+export async function guardDirect(userId: string, conversationId: string): Promise<SendResult<DirectConversation>> {
   const restricted = await restrictionResponse(userId, 'message');
   if (restricted) return { ok: false, code: 'restricted', response: restricted };
   const conversation = await findDm(conversationId);
@@ -202,9 +149,7 @@ export async function guardDirect(
   }
   // A block in either direction ends the conversation for sending (Saved Messages never blocks).
   const otherId =
-    conversation.participantOneId === userId
-      ? conversation.participantTwoId
-      : conversation.participantOneId;
+    conversation.participantOneId === userId ? conversation.participantTwoId : conversation.participantOneId;
   if (await isBlockedPair(userId, otherId)) {
     return fail('blocked', 'You can no longer message this person', 403);
   }
@@ -215,19 +160,12 @@ export async function guardDirect(
  * Send into an existing DM (or Saved Messages). Every check runs here, so the
  * cron re-runs them at delivery time.
  */
-export async function sendDirectMessage(
-  opts: SendDirectOptions,
-): Promise<
+export async function sendDirectMessage(opts: SendDirectOptions): Promise<
   SendResult<{
     message: SentDirectMessage;
   }>
 > {
-  const {
-    userId,
-    conversationId,
-    input,
-  } =
-    opts;
+  const { userId, conversationId, input } = opts;
 
   let conversation = opts.conversation;
   if (!conversation) {
@@ -237,265 +175,133 @@ export async function sendDirectMessage(
   }
   // M2: a conversation with yourself is Saved Messages — no recipient to
   // notify, no DM-privacy rule to apply, nothing to count as unread.
-  const isSavedChat =
-    conversation.participantOneId ===
-    conversation.participantTwoId;
+  const isSavedChat = conversation.participantOneId === conversation.participantTwoId;
 
   // Images must belong to the sender (filename is prefixed with their id).
-  if (
-    input.imageUrls?.some(
-      (
-        u,
-      ) =>
-        !ownsFeedImageUrl(
-          u,
-          userId,
-        ),
-    )
-  ) {
-    return fail(
-      'invalid-image',
-      'Invalid image reference',
-      400,
-    );
+  if (input.imageUrls?.some((u) => !ownsFeedImageUrl(u, userId))) {
+    return fail('invalid-image', 'Invalid image reference', 400);
   }
-  const altFailure =
-    await guardImageAlts(
-      userId,
-      input.imageUrls,
-      input.imageAlts,
-    );
-  if (
-    altFailure
-  )
-    return altFailure;
+  const altFailure = await guardImageAlts(userId, input.imageUrls, input.imageAlts);
+  if (altFailure) return altFailure;
 
   // Re-check DM privacy of recipient
   const recipientId =
-    conversation.participantOneId ===
-    userId
-      ? conversation.participantTwoId
-      : conversation.participantOneId;
+    conversation.participantOneId === userId ? conversation.participantTwoId : conversation.participantOneId;
 
   // Per-(sender→recipient) limit: bounds targeted flooding of one person while
   // staying generous for a normal rapid exchange (~160/min effective).
-  if (
-    opts.pairRateLimit
-  ) {
-    const pairRl =
-      await checkRateLimit(
-        `${userId}:${recipientId}`,
-        {
-          limit: 40,
-          windowMs: 60_000,
-          prefix:
-            'dm:to',
-        },
-      );
-    if (
-      !pairRl.allowed
-    ) {
-      return fail(
-        'rate-limited',
-        "You're messaging this person too quickly. Please slow down.",
-        429,
-        {
-          'Retry-After':
-            String(
-              pairRl.retryAfter,
-            ),
-        },
-      );
+  if (opts.pairRateLimit) {
+    const pairRl = await checkRateLimit(`${userId}:${recipientId}`, {
+      limit: 40,
+      windowMs: 60_000,
+      prefix: 'dm:to',
+    });
+    if (!pairRl.allowed) {
+      return fail('rate-limited', "You're messaging this person too quickly. Please slow down.", 429, {
+        'Retry-After': String(pairRl.retryAfter),
+      });
     }
   }
 
-  const recipient =
-    isSavedChat
-      ? null
-      : await prisma.user.findUnique(
-          {
-            where:
-              {
-                id: recipientId,
-              },
-            select:
-              {
-                profile:
-                  {
-                    select:
-                      {
-                        dmPrivacy: true,
-                      },
-                  },
-              },
+  const recipient = isSavedChat
+    ? null
+    : await prisma.user.findUnique({
+        where: {
+          id: recipientId,
+        },
+        select: {
+          profile: {
+            select: {
+              dmPrivacy: true,
+            },
           },
-        );
+        },
+      });
 
-  const dmPrivacy =
-    recipient
-      ?.profile
-      ?.dmPrivacy ??
-    'EVERYONE';
+  const dmPrivacy = recipient?.profile?.dmPrivacy ?? 'EVERYONE';
 
-  if (
-    dmPrivacy ===
-    'NONE'
-  ) {
-    return fail(
-      'cannot-message',
-      'This user is no longer accepting messages.',
-      403,
-    );
+  if (dmPrivacy === 'NONE') {
+    return fail('cannot-message', 'This user is no longer accepting messages.', 403);
   }
 
-  if (
-    dmPrivacy ===
-    'FOLLOWERS'
-  ) {
-    const follows =
-      await prisma.follow.findUnique(
-        {
-          where:
-            {
-              followerId_followingId:
-                {
-                  followerId:
-                    recipientId,
-                  followingId:
-                    userId,
-                },
-            },
+  if (dmPrivacy === 'FOLLOWERS') {
+    const follows = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: recipientId,
+          followingId: userId,
         },
-      );
-    if (
-      !follows
-    ) {
-      return fail(
-        'cannot-message',
-        'This user only accepts messages from people they follow.',
-        403,
-      );
+      },
+    });
+    if (!follows) {
+      return fail('cannot-message', 'This user only accepts messages from people they follow.', 403);
     }
   }
 
-  const [
-    message,
-  ] =
-    await prisma.$transaction(
-      [
-        prisma.chatMessage.create(
-          {
-            data: {
-              chatId:
-                conversationId,
-              senderId:
-                userId,
-              content:
-                input.content,
-              gifUrl:
-                input.gifUrl ??
-                null,
-              imageUrls:
-                input.imageUrls ??
-                [],
-              imageAlts:
-                normalizeImageAlts(
-                  input.imageUrls,
-                  input.imageAlts,
-                ),
-              read: isSavedChat,
-              // M3 + M6: expiry from the chat's timer, and the shared-media flags.
-              ...messageStamp(
-                conversation.disappearAfterSec,
-                input,
-              ),
-            },
-          },
-        ),
-        prisma.chat.update(
-          {
-            where:
-              {
-                id: conversationId,
-              },
-            data: {
-              lastMessageAt:
-                new Date(),
-            },
-          },
-        ),
-      ],
-    );
+  const [message] = await prisma.$transaction([
+    prisma.chatMessage.create({
+      data: {
+        chatId: conversationId,
+        senderId: userId,
+        content: input.content,
+        gifUrl: input.gifUrl ?? null,
+        imageUrls: input.imageUrls ?? [],
+        imageAlts: normalizeImageAlts(input.imageUrls, input.imageAlts),
+        read: isSavedChat,
+        // M3 + M6: expiry from the chat's timer, and the shared-media flags.
+        ...messageStamp(conversation.disappearAfterSec, input),
+      },
+    }),
+    prisma.chat.update({
+      where: {
+        id: conversationId,
+      },
+      data: {
+        lastMessageAt: new Date(),
+      },
+    }),
+  ]);
 
-  const messagePayload: SentDirectMessage =
-    {
-      id: message.id,
-      conversationId,
-      content:
-        message.content,
-      senderId:
-        message.senderId,
-      read: message.read,
-      createdAt:
-        message.createdAt.toISOString(),
-      gifUrl:
-        message.gifUrl,
-      imageUrls:
-        message.imageUrls,
-      imageAlts:
-        message.imageAlts,
-      reactions:
-        [],
-      expiresAt:
-        message.expiresAt?.toISOString() ??
-        null,
-    };
+  const messagePayload: SentDirectMessage = {
+    id: message.id,
+    conversationId,
+    content: message.content,
+    senderId: message.senderId,
+    read: message.read,
+    createdAt: message.createdAt.toISOString(),
+    gifUrl: message.gifUrl,
+    imageUrls: message.imageUrls,
+    imageAlts: message.imageAlts,
+    reactions: [],
+    expiresAt: message.expiresAt?.toISOString() ?? null,
+  };
 
   // Bump the recipient's denormalized unread counter (only if warm) before we
   // notify them, so their SSE stream reads the fresh count without a COUNT.
-  if (
-    !isSavedChat
-  ) {
-    void adjustDmUnread(
-      recipientId,
-      1,
-    );
+  if (!isSavedChat) {
+    void adjustDmUnread(recipientId, 1);
 
     // Notify recipient via SSE with message payload
-    notifyUser(
-      recipientId,
-      {
-        type: 'new-message',
-        message:
-          messagePayload,
-      },
-    );
+    notifyUser(recipientId, {
+      type: 'new-message',
+      message: messagePayload,
+    });
   }
 
   return {
     ok: true,
-    value:
-      {
-        message:
-          messagePayload,
-      },
+    value: {
+      message: messagePayload,
+    },
   };
 }
 
 /** What a group message carries: the endpoint's parsed body. */
 export interface GroupMessageInput {
-  content?:
-    | string
-    | undefined;
-  gifUrl?:
-    | string
-    | undefined;
-  imageUrls?:
-    | string[]
-    | undefined;
-  imageAlts?:
-    | string[]
-    | undefined;
+  content?: string | undefined;
+  gifUrl?: string | undefined;
+  imageUrls?: string[] | undefined;
+  imageAlts?: string[] | undefined;
   poll?:
     | {
         question: string;
@@ -528,46 +334,27 @@ export async function guardGroupAccount(userId: string): Promise<SendFailure | n
 }
 
 /** Membership alone (the endpoint's second step, after its IP rate limit). */
-export async function guardGroupMembership(
-  userId: string,
-  groupId: string,
-): Promise<SendResult<GroupMembership>> {
+export async function guardGroupMembership(userId: string, groupId: string): Promise<SendResult<GroupMembership>> {
   const membership = await loadGroupMembership(groupId, userId);
   if (!membership) return fail('not-member', 'Not found', 404);
   return { ok: true, value: membership };
 }
 
 /** Account checks then membership, for callers with no request (the cron). */
-export async function guardGroup(
-  userId: string,
-  groupId: string,
-): Promise<SendResult<GroupMembership>> {
+export async function guardGroup(userId: string, groupId: string): Promise<SendResult<GroupMembership>> {
   const denied = await guardGroupAccount(userId);
   if (denied) return denied;
   return guardGroupMembership(userId, groupId);
 }
 
 /** Send into a group chat the caller is a member of. */
-export async function sendGroupMessage(
-  opts: SendGroupOptions,
-): Promise<
+export async function sendGroupMessage(opts: SendGroupOptions): Promise<
   SendResult<{
     message: GroupMessagePayload;
   }>
 > {
-  const {
-    userId,
-    groupId,
-  } =
-    opts;
-  const {
-    content,
-    gifUrl,
-    imageUrls,
-    imageAlts,
-    poll,
-  } =
-    opts.input;
+  const { userId, groupId } = opts;
+  const { content, gifUrl, imageUrls, imageAlts, poll } = opts.input;
 
   let membership = opts.membership;
   if (!membership) {
@@ -576,170 +363,75 @@ export async function sendGroupMessage(
     membership = gate.value;
   }
 
-  const text =
-    content?.trim() ??
-    '';
-  const hasMedia =
-    !!gifUrl ||
-    (imageUrls?.length ??
-      0) >
-      0;
-  if (
-    !text &&
-    !hasMedia &&
-    !poll
-  )
-    return fail(
-      'empty',
-      'Empty message',
-      400,
-    );
+  const text = content?.trim() ?? '';
+  const hasMedia = !!gifUrl || (imageUrls?.length ?? 0) > 0;
+  if (!text && !hasMedia && !poll) return fail('empty', 'Empty message', 400);
   // Images must belong to the sender (filename is prefixed with their id).
-  if (
-    imageUrls?.some(
-      (
-        u,
-      ) =>
-        !ownsFeedImageUrl(
-          u,
-          userId,
-        ),
-    )
-  ) {
-    return fail(
-      'invalid-image',
-      'Invalid image reference',
-      400,
-    );
+  if (imageUrls?.some((u) => !ownsFeedImageUrl(u, userId))) {
+    return fail('invalid-image', 'Invalid image reference', 400);
   }
-  const altFailure =
-    await guardImageAlts(
-      userId,
-      imageUrls,
-      imageAlts,
-    );
-  if (
-    altFailure
-  )
-    return altFailure;
+  const altFailure = await guardImageAlts(userId, imageUrls, imageAlts);
+  if (altFailure) return altFailure;
 
-  const [
-    message,
-  ] =
-    await prisma.$transaction(
-      [
-        prisma.chatMessage.create(
-          {
-            data: {
-              chatId:
-                groupId,
-              senderId:
-                userId,
-              content:
-                text,
-              gifUrl:
-                gifUrl ??
-                null,
-              imageUrls:
-                imageUrls ??
-                [],
-              imageAlts:
-                normalizeImageAlts(
-                  imageUrls,
-                  imageAlts,
-                ),
-              pollQuestion:
-                poll?.question ??
-                null,
-              pollOptions:
-                poll?.options ??
-                [],
-              // M3 + M6: expiry from the group's timer, and the shared-media flags.
-              ...messageStamp(
-                membership
-                  .chat
-                  .disappearAfterSec,
-                {
-                  content:
-                    text,
-                  gifUrl,
-                  imageUrls,
-                },
-              ),
-            },
-            select:
-              groupMessageSelect,
-          },
-        ),
-        prisma.chat.update(
-          {
-            where:
-              {
-                id: groupId,
-              },
-            data: {
-              lastMessageAt:
-                new Date(),
-            },
-          },
-        ),
-        prisma.chatMember.update(
-          {
-            where:
-              {
-                chatId_userId:
-                  {
-                    chatId:
-                      groupId,
-                    userId,
-                  },
-              },
-            data: {
-              lastReadAt:
-                new Date(),
-            },
-          },
-        ),
-      ],
-    );
+  const [message] = await prisma.$transaction([
+    prisma.chatMessage.create({
+      data: {
+        chatId: groupId,
+        senderId: userId,
+        content: text,
+        gifUrl: gifUrl ?? null,
+        imageUrls: imageUrls ?? [],
+        imageAlts: normalizeImageAlts(imageUrls, imageAlts),
+        pollQuestion: poll?.question ?? null,
+        pollOptions: poll?.options ?? [],
+        // M3 + M6: expiry from the group's timer, and the shared-media flags.
+        ...messageStamp(membership.chat.disappearAfterSec, {
+          content: text,
+          gifUrl,
+          imageUrls,
+        }),
+      },
+      select: groupMessageSelect,
+    }),
+    prisma.chat.update({
+      where: {
+        id: groupId,
+      },
+      data: {
+        lastMessageAt: new Date(),
+      },
+    }),
+    prisma.chatMember.update({
+      where: {
+        chatId_userId: {
+          chatId: groupId,
+          userId,
+        },
+      },
+      data: {
+        lastReadAt: new Date(),
+      },
+    }),
+  ]);
 
-  const [
-    payload,
-  ] =
-    await serializeGroupMessages(
-      [
-        message,
-      ],
-      userId,
-    );
-  if (
-    !payload
-  )
-    throw new Error(
-      'group message was not serialized',
-    );
+  const [payload] = await serializeGroupMessages([message], userId);
+  if (!payload) throw new Error('group message was not serialized');
   // Push to connected members over SSE (best-effort). myVote is per-viewer,
   // so it stays null in the fan-out; recipients haven't voted yet anyway.
-  publishGroupMessage(
-    groupId,
-    {
-      ...payload,
-      poll: payload.poll
-        ? {
-            ...payload.poll,
-            myVote:
-              null,
-          }
-        : null,
-    },
-  );
+  publishGroupMessage(groupId, {
+    ...payload,
+    poll: payload.poll
+      ? {
+          ...payload.poll,
+          myVote: null,
+        }
+      : null,
+  });
 
   return {
     ok: true,
-    value:
-      {
-        message:
-          payload,
-      },
+    value: {
+      message: payload,
+    },
   };
 }

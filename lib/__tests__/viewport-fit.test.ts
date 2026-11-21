@@ -1,18 +1,13 @@
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { viewportFitTranslation } from '../viewport-fit';
 
 describe('viewportFitTranslation', () => {
-  const bounds =
-    {
-      left: 12,
-      top: 20,
-      right: 308,
-      bottom: 620,
-    };
+  const bounds = {
+    left: 12,
+    top: 20,
+    right: 308,
+    bottom: 620,
+  };
 
   it('leaves an on-screen popover untouched', () => {
     expect(
@@ -25,12 +20,10 @@ describe('viewportFitTranslation', () => {
         },
         bounds,
       ),
-    ).toEqual(
-      {
-        x: 0,
-        y: 0,
-      },
-    );
+    ).toEqual({
+      x: 0,
+      y: 0,
+    });
   });
 
   it('moves overflowing bottom-right content back into view', () => {
@@ -44,12 +37,10 @@ describe('viewportFitTranslation', () => {
         },
         bounds,
       ),
-    ).toEqual(
-      {
-        x: -32,
-        y: -60,
-      },
-    );
+    ).toEqual({
+      x: -32,
+      y: -60,
+    });
   });
 
   it('respects a visual viewport whose origin is offset', () => {
@@ -63,11 +54,9 @@ describe('viewportFitTranslation', () => {
         },
         bounds,
       ),
-    ).toEqual(
-      {
-        x: 12,
-        y: 20,
-      },
-    );
+    ).toEqual({
+      x: 12,
+      y: 20,
+    });
   });
 });

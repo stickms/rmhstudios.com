@@ -15,22 +15,8 @@ import { markdownComponents } from '@/components/blog/markdown-components';
  * Two exports from one module: the modal places them in two different rows, and
  * both `lazy()` wrappers resolve the same chunk.
  */
-export function AnnouncementPost({
-  content,
-}: {
-  content: string;
-}) {
-  return (
-    <ReactMarkdown
-      components={
-        markdownComponents
-      }
-    >
-      {
-        content
-      }
-    </ReactMarkdown>
-  );
+export function AnnouncementPost({ content }: { content: string }) {
+  return <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>;
 }
 
 export { AnnouncementDiscussion };

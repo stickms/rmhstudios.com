@@ -6,10 +6,7 @@
  * The `?after=` poll endpoint remains as a topology-independent fallback.
  */
 
-import {
-  createBus,
-  type RealtimeBus,
-} from '@/lib/realtime-bus.server';
+import { createBus, type RealtimeBus } from '@/lib/realtime-bus.server';
 import type { ReactionRow } from '@/lib/social/reactions';
 import type { ChatUpdate } from '@/lib/chat-plus/types';
 
@@ -22,9 +19,7 @@ export interface GroupPollPayload {
   totalVotes: number;
   /** The viewing member's chosen option index, or null. Per-recipient, so the
    *  SSE fan-out value is null; clients fill it in from their own vote. */
-  myVote:
-    | number
-    | null;
+  myVote: number | null;
 }
 
 export interface GroupMessagePayload {
@@ -33,19 +28,11 @@ export interface GroupMessagePayload {
   createdAt: string;
   sender: {
     id: string;
-    name:
-      | string
-      | null;
-    handle:
-      | string
-      | null;
-    image:
-      | string
-      | null;
+    name: string | null;
+    handle: string | null;
+    image: string | null;
   };
-  gifUrl?:
-    | string
-    | null;
+  gifUrl?: string | null;
   imageUrls?: string[];
   /** Image descriptions, index-aligned with `imageUrls`. */
   imageAlts?: string[];
@@ -58,9 +45,7 @@ export interface GroupMessagePayload {
   forwardCount?: number;
   replyCount?: number;
   /** M3 — when the message disappears (ISO), or null. */
-  expiresAt?:
-    | string
-    | null;
+  expiresAt?: string | null;
 }
 
 /** A non-message event on the group channel (e.g. a reaction toggle). Kept
@@ -81,70 +66,27 @@ export interface GroupChatUpdatePayload {
   update: ChatUpdate;
 }
 
-export type GroupEventPayload =
-  | GroupMessagePayload
-  | GroupReactionEventPayload
-  | GroupChatUpdatePayload;
+export type GroupEventPayload = GroupMessagePayload | GroupReactionEventPayload | GroupChatUpdatePayload;
 
-type Listener =
-  (
-    event: GroupEventPayload,
-  ) => void;
+type Listener = (event: GroupEventPayload) => void;
 
-const globalKey =
-  '__group_chat_bus__' as const;
+const globalKey = '__group_chat_bus__' as const;
 function bus(): RealtimeBus<GroupEventPayload> {
-  const g =
-    globalThis as Record<
-      string,
-      unknown
-    >;
-  if (
-    !g[
-      globalKey
-    ]
-  )
-    g[
-      globalKey
-    ] =
-      createBus<GroupEventPayload>(
-        'group',
-      );
-  return g[
-    globalKey
-  ] as RealtimeBus<GroupEventPayload>;
+  const g = globalThis as Record<string, unknown>;
+  if (!g[globalKey]) g[globalKey] = createBus<GroupEventPayload>('group');
+  return g[globalKey] as RealtimeBus<GroupEventPayload>;
 }
 
-export function subscribeGroup(
-  groupId: string,
-  listener: Listener,
-): () => void {
-  return bus().subscribe(
-    groupId,
-    listener,
-  );
+export function subscribeGroup(groupId: string, listener: Listener): () => void {
+  return bus().subscribe(groupId, listener);
 }
 
-export function publishGroupMessage(
-  groupId: string,
-  message: GroupMessagePayload,
-): void {
-  bus().publish(
-    groupId,
-    message,
-  );
+export function publishGroupMessage(groupId: string, message: GroupMessagePayload): void {
+  bus().publish(groupId, message);
 }
 
 /** Publish a non-message event (e.g. a reaction toggle) on the group channel,
  *  reusing the same bus/channel plumbing as `publishGroupMessage`. */
-export function publishGroupEvent(
-  groupId: string,
-  payload:
-    | GroupReactionEventPayload
-    | GroupChatUpdatePayload,
-): void {
-  bus().publish(
-    groupId,
-    payload,
-  );
+export function publishGroupEvent(groupId: string, payload: GroupReactionEventPayload | GroupChatUpdatePayload): void {
+  bus().publish(groupId, payload);
 }

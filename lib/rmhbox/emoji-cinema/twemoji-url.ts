@@ -36,49 +36,29 @@ import { isDiscordActivity } from '@/lib/discord-activity';
  * tells twemoji to skip the replacement, so no HTML is built and no string is
  * thrown away.
  */
-export function getEmojiUrl(
-  emoji: string,
-):
-  | string
-  | null {
+export function getEmojiUrl(emoji: string): string | null {
   // The Discord Activity iframe's CSP blocks the Twemoji CDN (cdn.jsdelivr.net),
   // so every image would break. Returning null makes every caller render the
   // native emoji instead.
-  if (
-    isDiscordActivity()
-  )
-    return null;
+  if (isDiscordActivity()) return null;
 
-  let url:
-    | string
-    | null =
-    null;
+  let url: string | null = null;
 
-  const capture: ParseCallback =
-    (
-      icon,
-      options,
-    ) => {
-      const o =
-        options as {
-          base: string;
-          size: string;
-          ext: string;
-        };
-      url ??= `${o.base}${o.size}/${icon}${o.ext}`;
-      return false;
+  const capture: ParseCallback = (icon, options) => {
+    const o = options as {
+      base: string;
+      size: string;
+      ext: string;
     };
+    url ??= `${o.base}${o.size}/${icon}${o.ext}`;
+    return false;
+  };
 
-  twemoji.parse(
-    emoji,
-    {
-      folder:
-        '72x72',
-      ext: '.png',
-      callback:
-        capture,
-    },
-  );
+  twemoji.parse(emoji, {
+    folder: '72x72',
+    ext: '.png',
+    callback: capture,
+  });
 
   return url;
 }

@@ -87,11 +87,7 @@ export interface EscrowCredit<M> {
  * the pledge, the match), so an escrowed coin is always attributable to
  * something that can refund it.
  */
-export async function holdEscrow<Tx, M>(
-  tx: Tx,
-  ledger: EscrowLedger<Tx, M>,
-  hold: EscrowCredit<M>,
-): Promise<void> {
+export async function holdEscrow<Tx, M>(tx: Tx, ledger: EscrowLedger<Tx, M>, hold: EscrowCredit<M>): Promise<void> {
   await ledger.debit(tx, hold.userId, hold.amount, hold.movement);
 }
 
@@ -116,8 +112,7 @@ export async function settleEscrow<Tx, M>(
   },
 ): Promise<boolean> {
   if (!(await settlement.claim())) return false;
-  const credits =
-    typeof settlement.credits === 'function' ? settlement.credits() : settlement.credits;
+  const credits = typeof settlement.credits === 'function' ? settlement.credits() : settlement.credits;
   for (const c of credits) {
     await ledger.credit(tx, c.userId, c.amount, c.movement);
   }

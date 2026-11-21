@@ -9,10 +9,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  ChevronRight,
-  Store,
-} from 'lucide-react';
+import { ChevronRight, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import { CoinAmount } from '@/components/shop/CoinAmount';
@@ -31,102 +28,37 @@ export function ProfileStorefrontStrip({
   userKey: string;
   isOwnProfile: boolean;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'feed',
-    );
-  const {
-    data,
-  } =
-    useQuery(
-      storefrontQuery(
-        userKey,
-      ),
-    );
+  const { t } = useTranslation('feed');
+  const { data } = useQuery(storefrontQuery(userKey));
   // Only products the visitor can buy; the owner also sees their inactive drafts on the storefront page itself.
-  const products =
-    (
-      data?.products ??
-      []
-    )
-      .filter(
-        (
-          p,
-        ) =>
-          p.active,
-      )
-      .slice(
-        0,
-        STRIP_LIMIT,
-      );
-  const arrival =
-    useArrival(
-      !!data,
-    );
+  const products = (data?.products ?? []).filter((p) => p.active).slice(0, STRIP_LIMIT);
+  const arrival = useArrival(!!data);
   const storeHref = `/store/${userKey}`;
 
-  if (
-    !data
-  )
-    return null;
+  if (!data) return null;
 
-  if (
-    products.length ===
-    0
-  ) {
-    if (
-      !isOwnProfile
-    )
-      return null;
+  if (products.length === 0) {
+    if (!isOwnProfile) return null;
     return (
-      <div
-        className={cn(
-          'profile-head__block flex items-center justify-between gap-4',
-          arrival,
-        )}
-      >
+      <div className={cn('profile-head__block flex items-center justify-between gap-4', arrival)}>
         <span className="min-w-0">
           <span className="t-label block text-site-text">
-            {t(
-              'profile-shop-empty-title',
-              {
-                defaultValue:
-                  'Your shop',
-              },
-            )}
+            {t('profile-shop-empty-title', {
+              defaultValue: 'Your shop',
+            })}
           </span>
           <span className="t-body block text-site-text-muted">
-            {t(
-              'profile-shop-empty-hint',
-              {
-                defaultValue:
-                  'Sell downloads and extras to people who follow you.',
-              },
-            )}
+            {t('profile-shop-empty-hint', {
+              defaultValue: 'Sell downloads and extras to people who follow you.',
+            })}
           </span>
         </span>
-        <Button
-          asChild
-          variant="default"
-          size="sm"
-        >
-          <Link
-            to={
-              storeHref as string
-            }
-          >
-            <Store
-              aria-hidden
-            />
-            {t(
-              'profile-shop-open',
-              {
-                defaultValue:
-                  'Open your shop',
-              },
-            )}
+        <Button asChild variant="default" size="sm">
+          <Link to={storeHref as string}>
+            <Store aria-hidden />
+            {t('profile-shop-open', {
+              defaultValue: 'Open your shop',
+            })}
           </Link>
         </Button>
       </div>
@@ -134,94 +66,45 @@ export function ProfileStorefrontStrip({
   }
 
   return (
-    <section
-      className={cn(
-        'profile-head__block',
-        arrival,
-      )}
-      aria-labelledby="profile-shop-title"
-    >
+    <section className={cn('profile-head__block', arrival)} aria-labelledby="profile-shop-title">
       <div className="mb-2 flex items-baseline justify-between gap-4">
-        <h2
-          id="profile-shop-title"
-          className="t-label text-site-text"
-        >
-          {t(
-            'profile-shop-title',
-            {
-              defaultValue:
-                'Shop',
-            },
-          )}
+        <h2 id="profile-shop-title" className="t-label text-site-text">
+          {t('profile-shop-title', {
+            defaultValue: 'Shop',
+          })}
         </h2>
-        <Link
-          to={
-            storeHref as string
-          }
-          className="t-meta inline-flex items-center gap-1"
-        >
-          {t(
-            'profile-shop-see-all',
-            {
-              defaultValue:
-                'See all',
-            },
-          )}
-          <ChevronRight
-            className="size-3 rtl:-scale-x-100"
-            aria-hidden
-          />
+        <Link to={storeHref as string} className="t-meta inline-flex items-center gap-1">
+          {t('profile-shop-see-all', {
+            defaultValue: 'See all',
+          })}
+          <ChevronRight className="size-3 rtl:-scale-x-100" aria-hidden />
         </Link>
       </div>
       <HorizontalScroller
-        aria-label={t(
-          'profile-shop-products',
-          {
-            defaultValue:
-              'Products',
-          },
-        )}
+        aria-label={t('profile-shop-products', {
+          defaultValue: 'Products',
+        })}
         surface="none"
       >
-        {products.map(
-          (
-            p,
-          ) => (
-            <Link
-              key={
-                p.id
-              }
-              to={
-                storeHref as string
-              }
-              className="flex w-48 shrink-0 flex-col gap-1 rounded-site border border-site-border px-3 py-2.5 transition-colors duration-(--m1) ease-[ease] hover:bg-site-bg-subtle"
-            >
-              <span className="line-clamp-2 text-sm font-medium text-site-text">
-                {
-                  p.title
-                }
-              </span>
-              <span className="t-meta flex items-center gap-2">
-                <CoinAmount
-                  amount={
-                    p.price
-                  }
-                />
-                {p.owned ? (
-                  <span>
-                    {t(
-                      'profile-shop-owned',
-                      {
-                        defaultValue:
-                          'Owned',
-                      },
-                    )}
-                  </span>
-                ) : null}
-              </span>
-            </Link>
-          ),
-        )}
+        {products.map((p) => (
+          <Link
+            key={p.id}
+            to={storeHref as string}
+            className="flex w-48 shrink-0 flex-col gap-1 rounded-site border border-site-border px-3 py-2.5 transition-colors duration-(--m1) ease-[ease] hover:bg-site-bg-subtle"
+          >
+            <span className="line-clamp-2 text-sm font-medium text-site-text">{p.title}</span>
+            <span className="t-meta flex items-center gap-2">
+              <CoinAmount amount={p.price} />
+              {p.owned ? (
+                <span>
+                  {t('profile-shop-owned', {
+                    defaultValue: 'Owned',
+                  })}
+                </span>
+              ) : null}
+            </span>
+          </Link>
+        ))}
       </HorizontalScroller>
     </section>
   );

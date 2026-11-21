@@ -1,18 +1,7 @@
-import {
-  useRef,
-  useEffect,
-  useLayoutEffect,
-  type MutableRefObject,
-} from 'react';
-import {
-  useFrame,
-  useLoader,
-} from '@react-three/fiber';
+import { useRef, useEffect, useLayoutEffect, type MutableRefObject } from 'react';
+import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
-import {
-  GLTFLoader,
-  type GLTF,
-} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import {
@@ -27,59 +16,24 @@ import { loadFighterClip } from '@/lib/kowloon-knockout/render/fighter/clipLoade
 import { resolveClip } from '@/lib/kowloon-knockout/render/fighter/stateMachine';
 import { useFighterMotion } from './useFighterMotion';
 import { stripRootMotionXZ } from '@/lib/kowloon-knockout/render/fighter/rootMotion';
-import {
-  autoScaleToHeight,
-  findBone,
-} from '@/lib/kowloon-knockout/render/fighter/fighterRig';
+import { autoScaleToHeight, findBone } from '@/lib/kowloon-knockout/render/fighter/fighterRig';
 import FighterTrappings from './FighterTrappings';
 
-type FramesRef =
-  MutableRefObject<
-    RenderFighter[]
-  >;
+type FramesRef = MutableRefObject<RenderFighter[]>;
 
 const TARGET_HEIGHT = 1.8;
 const MODEL_YAW_OFFSET = 0; // tune in browser if Y-Bot faces away from +Z
-const HEAD_BONES =
-  [
-    'mixamorigHead',
-    'mixamorig:Head',
-  ];
-const HIPS_BONES =
-  [
-    'mixamorigHips',
-    'mixamorig:Hips',
-  ];
+const HEAD_BONES = ['mixamorigHead', 'mixamorig:Head'];
+const HIPS_BONES = ['mixamorigHips', 'mixamorig:Hips'];
 
 const RIG_URL = `${FIGHTER_ASSET_DIR}/${RIG_FILE}`;
-const ESSENTIAL_CLIP_URLS =
-  ESSENTIAL_CLIP_KEYS.map(
-    (
-      k,
-    ) =>
-      `${FIGHTER_ASSET_DIR}/${CLIPS[k].file}`,
-  );
+const ESSENTIAL_CLIP_URLS = ESSENTIAL_CLIP_KEYS.map((k) => `${FIGHTER_ASSET_DIR}/${CLIPS[k].file}`);
 
 /** Build a mixer action with this clip's loop semantics. */
-function configureAction(
-  mixer: THREE.AnimationMixer,
-  clip: THREE.AnimationClip,
-  key: ClipKey,
-): THREE.AnimationAction {
-  const action =
-    mixer.clipAction(
-      clip,
-    );
-  if (
-    !CLIPS[
-      key
-    ]
-      .loop
-  ) {
-    action.setLoop(
-      THREE.LoopOnce,
-      1,
-    );
+function configureAction(mixer: THREE.AnimationMixer, clip: THREE.AnimationClip, key: ClipKey): THREE.AnimationAction {
+  const action = mixer.clipAction(clip);
+  if (!CLIPS[key].loop) {
+    action.setLoop(THREE.LoopOnce, 1);
     action.clampWhenFinished = true;
   }
   return action;
@@ -88,12 +42,7 @@ function configureAction(
 interface FighterInstance {
   model: THREE.Group;
   mixer: THREE.AnimationMixer;
-  actions: Partial<
-    Record<
-      ClipKey,
-      THREE.AnimationAction
-    >
-  >;
+  actions: Partial<Record<ClipKey, THREE.AnimationAction>>;
   bodyMats: THREE.MeshStandardMaterial[];
   dispose: () => void;
 }
@@ -116,196 +65,71 @@ function createFighterInstance(
   colorHex: string,
   accentHex: string,
 ): FighterInstance {
-  const model =
-    cloneSkeleton(
-      rig.scene,
-    ) as THREE.Group;
-  autoScaleToHeight(
-    model,
-    TARGET_HEIGHT,
-  );
+  const model = cloneSkeleton(rig.scene) as THREE.Group;
+  autoScaleToHeight(model, TARGET_HEIGHT);
 
   // Identity: tint every skinned-mesh material (cloned so seats differ).
-  const baseColor =
-    new THREE.Color(
-      colorHex,
-    );
-  const bodyMats: THREE.MeshStandardMaterial[] =
-    [];
-  model.traverse(
-    (
-      o,
-    ) => {
-      const sm =
-        o as THREE.SkinnedMesh;
-      if (
-        sm.isSkinnedMesh
-      ) {
-        sm.castShadow = true;
-        sm.receiveShadow = true;
-        const mat =
-          (
-            sm.material as THREE.MeshStandardMaterial
-          ).clone();
-        mat.color.copy(
-          baseColor,
-        );
-        sm.material =
-          mat;
-        bodyMats.push(
-          mat,
-        );
-      }
-    },
-  );
+  const baseColor = new THREE.Color(colorHex);
+  const bodyMats: THREE.MeshStandardMaterial[] = [];
+  model.traverse((o) => {
+    const sm = o as THREE.SkinnedMesh;
+    if (sm.isSkinnedMesh) {
+      sm.castShadow = true;
+      sm.receiveShadow = true;
+      const mat = (sm.material as THREE.MeshStandardMaterial).clone();
+      mat.color.copy(baseColor);
+      sm.material = mat;
+      bodyMats.push(mat);
+    }
+  });
 
   // Procedural accessories parented to bones (skip if bone missing).
-  const head =
-    findBone(
-      model,
-      HEAD_BONES,
+  const head = findBone(model, HEAD_BONES);
+  if (head) {
+    const band = new THREE.Mesh(
+      new THREE.TorusGeometry(0.12, 0.03, 6, 12),
+      new THREE.MeshStandardMaterial({
+        color: accentHex,
+      }),
     );
-  if (
-    head
-  ) {
-    const band =
-      new THREE.Mesh(
-        new THREE.TorusGeometry(
-          0.12,
-          0.03,
-          6,
-          12,
-        ),
-        new THREE.MeshStandardMaterial(
-          {
-            color:
-              accentHex,
-          },
-        ),
-      );
-    band.rotation.x =
-      Math.PI /
-      2;
-    head.add(
-      band,
-    );
+    band.rotation.x = Math.PI / 2;
+    head.add(band);
   }
-  const hips =
-    findBone(
-      model,
-      HIPS_BONES,
+  const hips = findBone(model, HIPS_BONES);
+  if (hips) {
+    const belt = new THREE.Mesh(
+      new THREE.TorusGeometry(0.16, 0.04, 6, 12),
+      new THREE.MeshStandardMaterial({
+        color: accentHex,
+      }),
     );
-  if (
-    hips
-  ) {
-    const belt =
-      new THREE.Mesh(
-        new THREE.TorusGeometry(
-          0.16,
-          0.04,
-          6,
-          12,
-        ),
-        new THREE.MeshStandardMaterial(
-          {
-            color:
-              accentHex,
-          },
-        ),
-      );
-    belt.rotation.x =
-      Math.PI /
-      2;
-    hips.add(
-      belt,
-    );
+    belt.rotation.x = Math.PI / 2;
+    hips.add(belt);
   }
 
-  const mixer =
-    new THREE.AnimationMixer(
-      model,
-    );
-  const actions: Partial<
-    Record<
-      ClipKey,
-      THREE.AnimationAction
-    >
-  > =
-    {};
-  ESSENTIAL_CLIP_KEYS.forEach(
-    (
-      key,
-      i,
-    ) => {
-      const clip =
-        essentialClips[
-          i
-        ]
-          ?.animations[0];
-      if (
-        !clip
-      )
-        return;
-      stripRootMotionXZ(
-        clip,
-      );
-      actions[
-        key
-      ] =
-        configureAction(
-          mixer,
-          clip,
-          key,
-        );
-    },
-  );
+  const mixer = new THREE.AnimationMixer(model);
+  const actions: Partial<Record<ClipKey, THREE.AnimationAction>> = {};
+  ESSENTIAL_CLIP_KEYS.forEach((key, i) => {
+    const clip = essentialClips[i]?.animations[0];
+    if (!clip) return;
+    stripRootMotionXZ(clip);
+    actions[key] = configureAction(mixer, clip, key);
+  });
 
-  const dispose =
-    () => {
-      mixer.stopAllAction();
-      mixer.uncacheRoot(
-        model,
-      );
-      model.traverse(
-        (
-          o,
-        ) => {
-          const m =
-            o as THREE.Mesh;
-          if (
-            !m.isMesh
-          )
-            return;
-          // Skinned-mesh geometry is SHARED across seats by SkeletonUtils.clone — do
-          // not dispose it. Accessory (non-skinned) geometry is created per seat.
-          if (
-            !(
-              m as THREE.SkinnedMesh
-            )
-              .isSkinnedMesh
-          )
-            m.geometry?.dispose?.();
-          const mat =
-            m.material as
-              | THREE.Material
-              | THREE.Material[]
-              | undefined;
-          if (
-            Array.isArray(
-              mat,
-            )
-          )
-            mat.forEach(
-              (
-                x,
-              ) =>
-                x?.dispose?.(),
-            );
-          else
-            mat?.dispose?.();
-        },
-      );
-    };
+  const dispose = () => {
+    mixer.stopAllAction();
+    mixer.uncacheRoot(model);
+    model.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      // Skinned-mesh geometry is SHARED across seats by SkeletonUtils.clone — do
+      // not dispose it. Accessory (non-skinned) geometry is created per seat.
+      if (!(m as THREE.SkinnedMesh).isSkinnedMesh) m.geometry?.dispose?.();
+      const mat = m.material as THREE.Material | THREE.Material[] | undefined;
+      if (Array.isArray(mat)) mat.forEach((x) => x?.dispose?.());
+      else mat?.dispose?.();
+    });
+  };
 
   return {
     model,
@@ -332,58 +156,21 @@ export default function SkeletalFighter({
   // awaited here. The rest stream in via loadFighterClip below, so the swap
   // off StickFighter no longer waits on, among others, the dance emote the
   // sim never requests.
-  const rig =
-    useLoader(
-      GLTFLoader,
-      RIG_URL,
-    ) as unknown as GLTF;
-  const clipScenes =
-    useLoader(
-      GLTFLoader,
-      ESSENTIAL_CLIP_URLS,
-    ) as unknown as GLTF[];
+  const rig = useLoader(GLTFLoader, RIG_URL) as unknown as GLTF;
+  const clipScenes = useLoader(GLTFLoader, ESSENTIAL_CLIP_URLS) as unknown as GLTF[];
 
-  const initial =
-    framesRef.current.find(
-      (
-        f,
-      ) =>
-        f.seat ===
-        seat,
-    );
-  const colorHex =
-    initial?.color ??
-    '#cccccc';
-  const accentHex =
-    initial?.accent ??
-    '#ffffff';
-  const plateColor =
-    initial?.isLocal
-      ? '#ffcc00'
-      : accentHex;
+  const initial = framesRef.current.find((f) => f.seat === seat);
+  const colorHex = initial?.color ?? '#cccccc';
+  const accentHex = initial?.accent ?? '#ffffff';
+  const plateColor = initial?.isLocal ? '#ffcc00' : accentHex;
   const plateLabel = `P${seat + 1}`;
 
-  const root =
-    useRef<THREE.Group>(
-      null,
-    );
-  const shadow =
-    useRef<THREE.Mesh>(
-      null,
-    );
+  const root = useRef<THREE.Group>(null);
+  const shadow = useRef<THREE.Mesh>(null);
   /** Empty group the model is attached to imperatively — see the effect below. */
-  const modelHost =
-    useRef<THREE.Group>(
-      null,
-    );
-  const instance =
-    useRef<FighterInstance | null>(
-      null,
-    );
-  const motion =
-    useFighterMotion(
-      seat,
-    );
+  const modelHost = useRef<THREE.Group>(null);
+  const instance = useRef<FighterInstance | null>(null);
+  const motion = useFighterMotion(seat);
 
   // Single owner of the fighter's GPU resources: this effect builds them,
   // attaches the model, streams the deferred clips in, and tears all of it
@@ -394,258 +181,90 @@ export default function SkeletalFighter({
   // there is no frame where the fighter is missing.
   useLayoutEffect(() => {
     // Captured up front: by cleanup time the ref may already point elsewhere.
-    const host =
-      modelHost.current;
-    const inst =
-      createFighterInstance(
-        rig,
-        clipScenes,
-        colorHex,
-        accentHex,
-      );
-    instance.current =
-      inst;
+    const host = modelHost.current;
+    const inst = createFighterInstance(rig, clipScenes, colorHex, accentHex);
+    instance.current = inst;
     motion.reset();
-    host?.add(
-      inst.model,
-    );
+    host?.add(inst.model);
 
     // Non-essential clips arrive behind the swap and register with this
     // instance's mixer. useFrame skips a clip whose action is missing, so an
     // un-arrived move simply holds the current pose.
     let cancelled = false;
     for (const key of DEFERRED_CLIP_KEYS) {
-      loadFighterClip(
-        key,
-      ).then(
-        (
-          clip,
-        ) => {
-          if (
-            cancelled ||
-            !clip ||
-            inst
-              .actions[
-              key
-            ]
-          )
-            return;
-          inst.actions[
-            key
-          ] =
-            configureAction(
-              inst.mixer,
-              clip,
-              key,
-            );
-        },
-      );
+      loadFighterClip(key).then((clip) => {
+        if (cancelled || !clip || inst.actions[key]) return;
+        inst.actions[key] = configureAction(inst.mixer, clip, key);
+      });
     }
 
     return () => {
       cancelled = true;
-      host?.remove(
-        inst.model,
-      );
+      host?.remove(inst.model);
       inst.dispose();
-      if (
-        instance.current ===
-        inst
-      )
-        instance.current =
-          null;
+      if (instance.current === inst) instance.current = null;
     };
-  }, [
-    rig,
-    clipScenes,
-    colorHex,
-    accentHex,
-    motion,
-  ]);
+  }, [rig, clipScenes, colorHex, accentHex, motion]);
 
   // Local-only dance emote: pressing G toggles dancing. Applied only to the
   // local fighter and only while idle (any real action overrides it). Purely
   // cosmetic / client-side — it is NOT synced to other players.
-  const dancing =
-    useRef(
-      false,
-    );
+  const dancing = useRef(false);
   useEffect(() => {
-    const onKey =
-      (
-        e: KeyboardEvent,
-      ) => {
-        if (
-          e.repeat
-        )
-          return; // ignore OS key-repeat so holding G doesn't flicker
-        if (
-          e.key.toLowerCase() !==
-          'g'
-        )
-          return;
-        if (
-          !framesRef.current.find(
-            (
-              f,
-            ) =>
-              f.seat ===
-              seat,
-          )
-            ?.isLocal
-        )
-          return;
-        dancing.current =
-          !dancing.current;
-      };
-    window.addEventListener(
-      'keydown',
-      onKey,
-    );
-    return () =>
-      window.removeEventListener(
-        'keydown',
-        onKey,
-      );
-  }, [
-    framesRef,
-    seat,
-  ]);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat) return; // ignore OS key-repeat so holding G doesn't flicker
+      if (e.key.toLowerCase() !== 'g') return;
+      if (!framesRef.current.find((f) => f.seat === seat)?.isLocal) return;
+      dancing.current = !dancing.current;
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [framesRef, seat]);
 
-  useFrame(
-    (
-      state,
+  useFrame((state, deltaRaw) => {
+    const rf = framesRef.current.find((f) => f.seat === seat);
+    const r = root.current;
+    const inst = instance.current;
+    if (!rf || !r || !inst) return;
+    const { mixer, actions, bodyMats } = inst;
+    const host = modelHost.current;
+    if (!host) return;
+
+    // Clip selection (+ local dance-emote override).
+    let want = resolveClip(rf).clip;
+    if (rf.isLocal && dancing.current && want === 'idle') want = 'dance';
+
+    // Smoothed position/facing, the clip driver and the impact reaction (useFighterMotion).
+    const flash = motion.step({
+      rf,
+      root: r,
+      host,
+      mixer,
+      actions,
+      want,
       deltaRaw,
-    ) => {
-      const rf =
-        framesRef.current.find(
-          (
-            f,
-          ) =>
-            f.seat ===
-            seat,
-        );
-      const r =
-        root.current;
-      const inst =
-        instance.current;
-      if (
-        !rf ||
-        !r ||
-        !inst
-      )
-        return;
-      const {
-        mixer,
-        actions,
-        bodyMats,
-      } =
-        inst;
-      const host =
-        modelHost.current;
-      if (
-        !host
-      )
-        return;
+      bounce: true,
+    });
 
-      // Clip selection (+ local dance-emote override).
-      let want =
-        resolveClip(
-          rf,
-        ).clip;
-      if (
-        rf.isLocal &&
-        dancing.current &&
-        want ===
-          'idle'
-      )
-        want =
-          'dance';
+    // Hit flash → emissive pulse (white-hot on a heavy hit, cool on a block); dim when down.
+    const dim = rf.alive ? 1 : 0.4;
+    for (const mat of bodyMats) {
+      mat.emissive.setRGB(flash.color[0], flash.color[1], flash.color[2]).multiplyScalar(flash.amount);
+      mat.color.setStyle(colorHex).multiplyScalar(dim);
+    }
 
-      // Smoothed position/facing, the clip driver and the impact reaction (useFighterMotion).
-      const flash =
-        motion.step(
-          {
-            rf,
-            root: r,
-            host,
-            mixer,
-            actions,
-            want,
-            deltaRaw,
-            bounce: true,
-          },
-        );
-
-      // Hit flash → emissive pulse (white-hot on a heavy hit, cool on a block); dim when down.
-      const dim =
-        rf.alive
-          ? 1
-          : 0.4;
-      for (const mat of bodyMats) {
-        mat.emissive
-          .setRGB(
-            flash
-              .color[0],
-            flash
-              .color[1],
-            flash
-              .color[2],
-          )
-          .multiplyScalar(
-            flash.amount,
-          );
-        mat.color
-          .setStyle(
-            colorHex,
-          )
-          .multiplyScalar(
-            dim,
-          );
-      }
-
-      if (
-        shadow.current
-      )
-        shadow.current.scale.setScalar(
-          rf.state ===
-            'knockedOut'
-            ? 1.4
-            : 1,
-        );
-    },
-  );
+    if (shadow.current) shadow.current.scale.setScalar(rf.state === 'knockedOut' ? 1.4 : 1);
+  });
 
   return (
-    <group
-      ref={
-        root
-      }
-    >
+    <group ref={root}>
       <FighterTrappings
-        showNameplate={
-          showNameplate
-        }
-        plateColor={
-          plateColor
-        }
-        plateLabel={
-          plateLabel
-        }
-        shadowRef={
-          shadow
-        }
+        showNameplate={showNameplate}
+        plateColor={plateColor}
+        plateLabel={plateLabel}
+        shadowRef={shadow}
       />
-      <group
-        ref={
-          modelHost
-        }
-        rotation={[
-          0,
-          MODEL_YAW_OFFSET,
-          0,
-        ]}
-      />
+      <group ref={modelHost} rotation={[0, MODEL_YAW_OFFSET, 0]} />
     </group>
   );
 }

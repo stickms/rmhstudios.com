@@ -79,12 +79,7 @@ export function isValidKeystroke(spec: unknown): spec is string {
 }
 
 export function isValidSequence(keys: unknown): keys is string[] {
-  return (
-    Array.isArray(keys) &&
-    keys.length >= 1 &&
-    keys.length <= MAX_SEQUENCE_STEPS &&
-    keys.every(isValidKeystroke)
-  );
+  return Array.isArray(keys) && keys.length >= 1 && keys.length <= MAX_SEQUENCE_STEPS && keys.every(isValidKeystroke);
 }
 
 /** Canonical form of a keystroke, so `shift+mod+k` style variants compare equal. */
@@ -135,10 +130,7 @@ function withMode(shortcut: Shortcut, mode: SingleKeyMode): Shortcut | null {
  * What is bound right now: overrides first, then the mode. Computed once per
  * change of `shortcuts` or `prefs`, never per keystroke.
  */
-export function effectiveBindings(
-  shortcuts: readonly Shortcut[],
-  prefs: KeyboardPrefs,
-): Shortcut[] {
+export function effectiveBindings(shortcuts: readonly Shortcut[], prefs: KeyboardPrefs): Shortcut[] {
   const out: Shortcut[] = [];
   for (const s of applyOverrides(shortcuts, prefs.overrides)) {
     const bound = withMode(s, prefs.singleKeys);
@@ -178,11 +170,7 @@ export type OverrideResult =
  * clash is a duplicate or a prefix (a bare `g` would shadow every `g …`), and
  * is reported with the shortcut it clashes with so the UI can name it.
  */
-export function validateOverride(
-  id: string,
-  keys: unknown,
-  shortcuts: readonly Shortcut[],
-): OverrideResult {
+export function validateOverride(id: string, keys: unknown, shortcuts: readonly Shortcut[]): OverrideResult {
   const target = shortcuts.find((s) => s.id === id);
   if (!target)
     return {
@@ -379,17 +367,11 @@ export function keyLabel(spec: string, platform: KeyPlatform): string[] {
   if (mod) parts.push(mac ? '⌘' : 'Ctrl');
   if (alt) parts.push(mac ? '⌥' : 'Alt');
   if (shift) parts.push(mac ? '⇧' : 'Shift');
-  parts.push(
-    NAMED_KEYS[key] ?? (key.length === 1 ? key.toUpperCase() : key[0].toUpperCase() + key.slice(1)),
-  );
+  parts.push(NAMED_KEYS[key] ?? (key.length === 1 ? key.toUpperCase() : key[0].toUpperCase() + key.slice(1)));
   return parts;
 }
 
 /** A spoken-friendly string for a whole sequence: `G then H`, `Ctrl+K`. */
-export function sequenceText(
-  keys: readonly string[],
-  platform: KeyPlatform,
-  thenWord = 'then',
-): string {
+export function sequenceText(keys: readonly string[], platform: KeyPlatform, thenWord = 'then'): string {
   return keys.map((k) => keyLabel(k, platform).join('+')).join(` ${thenWord} `);
 }

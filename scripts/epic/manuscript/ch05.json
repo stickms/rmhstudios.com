@@ -6,10 +6,7 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": [
-      "功高震主讒言起",
-      "劍冷帳空天意孤"
-    ],
+    "zh": ["功高震主讒言起", "劍冷帳空天意孤"],
     "en": [
       "When merit towers above the throne, slander finds its opening",
       "The sword grows cold, the tent grows empty, and Heaven's will stands alone"
@@ -42,12 +39,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "廟堂夜議燭光寒",
-        "讒舌如刀削骨寬",
-        "萬里沙場汗與血",
-        "不及一室巧言歡"
-      ],
+      "zh": ["廟堂夜議燭光寒", "讒舌如刀削骨寬", "萬里沙場汗與血", "不及一室巧言歡"],
       "en": [
         "In the council hall the candle-flame burns cold through the night",
         "Slanderous tongues work like knives, stripping flesh from bone with ease",

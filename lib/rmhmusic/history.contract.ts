@@ -4,15 +4,8 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  PracticeDay,
-  PracticeKind,
-} from '@/lib/rmhmusic/history';
-import type {
-  entriesQuery,
-  songProgressQuery,
-  summaryQuery,
-} from '@/lib/rmhmusic/history-schema';
+import type { PracticeDay, PracticeKind } from '@/lib/rmhmusic/history';
+import type { entriesQuery, songProgressQuery, summaryQuery } from '@/lib/rmhmusic/history-schema';
 
 export interface PracticeSummary {
   /** Today in the member's time zone, `YYYY-MM-DD`. */
@@ -47,15 +40,9 @@ export interface PracticeEntry {
   /** The lesson id, song id, sprint level, the date of a daily sprint, or `cards`. */
   refId: string;
   /** A song's mode (`wait`, `play`) or a sprint's (`daily`, `free`); null for lessons and cards. */
-  mode:
-    | string
-    | null;
-  score:
-    | number
-    | null;
-  durationMs:
-    | number
-    | null;
+  mode: string | null;
+  score: number | null;
+  durationMs: number | null;
   /** ISO time the activity finished. */
   createdAt: string;
 }
@@ -63,9 +50,7 @@ export interface PracticeEntry {
 export interface PracticePage {
   entries: PracticeEntry[];
   /** Pass as `cursor` for the next page; null at the end. */
-  nextCursor:
-    | string
-    | null;
+  nextCursor: string | null;
 }
 
 export interface SongProgress {
@@ -74,63 +59,41 @@ export interface SongProgress {
 }
 
 /** The summary: this week and last, goal days, the selected week's days and a year of days. */
-export const getPracticeSummaryApi =
-  endpoint<{
-    query: z.infer<
-      typeof summaryQuery
-    >;
-    res: PracticeSummary;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmhmusic/history',
-    },
-  );
+export const getPracticeSummaryApi = endpoint<{
+  query: z.infer<typeof summaryQuery>;
+  res: PracticeSummary;
+}>()({
+  method: 'GET',
+  path: '/api/rmhmusic/history',
+});
 
 /** Clear history: delete the member's entries. Bests, lesson progress and the streak stay. */
-export const clearPracticeApi =
-  endpoint<{
-    res: {
-      deleted: number;
-    };
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/rmhmusic/history',
-    },
-  );
+export const clearPracticeApi = endpoint<{
+  res: {
+    deleted: number;
+  };
+}>()({
+  method: 'DELETE',
+  path: '/api/rmhmusic/history',
+});
 
 /** One page of the member's entries, newest first, optionally of one kind. */
-export const listPracticeApi =
-  endpoint<{
-    query: z.infer<
-      typeof entriesQuery
-    >;
-    res: PracticePage;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmhmusic/history/entries',
-    },
-  );
+export const listPracticeApi = endpoint<{
+  query: z.infer<typeof entriesQuery>;
+  res: PracticePage;
+}>()({
+  method: 'GET',
+  path: '/api/rmhmusic/history/entries',
+});
 
 /** The member's attempts at one song, optionally of one mode. */
-export const getSongProgressApi =
-  endpoint<{
-    params: {
-      songId: string;
-    };
-    query: z.infer<
-      typeof songProgressQuery
-    >;
-    res: SongProgress;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmhmusic/history/songs/$songId',
-    },
-  );
+export const getSongProgressApi = endpoint<{
+  params: {
+    songId: string;
+  };
+  query: z.infer<typeof songProgressQuery>;
+  res: SongProgress;
+}>()({
+  method: 'GET',
+  path: '/api/rmhmusic/history/songs/$songId',
+});

@@ -25,11 +25,9 @@ declare global {
 }
 
 /** One in-flight/settled load per document. */
-let loadPromise: Promise<void> | null =
-  null;
+let loadPromise: Promise<void> | null = null;
 
-const SCRIPT_ATTR =
-  'data-rmh-adsense';
+const SCRIPT_ATTR = 'data-rmh-adsense';
 
 /**
  * Ensure `window.adsbygoogle` exists and carries the right personalisation
@@ -37,16 +35,9 @@ const SCRIPT_ATTR =
  * `requestNonPersonalizedAds` off the queue object it inherits, so setting it
  * afterwards has no effect on the units already in flight.
  */
-function primeQueue(
-  personalized: boolean,
-): void {
-  const queue =
-    (window.adsbygoogle =
-      window.adsbygoogle ??
-      []);
-  if (
-    personalized
-  ) {
+function primeQueue(personalized: boolean): void {
+  const queue = (window.adsbygoogle = window.adsbygoogle ?? []);
+  if (personalized) {
     delete queue.requestNonPersonalizedAds;
   } else {
     queue.requestNonPersonalizedAds = 1;
@@ -58,34 +49,14 @@ function primeQueue(
  * ever called from a slot that has already passed the gate.
  */
 export function preconnectAds(): void {
-  if (
-    typeof document ===
-    'undefined'
-  )
-    return;
-  if (
-    document.querySelector(
-      'link[data-rmh-adsense-preconnect]',
-    )
-  )
-    return;
-  const link =
-    document.createElement(
-      'link',
-    );
-  link.rel =
-    'preconnect';
-  link.href =
-    'https://pagead2.googlesyndication.com';
-  link.crossOrigin =
-    'anonymous';
-  link.setAttribute(
-    'data-rmh-adsense-preconnect',
-    '',
-  );
-  document.head.appendChild(
-    link,
-  );
+  if (typeof document === 'undefined') return;
+  if (document.querySelector('link[data-rmh-adsense-preconnect]')) return;
+  const link = document.createElement('link');
+  link.rel = 'preconnect';
+  link.href = 'https://pagead2.googlesyndication.com';
+  link.crossOrigin = 'anonymous';
+  link.setAttribute('data-rmh-adsense-preconnect', '');
+  document.head.appendChild(link);
 }
 
 /**
@@ -98,83 +69,32 @@ export function preconnectAds(): void {
  * after a network blip), and `primeQueue` runs on every call so a consent
  * change between slots is honoured by the units that come after it.
  */
-export function loadAdSense(
-  clientId: string,
-  personalized: boolean,
-): Promise<void> {
-  if (
-    typeof window ===
-    'undefined'
-  )
-    return Promise.reject(
-      new Error(
-        'adsense: no window',
-      ),
-    );
-  primeQueue(
-    personalized,
-  );
-  if (
-    loadPromise
-  )
-    return loadPromise;
+export function loadAdSense(clientId: string, personalized: boolean): Promise<void> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('adsense: no window'));
+  primeQueue(personalized);
+  if (loadPromise) return loadPromise;
 
-  loadPromise =
-    new Promise<void>(
-      (
-        resolve,
-        reject,
-      ) => {
-        const existing =
-          document.querySelector<HTMLScriptElement>(
-            `script[${SCRIPT_ATTR}]`,
-          );
-        if (
-          existing
-        ) {
-          resolve();
-          return;
-        }
-        const script =
-          document.createElement(
-            'script',
-          );
-        script.async = true;
-        script.src =
-          adsenseScriptSrc(
-            clientId,
-          );
-        // Required by AdSense; also what lets the tag report script errors to us.
-        script.crossOrigin =
-          'anonymous';
-        script.setAttribute(
-          SCRIPT_ATTR,
-          '',
-        );
-        script.addEventListener(
-          'load',
-          () =>
-            resolve(),
-        );
-        script.addEventListener(
-          'error',
-          () => {
-            // Blocked or offline. Drop the memo so a later mount may try again.
-            loadPromise =
-              null;
-            script.remove();
-            reject(
-              new Error(
-                'adsense: script failed to load',
-              ),
-            );
-          },
-        );
-        document.head.appendChild(
-          script,
-        );
-      },
-    );
+  loadPromise = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(`script[${SCRIPT_ATTR}]`);
+    if (existing) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = adsenseScriptSrc(clientId);
+    // Required by AdSense; also what lets the tag report script errors to us.
+    script.crossOrigin = 'anonymous';
+    script.setAttribute(SCRIPT_ATTR, '');
+    script.addEventListener('load', () => resolve());
+    script.addEventListener('error', () => {
+      // Blocked or offline. Drop the memo so a later mount may try again.
+      loadPromise = null;
+      script.remove();
+      reject(new Error('adsense: script failed to load'));
+    });
+    document.head.appendChild(script);
+  });
 
   return loadPromise;
 }
@@ -197,11 +117,7 @@ export function loadAdSense(
  */
 export function pushAd(): void {
   try {
-    (window.adsbygoogle =
-      window.adsbygoogle ??
-      []).push(
-      {},
-    );
+    (window.adsbygoogle = window.adsbygoogle ?? []).push({});
   } catch {
     // Already-filled slot or a tag that never loaded. Nothing to recover.
   }

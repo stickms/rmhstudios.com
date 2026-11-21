@@ -11,7 +11,9 @@ vi.mock('@/lib/prisma.server', () => ({
       findFirst: vi.fn(
         async ({ where }: { where: { action: string; targetId: string; createdAt: { gte: Date } } }) =>
           auditRows.rows
-            .filter((r) => r.action === where.action && r.targetId === where.targetId && r.createdAt >= where.createdAt.gte)
+            .filter(
+              (r) => r.action === where.action && r.targetId === where.targetId && r.createdAt >= where.createdAt.gte,
+            )
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ?? null,
       ),
     },
@@ -23,9 +25,8 @@ vi.mock('@/lib/admin-audit.server', () => ({
   }),
 }));
 
-const { assertNoRecoveryHold, getRecoveryHold, startRecoveryHold, RECOVERY_HOLD_MS } = await import(
-  '@/lib/recovery/hold.server'
-);
+const { assertNoRecoveryHold, getRecoveryHold, startRecoveryHold, RECOVERY_HOLD_MS } =
+  await import('@/lib/recovery/hold.server');
 
 beforeEach(() => {
   auditRows.rows = [];

@@ -29,13 +29,20 @@ export async function advisorSheet(c: Character): Promise<string> {
         p.epicBoon ? 'Epic Boon feat' : '',
         p.cantripsGained ? `+${p.cantripsGained} cantrip(s)` : '',
         p.preparedGained ? `+${p.preparedGained} prepared spell(s)` : '',
-        p.newSlots.some(Boolean) ? `new slots: ${p.newSlots.map((n, i) => (n ? `level ${i + 1} +${n}` : '')).filter(Boolean).join(', ')}` : '',
+        p.newSlots.some(Boolean)
+          ? `new slots: ${p.newSlots
+              .map((n, i) => (n ? `level ${i + 1} +${n}` : ''))
+              .filter(Boolean)
+              .join(', ')}`
+          : '',
         p.masteryGained ? `+${p.masteryGained} weapon mastery` : '',
         p.proficiencyBonusUp ? 'proficiency bonus increases' : '',
       ];
       lines.push(`- ${parts.filter(Boolean).join('; ')}`);
     }
-    const multi = d.classes.filter((k) => !c.classes.some((x) => x.classId === k.id) && d5.meetsMulticlass(c, d, k)).map((k) => k.name);
+    const multi = d.classes
+      .filter((k) => !c.classes.some((x) => x.classId === k.id) && d5.meetsMulticlass(c, d, k))
+      .map((k) => k.name);
     if (multi.length) lines.push(`- Multiclass options that meet the 13+ prerequisite: ${multi.join(', ')}`);
     const issues = d5.validate(c, d);
     if (issues.length) lines.push('', '## Unfinished or flagged', ...issues.map((i) => `- ${i}`));
@@ -46,7 +53,10 @@ export async function advisorSheet(c: Character): Promise<string> {
     if (p) {
       lines.push('', '## Next level', `- Level ${p.newLevel}: +${p.hpGain} HP`);
       if (p.features.length) lines.push(`- Class features: ${p.features.map((f) => f.name).join(', ')}`);
-      if (p.improvements.length) lines.push(`- Proficiency increases: ${p.improvements.map((i) => `${i.stat} → ${p2.RANK_NAMES[i.rank]}`).join(', ')}`);
+      if (p.improvements.length)
+        lines.push(
+          `- Proficiency increases: ${p.improvements.map((i) => `${i.stat} → ${p2.RANK_NAMES[i.rank]}`).join(', ')}`,
+        );
       if (p.slots.length) lines.push(`- Feats: ${p.slots.map((s) => s.label).join(', ')}`);
       if (p.skillIncrease) lines.push('- A skill increase');
       if (p.attributeBoosts) lines.push('- Four attribute boosts');

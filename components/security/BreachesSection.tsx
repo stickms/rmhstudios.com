@@ -246,11 +246,10 @@ export function BreachesSection() {
       <section id="breaches" aria-labelledby="breaches-title">
         <h2 id="breaches-title">Breaches: we put a secret in public.</h2>
         <p>
-          A security page that only lists wins is advertising, so this is our incident log. In
-          March 2026 a Discord webhook URL was committed to this repository in plain text and stayed
-          at the tip of the default branch for nine days. No user data was ever reachable through
-          it. Here is exactly how it got there, why nobody caught it, and why deleting the line did
-          not undo it.
+          A security page that only lists wins is advertising, so this is our incident log. In March 2026 a Discord
+          webhook URL was committed to this repository in plain text and stayed at the tip of the default branch for
+          nine days. No user data was ever reachable through it. Here is exactly how it got there, why nobody caught it,
+          and why deleting the line did not undo it.
         </p>
       </section>
 
@@ -266,8 +265,8 @@ export function BreachesSection() {
       <section id="breaches-incident" aria-labelledby="brc-incident-title">
         <h2 id="brc-incident-title">A webhook in the deploy script.</h2>
         <p>
-          Five facts, none of them flattering. Every one was read back out of this
-          repository&apos;s own history before it was written here.
+          Five facts, none of them flattering. Every one was read back out of this repository&apos;s own history before
+          it was written here.
         </p>
         <div className="surface-card sec-spec">
           {WHAT_HAPPENED.map((s) => (
@@ -281,10 +280,7 @@ export function BreachesSection() {
 
       <section aria-labelledby="brc-timeline-title">
         <h2 id="brc-timeline-title">Nine days, twenty commits, nobody looking.</h2>
-        <p>
-          The interesting part of this timeline is not the mistake. It is how ordinary every step
-          after it was.
-        </p>
+        <p>The interesting part of this timeline is not the mistake. It is how ordinary every step after it was.</p>
         <ol className="sec-steps">
           {TIMELINE.map((s, i) => (
             <li className="surface-card sec-step" key={s.title}>
@@ -301,8 +297,8 @@ export function BreachesSection() {
       <section aria-labelledby="brc-causes-title">
         <h2 id="brc-causes-title">Six reasons, and none of them is &ldquo;careless.&rdquo;</h2>
         <p>
-          Blaming the commit explains nothing and prevents nothing. These are the conditions that
-          made it the easy thing to do — and most of them are conditions, not people.
+          Blaming the commit explains nothing and prevents nothing. These are the conditions that made it the easy thing
+          to do — and most of them are conditions, not people.
         </p>
         <div className="sec-grid">
           {ROOT_CAUSES.map((c) => {
@@ -323,9 +319,8 @@ export function BreachesSection() {
       <section aria-labelledby="brc-radius-title">
         <h2 id="brc-radius-title">What it could actually do.</h2>
         <p>
-          A Discord webhook is a write-only pipe into exactly one channel. That is a real risk — a
-          convincing message from something that looks like our deploy bot is a good phish — and it
-          is a narrow one.
+          A Discord webhook is a write-only pipe into exactly one channel. That is a real risk — a convincing message
+          from something that looks like our deploy bot is a good phish — and it is a narrow one.
         </p>
         <div className="sec-rules">
           <div className="surface-card sec-rule">
@@ -373,8 +368,8 @@ export function BreachesSection() {
       <section aria-labelledby="brc-history-title">
         <h2 id="brc-history-title">Deleting the line did not delete the secret.</h2>
         <p>
-          This is the lesson worth taking from an otherwise unremarkable mistake, so it gets its own
-          section rather than a footnote.
+          This is the lesson worth taking from an otherwise unremarkable mistake, so it gets its own section rather than
+          a footnote.
         </p>
         <div className="surface-card sec-spec">
           {PERSISTENCE.map((s) => (
@@ -389,8 +384,8 @@ export function BreachesSection() {
       <section aria-labelledby="brc-changed-title">
         <h2 id="brc-changed-title">Where the pipeline stands now.</h2>
         <p>
-          Three things are fixed and one is not. The unfixed one is listed here for the same reason
-          the rest of this log is.
+          Three things are fixed and one is not. The unfixed one is listed here for the same reason the rest of this log
+          is.
         </p>
         <ul className="sec-list">
           {WHAT_CHANGED.map((f) => {
@@ -410,16 +405,16 @@ export function BreachesSection() {
       <section aria-labelledby="brc-takeaway-title">
         <h2 id="brc-takeaway-title">Treat every URL with a token in it as a password.</h2>
         <p>
-          It is the shape that fooled us and it is the shape that fools most people: a webhook
-          endpoint, a signed asset link, a pre-authenticated callback. If the string alone is enough
-          to act as you, it belongs in the environment, never in a tracked file — and once it has
-          been published, the only real remedy is to revoke it at the source and issue a new one.
+          It is the shape that fooled us and it is the shape that fools most people: a webhook endpoint, a signed asset
+          link, a pre-authenticated callback. If the string alone is enough to act as you, it belongs in the
+          environment, never in a tracked file — and once it has been published, the only real remedy is to revoke it at
+          the source and issue a new one.
         </p>
         <p>
-          <strong>Found something we have missed?</strong> Credential exposure in this repository is
-          in scope for our bug bounty and is treated with the same seriousness as a flaw in the
-          running application. Report it through the <a href="#sec-disclosure">disclosure form</a>{' '}
-          or email <a href={`mailto:${SECURITY_EMAIL}`}>{SECURITY_EMAIL}</a>.
+          <strong>Found something we have missed?</strong> Credential exposure in this repository is in scope for our
+          bug bounty and is treated with the same seriousness as a flaw in the running application. Report it through
+          the <a href="#sec-disclosure">disclosure form</a> or email{' '}
+          <a href={`mailto:${SECURITY_EMAIL}`}>{SECURITY_EMAIL}</a>.
         </p>
       </section>
 

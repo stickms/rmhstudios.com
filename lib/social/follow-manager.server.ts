@@ -168,8 +168,7 @@ export async function listFollows(userId: string, opts: ListFollowsOptions): Pro
   const last = pageEdges[pageEdges.length - 1];
   return {
     rows,
-    nextCursor:
-      hasMore && last ? encodeFollowCursor({ k: keyToString(last.sortKey), id: last.edgeId }) : null,
+    nextCursor: hasMore && last ? encodeFollowCursor({ k: keyToString(last.sortKey), id: last.edgeId }) : null,
     counts: { following: me?.followingCount ?? 0, followers: me?.followerCount ?? 0 },
   };
 }
@@ -211,10 +210,7 @@ export async function removeFollower(userId: string, followerId: string): Promis
 }
 
 /** Of `ids`, the ones that `where` currently matches in the follow table (the rest are skipped). */
-async function currentEdges(
-  where: Prisma.FollowWhereInput,
-  pick: 'followerId' | 'followingId',
-): Promise<Set<string>> {
+async function currentEdges(where: Prisma.FollowWhereInput, pick: 'followerId' | 'followingId'): Promise<Set<string>> {
   const rows = await prisma.follow.findMany({ where, select: { [pick]: true } });
   return new Set(rows.map((r) => r[pick]));
 }

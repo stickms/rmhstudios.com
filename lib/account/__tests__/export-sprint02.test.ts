@@ -12,14 +12,15 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const followEventFindMany = vi.fn(async (_args: unknown) => [{ followingId: 'u2', kind: 'follow', createdAt: new Date(0) }]);
+const followEventFindMany = vi.fn(async (_args: unknown) => [
+  { followingId: 'u2', kind: 'follow', createdAt: new Date(0) },
+]);
 
 // Any model, any method: an empty list (or null for a single-row read).
 const emptyModel = new Proxy(
   {},
   {
-    get: (_t, method: string) =>
-      vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
+    get: (_t, method: string) => vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
   },
 );
 
@@ -30,7 +31,11 @@ vi.mock('@/lib/prisma.server', () => ({
       get: (_t, model: string) => {
         if (model === 'followEvent') return { findMany: followEventFindMany };
         if (model === 'flashcardDeck')
-          return { findMany: vi.fn(async () => [{ id: 'd1', title: 'Verbs', cards: [{ id: 'c1', front: 'a', back: 'b', position: 0 }] }]) };
+          return {
+            findMany: vi.fn(async () => [
+              { id: 'd1', title: 'Verbs', cards: [{ id: 'c1', front: 'a', back: 'b', position: 0 }] },
+            ]),
+          };
         return emptyModel;
       },
     },
@@ -87,7 +92,10 @@ describe('account export: sprint 02 data', () => {
   it('exports only follow events the member made, never who unfollowed them', async () => {
     const body = await runExport();
     expect(followEventFindMany).toHaveBeenCalledTimes(1);
-    const args = followEventFindMany.mock.calls[0]![0] as { where: Record<string, unknown>; select: Record<string, unknown> };
+    const args = followEventFindMany.mock.calls[0]![0] as {
+      where: Record<string, unknown>;
+      select: Record<string, unknown>;
+    };
     expect(args.where).toEqual({ followerId: 'u1' });
     expect(args.select).not.toHaveProperty('followerId');
     expect(body.followEvents).toEqual([{ followingId: 'u2', kind: 'follow', createdAt: new Date(0).toISOString() }]);

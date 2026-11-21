@@ -17,25 +17,12 @@
  * `MPS_PER_UNIT` from `./constants` whenever a real distance is needed.
  */
 
-export type GameState =
-  | 'menu'
-  | 'levelSelect'
-  | 'countdown'
-  | 'playing'
-  | 'paused'
-  | 'gameOver'
-  | 'levelComplete';
+export type GameState = 'menu' | 'levelSelect' | 'countdown' | 'playing' | 'paused' | 'gameOver' | 'levelComplete';
 
-export type LevelId =
-  | 1
-  | 2
-  | 3;
+export type LevelId = 1 | 2 | 3;
 
 /** Roadside dressing set the renderer builds for a level. */
-export type RoadsideStyle =
-  | 'sunset'
-  | 'storm'
-  | 'neon';
+export type RoadsideStyle = 'sunset' | 'storm' | 'neon';
 
 /** Everything the 3D renderer needs to dress a level. */
 export interface LevelVisuals {
@@ -138,12 +125,7 @@ export type ObstacleType =
   | 'boost_pad'
   | 'ability_slowdown';
 
-export type TrafficBehavior =
-  | 'keep_lane'
-  | 'drift'
-  | 'signal_and_change'
-  | 'chase_bias'
-  | 'weave';
+export type TrafficBehavior = 'keep_lane' | 'drift' | 'signal_and_change' | 'chase_bias' | 'weave';
 
 export interface Obstacle {
   id: number;

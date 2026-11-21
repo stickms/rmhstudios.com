@@ -44,12 +44,9 @@ async function measureScale(previous: number): Promise<number> {
 export async function seasonXpScale(n: number): Promise<number> {
   // A failed read answers 1 for this request but is not remembered, so one bad
   // query cannot pin the wrong curve for hours.
-  const scale = await cached(
-    `battlepass:scale:${n}`,
-    SCALE_TTL_MS,
-    () => measureScale(n - 1).catch(() => null),
-    { shouldCache: (v) => v != null },
-  );
+  const scale = await cached(`battlepass:scale:${n}`, SCALE_TTL_MS, () => measureScale(n - 1).catch(() => null), {
+    shouldCache: (v) => v != null,
+  });
   return scale ?? 1;
 }
 

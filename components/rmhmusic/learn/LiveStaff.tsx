@@ -14,19 +14,8 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { InputSource } from '@/lib/rmhmusic/learn/input/events';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
-import {
-  GAP,
-  LABEL_FONT,
-  NOTE_X,
-  TOP,
-  VIEW_H,
-  VIEW_W,
-  liveStaffLayout,
-} from '@/lib/rmhmusic/learn/live-staff-layout';
-import {
-  CARD_TOP,
-  CLEF_GLYPHS,
-} from '@/lib/rmhmusic/learn/staff-card-layout';
+import { GAP, LABEL_FONT, NOTE_X, TOP, VIEW_H, VIEW_W, liveStaffLayout } from '@/lib/rmhmusic/learn/live-staff-layout';
+import { CARD_TOP, CLEF_GLYPHS } from '@/lib/rmhmusic/learn/staff-card-layout';
 import type { Clef } from '@/lib/rmhmusic/learn/theory/clef';
 import { cn } from '@/lib/utils';
 import { useLastNote } from './useLearnInput';
@@ -60,211 +49,54 @@ export function LiveStaff({
   clef = 'treble',
   octaveClef = false,
 }: LiveStaffProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
-  const titleId =
-    useId();
-  const last =
-    useLastNote(
-      source,
-    );
-  const midi =
-    note ??
-    last?.midi ??
-    null;
-  const name =
-    midi ===
-    null
-      ? null
-      : midiToName(
-          midi,
-        );
-  const fit =
-    midi ===
-    null
-      ? null
-      : liveStaffLayout(
-          octaveClef
-            ? midi +
-                12
-            : midi,
-          clef,
-        );
-  const label =
-    name
-      ? t(
-          'staff-last-note',
-          {
-            note: name,
-            defaultValue:
-              'Last note: {{note}}',
-          },
-        )
-      : t(
-          'staff-empty',
-          {
-            defaultValue:
-              'Staff: no note played yet',
-          },
-        );
+  const { t } = useTranslation('c-rmhmusic');
+  const titleId = useId();
+  const last = useLastNote(source);
+  const midi = note ?? last?.midi ?? null;
+  const name = midi === null ? null : midiToName(midi);
+  const fit = midi === null ? null : liveStaffLayout(octaveClef ? midi + 12 : midi, clef);
+  const label = name
+    ? t('staff-last-note', {
+        note: name,
+        defaultValue: 'Last note: {{note}}',
+      })
+    : t('staff-empty', {
+        defaultValue: 'Staff: no note played yet',
+      });
 
   return (
-    <figure
-      className={cn(
-        'mx-auto w-full max-w-64',
-        className,
-      )}
-    >
+    <figure className={cn('mx-auto w-full max-w-64', className)}>
       <svg
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         role="img"
-        aria-labelledby={
-          titleId
-        }
+        aria-labelledby={titleId}
         className="block h-auto w-full text-app-text"
       >
-        <title
-          id={
-            titleId
-          }
-        >
-          {
-            label
-          }
-        </title>
-        <g
-          stroke="currentColor"
-          strokeWidth="1"
-          opacity="0.55"
-        >
-          {[
-            0,
-            1,
-            2,
-            3,
-            4,
-          ].map(
-            (
-              i,
-            ) => (
-              <line
-                key={
-                  i
-                }
-                x1="4"
-                x2={
-                  VIEW_W -
-                  4
-                }
-                y1={
-                  TOP +
-                  i *
-                    GAP
-                }
-                y2={
-                  TOP +
-                  i *
-                    GAP
-                }
-              />
-            ),
-          )}
-          <line
-            x1="4"
-            x2="4"
-            y1={
-              TOP
-            }
-            y2={
-              TOP +
-              4 *
-                GAP
-            }
-          />
-          <line
-            x1={
-              VIEW_W -
-              4
-            }
-            x2={
-              VIEW_W -
-              4
-            }
-            y1={
-              TOP
-            }
-            y2={
-              TOP +
-              4 *
-                GAP
-            }
-          />
+        <title id={titleId}>{label}</title>
+        <g stroke="currentColor" strokeWidth="1" opacity="0.55">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <line key={i} x1="4" x2={VIEW_W - 4} y1={TOP + i * GAP} y2={TOP + i * GAP} />
+          ))}
+          <line x1="4" x2="4" y1={TOP} y2={TOP + 4 * GAP} />
+          <line x1={VIEW_W - 4} x2={VIEW_W - 4} y1={TOP} y2={TOP + 4 * GAP} />
         </g>
-        {clef ===
-        'bass' ? (
+        {clef === 'bass' ? (
           // The cards' bass clef, moved from the card's top line to this staff's.
-          <g
-            fill="currentColor"
-            transform={`translate(0 ${TOP - CARD_TOP})`}
-          >
-            <path
-              d={
-                CLEF_GLYPHS
-                  .bass
-                  .path
-              }
-            />
-            {CLEF_GLYPHS.bass.dots.map(
-              (
-                d,
-              ) => (
-                <circle
-                  key={`${d.cx}-${d.cy}`}
-                  cx={
-                    d.cx
-                  }
-                  cy={
-                    d.cy
-                  }
-                  r={
-                    d.r
-                  }
-                />
-              ),
-            )}
+          <g fill="currentColor" transform={`translate(0 ${TOP - CARD_TOP})`}>
+            <path d={CLEF_GLYPHS.bass.path} />
+            {CLEF_GLYPHS.bass.dots.map((d) => (
+              <circle key={`${d.cx}-${d.cy}`} cx={d.cx} cy={d.cy} r={d.r} />
+            ))}
           </g>
         ) : (
           <>
-            <path
-              d={
-                CLEF
-              }
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            />
-            <circle
-              cx="19"
-              cy={
-                TOP +
-                52
-              }
-              r="3"
-              fill="currentColor"
-            />
+            <path d={CLEF} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            <circle cx="19" cy={TOP + 52} r="3" fill="currentColor" />
             {octaveClef ? (
               // The octave-down treble clef's 8, small under the clef's tail.
               <text
                 x="19"
-                y={
-                  TOP +
-                  68
-                }
+                y={TOP + 68}
                 textAnchor="middle"
                 direction="ltr"
                 fontSize="10"
@@ -277,105 +109,29 @@ export function LiveStaff({
           </>
         )}
         {fit && (
-          <g
-            className="text-app-accent"
-            stroke="currentColor"
-            fill="currentColor"
-          >
-            {fit.ledgerYs.map(
-              (
-                y,
-              ) => (
-                <line
-                  key={
-                    y
-                  }
-                  x1={
-                    NOTE_X -
-                    12
-                  }
-                  x2={
-                    NOTE_X +
-                    12
-                  }
-                  y1={
-                    y
-                  }
-                  y2={
-                    y
-                  }
-                  strokeWidth="1.4"
-                />
-              ),
-            )}
+          <g className="text-app-accent" stroke="currentColor" fill="currentColor">
+            {fit.ledgerYs.map((y) => (
+              <line key={y} x1={NOTE_X - 12} x2={NOTE_X + 12} y1={y} y2={y} strokeWidth="1.4" />
+            ))}
             <ellipse
-              cx={
-                NOTE_X
-              }
-              cy={
-                fit.noteY
-              }
+              cx={NOTE_X}
+              cy={fit.noteY}
               rx="6.6"
               ry="4.6"
               transform={`rotate(-20 ${NOTE_X} ${fit.noteY})`}
               stroke="none"
             />
             {fit.sharp && (
-              <g
-                strokeWidth="1.4"
-                transform={`translate(${NOTE_X - 17} ${fit.noteY})`}
-              >
-                <line
-                  x1="-2"
-                  x2="-2"
-                  y1="-9"
-                  y2="10"
-                />
-                <line
-                  x1="2.5"
-                  x2="2.5"
-                  y1="-10"
-                  y2="9"
-                />
-                <line
-                  x1="-5.5"
-                  x2="6"
-                  y1="-1.5"
-                  y2="-4.5"
-                  strokeWidth="2.4"
-                />
-                <line
-                  x1="-5.5"
-                  x2="6"
-                  y1="4.5"
-                  y2="1.5"
-                  strokeWidth="2.4"
-                />
+              <g strokeWidth="1.4" transform={`translate(${NOTE_X - 17} ${fit.noteY})`}>
+                <line x1="-2" x2="-2" y1="-9" y2="10" />
+                <line x1="2.5" x2="2.5" y1="-10" y2="9" />
+                <line x1="-5.5" x2="6" y1="-1.5" y2="-4.5" strokeWidth="2.4" />
+                <line x1="-5.5" x2="6" y1="4.5" y2="1.5" strokeWidth="2.4" />
               </g>
             )}
             {fit.label && (
-              <text
-                x={
-                  fit
-                    .label
-                    .x
-                }
-                y={
-                  fit
-                    .label
-                    .y
-                }
-                stroke="none"
-                fontSize={
-                  LABEL_FONT
-                }
-                className="rmm-display"
-              >
-                {
-                  fit
-                    .label
-                    .text
-                }
+              <text x={fit.label.x} y={fit.label.y} stroke="none" fontSize={LABEL_FONT} className="rmm-display">
+                {fit.label.text}
               </text>
             )}
           </g>
@@ -385,18 +141,11 @@ export function LiveStaff({
         aria-hidden="true"
         className="min-h-9 text-center font-(family-name:--app-font-mono) text-2xl font-bold text-app-accent"
       >
-        {
-          name
-        }
+        {name}
       </figcaption>
       {announce && (
-        <p
-          className="sr-only"
-          aria-live="polite"
-        >
-          {name
-            ? label
-            : null}
+        <p className="sr-only" aria-live="polite">
+          {name ? label : null}
         </p>
       )}
     </figure>

@@ -25,18 +25,43 @@ export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void 
   const askAdvisor = useAdvisor((s) => s.ask);
   const set = (fn: (x: Dnd5eCharacter) => Dnd5eCharacter) => update(c.id, (x) => (x.system === 'dnd5e' ? fn(x) : x));
 
-  if (!d) return <p className="py-8 text-sm text-app-text-muted">{t('common.loadingRules', { defaultValue: 'Loading the rules…' })}</p>;
+  if (!d)
+    return (
+      <p className="py-8 text-sm text-app-text-muted">
+        {t('common.loadingRules', { defaultValue: 'Loading the rules…' })}
+      </p>
+    );
 
   const level = R.totalLevel(c);
   const species = d.species.find((s) => s.id === c.speciesId)?.name ?? '';
-  const classes = c.classes.map((k) => `${d.classes.find((x) => x.id === k.classId)?.name ?? k.classId} ${k.level}`).join(' / ');
+  const classes = c.classes
+    .map((k) => `${d.classes.find((x) => x.id === k.classId)?.name ?? k.classId} ${k.level}`)
+    .join(' / ');
   const scores = R.abilityScores(c, d);
   const carried = c.inventory.reduce((n, i) => n + (i.weight ?? 0) * i.quantity, 0);
 
   const catalog = [
-    ...d.weapons.map((w) => ({ id: w.id, name: w.name, weight: w.weight, meta: `${w.category} ${w.kind} · ${w.damage} ${w.damageType} · ${w.mastery}`, text: `${w.properties.join(', ')}${w.range ? ` · ${w.range}` : ''} · ${w.cost}` })),
-    ...d.armor.map((a) => ({ id: a.id, name: a.name, weight: a.weight, meta: `${a.category} armor · AC ${a.ac}${a.dexCap === undefined ? ' + Dex' : a.dexCap ? ` + Dex (max ${a.dexCap})` : ''}`, text: `${a.strength ? `Str ${a.strength} · ` : ''}${a.stealthDisadvantage ? 'Stealth disadvantage · ' : ''}${a.cost}` })),
-    ...d.gear.map((g) => ({ id: g.id, name: g.name, weight: g.weight, meta: g.cost, ...(g.text ? { text: g.text } : {}) })),
+    ...d.weapons.map((w) => ({
+      id: w.id,
+      name: w.name,
+      weight: w.weight,
+      meta: `${w.category} ${w.kind} · ${w.damage} ${w.damageType} · ${w.mastery}`,
+      text: `${w.properties.join(', ')}${w.range ? ` · ${w.range}` : ''} · ${w.cost}`,
+    })),
+    ...d.armor.map((a) => ({
+      id: a.id,
+      name: a.name,
+      weight: a.weight,
+      meta: `${a.category} armor · AC ${a.ac}${a.dexCap === undefined ? ' + Dex' : a.dexCap ? ` + Dex (max ${a.dexCap})` : ''}`,
+      text: `${a.strength ? `Str ${a.strength} · ` : ''}${a.stealthDisadvantage ? 'Stealth disadvantage · ' : ''}${a.cost}`,
+    })),
+    ...d.gear.map((g) => ({
+      id: g.id,
+      name: g.name,
+      weight: g.weight,
+      meta: g.cost,
+      ...(g.text ? { text: g.text } : {}),
+    })),
   ];
 
   const onEquip = (x: Dnd5eCharacter, item: InventoryItem, equipped: boolean): Dnd5eCharacter => {
@@ -44,7 +69,15 @@ export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void 
     if (!armor) return x;
     if (armor.category === 'shield') return { ...x, shield: equipped };
     if (equipped) {
-      return { ...x, armorId: armor.id, inventory: x.inventory.map((i) => (i.id !== item.id && d.armor.some((a) => a.id === i.refId && a.category !== 'shield') ? { ...i, equipped: false } : i)) };
+      return {
+        ...x,
+        armorId: armor.id,
+        inventory: x.inventory.map((i) =>
+          i.id !== item.id && d.armor.some((a) => a.id === i.refId && a.category !== 'shield')
+            ? { ...i, equipped: false }
+            : i,
+        ),
+      };
     }
     if (x.armorId === armor.id) {
       const { armorId: _a, ...rest } = x;
@@ -58,7 +91,11 @@ export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void 
     <>
       <EditorFrame
         character={c}
-        subtitle={level && classes ? t('e5.subtitle', { defaultValue: 'Level {{level}} {{species}} {{classes}}', level, species, classes }) : t('e5.new', { defaultValue: 'New character — start on the Build tab' })}
+        subtitle={
+          level && classes
+            ? t('e5.subtitle', { defaultValue: 'Level {{level}} {{species}} {{classes}}', level, species, classes })
+            : t('e5.new', { defaultValue: 'New character — start on the Build tab' })
+        }
         tab={tab}
         onTab={setTab}
         onBack={onBack}
@@ -68,7 +105,19 @@ export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void 
           build: <Build5e c={c} d={d} set={set} />,
           sheet: <Sheet5e c={c} d={d} set={set} />,
           spells: <Spells5e c={c} d={d} set={set} />,
-          inventory: <Inventory c={c} set={set} catalog={catalog} onEquip={onEquip} load={t('e5.carry', { defaultValue: '{{w}} / {{max}} lb', w: Math.round(carried * 10) / 10, max: scores.str * 15 })} />,
+          inventory: (
+            <Inventory
+              c={c}
+              set={set}
+              catalog={catalog}
+              onEquip={onEquip}
+              load={t('e5.carry', {
+                defaultValue: '{{w}} / {{max}} lb',
+                w: Math.round(carried * 10) / 10,
+                max: scores.str * 15,
+              })}
+            />
+          ),
           story: <Story c={c} set={set} />,
           advisor: <Advisor c={c} data={d} onApply={(fn) => update(c.id, fn)} />,
         }}

@@ -13,23 +13,15 @@
 // Pure and dependency-free: time comes in as `now` (ms) and `dt` (s), so every behaviour is testable.
 // ============================================================
 
-import {
-  clamp01,
-  lerp,
-} from '@/lib/core/math';
-export type ImpactKind =
-  | 'hit'
-  | 'block'
-  | 'ko';
+import { clamp01, lerp } from '@/lib/core/math';
+export type ImpactKind = 'hit' | 'block' | 'ko';
 
 export interface ImpactEvent {
   kind: ImpactKind;
   /** The seat that took it. */
   victim: number;
   /** The seat that threw it (null for a block, whose event names only the defender). */
-  attacker:
-    | number
-    | null;
+  attacker: number | null;
   /** Damage dealt (or that would have been); 0..~45. */
   power: number;
   /** World position of the contact (victim's chest). */
@@ -66,31 +58,17 @@ export interface ImpactProfile {
 }
 
 /** Damage → 0..1 weight. A jab is ~4-8, a fully comboed uppercut ~40+. */
-export function powerWeight(
-  power: number,
-): number {
-  return clamp01(
-    (power -
-      3) /
-      25,
-  );
+export function powerWeight(power: number): number {
+  return clamp01((power - 3) / 25);
 }
 
 /**
  * The numbers for one impact. Hits scale with damage; a block is a short, hard stop (the same freeze as
  * a light hit, a shower of sparks, little knock-back); a knockout is the biggest thing in the game.
  */
-export function impactProfile(
-  kind: ImpactKind,
-  power: number,
-): ImpactProfile {
-  const p =
-    powerWeight(
-      power,
-    );
-  switch (
-    kind
-  ) {
+export function impactProfile(kind: ImpactKind, power: number): ImpactProfile {
+  const p = powerWeight(power);
+  switch (kind) {
     case 'ko':
       return {
         trauma: 1,
@@ -107,116 +85,32 @@ export function impactProfile(
       };
     case 'block':
       return {
-        trauma:
-          lerp(
-            0.2,
-            0.34,
-            p,
-          ),
-        hitStopMs:
-          lerp(
-            55,
-            85,
-            p,
-          ),
+        trauma: lerp(0.2, 0.34, p),
+        hitStopMs: lerp(55, 85, p),
         slowMo: 1,
         slowMoMs: 0,
-        recoil:
-          lerp(
-            0.07,
-            0.15,
-            p,
-          ),
-        squash:
-          lerp(
-            0.03,
-            0.06,
-            p,
-          ),
+        recoil: lerp(0.07, 0.15, p),
+        squash: lerp(0.03, 0.06, p),
         flash: 0.5,
-        ringSize:
-          lerp(
-            0.9,
-            1.5,
-            p,
-          ),
+        ringSize: lerp(0.9, 1.5, p),
         ringLife: 0.3,
-        sparks:
-          Math.round(
-            lerp(
-              18,
-              30,
-              p,
-            ),
-          ),
-        fovKick:
-          lerp(
-            0.5,
-            1.1,
-            p,
-          ),
+        sparks: Math.round(lerp(18, 30, p)),
+        fovKick: lerp(0.5, 1.1, p),
       };
     case 'hit':
     default:
       return {
-        trauma:
-          lerp(
-            0.3,
-            0.8,
-            p,
-          ),
-        hitStopMs:
-          lerp(
-            50,
-            135,
-            p,
-          ),
+        trauma: lerp(0.3, 0.8, p),
+        hitStopMs: lerp(50, 135, p),
         slowMo: 1,
         slowMoMs: 0,
-        recoil:
-          lerp(
-            0.14,
-            0.42,
-            p,
-          ),
-        squash:
-          lerp(
-            0.06,
-            0.16,
-            p,
-          ),
-        flash:
-          lerp(
-            0.55,
-            1,
-            p,
-          ),
-        ringSize:
-          lerp(
-            1.3,
-            3.1,
-            p,
-          ),
-        ringLife:
-          lerp(
-            0.32,
-            0.5,
-            p,
-          ),
-        sparks:
-          Math.round(
-            lerp(
-              14,
-              38,
-              p,
-            ),
-          ),
-        fovKick:
-          lerp(
-            0.8,
-            3,
-            p,
-          ),
+        recoil: lerp(0.14, 0.42, p),
+        squash: lerp(0.06, 0.16, p),
+        flash: lerp(0.55, 1, p),
+        ringSize: lerp(1.3, 3.1, p),
+        ringLife: lerp(0.32, 0.5, p),
+        sparks: Math.round(lerp(14, 38, p)),
+        fovKick: lerp(0.8, 3, p),
       };
   }
 }
@@ -236,79 +130,22 @@ export const SHAKE_MAX_ROLL = 0.045;
 export const TRAUMA_DECAY = 1.15;
 
 /** A few incommensurate sines: smooth, never repeating within a shake, no per-frame randomness. */
-const wobble =
-  (
-    t: number,
-    a: number,
-    b: number,
-    c: number,
-  ) =>
-    (Math.sin(
-      t *
-        a,
-    ) +
-      Math.sin(
-        t *
-          b +
-          1.7,
-      ) *
-        0.6 +
-      Math.sin(
-        t *
-          c +
-          4.1,
-      ) *
-        0.35) /
-    1.95;
+const wobble = (t: number, a: number, b: number, c: number) =>
+  (Math.sin(t * a) + Math.sin(t * b + 1.7) * 0.6 + Math.sin(t * c + 4.1) * 0.35) / 1.95;
 
 /** Camera offset for `trauma` (0..1) at time `t` seconds. Amplitude is trauma², so small hits are subtle. */
-export function shakeSample(
-  trauma: number,
-  t: number,
-): ShakeSample {
-  const amp =
-    clamp01(
-      trauma,
-    ) **
-    2;
-  if (
-    amp ===
-    0
-  )
+export function shakeSample(trauma: number, t: number): ShakeSample {
+  const amp = clamp01(trauma) ** 2;
+  if (amp === 0)
     return {
       x: 0,
       y: 0,
       roll: 0,
     };
   return {
-    x:
-      wobble(
-        t,
-        23,
-        37,
-        59,
-      ) *
-      SHAKE_MAX_OFFSET *
-      amp,
-    y:
-      wobble(
-        t,
-        29,
-        43,
-        67,
-      ) *
-      SHAKE_MAX_OFFSET *
-      amp *
-      0.8,
-    roll:
-      wobble(
-        t,
-        19,
-        31,
-        53,
-      ) *
-      SHAKE_MAX_ROLL *
-      amp,
+    x: wobble(t, 23, 37, 59) * SHAKE_MAX_OFFSET * amp,
+    y: wobble(t, 29, 43, 67) * SHAKE_MAX_OFFSET * amp * 0.8,
+    roll: wobble(t, 19, 31, 53) * SHAKE_MAX_ROLL * amp,
   };
 }
 
@@ -348,8 +185,7 @@ function freshReaction(): ReactionInternal {
     oz: 0,
     squash: 0,
     flash: 0,
-    flashKind:
-      'hit',
+    flashKind: 'hit',
     lean: 0,
     dirX: 0,
     dirZ: 1,
@@ -362,11 +198,7 @@ function freshReaction(): ReactionInternal {
 
 // ── The bus ────────────────────────────────────────────────────────────────────
 
-export type ImpactListener =
-  (
-    event: ImpactEvent,
-    profile: ImpactProfile,
-  ) => void;
+export type ImpactListener = (event: ImpactEvent, profile: ImpactProfile) => void;
 
 /** How long the freeze takes to ease back to full speed at its end (ms): the stop releases, it doesn't pop. */
 const STOP_RELEASE_MS = 30;
@@ -378,165 +210,54 @@ export class ImpactBus {
   trauma = 0;
   /** Added to the camera's field of view, degrees (decays in `step`). */
   fovKick = 0;
-  private reactions =
-    new Map<
-      number,
-      ReactionInternal
-    >();
-  private stopUntil =
-    new Map<
-      number,
-      number
-    >();
-  private stopFrom =
-    new Map<
-      number,
-      number
-    >();
+  private reactions = new Map<number, ReactionInternal>();
+  private stopUntil = new Map<number, number>();
+  private stopFrom = new Map<number, number>();
   private slowUntil = 0;
   private slowFrom = 0;
   private slowScale = 1;
-  private listeners =
-    new Set<ImpactListener>();
+  private listeners = new Set<ImpactListener>();
   private clock = 0;
 
-  subscribe(
-    fn: ImpactListener,
-  ): () => void {
-    this.listeners.add(
-      fn,
-    );
-    return () =>
-      this.listeners.delete(
-        fn,
-      );
+  subscribe(fn: ImpactListener): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
   }
 
   /** Register an impact at time `now` (ms). Returns the profile that was applied. */
-  emit(
-    e: ImpactEvent,
-    now: number,
-  ): ImpactProfile {
-    const prof =
-      impactProfile(
-        e.kind,
-        e.power,
-      );
-    this.trauma =
-      Math.min(
-        1,
-        Math.max(
-          this
-            .trauma,
-          prof.trauma,
-        ) +
-          prof.trauma *
-            0.25,
-      );
-    this.fovKick =
-      Math.max(
-        this
-          .fovKick,
-        prof.fovKick,
-      );
+  emit(e: ImpactEvent, now: number): ImpactProfile {
+    const prof = impactProfile(e.kind, e.power);
+    this.trauma = Math.min(1, Math.max(this.trauma, prof.trauma) + prof.trauma * 0.25);
+    this.fovKick = Math.max(this.fovKick, prof.fovKick);
 
-    const r =
-      this.ensure(
-        e.victim,
-      );
-    const len =
-      Math.hypot(
-        e.dirX,
-        e.dirZ,
-      ) ||
-      1;
-    const dx =
-      e.dirX /
-      len;
-    const dz =
-      e.dirZ /
-      len;
-    r.dirX =
-      dx;
-    r.dirZ =
-      dz;
+    const r = this.ensure(e.victim);
+    const len = Math.hypot(e.dirX, e.dirZ) || 1;
+    const dx = e.dirX / len;
+    const dz = e.dirZ / len;
+    r.dirX = dx;
+    r.dirZ = dz;
     // Kick the springs with a velocity that carries the offset out to ~`recoil` before it returns.
-    const v =
-      prof.recoil *
-      Math.sqrt(
-        SPRING_K,
-      ) *
-      1.5;
-    r.vx +=
-      dx *
-      v;
-    r.vz +=
-      dz *
-      v;
-    r.vsq +=
-      prof.squash *
-      Math.sqrt(
-        SPRING_K,
-      ) *
-      1.6;
-    r.vlean +=
-      prof.recoil *
-      3.2;
-    r.flash =
-      Math.max(
-        r.flash,
-        prof.flash,
-      );
-    r.flashKind =
-      e.kind;
+    const v = prof.recoil * Math.sqrt(SPRING_K) * 1.5;
+    r.vx += dx * v;
+    r.vz += dz * v;
+    r.vsq += prof.squash * Math.sqrt(SPRING_K) * 1.6;
+    r.vlean += prof.recoil * 3.2;
+    r.flash = Math.max(r.flash, prof.flash);
+    r.flashKind = e.kind;
 
-    const until =
-      now +
-      prof.hitStopMs;
-    for (const seat of e.attacker ===
-    null
-      ? [
-          e.victim,
-        ]
-      : [
-          e.victim,
-          e.attacker,
-        ]) {
-      if (
-        until >
-        (this.stopUntil.get(
-          seat,
-        ) ??
-          0)
-      ) {
-        this.stopUntil.set(
-          seat,
-          until,
-        );
-        this.stopFrom.set(
-          seat,
-          now,
-        );
+    const until = now + prof.hitStopMs;
+    for (const seat of e.attacker === null ? [e.victim] : [e.victim, e.attacker]) {
+      if (until > (this.stopUntil.get(seat) ?? 0)) {
+        this.stopUntil.set(seat, until);
+        this.stopFrom.set(seat, now);
       }
     }
-    if (
-      prof.slowMoMs >
-      0
-    ) {
-      this.slowFrom =
-        until;
-      this.slowUntil =
-        until +
-        prof.slowMoMs;
-      this.slowScale =
-        prof.slowMo;
+    if (prof.slowMoMs > 0) {
+      this.slowFrom = until;
+      this.slowUntil = until + prof.slowMoMs;
+      this.slowScale = prof.slowMo;
     }
-    for (const fn of this
-      .listeners)
-      fn(
-        e,
-        prof,
-      );
+    for (const fn of this.listeners) fn(e, prof);
     return prof;
   }
 
@@ -545,39 +266,23 @@ export class ImpactBus {
    * freeze, no slow motion, no knock-back, no ring. For Jelly motion Still, where only a few sparks
    * mark the contact. Returns the profile the listeners got.
    */
-  emitCalm(
-    e: ImpactEvent,
-  ): ImpactProfile {
-    const full =
-      impactProfile(
-        e.kind,
-        e.power,
-      );
-    const calm: ImpactProfile =
-      {
-        ...full,
-        trauma: 0,
-        hitStopMs: 0,
-        slowMo: 1,
-        slowMoMs: 0,
-        recoil: 0,
-        squash: 0,
-        flash: 0,
-        ringSize: 0,
-        ringLife: 0,
-        fovKick: 0,
-        sparks:
-          Math.min(
-            full.sparks,
-            8,
-          ),
-      };
-    for (const fn of this
-      .listeners)
-      fn(
-        e,
-        calm,
-      );
+  emitCalm(e: ImpactEvent): ImpactProfile {
+    const full = impactProfile(e.kind, e.power);
+    const calm: ImpactProfile = {
+      ...full,
+      trauma: 0,
+      hitStopMs: 0,
+      slowMo: 1,
+      slowMoMs: 0,
+      recoil: 0,
+      squash: 0,
+      flash: 0,
+      ringSize: 0,
+      ringLife: 0,
+      fovKick: 0,
+      sparks: Math.min(full.sparks, 8),
+    };
+    for (const fn of this.listeners) fn(e, calm);
     return calm;
   }
 
@@ -587,245 +292,78 @@ export class ImpactBus {
    * hit-stop freezes the victim mid-recoil and a knockout's slow motion slows the fall; without it they
    * run in real time.
    */
-  step(
-    dtRaw: number,
-    now?: number,
-  ): void {
-    const dt =
-      Math.min(
-        0.05,
-        Math.max(
-          0,
-          dtRaw,
-        ),
-      );
-    this.clock +=
-      dt;
-    this.trauma =
-      Math.max(
-        0,
-        this
-          .trauma -
-          TRAUMA_DECAY *
-            dt,
-      );
-    this.fovKick *=
-      Math.exp(
-        -9 *
-          dt,
-      );
-    if (
-      this
-        .fovKick <
-      0.01
-    )
-      this.fovKick = 0;
-    for (const [
-      seat,
-      r,
-    ] of this
-      .reactions) {
-      const d =
-        now ===
-        undefined
-          ? dt
-          : dt *
-            this.timeScaleFor(
-              seat,
-              now,
-            );
+  step(dtRaw: number, now?: number): void {
+    const dt = Math.min(0.05, Math.max(0, dtRaw));
+    this.clock += dt;
+    this.trauma = Math.max(0, this.trauma - TRAUMA_DECAY * dt);
+    this.fovKick *= Math.exp(-9 * dt);
+    if (this.fovKick < 0.01) this.fovKick = 0;
+    for (const [seat, r] of this.reactions) {
+      const d = now === undefined ? dt : dt * this.timeScaleFor(seat, now);
       // semi-implicit Euler: stable for these constants at d <= 0.05
-      r.vx +=
-        (-SPRING_K *
-          r.ox -
-          SPRING_C *
-            r.vx) *
-        d;
-      r.ox +=
-        r.vx *
-        d;
-      r.vz +=
-        (-SPRING_K *
-          r.oz -
-          SPRING_C *
-            r.vz) *
-        d;
-      r.oz +=
-        r.vz *
-        d;
-      r.vsq +=
-        (-SPRING_K *
-          r.squash -
-          SPRING_C *
-            r.vsq) *
-        d;
-      r.squash +=
-        r.vsq *
-        d;
-      r.vlean +=
-        (-SPRING_K *
-          r.lean -
-          SPRING_C *
-            r.vlean) *
-        d;
-      r.lean +=
-        r.vlean *
-        d;
-      r.flash =
-        Math.max(
-          0,
-          r.flash -
-            FLASH_DECAY *
-              d *
-              Math.max(
-                0.3,
-                r.flash,
-              ),
-        );
-      if (
-        r.flash <
-        0.004
-      )
-        r.flash = 0;
+      r.vx += (-SPRING_K * r.ox - SPRING_C * r.vx) * d;
+      r.ox += r.vx * d;
+      r.vz += (-SPRING_K * r.oz - SPRING_C * r.vz) * d;
+      r.oz += r.vz * d;
+      r.vsq += (-SPRING_K * r.squash - SPRING_C * r.vsq) * d;
+      r.squash += r.vsq * d;
+      r.vlean += (-SPRING_K * r.lean - SPRING_C * r.vlean) * d;
+      r.lean += r.vlean * d;
+      r.flash = Math.max(0, r.flash - FLASH_DECAY * d * Math.max(0.3, r.flash));
+      if (r.flash < 0.004) r.flash = 0;
     }
   }
 
   /** Camera shake offset at the bus's own clock. */
   shake(): ShakeSample {
-    return shakeSample(
-      this
-        .trauma,
-      this
-        .clock,
-    );
+    return shakeSample(this.trauma, this.clock);
   }
 
   /** The reaction state for a seat (zeros when nothing has hit it). Read-only. */
-  reaction(
-    seat: number,
-  ): Readonly<Reaction> {
-    return (
-      this.reactions.get(
-        seat,
-      ) ??
-      ZERO_REACTION
-    );
+  reaction(seat: number): Readonly<Reaction> {
+    return this.reactions.get(seat) ?? ZERO_REACTION;
   }
 
   /**
    * How fast this seat's animation should run at time `now` (ms): ~0 during a hit-stop, easing back to
    * 1 over its last 30 ms, multiplied by the knockout slow motion when one is running.
    */
-  timeScaleFor(
-    seat: number,
-    now: number,
-  ): number {
+  timeScaleFor(seat: number, now: number): number {
     let s = 1;
-    const until =
-      this.stopUntil.get(
-        seat,
-      );
-    if (
-      until !==
-        undefined &&
-      now <
-        until
-    ) {
-      const left =
-        until -
-        now;
-      s =
-        left >
-        STOP_RELEASE_MS
-          ? STOP_SPEED
-          : STOP_SPEED +
-            (1 -
-              STOP_SPEED) *
-              (1 -
-                left /
-                  STOP_RELEASE_MS);
+    const until = this.stopUntil.get(seat);
+    if (until !== undefined && now < until) {
+      const left = until - now;
+      s = left > STOP_RELEASE_MS ? STOP_SPEED : STOP_SPEED + (1 - STOP_SPEED) * (1 - left / STOP_RELEASE_MS);
     }
-    return (
-      s *
-      this.slowScaleAt(
-        now,
-      )
-    );
+    return s * this.slowScaleAt(now);
   }
 
   /** The slow-motion factor alone (1 when none) — particles and the camera use it too. */
-  slowScaleAt(
-    now: number,
-  ): number {
-    if (
-      now <
-        this
-          .slowFrom ||
-      now >=
-        this
-          .slowUntil
-    )
-      return 1;
-    const into =
-      now -
-      this
-        .slowFrom;
-    const left =
-      this
-        .slowUntil -
-      now;
-    const ramp =
-      Math.min(
-        into,
-        left,
-        120,
-      ) /
-      120; // ease in and out of the slow motion
-    return (
-      1 -
-      (1 -
-        this
-          .slowScale) *
-        ramp *
-        ramp *
-        (3 -
-          2 *
-            ramp)
-    );
+  slowScaleAt(now: number): number {
+    if (now < this.slowFrom || now >= this.slowUntil) return 1;
+    const into = now - this.slowFrom;
+    const left = this.slowUntil - now;
+    const ramp = Math.min(into, left, 120) / 120; // ease in and out of the slow motion
+    return 1 - (1 - this.slowScale) * ramp * ramp * (3 - 2 * ramp);
   }
 
-  private ensure(
-    seat: number,
-  ): ReactionInternal {
-    let r =
-      this.reactions.get(
-        seat,
-      );
-    if (
-      !r
-    ) {
-      r =
-        freshReaction();
-      this.reactions.set(
-        seat,
-        r,
-      );
+  private ensure(seat: number): ReactionInternal {
+    let r = this.reactions.get(seat);
+    if (!r) {
+      r = freshReaction();
+      this.reactions.set(seat, r);
     }
     return r;
   }
 }
 
-const ZERO_REACTION: Readonly<Reaction> =
-  Object.freeze(
-    {
-      ox: 0,
-      oz: 0,
-      squash: 0,
-      flash: 0,
-      flashKind:
-        'hit' as ImpactKind,
-      lean: 0,
-      dirX: 0,
-      dirZ: 1,
-    },
-  );
+const ZERO_REACTION: Readonly<Reaction> = Object.freeze({
+  ox: 0,
+  oz: 0,
+  squash: 0,
+  flash: 0,
+  flashKind: 'hit' as ImpactKind,
+  lean: 0,
+  dirX: 0,
+  dirZ: 1,
+});

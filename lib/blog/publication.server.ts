@@ -8,15 +8,8 @@ import { prisma } from '@/lib/prisma.server';
 import { userChipSelect } from '@/lib/user-display';
 import { pingIndexNow } from '@/lib/seo/indexnow.server';
 import { invalidateCurrentAnnouncement } from '@/lib/sitewide-announcement.server';
-import {
-  invalidateCached,
-  invalidateCachedPrefix,
-} from '@/lib/cached.server';
-import {
-  MAX_REVISIONS_PER_LOG,
-  wordCount,
-  type LogStatus,
-} from '@/lib/blog/publication';
+import { invalidateCached, invalidateCachedPrefix } from '@/lib/cached.server';
+import { MAX_REVISIONS_PER_LOG, wordCount, type LogStatus } from '@/lib/blog/publication';
 
 /**
  * Drop every cached public read of the Logs (announcement pop-up, sidebar list, feed announcements, the RSS feed).
@@ -33,19 +26,11 @@ export async function invalidateLogCaches(): Promise<void> {
   ]);
 }
 
-const PUBLISH_LOCK =
-  'blog-publish-due';
+const PUBLISH_LOCK = 'blog-publish-due';
 
 /** `YYYY-MM-DD` (UTC): the day a Log with no date goes out under. */
-export function publishDay(
-  now: Date,
-): string {
-  return now
-    .toISOString()
-    .slice(
-      0,
-      10,
-    );
+export function publishDay(now: Date): string {
+  return now.toISOString().slice(0, 10);
 }
 
 /**
@@ -57,225 +42,130 @@ export function publishDay(
  * Logs by that date from its own cursor, sees the Log as new; `announcedAt` is stamped the same way so a scheduled
  * announcement pops up only once it is live.
  */
-export async function publishDueLogs(
-  now: Date = new Date(),
-): Promise<
-  string[]
-> {
-  const published =
-    await prisma.$transaction(
-      async (
-        tx,
-      ) => {
-        const lock =
-          await tx.$queryRaw<
-            {
-              locked: boolean;
-            }[]
-          >`
+export async function publishDueLogs(now: Date = new Date()): Promise<string[]> {
+  const published = await prisma.$transaction(async (tx) => {
+    const lock = await tx.$queryRaw<
+      {
+        locked: boolean;
+      }[]
+    >`
       SELECT pg_try_advisory_xact_lock(hashtext(${PUBLISH_LOCK})) AS locked`;
-        if (
-          !lock[0]
-            ?.locked
-        )
-          return [] as string[];
+    if (!lock[0]?.locked) return [] as string[];
 
-        const due =
-          await tx.blogPost.findMany(
-            {
-              where:
-                {
-                  status:
-                    'scheduled',
-                  publishAt:
-                    {
-                      lte: now,
-                    },
-                },
-              orderBy:
-                [
-                  {
-                    publishAt:
-                      'asc',
-                  },
-                  {
-                    id: 'asc',
-                  },
-                ],
-              select:
-                {
-                  id: true,
-                  slug: true,
-                  announcement: true,
-                },
-            },
-          );
-        const slugs: string[] =
-          [];
-        for (const post of due) {
-          const claimed =
-            await tx.blogPost.updateMany(
-              {
-                where:
-                  {
-                    id: post.id,
-                    status:
-                      'scheduled',
-                    publishAt:
-                      {
-                        lte: now,
-                      },
-                  },
-                data: {
-                  status:
-                    'published',
-                  publishedAt:
-                    now,
-                  publishAt:
-                    null,
-                  ...(post.announcement
-                    ? {
-                        announcedAt:
-                          now,
-                      }
-                    : {}),
-                },
-              },
-            );
-          if (
-            claimed.count !==
-            1
-          )
-            continue;
-          // A Log written without a date goes out under the day it is published (FR-7).
-          await tx.blogPost.updateMany(
-            {
-              where:
-                {
-                  id: post.id,
-                  date: '',
-                },
-              data: {
-                date: publishDay(
-                  now,
-                ),
-              },
-            },
-          );
-          if (
-            post.announcement
-          )
-            await tx.blogAnnouncementSeen.deleteMany(
-              {
-                where:
-                  {
-                    postId:
-                      post.id,
-                  },
-              },
-            );
-          slugs.push(
-            post.slug,
-          );
-        }
-        return slugs;
+    const due = await tx.blogPost.findMany({
+      where: {
+        status: 'scheduled',
+        publishAt: {
+          lte: now,
+        },
       },
-    );
+      orderBy: [
+        {
+          publishAt: 'asc',
+        },
+        {
+          id: 'asc',
+        },
+      ],
+      select: {
+        id: true,
+        slug: true,
+        announcement: true,
+      },
+    });
+    const slugs: string[] = [];
+    for (const post of due) {
+      const claimed = await tx.blogPost.updateMany({
+        where: {
+          id: post.id,
+          status: 'scheduled',
+          publishAt: {
+            lte: now,
+          },
+        },
+        data: {
+          status: 'published',
+          publishedAt: now,
+          publishAt: null,
+          ...(post.announcement
+            ? {
+                announcedAt: now,
+              }
+            : {}),
+        },
+      });
+      if (claimed.count !== 1) continue;
+      // A Log written without a date goes out under the day it is published (FR-7).
+      await tx.blogPost.updateMany({
+        where: {
+          id: post.id,
+          date: '',
+        },
+        data: {
+          date: publishDay(now),
+        },
+      });
+      if (post.announcement)
+        await tx.blogAnnouncementSeen.deleteMany({
+          where: {
+            postId: post.id,
+          },
+        });
+      slugs.push(post.slug);
+    }
+    return slugs;
+  });
 
-  if (
-    published.length >
-    0
-  ) {
+  if (published.length > 0) {
     await invalidateLogCaches();
-    pingIndexNow(
-      published.map(
-        (
-          slug,
-        ) =>
-          `/blog/${slug}`,
-      ),
-    );
+    pingIndexNow(published.map((slug) => `/blog/${slug}`));
   }
   return published;
 }
 
 export interface RevisionInput {
   postId: string;
-  authorId:
-    | string
-    | null;
+  authorId: string | null;
   title: string;
   description: string;
   tags: string[];
   content: string;
 }
 
-type RevisionDb =
-  Pick<
-    Prisma.TransactionClient,
-    'blogPostRevision'
-  >;
+type RevisionDb = Pick<Prisma.TransactionClient, 'blogPostRevision'>;
 
 /** Record one saved version of a Log and prune the oldest beyond {@link MAX_REVISIONS_PER_LOG}. */
-export async function saveRevision(
-  db: RevisionDb,
-  input: RevisionInput,
-): Promise<void> {
-  await db.blogPostRevision.create(
-    {
-      data: {
-        postId:
-          input.postId,
-        authorId:
-          input.authorId,
-        title:
-          input.title,
-        description:
-          input.description,
-        tags: input.tags,
-        content:
-          input.content,
-      },
+export async function saveRevision(db: RevisionDb, input: RevisionInput): Promise<void> {
+  await db.blogPostRevision.create({
+    data: {
+      postId: input.postId,
+      authorId: input.authorId,
+      title: input.title,
+      description: input.description,
+      tags: input.tags,
+      content: input.content,
     },
-  );
-  const stale =
-    await db.blogPostRevision.findMany(
-      {
-        where:
-          {
-            postId:
-              input.postId,
-          },
-        orderBy:
-          {
-            id: 'desc',
-          },
-        skip: MAX_REVISIONS_PER_LOG,
-        select:
-          {
-            id: true,
-          },
+  });
+  const stale = await db.blogPostRevision.findMany({
+    where: {
+      postId: input.postId,
+    },
+    orderBy: {
+      id: 'desc',
+    },
+    skip: MAX_REVISIONS_PER_LOG,
+    select: {
+      id: true,
+    },
+  });
+  if (stale.length > 0) {
+    await db.blogPostRevision.deleteMany({
+      where: {
+        id: {
+          in: stale.map((r) => r.id),
+        },
       },
-    );
-  if (
-    stale.length >
-    0
-  ) {
-    await db.blogPostRevision.deleteMany(
-      {
-        where:
-          {
-            id: {
-              in: stale.map(
-                (
-                  r,
-                ) =>
-                  r.id,
-              ),
-            },
-          },
-      },
-    );
+    });
   }
 }
 
@@ -283,9 +173,7 @@ export interface RevisionSummary {
   id: string;
   /** ISO timestamp. */
   createdAt: string;
-  authorName:
-    | string
-    | null;
+  authorName: string | null;
   title: string;
   /** Words added (positive) or removed (negative) against the version saved just before it. */
   wordDelta: number;
@@ -294,227 +182,94 @@ export interface RevisionSummary {
 export interface RevisionDetail {
   id: string;
   createdAt: string;
-  authorName:
-    | string
-    | null;
+  authorName: string | null;
   title: string;
   description: string;
   tags: string[];
   content: string;
 }
 
-async function authorNames(
-  ids: readonly (
-    | string
-    | null
-  )[],
-): Promise<
-  Map<
-    string,
-    string
-  >
-> {
-  const unique =
-    [
-      ...new Set(
-        ids.filter(
-          (
-            id,
-          ): id is string =>
-            id !==
-            null,
-        ),
-      ),
-    ];
-  if (
-    unique.length ===
-    0
-  )
-    return new Map();
-  const users =
-    await prisma.user.findMany(
-      {
-        where:
-          {
-            id: {
-              in: unique,
-            },
-          },
-        select:
-            userChipSelect,
+async function authorNames(ids: readonly (string | null)[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids.filter((id): id is string => id !== null))];
+  if (unique.length === 0) return new Map();
+  const users = await prisma.user.findMany({
+    where: {
+      id: {
+        in: unique,
       },
-    );
-  return new Map(
-    users.map(
-      (
-        u,
-      ) => [
-        u.id,
-        u.name ??
-          '',
-      ],
-    ),
-  );
+    },
+    select: userChipSelect,
+  });
+  return new Map(users.map((u) => [u.id, u.name ?? '']));
 }
 
 /** A Log's saved versions, newest first, with each one's word-count change; null when the Log does not exist. */
-export async function listRevisions(
-  slug: string,
-): Promise<
-  | RevisionSummary[]
-  | null
-> {
-  const post =
-    await prisma.blogPost.findUnique(
-      {
-        where:
-          {
-            slug,
-          },
-        select:
-          {
-            id: true,
-          },
-      },
-    );
-  if (
-    !post
-  )
-    return null;
-  const rows =
-    await prisma.blogPostRevision.findMany(
-      {
-        where:
-          {
-            postId:
-              post.id,
-          },
-        orderBy:
-          {
-            id: 'desc',
-          },
-        take: MAX_REVISIONS_PER_LOG,
-        select:
-          {
-            id: true,
-            createdAt: true,
-            authorId: true,
-            title: true,
-            content: true,
-          },
-      },
-    );
-  const names =
-    await authorNames(
-      rows.map(
-        (
-          r,
-        ) =>
-          r.authorId,
-      ),
-    );
-  return rows.map(
-    (
-      row,
-      i,
-    ) => {
-      const before =
-        rows[
-          i +
-            1
-        ];
-      return {
-        id: String(
-          row.id,
-        ),
-        createdAt:
-          row.createdAt.toISOString(),
-        authorName:
-          row.authorId
-            ? (names.get(
-                row.authorId,
-              ) ??
-              null)
-            : null,
-        title:
-          row.title,
-        wordDelta:
-          wordCount(
-            row.content,
-          ) -
-          (before
-            ? wordCount(
-                before.content,
-              )
-            : 0),
-      };
+export async function listRevisions(slug: string): Promise<RevisionSummary[] | null> {
+  const post = await prisma.blogPost.findUnique({
+    where: {
+      slug,
     },
-  );
+    select: {
+      id: true,
+    },
+  });
+  if (!post) return null;
+  const rows = await prisma.blogPostRevision.findMany({
+    where: {
+      postId: post.id,
+    },
+    orderBy: {
+      id: 'desc',
+    },
+    take: MAX_REVISIONS_PER_LOG,
+    select: {
+      id: true,
+      createdAt: true,
+      authorId: true,
+      title: true,
+      content: true,
+    },
+  });
+  const names = await authorNames(rows.map((r) => r.authorId));
+  return rows.map((row, i) => {
+    const before = rows[i + 1];
+    return {
+      id: String(row.id),
+      createdAt: row.createdAt.toISOString(),
+      authorName: row.authorId ? (names.get(row.authorId) ?? null) : null,
+      title: row.title,
+      wordDelta: wordCount(row.content) - (before ? wordCount(before.content) : 0),
+    };
+  });
 }
 
 /** One saved version in full, or null when it is not a version of this Log. */
-export async function getRevision(
-  slug: string,
-  id: bigint,
-): Promise<RevisionDetail | null> {
-  const post =
-    await prisma.blogPost.findUnique(
-      {
-        where:
-          {
-            slug,
-          },
-        select:
-          {
-            id: true,
-          },
-      },
-    );
-  if (
-    !post
-  )
-    return null;
-  const row =
-    await prisma.blogPostRevision.findFirst(
-      {
-        where:
-          {
-            id,
-            postId:
-              post.id,
-          },
-      },
-    );
-  if (
-    !row
-  )
-    return null;
-  const names =
-    await authorNames(
-      [
-        row.authorId,
-      ],
-    );
+export async function getRevision(slug: string, id: bigint): Promise<RevisionDetail | null> {
+  const post = await prisma.blogPost.findUnique({
+    where: {
+      slug,
+    },
+    select: {
+      id: true,
+    },
+  });
+  if (!post) return null;
+  const row = await prisma.blogPostRevision.findFirst({
+    where: {
+      id,
+      postId: post.id,
+    },
+  });
+  if (!row) return null;
+  const names = await authorNames([row.authorId]);
   return {
-    id: String(
-      row.id,
-    ),
-    createdAt:
-      row.createdAt.toISOString(),
-    authorName:
-      row.authorId
-        ? (names.get(
-            row.authorId,
-          ) ??
-          null)
-        : null,
-    title:
-      row.title,
-    description:
-      row.description,
+    id: String(row.id),
+    createdAt: row.createdAt.toISOString(),
+    authorName: row.authorId ? (names.get(row.authorId) ?? null) : null,
+    title: row.title,
+    description: row.description,
     tags: row.tags,
-    content:
-      row.content,
+    content: row.content,
   };
 }
 
@@ -524,84 +279,50 @@ export interface AdminLogRow {
   title: string;
   date: string;
   status: LogStatus;
-  publishAt:
-    | string
-    | null;
-  publishedAt:
-    | string
-    | null;
+  publishAt: string | null;
+  publishedAt: string | null;
   announcement: boolean;
   business: string;
 }
 
-export async function listLogsForAdmin(): Promise<
-  AdminLogRow[]
-> {
-  const rows =
-    await prisma.blogPost.findMany(
+export async function listLogsForAdmin(): Promise<AdminLogRow[]> {
+  const rows = await prisma.blogPost.findMany({
+    orderBy: [
       {
-        orderBy:
-          [
-            {
-              createdAt:
-                'desc',
-            },
-            {
-              id: 'desc',
-            },
-          ],
-        select:
-          {
-            slug: true,
-            title: true,
-            date: true,
-            status: true,
-            publishAt: true,
-            publishedAt: true,
-            announcement: true,
-            business: true,
-          },
+        createdAt: 'desc',
       },
-    );
-  return rows.map(
-    (
-      r,
-    ) => ({
-      slug: r.slug,
-      title:
-        r.title,
-      date: r.date,
-      status:
-        r.status ===
-          'scheduled' ||
-        r.status ===
-          'draft'
-          ? r.status
-          : 'published',
-      publishAt:
-        r.publishAt?.toISOString() ??
-        null,
-      publishedAt:
-        r.publishedAt?.toISOString() ??
-        null,
-      announcement:
-        r.announcement,
-      business:
-        r.business,
-    }),
-  );
+      {
+        id: 'desc',
+      },
+    ],
+    select: {
+      slug: true,
+      title: true,
+      date: true,
+      status: true,
+      publishAt: true,
+      publishedAt: true,
+      announcement: true,
+      business: true,
+    },
+  });
+  return rows.map((r) => ({
+    slug: r.slug,
+    title: r.title,
+    date: r.date,
+    status: r.status === 'scheduled' || r.status === 'draft' ? r.status : 'published',
+    publishAt: r.publishAt?.toISOString() ?? null,
+    publishedAt: r.publishedAt?.toISOString() ?? null,
+    announcement: r.announcement,
+    business: r.business,
+  }));
 }
 
 /** A Log in any state (the editor, and an admin previewing a draft), or null. */
-export async function findLogForAdmin(
-  slug: string,
-) {
-  return prisma.blogPost.findUnique(
-    {
-      where:
-        {
-          slug,
-        },
+export async function findLogForAdmin(slug: string) {
+  return prisma.blogPost.findUnique({
+    where: {
+      slug,
     },
-  );
+  });
 }

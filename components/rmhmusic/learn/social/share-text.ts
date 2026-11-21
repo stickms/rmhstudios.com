@@ -8,270 +8,127 @@
  * Every call names its namespace (`ns`): this file has no `useTranslation` of its own.
  */
 import type { TFunction } from 'i18next';
-import type {
-  CardLines,
-  SharePayload,
-} from '@/lib/rmhmusic/learn/social/share';
+import type { CardLines, SharePayload } from '@/lib/rmhmusic/learn/social/share';
 import { songById } from '@/lib/rmhmusic/learn/songs/catalog';
 import type { SharedResultView } from '@/lib/rmhmusic/social/share.contract';
 
-type T =
-  TFunction<'c-rmhmusic'>;
+type T = TFunction<'c-rmhmusic'>;
 
-function shortDate(
-  language: string,
-  value: Date,
-): string {
-  return new Intl.DateTimeFormat(
-    language,
-    {
-      day: 'numeric',
-      month:
-        'short',
-      year: 'numeric',
-      timeZone:
-        'UTC',
-    },
-  ).format(
-    value,
-  );
+function shortDate(language: string, value: Date): string {
+  return new Intl.DateTimeFormat(language, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(value);
 }
 
-function seconds(
-  language: string,
-  ms: number,
-): string {
-  return new Intl.NumberFormat(
-    language,
-    {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    },
-  ).format(
-    ms /
-      1000,
-  );
+function seconds(language: string, ms: number): string {
+  return new Intl.NumberFormat(language, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(ms / 1000);
 }
 
-function modeName(
-  t: T,
-  mode:
-    | 'wait'
-    | 'play',
-): string {
-  return mode ===
-    'play'
-    ? t(
-        'song-mode-play',
-        {
+function modeName(t: T, mode: 'wait' | 'play'): string {
+  return mode === 'play'
+    ? t('song-mode-play', {
+        ns: 'c-rmhmusic',
+        defaultValue: 'Play along',
+      })
+    : t('song-mode-wait', {
+        ns: 'c-rmhmusic',
+        defaultValue: 'Wait for me',
+      });
+}
+
+function versionName(t: T, version: 'piano' | 'guitar' | 'voice'): string {
+  return version === 'guitar'
+    ? t('share-version-guitar', {
+        ns: 'c-rmhmusic',
+        defaultValue: 'guitar',
+      })
+    : version === 'voice'
+      ? t('share-version-voice', {
           ns: 'c-rmhmusic',
-          defaultValue:
-            'Play along',
-        },
-      )
-    : t(
-        'song-mode-wait',
-        {
+          defaultValue: 'voice',
+        })
+      : t('share-version-piano', {
           ns: 'c-rmhmusic',
-          defaultValue:
-            'Wait for me',
-        },
-      );
+          defaultValue: 'piano',
+        });
 }
 
-function versionName(
-  t: T,
-  version:
-    | 'piano'
-    | 'guitar'
-    | 'voice',
-): string {
-  return version ===
-    'guitar'
-    ? t(
-        'share-version-guitar',
-        {
-          ns: 'c-rmhmusic',
-          defaultValue:
-            'guitar',
-        },
-      )
-    : version ===
-        'voice'
-      ? t(
-          'share-version-voice',
-          {
-            ns: 'c-rmhmusic',
-            defaultValue:
-              'voice',
-          },
-        )
-      : t(
-          'share-version-piano',
-          {
-            ns: 'c-rmhmusic',
-            defaultValue:
-              'piano',
-          },
-        );
+function dailyLead(t: T, language: string, date: string): string {
+  return t('share-daily-lead', {
+    ns: 'c-rmhmusic',
+    date: shortDate(language, new Date(`${date}T00:00:00Z`)),
+    defaultValue: 'Daily sight reading · {{date}}',
+  });
 }
 
-function dailyLead(
-  t: T,
-  language: string,
-  date: string,
-): string {
-  return t(
-    'share-daily-lead',
-    {
-      ns: 'c-rmhmusic',
-      date: shortDate(
-        language,
-        new Date(
-          `${date}T00:00:00Z`,
-        ),
-      ),
-      defaultValue:
-        'Daily sight reading · {{date}}',
-    },
-  );
-}
-
-function songLead(
-  t: T,
-  songId: string,
-): string {
-  const song =
-    songById(
-      songId,
-    );
+function songLead(t: T, songId: string): string {
+  const song = songById(songId);
   return song
-    ? t(
-        'share-song-lead',
-        {
-          ns: 'c-rmhmusic',
-          title:
-            song.title,
-          composer:
-            song.composer,
-          defaultValue:
-            '{{title}} — {{composer}}',
-        },
-      )
-    : t(
-        'share-song-unknown',
-        {
-          ns: 'c-rmhmusic',
-          defaultValue:
-            'A song',
-        },
-      );
+    ? t('share-song-lead', {
+        ns: 'c-rmhmusic',
+        title: song.title,
+        composer: song.composer,
+        defaultValue: '{{title}} — {{composer}}',
+      })
+    : t('share-song-unknown', {
+        ns: 'c-rmhmusic',
+        defaultValue: 'A song',
+      });
 }
 
 /** The result's lines: what the dialog previews, the page shows and (in English) the card draws. */
-export function shareText(
-  t: T,
-  language: string,
-  p: SharePayload,
-): CardLines {
-  const title =
-    t(
-      'share-points',
-      {
-        ns: 'c-rmhmusic',
-        score:
-          p.score,
-        defaultValue:
-          '{{score}} points',
-      },
-    );
-  const stars =
-    t(
-      'share-stars',
-      {
-        ns: 'c-rmhmusic',
-        stars:
-          p.stars,
-        defaultValue:
-          '{{stars}} of 3 stars',
-      },
-    );
-  if (
-    p.kind ===
-    'daily'
-  ) {
-    const parts: string[] =
-      [];
-    if (
-      p.right !==
-      null
-    )
+export function shareText(t: T, language: string, p: SharePayload): CardLines {
+  const title = t('share-points', {
+    ns: 'c-rmhmusic',
+    score: p.score,
+    defaultValue: '{{score}} points',
+  });
+  const stars = t('share-stars', {
+    ns: 'c-rmhmusic',
+    stars: p.stars,
+    defaultValue: '{{stars}} of 3 stars',
+  });
+  if (p.kind === 'daily') {
+    const parts: string[] = [];
+    if (p.right !== null)
       parts.push(
-        t(
-          'share-right',
-          {
-            ns: 'c-rmhmusic',
-            right:
-              p.right,
-            played:
-              p.played,
-            defaultValue:
-              '{{right}} of {{played}} right',
-          },
-        ),
+        t('share-right', {
+          ns: 'c-rmhmusic',
+          right: p.right,
+          played: p.played,
+          defaultValue: '{{right}} of {{played}} right',
+        }),
       );
-    if (
-      p.avgMs !==
-      null
-    )
+    if (p.avgMs !== null)
       parts.push(
-        t(
-          'share-seconds',
-          {
-            ns: 'c-rmhmusic',
-            seconds:
-              seconds(
-                language,
-                p.avgMs,
-              ),
-            defaultValue:
-              '{{seconds}} s a note',
-          },
-        ),
+        t('share-seconds', {
+          ns: 'c-rmhmusic',
+          seconds: seconds(language, p.avgMs),
+          defaultValue: '{{seconds}} s a note',
+        }),
       );
-    if (
-      p.skipped >
-      0
-    )
+    if (p.skipped > 0)
       parts.push(
-        t(
-          'share-without-chords',
-          {
-            ns: 'c-rmhmusic',
-            defaultValue:
-              'without chords',
-          },
-        ),
+        t('share-without-chords', {
+          ns: 'c-rmhmusic',
+          defaultValue: 'without chords',
+        }),
       );
     return {
-      lead: dailyLead(
-        t,
-        language,
-        p.date,
-      ),
+      lead: dailyLead(t, language, p.date),
       title,
-      subtitle:
-        parts.join(
-          ' · ',
-        ),
+      subtitle: parts.join(' · '),
       stars,
     };
   }
   return {
-    lead: songLead(
-      t,
-      p.songId,
-    ),
+    lead: songLead(t, p.songId),
     title,
     subtitle: `${modeName(t, p.mode)} · ${versionName(t, p.version)}`,
     stars,
@@ -279,64 +136,28 @@ export function shareText(
 }
 
 /** A link in the Shared links list: what it shares. */
-export function shareLinkLabel(
-  t: T,
-  language: string,
-  p: SharePayload,
-): string {
-  return p.kind ===
-    'daily'
-    ? dailyLead(
-        t,
-        language,
-        p.date,
-      )
-    : t(
-        'share-link-song',
-        {
-          ns: 'c-rmhmusic',
-          song: songLead(
-            t,
-            p.songId,
-          ),
-          mode: modeName(
-            t,
-            p.mode,
-          ),
-          defaultValue:
-            '{{song}}, {{mode}}',
-        },
-      );
+export function shareLinkLabel(t: T, language: string, p: SharePayload): string {
+  return p.kind === 'daily'
+    ? dailyLead(t, language, p.date)
+    : t('share-link-song', {
+        ns: 'c-rmhmusic',
+        song: songLead(t, p.songId),
+        mode: modeName(t, p.mode),
+        defaultValue: '{{song}}, {{mode}}',
+      });
 }
 
 /** "Works until 14 Feb 2027". */
-export function shareExpiryLine(
-  t: T,
-  language: string,
-  expiresAt: string,
-): string {
-  return t(
-    'share-works-until',
-    {
-      ns: 'c-rmhmusic',
-      date: shortDate(
-        language,
-        new Date(
-          expiresAt,
-        ),
-      ),
-      defaultValue:
-        'Works until {{date}}',
-    },
-  );
+export function shareExpiryLine(t: T, language: string, expiresAt: string): string {
+  return t('share-works-until', {
+    ns: 'c-rmhmusic',
+    date: shortDate(language, new Date(expiresAt)),
+    defaultValue: 'Works until {{date}}',
+  });
 }
 
 /** What the shared result page shows. */
-export type SharedPageState =
-  | 'pending'
-  | 'error'
-  | 'gone'
-  | 'live';
+export type SharedPageState = 'pending' | 'error' | 'gone' | 'live';
 
 /**
  * Only the server's own `{ state: 'gone' }` reads as "no longer shared". A request that failed (a
@@ -347,16 +168,9 @@ export function sharedPageState({
   data,
   isError,
 }: {
-  data:
-    | SharedResultView
-    | undefined;
+  data: SharedResultView | undefined;
   isError: boolean;
 }): SharedPageState {
-  if (
-    data
-  )
-    return data.state;
-  return isError
-    ? 'error'
-    : 'pending';
+  if (data) return data.state;
+  return isError ? 'error' : 'pending';
 }

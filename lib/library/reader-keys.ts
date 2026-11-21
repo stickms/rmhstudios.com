@@ -4,26 +4,11 @@
  * menu, listbox or dialog — the same guard the page-turn arrow keys use in
  * BookCanvas.
  */
-const BLOCKED_ANCESTORS =
-  'input, textarea, select, [role="menu"], [role="listbox"], [role="dialog"]';
+const BLOCKED_ANCESTORS = 'input, textarea, select, [role="menu"], [role="listbox"], [role="dialog"]';
 
-export function isReaderKeyBlocked(
-  target: EventTarget | null,
-): boolean {
-  if (
-    !(
-      target instanceof
-      HTMLElement
-    )
-  )
-    return false;
-  return (
-    target.isContentEditable ||
-    target.closest(
-      BLOCKED_ANCESTORS,
-    ) !==
-      null
-  );
+export function isReaderKeyBlocked(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || target.closest(BLOCKED_ANCESTORS) !== null;
 }
 
 /**
@@ -32,23 +17,9 @@ export function isReaderKeyBlocked(
  * focus is inside it; anywhere else the browser keeps its own find.
  */
 export function isFindShortcut(
-  event: Pick<
-    KeyboardEvent,
-    | 'key'
-    | 'ctrlKey'
-    | 'metaKey'
-    | 'altKey'
-    | 'shiftKey'
-  >,
+  event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey'>,
 ): boolean {
-  return (
-    (event.ctrlKey ||
-      event.metaKey) &&
-    !event.altKey &&
-    !event.shiftKey &&
-    event.key.toLowerCase() ===
-      'f'
-  );
+  return (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f';
 }
 
 /**
@@ -56,18 +27,7 @@ export function isFindShortcut(
  * not while typing in another field, but yes inside the panel's own search
  * field (it re-focuses and selects it).
  */
-export function shouldOpenFind(
-  target: EventTarget | null,
-): boolean {
-  if (
-    target instanceof
-      HTMLElement &&
-    target.closest(
-      '[role="search"]',
-    )
-  )
-    return true;
-  return !isReaderKeyBlocked(
-    target,
-  );
+export function shouldOpenFind(target: EventTarget | null): boolean {
+  if (target instanceof HTMLElement && target.closest('[role="search"]')) return true;
+  return !isReaderKeyBlocked(target);
 }

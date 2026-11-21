@@ -13,7 +13,14 @@ import { cloneCharacter, normalizeCharacter } from '../factory';
 import * as d5 from '../dnd5e/rules';
 import * as p2 from '../pf2e/rules';
 import type { Character } from '../types';
-import { exportFoundryDnd5e, exportFoundryPf2e, foundrySystemOf, importFoundryDnd5e, importFoundryPf2e, isFoundryActor } from './foundry';
+import {
+  exportFoundryDnd5e,
+  exportFoundryPf2e,
+  foundrySystemOf,
+  importFoundryDnd5e,
+  importFoundryPf2e,
+  isFoundryActor,
+} from './foundry';
 import { exportPathbuilder, importPathbuilder, isPathbuilder } from './pathbuilder';
 import { importDndBeyond, isDndBeyond } from './dndbeyond';
 import { dnd5eMarkdown, pf2eMarkdown } from './markdown';
@@ -86,7 +93,9 @@ export async function importText(text: string): Promise<ImportResult> {
   try {
     json = JSON.parse(text);
   } catch {
-    throw new ImportError('That file is not JSON. Import reads RMHCharacters, Foundry VTT, Pathbuilder 2e and D&D Beyond JSON.');
+    throw new ImportError(
+      'That file is not JSON. Import reads RMHCharacters, Foundry VTT, Pathbuilder 2e and D&D Beyond JSON.',
+    );
   }
   const done = async (list: (Character | null)[], source: string): Promise<ImportResult> => {
     const characters = await Promise.all(list.filter((c): c is Character => Boolean(c)).map(finish));
@@ -94,7 +103,8 @@ export async function importText(text: string): Promise<ImportResult> {
     return { characters, source };
   };
   if (isObj(json) && json.format === NATIVE_FORMAT) {
-    if (Array.isArray(json.characters)) return done(json.characters.slice(0, 200).map(normalizeCharacter), 'RMHCharacters roster');
+    if (Array.isArray(json.characters))
+      return done(json.characters.slice(0, 200).map(normalizeCharacter), 'RMHCharacters roster');
     return done([normalizeCharacter(json.character)], 'RMHCharacters');
   }
   if (isObj(json) && (json.system === 'dnd5e' || json.system === 'pf2e') && 'schemaVersion' in json)

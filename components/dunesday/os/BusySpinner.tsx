@@ -4,25 +4,14 @@
  * the label carries the meaning.
  */
 
-export function BusySpinner({
-  label,
-  size = 32,
-}: {
-  label: string;
-  size?: number;
-}) {
+export function BusySpinner({ label, size = 32 }: { label: string; size?: number }) {
   return (
-    <div
-      className="ds-busy"
-      role="status"
-    >
+    <div className="ds-busy" role="status">
       <span
         className="ds-busy-ring"
         style={{
-          width:
-            size,
-          height:
-            size,
+          width: size,
+          height: size,
         }}
         aria-hidden="true"
       >
@@ -30,14 +19,9 @@ export function BusySpinner({
           {
             length: 8,
           },
-          (
-            _,
-            i,
-          ) => (
+          (_, i) => (
             <span
-              key={
-                i
-              }
+              key={i}
               style={{
                 transform: `rotate(${i * 45}deg)`,
                 animationDelay: `${(i - 8) * 0.1}s`,
@@ -46,11 +30,7 @@ export function BusySpinner({
           ),
         )}
       </span>
-      <span className="ds-busy-label">
-        {
-          label
-        }
-      </span>
+      <span className="ds-busy-label">{label}</span>
     </div>
   );
 }

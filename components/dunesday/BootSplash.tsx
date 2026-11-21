@@ -7,55 +7,30 @@
  * any key dismisses it immediately. It lasts under two seconds.
  */
 
-import {
-  AnimatePresence,
-  m as motion,
-} from 'framer-motion';
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { AnimatePresence, m as motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
-const KEY =
-  'dunesday:booted';
-const LIGHTS =
-  [
-    {
-      color:
-        '#ff5a3c',
-      from: [
-        -140,
-        -60,
-      ],
-    },
-    {
-      color:
-        '#7ad33c',
-      from: [
-        140,
-        -70,
-      ],
-    },
-    {
-      color:
-        '#2ba7ff',
-      from: [
-        -120,
-        90,
-      ],
-    },
-    {
-      color:
-        '#ffc928',
-      from: [
-        130,
-        80,
-      ],
-    },
-  ];
+const KEY = 'dunesday:booted';
+const LIGHTS = [
+  {
+    color: '#ff5a3c',
+    from: [-140, -60],
+  },
+  {
+    color: '#7ad33c',
+    from: [140, -70],
+  },
+  {
+    color: '#2ba7ff',
+    from: [-120, 90],
+  },
+  {
+    color: '#ffc928',
+    from: [130, 80],
+  },
+];
 
 /**
  * @param force Show it now regardless of the once-per-session rule (Restart).
@@ -68,85 +43,38 @@ export function BootSplash({
   force?: boolean;
   onDone?: () => void;
 } = {}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-dunesday',
-    );
-  const [
-    show,
-    setShow,
-  ] =
-    useState(
-      false,
-    );
-  const doneRef =
-    useRef(
-      onDone,
-    );
-  doneRef.current =
-    onDone;
+  const { t } = useTranslation('c-dunesday');
+  const [show, setShow] = useState(false);
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
 
   useEffect(() => {
     let seen: boolean;
     try {
-      seen =
-        sessionStorage.getItem(
-          KEY,
-        ) ===
-        '1';
-      sessionStorage.setItem(
-        KEY,
-        '1',
-      );
+      seen = sessionStorage.getItem(KEY) === '1';
+      sessionStorage.setItem(KEY, '1');
     } catch {
       seen = true;
     }
-    if (
-      (seen &&
-        !force) ||
-      prefersReducedMotion()
-    ) {
+    if ((seen && !force) || prefersReducedMotion()) {
       doneRef.current?.();
       return;
     }
-    setShow(
-      true,
-    );
-    const finish =
-      () => {
-        setShow(
-          false,
-        );
-        doneRef.current?.();
-      };
-    const done =
-      window.setTimeout(
-        finish,
-        1900,
-      );
-    const skip =
-      finish;
-    window.addEventListener(
-      'keydown',
-      skip,
-      {
-        once: true,
-      },
-    );
-    return () => {
-      window.clearTimeout(
-        done,
-      );
-      window.removeEventListener(
-        'keydown',
-        skip,
-      );
+    setShow(true);
+    const finish = () => {
+      setShow(false);
+      doneRef.current?.();
     };
-  }, [
-    force,
-  ]);
+    const done = window.setTimeout(finish, 1900);
+    const skip = finish;
+    window.addEventListener('keydown', skip, {
+      once: true,
+    });
+    return () => {
+      window.clearTimeout(done);
+      window.removeEventListener('keydown', skip);
+    };
+  }, [force]);
 
   return (
     <AnimatePresence>
@@ -155,9 +83,7 @@ export function BootSplash({
           className="ds-boot"
           role="presentation"
           onClick={() => {
-            setShow(
-              false,
-            );
+            setShow(false);
             doneRef.current?.();
           }}
           initial={{
@@ -170,64 +96,33 @@ export function BootSplash({
             duration: 0.5,
           }}
         >
-          <div
-            className="ds-boot-stage"
-            aria-hidden="true"
-          >
-            {LIGHTS.map(
-              (
-                l,
-                i,
-              ) => (
-                <motion.span
-                  key={
-                    l.color
-                  }
-                  className="ds-boot-light"
-                  style={{
-                    background: `radial-gradient(circle, ${l.color} 0%, transparent 70%)`,
-                  }}
-                  initial={{
-                    x: l
-                      .from[0],
-                    y: l
-                      .from[1],
-                    opacity: 0,
-                    scale: 0.4,
-                  }}
-                  animate={{
-                    x: 0,
-                    y: 0,
-                    opacity:
-                      [
-                        0,
-                        1,
-                        1,
-                        0,
-                      ],
-                    scale:
-                      [
-                        0.4,
-                        1,
-                        1.2,
-                        0.6,
-                      ],
-                  }}
-                  transition={{
-                    duration: 1.1,
-                    delay:
-                      i *
-                      0.06,
-                    ease: [
-                      0.16,
-                      1,
-                      0.3,
-                      1,
-                    ],
-                  }}
-                />
-              ),
-            )}
+          <div className="ds-boot-stage" aria-hidden="true">
+            {LIGHTS.map((l, i) => (
+              <motion.span
+                key={l.color}
+                className="ds-boot-light"
+                style={{
+                  background: `radial-gradient(circle, ${l.color} 0%, transparent 70%)`,
+                }}
+                initial={{
+                  x: l.from[0],
+                  y: l.from[1],
+                  opacity: 0,
+                  scale: 0.4,
+                }}
+                animate={{
+                  x: 0,
+                  y: 0,
+                  opacity: [0, 1, 1, 0],
+                  scale: [0.4, 1, 1.2, 0.6],
+                }}
+                transition={{
+                  duration: 1.1,
+                  delay: i * 0.06,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+              />
+            ))}
             <motion.span
               className="ds-boot-orb"
               initial={{
@@ -241,12 +136,7 @@ export function BootSplash({
               transition={{
                 delay: 0.85,
                 duration: 0.6,
-                ease: [
-                  0.16,
-                  1,
-                  0.3,
-                  1,
-                ],
+                ease: [0.16, 1, 0.3, 1],
               }}
             />
           </div>
@@ -263,13 +153,9 @@ export function BootSplash({
               duration: 0.5,
             }}
           >
-            {t(
-              'booting',
-              {
-                defaultValue:
-                  'Starting Dunesday',
-              },
-            )}
+            {t('booting', {
+              defaultValue: 'Starting Dunesday',
+            })}
           </motion.p>
         </motion.div>
       )}

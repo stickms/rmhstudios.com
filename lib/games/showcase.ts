@@ -5,78 +5,28 @@
 
 export const MAX_SHOWCASE = 6;
 
-export const badgeKey =
-  (
-    gameId: string,
-    foil: boolean,
-  ) =>
-    `${gameId}:${foil ? 'foil' : 'normal'}`;
+export const badgeKey = (gameId: string, foil: boolean) => `${gameId}:${foil ? 'foil' : 'normal'}`;
 
-export function parseBadgeKey(
-  key: string,
-): {
+export function parseBadgeKey(key: string): {
   gameId: string;
   foil: boolean;
 } | null {
-  const i =
-    key.lastIndexOf(
-      ':',
-    );
-  if (
-    i <=
-    0
-  )
-    return null;
-  const kind =
-    key.slice(
-      i +
-        1,
-    );
-  if (
-    kind !==
-      'foil' &&
-    kind !==
-      'normal'
-  )
-    return null;
+  const i = key.lastIndexOf(':');
+  if (i <= 0) return null;
+  const kind = key.slice(i + 1);
+  if (kind !== 'foil' && kind !== 'normal') return null;
   return {
-    gameId:
-      key.slice(
-        0,
-        i,
-      ),
-    foil:
-      kind ===
-      'foil',
+    gameId: key.slice(0, i),
+    foil: kind === 'foil',
   };
 }
 
-function pick(
-  input: unknown[],
-  owned: Set<string>,
-): string[] {
-  const out: string[] =
-    [];
+function pick(input: unknown[], owned: Set<string>): string[] {
+  const out: string[] = [];
   for (const x of input) {
-    if (
-      typeof x !==
-        'string' ||
-      !owned.has(
-        x,
-      ) ||
-      out.includes(
-        x,
-      )
-    )
-      continue;
-    out.push(
-      x,
-    );
-    if (
-      out.length ===
-      MAX_SHOWCASE
-    )
-      break;
+    if (typeof x !== 'string' || !owned.has(x) || out.includes(x)) continue;
+    out.push(x);
+    if (out.length === MAX_SHOWCASE) break;
   }
   return out;
 }
@@ -95,15 +45,7 @@ export function cleanShowcase(
   badges: string[];
 } {
   return {
-    achievements:
-      pick(
-        input.achievements,
-        owned.achievements,
-      ),
-    badges:
-      pick(
-        input.badges,
-        owned.badges,
-      ),
+    achievements: pick(input.achievements, owned.achievements),
+    badges: pick(input.badges, owned.badges),
   };
 }
