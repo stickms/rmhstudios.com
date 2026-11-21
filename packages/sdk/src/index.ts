@@ -77,7 +77,7 @@ export interface ListMyPostsArgs {
   cursor?: string;
 }
 
-export type ListMyPostsResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number } }[]; nextCursor: string };
+export type ListMyPostsResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null }[]; nextCursor: string };
 
 export interface CreatePostBody {
   /** 1–280 characters. Optional if at least one `media_ids` entry is supplied. */
@@ -101,7 +101,7 @@ export interface GetPostArgs {
   id: string;
 }
 
-export type GetPostResponse = { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } };
+export type GetPostResponse = { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null; author: { id: string; name: string; handle: string; image: string } };
 
 export interface DeletePostArgs {
   /** The post id. */
