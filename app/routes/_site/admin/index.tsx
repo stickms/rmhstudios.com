@@ -299,6 +299,13 @@ function AdminDashboardPage() {
           <AdminChallengeLink />
           <AdminReadingLink />
           <AdminMedSchoolsLink />
+          {/* Sprint 05 admin tools (docs/autonomous/sprint-05/plan.md §Anchors) */}
+          {/* s05-02 admin-jobs */}
+
+          {/* s05-03 admin-outbox */}
+
+          {/* s05-10 admin-lookup */}
+
         </div>
       </AdminBody>
     </PageLayout>

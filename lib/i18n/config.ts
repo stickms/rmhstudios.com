@@ -173,6 +173,26 @@ export const NAMESPACES = [
   "community-handover",
   "follow-list-privacy",
   "flag-targeting",
+  // Sprint 05 (docs/autonomous/sprint-05): one namespace per feature.
+  "leaderboard-privacy",
+  "admin-jobs",
+  "admin-outbox",
+  "personal-bests",
+  "event-cohosts",
+  "studio-projects",
+  "repost-mutes",
+  "double-elimination",
+  "flashcard-types",
+  "admin-lookup",
+  "rmhtube-playlists",
+  "saved-replies",
+  "blocked-muted",
+  "jam-teams",
+  "alt-text-editing",
+  "community-alerts",
+  "tournament-seeding",
+  "profile-pins",
+  "study-reminders",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

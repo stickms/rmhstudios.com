@@ -220,6 +220,11 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // s04-08: every minute, tell the author and the voters of each poll that has just ended (once).
   { queue: POLL_ENDED_QUEUE, register: registerPollEndedCron },
 
+  // Sprint 05 (docs/autonomous/sprint-05/plan.md §Anchors)
+  // s05-17 community-post-alerts
+
+  // s05-20 flashcard-reminders
+
 ];
 
 /**

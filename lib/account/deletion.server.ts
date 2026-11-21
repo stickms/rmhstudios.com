@@ -427,6 +427,28 @@ export async function anonymizeAccount(userId: string): Promise<void> {
       where: { status: 'pending', OR: [{ fromId: userId }, { toId: userId }] },
     }),
 
+    // Sprint 05 erasures (docs/autonomous/sprint-05/plan.md §Anchors): each feature adds its
+    // operations under its own line.
+    // s05-01 leaderboard-privacy
+
+    // s05-04 personal-bests
+
+    // s05-05 event-cohosts
+
+    // s05-06 studio-projects
+
+    // s05-07 repost-mutes
+
+    // s05-13 saved-replies
+
+    // s05-14 blocked-muted-accounts
+
+    // s05-15 jam-teams
+
+    // s05-17 community-post-alerts
+
+    // s05-20 flashcard-reminders
+
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
       where: { userId },

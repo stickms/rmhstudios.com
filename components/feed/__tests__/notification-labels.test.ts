@@ -66,6 +66,15 @@ describe('system notification labels', () => {
       'watch-build-release': 'User Builds',
       group_chat: 'Group chats',
       community_handover: 'Communities',
+      // Sprint 05 system labels (docs/autonomous/sprint-05/plan.md §Anchors)
+      // s05-05 event-cohosts
+
+      // s05-15 jam-teams
+
+      // s05-17 community-post-alerts
+
+      // s05-20 flashcard-reminders
+
       default: 'RMH Studios',
     });
   });

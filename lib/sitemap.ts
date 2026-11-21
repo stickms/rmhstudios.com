@@ -759,6 +759,9 @@ export const EXCLUDED_ROUTES: Record<
     '/messages/requests':
       'personal',
 
+    // Sprint 05 static personal paths (docs/autonomous/sprint-05/plan.md §Anchors)
+    // s05-14 blocked-muted-accounts
+
     '/account/connect':
       'personal', // the account-merge step after a new sign-in; needs a session
     '/settings':
@@ -897,6 +900,13 @@ export const EXCLUDED_ROUTES: Record<
       'admin',
     '/admin/users':
       'admin',
+
+    // Sprint 05 admin pages (docs/autonomous/sprint-05/plan.md §Anchors)
+    // s05-02 admin-jobs
+
+    // s05-03 admin-outbox
+
+    // s05-10 admin-lookup
 
     // ── redirects ──
     // A sitemap entry that redirects is an indexing error in Search Console, and
