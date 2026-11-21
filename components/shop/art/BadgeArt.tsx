@@ -1,12 +1,13 @@
 import { useId, type ReactNode } from 'react';
+import { ART_VIEWBOX, PaintFilter } from './painterly';
 
 /**
  * Drawn art for the shop's BADGE items: one enamel-pin picture per badge id.
  *
  * This is shop ART (a purchased picture), not site chrome, so the hex colours and SVG gradients
  * inside it are content in the same sense as a bought name colour (ItemPicture.tsx). It obeys the
- * site rules that do apply to pictures: nothing moves (R5, no <animate> or CSS animation) and no
- * `filter` — depth is faked with gradients, facets and highlights only.
+ * site rules that do apply to pictures: nothing moves (R5, no <animate> or CSS animation). The one SVG
+ * `filter` is the shared painted finish (painterly.tsx): pastel, hand-wobbled edges, oil-paint ridges.
  *
  * The frame follows the item's rarity in `lib/shop/catalog.ts` (common enamel disc → uncommon
  * bronze ring → rare silver reeded medallion → epic faceted hex → legendary gold ray burst with
@@ -1138,29 +1139,33 @@ export function BadgeArt({ id, size, className, title }: { id: string; size: num
   if (!def) return null;
   return (
     <svg
-      viewBox="0 0 64 64"
+      viewBox={ART_VIEWBOX}
       width={size}
       height={size}
       className={className}
+      overflow="visible"
       aria-hidden={title ? undefined : true}
       role={title ? 'img' : undefined}
       focusable="false"
     >
       {title ? <title>{title}</title> : null}
       <defs>
+        <PaintFilter id={`${p}-paint`} seed={2} slope={0.5} intercept={0.46} />
         <RG id={`${p}-field`} fx={0.4} fy={0.32} r={0.62} stops={[[0, def.field[0]], [1, def.field[1]]]} />
         <LG id={`${p}-inset`} stops={[[0, '#000000', 0.55], [0.5, '#000000', 0], [1, '#ffffff', 0.25]]} />
         <clipPath id={`${p}-clip`}>
           <circle cx={C} cy={C} r={FIELD_R} />
         </clipPath>
       </defs>
-      <FrameBack p={p} rarity={def.rarity} rim={def.rim} />
-      <circle cx={C} cy={C} r={FIELD_R} fill={`url(#${p}-field)`} />
-      <g clipPath={`url(#${p}-clip)`}>
+      <g filter={`url(#${p}-paint)`}>
+        <FrameBack p={p} rarity={def.rarity} rim={def.rim} />
+        <circle cx={C} cy={C} r={FIELD_R} fill={`url(#${p}-field)`} />
+        <g clipPath={`url(#${p}-clip)`}>
         {def.emblem(p)}
         {/* enamel dome: an inset shadow under the rim and a soft gloss */}
         <circle cx={C} cy={C} r={FIELD_R - 0.6} fill="none" stroke={`url(#${p}-inset)`} strokeWidth={1.6} />
         <path d="M14 24 C17 15.6 25 11.4 32 11.4 C24.6 13.6 18.6 18.4 16 26Z" fill="#ffffff" opacity={0.22} />
+        </g>
       </g>
     </svg>
   );

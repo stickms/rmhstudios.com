@@ -1,15 +1,17 @@
 /**
  * Shop pet art: one sticker-style character illustration per `PET` item in `lib/shop/catalog.ts`.
  *
+ * Every pet is finished by `PaintFilter` (painterly.tsx): pastel, wobbly hand-drawn edges and oil-paint ridges.
  * This is a purchased picture, not site chrome, so it carries its own literal palette (like a playing
  * card or a brand mark): the colours below never follow the `--site-*` tokens. Everything is static
- * (Steel R5: no animation, no frame loop) and uses no SVG `filter`; depth is faked with gradients.
+ * (Steel R5: no animation, no frame loop); the only SVG `filter` is the painted finish.
  * Every gradient and clip id is prefixed with a `useId()` value so any number of pets can share a page.
  *
  * Higher rarities get more flourish: uncommon pets are the plain character, rare ones add a prop or a
  * detail, epic ones add sparkles and a setting, and legendary, mythic and exotic add glow and ornament.
  */
 import { useId, type ReactElement, type ReactNode } from 'react';
+import { ART_VIEWBOX, PaintFilter } from './painterly';
 
 /* ─── Shared style ──────────────────────────────────────────────────────── */
 
@@ -993,17 +995,21 @@ export function PetArt({
   };
   return (
     <svg
-      viewBox="0 0 64 64"
+      viewBox={ART_VIEWBOX}
       width={size}
       height={size}
       className={className}
+      overflow="visible"
       role={title ? 'img' : undefined}
       aria-hidden={title ? undefined : true}
       focusable="false"
       xmlns="http://www.w3.org/2000/svg"
     >
       {title ? <title>{title}</title> : null}
-      {draw(k)}
+      <defs>
+        <PaintFilter id={k.id('paint')} seed={4} />
+      </defs>
+      <g filter={k.url('paint')}>{draw(k)}</g>
     </svg>
   );
 }
