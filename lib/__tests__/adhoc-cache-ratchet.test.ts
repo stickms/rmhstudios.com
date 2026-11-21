@@ -33,7 +33,7 @@ import {
 } from 'vitest';
 
 /** Lower this when you migrate files. Never raise it. */
-const BASELINE = 64;
+const BASELINE = 63;
 
 const MODULE_MAP =
   /^(?:export\s+)?(?:const|let)\s+\w+\s*(?::[^=\n]+)?=\s*new Map\b/m;

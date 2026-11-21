@@ -90,20 +90,24 @@ model ApiIdempotencyKey {
 /// is shown once at creation and used to sign every delivery so receivers can
 /// verify authenticity.
 model WebhookEndpoint {
-  id             String    @id @default(cuid())
-  userId         String
-  url            String    @db.VarChar(2048)
+  id                      String    @id @default(cuid())
+  userId                  String
+  url                     String    @db.VarChar(2048)
   /// Signing secret (whsec_…). Stored to compute the HMAC on each delivery.
-  secret         String    @db.VarChar(128)
+  secret                  String    @db.VarChar(128)
   /// Subscribed event names. "*" matches every event.
-  events         String[]  @default([])
-  description    String?   @db.VarChar(200)
-  enabled        Boolean   @default(true)
+  events                  String[]  @default([])
+  description             String?   @db.VarChar(200)
+  enabled                 Boolean   @default(true)
   /// Consecutive delivery failures; the endpoint auto-disables past a threshold.
-  failureCount   Int       @default(0)
-  lastDeliveryAt DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  failureCount            Int       @default(0)
+  lastDeliveryAt          DateTime?
+  /// The secret before the last rotation. Deliveries also sign with it until
+  /// `previousSecretExpiresAt`, so a receiver can switch over without dropping events.
+  previousSecret          String?   @db.VarChar(128)
+  previousSecretExpiresAt DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   user       User              @relation("UserWebhookEndpoints", fields: [userId], references: [id], onDelete: Cascade)
   deliveries WebhookDelivery[]
@@ -127,6 +131,10 @@ model WebhookDelivery {
   nextAttemptAt  DateTime              @default(now())
   createdAt      DateTime              @default(now())
   deliveredAt    DateTime?
+  /// Wall-clock time of the latest attempt's request, in milliseconds.
+  durationMs     Int?
+  /// The delivery this one re-sent (no FK: the original may be pruned).
+  redeliveryOfId String?               @db.VarChar(32)
 
   endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
 

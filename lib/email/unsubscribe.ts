@@ -25,7 +25,7 @@ function secret(): string | null {
  * in the signature, so a digest link cannot be replayed against announcements.
  * The digest keeps its original payload, so links already in inboxes still work.
  */
-export const UNSUB_LISTS = ['digest', 'announcements', 'product'] as const;
+export const UNSUB_LISTS = ['digest', 'announcements', 'product', 'logs'] as const;
 export type UnsubList = (typeof UNSUB_LISTS)[number];
 
 export function isUnsubList(value: unknown): value is UnsubList {

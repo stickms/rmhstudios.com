@@ -1,11 +1,11 @@
 /**
  * Contracts for the RMHType per-key analytics reads and the practice test
- * (redesign audit C1, batch 8). The aggregate `POST /api/rmhtype/keystats` is
- * written by the test runner and stays unbound. Client-safe.
+ * (redesign audit C1, batch 8), and the aggregate `POST /api/rmhtype/keystats` that a
+ * typing run submits its own timings through. Client-safe.
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { GeneratedTest } from '@/lib/rmhtype/custom-test';
-import type { TypingLayout } from '@/lib/rmhtype/keystats';
+import type { KeyStatAggregate, TypingLayout } from '@/lib/rmhtype/keystats';
 import type { getKeyStats } from '@/lib/rmhtype/keystats.server';
 
 export type RmhTypeKeyStats =
@@ -85,5 +85,23 @@ export const buildRmhTypePracticeTestApi =
       method:
         'POST',
       path: '/api/rmhtype/practice-test',
+    },
+  );
+
+/** Fold one run's per-key aggregates into the caller's stats. */
+export const recordRmhTypeKeyStatsApi =
+  endpoint<{
+    body: {
+      layout: TypingLayout;
+      keys: KeyStatAggregate[];
+    };
+    res: {
+      keysRecorded: number;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/rmhtype/keystats',
     },
   );

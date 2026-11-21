@@ -3,6 +3,7 @@ import {
   it,
   expect,
   afterEach,
+  vi,
 } from 'vitest';
 import {
   ALL_SHORTCUTS,
@@ -11,9 +12,14 @@ import {
   registerShortcuts,
   scopesOverlap,
   shortcutsForScope,
+  isTypingTarget,
   type Shortcut,
   type ShortcutScope,
 } from '@/lib/shortcuts/registry';
+import {
+  DEFAULT_KEYBOARD_PREFS,
+  effectiveBindings,
+} from '@/lib/shortcuts/bindings';
 
 /**
  * ─────────── two shortcuts may not claim the same keystroke (B4) ───────────
@@ -553,5 +559,46 @@ describe('scope resolution', () => {
     ).not.toContain(
       'test.guarded',
     );
+  });
+});
+
+describe('effective bindings (WCAG 2.1.4 settings)', () => {
+  it('are the registry itself by default, so the shipped set still has no conflicts', () => {
+    const effective = effectiveBindings(ALL_SHORTCUTS(), DEFAULT_KEYBOARD_PREFS);
+    expect(effective.map((s) => [s.id, s.keys])).toEqual(
+      ALL_SHORTCUTS().map((s) => [s.id, s.keys]),
+    );
+    expect(findShortcutConflicts(effective)).toEqual([]);
+  });
+
+  it('declare the keys the dispatcher has an action for', () => {
+    const ids = SITE_SHORTCUTS.map((s) => s.id);
+    for (const id of ['site.palette', 'site.search', 'site.compose', 'site.help', 'site.go.home']) {
+      expect(ids).toContain(id);
+    }
+  });
+});
+
+describe('shortcuts never fire in editable fields', () => {
+  // The suite runs in node: stand in for the DOM class the guard checks against.
+  class FakeElement {
+    constructor(
+      public tagName: string,
+      public isContentEditable = false,
+    ) {}
+  }
+  vi.stubGlobal('HTMLElement', FakeElement);
+
+  it('treats inputs, textareas, selects and contenteditable as typing targets', () => {
+    for (const tag of ['INPUT', 'TEXTAREA', 'SELECT']) {
+      expect(isTypingTarget(new FakeElement(tag) as unknown as EventTarget)).toBe(true);
+    }
+    expect(isTypingTarget(new FakeElement('DIV', true) as unknown as EventTarget)).toBe(true);
+  });
+
+  it('lets shortcuts through everywhere else', () => {
+    expect(isTypingTarget(new FakeElement('BUTTON') as unknown as EventTarget)).toBe(false);
+    expect(isTypingTarget(new FakeElement('DIV') as unknown as EventTarget)).toBe(false);
+    expect(isTypingTarget(null)).toBe(false);
   });
 });

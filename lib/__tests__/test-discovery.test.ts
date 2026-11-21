@@ -218,6 +218,10 @@ describe('test discovery', () => {
     collectedBy(
       'vitest.toolbox.config.ts',
     );
+  const product =
+    collectedBy(
+      'vitest.product.config.ts',
+    );
   const collected =
     new Set(
       [
@@ -228,6 +232,7 @@ describe('test discovery', () => {
         ...balatro,
         ...balatroE2e,
         ...tools,
+        ...product,
       ],
     );
   const excused =
@@ -370,9 +375,62 @@ describe('test discovery', () => {
   it('runs the Toolbox from its own config, and never twice', () => {
     // vitest.toolbox.config.ts includes exactly the glob vitest.config.ts excludes
     // for it: the utilities are not mission-critical (docs/testing.md).
-    expect(tools).toContain('lib/toolbox/__tests__/contrast.test.ts');
-    expect(tools.every((file) => file.startsWith('lib/toolbox/'))).toBe(true);
-    expect(main.filter((file) => file.startsWith('lib/toolbox/'))).toEqual([]);
+    expect(
+      tools,
+    ).toContain(
+      'lib/toolbox/__tests__/contrast.test.ts',
+    );
+    expect(
+      tools.every(
+        (
+          file,
+        ) =>
+          file.startsWith(
+            'lib/toolbox/',
+          ),
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      main.filter(
+        (
+          file,
+        ) =>
+          file.startsWith(
+            'lib/toolbox/',
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
+  });
+
+  it('runs the product suite from its own config, and never twice', () => {
+    // vitest.product.config.ts includes exactly the `*.product.test.ts(x)` names
+    // vitest.config.ts excludes: sprint 02's pure product logic is not
+    // mission-critical (docs/testing.md). The suite may be empty while it fills.
+    const isProduct =
+      (
+        file: string,
+      ) =>
+        /\.product\.test\.tsx?$/.test(
+          file,
+        );
+    expect(
+      product.every(
+        isProduct,
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      main.filter(
+        isProduct,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('runs multiplayer Balatro from its own configs, and never twice', () => {

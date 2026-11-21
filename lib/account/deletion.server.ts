@@ -36,6 +36,8 @@ import {
 } from '@/lib/account-lifecycle';
 import { DELETED_USER_ID } from '@/lib/account/deleted-user';
 import { deleteActiveCardListingsOf } from '@/lib/listings/listings.server';
+import { recordSecurityEvent } from '@/lib/auth/security-log.server';
+import { deleteFollowEventsFor } from '@/lib/social/follow-events.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -78,7 +80,10 @@ export async function scheduleDeletion(userId: string, now: Date = new Date()): 
       select: { deletionScheduledAt: true },
     });
     if (fresh?.deletionScheduledAt) return fresh.deletionScheduledAt;
+    // The account was already erased: nothing was scheduled by this call.
+    return scheduledAt;
   }
+  void recordSecurityEvent({ userId, kind: 'deletion_scheduled' });
   return scheduledAt;
 }
 
@@ -115,6 +120,7 @@ export async function cancelDeletion(userId: string): Promise<boolean> {
     },
     data: { deletionScheduledAt: null },
   });
+  if (count > 0) void recordSecurityEvent({ userId, kind: 'deletion_cancelled' });
   return count > 0;
 }
 
@@ -231,6 +237,17 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     //     and a tombstone would keep showing in "Most played by" with its hours.
     prisma.gamePlaytime.deleteMany({ where: { userId } }),
     prisma.gamePlaytimeDay.deleteMany({ where: { userId } }),
+    // 2b-saves. Cloud saves and their version history: private progress that only cascades from the
+    //     user row, which step 4 anonymises instead of removing.
+    prisma.gameSaveSnapshot.deleteMany({ where: { userId } }),
+    prisma.gameSave.deleteMany({ where: { userId } }),
+    // 2b'. Flashcard review history and SM-2 state: private study activity that only cascades
+    //      from the user row, which step 4 anonymises instead of removing.
+    prisma.flashcardReviewLog.deleteMany({ where: { userId } }),
+    prisma.flashcardReview.deleteMany({ where: { userId } }),
+    // 2b''. The follow log has no foreign keys, so nothing cascades it: erase this account's own
+    //       audience history and de-identify the events where it was the follower.
+    ...deleteFollowEventsFor(userId),
     // 2c. Per-user vibe store rows (`scope: 'user'`, `ownerKey` = the user id): the vibe pages
     //     they sit on belong to other people, and the user row is anonymised, not removed.
     prisma.vibeKv.deleteMany({ where: { scope: 'user', ownerKey: userId } }),
@@ -245,6 +262,8 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.userCard.deleteMany({ where: { userId } }),
     prisma.cardDrop.deleteMany({ where: { userId } }),
     prisma.gameBadge.deleteMany({ where: { userId } }),
+    // Pinned achievements (the achievement tracker): same reason, the cascade never fires.
+    prisma.achievementTrack.deleteMany({ where: { userId } }),
     // Their live market listings (the escrowed card goes with the rest of the inventory);
     // finished sales stay as anonymous price history.
     deleteActiveCardListingsOf(userId),

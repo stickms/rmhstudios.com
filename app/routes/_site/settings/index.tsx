@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { fetchOwnedThemes } from '@/lib/themes/owned-themes.functions';
 import { useTranslation } from 'react-i18next';
+import { settingsNavText } from '@/components/settings/settings-nav-labels';
 import { ChevronRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
@@ -76,12 +77,13 @@ function SettingsPage() {
     (d) => !isAlert(d),
   );
   const accountItems = groups.filter((g) => g.group !== 'personalization').flatMap((g) => g.items);
+  const navText = settingsNavText(t);
   const row = (d: (typeof lookItems)[number]) => (
     <DestinationRow
       key={d.id}
       to={d.to}
-      label={t(`settings-nav-${d.id}`, { defaultValue: d.label })}
-      hint={t(`settings-nav-${d.id}-hint`, { defaultValue: d.hint })}
+      label={navText[d.id]?.label ?? d.label}
+      hint={navText[d.id]?.hint ?? d.hint}
     />
   );
 

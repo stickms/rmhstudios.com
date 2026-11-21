@@ -19,6 +19,7 @@ import { resolveMediaForPost } from '@/lib/media/attach.server';
 import { userDisplaySelect } from '@/lib/user-display';
 import { canReadThread } from '@/lib/feed/audience.server';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
+import { invalidateAudience, recordFollowEvent } from '@/lib/social/follow-events.server';
 import type { RMHarkAudience } from '@prisma/client';
 
 function postLink(handle: string | null | undefined, userId: string, postId: string): string {
@@ -372,8 +373,10 @@ async function applyFollow(args: {
   followingId: string;
   following: boolean;
   followerHandle?: string | null;
+  /** False re-creates the edge without telling the followed member (an undo). Default true. */
+  notify?: boolean;
 }): Promise<FollowResult> {
-  const { followerId, followingId, following } = args;
+  const { followerId, followingId, following, notify = true } = args;
   if (followerId === followingId)
     return { ok: false, found: true, following: false, selfFollow: true };
 
@@ -389,8 +392,9 @@ async function applyFollow(args: {
   if (!following && !existing) return { ok: true, found: true, following: false };
 
   if (following) {
-    // One transaction keeps all three writes atomic: the edge, the followed
-    // user's follower count, and the follower's own following count. Reuse the
+    // One transaction keeps all four writes atomic: the edge, the followed
+    // user's follower count, the follower's own following count, and the follow-log
+    // event (so the audience view can never disagree with the graph). Reuse the
     // returned followerCount for achievement progress (avoids a follow.count).
     const [, followedRow] = await prisma.$transaction([
       prisma.follow.create({ data: { followerId, followingId } }),
@@ -404,20 +408,24 @@ async function applyFollow(args: {
         data: { followingCount: { increment: 1 } },
         select: { id: true },
       }),
+      recordFollowEvent(prisma, { followerId, followingId, kind: 'follow' }),
     ]);
     const { followerCount } = followedRow;
+    invalidateAudience(followingId);
     // The follower's cached follow graph is now stale — drop it so their next
     // feed/sidebar read reflects the new follow immediately.
     invalidateFollowingIds(followerId);
-    void createNotification({
-      userId: followingId,
-      actorId: followerId,
-      type: 'FOLLOW',
-      entityType: 'user',
-      entityId: followerId,
-      link: `/u/${args.followerHandle ?? followerId}`,
-      dedupeUnread: true,
-    });
+    if (notify) {
+      void createNotification({
+        userId: followingId,
+        actorId: followerId,
+        type: 'FOLLOW',
+        entityType: 'user',
+        entityId: followerId,
+        link: `/u/${args.followerHandle ?? followerId}`,
+        dedupeUnread: true,
+      });
+    }
     // Three serial upserts against the *followed* user's achievement rows. They
     // are derived state that nothing in the response depends on, so they run
     // after it instead of in front of it (same treatment as enqueueProgression
@@ -448,8 +456,8 @@ async function applyFollow(args: {
   }
 
   // Remove the edge and keep both denormalized counters in sync (never below
-  // zero), atomically: the followed user's follower count and the follower's
-  // own following count.
+  // zero), atomically: the followed user's follower count, the follower's
+  // own following count, and the follow-log event.
   await prisma.$transaction([
     prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } }),
     prisma.user.updateMany({
@@ -460,8 +468,10 @@ async function applyFollow(args: {
       where: { id: followerId, followingCount: { gt: 0 } },
       data: { followingCount: { decrement: 1 } },
     }),
+    recordFollowEvent(prisma, { followerId, followingId, kind: 'unfollow' }),
   ]);
   invalidateFollowingIds(followerId);
+  invalidateAudience(followingId);
   void removeNotification({
     userId: followingId,
     actorId: followerId,
@@ -481,6 +491,7 @@ export function followUser(args: {
   followerId: string;
   followingId: string;
   followerHandle?: string | null;
+  notify?: boolean;
 }): Promise<FollowResult> {
   return applyFollow({ ...args, following: true });
 }

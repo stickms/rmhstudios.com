@@ -10,6 +10,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { DiscoverySettings } from '@/components/discovery/DiscoverySettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { EmailSettings } from '@/components/settings/EmailSettings';
+import { ReadingSubscriptionsSection } from '@/components/settings/ReadingSubscriptionsSection';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
 import CalendarSettings from '@/components/calendar/CalendarSettings';
 
@@ -43,6 +44,7 @@ function NotificationSettingsPage() {
       <SettingsPageBody>
         <NotificationSettings />
         <EmailSettings />
+        <ReadingSubscriptionsSection />
         <DiscoverySettings />
         <CalendarSettings />
       </SettingsPageBody>

@@ -4,6 +4,7 @@ import { listBlockedUsersApi, toggleBlockApi } from '@/lib/moderation/moderation
 import { prisma } from '@/lib/prisma.server';
 import { invalidateHiddenAuthors } from '@/lib/moderation.server';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
+import { invalidateAudience, recordFollowEvent } from '@/lib/social/follow-events.server';
 import { z } from 'zod';
 
 /**
@@ -56,24 +57,47 @@ export const route = apiRoute('/api/moderation/block', {
         return Response.json({ error: 'You cannot block an admin' }, { status: 403 });
       }
 
-      // Create the block and tear down follows both ways in one transaction.
-      await prisma.$transaction([
-        prisma.userBlock.create({ data: { blockerId, blockedId } }),
-        prisma.follow.deleteMany({
+      // Create the block and tear down follows both ways in one transaction. Each follow the
+      // block removes is logged as `blocked` in the same transaction.
+      await prisma.$transaction(async (tx) => {
+        await tx.userBlock.create({ data: { blockerId, blockedId } });
+        const edges = await tx.follow.findMany({
           where: {
             OR: [
               { followerId: blockerId, followingId: blockedId },
               { followerId: blockedId, followingId: blockerId },
             ],
           },
-        }),
-      ]);
+          select: { id: true, followerId: true, followingId: true },
+        });
+        for (const edge of edges) {
+          // Only the transaction that actually removes the edge logs it and moves the counters,
+          // so a concurrent unfollow can never produce a second event.
+          const removed = await tx.follow.deleteMany({ where: { id: edge.id } });
+          if (removed.count === 0) continue;
+          await tx.user.updateMany({
+            where: { id: edge.followingId, followerCount: { gt: 0 } },
+            data: { followerCount: { decrement: 1 } },
+          });
+          await tx.user.updateMany({
+            where: { id: edge.followerId, followingCount: { gt: 0 } },
+            data: { followingCount: { decrement: 1 } },
+          });
+          await recordFollowEvent(tx, {
+            followerId: edge.followerId,
+            followingId: edge.followingId,
+            kind: 'blocked',
+          });
+        }
+      });
 
       // A block mutates both users' hidden-author sets and can drop follows
       // in both directions — invalidate both caches so neither feed is stale.
       invalidateHiddenAuthors(blockerId, blockedId);
       invalidateFollowingIds(blockerId);
       invalidateFollowingIds(blockedId);
+      invalidateAudience(blockerId);
+      invalidateAudience(blockedId);
 
       return Response.json({ success: true, blocked: true });
     },

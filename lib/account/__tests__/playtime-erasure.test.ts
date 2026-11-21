@@ -153,6 +153,49 @@ describe('anonymizeAccount', () => {
     }
   });
 
+  it('erases cloud saves and their snapshots', async () => {
+    (
+      prismaMock.$transaction as ReturnType<
+        typeof vi.fn
+      >
+    ).mockClear();
+    await anonymizeAccount(
+      'user-1',
+    );
+    const tx =
+      (
+        prismaMock.$transaction as ReturnType<
+          typeof vi.fn
+        >
+      )
+        .mock
+        .calls[0][0] as Op[];
+    for (const m of [
+      'gameSave',
+      'gameSaveSnapshot',
+    ]) {
+      expect(
+        tx.find(
+          (
+            o,
+          ) =>
+            o.model ===
+              m &&
+            o.method ===
+              'deleteMany',
+        )?.args,
+      ).toEqual(
+        {
+          where:
+            {
+              userId:
+                'user-1',
+            },
+        },
+      );
+    }
+  });
+
   it('erases trading cards, the drop ledger and badges', async () => {
     (
       prismaMock.$transaction as ReturnType<
@@ -174,6 +217,7 @@ describe('anonymizeAccount', () => {
       'userCard',
       'cardDrop',
       'gameBadge',
+      'achievementTrack',
     ]) {
       const op =
         tx.find(

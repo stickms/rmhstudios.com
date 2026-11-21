@@ -2087,12 +2087,146 @@ path-filtered.
 
 #### The Toolbox suite (`vitest.toolbox.config.ts`)
 
-The twenty client-side utilities under `/tools` (`lib/toolbox/`, specified in
-`docs/autonomous/sprint-01/`) are pure parsers, converters and calculators whose
-worst failure is a wrong answer on screen, so their tests are not
-mission-critical and run in their own suite: `pnpm test:toolbox`, gated by the
-path-filtered `toolbox-tests.yml`. The main config excludes `lib/toolbox/**`,
-and `lib/__tests__/test-discovery.test.ts` holds that the two never overlap.
+The
+twenty
+client-side
+utilities
+under
+`/tools`
+(`lib/toolbox/`,
+specified
+in
+`docs/autonomous/sprint-01/`)
+are
+pure
+parsers,
+converters
+and
+calculators
+whose
+worst
+failure
+is
+a
+wrong
+answer
+on
+screen,
+so
+their
+tests
+are
+not
+mission-critical
+and
+run
+in
+their
+own
+suite:
+`pnpm test:toolbox`,
+gated
+by
+the
+path-filtered
+`toolbox-tests.yml`.
+The
+main
+config
+excludes
+`lib/toolbox/**`,
+and
+`lib/__tests__/test-discovery.test.ts`
+holds
+that
+the
+two
+never
+overlap.
+
+#### The product suite (`vitest.product.config.ts`)
+
+Sprint
+02
+(`docs/autonomous/sprint-02/`)
+deepens
+existing
+product
+surfaces.
+Its
+pure
+product
+logic
+(flashcard
+question
+generators,
+deck
+importers,
+typing
+lessons,
+in-book
+search)
+fails
+as
+a
+wrong
+answer
+on
+screen,
+so
+those
+tests
+are
+named
+`*.product.test.ts`
+and
+run
+in
+their
+own
+suite:
+`pnpm test:product`,
+gated
+by
+`product-tests.yml`.
+The
+main
+config
+excludes
+that
+name,
+and
+`lib/__tests__/test-discovery.test.ts`
+holds
+that
+the
+two
+never
+overlap.
+A
+test
+that
+meets
+a
+mission-critical
+criterion
+(ownership,
+secrets,
+auth,
+a
+member's
+data)
+keeps
+the
+plain
+`*.test.ts`
+name
+and
+stays
+in
+the
+main
+suite.
 
 ### 3. Go tests (Bazel)
 
@@ -3441,6 +3575,7 @@ miss):
 | `web-ci.yml` (`steel-rest`)                | checked build → serve → `testing/e2e/steel-rest.mjs` (zero frames at rest, one GL context, the globe)    | non-blocking; **nightly + manual dispatch only** (not on PRs); see §6                                                                 |
 | `go-microservices.yml`                     | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`                  | blocks                                                                                                                                |
 | `toolbox-tests.yml`                        | `pnpm test:toolbox` (vitest.toolbox.config.ts), path-filtered to `lib/toolbox/**`                        | blocks                                                                                                                                |
+| `product-tests.yml`                        | `pnpm test:product` (vitest.product.config.ts), on any TypeScript change                                 | blocks                                                                                                                                |
 
 The
 deploy

@@ -298,6 +298,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'As above, for RMHType.',
   },
+  '/rmhtype/lessons/$lessonId': {
+    path: '/rmhtype/lessons/fouc-audit',
+    fidelity: 'shell',
+    why: 'An unknown lesson renders the not-found branch inside the RMHType shell (sign-in gated).',
+  },
   '/sitemaps/$name': {
     path: null,
     fidelity: 'shell',
@@ -367,6 +372,16 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     path: '/study/fouc-audit',
     fidelity: 'shell',
     why: 'Not-found branch of a deck page.',
+  },
+  '/study/$deckId/edit': {
+    path: '/study/fouc-audit/edit',
+    fidelity: 'shell',
+    why: 'Not-found branch of the deck editor (owner-only).',
+  },
+  '/study/$deckId/practice': {
+    path: '/study/fouc-audit/practice',
+    fidelity: 'shell',
+    why: 'Not-found branch of a practice test.',
   },
   '/tag/$tag': {
     path: '/tag/fouc-audit',

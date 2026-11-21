@@ -536,3 +536,32 @@ model GlossaryTerm {
 
   @@map("glossary_term")
 }
+
+/// A member's follow of the Logs, a Log tag, a News category or a News story. `target` is "" for `blog`, the tag,
+/// the category name, or the story slug. The 15-minute fan-out (`lib/reading/subscriptions.server.ts`) notifies
+/// `inApp` rows; the daily email batch sends to `email` rows with new items since `lastEmailedAt`.
+model ReadingSubscription {
+  id            String    @id @default(cuid())
+  userId        String
+  kind          String    @db.VarChar(16)
+  target        String    @default("") @db.VarChar(80)
+  inApp         Boolean   @default(true)
+  email         Boolean   @default(false)
+  lastEmailedAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, target])
+  @@index([kind, target])
+  @@map("reading_subscription")
+}
+
+/// Where the subscription fan-out stopped, one row per source (`blog`, `news`). It advances only after the batch
+/// it covers has been written, so a crash re-reads the batch and the notification dedupe absorbs the repeat.
+model ReadingFanoutCursor {
+  name       String   @id
+  lastSeenAt DateTime
+
+  @@map("reading_fanout_cursor")
+}

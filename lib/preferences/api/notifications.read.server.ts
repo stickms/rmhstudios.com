@@ -1,17 +1,20 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import { prisma } from '@/lib/prisma.server';
-import { adjustNotifUnread } from '@/lib/notifications.server';
 import { z } from 'zod';
 import { markNotificationsReadApi } from '@/lib/preferences/preferences.contract';
+import { NOTIFICATION_FILTER_IDS } from '@/lib/notifications/filters';
+import { markAllRead, setRead } from '@/lib/notifications/inbox.server';
 
 /**
  * POST /api/notifications/read — mark notifications read.
- * Body: { all: true } to mark everything, or { ids: string[] } for specific ones.
+ * Body: { all: true } to mark everything (with { filter } only that filter's types), or { ids: string[] } for
+ * specific ones ({ read: false } marks those unread instead; a group's rows use this).
  */
 const readSchema = z.object({
   all: z.boolean().optional(),
   ids: z.array(z.string().max(64)).max(200).optional(),
+  filter: z.enum(NOTIFICATION_FILTER_IDS).optional(),
+  read: z.boolean().optional(),
 });
 
 export const route = apiRoute('/api/notifications/read', {
@@ -21,26 +24,14 @@ export const route = apiRoute('/api/notifications/read', {
     async ({ session, body }) => {
       const userId = session.user.id;
       if (body.all) {
-        const res = await prisma.notification.updateMany({
-          where: { userId, read: false },
-          data: { read: true },
-        });
-        // Keep the Redis unread badge counter in step (it self-heals on the
-        // next read via COUNT backfill, but decrementing keeps it instant).
-        if (res.count > 0) void adjustNotifUnread(userId, -res.count);
-        return Response.json({ success: true, updated: res.count });
+        const updated = await markAllRead(userId, body.filter);
+        return Response.json({ success: true, updated });
       }
 
       if (body.ids && body.ids.length > 0) {
-        // Scope to the caller's own notifications — never let one user mark
-        // another user's notifications read. Only count rows that were
-        // actually unread so the counter isn't over-decremented on re-marks.
-        const res = await prisma.notification.updateMany({
-          where: { userId, id: { in: body.ids }, read: false },
-          data: { read: true },
-        });
-        if (res.count > 0) void adjustNotifUnread(userId, -res.count);
-        return Response.json({ success: true, updated: res.count });
+        // Scoped to the caller's own rows inside setRead; only rows that actually flip are counted.
+        const { changed } = await setRead(userId, body.ids, body.read ?? true);
+        return Response.json({ success: true, updated: changed });
       }
 
       return Response.json({ success: true, updated: 0 });

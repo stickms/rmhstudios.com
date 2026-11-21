@@ -35,6 +35,11 @@ export interface ReaderOptions {
   ) => void;
   /** 0.1–10, default 1. */
   rate?: number;
+  /**
+   * `voiceURI` of the voice to use. Falls back to the language match when the
+   * voice is not installed (a saved choice from another device).
+   */
+  voiceURI?: string | null;
   /** 0–2, default 1. */
   pitch?: number;
   /** 0–1, default 1. */
@@ -49,6 +54,14 @@ export interface Reader {
   pause: () => void;
   /** Stop and rewind to the top. */
   stop: () => void;
+  /** Applies from the next utterance (a sentence-sized chunk), not mid-sentence. */
+  setRate: (
+    rate: number,
+  ) => void;
+  /** Applies from the next utterance; `null` goes back to the language match. */
+  setVoice: (
+    voiceURI: string | null,
+  ) => void;
   /** Current state. */
   readonly state: ReaderState;
   /** Paragraph index currently being spoken, or -1 when idle. */
@@ -159,6 +172,7 @@ function chunkParagraph(
 function pickVoice(
   synth: SpeechSynthesis,
   lang: string,
+  voiceURI: string | null,
 ): SpeechSynthesisVoice | null {
   const voices =
     synth.getVoices();
@@ -166,6 +180,20 @@ function pickVoice(
     !voices.length
   )
     return null; // still loading — the default voice is fine
+  const chosen =
+    voiceURI
+      ? voices.find(
+          (
+            v,
+          ) =>
+            v.voiceURI ===
+            voiceURI,
+        )
+      : undefined;
+  if (
+    chosen
+  )
+    return chosen;
   const wanted =
     lang.toLowerCase();
   const base =
@@ -206,7 +234,8 @@ export function createReader(
   {
     onParagraph,
     onStateChange,
-    rate = 1,
+    rate: initialRate = 1,
+    voiceURI: initialVoice = null,
     pitch = 1,
     volume = 1,
   }: ReaderOptions = {},
@@ -234,6 +263,10 @@ export function createReader(
   )
     return null;
 
+  let rate =
+    initialRate;
+  let voiceURI =
+    initialVoice;
   let state: ReaderState =
     'idle';
   let cursor = 0;
@@ -315,6 +348,7 @@ export function createReader(
         pickVoice(
           synth,
           lang,
+          voiceURI,
         );
       if (
         voice
@@ -427,6 +461,9 @@ export function createReader(
       // the two articles interleave.
       chain++;
       synth.cancel();
+      // A pause() issued before the cancel() can leave Chromium's queue
+      // paused, which would swallow the utterance queued next.
+      synth.resume();
       const start =
         from ===
         undefined
@@ -465,6 +502,21 @@ export function createReader(
         );
       },
     stop,
+    setRate: (
+      next: number,
+    ) => {
+      rate =
+        next;
+    },
+    setVoice:
+      (
+        next:
+          | string
+          | null,
+      ) => {
+        voiceURI =
+          next;
+      },
     get state() {
       return state;
     },

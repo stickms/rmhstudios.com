@@ -113,6 +113,27 @@ export const NAMESPACES = [
   "medschools",
   // The Toolbox (/tools, docs/autonomous/sprint-01).
   "toolbox",
+  // Sprint 02 (docs/autonomous/sprint-02): one namespace per feature, one per line.
+  "dev-webhooks",
+  "dev-explorer",
+  "study-editor",
+  "study-tests",
+  "study-stats",
+  "rmhstudy-focus",
+  "rmhtype-lessons",
+  "rmhtype-progress",
+  "rmhtype-daily",
+  "security-activity",
+  "keyboard",
+  "read-aloud",
+  "find-in-book",
+  "highlights",
+  "audience",
+  "follows",
+  "notifications-inbox",
+  "subscriptions",
+  "achievement-tracker",
+  "cloud-saves",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

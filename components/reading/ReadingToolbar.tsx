@@ -6,11 +6,19 @@
 
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { useId } from 'react';
+import { useId, type RefObject } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useReadingRuler } from '@/lib/reading/ruler';
+import { ListenButton } from './ListenButton';
 
-export function ReadingToolbar() {
+export function ReadingToolbar({
+  rootRef,
+  resetKey,
+}: {
+  /** The article body Listen reads from. */
+  rootRef: RefObject<HTMLElement | null>;
+  resetKey: string;
+}) {
   const {
     t,
   } =
@@ -27,9 +35,9 @@ export function ReadingToolbar() {
   return (
     <div
       data-rf-skip=""
-      className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-site-text-muted"
+      className="mb-6 flex min-h-9 flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-site-text-muted pointer-coarse:min-h-11"
     >
-      <span className="inline-flex items-center gap-2">
+      <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
         <Switch
           id={
             id
@@ -66,6 +74,14 @@ export function ReadingToolbar() {
             },
           )}
         </span>
+        <ListenButton
+          rootRef={
+            rootRef
+          }
+          resetKey={
+            resetKey
+          }
+        />
       </span>
       <Link
         to="/library"

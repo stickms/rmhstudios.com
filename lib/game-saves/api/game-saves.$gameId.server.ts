@@ -16,6 +16,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { isSharedSaveGame, MAX_SAVE_BYTES } from '@/lib/game-saves/registry';
+import { deleteSave, snapshotIfDue } from '@/lib/game-saves/snapshots.server';
 
 /** 404 rather than 400: an id that is not a game is not a resource. */
 const UNKNOWN = () => Response.json({ error: 'Unknown game' }, { status: 404 });
@@ -61,10 +62,15 @@ export const route = apiRoute('/api/game-saves/$gameId', {
         return Response.json({ error: 'Payload too large' }, { status: 413 });
       }
 
-      const save = await prisma.gameSave.upsert({
-        where: { userId_gameId: { userId, gameId } },
-        create: { userId, gameId, saveData },
-        update: { saveData },
+      // One transaction, so the old blob is never gone before its copy exists. Most saves add no insert: a copy is
+      // kept only when the newest snapshot is six hours old or more (`snapshotIfDue`).
+      const save = await prisma.$transaction(async (tx) => {
+        await snapshotIfDue(tx, userId, gameId);
+        return tx.gameSave.upsert({
+          where: { userId_gameId: { userId, gameId } },
+          create: { userId, gameId, saveData },
+          update: { saveData },
+        });
       });
 
       return Response.json({ success: true, updatedAt: save.updatedAt });
@@ -76,7 +82,7 @@ export const route = apiRoute('/api/game-saves/$gameId', {
    *
    * `deleteMany` rather than `delete`: there may be no row — a player who
    * only ever played this game signed out on this device — and a missing row
-   * is the outcome being asked for, not an error.
+   * is the outcome being asked for, not an error. The save is kept as a `before-delete` snapshot first.
    */
   DELETE: defineHandler(
     { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'game-wipe' } },
@@ -84,7 +90,7 @@ export const route = apiRoute('/api/game-saves/$gameId', {
       const gameId = params.gameId;
       if (!isSharedSaveGame(gameId)) return UNKNOWN();
 
-      await prisma.gameSave.deleteMany({ where: { userId, gameId } });
+      await deleteSave(userId, gameId);
       return Response.json({ success: true });
     },
   ),

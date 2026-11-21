@@ -350,6 +350,25 @@ model Follow {
   @@map("follow")
 }
 
+// Append-only log written beside every change to a Follow row (follow, unfollow, block removal,
+// removed follower), in the same transaction. It is what lets the audience view chart gains and
+// losses over time, which the Follow table alone cannot (an unfollow deletes the row).
+// No relations to User on purpose: events outlive a deleted follower and the ids are opaque;
+// the account-deletion path erases a member's rows (lib/social/follow-events.server.ts).
+model FollowEvent {
+  id          BigInt   @id @default(autoincrement())
+  followerId  String
+  followingId String
+  // 'follow' | 'unfollow' | 'blocked' | 'removed'
+  kind        String   @db.VarChar(8)
+  createdAt   DateTime @default(now())
+
+  @@index([followingId, createdAt])
+  // Account deletion erases the rows where the deleted member was the follower.
+  @@index([followerId])
+  @@map("follow_event")
+}
+
 /// Normalized hashtag registry. Tags are extracted from post content at write
 /// time (see lib/tags-extract.server.ts) into these tables so trending and tag
 /// feeds are indexed lookups instead of ILIKE '%#tag%' scans of rmheet.content.

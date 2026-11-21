@@ -35,6 +35,9 @@ import {
 } from '@tanstack/react-router';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { LessonsEntry } from '@/components/rmhtype/lessons/LessonsEntry';
+import { ProgressEntry } from '@/components/rmhtype/progress/ProgressEntry';
+import { DailyEntry } from '@/components/rmhtype/daily/DailyEntry';
 
 interface LeaderboardEntry {
   rank: number;
@@ -526,6 +529,12 @@ export default function RmhTypeLanding() {
                 )}
               </p>
             </Link>
+
+            <DailyEntry />
+
+            <LessonsEntry />
+
+            <ProgressEntry />
           </div>
 
           {/* Leaderboards — all 3 difficulties */}

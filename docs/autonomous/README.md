@@ -37,6 +37,7 @@ of
 what
 shipped.
 
-| Sprint | Theme                                                             | Index                                      |
-| ------ | ----------------------------------------------------------------- | ------------------------------------------ |
-| 01     | The Toolbox: twenty private, client-side utilities under `/tools` | [sprint-01/README.md](sprint-01/README.md) |
+| Sprint | Theme                                                               | Index                                      |
+| ------ | ------------------------------------------------------------------- | ------------------------------------------ |
+| 01     | The Toolbox: twenty private, client-side utilities under `/tools`   | [sprint-01/README.md](sprint-01/README.md) |
+| 02     | Deeper product surfaces: twenty features in existing apps and pages | [sprint-02/README.md](sprint-02/README.md) |

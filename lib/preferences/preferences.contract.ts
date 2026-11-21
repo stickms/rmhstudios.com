@@ -7,6 +7,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { AppearanceComfortInput } from '@/lib/appearance/prefs-schema';
 import type { layoutPrefsSchema } from '@/lib/home-widgets-schema';
+import type { NotificationFilter } from '@/lib/notifications/filters';
 import type { notifPrefsSchema } from '@/lib/notify/categories-schema';
 import type { PresenceVisibility } from '@/lib/presence-types';
 import type { presencePrivacySchema } from '@/lib/presence-types-schema';
@@ -298,6 +299,12 @@ export const listNotificationsApi =
     query: {
       cursor?: string;
       limit?: number;
+      /** Only this filter's types (`lib/notifications/filters.ts`). */
+      filter?: NotificationFilter;
+      /** The Unread view: rows unread now, plus those named in `unreadIds`. */
+      unread?: 'true';
+      /** Comma-separated notification ids (the Unread view's snapshot, at most 100). */
+      unreadIds?: string;
     };
     res: {
       items: NotificationRow[];
@@ -318,6 +325,10 @@ export const markNotificationsReadApi =
     body: {
       all?: boolean;
       ids?: string[];
+      /** With `all`: only this filter's types. */
+      filter?: NotificationFilter;
+      /** With `ids`: false marks them unread instead (default true). */
+      read?: boolean;
     };
     res: {
       success: true;

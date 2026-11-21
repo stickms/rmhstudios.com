@@ -114,6 +114,9 @@ const ComposeModal =
 // the palette without importing the games+apps registries and scorer this file
 // pulls in: import them from './command-palette-bus', never from here.
 import { COMMAND_PALETTE_EVENT } from './command-palette-bus';
+import { useEffectiveKeys } from '@/hooks/useEffectiveShortcuts';
+import { eventMatchesKeystroke, isCharacterKeyBinding } from '@/lib/shortcuts/bindings';
+import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { OverlaySignal } from '@/components/ui/overlay-signal';
 
 type Section =
@@ -391,27 +394,18 @@ export function CommandPalette({
     )
       ?.handle;
 
-  // ⌘K / Ctrl+K global shortcut + programmatic open event.
+  // ⌘K / Ctrl+K (or the person's remap) + programmatic open event.
+  const paletteKeys = useEffectiveKeys('site.palette');
   useEffect(() => {
-    const onKey =
-      (
-        e: KeyboardEvent,
-      ) => {
-        if (
-          (e.metaKey ||
-            e.ctrlKey) &&
-          e.key.toLowerCase() ===
-            'k'
-        ) {
-          e.preventDefault();
-          setOpen(
-            (
-              v,
-            ) =>
-              !v,
-          );
-        }
-      };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (paletteKeys?.length === 1 && eventMatchesKeystroke(paletteKeys[0], e)) {
+        // A remap to a character key must not fire while typing (mod+k always did).
+        if (isCharacterKeyBinding(paletteKeys) && isTypingTarget(e.target)) return;
+        e.preventDefault();
+        setOpen((v) => !v);
+      }
+    };
     const onOpen =
       () =>
         setOpen(
@@ -435,7 +429,7 @@ export function CommandPalette({
         onOpen,
       );
     };
-  }, []);
+  }, [paletteKeys]);
 
   // Reset state each time the palette opens.
   useEffect(() => {

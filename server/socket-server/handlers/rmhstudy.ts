@@ -19,6 +19,7 @@ import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
 import { config } from '../config';
 import { awardAppProgress } from '../economy';
+import { nextStudyStreak } from '../../../lib/rmhstudy/streak';
 
 // ─── Interfaces ───
 
@@ -703,6 +704,12 @@ function completePhase(
     completedPhase ===
       'long_break'
   ) {
+    // The time the break actually ran: all of it on a natural end, less when it was skipped.
+    persistBreak(
+      room,
+      room.timer.totalMs -
+        room.timer.remainingMs,
+    );
     // After long break, reset session counter
     if (
       completedPhase ===
@@ -888,6 +895,31 @@ function transitionToPhase(
 
 // ─── Database Persistence (fire-and-forget) ───
 
+/**
+ * When a finished work phase began and ended. The row is written as the phase completes, so
+ * `endedAt` is now and `startedAt` is that minus the focus length (a pause only makes it
+ * approximate; the timer tracks no wall-clock start that survives one).
+ */
+export function workSessionWindow(
+  endMs: number,
+  focusTimeMs: number,
+): {
+  startedAt: Date;
+  endedAt: Date;
+} {
+  return {
+    startedAt:
+      new Date(
+        endMs -
+          focusTimeMs,
+      ),
+    endedAt:
+      new Date(
+        endMs,
+      ),
+  };
+}
+
 function persistWorkSession(
   room: StudyRoom,
 ): void {
@@ -906,188 +938,205 @@ function persistWorkSession(
 
   // Persist for all members in the room
   for (const member of memberList) {
-    try {
-      const db =
-        getPrismaClient() as any;
-      const userId =
-        member.userId;
+    const userId =
+      member.userId;
+    // Progression: XP for completing a focus (Pomodoro) work session.
+    awardAppProgress(
+      userId,
+      {
+        xp: 15,
+      },
+    );
+    void persistMemberWorkSession(
+      userId,
+      room.code,
+      focusTimeMs,
+      sessionNumber,
+    );
+  }
+}
 
-      // Progression: XP for completing a focus (Pomodoro) work session.
-      awardAppProgress(
-        userId,
+/**
+ * One member's finished work session: the profile totals, the streak and the session row.
+ *
+ * The streak is computed from the profile as it was BEFORE this session (`nextStudyStreak`);
+ * reading it after the upsert had already stamped `lastStudyDate` with now is why the streak
+ * used to stay at 1 forever.
+ */
+async function persistMemberWorkSession(
+  userId: string,
+  roomCode: string,
+  focusTimeMs: number,
+  sessionNumber: number,
+): Promise<void> {
+  try {
+    const db =
+      getPrismaClient();
+    const now =
+      new Date();
+    const previous =
+      await db.rmhStudyProfile.findUnique(
         {
-          xp: 15,
+          where: {
+            userId,
+          },
+          select: {
+            currentStreak: true,
+            longestStreak: true,
+            lastStudyDate: true,
+          },
         },
       );
-
-      // Upsert profile and create session
-      db.rmhStudyProfile
-        .upsert(
-          {
-            where:
-              {
-                userId,
-              },
-            create:
-              {
-                userId,
-                totalFocusTimeMs:
-                  BigInt(
-                    focusTimeMs,
-                  ),
-                sessionsCompleted: 1,
-                currentStreak: 1,
-                longestStreak: 1,
-                lastStudyDate:
-                  new Date(),
-              },
-            update:
-              {
-                totalFocusTimeMs:
-                  {
-                    increment:
-                      BigInt(
-                        focusTimeMs,
-                      ),
-                  },
-                sessionsCompleted:
-                  {
-                    increment: 1,
-                  },
-                lastStudyDate:
-                  new Date(),
-              },
+    const streak =
+      nextStudyStreak(
+        previous,
+        now,
+      );
+    const profile =
+      await db.rmhStudyProfile.upsert(
+        {
+          where: {
+            userId,
           },
-        )
-        .then(
-          (
-            profile: any,
-          ) => {
-            // Update streak logic
-            const now =
-              new Date();
-            const lastStudy =
-              profile.lastStudyDate;
-            if (
-              lastStudy
-            ) {
-              const daysSinceLastStudy =
-                Math.floor(
-                  (now.getTime() -
-                    new Date(
-                      lastStudy,
-                    ).getTime()) /
-                    (24 *
-                      60 *
-                      60 *
-                      1000),
-                );
-              if (
-                daysSinceLastStudy <=
-                1
-              ) {
-                // Continue or maintain streak
-                const newStreak =
-                  profile.currentStreak +
-                  (daysSinceLastStudy ===
-                  1
-                    ? 1
-                    : 0);
-                const newLongest =
-                  Math.max(
-                    profile.longestStreak,
-                    newStreak,
-                  );
-                return db.rmhStudyProfile.update(
-                  {
-                    where:
-                      {
-                        userId,
-                      },
-                    data: {
-                      currentStreak:
-                        newStreak,
-                      longestStreak:
-                        newLongest,
-                    },
-                  },
-                );
-              } else if (
-                daysSinceLastStudy >
-                1
-              ) {
-                // Reset streak
-                return db.rmhStudyProfile.update(
-                  {
-                    where:
-                      {
-                        userId,
-                      },
-                    data: {
-                      currentStreak: 1,
-                    },
-                  },
-                );
-              }
-            }
-            return null;
+          create: {
+            userId,
+            totalFocusTimeMs:
+              BigInt(
+                focusTimeMs,
+              ),
+            sessionsCompleted: 1,
+            ...streak,
+            lastStudyDate:
+              now,
           },
-        )
-        .then(
-          (
-            profile: any,
-          ) => {
-            if (
-              !profile
-            )
-              return;
-            // Create session record
-            return db.rmhStudySession.create(
-              {
-                data: {
-                  profileId:
-                    profile.id,
-                  userId:
-                    profile.userId,
-                  roomId:
-                    room.code,
+          update: {
+            totalFocusTimeMs: {
+              increment:
+                BigInt(
                   focusTimeMs,
-                  breakTimeMs: 0,
-                  sessionsInRun:
-                    sessionNumber,
+                ),
+            },
+            sessionsCompleted: {
+              increment: 1,
+            },
+            ...streak,
+            lastStudyDate:
+              now,
+          },
+        },
+      );
+    await db.rmhStudySession.create(
+      {
+        data: {
+          profileId:
+            profile.id,
+          userId,
+          roomId:
+            roomCode,
+          focusTimeMs,
+          // The break follows the work phase; `persistBreak` fills it in when it ends.
+          breakTimeMs: 0,
+          sessionsInRun:
+            sessionNumber,
+          ...workSessionWindow(
+            now.getTime(),
+            focusTimeMs,
+          ),
+        },
+      },
+    );
+  } catch (err) {
+    logger.warn(
+      {
+        event:
+          'rmhstudy_db_persist_session_failed',
+        userId,
+        error: (
+          err as Error
+        ).message,
+      },
+    );
+  }
+}
+
+/** How long a break may trail its work session and still belong to it. */
+const BREAK_ATTACH_WINDOW_MS =
+  2 * 60 * 60 * 1000;
+
+/**
+ * A break that ended (ran out or was skipped): add the time it ran to each member's latest session in this room,
+ * the work session it followed. A member who joined during the break has no such session within
+ * the window, so nothing is written for them.
+ */
+function persistBreak(
+  room: StudyRoom,
+  breakTimeMs: number,
+): void {
+  if (
+    breakTimeMs <=
+    0
+  )
+    return;
+  const since =
+    new Date(
+      Date.now() -
+        BREAK_ATTACH_WINDOW_MS,
+    );
+  for (const member of room.members.values()) {
+    const userId =
+      member.userId;
+    void (async () => {
+      try {
+        const db =
+          getPrismaClient();
+        const latest =
+          await db.rmhStudySession.findFirst(
+            {
+              where: {
+                userId,
+                roomId:
+                  room.code,
+                breakTimeMs: 0,
+                endedAt: {
+                  gte: since,
                 },
               },
-            );
-          },
-        )
-        .catch(
-          (
-            err: Error,
-          ) => {
-            logger.warn(
-              {
-                event:
-                  'rmhstudy_db_persist_session_failed',
-                userId,
-                error:
-                  err.message,
+              orderBy: {
+                startedAt:
+                  'desc',
               },
-            );
+              select: {
+                id: true,
+              },
+            },
+          );
+        if (
+          !latest
+        )
+          return;
+        await db.rmhStudySession.update(
+          {
+            where: {
+              id: latest.id,
+            },
+            data: {
+              breakTimeMs,
+            },
           },
         );
-    } catch (err) {
-      logger.warn(
-        {
-          event:
-            'rmhstudy_db_prisma_unavailable',
-          error:
-            (
+      } catch (err) {
+        logger.warn(
+          {
+            event:
+              'rmhstudy_db_persist_break_failed',
+            userId,
+            error: (
               err as Error
-            )
-              .message,
-        },
-      );
-    }
+            ).message,
+          },
+        );
+      }
+    })();
   }
 }
 

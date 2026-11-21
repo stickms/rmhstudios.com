@@ -5,6 +5,7 @@ import { reviewCardBody } from '@/lib/study/decks-schema';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { nextState, type Grade } from '@/lib/rmhstudy/srs';
+import { saveReview } from '@/lib/study/review-log.server';
 import { recordStudyReview } from '@/lib/quests/engine.server';
 
 /** POST /api/study/cards/$id/review — submit an SRS grade for a card. */
@@ -28,7 +29,7 @@ export const route = apiRoute('/api/study/cards/$id/review', {
 
       const card = await prisma.flashcard.findUnique({
         where: { id: params.id },
-        select: { id: true, deck: { select: { isPublic: true, userId: true } } },
+        select: { id: true, deckId: true, deck: { select: { isPublic: true, userId: true } } },
       });
       if (!card) return Response.json({ error: 'Not found' }, { status: 404 });
       if (!card.deck.isPublic && card.deck.userId !== userId) {
@@ -42,22 +43,12 @@ export const route = apiRoute('/api/study/cards/$id/review', {
       const prev = existing ?? { easeFactor: 2.5, intervalDays: 0, repetitions: 0 };
       const next = nextState(prev, body.grade as Grade);
 
-      await prisma.flashcardReview.upsert({
-        where: { userId_cardId: { userId, cardId: params.id } },
-        create: {
-          userId,
-          cardId: params.id,
-          easeFactor: next.easeFactor,
-          intervalDays: next.intervalDays,
-          repetitions: next.repetitions,
-          dueAt: next.dueAt,
-        },
-        update: {
-          easeFactor: next.easeFactor,
-          intervalDays: next.intervalDays,
-          repetitions: next.repetitions,
-          dueAt: next.dueAt,
-        },
+      await saveReview({
+        userId,
+        cardId: params.id,
+        deckId: card.deckId,
+        grade: body.grade,
+        next,
       });
 
       // Progress the daily "study" quest + award XP (best-effort, rate-limited).

@@ -28,6 +28,16 @@
   color: inherit;
 }
 
+/* Find in book: the match the reader's Find panel last jumped to. */
+::highlight(rf-find) {
+  background-color: var(--site-bg-subtle);
+  color: var(--site-text);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--site-text);
+  text-underline-offset: 3px;
+}
+
 /* ── L2: footnote reference, sidenote, popover ── */
 .rf-fn {
   position: relative;
@@ -212,4 +222,11 @@
 /* Outline links land below the sticky chrome. */
 .rf-article :is(h2, h3)[id] {
   scroll-margin-top: 6rem;
+}
+
+/* ── Listen (feature 12): the paragraph being read ── */
+.rf-article [data-speaking],
+.rf-textview__body [data-speaking] {
+  background-color: var(--site-bg-subtle);
+  transition: background-color var(--m1) ease;
 }

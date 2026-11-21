@@ -19,6 +19,8 @@
 
 import {
   Bell,
+  CloudUpload,
+  Keyboard,
   KeyRound,
   LayoutDashboard,
   Palette,
@@ -109,6 +111,19 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       requiresAuth: true,
     },
 
+    {
+      id: 'keyboard',
+      to: '/settings/keyboard',
+      group:
+        'personalization',
+      icon: Keyboard,
+      label:
+        'Keyboard',
+      hint: 'Turn single-key shortcuts off, or change any shortcut',
+      keywords:
+        'shortcuts hotkeys keys remap rebind accessibility speech voice switch single character alt option',
+    },
+
     // ── Content ──
     {
       id: 'content',
@@ -168,6 +183,19 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       hint: 'Sign-in methods, passkeys, sessions and account standing',
       keywords:
         'password login 2fa sign in devices logout revoke forgot reset strike ban suspended appeal moderation warning status',
+      requiresAuth: true,
+    },
+    {
+      id: 'cloud-saves',
+      to: '/settings/cloud-saves',
+      group:
+        'account',
+      icon: CloudUpload,
+      label:
+        'Cloud saves',
+      hint: 'Back up, restore or delete your game saves, and see earlier versions',
+      keywords:
+        'game save backup restore download snapshot history progress void breaker neon driftway balatro',
       requiresAuth: true,
     },
     {

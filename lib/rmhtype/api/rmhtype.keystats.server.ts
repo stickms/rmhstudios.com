@@ -13,9 +13,12 @@
 
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
-import { clearRmhTypeKeyStatsApi, getRmhTypeKeyStatsApi } from '@/lib/rmhtype/keystats.contract';
+import {
+  clearRmhTypeKeyStatsApi,
+  getRmhTypeKeyStatsApi,
+  recordRmhTypeKeyStatsApi,
+} from '@/lib/rmhtype/keystats.contract';
 import { KEYSTAT_LIMITS, TYPING_LAYOUTS } from '@/lib/rmhtype/keystats';
 import {
   clearKeyStats,
@@ -59,7 +62,8 @@ export const route = apiRoute('/api/rmhtype/keystats', {
       Response.json({ stats: await getKeyStats(userId, normalizeLayout(query.layout)) }),
   ),
 
-  POST: defineHandler(
+  POST: implement(
+    recordRmhTypeKeyStatsApi,
     {
       // Per user, not per IP: a shared network must not throttle a whole
       // household's typing practice. One submission per finished test, so 60

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 366 routes. 188 render inside the standard site shell (sidebar, nav, context rail); 178 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 379 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 183 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -80,6 +80,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/create/personas` | AI Personas | public | `app/routes/_site/create/personas.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/developer/ai-practices` | Coding with AI \| RMH Studios Developer | public | `app/routes/_site/developer/ai-practices.tsx` |
+| `/developer/explorer` | API Explorer \| RMH Studios Developer | public | `app/routes/_site/developer/explorer.tsx` |
+| `/developer/webhooks` | — | public | `app/routes/_site/developer/webhooks.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
 | `/emoji-packs` | Emoji & sticker packs | public | `app/routes/_site/emoji-packs.tsx` |
 | `/exchange` | — | public | `app/routes/_site/exchange.index.tsx` |
@@ -87,6 +89,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
 | `/feeds` | Feeds | public | `app/routes/_site/feeds.index.tsx` |
 | `/feeds/:id` | Feed | public | `app/routes/_site/feeds.$id.tsx` |
+| `/follows` | Followers and following | public | `app/routes/_site/follows.tsx` |
 | `/groups` | Group Chats | public | `app/routes/_site/groups/index.tsx` |
 | `/groups/:id` | Group Chat | public | `app/routes/_site/groups/$id.tsx` |
 | `/help` | Help & Concierge | public | `app/routes/_site/help.tsx` |
@@ -156,7 +159,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/services/fashion` | RMH Fashion | public | `app/routes/_site/services/fashion.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
 | `/settings/appearance` | Appearance | public | `app/routes/_site/settings/appearance.tsx` |
+| `/settings/cloud-saves` | Cloud saves | public | `app/routes/_site/settings/cloud-saves.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
+| `/settings/keyboard` | Keyboard | public | `app/routes/_site/settings/keyboard.tsx` |
 | `/settings/layout` | Sidebar | public | `app/routes/_site/settings/layout.tsx` |
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |
 | `/settings/privacy` | Privacy & data | public | `app/routes/_site/settings/privacy.tsx` |
@@ -170,7 +175,10 @@ Standard pages, rendered inside the sidebar shell.
 | `/store/:userid` | Store | public | `app/routes/_site/store/$userid.tsx` |
 | `/study` | Flashcards | public | `app/routes/_site/study/index.tsx` |
 | `/study/:deckId` | Deck \| RMHStudy | public | `app/routes/_site/study/$deckId.tsx` |
+| `/study/:deckId/edit` | Edit deck \| RMHStudy | public | `app/routes/_site/study/$deckId_.edit.tsx` |
+| `/study/:deckId/practice` | — | public | `app/routes/_site/study/$deckId_.practice.tsx` |
 | `/study/browse` | Browse decks | public | `app/routes/_site/study/browse.tsx` |
+| `/study/stats` | — | public | `app/routes/_site/study/stats.tsx` |
 | `/tag/:tag` | — | public | `app/routes/_site/tag.$tag.tsx` |
 | `/thread/:rootId` | — | public | `app/routes/_site/thread/$rootId.tsx` |
 | `/tools` | Toolbox | public | `app/routes/_site/tools/index.tsx` |
@@ -330,12 +338,17 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhos` | — | sign-in | `app/routes/rmhos.tsx` |
 | `/rmhstudy` | — | sign-in | `app/routes/rmhstudy/index.tsx` |
 | `/rmhstudy/:roomId` | — | sign-in | `app/routes/rmhstudy/$roomId.tsx` |
+| `/rmhstudy/history` | — | sign-in | `app/routes/rmhstudy/history.tsx` |
 | `/rmhstudy/planner` | — | sign-in | `app/routes/rmhstudy/planner.tsx` |
 | `/rmhtube` | — | sign-in | `app/routes/rmhtube/index.tsx` |
 | `/rmhtube/:roomId` | — | sign-in | `app/routes/rmhtube/$roomId.tsx` |
 | `/rmhtype` | — | sign-in | `app/routes/rmhtype/index.tsx` |
 | `/rmhtype/:roomId` | — | sign-in | `app/routes/rmhtype/$roomId.tsx` |
+| `/rmhtype/daily` | — | sign-in | `app/routes/rmhtype/daily.tsx` |
+| `/rmhtype/lessons` | — | sign-in | `app/routes/rmhtype/lessons.index.tsx` |
+| `/rmhtype/lessons/:lessonId` | — | sign-in | `app/routes/rmhtype/lessons.$lessonId.tsx` |
 | `/rmhtype/multiplayer` | — | sign-in | `app/routes/rmhtype/multiplayer.tsx` |
+| `/rmhtype/progress` | — | sign-in | `app/routes/rmhtype/progress.tsx` |
 | `/rmhtype/solo` | — | sign-in | `app/routes/rmhtype/solo.tsx` |
 | `/secret` | Secret | public | `app/routes/secret/index.tsx` |
 | `/secret/cursed-logic` | — | public | `app/routes/secret/cursed-logic/index.tsx` |

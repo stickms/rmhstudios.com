@@ -1,0 +1,15 @@
+{
+  "code-skipped": "Code block skipped",
+  "image-alt": "Image: {{alt}}",
+  "listen": "Listen",
+  "next-paragraph": "Next paragraph",
+  "nothing-to-read": "There is no text to read here.",
+  "pause": "Pause",
+  "previous-paragraph": "Previous paragraph",
+  "site-name": "RMH Studios",
+  "speed": "Speed",
+  "status": "Reading paragraph {{current}} of {{total}}",
+  "stop": "Stop",
+  "voice": "Voice",
+  "voice-default": "System default"
+}

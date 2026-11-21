@@ -52,6 +52,8 @@ import { registerRecipeJobs } from '@/lib/developer/recipes.server';
 import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
 import { PROFILE_LINK_REVERIFY_QUEUE, registerProfileLinkReverifyCron } from '@/lib/profile-links/jobs.server';
 import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';
+import { SECURITY_LOG_PRUNE_QUEUE, registerSecurityLogPrune } from '@/lib/auth/security-log.server';
+import { registerReadingSubscriptionJobs } from '@/lib/reading/subscriptions-jobs.server';
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
 import { registerDoctrineJobs } from '@features/doctrine/engine/jobs.server';
 import { CLEANUP_QUEUE, registerCleanupCron } from '@/lib/cleanup-job.server';
@@ -189,6 +191,11 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: WEBHOOK_RETRY_QUEUE, register: registerWebhookRetryCron },
   // J1 §5: re-check verified profile links that have gone stale; a page that stopped linking back loses its mark.
   { queue: PROFILE_LINK_REVERIFY_QUEUE, register: registerProfileLinkReverifyCron },
+  // Account security log: daily prune of events older than 365 days, 5,000 rows at a time.
+  { queue: SECURITY_LOG_PRUNE_QUEUE, register: registerSecurityLogPrune },
+  // Follow Logs and News: every 15 min one notification per new Log / published article per subscriber
+  // (cursor + dedupe), and a daily 17:00 UTC email batch for members who turned email on.
+  { queue: 'reading.subscriptions', register: registerReadingSubscriptionJobs },
 ];
 
 /**

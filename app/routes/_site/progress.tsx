@@ -168,6 +168,7 @@ function ProgressPage() {
           <AchievementsColumn
             userId={userId}
             hideHeader
+            own
             initialData={data.achievements}
           />
         )}

@@ -84,6 +84,7 @@ import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteEmojiPacksRouteImport } from './routes/_site/emoji-packs'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
+import { Route as SiteFollowsRouteImport } from './routes/_site/follows'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
 import { Route as SiteHistoryRouteImport } from './routes/_site/history'
 import { Route as SiteHuntRouteImport } from './routes/_site/hunt'
@@ -170,12 +171,15 @@ import { Route as RmhmusicSprintRouteImport } from './routes/rmhmusic/sprint'
 import { Route as RmhmusicTunerRouteImport } from './routes/rmhmusic/tuner'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
+import { Route as RmhstudyHistoryRouteImport } from './routes/rmhstudy/history'
 import { Route as RmhstudyPlannerRouteImport } from './routes/rmhstudy/planner'
 import { Route as RmhtubeIndexRouteImport } from './routes/rmhtube/index'
 import { Route as RmhtubeRoomIdRouteImport } from './routes/rmhtube/$roomId'
 import { Route as RmhtypeIndexRouteImport } from './routes/rmhtype/index'
 import { Route as RmhtypeRoomIdRouteImport } from './routes/rmhtype/$roomId'
+import { Route as RmhtypeDailyRouteImport } from './routes/rmhtype/daily'
 import { Route as RmhtypeMultiplayerRouteImport } from './routes/rmhtype/multiplayer'
+import { Route as RmhtypeProgressRouteImport } from './routes/rmhtype/progress'
 import { Route as RmhtypeSoloRouteImport } from './routes/rmhtype/solo'
 import { Route as SecretIndexRouteImport } from './routes/secret/index'
 import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
@@ -243,6 +247,8 @@ import { Route as SiteCreateEarningsRouteImport } from './routes/_site/create/ea
 import { Route as SiteCreatePersonasRouteImport } from './routes/_site/create/personas'
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
 import { Route as SiteDeveloperAiPracticesRouteImport } from './routes/_site/developer/ai-practices'
+import { Route as SiteDeveloperExplorerRouteImport } from './routes/_site/developer/explorer'
+import { Route as SiteDeveloperWebhooksRouteImport } from './routes/_site/developer/webhooks'
 import { Route as SiteExchangeIndexRouteImport } from './routes/_site/exchange.index'
 import { Route as SiteExchangeIdRouteImport } from './routes/_site/exchange.$id'
 import { Route as SiteFeedsIndexRouteImport } from './routes/_site/feeds.index'
@@ -299,7 +305,9 @@ import { Route as SiteServicesCarsRouteImport } from './routes/_site/services/ca
 import { Route as SiteServicesFashionRouteImport } from './routes/_site/services/fashion'
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
+import { Route as SiteSettingsCloudSavesRouteImport } from './routes/_site/settings/cloud-saves'
 import { Route as SiteSettingsContentRouteImport } from './routes/_site/settings/content'
+import { Route as SiteSettingsKeyboardRouteImport } from './routes/_site/settings/keyboard'
 import { Route as SiteSettingsLayoutRouteImport } from './routes/_site/settings/layout'
 import { Route as SiteSettingsNotificationsRouteImport } from './routes/_site/settings/notifications'
 import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
@@ -312,6 +320,7 @@ import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$useri
 import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse'
+import { Route as SiteStudyStatsRouteImport } from './routes/_site/study/stats'
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteThreadRootIdRouteImport } from './routes/_site/thread/$rootId'
 import { Route as SiteToolsIndexRouteImport } from './routes/_site/tools/index'
@@ -412,6 +421,8 @@ import { Route as RmhmusicLessonLessonIdRouteImport } from './routes/rmhmusic/le
 import { Route as RmhmusicSongsIndexRouteImport } from './routes/rmhmusic/songs.index'
 import { Route as RmhmusicSongsSongIdRouteImport } from './routes/rmhmusic/songs.$songId'
 import { Route as RmhmusicRTokenRouteImport } from './routes/rmhmusic_.r.$token'
+import { Route as RmhtypeLessonsIndexRouteImport } from './routes/rmhtype/lessons.index'
+import { Route as RmhtypeLessonsLessonIdRouteImport } from './routes/rmhtype/lessons.$lessonId'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
@@ -445,6 +456,8 @@ import { Route as SiteCreateBuildsSubmitRouteImport } from './routes/_site/creat
 import { Route as SiteHomesListingIdRouteImport } from './routes/_site/homes/listing.$id'
 import { Route as SiteNewsStoriesSlugRouteImport } from './routes/_site/news/stories/$slug'
 import { Route as SiteRmhladderJobsJobIdRouteImport } from './routes/_site/rmhladder/jobs/$jobId'
+import { Route as SiteStudyDeckIdEditRouteImport } from './routes/_site/study/$deckId_.edit'
+import { Route as SiteStudyDeckIdPracticeRouteImport } from './routes/_site/study/$deckId_.practice'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
 import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
 import { Route as ApiBalatroPackFileRouteImport } from './routes/api/balatro/pack.$file'
@@ -895,6 +908,11 @@ const SiteExploreRoute = SiteExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteFollowsRoute = SiteFollowsRouteImport.update({
+  id: '/follows',
+  path: '/follows',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteHelpRoute = SiteHelpRouteImport.update({
   id: '/help',
   path: '/help',
@@ -1324,6 +1342,11 @@ const RmhstudyRoomIdRoute = RmhstudyRoomIdRouteImport.update({
   path: '/$roomId',
   getParentRoute: () => RmhstudyRoute,
 } as any)
+const RmhstudyHistoryRoute = RmhstudyHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => RmhstudyRoute,
+} as any)
 const RmhstudyPlannerRoute = RmhstudyPlannerRouteImport.update({
   id: '/planner',
   path: '/planner',
@@ -1349,9 +1372,19 @@ const RmhtypeRoomIdRoute = RmhtypeRoomIdRouteImport.update({
   path: '/$roomId',
   getParentRoute: () => RmhtypeRoute,
 } as any)
+const RmhtypeDailyRoute = RmhtypeDailyRouteImport.update({
+  id: '/daily',
+  path: '/daily',
+  getParentRoute: () => RmhtypeRoute,
+} as any)
 const RmhtypeMultiplayerRoute = RmhtypeMultiplayerRouteImport.update({
   id: '/multiplayer',
   path: '/multiplayer',
+  getParentRoute: () => RmhtypeRoute,
+} as any)
+const RmhtypeProgressRoute = RmhtypeProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
   getParentRoute: () => RmhtypeRoute,
 } as any)
 const RmhtypeSoloRoute = RmhtypeSoloRouteImport.update({
@@ -1692,6 +1725,16 @@ const SiteDeveloperAiPracticesRoute =
     path: '/ai-practices',
     getParentRoute: () => SiteDeveloperRouteRoute,
   } as any)
+const SiteDeveloperExplorerRoute = SiteDeveloperExplorerRouteImport.update({
+  id: '/explorer',
+  path: '/explorer',
+  getParentRoute: () => SiteDeveloperRouteRoute,
+} as any)
+const SiteDeveloperWebhooksRoute = SiteDeveloperWebhooksRouteImport.update({
+  id: '/webhooks',
+  path: '/webhooks',
+  getParentRoute: () => SiteDeveloperRouteRoute,
+} as any)
 const SiteExchangeIndexRoute = SiteExchangeIndexRouteImport.update({
   id: '/exchange/',
   path: '/exchange/',
@@ -1977,9 +2020,19 @@ const SiteSettingsAppearanceRoute = SiteSettingsAppearanceRouteImport.update({
   path: '/settings/appearance',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteSettingsCloudSavesRoute = SiteSettingsCloudSavesRouteImport.update({
+  id: '/settings/cloud-saves',
+  path: '/settings/cloud-saves',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteSettingsContentRoute = SiteSettingsContentRouteImport.update({
   id: '/settings/content',
   path: '/settings/content',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsKeyboardRoute = SiteSettingsKeyboardRouteImport.update({
+  id: '/settings/keyboard',
+  path: '/settings/keyboard',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSettingsLayoutRoute = SiteSettingsLayoutRouteImport.update({
@@ -2041,6 +2094,11 @@ const SiteStudyDeckIdRoute = SiteStudyDeckIdRouteImport.update({
 const SiteStudyBrowseRoute = SiteStudyBrowseRouteImport.update({
   id: '/study/browse',
   path: '/study/browse',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteStudyStatsRoute = SiteStudyStatsRouteImport.update({
+  id: '/study/stats',
+  path: '/study/stats',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteTagTagRoute = SiteTagTagRouteImport.update({
@@ -2550,6 +2608,16 @@ const RmhmusicRTokenRoute = RmhmusicRTokenRouteImport.update({
   path: '/rmhmusic/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RmhtypeLessonsIndexRoute = RmhtypeLessonsIndexRouteImport.update({
+  id: '/lessons/',
+  path: '/lessons/',
+  getParentRoute: () => RmhtypeRoute,
+} as any)
+const RmhtypeLessonsLessonIdRoute = RmhtypeLessonsLessonIdRouteImport.update({
+  id: '/lessons/$lessonId',
+  path: '/lessons/$lessonId',
+  getParentRoute: () => RmhtypeRoute,
+} as any)
 const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -2721,6 +2789,16 @@ const SiteRmhladderJobsJobIdRoute = SiteRmhladderJobsJobIdRouteImport.update({
   id: '/$jobId',
   path: '/$jobId',
   getParentRoute: () => SiteRmhladderJobsRoute,
+} as any)
+const SiteStudyDeckIdEditRoute = SiteStudyDeckIdEditRouteImport.update({
+  id: '/study/$deckId_/edit',
+  path: '/study/$deckId/edit',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteStudyDeckIdPracticeRoute = SiteStudyDeckIdPracticeRouteImport.update({
+  id: '/study/$deckId_/practice',
+  path: '/study/$deckId/practice',
+  getParentRoute: () => SiteRoute,
 } as any)
 const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
   id: '/u/$userid/',
@@ -3179,6 +3257,7 @@ export interface FileRoutesByFullPath {
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
   '/explore': typeof SiteExploreRoute
+  '/follows': typeof SiteFollowsRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
   '/hunt': typeof SiteHuntRoute
@@ -3253,10 +3332,13 @@ export interface FileRoutesByFullPath {
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
+  '/rmhstudy/history': typeof RmhstudyHistoryRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
   '/rmhtype/$roomId': typeof RmhtypeRoomIdRoute
+  '/rmhtype/daily': typeof RmhtypeDailyRoute
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
+  '/rmhtype/progress': typeof RmhtypeProgressRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
@@ -3334,6 +3416,8 @@ export interface FileRoutesByFullPath {
   '/create/earnings': typeof SiteCreateEarningsRoute
   '/create/personas': typeof SiteCreatePersonasRoute
   '/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
+  '/developer/explorer': typeof SiteDeveloperExplorerRoute
+  '/developer/webhooks': typeof SiteDeveloperWebhooksRoute
   '/exchange/$id': typeof SiteExchangeIdRoute
   '/feeds/$id': typeof SiteFeedsIdRoute
   '/groups/$id': typeof SiteGroupsIdRoute
@@ -3371,7 +3455,9 @@ export interface FileRoutesByFullPath {
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/settings/content': typeof SiteSettingsContentRoute
+  '/settings/keyboard': typeof SiteSettingsKeyboardRoute
   '/settings/layout': typeof SiteSettingsLayoutRoute
   '/settings/notifications': typeof SiteSettingsNotificationsRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
@@ -3382,6 +3468,7 @@ export interface FileRoutesByFullPath {
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
+  '/study/stats': typeof SiteStudyStatsRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/thread/$rootId': typeof SiteThreadRootIdRoute
   '/tools/base': typeof SiteToolsBaseRoute
@@ -3472,6 +3559,7 @@ export interface FileRoutesByFullPath {
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic/r/$token': typeof RmhmusicRTokenRoute
+  '/rmhtype/lessons/$lessonId': typeof RmhtypeLessonsLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -3523,6 +3611,7 @@ export interface FileRoutesByFullPath {
   '/rmh-research/fields/': typeof RmhResearchFieldsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
+  '/rmhtype/lessons/': typeof RmhtypeLessonsIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
@@ -3537,6 +3626,8 @@ export interface FileRoutesByFullPath {
   '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
+  '/study/$deckId/edit': typeof SiteStudyDeckIdEditRoute
+  '/study/$deckId/practice': typeof SiteStudyDeckIdPracticeRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
@@ -3665,6 +3756,7 @@ export interface FileRoutesByTo {
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
   '/explore': typeof SiteExploreRoute
+  '/follows': typeof SiteFollowsRoute
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
   '/hunt': typeof SiteHuntRoute
@@ -3736,10 +3828,13 @@ export interface FileRoutesByTo {
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
+  '/rmhstudy/history': typeof RmhstudyHistoryRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
   '/rmhtype/$roomId': typeof RmhtypeRoomIdRoute
+  '/rmhtype/daily': typeof RmhtypeDailyRoute
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
+  '/rmhtype/progress': typeof RmhtypeProgressRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
@@ -3817,6 +3912,8 @@ export interface FileRoutesByTo {
   '/create/earnings': typeof SiteCreateEarningsRoute
   '/create/personas': typeof SiteCreatePersonasRoute
   '/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
+  '/developer/explorer': typeof SiteDeveloperExplorerRoute
+  '/developer/webhooks': typeof SiteDeveloperWebhooksRoute
   '/exchange/$id': typeof SiteExchangeIdRoute
   '/feeds/$id': typeof SiteFeedsIdRoute
   '/groups/$id': typeof SiteGroupsIdRoute
@@ -3854,7 +3951,9 @@ export interface FileRoutesByTo {
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/settings/content': typeof SiteSettingsContentRoute
+  '/settings/keyboard': typeof SiteSettingsKeyboardRoute
   '/settings/layout': typeof SiteSettingsLayoutRoute
   '/settings/notifications': typeof SiteSettingsNotificationsRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
@@ -3865,6 +3964,7 @@ export interface FileRoutesByTo {
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
+  '/study/stats': typeof SiteStudyStatsRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/thread/$rootId': typeof SiteThreadRootIdRoute
   '/tools/base': typeof SiteToolsBaseRoute
@@ -3955,6 +4055,7 @@ export interface FileRoutesByTo {
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic/r/$token': typeof RmhmusicRTokenRoute
+  '/rmhtype/lessons/$lessonId': typeof RmhtypeLessonsLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -4005,6 +4106,7 @@ export interface FileRoutesByTo {
   '/rmh-research/fields': typeof RmhResearchFieldsIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs': typeof RmhmusicSongsIndexRoute
+  '/rmhtype/lessons': typeof RmhtypeLessonsIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/strategies/profile': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
@@ -4019,6 +4121,8 @@ export interface FileRoutesByTo {
   '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
+  '/study/$deckId/edit': typeof SiteStudyDeckIdEditRoute
+  '/study/$deckId/practice': typeof SiteStudyDeckIdPracticeRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
@@ -4171,6 +4275,7 @@ export interface FileRoutesById {
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/emoji-packs': typeof SiteEmojiPacksRoute
   '/_site/explore': typeof SiteExploreRoute
+  '/_site/follows': typeof SiteFollowsRoute
   '/_site/help': typeof SiteHelpRoute
   '/_site/history': typeof SiteHistoryRoute
   '/_site/hunt': typeof SiteHuntRoute
@@ -4246,10 +4351,13 @@ export interface FileRoutesById {
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
+  '/rmhstudy/history': typeof RmhstudyHistoryRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
   '/rmhtype/$roomId': typeof RmhtypeRoomIdRoute
+  '/rmhtype/daily': typeof RmhtypeDailyRoute
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
+  '/rmhtype/progress': typeof RmhtypeProgressRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
@@ -4328,6 +4436,8 @@ export interface FileRoutesById {
   '/_site/create/earnings': typeof SiteCreateEarningsRoute
   '/_site/create/personas': typeof SiteCreatePersonasRoute
   '/_site/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
+  '/_site/developer/explorer': typeof SiteDeveloperExplorerRoute
+  '/_site/developer/webhooks': typeof SiteDeveloperWebhooksRoute
   '/_site/exchange/$id': typeof SiteExchangeIdRoute
   '/_site/feeds/$id': typeof SiteFeedsIdRoute
   '/_site/groups/$id': typeof SiteGroupsIdRoute
@@ -4365,7 +4475,9 @@ export interface FileRoutesById {
   '/_site/services/cars': typeof SiteServicesCarsRoute
   '/_site/services/fashion': typeof SiteServicesFashionRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/_site/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/_site/settings/content': typeof SiteSettingsContentRoute
+  '/_site/settings/keyboard': typeof SiteSettingsKeyboardRoute
   '/_site/settings/layout': typeof SiteSettingsLayoutRoute
   '/_site/settings/notifications': typeof SiteSettingsNotificationsRoute
   '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
@@ -4376,6 +4488,7 @@ export interface FileRoutesById {
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
   '/_site/study/browse': typeof SiteStudyBrowseRoute
+  '/_site/study/stats': typeof SiteStudyStatsRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
   '/_site/thread/$rootId': typeof SiteThreadRootIdRoute
   '/_site/tools/base': typeof SiteToolsBaseRoute
@@ -4466,6 +4579,7 @@ export interface FileRoutesById {
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic_/r/$token': typeof RmhmusicRTokenRoute
+  '/rmhtype/lessons/$lessonId': typeof RmhtypeLessonsLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -4517,6 +4631,7 @@ export interface FileRoutesById {
   '/rmh-research/fields/': typeof RmhResearchFieldsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
+  '/rmhtype/lessons/': typeof RmhtypeLessonsIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
@@ -4531,6 +4646,8 @@ export interface FileRoutesById {
   '/_site/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/_site/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/_site/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
+  '/_site/study/$deckId_/edit': typeof SiteStudyDeckIdEditRoute
+  '/_site/study/$deckId_/practice': typeof SiteStudyDeckIdPracticeRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
@@ -4684,6 +4801,7 @@ export interface FileRouteTypes {
     | '/drafts'
     | '/emoji-packs'
     | '/explore'
+    | '/follows'
     | '/help'
     | '/history'
     | '/hunt'
@@ -4758,10 +4876,13 @@ export interface FileRouteTypes {
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
+    | '/rmhstudy/history'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
     | '/rmhtype/$roomId'
+    | '/rmhtype/daily'
     | '/rmhtype/multiplayer'
+    | '/rmhtype/progress'
     | '/rmhtype/solo'
     | '/secret/cursed-logic'
     | '/secret/signal-forge'
@@ -4839,6 +4960,8 @@ export interface FileRouteTypes {
     | '/create/earnings'
     | '/create/personas'
     | '/developer/ai-practices'
+    | '/developer/explorer'
+    | '/developer/webhooks'
     | '/exchange/$id'
     | '/feeds/$id'
     | '/groups/$id'
@@ -4876,7 +4999,9 @@ export interface FileRouteTypes {
     | '/services/cars'
     | '/services/fashion'
     | '/settings/appearance'
+    | '/settings/cloud-saves'
     | '/settings/content'
+    | '/settings/keyboard'
     | '/settings/layout'
     | '/settings/notifications'
     | '/settings/privacy'
@@ -4887,6 +5012,7 @@ export interface FileRouteTypes {
     | '/store/$userid'
     | '/study/$deckId'
     | '/study/browse'
+    | '/study/stats'
     | '/tag/$tag'
     | '/thread/$rootId'
     | '/tools/base'
@@ -4977,6 +5103,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic/r/$token'
+    | '/rmhtype/lessons/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -5028,6 +5155,7 @@ export interface FileRouteTypes {
     | '/rmh-research/fields/'
     | '/rmhbox/minigames/'
     | '/rmhmusic/songs/'
+    | '/rmhtype/lessons/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
@@ -5042,6 +5170,8 @@ export interface FileRouteTypes {
     | '/homes/listing/$id'
     | '/news/stories/$slug'
     | '/rmhladder/jobs/$jobId'
+    | '/study/$deckId/edit'
+    | '/study/$deckId/practice'
     | '/api/albums/asset/$'
     | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
@@ -5170,6 +5300,7 @@ export interface FileRouteTypes {
     | '/drafts'
     | '/emoji-packs'
     | '/explore'
+    | '/follows'
     | '/help'
     | '/history'
     | '/hunt'
@@ -5241,10 +5372,13 @@ export interface FileRouteTypes {
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
+    | '/rmhstudy/history'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
     | '/rmhtype/$roomId'
+    | '/rmhtype/daily'
     | '/rmhtype/multiplayer'
+    | '/rmhtype/progress'
     | '/rmhtype/solo'
     | '/secret/signal-forge'
     | '/secret/vega'
@@ -5322,6 +5456,8 @@ export interface FileRouteTypes {
     | '/create/earnings'
     | '/create/personas'
     | '/developer/ai-practices'
+    | '/developer/explorer'
+    | '/developer/webhooks'
     | '/exchange/$id'
     | '/feeds/$id'
     | '/groups/$id'
@@ -5359,7 +5495,9 @@ export interface FileRouteTypes {
     | '/services/cars'
     | '/services/fashion'
     | '/settings/appearance'
+    | '/settings/cloud-saves'
     | '/settings/content'
+    | '/settings/keyboard'
     | '/settings/layout'
     | '/settings/notifications'
     | '/settings/privacy'
@@ -5370,6 +5508,7 @@ export interface FileRouteTypes {
     | '/store/$userid'
     | '/study/$deckId'
     | '/study/browse'
+    | '/study/stats'
     | '/tag/$tag'
     | '/thread/$rootId'
     | '/tools/base'
@@ -5460,6 +5599,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic/r/$token'
+    | '/rmhtype/lessons/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -5510,6 +5650,7 @@ export interface FileRouteTypes {
     | '/rmh-research/fields'
     | '/rmhbox/minigames'
     | '/rmhmusic/songs'
+    | '/rmhtype/lessons'
     | '/secret/cursed-logic'
     | '/strategies/profile'
     | '/strategies/puzzles'
@@ -5524,6 +5665,8 @@ export interface FileRouteTypes {
     | '/homes/listing/$id'
     | '/news/stories/$slug'
     | '/rmhladder/jobs/$jobId'
+    | '/study/$deckId/edit'
+    | '/study/$deckId/practice'
     | '/api/albums/asset/$'
     | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
@@ -5675,6 +5818,7 @@ export interface FileRouteTypes {
     | '/_site/drafts'
     | '/_site/emoji-packs'
     | '/_site/explore'
+    | '/_site/follows'
     | '/_site/help'
     | '/_site/history'
     | '/_site/hunt'
@@ -5750,10 +5894,13 @@ export interface FileRouteTypes {
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
+    | '/rmhstudy/history'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
     | '/rmhtype/$roomId'
+    | '/rmhtype/daily'
     | '/rmhtype/multiplayer'
+    | '/rmhtype/progress'
     | '/rmhtype/solo'
     | '/secret/cursed-logic'
     | '/secret/signal-forge'
@@ -5832,6 +5979,8 @@ export interface FileRouteTypes {
     | '/_site/create/earnings'
     | '/_site/create/personas'
     | '/_site/developer/ai-practices'
+    | '/_site/developer/explorer'
+    | '/_site/developer/webhooks'
     | '/_site/exchange/$id'
     | '/_site/feeds/$id'
     | '/_site/groups/$id'
@@ -5869,7 +6018,9 @@ export interface FileRouteTypes {
     | '/_site/services/cars'
     | '/_site/services/fashion'
     | '/_site/settings/appearance'
+    | '/_site/settings/cloud-saves'
     | '/_site/settings/content'
+    | '/_site/settings/keyboard'
     | '/_site/settings/layout'
     | '/_site/settings/notifications'
     | '/_site/settings/privacy'
@@ -5880,6 +6031,7 @@ export interface FileRouteTypes {
     | '/_site/store/$userid'
     | '/_site/study/$deckId'
     | '/_site/study/browse'
+    | '/_site/study/stats'
     | '/_site/tag/$tag'
     | '/_site/thread/$rootId'
     | '/_site/tools/base'
@@ -5970,6 +6122,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic_/r/$token'
+    | '/rmhtype/lessons/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -6021,6 +6174,7 @@ export interface FileRouteTypes {
     | '/rmh-research/fields/'
     | '/rmhbox/minigames/'
     | '/rmhmusic/songs/'
+    | '/rmhtype/lessons/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
@@ -6035,6 +6189,8 @@ export interface FileRouteTypes {
     | '/_site/homes/listing/$id'
     | '/_site/news/stories/$slug'
     | '/_site/rmhladder/jobs/$jobId'
+    | '/_site/study/$deckId_/edit'
+    | '/_site/study/$deckId_/practice'
     | '/api/albums/asset/$'
     | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
@@ -6823,6 +6979,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteExploreRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/follows': {
+      id: '/_site/follows'
+      path: '/follows'
+      fullPath: '/follows'
+      preLoaderRoute: typeof SiteFollowsRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/help': {
       id: '/_site/help'
       path: '/help'
@@ -7425,6 +7588,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhstudyRoomIdRouteImport
       parentRoute: typeof RmhstudyRoute
     }
+    '/rmhstudy/history': {
+      id: '/rmhstudy/history'
+      path: '/history'
+      fullPath: '/rmhstudy/history'
+      preLoaderRoute: typeof RmhstudyHistoryRouteImport
+      parentRoute: typeof RmhstudyRoute
+    }
     '/rmhstudy/planner': {
       id: '/rmhstudy/planner'
       path: '/planner'
@@ -7460,11 +7630,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhtypeRoomIdRouteImport
       parentRoute: typeof RmhtypeRoute
     }
+    '/rmhtype/daily': {
+      id: '/rmhtype/daily'
+      path: '/daily'
+      fullPath: '/rmhtype/daily'
+      preLoaderRoute: typeof RmhtypeDailyRouteImport
+      parentRoute: typeof RmhtypeRoute
+    }
     '/rmhtype/multiplayer': {
       id: '/rmhtype/multiplayer'
       path: '/multiplayer'
       fullPath: '/rmhtype/multiplayer'
       preLoaderRoute: typeof RmhtypeMultiplayerRouteImport
+      parentRoute: typeof RmhtypeRoute
+    }
+    '/rmhtype/progress': {
+      id: '/rmhtype/progress'
+      path: '/progress'
+      fullPath: '/rmhtype/progress'
+      preLoaderRoute: typeof RmhtypeProgressRouteImport
       parentRoute: typeof RmhtypeRoute
     }
     '/rmhtype/solo': {
@@ -7936,6 +8120,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteDeveloperAiPracticesRouteImport
       parentRoute: typeof SiteDeveloperRouteRoute
     }
+    '/_site/developer/explorer': {
+      id: '/_site/developer/explorer'
+      path: '/explorer'
+      fullPath: '/developer/explorer'
+      preLoaderRoute: typeof SiteDeveloperExplorerRouteImport
+      parentRoute: typeof SiteDeveloperRouteRoute
+    }
+    '/_site/developer/webhooks': {
+      id: '/_site/developer/webhooks'
+      path: '/webhooks'
+      fullPath: '/developer/webhooks'
+      preLoaderRoute: typeof SiteDeveloperWebhooksRouteImport
+      parentRoute: typeof SiteDeveloperRouteRoute
+    }
     '/_site/exchange/': {
       id: '/_site/exchange/'
       path: '/exchange'
@@ -8328,11 +8526,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSettingsAppearanceRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/settings/cloud-saves': {
+      id: '/_site/settings/cloud-saves'
+      path: '/settings/cloud-saves'
+      fullPath: '/settings/cloud-saves'
+      preLoaderRoute: typeof SiteSettingsCloudSavesRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/settings/content': {
       id: '/_site/settings/content'
       path: '/settings/content'
       fullPath: '/settings/content'
       preLoaderRoute: typeof SiteSettingsContentRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/keyboard': {
+      id: '/_site/settings/keyboard'
+      path: '/settings/keyboard'
+      fullPath: '/settings/keyboard'
+      preLoaderRoute: typeof SiteSettingsKeyboardRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/settings/layout': {
@@ -8417,6 +8629,13 @@ declare module '@tanstack/react-router' {
       path: '/study/browse'
       fullPath: '/study/browse'
       preLoaderRoute: typeof SiteStudyBrowseRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/study/stats': {
+      id: '/_site/study/stats'
+      path: '/study/stats'
+      fullPath: '/study/stats'
+      preLoaderRoute: typeof SiteStudyStatsRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/tag/$tag': {
@@ -9119,6 +9338,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhmusicRTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rmhtype/lessons/': {
+      id: '/rmhtype/lessons/'
+      path: '/lessons'
+      fullPath: '/rmhtype/lessons/'
+      preLoaderRoute: typeof RmhtypeLessonsIndexRouteImport
+      parentRoute: typeof RmhtypeRoute
+    }
+    '/rmhtype/lessons/$lessonId': {
+      id: '/rmhtype/lessons/$lessonId'
+      path: '/lessons/$lessonId'
+      fullPath: '/rmhtype/lessons/$lessonId'
+      preLoaderRoute: typeof RmhtypeLessonsLessonIdRouteImport
+      parentRoute: typeof RmhtypeRoute
+    }
     '/secret/cursed-logic/': {
       id: '/secret/cursed-logic/'
       path: '/'
@@ -9349,6 +9582,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhladder/jobs/$jobId'
       preLoaderRoute: typeof SiteRmhladderJobsJobIdRouteImport
       parentRoute: typeof SiteRmhladderJobsRoute
+    }
+    '/_site/study/$deckId_/edit': {
+      id: '/_site/study/$deckId_/edit'
+      path: '/study/$deckId/edit'
+      fullPath: '/study/$deckId/edit'
+      preLoaderRoute: typeof SiteStudyDeckIdEditRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/study/$deckId_/practice': {
+      id: '/_site/study/$deckId_/practice'
+      path: '/study/$deckId/practice'
+      fullPath: '/study/$deckId/practice'
+      preLoaderRoute: typeof SiteStudyDeckIdPracticeRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/_site/u/$userid/': {
       id: '/_site/u/$userid/'
@@ -9972,11 +10219,15 @@ const SiteCreateRouteRouteWithChildren = SiteCreateRouteRoute._addFileChildren(
 
 interface SiteDeveloperRouteRouteChildren {
   SiteDeveloperAiPracticesRoute: typeof SiteDeveloperAiPracticesRoute
+  SiteDeveloperExplorerRoute: typeof SiteDeveloperExplorerRoute
+  SiteDeveloperWebhooksRoute: typeof SiteDeveloperWebhooksRoute
   SiteDeveloperIndexRoute: typeof SiteDeveloperIndexRoute
 }
 
 const SiteDeveloperRouteRouteChildren: SiteDeveloperRouteRouteChildren = {
   SiteDeveloperAiPracticesRoute: SiteDeveloperAiPracticesRoute,
+  SiteDeveloperExplorerRoute: SiteDeveloperExplorerRoute,
+  SiteDeveloperWebhooksRoute: SiteDeveloperWebhooksRoute,
   SiteDeveloperIndexRoute: SiteDeveloperIndexRoute,
 }
 
@@ -10054,6 +10305,7 @@ interface SiteRouteChildren {
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteEmojiPacksRoute: typeof SiteEmojiPacksRoute
   SiteExploreRoute: typeof SiteExploreRoute
+  SiteFollowsRoute: typeof SiteFollowsRoute
   SiteHelpRoute: typeof SiteHelpRoute
   SiteHistoryRoute: typeof SiteHistoryRoute
   SiteHuntRoute: typeof SiteHuntRoute
@@ -10109,7 +10361,9 @@ interface SiteRouteChildren {
   SiteSafetyPileOnRoute: typeof SiteSafetyPileOnRoute
   SiteSeriesIdRoute: typeof SiteSeriesIdRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
+  SiteSettingsCloudSavesRoute: typeof SiteSettingsCloudSavesRoute
   SiteSettingsContentRoute: typeof SiteSettingsContentRoute
+  SiteSettingsKeyboardRoute: typeof SiteSettingsKeyboardRoute
   SiteSettingsLayoutRoute: typeof SiteSettingsLayoutRoute
   SiteSettingsNotificationsRoute: typeof SiteSettingsNotificationsRoute
   SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
@@ -10120,6 +10374,7 @@ interface SiteRouteChildren {
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
   SiteStudyBrowseRoute: typeof SiteStudyBrowseRoute
+  SiteStudyStatsRoute: typeof SiteStudyStatsRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
   SiteThreadRootIdRoute: typeof SiteThreadRootIdRoute
   SiteToolsBaseRoute: typeof SiteToolsBaseRoute
@@ -10173,6 +10428,8 @@ interface SiteRouteChildren {
   SiteCreateBuildsSubmitRoute: typeof SiteCreateBuildsSubmitRoute
   SiteHomesListingIdRoute: typeof SiteHomesListingIdRoute
   SiteNewsStoriesSlugRoute: typeof SiteNewsStoriesSlugRoute
+  SiteStudyDeckIdEditRoute: typeof SiteStudyDeckIdEditRoute
+  SiteStudyDeckIdPracticeRoute: typeof SiteStudyDeckIdPracticeRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
   SiteCSlugInviteCodeRoute: typeof SiteCSlugInviteCodeRoute
   SiteUUseridPostPostidRoute: typeof SiteUUseridPostPostidRoute
@@ -10192,6 +10449,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteDraftsRoute: SiteDraftsRoute,
   SiteEmojiPacksRoute: SiteEmojiPacksRoute,
   SiteExploreRoute: SiteExploreRoute,
+  SiteFollowsRoute: SiteFollowsRoute,
   SiteHelpRoute: SiteHelpRoute,
   SiteHistoryRoute: SiteHistoryRoute,
   SiteHuntRoute: SiteHuntRoute,
@@ -10247,7 +10505,9 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSafetyPileOnRoute: SiteSafetyPileOnRoute,
   SiteSeriesIdRoute: SiteSeriesIdRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
+  SiteSettingsCloudSavesRoute: SiteSettingsCloudSavesRoute,
   SiteSettingsContentRoute: SiteSettingsContentRoute,
+  SiteSettingsKeyboardRoute: SiteSettingsKeyboardRoute,
   SiteSettingsLayoutRoute: SiteSettingsLayoutRoute,
   SiteSettingsNotificationsRoute: SiteSettingsNotificationsRoute,
   SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
@@ -10258,6 +10518,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
   SiteStudyBrowseRoute: SiteStudyBrowseRoute,
+  SiteStudyStatsRoute: SiteStudyStatsRoute,
   SiteTagTagRoute: SiteTagTagRoute,
   SiteThreadRootIdRoute: SiteThreadRootIdRoute,
   SiteToolsBaseRoute: SiteToolsBaseRoute,
@@ -10311,6 +10572,8 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteCreateBuildsSubmitRoute: SiteCreateBuildsSubmitRoute,
   SiteHomesListingIdRoute: SiteHomesListingIdRoute,
   SiteNewsStoriesSlugRoute: SiteNewsStoriesSlugRoute,
+  SiteStudyDeckIdEditRoute: SiteStudyDeckIdEditRoute,
+  SiteStudyDeckIdPracticeRoute: SiteStudyDeckIdPracticeRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
   SiteCSlugInviteCodeRoute: SiteCSlugInviteCodeRoute,
   SiteUUseridPostPostidRoute: SiteUUseridPostPostidRoute,
@@ -10592,12 +10855,14 @@ const RmhmusicRouteWithChildren = RmhmusicRoute._addFileChildren(
 
 interface RmhstudyRouteChildren {
   RmhstudyRoomIdRoute: typeof RmhstudyRoomIdRoute
+  RmhstudyHistoryRoute: typeof RmhstudyHistoryRoute
   RmhstudyPlannerRoute: typeof RmhstudyPlannerRoute
   RmhstudyIndexRoute: typeof RmhstudyIndexRoute
 }
 
 const RmhstudyRouteChildren: RmhstudyRouteChildren = {
   RmhstudyRoomIdRoute: RmhstudyRoomIdRoute,
+  RmhstudyHistoryRoute: RmhstudyHistoryRoute,
   RmhstudyPlannerRoute: RmhstudyPlannerRoute,
   RmhstudyIndexRoute: RmhstudyIndexRoute,
 }
@@ -10621,16 +10886,24 @@ const RmhtubeRouteWithChildren =
 
 interface RmhtypeRouteChildren {
   RmhtypeRoomIdRoute: typeof RmhtypeRoomIdRoute
+  RmhtypeDailyRoute: typeof RmhtypeDailyRoute
   RmhtypeMultiplayerRoute: typeof RmhtypeMultiplayerRoute
+  RmhtypeProgressRoute: typeof RmhtypeProgressRoute
   RmhtypeSoloRoute: typeof RmhtypeSoloRoute
   RmhtypeIndexRoute: typeof RmhtypeIndexRoute
+  RmhtypeLessonsLessonIdRoute: typeof RmhtypeLessonsLessonIdRoute
+  RmhtypeLessonsIndexRoute: typeof RmhtypeLessonsIndexRoute
 }
 
 const RmhtypeRouteChildren: RmhtypeRouteChildren = {
   RmhtypeRoomIdRoute: RmhtypeRoomIdRoute,
+  RmhtypeDailyRoute: RmhtypeDailyRoute,
   RmhtypeMultiplayerRoute: RmhtypeMultiplayerRoute,
+  RmhtypeProgressRoute: RmhtypeProgressRoute,
   RmhtypeSoloRoute: RmhtypeSoloRoute,
   RmhtypeIndexRoute: RmhtypeIndexRoute,
+  RmhtypeLessonsLessonIdRoute: RmhtypeLessonsLessonIdRoute,
+  RmhtypeLessonsIndexRoute: RmhtypeLessonsIndexRoute,
 }
 
 const RmhtypeRouteWithChildren =

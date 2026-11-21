@@ -10,6 +10,7 @@ import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { ManageFollowsLink } from '@/components/follows/ManageFollowsLink';
 
 interface SocialUser {
  id: string;
@@ -26,9 +27,11 @@ interface SocialListModalProps {
  onClose: () => void;
  userId: string;
  type:'followers'|'following';
+ /** Set on the member's own profile: shows a link to the follow manager. */
+ canManage?: boolean;
 }
 
-export function SocialListModal({ open, onClose, userId, type }: SocialListModalProps) {
+export function SocialListModal({ open, onClose, userId, type, canManage }: SocialListModalProps) {
  const [users, setUsers] = useState<SocialUser[]>([]);
  const [cursor, setCursor] = useState<string | null>(null);
  const [hasMore, setHasMore] = useState(true);
@@ -143,6 +146,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <DialogTitle className="font-semibold text-lg text-site-text">
  {title}
  </DialogTitle>
+ {canManage && <ManageFollowsLink tab={type} onNavigate={onClose} />}
  </div>
 
  {/* List */}

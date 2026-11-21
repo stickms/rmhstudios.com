@@ -415,6 +415,12 @@ export const STATIC_ROUTES: SitemapEntry[] =
         'monthly',
       priority: 0.4,
     },
+    {
+      loc: '/developer/explorer',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
 
     // The separately-branded arms are DERIVED from `lib/verticals.ts` rather than
     // listed here (K2). Eleven microsites shipped in six weeks and this block was
@@ -636,6 +642,10 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // the viewer's own coins, views and payouts
     '/drafts':
       'personal',
+    '/follows':
+      'personal',
+    '/study/stats':
+      'personal', // the member's own review statistics
     '/connections/new':
       'personal', // signed-in authoring form
     '/games/trades':
@@ -652,6 +662,8 @@ export const EXCLUDED_ROUTES: Record<
       'noindex', // discovery page; filters and search make a URL per query
     '/games/inventory':
       'personal', // the viewer's own trading cards and badges
+    '/developer/webhooks':
+      'personal', // the member's own webhook endpoints and delivery log
     '/out':
       'noindex', // link-warning interstitial; the destination rides in ?url=
     '/safety/pile-on':
@@ -720,7 +732,11 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/settings/appearance':
       'personal',
+    '/settings/cloud-saves':
+      'personal',
     '/settings/content':
+      'personal',
+    '/settings/keyboard':
       'personal',
     '/settings/layout':
       'personal',
@@ -755,6 +771,7 @@ export const EXCLUDED_ROUTES: Record<
       'auth-gated',
     '/user-builds/submit':
       'redirect', // → /create/builds/submit, carrying ?edit= and ?forGame=
+    '/rmhstudy/history': 'auth-gated', // focus history and weekly goal
     '/rmhstudy/planner':
       'auth-gated', // P21 F4: exam planner
     '/v/new':
@@ -914,6 +931,12 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // a member's own saved loadouts
     '/rmhtype/solo':
       'duplicate', // same content as `/rmhtype`
+    '/rmhtype/progress':
+      'auth-gated', // the member's own typing history, behind the RMHType sign-in
+    '/rmhtype/lessons':
+      'auth-gated', // the touch-typing course index, behind the RMHType sign-in
+    '/rmhtype/daily':
+      'auth-gated', // today's shared passage and board, behind the RMHType sign-in
 
     // ── strategies: an in-game meta layer, all of it behind a save ──
     '/strategies/incidents':
@@ -1042,6 +1065,10 @@ export const DYNAMIC_ROUTES: Record<
       'community',
     '/study/$deckId':
       'community',
+    '/study/$deckId/edit':
+      null, // personal: the owner's editor
+    '/study/$deckId/practice':
+      null, // personal: a practice-test session, noindex
     '/tournaments/$id':
       'community',
     '/jams/$slug':
@@ -1154,6 +1181,8 @@ export const DYNAMIC_ROUTES: Record<
       null,
     '/rmhtype/$roomId':
       null,
+    '/rmhtype/lessons/$lessonId':
+      null, // one lesson run (or the worst-keys drill): the curriculum is fixed, behind the sign-in
     '/tf2/hud-editor/h/$slug':
       null, // one HUD; listed through the workshop, not enumerated here
     '/tf2/hud-editor/s/$token':

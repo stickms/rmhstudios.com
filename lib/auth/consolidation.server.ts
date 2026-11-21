@@ -37,6 +37,7 @@ import { logAdminAction } from '@/lib/admin-audit.server';
 import { userChipSelect } from '@/lib/user-display';
 import { findAccountHistory } from '@/lib/auth/account-history.server';
 import { notifySignInChange } from '@/lib/auth/security-notice.server';
+import { recordSecurityEvent } from '@/lib/auth/security-log.server';
 import {
   CREDENTIAL_PROVIDER_ID,
   SESSION_NOT_FRESH,
@@ -703,6 +704,20 @@ export function consolidation() {
                   kind: 'merged',
                   providerIds:
                     moved,
+                },
+              );
+              void recordSecurityEvent(
+                {
+                  userId:
+                    toUserId,
+                  kind: 'account_merged',
+                  request:
+                    ctx.request,
+                  detail:
+                    {
+                      providerIds:
+                        moved,
+                    },
                 },
               );
 
