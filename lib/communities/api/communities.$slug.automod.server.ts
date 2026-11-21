@@ -20,7 +20,7 @@ export const route = apiRoute('/api/communities/$slug/automod', {
       const guard = await requireMod(params.slug, userId);
       if (!guard.ok) return guard.response;
       try {
-        const rule = await createAutomodRule(guard.value.id, body);
+        const rule = await createAutomodRule(guard.value.id, body, userId);
         return Response.json({ rule }, { status: 201 });
       } catch (e) {
         if (e instanceof AutomodError) {

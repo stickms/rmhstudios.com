@@ -28,14 +28,33 @@ export interface DeveloperKeyRow {
     | string
     | null;
   createdAt: string;
+  /** Allowed addresses/ranges; empty means any address. */
+  allowedCidrs: string[];
+  /** The key's own per-minute limit; null means the tier's. */
+  rateLimitPerMinute: number | null;
+}
+
+/** Requests refused for coming from an address outside a key's list. */
+export interface KeyRefusals {
+  /** Refused in the last 7 days. */
+  count: number;
+  /** Masked address of the latest refusal (`203.0.113.x`). */
+  lastPrefix: string | null;
+}
+
+/** A key as listed on /developer: its metadata plus its refusal summary. */
+export interface DeveloperKeyListRow extends DeveloperKeyRow {
+  refusals: KeyRefusals;
 }
 
 export const listDeveloperKeysApi =
   endpoint<{
     res: {
-      keys: DeveloperKeyRow[];
+      keys: DeveloperKeyListRow[];
       hasApiAccess: boolean;
       tier: string;
+      /** The tier's per-minute limit: the ceiling for a key's own limit. */
+      maxRateLimitPerMinute: number;
       availableScopes: string[];
     };
   }>()(

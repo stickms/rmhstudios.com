@@ -14,6 +14,7 @@ import { notifyUser, type MessagePayload } from '@/lib/message-events';
 import { publishGroupMessage, type GroupMessagePayload } from '@/lib/group-events';
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
 import { toMessageView } from '@/lib/messages/message-view';
+import { normalizeImageAlts } from '@/lib/messages/image-alts';
 import { computeAttachFlags, expiryFor } from '@/lib/chat-plus/flags';
 import { dmAudience, publishChatUpdate, type ChatAccess } from '@/lib/chat-plus/access.server';
 import { adjustDmUnread } from '@/lib/chat-plus/unread.server';
@@ -38,6 +39,8 @@ export interface PostInput {
   content: string;
   gifUrl?: string | null;
   imageUrls?: string[];
+  /** Descriptions, index-aligned with `imageUrls` (a forward copies them). */
+  imageAlts?: string[];
   kind?: string;
   meta?: Prisma.InputJsonValue;
   forwardCount?: number;
@@ -64,6 +67,7 @@ const dmSelect = {
   createdAt: true,
   gifUrl: true,
   imageUrls: true,
+  imageAlts: true,
   editedAt: true,
   deletedAt: true,
   deletedBy: true,
@@ -96,6 +100,7 @@ export async function postChatMessage(
             content: input.content,
             gifUrl: input.gifUrl ?? null,
             imageUrls: input.imageUrls ?? [],
+            imageAlts: normalizeImageAlts(input.imageUrls, input.imageAlts),
             kind,
             meta: input.meta,
             forwardCount: input.forwardCount ?? 0,
@@ -121,6 +126,7 @@ export async function postChatMessage(
       createdAt: view.createdAt,
       gifUrl: view.gifUrl,
       imageUrls: view.imageUrls,
+      imageAlts: view.imageAlts,
       reactions: [],
       kind: view.kind,
       meta: view.meta,
@@ -152,6 +158,7 @@ export async function postChatMessage(
         content: input.content,
         gifUrl: input.gifUrl ?? null,
         imageUrls: input.imageUrls ?? [],
+        imageAlts: normalizeImageAlts(input.imageUrls, input.imageAlts),
         pollQuestion: input.poll?.question ?? null,
         pollOptions: input.poll?.options ?? [],
         kind,

@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -28,6 +28,7 @@ import {
   OFF_LADDER,
   STAGE_LABELS,
 } from '@/components/rmhladder/PipelineLadder';
+import { OfferForm, type OfferTarget } from '@/components/rmhladder/OfferForm';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
@@ -101,6 +102,7 @@ function PipelinePage() {
   const [apps, setApps] = useState<AnyRow[]>(applications as AnyRow[]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [recording, setRecording] = useState<OfferTarget | null>(null);
   const liveRef = useRef<HTMLParagraphElement>(null);
 
   const prevRef = useRef(applications);
@@ -128,6 +130,10 @@ function PipelinePage() {
       return false;
     }
     await router.invalidate();
+    // Reaching Offer is the moment the numbers are known: open "Record the offer".
+    if (patch.status === 'offer' && app.status !== 'offer' && !app.offer) {
+      setRecording(offerTargetOf(app));
+    }
     return true;
   }
 
@@ -198,19 +204,40 @@ function PipelinePage() {
               app={selected}
               resumeVersions={resumeVersions}
               onPatch={(patch) => void applyPatch(selected, patch)}
+              onRecordOffer={() => setRecording(offerTargetOf(selected))}
               onClose={() => setSelectedId(null)}
             />
           )}
         </div>
       )}
+
+      {recording && (
+        <OfferForm
+          key={recording.applicationId}
+          open
+          onOpenChange={(open) => !open && setRecording(null)}
+          target={recording}
+          onSaved={() => void router.invalidate()}
+        />
+      )}
     </div>
   );
+}
+
+function offerTargetOf(app: AnyRow): OfferTarget {
+  const job = app.job as AnyRow | undefined;
+  return {
+    applicationId: app.id as string,
+    company: ((job?.company as AnyRow | undefined)?.name as string | undefined) ?? '',
+    title: (job?.title as string | undefined) ?? '',
+  };
 }
 
 function ApplicationEditor({
   app,
   resumeVersions,
   onPatch,
+  onRecordOffer,
   onClose,
 }: {
   app: AnyRow;
@@ -221,9 +248,10 @@ function ApplicationEditor({
     resumeName: string;
   }>;
   onPatch: (patch: ApplicationPatch) => void;
+  onRecordOffer: () => void;
   onClose: () => void;
 }) {
-  const { t } = useTranslation('site');
+  const { t } = useTranslation(['site', 'ladder-offers']);
   const job = app.job as AnyRow | undefined;
 
   // Local draft for text fields; saved on blur
@@ -303,6 +331,19 @@ function ApplicationEditor({
           ))}
         </Select>
       </label>
+
+      {app.status === 'offer' &&
+        (app.offer ? (
+          <Button asChild variant="default">
+            <Link to="/rmhladder/offers">
+              {t('pipeline.viewOffer', { ns: 'ladder-offers', defaultValue: 'View the offer' })}
+            </Link>
+          </Button>
+        ) : (
+          <Button type="button" variant="default" onClick={onRecordOffer}>
+            {t('pipeline.recordOffer', { ns: 'ladder-offers', defaultValue: 'Record the offer' })}
+          </Button>
+        ))}
 
       <label className="rl-field" htmlFor="rl-app-applied">
         <span className="rl-label">{t('ladder.pipeline.appliedDate', { defaultValue: 'Applied date' })}</span>

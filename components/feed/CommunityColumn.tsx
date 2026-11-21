@@ -14,6 +14,9 @@ import {
 } from'lucide-react';
 import { formatDistanceToNow } from'date-fns';
 import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
+import { RulesAgreementDialog } from'@/components/communities/CommunityRules';
+import { getRulesApi } from'@/lib/communities/rules.contract';
+import type { CommunityRuleDTO } from'@/lib/communities/rules';
 import { VoiceRoomBanner } from'@/components/groupcall/VoiceRoomBanner';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -101,6 +104,8 @@ export function CommunityColumn({
  const { run: runJoin, pending: joining } = useOptimisticAction();
  const [announceOpen, setAnnounceOpen] = useState(false);
  const [membersOpen, setMembersOpen] = useState(false);
+ // s03-13: the rules a joiner must tick first, when the community requires agreement.
+ const [agreeRules, setAgreeRules] = useState<CommunityRuleDTO[] | null>(null);
  // Steel M9: a community fetched here replaces the spinner; the loader's is there on first paint.
  const arrival = useArrival(!loading);
 
@@ -126,7 +131,23 @@ export function CommunityColumn({
  Promise.all([loadCommunity(), loadFeed()]).finally(() => setLoading(false));
  }, [loadCommunity, loadFeed]);
 
- const toggleJoin = () => {
+ const toggleJoin = async () => {
+ if (!community) return;
+ if (!community.joined) {
+ try {
+ const rules = await api(getRulesApi, { params: { slug } });
+ if (rules.requireAgreement && rules.rules.length > 0) {
+ setAgreeRules(rules.rules);
+ return;
+ }
+ } catch {
+ // Rules unavailable: try the join; the server still enforces agreement.
+ }
+ }
+ commitJoin(false);
+ };
+
+ const commitJoin = (acceptRules: boolean) => {
  if (!community) return;
  const willJoin = !community.joined;
  runJoin({
@@ -139,7 +160,10 @@ export function CommunityColumn({
  (c) => c && { ...c, joined: !willJoin, memberCount: c.memberCount + (willJoin ? -1 : 1) },
  ),
  commit: async () => {
- const data = await api(joinCommunityApi, { params: { slug }, body: {} });
+ const data = await api(joinCommunityApi, {
+ params: { slug },
+ body: acceptRules ? { acceptRules: true } : {},
+ });
  // Trust the server's authoritative membership flag.
  if (typeof data.joined ==='boolean')
  setCommunity((c) => c && { ...c, joined: data.joined });
@@ -254,7 +278,7 @@ export function CommunityColumn({
  size="sm"
  variant={community.joined ?'default':'default'}
  disabled={joining}
- onClick={toggleJoin}
+ onClick={() => void toggleJoin()}
  >
  {community.joined
  ? t('joined', { defaultValue:'Joined'})
@@ -358,6 +382,19 @@ export function CommunityColumn({
 
  {announceOpen && (
  <AnnounceDialog slug={slug} onClose={() => setAnnounceOpen(false)} onPosted={onAnnounced} />
+ )}
+ {agreeRules && (
+ <RulesAgreementDialog
+ open
+ communityName={community.name}
+ rules={agreeRules}
+ busy={joining}
+ onCancel={() => setAgreeRules(null)}
+ onConfirm={() => {
+ setAgreeRules(null);
+ commitJoin(true);
+ }}
+ />
  )}
  {membersOpen && (
  <MembersDialog

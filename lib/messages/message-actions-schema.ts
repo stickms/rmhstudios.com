@@ -10,6 +10,11 @@ import {
   feedImageUrlSchema,
   gifUrlSchema,
 } from '@/lib/rmhark-schema';
+import {
+  ALTS_MISMATCH_ISSUE,
+  altsMatchImages,
+  messageImageAltsField,
+} from '@/lib/messages/image-alts-schema';
 
 export const editMessageBody =
   z.object(
@@ -159,7 +164,13 @@ export const sendToConversationBody =
               4,
             )
             .optional(),
+        imageAlts:
+          messageImageAltsField,
       },
+    )
+    .refine(
+      altsMatchImages,
+      ALTS_MISMATCH_ISSUE,
     )
     .refine(
       (

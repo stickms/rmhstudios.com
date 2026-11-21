@@ -412,9 +412,44 @@ model LadderApplication {
   updatedAt             DateTime                @updatedAt
 
   events LadderApplicationEvent[]
+  offer  LadderOffer?
 
   @@unique([userId, jobId])
   @@map("ladder_application")
+}
+
+// The compensation actually offered on one application (sprint 03, feature 17).
+// Amounts are minor units of `currency`; `revisions` keeps the previous amounts
+// each time they change: [{ at, previous: { …amount fields } }].
+model LadderOffer {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String            @unique
+  application   LadderApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  currency      String            @db.VarChar(3)
+  basePay       BigInt
+  payPeriod     String            @db.VarChar(6) // year | month | hour
+  hoursPerWeek  Int?
+  bonusAmount   BigInt?
+  bonusPercent  Int?
+  signOn        BigInt?
+  equityGrant   BigInt?
+  equityYears   Int?
+  equityNote    String?           @db.VarChar(300)
+  location      String?           @db.VarChar(120)
+  remote        String?           @db.VarChar(8) // onsite | hybrid | remote
+  ptoDays       Int?
+  startDate     DateTime?
+  deadline      DateTime?
+  notes         String?           @db.VarChar(2000)
+  state         String            @default("open") @db.VarChar(10) // open | accepted | declined
+  revisions     Json              @default("[]")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([userId])
+  @@map("ladder_offer")
 }
 
 model LadderAlert {

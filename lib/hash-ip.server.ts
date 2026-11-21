@@ -34,3 +34,16 @@ export function hashIp(ip: string): string {
   const key = hashKey();
   return key ? createHmac('sha256', key).update(ip).digest('hex') : createHash('sha256').update(ip).digest('hex');
 }
+
+/**
+ * A keyed hash of an arbitrary value under a caller-named context, using the same
+ * server secret as `hashIp` (derived per context, so two features never share a
+ * key). For one-way keys that must not be reversible by enumerating ids, such as
+ * a community report's "this member already reported" marker.
+ */
+export function hashScoped(context: string, value: string): string {
+  const source = process.env.IP_HASH_SECRET || process.env.BETTER_AUTH_SECRET || '';
+  if (!source) return createHash('sha256').update(`${context}\u0000${value}`).digest('hex');
+  const key = createHmac('sha256', source).update(`rmh-scoped-hash-v1:${context}`).digest();
+  return createHmac('sha256', key).update(value).digest('hex');
+}

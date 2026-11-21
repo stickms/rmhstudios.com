@@ -70,6 +70,9 @@ export const communitySettingsSchema =
             ),
         flairRequired:
           z.boolean(),
+        // s03-14: members may read the content part of the moderation log.
+        publicModLog:
+          z.boolean(),
         starThreshold:
           z
             .number()
@@ -236,6 +239,17 @@ export const modDecisionSchema =
           .trim()
           .max(
             1000,
+          )
+          .optional(),
+      // s03-13: the community rule a removal cites; the author's notice names it.
+      ruleId:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            64,
           )
           .optional(),
     },

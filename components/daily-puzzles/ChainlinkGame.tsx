@@ -424,7 +424,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                                 </ol>
                             </PuzzleSection>
 
-                            <PuzzleShareRow shareText={shareText} />
+                            <PuzzleShareRow gameMode="chainlink" shareText={shareText} />
                             <PuzzleFootnote>
                                 {t("new-chain-tomorrow", { defaultValue: "A new chain unlocks tomorrow — same for everyone worldwide." })}
                             </PuzzleFootnote>

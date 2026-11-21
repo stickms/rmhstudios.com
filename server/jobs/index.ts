@@ -29,6 +29,7 @@ import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { EMAIL_CAMPAIGN_QUEUE, registerEmailCampaignWorker } from '@/lib/email/campaign.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
 import { registerArcadeCrons } from '@/lib/arcade/jobs.server';
+import { GAME_UPDATE_FANOUT_QUEUE, registerGameUpdateFanoutWorker } from '@/lib/arcade/updates-jobs.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
 import { registerCommunityCrons } from '@/lib/communities/jobs.server';
 import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
@@ -46,6 +47,8 @@ import { registerAltairSoloWorker } from '@features/altair/engine/solo/queue.ser
 import { VERIFY_SOLO_QUEUE } from '@features/altair/engine/solo/job';
 import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
+import { SEND_SCHEDULED_QUEUE, registerSendScheduledMessagesCron } from '@/lib/messages/scheduled-jobs.server';
+import { PARTY_REMINDERS_QUEUE, registerPartyRemindersCron } from '@/lib/rmhtube/parties-jobs.server';
 import { DAILY_PUZZLE_PREWARM_QUEUE, registerDailyPuzzlePrewarmCron } from '@/lib/daily-puzzles/prewarm.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/developer/recipes.server';
@@ -54,6 +57,7 @@ import { PROFILE_LINK_REVERIFY_QUEUE, registerProfileLinkReverifyCron } from '@/
 import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';
 import { SECURITY_LOG_PRUNE_QUEUE, registerSecurityLogPrune } from '@/lib/auth/security-log.server';
 import { registerReadingSubscriptionJobs } from '@/lib/reading/subscriptions-jobs.server';
+import { registerBlogPublicationJobs } from '@/lib/blog/publication-jobs.server';
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
 import { registerDoctrineJobs } from '@features/doctrine/engine/jobs.server';
 import { CLEANUP_QUEUE, registerCleanupCron } from '@/lib/cleanup-job.server';
@@ -196,6 +200,15 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // Follow Logs and News: every 15 min one notification per new Log / published article per subscriber
   // (cursor + dedupe), and a daily 17:00 UTC email batch for members who turned email on.
   { queue: 'reading.subscriptions', register: registerReadingSubscriptionJobs },
+  // s03-12: every minute, deliver the direct and group messages members scheduled for later.
+  { queue: SEND_SCHEDULED_QUEUE, register: registerSendScheduledMessagesCron },
+  // Log drafts: every minute, publish the scheduled Logs whose time has come (they then count as new for
+  // announcements and subscriptions).
+  { queue: 'blog.publish-due', register: registerBlogPublicationJobs },
+  // s03-09: every 5 minutes, the 15-minute and at-start reminders for scheduled RMHTube watch parties; closes unopened ones.
+  { queue: PARTY_REMINDERS_QUEUE, register: registerPartyRemindersCron },
+  // s03-10: a work queue (not a cron) fed by publishing a patch note or a guide; tells that game's followers.
+  { queue: GAME_UPDATE_FANOUT_QUEUE, register: registerGameUpdateFanoutWorker },
 ];
 
 /**

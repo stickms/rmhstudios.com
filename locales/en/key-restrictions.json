@@ -1,0 +1,22 @@
+{
+  "allowed-help": "One IPv4 or IPv6 address or range per line, such as 203.0.113.7 or 198.51.100.0/24. Up to {{max}}. Leave empty to allow any address.",
+  "allowed-label": "Allowed addresses",
+  "error-invalid": "Line {{line}}: {{value}} is not an IPv4 or IPv6 address or range. Hostnames and wildcards are not accepted.",
+  "error-limit-range": "Enter a number from 1 to {{max}}.",
+  "error-limit-whole": "Enter a whole number, or leave it blank.",
+  "error-open-range": "Line {{line}}: a range covering every address is not a restriction. Leave the list empty to allow any address.",
+  "error-prefix": "Line {{line}}: the prefix length must be between /{{min}} and /{{max}}.",
+  "error-too-many": "Line {{line}}: at most {{max}} addresses are allowed.",
+  "hide-restrictions": "Hide restrictions",
+  "limit-help": "Blank uses your plan limit of {{max}} a minute. A lower number applies to this key only.",
+  "limit-label": "Requests per minute",
+  "refused_one": "Refused requests: {{count}} in the last 7 days",
+  "refused_other": "Refused requests: {{count}} in the last 7 days",
+  "refused-with-address_one": "Refused requests: {{count}} in the last 7 days, last from {{address}}",
+  "refused-with-address_other": "Refused requests: {{count}} in the last 7 days, last from {{address}}",
+  "restricted": "Restricted",
+  "save": "Save restrictions",
+  "save-failed": "Could not save the restrictions",
+  "saved": "Restrictions saved",
+  "show-restrictions": "Restrictions"
+}

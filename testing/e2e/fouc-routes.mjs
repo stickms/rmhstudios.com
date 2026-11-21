@@ -153,6 +153,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Real game, absent guide — the guide shell with its not-found branch.',
   },
+  '/games/$gameId/updates': {
+    path: '/games/hearthworks/updates',
+    fidelity: 'content',
+    why: 'A catalog id, so the changelog renders with its real notes (or its empty state).',
+  },
   '/games/profile/$id': {
     path: '/games/profile/fouc-audit',
     fidelity: 'shell',
@@ -292,6 +297,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     path: '/rmhtube/fouc-audit',
     fidelity: 'shell',
     why: 'As above, for RMHTube.',
+  },
+  '/rmhtube/party/$roomId': {
+    path: '/rmhtube/party/FOUC00',
+    fidelity: 'shell',
+    why: 'Absent party code: the party page shell with its not-found branch.',
   },
   '/rmhtype/$roomId': {
     path: '/rmhtype/fouc-audit',

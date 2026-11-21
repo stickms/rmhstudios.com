@@ -22,10 +22,25 @@ export interface FocusHistory {
   goalMinutes:
     | number
     | null;
+  /**
+   * Derived from the member's session days in their zone, so it is right where the stored
+   * profile value is stale. `days` are the days of the current streak, oldest first.
+   */
   streak: {
     current: number;
     longest: number;
+    days: string[];
+    /** True when today already has a session. */
+    studiedToday: boolean;
   };
+  /** Break time this week; null when no run this week records breaks. */
+  thisWeekBreaks: {
+    breakMinutes: number;
+    /** Minutes of focus for each minute of break; null when there was no break time. */
+    focusPerBreak:
+      | number
+      | null;
+  } | null;
   /** The selected week: seven days, first day first. */
   week: {
     start: string;

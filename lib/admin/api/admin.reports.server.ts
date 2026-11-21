@@ -5,6 +5,7 @@ import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/admin/admin-ops.contract';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { noteCountsFor } from '@/lib/moderation/notes.server';
 
 /**
  * GET /api/admin/reports — moderation queue. Admin only.
@@ -54,6 +55,8 @@ export const route = apiRoute('/api/admin/reports', {
           })
         : [];
       const targetMap = new Map(targets.map((t) => [t.id, resolveUser(t)]));
+      // s03-04: one groupBy for the visible members' moderator-note counts.
+      const noteCounts = await noteCountsFor(targetIds);
 
       const items = pageRows.map((r) => ({
         id: r.id,
@@ -62,9 +65,12 @@ export const route = apiRoute('/api/admin/reports', {
         entityType: r.entityType,
         entityId: r.entityId,
         status: r.status,
+        // s03-16: a withdrawn report is DISMISSED, so it never sits in the pending queue; moderators still see why.
+        withdrawn: r.withdrawnAt !== null,
         createdAt: r.createdAt.toISOString(),
         reporter: resolveUser(r.reporter),
         targetUser: r.targetUserId ? (targetMap.get(r.targetUserId) ?? null) : null,
+        targetNoteCount: r.targetUserId ? (noteCounts.get(r.targetUserId) ?? 0) : 0,
       }));
 
       const counts = await prisma.contentReport.groupBy({

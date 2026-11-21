@@ -39,6 +39,7 @@ import {
   useTimeoutLabel,
 } from '@/components/moderation/moderation-ui';
 import { cn } from '@/lib/utils';
+import { ModeratorNotes } from '@/components/admin/ModeratorNotes';
 
 type Form =
   | 'strike'
@@ -49,11 +50,14 @@ type Form =
 export function UserModerationPanel({
   userId,
   isAdminUser,
+  revealNotes = false,
   onChanged,
 }: {
   userId: string;
   /** Admins cannot be timed out or banned; the forms are hidden for them. */
   isAdminUser: boolean;
+  /** Scroll to the Notes section once it has loaded (the reports queue links here). */
+  revealNotes?: boolean;
   /** Tell the table the counts changed. */
   onChanged: (summary: {
     activeStrikes: number;
@@ -959,6 +963,8 @@ export function UserModerationPanel({
           </ul>
         )}
       </section>
+
+      <ModeratorNotes userId={userId} reveal={revealNotes} />
     </div>
   );
 }

@@ -59,6 +59,10 @@ model RMHark {
   // Author-pinned to the top of their profile (one per user, enforced in code).
   pinnedAt DateTime?
 
+  // The one reply the author pinned to the top of this post's conversation. No foreign
+  // key: the hide and delete handlers clear it (lib/feed/conversation-controls.server.ts).
+  pinnedCommentId String? @db.VarChar(64)
+
   // Edit history: editedAt set on first edit; prior versions stored separately.
   editedAt DateTime?
   edits    RMHarkEdit[]

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { durationMsSchema } from '@/lib/rmhmusic/history-schema';
 import { INSTRUMENT_IDS } from './audio/instruments/types';
 
 export const INSTRUMENTS =
@@ -121,6 +122,9 @@ export const lessonCompleteSchema =
           .max(
             100,
           ),
+      /** How long the lesson took, from the client's clock; recorded in the practice log. */
+      durationMs:
+        durationMsSchema,
     },
   );
 
@@ -179,6 +183,9 @@ export const reviewBatchSchema =
           .max(
             MAX_REVIEWS_PER_BATCH,
           ),
+      /** How long the session took, from the client's clock; recorded in the practice log. */
+      durationMs:
+        durationMsSchema,
     },
   );
 

@@ -10,6 +10,7 @@
  * the first read after the deadline so the result never waits for a cron tick.
  */
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import type { ChallengeDTO } from '@/lib/communities/plus';
@@ -76,11 +77,26 @@ export async function createChallenge(
 }
 
 /** Cancel the running challenge (entries are deleted; their posts stay). */
-export async function cancelChallenge(communityId: string, challengeId: string): Promise<void> {
-  const res = await prisma.communityChallenge.deleteMany({
-    where: { id: challengeId, communityId, finalizedAt: null },
+export async function cancelChallenge(
+  communityId: string,
+  challengeId: string,
+  actorId: string,
+): Promise<void> {
+  const cancelled = await prisma.$transaction(async (tx) => {
+    const res = await tx.communityChallenge.deleteMany({
+      where: { id: challengeId, communityId, finalizedAt: null },
+    });
+    if (res.count === 0) return false;
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'challenge_cancelled',
+      targetType: 'challenge',
+      targetId: challengeId,
+    });
+    return true;
   });
-  if (res.count === 0) throw new ChallengeError('Challenge not found or already finished', 404);
+  if (!cancelled) throw new ChallengeError('Challenge not found or already finished', 404);
 }
 
 export async function castVote(args: {

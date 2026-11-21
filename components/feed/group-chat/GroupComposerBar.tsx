@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { MenuItem } from '@/components/ui/menu';
 import { ChecklistComposer } from '@/components/chat-plus/ChecklistComposer';
 import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
+import { ScheduledStrip } from '@/components/messages/ScheduledStrip';
+import { SendLaterMenu } from '@/components/messages/SendLaterMenu';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import { MentionTextarea } from '../MentionTextarea';
@@ -31,8 +33,13 @@ export function GroupComposerBar({
     input,
     setInput,
     sending,
+    gifUrl,
+    setGifUrl,
     imageUrls,
+    setImageUrls,
+    imageAlts,
     uploading,
+    pollDraft,
     attachOpen,
     setAttachOpen,
     setShowGifPicker,
@@ -48,7 +55,19 @@ export function GroupComposerBar({
   } = composer;
   // Chat members get priority in @-mention autocomplete.
   const suggestions = useMemo(() => memberSuggestions(group.members), [group.members]);
+  // A poll is not schedulable; text, a GIF and images are.
+  const canSchedule =
+    !!(input.trim() || gifUrl || imageUrls.length > 0) &&
+    !pollDraft &&
+    !sending &&
+    !uploading &&
+    imageAlts.missing.length === 0;
   return (
+    <>
+    <ScheduledStrip
+      chatId={group.id}
+      onDelivered={(message) => appendMessages([message as Msg])}
+    />
     <div className="conversation__composer">
       <div className="flex flex-wrap items-end gap-2">
         <input
@@ -153,7 +172,19 @@ export function GroupComposerBar({
         <Button variant="primary" disabled={!canSend} onClick={send} className="h-9">
           {t('conversation-send', { defaultValue: 'Send' })}
         </Button>
+        <SendLaterMenu
+          chatId={group.id}
+          disabled={!canSchedule}
+          getDraft={() => ({ content: input, gifUrl, imageUrls, imageAlts: imageAlts.alts })}
+          onScheduled={() => {
+            setInput('');
+            setGifUrl(null);
+            setImageUrls([]);
+          }}
+          className="h-9"
+        />
       </div>
     </div>
+    </>
   );
 }

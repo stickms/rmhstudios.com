@@ -12,8 +12,8 @@
  *
  * Better Auth paths (verified against `node_modules/better-auth` and `@better-auth/passkey`):
  * `/sign-out`, `/revoke-session`, `/revoke-sessions`, `/revoke-other-sessions`, `/change-password`,
- * `/change-email`, `/passkey/verify-registration`, `/passkey/delete-passkey`, and `/reset-password`
- * (the forgotten-password form, which has no session: its actor is the account the reset token names).
+ * `/change-email`, `/passkey/verify-registration` and `/passkey/delete-passkey`. A forgotten-password reset
+ * has no session and is recorded from `onPasswordReset` in `lib/auth.ts`, which is handed the account.
  */
 
 import type { createAuthMiddleware } from 'better-auth/api';
@@ -32,7 +32,6 @@ export const AUTH_PATH_EVENTS: Readonly<Record<string, SecurityEventKind>> = {
   '/revoke-sessions': 'other_sessions_revoked',
   '/revoke-other-sessions': 'other_sessions_revoked',
   '/change-password': 'password_changed',
-  '/reset-password': 'password_changed',
   '/change-email': 'email_changed',
   '/passkey/verify-registration': 'passkey_added',
   '/passkey/delete-passkey': 'passkey_removed',
@@ -40,8 +39,7 @@ export const AUTH_PATH_EVENTS: Readonly<Record<string, SecurityEventKind>> = {
 
 interface Actor {
   userId: string;
-  /** The session the change is made from; `null` for a password reset, which is made signed out. */
-  sessionId: string | null;
+  sessionId: string;
   /** `/revoke-session` only: the session being ended, and its own device label. */
   revokedSessionId?: string;
   revokedDevice?: string | null;
@@ -57,22 +55,6 @@ const actors = new WeakMap<Request, Actor | null>();
 export async function captureSecurityActor(ctx: AuthHookContext): Promise<void> {
   try {
     if (!ctx.request || !(ctx.path in AUTH_PATH_EVENTS)) return;
-    if (ctx.path === '/reset-password') {
-      // Signed out by design: the account is the one the reset token was issued for. Read here,
-      // because the endpoint deletes the token before any `after` hook runs.
-      const body = ctx.body as { token?: unknown } | undefined;
-      const query = ctx.query as { token?: unknown } | undefined;
-      const resetToken =
-        typeof body?.token === 'string' ? body.token : typeof query?.token === 'string' ? query.token : null;
-      const verification = resetToken
-        ? await ctx.context.internalAdapter.findVerificationValue(`reset-password:${resetToken}`)
-        : null;
-      actors.set(
-        ctx.request,
-        verification && verification.expiresAt > new Date() ? { userId: verification.value, sessionId: null } : null,
-      );
-      return;
-    }
     const token = await ctx.getSignedCookie(
       ctx.context.authCookies.sessionToken.name,
       ctx.context.secret,

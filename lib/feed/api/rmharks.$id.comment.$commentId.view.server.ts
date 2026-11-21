@@ -2,7 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { getClientIp } from '@/lib/rate-limit';
-import crypto from 'crypto';
+import { hashIp } from '@/lib/hash-ip.server';
 import { canReadCommentThread } from '@/lib/feed/audience.server';
 import { viewCommentApi } from '@/lib/feed/rmhark-actions.contract';
 
@@ -24,7 +24,7 @@ export const route = apiRoute('/api/rmharks/$id/comment/$commentId/view', {
       // attacker-spoofable, letting a client vary the header to dodge the
       // per-IP view dedup below.
       const ip = getClientIp(request);
-      const ipHash = crypto.createHash('sha256').update(ip).digest('hex').slice(0, 16);
+      const ipHash = hashIp(ip).slice(0, 16);
 
       // Privacy gate: no view row (and no existence signal) for a comment
       // whose thread the viewer cannot read.

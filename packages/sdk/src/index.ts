@@ -308,6 +308,39 @@ export interface GetLeaderboardArgs {
 
 export type GetLeaderboardResponse = { game: string; metric: string; data: { rank: number; username: string; score: number; gamesPlayed: number }[] };
 
+export type ListGamesResponse = { data: { id: string; title: string; description: string; href: string; multiplayer: boolean; tags: string[] }[] };
+
+export type ListMyGamesResponse = { data: { gameId: string; totalMinutes: number; lastPlayedAt: string; minutesLast7Days: number; minutesLast30Days: number }[] };
+
+export interface GetMyGameDaysArgs {
+  /** A game id from `GET /api/v1/games`. */
+  gameId: string;
+  /** First day, ISO date `YYYY-MM-DD` (default: 29 days before `to`). */
+  from?: string;
+  /** Last day, ISO date `YYYY-MM-DD` (default: today, UTC). */
+  to?: string;
+}
+
+export type GetMyGameDaysResponse = { gameId: string; from: string; to: string; data: { date: string; minutes: number }[] };
+
+export interface ListMyAchievementsArgs {
+  /** Only achievements for this game id. */
+  gameId?: string;
+  /** Page size, 1–100 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyAchievementsResponse = { data: { id: string; gameId: string; title: string; unlockedAt: string; rarityPercent: number }[]; nextCursor: string | null };
+
+export interface ListUserGamesArgs {
+  /** The member’s handle, with or without a leading `@`. */
+  handle: string;
+}
+
+export type ListUserGamesResponse = { data: { gameId: string; totalMinutes: number; lastPlayedAt: string; minutesLast7Days: number; minutesLast30Days: number }[] };
+
 export type ListWebhooksResponse = { data: { id: string; url: string; events: string[]; enabled: boolean; createdAt: string }[] };
 
 export interface CreateWebhookBody {
@@ -544,6 +577,31 @@ export class RmhClient {
   /** Get a game leaderboard (scope: read:leaderboards) */
   getLeaderboard(args: GetLeaderboardArgs): Promise<GetLeaderboardResponse> {
     return this.request<GetLeaderboardResponse>("GET", { path: "/api/v1/leaderboards/{game}", pathParams: { game: args.game }, query: { limit: args.limit } });
+  }
+
+  /** List games (scope: none) */
+  listGames(): Promise<ListGamesResponse> {
+    return this.request<ListGamesResponse>("GET", { path: "/api/v1/games" });
+  }
+
+  /** List your played games (scope: read:games) */
+  listMyGames(): Promise<ListMyGamesResponse> {
+    return this.request<ListMyGamesResponse>("GET", { path: "/api/v1/me/games" });
+  }
+
+  /** Get your minutes per day for a game (scope: read:games) */
+  getMyGameDays(args: GetMyGameDaysArgs): Promise<GetMyGameDaysResponse> {
+    return this.request<GetMyGameDaysResponse>("GET", { path: "/api/v1/me/games/{gameId}/days", pathParams: { gameId: args.gameId }, query: { from: args.from, to: args.to } });
+  }
+
+  /** List your achievements (scope: read:games) */
+  listMyAchievements(args: ListMyAchievementsArgs = {}): Promise<ListMyAchievementsResponse> {
+    return this.request<ListMyAchievementsResponse>("GET", { path: "/api/v1/me/achievements", query: { gameId: args.gameId, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List a member’s played games (scope: read:games) */
+  listUserGames(args: ListUserGamesArgs): Promise<ListUserGamesResponse> {
+    return this.request<ListUserGamesResponse>("GET", { path: "/api/v1/users/{handle}/games", pathParams: { handle: args.handle } });
   }
 
   /** List webhook endpoints (scope: manage:webhooks) */

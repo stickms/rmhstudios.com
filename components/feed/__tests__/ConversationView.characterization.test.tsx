@@ -57,6 +57,10 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 vi.mock('@/components/ui/confirm-dialog', () => ({ useConfirm: () => async () => true }));
+// s03-12: the Send-later menu and the Scheduled strip need a QueryClient and draw nothing until a message is
+// scheduled; they are stubbed to nothing so the markup below stays the pre-feature composer.
+vi.mock('@/components/messages/SendLaterMenu', () => ({ SendLaterMenu: () => null }));
+vi.mock('@/components/messages/ScheduledStrip', () => ({ ScheduledStrip: () => null }));
 vi.mock('@/components/ui/anchored-menu', () => ({
   AnchoredMenu: ({
     open,

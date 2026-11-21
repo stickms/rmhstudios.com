@@ -22,15 +22,43 @@ model BlogPost {
   // links to it any more (the discussion is `comments` below); the column stays so no data changes.
   announcementPostId    String?
 
+  // s03-05: draft / scheduled / published. `published` is the database default so a release that knows no
+  // status keeps creating live Logs. `publishAt` is the wanted time of a scheduled Log; `publishedAt` is when
+  // it went live (the date readers sort and fan out by), defaulted so an older release's inserts carry one too.
+  status      String    @default("published") @db.VarChar(12)
+  publishAt   DateTime?
+  publishedAt DateTime? @default(now())
+  updatedById String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  seenBy   BlogAnnouncementSeen[]
-  comments BlogComment[]
+  seenBy    BlogAnnouncementSeen[]
+  comments  BlogComment[]
+  revisions BlogPostRevision[]
 
   @@index([date(sort: Desc)])
+  @@index([status, publishedAt(sort: Desc)])
   @@index([announcement, announcedAt(sort: Desc)])
   @@map("blog_post")
+}
+
+/// s03-05 — one saved version of a Log (a save that changed title, description, tags or content). At most 50
+/// are kept per Log; the oldest are pruned. `authorId` is de-identified when the editor's account is erased.
+model BlogPostRevision {
+  id          BigInt   @id @default(autoincrement())
+  postId      String
+  authorId    String?
+  title       String
+  description String
+  tags        String[]
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt(sort: Desc)])
+  @@map("blog_post_revision")
 }
 
 /// One row per signed-in member who dismissed a sitewide announcement popup.

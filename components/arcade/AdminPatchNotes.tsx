@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { games } from '@/lib/catalog';
 import { api } from '@/lib/contract/client';
 import { publishPatchNoteApi } from '@/lib/arcade/arcade.contract';
+import { useQueryClient } from '@tanstack/react-query';
+import { AdminPatchNoteList, notesKey } from '@/components/arcade/AdminPatchNoteList';
 
 /** Publish a short patch note; players see it once on their next launch of that game. */
 export function AdminPatchNotes() {
@@ -56,6 +58,7 @@ export function AdminPatchNotes() {
     useState(
       false,
     );
+  const queryClient = useQueryClient();
 
   async function publish() {
     setBusy(
@@ -102,6 +105,7 @@ export function AdminPatchNotes() {
       setBody(
         '',
       );
+      void queryClient.invalidateQueries({ queryKey: notesKey(gameId) });
     } else {
       toast.error(
         t(
@@ -276,6 +280,7 @@ export function AdminPatchNotes() {
             </Button>
           </div>
         </div>
+        <AdminPatchNoteList gameId={gameId} />
       </AdminBody>
     </PageLayout>
   );

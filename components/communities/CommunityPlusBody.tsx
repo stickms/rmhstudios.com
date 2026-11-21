@@ -43,6 +43,8 @@ import { CommunityComposer } from '@/components/communities/CommunityComposer';
 import { FlairChip } from '@/components/communities/FlairChip';
 import { RelatedRail } from '@/components/communities/RelatedRail';
 import { OnboardingSheet } from '@/components/communities/OnboardingSheet';
+import { CommunityRulesRail } from '@/components/communities/CommunityRules';
+import { PublicModLog } from '@/components/communities/PublicModLog';
 import {
   communityApi,
   plusFetch,
@@ -75,6 +77,11 @@ const ModPanel =
     () =>
       import('@/components/communities/ModPanel'),
   );
+
+/** A rules-only sheet is offered to members who joined within this long. */
+const RULES_SHEET_WINDOW_MS =
+  60 *
+  60_000;
 
 const dismissKey =
   (
@@ -387,10 +394,26 @@ export function CommunityPlusBody({
       ?.member
       ?.onboarding ??
     [];
+  // s03-13: the rules ride the same sheet for someone who has just joined.
+  const rules =
+    extras?.rules ??
+    [];
+  const justJoined =
+    !!extras?.member &&
+    Date.now() -
+      new Date(
+        extras
+          .member
+          .joinedAt,
+      ).getTime() <
+      RULES_SHEET_WINDOW_MS;
   const showOnboarding =
     community.joined &&
-    pendingOnboarding.length >
-      0 &&
+    (pendingOnboarding.length >
+      0 ||
+      (rules.length >
+        0 &&
+        justJoined)) &&
     !onboardingClosed &&
     typeof window !==
       'undefined' &&
@@ -421,6 +444,32 @@ export function CommunityPlusBody({
 
   return (
     <div>
+      {extras && (
+        <CommunityRulesRail
+          rules={
+            extras.rules
+          }
+          communityName={
+            community.name
+          }
+          className={
+            extrasArrival
+          }
+        />
+      )}
+      {extras?.publicModLog && (
+        <PublicModLog
+          slug={
+            slug
+          }
+          communityName={
+            community.name
+          }
+          className={
+            extrasArrival
+          }
+        />
+      )}
       {extras && (
         <RelatedRail
           sisters={
@@ -751,10 +800,23 @@ export function CommunityPlusBody({
           questions={
             pendingOnboarding
           }
+          rules={
+            rules
+          }
           onDone={() => {
             setOnboardingClosed(
               true,
             );
+            try {
+              window.localStorage.setItem(
+                dismissKey(
+                  slug,
+                ),
+                '1',
+              );
+            } catch {
+              /* private mode: the sheet may show once more */
+            }
             void loadExtras();
             // The feed now leads with the flairs they follow.
             void plusFetch<{

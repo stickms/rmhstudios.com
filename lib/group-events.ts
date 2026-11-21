@@ -47,6 +47,8 @@ export interface GroupMessagePayload {
     | string
     | null;
   imageUrls?: string[];
+  /** Image descriptions, index-aligned with `imageUrls`. */
+  imageAlts?: string[];
   poll?: GroupPollPayload | null;
   /** Raw reaction rows, grouped client-side so SSE updates stay cheap. */
   reactions?: ReactionRow[];

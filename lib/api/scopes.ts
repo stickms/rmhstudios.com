@@ -181,6 +181,17 @@ export const SCOPES: ScopeDetail[] =
       description:
         'Read Slice It! charts, leaderboards and public player stats.',
     },
+    // Playtime and achievements are a member's own activity, so they sit behind
+    // their own scope; the public game catalogue needs no scope at all.
+    {
+      id: 'read:games',
+      action:
+        'read',
+      group:
+        'Games',
+      description:
+        'Read your game playtime and achievements, and the playtime other members share with you.',
+    },
     {
       id: 'manage:webhooks',
       action:

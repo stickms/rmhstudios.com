@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
@@ -383,6 +384,10 @@ async function getBlogPosts(): Promise<
     async () => {
       return prisma.blogPost.findMany(
         {
+          where:
+            publishedLogWhere(
+              new Date(),
+            ),
           orderBy:
             [
               {

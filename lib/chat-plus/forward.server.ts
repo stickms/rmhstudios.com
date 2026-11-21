@@ -44,6 +44,7 @@ export async function forwardMessage(userId: string, input: ForwardInput): Promi
     content: true,
     gifUrl: true,
     imageUrls: true,
+    imageAlts: true,
     audioUrl: true,
     kind: true,
     forwardCount: true,
@@ -102,6 +103,7 @@ export async function forwardMessage(userId: string, input: ForwardInput): Promi
       content: msg.content,
       gifUrl: msg.gifUrl,
       imageUrls: msg.imageUrls,
+      imageAlts: msg.imageAlts,
       forwardCount,
     });
     sent.push(target);

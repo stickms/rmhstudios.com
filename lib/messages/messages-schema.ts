@@ -7,6 +7,11 @@ import {
   feedImageUrlSchema,
   gifUrlSchema,
 } from '@/lib/rmhark-schema';
+import {
+  ALTS_MISMATCH_ISSUE,
+  altsMatchImages,
+  messageImageAltsField,
+} from '@/lib/messages/image-alts-schema';
 
 export const sendMessageSchema =
   z.object(
@@ -35,5 +40,11 @@ export const sendMessageSchema =
             4,
           )
           .optional(),
+      imageAlts:
+        messageImageAltsField,
     },
+  )
+  .refine(
+    altsMatchImages,
+    ALTS_MISMATCH_ISSUE,
   );

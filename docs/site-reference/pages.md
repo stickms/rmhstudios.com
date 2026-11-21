@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 379 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 183 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 385 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 187 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -141,7 +141,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmhladder/alerts` | — | sign-in | `app/routes/_site/rmhladder/alerts.tsx` |
 | `/rmhladder/companies` | — | admin | `app/routes/_site/rmhladder/companies.tsx` |
 | `/rmhladder/health` | — | admin | `app/routes/_site/rmhladder/health.tsx` |
+| `/rmhladder/insights` | — | sign-in | `app/routes/_site/rmhladder/insights.tsx` |
 | `/rmhladder/jobs/:jobId` | Job unavailable \| RMH Ladder | sign-in | `app/routes/_site/rmhladder/jobs/$jobId.tsx` |
+| `/rmhladder/offers` | — | sign-in | `app/routes/_site/rmhladder/offers.tsx` |
 | `/rmhladder/pipeline` | — | sign-in | `app/routes/_site/rmhladder/pipeline.tsx` |
 | `/rmhladder/referrals` | Referral Board \| RMH Ladder | sign-in | `app/routes/_site/rmhladder/referrals.tsx` |
 | `/rmhladder/resume` | — | sign-in | `app/routes/_site/rmhladder/resume.tsx` |
@@ -242,6 +244,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/daily/lights-out` | Lights Out \| Daily Puzzles | public | `app/routes/daily/lights-out.tsx` |
 | `/daily/outcast` | Outcast \| Daily Puzzles | public | `app/routes/daily/outcast.tsx` |
 | `/daily/spectrum` | Spectrum \| Daily Puzzles | public | `app/routes/daily/spectrum.tsx` |
+| `/daily/stats` | — | public | `app/routes/daily/stats.tsx` |
 | `/deeplink` | — | public | `app/routes/deeplink.ts` |
 | `/deeplink/:page` | — | public | `app/routes/deeplink.$page.ts` |
 | `/design` | Spatial Minimalism | public | `app/routes/design.tsx` |
@@ -257,6 +260,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/games` | redirects to `/compete?tab=leaderboard` | public | `app/routes/games/_library/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/games/_library/$gameId_.guides.$guideId.tsx` |
+| `/games/:gameId/updates` | — | public | `app/routes/games/_library/$gameId_.updates.tsx` |
 | `/games/groups/:slug` | redirects to `/c/$slug` | public | `app/routes/games/groups.$slug.tsx` |
 | `/games/hub/:gameId` | — | public | `app/routes/games/hub.$gameId.index.tsx` |
 | `/games/hub/:gameId/t/:threadId` | — | public | `app/routes/games/hub.$gameId.t.$threadId.tsx` |
@@ -328,6 +332,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhmusic/credits` | — | sign-in | `app/routes/rmhmusic/credits.tsx` |
 | `/rmhmusic/daily` | — | sign-in | `app/routes/rmhmusic/daily.tsx` |
 | `/rmhmusic/friends` | — | sign-in | `app/routes/rmhmusic/friends.tsx` |
+| `/rmhmusic/history` | — | sign-in | `app/routes/rmhmusic/history.tsx` |
 | `/rmhmusic/lesson/:lessonId` | — | sign-in | `app/routes/rmhmusic/lesson.$lessonId.tsx` |
 | `/rmhmusic/practice` | — | sign-in | `app/routes/rmhmusic/practice.tsx` |
 | `/rmhmusic/r/:token` | A shared result \| RMH Music | public | `app/routes/rmhmusic_.r.$token.tsx` |
@@ -342,6 +347,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhstudy/planner` | — | sign-in | `app/routes/rmhstudy/planner.tsx` |
 | `/rmhtube` | — | sign-in | `app/routes/rmhtube/index.tsx` |
 | `/rmhtube/:roomId` | — | sign-in | `app/routes/rmhtube/$roomId.tsx` |
+| `/rmhtube/party/:roomId` | RMHTube watch party | sign-in | `app/routes/rmhtube/party.$roomId.tsx` |
 | `/rmhtype` | — | sign-in | `app/routes/rmhtype/index.tsx` |
 | `/rmhtype/:roomId` | — | sign-in | `app/routes/rmhtype/$roomId.tsx` |
 | `/rmhtype/daily` | — | sign-in | `app/routes/rmhtype/daily.tsx` |

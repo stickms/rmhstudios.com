@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
               where: { id: params.id },
               select: {
                 id: true, userId: true, content: true, audience: true, communityId: true, createdAt: true, deletedAt: true,
-                likeCount: true, commentCount: true, repostCount: true, viewCount: true, imageUrls: true,
+                likeCount: true, commentCount: true, repostCount: true, viewCount: true, imageUrls: true, pinnedCommentId: true,
                 unlockPrice: true, unlocks: { where: { userId }, select: { id: true } },
                 user: { select: apiAuthorSelect },
               },

@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/lib/toast';
@@ -52,7 +53,10 @@ import { Tabs } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PuzzlePage } from '@/components/daily-puzzles/PuzzleShell';
+import { StatsLink } from '@/components/daily-puzzles/StatsLink';
 import { useSession } from '@/components/Providers';
+import { apiQuery } from '@/lib/contract/client';
+import { getDailyStatsApi } from '@/lib/daily-puzzles/stats.contract';
 
 const LIGHTS_OUT = 'lights-out';
 const GENERIC_MODES = DESK_MODES.filter((m) => m.id !== LIGHTS_OUT);
@@ -182,8 +186,17 @@ export function DailyPuzzlesHub({
 
   const [mounted, setMounted] = useState(false);
   const [statusMap, setStatusMap] = useState<Record<string, ModeStatus>>({});
-  const [streak, setStreak] = useState(0);
-  const [allTime, setAllTime] = useState(0);
+  const [localStreak, setLocalStreak] = useState(0);
+  const [localAllTime, setLocalAllTime] = useState(0);
+  // Signed in, the streak and the all-time total are the server's (they follow the member
+  // across devices); the local figures stand in while it loads, and for guests.
+  const serverStats = useQuery({
+    ...apiQuery(getDailyStatsApi, {}),
+    enabled: !!session.data,
+    retry: false,
+  }).data;
+  const streak = serverStats?.currentStreak ?? localStreak;
+  const allTime = serverStats?.totalSolves ?? localAllTime;
   const [countdown, setCountdown] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const celebratedRef = useRef(false);
@@ -192,8 +205,8 @@ export function DailyPuzzlesHub({
     const map: Record<string, ModeStatus> = {};
     for (const m of DESK_MODES) map[m.id] = readStatus(m.id, todayKey);
     setStatusMap(map);
-    setStreak(computeStreak(collectCompletedDates()));
-    setAllTime(countAllTimeSolves());
+    setLocalStreak(computeStreak(collectCompletedDates()));
+    setLocalAllTime(countAllTimeSolves());
   }, [todayKey]);
 
   // Mount: read local progress immediately, then (signed-in) reconcile with server.
@@ -449,6 +462,7 @@ export function DailyPuzzlesHub({
               <Share2 aria-hidden />
               {t('share-today', { defaultValue: 'Share today' })}
             </Button>
+            <StatsLink />
             <Button type="button" variant="ghost" size="sm" onClick={quit}>
               <LogOut aria-hidden />
               {t('quit', { defaultValue: 'Quit' })}

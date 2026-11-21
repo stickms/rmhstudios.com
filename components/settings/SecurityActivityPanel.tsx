@@ -52,6 +52,8 @@ const ICONS: Record<SecurityEventKind, LucideIcon> = {
   passkey_added: KeyRound,
   passkey_removed: KeyRound,
   password_changed: KeyRound,
+  password_reset_requested: KeyRound,
+  password_reset_completed: KeyRound,
   email_changed: AtSign,
   handle_changed: UserRound,
   deletion_scheduled: Trash2,
@@ -117,6 +119,12 @@ function sentence(t: TFunction, item: SecurityActivityItem): string {
       return t('event-passkey-removed', { defaultValue: 'Passkey removed' });
     case 'password_changed':
       return t('event-password-changed', { defaultValue: 'Password changed' });
+    case 'password_reset_requested':
+      return t('event-password-reset-requested', { defaultValue: 'Password reset requested' });
+    case 'password_reset_completed':
+      return t('event-password-reset-completed', {
+        defaultValue: 'Password reset. Every device was signed out and coin transfers are paused for 72 hours',
+      });
     case 'email_changed':
       return t('event-email-changed', { defaultValue: 'Email change requested' });
     case 'handle_changed':

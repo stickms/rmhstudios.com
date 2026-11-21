@@ -34,7 +34,7 @@ export const Route = createFileRoute('/api/v1/posts')({
               where: { userId, deletedAt: null, ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}) },
               orderBy: { createdAt: 'desc' },
               take: limit,
-              select: { id: true, content: true, createdAt: true, likeCount: true, commentCount: true, repostCount: true, viewCount: true, audience: true, imageUrls: true },
+              select: { id: true, content: true, createdAt: true, likeCount: true, commentCount: true, repostCount: true, viewCount: true, audience: true, imageUrls: true, pinnedCommentId: true },
             });
             return json(page(posts.map(serializeOwnPost), limit, (p) => p.createdAt.toISOString()));
           },

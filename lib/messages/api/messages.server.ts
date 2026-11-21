@@ -5,6 +5,8 @@ import { listConversationsApi, sendMessageApi } from '@/lib/messages/messages.co
 import { sendMessageSchema } from '@/lib/messages/messages-schema';
 import { prisma } from '@/lib/prisma.server';
 import { upsertDm } from '@/lib/chat/chat.server';
+import { guardImageAlts, isBlockedPair } from '@/lib/messages/send.server';
+import { normalizeImageAlts } from '@/lib/messages/image-alts';
 import { notifyUser } from '@/lib/message-events';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listConversations } from '@/lib/messages.server';
@@ -41,7 +43,7 @@ export const route = apiRoute('/api/messages', {
         );
       }
 
-      const { recipientId, content, gifUrl, imageUrls } = parsed.data;
+      const { recipientId, content, gifUrl, imageUrls, imageAlts } = parsed.data;
       const senderId = session.user.id;
 
       if (recipientId === senderId) {
@@ -52,6 +54,8 @@ export const route = apiRoute('/api/messages', {
       if (imageUrls?.some((u) => !ownsFeedImageUrl(u, senderId))) {
         return Response.json({ error: 'Invalid image reference' }, { status: 400 });
       }
+      const altFailure = await guardImageAlts(senderId, imageUrls, imageAlts);
+      if (altFailure) return altFailure.response;
       const hasMedia = !!gifUrl || (imageUrls?.length ?? 0) > 0;
 
       // Check recipient exists and DM privacy
@@ -65,6 +69,14 @@ export const route = apiRoute('/api/messages', {
 
       if (!recipient) {
         return Response.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // A block in either direction: no new conversation and no message (same answer as the send path).
+      if (await isBlockedPair(senderId, recipientId)) {
+        return Response.json(
+          { error: 'You can no longer message this person' },
+          { status: 403 },
+        );
       }
 
       const dmPrivacy = recipient.profile?.dmPrivacy ?? 'EVERYONE';
@@ -110,6 +122,7 @@ export const route = apiRoute('/api/messages', {
               content: content ?? '',
               gifUrl: gifUrl ?? null,
               imageUrls: imageUrls ?? [],
+              imageAlts: normalizeImageAlts(imageUrls, imageAlts),
               ...messageStamp(conversation.disappearAfterSec, { content, gifUrl, imageUrls }),
             },
           }),
@@ -128,6 +141,7 @@ export const route = apiRoute('/api/messages', {
           createdAt: message.createdAt.toISOString(),
           gifUrl: message.gifUrl,
           imageUrls: message.imageUrls,
+          imageAlts: message.imageAlts,
           reactions: [],
           expiresAt: message.expiresAt?.toISOString() ?? null,
         };

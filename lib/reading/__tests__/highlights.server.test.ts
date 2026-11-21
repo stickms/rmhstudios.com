@@ -122,7 +122,7 @@ vi.mock(
             ),
         blogPost:
           {
-            findUnique:
+            findFirst:
               async () => ({
                 id: 'b',
               }),

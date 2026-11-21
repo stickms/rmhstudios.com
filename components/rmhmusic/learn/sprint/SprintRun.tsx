@@ -62,6 +62,7 @@ import {
   useNoteSound,
 } from '../useLearnInput';
 import { focusOf } from './focus';
+import { beginActivity } from '@/lib/rmhmusic/learn/activity-clock';
 import {
   askHint,
   feedbackLine,
@@ -928,6 +929,8 @@ export function SprintRun({
                 state.scored
               )
                 onStart?.();
+              // The run's length, for the practice log, counts from Start.
+              beginActivity();
               carry(
                 send(
                   {

@@ -7,7 +7,8 @@ import { toast } from '@/lib/toast';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
+import { errorField, serverError } from '@/lib/http';
+import { useMessageImageAlts } from '@/components/feed/useMessageImageAlts';
 import { sendGroupMessageApi } from '@/lib/group-chat/group-chat.contract';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
 import type { ChatRef } from '@/lib/chat-plus/types';
@@ -154,6 +155,13 @@ export function useGroupComposer({
       },
     );
 
+  // Descriptions for the pending images; with "Require image descriptions" on,
+  // a missing one blocks sending (the server refuses the same message).
+  const imageAlts =
+    useMessageImageAlts(
+      imageUrls,
+    );
+
   const handleImageFiles =
     async (
       files: FileList | null,
@@ -250,7 +258,11 @@ export function useGroupComposer({
         !hasMedia &&
         !poll) ||
       sending ||
-      uploading
+      uploading ||
+      imageAlts
+        .missing
+        .length >
+        0
     )
       return;
 
@@ -274,6 +286,8 @@ export function useGroupComposer({
       gifUrl;
     const pendingImages =
       imageUrls;
+    const pendingAlts =
+      imageAlts.alts;
     const pendingPollDraft =
       pollDraft;
     const restore =
@@ -329,6 +343,8 @@ export function useGroupComposer({
                 ? {
                     imageUrls:
                       pendingImages,
+                    imageAlts:
+                      pendingAlts,
                   }
                 : {}),
               ...(poll
@@ -345,6 +361,16 @@ export function useGroupComposer({
         ],
       );
     } catch (e) {
+      // The server's "Require image descriptions" check: turn the composer's own
+      // check on, so the images that lack one are named.
+      if (
+        errorField(
+          e,
+          'code',
+        ) ===
+        'alt-text-required'
+      )
+        imageAlts.markRequired();
       // Restore the draft (poll included) on failure.
       restore();
       toast.error(
@@ -372,7 +398,11 @@ export function useGroupComposer({
       imageUrls.length >
         0 ||
       pollDraft) &&
-    !sending;
+    !sending &&
+    imageAlts
+      .missing
+      .length ===
+      0;
 
   return {
     input,
@@ -382,6 +412,7 @@ export function useGroupComposer({
     setGifUrl,
     imageUrls,
     setImageUrls,
+    imageAlts,
     uploading,
     showGifPicker,
     setShowGifPicker,

@@ -25,7 +25,7 @@ export const route = apiRoute('/api/communities/$slug/onboarding', {
     async ({ params, userId, body }) => {
       const guard = await requireMod(params.slug, userId);
       if (!guard.ok) return guard.response;
-      return Response.json({ questions: await setOnboardingQuestions(guard.value.id, body) });
+      return Response.json({ questions: await setOnboardingQuestions(guard.value.id, body, userId) });
     },
   ),
   POST: defineHandler(

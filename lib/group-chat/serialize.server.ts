@@ -14,6 +14,7 @@ export const groupMessageSelect = {
   createdAt: true,
   gifUrl: true,
   imageUrls: true,
+  imageAlts: true,
   pollQuestion: true,
   pollOptions: true,
   kind: true,
@@ -31,6 +32,7 @@ type GroupMessageRow = {
   createdAt: Date;
   gifUrl: string | null;
   imageUrls: string[];
+  imageAlts?: string[];
   pollQuestion: string | null;
   pollOptions: string[];
   kind?: string;
@@ -91,6 +93,7 @@ export async function serializeGroupMessages(
       sender: resolveUser(m.sender),
       gifUrl: m.gifUrl,
       imageUrls: m.imageUrls,
+      imageAlts: m.imageAlts ?? [],
       poll,
       reactions: m.reactions,
       kind: m.kind ?? 'text',

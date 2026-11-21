@@ -8,6 +8,7 @@ import type { MessageView } from '@/lib/messages/message-view';
 import type { ReactionRow } from '@/lib/social/reactions';
 import type { ThreadPage } from '@/lib/messages/mutations.server';
 import type { SentDirectMessage } from '@/lib/messages/messages.contract';
+import type { editMessageAltsBody } from '@/lib/messages/image-alts-schema';
 import type {
   editMessageBody,
   hideMessageBody,
@@ -95,6 +96,24 @@ export const editMessageApi =
       method:
         'POST',
       path: '/api/messages/$conversationId/edit',
+    },
+  );
+
+/** Change the descriptions of a sent message's images (a DM or a group message); 24 hours after sending. */
+export const editMessageAltsApi =
+  endpoint<{
+    body: z.infer<
+      typeof editMessageAltsBody
+    >;
+    res: {
+      success: true;
+      imageAlts: string[];
+    };
+  }>()(
+    {
+      method:
+        'PATCH',
+      path: '/api/messages/$conversationId/alt',
     },
   );
 

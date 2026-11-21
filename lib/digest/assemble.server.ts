@@ -13,6 +13,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { WHOLE_EVENT } from '@/lib/calendar/event-model';
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { SITE_URL } from '@/lib/seo';
@@ -143,6 +144,7 @@ async function latestEditorial(): Promise<Editorial | null> {
       .catch(() => null),
     prisma.blogPost
       .findFirst({
+        where: publishedLogWhere(new Date()),
         orderBy: { date: 'desc' },
         select: { slug: true, title: true, description: true, date: true },
       })

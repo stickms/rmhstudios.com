@@ -7,6 +7,8 @@ Limits are enforced **per key**, per minute:
 | HARD-R | 120 |
 | Pro / higher | 600 |
 
+A key can be given a lower per-minute limit than its tier (Developer, API keys). Its `X-RateLimit-Limit` then shows that number, and the request that exceeds it takes the usual `429`.
+
 Image uploads have a tighter dedicated budget (15/min) and a tier-scaled daily quota on top of the per-minute limit.
 
 ## Headers

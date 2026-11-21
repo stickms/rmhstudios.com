@@ -34,7 +34,10 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import { SlidersHorizontal } from 'lucide-react';
+import {
+  History,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useArrival } from '@/components/ui/arrive';
@@ -120,6 +123,7 @@ import {
 } from '../useLearnInput';
 import { ScoreView } from './ScoreView';
 import { composerName } from './song-text';
+import { beginActivity } from '@/lib/rmhmusic/learn/activity-clock';
 
 const TABS_ID =
   'rmm-song';
@@ -147,6 +151,12 @@ export function SongScreen({
   } =
     useTranslation(
       'c-rmhmusic',
+    );
+  const {
+    t: ts,
+  } =
+    useTranslation(
+      'music-history',
     );
   const written =
     songById(
@@ -719,51 +729,74 @@ export function SongScreen({
           ),
       }}
       action={
-        <button
-          ref={
-            setupButton
-          }
-          type="button"
-          disabled={
-            loading ||
-            running
-          }
-          aria-describedby={
-            running
-              ? LOCKED_ID
-              : undefined
-          }
-          onClick={() =>
-            setSetupOpen(
-              true,
-            )
-          }
-          aria-label={t(
-            'change-input',
-            {
-              defaultValue:
-                'Change input',
-            },
-          )}
-          className={`${SECONDARY_BUTTON} min-w-11 max-[399px]:px-0`}
-        >
-          <SlidersHorizontal
-            className="h-4 w-4 shrink-0"
-            aria-hidden="true"
-          />
-          <span
-            aria-hidden="true"
-            className="max-[399px]:hidden"
+        <>
+          <Link
+            to="/rmhmusic/history"
+            search={{
+              song: song.id,
+            }}
+            className={`${SECONDARY_BUTTON} max-[399px]:px-3`}
           >
-            {t(
+            <History
+              className="h-4 w-4 shrink-0"
+              aria-hidden="true"
+            />
+            <span>
+              {ts(
+                'song-history-link',
+                {
+                  defaultValue:
+                    'History',
+                },
+              )}
+            </span>
+          </Link>
+          <button
+            ref={
+              setupButton
+            }
+            type="button"
+            disabled={
+              loading ||
+              running
+            }
+            aria-describedby={
+              running
+                ? LOCKED_ID
+                : undefined
+            }
+            onClick={() =>
+              setSetupOpen(
+                true,
+              )
+            }
+            aria-label={t(
               'change-input',
               {
                 defaultValue:
                   'Change input',
               },
             )}
-          </span>
-        </button>
+            className={`${SECONDARY_BUTTON} min-w-11 max-[399px]:px-0`}
+          >
+            <SlidersHorizontal
+              className="h-4 w-4 shrink-0"
+              aria-hidden="true"
+            />
+            <span
+              aria-hidden="true"
+              className="max-[399px]:hidden"
+            >
+              {t(
+                'change-input',
+                {
+                  defaultValue:
+                    'Change input',
+                },
+              )}
+            </span>
+          </button>
+        </>
       }
     >
       {
@@ -1913,6 +1946,8 @@ function SongRun({
                     },
                   ),
                 );
+              // The run's length, for the practice log, counts from Start.
+              beginActivity();
               carry(
                 send(
                   {

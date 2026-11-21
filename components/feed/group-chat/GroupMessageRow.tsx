@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatRichBody } from '@/components/chat-plus/ChatRichBody';
 import { ChatSystemLine } from '@/components/chat-plus/ChatSystemLine';
@@ -7,7 +8,9 @@ import { ReactionChips } from '@/components/shared/ReactionChips';
 import { groupReactions } from '@/lib/social/reactions';
 import type { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { isCardKind, isLineKind, type ChatRef } from '@/lib/chat-plus/types';
-import { PostImageGrid } from '../PostImageGrid';
+import { MessageAltsDialog } from '../MessageAltsDialog';
+import { MessageImages } from '../MessageImages';
+import { canEditImageAlts } from '@/lib/messages/image-alts';
 import { SpineItem, SpineStation } from '@/components/ui/spine';
 import { cn } from '@/lib/utils';
 import { memberDisplayName } from './group-chat-state';
@@ -58,6 +61,10 @@ export function GroupMessageRow({
 }) {
   const { t } = useTranslation('feed');
   const mine = m.sender.id === currentUserId;
+  // The sender's "Edit descriptions": the saved list shows at once, whether or not the realtime event arrives.
+  const [altsEditing, setAltsEditing] = useState(false);
+  const [savedAlts, setSavedAlts] = useState<string[] | null>(null);
+  const imageAlts = savedAlts ?? m.imageAlts;
   const newDay =
     !prevMessage ||
     new Date(m.createdAt).toDateString() !== new Date(prevMessage.createdAt).toDateString();
@@ -107,7 +114,7 @@ export function GroupMessageRow({
               </div>
             )}
             {m.imageUrls && m.imageUrls.length > 0 && (
-              <PostImageGrid urls={m.imageUrls} className="mt-2 overflow-hidden rounded-site" />
+              <MessageImages urls={m.imageUrls} alts={imageAlts} className="mt-2" />
             )}
             {m.gifUrl && (
               <img
@@ -141,9 +148,27 @@ export function GroupMessageRow({
               forwardCount: m.forwardCount,
               threadable: true,
             }}
+            onEditAlts={
+              canEditImageAlts(
+                { senderId: m.sender.id, createdAt: m.createdAt, imageUrls: m.imageUrls ?? [] },
+                currentUserId,
+              )
+                ? () => setAltsEditing(true)
+                : undefined
+            }
             className="-my-2 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
           />
         </div>
+        {altsEditing && m.imageUrls && (
+          <MessageAltsDialog
+            chatId={groupId}
+            messageId={m.id}
+            imageUrls={m.imageUrls}
+            imageAlts={imageAlts ?? []}
+            onSaved={setSavedAlts}
+            onClose={() => setAltsEditing(false)}
+          />
+        )}
       </SpineItem>
     </>
   );

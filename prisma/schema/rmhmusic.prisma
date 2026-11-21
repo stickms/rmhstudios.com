@@ -172,3 +172,26 @@ model MusicShare {
   @@index([expiresAt])
   @@map("music_share")
 }
+
+/// One finished practice activity (Sprint 03 practice log, `lib/rmhmusic/history.ts`). Append-only: the
+/// endpoints that already keep a result also write one entry, so a second, lower attempt at a song
+/// leaves a trace the bests never keep. Nothing reads it but its owner. `kind` is `lesson`, `song`,
+/// `sprint` or `cards`; `refId` is the lesson id, song id, sprint level (the date for the daily run) or
+/// `cards`; `mode` is the song mode (`wait`/`play`) or the sprint mode (`daily`/`free`). `durationMs`
+/// is null when the client did not say (the entry then counts as an activity, not as minutes).
+model MusicPracticeEntry {
+  id         BigInt   @id @default(autoincrement())
+  userId     String
+  kind       String   @db.VarChar(8)
+  refId      String   @db.VarChar(80)
+  mode       String?  @db.VarChar(8)
+  score      Int?
+  durationMs Int?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, kind, refId, createdAt])
+  @@map("music_practice_entry")
+}

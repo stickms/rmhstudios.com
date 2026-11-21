@@ -85,6 +85,7 @@ interface DbRoomRow {
   loopQueue: boolean;
   customReactions: string[];
   waitForSlowPeers: boolean;
+  scheduledFor: Date | null;
   createdAt: Date;
   updatedAt: Date;
   members: {
@@ -881,6 +882,8 @@ export class RoomManager {
           new Set(),
         createdAt:
           now,
+        scheduledFor:
+          null,
         lastActivityAt:
           now,
         seq: 0,
@@ -1098,6 +1101,17 @@ export class RoomManager {
           roomId,
         )) ??
         undefined;
+    } else if (
+      room.scheduledFor !==
+      null
+    ) {
+      // A host may edit a watch party's name/time on the web tier after this
+      // hub loaded the room; re-read those two fields (one PK read).
+      await this.refreshScheduledFields(
+        [
+          room,
+        ],
+      );
     }
 
     if (
@@ -2559,12 +2573,90 @@ export class RoomManager {
 
   // ─── Room Browsing ────────────────────────────────────────────
 
-  private browseRooms(
+  /**
+   * Re-read `name` and `scheduledFor` for in-memory watch-party rooms. The web
+   * tier edits those on the DB row with no channel to this hub, so browse and
+   * join refresh them (indexed primary-key read). Failures keep the old values.
+   */
+  async refreshScheduledFields(
+    rooms: RmhTubeRoom[],
+  ): Promise<void> {
+    const scheduled =
+      rooms.filter(
+        (
+          r,
+        ) =>
+          r.scheduledFor !==
+          null,
+      );
+    if (
+      scheduled.length ===
+      0
+    )
+      return;
+    try {
+      const rows =
+        await getPrismaClient().rmhTubeRoom.findMany(
+          {
+            where:
+              {
+                id: {
+                  in: scheduled.map(
+                    (
+                      r,
+                    ) =>
+                      r.id,
+                  ),
+                },
+              },
+            select:
+              {
+                id: true,
+                name: true,
+                scheduledFor:
+                  true,
+              },
+          },
+        );
+      for (const row of rows) {
+        const r =
+          this.rooms.get(
+            row.id,
+          );
+        if (
+          !r
+        )
+          continue;
+        r.name =
+          row.name;
+        r.scheduledFor =
+          row
+            .scheduledFor
+            ?.getTime() ??
+          null;
+      }
+    } catch (err) {
+      logger.warn(
+        {
+          event:
+            'party_refresh_failed',
+          err,
+        },
+      );
+    }
+  }
+
+  private async browseRooms(
     socket: Socket,
     payload: {
       limit: number;
     },
-  ): void {
+  ): Promise<void> {
+    await this.refreshScheduledFields(
+      Array.from(
+        this.rooms.values(),
+      ),
+    );
     const publicRooms: PublicRoomInfo[] =
       [];
 
@@ -2619,7 +2711,7 @@ export class RoomManager {
               .settings
               .password,
           scheduledFor:
-            null,
+            room.scheduledFor,
         },
       );
     }
@@ -3430,6 +3522,9 @@ export class RoomManager {
         new Set(),
       createdAt:
         dbRoom.createdAt.getTime(),
+      scheduledFor:
+        dbRoom.scheduledFor?.getTime() ??
+        null,
       lastActivityAt:
         dbRoom.updatedAt.getTime(),
       seq: 0,

@@ -21,6 +21,7 @@ import {
   type NotifyMatrix,
 } from '@/lib/notify/categories';
 import { holdNotification } from '@/lib/notify/held.server';
+import { getConversationPref, shouldDeliver } from '@/lib/notify/conversation-prefs.server';
 import type { NotificationType } from '@prisma/client';
 
 /**
@@ -155,6 +156,17 @@ export interface CreateNotificationInput {
    * toggles so a user un-liking and re-liking doesn't spam the recipient.
    */
   dedupeUnread?: boolean;
+  /**
+   * The conversation this is about (`scopeKeyFor('post', rootId)`). Present: the recipient's per-conversation
+   * All / Mentions only / None choice is applied first, exactly as `dispatch()` does for chats. Absent (every other
+   * caller): nothing changes.
+   */
+  conversationKey?: string;
+  /**
+   * Whether the recipient was personally addressed (a direct reply to their reply, an @mention): the input to
+   * "Mentions only". Only read with `conversationKey`; defaults to `type === 'MENTION'`.
+   */
+  addressed?: boolean;
 }
 
 /** Which preference column governs each notification type. */
@@ -301,6 +313,12 @@ export async function createNotification(input: CreateNotificationInput): Promis
   if (input.actorId && input.actorId === input.userId) return;
 
   try {
+    // The conversation gate runs before anything is read or written: a muted thread is not a notification source.
+    if (input.conversationKey && !isUnmutable(input)) {
+      const pref = await getConversationPref(input.userId, input.conversationKey);
+      if (!shouldDeliver(pref, input.addressed ?? input.type === 'MENTION')) return;
+    }
+
     const prefs = await loadPrefs(input.userId);
     if (isMuted(input, prefs)) return;
 

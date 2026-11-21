@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import { getPatchNoteApi, publishPatchNoteApi } from '@/lib/arcade/arcade.contract';
 import { prisma } from '@/lib/prisma.server';
-import { cached, invalidateCached } from '@/lib/cached.server';
+import { invalidateCached } from '@/lib/cached.server';
+import { enqueueGameUpdateFanout } from '@/lib/arcade/updates-jobs.server';
+import { latestForLaunch, latestPatchNoteKey } from '@/lib/arcade/updates.server';
 import { games } from '@/lib/catalog';
 
 const getQuery = z.object({ path: z.string().max(80) });
@@ -13,18 +15,6 @@ const postBody = z.object({
   title: z.string().trim().min(1).max(120),
   body: z.string().trim().min(1).max(1000),
 });
-
-const key = (gameId: string) => `arcade:patch:${gameId}`;
-const latestFor = (gameId: string) =>
-  cached(key(gameId), 300_000, () =>
-    prisma.gamePatchNote
-      .findFirst({
-        where: { gameId },
-        orderBy: { createdAt: 'desc' },
-        select: { version: true, title: true, body: true },
-      })
-      .then((r) => r ?? null),
-  );
 
 /**
  * GET  /api/arcade/patch-notes?path=/laundry-sort — latest note for the game at that path.
@@ -36,7 +26,7 @@ export const route = apiRoute('/api/arcade/patch-notes', {
     { auth: 'none', rateLimit: 'read', query: getQuery },
     async ({ query }) => {
       const game = games.find((g) => g.href === query.path);
-      const note = game ? await latestFor(game.id) : null;
+      const note = game ? await latestForLaunch(game.id) : null;
       return Response.json(
         { gameId: game?.id ?? null, note },
         { headers: { 'Cache-Control': 'public, max-age=60' } },
@@ -50,12 +40,21 @@ export const route = apiRoute('/api/arcade/patch-notes', {
       if (!games.some((g) => g.id === body.gameId)) {
         return Response.json({ error: 'Unknown game' }, { status: 404 });
       }
-      await prisma.gamePatchNote.upsert({
+      // Re-publishing a version corrects its text; only a new version is news, so only it notifies followers.
+      const existing = await prisma.gamePatchNote.findUnique({
         where: { gameId_version: { gameId: body.gameId, version: body.version } },
-        create: body,
-        update: { title: body.title, body: body.body },
+        select: { id: true },
       });
-      await invalidateCached(key(body.gameId));
+      if (existing) {
+        await prisma.gamePatchNote.update({
+          where: { id: existing.id },
+          data: { title: body.title, body: body.body },
+        });
+      } else {
+        const note = await prisma.gamePatchNote.create({ data: body, select: { id: true } });
+        await enqueueGameUpdateFanout({ kind: 'update', gameId: body.gameId, noteId: note.id });
+      }
+      await invalidateCached(latestPatchNoteKey(body.gameId));
       return Response.json({ ok: true }, { status: 201 });
     },
   ),

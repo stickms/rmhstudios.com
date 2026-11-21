@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import {
   Dialog,
   DialogContent,
@@ -9,11 +10,14 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { reportContentApi } from '@/lib/moderation/moderation.contract';
+import { reportToModsApi } from '@/lib/communities/rules.contract';
+import type { ReportableRules } from '@/lib/communities/rules';
 import {
   REPORT_DETAILS_MAX,
   REPORT_REASONS,
@@ -24,6 +28,10 @@ import {
 export type { ReportEntityType } from '@/lib/moderation/report-schema';
 import type { ReportEntityType } from '@/lib/moderation/report-schema';
 
+/** The option that reports to the community's own moderators instead of the site's. */
+const COMMUNITY_RULE =
+  'COMMUNITY_RULE' as const;
+
 interface ReportDialogProps {
   open: boolean;
   onOpenChange: (
@@ -31,6 +39,14 @@ interface ReportDialogProps {
   ) => void;
   entityType: ReportEntityType;
   entityId: string;
+  /**
+   * s03-13: the community this post belongs to, with its rules. When it has any,
+   * the dialog also offers "Breaks a rule of <community>" (reported to that
+   * community's moderators); the site reasons stay as they are.
+   */
+  community?:
+    | ReportableRules
+    | undefined;
 }
 
 /**
@@ -42,19 +58,48 @@ export function ReportDialog({
   onOpenChange,
   entityType,
   entityId,
+  community,
 }: ReportDialogProps) {
+  const {
+    t: tr,
+  } =
+    useTranslation(
+      'community-rules',
+    );
+  const rules =
+    entityType ===
+    'rmhark'
+      ? (community?.rules ??
+        [])
+      : [];
+  const [
+    ruleId,
+    setRuleId,
+  ] =
+    useState(
+      '',
+    );
   const {
     t,
   } =
     useTranslation(
       'c-moderation',
     );
+  const {
+    t: tl,
+  } =
+    useTranslation(
+      'my-reports',
+    );
+  const navigate =
+    useNavigate();
   const [
     reason,
     setReason,
   ] =
     useState<
       | ReportReason
+      | typeof COMMUNITY_RULE
       | ''
     >(
       '',
@@ -160,6 +205,9 @@ export function ReportDialog({
       setReason(
         '',
       );
+      setRuleId(
+        '',
+      );
       setDetails(
         '',
       );
@@ -174,6 +222,75 @@ export function ReportDialog({
         !reason
       )
         return;
+      if (
+        reason ===
+        COMMUNITY_RULE
+      ) {
+        if (
+          !community ||
+          !ruleId
+        )
+          return;
+        setSubmitting(
+          true,
+        );
+        try {
+          await api(
+            reportToModsApi,
+            {
+              params:
+                {
+                  slug: community.slug,
+                },
+              body: {
+                postId:
+                  entityId,
+                ruleId,
+              },
+            },
+          );
+          toast.success(
+            tr(
+              'reported-to-mods',
+              {
+                name: community.name,
+                defaultValue:
+                  'Sent to the moderators of {{name}}.',
+              },
+            ),
+          );
+          onOpenChange(
+            false,
+          );
+          reset();
+        } catch (e) {
+          toast.error(
+            e instanceof
+              HttpError &&
+              e.status ===
+                429
+              ? tr(
+                  'report-rate-limited',
+                  {
+                    defaultValue:
+                      'You have sent a lot of reports. Try again later.',
+                  },
+                )
+              : tr(
+                  'report-to-mods-error',
+                  {
+                    defaultValue:
+                      'Could not send the report. Please try again.',
+                  },
+                ),
+          );
+        } finally {
+          setSubmitting(
+            false,
+          );
+        }
+        return;
+      }
       // Validate with the schema the route enforces, so a limit can never be
       // enforced on one side only — the 400 would arrive with no field context.
       const parsed =
@@ -205,21 +322,65 @@ export function ReportDialog({
         true,
       );
       try {
-        await api(
-          reportContentApi,
-          {
-            body: parsed.data,
-          },
-        );
-        toast.success(
-          t(
-            'toast-success',
+        const sent =
+          await api(
+            reportContentApi,
             {
-              defaultValue:
-                'Thanks — our team will review this.',
+              body: parsed.data,
             },
-          ),
-        );
+          );
+        // s03-16: both answers point at "Your reports"; a duplicate says so instead of pretending
+        // a second report was filed.
+        const toYourReports =
+          {
+            label:
+              tl(
+                'view-reports',
+                {
+                  defaultValue:
+                    'Your reports',
+                },
+              ),
+            onClick:
+              () => {
+                void navigate(
+                  {
+                    to: '/settings/security',
+                  },
+                );
+              },
+          };
+        if (
+          sent.alreadyReported
+        ) {
+          toast.info(
+            tl(
+              'already-reported',
+              {
+                defaultValue:
+                  'You already have an open report on this.',
+              },
+            ),
+            {
+              action:
+                toYourReports,
+            },
+          );
+        } else {
+          toast.success(
+            t(
+              'toast-success',
+              {
+                defaultValue:
+                  'Thanks — our team will review this.',
+              },
+            ),
+            {
+              action:
+                toYourReports,
+            },
+          );
+        }
         onOpenChange(
           false,
         );
@@ -298,6 +459,105 @@ export function ReportDialog({
         </DialogHeader>
 
         <fieldset className="space-y-1.5">
+          {community &&
+            rules.length >
+              0 && (
+              <>
+                <label
+                  className={`flex cursor-pointer items-center gap-3 rounded-site-sm border px-3 py-2 text-sm ${
+                    reason ===
+                    COMMUNITY_RULE
+                      ? 'border-site-accent bg-site-bg-subtle text-site-text'
+                      : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="report-reason"
+                    value={
+                      COMMUNITY_RULE
+                    }
+                    checked={
+                      reason ===
+                      COMMUNITY_RULE
+                    }
+                    onChange={() =>
+                      setReason(
+                        COMMUNITY_RULE,
+                      )
+                    }
+                    className="accent-(--site-accent)"
+                  />
+                  {tr(
+                    'breaks-rule',
+                    {
+                      name: community.name,
+                      defaultValue:
+                        'Breaks a rule of {{name}}',
+                    },
+                  )}
+                </label>
+                {reason ===
+                  COMMUNITY_RULE && (
+                  <Select
+                    value={
+                      ruleId
+                    }
+                    onChange={(
+                      e,
+                    ) =>
+                      setRuleId(
+                        e
+                          .target
+                          .value,
+                      )
+                    }
+                    aria-label={tr(
+                      'rule-picker',
+                      {
+                        defaultValue:
+                          'Which rule',
+                      },
+                    )}
+                  >
+                    <option value="">
+                      {tr(
+                        'rule-picker-ph',
+                        {
+                          defaultValue:
+                            'Choose a rule',
+                        },
+                      )}
+                    </option>
+                    {rules.map(
+                      (
+                        r,
+                      ) => (
+                        <option
+                          key={
+                            r.id
+                          }
+                          value={
+                            r.id
+                          }
+                        >
+                          {tr(
+                            'rule-option',
+                            {
+                              n: r.position,
+                              title:
+                                r.title,
+                              defaultValue:
+                                '{{n}}. {{title}}',
+                            },
+                          )}
+                        </option>
+                      ),
+                    )}
+                  </Select>
+                )}
+              </>
+            )}
           {REPORT_REASONS.map(
             (
               value,
@@ -340,34 +600,37 @@ export function ReportDialog({
           )}
         </fieldset>
 
-        <Textarea
-          value={
-            details
-          }
-          onChange={(
-            e,
-          ) =>
-            setDetails(
-              e
-                .target
-                .value,
-            )
-          }
-          maxLength={
-            REPORT_DETAILS_MAX
-          }
-          placeholder={t(
-            'details-placeholder',
-            {
-              defaultValue:
-                'Add any details (optional)',
-            },
-          )}
-          rows={
-            3
-          }
-          className="min-h-0 resize-none px-3 py-2"
-        />
+        {reason !==
+          COMMUNITY_RULE && (
+          <Textarea
+            value={
+              details
+            }
+            onChange={(
+              e,
+            ) =>
+              setDetails(
+                e
+                  .target
+                  .value,
+              )
+            }
+            maxLength={
+              REPORT_DETAILS_MAX
+            }
+            placeholder={t(
+              'details-placeholder',
+              {
+                defaultValue:
+                  'Add any details (optional)',
+              },
+            )}
+            rows={
+              3
+            }
+            className="min-h-0 resize-none px-3 py-2"
+          />
+        )}
 
         <DialogFooter>
           <Button
@@ -396,7 +659,10 @@ export function ReportDialog({
             }
             disabled={
               !reason ||
-              submitting
+              submitting ||
+              (reason ===
+                COMMUNITY_RULE &&
+                !ruleId)
             }
           >
             {submitting

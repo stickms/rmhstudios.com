@@ -19,6 +19,7 @@ API keys authenticate as **your user account**. Writes are scoped to your own ac
 - Treat a key like a password. Keep it server-side; never embed it in a public client, repo, or browser bundle you don't control.
 - **Scopes:** each key carries granular permissions — see [Scopes](./scopes.md). Grant the least privilege a given integration needs.
 - **Expiry:** a key may be created with an expiry date; expired keys are rejected exactly like revoked ones.
+- **Allowed addresses:** restrict a key to up to 20 IPv4/IPv6 addresses or CIDR ranges (IPv4 /8 to /32, IPv6 /16 to /128). A request from anywhere else is refused with `403 ip_not_allowed` before any limit is counted, and shows on the key as a refused request with the address masked. An empty list allows any address. The address checked is the one `getClientIp` derives: Cloudflare's `CF-Connecting-IP`, which is only trustworthy because the origin accepts traffic from Cloudflare's ranges alone (`deploy/apache/rmhstudios.conf`, client-IP trust boundary). Keep that origin firewall in place: it is what makes the allowlist unforgeable.
 - **Rotation:** rotate a key from [`/developer`](https://rmhstudios.com/developer) to issue a new secret while keeping the same key record — the old secret stops working immediately.
 - **Revocation:** revoke a key any time from [`/developer`](https://rmhstudios.com/developer); it takes effect at once.
 - If a subscription lapses or the account is suspended, all of that account's keys stop working until the subscription is restored.

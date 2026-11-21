@@ -55,6 +55,11 @@ interface User {
 
 export const Route = createFileRoute('/_site/admin/users')({
   head: () => ({ meta: [{ title: 'Users | Admin | RMH Studios' }] }),
+  // s03-04: the reports queue links here with the reported member's handle and id, which opens their panel at the notes.
+  validateSearch: (search: Record<string, unknown>): { q?: string; open?: string } => ({
+    ...(typeof search.q === 'string' && search.q ? { q: search.q.slice(0, 100) } : {}),
+    ...(typeof search.open === 'string' && search.open ? { open: search.open.slice(0, 64) } : {}),
+  }),
   component: AdminUsersPage,
 });
 
@@ -63,10 +68,11 @@ function AdminUsersPage() {
   const confirm = useConfirm();
   const { data: session } = useSession();
   const navigate = useNavigate();
+  const linked = Route.useSearch();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(linked.q ?? '');
   const [updating, setUpdating] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -77,7 +83,7 @@ function AdminUsersPage() {
   // flat list — this narrows the table to one population or the other.
   const [accounts, setAccounts] = useState<AccountFilter>('all');
   // The one user whose moderation record is open under their row.
-  const [moderating, setModerating] = useState<string | null>(null);
+  const [moderating, setModerating] = useState<string | null>(linked.open ?? null);
   const arrival = useArrival(!(loading && users.length === 0));
   const isNewUser = useArrivingKeys(users.map((u) => u.id));
 
@@ -388,6 +394,7 @@ function AdminUsersPage() {
                       <UserModerationPanel
                         userId={user.id}
                         isAdminUser={user.isAdmin}
+                        revealNotes={linked.open === user.id}
                         onChanged={(summary) =>
                           setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, ...summary } : u)))
                         }

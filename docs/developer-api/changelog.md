@@ -1,5 +1,10 @@
 # Changelog
 
+## Games — 2026-11
+
+- New scope `read:games` (group Games).
+- New endpoints: `GET /api/v1/games` (the catalogue; any valid key, no scope), `GET /api/v1/me/games`, `GET /api/v1/me/games/{gameId}/days`, `GET /api/v1/me/achievements` and `GET /api/v1/users/{handle}/games`. A member's playtime is shown to a key only as their playtime privacy setting allows, and is a `404` when hidden. Secret achievements are never listed.
+
 ## v1.2 — 2026-06
 
 Major overhaul:

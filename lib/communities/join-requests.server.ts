@@ -14,6 +14,8 @@
  * so two moderators approving at once cannot double-count the member.
  */
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
+import { recordMemberEvent } from '@/lib/communities/member-events.server';
 import { createNotification } from '@/lib/notifications.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 
@@ -195,6 +197,14 @@ export async function decideRequest(
       },
     });
     if (res.count === 0) return false;
+    await logModAction(tx, {
+      communityId: community.id,
+      actorId: decidedById,
+      action: decision === 'approve' ? 'join_request_approved' : 'join_request_denied',
+      targetUserId: requester.userId,
+      targetType: 'request',
+      targetId: String(requestId),
+    });
     if (decision === 'approve') {
       const created = await tx.communityMember.createMany({
         data: [{ communityId: community.id, userId: requester.userId }],
@@ -205,6 +215,7 @@ export async function decideRequest(
           where: { id: community.id },
           data: { memberCount: { increment: 1 } },
         });
+        await recordMemberEvent(tx, community.id, requester.userId, 'join');
       }
     }
     return true;

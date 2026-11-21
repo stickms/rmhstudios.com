@@ -21,18 +21,23 @@ interface Day {
  * `days` is oldest first and consecutive. The component owns no strings: `label` (table
  * caption), `summary` (the one-line text alternative) and `columns` (table headers) are
  * passed already translated. Only the active language is read, for `Intl`.
+ *
+ * `marked` flags days (a streak, say): the cell gets a 1px ink outline, and the table, which is
+ * what a screen reader reads, gains a column carrying `label` for each marked day.
  */
 export function DayHeatmap({
   days,
   label,
   summary,
   columns: headers,
+  marked,
   weeks = 53,
 }: {
   days: Day[];
   label: string;
   summary: string;
   columns: { date: string; count: string };
+  marked?: { days: ReadonlySet<string>; label: string; column: string };
   weeks?: number;
 }) {
   const { i18n } = useTranslation();
@@ -76,7 +81,7 @@ export function DayHeatmap({
               cell ? (
                 <div
                   key={cell.date}
-                  className="aspect-square w-full rounded-site-sm"
+                  className={`aspect-square w-full rounded-site-sm ${marked?.days.has(cell.date) ? 'border border-site-text' : ''}`}
                   style={{
                     background: `color-mix(in srgb, var(--heat-ink, var(--site-text)) ${LEVEL_MIX[heatLevel(cell.count, max)]}%, var(--heat-ground, var(--site-bg)))`,
                   }}
@@ -88,23 +93,28 @@ export function DayHeatmap({
           </div>
         ))}
       </div>
-      <table className="sr-only">
-        <caption>{label}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{headers.date}</th>
-            <th scope="col">{headers.count}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {days.map((d) => (
-            <tr key={d.date}>
-              <th scope="row">{formatDate(d.date)}</th>
-              <td>{number.format(d.count)}</td>
+      {/* A table ignores a 1px width, so the clipping box is a wrapper, not the table itself. */}
+      <div className="sr-only">
+        <table>
+          <caption>{label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{headers.date}</th>
+              <th scope="col">{headers.count}</th>
+              {marked && <th scope="col">{marked.column}</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {days.map((d) => (
+              <tr key={d.date}>
+                <th scope="row">{formatDate(d.date)}</th>
+                <td>{number.format(d.count)}</td>
+                {marked && <td>{marked.days.has(d.date) ? marked.label : ''}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

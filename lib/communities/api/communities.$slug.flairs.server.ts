@@ -12,7 +12,7 @@ export const route = apiRoute('/api/communities/$slug/flairs', {
       const guard = await requireMod(params.slug, userId);
       if (!guard.ok) return guard.response;
       try {
-        const flair = await createFlair(guard.value.id, body);
+        const flair = await createFlair(guard.value.id, body, userId);
         return Response.json({ flair }, { status: 201 });
       } catch (e) {
         if (e instanceof FlairError) {

@@ -108,6 +108,8 @@ export interface RmhTubeRoom {
   chat: ChatMessage[];
   skipVotes: Set<string>;
   createdAt: number;
+  /** Epoch ms of the scheduled start of a watch party room (lib/rmhtube/parties.server.ts); null for an ad-hoc room. */
+  scheduledFor: number | null;
   lastActivityAt: number;
   seq: number;
   // Phase 1: Pinned message

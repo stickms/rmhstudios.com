@@ -26,6 +26,10 @@
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import type { DailyBoardMe } from '@/lib/rmhmusic/social/social.contract';
+import {
+  activityDurationMs,
+  endActivity,
+} from '../activity-clock';
 import type { SprintSaveOutcome } from './machine';
 import type { SprintLevelId } from './levels';
 import type {
@@ -128,15 +132,24 @@ export function createApiSaver(): SprintSaver {
         results,
       }) => {
         try {
+          const durationMs =
+            activityDurationMs();
           await api(
             sprintFreeplayApi,
             {
               body: {
                 level,
                 results,
+                ...(durationMs ===
+                undefined
+                  ? {}
+                  : {
+                      durationMs,
+                    }),
               },
             },
           );
+          endActivity();
           return 'saved';
         } catch (err) {
           return failure(
@@ -151,6 +164,8 @@ export function createApiSaver(): SprintSaver {
         onBoard,
       }) => {
         try {
+          const durationMs =
+            activityDurationMs();
           const res =
             await api(
               sprintDailyApi,
@@ -158,9 +173,16 @@ export function createApiSaver(): SprintSaver {
                 body: {
                   date,
                   results,
+                  ...(durationMs ===
+                  undefined
+                    ? {}
+                    : {
+                        durationMs,
+                      }),
                 },
               },
             );
+          endActivity();
           if (
             res.board &&
             onBoard

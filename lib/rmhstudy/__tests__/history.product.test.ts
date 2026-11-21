@@ -10,6 +10,7 @@ import {
   records,
   weekBounds,
   weekFrom,
+  weekBreaks,
   weekTotal,
 } from '@/lib/rmhstudy/history';
 import { dayKeyInZone } from '@/lib/study/stats';
@@ -497,5 +498,31 @@ describe('formatMinutes', () => {
     ).toBe(
       '25 min',
     );
+  });
+});
+
+describe('weekBreaks', () => {
+  const week = weekFrom('2026-11-16');
+  const day = (date: string, focusMinutes: number, breakMinutes: number, tracked = true) => ({
+    date,
+    focusMinutes,
+    breakMinutes,
+    tracked,
+  });
+
+  it('totals break time and gives the minutes of focus per minute of break', () => {
+    expect(weekBreaks([day('2026-11-16', 50, 5), day('2026-11-17', 50, 5), day('2026-11-09', 99, 99)], week)).toEqual({
+      breakMinutes: 10,
+      focusPerBreak: 10,
+    });
+  });
+
+  it('has no ratio when no break time was recorded', () => {
+    expect(weekBreaks([day('2026-11-16', 50, 0)], week)).toEqual({ breakMinutes: 0, focusPerBreak: null });
+  });
+
+  it('is null for a week whose rows predate break tracking', () => {
+    expect(weekBreaks([day('2026-11-16', 50, 0, false)], week)).toBeNull();
+    expect(weekBreaks([], week)).toBeNull();
   });
 });

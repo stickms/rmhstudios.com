@@ -1,4 +1,3 @@
-import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
@@ -9,10 +8,9 @@ import { findDm } from '@/lib/chat/chat.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { redisEnabled, redisGetJSON, redisIncrBy } from '@/lib/redis.server';
 import { readJsonLimited, RequestTooLargeError } from '@/lib/request-limits';
-import { notifyUser } from '@/lib/message-events';
-import { ownsFeedImageUrl } from '@/lib/storage/keys';
+import { guardDirect, sendDirectMessage } from '@/lib/messages/send.server';
+import { normalizeImageAlts } from '@/lib/messages/image-alts';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
-import { messageStamp } from '@/lib/chat-plus/post.server';
 import { getPairPrivacy, maskReceipts } from '@/lib/chat-plus/receipts.server';
 
 /**
@@ -79,6 +77,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
         createdAt: true,
         gifUrl: true,
         imageUrls: true,
+        imageAlts: true,
         reactions: { select: { emoji: true, userId: true } },
       },
     });
@@ -131,6 +130,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
         createdAt: m.createdAt.toISOString(),
         gifUrl: m.gifUrl,
         imageUrls: m.imageUrls,
+        imageAlts: normalizeImageAlts(m.imageUrls, m.imageAlts),
         reactions: m.reactions,
       })),
       nextCursor: hasMore ? items[items.length - 1].id : null,
@@ -140,15 +140,20 @@ export const route = apiRoute('/api/messages/$conversationId', {
   POST: implement(sendToConversationApi, {}, async ({ request, params, session }) => {
     const { conversationId } = params;
     const userId = session.user.id;
-    const restricted = await restrictionResponse(userId, 'message');
-    if (restricted) return restricted;
+
+    // Restriction, then existence and participation, before any rate limit or
+    // body parse: a restricted user or a stranger never spends tokens or sees a
+    // validation error first.
+    const gate = await guardDirect(userId, conversationId);
+    if (!gate.ok) return gate.response;
 
     // Anti-spam, tuned to never hinder a real fast-typed conversation — only
     // botnet-scale flooding. Every limit carries the global ×4 multiplier, so
     // effective ceilings sit far above any human typer:
     //   • per-IP     ~120/min  (coarse; pre-existing, now Redis-coordinated)
     //   • per-sender ~240/min  (bounds one account regardless of IP rotation)
-    // The per-(sender→recipient) limit is applied below, once we know the target.
+    // The per-(sender→recipient) limit is applied by `sendDirectMessage`, once
+    // it knows the target.
     const ipRl = await checkRateLimit(getClientIp(request), {
       limit: 30,
       windowMs: 60_000,
@@ -172,20 +177,6 @@ export const route = apiRoute('/api/messages/$conversationId', {
       );
     }
 
-    // Verify user is a participant
-    const conversation = await findDm(conversationId);
-
-    if (!conversation) {
-      return Response.json({ error: 'Conversation not found' }, { status: 404 });
-    }
-
-    if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    // M2: a conversation with yourself is Saved Messages — no recipient to
-    // notify, no DM-privacy rule to apply, nothing to count as unread.
-    const isSavedChat = conversation.participantOneId === conversation.participantTwoId;
-
     let body: unknown;
     try {
       // A DM is tiny (2000-char text + a few media URLs); cap well below the
@@ -205,110 +196,13 @@ export const route = apiRoute('/api/messages/$conversationId', {
       );
     }
 
-    // Images must belong to the sender (filename is prefixed with their id).
-    if (parsed.data.imageUrls?.some((u) => !ownsFeedImageUrl(u, userId))) {
-      return Response.json({ error: 'Invalid image reference' }, { status: 400 });
-    }
-
-    // Re-check DM privacy of recipient
-    const recipientId =
-      conversation.participantOneId === userId
-        ? conversation.participantTwoId
-        : conversation.participantOneId;
-
-    // Per-(sender→recipient) limit: bounds targeted flooding of one person while
-    // staying generous for a normal rapid exchange (~160/min effective).
-    const pairRl = await checkRateLimit(`${userId}:${recipientId}`, {
-      limit: 40,
-      windowMs: 60_000,
-      prefix: 'dm:to',
-    });
-    if (!pairRl.allowed) {
-      return Response.json(
-        { error: "You're messaging this person too quickly. Please slow down." },
-        { status: 429, headers: { 'Retry-After': String(pairRl.retryAfter) } },
-      );
-    }
-
-    const recipient = isSavedChat
-      ? null
-      : await prisma.user.findUnique({
-          where: { id: recipientId },
-          select: { profile: { select: { dmPrivacy: true } } },
-        });
-
-    const dmPrivacy = recipient?.profile?.dmPrivacy ?? 'EVERYONE';
-
-    if (dmPrivacy === 'NONE') {
-      return Response.json(
-        { error: 'This user is no longer accepting messages.' },
-        { status: 403 },
-      );
-    }
-
-    if (dmPrivacy === 'FOLLOWERS') {
-      const follows = await prisma.follow.findUnique({
-        where: {
-          followerId_followingId: {
-            followerId: recipientId,
-            followingId: userId,
-          },
-        },
-      });
-      if (!follows) {
-        return Response.json(
-          {
-            error: 'This user only accepts messages from people they follow.',
-          },
-          { status: 403 },
-        );
-      }
-    }
-
-    const [message] = await prisma.$transaction([
-      prisma.chatMessage.create({
-        data: {
-          chatId: conversationId,
-          senderId: userId,
-          content: parsed.data.content,
-          gifUrl: parsed.data.gifUrl ?? null,
-          imageUrls: parsed.data.imageUrls ?? [],
-          read: isSavedChat,
-          // M3 + M6: expiry from the chat's timer, and the shared-media flags.
-          ...messageStamp(conversation.disappearAfterSec, parsed.data),
-        },
-      }),
-      prisma.chat.update({
-        where: { id: conversationId },
-        data: { lastMessageAt: new Date() },
-      }),
-    ]);
-
-    const messagePayload = {
-      id: message.id,
+    const sent = await sendDirectMessage({
+      userId,
       conversationId,
-      content: message.content,
-      senderId: message.senderId,
-      read: message.read,
-      createdAt: message.createdAt.toISOString(),
-      gifUrl: message.gifUrl,
-      imageUrls: message.imageUrls,
-      reactions: [],
-      expiresAt: message.expiresAt?.toISOString() ?? null,
-    };
-
-    // Bump the recipient's denormalized unread counter (only if warm) before we
-    // notify them, so their SSE stream reads the fresh count without a COUNT.
-    if (!isSavedChat) {
-      void adjustDmUnread(recipientId, 1);
-
-      // Notify recipient via SSE with message payload
-      notifyUser(recipientId, {
-        type: 'new-message',
-        message: messagePayload,
-      });
-    }
-
-    return { message: messagePayload };
+      input: parsed.data,
+      pairRateLimit: true,
+      conversation: gate.value,
+    });
+    return sent.ok ? sent.value : sent.response;
   }),
 });

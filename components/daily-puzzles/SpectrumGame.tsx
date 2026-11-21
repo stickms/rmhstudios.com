@@ -344,7 +344,7 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                                 <p className="text-sm leading-relaxed text-site-text-muted">{puzzle._funFact}</p>
                             </PuzzleSection>
 
-                            <PuzzleShareRow shareText={shareText} />
+                            <PuzzleShareRow gameMode="spectrum" shareText={shareText} />
                         </PuzzleResultStack>
                     </motion.div>
                 )}

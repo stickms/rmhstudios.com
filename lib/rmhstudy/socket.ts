@@ -21,6 +21,15 @@ let pendingRoomCode: string | null = null;
 // A body-doubling match id: lets the hub open the pair's room on first join.
 let pendingMatchId: string | null = null;
 
+/** The member's IANA zone, so the hub counts their streak in local days. */
+function viewerTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+}
+
 const store = () => useRmhStudyStore.getState();
 
 // ─── Connection ─────────────────────────────────────────────────────────────
@@ -31,7 +40,7 @@ async function connectToRmhStudyInner(roomCode?: string, matchId?: string): Prom
 
   if (client) {
     if (client.socket.connected && roomCode) {
-      client.emit('rmhstudy:room:join', { roomCode, matchId: pendingMatchId ?? undefined });
+      client.emit('rmhstudy:room:join', { roomCode, matchId: pendingMatchId ?? undefined, timeZone: viewerTimeZone() });
     } else {
       client.reconnectNow();
     }
@@ -58,7 +67,7 @@ async function connectToRmhStudyInner(roomCode?: string, matchId?: string): Prom
     },
     onConnect: (socket) => {
       const code = store().room?.roomCode ?? pendingRoomCode;
-      if (code) socket.emit('rmhstudy:room:join', { roomCode: code, matchId: pendingMatchId ?? undefined });
+      if (code) socket.emit('rmhstudy:room:join', { roomCode: code, matchId: pendingMatchId ?? undefined, timeZone: viewerTimeZone() });
     },
     bind: registerHandlers,
   });

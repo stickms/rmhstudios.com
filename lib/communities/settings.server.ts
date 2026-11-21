@@ -4,6 +4,7 @@
  * post/comment in a community; mutations bust the local entry.
  */
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import {
   isVerificationLevel,
@@ -54,28 +55,61 @@ export async function updateCommunitySettings(
     verificationValue?: number;
     flairRequired?: boolean;
     starThreshold?: number;
+    publicModLog?: boolean;
   },
+  actorId: string,
 ): Promise<CommunitySettings | null> {
-  const data: Record<string, unknown> = {};
-  if (patch.verificationLevel !== undefined || patch.verificationValue !== undefined) {
-    const current = await getCommunitySettings(communityId);
-    if (!current) return null;
-    const level =
-      patch.verificationLevel !== undefined && isVerificationLevel(patch.verificationLevel)
-        ? patch.verificationLevel
-        : current.verification.level;
-    const rule = normalizeVerificationRule(
-      level,
-      patch.verificationValue ?? current.verification.value,
-    );
-    data.verificationLevel = rule.level;
-    data.verificationValue = rule.value;
-  }
-  if (patch.flairRequired !== undefined) data.flairRequired = patch.flairRequired;
-  if (patch.starThreshold !== undefined) data.starThreshold = patch.starThreshold;
-  if (Object.keys(data).length > 0) {
-    await prisma.community.update({ where: { id: communityId }, data });
-  }
+  const found = await prisma.$transaction(async (tx) => {
+    const row = await tx.community.findUnique({
+      where: { id: communityId },
+      select: {
+        verificationLevel: true,
+        verificationValue: true,
+        flairRequired: true,
+        starThreshold: true,
+        publicModLog: true,
+      },
+    });
+    if (!row) return false;
+    const data: Record<string, unknown> = {};
+    const changed: string[] = [];
+    if (patch.verificationLevel !== undefined || patch.verificationValue !== undefined) {
+      const currentLevel = isVerificationLevel(row.verificationLevel) ? row.verificationLevel : 'none';
+      const current = normalizeVerificationRule(currentLevel, row.verificationValue);
+      const level =
+        patch.verificationLevel !== undefined && isVerificationLevel(patch.verificationLevel)
+          ? patch.verificationLevel
+          : current.level;
+      const rule = normalizeVerificationRule(level, patch.verificationValue ?? current.value);
+      if (rule.level !== row.verificationLevel || rule.value !== row.verificationValue) {
+        data.verificationLevel = rule.level;
+        data.verificationValue = rule.value;
+        changed.push('verification');
+      }
+    }
+    if (patch.flairRequired !== undefined && patch.flairRequired !== row.flairRequired) {
+      data.flairRequired = patch.flairRequired;
+      changed.push('flairRequired');
+    }
+    if (patch.starThreshold !== undefined && patch.starThreshold !== row.starThreshold) {
+      data.starThreshold = patch.starThreshold;
+      changed.push('starThreshold');
+    }
+    if (patch.publicModLog !== undefined && patch.publicModLog !== row.publicModLog) {
+      data.publicModLog = patch.publicModLog;
+      changed.push('publicModLog');
+    }
+    if (changed.length > 0) {
+      await tx.community.update({ where: { id: communityId }, data });
+      await logModAction(tx, {
+        communityId,
+        actorId,
+        action: 'settings_changed',
+        detail: { fields: changed },
+      });
+    }
+    return true;
+  });
   void invalidateCached(key(communityId));
-  return getCommunitySettings(communityId);
+  return found ? getCommunitySettings(communityId) : null;
 }

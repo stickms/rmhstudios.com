@@ -19,6 +19,8 @@ export const SECURITY_EVENT_KINDS = [
   'passkey_added',
   'passkey_removed',
   'password_changed',
+  'password_reset_requested',
+  'password_reset_completed',
   'email_changed',
   'handle_changed',
   'deletion_scheduled',
@@ -45,6 +47,8 @@ export const FILTER_KINDS: Readonly<Record<SecurityFilter, readonly SecurityEven
     'passkey_added',
     'passkey_removed',
     'password_changed',
+    'password_reset_requested',
+    'password_reset_completed',
   ],
   account: ['email_changed', 'handle_changed', 'deletion_scheduled', 'deletion_cancelled'],
 };
@@ -99,6 +103,8 @@ const UNFAMILIAR_KINDS: ReadonlySet<SecurityEventKind> = new Set([
   'passkey_added',
   'passkey_removed',
   'password_changed',
+  'password_reset_requested',
+  'password_reset_completed',
   'email_changed',
   'deletion_scheduled',
 ]);

@@ -1276,6 +1276,166 @@ export const ENDPOINTS: ApiEndpoint[] =
         },
     },
 
+    // ─── Games ───────────────────────────────────────────────────────────────
+    {
+      method: 'GET',
+      path: '/api/v1/games',
+      operationId: 'listGames',
+      group: 'Games',
+      scope: null,
+      summary: 'List games',
+      description:
+        'The game catalogue: every listed title that lives on this site, in display order. Public data, so any valid key may read it; no scope is required. Cached for five minutes (`Cache-Control: public, max-age=300`).',
+      responseExample: {
+        data: [
+          {
+            id: 'altair',
+            title: 'Altair',
+            description: 'A short description of the game.',
+            href: 'https://rmhstudios.com/altair',
+            multiplayer: true,
+            tags: ['Deckbuilder', 'Roguelike'],
+          },
+        ],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/games',
+      operationId: 'listMyGames',
+      group: 'Games',
+      scope: 'read:games',
+      summary: 'List your played games',
+      description:
+        'The titles you have played, most recently played first, with total minutes and the minutes in the last 7 and 30 UTC days (today counts).',
+      responseExample: {
+        data: [
+          {
+            gameId: 'altair',
+            totalMinutes: 312,
+            lastPlayedAt: '2026-11-20T21:14:00.000Z',
+            minutesLast7Days: 95,
+            minutesLast30Days: 240,
+          },
+        ],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/games/{gameId}/days',
+      operationId: 'getMyGameDays',
+      group: 'Games',
+      scope: 'read:games',
+      summary: 'Get your minutes per day for a game',
+      description:
+        'Your minutes played on one title for each UTC day in a range, with 0 for days you did not play. The range may cover at most 90 days; it defaults to the last 30 days. An unknown title is a 404, a malformed or over-long range a 400.',
+      params: [
+        {
+          name: 'gameId',
+          in: 'path',
+          required: true,
+          type: 'string',
+          description: 'A game id from `GET /api/v1/games`.',
+        },
+        {
+          name: 'from',
+          in: 'query',
+          type: 'string',
+          description: 'First day, ISO date `YYYY-MM-DD` (default: 29 days before `to`).',
+        },
+        {
+          name: 'to',
+          in: 'query',
+          type: 'string',
+          description: 'Last day, ISO date `YYYY-MM-DD` (default: today, UTC).',
+        },
+      ],
+      responseExample: {
+        gameId: 'altair',
+        from: '2026-11-19',
+        to: '2026-11-21',
+        data: [
+          { date: '2026-11-19', minutes: 0 },
+          { date: '2026-11-20', minutes: 42 },
+          { date: '2026-11-21', minutes: 18 },
+        ],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/achievements',
+      operationId: 'listMyAchievements',
+      group: 'Games',
+      scope: 'read:games',
+      paginated: true,
+      summary: 'List your achievements',
+      description:
+        'Achievements you have unlocked, newest first. `rarityPercent` is the share of accounts holding it (null until computed) and `gameId` is the title it belongs to (null for site-wide ones). Secret achievements are never listed, and other members’ achievements are not readable.',
+      params: [
+        {
+          name: 'gameId',
+          in: 'query',
+          type: 'string',
+          description: 'Only achievements for this game id.',
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          type: 'integer',
+          description: 'Page size, 1–100 (default 20).',
+        },
+        {
+          name: 'cursor',
+          in: 'query',
+          type: 'string',
+          description:
+            'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+        },
+      ],
+      responseExample: {
+        data: [
+          {
+            id: 'game.altair.first_run',
+            gameId: 'altair',
+            title: 'Into the Black',
+            unlockedAt: '2026-11-18T19:02:00.000Z',
+            rarityPercent: 41.5,
+          },
+        ],
+        nextCursor: null,
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/users/{handle}/games',
+      operationId: 'listUserGames',
+      group: 'Games',
+      scope: 'read:games',
+      summary: 'List a member’s played games',
+      description:
+        'Another member’s playtime, in the same shape as `GET /api/v1/me/games`, as far as their playtime privacy setting lets the key owner see it (public: anyone with a key; followers: members who follow them; private: only them). When it is hidden, or the member does not exist, the answer is the same 404.',
+      params: [
+        {
+          name: 'handle',
+          in: 'path',
+          required: true,
+          type: 'string',
+          description: 'The member’s handle, with or without a leading `@`.',
+        },
+      ],
+      responseExample: {
+        data: [
+          {
+            gameId: 'altair',
+            totalMinutes: 312,
+            lastPlayedAt: '2026-11-20T21:14:00.000Z',
+            minutesLast7Days: 95,
+            minutesLast30Days: 240,
+          },
+        ],
+      },
+    },
+
     // ─── Webhooks ────────────────────────────────────────────────────────────
     {
       method:

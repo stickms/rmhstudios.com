@@ -26,6 +26,7 @@
 
 import { DELETED_BY_SENDER } from '@/lib/messages/edit-policy';
 import type { PollView } from '@/lib/chat-plus/types';
+import { normalizeImageAlts } from '@/lib/messages/image-alts';
 
 /** The columns this module reads. Structural, so a Prisma row satisfies it. */
 export interface StoredMessage {
@@ -40,6 +41,9 @@ export interface StoredMessage {
     | string
     | null;
   imageUrls?:
+    | string[]
+    | null;
+  imageAlts?:
     | string[]
     | null;
   editedAt?:
@@ -92,6 +96,8 @@ export interface MessageView {
     | string
     | null;
   imageUrls: string[];
+  /** Descriptions, index-aligned with `imageUrls` ('' = none); same length. */
+  imageAlts: string[];
   /** Non-null once edited — the bubble renders an "edited" marker. */
   editedAt:
     | string
@@ -198,6 +204,11 @@ export function toMessageView(
       imageUrls:
         row.imageUrls ??
         [],
+      imageAlts:
+        normalizeImageAlts(
+          row.imageUrls,
+          row.imageAlts,
+        ),
       editedAt:
         iso(
           row.editedAt,
@@ -246,6 +257,8 @@ export function toMessageView(
     gifUrl:
       null,
     imageUrls:
+      [],
+    imageAlts:
       [],
     audioUrl:
       null,

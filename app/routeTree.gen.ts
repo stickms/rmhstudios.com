@@ -125,6 +125,7 @@ import { Route as DailyImpostorRouteImport } from './routes/daily/impostor'
 import { Route as DailyLightsOutRouteImport } from './routes/daily/lights-out'
 import { Route as DailyOutcastRouteImport } from './routes/daily/outcast'
 import { Route as DailySpectrumRouteImport } from './routes/daily/spectrum'
+import { Route as DailyStatsRouteImport } from './routes/daily/stats'
 import { Route as DeeplinkPageRouteImport } from './routes/deeplink.$page'
 import { Route as DiscordIndexRouteImport } from './routes/discord/index'
 import { Route as DiscordLightsOutRouteImport } from './routes/discord/lights-out'
@@ -166,6 +167,7 @@ import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhmusicCreditsRouteImport } from './routes/rmhmusic/credits'
 import { Route as RmhmusicDailyRouteImport } from './routes/rmhmusic/daily'
 import { Route as RmhmusicFriendsRouteImport } from './routes/rmhmusic/friends'
+import { Route as RmhmusicHistoryRouteImport } from './routes/rmhmusic/history'
 import { Route as RmhmusicPracticeRouteImport } from './routes/rmhmusic/practice'
 import { Route as RmhmusicSprintRouteImport } from './routes/rmhmusic/sprint'
 import { Route as RmhmusicTunerRouteImport } from './routes/rmhmusic/tuner'
@@ -290,7 +292,9 @@ import { Route as SiteRmhladderIndexRouteImport } from './routes/_site/rmhladder
 import { Route as SiteRmhladderAlertsRouteImport } from './routes/_site/rmhladder/alerts'
 import { Route as SiteRmhladderCompaniesRouteImport } from './routes/_site/rmhladder/companies'
 import { Route as SiteRmhladderHealthRouteImport } from './routes/_site/rmhladder/health'
+import { Route as SiteRmhladderInsightsRouteImport } from './routes/_site/rmhladder/insights'
 import { Route as SiteRmhladderJobsRouteImport } from './routes/_site/rmhladder/jobs'
+import { Route as SiteRmhladderOffersRouteImport } from './routes/_site/rmhladder/offers'
 import { Route as SiteRmhladderPipelineRouteImport } from './routes/_site/rmhladder/pipeline'
 import { Route as SiteRmhladderReferralsRouteImport } from './routes/_site/rmhladder/referrals'
 import { Route as SiteRmhladderResumeRouteImport } from './routes/_site/rmhladder/resume'
@@ -389,6 +393,7 @@ import { Route as ApiSpacesLiveRouteImport } from './routes/api/spaces/live'
 import { Route as ApiV1BlogRouteImport } from './routes/api/v1/blog'
 import { Route as ApiV1BuildsRouteImport } from './routes/api/v1/builds'
 import { Route as ApiV1FeedRouteImport } from './routes/api/v1/feed'
+import { Route as ApiV1GamesRouteImport } from './routes/api/v1/games'
 import { Route as ApiV1ImagesRouteImport } from './routes/api/v1/images'
 import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
 import { Route as ApiV1NewsRouteImport } from './routes/api/v1/news'
@@ -421,6 +426,7 @@ import { Route as RmhmusicLessonLessonIdRouteImport } from './routes/rmhmusic/le
 import { Route as RmhmusicSongsIndexRouteImport } from './routes/rmhmusic/songs.index'
 import { Route as RmhmusicSongsSongIdRouteImport } from './routes/rmhmusic/songs.$songId'
 import { Route as RmhmusicRTokenRouteImport } from './routes/rmhmusic_.r.$token'
+import { Route as RmhtubePartyRoomIdRouteImport } from './routes/rmhtube/party.$roomId'
 import { Route as RmhtypeLessonsIndexRouteImport } from './routes/rmhtype/lessons.index'
 import { Route as RmhtypeLessonsLessonIdRouteImport } from './routes/rmhtype/lessons.$lessonId'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
@@ -494,9 +500,11 @@ import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-build
 import { Route as ApiV1BlogSlugRouteImport } from './routes/api/v1/blog/$slug'
 import { Route as ApiV1BuildsSlugRouteImport } from './routes/api/v1/builds/$slug'
 import { Route as ApiV1LeaderboardsGameRouteImport } from './routes/api/v1/leaderboards/$game'
+import { Route as ApiV1MeAchievementsRouteImport } from './routes/api/v1/me/achievements'
 import { Route as ApiV1MeBookmarksRouteImport } from './routes/api/v1/me/bookmarks'
 import { Route as ApiV1MeFollowersRouteImport } from './routes/api/v1/me/followers'
 import { Route as ApiV1MeFollowingRouteImport } from './routes/api/v1/me/following'
+import { Route as ApiV1MeGamesRouteImport } from './routes/api/v1/me/games'
 import { Route as ApiV1MeNotificationsRouteImport } from './routes/api/v1/me/notifications'
 import { Route as ApiV1NewsSlugRouteImport } from './routes/api/v1/news/$slug'
 import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts/$id'
@@ -509,6 +517,7 @@ import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$s
 import { Route as ApiWagerIdAcceptRouteImport } from './routes/api/wager/$id/accept'
 import { Route as ApiWagerIdCancelRouteImport } from './routes/api/wager/$id/cancel'
 import { Route as ApiWagerIdReportRouteImport } from './routes/api/wager/$id/report'
+import { Route as GamesLibraryGameIdUpdatesRouteImport } from './routes/games/_library/$gameId_.updates'
 import { Route as GamesHubGameIdIndexRouteImport } from './routes/games/hub.$gameId.index'
 import { Route as GamesMarketGameIdCardIndexRouteImport } from './routes/games/market.$gameId.$cardIndex'
 import { Route as GamesTradesNewIdRouteImport } from './routes/games/trades.new.$id'
@@ -521,6 +530,7 @@ import { Route as SiteCSlugInviteCodeRouteImport } from './routes/_site/c.$slug_
 import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
 import { Route as ApiRmhladderResumeIdAnalyzeRouteImport } from './routes/api/rmhladder/resume/$id/analyze'
 import { Route as ApiRmhladderResumeIdConfirmRouteImport } from './routes/api/rmhladder/resume/$id/confirm'
+import { Route as ApiRmhtubePartiesRoomIdIcsRouteImport } from './routes/api/rmhtube/parties/$roomId/ics'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiV1PostsIdBookmarkRouteImport } from './routes/api/v1/posts/$id/bookmark'
 import { Route as ApiV1PostsIdCommentsRouteImport } from './routes/api/v1/posts/$id/comments'
@@ -528,9 +538,11 @@ import { Route as ApiV1PostsIdLikeRouteImport } from './routes/api/v1/posts/$id/
 import { Route as ApiV1UsersHandleFollowRouteImport } from './routes/api/v1/users/$handle/follow'
 import { Route as ApiV1UsersHandleFollowersRouteImport } from './routes/api/v1/users/$handle/followers'
 import { Route as ApiV1UsersHandleFollowingRouteImport } from './routes/api/v1/users/$handle/following'
+import { Route as ApiV1UsersHandleGamesRouteImport } from './routes/api/v1/users/$handle/games'
 import { Route as ApiV1UsersHandlePostsRouteImport } from './routes/api/v1/users/$handle/posts'
 import { Route as GamesLibraryGameIdGuidesGuideIdRouteImport } from './routes/games/_library/$gameId_.guides.$guideId'
 import { Route as GamesHubGameIdTThreadIdRouteImport } from './routes/games/hub.$gameId.t.$threadId'
+import { Route as ApiV1MeGamesGameIdDaysRouteImport } from './routes/api/v1/me/games/$gameId/days'
 
 const SiteRoute = SiteRouteImport.update({
   id: '/_site',
@@ -1113,6 +1125,11 @@ const DailySpectrumRoute = DailySpectrumRouteImport.update({
   path: '/spectrum',
   getParentRoute: () => DailyRoute,
 } as any)
+const DailyStatsRoute = DailyStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => DailyRoute,
+} as any)
 const DeeplinkPageRoute = DeeplinkPageRouteImport.update({
   id: '/$page',
   path: '/$page',
@@ -1315,6 +1332,11 @@ const RmhmusicDailyRoute = RmhmusicDailyRouteImport.update({
 const RmhmusicFriendsRoute = RmhmusicFriendsRouteImport.update({
   id: '/friends',
   path: '/friends',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicHistoryRoute = RmhmusicHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
@@ -1945,9 +1967,19 @@ const SiteRmhladderHealthRoute = SiteRmhladderHealthRouteImport.update({
   path: '/health',
   getParentRoute: () => SiteRmhladderRoute,
 } as any)
+const SiteRmhladderInsightsRoute = SiteRmhladderInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => SiteRmhladderRoute,
+} as any)
 const SiteRmhladderJobsRoute = SiteRmhladderJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
+  getParentRoute: () => SiteRmhladderRoute,
+} as any)
+const SiteRmhladderOffersRoute = SiteRmhladderOffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
   getParentRoute: () => SiteRmhladderRoute,
 } as any)
 const SiteRmhladderPipelineRoute = SiteRmhladderPipelineRouteImport.update({
@@ -2444,6 +2476,11 @@ const ApiV1FeedRoute = ApiV1FeedRouteImport.update({
   path: '/api/v1/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1GamesRoute = ApiV1GamesRouteImport.update({
+  id: '/api/v1/games',
+  path: '/api/v1/games',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1ImagesRoute = ApiV1ImagesRouteImport.update({
   id: '/api/v1/images',
   path: '/api/v1/images',
@@ -2607,6 +2644,11 @@ const RmhmusicRTokenRoute = RmhmusicRTokenRouteImport.update({
   id: '/rmhmusic_/r/$token',
   path: '/rmhmusic/r/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const RmhtubePartyRoomIdRoute = RmhtubePartyRoomIdRouteImport.update({
+  id: '/party/$roomId',
+  path: '/party/$roomId',
+  getParentRoute: () => RmhtubeRoute,
 } as any)
 const RmhtypeLessonsIndexRoute = RmhtypeLessonsIndexRouteImport.update({
   id: '/lessons/',
@@ -2989,6 +3031,11 @@ const ApiV1LeaderboardsGameRoute = ApiV1LeaderboardsGameRouteImport.update({
   path: '/api/v1/leaderboards/$game',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1MeAchievementsRoute = ApiV1MeAchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
 const ApiV1MeBookmarksRoute = ApiV1MeBookmarksRouteImport.update({
   id: '/bookmarks',
   path: '/bookmarks',
@@ -3002,6 +3049,11 @@ const ApiV1MeFollowersRoute = ApiV1MeFollowersRouteImport.update({
 const ApiV1MeFollowingRoute = ApiV1MeFollowingRouteImport.update({
   id: '/following',
   path: '/following',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeGamesRoute = ApiV1MeGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
   getParentRoute: () => ApiV1MeRoute,
 } as any)
 const ApiV1MeNotificationsRoute = ApiV1MeNotificationsRouteImport.update({
@@ -3064,6 +3116,12 @@ const ApiWagerIdReportRoute = ApiWagerIdReportRouteImport.update({
   path: '/api/wager/$id/report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesLibraryGameIdUpdatesRoute =
+  GamesLibraryGameIdUpdatesRouteImport.update({
+    id: '/$gameId_/updates',
+    path: '/$gameId/updates',
+    getParentRoute: () => GamesLibraryRoute,
+  } as any)
 const GamesHubGameIdIndexRoute = GamesHubGameIdIndexRouteImport.update({
   id: '/hub/$gameId/',
   path: '/hub/$gameId/',
@@ -3128,6 +3186,12 @@ const ApiRmhladderResumeIdConfirmRoute =
     path: '/confirm',
     getParentRoute: () => ApiRmhladderResumeIdRoute,
   } as any)
+const ApiRmhtubePartiesRoomIdIcsRoute =
+  ApiRmhtubePartiesRoomIdIcsRouteImport.update({
+    id: '/api/rmhtube/parties/$roomId/ics',
+    path: '/api/rmhtube/parties/$roomId/ics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSliceItSongsStreamIdRoute = ApiSliceItSongsStreamIdRouteImport.update({
   id: '/api/slice-it/songs/stream/$id',
   path: '/api/slice-it/songs/stream/$id',
@@ -3165,6 +3229,11 @@ const ApiV1UsersHandleFollowingRoute =
     path: '/following',
     getParentRoute: () => ApiV1UsersHandleRoute,
   } as any)
+const ApiV1UsersHandleGamesRoute = ApiV1UsersHandleGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => ApiV1UsersHandleRoute,
+} as any)
 const ApiV1UsersHandlePostsRoute = ApiV1UsersHandlePostsRouteImport.update({
   id: '/posts',
   path: '/posts',
@@ -3180,6 +3249,11 @@ const GamesHubGameIdTThreadIdRoute = GamesHubGameIdTThreadIdRouteImport.update({
   id: '/hub/$gameId/t/$threadId',
   path: '/hub/$gameId/t/$threadId',
   getParentRoute: () => GamesRoute,
+} as any)
+const ApiV1MeGamesGameIdDaysRoute = ApiV1MeGamesGameIdDaysRouteImport.update({
+  id: '/$gameId/days',
+  path: '/$gameId/days',
+  getParentRoute: () => ApiV1MeGamesRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -3296,6 +3370,7 @@ export interface FileRoutesByFullPath {
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
+  '/daily/stats': typeof DailyStatsRoute
   '/deeplink/$page': typeof DeeplinkPageRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
@@ -3328,6 +3403,7 @@ export interface FileRoutesByFullPath {
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/friends': typeof RmhmusicFriendsRoute
+  '/rmhmusic/history': typeof RmhmusicHistoryRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -3444,7 +3520,9 @@ export interface FileRoutesByFullPath {
   '/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/rmhladder/health': typeof SiteRmhladderHealthRoute
+  '/rmhladder/insights': typeof SiteRmhladderInsightsRoute
   '/rmhladder/jobs': typeof SiteRmhladderJobsRouteWithChildren
+  '/rmhladder/offers': typeof SiteRmhladderOffersRoute
   '/rmhladder/pipeline': typeof SiteRmhladderPipelineRoute
   '/rmhladder/referrals': typeof SiteRmhladderReferralsRoute
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
@@ -3534,6 +3612,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
   '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/games': typeof ApiV1GamesRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
   '/api/v1/me': typeof ApiV1MeRouteWithChildren
   '/api/v1/news': typeof ApiV1NewsRouteWithChildren
@@ -3559,6 +3638,7 @@ export interface FileRoutesByFullPath {
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic/r/$token': typeof RmhmusicRTokenRoute
+  '/rmhtube/party/$roomId': typeof RmhtubePartyRoomIdRoute
   '/rmhtype/lessons/$lessonId': typeof RmhtypeLessonsLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -3660,9 +3740,11 @@ export interface FileRoutesByFullPath {
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
+  '/api/v1/me/achievements': typeof ApiV1MeAchievementsRoute
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
+  '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
@@ -3675,6 +3757,7 @@ export interface FileRoutesByFullPath {
   '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
   '/api/wager/$id/cancel': typeof ApiWagerIdCancelRoute
   '/api/wager/$id/report': typeof ApiWagerIdReportRoute
+  '/games/$gameId/updates': typeof GamesLibraryGameIdUpdatesRoute
   '/games/market/$gameId/$cardIndex': typeof GamesMarketGameIdCardIndexRoute
   '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -3693,6 +3776,7 @@ export interface FileRoutesByFullPath {
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
+  '/api/rmhtube/parties/$roomId/ics': typeof ApiRmhtubePartiesRoomIdIcsRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
@@ -3700,9 +3784,11 @@ export interface FileRoutesByFullPath {
   '/api/v1/users/$handle/follow': typeof ApiV1UsersHandleFollowRoute
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
+  '/api/v1/users/$handle/games': typeof ApiV1UsersHandleGamesRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
+  '/api/v1/me/games/$gameId/days': typeof ApiV1MeGamesGameIdDaysRoute
 }
 export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
@@ -3792,6 +3878,7 @@ export interface FileRoutesByTo {
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
+  '/daily/stats': typeof DailyStatsRoute
   '/deeplink/$page': typeof DeeplinkPageRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
@@ -3824,6 +3911,7 @@ export interface FileRoutesByTo {
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/friends': typeof RmhmusicFriendsRoute
+  '/rmhmusic/history': typeof RmhmusicHistoryRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -3940,7 +4028,9 @@ export interface FileRoutesByTo {
   '/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/rmhladder/health': typeof SiteRmhladderHealthRoute
+  '/rmhladder/insights': typeof SiteRmhladderInsightsRoute
   '/rmhladder/jobs': typeof SiteRmhladderJobsRouteWithChildren
+  '/rmhladder/offers': typeof SiteRmhladderOffersRoute
   '/rmhladder/pipeline': typeof SiteRmhladderPipelineRoute
   '/rmhladder/referrals': typeof SiteRmhladderReferralsRoute
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
@@ -4030,6 +4120,7 @@ export interface FileRoutesByTo {
   '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
   '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/games': typeof ApiV1GamesRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
   '/api/v1/me': typeof ApiV1MeRouteWithChildren
   '/api/v1/news': typeof ApiV1NewsRouteWithChildren
@@ -4055,6 +4146,7 @@ export interface FileRoutesByTo {
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic/r/$token': typeof RmhmusicRTokenRoute
+  '/rmhtube/party/$roomId': typeof RmhtubePartyRoomIdRoute
   '/rmhtype/lessons/$lessonId': typeof RmhtypeLessonsLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -4155,9 +4247,11 @@ export interface FileRoutesByTo {
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
+  '/api/v1/me/achievements': typeof ApiV1MeAchievementsRoute
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
+  '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
@@ -4170,6 +4264,7 @@ export interface FileRoutesByTo {
   '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
   '/api/wager/$id/cancel': typeof ApiWagerIdCancelRoute
   '/api/wager/$id/report': typeof ApiWagerIdReportRoute
+  '/games/$gameId/updates': typeof GamesLibraryGameIdUpdatesRoute
   '/games/market/$gameId/$cardIndex': typeof GamesMarketGameIdCardIndexRoute
   '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -4188,6 +4283,7 @@ export interface FileRoutesByTo {
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
+  '/api/rmhtube/parties/$roomId/ics': typeof ApiRmhtubePartiesRoomIdIcsRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
@@ -4195,9 +4291,11 @@ export interface FileRoutesByTo {
   '/api/v1/users/$handle/follow': typeof ApiV1UsersHandleFollowRoute
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
+  '/api/v1/users/$handle/games': typeof ApiV1UsersHandleGamesRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
+  '/api/v1/me/games/$gameId/days': typeof ApiV1MeGamesGameIdDaysRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -4314,6 +4412,7 @@ export interface FileRoutesById {
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
+  '/daily/stats': typeof DailyStatsRoute
   '/deeplink/$page': typeof DeeplinkPageRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
@@ -4347,6 +4446,7 @@ export interface FileRoutesById {
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/friends': typeof RmhmusicFriendsRoute
+  '/rmhmusic/history': typeof RmhmusicHistoryRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -4464,7 +4564,9 @@ export interface FileRoutesById {
   '/_site/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/_site/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/_site/rmhladder/health': typeof SiteRmhladderHealthRoute
+  '/_site/rmhladder/insights': typeof SiteRmhladderInsightsRoute
   '/_site/rmhladder/jobs': typeof SiteRmhladderJobsRouteWithChildren
+  '/_site/rmhladder/offers': typeof SiteRmhladderOffersRoute
   '/_site/rmhladder/pipeline': typeof SiteRmhladderPipelineRoute
   '/_site/rmhladder/referrals': typeof SiteRmhladderReferralsRoute
   '/_site/rmhladder/resume': typeof SiteRmhladderResumeRoute
@@ -4554,6 +4656,7 @@ export interface FileRoutesById {
   '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
   '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/games': typeof ApiV1GamesRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
   '/api/v1/me': typeof ApiV1MeRouteWithChildren
   '/api/v1/news': typeof ApiV1NewsRouteWithChildren
@@ -4579,6 +4682,7 @@ export interface FileRoutesById {
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/rmhmusic_/r/$token': typeof RmhmusicRTokenRoute
+  '/rmhtube/party/$roomId': typeof RmhtubePartyRoomIdRoute
   '/rmhtype/lessons/$lessonId': typeof RmhtypeLessonsLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -4680,9 +4784,11 @@ export interface FileRoutesById {
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
+  '/api/v1/me/achievements': typeof ApiV1MeAchievementsRoute
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
+  '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
@@ -4695,6 +4801,7 @@ export interface FileRoutesById {
   '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
   '/api/wager/$id/cancel': typeof ApiWagerIdCancelRoute
   '/api/wager/$id/report': typeof ApiWagerIdReportRoute
+  '/games/_library/$gameId_/updates': typeof GamesLibraryGameIdUpdatesRoute
   '/games/market/$gameId/$cardIndex': typeof GamesMarketGameIdCardIndexRoute
   '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -4713,6 +4820,7 @@ export interface FileRoutesById {
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
+  '/api/rmhtube/parties/$roomId/ics': typeof ApiRmhtubePartiesRoomIdIcsRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
@@ -4720,9 +4828,11 @@ export interface FileRoutesById {
   '/api/v1/users/$handle/follow': typeof ApiV1UsersHandleFollowRoute
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
+  '/api/v1/users/$handle/games': typeof ApiV1UsersHandleGamesRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/games/_library/$gameId_/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
+  '/api/v1/me/games/$gameId/days': typeof ApiV1MeGamesGameIdDaysRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -4840,6 +4950,7 @@ export interface FileRouteTypes {
     | '/daily/lights-out'
     | '/daily/outcast'
     | '/daily/spectrum'
+    | '/daily/stats'
     | '/deeplink/$page'
     | '/discord/lights-out'
     | '/discord/rmhbox'
@@ -4872,6 +4983,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/credits'
     | '/rmhmusic/daily'
     | '/rmhmusic/friends'
+    | '/rmhmusic/history'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -4988,7 +5100,9 @@ export interface FileRouteTypes {
     | '/rmhladder/alerts'
     | '/rmhladder/companies'
     | '/rmhladder/health'
+    | '/rmhladder/insights'
     | '/rmhladder/jobs'
+    | '/rmhladder/offers'
     | '/rmhladder/pipeline'
     | '/rmhladder/referrals'
     | '/rmhladder/resume'
@@ -5078,6 +5192,7 @@ export interface FileRouteTypes {
     | '/api/v1/blog'
     | '/api/v1/builds'
     | '/api/v1/feed'
+    | '/api/v1/games'
     | '/api/v1/images'
     | '/api/v1/me'
     | '/api/v1/news'
@@ -5103,6 +5218,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic/r/$token'
+    | '/rmhtube/party/$roomId'
     | '/rmhtype/lessons/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -5204,9 +5320,11 @@ export interface FileRouteTypes {
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
     | '/api/v1/leaderboards/$game'
+    | '/api/v1/me/achievements'
     | '/api/v1/me/bookmarks'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
+    | '/api/v1/me/games'
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
@@ -5219,6 +5337,7 @@ export interface FileRouteTypes {
     | '/api/wager/$id/accept'
     | '/api/wager/$id/cancel'
     | '/api/wager/$id/report'
+    | '/games/$gameId/updates'
     | '/games/market/$gameId/$cardIndex'
     | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
@@ -5237,6 +5356,7 @@ export interface FileRouteTypes {
     | '/u/$userid/post/$postid'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
+    | '/api/rmhtube/parties/$roomId/ics'
     | '/api/slice-it/songs/stream/$id'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
@@ -5244,9 +5364,11 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/follow'
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
+    | '/api/v1/users/$handle/games'
     | '/api/v1/users/$handle/posts'
     | '/games/$gameId/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
+    | '/api/v1/me/games/$gameId/days'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/adaptive-intelligence'
@@ -5336,6 +5458,7 @@ export interface FileRouteTypes {
     | '/daily/lights-out'
     | '/daily/outcast'
     | '/daily/spectrum'
+    | '/daily/stats'
     | '/deeplink/$page'
     | '/discord/lights-out'
     | '/discord/rmhbox'
@@ -5368,6 +5491,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/credits'
     | '/rmhmusic/daily'
     | '/rmhmusic/friends'
+    | '/rmhmusic/history'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -5484,7 +5608,9 @@ export interface FileRouteTypes {
     | '/rmhladder/alerts'
     | '/rmhladder/companies'
     | '/rmhladder/health'
+    | '/rmhladder/insights'
     | '/rmhladder/jobs'
+    | '/rmhladder/offers'
     | '/rmhladder/pipeline'
     | '/rmhladder/referrals'
     | '/rmhladder/resume'
@@ -5574,6 +5700,7 @@ export interface FileRouteTypes {
     | '/api/v1/blog'
     | '/api/v1/builds'
     | '/api/v1/feed'
+    | '/api/v1/games'
     | '/api/v1/images'
     | '/api/v1/me'
     | '/api/v1/news'
@@ -5599,6 +5726,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic/r/$token'
+    | '/rmhtube/party/$roomId'
     | '/rmhtype/lessons/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -5699,9 +5827,11 @@ export interface FileRouteTypes {
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
     | '/api/v1/leaderboards/$game'
+    | '/api/v1/me/achievements'
     | '/api/v1/me/bookmarks'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
+    | '/api/v1/me/games'
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
@@ -5714,6 +5844,7 @@ export interface FileRouteTypes {
     | '/api/wager/$id/accept'
     | '/api/wager/$id/cancel'
     | '/api/wager/$id/report'
+    | '/games/$gameId/updates'
     | '/games/market/$gameId/$cardIndex'
     | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
@@ -5732,6 +5863,7 @@ export interface FileRouteTypes {
     | '/u/$userid/post/$postid'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
+    | '/api/rmhtube/parties/$roomId/ics'
     | '/api/slice-it/songs/stream/$id'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
@@ -5739,9 +5871,11 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/follow'
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
+    | '/api/v1/users/$handle/games'
     | '/api/v1/users/$handle/posts'
     | '/games/$gameId/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
+    | '/api/v1/me/games/$gameId/days'
   id:
     | '__root__'
     | '/_site'
@@ -5857,6 +5991,7 @@ export interface FileRouteTypes {
     | '/daily/lights-out'
     | '/daily/outcast'
     | '/daily/spectrum'
+    | '/daily/stats'
     | '/deeplink/$page'
     | '/discord/lights-out'
     | '/discord/rmhbox'
@@ -5890,6 +6025,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/credits'
     | '/rmhmusic/daily'
     | '/rmhmusic/friends'
+    | '/rmhmusic/history'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -6007,7 +6143,9 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/alerts'
     | '/_site/rmhladder/companies'
     | '/_site/rmhladder/health'
+    | '/_site/rmhladder/insights'
     | '/_site/rmhladder/jobs'
+    | '/_site/rmhladder/offers'
     | '/_site/rmhladder/pipeline'
     | '/_site/rmhladder/referrals'
     | '/_site/rmhladder/resume'
@@ -6097,6 +6235,7 @@ export interface FileRouteTypes {
     | '/api/v1/blog'
     | '/api/v1/builds'
     | '/api/v1/feed'
+    | '/api/v1/games'
     | '/api/v1/images'
     | '/api/v1/me'
     | '/api/v1/news'
@@ -6122,6 +6261,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
     | '/rmhmusic_/r/$token'
+    | '/rmhtube/party/$roomId'
     | '/rmhtype/lessons/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -6223,9 +6363,11 @@ export interface FileRouteTypes {
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
     | '/api/v1/leaderboards/$game'
+    | '/api/v1/me/achievements'
     | '/api/v1/me/bookmarks'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
+    | '/api/v1/me/games'
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
@@ -6238,6 +6380,7 @@ export interface FileRouteTypes {
     | '/api/wager/$id/accept'
     | '/api/wager/$id/cancel'
     | '/api/wager/$id/report'
+    | '/games/_library/$gameId_/updates'
     | '/games/market/$gameId/$cardIndex'
     | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
@@ -6256,6 +6399,7 @@ export interface FileRouteTypes {
     | '/_site/u/$userid/post/$postid'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
+    | '/api/rmhtube/parties/$roomId/ics'
     | '/api/slice-it/songs/stream/$id'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
@@ -6263,9 +6407,11 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/follow'
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
+    | '/api/v1/users/$handle/games'
     | '/api/v1/users/$handle/posts'
     | '/games/_library/$gameId_/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
+    | '/api/v1/me/games/$gameId/days'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -6388,6 +6534,7 @@ export interface RootRouteChildren {
   ApiV1BlogRoute: typeof ApiV1BlogRouteWithChildren
   ApiV1BuildsRoute: typeof ApiV1BuildsRouteWithChildren
   ApiV1FeedRoute: typeof ApiV1FeedRoute
+  ApiV1GamesRoute: typeof ApiV1GamesRoute
   ApiV1ImagesRoute: typeof ApiV1ImagesRoute
   ApiV1MeRoute: typeof ApiV1MeRouteWithChildren
   ApiV1NewsRoute: typeof ApiV1NewsRouteWithChildren
@@ -6449,6 +6596,7 @@ export interface RootRouteChildren {
   ApiEventsIdIndexRoute: typeof ApiEventsIdIndexRoute
   ApiRmhladderResumeIndexRoute: typeof ApiRmhladderResumeIndexRoute
   ApiSpacesIdIndexRoute: typeof ApiSpacesIdIndexRoute
+  ApiRmhtubePartiesRoomIdIcsRoute: typeof ApiRmhtubePartiesRoomIdIcsRoute
   ApiSliceItSongsStreamIdRoute: typeof ApiSliceItSongsStreamIdRoute
 }
 
@@ -7266,6 +7414,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DailySpectrumRouteImport
       parentRoute: typeof DailyRoute
     }
+    '/daily/stats': {
+      id: '/daily/stats'
+      path: '/stats'
+      fullPath: '/daily/stats'
+      preLoaderRoute: typeof DailyStatsRouteImport
+      parentRoute: typeof DailyRoute
+    }
     '/deeplink/$page': {
       id: '/deeplink/$page'
       path: '/$page'
@@ -7551,6 +7706,13 @@ declare module '@tanstack/react-router' {
       path: '/friends'
       fullPath: '/rmhmusic/friends'
       preLoaderRoute: typeof RmhmusicFriendsRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/history': {
+      id: '/rmhmusic/history'
+      path: '/history'
+      fullPath: '/rmhmusic/history'
+      preLoaderRoute: typeof RmhmusicHistoryRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhmusic/practice': {
@@ -8421,11 +8583,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRmhladderHealthRouteImport
       parentRoute: typeof SiteRmhladderRoute
     }
+    '/_site/rmhladder/insights': {
+      id: '/_site/rmhladder/insights'
+      path: '/insights'
+      fullPath: '/rmhladder/insights'
+      preLoaderRoute: typeof SiteRmhladderInsightsRouteImport
+      parentRoute: typeof SiteRmhladderRoute
+    }
     '/_site/rmhladder/jobs': {
       id: '/_site/rmhladder/jobs'
       path: '/jobs'
       fullPath: '/rmhladder/jobs'
       preLoaderRoute: typeof SiteRmhladderJobsRouteImport
+      parentRoute: typeof SiteRmhladderRoute
+    }
+    '/_site/rmhladder/offers': {
+      id: '/_site/rmhladder/offers'
+      path: '/offers'
+      fullPath: '/rmhladder/offers'
+      preLoaderRoute: typeof SiteRmhladderOffersRouteImport
       parentRoute: typeof SiteRmhladderRoute
     }
     '/_site/rmhladder/pipeline': {
@@ -9114,6 +9290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/games': {
+      id: '/api/v1/games'
+      path: '/api/v1/games'
+      fullPath: '/api/v1/games'
+      preLoaderRoute: typeof ApiV1GamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/images': {
       id: '/api/v1/images'
       path: '/api/v1/images'
@@ -9337,6 +9520,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhmusic/r/$token'
       preLoaderRoute: typeof RmhmusicRTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/rmhtube/party/$roomId': {
+      id: '/rmhtube/party/$roomId'
+      path: '/party/$roomId'
+      fullPath: '/rmhtube/party/$roomId'
+      preLoaderRoute: typeof RmhtubePartyRoomIdRouteImport
+      parentRoute: typeof RmhtubeRoute
     }
     '/rmhtype/lessons/': {
       id: '/rmhtype/lessons/'
@@ -9849,6 +10039,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1LeaderboardsGameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/me/achievements': {
+      id: '/api/v1/me/achievements'
+      path: '/achievements'
+      fullPath: '/api/v1/me/achievements'
+      preLoaderRoute: typeof ApiV1MeAchievementsRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
     '/api/v1/me/bookmarks': {
       id: '/api/v1/me/bookmarks'
       path: '/bookmarks'
@@ -9868,6 +10065,13 @@ declare module '@tanstack/react-router' {
       path: '/following'
       fullPath: '/api/v1/me/following'
       preLoaderRoute: typeof ApiV1MeFollowingRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/games': {
+      id: '/api/v1/me/games'
+      path: '/games'
+      fullPath: '/api/v1/me/games'
+      preLoaderRoute: typeof ApiV1MeGamesRouteImport
       parentRoute: typeof ApiV1MeRoute
     }
     '/api/v1/me/notifications': {
@@ -9954,6 +10158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWagerIdReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/_library/$gameId_/updates': {
+      id: '/games/_library/$gameId_/updates'
+      path: '/$gameId/updates'
+      fullPath: '/games/$gameId/updates'
+      preLoaderRoute: typeof GamesLibraryGameIdUpdatesRouteImport
+      parentRoute: typeof GamesLibraryRoute
+    }
     '/games/hub/$gameId/': {
       id: '/games/hub/$gameId/'
       path: '/hub/$gameId'
@@ -10038,6 +10249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhladderResumeIdConfirmRouteImport
       parentRoute: typeof ApiRmhladderResumeIdRoute
     }
+    '/api/rmhtube/parties/$roomId/ics': {
+      id: '/api/rmhtube/parties/$roomId/ics'
+      path: '/api/rmhtube/parties/$roomId/ics'
+      fullPath: '/api/rmhtube/parties/$roomId/ics'
+      preLoaderRoute: typeof ApiRmhtubePartiesRoomIdIcsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/songs/stream/$id': {
       id: '/api/slice-it/songs/stream/$id'
       path: '/api/slice-it/songs/stream/$id'
@@ -10087,6 +10305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1UsersHandleFollowingRouteImport
       parentRoute: typeof ApiV1UsersHandleRoute
     }
+    '/api/v1/users/$handle/games': {
+      id: '/api/v1/users/$handle/games'
+      path: '/games'
+      fullPath: '/api/v1/users/$handle/games'
+      preLoaderRoute: typeof ApiV1UsersHandleGamesRouteImport
+      parentRoute: typeof ApiV1UsersHandleRoute
+    }
     '/api/v1/users/$handle/posts': {
       id: '/api/v1/users/$handle/posts'
       path: '/posts'
@@ -10107,6 +10332,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/games/hub/$gameId/t/$threadId'
       preLoaderRoute: typeof GamesHubGameIdTThreadIdRouteImport
       parentRoute: typeof GamesRoute
+    }
+    '/api/v1/me/games/$gameId/days': {
+      id: '/api/v1/me/games/$gameId/days'
+      path: '/$gameId/days'
+      fullPath: '/api/v1/me/games/$gameId/days'
+      preLoaderRoute: typeof ApiV1MeGamesGameIdDaysRouteImport
+      parentRoute: typeof ApiV1MeGamesRoute
     }
   }
 }
@@ -10249,7 +10481,9 @@ interface SiteRmhladderRouteChildren {
   SiteRmhladderAlertsRoute: typeof SiteRmhladderAlertsRoute
   SiteRmhladderCompaniesRoute: typeof SiteRmhladderCompaniesRoute
   SiteRmhladderHealthRoute: typeof SiteRmhladderHealthRoute
+  SiteRmhladderInsightsRoute: typeof SiteRmhladderInsightsRoute
   SiteRmhladderJobsRoute: typeof SiteRmhladderJobsRouteWithChildren
+  SiteRmhladderOffersRoute: typeof SiteRmhladderOffersRoute
   SiteRmhladderPipelineRoute: typeof SiteRmhladderPipelineRoute
   SiteRmhladderReferralsRoute: typeof SiteRmhladderReferralsRoute
   SiteRmhladderResumeRoute: typeof SiteRmhladderResumeRoute
@@ -10262,7 +10496,9 @@ const SiteRmhladderRouteChildren: SiteRmhladderRouteChildren = {
   SiteRmhladderAlertsRoute: SiteRmhladderAlertsRoute,
   SiteRmhladderCompaniesRoute: SiteRmhladderCompaniesRoute,
   SiteRmhladderHealthRoute: SiteRmhladderHealthRoute,
+  SiteRmhladderInsightsRoute: SiteRmhladderInsightsRoute,
   SiteRmhladderJobsRoute: SiteRmhladderJobsRouteWithChildren,
+  SiteRmhladderOffersRoute: SiteRmhladderOffersRoute,
   SiteRmhladderPipelineRoute: SiteRmhladderPipelineRoute,
   SiteRmhladderReferralsRoute: SiteRmhladderReferralsRoute,
   SiteRmhladderResumeRoute: SiteRmhladderResumeRoute,
@@ -10615,6 +10851,7 @@ interface DailyRouteChildren {
   DailyLightsOutRoute: typeof DailyLightsOutRoute
   DailyOutcastRoute: typeof DailyOutcastRoute
   DailySpectrumRoute: typeof DailySpectrumRoute
+  DailyStatsRoute: typeof DailyStatsRoute
   DailyIndexRoute: typeof DailyIndexRoute
 }
 
@@ -10626,6 +10863,7 @@ const DailyRouteChildren: DailyRouteChildren = {
   DailyLightsOutRoute: DailyLightsOutRoute,
   DailyOutcastRoute: DailyOutcastRoute,
   DailySpectrumRoute: DailySpectrumRoute,
+  DailyStatsRoute: DailyStatsRoute,
   DailyIndexRoute: DailyIndexRoute,
 }
 
@@ -10647,6 +10885,7 @@ interface GamesLibraryRouteChildren {
   GamesLibraryGameIdRoute: typeof GamesLibraryGameIdRoute
   GamesLibrarySliceItRoute: typeof GamesLibrarySliceItRoute
   GamesLibraryIndexRoute: typeof GamesLibraryIndexRoute
+  GamesLibraryGameIdUpdatesRoute: typeof GamesLibraryGameIdUpdatesRoute
   GamesLibraryGameIdGuidesGuideIdRoute: typeof GamesLibraryGameIdGuidesGuideIdRoute
 }
 
@@ -10654,6 +10893,7 @@ const GamesLibraryRouteChildren: GamesLibraryRouteChildren = {
   GamesLibraryGameIdRoute: GamesLibraryGameIdRoute,
   GamesLibrarySliceItRoute: GamesLibrarySliceItRoute,
   GamesLibraryIndexRoute: GamesLibraryIndexRoute,
+  GamesLibraryGameIdUpdatesRoute: GamesLibraryGameIdUpdatesRoute,
   GamesLibraryGameIdGuidesGuideIdRoute: GamesLibraryGameIdGuidesGuideIdRoute,
 }
 
@@ -10827,6 +11067,7 @@ interface RmhmusicRouteChildren {
   RmhmusicCreditsRoute: typeof RmhmusicCreditsRoute
   RmhmusicDailyRoute: typeof RmhmusicDailyRoute
   RmhmusicFriendsRoute: typeof RmhmusicFriendsRoute
+  RmhmusicHistoryRoute: typeof RmhmusicHistoryRoute
   RmhmusicPracticeRoute: typeof RmhmusicPracticeRoute
   RmhmusicSprintRoute: typeof RmhmusicSprintRoute
   RmhmusicTunerRoute: typeof RmhmusicTunerRoute
@@ -10840,6 +11081,7 @@ const RmhmusicRouteChildren: RmhmusicRouteChildren = {
   RmhmusicCreditsRoute: RmhmusicCreditsRoute,
   RmhmusicDailyRoute: RmhmusicDailyRoute,
   RmhmusicFriendsRoute: RmhmusicFriendsRoute,
+  RmhmusicHistoryRoute: RmhmusicHistoryRoute,
   RmhmusicPracticeRoute: RmhmusicPracticeRoute,
   RmhmusicSprintRoute: RmhmusicSprintRoute,
   RmhmusicTunerRoute: RmhmusicTunerRoute,
@@ -10874,11 +11116,13 @@ const RmhstudyRouteWithChildren = RmhstudyRoute._addFileChildren(
 interface RmhtubeRouteChildren {
   RmhtubeRoomIdRoute: typeof RmhtubeRoomIdRoute
   RmhtubeIndexRoute: typeof RmhtubeIndexRoute
+  RmhtubePartyRoomIdRoute: typeof RmhtubePartyRoomIdRoute
 }
 
 const RmhtubeRouteChildren: RmhtubeRouteChildren = {
   RmhtubeRoomIdRoute: RmhtubeRoomIdRoute,
   RmhtubeIndexRoute: RmhtubeIndexRoute,
+  RmhtubePartyRoomIdRoute: RmhtubePartyRoomIdRoute,
 }
 
 const RmhtubeRouteWithChildren =
@@ -11079,17 +11323,33 @@ const ApiV1BuildsRouteWithChildren = ApiV1BuildsRoute._addFileChildren(
   ApiV1BuildsRouteChildren,
 )
 
+interface ApiV1MeGamesRouteChildren {
+  ApiV1MeGamesGameIdDaysRoute: typeof ApiV1MeGamesGameIdDaysRoute
+}
+
+const ApiV1MeGamesRouteChildren: ApiV1MeGamesRouteChildren = {
+  ApiV1MeGamesGameIdDaysRoute: ApiV1MeGamesGameIdDaysRoute,
+}
+
+const ApiV1MeGamesRouteWithChildren = ApiV1MeGamesRoute._addFileChildren(
+  ApiV1MeGamesRouteChildren,
+)
+
 interface ApiV1MeRouteChildren {
+  ApiV1MeAchievementsRoute: typeof ApiV1MeAchievementsRoute
   ApiV1MeBookmarksRoute: typeof ApiV1MeBookmarksRoute
   ApiV1MeFollowersRoute: typeof ApiV1MeFollowersRoute
   ApiV1MeFollowingRoute: typeof ApiV1MeFollowingRoute
+  ApiV1MeGamesRoute: typeof ApiV1MeGamesRouteWithChildren
   ApiV1MeNotificationsRoute: typeof ApiV1MeNotificationsRoute
 }
 
 const ApiV1MeRouteChildren: ApiV1MeRouteChildren = {
+  ApiV1MeAchievementsRoute: ApiV1MeAchievementsRoute,
   ApiV1MeBookmarksRoute: ApiV1MeBookmarksRoute,
   ApiV1MeFollowersRoute: ApiV1MeFollowersRoute,
   ApiV1MeFollowingRoute: ApiV1MeFollowingRoute,
+  ApiV1MeGamesRoute: ApiV1MeGamesRouteWithChildren,
   ApiV1MeNotificationsRoute: ApiV1MeNotificationsRoute,
 }
 
@@ -11165,6 +11425,7 @@ interface ApiV1UsersHandleRouteChildren {
   ApiV1UsersHandleFollowRoute: typeof ApiV1UsersHandleFollowRoute
   ApiV1UsersHandleFollowersRoute: typeof ApiV1UsersHandleFollowersRoute
   ApiV1UsersHandleFollowingRoute: typeof ApiV1UsersHandleFollowingRoute
+  ApiV1UsersHandleGamesRoute: typeof ApiV1UsersHandleGamesRoute
   ApiV1UsersHandlePostsRoute: typeof ApiV1UsersHandlePostsRoute
 }
 
@@ -11172,6 +11433,7 @@ const ApiV1UsersHandleRouteChildren: ApiV1UsersHandleRouteChildren = {
   ApiV1UsersHandleFollowRoute: ApiV1UsersHandleFollowRoute,
   ApiV1UsersHandleFollowersRoute: ApiV1UsersHandleFollowersRoute,
   ApiV1UsersHandleFollowingRoute: ApiV1UsersHandleFollowingRoute,
+  ApiV1UsersHandleGamesRoute: ApiV1UsersHandleGamesRoute,
   ApiV1UsersHandlePostsRoute: ApiV1UsersHandlePostsRoute,
 }
 
@@ -11299,6 +11561,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1BlogRoute: ApiV1BlogRouteWithChildren,
   ApiV1BuildsRoute: ApiV1BuildsRouteWithChildren,
   ApiV1FeedRoute: ApiV1FeedRoute,
+  ApiV1GamesRoute: ApiV1GamesRoute,
   ApiV1ImagesRoute: ApiV1ImagesRoute,
   ApiV1MeRoute: ApiV1MeRouteWithChildren,
   ApiV1NewsRoute: ApiV1NewsRouteWithChildren,
@@ -11360,6 +11623,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEventsIdIndexRoute: ApiEventsIdIndexRoute,
   ApiRmhladderResumeIndexRoute: ApiRmhladderResumeIndexRoute,
   ApiSpacesIdIndexRoute: ApiSpacesIdIndexRoute,
+  ApiRmhtubePartiesRoomIdIcsRoute: ApiRmhtubePartiesRoomIdIcsRoute,
   ApiSliceItSongsStreamIdRoute: ApiSliceItSongsStreamIdRoute,
 }
 export const routeTree = rootRouteImport

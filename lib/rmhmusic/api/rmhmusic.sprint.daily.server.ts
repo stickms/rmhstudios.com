@@ -1,7 +1,9 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { badRequest } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
+import { recordPractice } from '@/lib/rmhmusic/history.server';
 import { loadBoardMe } from '@/lib/rmhmusic/learn/social/board.server';
+import { checkDailyRun } from '@/lib/rmhmusic/learn/sprint/record';
 import { saveSprintDaily } from '@/lib/rmhmusic/learn/sprint/sprint.server';
 import { sprintDailyApi } from '@/lib/rmhmusic/learn/sprint/sprint.contract';
 import { sprintDailyBody, sprintDailyRes } from '@/lib/rmhmusic/learn/sprint/sprint-schema';
@@ -11,7 +13,8 @@ import { sprintDailyBody, sprintDailyRes } from '@/lib/rmhmusic/learn/sprint/spr
  * outside today (or yesterday within the grace window) or an impossible run; `already-scored`
  * when the date has its scored run; a retried identical POST answers `saved`. `board` says where
  * the date's scored run stands on the Daily board (Phase 6); a failure to read it never fails the
- * save, which has already happened.
+ * save, which has already happened. A run that was saved is logged once in the practice log, under
+ * its date (a retried save of the same run adds nothing).
  */
 export const route = apiRoute('/api/rmhmusic/sprint/daily', {
   POST: implement(
@@ -21,6 +24,15 @@ export const route = apiRoute('/api/rmhmusic/sprint/daily', {
       const now = Date.now();
       const outcome = await saveSprintDaily(userId, body.date, body.results, now);
       if (outcome === 'invalid') return badRequest('Not a possible run for this date');
+      if (outcome === 'saved')
+        await recordPractice(userId, {
+          kind: 'sprint',
+          refId: body.date,
+          mode: 'daily',
+          score: checkDailyRun(body.results)?.summary.score,
+          durationMs: body.durationMs,
+          once: true,
+        });
       const board = await loadBoardMe(userId, body.date, now).catch((err: unknown) => {
         console.error('[rmhmusic] board line after a save failed:', err);
         return undefined;

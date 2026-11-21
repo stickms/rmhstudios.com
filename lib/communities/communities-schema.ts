@@ -67,5 +67,10 @@ export const joinCommunityBody =
             64,
           )
           .optional(),
+      /** The member ticked "I have read the rules" (needed when the community requires it). */
+      acceptRules:
+        z
+          .boolean()
+          .optional(),
     },
   );

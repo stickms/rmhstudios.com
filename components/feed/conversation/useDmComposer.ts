@@ -14,7 +14,8 @@ import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
 import { useMessageSuggestion } from '@/hooks/useMessageSuggestion';
 import { yieldToMain } from '@/lib/scheduler';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
+import { errorField, serverError } from '@/lib/http';
+import { useMessageImageAlts } from '@/components/feed/useMessageImageAlts';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { sendToConversationApi } from '@/lib/messages/message-actions.contract';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
@@ -150,6 +151,13 @@ export function useDmComposer({
   ] =
     useState(
       false,
+    );
+  // Called after the last `useState` the characterization suite seeds by ordinal.
+  // Descriptions for the pending images; with "Require image descriptions" on,
+  // a missing one blocks sending (the server refuses the same message).
+  const imageAlts =
+    useMessageImageAlts(
+      imageUrls,
     );
 
   const inputRef =
@@ -432,13 +440,19 @@ export function useDmComposer({
         gifUrl;
       const pendingImages =
         imageUrls;
+      const pendingAlts =
+        imageAlts.alts;
       if (
         (!content &&
           !pendingGif &&
           pendingImages.length ===
             0) ||
         sending ||
-        uploading
+        uploading ||
+        imageAlts
+          .missing
+          .length >
+          0
       )
         return;
 
@@ -484,6 +498,8 @@ export function useDmComposer({
             pendingGif,
           imageUrls:
             pendingImages,
+          imageAlts:
+            pendingAlts,
         };
       setMessages(
         (
@@ -542,6 +558,8 @@ export function useDmComposer({
                   ? {
                       imageUrls:
                         pendingImages,
+                      imageAlts:
+                        pendingAlts,
                     }
                   : {}),
               },
@@ -570,6 +588,16 @@ export function useDmComposer({
             ),
         );
       } catch (err) {
+        // The server's "Require image descriptions" check: turn the composer's
+        // own check on, so the images that lack one are named.
+        if (
+          errorField(
+            err,
+            'code',
+          ) ===
+          'alt-text-required'
+        )
+          imageAlts.markRequired();
         // Remove the optimistic message and restore the draft + media.
         setError(
           serverError(
@@ -639,6 +667,7 @@ export function useDmComposer({
     setGifUrl,
     imageUrls,
     setImageUrls,
+    imageAlts,
     uploading,
     voiceActive,
     setVoiceActive,

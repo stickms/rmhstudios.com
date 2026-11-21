@@ -24,6 +24,10 @@ export interface ReplyThread {
     commentId: string,
     hidden: boolean,
   ) => void;
+  /** The author pinned a reply (its id) or unpinned it (null). */
+  handlePinnedChange: (
+    replyId: string | null,
+  ) => void;
 }
 
 /** Edits to the reply tree made from inside a reply card: add, remove, hide. */
@@ -127,9 +131,49 @@ export function useReplyThread(
               hidden,
             ),
         );
+        // The server unpins a reply when it is hidden; match it here.
+        if (
+          hidden
+        )
+          setPost(
+            (
+              prev,
+            ) =>
+              prev?.pinnedReplyId ===
+              commentId
+                ? {
+                    ...prev,
+                    pinnedReplyId:
+                      null,
+                  }
+                : prev,
+          );
       },
       [
         setComments,
+        setPost,
+      ],
+    );
+
+  const handlePinnedChange =
+    useCallback(
+      (
+        replyId: string | null,
+      ) =>
+        setPost(
+          (
+            prev,
+          ) =>
+            prev
+              ? {
+                  ...prev,
+                  pinnedReplyId:
+                    replyId,
+                }
+              : prev,
+        ),
+      [
+        setPost,
       ],
     );
 
@@ -137,5 +181,6 @@ export function useReplyThread(
     handleReplyAdded,
     handleCommentRemoved,
     handleHiddenChange,
+    handlePinnedChange,
   };
 }

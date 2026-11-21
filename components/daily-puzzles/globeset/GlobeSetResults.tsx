@@ -230,6 +230,7 @@ export function GlobeSetResults({
 
         <div className="mt-5">
           <PuzzleShareRow
+            gameMode="globeset"
             shareText={
               shareText
             }

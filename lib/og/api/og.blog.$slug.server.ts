@@ -1,6 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { renderPageCard } from '@/lib/og/page-card.server';
 
 /** Roughly how many words a minute the devlog's readers get through. */
@@ -16,8 +17,8 @@ const WPM = 220;
  */
 export const route = apiRoute('/api/og/blog/$slug', {
   GET: defineHandler({ auth: 'none' }, async ({ params }) => {
-    const post = await prisma.blogPost.findUnique({
-      where: { slug: params.slug },
+    const post = await prisma.blogPost.findFirst({
+      where: { slug: params.slug, ...publishedLogWhere(new Date()) },
       select: {
         slug: true,
         title: true,

@@ -409,3 +409,36 @@ export function formatMinutes(
       : `${mins}m`;
   }
 }
+
+/** One day of runs: focus and break minutes, and whether its rows record break time. */
+export interface DayBreaks {
+  date: string;
+  focusMinutes: number;
+  breakMinutes: number;
+  /** True when any run that day was written with break tracking (it has an `endedAt`). */
+  tracked: boolean;
+}
+
+export interface WeekBreaks {
+  breakMinutes: number;
+  /** Minutes of focus per minute of break, rounded; null when there was no break time. */
+  focusPerBreak: number | null;
+}
+
+/**
+ * Break time over the days of `week`, or null when no run in it records breaks (rows from before
+ * break tracking), so the page shows "—" rather than a misleading zero.
+ */
+export function weekBreaks(
+  days: DayBreaks[],
+  week: Pick<WeekBounds, 'start' | 'end'>,
+): WeekBreaks | null {
+  const inWeek = days.filter((d) => d.date >= week.start && d.date <= week.end);
+  if (!inWeek.some((d) => d.tracked)) return null;
+  const breakMinutes = inWeek.reduce((sum, d) => sum + d.breakMinutes, 0);
+  const focusMinutes = inWeek.reduce((sum, d) => sum + d.focusMinutes, 0);
+  return {
+    breakMinutes,
+    focusPerBreak: breakMinutes > 0 ? Math.max(1, Math.round(focusMinutes / breakMinutes)) : null,
+  };
+}

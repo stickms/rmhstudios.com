@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
+import { ModeStreakNote } from '@/components/daily-puzzles/ModeStreakNote';
 import { cn } from '@/lib/utils';
 
 export type PuzzleTone =
@@ -469,10 +470,13 @@ export function PuzzleShareRow({
   shareText,
   shareLabel,
   disabled,
+  gameMode,
 }: {
   shareText: string;
   shareLabel?: string;
   disabled?: boolean;
+  /** The puzzle's mode id: adds the mode's streak and a link to the statistics page. */
+  gameMode?: string;
 }) {
   const {
     t,
@@ -480,7 +484,7 @@ export function PuzzleShareRow({
     useTranslation(
       'c-daily-puzzles',
     );
-  return (
+  const row = (
     <div className="flex flex-wrap items-center justify-center gap-2">
       <CopyButton
         value={
@@ -523,6 +527,13 @@ export function PuzzleShareRow({
           )}
         </Link>
       </Button>
+    </div>
+  );
+  if (!gameMode) return row;
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <ModeStreakNote gameMode={gameMode} />
+      {row}
     </div>
   );
 }

@@ -771,6 +771,20 @@ model GamePatchNote {
   @@map("game_patch_note")
 }
 
+/// A member following a game: told in-site when it gets a patch note or a new published guide (s03-10).
+/// `gameId` is a catalogue id, not a relation (the catalogue is code).
+model GameFollow {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId])
+  @@index([gameId])
+  @@map("game_follow")
+}
+
 // ── P19 canvas: Z5 community pixel canvas, X3 context notes ──
 // One row per event; `state` is width*height bytes (one palette index per pixel)
 // so a snapshot is a single read. The placement log is the history for the replay.

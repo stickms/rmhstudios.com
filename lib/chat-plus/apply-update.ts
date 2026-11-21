@@ -14,6 +14,7 @@ export interface PatchableMessage {
   read?: boolean;
   meta?: unknown;
   replyCount?: number;
+  imageAlts?: string[];
   poll?: {
     question: string;
     options: {
@@ -90,6 +91,20 @@ export function applyChatUpdate<
                 ...m,
                 replyCount:
                   update.replyCount,
+              }
+            : m,
+      );
+    case 'alts':
+      return messages.map(
+        (
+          m,
+        ) =>
+          m.id ===
+          update.messageId
+            ? {
+                ...m,
+                imageAlts:
+                  update.imageAlts,
               }
             : m,
       );

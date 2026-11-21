@@ -4,6 +4,7 @@
  * `record.ts`, applied by `sprint.server.ts`.
  */
 import { z } from 'zod';
+import { durationMsSchema } from '@/lib/rmhmusic/history-schema';
 import { isUtcDate } from './generate';
 import {
   BAR_NOTES,
@@ -105,6 +106,9 @@ export const sprintFreeplayBody =
     {
       level,
       results,
+      /** How long the run took, from the client's clock; recorded in the practice log. */
+      durationMs:
+        durationMsSchema,
     },
   );
 
@@ -114,6 +118,9 @@ export const sprintDailyBody =
     {
       date,
       results,
+      /** How long the run took, from the client's clock; recorded in the practice log. */
+      durationMs:
+        durationMsSchema,
     },
   );
 

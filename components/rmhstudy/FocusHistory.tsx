@@ -60,6 +60,12 @@ export default function FocusHistory() {
     useTranslation(
       'rmhstudy-focus',
     );
+  const {
+    t: ts,
+  } =
+    useTranslation(
+      'rmhstudy-streaks',
+    );
   const locale =
     i18n.language;
   const firstDay =
@@ -556,6 +562,73 @@ export default function FocusHistory() {
                   },
                 )}
               </Figure>
+              <Figure
+                label={ts(
+                  'longest-streak',
+                  {
+                    defaultValue:
+                      'Longest streak',
+                  },
+                )}
+              >
+                {t(
+                  'streak-days',
+                  {
+                    defaultValue:
+                      '{{count}} days',
+                    defaultValue_one:
+                      '{{count}} day',
+                    count:
+                      data
+                        .streak
+                        .longest,
+                  },
+                )}
+              </Figure>
+              <Figure
+                label={ts(
+                  'break-total',
+                  {
+                    defaultValue:
+                      'Break time this week',
+                  },
+                )}
+              >
+                {data.thisWeekBreaks
+                  ? minutes(
+                      data
+                        .thisWeekBreaks
+                        .breakMinutes,
+                    )
+                  : '—'}
+              </Figure>
+              <Figure
+                label={ts(
+                  'break-ratio',
+                  {
+                    defaultValue:
+                      'Break to focus',
+                  },
+                )}
+              >
+                {data
+                  .thisWeekBreaks
+                  ?.focusPerBreak
+                  ? ts(
+                      'break-ratio-sentence',
+                      {
+                        defaultValue:
+                          '1 minute of break for every {{count}} of focus',
+                        defaultValue_one:
+                          '1 minute of break for every minute of focus',
+                        count:
+                          data
+                            .thisWeekBreaks
+                            .focusPerBreak,
+                      },
+                    )
+                  : '—'}
+              </Figure>
             </dl>
           </section>
 
@@ -723,6 +796,29 @@ export default function FocusHistory() {
               )}
             </h2>
             <DayHeatmap
+              marked={{
+                days: new Set(
+                  data
+                    .streak
+                    .days,
+                ),
+                label:
+                  ts(
+                    'streak-day',
+                    {
+                      defaultValue:
+                        'Streak day',
+                    },
+                  ),
+                column:
+                  ts(
+                    'streak-column',
+                    {
+                      defaultValue:
+                        'Streak',
+                    },
+                  ),
+              }}
               days={year.map(
                 (
                   d,

@@ -142,6 +142,7 @@ export function PostDetail({ postId }: PostDetailProps) {
           <ReplyList
             postId={postId}
             postAuthorId={post.user?.id}
+            pinnedReplyId={post.pinnedReplyId}
             comments={comments}
             loadingComments={loadingComments}
             sessionUser={sessionUserForReplies}
