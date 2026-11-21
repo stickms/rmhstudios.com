@@ -2,7 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { reportTournamentMatchApi } from '@/lib/tournaments/tournaments.contract';
 import { reportMatchSchema } from '@/lib/tournaments/tournament-schema';
-import { reportMatch, TournamentError } from '@/lib/tournaments/tournament.server';
+import { reportMatch } from '@/lib/tournaments/report.server';
+import { TournamentError } from '@/lib/tournaments/tournament.server';
 
 export const route = apiRoute('/api/tournaments/$id/matches/$matchId/report', {
   POST: implement(

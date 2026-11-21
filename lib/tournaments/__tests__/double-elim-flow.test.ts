@@ -12,7 +12,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn(async () => {}) }));
 
-const { startTournament, reportMatch } = await import('@/lib/tournaments/tournament.server');
+const { startTournament } = await import('@/lib/tournaments/tournament.server');
+const { reportMatch } = await import('@/lib/tournaments/report.server');
 const { computePayouts } = await import('@/lib/tournaments/swiss-flow');
 
 interface State {

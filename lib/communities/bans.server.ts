@@ -6,13 +6,13 @@
  * Time: "active" is judged against the application clock (`endsAt > now`), the
  * same clock every other community check uses; expiry is read-time, no job.
  */
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { userChipSelect } from '@/lib/user-display';
 import { createNotification } from '@/lib/notifications.server';
 import { logModAction } from '@/lib/communities/modlog.server';
 import { markRemoved } from '@/lib/communities/join-requests.server';
+import { activeWhere, activeSanction, asKind } from '@/lib/communities/sanction-read.server';
 import { recordMemberEvent } from '@/lib/communities/member-events.server';
 import { getRule } from '@/lib/communities/rules.server';
 import {
@@ -26,88 +26,7 @@ import {
 } from '@/lib/communities/bans';
 import type { CommunityRole } from '@/lib/communities/access.server';
 
-export interface ActiveSanction {
-  id: string;
-  kind: SanctionKind;
-  endsAt: Date | null;
-  ruleId:
-    | string
-    | null;
-}
-
-const asKind =
-  (
-    v: string,
-  ): SanctionKind =>
-    v ===
-    'ban'
-      ? 'ban'
-      : 'timeout';
-
-/** `where` for "not lifted and not ended yet". */
-const activeWhere =
-  (
-    now: Date,
-  ): Prisma.CommunityBanWhereInput => ({
-    liftedAt:
-      null,
-    OR: [
-      {
-        endsAt:
-          null,
-      },
-      {
-        endsAt:
-          {
-            gt: now,
-          },
-      },
-    ],
-  });
-
-/**
- * The member's active ban or timeout in a community, or `null`. One indexed lookup
- * (`communityId, userId, liftedAt`). Never returns the private reason.
- */
-export async function activeSanction(
-  communityId: string,
-  userId: string,
-  now: Date = new Date(),
-): Promise<ActiveSanction | null> {
-  const row =
-    await prisma.communityBan.findFirst(
-      {
-        where:
-          {
-            communityId,
-            userId,
-            ...activeWhere(
-              now,
-            ),
-          },
-        orderBy:
-          {
-            createdAt:
-              'desc',
-          },
-        select:
-          {
-            id: true,
-            kind: true,
-            endsAt: true,
-            ruleId: true,
-          },
-      },
-    );
-  return row
-    ? {
-        ...row,
-        kind: asKind(
-          row.kind,
-        ),
-      }
-    : null;
-}
+export { activeSanction, type ActiveSanction } from '@/lib/communities/sanction-read.server';
 
 export type SanctionResult =
   | {

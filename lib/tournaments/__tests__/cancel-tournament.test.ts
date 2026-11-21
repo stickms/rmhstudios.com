@@ -258,9 +258,9 @@ const db: any =
       },
   };
 
+const { reportMatch } = await import('@/lib/tournaments/report.server');
 const {
   cancelTournament,
-  reportMatch,
   settleMatch,
   TournamentError,
 } =

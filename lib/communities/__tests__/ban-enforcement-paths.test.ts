@@ -262,7 +262,7 @@ describe('BAN_ENFORCEMENT_PATHS', () => {
       expect(
         src,
       ).toMatch(
-        /import\s*\{[^}]*\bactiveSanction\b[^}]*\}\s*from\s*'@\/lib\/communities\/bans\.server'/,
+        /import\s*\{[^}]*\bactiveSanction\b[^}]*\}\s*from\s*'@\/lib\/communities\/(?:bans|sanction-read)\.server'/,
       );
       expect(
         src,

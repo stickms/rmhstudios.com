@@ -35,10 +35,10 @@ vi.mock('@/lib/wager/wager.server', () => ({
   getWager: vi.fn(async () => null),
   WagerError: class extends Error {},
 }));
+vi.mock('@/lib/tournaments/report.server', () => ({ reportMatch: vi.fn() }));
 vi.mock('@/lib/tournaments/tournament.server', () => ({
   createTournament: vi.fn(),
   listTournaments: vi.fn(async () => []),
-  reportMatch: vi.fn(),
   TournamentError: class extends Error {},
 }));
 vi.mock('@/lib/homes/geo.server', () => ({ geocode: vi.fn(async () => []) }));

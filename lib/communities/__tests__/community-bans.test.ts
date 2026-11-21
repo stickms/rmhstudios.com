@@ -567,10 +567,10 @@ describe('activeSanction', () => {
   });
 
   it('never selects the private reason', async () => {
-    const src = (await import('node:fs')).readFileSync('lib/communities/bans.server.ts', 'utf8');
+    const src = (await import('node:fs')).readFileSync('lib/communities/sanction-read.server.ts', 'utf8');
     const flat = src.replace(/\s+/g, ' ');
     const start = flat.indexOf('export async function activeSanction');
-    const body = flat.slice(start, flat.indexOf('export type SanctionResult'));
+    const body = flat.slice(start);
     expect(body).toMatch(/select: \{ id: true, kind: true, endsAt: true, ruleId: true,? \}/);
     expect(body).not.toContain('reason');
   });

@@ -55,7 +55,7 @@ const results =
 const {
   reportMatch,
 } =
-  await import('@/lib/tournaments/tournament.server');
+  await import('@/lib/tournaments/report.server');
 const {
   CLAIM_WINDOW_MS,
 } =

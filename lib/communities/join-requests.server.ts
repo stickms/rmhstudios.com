@@ -13,7 +13,7 @@
  * and a decision only applies to a PENDING row (`updateMany … status: PENDING`),
  * so two moderators approving at once cannot double-count the member.
  */
-import { activeSanction } from '@/lib/communities/bans.server';
+import { activeSanction } from '@/lib/communities/sanction-read.server';
 import { prisma } from '@/lib/prisma.server';
 import { logModAction } from '@/lib/communities/modlog.server';
 import { recordMemberEvent } from '@/lib/communities/member-events.server';
