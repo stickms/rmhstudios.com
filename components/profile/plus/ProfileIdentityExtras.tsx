@@ -12,6 +12,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import type { ProfileData } from '@/components/profile/profile-types';
 import { LocalTimeChip } from './LocalTime';
 
@@ -121,11 +122,13 @@ export function ProfileIdentityExtras({
         audio.pause();
     };
 
-  if (!(
-    profile.pronouns ||
-    clipUrl ||
-    profile.timezone
-  ))
+  if (
+    !(
+      profile.pronouns ||
+      clipUrl ||
+      profile.timezone
+    )
+  )
     return null;
 
   return (
@@ -224,26 +227,23 @@ export function ProfileShareCardButton({
     return null;
   return (
     <>
-      <Button
-        variant="ghost"
-        size="xs"
-        onClick={() =>
-          setCardOpen(
-            true,
-          )
+      <IconButton
+        icon={
+          QrCode
         }
-      >
-        <QrCode
-          aria-hidden
-        />
-        {t(
+        label={t(
           'share-card',
           {
             defaultValue:
               'Share card',
           },
         )}
-      </Button>
+        onClick={() =>
+          setCardOpen(
+            true,
+          )
+        }
+      />
       {cardOpen ? (
         <Suspense
           fallback={
