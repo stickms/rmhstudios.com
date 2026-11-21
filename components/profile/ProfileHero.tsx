@@ -186,7 +186,7 @@ export function ProfileHero({
   return (
     // Two columns: everything hangs in the first, and the song / share column sits beside it in the second, spanning
     // down the side, so it never pushes the bio below its own height (the bio follows the avatar row directly).
-    <header className="profile-head grid sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-4 [&>*]:col-start-1">
+    <header className="profile-head grid sm:grid-cols-[1fr_auto] sm:gap-x-4">
       {profile.bannerUrl || headerBackdrop ? (
         <ProfileBanner
           src={profile.bannerUrl}
@@ -227,7 +227,7 @@ export function ProfileHero({
           ) : null}
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-3 sm:col-start-2! sm:row-span-[20] sm:mt-0 sm:shrink-0 sm:flex-col sm:items-end sm:gap-1 sm:self-start">
+      <div className="flex items-center gap-3 sm:col-start-2 sm:row-span-[20] sm:shrink-0 sm:flex-col sm:items-end sm:gap-1 sm:self-start">
         {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
           <VinylRecord
             albumArt={profile.profileSongAlbumArt}
