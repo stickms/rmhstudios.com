@@ -687,6 +687,16 @@ export const STATIC_CARDS: StaticCard[] =
         'Read the answers, or add your own.',
     },
     {
+      path: '/tools',
+      file: 'tools',
+      eyebrow:
+        'Toolbox',
+      title:
+        'Twenty tools. Nothing leaves your device.',
+      subtitle:
+        'Text, JSON, regex, hashes, IDs, colours, dates and money, in the browser.',
+    },
+    {
       path: '/photo-of-the-day',
       file: 'photo-of-the-day',
       eyebrow:

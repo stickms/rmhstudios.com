@@ -111,6 +111,8 @@ export const NAMESPACES = [
   "f-oncall",
   "f-dev-ai",
   "medschools",
+  // The Toolbox (/tools, docs/autonomous/sprint-01).
+  "toolbox",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

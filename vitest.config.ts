@@ -100,6 +100,9 @@ export default defineConfig({
       'scripts/balatro/**',
       // Its browser end-to-end suite: `pnpm test:balatro:e2e` (vitest.balatro-e2e.config.ts).
       'testing/balatro-e2e/**',
+      // The Toolbox's pure utilities (/tools) are not mission-critical either: their own
+      // suite, `pnpm test:toolbox` (vitest.toolbox.config.ts), gated by .github/workflows/toolbox-tests.yml.
+      'lib/toolbox/**',
     ],
     environment: 'node',
     globals: true,

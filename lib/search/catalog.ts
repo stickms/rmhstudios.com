@@ -501,6 +501,18 @@ export const SITE_DESTINATIONS: SiteDestination[] =
         'Head-to-head coin wagers.',
     },
     {
+      id: 'toolbox',
+      title:
+        'Toolbox',
+      href: '/tools',
+      iconName:
+        'SlidersHorizontal',
+      keywords:
+        'tools utilities word count json formatter regex base64 hash uuid cron contrast converter timestamp time zone date calculator loan tip split password dice random picker teams',
+      description:
+        'Private utilities that run on your device: text, JSON, regex, hashes, IDs, colours, dates and money.',
+    },
+    {
       id: 'events',
       title:
         'Events',

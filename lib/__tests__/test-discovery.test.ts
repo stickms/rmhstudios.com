@@ -189,7 +189,7 @@ describe('test discovery', () => {
     walk(
       ROOT,
     ).sort();
-  // Six subprocesses, once for the file — each `vitest list` costs ~400ms.
+  // Seven subprocesses, once for the file — each `vitest list` costs ~400ms.
   const main =
     collectedBy(
       'vitest.config.ts',
@@ -214,6 +214,10 @@ describe('test discovery', () => {
     collectedBy(
       'vitest.balatro-e2e.config.ts',
     );
+  const tools =
+    collectedBy(
+      'vitest.toolbox.config.ts',
+    );
   const collected =
     new Set(
       [
@@ -223,6 +227,7 @@ describe('test discovery', () => {
         ...tf2,
         ...balatro,
         ...balatroE2e,
+        ...tools,
       ],
     );
   const excused =
@@ -360,6 +365,14 @@ describe('test discovery', () => {
     ).toBe(
       false,
     );
+  });
+
+  it('runs the Toolbox from its own config, and never twice', () => {
+    // vitest.toolbox.config.ts includes exactly the glob vitest.config.ts excludes
+    // for it: the utilities are not mission-critical (docs/testing.md).
+    expect(tools).toContain('lib/toolbox/__tests__/contrast.test.ts');
+    expect(tools.every((file) => file.startsWith('lib/toolbox/'))).toBe(true);
+    expect(main.filter((file) => file.startsWith('lib/toolbox/'))).toEqual([]);
   });
 
   it('runs multiplayer Balatro from its own configs, and never twice', () => {

@@ -103,6 +103,7 @@ website-improvement-plan
 plans/**
 feed/**
 superpowers/**
+autonomous/**
 ```
 
 ```{toctree}
