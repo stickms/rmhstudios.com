@@ -3182,12 +3182,6 @@ globe veil or a theme wash should be looked at that way before it is called done
 [`docs/ios-safari-screenshots.md`](docs/ios-safari-screenshots.md).
 
 
-**To actually see Safari's bars** (Chromium cannot draw them, so an emulated iPhone proves nothing about the strips):
-run the **iOS Safari screenshots** workflow (`.github/workflows/ios-safari-screenshots.yml`, manual, macOS runner with
-an iOS simulator) and read the PNG artifact. Any change to the root/body ground, `theme-color`, an edge-pinned layer, the
-globe veil or a theme wash should be looked at that way before it is called done. How to run and read it:
-[`docs/ios-safari-screenshots.md`](docs/ios-safari-screenshots.md).
-
 
 **Performance
 (plan
