@@ -73,6 +73,7 @@
     "audit": "pnpm audit --audit-level=moderate",
     "test": "vitest run",
     "test:toolbox": "vitest run --config vitest.toolbox.config.ts",
+    "test:product": "vitest run --config vitest.product.config.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:epic": "vitest run --config vitest.epic.config.ts",

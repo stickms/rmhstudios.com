@@ -9,6 +9,8 @@ model RmhStudyProfile {
   currentStreak     Int               @default(0)
   longestStreak     Int               @default(0)
   lastStudyDate     DateTime?
+  /// Weekly focus goal in minutes (30 to 3,000); null when none is set.
+  weeklyGoalMinutes Int?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   sessions          RmhStudySession[]
@@ -34,6 +36,7 @@ model RmhStudySession {
   @@index([profileId])
   @@index([userId])
   @@index([startedAt(sort: Desc)])
+  @@index([userId, startedAt(sort: Desc)])
   @@map("rmhstudy_session")
 }
 
@@ -52,8 +55,9 @@ model FlashcardDeck {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cards Flashcard[]
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards       Flashcard[]
+  testResults FlashcardTestResult[]
 
   @@index([userId])
   @@index([isPublic, updatedAt(sort: Desc)])
@@ -69,8 +73,9 @@ model Flashcard {
   position  Int      @default(0)
   createdAt DateTime @default(now())
 
-  deck    FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
-  reviews FlashcardReview[]
+  deck       FlashcardDeck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  reviews    FlashcardReview[]
+  reviewLogs FlashcardReviewLog[]
 
   @@index([deckId])
   @@map("flashcard")
@@ -94,6 +99,49 @@ model FlashcardReview {
   @@unique([userId, cardId])
   @@index([userId, dueAt])
   @@map("flashcard_review")
+}
+
+/// Append-only history of every review (grade and the schedule it produced), written in the
+/// same transaction as the FlashcardReview update. Feeds /study/stats. `deckId` is copied
+/// from the card so a per-deck query needs no join; it is not a relation.
+model FlashcardReviewLog {
+  id           BigInt   @id @default(autoincrement())
+  userId       String
+  cardId       String
+  deckId       String
+  grade        Int
+  intervalDays Int
+  easeFactor   Float
+  reviewedAt   DateTime @default(now())
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([userId, reviewedAt])
+  @@index([userId, deckId, reviewedAt])
+  @@map("flashcard_review_log")
+}
+
+/// One finished practice test (/study/$deckId/test): append-only, separate from SM-2 state, so
+/// a test never changes a card's schedule. `total` and `correct` count points (one per question,
+/// one per pair in a matching question). `seed` rebuilds the same questions.
+model FlashcardTestResult {
+  id            BigInt   @id @default(autoincrement())
+  userId        String
+  deckId        String
+  total         Int
+  correct       Int
+  kinds         String[]
+  durationMs    Int
+  missedCardIds String[]
+  seed          Int
+  createdAt     DateTime @default(now())
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deckId, createdAt(sort: Desc)])
+  @@map("flashcard_test_result")
 }
 
 /// F5 — a request to body-double. 'now' requests queue for ten minutes; 'slot'

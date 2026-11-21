@@ -13,6 +13,12 @@ import { prisma } from '@/lib/prisma.server';
 import { exportVibeData } from '@/lib/rmhvibe/account-data.server';
 import { exportMusicData } from '@/lib/rmhmusic/learn/account-data.server';
 import { cardListingsForExport } from '@/lib/listings/listings.server';
+import { exportStudyStatsData } from '@/lib/study/stats.server';
+import { exportStudyTestData } from '@/lib/study/tests.server';
+import { exportLessonProgress } from '@/lib/rmhtype/lessons.server';
+import { exportSecurityEvents } from '@/lib/auth/security-log.server';
+import { exportReadingSubscriptions } from '@/lib/reading/subscriptions.server';
+import { exportCloudSaveSnapshots } from '@/lib/game-saves/snapshots.server';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -65,6 +71,7 @@ export const route = apiRoute('/api/account/export', {
         gemEntries,
         rmhMusic,
         vibes,
+        sprint02,
       ] = await Promise.all([
         prisma.user.findUnique({
           where: { id: userId },
@@ -248,7 +255,57 @@ export const route = apiRoute('/api/account/export', {
         exportMusicData(userId),
         // RMH Vibes: owned pages, the prompts on them, per-user vibe state and feed embeds.
         exportVibeData(userId),
+        // Flashcards, typing, security, reading subscriptions, saves and
+        // preferences: everything the person wrote, chose or did there.
+        Promise.all([
+          prisma.flashcardDeck.findMany({
+            where: { userId },
+            take: CAP,
+            orderBy: { createdAt: 'asc' },
+            include: {
+              cards: {
+                orderBy: { position: 'asc' },
+                select: { id: true, front: true, back: true, position: true, createdAt: true },
+              },
+            },
+          }),
+          exportStudyStatsData(userId),
+          exportStudyTestData(userId),
+          exportLessonProgress(userId),
+          prisma.rmhTypeDailyEntry.findMany({ where: { userId }, take: CAP, orderBy: { day: 'desc' } }),
+          prisma.rmhStudyProfile.findUnique({ where: { userId } }),
+          exportSecurityEvents(userId),
+          exportReadingSubscriptions(userId),
+          prisma.gameSave.findMany({ where: { userId }, take: CAP }),
+          exportCloudSaveSnapshots(userId),
+          prisma.keyboardPreference.findUnique({ where: { userId } }),
+          prisma.achievementTrack.findMany({ where: { userId }, take: CAP }),
+          // Only the person's own follow actions: events about who followed or
+          // unfollowed THEM stay counts in Audience insights, never names.
+          prisma.followEvent.findMany({
+            where: { followerId: userId },
+            take: CAP,
+            orderBy: { id: 'desc' },
+            select: { followingId: true, kind: true, createdAt: true },
+          }),
+        ]),
       ]);
+
+      const [
+        flashcardDecks,
+        flashcardReviews,
+        flashcardTests,
+        rmhTypeLessons,
+        rmhTypeDaily,
+        rmhStudyProfile,
+        securityEvents,
+        readingSubscriptions,
+        gameSaves,
+        gameSaveSnapshots,
+        keyboardPreference,
+        achievementTracks,
+        followEvents,
+      ] = sprint02;
 
       const [
         ladderPrefs,
@@ -301,6 +358,21 @@ export const route = apiRoute('/api/account/export', {
         gemEntries,
         rmhMusic,
         vibes,
+        flashcards: {
+          decks: flashcardDecks,
+          ...flashcardReviews,
+          ...flashcardTests,
+        },
+        rmhType: { lessons: rmhTypeLessons, daily: rmhTypeDaily },
+        rmhStudy: rmhStudyProfile
+          ? { ...rmhStudyProfile, totalFocusTimeMs: Number(rmhStudyProfile.totalFocusTimeMs) }
+          : null,
+        securityEvents,
+        readingSubscriptions,
+        cloudSaves: { saves: gameSaves, snapshots: gameSaveSnapshots },
+        keyboardPreference,
+        achievementTracks,
+        followEvents,
         rmhLadder: {
           preferences: ladderPrefs,
           // Salary expectations, work authorization and EEO answers — the

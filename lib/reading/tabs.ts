@@ -2,6 +2,7 @@
 export const READING_TABS =
   [
     'highlights',
+    'notebook',
     'shelves',
     'challenge',
   ] as const;

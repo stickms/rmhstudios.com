@@ -1,0 +1,335 @@
+import { useCallback, useId, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { PageLayout } from '@/components/feed/PageLayout';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { SortableList } from '@/components/ui/sortable-list';
+import { Switch } from '@/components/ui/switch';
+import { Tabs } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { CardRow, type EditorCard } from '@/components/study/CardRow';
+import { ExportMenu } from '@/components/study/ExportMenu';
+import { ImportPanel } from '@/components/study/ImportPanel';
+import { api } from '@/lib/contract/client';
+import { toast } from '@/lib/toast';
+import {
+  deleteCardApi,
+  getDeckApi,
+  importCardsApi,
+  reorderCardsApi,
+  updateCardApi,
+  updateDeckApi,
+} from '@/lib/study/decks.contract';
+import type { DeckDetail } from '@/lib/study.server';
+
+type TabId = 'cards' | 'import' | 'settings';
+
+/** How long a deleted card can be brought back. */
+const UNDO_MS = 8000;
+
+/** The owner's editor for one deck: cards, import and export, deck settings. */
+export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckDetail }) {
+  const { t } = useTranslation('study-editor');
+  const base = useId();
+  const [tab, setTab] = useState<TabId>('cards');
+  const [meta, setMeta] = useState(initial.deck);
+  const [cards, setCards] = useState<EditorCard[]>(initial.cards);
+
+  // Order saves are coalesced: one in flight, the latest order waiting behind it.
+  const savedOrder = useRef(initial.cards.map((c) => c.id));
+  const nextOrder = useRef<string[] | null>(null);
+  const saving = useRef(false);
+  const orderVersion = useRef(0);
+  // Cards whose delete is waiting on the undo toast. The server still has them,
+  // so an order save names them too or it would not match the deck.
+  const pendingDeletes = useRef(new Set<string>());
+
+  const flushOrder = useCallback(async () => {
+    if (saving.current) return;
+    saving.current = true;
+    while (nextOrder.current) {
+      const ids = nextOrder.current;
+      nextOrder.current = null;
+      try {
+        await api(reorderCardsApi, {
+          params: { id: deckId },
+          body: { cardIds: [...ids, ...pendingDeletes.current] },
+        });
+        savedOrder.current = ids;
+      } catch {
+        nextOrder.current = null;
+        toast.error(t('reorder-failed', { defaultValue: 'Could not save the new order' }));
+        const rank = new Map(savedOrder.current.map((id, i) => [id, i]));
+        setCards((prev) =>
+          [...prev].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)),
+        );
+      }
+    }
+    saving.current = false;
+  }, [deckId, t]);
+
+  const saveOrder = useCallback(
+    (ids: string[]) => {
+      orderVersion.current += 1;
+      nextOrder.current = ids;
+      void flushOrder();
+    },
+    [flushOrder],
+  );
+
+  function reorder(next: EditorCard[]) {
+    setCards(next);
+    saveOrder(next.map((c) => c.id));
+  }
+
+  async function saveCard(id: string, next: { front: string; back: string }): Promise<boolean> {
+    try {
+      await api(updateCardApi, { params: { id }, body: next });
+    } catch {
+      toast.error(t('card-save-failed', { defaultValue: 'Could not save the card' }));
+      return false;
+    }
+    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...next } : c)));
+    return true;
+  }
+
+  function deleteCard(card: EditorCard) {
+    const index = cards.findIndex((c) => c.id === card.id);
+    const versionAtDelete = orderVersion.current;
+    let undone = false;
+    let sent = false;
+    pendingDeletes.current.add(card.id);
+    setCards((prev) => prev.filter((c) => c.id !== card.id));
+
+    const restore = () => {
+      let restored: string[] = [];
+      setCards((prev) => {
+        const next = prev.slice();
+        next.splice(Math.min(Math.max(index, 0), next.length), 0, card);
+        restored = next.map((c) => c.id);
+        return next;
+      });
+      // The list was reordered while this card was waiting: its slot has to be saved again.
+      queueMicrotask(() => {
+        if (orderVersion.current !== versionAtDelete) saveOrder(restored);
+      });
+    };
+
+    // The delete goes out when the toast closes without Undo.
+    const send = async () => {
+      if (undone || sent) return;
+      sent = true;
+      try {
+        await api(deleteCardApi, { params: { id: card.id } });
+        savedOrder.current = savedOrder.current.filter((id) => id !== card.id);
+        pendingDeletes.current.delete(card.id);
+      } catch {
+        pendingDeletes.current.delete(card.id);
+        restore();
+        toast.error(t('card-delete-failed', { defaultValue: 'Could not delete the card' }));
+      }
+    };
+
+    toast(t('card-deleted', { defaultValue: 'Card deleted' }), {
+      duration: UNDO_MS,
+      action: {
+        label: t('undo', { defaultValue: 'Undo' }),
+        onClick: () => {
+          undone = true;
+          pendingDeletes.current.delete(card.id);
+          restore();
+        },
+      },
+      onDismiss: () => void send(),
+      onAutoClose: () => void send(),
+    });
+  }
+
+  async function importCards(batch: { front: string; back: string }[]): Promise<boolean> {
+    try {
+      const res = await api(importCardsApi, { params: { id: deckId }, body: { cards: batch } });
+      const fresh = await api(getDeckApi, { params: { id: deckId } });
+      setCards(fresh.cards);
+      setMeta(fresh.deck);
+      savedOrder.current = fresh.cards.map((c) => c.id);
+      toast.success(
+        t('imported', {
+          count: res.created,
+          defaultValue_one: 'Added {{count}} card',
+          defaultValue: 'Added {{count}} cards',
+        }),
+      );
+      setTab('cards');
+      return true;
+    } catch {
+      toast.error(t('import-failed', { defaultValue: 'Could not import these cards' }));
+      return false;
+    }
+  }
+
+  const tabs = [
+    { id: 'cards', label: t('tab-cards', { defaultValue: 'Cards' }), count: cards.length },
+    { id: 'import', label: t('tab-import', { defaultValue: 'Import' }) },
+    { id: 'settings', label: t('tab-settings', { defaultValue: 'Settings' }) },
+  ];
+  const panel = (id: TabId) => ({
+    id: `${base}-panel-${id}`,
+    role: 'tabpanel' as const,
+    'aria-labelledby': `${base}-tab-${id}`,
+    hidden: tab !== id,
+  });
+
+  return (
+    <PageLayout
+      title={t('title', { defaultValue: 'Edit deck' })}
+      description={meta.title}
+      wrapTitle
+      backTo={`/study/${deckId}`}
+      backLabel={t('back-to-deck', { defaultValue: 'Back to deck' })}
+      headerRight={<ExportMenu deck={{ title: meta.title, description: meta.description, cards }} />}
+    >
+      <Tabs
+        tabs={tabs}
+        value={tab}
+        onChange={(id) => setTab(id as TabId)}
+        idBase={base}
+        sheet={false}
+        aria-label={t('sections', { defaultValue: 'Deck sections' })}
+      />
+
+      <div className="pt-4">
+        <section {...panel('cards')}>
+          {cards.length === 0 ? (
+            <EmptyState
+              title={t('no-cards', { defaultValue: 'No cards yet' })}
+              description={t('no-cards-hint', {
+                defaultValue: 'Paste a list in Import, or add cards one at a time from the deck page.',
+              })}
+              action={
+                <Button variant="default" onClick={() => setTab('import')}>
+                  {t('go-import', { defaultValue: 'Import cards' })}
+                </Button>
+              }
+            />
+          ) : (
+            <SortableList
+              items={cards}
+              onReorder={reorder}
+              itemLabel={(c) => c.front}
+              className="gap-0 divide-y divide-site-border border-y border-site-border"
+              renderItem={(card) => <CardRow card={card} onSave={saveCard} onDelete={deleteCard} />}
+            />
+          )}
+        </section>
+
+        <section {...panel('import')}>
+          <ImportPanel
+            existingFronts={cards.map((c) => c.front)}
+            cardCount={cards.length + pendingDeletes.current.size}
+            onImport={importCards}
+          />
+        </section>
+
+        <section {...panel('settings')}>
+          <SettingsForm
+            deckId={deckId}
+            meta={meta}
+            onSaved={(next) => setMeta((m) => ({ ...m, ...next }))}
+          />
+        </section>
+      </div>
+    </PageLayout>
+  );
+}
+
+function SettingsForm({
+  deckId,
+  meta,
+  onSaved,
+}: {
+  deckId: string;
+  meta: DeckDetail['deck'];
+  onSaved: (next: { title: string; description: string | null; isPublic: boolean }) => void;
+}) {
+  const { t } = useTranslation('study-editor');
+  const uid = useId();
+  const [title, setTitle] = useState(meta.title);
+  const [description, setDescription] = useState(meta.description ?? '');
+  const [isPublic, setIsPublic] = useState(meta.isPublic);
+  const [busy, setBusy] = useState(false);
+
+  const dirty =
+    title.trim() !== meta.title ||
+    description.trim() !== (meta.description ?? '') ||
+    isPublic !== meta.isPublic;
+
+  async function save() {
+    if (!title.trim() || busy) return;
+    setBusy(true);
+    try {
+      await api(updateDeckApi, {
+        params: { id: deckId },
+        body: { title: title.trim(), description: description.trim(), isPublic },
+      });
+      onSaved({ title: title.trim(), description: description.trim() || null, isPublic });
+      toast.success(t('settings-saved', { defaultValue: 'Deck saved' }));
+    } catch {
+      toast.error(t('settings-failed', { defaultValue: 'Could not save the deck' }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex max-w-xl flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${uid}-title`}>{t('deck-title', { defaultValue: 'Title' })}</Label>
+        <Input
+          id={`${uid}-title`}
+          dir="auto"
+          value={title}
+          maxLength={100}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${uid}-description`}>
+          {t('deck-description', { defaultValue: 'Description' })}
+        </Label>
+        <Textarea
+          id={`${uid}-description`}
+          dir="auto"
+          rows={3}
+          value={description}
+          maxLength={500}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-3 border-y border-site-border py-3">
+        <div className="min-w-0">
+          <p id={`${uid}-public`} className="t-body font-medium">
+            {t('deck-public', { defaultValue: 'Public deck' })}
+          </p>
+          <p id={`${uid}-public-hint`} className="t-meta">
+            {t('deck-public-hint', {
+              defaultValue: 'Anyone with the link can study, clone and export it.',
+            })}
+          </p>
+        </div>
+        <Switch
+          checked={isPublic}
+          onCheckedChange={setIsPublic}
+          aria-labelledby={`${uid}-public`}
+          aria-describedby={`${uid}-public-hint`}
+        />
+      </div>
+      <div>
+        <Button variant="primary" disabled={!dirty || !title.trim()} loading={busy} onClick={save}>
+          {t('save-deck', { defaultValue: 'Save deck' })}
+        </Button>
+      </div>
+    </div>
+  );
+}

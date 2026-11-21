@@ -318,7 +318,12 @@ export function ArticleBody({
       }
     >
       <div className="max-w-2xl">
-        <ReadingToolbar />
+        <ReadingToolbar
+          rootRef={
+            ref
+          }
+          resetKey={`${kind}:${slug}`}
+        />
       </div>
       <ArticleOutline
         items={

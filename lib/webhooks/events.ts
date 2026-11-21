@@ -47,6 +47,13 @@ export const WEBHOOK_EVENTS: WebhookEventDef[] =
     },
   ];
 
+/**
+ * The event the console's "Send test event" delivers. It is deliberately not in
+ * `WEBHOOK_EVENTS`: nobody subscribes to it, it is sent to one endpoint on request.
+ */
+export const WEBHOOK_PING_EVENT =
+  'ping';
+
 export const WEBHOOK_EVENT_NAMES: string[] =
   WEBHOOK_EVENTS.map(
     (

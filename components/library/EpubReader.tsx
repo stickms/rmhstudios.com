@@ -31,6 +31,7 @@ import {
   Maximize2,
   Minimize2,
   Palette,
+  Search,
 } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
 import {
@@ -39,6 +40,9 @@ import {
   type EpubToc,
 } from '@/lib/library/epub-raster';
 import { useBookState } from '@/lib/library/reader-store';
+import { isFindShortcut, shouldOpenFind } from '@/lib/library/reader-keys';
+import type { FindTarget } from '@/lib/library/find';
+import type { FindSource } from '@/lib/library/find-index';
 import { BookCanvas } from './BookCanvas';
 import {
   Dropdown,
@@ -48,6 +52,7 @@ import {
   type Chapter,
 } from './BookReader';
 import { ReaderDetails } from './ReaderDetails';
+import { FindPanel } from './FindPanel';
 import {
   ReaderReadingTools,
   type ReaderTextSource,
@@ -99,6 +104,12 @@ export function EpubReader({
   } =
     useTranslation(
       'c-library',
+    );
+  const {
+    t: ts,
+  } =
+    useTranslation(
+      'find-in-book',
     );
   const readerRef =
     useRef<HTMLElement>(
@@ -196,6 +207,28 @@ export function EpubReader({
     );
   const detailsTriggerRef =
     useRef<HTMLElement | null>(
+      null,
+    );
+  // Find in book: the panel, the request to focus its field, and the match last chosen.
+  const [
+    findOpen,
+    setFindOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    findFocus,
+    setFindFocus,
+  ] =
+    useState(
+      0,
+    );
+  const [
+    findJump,
+    setFindJump,
+  ] =
+    useState<FindTarget | null>(
       null,
     );
 
@@ -531,6 +564,95 @@ export function EpubReader({
       curPage,
     ]);
 
+  // Find in book searches the same chapter text. Stable per book so the index survives page turns.
+  const findSource =
+    useMemo<FindSource | null>(() => {
+      const store =
+        storeRef.current;
+      if (
+        status !==
+          'ready' ||
+        !store ||
+        store.chapterCount ===
+          0
+      )
+        return null;
+      return {
+        count:
+          store.chapterCount,
+        load: (
+          n,
+        ) =>
+          store.chapterText(
+            n -
+              1,
+          ),
+      };
+    }, [
+      status,
+    ]);
+  const openFind =
+    useCallback(() => {
+      setFindOpen(
+        true,
+      );
+      setFindFocus(
+        (
+          n,
+        ) =>
+          n +
+          1,
+      );
+    }, []);
+  const findButtonRef =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const closeFind =
+    useCallback(
+      (
+        open: boolean,
+      ) => {
+        setFindOpen(
+          open,
+        );
+        if (
+          !open
+        ) {
+          setFindJump(
+            null,
+          );
+          // The panel unmounts with focus inside it; hand focus back to the button that opened it.
+          setTimeout(
+            () =>
+              findButtonRef.current?.focus(),
+            0,
+          );
+        }
+      },
+      [],
+    );
+  const selectFind =
+    useCallback(
+      (
+        target: FindTarget,
+      ) => {
+        setFindJump(
+          target,
+        );
+        goToPage(
+          storeRef.current?.pageForChapter(
+            target.unit -
+              1,
+          ) ??
+            1,
+        );
+      },
+      [
+        goToPage,
+      ],
+    );
+
   const bookmarked =
     marks.state.bookmarks.some(
       (
@@ -648,7 +770,28 @@ export function EpubReader({
       ref={
         readerRef
       }
+      tabIndex={
+        -1
+      }
       className="vibe-screen lib-reader"
+      onKeyDown={(
+        e,
+      ) => {
+        // Mod+F finds in the book only while focus is inside the reader; elsewhere the browser keeps it.
+        if (
+          status !==
+            'ready' ||
+          !isFindShortcut(
+            e.nativeEvent,
+          ) ||
+          !shouldOpenFind(
+            e.target,
+          )
+        )
+          return;
+        e.preventDefault();
+        openFind();
+      }}
     >
       <header className="lib-reader__bar">
         <Link
@@ -795,6 +938,47 @@ export function EpubReader({
           )}
           {status ===
             'ready' && (
+            <button
+              ref={
+                findButtonRef
+              }
+              type="button"
+              className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${findOpen ? ' is-on' : ''}`}
+              onClick={() =>
+                findOpen
+                  ? closeFind(
+                      false,
+                    )
+                  : openFind()
+              }
+              aria-keyshortcuts="Control+F Meta+F"
+              aria-pressed={
+                findOpen
+              }
+              title={ts(
+                'panel-title',
+                {
+                  defaultValue:
+                    'Find in book',
+                },
+              )}
+              aria-label={ts(
+                'panel-title',
+                {
+                  defaultValue:
+                    'Find in book',
+                },
+              )}
+            >
+              <Search
+                size={
+                  16
+                }
+              />
+            </button>
+          )}
+          {status ===
+            'ready' && (
             <MarksMenu
               bookmarks={
                 marks
@@ -845,6 +1029,9 @@ export function EpubReader({
                 '.lib-reader__stage',
               ) ??
               null
+            }
+            findJump={
+              findJump
             }
             Dropdown={
               Dropdown
@@ -1094,6 +1281,24 @@ export function EpubReader({
           </>
         )}
       </div>
+      <FindPanel
+        source={
+          findSource
+        }
+        unitLabel="chapter"
+        open={
+          findOpen
+        }
+        onOpenChange={
+          closeFind
+        }
+        onSelect={
+          selectFind
+        }
+        focusRequest={
+          findFocus
+        }
+      />
       {detailsOpen && (
         <ReaderDetails
           book={

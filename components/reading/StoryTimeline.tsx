@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { FollowButton } from '@/components/reading/FollowButton';
 import { getCategoryColor } from '@/lib/news-categories';
 import type { StoryPageData } from '@/lib/reading/schema';
 
@@ -12,6 +13,7 @@ export function StoryTimeline({
 }: {
   story: Pick<
     StoryPageData,
+    | 'slug'
     | 'title'
     | 'summary'
     | 'articles'
@@ -43,6 +45,13 @@ export function StoryTimeline({
       wrapTitle
     >
       <div className="px-4 pt-4 pb-12">
+        <FollowButton
+          kind="news_story"
+          target={
+            story.slug
+          }
+          className="mb-4"
+        />
         {story
           .articles
           .length ===

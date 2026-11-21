@@ -35,6 +35,7 @@ const T_FUNCTIONS =
     'tl',
     'tr',
     'tSlice',
+    'tn',
   ];
 
 export default {

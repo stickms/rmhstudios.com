@@ -13,7 +13,11 @@ import type {
 import type {
   addCardBody,
   createDeckBody,
+  importCardsBody,
+  reorderCardsBody,
   reviewCardBody,
+  updateCardBody,
+  updateDeckBody,
 } from '@/lib/study/decks-schema';
 
 /** Your decks plus popular public decks (signed-out visitors see only public ones). */
@@ -134,5 +138,89 @@ export const reviewCardApi =
       method:
         'POST',
       path: '/api/study/cards/$id/review',
+    },
+  );
+
+/** Owner only; 404 for a foreign or missing deck. */
+export const updateDeckApi =
+  endpoint<{
+    body: z.infer<
+      typeof updateDeckBody
+    >;
+    res: {
+      success: true;
+    };
+  }>()(
+    {
+      method:
+        'PATCH',
+      path: '/api/study/decks/$id',
+    },
+  );
+
+/** Edit a card's text. Its review history is kept. Owner only; 404 otherwise. */
+export const updateCardApi =
+  endpoint<{
+    body: z.infer<
+      typeof updateCardBody
+    >;
+    res: {
+      success: true;
+    };
+  }>()(
+    {
+      method:
+        'PATCH',
+      path: '/api/study/cards/$id',
+    },
+  );
+
+/** Delete a card and its reviews. Owner only; 404 otherwise. */
+export const deleteCardApi =
+  endpoint<{
+    res: {
+      success: true;
+    };
+  }>()(
+    {
+      method:
+        'DELETE',
+      path: '/api/study/cards/$id',
+    },
+  );
+
+/** 201. Bulk add (at most 500, all or nothing). 400 when the deck would pass 2,000 cards. */
+export const importCardsApi =
+  endpoint<{
+    body: z.infer<
+      typeof importCardsBody
+    >;
+    res: {
+      success: true;
+      created: number;
+      cardCount: number;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/study/decks/$id/cards',
+    },
+  );
+
+/** `cardIds` must be exactly the deck's cards, in the new order; 400 otherwise. */
+export const reorderCardsApi =
+  endpoint<{
+    body: z.infer<
+      typeof reorderCardsBody
+    >;
+    res: {
+      success: true;
+    };
+  }>()(
+    {
+      method:
+        'PUT',
+      path: '/api/study/decks/$id/order',
     },
   );

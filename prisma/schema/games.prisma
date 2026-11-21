@@ -218,6 +218,28 @@ model GameSave {
   @@map("game_save")
 }
 
+/// A previous version of a `GameSave`, kept so a bad autosave, a restore or a delete can be undone.
+///
+/// Taken inside the same transaction as the write that replaces the live blob
+/// (`lib/game-saves/snapshots.server.ts`): at most one automatic snapshot per
+/// game per six hours, plus one before every restore and delete, ten kept per
+/// game. `sizeBytes` is stored so lists never have to read `saveData`.
+model GameSaveSnapshot {
+  id        BigInt   @id @default(autoincrement())
+  userId    String
+  gameId    String   @db.VarChar(48)
+  saveData  Json
+  sizeBytes Int
+  /// `auto`, `before-restore` or `before-delete`.
+  reason    String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, gameId, createdAt(sort: Desc)])
+  @@map("game_save_snapshot")
+}
+
 model NeonDriftwayPlayer {
   id           String   @id @default(uuid())
   username     String   @unique

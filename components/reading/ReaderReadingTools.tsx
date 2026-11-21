@@ -32,6 +32,7 @@ import {
   useShelfMutations,
 } from '@/lib/reading/client';
 import { useReadingRuler } from '@/lib/reading/ruler';
+import type { FindTarget } from '@/lib/library/find';
 import {
   SHELVES,
   type ShelfId,
@@ -89,6 +90,7 @@ export function ReaderReadingTools({
   curPage,
   ready,
   stageEl,
+  findJump,
   Dropdown,
 }: {
   book: {
@@ -102,6 +104,8 @@ export function ReaderReadingTools({
   ready: boolean;
   /** Element the text view is drawn into (the reader stage). */
   stageEl: HTMLElement | null;
+  /** The match last chosen in the Find panel; the text view shows and marks it. */
+  findJump?: FindTarget | null;
   Dropdown: DropdownComponent;
 }) {
   const {
@@ -549,6 +553,9 @@ export function ReaderReadingTools({
                 }
                 source={
                   source
+                }
+                jump={
+                  findJump
                 }
                 onClose={() =>
                   setTextOpen(

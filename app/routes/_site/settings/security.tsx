@@ -15,6 +15,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { PasskeyManager } from '@/components/site/PasskeyManager';
 import { SignInMethodsPanel } from '@/components/settings/SignInMethodsPanel';
 import { SessionManager } from '@/components/site/SessionManager';
+import { SecurityActivityPanel } from '@/components/settings/SecurityActivityPanel';
 import { AccountStandingPanel } from '@/components/moderation/AccountStandingPanel';
 import { useSession } from '@/components/Providers';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
@@ -73,6 +74,7 @@ function SecuritySettingsPage() {
             <SignInMethodsPanel linkError={linkError} />
             <PasskeyManager />
             <SessionManager />
+            <SecurityActivityPanel />
             <AccountStandingPanel />
           </>
         )}

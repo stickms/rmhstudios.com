@@ -18,6 +18,11 @@ import {
  getDeckApi,
 } from '@/lib/study/decks.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { EditDeckLink } from '@/components/study/EditDeckLink';
+import { ExportMenu } from '@/components/study/ExportMenu';
+import { DeckStatsSummary } from '@/components/study/DeckStatsSummary';
+import { PracticeTestLink } from '@/components/study/PracticeTestLink';
+import { TestHistory } from '@/components/study/TestHistory';
 
 interface Card {
  id: string;
@@ -285,6 +290,11 @@ export function DeckStudyColumn({
  <p className="truncate text-xs text-site-text-muted">{deck.description}</p>
  )}
  </div>
+ {deck.isOwner && <EditDeckLink deckId={deckId} />}
+ {/* Anyone may export a public deck; the owner exports from the editor. */}
+ {!deck.isOwner && cards.length > 0 && (
+ <ExportMenu deck={{ title: deck.title, description: deck.description ?? null, cards }} />
+ )}
  {deck.isOwner && (
  <button
  onClick={deleteDeck}
@@ -298,6 +308,7 @@ export function DeckStudyColumn({
  </header>
 
  <div className="space-y-4 p-4">
+ {signedIn && <DeckStatsSummary deckId={deckId} />}
  {signedIn && (
  <div>
  <Button
@@ -317,6 +328,9 @@ export function DeckStudyColumn({
  </Button>
  </div>
  )}
+
+ {cards.length > 0 && <PracticeTestLink deckId={deckId} />}
+ {signedIn && <TestHistory deckId={deckId} />}
 
  {deck.isOwner && (
  <div className={`rounded-site relative p-4`}>

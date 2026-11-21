@@ -185,6 +185,8 @@ model Notification {
   // Without this they fell back to (userId, read, createdAt) and scanned every
   // unread row the recipient has.
   @@index([userId, read, type, entityId])
+  // The inbox's type filter (Mentions and replies, Follows, …): newest first within a type.
+  @@index([userId, type, createdAt(sort: Desc)])
   @@map("notification")
 }
 

@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { developerKeysQuery, recipesQuery } from '@/lib/developer/developer.queries';
-import { Terminal, BookOpen, ExternalLink } from 'lucide-react';
+import { Terminal, BookOpen, ExternalLink, FlaskConical, Webhook } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -48,6 +48,16 @@ function DeveloperHome() {
       wide
       headerRight={
         <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/developer/webhooks">
+              <Webhook aria-hidden /> {t('developer-webhooks', { defaultValue: 'Webhooks' })}
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/developer/explorer">
+              <FlaskConical aria-hidden /> {t('developer-explorer', { defaultValue: 'API explorer' })}
+            </Link>
+          </Button>
           <Button asChild variant="ghost" size="sm">
             <a href="/api/v1/openapi.json">
               <Terminal aria-hidden /> {t('developer-openapi', { defaultValue: 'OpenAPI spec' })}

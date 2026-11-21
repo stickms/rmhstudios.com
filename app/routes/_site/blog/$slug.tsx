@@ -24,6 +24,8 @@ import { ShareButton } from '@/components/blog/ShareButton';
 import { ArticleTakeaways } from '@/components/blog/ArticleTakeaways';
 import { AnnouncementDiscussion } from '@/components/announcements/AnnouncementDiscussion';
 import { ArticleBody } from '@/components/reading/ArticleBody';
+import { FollowButton } from '@/components/reading/FollowButton';
+import { FollowTagMenu } from '@/components/reading/FollowTagMenu';
 import { getPostBySlug } from '@/lib/blog';
 import { getBusiness } from '@/lib/businesses';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
@@ -152,7 +154,12 @@ function BlogPost() {
           {tags.map((tag) => (
             <Badge key={tag}>#{tag}</Badge>
           ))}
-          <ShareButton slug={slug} className="ms-auto" />
+          <div className="ms-auto flex flex-wrap items-center gap-2">
+            {/* Members only: both follow controls render nothing when signed out. */}
+            <FollowButton kind="blog" />
+            <FollowTagMenu tags={tags} />
+            <ShareButton slug={slug} />
+          </div>
         </div>
 
         {image && (

@@ -395,6 +395,7 @@ export function SessionManager() {
   // column, two materials, and two of them nearly invisible.
   return (
     <SettingsSection
+      id="sessions"
       title={t(
         'sessions-title',
         {

@@ -115,7 +115,6 @@
 @source not "../components/versecraft";
 @source not "../features/void-breaker/engine";
 @source not "../features/void-breaker/ui";
-@source not "../lib/audio";
 @source not "../lib/cards";
 @source not "../lib/controller";
 @source not "../lib/cursed-logic";
@@ -124,7 +123,6 @@
 @source not "../lib/elections";
 @source not "../lib/fonts";
 @source not "../features/gabriels-horn/engine";
-@source not "../lib/game-saves";
 @source not "../lib/globeset";
 @source not "../lib/house-always-wins";
 @source not "../lib/kaikai-debt";
@@ -147,7 +145,6 @@
 @source not "../lib/sp-game";
 @source not "../lib/csgo-game";
 @source not "../lib/tf2-loadout";
-@source not "../lib/shortcuts";
 @source not "../features/signal-forge/engine";
 @source not "../lib/sohumtracker";
 @source not "../lib/store";

@@ -18,6 +18,9 @@ import { prisma } from '@/lib/prisma.server';
  * merge itself handles:
  *  - `account`, `passkey`: the sign-in methods. They are what moves.
  *  - `session`: ended when the merge starts; deleted with the account.
+ *  - `security_event`: the account's own security log (`lib/auth/security-log.server.ts`).
+ *    Signing up and signing in write to it before the member has done anything,
+ *    so its rows say how the account was entered, not what was done with it.
  * Measured against a real sign-up (email and provider) followed by a visit to
  * the home page, settings and `/account/connect`; see the design doc.
  */
@@ -27,6 +30,7 @@ export const EMPTY_ACCOUNT_ALLOWED_TABLES: ReadonlySet<string> =
       'account',
       'passkey',
       'session',
+      'security_event',
     ],
   );
 

@@ -694,6 +694,7 @@ export function SignInMethodsPanel({
 
   return (
     <SettingsSection
+      id="sign-in-methods"
       title={t(
         'signin-methods-title',
         {

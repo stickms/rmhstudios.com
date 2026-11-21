@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   BookMarked,
   Highlighter,
+  NotebookPen,
   Target,
 } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
@@ -18,6 +19,11 @@ const MyHighlightsPanel =
   lazy(
     () =>
       import('./MyHighlightsPanel'),
+  );
+const HighlightsNotebook =
+  lazy(
+    () =>
+      import('./HighlightsNotebook'),
   );
 const ShelvesPanel =
   lazy(
@@ -121,6 +127,19 @@ export function MyReadingView({
             icon: Highlighter,
           },
           {
+            id: 'notebook',
+            label:
+              t(
+                'tab-notebook',
+                {
+                  ns: 'highlights',
+                  defaultValue:
+                    'Notebook',
+                },
+              ),
+            icon: NotebookPen,
+          },
+          {
             id: 'shelves',
             label:
               t(
@@ -155,6 +174,10 @@ export function MyReadingView({
           {tab ===
           'highlights' ? (
             <MyHighlightsPanel />
+          ) : null}
+          {tab ===
+          'notebook' ? (
+            <HighlightsNotebook />
           ) : null}
           {tab ===
           'shelves' ? (

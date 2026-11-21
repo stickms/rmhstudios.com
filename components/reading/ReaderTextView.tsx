@@ -19,10 +19,13 @@ import { buildGlossaryMatcher, findGlossaryMatches } from '@/lib/reading/glossar
 import { useDocBundle } from '@/lib/reading/client';
 import { useReadingRuler } from '@/lib/reading/ruler';
 import { textVersion } from '@/lib/reading/passages';
+import { buildTextIndex, clearHighlight, offsetsToRange, paintHighlight } from '@/lib/reading/dom-text';
+import { toParagraphOffset, type FindTarget } from '@/lib/library/find';
 import type { GlossaryTermView } from '@/lib/reading/schema';
 import { GlossaryContext, GlossaryTermLink } from './ArticleNotes';
 import { HighlightsSection } from './HighlightsSection';
 import ReadingRuler from './ReadingRuler';
+import { ListenButton } from './ListenButton';
 import type { ReaderTextSource } from './ReaderReadingTools';
 import { NO_HIGHLIGHTS, NO_NOTES, NO_POPULAR, useHighlightKit } from './useHighlightKit';
 import { useArrival } from '@/components/ui/arrive';
@@ -35,15 +38,20 @@ const EMPTY: GlossaryTermView[] = [];
 export default function ReaderTextView({
   book,
   source,
+  jump,
   onClose,
 }: {
   book: { slug: string; title: string };
   source: ReaderTextSource;
+  /** A match chosen in the Find panel: shown on its page and marked. */
+  jump?: FindTarget | null;
   onClose: () => void;
 }) {
   const { t } = useTranslation('f-reading');
   const [unit, setUnit] = useState(() => Math.max(1, Math.min(source.count, source.current)));
   const [text, setText] = useState<string | null>(null);
+  // The unit `text` belongs to: it lags `unit` for a render while the next page loads.
+  const [textUnit, setTextUnit] = useState(0);
   const [failed, setFailed] = useState(false);
   // Each part's text replaces "Loading text…"; moving to another part waits again.
   const arrival = useArrival(text !== null || failed);
@@ -60,12 +68,37 @@ export default function ReaderTextView({
     setFailed(false);
     loadRef
       .current(unit)
-      .then((value) => alive && setText(value))
+      .then((value) => {
+        if (!alive) return;
+        setText(value);
+        setTextUnit(unit);
+      })
       .catch(() => alive && setFailed(true));
     return () => {
       alive = false;
     };
   }, [unit]);
+
+  // Find in book: move to the match's page, then mark it once that page's text is on screen.
+  useEffect(() => {
+    if (jump) setUnit(Math.max(1, Math.min(source.count, jump.unit)));
+  }, [jump, source.count]);
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!jump || jump.unit !== unit || textUnit !== unit || text === null || !body) {
+      clearHighlight('rf-find');
+      return;
+    }
+    const range = offsetsToRange(
+      buildTextIndex(body),
+      toParagraphOffset(text, jump.range.start),
+      toParagraphOffset(text, jump.range.end),
+    );
+    if (!range) return;
+    paintHighlight('rf-find', [range]);
+    range.startContainer.parentElement?.scrollIntoView({ block: 'center' });
+  }, [jump, unit, text, textUnit]);
+  useEffect(() => () => clearHighlight('rf-find'), []);
 
   // The page-turn shortcut (←/→ on window) must not fire behind this view.
   useEffect(() => {
@@ -172,6 +205,7 @@ export default function ReaderTextView({
             <ChevronRight aria-hidden />
           </Button>
         </div>
+        <ListenButton rootRef={bodyRef} resetKey={`${book.slug}:${unitKey}`} />
         <label className="flex items-center gap-2 text-sm text-site-text-muted">
           <Switch
             checked={ruler}

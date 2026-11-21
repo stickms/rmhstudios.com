@@ -35,82 +35,74 @@ export function signWebhookPayload(
     );
 }
 
-/** Constant-time check of a received signature header against the expected value. */
+/**
+ * The secrets a delivery is signed with right now: the current one first, then
+ * the rotated-out one while its overlap window (`previousSecretExpiresAt`) is
+ * still open.
+ */
+export function activeSigningSecrets(
+  endpoint: {
+    secret: string;
+    previousSecret?: string | null;
+    previousSecretExpiresAt?: Date | null;
+  },
+  now: Date,
+): string[] {
+  const overlap =
+    endpoint.previousSecret &&
+    endpoint.previousSecretExpiresAt &&
+    endpoint.previousSecretExpiresAt.getTime() > now.getTime();
+  return overlap ? [endpoint.secret, endpoint.previousSecret as string] : [endpoint.secret];
+}
+
+/**
+ * The `X-RMH-Signature` header value: `t=<seconds>` then one `v1=` per secret.
+ * Two secrets are passed while a rotation overlap lasts (newest first), so a
+ * receiver holding either one verifies the same delivery.
+ */
+export function signatureHeader(
+  secrets: readonly string[],
+  timestamp: number,
+  body: string,
+): string {
+  return [
+    `t=${timestamp}`,
+    ...secrets.map((secret) => `v1=${signWebhookPayload(secret, timestamp, body)}`),
+  ].join(',');
+}
+
+/**
+ * Constant-time check of a received signature header against the expected
+ * value. A header may carry several `v1=` parts (rotation overlap); a match on
+ * any one of them verifies.
+ */
 export function verifyWebhookSignature(
   secret: string,
   header: string,
   body: string,
   toleranceSec = 300,
 ): boolean {
-  const parts =
-    Object.fromEntries(
-      header
-        .split(
-          ',',
-        )
-        .map(
-          (
-            kv,
-          ) =>
-            kv
-              .split(
-                '=',
-              )
-              .map(
-                (
-                  s,
-                ) =>
-                  s.trim(),
-              ) as [
-              string,
-              string,
-            ],
-        ),
-    );
-  const t =
-    Number(
-      parts.t,
-    );
-  const v1 =
-    parts.v1;
-  if (
-    !Number.isFinite(
-      t,
-    ) ||
-    !v1
-  )
-    return false;
-  if (
-    Math.abs(
-      Date.now() /
-        1000 -
-        t,
-    ) >
-    toleranceSec
-  )
-    return false;
-  const expected =
-    signWebhookPayload(
-      secret,
-      t,
-      body,
-    );
-  const a =
-    Buffer.from(
-      expected,
-    );
-  const b =
-    Buffer.from(
-      v1,
-    );
-  return (
-    a.length ===
-      b.length &&
-    timingSafeEqual(
-      a,
-      b,
-    )
-  );
+  let t = NaN;
+  const candidates: string[] = [];
+  for (const part of header.split(',')) {
+    const eq = part.indexOf('=');
+    if (eq < 0) continue;
+    const key = part.slice(0, eq).trim();
+    const value = part.slice(eq + 1).trim();
+    if (key === 't') t = Number(value);
+    else if (key === 'v1' && value) candidates.push(value);
+  }
+  if (!Number.isFinite(t) || candidates.length === 0) return false;
+  if (Math.abs(Date.now() / 1000 - t) > toleranceSec) return false;
+  const expected = Buffer.from(signWebhookPayload(secret, t, body));
+  // Every candidate is compared (no early exit on a match) so timing does not
+  // reveal which position matched.
+  let ok = false;
+  for (const candidate of candidates) {
+    const got = Buffer.from(candidate);
+    if (got.length === expected.length && timingSafeEqual(expected, got)) ok = true;
+  }
+  return ok;
 }
 
 /**

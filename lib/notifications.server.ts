@@ -87,11 +87,24 @@ export interface NotificationListItem {
  */
 export async function listNotifications(
   userId: string,
-  opts: { cursor?: string | null; limit?: number } = {},
+  opts: {
+    cursor?: string | null;
+    limit?: number;
+    /** Only these types (a filter's types). */
+    types?: NotificationType[];
+    /** The inbox's Unread view: rows unread now, plus these ids (unread when the inbox opened). Scoped to the caller. */
+    unread?: { alsoIds: string[] };
+  } = {},
 ): Promise<{ items: NotificationListItem[]; nextCursor: string | null }> {
   const limit = pageSize(opts.limit);
   const rows = await prisma.notification.findMany({
-    where: { userId },
+    where: {
+      userId,
+      ...(opts.types ? { type: { in: opts.types } } : {}),
+      ...(opts.unread
+        ? { OR: [{ read: false }, ...(opts.unread.alsoIds.length ? [{ id: { in: opts.unread.alsoIds } }] : [])] }
+        : {}),
+    },
     orderBy: { createdAt: 'desc' },
     take: limit + 1,
     ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),

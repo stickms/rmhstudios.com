@@ -180,6 +180,21 @@ model UserAchievement {
   @@map("user_achievement")
 }
 
+/// An achievement a member pinned to work toward (at most five, never a secret
+/// one). `notifiedPct` is the highest milestone (50 or 90) already announced, so
+/// each threshold notifies once. The row is removed when the achievement unlocks.
+model AchievementTrack {
+  userId        String
+  achievementId String   @db.VarChar(64) // matches a catalog key
+  notifiedPct   Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@map("achievement_track")
+}
+
 /// Idempotency key for drops: a drop is granted once per (user, title, dropIndex).
 model CardDrop {
   userId    String

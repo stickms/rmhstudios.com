@@ -16,11 +16,13 @@ export const Route = createFileRoute('/api/news/approve')({ server: { handlers: 
     if (!article) return Response.json({ error: 'Article not found' }, { status: 404, headers: newsActionHeaders('application/json') });
     // CAS STAGING → PUBLISHED: a replayed approval link (or one racing reject)
     // is a no-op, and IndexNow is pinged only for the publish that happened.
-    const { count } = await prisma.newsArticle.updateMany({ where: { slug, status: 'STAGING' }, data: { status: 'PUBLISHED' } });
+    const { count } = await prisma.newsArticle.updateMany({ where: { slug, status: 'STAGING' }, data: { status: 'PUBLISHED', createdAt: new Date() } });
     if (count === 0) {
       if (article.status === 'PUBLISHED') return new Response(`Article "${slug}" is already published.`, { headers: newsActionHeaders('text/plain; charset=utf-8') });
       return Response.json({ error: 'Article not found' }, { status: 404, headers: newsActionHeaders('application/json') });
     }
+    // createdAt moves to the publish instant: the Logs-and-News fan-out (lib/reading/subscriptions.server.ts) reads
+    // published articles by createdAt past a cursor, so an article staged for hours would otherwise be skipped.
     // This is THE moment a news article becomes publicly reachable: the sitemap
     // and /news/$slug both gate on status === 'PUBLISHED', and this is the only
     // place in the web tier that sets it. Fire-and-forget — never awaited.

@@ -103,6 +103,10 @@ export default defineConfig({
       // The Toolbox's pure utilities (/tools) are not mission-critical either: their own
       // suite, `pnpm test:toolbox` (vitest.toolbox.config.ts), gated by .github/workflows/toolbox-tests.yml.
       'lib/toolbox/**',
+      // Sprint 02's product logic (`*.product.test.ts`) is not mission-critical either: its own
+      // suite, `pnpm test:product` (vitest.product.config.ts), gated by .github/workflows/product-tests.yml.
+      '**/*.product.test.ts',
+      '**/*.product.test.tsx',
     ],
     environment: 'node',
     globals: true,

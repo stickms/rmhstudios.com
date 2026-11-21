@@ -16,6 +16,7 @@
 
 import { Link } from '@tanstack/react-router';
 import {
+  BarChart3,
   Compass,
   Layers,
 } from 'lucide-react';
@@ -28,7 +29,8 @@ export function StudyTabs({
 }: {
   active:
     | '/study'
-    | '/study/browse';
+    | '/study/browse'
+    | '/study/stats';
 }) {
   const {
     t,
@@ -62,6 +64,20 @@ export function StudyTabs({
             },
           ),
         icon: Compass,
+      },
+      {
+        id: '/study/stats',
+        label:
+          t(
+            'study-tab-stats',
+            {
+              // The Statistics tab belongs to the study-stats namespace.
+              ns: 'study-stats',
+              defaultValue:
+                'Statistics',
+            },
+          ),
+        icon: BarChart3,
       },
     ];
 

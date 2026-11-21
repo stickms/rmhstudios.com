@@ -16,6 +16,7 @@ import { prisma } from '@/lib/prisma.server';
 import { handleSchema } from '@/lib/handle-schema';
 import { invalidateProfileLookup } from '@/lib/profile.server';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
+import { recordSecurityEvent } from '@/lib/auth/security-log.server';
 import {
   PREVIOUS_HANDLE_WINDOW_MS,
   canChangeHandleNow,
@@ -130,6 +131,16 @@ export async function changeHandle(
       return { ok: false, reason: 'taken', message: 'This handle is already taken' };
     }
     throw error;
+  }
+
+  // After the transaction has committed, so a rolled-back change leaves no row. Only a rename counts:
+  // giving an account its first handle has no old name to report.
+  if (previousHandle) {
+    void recordSecurityEvent({
+      userId,
+      kind: 'handle_changed',
+      detail: { oldHandle: previousHandle, newHandle: next },
+    });
   }
 
   invalidateUserDisplay(userId);
