@@ -100,24 +100,20 @@ html:not(.app-route) {
   scrollbar-gutter: stable;
 }
 
-/* A bought theme's glow wash (R1 amendment, `themeWash` in lib/themes/tokens.ts) lives on the ROOT, not on the shell.
-   The root's background is the browser canvas: it paints edge to edge under `viewport-fit=cover`, including behind the
-   iOS status bar, the floating tab bar, the home-indicator strip and rubber-band overscroll, which a box inside <body>
-   never reaches. It is still a BACKGROUND, not a layer: no element sits at an edge for Safari to read into a flat band
-   (the iOS bar contract), and with no user theme the image is `none`. Held to the viewport on desktop; iOS ignores
-   `fixed` and scrolls it, so the image is stretched over the whole document there, as the shell's copy used to be.
-   Body and shell paint nothing of their own on the site tier, or they would cover it. */
-html:not(.app-route) {
+/* A bought theme's glow wash (R1 amendment, `themeWash` in lib/themes/tokens.ts) is painted on <body>, over body's own
+   opaque `--site-bg`. Body keeps an opaque background-color on purpose: iOS Safari takes the colour of its status-bar and
+   tab-bar strips from body's background-color, and a transparent body made both strips pure white. Body spans the whole
+   document and runs under the strips (viewport-fit=cover), so the wash is behind them too wherever Safari lets the page
+   show. It is a BACKGROUND, not a fixed layer, so no element sits at an edge (the iOS bar contract); with no user theme
+   the image is `none`. Held to the viewport on desktop; iOS ignores `fixed`, so there it is stretched over the document. */
+html:not(.app-route) body {
   background-image: var(--site-theme-wash, none);
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
-html.ios-webkit:not(.app-route) {
+html.ios-webkit:not(.app-route) body {
   background-attachment: scroll;
-}
-html:not(.app-route) body {
-  background: transparent;
 }
 
 /* App/game routes are excluded above because they do not scroll the document —

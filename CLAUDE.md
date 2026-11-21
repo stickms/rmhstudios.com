@@ -301,6 +301,12 @@ bottom edge). `lib/__tests__/ios-edge-contract.test.ts` asserts the invariants a
 `pnpm audit:pages` finds the rest in a real browser. Both are described in
 [`docs/page-consistency.md`](docs/page-consistency.md) §"How consistency is enforced".
 
+**To actually see Safari's bars** (Chromium cannot draw them, so an emulated iPhone proves nothing about the strips):
+run the **iOS Safari screenshots** workflow (`.github/workflows/ios-safari-screenshots.yml`, manual, macOS runner with
+an iOS simulator) and read the PNG artifact. Any change to the root/body ground, `theme-color`, an edge-pinned layer,
+the globe veil or a theme wash should be looked at that way before it is called done. How to run and read it:
+[`docs/ios-safari-screenshots.md`](docs/ios-safari-screenshots.md).
+
 **Performance (plan section 13).** The shell renders complete with scripting off; the only script attached to it is the
 chrome renderer, loaded at idle. The site tier creates exactly one WebGL context (the chrome renderer) and no worker,
 `MutationObserver` or decorative `ResizeObserver`, except the predictive link prefetcher (`lib/foresight-prefetch.ts`,

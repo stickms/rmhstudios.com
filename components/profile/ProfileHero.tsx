@@ -24,6 +24,7 @@ import { safeHref } from '@/lib/url-safety';
 import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
 import { ProfileIdentityExtras, ProfileShareCardButton } from './plus/ProfileIdentityExtras';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { PresenceDot } from './PresenceDot';
 import { BadgeMark } from '@/components/shop/art/BadgeMark';
 import { PetMark } from '@/components/shop/art/PetMark';
@@ -183,12 +184,14 @@ export function ProfileHero({
   // (the one primary) and Message. No banner box, no stat tiles, no chips: what is left is words. The person's history
   // is the spine below (ProfileColumn).
   return (
-    <header className="profile-head">
+    // Two columns: everything hangs in the first, and the song / share column sits beside it in the second, spanning
+    // down the side, so it never pushes the bio below its own height (the bio follows the avatar row directly).
+    <header className="profile-head grid sm:grid-cols-[1fr_auto] sm:gap-x-4">
       {profile.bannerUrl || headerBackdrop ? (
         <ProfileBanner
           src={profile.bannerUrl}
           backdrop={headerBackdrop}
-          className="profile-head__banner"
+          className="profile-head__banner col-span-full"
         />
       ) : null}
 
@@ -223,20 +226,29 @@ export function ProfileHero({
             </p>
           ) : null}
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
-            <VinylRecord
-              albumArt={profile.profileSongAlbumArt}
-              title={profile.profileSongTitle ?? t('unknown', { defaultValue: 'Unknown' })}
-              artist={profile.profileSongArtist ?? t('unknown', { defaultValue: 'Unknown' })}
-              isPlaying={isPlaying}
-              onToggle={onTogglePlay}
-            />
-          ) : null}
+      </div>
+      <div className="flex items-center gap-3 sm:col-start-2 sm:row-span-[20] sm:shrink-0 sm:flex-col sm:items-end sm:gap-1 sm:self-start">
+        {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
+          <VinylRecord
+            albumArt={profile.profileSongAlbumArt}
+            title={profile.profileSongTitle ?? t('unknown', { defaultValue: 'Unknown' })}
+            artist={profile.profileSongArtist ?? t('unknown', { defaultValue: 'Unknown' })}
+            isPlaying={isPlaying}
+            onToggle={onTogglePlay}
+          />
+        ) : null}
+        {/* The two icon actions share one row; each names itself in a tooltip. */}
+        <div className="flex items-center gap-1">
           <ProfileShareCardButton profile={profile} />
-          <CopyButton value={shareUrl} variant="ghost" size="xs">
-            {t('copy-profile-link-short', { defaultValue: 'Copy link' })}
-          </CopyButton>
+          <Tooltip content={t('copy-profile-link-short', { defaultValue: 'Copy link' })}>
+            <CopyButton
+              value={shareUrl}
+              icon={Link2}
+              variant="ghost"
+              label={t('copy-profile-link-short', { defaultValue: 'Copy link' })}
+              title={undefined}
+            />
+          </Tooltip>
         </div>
       </div>
 

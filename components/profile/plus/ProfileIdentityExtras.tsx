@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pause, QrCode, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import type { ProfileData } from '@/components/profile/profile-types';
 import { LocalTimeChip } from './LocalTime';
 
@@ -84,12 +85,13 @@ export function ProfileShareCardButton({ profile }: { profile: ProfileData }) {
   if (!profile.isOwnProfile) return null;
   return (
     <>
-      <Button variant="ghost" size="xs" onClick={() => setCardOpen(true)}>
-        <QrCode aria-hidden />
-        {t('share-card', {
+      <IconButton
+        icon={QrCode}
+        label={t('share-card', {
           defaultValue: 'Share card',
         })}
-      </Button>
+        onClick={() => setCardOpen(true)}
+      />
       {cardOpen ? (
         <Suspense fallback={null}>
           <ProfileCardDialog open={cardOpen} onOpenChange={setCardOpen} handleOrId={profile.handle || profile.id} />
