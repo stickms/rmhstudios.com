@@ -122,6 +122,7 @@ vi.mock('@/components/posts-plus/PostPlusBadges', () => ({
 vi.mock('../GifEmbed', () => ({ GifEmbed: marker('GifEmbed') }));
 vi.mock('../PostImageGrid', () => ({ PostImageGrid: marker('PostImageGrid') }));
 vi.mock('../SensitiveMedia', () => ({ SensitiveMedia: wrapper('SensitiveMedia') }));
+vi.mock('../ContentWarningCover', () => ({ ContentWarningCover: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock('../LinkPreview', () => ({ LinkPreview: marker('LinkPreview') }));
 vi.mock('../UserAvatar', () => ({ UserAvatar: marker('UserAvatar') }));
 vi.mock('../ThreadSummary', () => ({ ThreadSummary: marker('ThreadSummary') }));

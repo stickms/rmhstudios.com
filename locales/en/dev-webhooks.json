@@ -93,5 +93,6 @@
   "secret-warning": "Copy this secret now. It is shown once and cannot be retrieved later.",
   "status-delivered": "Delivered",
   "status-failed": "Failed",
-  "status-pending": "Retrying"
+  "status-pending": "Retrying",
+  "detail-disabled-staff-hint": "If RMH Studios staff disabled it to secure your account, its secret was replaced. Rotate the secret below to get a new one, then enable the endpoint."
 }

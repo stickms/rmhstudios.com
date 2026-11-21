@@ -38,6 +38,7 @@ import {
   chatMetaKey,
   useChatMeta,
 } from './hooks';
+import { AccountReceiptReason } from './AccountReceiptReason';
 import { SharedMediaPanel } from './SharedMediaPanel';
 import { ChatFoldersSection } from './ChatFoldersSection';
 
@@ -785,6 +786,7 @@ function SettingsPanel({
             )}
           </p>
           <div className="flex flex-col divide-y divide-site-border">
+            <div>
             <label className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-site-text">
               {t(
                 'privacy-receipts',
@@ -795,9 +797,24 @@ function SettingsPanel({
               )}
               <Switch
                 checked={
+                  meta
+                    .account
+                    .readReceipts &&
                   !meta
                     .prefs
                     .hideReceipts
+                }
+                disabled={
+                  !meta
+                    .account
+                    .readReceipts
+                }
+                aria-describedby={
+                  meta
+                    .account
+                    .readReceipts
+                    ? undefined
+                    : 'opt-receipts-reason'
                 }
                 onCheckedChange={(
                   on,
@@ -816,6 +833,9 @@ function SettingsPanel({
                 )}
               />
             </label>
+            {!meta.account.readReceipts && <AccountReceiptReason id="opt-receipts-reason" />}
+            </div>
+            <div>
             <label className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-site-text">
               {t(
                 'privacy-typing',
@@ -826,9 +846,24 @@ function SettingsPanel({
               )}
               <Switch
                 checked={
+                  meta
+                    .account
+                    .typingIndicators &&
                   !meta
                     .prefs
                     .hideTyping
+                }
+                disabled={
+                  !meta
+                    .account
+                    .typingIndicators
+                }
+                aria-describedby={
+                  meta
+                    .account
+                    .typingIndicators
+                    ? undefined
+                    : 'opt-typing-reason'
                 }
                 onCheckedChange={(
                   on,
@@ -847,6 +882,8 @@ function SettingsPanel({
                 )}
               />
             </label>
+            {!meta.account.typingIndicators && <AccountReceiptReason id="opt-typing-reason" />}
+            </div>
           </div>
         </section>
       )}

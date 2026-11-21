@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
@@ -71,6 +72,7 @@ export const route = apiRoute('/api/embed/oembed', {
           select: {
             id: true,
             content: true,
+            contentWarning: true,
             deletedAt: true,
             audience: true,
             unlockPrice: true,
@@ -99,7 +101,8 @@ export const route = apiRoute('/api/embed/oembed', {
           : Math.min(maxHeight, DEFAULT_HEIGHT);
         const authorUrl = `${SITE_URL}/u/${author.handle ?? author.id}`;
         const embedSrc = `${SITE_URL}/embed/post/${post.id}`;
-        const title = (post.content || 'Post on RMH Studios').slice(0, 120);
+        // A post with a content warning reason titles itself with the reason, not its text (sprint 06 #16).
+        const title = (previewTextFor(post) || 'Post on RMH Studios').slice(0, 120);
 
         const html =
           `<iframe src="${embedSrc}" width="${width}" height="${height}" ` +

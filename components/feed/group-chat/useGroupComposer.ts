@@ -140,11 +140,15 @@ export function useGroupComposer({
               ],
             ),
         onPickGif:
-          (
+          ({
             url,
-          ) => {
+            description,
+          }) => {
             setGifUrl(
               url,
+            );
+            setGifAlt(
+              description,
             );
             setTimeout(
               () =>
@@ -160,6 +164,15 @@ export function useGroupComposer({
   const imageAlts =
     useMessageImageAlts(
       imageUrls,
+    );
+  // The pending GIF's description (sprint 06 #15), prefilled from the picker. Declared after the hook the
+  // characterization suite counts up to, so its ordinals do not move.
+  const [
+    gifAlt,
+    setGifAlt,
+  ] =
+    useState(
+      '',
     );
 
   const handleImageFiles =
@@ -284,6 +297,8 @@ export function useGroupComposer({
     );
     const pendingGif =
       gifUrl;
+    const pendingGifAlt =
+      gifAlt;
     const pendingImages =
       imageUrls;
     const pendingAlts =
@@ -298,6 +313,9 @@ export function useGroupComposer({
         setGifUrl(
           pendingGif,
         );
+        setGifAlt(
+          pendingGifAlt,
+        );
         setImageUrls(
           pendingImages,
         );
@@ -310,6 +328,9 @@ export function useGroupComposer({
     );
     setGifUrl(
       null,
+    );
+    setGifAlt(
+      '',
     );
     setImageUrls(
       [],
@@ -337,6 +358,12 @@ export function useGroupComposer({
                 ? {
                     gifUrl:
                       pendingGif,
+                    ...(pendingGifAlt.trim()
+                      ? {
+                          gifAlt:
+                            pendingGifAlt.trim(),
+                        }
+                      : {}),
                   }
                 : {}),
               ...(pendingImages.length
@@ -410,6 +437,8 @@ export function useGroupComposer({
     sending,
     gifUrl,
     setGifUrl,
+    gifAlt,
+    setGifAlt,
     imageUrls,
     setImageUrls,
     imageAlts,

@@ -27,6 +27,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { Select } from '@/components/ui/select';
+import { UndoRedoButtons } from '@/components/studio/UndoRedoButtons';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -45,6 +46,9 @@ import { SampleBrowser } from '@/components/studio/SampleBrowser';
 import { KeybindSettings } from '@/components/studio/KeybindSettings';
 import { ProjectsMenu } from '@/components/studio/ProjectsMenu';
 import { OpenProjectDialog } from '@/components/studio/OpenProjectDialog';
+import { ExportMixDialog } from '@/components/studio/ExportMixDialog';
+import { ImportMidiDialog } from '@/components/studio/ImportMidiDialog';
+import { useExportUi } from '@/lib/studio/export/ui-store';
 import { ProjectConflictDialog } from '@/components/studio/ProjectConflictDialog';
 import {
   useProjectSession,
@@ -396,6 +400,12 @@ function TransportBar({
           timeSignature[1]
         }
       </div>
+
+      {/* Divider */}
+      <div className="h-6 w-px bg-app-border" />
+
+      {/* Undo and redo */}
+      <UndoRedoButtons />
 
       {/* Divider */}
       <div className="h-6 w-px bg-app-border" />
@@ -1187,9 +1197,29 @@ export default function StudioShell() {
     initEngine,
   ]);
 
+  const exportOpen =
+    useExportUi(
+      (
+        s,
+      ) =>
+        s.exportOpen,
+    );
+  const importOpen =
+    useExportUi(
+      (
+        s,
+      ) =>
+        s.importOpen,
+    );
   const projectDialogs =
     (
       <>
+        {exportOpen ? (
+          <ExportMixDialog />
+        ) : null}
+        {importOpen ? (
+          <ImportMidiDialog />
+        ) : null}
         {session.openDialog ? (
           <OpenProjectDialog
             key={

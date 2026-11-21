@@ -6,11 +6,45 @@ import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 import { lockOpenPoll, PollLifecycleError, pollClosedError } from '@/lib/feed/poll-lifecycle.server';
 import { isPollEnded } from '@/lib/feed/poll-lifecycle';
+import { rankedBallotSchema } from '@/lib/feed/ranked-poll-schema';
+import { RankedBallotError, submitBallot } from '@/lib/feed/ranked-poll.server';
 
 /** 409 `POLL_CLOSED`: the poll has ended, by the clock or by its author. */
 function pollClosedResponse(): Response {
   const err = pollClosedError();
   return Response.json({ error: err.message, code: err.code }, { status: err.status });
+}
+
+/** Submit (or replace) the caller's ranked ballot on the poll of post `postId`. */
+async function castRankedBallot(postId: string, userId: string, body: unknown): Promise<Response> {
+  const parsed = rankedBallotSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ error: 'Invalid ranking', code: 'BAD_BALLOT' }, { status: 400 });
+  }
+  const poll = await prisma.rMHarkPoll.findUnique({
+    where: { rmheetId: postId },
+    select: { id: true, ranked: true, closesAt: true, closedAt: true },
+  });
+  if (!poll) return Response.json({ error: 'Not found' }, { status: 404 });
+  if (!poll.ranked) {
+    return Response.json({ error: 'This poll is not ranked', code: 'NOT_RANKED' }, { status: 400 });
+  }
+  if (isPollEnded(poll)) return pollClosedResponse();
+  if (!(await canReadPostThread(postId, userId))) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  try {
+    const outcome = await submitBallot({ pollId: poll.id, userId, ranking: parsed.data.ranking });
+    await awardXp(userId, 3);
+    await progressQuests(userId, 'vote');
+    return Response.json({ success: true, ...outcome });
+  } catch (err) {
+    if (err instanceof PollLifecycleError && err.code === 'POLL_CLOSED') return pollClosedResponse();
+    if (err instanceof RankedBallotError) {
+      return Response.json({ error: err.message, code: err.code }, { status: 400 });
+    }
+    throw err;
+  }
 }
 
 export const route = apiRoute('/api/rmharks/$id/vote', {
@@ -19,6 +53,11 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
     async ({ request, params, session }) => {
       const { id } = params;
       const body = await request.json();
+
+      // A ranked ballot: `{ ranking: string[] }` (sprint 06 #19). Plain and multi-select polls keep `{ optionId }`.
+      if (body && typeof body === 'object' && 'ranking' in body) {
+        return castRankedBallot(id, session.user.id, body);
+      }
       const { optionId } = body;
 
       if (!optionId || typeof optionId !== 'string') {
@@ -30,7 +69,7 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
         where: { id: optionId },
         include: {
           poll: {
-            select: { rmheetId: true, multiSelect: true, id: true, closesAt: true, closedAt: true },
+            select: { rmheetId: true, multiSelect: true, ranked: true, id: true, closesAt: true, closedAt: true },
           },
         },
       });
@@ -42,6 +81,11 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
       // Ended by the clock or by its author. Checked again under the poll's lock below, where it is race-safe.
       if (isPollEnded(option.poll)) {
         return pollClosedResponse();
+      }
+
+      // One option cannot be a ranking: a ranked poll is voted with `{ ranking }`.
+      if (option.poll.ranked) {
+        return Response.json({ error: 'This poll takes a ranking', code: 'RANKED_POLL' }, { status: 400 });
       }
 
       const userId = session.user.id;

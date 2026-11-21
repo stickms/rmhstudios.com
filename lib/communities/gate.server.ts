@@ -2,6 +2,7 @@
  * The one gate every post/comment create in a community passes (server-only).
  *
  * Order, cheapest and most explicit first:
+ *   0. ban / timeout (s06-01) — an active sanction refuses everything, mods never carry one
  *   1. flair (N1)         — required flair present and belongs to the community
  *   2. verification (S2)  — email / account age / member age
  *   3. AutoMod (N4)       — in-memory over the cached rules
@@ -15,11 +16,13 @@ import { getCommunitySettings } from '@/lib/communities/settings.server';
 import { flairBelongsTo } from '@/lib/communities/flairs.server';
 import { getAutomodRules, recordModItem } from '@/lib/communities/automod.server';
 import { checkVerification } from '@/lib/communities/verification';
+import { activeSanction } from '@/lib/communities/bans.server';
+import { denyCode, denyText } from '@/lib/communities/bans';
 import { evaluateAutomod, type AutomodPostKind } from '@/lib/communities/automod';
 
 export type GateOutcome =
   | { kind: 'allow'; flag?: { ruleName: string } }
-  | { kind: 'deny'; status: 400 | 403 | 404; code: string; error: string }
+  | { kind: 'deny'; status: 400 | 403 | 404; code: string; error: string; endsAt?: string | null }
   | { kind: 'hold'; ruleName: string }
   | { kind: 'remove'; ruleName: string };
 
@@ -31,7 +34,7 @@ export async function gateCommunityContent(args: {
   postKind: AutomodPostKind;
   flairId?: string | null;
 }): Promise<GateOutcome> {
-  const [settings, member, user, rules] = await Promise.all([
+  const [settings, member, user, rules, sanction] = await Promise.all([
     getCommunitySettings(args.communityId),
     prisma.communityMember.findUnique({
       where: { communityId_userId: { communityId: args.communityId, userId: args.userId } },
@@ -44,11 +47,23 @@ export async function gateCommunityContent(args: {
       select: { emailVerified: true, createdAt: true, image: true },
     }),
     getAutomodRules(args.communityId),
+    activeSanction(args.communityId, args.userId),
   ]);
   if (!settings || !user) {
     return { kind: 'deny', status: 404, code: 'not_found', error: 'Community not found' };
   }
   const isMod = member?.role === 'MOD' || member?.role === 'ADMIN';
+
+  // 0. An active ban or timeout (read once, in the Promise.all above).
+  if (sanction) {
+    return {
+      kind: 'deny',
+      status: 403,
+      code: denyCode(sanction.kind),
+      error: denyText(sanction.kind, sanction.endsAt),
+      endsAt: sanction.endsAt ? sanction.endsAt.toISOString() : null,
+    };
+  }
 
   // 1. Flair (posts only).
   if (args.target === 'post') {

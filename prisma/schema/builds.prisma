@@ -60,6 +60,8 @@ model UserBuild {
   likes      BuildLike[]
   jamEntries GameJamEntry[]
   comments   BuildComment[]
+  /// s06-14: the creator closed comments; existing ones stay, new ones and replies are refused.
+  commentsLocked Boolean @default(false)
   views      BuildView[]
   unlocks    BuildUnlock[]
 
@@ -153,11 +155,18 @@ model BuildComment {
   parentId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // s06-14: the author's edit (within 30 minutes), a soft delete ('author' | 'moderator') and the creator's hide.
+  editedAt   DateTime?
+  deletedAt  DateTime?
+  deletedBy  String?   @db.VarChar(12)
+  hiddenAt   DateTime?
+  hiddenById String?
 
   parent  BuildComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
   replies BuildComment[] @relation("CommentReplies")
   build   UserBuild      @relation(fields: [buildId], references: [id], onDelete: Cascade)
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hiddenBy User?         @relation("BuildCommentHider", fields: [hiddenById], references: [id], onDelete: SetNull)
 
   @@index([buildId, createdAt(sort: Desc)])
   @@map("build_comment")

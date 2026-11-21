@@ -43,6 +43,7 @@ import { reactToPostApi, viewPostApi } from '@/lib/feed/rmhark-actions.contract'
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { translatePostApi } from '@/lib/ai/ai.contract';
 import { ARRIVE } from '@/components/ui/arrive';
+import { ContentWarningCover } from '@/components/feed/ContentWarningCover';
 import { BadgeMark } from '@/components/shop/art/BadgeMark';
 
 interface RMHarkCardProps {
@@ -390,7 +391,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           ) : (
             <>
               {item.communityFlair && <FlairChip flair={item.communityFlair} className="mt-2" />}
-              {/* Content */}
+              {/* Content: a post with a content warning reason is covered whole (text, poll, media) until shown */}
+              <ContentWarningCover
+                post={{ isSensitive: item.isSensitive, contentWarning: item.contentWarning, userId: item.user?.id }}
+              >
               {item.content && (
                 <RMHarkContent
                   text={item.content}
@@ -465,7 +469,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               {/* Image / GIF: hidden behind a content warning when marked sensitive */}
               {(item.gifUrl || (item.imageUrls && item.imageUrls.length > 0)) && (
                 <SensitiveMedia sensitive={item.isSensitive} className="mt-3">
-                  {item.gifUrl && <GifEmbed url={item.gifUrl} />}
+                  {item.gifUrl && <GifEmbed url={item.gifUrl} gifAlt={item.gifAlt ?? null} />}
                   {item.imageUrls && item.imageUrls.length > 0 && (
                     <PostImageGrid
                       urls={item.imageUrls}
@@ -478,6 +482,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
               {/* Link preview: only when no poll, gif, or image */}
               {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
+              </ContentWarningCover>
             </>
           )}
 
@@ -544,12 +549,20 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   </span>
                 )}
               </div>
+              <ContentWarningCover
+                post={{
+                  isSensitive: item.original.isSensitive,
+                  contentWarning: item.original.contentWarning,
+                  userId: item.original.user?.id,
+                }}
+              >
               <RMHarkContent
                 text={item.original.content ?? ''}
                 className="t-body break-words whitespace-pre-wrap text-site-text"
               />
-              {/* Original's media (server omits these for paid/non-public posts) */}
-              {item.original.gifUrl && <GifEmbed url={item.original.gifUrl} className="mt-2" />}
+              {/* Original's media (server omits these for paid/non-public posts); a warning without a reason covers it alone */}
+              <SensitiveMedia sensitive={item.original.isSensitive}>
+              {item.original.gifUrl && <GifEmbed url={item.original.gifUrl} gifAlt={item.original.gifAlt ?? null} className="mt-2" />}
               {!item.original.gifUrl &&
                 item.original.imageUrls &&
                 item.original.imageUrls.length > 0 && (
@@ -559,6 +572,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                     className="mt-2"
                   />
                 )}
+              </SensitiveMedia>
+              </ContentWarningCover>
             </div>
           )}
 

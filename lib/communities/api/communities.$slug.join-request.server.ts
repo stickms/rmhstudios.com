@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { communityWithRole } from '@/lib/communities/guard.server';
+import { activeSanction } from '@/lib/communities/bans.server';
+import { denyCode, denyText } from '@/lib/communities/bans';
 import {
   JOIN_REQUEST_MESSAGE_MAX,
   cancelRequest,
@@ -35,6 +37,17 @@ export const route = apiRoute('/api/communities/$slug/join-request', {
       if (!ctx) return Response.json({ error: 'Not found' }, { status: 404 });
       if (!ctx.isPrivate) {
         return Response.json({ error: 'This community is open: just join it' }, { status: 400 });
+      }
+      const banned = await activeSanction(ctx.id, session.user.id);
+      if (banned) {
+        return Response.json(
+          {
+            error: denyText(banned.kind, banned.endsAt),
+            code: denyCode(banned.kind),
+            endsAt: banned.endsAt ? banned.endsAt.toISOString() : null,
+          },
+          { status: 403 },
+        );
       }
       const result = await requestToJoin(
         ctx,

@@ -83,6 +83,21 @@ function EndpointForm({
     setEvents((cur) => (cur.includes(name) ? cur.filter((e) => e !== name) : [...cur, name]));
   }
 
+  const renderEvent = (event: (typeof WEBHOOK_EVENTS)[number]) => (
+    <label key={event.name} className="flex min-h-9 items-start gap-2 py-1 t-body">
+      <input
+        type="checkbox"
+        checked={all || events.includes(event.name)}
+        disabled={all}
+        onChange={() => toggle(event.name)}
+        className="mt-1 accent-site-accent"
+      />
+      <span className="font-mono" dir="ltr">
+        {event.name}
+      </span>
+    </label>
+  );
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!valid || saving) return;
@@ -148,20 +163,9 @@ function EndpointForm({
           />
           {t('form-events-all', { defaultValue: 'All events' })}
         </label>
-        {WEBHOOK_EVENTS.map((event) => (
-          <label key={event.name} className="flex min-h-9 items-start gap-2 py-1 t-body">
-            <input
-              type="checkbox"
-              checked={all || events.includes(event.name)}
-              disabled={all}
-              onChange={() => toggle(event.name)}
-              className="mt-1 accent-site-accent"
-            />
-            <span className="font-mono" dir="ltr">
-              {event.name}
-            </span>
-          </label>
-        ))}
+        {WEBHOOK_EVENTS.filter((event) => !event.group).map(renderEvent)}
+        <p className="t-label pt-2">{t('events-games', { ns: 'game-webhooks', defaultValue: 'Games' })}</p>
+        {WEBHOOK_EVENTS.filter((event) => event.group === 'games').map(renderEvent)}
       </fieldset>
 
       {error && (

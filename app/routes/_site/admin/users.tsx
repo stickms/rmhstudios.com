@@ -374,6 +374,7 @@ function AdminUsersPage() { const fmt = useLocaleFormat();
                       <UserModerationPanel
                         userId={user.id}
                         isAdminUser={user.isAdmin}
+                        displayName={user.name || user.handle || user.username}
                         revealNotes={linked.open === user.id}
                         onChanged={(summary) =>
                           setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, ...summary } : u)))

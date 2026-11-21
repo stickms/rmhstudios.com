@@ -9,6 +9,7 @@
  * gamification/notification side effects (those never block the core action).
  */
 
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { feedEventBus } from '@/lib/feed-sse';
 import { createNotification, removeNotification } from '@/lib/notifications.server';
@@ -65,6 +66,7 @@ async function applyPostLike(
         userId: true,
         threadRootId: true,
         content: true,
+        contentWarning: true,
         likeCount: true,
         audience: true,
         communityId: true,
@@ -119,7 +121,7 @@ async function applyPostLike(
       type: 'LIKE',
       entityType: 'rmhark',
       entityId: postId,
-      preview: post.content ?? null,
+      preview: previewTextFor(post),
       link: postLink(post.user?.handle, post.userId, postId),
       dedupeUnread: true,
       conversationKey: postConversationKey({ id: postId, threadRootId: post.threadRootId }),

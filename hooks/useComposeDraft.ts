@@ -29,6 +29,8 @@ const MAX_AGE_MS =
 export interface ComposeDraft {
   content: string;
   gifUrl: string;
+  /** The GIF's description (sprint 06 #15); absent in drafts saved before it existed. */
+  gifAlt?: string;
   savedAt: number;
 }
 
@@ -71,6 +73,7 @@ export function useComposeDraftAutosave(
   content: string,
   gifUrl: string,
   enabled = true,
+  gifAlt = '',
 ) {
   const first =
     useRef(
@@ -102,6 +105,7 @@ export function useComposeDraftAutosave(
               {
                 content,
                 gifUrl,
+                ...(gifUrl && gifAlt ? { gifAlt } : {}),
                 savedAt:
                   Date.now(),
               };
@@ -124,6 +128,7 @@ export function useComposeDraftAutosave(
   }, [
     content,
     gifUrl,
+    gifAlt,
     enabled,
   ]);
 }

@@ -1116,13 +1116,22 @@ export function ReportGroups({
                                     )
                                   }
                                 >
-                                  {t(
-                                    'resolve-and-remove',
-                                    {
-                                      defaultValue:
-                                        'Resolve and remove content',
-                                    },
-                                  )}
+                                  {g.entityType ===
+                                  'build-comment'
+                                    ? t(
+                                        'delete-comment',
+                                        {
+                                          defaultValue:
+                                            'Delete comment',
+                                        },
+                                      )
+                                    : t(
+                                        'resolve-and-remove',
+                                        {
+                                          defaultValue:
+                                            'Resolve and remove content',
+                                        },
+                                      )}
                                 </Button>
                               )}
                               <Button

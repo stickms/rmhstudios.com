@@ -1,0 +1,7 @@
+{
+  "events-games": "Games",
+  "test-event-achievement": "achievement.unlocked",
+  "test-event-label": "Test event",
+  "test-event-pb": "personal_best.created",
+  "test-event-ping": "ping"
+}

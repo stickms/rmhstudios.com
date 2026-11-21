@@ -10,6 +10,8 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { createNotification } from '@/lib/notifications.server';
+import { computeAndStoreResult } from '@/lib/feed/ranked-result.server';
+import { rankedAuthorNoticeText, rankedVoterNoticeText } from '@/lib/feed/ranked-poll';
 import {
   POLL_NOTICE_BATCH,
   POLL_VOTER_PAGE,
@@ -516,6 +518,7 @@ async function announce(
           },
         select:
           {
+            ranked: true,
             options:
               {
                 orderBy:
@@ -548,6 +551,14 @@ async function announce(
           },
       },
     );
+  // A ranked poll is counted here, inside the end claim, so the notice and the post carry the same result.
+  const ranked =
+    poll?.ranked
+      ? await computeAndStoreResult(
+          pollId,
+          db,
+        )
+      : null;
   if (
     !poll ||
     poll
@@ -555,6 +566,17 @@ async function announce(
       .deletedAt
   )
     return;
+  const winnerText =
+    poll.ranked
+      ? (poll.options.find(
+          (
+            o,
+          ) =>
+            o.id ===
+            ranked?.winnerOptionId,
+        )?.text ??
+        null)
+      : null;
   const {
     id: postId,
     userId:
@@ -579,9 +601,13 @@ async function announce(
       userId:
         authorId,
       preview:
-        authorNoticeText(
-          poll.options,
-        ),
+        poll.ranked
+          ? rankedAuthorNoticeText(
+              winnerText,
+            )
+          : authorNoticeText(
+              poll.options,
+            ),
     },
   );
 
@@ -664,7 +690,11 @@ async function announce(
                 ...base,
                 userId,
                 preview:
-                  VOTER_NOTICE_TEXT,
+                  poll.ranked
+                    ? rankedVoterNoticeText(
+                        winnerText,
+                      )
+                    : VOTER_NOTICE_TEXT,
               },
             ),
         ),

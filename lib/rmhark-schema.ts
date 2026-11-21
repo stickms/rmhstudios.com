@@ -1,4 +1,8 @@
+import { refineRankedPoll } from '@/lib/feed/ranked-poll-schema';
+import { RANKED_MAX_OPTIONS } from '@/lib/feed/ranked-poll';
 import { z } from 'zod';
+import { MAX_GIF_ALT_LENGTH } from '@/lib/feed/gif-alt';
+import { contentWarningFieldSchema } from '@/lib/feed/content-warning-schema';
 import { isFeedImageUrl } from '@/lib/storage/keys';
 
 import {
@@ -37,6 +41,15 @@ export const feedImageUrlSchema =
 
 const IMAGE_EXT_REGEX =
   /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
+
+/** A GIF's description: plain text, capped like an image description; refused (not truncated) when too long. */
+export const gifAltSchema =
+  z
+    .string()
+    .max(
+      MAX_GIF_ALT_LENGTH,
+      `GIF description must be at most ${MAX_GIF_ALT_LENGTH} characters`,
+    );
 
 export const gifUrlSchema =
   z
@@ -113,11 +126,19 @@ const pollSchema =
             MIN_POLL_OPTIONS,
             `Poll must have at least ${MIN_POLL_OPTIONS} options`,
           )
+          // A ranked poll takes up to RANKED_MAX_OPTIONS; `refineRankedPoll` holds a plain poll to MAX_POLL_OPTIONS.
           .max(
-            MAX_POLL_OPTIONS,
-            `Poll can have at most ${MAX_POLL_OPTIONS} options`,
+            RANKED_MAX_OPTIONS,
+            `Poll can have at most ${RANKED_MAX_OPTIONS} options`,
           ),
       multiSelect:
+        z
+          .boolean()
+          .default(
+            false,
+          ),
+      // s06-19: a ranked-choice poll (3-6 options, a required end, never multi-select; refined below).
+      ranked:
         z
           .boolean()
           .default(
@@ -136,6 +157,9 @@ const pollSchema =
           )
           .optional(),
     },
+  )
+  .superRefine(
+    refineRankedPoll,
   );
 
 export const createRMHarkSchema =
@@ -156,6 +180,9 @@ export const createRMHarkSchema =
         poll: pollSchema.optional(),
         gifUrl:
           gifUrlSchema.optional(),
+        // Description of the GIF (sprint 06 #15); cleaned and capped server-side by `normalizeGifAlt`.
+        gifAlt:
+          gifAltSchema.optional(),
         imageUrls:
           z
             .array(
@@ -207,6 +234,9 @@ export const createRMHarkSchema =
           z
             .boolean()
             .optional(),
+        // Why the post is warned (sprint 06 #16): implies `isSensitive` and also covers the text.
+        contentWarning:
+          contentWarningFieldSchema,
         // Who is allowed to reply.
         replyControl:
           z
@@ -344,6 +374,17 @@ export const editRMHarkSchema =
       // null clears an existing GIF; undefined leaves it unchanged.
       gifUrl:
         gifUrlSchema.nullish(),
+      // null clears the description; undefined leaves it (or, with a new gifUrl, starts it empty).
+      gifAlt:
+        gifAltSchema.nullish(),
+      // The content warning (sprint 06 #16): a reason implies the warning, `isSensitive: false` clears both,
+      // undefined leaves it unchanged.
+      isSensitive:
+        z
+          .boolean()
+          .optional(),
+      contentWarning:
+        contentWarningFieldSchema,
     },
   );
 

@@ -16,8 +16,23 @@ model Feedback {
   /// screenshot tool that uploads without showing you is a privacy incident.
   shotKey String? @db.VarChar(300)
 
+  /// Inbox (sprint 06 05): new -> in_progress -> closed; a closed row carries an outcome.
+  status          String    @default("new") @db.VarChar(12)
+  outcome         String?   @db.VarChar(20)
+  /// Internal: never returned to the member, never exported.
+  adminNote       String?   @db.VarChar(1000)
+  /// The one reply shown to the member; replyNotifiedAt is the once-only notification claim (cleared when it changes).
+  reply           String?   @db.VarChar(1000)
+  repliedAt       DateTime?
+  replyNotifiedAt DateTime?
+  handledById     String?
+  updatedAt       DateTime?
+  /// Accessibility reports: what the member was using (screen_reader, magnifier, voice_control, keyboard, switch, other).
+  assistiveTech   String?   @db.VarChar(24)
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
   @@map("feedback")
 }
 

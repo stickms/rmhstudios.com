@@ -2,12 +2,10 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
 import { createDeckBody } from '@/lib/study/decks-schema';
-import { prisma } from '@/lib/prisma.server';
+import { atDeckCap, createDeck } from '@/lib/study/deck-editor.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { generateCards } from '@/lib/rmhstudy/tutor.server';
 import { listDecks } from '@/lib/study.server';
-
-const MAX_DECKS = 200;
 
 /**
  * GET  /api/study/decks — your decks + popular public decks.
@@ -28,8 +26,7 @@ export const route = apiRoute('/api/study/decks', {
       const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'deck-create' });
       if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-      const count = await prisma.flashcardDeck.count({ where: { userId } });
-      if (count >= MAX_DECKS) return Response.json({ error: 'Too many decks' }, { status: 400 });
+      if (await atDeckCap(userId)) return Response.json({ error: 'Too many decks' }, { status: 400 });
 
       // Optionally seed with AI-generated cards.
       let cards: { front: string; back: string }[] = [];
@@ -37,19 +34,15 @@ export const route = apiRoute('/api/study/decks', {
         cards = await generateCards(body.generateTopic, 8);
       }
 
-      const deck = await prisma.flashcardDeck.create({
-        data: {
-          userId,
-          title: body.title.trim(),
-          description: body.description?.trim() || null,
-          isPublic: body.isPublic ?? false,
-          cardCount: cards.length,
-          cards: cards.length
-            ? { create: cards.map((c, i) => ({ front: c.front, back: c.back, position: i })) }
-            : undefined,
-        },
-        select: { id: true },
+      // The deck cap and the insert run under one per-member lock.
+      const created = await createDeck(userId, {
+        title: body.title,
+        description: body.description,
+        isPublic: body.isPublic,
+        cards,
       });
+      if (!created.ok) return Response.json({ error: created.error }, { status: created.status });
+      const deck = created;
 
       return Response.json(
         { success: true, id: deck.id, generated: cards.length },

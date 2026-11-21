@@ -8,6 +8,7 @@ import {
   ALTS_MISMATCH_ISSUE,
   altsMatchImages,
   messageImageAltsField,
+  messageGifAltField,
 } from '@/lib/messages/image-alts-schema';
 
 const isoInstant =
@@ -45,6 +46,8 @@ export const createScheduledMessageBody =
             ),
         gifUrl:
           gifUrlSchema.optional(),
+        gifAlt:
+          messageGifAltField,
         imageUrls:
           z
             .array(

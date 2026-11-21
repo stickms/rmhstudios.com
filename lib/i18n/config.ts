@@ -193,6 +193,26 @@ export const NAMESPACES = [
   "tournament-seeding",
   "profile-pins",
   "study-reminders",
+  // Sprint 06 (docs/autonomous/sprint-06): one namespace per feature.
+  "community-bans",
+  "community-notes",
+  "studio-editing",
+  "studio-export",
+  "feedback-inbox",
+  "admin-secure-account",
+  "jam-feedback",
+  "deck-updates",
+  "group-invites",
+  "event-occurrences",
+  "event-updates",
+  "game-webhooks",
+  "build-comments",
+  "gif-descriptions",
+  "content-warnings",
+  "read-receipts",
+  "away-message",
+  "ranked-polls",
+  "match-results",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

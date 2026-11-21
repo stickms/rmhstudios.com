@@ -23,6 +23,7 @@ const DOCUMENTED_GROUPS: ReadonlySet<string> = new Set([
   'media',
   'meta',
   'posts',
+  'study',
   'users',
   'webhooks',
 ]);

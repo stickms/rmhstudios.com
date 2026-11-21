@@ -205,6 +205,12 @@ export const listBuildCommentsApi =
         | string
         | null;
       hasMore: boolean;
+      /** s06-14: the creator closed comments. */
+      locked: boolean;
+      /** s06-14: the viewer is the build's creator and may close or open comments. */
+      canLock: boolean;
+      /** s06-14: what the composer shows; blocked and banned members get `restricted` with no reason. */
+      composer: 'open' | 'signed-out' | 'locked' | 'restricted';
     };
   }>()(
     {

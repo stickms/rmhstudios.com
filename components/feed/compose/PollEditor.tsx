@@ -8,7 +8,10 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-limits';
+import { RANKED_MAX_OPTIONS, RANKED_MIN_OPTIONS } from '@/lib/feed/ranked-poll';
 import type { PollDraft } from './compose-state';
+
+type PollMethod = 'single' | 'multi' | 'ranked';
 
 /** The poll creator shown while the poll attachment is active. */
 export function PollEditor({
@@ -26,6 +29,29 @@ export function PollEditor({
   onRemove: () => void;
 }) {
   const { t } = useTranslation('feed');
+  const ranked = !!poll.ranked;
+  const method: PollMethod = ranked ? 'ranked' : poll.multiSelect ? 'multi' : 'single';
+  const maxOptions = ranked ? RANKED_MAX_OPTIONS : MAX_POLL_OPTIONS;
+  const minOptions = ranked ? RANKED_MIN_OPTIONS : MIN_POLL_OPTIONS;
+
+  // Rank needs 3 to 6 options and a length; leaving it again trims back to the plain-poll limit.
+  const chooseMethod = (next: PollMethod) => {
+    setPoll((p) => {
+      if (next === 'ranked') {
+        const options = [...p.options];
+        while (options.length < RANKED_MIN_OPTIONS) options.push('');
+        return { ...p, options, multiSelect: false, ranked: true };
+      }
+      return {
+        ...p,
+        options: p.options.slice(0, MAX_POLL_OPTIONS),
+        multiSelect: next === 'multi',
+        ranked: false,
+      };
+    });
+    if (next === 'ranked' && pollDuration === 0) setPollDuration(24);
+  };
+
   return (
     <div className="mt-2 rounded-site px-4 py-3">
       <div className="flex items-center justify-between mb-2">
@@ -72,7 +98,7 @@ export function PollEditor({
               maxLength={MAX_POLL_OPTION_LENGTH}
               className="flex-1 surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
             />
-            {poll.options.length > MIN_POLL_OPTIONS && (
+            {poll.options.length > minOptions && (
               <button
                 type="button"
                 onClick={() => {
@@ -92,7 +118,7 @@ export function PollEditor({
         ))}
       </div>
 
-      {poll.options.length < MAX_POLL_OPTIONS && (
+      {poll.options.length < maxOptions && (
         <button
           onClick={() => setPoll((p) => ({ ...p, options: [...p.options, ''] }))}
           className="mt-2 text-xs text-site-accent hover:text-site-accent-hover transition-colors"
@@ -101,17 +127,30 @@ export function PollEditor({
         </button>
       )}
 
-      <label className="flex items-center gap-2 mt-3 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={poll.multiSelect}
-          onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
-          className="rounded border-site-border text-site-accent focus:ring-site-accent"
-        />
+      <label className="mt-3 flex items-center gap-2">
         <span className="text-xs text-site-text-muted">
-          {t('poll-multi-select', { defaultValue: 'Allow multiple selections' })}
+          {t('poll-method-label', { ns: 'ranked-polls', defaultValue: 'Poll type' })}
         </span>
+        <Select
+          controlSize="sm"
+          value={method}
+          onChange={(e) => chooseMethod(e.target.value as PollMethod)}
+          containerClassName="inline-block w-auto"
+          className="w-auto min-w-28"
+        >
+          <option value="single">{t('poll-method-single', { ns: 'ranked-polls', defaultValue: 'Pick one' })}</option>
+          <option value="multi">{t('poll-method-multi', { ns: 'ranked-polls', defaultValue: 'Pick any' })}</option>
+          <option value="ranked">{t('poll-method-ranked', { ns: 'ranked-polls', defaultValue: 'Rank' })}</option>
+        </Select>
       </label>
+      {ranked && (
+        <p className="t-meta mt-1">
+          {t('poll-ranked-hint', { ns: 'ranked-polls',
+            defaultValue:
+              'Voters rank the options and the winner is counted when the poll ends. Needs 3 to 6 options and a length.',
+          })}
+        </p>
+      )}
 
       <label className="mt-3 flex items-center gap-2">
         <span className="text-xs text-site-text-muted">
@@ -124,7 +163,7 @@ export function PollEditor({
           containerClassName="inline-block w-auto"
           className="w-auto min-w-28"
         >
-          <option value={0}>{t('poll-duration-no-limit', { defaultValue: 'No limit' })}</option>
+          {!ranked && <option value={0}>{t('poll-duration-no-limit', { defaultValue: 'No limit' })}</option>}
           <option value={1}>{t('poll-duration-1h', { defaultValue: '1 hour' })}</option>
           <option value={6}>{t('poll-duration-6h', { defaultValue: '6 hours' })}</option>
           <option value={24}>{t('poll-duration-1d', { defaultValue: '1 day' })}</option>

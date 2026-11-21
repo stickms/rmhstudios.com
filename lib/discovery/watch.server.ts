@@ -4,6 +4,7 @@
  * indexed read of `watch(kind, targetId)`; when nobody watches, that is the
  * whole cost. Notifications are created in one batch per event.
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { getShopItem } from '@/lib/shop/catalog';
@@ -246,6 +247,8 @@ export async function watchCommunityPost(post: {
   userId: string;
   communityId: string;
   content: string;
+  /** The post's content warning reason (sprint 06 #16): the preview shows it instead of the text. */
+  contentWarning?: string | null;
   handle: string | null;
 }): Promise<void> {
   await notifyWatchers({
@@ -263,7 +266,7 @@ export async function watchCommunityPost(post: {
       });
       return !!m;
     },
-    preview: post.content.replace(/\s+/g, ' ').trim().slice(0, 140) || 'New post',
+    preview: (previewTextFor(post) ?? '').replace(/\s+/g, ' ').trim().slice(0, 140) || 'New post',
     link: `/u/${post.handle ?? post.userId}/post/${post.id}`,
   });
 }

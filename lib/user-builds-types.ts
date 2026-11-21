@@ -104,6 +104,15 @@ export interface BuildComment {
     | null;
   replyCount?: number;
   replies?: BuildComment[];
+  /** s06-14: set once the author has edited it. */
+  edited?: boolean;
+  /** s06-14: how to draw it; absent means `visible`. A `deleted` comment has no text. */
+  state?: 'visible' | 'hidden' | 'hidden-own' | 'deleted';
+  /** s06-14: what the viewer may do, computed on the server. */
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canHide?: boolean;
+  canReport?: boolean;
 }
 
 export type BuildSortOption =

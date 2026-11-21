@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { GifPicker } from '@/components/feed/GifPickerLazy';
+import { GifDescriptionField } from '@/components/feed/compose/GifDescriptionField';
+import { useGifAlt } from '@/components/feed/use-gif-alt';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
 import { VoiceComposer } from '@/components/voice/VoiceComposer';
@@ -44,6 +46,7 @@ export function ComposerBar({
   recipientName?: string | null;
 }) {
   const { t } = useTranslation('feed');
+  const gifAltText = useGifAlt();
   const {
     input,
     setInput,
@@ -55,6 +58,8 @@ export function ComposerBar({
     setAttachOpen,
     gifUrl,
     setGifUrl,
+    gifAlt,
+    setGifAlt,
     imageUrls,
     setImageUrls,
     imageAlts,
@@ -113,8 +118,9 @@ export function ComposerBar({
           <GifPicker
             className="mx-2 mb-2"
             onClose={() => setShowGifPicker(false)}
-            onSelect={(u) => {
-              setGifUrl(u);
+            onSelect={({ url, description }) => {
+              setGifUrl(url);
+              setGifAlt(description);
               setShowGifPicker(false);
               setTimeout(() => inputRef.current?.focus(), 0);
             }}
@@ -134,16 +140,20 @@ export function ComposerBar({
         {!voiceActive && gifUrl && (
           <div className="mb-2 flex flex-wrap gap-2">
             <div className="relative">
-              <img src={gifUrl} alt="" className="h-20 w-auto rounded-site-sm" />
+              <img src={gifUrl} alt={gifAltText(gifAlt)} className="h-20 w-auto rounded-site-sm" />
               <button
                 type="button"
                 aria-label={t('remove-gif', { defaultValue: 'Remove GIF' })}
-                onClick={() => setGifUrl(null)}
+                onClick={() => {
+                  setGifUrl(null);
+                  setGifAlt('');
+                }}
                 className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
+            <GifDescriptionField value={gifAlt} onChange={setGifAlt} className="min-w-48 flex-1" />
           </div>
         )}
 
@@ -304,7 +314,7 @@ export function ComposerBar({
                     uploading ||
                     imageAlts.missing.length > 0
                   }
-                  getDraft={() => ({ content: input, gifUrl, imageUrls, imageAlts: imageAlts.alts })}
+                  getDraft={() => ({ content: input, gifUrl, gifAlt, imageUrls, imageAlts: imageAlts.alts })}
                   onScheduled={() => {
                     setInput('');
                     setGifUrl(null);

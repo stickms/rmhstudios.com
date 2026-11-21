@@ -14,6 +14,7 @@ import {
   ALTS_MISMATCH_ISSUE,
   altsMatchImages,
   messageImageAltsField,
+  messageGifAltField,
 } from '@/lib/messages/image-alts-schema';
 
 export const editMessageBody =
@@ -155,6 +156,8 @@ export const sendToConversationBody =
             ),
         gifUrl:
           gifUrlSchema.optional(),
+        gifAlt:
+          messageGifAltField,
         imageUrls:
           z
             .array(

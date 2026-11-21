@@ -128,8 +128,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       {composer.showGifPicker && (
         <div className="border-t border-site-border p-2">
           <GifPicker
-            onSelect={(url) => {
+            onSelect={({ url, description }) => {
               composer.setGifUrl(url);
+              composer.setGifAlt(description);
               composer.setShowGifPicker(false);
             }}
             onClose={() => composer.setShowGifPicker(false)}
@@ -154,8 +155,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           missingAlts={composer.imageAlts.missing}
           onSetAlt={composer.imageAlts.setAlt}
           gifUrl={composer.gifUrl}
+          gifAlt={composer.gifAlt}
+          onGifAltChange={composer.setGifAlt}
           onRemoveImage={(url) => composer.setImageUrls((prev) => prev.filter((u) => u !== url))}
-          onRemoveGif={() => composer.setGifUrl(null)}
+          onRemoveGif={() => {
+            composer.setGifUrl(null);
+            composer.setGifAlt('');
+          }}
         />
       )}
 

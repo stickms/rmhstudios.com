@@ -1,13 +1,16 @@
 /** Drafts / scheduled posts — the zod request schemas for /api/scheduled (client-safe). */
 import { z } from 'zod';
+import { contentWarningFieldSchema } from '@/lib/feed/content-warning-schema';
 import {
   MAX_RMHARK_LENGTH,
   MAX_POLL_QUESTION_LENGTH,
   MAX_POLL_OPTION_LENGTH,
   MIN_POLL_OPTIONS,
-  MAX_POLL_OPTIONS,
   MAX_IMAGE_ALT_LENGTH,
+  gifAltSchema,
 } from '@/lib/rmhark-schema';
+import { refineRankedPoll } from '@/lib/feed/ranked-poll-schema';
+import { RANKED_MAX_OPTIONS } from '@/lib/feed/ranked-poll';
 
 export const pollSchema =
   z.object(
@@ -37,9 +40,14 @@ export const pollSchema =
             MIN_POLL_OPTIONS,
           )
           .max(
-            MAX_POLL_OPTIONS,
+            RANKED_MAX_OPTIONS,
           ),
       multiSelect:
+        z
+          .boolean()
+          .optional(),
+      // s06-19: a ranked-choice poll; `refineRankedPoll` holds it to 3-6 options and an end.
+      ranked:
         z
           .boolean()
           .optional(),
@@ -55,7 +63,8 @@ export const pollSchema =
           )
           .optional(),
     },
-  );
+  )
+  .superRefine(refineRankedPoll);
 
 export const createScheduledSchema =
   z.object(
@@ -76,6 +85,8 @@ export const createScheduledSchema =
           .string()
           .url()
           .optional(),
+      gifAlt:
+        gifAltSchema.optional(),
       imageUrls:
         z
           .array(
@@ -112,6 +123,8 @@ export const createScheduledSchema =
         z
           .boolean()
           .optional(),
+      contentWarning:
+        contentWarningFieldSchema,
       replyControl:
         z
           .enum(

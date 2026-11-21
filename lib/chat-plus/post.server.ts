@@ -15,6 +15,7 @@ import { publishGroupMessage, type GroupMessagePayload } from '@/lib/group-event
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
 import { toMessageView } from '@/lib/messages/message-view';
 import { normalizeImageAlts } from '@/lib/messages/image-alts';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { computeAttachFlags, expiryFor } from '@/lib/chat-plus/flags';
 import { dmAudience, publishChatUpdate, type ChatAccess } from '@/lib/chat-plus/access.server';
 import { adjustDmUnread } from '@/lib/chat-plus/unread.server';
@@ -38,6 +39,8 @@ export interface PostInput {
   senderId: string;
   content: string;
   gifUrl?: string | null;
+  /** The GIF's description (a forward and the `/gif` command carry it). */
+  gifAlt?: string | null;
   imageUrls?: string[];
   /** Descriptions, index-aligned with `imageUrls` (a forward copies them). */
   imageAlts?: string[];
@@ -66,6 +69,7 @@ const dmSelect = {
   read: true,
   createdAt: true,
   gifUrl: true,
+  gifAlt: true,
   imageUrls: true,
   imageAlts: true,
   editedAt: true,
@@ -99,6 +103,7 @@ export async function postChatMessage(
             senderId: input.senderId,
             content: input.content,
             gifUrl: input.gifUrl ?? null,
+            gifAlt: normalizeGifAlt(input.gifUrl, input.gifAlt),
             imageUrls: input.imageUrls ?? [],
             imageAlts: normalizeImageAlts(input.imageUrls, input.imageAlts),
             kind,
@@ -125,6 +130,7 @@ export async function postChatMessage(
       read: view.read,
       createdAt: view.createdAt,
       gifUrl: view.gifUrl,
+      gifAlt: view.gifAlt,
       imageUrls: view.imageUrls,
       imageAlts: view.imageAlts,
       reactions: [],

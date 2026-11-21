@@ -5,7 +5,7 @@
 
 # Games
 
-5 endpoints. Paths are relative to `https://rmhstudios.com`.
+6 endpoints. Paths are relative to `https://rmhstudios.com`.
 
 | Endpoint | Scope | Summary |
 | -------- | ----- | ------- |
@@ -14,6 +14,7 @@
 | `GET /api/v1/me/games/{gameId}/days` | `read:games` | Get your minutes per day for a game |
 | `GET /api/v1/me/achievements` | `read:games` | List your achievements |
 | `GET /api/v1/users/{handle}/games` | `read:games` | List a member’s played games |
+| `GET /api/v1/me/personal-bests` | `read:games` | List your personal bests |
 
 ## Reference
 
@@ -153,5 +154,35 @@ Another member’s playtime, in the same shape as `GET /api/v1/me/games`, as far
       "minutesLast30Days": 240
     }
   ]
+}
+```
+
+### `GET /api/v1/me/personal-bests`
+
+Your current personal best in each game, ordered by game id. `previousScore` is the best before this one (null for a first score). No rank is returned. Other members’ bests are not readable. The same data is sent by the `personal_best.created` webhook event: `{ "event": "personal_best.created", "created": "2026-11-20T21:14:00.000Z", "data": { "gameId": "altair", "gameTitle": "Altair", "score": 4200, "previousScore": 3900, "achievedAt": "2026-11-20T21:14:00.000Z" } }`. The `achievement.unlocked` event carries `{ "achievementId": "game.altair.first_run", "name": "Into the Black", "gameId": "altair", "unlockedAt": "2026-11-20T21:14:00.000Z" }`.
+
+**Scope:** `read:games` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyPersonalBests`
+
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `gameId` | query | string | no | Only this game. |
+| `since` | query | string | no | ISO 8601 time; only games whose current best was set at or after it. |
+| `limit` | query | integer | no | Page size, 1–100 (default 20). |
+| `cursor` | query | string | no | Opaque cursor from a previous `nextCursor` to fetch the next page. |
+
+**Example response** (`200`)
+
+```json
+{
+  "data": [
+    {
+      "gameId": "altair",
+      "gameTitle": "Altair",
+      "score": 4200,
+      "previousScore": null,
+      "achievedAt": "2026-11-20T21:14:00.000Z"
+    }
+  ],
+  "nextCursor": null
 }
 ```

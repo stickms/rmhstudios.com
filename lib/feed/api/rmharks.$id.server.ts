@@ -14,8 +14,12 @@ import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { isExpired } from '@/lib/posts-plus/constants';
 import { deletePostApi } from '@/lib/feed/rmhark-actions.contract';
-import { redactCounts } from '@/lib/feed/quiet-counts';
+import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { resolveEditedGifAlt } from '@/lib/feed/gif-alt';
+import { resolveEditedContentWarning } from '@/lib/feed/content-warning';
+import { pollOptionCount, rankedPollFields } from '@/lib/feed/ranked-poll';
+import { resolveEndedResult } from '@/lib/feed/ranked-poll.server';
 
 export const route = apiRoute('/api/rmharks/$id', {
   GET: defineHandler({ auth: 'optional' }, async ({ params, userId }) => {
@@ -39,7 +43,7 @@ export const route = apiRoute('/api/rmharks/$id', {
               include: {
                 _count: { select: { votes: true } },
                 ...(userId
-                  ? { votes: { where: { userId }, select: { id: true, optionId: true } } }
+                  ? { votes: { where: { userId }, select: { id: true, optionId: true, rank: true } } }
                   : {}),
               },
             },
@@ -79,20 +83,28 @@ export const route = apiRoute('/api/rmharks/$id', {
 
     let pollData;
     if (rmhark.poll && !rmhark.deletedAt) {
-      const totalVotes = rmhark.poll.options.reduce(
-        (sum: number, o: any) => sum + (o._count?.votes ?? 0),
+      const poll = rmhark.poll;
+      const totalVotes = poll.options.reduce(
+        (sum: number, o: any) => sum + pollOptionCount(poll, o),
         0,
       );
+      const lifecycle = pollLifecycleView(poll);
+      // An ended ranked poll the job has not counted yet is counted now, once, so every reader sees one result.
+      const counted = lifecycle.ended ? await resolveEndedResult(poll) : null;
       pollData = {
-        id: rmhark.poll.id,
-        question: rmhark.poll.question,
-        multiSelect: rmhark.poll.multiSelect,
-        ...pollLifecycleView(rmhark.poll),
+        id: poll.id,
+        question: poll.question,
+        multiSelect: poll.multiSelect,
+        ...lifecycle,
+        ...rankedPollFields(counted ? { ...poll, resultJson: counted } : poll, {
+          ended: lifecycle.ended,
+          countsHidden: countsHiddenFrom(rmhark.userId, rmhark.user?.profile?.hideCountsOnMine, userId),
+        }),
         totalVotes,
-        options: rmhark.poll.options.map((o: any) => ({
+        options: poll.options.map((o: any) => ({
           id: o.id,
           text: o.text,
-          voteCount: o._count?.votes ?? 0,
+          voteCount: pollOptionCount(poll, o),
         })),
         myVotes: rmhark.poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
       };
@@ -124,6 +136,9 @@ export const route = apiRoute('/api/rmharks/$id', {
       reposted: userId ? rmhark.reposts.length > 0 : false,
       poll: isDeleted || locked ? undefined : pollData,
       gifUrl: isDeleted || locked ? undefined : (rmhark.gifUrl ?? undefined),
+      gifAlt: isDeleted || locked ? undefined : (rmhark.gifAlt ?? undefined),
+      isSensitive: isDeleted || locked ? undefined : (rmhark.isSensitive ?? false),
+      contentWarning: isDeleted || locked ? undefined : (rmhark.contentWarning ?? undefined),
       imageUrls: isDeleted || locked ? undefined : rmhark.imageUrls,
       imageAlts: isDeleted || locked ? undefined : rmhark.imageAlts,
       isTake: rmhark.isTake || undefined,
@@ -236,6 +251,7 @@ export const route = apiRoute('/api/rmharks/$id', {
     }
     const content = parsed.data.content.trim();
     const gifUrlProvided = Object.prototype.hasOwnProperty.call(body, 'gifUrl');
+    const gifAltProvided = Object.prototype.hasOwnProperty.call(body, 'gifAlt');
     const nextGifUrl = parsed.data.gifUrl ?? null;
 
     const existing = await prisma.rMHark.findUnique({
@@ -246,6 +262,9 @@ export const route = apiRoute('/api/rmharks/$id', {
         deletedAt: true,
         unlockPrice: true,
         gifUrl: true,
+        gifAlt: true,
+        isSensitive: true,
+        contentWarning: true,
       },
     });
     if (!existing || existing.deletedAt) {
@@ -258,11 +277,36 @@ export const route = apiRoute('/api/rmharks/$id', {
     if (!content && !(gifUrlProvided ? nextGifUrl : existingHasGif)) {
       return Response.json({ error: 'Post cannot be empty' }, { status: 400 });
     }
-    if (existing.content === content && (!gifUrlProvided || existing.gifUrl === nextGifUrl)) {
+    // The description follows the GIF: a new GIF starts from the description sent with it, never the old one's.
+    const nextGif = resolveEditedGifAlt({
+      existingUrl: existing.gifUrl,
+      existingAlt: existing.gifAlt,
+      nextUrl: gifUrlProvided ? nextGifUrl : undefined,
+      nextAlt: gifAltProvided ? (parsed.data.gifAlt ?? null) : undefined,
+    });
+    const gifChanged = nextGif.gifUrl !== existing.gifUrl;
+    const altChanged = nextGif.gifAlt !== existing.gifAlt;
+    // The warning: a reason implies it, `isSensitive: false` clears both. Changing it is a content edit (history row,
+    // "edited" marker), because the reason is part of what readers see in the text's place.
+    const nextWarning = resolveEditedContentWarning({
+      existing: { isSensitive: existing.isSensitive, contentWarning: existing.contentWarning },
+      nextSensitive: parsed.data.isSensitive,
+      nextReason: parsed.data.contentWarning,
+    });
+    const warningChanged =
+      nextWarning.isSensitive !== existing.isSensitive || nextWarning.contentWarning !== existing.contentWarning;
+    if (existing.content === content && !gifChanged && !warningChanged) {
+      // A description alone is accessibility metadata, not a content edit: no history row, no "edited" marker.
+      if (altChanged) {
+        await prisma.rMHark.update({ where: { id }, data: { gifAlt: nextGif.gifAlt } });
+      }
       return Response.json({
         success: true,
         content,
         gifUrl: existing.gifUrl ?? undefined,
+        gifAlt: nextGif.gifAlt ?? undefined,
+        isSensitive: existing.isSensitive,
+        contentWarning: existing.contentWarning,
         editedAt: null,
       });
     }
@@ -273,7 +317,13 @@ export const route = apiRoute('/api/rmharks/$id', {
       prisma.rMHarkEdit.create({ data: { rmheetId: id, content: existing.content } }),
       prisma.rMHark.update({
         where: { id },
-        data: { content, editedAt, ...(gifUrlProvided ? { gifUrl: nextGifUrl } : {}) },
+        data: {
+          content,
+          editedAt,
+          ...(gifChanged ? { gifUrl: nextGif.gifUrl } : {}),
+          ...(gifChanged || altChanged ? { gifAlt: nextGif.gifAlt } : {}),
+          ...(warningChanged ? nextWarning : {}),
+        },
       }),
     ]);
 
@@ -284,14 +334,23 @@ export const route = apiRoute('/api/rmharks/$id', {
       payload:
         existing.unlockPrice && existing.unlockPrice > 0
           ? { id, content: '', locked: true, unlockPrice: existing.unlockPrice, edited: true }
-          : { id, content, edited: true },
+          : {
+              id,
+              content,
+              edited: true,
+              isSensitive: nextWarning.isSensitive,
+              contentWarning: nextWarning.contentWarning ?? undefined,
+            },
       timestamp: editedAt.toISOString(),
     });
 
     return Response.json({
       success: true,
       content,
-      gifUrl: gifUrlProvided ? (nextGifUrl ?? undefined) : (existing.gifUrl ?? undefined),
+      gifUrl: nextGif.gifUrl ?? undefined,
+      gifAlt: nextGif.gifAlt ?? undefined,
+      isSensitive: nextWarning.isSensitive,
+      contentWarning: nextWarning.contentWarning,
       editedAt: editedAt.toISOString(),
     });
   }),

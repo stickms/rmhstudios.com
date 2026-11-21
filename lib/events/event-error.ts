@@ -10,7 +10,8 @@ export class EventError extends Error {
       | 'WAITLIST_CLOSED'
       | 'WAITLIST_FULL'
       | 'CANCELED'
-      | 'INVALID_RECURRENCE',
+      | 'INVALID_RECURRENCE'
+      | 'OCCURRENCE_SKIPPED',
   ) {
     super(code);
     this.name = 'EventError';

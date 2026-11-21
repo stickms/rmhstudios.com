@@ -31,6 +31,7 @@ export const route =
                   params.id,
                 userId,
                 alts: body.alts,
+                gifAlt: body.gifAlt,
               },
             );
           if (
@@ -52,6 +53,13 @@ export const route =
               true as const,
             imageAlts:
               result.imageAlts,
+            ...(result.gifAlt !==
+            undefined
+              ? {
+                  gifAlt:
+                    result.gifAlt,
+                }
+              : {}),
           };
         },
       ),

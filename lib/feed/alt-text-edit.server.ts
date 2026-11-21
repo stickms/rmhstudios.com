@@ -12,6 +12,7 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
 import {
   MISSING_ALT_BATCH_SIZE,
@@ -38,6 +39,8 @@ export type UpdatePostAltsResult =
   | {
       ok: true;
       imageAlts: string[];
+      /** The GIF's description after the write; undefined when the post has no GIF. */
+      gifAlt?: string | null;
     }
   | {
       ok: false;
@@ -65,6 +68,11 @@ export async function updatePostAlts(args: {
   postId: string;
   userId: string;
   alts: readonly string[];
+  /** The GIF's description (sprint 06 #15): undefined leaves it, null or blank clears it. */
+  gifAlt?:
+    | string
+    | null
+    | undefined;
 }): Promise<UpdatePostAltsResult> {
   const post =
     await prisma.rMHark.findUnique(
@@ -79,6 +87,9 @@ export async function updatePostAlts(args: {
             userId: true,
             deletedAt: true,
             imageUrls: true,
+            imageAlts: true,
+            gifUrl: true,
+            gifAlt: true,
             unlockPrice: true,
             expiresAt: true,
           },
@@ -115,21 +126,65 @@ export async function updatePostAlts(args: {
       403,
       'This post is locked',
     );
-  if (
+  const hasImages =
     post
       .imageUrls
-      .length ===
-    0
+      .length >
+    0;
+  const hasGif =
+    !!post.gifUrl;
+  const gifGiven =
+    args.gifAlt !==
+    undefined;
+  if (
+    !hasImages &&
+    !hasGif
   )
     return fail(
       400,
       'This post has no images',
     );
   if (
-    !altsMatchImages(
-      post.imageUrls,
-      args.alts,
-    )
+    gifGiven &&
+    !hasGif
+  )
+    return fail(
+      400,
+      'This post has no GIF',
+    );
+  // Images need exactly one description each; a post with only a GIF sends none.
+  if (
+    hasImages
+      ? !altsMatchImages(
+          post.imageUrls,
+          args.alts,
+        ) &&
+        !(
+          hasGif &&
+          gifGiven &&
+          args
+            .alts
+            .length ===
+            0
+        )
+      : args
+          .alts
+          .length >
+        0
+  )
+    return fail(
+      400,
+      'Provide exactly one description per image',
+    );
+  const writesImages =
+    hasImages &&
+    args
+      .alts
+      .length >
+      0;
+  if (
+    !writesImages &&
+    !gifGiven
   )
     return fail(
       400,
@@ -137,9 +192,21 @@ export async function updatePostAlts(args: {
     );
 
   const imageAlts =
-    sanitizeAlts(
-      args.alts,
-    );
+    writesImages
+      ? sanitizeAlts(
+          args.alts,
+        )
+      : alignAlts(
+          post.imageUrls,
+          post.imageAlts,
+        );
+  const gifAlt =
+    gifGiven
+      ? normalizeGifAlt(
+          post.gifUrl,
+          args.gifAlt,
+        )
+      : undefined;
   // The compare-and-set keeps a delete that lands between the read and the write from being undone by it.
   const written =
     await prisma.rMHark.updateMany(
@@ -157,9 +224,22 @@ export async function updatePostAlts(args: {
                 equals:
                   post.imageUrls,
               },
+            // Likewise the GIF: a description is for the GIF it was written for.
+            gifUrl:
+              post.gifUrl,
           },
         data: {
-          imageAlts,
+          ...(writesImages
+            ? {
+                imageAlts,
+              }
+            : {}),
+          ...(gifAlt !==
+          undefined
+            ? {
+                gifAlt,
+              }
+            : {}),
         },
       },
     );
@@ -174,6 +254,12 @@ export async function updatePostAlts(args: {
   return {
     ok: true,
     imageAlts,
+    ...(gifAlt !==
+    undefined
+      ? {
+          gifAlt,
+        }
+      : {}),
   };
 }
 

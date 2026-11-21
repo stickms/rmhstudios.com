@@ -209,6 +209,30 @@ export function actionSentence(
             '{{actor}} removed {{target}} from the community',
         },
       );
+    case 'member_banned':
+      return t('member-banned', {
+        actor,
+        target,
+        defaultValue: '{{actor}} banned {{target}}',
+      });
+    case 'note_deleted':
+      return t('note-deleted', {
+        actor,
+        target,
+        defaultValue: '{{actor}} deleted a note about {{target}}',
+      });
+    case 'member_timed_out':
+      return t('member-timed-out', {
+        actor,
+        target,
+        defaultValue: '{{actor}} timed out {{target}}',
+      });
+    case 'ban_lifted':
+      return t('ban-lifted', {
+        actor,
+        target,
+        defaultValue: '{{actor}} lifted the ban or timeout on {{target}}',
+      });
     case 'member_role_changed':
       return e
         .detail
@@ -838,6 +862,14 @@ export function ModLog({
                       ?.handle &&
                     (e.action ===
                       'member_removed' ||
+                      e.action ===
+                        'member_banned' ||
+                      e.action ===
+                        'member_timed_out' ||
+                      e.action ===
+                        'ban_lifted' ||
+                      e.action ===
+                        'note_deleted' ||
                       e.action ===
                         'member_role_changed' ||
                       e.action ===

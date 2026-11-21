@@ -32,6 +32,10 @@ export const REPORT_ENTITY_TYPES =
     // shared result link (`lib/rmhmusic/learn/moderation.server.ts`).
     'music-score',
     'music-share',
+    // s06-07: written feedback on a game jam entry (the `GameJamFeedback` id); reported by the entry's team.
+    'jam-feedback',
+    // s06-14: a comment on a User Build (the `BuildComment` id).
+    'build-comment',
   ] as const;
 export type ReportEntityType =
   (typeof REPORT_ENTITY_TYPES)[number];
@@ -51,6 +55,8 @@ export const REMOVABLE_REPORT_ENTITY_TYPES: readonly ReportEntityType[] =
     'ladder-interview',
     'music-score',
     'music-share',
+    'jam-feedback',
+    'build-comment',
   ];
 
 /**

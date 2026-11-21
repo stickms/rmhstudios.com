@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma.server';
 import { isCardKind, isReviewable, noteIdOf, type CardKind } from '@/lib/study/card-types';
 import { AUTHORED_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import { insertCards } from '@/lib/study/deck-editor.server';
+import { cardHash, type UpdatesSummary } from '@/lib/study/deck-sync';
+import { deckUpdatesSummary } from '@/lib/study/deck-sync.server';
 import type { TestCard } from '@/lib/study/practice-test';
 
 export interface DeckSummary {
@@ -151,7 +153,7 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       cards: {
         where: AUTHORED_WHERE,
         orderBy: CARD_ORDER,
-        select: { kind: true, front: true, back: true },
+        select: { id: true, kind: true, front: true, back: true },
       },
     },
   });
@@ -176,6 +178,7 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
         description: source.description?.slice(0, 500) ?? null,
         isPublic: false,
         clonedFromId: sourceId,
+        sourceSyncedAt: new Date(),
         cardCount: source.cards.length,
       },
       select: { id: true },
@@ -184,7 +187,13 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       await insertCards(
         tx,
         created.id,
-        source.cards.map((c) => ({ kind: cardKind(c.kind), front: c.front, back: c.back })),
+        source.cards.map((c) => ({
+          kind: cardKind(c.kind),
+          front: c.front,
+          back: c.back,
+          originCardId: c.id,
+          originHash: cardHash(c),
+        })),
       );
     }
     return created;
@@ -214,7 +223,13 @@ export interface DeckDetail {
     isOwner: boolean;
     /** Authored cards: what the owner wrote. */
     cardCount: number;
+    /** Added from another deck (the marketplace). */
+    isCopy: boolean;
+    /** "Tell me about updates" (copies only). */
+    notifyUpdates: boolean;
   };
+  /** What the author of the original changed; owner of a copy only, null when there is nothing to say. */
+  updates: UpdatesSummary | null;
   /** The authored cards, in deck order. */
   cards: DeckCard[];
   /** Cards a member studies: authored plus generated, minus authored cloze text. */
@@ -237,6 +252,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
     where: { id: deckId },
     select: {
       id: true, title: true, description: true, isPublic: true, userId: true, cardCount: true,
+      clonedFromId: true, notifyUpdates: true,
       cards: {
         orderBy: CARD_ORDER,
         select: { id: true, front: true, back: true, kind: true, sourceId: true, clozeIndex: true },
@@ -264,7 +280,20 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
   }
 
   return {
-    deck: { id: deck.id, title: deck.title, description: deck.description, isPublic: deck.isPublic, isOwner, cardCount: deck.cardCount },
+    deck: {
+      id: deck.id,
+      title: deck.title,
+      description: deck.description,
+      isPublic: deck.isPublic,
+      isOwner,
+      cardCount: deck.cardCount,
+      isCopy: !!deck.clonedFromId,
+      notifyUpdates: deck.notifyUpdates ?? true,
+    },
+    updates:
+      isOwner && deck.clonedFromId && (deck.notifyUpdates ?? true)
+        ? await deckUpdatesSummary(viewer.id as string, deck.id).catch(() => null)
+        : null,
     cards: deck.cards
       .filter((c) => c.sourceId === null)
       .map((c) => ({ id: c.id, front: c.front, back: c.back, kind: cardKind(c.kind), clozeIndex: null, sourceId: null })),

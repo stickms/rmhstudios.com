@@ -38,6 +38,9 @@ export interface Msg {
   gifUrl?:
     | string
     | null;
+  gifAlt?:
+    | string
+    | null;
   imageUrls?: string[];
   imageAlts?: string[];
   poll?: Poll | null;

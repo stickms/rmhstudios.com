@@ -26,7 +26,7 @@ import {
 /** Lower these when you remove escape hatches. Never raise them. */
 const BASELINE =
   {
-    colonAny: 124,
+    colonAny: 121,
     asAny: 67,
     tsIgnore: 1,
     tsExpectError: 3,

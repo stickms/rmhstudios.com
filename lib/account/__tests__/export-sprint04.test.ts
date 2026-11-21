@@ -15,6 +15,11 @@ const profileRow = {
   dmRequests: true,
   hideCountsOnMine: true,
   hideCountsInFeed: false,
+  // Sprint 06 #17: the account-wide receipt and typing switches.
+  readReceipts: false,
+  typingIndicators: true,
+  // Sprint 06 #16: the reader's content-warning preference.
+  showContentWarnings: true,
 };
 const playLimitsRow = {
   userId: 'u1',
@@ -92,6 +97,9 @@ describe('account export: sprint 04 data', () => {
       dmRequests: true,
       hideCountsOnMine: true,
       hideCountsInFeed: false,
+      readReceipts: false,
+      typingIndicators: true,
+      showContentWarnings: true,
     });
     expect(body.playLimits).toMatchObject({ monthlySpendCap: 2000, pendingSpendCap: 5000, spendNoticeMonth: '2026-11' });
   });

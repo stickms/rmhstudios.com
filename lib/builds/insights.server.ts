@@ -70,7 +70,7 @@ export async function getBuildInsights(
     prisma.$queryRaw<DayRow[]>`
       SELECT to_char(date_trunc('day', "createdAt"), 'YYYY-MM-DD') AS "day", count(*)::int AS "n"
       FROM "build_comment"
-      WHERE "buildId" = ${buildId} AND "createdAt" >= ${prevStart} AND "createdAt" < ${end}
+      WHERE "buildId" = ${buildId} AND "deletedAt" IS NULL AND "createdAt" >= ${prevStart} AND "createdAt" < ${end}
       GROUP BY 1`,
     prisma.$queryRaw<DayRow[]>`
       SELECT to_char(date_trunc('day', "createdAt"), 'YYYY-MM-DD') AS "day", count(*)::int AS "n",

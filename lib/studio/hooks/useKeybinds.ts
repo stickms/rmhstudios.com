@@ -11,10 +11,22 @@ import {
   resolveKeybinds,
 } from '../keybinds';
 import { MIDDLE_C } from '../constants';
+import { runEditAction } from '../edit-commands';
+import { useExportUi } from '../export/ui-store';
 import type {
   ViewMode,
   ToolMode,
 } from '../types';
+
+/** True while a modal dialog is on screen: the Studio's shortcuts must not act behind it. */
+function dialogIsOpen(): boolean {
+  return (
+    typeof document !== 'undefined' &&
+    document.querySelector(
+      '[aria-modal="true"],[role="alertdialog"],[role="dialog"][data-state="open"],dialog[open]',
+    ) !== null
+  );
+}
 
 /**
  * useKeybinds — global keyboard handler for the DAW.
@@ -219,6 +231,11 @@ export function useKeybinds(
               'saveAs',
             );
             break;
+          case 'project.export':
+            useExportUi
+              .getState()
+              .openExport();
+            break;
 
           // Track
           case 'track.muteSelected':
@@ -236,6 +253,13 @@ export function useKeybinds(
               store.toggleTrackSolo(
                 store.selectedTrackId,
               );
+            break;
+
+          // Undo, redo, clipboard, selection and piano-roll note edits
+          default:
+            runEditAction(
+              actionId,
+            );
             break;
         }
       },
@@ -266,6 +290,8 @@ export function useKeybinds(
           isEditable
         )
           return;
+        // Never while a dialog is open.
+        if (dialogIsOpen()) return;
 
         const store =
           useStudioStore.getState();

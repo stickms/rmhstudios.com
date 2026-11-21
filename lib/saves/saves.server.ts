@@ -3,6 +3,7 @@
  * hydration of saved items to display shapes with per-type visibility guards
  * and tombstones for gone/hidden targets.
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { canReadPostThread, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
@@ -187,6 +188,7 @@ export async function hydrateSaves(
       select: {
         id: true,
         content: true,
+        contentWarning: true,
         audience: true,
         userId: true,
         unlockPrice: true,
@@ -199,7 +201,7 @@ export async function hydrateSaves(
       // unlocked contributes no text to its save's title.
       const locked = isLocked(p, viewerId);
       postMap.set(p.id, {
-        content: locked ? '' : p.content,
+        content: locked ? '' : (previewTextFor(p) ?? ''),
         locked,
         audience: String(p.audience),
         userId: p.userId,

@@ -17,18 +17,25 @@ import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
 import { createNotification } from '@/lib/notifications.server';
+import { activeSanction } from '@/lib/communities/bans.server';
 import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 
 interface PollPayload {
   question: string;
   options: string[];
   multiSelect?: boolean;
+  ranked?: boolean;
   durationHours?: number;
 }
 
 /** Materialize one scheduled post into a real RMHark. Returns the new post id. */
 export async function publishScheduledPost(sp: ScheduledPost): Promise<string | null> {
   if (sp.publishedId) return sp.publishedId;
+
+  // s06-01: a member banned or timed out after scheduling does not get the post into
+  // the community. It stays a draft (publishedId null) and goes out once the sanction ends.
+  if (sp.communityId && (await activeSanction(sp.communityId, sp.userId))) return null;
 
   const poll = (sp.poll as PollPayload | null) ?? null;
 
@@ -45,11 +52,13 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
       data: {
         content: sp.content.trim(),
         gifUrl: sp.gifUrl ?? null,
+        gifAlt: normalizeGifAlt(sp.gifUrl, sp.gifAlt),
         imageUrls: sp.imageUrls ?? [],
         imageAlts: sp.imageAlts ?? [],
         userId: sp.userId,
         audience: sp.audience,
-        isSensitive: sp.isSensitive,
+        isSensitive: sp.isSensitive || !!sp.contentWarning,
+        contentWarning: sp.contentWarning ?? null,
         replyControl: sp.replyControl,
         unlockPrice: sp.unlockPrice && sp.unlockPrice > 0 ? sp.unlockPrice : null,
         communityId: sp.communityId ?? null,
@@ -78,6 +87,7 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
           rmheetId: post.id,
           question: poll.question.trim(),
           multiSelect: !!poll.multiSelect,
+          ranked: !!poll.ranked,
           closesAt: poll.durationHours
             ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000)
             : null,

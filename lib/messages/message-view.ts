@@ -40,6 +40,10 @@ export interface StoredMessage {
   gifUrl?:
     | string
     | null;
+  /** The GIF's description (sprint 06 #15). */
+  gifAlt?:
+    | string
+    | null;
   imageUrls?:
     | string[]
     | null;
@@ -93,6 +97,10 @@ export interface MessageView {
   read: boolean;
   createdAt: string;
   gifUrl:
+    | string
+    | null;
+  /** The GIF's description; null = undescribed (rendered as "GIF"). */
+  gifAlt:
     | string
     | null;
   imageUrls: string[];
@@ -201,6 +209,11 @@ export function toMessageView(
       gifUrl:
         row.gifUrl ??
         null,
+      gifAlt:
+        row.gifUrl
+          ? (row.gifAlt ??
+            null)
+          : null,
       imageUrls:
         row.imageUrls ??
         [],
@@ -255,6 +268,8 @@ export function toMessageView(
     content:
       '',
     gifUrl:
+      null,
+    gifAlt:
       null,
     imageUrls:
       [],

@@ -33,6 +33,8 @@ The public global feed. Only public, free, non-community posts are returned. `me
       "id": "ck_post123",
       "content": "hello world",
       "audience": "PUBLIC",
+      "sensitive": false,
+      "contentWarning": null,
       "createdAt": "2026-06-30T10:00:00.000Z",
       "metrics": {
         "likes": 3,

@@ -19,6 +19,8 @@ import {
   resolveTeamState,
 } from './jam-teams';
 import { memberLockName, placementsOf } from './jam-teams.server';
+import { FEEDBACK_MAX, FEEDBACK_MIN, feedbackIntent } from './jam-feedback';
+import { feedbackCounts, myFeedbackFor, notifyTeamOfFeedback, saveFeedback, type FeedbackSaveOutcome } from './jam-feedback.server';
 
 const ENTRY_CAP = 200;
 
@@ -95,6 +97,7 @@ export async function getJam(slug: string, viewerId: string | null) {
       myEntryId: null,
       teamEntryId: null,
       myRatings: {},
+      myFeedback: {} as Awaited<ReturnType<typeof myFeedbackFor>>,
       myBuilds: [],
       results: false,
     };
@@ -174,6 +177,16 @@ export async function getJam(slug: string, viewerId: string | null) {
     : [];
   const myRatings: Record<string, Record<JamCategory, number>> = {};
   for (const r of mine) myRatings[r.entryId] = r;
+  // s06-07: the viewer's own feedback (to re-open the form), and the count of feedback on the entry they are on
+  // the team of. Nobody else's feedback, and no other entry's count, is ever read here.
+  const myFeedback = viewerId ? await myFeedbackFor(viewerId, entries.map((e) => e.id)) : {};
+  const teamEntryIds = entries
+    .filter((e) => {
+      const st = resolveTeamState(e.userId, viewerId, viewerStatus.get(e.id));
+      return st === 'owner' || st === 'teammate';
+    })
+    .map((e) => e.id);
+  const feedbackCountByEntry = viewerId ? await feedbackCounts(teamEntryIds) : new Map<string, number>();
 
   const myBuilds =
     viewerId && canSubmit(phase)
@@ -205,6 +218,8 @@ export async function getJam(slug: string, viewerId: string | null) {
       averages: a?.avg ?? null,
       ratingCount: a?.count ?? 0,
       score: overall(a?.avg ?? null),
+      // null unless the viewer is the submitter or an accepted teammate: feedback is private to the team.
+      feedbackCount: teamEntryIds.includes(e.id) ? (feedbackCountByEntry.get(e.id) ?? 0) : null,
     };
   });
   if (results) rows.sort((x, y) => y.score - x.score || y.ratingCount - x.ratingCount);
@@ -216,6 +231,7 @@ export async function getJam(slug: string, viewerId: string | null) {
     // The entry the viewer is credited on as a teammate (they cannot submit their own).
     teamEntryId: rows.find((r) => r.viewerTeamState === 'teammate')?.id ?? null,
     myRatings,
+    myFeedback,
     myBuilds,
     results,
   };
@@ -278,6 +294,7 @@ export async function rateEntry(
   raterId: string,
   entryId: string,
   scores: Record<JamCategory, number>,
+  extras: { feedback?: string | null | undefined; anonymous?: boolean | undefined } = {},
 ) {
   const entry = await prisma.gameJamEntry.findUnique({
     where: { id: entryId },
@@ -293,11 +310,18 @@ export async function rateEntry(
     return { ok: false as const, error: 'Rating is closed', status: 409 };
   if (entry.userId === raterId)
     return { ok: false as const, error: 'You cannot rate your own entry', status: 403 };
+  if (feedbackIntent(extras.feedback).kind === 'invalid')
+    return {
+      ok: false as const,
+      error: `Feedback must be ${FEEDBACK_MIN} to ${FEEDBACK_MAX} characters`,
+      status: 400,
+    };
   const data = Object.fromEntries(JAM_CATEGORIES.map((c) => [c, scores[c]])) as Record<
     JamCategory,
     number
   >;
   // The same lock an accept takes, so a teammate cannot rate between "not on the team" and "on the team".
+  let feedbackOutcome = 'unchanged' as FeedbackSaveOutcome;
   const teammate = await prisma.$transaction(async (tx) => {
     await lockKey(tx, memberLockName(entry.jamId, raterId));
     const row = await tx.gameJamTeamMember.findUnique({
@@ -307,15 +331,28 @@ export async function rateEntry(
     if (!mayRateEntry({ userId: entry.userId, acceptedIds: row?.status === 'accepted' ? [raterId] : [] }, raterId)) {
       return true;
     }
-    await tx.gameJamRating.upsert({
+    const rating = await tx.gameJamRating.upsert({
       where: { entryId_raterId: { entryId, raterId } },
       create: { entryId, raterId, ...data },
       update: data,
+      select: { id: true },
     });
+    // s06-07: the words are written with the scores, in this transaction.
+    if (extras.feedback !== undefined || extras.anonymous !== undefined) {
+      feedbackOutcome = await saveFeedback(tx, {
+        entry: { id: entryId, userId: entry.userId },
+        ratingId: rating.id,
+        raterId,
+        feedback: extras.feedback,
+        anonymous: extras.anonymous,
+        now: new Date(),
+      });
+    }
     return false;
   });
   if (teammate) {
     return { ok: false as const, error: 'You cannot rate your own entry', status: 403 };
   }
-  return { ok: true as const };
+  if (feedbackOutcome === 'created') await notifyTeamOfFeedback(entryId, raterId).catch(() => false);
+  return { ok: true as const, feedback: feedbackOutcome };
 }

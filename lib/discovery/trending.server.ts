@@ -4,6 +4,7 @@
  * surge, and 24h volume against the previous week's daily average. Cached
  * per tag, so a popular chip costs three indexed reads every ten minutes.
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -47,6 +48,7 @@ async function compute(tag: string): Promise<TrendingWhy | null> {
         select: {
           id: true,
           content: true,
+          contentWarning: true,
           createdAt: true,
           user: { select: userDisplaySelect },
         },
@@ -64,7 +66,7 @@ async function compute(tag: string): Promise<TrendingWhy | null> {
       const u = resolveUser(p.user);
       return {
         id: p.id,
-        snippet: p.content.replace(/\s+/g, ' ').trim().slice(0, 140),
+        snippet: (previewTextFor(p) ?? '').replace(/\s+/g, ' ').trim().slice(0, 140),
         author: u.name ?? u.handle ?? 'Someone',
         href: `/u/${u.handle ?? u.id}/post/${p.id}`,
         createdAt: p.createdAt.toISOString(),

@@ -11,6 +11,7 @@
  * here; `lib/search/parse.ts` turns the raw query into them.
  */
 
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { Prisma } from '@prisma/client';
 import { prisma, prismaRead } from '@/lib/prisma.server';
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
@@ -153,6 +154,7 @@ export async function searchPostsScored(
     select: {
       id: true,
       content: true,
+      contentWarning: true,
       createdAt: true,
       likeCount: true,
       imageUrls: true,
@@ -189,7 +191,8 @@ export async function searchPostsScored(
       return {
         post: {
           id: row.id,
-          content: row.content,
+          // A result cannot be revealed, so a post with a content warning reason shows the reason in its text's place.
+          content: previewTextFor(row) ?? '',
           createdAt: row.createdAt.toISOString(),
           // Ranked on the real number above; shown only when the author has not hidden it. Search results are
           // shared across viewers, so an author's switch withholds the figure from the author too.

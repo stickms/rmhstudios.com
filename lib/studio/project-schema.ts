@@ -67,7 +67,7 @@ const clipBase = {
   color: z.string().max(40),
 };
 
-const midiNote = z.object({
+export const midiNoteSchema = z.object({
   id,
   pitch: z.number().int().min(0).max(127),
   startBeat: z.number().min(-MAX_BEAT).max(MAX_BEAT),
@@ -75,7 +75,7 @@ const midiNote = z.object({
   velocity: z.number().min(0).max(127),
 });
 
-const clip = z.discriminatedUnion('type', [
+export const clipSchema = z.discriminatedUnion('type', [
   z.object({
     ...clipBase,
     type: z.literal('audio'),
@@ -85,7 +85,7 @@ const clip = z.discriminatedUnion('type', [
     fadeInBeats: beats,
     fadeOutBeats: beats,
   }),
-  z.object({ ...clipBase, type: z.literal('midi'), notes: z.array(midiNote).max(50_000) }),
+  z.object({ ...clipBase, type: z.literal('midi'), notes: z.array(midiNoteSchema).max(50_000) }),
   z.object({
     ...clipBase,
     type: z.literal('automation'),
@@ -133,7 +133,7 @@ export const studioProjectSchema = z.object({
   timeSignature: z.tuple([z.number().int().min(1).max(64), z.number().int().min(1).max(64)]),
   tracks: z.array(track).max(MAX_TRACKS),
   clips: z
-    .record(z.string().max(128), clip)
+    .record(z.string().max(128), clipSchema)
     .refine((c) => Object.keys(c).length <= MAX_CLIPS, { message: 'Too many clips' }),
   patterns: z.array(pattern).max(MAX_PATTERNS),
   masterVolume: z.number().min(0).max(4),

@@ -1,7 +1,7 @@
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { editPostApi } from '@/lib/feed/compose-assist.contract';
-import { useRef, useState } from'react';
+import { useId, useRef, useState } from'react';
 import { useTranslation } from'react-i18next';
 import { X } from'lucide-react';
 import {
@@ -13,10 +13,13 @@ import {
 } from'@/components/ui/dialog';
 import { Button } from'@/components/ui/button';
 import { Textarea } from'@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { MAX_CONTENT_WARNING_LENGTH, checkContentWarningInput } from '@/lib/feed/content-warning';
 import { toast } from '@/lib/toast';
 import { MAX_RMHARK_LENGTH } from'@/lib/rmhark-limits';
 import { GifPicker } from './GifPickerLazy';
 import { GifEmbed } from'./GifEmbed';
+import { GifDescriptionField } from './compose/GifDescriptionField';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
 
@@ -26,7 +29,17 @@ interface EditPostModalProps {
  postId: string;
  initialContent: string;
  initialGifUrl?: string | null;
- onSaved: (content: string, gifUrl: string | null) => void;
+ /** The GIF's current description (s06-15). */
+ initialGifAlt?: string | null;
+ /** The reason for the content warning, if any (s06-16). */
+ initialContentWarning?: string | null;
+ initialSensitive?: boolean;
+ onSaved: (
+ content: string,
+ gifUrl: string | null,
+ gifAlt: string | null,
+ warning: { isSensitive: boolean; contentWarning: string | null },
+ ) => void;
 }
 
 /** Edit your own post's text. Prior versions are preserved server-side. */
@@ -36,27 +49,51 @@ export function EditPostModal({
  postId,
  initialContent,
  initialGifUrl,
+ initialGifAlt,
+ initialContentWarning,
+ initialSensitive,
  onSaved,
 }: EditPostModalProps) {
- const { t } = useTranslation('feed');
+ const { t } = useTranslation(['feed', 'content-warnings']);
+ const warningId = useId();
  const [content, setContent] = useState(initialContent);
  const [gifUrl, setGifUrl] = useState<string>(initialGifUrl ??'');
+ // Choosing a different GIF restarts the description from that GIF's provider text; it stays editable.
+ const [gifAlt, setGifAlt] = useState<string>(initialGifAlt ??'');
  const [showGifPicker, setShowGifPicker] = useState(false);
+ // The reason is the only warning control here: a warning with a reason covers the text too (s06-16).
+ const [warning, setWarning] = useState<string>(initialContentWarning ??'');
  const [saving, setSaving] = useState(false);
  const textareaRef = useRef<HTMLTextAreaElement>(null);
  const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
  const remaining = MAX_RMHARK_LENGTH - content.length;
+ const warningCheck = checkContentWarningInput(warning);
+ // Clearing a reason removes the whole warning; a warning that never had a reason is left as it was.
+ const hadReason = !!initialContentWarning?.trim();
+ const nextWarning = (): { isSensitive: boolean; contentWarning: string | null } => {
+ const reason = warningCheck.reason;
+ if (reason) return { isSensitive: true, contentWarning: reason };
+ return hadReason ? { isSensitive: false, contentWarning: null } : { isSensitive: !!initialSensitive, contentWarning: null };
+ };
 
  const save = async () => {
  const trimmed = content.trim();
- if ((!trimmed && !gifUrl.trim()) || trimmed.length > MAX_RMHARK_LENGTH) return;
+ if ((!trimmed && !gifUrl.trim()) || trimmed.length > MAX_RMHARK_LENGTH || !warningCheck.ok) return;
+ const next = nextWarning();
  setSaving(true);
  try {
  await api(editPostApi, {
  params: { id: postId },
- body: { content: trimmed, gifUrl: gifUrl.trim() || null },
+ body: {
+ content: trimmed,
+ gifUrl: gifUrl.trim() || null,
+ // Always sent with the GIF, so the server stores what this field shows (null when there is no GIF).
+ gifAlt: gifUrl.trim() ? gifAlt.trim() || null : null,
+ isSensitive: next.isSensitive,
+ contentWarning: next.contentWarning,
+ },
  });
- onSaved(trimmed, gifUrl.trim() || null);
+ onSaved(trimmed, gifUrl.trim() || null, gifUrl.trim() ? gifAlt.trim() || null : null, next);
  onOpenChange(false);
  toast.success(t('post-updated', { defaultValue:'Post updated'}));
  } catch (e) {
@@ -81,6 +118,22 @@ export function EditPostModal({
  rows={5}
  className="resize-none"
  />
+ <div className="mt-3">
+ <label className="t-label mb-1 block" htmlFor={warningId}>
+ {t('warning-field-label', { ns: 'content-warnings', defaultValue:'Content warning'})}
+ </label>
+ <Input
+ id={warningId}
+ value={warning}
+ onChange={(e) => setWarning(e.target.value)}
+ maxLength={MAX_CONTENT_WARNING_LENGTH}
+ placeholder={t('warning-field-placeholder', { ns: 'content-warnings', defaultValue:'What is it for? Optional'})}
+ aria-invalid={!warningCheck.ok}
+ />
+ <p className="t-meta mt-1">
+ {t('warning-field-hint', { ns: 'content-warnings', defaultValue:'A reason covers the post, text and media, until a reader chooses to show it.'})}
+ </p>
+ </div>
  {/* GIF section */}
  <div className="mt-3 relative rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
@@ -92,6 +145,7 @@ export function EditPostModal({
  type="button"
  onClick={() => {
  setGifUrl('');
+ setGifAlt('');
  setShowGifPicker(false);
  }}
  className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
@@ -104,11 +158,12 @@ export function EditPostModal({
 
  {gifUrl.trim() ? (
  <div className="relative">
- <GifEmbed url={gifUrl.trim()} />
+ <GifEmbed url={gifUrl.trim()} gifAlt={gifAlt} />
  <button
  type="button"
  onClick={() => {
  setGifUrl('');
+ setGifAlt('');
  setShowGifPicker(true);
  }}
  aria-label={t('swap-gif-aria', { defaultValue:'Swap GIF'})}
@@ -116,11 +171,13 @@ export function EditPostModal({
  >
  {t('swap', { defaultValue:'Swap'})}
  </button>
+ <GifDescriptionField value={gifAlt} onChange={setGifAlt} className="mt-2" />
  </div>
  ) : showGifPicker ? (
  <GifPicker
- onSelect={(u) => {
- setGifUrl(u);
+ onSelect={({ url, description }) => {
+ setGifUrl(url);
+ setGifAlt(description);
  setShowGifPicker(false);
  }}
  />
@@ -148,7 +205,7 @@ export function EditPostModal({
  <Button
  variant="default"
  onClick={save}
- disabled={saving || (!content.trim() && !gifUrl.trim()) || remaining < 0}
+ disabled={saving || (!content.trim() && !gifUrl.trim()) || remaining < 0 || !warningCheck.ok}
  >
  {saving
  ? t('saving', { defaultValue:'Saving…'})

@@ -1,0 +1,12 @@
+{
+  "account-off": "Off for all conversations in Settings > Privacy.",
+  "account-off-link": "Change it",
+  "load-failed": "Could not load these settings. Reload the page to try again.",
+  "reciprocal": "These work both ways: when you turn one off, you also stop seeing it from other people.",
+  "save-failed": "Could not save that setting",
+  "show-read": "Show when I have read direct messages",
+  "show-read-hint": "When this is off, nobody sees \"Seen\" in any of your conversations.",
+  "show-typing": "Show when I am typing",
+  "show-typing-hint": "When this is off, nobody sees a typing indicator in any of your conversations.",
+  "title": "Messages"
+}

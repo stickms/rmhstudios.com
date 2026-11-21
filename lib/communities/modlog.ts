@@ -41,6 +41,10 @@ export const MOD_ACTIONS_BY_GROUP =
         'invite_created',
         'invite_revoked',
         'ownership_transferred',
+        'member_banned',
+        'member_timed_out',
+        'ban_lifted',
+        'note_deleted',
       ],
     settings:
       [

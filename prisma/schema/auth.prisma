@@ -653,6 +653,22 @@ model User {
   // s05-20 flashcard-reminders
   flashcardReminder FlashcardReminder?
 
+  // Sprint 06 back-relations (one block per feature, docs/autonomous/sprint-06/plan.md)
+  // s06-01 community-bans
+  communityBansAbout CommunityBan[] @relation("CommunityBanSubject")
+
+  // s06-07 jam-feedback
+  jamFeedbackWritten GameJamFeedback[] @relation("JamFeedbackAuthor")
+
+  // s06-09 group-invites
+  chatInvitesCreated ChatInvite[] @relation("ChatInviteCreator")
+
+  // s06-14 build-comments
+  buildCommentsHidden BuildComment[] @relation("BuildCommentHider")
+
+  // s06-18 away-message
+  awayMessage AwayMessage? @relation("AwayMessageOwner")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

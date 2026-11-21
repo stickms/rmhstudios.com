@@ -11,6 +11,7 @@ import { toast } from '@/lib/toast';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { GifPicker } from '@/components/feed/GifPickerLazy';
+import type { GifSelection } from '@/lib/feed/gif-alt';
 import {
   parseRemind,
   resolveCommand,
@@ -52,7 +53,7 @@ export function useSlashCommands({
     message: unknown,
   ) => void;
   onPickGif: (
-    url: string,
+    selection: GifSelection,
   ) => void;
 }): {
   /** Render next to the composer. */
@@ -489,10 +490,10 @@ export function useSlashCommands({
                 )
               }
               onSelect={(
-                url,
+                selection,
               ) => {
                 onPickGif(
-                  url,
+                  selection,
                 );
                 setGifQuery(
                   null,

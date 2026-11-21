@@ -23,6 +23,8 @@ import {
   gridOccurrences,
 } from '@/lib/calendar/event-model';
 import { attendanceBetween } from '@/lib/calendar/feed-entries';
+import { OVERRIDE_MARGIN_MS, applyOverrides } from '@/lib/events/occurrences';
+import { overridesForEvents } from '@/lib/events/occurrences.server';
 import { myEventInputs } from '@/lib/calendar/my-events.server';
 import {
   buildGrid,
@@ -136,7 +138,22 @@ async function eventOccurrences(from: Date, to: Date): Promise<Occurrence[]> {
       community: { select: { slug: true } },
     },
   });
-  return rows.flatMap((r) => gridOccurrences(r, eventHref(r), from, to));
+  // s06-10 — skipped dates leave the grid and moved ones appear where they now are, so a repeating
+  // event with overrides is expanded a little wider and then cut to the window by its effective start.
+  const overridesBy = await overridesForEvents(rows.filter((r) => r.recurrence).map((r) => r.id));
+  return rows.flatMap((r) => {
+    const overrides = overridesBy.get(r.id);
+    if (!overrides?.length) return gridOccurrences(r, eventHref(r), from, to);
+    const wide = gridOccurrences(
+      r,
+      eventHref(r),
+      new Date(from.getTime() - OVERRIDE_MARGIN_MS),
+      new Date(to.getTime() + OVERRIDE_MARGIN_MS),
+    );
+    return applyOverrides(wide, overrides)
+      .filter((o) => o.startsAt >= from && o.startsAt <= to)
+      .map(({ slotId, kind, title, href, startsAt, endsAt }) => ({ slotId, kind, title, href, startsAt, endsAt }));
+  });
 }
 
 /** Tournaments that start inside the window. */

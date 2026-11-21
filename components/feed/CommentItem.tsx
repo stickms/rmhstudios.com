@@ -66,6 +66,7 @@ import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { translateCommentApi } from '@/lib/ai/ai.contract';
 
 import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 import { pinReplyApi, unpinReplyApi } from '@/lib/feed/conversation-controls.contract';
 import { ARRIVE } from '@/components/ui/arrive';
 import { toast } from '@/lib/toast';
@@ -317,6 +318,7 @@ export function CommentItem({
   );
 
   const reconsider = useReconsider();
+  const sanctionRefusalText = useSanctionRefusal();
   const handleSubmitReply = async () => {
     if (!replyContent.trim() || submitting) return;
     setSubmitting(true);
@@ -336,7 +338,9 @@ export function CommentItem({
       setReplyContent('');
       setReplyOpen(false);
     } catch (error) {
-      console.error('Reply error:', error);
+      const refused = sanctionRefusalText(error);
+      if (refused) toast.error(refused);
+      else console.error('Reply error:', error);
     } finally {
       setSubmitting(false);
     }
@@ -685,7 +689,7 @@ export function CommentItem({
               <GifPicker
                 className="mt-2"
                 onClose={() => setShowGifPicker(false)}
-                onSelect={(u) => {
+                onSelect={({ url: u }) => {
                   setReplyContent((c) => (c ? `${c} ${u}` : u));
                   setShowGifPicker(false);
                 }}

@@ -81,6 +81,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  multiSelect: false,
  });
  const [gifUrl, setGifUrl] = useState('');
+ // The chosen GIF's description (s06-15), prefilled from the picker.
+ const [gifAlt, setGifAlt] = useState('');
  // The attached vibe; the writer can take it off.
  const [vibe, setVibe] = useState(initialVibe ?? null);
  // The GIF picker is a popover off the GIF button; the chosen GIF is the attachment.
@@ -113,7 +115,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
 
  // Autosave plain drafts (not quotes/seeded shares — those would overwrite a
  // draft typed elsewhere). Restore is offered by the feed ComposeBox.
- useComposeDraftAutosave(content, gifUrl, open && !quoteItem && !initialContent && !initialVibe);
+ useComposeDraftAutosave(content, gifUrl, open && !quoteItem && !initialContent && !initialVibe, gifAlt);
 
  useEffect(() => setMounted(true), []);
 
@@ -189,9 +191,14 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  question: poll.question.trim(),
  options: poll.options.filter((o) => o.trim()).map((o) => o.trim()),
  multiSelect: poll.multiSelect,
+ // s06-19: the quick composer writes plain polls only.
+ ranked: false,
  };
  }
- if (hasGif) body.gifUrl = gifUrl.trim();
+ if (hasGif) {
+ body.gifUrl = gifUrl.trim();
+ if (gifAlt.trim()) body.gifAlt = gifAlt.trim();
+ }
  if (hasImages) {
  body.imageUrls = imageUrls;
  if (imageAlts.some((a) => a?.trim())) {
@@ -213,6 +220,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  setAttachment(null);
  setPoll({ question:'', options: ['',''], multiSelect: false });
  setGifUrl('');
+ setGifAlt('');
  setImageUrls([]);
  setImageAlts([]);
  setAltEditIndex(null);
@@ -343,6 +351,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  onSelect={() => {
  setAttachment('poll');
  setGifUrl('');
+ setGifAlt('');
  setMenuOpen(false);
  }}
  >
@@ -354,9 +363,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  open={gifOpen}
  onClose={() => setGifOpen(false)}
  anchorRef={menuBtnRef}
- onSelect={(url) => {
+ onSelect={({ url, description }) => {
  setAttachment('gif');
  setGifUrl(url);
+ setGifAlt(description);
  setPoll({ question: '', options: ['', ''], multiSelect: false });
  }}
  />
@@ -519,9 +529,12 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  {hasGif && (
  <GifAttachment
  gifUrl={gifUrl.trim()}
+ gifAlt={gifAlt}
+ onGifAltChange={setGifAlt}
  onRemove={() => {
  setAttachment(null);
  setGifUrl('');
+ setGifAlt('');
  }}
  />
  )}

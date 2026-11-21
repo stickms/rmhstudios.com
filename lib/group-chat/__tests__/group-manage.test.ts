@@ -533,6 +533,14 @@ function makeTx(
               null,
           ),
     },
+    // s06-09: removal records and invite links; this suite does not look at them (group-invites.test.ts does).
+    chatRemoval: {
+      deleteMany: async () => y({ count: 0 }),
+      upsert: async () => y({}),
+    },
+    chatInvite: {
+      updateMany: async () => y({ count: 0 }),
+    },
     userBlock:
       {
         findMany:

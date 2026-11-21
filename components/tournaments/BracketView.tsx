@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MatchResultControls } from '@/components/tournaments/MatchResultControls';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
 
 interface Props {
@@ -14,6 +15,10 @@ interface Props {
     matchId: string,
     winnerEntrantId: string,
   ) => void;
+  /** The signed-in viewer (null signed out): players confirm, dispute or withdraw reports (s06-20). */
+  viewerId?: string | null;
+  /** Reload the tournament after a result step. */
+  onChanged?: () => Promise<void> | void;
 }
 
 type Entrant =
@@ -49,6 +54,8 @@ export function BracketView({
   canReport,
   reportingId,
   onReport,
+  viewerId = null,
+  onChanged,
 }: Props) {
   const {
     t,
@@ -412,6 +419,16 @@ export function BracketView({
                             </Button>
                           </div>
                         )}
+                      {onChanged && (
+                        <MatchResultControls
+                          tournamentId={tournament.id}
+                          match={m}
+                          entrants={tournament.entrants ?? []}
+                          viewerId={viewerId}
+                          isManager={canReport}
+                          onChanged={onChanged}
+                        />
+                      )}
                     </div>
                   );
                 },

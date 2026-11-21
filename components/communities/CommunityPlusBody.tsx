@@ -111,7 +111,10 @@ export function CommunityPlusBody({
   community,
   items,
   setItems,
+  composerLocked = false,
 }: {
+  /** s06-01: a timed-out member reads but does not post; the page shows the notice instead of the composer. */
+  composerLocked?: boolean;
   community: {
     id: string;
     slug: string;
@@ -493,7 +496,7 @@ export function CommunityPlusBody({
         />
       )}
 
-      {community.joined && (
+      {community.joined && !composerLocked && (
         <CommunityComposer
           communityId={
             community.id

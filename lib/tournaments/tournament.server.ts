@@ -26,7 +26,7 @@ type Db = PrismaClient;
 export { TournamentError };
 
 /** Reporting a result for a match its tournament's cancellation closed. */
-function matchCancelledError(): TournamentError {
+export function matchCancelledError(): TournamentError {
   return new TournamentError(
     'This match was cancelled with its tournament',
     'MATCH_CANCELLED',
@@ -710,83 +710,6 @@ async function maybeCompleteTournament(tournamentId: string, db: Db): Promise<bo
   });
 }
 
-// ─── Reporting entry points ─────────────────────────────────────────────────
-
-/** Host/admin (or a participant) reports a match winner. */
-export async function reportMatch(
-  opts: {
-    tournamentId: string;
-    matchId: string;
-    winnerEntrantId: string;
-    reporterId: string;
-    isAdmin?: boolean;
-  },
-  db: Db = prisma,
-): Promise<{ settled: boolean; tournamentComplete: boolean }> {
-  const t = await db.tournament.findUnique({ where: { id: opts.tournamentId } });
-  if (!t) throw new TournamentError('Tournament not found', 'NOT_FOUND', 404);
-
-  const match = await db.tournamentMatch.findUnique({ where: { id: opts.matchId } });
-  if (!match || match.tournamentId !== t.id) {
-    throw new TournamentError('Match not found', 'NOT_FOUND', 404);
-  }
-  // Checked before the tournament status so the reporter learns WHY: the match
-  // was closed by the tournament's cancellation, not merely "not live".
-  if (match.state === 'CANCELLED') throw matchCancelledError();
-  if (t.status !== 'LIVE') throw new TournamentError('Tournament is not live', 'NOT_LIVE', 409);
-
-  // Authorization: host or admin may report any match; a participant may report
-  // only their own match.
-  const isHost = t.createdById === opts.reporterId || opts.isAdmin;
-  if (!isHost) {
-    const entrants = await db.tournamentEntrant.findMany({
-      where: { id: { in: [match.entrantAId, match.entrantBId].filter(Boolean) as string[] } },
-      select: { userId: true },
-    });
-    const isParticipant = entrants.some((e) => e.userId === opts.reporterId);
-    if (!isParticipant) throw new TournamentError('Not your match', 'FORBIDDEN', 403);
-  }
-  if (match.state !== 'READY' && match.state !== 'LIVE') {
-    throw new TournamentError('Match is not ready', 'NOT_READY', 409);
-  }
-  return settleMatch(
-    {
-      tournamentId: t.id,
-      matchId: opts.matchId,
-      winnerEntrantId: opts.winnerEntrantId,
-      source: isHost ? 'admin' : 'agreement',
-    },
-    db,
-  );
-}
-
-/** Authoritative report from a game hub (via /api/internal/match-result). */
-export async function reportTournamentMatchByGameSession(
-  opts: { gameSessionRef: string; winnerId: string },
-  db: Db = prisma,
-): Promise<{ settled: boolean }> {
-  const match = await db.tournamentMatch.findFirst({
-    where: { gameSessionRef: opts.gameSessionRef, state: { in: ['READY', 'LIVE'] } },
-  });
-  if (!match) return { settled: false };
-  // Map the winning userId to its entrant in this match.
-  const entrants = await db.tournamentEntrant.findMany({
-    where: { id: { in: [match.entrantAId, match.entrantBId].filter(Boolean) as string[] } },
-  });
-  const winnerEntrant = entrants.find((e) => e.userId === opts.winnerId);
-  if (!winnerEntrant) return { settled: false };
-  const res = await settleMatch(
-    {
-      tournamentId: match.tournamentId,
-      matchId: match.id,
-      winnerEntrantId: winnerEntrant.id,
-      source: 'authoritative',
-    },
-    db,
-  );
-  return { settled: res.settled };
-}
-
 /** Cancel a tournament, close its open matches, and refund all escrowed coins (fees + seed). */
 export async function cancelTournament(
   opts: { tournamentId: string; byUserId: string; isAdmin?: boolean },
@@ -923,6 +846,16 @@ export interface SerializedTournament {
     /** W winners, L losers, GF grand final, GR bracket reset (W for non-double-elimination formats). */
     bracket: string;
     loserNextMatchId: string | null;
+    /** How a settled match was decided: agreement, admin (the host's report), authoritative or unanswered. */
+    resultSource: string | null;
+    /** Disputed matches read "Disputed" to everyone; the detail below is for the players, the host and admins. */
+    disputed: boolean;
+    /** The claim awaiting the opponent (players, host and admins only). */
+    claimedWinnerId: string | null;
+    claimedByUserId: string | null;
+    claimedAt: string | null;
+    disputedByUserId: string | null;
+    disputeNote: string | null;
   }[];
   payouts?: { userId: string; placement: number; amountCoins: number }[];
   viewerEntered?: boolean;
@@ -974,6 +907,7 @@ export async function getTournament(
   id: string,
   viewerId?: string | null,
   db: Db = prisma,
+  viewerIsAdmin = false,
 ): Promise<SerializedTournament | null> {
   const t = await db.tournament.findUnique({
     where: { id },
@@ -1000,7 +934,15 @@ export async function getTournament(
       losses: e.losses,
       user: e.user ? resolveUser(e.user) : null,
     })),
-    matches: t.matches.map((m) => ({
+    matches: t.matches.map((m) => {
+      const privileged =
+        viewerIsAdmin ||
+        (!!viewerId &&
+          (t.createdById === viewerId ||
+            [m.entrantAId, m.entrantBId].some(
+              (id) => id != null && t.entrants.find((e) => e.id === id)?.userId === viewerId,
+            )));
+      return {
       id: m.id,
       round: m.round,
       slot: m.slot,
@@ -1010,7 +952,15 @@ export async function getTournament(
       state: m.state,
       bracket: m.bracket,
       loserNextMatchId: m.loserNextMatchId,
-    })),
+      resultSource: m.resultSource,
+      disputed: m.disputedAt != null && m.state !== 'COMPLETE',
+      claimedWinnerId: privileged && m.state !== 'COMPLETE' ? m.claimedWinnerId : null,
+      claimedByUserId: privileged && m.state !== 'COMPLETE' ? m.claimedById : null,
+      claimedAt: privileged && m.state !== 'COMPLETE' ? (m.claimedAt?.toISOString() ?? null) : null,
+      disputedByUserId: privileged && m.state !== 'COMPLETE' ? m.disputedById : null,
+      disputeNote: privileged && m.state !== 'COMPLETE' ? m.disputeNote : null,
+      };
+    }),
     payouts: t.payouts.map((p) => ({
       userId: p.userId,
       placement: p.placement,

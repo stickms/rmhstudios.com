@@ -11,6 +11,7 @@ import {
   ALTS_MISMATCH_ISSUE,
   altsMatchImages,
   messageImageAltsField,
+  messageGifAltField,
 } from '@/lib/messages/image-alts-schema';
 
 export const sendMessageSchema =
@@ -31,6 +32,8 @@ export const sendMessageSchema =
           .optional(),
       gifUrl:
         gifUrlSchema.optional(),
+      gifAlt:
+        messageGifAltField,
       imageUrls:
         z
           .array(

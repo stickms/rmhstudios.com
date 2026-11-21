@@ -52,6 +52,8 @@ vi.mock(
       {
         $executeRaw:
           async () => {},
+        // s06-09: a leaving owner's invite links are revoked; this suite does not look at them.
+        chatInvite: { updateMany: async () => ({ count: 0 }) },
         chat: {
           findFirst:
             async ({

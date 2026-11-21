@@ -286,6 +286,8 @@ export function RMHarkOverflowPanel({
 
  // Own post with pictures: descriptions can be added or fixed after posting (s05-16).
  const hasImages = (item.imageUrls?.length ?? 0) > 0;
+ // A GIF can be described after posting as well (s06-15); the dialog lists it with the images.
+ const hasGif = !!item.gifUrl;
 
  // The author's poll actions. An ended poll offers neither; an untimed one can only be ended.
  const poll = item.poll;
@@ -469,7 +471,7 @@ export function RMHarkOverflowPanel({
  >
  {t('edit', { defaultValue:'Edit'})}
  </MenuItem>
- {hasImages && (
+ {(hasImages || hasGif) && (
  <MenuItem
  icon={ImagePlus}
  onSelect={() => {
@@ -477,7 +479,9 @@ export function RMHarkOverflowPanel({
  setAltOpen(true);
  }}
  >
- {t('menu-item', { ns: 'alt-text-editing', defaultValue: 'Edit image descriptions' })}
+ {hasImages
+ ? t('menu-item', { ns: 'alt-text-editing', defaultValue: 'Edit image descriptions' })
+ : t('menu-item-gif', { ns: 'gif-descriptions', defaultValue: 'Describe GIF' })}
  </MenuItem>
  )}
  {pollOpen && (
@@ -649,14 +653,24 @@ export function RMHarkOverflowPanel({
  postId={actualId}
  initialContent={item.content ??''}
  initialGifUrl={item.gifUrl ??''}
- onSaved={(content, gifUrl) =>
- onUpdate?.({ content, gifUrl: gifUrl ?? undefined, edited: true })
+ initialGifAlt={item.gifAlt ??''}
+ initialContentWarning={item.contentWarning ??''}
+ initialSensitive={item.isSensitive ?? false}
+ onSaved={(content, gifUrl, gifAlt, warning) =>
+ onUpdate?.({
+ content,
+ gifUrl: gifUrl ?? undefined,
+ gifAlt: gifAlt ?? undefined,
+ isSensitive: warning.isSensitive,
+ contentWarning: warning.contentWarning ?? undefined,
+ edited: true,
+ })
  }
  />
  </Suspense>
  )}
 
- {isAuthor && hasImages && mounted.current.alt && (
+  {isAuthor && (hasImages || hasGif) && mounted.current.alt && (
  <Suspense fallback={null}>
  <EditAltTextDialog
  open={altOpen}
@@ -664,8 +678,12 @@ export function RMHarkOverflowPanel({
  postId={actualId}
  imageUrls={item.imageUrls ?? []}
  imageAlts={item.imageAlts}
+ gifUrl={item.gifUrl}
+ gifAlt={item.gifAlt}
  restoreFocusTo={() => anchorRef.current}
- onSaved={(imageAlts) => onUpdate?.({ imageAlts })}
+ onSaved={(imageAlts, gifAlt) =>
+ onUpdate?.({ imageAlts, ...(gifAlt !== undefined ? { gifAlt: gifAlt ?? undefined } : {}) })
+ }
  />
  </Suspense>
  )}

@@ -1,4 +1,5 @@
 import type { ReactionSummary } from '@/lib/social/reactions';
+import type { RankedResultView } from '@/lib/feed/ranked-poll';
 
 export type FeedItemType =
   | 'rmhark'
@@ -105,6 +106,12 @@ export interface FeedPoll {
   id: string;
   question: string;
   multiSelect: boolean;
+  /** s06-19: a ranked-choice poll. Absent on plain and multi-select polls. */
+  ranked?: true;
+  /** A ranked poll: the viewer's own ballot, option ids from rank 1. */
+  myRanking?: string[];
+  /** A ranked poll that has ended and been counted: the winner and the rounds (`lib/feed/ranked-poll`). */
+  result?: RankedResultView;
   totalVotes: number;
   options: FeedPollOption[];
   myVotes?: string[]; // option IDs the current user voted for
@@ -165,11 +172,15 @@ export interface FeedItem {
   // Poll & GIF attachments
   poll?: FeedPoll;
   gifUrl?: string;
+  /** Description of the GIF (sprint 06 #15); absent = undescribed, rendered as "GIF". */
+  gifAlt?: string;
   imageUrls?: string[];
   /** Per-image alt text, aligned by index with `imageUrls` (may be shorter). */
   imageAlts?: string[];
   /** Content warning: render media/text behind a click-to-reveal overlay. */
   isSensitive?: boolean;
+  /** Why the post is warned (sprint 06 #16, 1-80 characters): the reason covers the text too; absent = media only. */
+  contentWarning?: string;
   /** Who can reply to this post. */
   replyControl?:
     | 'EVERYONE'

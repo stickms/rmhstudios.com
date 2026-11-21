@@ -25,6 +25,7 @@ import {
   Keyboard,
   KeyRound,
   LayoutDashboard,
+  MessageSquareText,
   Palette,
   Paintbrush,
   ShieldUser,
@@ -224,6 +225,18 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       hint: 'Everyone you blocked or muted, with the date, and unblock or unmute them',
       keywords:
         'block unblock mute unmute blocked muted people accounts safety hide',
+      requiresAuth: true,
+    },
+    // Sprint 06
+    // s06-05 feedback-inbox
+    {
+      id: 'feedback',
+      to: '/settings/feedback',
+      group: 'account',
+      icon: MessageSquareText,
+      label: 'Your feedback',
+      hint: 'What you sent us, where it stands, and any reply',
+      keywords: 'feedback report bug problem accessibility send reply',
       requiresAuth: true,
     },
     {

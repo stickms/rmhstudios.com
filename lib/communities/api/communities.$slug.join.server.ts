@@ -5,6 +5,8 @@ import { joinCommunityBody } from '@/lib/communities/communities-schema';
 import { prisma } from '@/lib/prisma.server';
 import { acceptInvite } from '@/lib/communities/invites.server';
 import { agreementRequired } from '@/lib/communities/rules.server';
+import { activeSanction } from '@/lib/communities/bans.server';
+import { denyCode, denyText } from '@/lib/communities/bans';
 import { recordMemberEvent } from '@/lib/communities/member-events.server';
 
 /**
@@ -35,6 +37,21 @@ export const route = apiRoute('/api/communities/$slug/join', {
         where: { communityId_userId: { communityId: community.id, userId } },
         select: { id: true },
       });
+
+      // A banned member cannot join, with or without an invite (FR-3).
+      if (!existing) {
+        const banned = await activeSanction(community.id, userId);
+        if (banned) {
+          return Response.json(
+            {
+              error: denyText(banned.kind, banned.endsAt),
+              code: denyCode(banned.kind),
+              endsAt: banned.endsAt ? banned.endsAt.toISOString() : null,
+            },
+            { status: 403 },
+          );
+        }
+      }
 
       // An invite is a request to join, never a toggle: repeating it (a double
       // submit, a second open invite tab) must not turn into a leave.

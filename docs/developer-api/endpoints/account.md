@@ -99,6 +99,8 @@ Posts you have bookmarked, newest first. `metrics` fields are `null` on a post w
       "id": "ck_post123",
       "content": "hello world",
       "audience": "PUBLIC",
+      "sensitive": false,
+      "contentWarning": null,
       "createdAt": "2026-06-30T10:00:00.000Z",
       "metrics": {
         "likes": 3,

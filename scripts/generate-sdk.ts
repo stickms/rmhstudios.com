@@ -29,6 +29,11 @@ const key = (k: string) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : JSON.stringify(k)
 const NULLABLE: Record<string, string> = {
   nextCursor: 'string | null',
   pinnedOrder: 'number | null',
+  contentWarning: 'string | null',
+  previousScore: 'number | null',
+  description: 'string | null',
+  externalId: 'string | null',
+  poll: '{ id: string; question: string; multiSelect: boolean; ranked: boolean; ended: boolean; closesAt: string | null; options: { id: string; text: string }[]; result: { winnerOptionId: string | null; percentOnly: boolean; rounds: { tally: Record<string, number>; eliminatedOptionId: string | null }[] } | null } | null',
 };
 
 function tsOf(v: unknown, k = ''): string {

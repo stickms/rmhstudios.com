@@ -8,6 +8,7 @@ import { formatRelativeTime } from'@/lib/i18n/relative-time';
 import { toast } from'@/lib/toast';
 import { pollWinners } from'@/lib/feed/poll-lifecycle';
 import type { FeedPoll } from'@/lib/feed-types';
+import { RankedPoll } from'@/components/feed/RankedPoll';
 
 /** A poll further than this from its end names the date ("Ends on 4 Dec"); nearer, how long is left. */
 const NEAR_END_MS = 2 * 86_400_000;
@@ -38,6 +39,21 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  const isClosed = !!localPoll.ended || (!!localPoll.closesAt && new Date(localPoll.closesAt).getTime() <= Date.now());
  const showResults = hasVoted || isClosed;
  const winnerIds = isClosed ? new Set(pollWinners(localPoll.options).map((o) => o.id)) : null;
+
+ if (localPoll.ranked) {
+ return (
+ <RankedPoll
+ poll={localPoll}
+ postId={postId}
+ closed={isClosed}
+ signedIn={!!session}
+ onChange={(next) => {
+ setLocalPoll(next);
+ onUpdate?.(next);
+ }}
+ />
+ );
+ }
 
  const handleVote = async (optionId: string) => {
  if (!session || voting || isClosed) return;

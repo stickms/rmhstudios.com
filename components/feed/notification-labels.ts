@@ -68,6 +68,29 @@ export function systemLabels(t: TFunction): Record<string, string> {
     // s05-20 flashcard-reminders
     study_due: t('system-label-study_due', { ns: 'feed', defaultValue: 'Study' }),
 
+    // Sprint 06 system labels (docs/autonomous/sprint-06/plan.md §Anchors)
+    // s06-01 community-bans
+    community_ban: t('system-label-community_ban', { ns: 'feed', defaultValue: 'Communities' }),
+
+    // s06-05 feedback-inbox
+    feedback_reply: t('system-label-feedback_reply', { ns: 'feed', defaultValue: 'Feedback' }),
+
+    // s06-06 admin-secure-account
+    account_secured: t('system-label-account_secured', { ns: 'feed', defaultValue: 'Account security' }),
+
+    // s06-07 jam-feedback
+    jam_feedback: t('system-label-jam_feedback', { ns: 'feed', defaultValue: 'Game jams' }),
+
+    // s06-10 event-occurrences
+    event_occurrence: t('system-label-event_occurrence', { ns: 'feed', defaultValue: 'Events' }),
+
+    // s06-11 event-updates
+    event_update: t('system-label-event_update', { ns: 'feed', defaultValue: 'Event updates' }),
+
+    // s06-20 match-results
+    tournament_result: t('system-label-tournament_result', { ns: 'feed', defaultValue: 'Tournaments' }),
+
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

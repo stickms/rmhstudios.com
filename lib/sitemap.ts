@@ -764,6 +764,11 @@ export const EXCLUDED_ROUTES: Record<
     '/settings/blocked':
       'personal',
 
+    // Sprint 06 static personal paths (docs/autonomous/sprint-06/plan.md §Anchors)
+    // s06-05 feedback-inbox
+    '/settings/feedback':
+      'personal',
+
     '/account/connect':
       'personal', // the account-merge step after a new sign-in; needs a session
     '/settings':
@@ -912,6 +917,10 @@ export const EXCLUDED_ROUTES: Record<
 
     // s05-10 admin-lookup
     '/admin/lookup': 'admin',
+
+    // Sprint 06 admin pages (docs/autonomous/sprint-06/plan.md §Anchors)
+    // s06-05 feedback-inbox
+    '/admin/feedback': 'admin',
 
     // ── redirects ──
     // A sitemap entry that redirects is an indexing error in Search Console, and
@@ -1109,6 +1118,11 @@ export const DYNAMIC_ROUTES: Record<
       'community',
     '/c/$slug/invite/$code':
       null, // private-community invite: a capability URL, never listed (the page sets noindex, nofollow)
+
+    // Sprint 06
+    // s06-09 group-invites
+    '/groups/join/$code':
+      null, // a group-chat invite: a capability URL, never listed
     '/personas/$id':
       'community',
     '/study/$deckId':

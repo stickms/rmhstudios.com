@@ -12,6 +12,7 @@
  * Server-only: touches Prisma and reads server helpers.
  */
 
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { publishedLogWhere } from '@/lib/blog/publication';
 import { WHOLE_EVENT } from '@/lib/calendar/event-model';
@@ -110,6 +111,7 @@ export async function topPostsFromFollows(userId: string, since: Date): Promise<
       id: true,
       userId: true,
       content: true,
+      contentWarning: true,
       likeCount: true,
       commentCount: true,
       repostCount: true,
@@ -130,7 +132,7 @@ export async function topPostsFromFollows(userId: string, since: Date): Promise<
         id: p.id,
         href: `/u/${encodeURIComponent(seg)}/post/${p.id}`,
         author: p.user.name || (p.user.handle ? `@${p.user.handle}` : p.user.username) || 'Someone',
-        content: truncate(p.content || '', 200),
+        content: truncate(previewTextFor(p) || '', 200),
         // Ranked above on the real numbers; the email shows them only for authors who have not hidden them.
         likeCount: hidden ? null : p.likeCount,
         commentCount: hidden ? null : p.commentCount,

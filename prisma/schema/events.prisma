@@ -79,6 +79,8 @@ model Event {
   community Community? @relation("CommunityEvents", fields: [communityId], references: [id], onDelete: Cascade)
   rsvps     Rsvp[]
   cohosts   EventCohost[]
+  overrides EventOccurrenceOverride[]
+  updates   EventUpdate[]
 
   @@index([communityId, startsAt])
   @@index([hostId, startsAt])
@@ -134,4 +136,51 @@ model EventCohost {
   @@id([eventId, userId])
   @@index([userId, status])
   @@map("event_cohost")
+}
+
+/// One changed date of a repeating event (s06-10): `skip` removes it, `move` shows it at another time.
+/// Keyed by the ORIGINAL occurrence start, which is also what `Rsvp.occurrenceAt` holds, so answers and
+/// waitlist places carry over a move untouched. At most one per occurrence; at most 52 per event.
+model EventOccurrenceOverride {
+  id           String   @id @default(cuid())
+  eventId      String
+  /// The occurrence's start as the rule computes it (UTC).
+  occurrenceAt DateTime
+  /// 'skip' | 'move'
+  kind         String   @db.VarChar(4)
+  /// Move only: where the occurrence now starts and, optionally, ends.
+  startsAt     DateTime?
+  endsAt       DateTime?
+  note         String?  @db.VarChar(200)
+  /// The member who made it; nulled when that member deletes their account.
+  createdById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, occurrenceAt])
+  @@index([eventId])
+  @@map("event_occurrence_override")
+}
+
+/// A short update the host, a co-host or an admin posted about an event or one date of it (s06-11), told to the
+/// people coming through the `events.update-fanout` queue. Plain text, never edited; the author may delete it for
+/// ten minutes. `occurrenceAt` is the ORIGINAL start of the date it is about (null: the whole series or a one-off).
+/// `authorId` is a plain id with no relation: account erasure nulls it, because an update is event content.
+model EventUpdate {
+  id           String    @id @default(cuid())
+  eventId      String
+  occurrenceAt DateTime?
+  authorId     String?
+  body         String    @db.VarChar(500)
+  createdAt    DateTime  @default(now())
+  /// Set once, by the fan-out job's compare-and-set, when the people coming have been told.
+  notifiedAt   DateTime?
+  deletedAt    DateTime?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, createdAt(sort: Desc)])
+  @@map("event_update")
 }

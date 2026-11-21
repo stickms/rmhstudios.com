@@ -21,6 +21,7 @@ import {
   communityApi,
   plusFetch,
 } from '@/components/communities/plus-api';
+import { useGifAlt } from '@/components/feed/use-gif-alt';
 import type { ChallengeDTO } from '@/lib/communities/plus';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
@@ -349,6 +350,8 @@ export default function ChallengePanel({
     useTranslation(
       'f-communities-plus',
     );
+  const gifAltText =
+    useGifAlt();
   const [
     challenge,
     setChallenge,
@@ -811,8 +814,12 @@ export default function ChallengePanel({
                         ''
                       }
                       alt={
-                        e.imageAlt ??
-                        ''
+                        e.imageUrl
+                          ? (e.imageAlt ??
+                            '')
+                          : gifAltText(
+                              e.gifAlt,
+                            )
                       }
                       loading="lazy"
                       className="max-h-64 w-full rounded-site-sm object-cover"

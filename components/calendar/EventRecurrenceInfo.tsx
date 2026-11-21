@@ -52,6 +52,8 @@ export function EventRecurrenceInfo({
   )
     return null;
 
+  // s06-10: answers are keyed by the date's ORIGINAL start; a moved date shows another time.
+  const occurrenceAt = rec.occurrenceAt ?? event.startsAt;
   const base = `/api/events/${event.id}/rsvp`;
   const status =
     event.viewerRsvp;
@@ -91,14 +93,14 @@ export function EventRecurrenceInfo({
                 status,
                 everyTime: true,
                 occurrenceAt:
-                  event.startsAt,
+                  occurrenceAt,
               },
             },
           );
       } else {
         // Drop the standing RSVP, but keep this date.
         await api(
-          `${base}?scope=all&occurrenceAt=${encodeURIComponent(event.startsAt)}`,
+          `${base}?scope=all&occurrenceAt=${encodeURIComponent(occurrenceAt)}`,
           {
             method:
               'DELETE',
@@ -114,7 +116,7 @@ export function EventRecurrenceInfo({
                 status,
                 everyTime: false,
                 occurrenceAt:
-                  event.startsAt,
+                  occurrenceAt,
               },
             },
           );
@@ -152,7 +154,7 @@ export function EventRecurrenceInfo({
       );
       const res =
         await api<RsvpResult>(
-          `${base}?scope=occurrence&occurrenceAt=${encodeURIComponent(event.startsAt)}`,
+          `${base}?scope=occurrence&occurrenceAt=${encodeURIComponent(occurrenceAt)}`,
           {
             method:
               'DELETE',

@@ -20,6 +20,8 @@ import {
 } from '@/lib/study/decks.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { EditDeckLink } from '@/components/study/EditDeckLink';
+import { DeckUpdatesLine } from '@/components/study/DeckUpdatesLine';
+import type { UpdatesSummary } from '@/lib/study/deck-sync';
 import { ExportMenu } from '@/components/study/ExportMenu';
 import { DeckStatsSummary } from '@/components/study/DeckStatsSummary';
 import { PracticeTestLink } from '@/components/study/PracticeTestLink';
@@ -54,7 +56,14 @@ export function DeckStudyColumn({
  * private for this viewer; `undefined`means no loader supplied one → the
  * column fetches on mount.
  */
- initialData?: { deck: Deck; cards: Card[]; reviewCount: number; dueCount: number; signedIn: boolean } | null;
+ initialData?: {
+ deck: Deck;
+ cards: Card[];
+ reviewCount: number;
+ dueCount: number;
+ signedIn: boolean;
+ updates?: UpdatesSummary | null;
+ } | null;
 }) {
  const { t } = useTranslation('feed');
  const { t: ts } = useTranslation('flashcard-types');
@@ -70,6 +79,8 @@ export function DeckStudyColumn({
  // Cards a member studies: the authored ones plus the generated reverse and cloze cards.
  const [reviewCount, setReviewCount] = useState(initialData?.reviewCount ?? 0);
  const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
+ // What the author of the original changed (owner of a copy only).
+ const [updates, setUpdates] = useState<UpdatesSummary | null>(initialData?.updates ?? null);
  const [loading, setLoading] = useState(initialData === undefined);
  const [notFound, setNotFound] = useState(initialData === null);
 
@@ -102,6 +113,7 @@ export function DeckStudyColumn({
  setDueCount(data.dueCount ?? 0);
  setReviewCount(data.reviewCount ?? 0);
  setSignedIn(!!data.signedIn);
+ setUpdates(data.updates ?? null);
  } catch (err) {
  // 404 is the not-found state; any other failure leaves the page as it was.
  if (err instanceof HttpError && err.status === 404) setNotFound(true);
@@ -318,6 +330,7 @@ export function DeckStudyColumn({
  </header>
 
  <div className="space-y-4 p-4">
+ {deck.isOwner && updates && <DeckUpdatesLine deckId={deckId} summary={updates} onChanged={() => void load()} />}
  {signedIn && <DeckStatsSummary deckId={deckId} />}
  {signedIn && (
  <div>

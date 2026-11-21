@@ -42,5 +42,6 @@
   "retry": "Try again",
   "same-network": "Same network as this device",
   "this-device": "This device",
-  "title": "Recent activity"
+  "title": "Recent activity",
+  "event-account-secured-by-admin": "Staff signed this account out everywhere and revoked its API keys, tokens and webhooks"
 }

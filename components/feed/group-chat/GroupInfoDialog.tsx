@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SearchField } from '@/components/ui/search-field';
 import { Spinner } from '@/components/ui/spinner';
+import { InviteLinksDialog } from './InviteLinksDialog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
@@ -594,6 +595,8 @@ function GroupInfoBody({
           )}
         </ul>
       </section>
+
+      {isOwner && <InviteLinksDialog groupId={group.id} />}
 
       {isOwner && (
         <AddPeople

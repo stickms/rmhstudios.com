@@ -32,11 +32,14 @@ import { HealthBadge } from './webhooks/StatusBadges';
 
 type StatusFilter = (typeof DELIVERY_STATUS_FILTERS)[number];
 
+type TestEvent = 'ping' | 'personal_best.created' | 'achievement.unlocked';
+
 const EVENT_FILTERS = [WEBHOOK_PING_EVENT, ...WEBHOOK_EVENT_NAMES];
 
 /** One endpoint: its settings and actions, and its delivery log with filters. */
 export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const { t } = useTranslation('dev-webhooks');
+  const [testEvent, setTestEvent] = useState<TestEvent>('ping');
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -74,7 +77,7 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
   });
 
   const sendTest = useMutation({
-    mutationFn: () => api(testWebhookApi, { params: { id } }),
+    mutationFn: () => api(testWebhookApi, { params: { id }, query: testEvent === 'ping' ? {} : { event: testEvent } }),
     onSuccess: ({ delivery }) => {
       void refresh();
       if (delivery.status === 'DELIVERED') {
@@ -233,6 +236,12 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
                   defaultValue: 'Endpoints switch off after repeated failed deliveries. Enabling it resets the failure count.',
                 })}
               </p>
+              <p className="t-meta">
+                {t('detail-disabled-staff-hint', {
+                  defaultValue:
+                    'If RMH Studios staff disabled it to secure your account, its secret was replaced. Rotate the secret below to get a new one, then enable the endpoint.',
+                })}
+              </p>
               <Button loading={setEnabled.isPending} onClick={() => setEnabled.mutate(true)}>
                 {t('detail-enable', { defaultValue: 'Enable endpoint' })}
               </Button>
@@ -249,6 +258,21 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
           )}
 
           <div className="flex flex-wrap items-center gap-2">
+            <Select
+              id="webhook-test-event"
+              className="w-auto"
+              aria-label={t('test-event-label', { ns: 'game-webhooks', defaultValue: 'Test event' })}
+              value={testEvent}
+              onChange={(e) => setTestEvent(e.target.value as TestEvent)}
+            >
+              <option value="ping">{t('test-event-ping', { ns: 'game-webhooks', defaultValue: 'ping' })}</option>
+              <option value="personal_best.created">
+                {t('test-event-pb', { ns: 'game-webhooks', defaultValue: 'personal_best.created' })}
+              </option>
+              <option value="achievement.unlocked">
+                {t('test-event-achievement', { ns: 'game-webhooks', defaultValue: 'achievement.unlocked' })}
+              </option>
+            </Select>
             <Button loading={sendTest.isPending} onClick={() => sendTest.mutate()}>
               <Send aria-hidden /> {t('detail-test', { defaultValue: 'Send test event' })}
             </Button>

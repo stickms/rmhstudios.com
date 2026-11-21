@@ -147,14 +147,24 @@ async function releaseHeld(userId: string, held: { eventId: string; status: stri
   }
 }
 
-/** The host, an accepted co-host (s05-05) or a site admin; anyone else is told the event does not exist. */
-async function assertHostOrAdmin(eventId: string, actorId: string, isAdmin: boolean) {
+/**
+ * The host, an accepted co-host (s05-05) or a site admin; anyone else is told the event does not exist.
+ * A waitlist belongs to a one-off event, so a repeating one is refused; `recurring: true` (s06-10, a
+ * repeating event's dates) inverts that, and `denyWith: 'FORBIDDEN'` answers a member who may not manage
+ * an event that exists with 403 instead of 404.
+ */
+export async function assertHostOrAdmin(
+  eventId: string,
+  actorId: string,
+  isAdmin: boolean,
+  opts: { recurring?: boolean; denyWith?: 'NOT_FOUND' | 'FORBIDDEN' } = {},
+) {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     select: { id: true, hostId: true, startsAt: true, recurrence: true },
   });
-  if (!event || event.recurrence) throw new EventError('NOT_FOUND');
-  if (!isAdmin && !(await canManageEvent(event, actorId))) throw new EventError('NOT_FOUND');
+  if (!event || !!event.recurrence !== !!opts.recurring) throw new EventError('NOT_FOUND');
+  if (!isAdmin && !(await canManageEvent(event, actorId))) throw new EventError(opts.denyWith ?? 'NOT_FOUND');
   return event;
 }
 
