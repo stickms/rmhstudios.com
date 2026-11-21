@@ -50,6 +50,8 @@ import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { SEND_SCHEDULED_QUEUE, registerSendScheduledMessagesCron } from '@/lib/messages/scheduled-jobs.server';
 import { PARTY_REMINDERS_QUEUE, registerPartyRemindersCron } from '@/lib/rmhtube/parties-jobs.server';
 import { DAILY_PUZZLE_PREWARM_QUEUE, registerDailyPuzzlePrewarmCron } from '@/lib/daily-puzzles/prewarm.server';
+import { CHECKIN_OPEN_QUEUE, registerCheckInOpenCron } from '@/lib/tournaments/checkin-jobs.server';
+import { POLL_ENDED_QUEUE, registerPollEndedCron } from '@/lib/feed/poll-lifecycle-jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/developer/recipes.server';
 import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
@@ -209,6 +211,15 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: PARTY_REMINDERS_QUEUE, register: registerPartyRemindersCron },
   // s03-10: a work queue (not a cron) fed by publishing a patch note or a guide; tells that game's followers.
   { queue: GAME_UPDATE_FANOUT_QUEUE, register: registerGameUpdateFanoutWorker },
+  // Sprint 04 (docs/autonomous/sprint-04/plan.md §Anchors)
+  // s04-03 tournament-checkin
+  // s04-03: every minute, tell the entrants of each tournament whose check-in window has just opened (once).
+  { queue: CHECKIN_OPEN_QUEUE, register: registerCheckInOpenCron },
+
+  // s04-08 poll-lifecycle
+  // s04-08: every minute, tell the author and the voters of each poll that has just ended (once).
+  { queue: POLL_ENDED_QUEUE, register: registerPollEndedCron },
+
 ];
 
 /**

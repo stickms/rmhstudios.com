@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/prisma.server';
-import { dmChatSelect, dmKeyOf, dmsOf, toDmRow } from '@/lib/chat/chat.server';
+import { dmChatSelect, dmKeyOf, dmsOf, inboxVisibleTo, toDmRow } from '@/lib/chat/chat.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { conversationPreview, type ConversationPreview } from '@/lib/messages/message-view';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { folderChatIds } from '@/lib/chat-plus/folders.server';
 import { receiptsHiddenFor } from '@/lib/chat-plus/receipts.server';
+import { requestOut } from '@/lib/messages/requests';
 
 export interface ConversationListItem {
   id: string;
@@ -50,6 +51,8 @@ export async function listConversations(
   const rows = await prisma.chat.findMany({
     where: {
       ...dmsOf(userId),
+      // A message request waiting for this viewer (or declined by them) lives in the Requests folder.
+      AND: [inboxVisibleTo(userId)],
       // M2: Saved Messages (a conversation with yourself) is pinned separately
       // at the top of the inbox, so it is not part of this paged list.
       NOT: { dmKey: dmKeyOf(userId, userId) },
@@ -130,7 +133,9 @@ export async function listConversations(
             content: conversationPreview(lastMessage).text,
             previewKind: conversationPreview(lastMessage).kind,
             senderId: lastMessage.senderId,
-            read: lastMessage.read && !(lastMessage.senderId === userId && receiptsHidden.has(conv.id)),
+            read:
+              lastMessage.read &&
+              !(lastMessage.senderId === userId && (receiptsHidden.has(conv.id) || requestOut(conv.request, userId))),
             createdAt: lastMessage.createdAt.toISOString(),
             gifUrl: lastMessage.gifUrl,
             imageUrls: lastMessage.imageUrls,

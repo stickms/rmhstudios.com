@@ -28,6 +28,7 @@ import {
   Minus,
   Plus,
 } from 'lucide-react';
+import PresetBar from './PresetBar';
 import type {
   GameSettingDef,
   GameSettingsSchema,
@@ -51,6 +52,9 @@ export interface GameSettingsFormProps {
   ) => void;
   /** Called when the host resets all settings to defaults. */
   onReset?: () => void;
+  /** With `minigameId`, shows the host's presets above the form (host only). */
+  lobbyId?: string;
+  minigameId?: string;
 }
 
 // ─── Individual setting renderers ────────────────────────────────
@@ -761,6 +765,8 @@ export default function GameSettingsForm({
   editable,
   onSettingChange,
   onReset,
+  lobbyId,
+  minigameId,
 }: GameSettingsFormProps) {
   const {
     t,
@@ -769,6 +775,22 @@ export default function GameSettingsForm({
       'c-rmhbox',
     );
   return (
+    <>
+      {editable &&
+        lobbyId &&
+        minigameId && (
+          <PresetBar
+            lobbyId={
+              lobbyId
+            }
+            minigameId={
+              minigameId
+            }
+            values={
+              values
+            }
+          />
+        )}
     <div className="space-y-1 divide-y divide-app-border">
       {schema.map(
         (
@@ -826,5 +848,6 @@ export default function GameSettingsForm({
           </div>
         )}
     </div>
+    </>
   );
 }

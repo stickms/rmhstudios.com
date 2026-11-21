@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { HANDLE_REGEX } from '@/lib/handle';
 import { httpUrl } from '@/lib/url-schema';
 import { MAX_PROFILE_LINKS } from '@/lib/profile-limits';
+import { FOLLOW_LIST_VISIBILITIES } from '@/lib/social/follow-list-privacy';
 
 export { MAX_PROFILE_LINKS };
 
@@ -123,6 +124,16 @@ export const updateProfileSchema =
               'NONE',
             ],
           )
+          .optional(),
+      followListVisibility:
+        z
+          .enum(
+            FOLLOW_LIST_VISIBILITIES,
+          )
+          .optional(),
+      dmRequests:
+        z
+          .boolean()
           .optional(),
       tipGoal:
         z

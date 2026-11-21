@@ -22,6 +22,8 @@ import { useReveal } from './LibraryReveal';
 import { LibraryContextMenu, useContextMenu, type MenuItem } from './LibraryContextMenu';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
+import { toast } from '@/lib/toast';
 import '@/components/library/library.css';
 import '@/components/rmhvibe/vibe.css';
 import { api } from '@/lib/contract/client';
@@ -58,6 +60,7 @@ export function LibraryCollections({
 }) {
   const { t } = useTranslation('library');
   const confirm = useConfirm();
+  const prompt = usePrompt();
   const [creating, setCreating] = useState(false);
   const [addingTo, setAddingTo] = useState<CollectionView | null>(null);
   const [opened, setOpened] = useState<CollectionView | null>(null);
@@ -104,10 +107,10 @@ export function LibraryCollections({
   }
 
   async function renameCollection(c: CollectionView) {
-    const title = window.prompt(
-      t('collection-rename-prompt', { defaultValue: 'Collection name' }),
-      c.title,
-    );
+    const title = await prompt({
+      title: t('collection-rename-prompt', { defaultValue: 'Collection name' }),
+      initialValue: c.title,
+    });
     if (title === null) return;
     const ok = await api(updateLibraryCollectionApi, { params: { id: c.id }, body: { title } }).then(
       () => true,
@@ -152,7 +155,7 @@ export function LibraryCollections({
     if (ok) {
       await onChanged();
     } else {
-      window.alert(
+      toast.error(
         serverError(failure) ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
       );
     }

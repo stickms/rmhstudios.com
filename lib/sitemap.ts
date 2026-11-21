@@ -746,6 +746,19 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // s03-17 ladder-offers (a static path, so it is here and not under the dynamic-route anchor)
     '/rmhladder/insights':
       'personal', // s03-18 ladder-insights (a static path, so it is here and not under the dynamic-route anchor)
+    // Sprint 04 static personal paths (docs/autonomous/sprint-04/plan.md §Anchors)
+    // s04-01 replay-library
+    '/settings/replays':
+      'personal',
+
+    // s04-11 achievement-compare
+    '/progress/compare':
+      'personal',
+
+    // s04-16 message-requests
+    '/messages/requests':
+      'personal',
+
     '/account/connect':
       'personal', // the account-merge step after a new sign-in; needs a session
     '/settings':
@@ -1229,6 +1242,14 @@ export const DYNAMIC_ROUTES: Record<
     // s03-17 ladder-offers
 
     // s03-18 ladder-insights
+
+    // Sprint 04 (docs/autonomous/sprint-04/plan.md §Anchors)
+    // s04-05 build-insights
+    '/create/builds/$slug/insights': null,
+
+    // s04-12 rmhbox-stats
+    '/rmhbox/players/$userId':
+      null, // a member's record, shown per their game-activity privacy; only a public one is indexable
 
   };
 

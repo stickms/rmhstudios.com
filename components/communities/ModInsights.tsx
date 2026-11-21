@@ -913,7 +913,8 @@ export function ModInsights({
                       )}
                   </Link>
                   <p className="t-meta">
-                    {t(
+                    {p.likes !== null && p.reactions !== null && p.replies !== null
+                      ? t(
                       'top-counts',
                       {
                         defaultValue:
@@ -931,10 +932,9 @@ export function ModInsights({
                             p.replies,
                           ),
                       },
-                    )}
-                    {
-                      ' · '
-                    }
+                    )
+                      : null}
+                    {p.likes !== null && ' · '}
                     {p.authorName ??
                       p.author}
                   </p>

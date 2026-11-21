@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCopyFallback } from '@/components/ui/copy-fallback';
 import { toast } from '@/lib/toast';
 import { Share2, ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export function BasketPanel({
   signedIn: boolean;
 }) {
   const { t } = useTranslation('f-party');
+  const showCopy = useCopyFallback();
   const run = useArcadeRun((s) => s.run);
   const [board, setBoard] = useState<Row[] | null>(null);
   // The board is fetched after the result shows: it fades in when it lands (M9).
@@ -80,7 +82,7 @@ export function BasketPanel({
       await navigator.clipboard.writeText(text);
       toast.success(t('basket-copied', { defaultValue: 'Result copied' }));
     } catch {
-      window.prompt(t('basket-copy', { defaultValue: 'Copy your result:' }), text);
+      showCopy({ title: t('basket-copy', { defaultValue: 'Copy your result:' }), text });
     }
   }
 

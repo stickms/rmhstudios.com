@@ -8,6 +8,7 @@ import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { useTranslation } from'react-i18next';
+import { deckGradeLabels } from '@/components/feed/deck-grade-labels';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { reviewCardApi } from '@/lib/study/decks.contract';
@@ -38,11 +39,11 @@ interface Deck {
  cardCount: number;
 }
 
-const GRADES: { grade: number; label: string; cls: string }[] = [
- { grade: 0, label:'Again', cls:'text-site-danger'},
- { grade: 1, label:'Hard', cls:'text-site-warning'},
- { grade: 2, label:'Good', cls:'text-site-accent'},
- { grade: 3, label:'Easy', cls:'text-site-success'},
+const GRADES: { grade: number; cls: string }[] = [
+ { grade: 0, cls:'text-site-danger'},
+ { grade: 1, cls:'text-site-warning'},
+ { grade: 2, cls:'text-site-accent'},
+ { grade: 3, cls:'text-site-success'},
 ];
 
 export function DeckStudyColumn({
@@ -58,6 +59,7 @@ export function DeckStudyColumn({
  initialData?: { deck: Deck; cards: Card[]; dueCount: number; signedIn: boolean } | null;
 }) {
  const { t } = useTranslation('feed');
+ const gradeLabels = deckGradeLabels(t);
  const confirm = useConfirm();
  const navigate = useNavigate();
  // Seed from the loader when it ran (even a `null`result is a resolved
@@ -264,7 +266,7 @@ export function DeckStudyColumn({
  onClick={() => grade(g.grade)}
  className={`flex-col ${g.cls}`}
  >
- {t(`grade-${g.grade}`, { defaultValue: g.label })}
+ {gradeLabels[g.grade]}
  </Button>
  ))}
  </div>

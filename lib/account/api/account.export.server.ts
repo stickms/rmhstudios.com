@@ -24,6 +24,11 @@ import { exportScheduledMessages } from '@/lib/messages/scheduled.server';
 import { exportLadderOffers } from '@/lib/rmhladder/offers.server';
 import { exportWatchPartyRsvps } from '@/lib/rmhtube/parties.server';
 import { exportGameFollows } from '@/lib/arcade/updates.server';
+import { exportEventRsvps } from '@/lib/events/waitlist.server';
+import { exportReplays } from '@/lib/replays.server';
+import { exportReaderMarks } from '@/lib/library/reader-sync.server';
+import { exportRmhboxPresets } from '@/lib/rmhbox/presets.server';
+import { exportMessageRequests } from '@/lib/messages/requests.server';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -303,8 +308,17 @@ export const route = apiRoute('/api/account/export', {
           exportLadderOffers(userId),
           exportWatchPartyRsvps(userId),
           exportGameFollows(userId),
+          // Event answers, waitlist places included (s04-02).
+          exportEventRsvps(userId),
           // Per-conversation notification choices, including muted post threads (s03-03).
           prisma.conversationPref.findMany({ where: { userId }, take: CAP }),
+          // Sprint 04: replays they saved (metadata, not the input log), their synced library
+          // places, bookmarks and notes, their RMHBox host presets, and message requests they
+          // sent or received (who and when; the message itself is in the conversation).
+          exportReplays(userId),
+          exportReaderMarks(userId),
+          exportRmhboxPresets(userId),
+          exportMessageRequests(userId),
         ]),
       ]);
 
@@ -330,7 +344,12 @@ export const route = apiRoute('/api/account/export', {
         ladderOffers,
         watchPartyRsvps,
         gameFollows,
+        eventRsvps,
         conversationPrefs,
+        replays,
+        readerMarks,
+        rmhboxPresets,
+        messageRequests,
       ] = sprint03;
 
       const [
@@ -403,7 +422,12 @@ export const route = apiRoute('/api/account/export', {
         scheduledMessages,
         watchPartyRsvps,
         gameFollows,
+        eventRsvps,
         conversationPrefs,
+        replays,
+        libraryReaderMarks: readerMarks,
+        rmhboxPresets,
+        messageRequests,
         rmhLadder: {
           preferences: ladderPrefs,
           // Salary expectations, work authorization and EEO answers — the

@@ -21,6 +21,7 @@ import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
 import GameSettingsForm from './GameSettingsForm';
+import { useAutoApplyDefaultPreset } from './use-presets';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
@@ -59,6 +60,12 @@ export default function GameSettingsPhase() {
   const lobbyId =
     lobby?.lobbyId ??
     '';
+  useAutoApplyDefaultPreset(
+    lobbyId,
+    settingsState?.minigameId,
+    isHost &&
+      !!settingsState,
+  );
   const arrival =
     useArrival(
       !!settingsState &&
@@ -252,6 +259,12 @@ export default function GameSettingsPhase() {
           }
           onReset={
             handleReset
+          }
+          lobbyId={
+            lobbyId
+          }
+          minigameId={
+            settingsState.minigameId
           }
         />
       </div>

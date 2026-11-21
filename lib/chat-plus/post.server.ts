@@ -228,6 +228,14 @@ export function systemFallback(action: SystemAction): string {
       return action.pinned ? 'Pinned a message' : 'Unpinned a message';
     case 'tip':
       return `Tipped ${action.amount} coins`;
+    case 'rename':
+      return `The group was renamed to ${action.name}`;
+    case 'add':
+      return `${action.targetName ?? 'Someone'} was added to the group`;
+    case 'remove':
+      return `${action.targetName ?? 'Someone'} was removed from the group`;
+    case 'owner':
+      return `${action.targetName ?? 'Someone'} is now the owner`;
   }
 }
 

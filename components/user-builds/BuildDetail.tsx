@@ -16,6 +16,7 @@ import {
   Edit,
   Trash2,
   Lock,
+  ChartColumn,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { CoinIcon } from '@/components/ui/CoinIcon';
@@ -35,6 +36,7 @@ import type { Build } from '@/lib/user-builds-types';
 import { liquidVTName } from '@/lib/view-transition';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
+import { BuildReleases } from './BuildReleases';
 import { PostAwards } from '@/components/awards/PostAwards';
 import { formatCount } from '@/lib/utils';
 import { safeHref } from '@/lib/url-safety';
@@ -511,6 +513,30 @@ export function BuildDetail({
             <div className="ml-auto flex items-center gap-2">
               <Button
                 asChild
+                variant="ghost"
+                size="sm"
+              >
+                <Link
+                  to="/create/builds/$slug/insights"
+                  params={{
+                    slug: build.slug,
+                  }}
+                >
+                  <ChartColumn
+                    aria-hidden
+                  />
+                  {t(
+                    'link',
+                    {
+                      ns: 'build-insights',
+                      defaultValue:
+                        'Insights',
+                    },
+                  )}
+                </Link>
+              </Button>
+              <Button
+                asChild
                 variant="default"
                 size="sm"
               >
@@ -874,69 +900,19 @@ export function BuildDetail({
           </Card>
         )}
 
-      {/* Version History */}
-      {build.versions &&
-        build
-          .versions
-          .length >
-          0 && (
-          <Card>
-            <CardContent>
-              <h2 className="mb-4 text-lg font-semibold text-site-text">
-                {t(
-                  'version-history',
-                  {
-                    defaultValue:
-                      'Version History',
-                  },
-                )}
-              </h2>
-              <div className="space-y-3">
-                {build.versions.map(
-                  (
-                    version,
-                  ) => (
-                    <div
-                      key={
-                        version.id
-                      }
-                      className="flex items-start gap-3 rounded-site-sm p-3"
-                    >
-                      <Badge className="font-mono">
-                        v
-                        {
-                          version.version
-                        }
-                      </Badge>
-                      <div className="min-w-0 flex-1">
-                        {version.changelog && (
-                          <p className="text-sm text-site-text-muted">
-                            {
-                              version.changelog
-                            }
-                          </p>
-                        )}
-                        <p className="mt-1 text-xs text-site-text-muted">
-                          {formatDate(
-                            version.createdAt,
-                          )}
-                          {version.commitHash && (
-                            <span className="ml-2 font-mono">
-                              {version.commitHash.slice(
-                                0,
-                                7,
-                              )}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  ),
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      {/* Releases */}
+      <BuildReleases
+        buildId={build.id}
+        repoUrl={build.repoUrl}
+        isOwner={isOwner}
+        initialReleases={(build.versions ?? []).map((v) => ({
+          id: v.id,
+          version: v.version,
+          changelog: v.changelog ?? null,
+          commitHash: v.commitHash ?? null,
+          createdAt: v.createdAt,
+        }))}
+      />
 
       {/* Comments */}
       <Card>

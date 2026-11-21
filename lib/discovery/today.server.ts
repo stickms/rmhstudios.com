@@ -69,7 +69,8 @@ export async function buildDigest(now = new Date()): Promise<DigestPayload> {
       return {
         title: snip(p.content, 120),
         href: `/u/${u.handle ?? u.id}/post/${p.id}`,
-        meta: `${u.name ?? u.handle ?? ''} · ${p.likeCount}`,
+        // The public digest has no viewer: an author who hides their counts is listed without the number.
+        meta: u.hideCounts ? (u.name ?? u.handle ?? '') : `${u.name ?? u.handle ?? ''} · ${p.likeCount}`,
       };
     }),
     newBuilds: builds.map((b) => ({

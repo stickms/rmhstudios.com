@@ -13,7 +13,7 @@ import { Pill } from '@/components/tf2-hud/ui';
 import type { LoadoutSummary } from '@/lib/tf2-loadout/api-types';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemTile from './ItemTile';
-import { CLASS_DEFAULT } from './labels';
+import { tfClassLabels } from './labels';
 import { cn } from '@/lib/utils';
 
 const PREVIEW = 8;
@@ -35,6 +35,7 @@ export default function LoadoutCard({
     useTranslation(
       'c-tf2-hud',
     );
+  const classLabels = tfClassLabels(t);
   const entries =
     Object.values(
       loadout.slots,
@@ -89,16 +90,7 @@ export default function LoadoutCard({
         </h2>
         <div className="flex shrink-0 items-center gap-1">
           <Pill tone="accent">
-            {t(
-              `class-${loadout.tfClass}`,
-              {
-                defaultValue:
-                  CLASS_DEFAULT[
-                    loadout
-                      .tfClass
-                  ],
-              },
-            )}
+            {classLabels[loadout.tfClass]}
           </Pill>
           {loadout.visibility !==
           'PUBLIC' ? (

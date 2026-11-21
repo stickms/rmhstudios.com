@@ -37,6 +37,8 @@
   "member-unmodded": "{{actor}} removed {{target}} as a moderator",
   "mod-tab": "Log",
   "onboarding-changed": "{{actor}} changed the onboarding questions",
+  "ownership-assigned": "A site admin gave ownership to {{target}}",
+  "ownership-passed": "Ownership passed to {{target}}",
   "public-comment-approved": "A moderator approved a comment",
   "public-comment-removed": "A moderator removed a comment",
   "public-empty": "Nothing yet",

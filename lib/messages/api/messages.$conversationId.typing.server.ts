@@ -5,6 +5,8 @@ import { typingBody } from '@/lib/messages/message-actions-schema';
 import { prisma } from '@/lib/prisma.server';
 import { findDm } from '@/lib/chat/chat.server';
 import { notifyUser } from '@/lib/message-events';
+import { hiddenFromRecipient } from '@/lib/messages/requests';
+import { requestWriteRefusal } from '@/lib/messages/requests.server';
 import { getPairPrivacy } from '@/lib/chat-plus/receipts.server';
 
 /** POST /api/messages/[conversationId]/typing — broadcast a typing indicator to the other participant */
@@ -28,6 +30,15 @@ export const route = apiRoute('/api/messages/$conversationId/typing', {
       conversation.participantOneId === userId
         ? conversation.participantTwoId
         : conversation.participantOneId;
+
+    // s04-16: while the chat is a message request nothing about the sender reaches the recipient, typing included.
+    if (
+      otherUserId !== userId &&
+      (hiddenFromRecipient(conversation.request, userId) ||
+        (await requestWriteRefusal(userId, otherUserId, conversation.request)))
+    ) {
+      return { success: true as const, suppressed: true as const };
+    }
 
     // M8: typing indicators are reciprocal. If either participant has them
     // switched off for this conversation, nothing is published at all — the

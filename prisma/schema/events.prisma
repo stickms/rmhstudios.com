@@ -95,18 +95,21 @@ model Rsvp {
   id           String   @id @default(cuid())
   eventId      String
   userId       String
-  /// 'going' | 'maybe' | 'no' ('no' only on an occurrence).
+  /// 'going' | 'maybe' | 'no' ('no' only on an occurrence) | 'waitlist' (a full one-off event; FIFO by waitlistedAt).
   status       String   @db.VarChar(8)
   occurrenceAt DateTime
   /// On a repeating event, a WHOLE_EVENT answer that carries over to every occurrence.
   everyTime    Boolean  @default(false)
   createdAt    DateTime @default(now())
+  /// When the member joined the waitlist; set only while status is 'waitlist'.
+  waitlistedAt DateTime?
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User  @relation("EventRsvps", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId, occurrenceAt])
   @@index([eventId, occurrenceAt, status])
+  @@index([eventId, occurrenceAt, status, waitlistedAt])
   @@index([userId, occurrenceAt])
   @@index([userId, createdAt])
   @@map("rsvp")

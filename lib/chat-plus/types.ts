@@ -181,6 +181,19 @@ export type SystemAction =
       amount: number;
       fromId: string;
       toId: string;
+    }
+  // s04-10 group management lines. The target's name is stored beside its id: a removed member is no longer in the
+  // group's member list, so the line could not otherwise name them.
+  | {
+      action: 'rename';
+      actorId: string;
+      name: string;
+    }
+  | {
+      action: 'add' | 'remove' | 'owner';
+      actorId: string;
+      targetId: string;
+      targetName: string | null;
     };
 
 /* -------------------------------------------------------------------------- */
@@ -269,5 +282,14 @@ export type ChatUpdate =
         op: 'alts';
         messageId: string;
         imageAlts: string[];
+      }
+    | {
+        /**
+         * A group's name, member list or owner changed (s04-10). `removed` also names the member who lost access: their
+         * client drops the chat and the server closes their stream. Clients that predate it fall through `default`.
+         */
+        op: 'group';
+        change: 'rename' | 'members' | 'owner' | 'removed';
+        userId?: string;
       }
   );

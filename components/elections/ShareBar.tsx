@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCopyFallback } from '@/components/ui/copy-fallback';
 import {
   Check,
   Link2,
@@ -33,6 +34,8 @@ export function ShareBar({
     useTranslation(
       'c-elections',
     );
+  const showCopy =
+    useCopyFallback();
   const {
     data: session,
   } =
@@ -80,15 +83,18 @@ export function ShareBar({
           1600,
         );
       } catch {
-        window.prompt(
-          t(
-            'share.copyPrompt',
-            {
-              defaultValue:
-                'Copy this link:',
-            },
-          ),
-          url,
+        showCopy(
+          {
+            title:
+              t(
+                'share.copyPrompt',
+                {
+                  defaultValue:
+                    'Copy this link:',
+                },
+              ),
+            text: url,
+          },
         );
       }
     };

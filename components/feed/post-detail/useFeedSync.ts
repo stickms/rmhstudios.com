@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { FeedItem } from '@/lib/feed-types';
 import { useFeedStore } from '@/stores/feedStore';
+import { bumpCount } from '@/lib/feed/quiet-counts';
 
 export interface FeedSync {
   syncToFeed: (
@@ -68,11 +69,9 @@ export function useFeedSync(
             postId,
             {
               commentCount:
-                Math.max(
-                  0,
-                  (current.commentCount ??
-                    0) +
-                    delta,
+                bumpCount(
+                  current.commentCount,
+                  delta,
                 ),
             },
           );

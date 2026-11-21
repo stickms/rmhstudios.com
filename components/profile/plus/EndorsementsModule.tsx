@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { useSession } from '@/components/Providers';
 import { SKILLS } from '@/lib/profile/skills';
+import { knownLabel } from '@/lib/i18n/known-label';
+import { skillLabels } from './skill-labels';
 import { useJson } from './useJson';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -42,6 +44,7 @@ export default function EndorsementsModule({
     useTranslation(
       'f-profile-plus',
     );
+  const skillNames = skillLabels(t);
   const {
     data: session,
   } =
@@ -75,21 +78,7 @@ export default function EndorsementsModule({
     (
       id: string,
     ) =>
-      t(
-        `skill-${id}`,
-        {
-          defaultValue:
-            SKILLS.find(
-              (
-                s,
-              ) =>
-                s.id ===
-                id,
-            )
-              ?.label ??
-            id,
-        },
-      );
+      knownLabel(skillNames, id) ?? id;
 
   async function set(
     skill: string,

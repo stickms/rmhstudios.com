@@ -138,6 +138,9 @@ vi.mock(
   () => ({
     upsertDm:
       h.upsertDm,
+    findDmByPair:
+      async () =>
+        null,
   }),
 );
 vi.mock(

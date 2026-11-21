@@ -1,6 +1,7 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
+import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { getStakeApi } from '@/lib/staking/staking.contract';
 import { Loader2, PiggyBank, TrendingUp } from'lucide-react';
@@ -66,7 +67,7 @@ export function StakingCard() {
  await load();
  } else {
  const b = await res.json().catch(() => ({}));
- if (b?.error) alert(b.error);
+ if (b?.error) toast.error(b.error);
  }
  } finally {
  setBusy(null);

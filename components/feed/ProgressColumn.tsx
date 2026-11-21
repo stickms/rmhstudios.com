@@ -3,6 +3,7 @@ import { useState, useCallback } from'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { battlepassQuery, progressSummaryQuery } from '@/lib/progress.queries';
 import { useTranslation } from'react-i18next';
+import { toast } from '@/lib/toast';
 import {
  Loader2,
  Zap,
@@ -81,7 +82,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  await load();
  } catch (e) {
  const message = serverError(e);
- if (message) alert(message);
+ if (message) toast.error(message);
  } finally {
  setBusy(null);
  }

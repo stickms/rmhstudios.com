@@ -24,7 +24,7 @@ export default function RepostMenu({
   anchorRef,
   label,
   reposted,
-  repostCount,
+  hasQuotes,
   onRepost,
   onQuote,
   onViewQuotes,
@@ -34,7 +34,8 @@ export default function RepostMenu({
   anchorRef: RefObject<HTMLButtonElement | null>;
   label: string;
   reposted: boolean;
-  repostCount: number;
+  /** Whether "View quotes" is offered: the post has been reposted, or its count is withheld (then it cannot be ruled out). */
+  hasQuotes: boolean;
   onRepost: () => void;
   onQuote: () => void;
   onViewQuotes: () => void;
@@ -98,8 +99,7 @@ export default function RepostMenu({
           },
         )}
       </MenuItem>
-      {repostCount >
-        0 && (
+      {hasQuotes && (
         <QuotesMenuItem
           onSelect={
             onViewQuotes

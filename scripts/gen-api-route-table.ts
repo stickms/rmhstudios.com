@@ -53,6 +53,20 @@ export function renderRouteTable(
       file,
     );
   }
+  const CHUNK = 200;
+  const indexed = routes.map(
+    (
+      {
+        template,
+      },
+      i,
+    ) => ({
+      template,
+      i,
+    }),
+  );
+  const chunks: (typeof indexed)[] = [];
+  for (let at = 0; at < indexed.length; at += CHUNK) chunks.push(indexed.slice(at, at + CHUNK));
   const lines =
     [
       '/**',
@@ -72,15 +86,35 @@ export function renderRouteTable(
           `import { route as r${i} } from '@/${file.replace(/\.ts$/, '')}';`,
       ),
       '',
-      'export const API_ROUTES: readonly ApiRoute[] = [',
-      ...routes.map(
+      // One array literal of every route makes tsc build a union of a thousand route types,
+      // past its limit (TS2590, "union type that is too complex"). Chunks of CHUNK are each
+      // checked against `ApiRoute[]` on their own, and the export only spreads them.
+      ...chunks.flatMap(
         (
-          {
-            template,
-          },
-          i,
+          chunk,
+          c,
+        ) => [
+          `const API_ROUTES_${c}: readonly ApiRoute[] = [`,
+          ...chunk.map(
+            (
+              {
+                template,
+                i,
+              },
+            ) =>
+              `  r${i}, // ${template}`,
+          ),
+          '];',
+          '',
+        ],
+      ),
+      'export const API_ROUTES: readonly ApiRoute[] = [',
+      ...chunks.map(
+        (
+          _chunk,
+          c,
         ) =>
-          `  r${i}, // ${template}`,
+          `  ...API_ROUTES_${c},`,
       ),
       '];',
       '',

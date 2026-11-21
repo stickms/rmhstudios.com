@@ -4,6 +4,7 @@ import { login } from './commands/login.js';
 import { whoami } from './commands/whoami.js';
 import { pushBuild } from './commands/push-build.js';
 import { listBuilds } from './commands/list-builds.js';
+import { release } from './commands/release.js';
 import { logout } from './commands/logout.js';
 import { color } from './lib/output.js';
 
@@ -12,6 +13,7 @@ const RMH_COMMANDS: Record<string, (args: string[]) => void | Promise<void>> = {
   whoami,
   'push-build': pushBuild,
   'list-builds': listBuilds,
+  release,
   logout,
 };
 
@@ -25,6 +27,7 @@ function showHelp(): void {
   console.log(`    ${color.cyan('whoami')}       Show current authenticated user`);
   console.log(`    ${color.cyan('push-build')}   Publish a project to User Builds`);
   console.log(`    ${color.cyan('list-builds')}  List your published builds`);
+  console.log(`    ${color.cyan('release')}      Publish a release of one of your builds`);
   console.log(`    ${color.cyan('logout')}       Sign out and remove stored token`);
   console.log('');
   console.log(color.dim('  All other arguments are passed to Claude Code.'));

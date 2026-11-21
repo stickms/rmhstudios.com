@@ -14,6 +14,8 @@ import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { isExpired } from '@/lib/posts-plus/constants';
 import { deletePostApi } from '@/lib/feed/rmhark-actions.contract';
+import { redactCounts } from '@/lib/feed/quiet-counts';
+import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 
 export const route = apiRoute('/api/rmharks/$id', {
   GET: defineHandler({ auth: 'optional' }, async ({ params, userId }) => {
@@ -85,6 +87,7 @@ export const route = apiRoute('/api/rmharks/$id', {
         id: rmhark.poll.id,
         question: rmhark.poll.question,
         multiSelect: rmhark.poll.multiSelect,
+        ...pollLifecycleView(rmhark.poll),
         totalVotes,
         options: rmhark.poll.options.map((o: any) => ({
           id: o.id,
@@ -102,7 +105,8 @@ export const route = apiRoute('/api/rmharks/$id', {
 
     const locked = !isDeleted && isLocked(rmhark, userId);
 
-    return Response.json({
+    // An author who hides their counts shows them to nobody but themselves (lib/feed/quiet-counts).
+    return Response.json(redactCounts({
       id: rmhark.id,
       type: 'rmhark',
       createdAt: rmhark.createdAt.toISOString(),
@@ -143,7 +147,7 @@ export const route = apiRoute('/api/rmharks/$id', {
             await getBlockedAuthorIds(userId),
           )
         : undefined,
-    });
+    }, userId));
   }),
   DELETE: implement(deletePostApi, {}, async ({ params, session }) => {
     const { id } = params;

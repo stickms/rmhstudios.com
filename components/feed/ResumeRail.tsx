@@ -29,7 +29,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { FileText, Gamepad2, History, Layers, PlayCircle, X } from 'lucide-react';
+import { BookOpen, FileText, Gamepad2, History, Layers, PlayCircle, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
@@ -58,6 +58,7 @@ const KIND_ICONS: Record<ResumeKind, LucideIcon> = {
   watch: PlayCircle,
   draft: FileText,
   deck: Layers,
+  book: BookOpen,
 };
 
 interface ResumeRailProps {
@@ -71,6 +72,7 @@ interface ResumeRailProps {
 
 export function ResumeRail({ initial }: ResumeRailProps) {
   const { t, i18n } = useTranslation('feed');
+  const { t: ts } = useTranslation('reading-sync');
   const { data: session } = useSession();
   const [cards, setCards] = useState<ResumeCard[] | null>(initial ?? null);
   // Read on the client only: the server renders nothing here either way (no
@@ -165,7 +167,14 @@ export function ResumeRail({ initial }: ResumeRailProps) {
                     aria-hidden
                   />
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="t-body truncate font-medium text-site-text">{card.title}</span>
+                    <span className="t-body truncate font-medium text-site-text">
+                      {card.kind === 'book'
+                        ? ts('resume-continue', {
+                            defaultValue: 'Continue reading {{title}}',
+                            title: card.title,
+                          })
+                        : card.title}
+                    </span>
                     {detail ? <span className="t-meta truncate">{detail}</span> : null}
                   </span>
                   {typeof card.progress === 'number' ? (

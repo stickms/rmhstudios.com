@@ -238,7 +238,7 @@ function operationFor(
     ] =
       {
         description:
-          'Insufficient scope or entitlement, or the key is not allowed from this address (`ip_not_allowed`)',
+          'Insufficient scope or entitlement, the key is not allowed from this address (`ip_not_allowed`), or the member keeps the followers or following list private (`list_private`)',
         content:
           {
             'application/json':
@@ -368,6 +368,43 @@ export function buildOpenApiDocument(): Record<
           },
         schemas:
           {
+            PostMetrics:
+              {
+                type: 'object',
+                description:
+                  'Engagement counts on a post. Every field is null when the post’s author hides the counts on their posts from other accounts; the author always sees the numbers.',
+                properties:
+                  {
+                    likes:
+                      {
+                        type: [
+                          'integer',
+                          'null',
+                        ],
+                      },
+                    comments:
+                      {
+                        type: [
+                          'integer',
+                          'null',
+                        ],
+                      },
+                    reposts:
+                      {
+                        type: [
+                          'integer',
+                          'null',
+                        ],
+                      },
+                    views:
+                      {
+                        type: [
+                          'integer',
+                          'null',
+                        ],
+                      },
+                  },
+              },
             Error:
               {
                 type: 'object',

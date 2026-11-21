@@ -159,6 +159,8 @@ export const createGroupChatApi =
     res: {
       success: true;
       id: string;
+      /** People left out (a block, a ban, an unknown name); never says which or why. */
+      refused: number;
     };
   }>()(
     {

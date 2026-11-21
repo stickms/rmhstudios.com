@@ -1817,7 +1817,6 @@ lib/prepaint/generated.ts
 /lib/admin/api/admin.review-counts.server.ts
 /lib/admin/api/admin.users.$id.ban.server.ts
 /lib/admin/api/admin.users.$id.grant-membership.server.ts
-/lib/admin/api/admin.users.$id.set-coins.server.ts
 /lib/admin/api/admin.users.$id.strike.server.ts
 /lib/admin/api/admin.users.server.ts
 /lib/admin/api/admin.view-as.server.ts
@@ -3749,3 +3748,7 @@ docs/announcements/
 # Sprint 03 planning docs are wrapped at 80 columns, not one word per line, so their
 # line count reports the writing rather than the wrap (docs/autonomous/sprint-03/plan.md §Reporting).
 /docs/autonomous/sprint-03/
+
+# Sprint 04 planning docs are wrapped at 80 columns, not one word per line, so their
+# line count reports the writing rather than the wrap (docs/autonomous/sprint-04/plan.md §Reporting).
+/docs/autonomous/sprint-04/

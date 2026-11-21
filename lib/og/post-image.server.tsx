@@ -164,9 +164,10 @@ export interface PostOgData {
     | Date
     | string
     | null;
-  likeCount: number;
-  commentCount: number;
-  repostCount: number;
+  /** The counts, or `null` to draw the card without them (the author hides them; lib/feed/quiet-counts). */
+  likeCount: number | null;
+  commentCount: number | null;
+  repostCount: number | null;
   /** Attachment URLs in the author's order. Up to four are drawn. */
   images?: readonly string[];
   /** The post's GIF. Drawn (first frame) when the post has no photos. */
@@ -696,13 +697,15 @@ async function renderPostOgImageUncached(
   // content warning that has just been applied.
   const bucket =
     (
-      n: number,
+      n: number | null,
     ) =>
-      Math.floor(
-        (n ??
-          0) /
-          10,
-      );
+      n ===
+      null
+        ? 'q'
+        : Math.floor(
+            n /
+              10,
+          );
   const cacheKey = `${data.id}:${data.revision ?? ''}:${bucket(data.likeCount)}:${bucket(data.commentCount)}:${bucket(data.repostCount)}`;
   const cached =
     pngCache.get(
@@ -928,49 +931,54 @@ async function renderPostOgImageUncached(
       },
     );
 
+  // A null count is withheld, not zero: the card is drawn without that figure at all.
   const stats: Stat[] =
-    [
-      {
-        value:
-          compact(
-            data.likeCount ??
-              0,
-          ),
-        label:
-          plural(
-            data.likeCount,
-            'like',
-            'likes',
-          ),
-        lead: true,
-      },
-      {
-        value:
-          compact(
-            data.repostCount ??
-              0,
-          ),
-        label:
-          plural(
-            data.repostCount,
-            'repost',
-            'reposts',
-          ),
-      },
-      {
-        value:
-          compact(
-            data.commentCount ??
-              0,
-          ),
-        label:
-          plural(
-            data.commentCount,
-            'reply',
-            'replies',
-          ),
-      },
-    ];
+    data.likeCount ===
+      null ||
+    data.repostCount ===
+      null ||
+    data.commentCount ===
+      null
+      ? []
+      : [
+          {
+            value:
+              compact(
+                data.likeCount,
+              ),
+            label:
+              plural(
+                data.likeCount,
+                'like',
+                'likes',
+              ),
+            lead: true,
+          },
+          {
+            value:
+              compact(
+                data.repostCount,
+              ),
+            label:
+              plural(
+                data.repostCount,
+                'repost',
+                'reposts',
+              ),
+          },
+          {
+            value:
+              compact(
+                data.commentCount,
+              ),
+            label:
+              plural(
+                data.commentCount,
+                'reply',
+                'replies',
+              ),
+          },
+        ];
 
   const date =
     formatDate(
@@ -1334,7 +1342,7 @@ export function renderPostOgImage(
   data: PostOgData,
 ): Promise<Buffer> {
   return dedupeOgRender(
-    `post:${data.id}:${data.revision ?? ''}:${Math.floor((data.likeCount ?? 0) / 10)}:${Math.floor((data.commentCount ?? 0) / 10)}:${Math.floor((data.repostCount ?? 0) / 10)}`,
+    `post:${data.id}:${data.revision ?? ''}:${data.likeCount === null ? 'q' : Math.floor(data.likeCount / 10)}:${data.commentCount === null ? 'q' : Math.floor(data.commentCount / 10)}:${data.repostCount === null ? 'q' : Math.floor(data.repostCount / 10)}`,
     () =>
       renderPostOgImageUncached(
         data,

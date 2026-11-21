@@ -12,6 +12,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { AdminOwnedCommunities } from '@/components/communities/AdminOwnedCommunities';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
@@ -880,6 +881,8 @@ export function UserModerationPanel({
           />
         </section>
       )}
+
+      <AdminOwnedCommunities userId={userId} />
 
       <section className="space-y-2">
         <h3 className="t-label">

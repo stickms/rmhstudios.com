@@ -121,6 +121,9 @@ vi.mock('@/lib/prisma.server', () => {
       delete: write('save.delete'),
       upsert: write('save.upsert'),
     },
+    // The vote runs under the poll's advisory lock and re-reads its end (s04-08): an open poll.
+    $executeRaw: async () => 1,
+    rMHarkPoll: { findUnique: async () => ({ closesAt: null, closedAt: null }) },
     rMHarkPollOption: {
       findUnique: async () => ({ id: 'o1', poll: { rmheetId: 'p1', multiSelect: true, id: 'poll1', closesAt: null } }),
       findMany: async () => [{ id: 'o1', voteCount: 1 }],

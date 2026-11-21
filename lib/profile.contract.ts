@@ -39,6 +39,10 @@ export interface UpdatedProfile {
   dmPrivacy: NonNullable<
     UpdateProfileInput['dmPrivacy']
   >;
+  followListVisibility: NonNullable<
+    UpdateProfileInput['followListVisibility']
+  >;
+  dmRequests: boolean;
   profileSongSpotifyId:
     | string
     | null;

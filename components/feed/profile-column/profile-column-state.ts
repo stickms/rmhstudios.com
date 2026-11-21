@@ -329,6 +329,20 @@ export function applySavedProfile(
             data.dmPrivacy,
         }
       : {}),
+    ...(data.dmRequests !==
+    undefined
+      ? {
+          dmRequests:
+            data.dmRequests,
+        }
+      : {}),
+    ...(data.followListVisibility !==
+    undefined
+      ? {
+          followListVisibility:
+            data.followListVisibility,
+        }
+      : {}),
     ...(data.profileSongSpotifyId !==
     undefined
       ? {
@@ -436,6 +450,10 @@ export function buildEditInitial(
       profile.showLikes,
     dmPrivacy:
       profile.dmPrivacy,
+    followListVisibility:
+      profile.followListVisibility,
+    dmRequests:
+      profile.dmRequests,
     tipGoal:
       profile.tipGoal,
     tipGoalLabel:

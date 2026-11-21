@@ -9,6 +9,8 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { groupReactions } from '@/lib/social/reactions';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { mapQuotedOriginal } from '@/lib/feed/quoted-original';
+import { redactCounts } from '@/lib/feed/quiet-counts';
+import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 
 /** One per-emoji reaction summary entry, as it appears on a FeedItem. */
 type ReactionSummary = NonNullable<FeedItem['reactions']>[number];
@@ -182,7 +184,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
-    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
+    ...pollLifecycleView(poll),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -234,5 +236,6 @@ export function mapRmharkToFeedItem(
     reactions: reactionsOverride ?? groupReactions(r.reactions ?? [], viewerId),
     threadReplyCount: r.threadReplyCount ?? 0,
   };
-  return applyLock(item, r, viewerId);
+  // An author who hides their counts shows them to nobody but themselves (lib/feed/quiet-counts).
+  return redactCounts(applyLock(item, r, viewerId), viewerId);
 }

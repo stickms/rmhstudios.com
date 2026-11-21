@@ -33,6 +33,7 @@ import type { CoinTxnType, Prisma, PrismaClient } from '@prisma/client';
 // specifier that esbuild could not map emitted a literal require() and killed the
 // whole hub on boot, with no build error.
 import { assertPlayAllowedOn } from './play-limits-core';
+import { assertSpendAllowedOn } from './spend-budget-core';
 
 /** Any Prisma client: the base client or an interactive-transaction client. */
 export type Db = Prisma.TransactionClient | PrismaClient;
@@ -307,6 +308,8 @@ export async function debitCoinsOn(
 
   return execute(client, opts, async (db) => {
     if (opts.type === 'WAGER') await assertPlayAllowedOn(db, userId, amount);
+    // Spending budget (s04-07): the spend types only, under the member's lock.
+    await assertSpendAllowedOn(db, userId, amount, opts.type ?? 'PURCHASE');
 
     await ensureProfile(db, userId);
 
@@ -361,6 +364,8 @@ export async function transferCoinsOn(
   const delivered = amount - fee;
 
   return execute(client, opts, async (db) => {
+    // Spending budget (s04-07): the sender pays `amount` (fee included).
+    await assertSpendAllowedOn(db, fromUserId, amount, opts.type ?? 'TIP');
     await ensureProfile(db, fromUserId);
     await ensureProfile(db, toUserId);
 

@@ -1,10 +1,15 @@
 /**
  * Contracts for the RMHbox leaderboard and match-history reads (redesign audit C1,
- * batch 10). Client-safe. Both routes are public and rate limited per IP (429
- * `{ error, retryAfter }`). The routes stay hand-wrapped, so these types are the
- * hand-written shapes of what they return.
+ * batch 10). Client-safe. All three are public reads rate limited per IP; stats and the
+ * history player filter also follow the member's game-activity privacy
+ * (`lib/rmhbox/player-stats.server.ts`).
  */
 import { endpoint } from '@/lib/contract/endpoint';
+import type {
+  GlobalStats,
+  MinigameStats,
+  RecentMatch,
+} from '@/lib/rmhbox/player-stats';
 import type { GameLog } from '@/lib/rmhbox/history-display';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
 
@@ -74,13 +79,18 @@ export interface RmhboxMatchSummary {
   gameLog?: GameLog;
 }
 
-/** A page of finished matches, newest first, optionally narrowed to one minigame or player. */
+/** A page of finished matches, newest first, optionally narrowed to one minigame or player (a player the caller may not see lists as empty). */
 export const listRmhboxMatchesApi =
   endpoint<{
     query: {
+      /** One match's detail (the log only for its players and admins): answers `{ match }` instead of a list. */
+      matchId?:
+        | string
+        | undefined;
       minigame?:
         | string
         | undefined;
+      /** Only the matches of this player, and only when their game-activity setting lets the caller see them. */
       userId?:
         | string
         | undefined;
@@ -102,5 +112,50 @@ export const listRmhboxMatchesApi =
       method:
         'GET',
       path: '/api/rmhbox/history',
+    },
+  );
+
+/** What the caller may see of a player's record (see `resolveStatsAccess`). */
+export type RmhboxStatsAccess = 'full' | 'totals' | 'private';
+
+export interface RmhboxStatsPlayer {
+  id: string;
+  name: string;
+  image: string | null;
+}
+
+/**
+ * A player's RMHBox record. `full` carries everything; `totals` (a signed-out visitor
+ * to a public record) only `global`; `private` carries nothing but the player's name.
+ * A blocked, banned or unknown player is a 404.
+ */
+export const getRmhboxStatsApi =
+  endpoint<{
+    query: {
+      userId: string;
+      /** Narrows `recentMatches` to one minigame. */
+      minigame?:
+        | string
+        | undefined;
+      limit?:
+        | number
+        | undefined;
+      offset?:
+        | number
+        | undefined;
+    };
+    res: {
+      access: RmhboxStatsAccess;
+      player: RmhboxStatsPlayer;
+      /** Null for a member who has never finished a match. */
+      global: GlobalStats | null;
+      minigames: Record<string, MinigameStats>;
+      recentMatches: RecentMatch[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/rmhbox/stats',
     },
   );

@@ -35,7 +35,10 @@ export const Route = createFileRoute('/api/tournaments/$id/start')({
           return Response.json({ ok: true });
         } catch (error) {
           if (error instanceof TournamentError) {
-            return Response.json({ error: error.message }, { status: error.status });
+            return Response.json(
+              { error: error.message, code: error.code, details: error.details },
+              { status: error.status },
+            );
           }
           console.error('Tournament start error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

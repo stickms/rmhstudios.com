@@ -426,6 +426,32 @@ model CoinTransaction {
   @@map("coin_transaction")
 }
 
+/// One signed, reasoned admin adjustment of a member's coins (s04-06). The coins
+/// themselves move through the ledger (`CoinTransaction`, type ADMIN, linked by
+/// `transactionId`); this row says who, why, and the one-time reversal link. It
+/// is a financial record, so it outlives the member's erasure (only `note` is
+/// cleared). `reversesId` / `reversedById` are plain ids, claimed with a
+/// conditional update, so two reversals can never both apply.
+model CoinAdjustment {
+  id            String   @id @default(cuid())
+  userId        String
+  adminId       String?
+  /// Signed: positive credits the member, negative debits.
+  delta         Int
+  reason        String   @db.VarChar(24)
+  note          String?  @db.VarChar(280)
+  transactionId String   @unique
+  reversesId    String?  @unique
+  reversedById  String?  @unique
+  createdAt     DateTime @default(now())
+
+  user  User  @relation("CoinAdjustmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin User? @relation("CoinAdjustmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("coin_adjustment")
+}
+
 // ─── Progression: Quests ──────────────────────────────────────────────────
 // Quest definitions live in code (lib/quests/catalog.ts). One row per user per
 // quest per period (daily/weekly), tracking progress + claim state.

@@ -156,6 +156,18 @@ function matches(
   );
 }
 
+// s04-16: the message-request gate has its own tests; these files are about scheduling and alt text.
+vi.mock(
+  '@/lib/messages/requests.server',
+  () => ({
+    requestGate:
+      async () => ({
+        outcome:
+          'allowed',
+      }),
+  }),
+);
+
 vi.mock(
   '@/lib/prisma.server',
   () => ({

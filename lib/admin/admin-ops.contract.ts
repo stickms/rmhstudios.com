@@ -134,12 +134,6 @@ export const grantAdminMembershipApi = endpoint<{
   res: { success: true; revoked?: number; tier?: string; expiresAt?: string };
 }>()({ method: 'POST', path: '/api/admin/users/$id/grant-membership' });
 
-/** Set a user's coin balance to an exact amount. */
-export const setAdminUserCoinsApi = endpoint<{
-  body: { coins: number };
-  res: { success: true; coins: number };
-}>()({ method: 'POST', path: '/api/admin/users/$id/set-coins' });
-
 /** The slice of a user row the admin table merges back after an edit. */
 export interface AdminUserPatched {
   id: string;

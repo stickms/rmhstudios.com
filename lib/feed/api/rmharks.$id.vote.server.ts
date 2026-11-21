@@ -4,6 +4,14 @@ import { prisma } from '@/lib/prisma.server';
 import { canReadPostThread } from '@/lib/feed/audience.server';
 import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
+import { lockOpenPoll, PollLifecycleError, pollClosedError } from '@/lib/feed/poll-lifecycle.server';
+import { isPollEnded } from '@/lib/feed/poll-lifecycle';
+
+/** 409 `POLL_CLOSED`: the poll has ended, by the clock or by its author. */
+function pollClosedResponse(): Response {
+  const err = pollClosedError();
+  return Response.json({ error: err.message, code: err.code }, { status: err.status });
+}
 
 export const route = apiRoute('/api/rmharks/$id/vote', {
   POST: defineHandler(
@@ -21,7 +29,9 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
       const option = await prisma.rMHarkPollOption.findUnique({
         where: { id: optionId },
         include: {
-          poll: { select: { rmheetId: true, multiSelect: true, id: true, closesAt: true } },
+          poll: {
+            select: { rmheetId: true, multiSelect: true, id: true, closesAt: true, closedAt: true },
+          },
         },
       });
 
@@ -29,8 +39,9 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
         return Response.json({ error: 'Invalid option' }, { status: 400 });
       }
 
-      if (option.poll.closesAt && option.poll.closesAt.getTime() <= Date.now()) {
-        return Response.json({ error: 'This poll has closed' }, { status: 403 });
+      // Ended by the clock or by its author. Checked again under the poll's lock below, where it is race-safe.
+      if (isPollEnded(option.poll)) {
+        return pollClosedResponse();
       }
 
       const userId = session.user.id;
@@ -42,66 +53,65 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
         where: { optionId_userId: { optionId, userId } },
       });
 
-      let castVote = false;
-      // Set when an un-vote lands on a post the caller can no longer read: the
-      // vote is still removed, but the post's tallies are not returned.
-      let unreadable = false;
-      if (existingVote) {
-        // Toggle off — remove the vote and drop the option's denormalized tally in
-        // the same transaction (guarded so it never goes below zero).
-        await prisma.$transaction([
-          prisma.rMHarkPollVote.delete({ where: { id: existingVote.id } }),
-          prisma.rMHarkPollOption.updateMany({
-            where: { id: optionId, voteCount: { gt: 0 } },
-            data: { voteCount: { decrement: 1 } },
-          }),
-        ]);
-        unreadable = !(await canReadPostThread(id, userId));
-      } else if (!(await canReadPostThread(id, userId))) {
-        // Voting needs a readable post (un-voting, above, stays allowed).
+      // Voting needs a readable post (un-voting stays allowed).
+      if (!existingVote && !(await canReadPostThread(id, userId))) {
         return Response.json({ error: 'Not found' }, { status: 404 });
-      } else if (isMultiSelect) {
-        castVote = true;
-        // Multi-select: add the vote and bump the option's tally atomically.
-        await prisma.$transaction([
-          prisma.rMHarkPollVote.create({ data: { optionId, userId } }),
-          prisma.rMHarkPollOption.update({
-            where: { id: optionId },
-            data: { voteCount: { increment: 1 } },
-          }),
-        ]);
-      } else {
-        castVote = true;
-        // Single-select: remove any existing votes on this poll (decrementing the
-        // tally of each option the user had chosen), then add the new vote and
-        // bump its tally — all in one transaction so counts stay consistent.
-        const allOptions = await prisma.rMHarkPollOption.findMany({
-          where: { pollId },
-          select: { id: true },
-        });
-        const optionIds = allOptions.map((o) => o.id);
-        const priorVotes = await prisma.rMHarkPollVote.findMany({
-          where: { optionId: { in: optionIds }, userId },
-          select: { optionId: true },
-        });
-
-        await prisma.$transaction([
-          prisma.rMHarkPollVote.deleteMany({
-            where: { optionId: { in: optionIds }, userId },
-          }),
-          ...priorVotes.map((pv) =>
-            prisma.rMHarkPollOption.updateMany({
-              where: { id: pv.optionId, voteCount: { gt: 0 } },
-              data: { voteCount: { decrement: 1 } },
-            }),
-          ),
-          prisma.rMHarkPollVote.create({ data: { optionId, userId } }),
-          prisma.rMHarkPollOption.update({
-            where: { id: optionId },
-            data: { voteCount: { increment: 1 } },
-          }),
-        ]);
       }
+
+      try {
+        // Every write below runs under the poll's lock, after re-reading its end, so a vote in flight when the
+        // author ends the poll is either in the final tally or refused. Tallies move in the same transaction as
+        // the votes (guarded so a decrement never goes below zero).
+        await prisma.$transaction(async (tx) => {
+          await lockOpenPoll(tx, pollId);
+          if (existingVote) {
+            // Toggle off.
+            await tx.rMHarkPollVote.delete({ where: { id: existingVote.id } });
+            await tx.rMHarkPollOption.updateMany({
+              where: { id: optionId, voteCount: { gt: 0 } },
+              data: { voteCount: { decrement: 1 } },
+            });
+          } else if (isMultiSelect) {
+            // Multi-select: add the vote and bump the option's tally.
+            await tx.rMHarkPollVote.create({ data: { optionId, userId } });
+            await tx.rMHarkPollOption.update({
+              where: { id: optionId },
+              data: { voteCount: { increment: 1 } },
+            });
+          } else {
+            // Single-select: remove any existing votes on this poll (decrementing the tally of each option the
+            // user had chosen), then add the new vote and bump its tally.
+            const allOptions = await tx.rMHarkPollOption.findMany({
+              where: { pollId },
+              select: { id: true },
+            });
+            const optionIds = allOptions.map((o) => o.id);
+            const priorVotes = await tx.rMHarkPollVote.findMany({
+              where: { optionId: { in: optionIds }, userId },
+              select: { optionId: true },
+            });
+            await tx.rMHarkPollVote.deleteMany({ where: { optionId: { in: optionIds }, userId } });
+            for (const pv of priorVotes) {
+              await tx.rMHarkPollOption.updateMany({
+                where: { id: pv.optionId, voteCount: { gt: 0 } },
+                data: { voteCount: { decrement: 1 } },
+              });
+            }
+            await tx.rMHarkPollVote.create({ data: { optionId, userId } });
+            await tx.rMHarkPollOption.update({
+              where: { id: optionId },
+              data: { voteCount: { increment: 1 } },
+            });
+          }
+        });
+      } catch (err) {
+        if (err instanceof PollLifecycleError && err.code === 'POLL_CLOSED') return pollClosedResponse();
+        throw err;
+      }
+      // Progression runs only when a vote was cast (not toggled off).
+      const castVote = !existingVote;
+      // An un-vote on a post the caller can no longer read still removes the vote, but the tallies are withheld.
+      const unreadable = !!existingVote && !(await canReadPostThread(id, userId));
 
       // Fetch the user's current votes for this poll
       const allOptions = await prisma.rMHarkPollOption.findMany({

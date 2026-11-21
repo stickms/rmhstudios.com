@@ -12,6 +12,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { nullPostCounts } from '@/lib/feed/quiet-counts';
 import { ExternalLink, Heart, MessageCircle, Repeat } from 'lucide-react';
 
 const fetchEmbed = createServerFn({ method: 'GET' })
@@ -45,13 +46,17 @@ const fetchEmbed = createServerFn({ method: 'GET' })
       return null;
     }
     const user = resolveUser(post.user as any);
+    // An embed has no viewer: an author who hides their counts gets an embed without them (lib/feed/quiet-counts).
+    const counts = {
+      likeCount: post.likeCount as number | null,
+      commentCount: post.commentCount as number | null,
+      repostCount: post.repostCount as number | null,
+    };
     return {
       id: post.id,
       content: post.content,
       createdAt: post.createdAt.toISOString(),
-      likeCount: post.likeCount,
-      commentCount: post.commentCount,
-      repostCount: post.repostCount,
+      ...(user.hideCounts ? nullPostCounts(counts) : counts),
       imageUrl: post.imageUrls?.[0] ?? null,
       imageAlt: post.imageAlts?.[0]?.trim() || null,
       user: { name: user.name, handle: user.handle, image: user.image, id: user.id },
@@ -105,15 +110,19 @@ function EmbedPost() {
         )}
 
         <div className="mt-3 flex items-center gap-4 text-xs text-site-text-muted">
-          <span className="inline-flex items-center gap-1.5">
-            <Heart className="size-3.5" aria-hidden /> {post.likeCount}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Repeat className="size-3.5" aria-hidden /> {post.repostCount}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <MessageCircle className="size-3.5" aria-hidden /> {post.commentCount}
-          </span>
+          {post.likeCount !== null && (
+            <>
+              <span className="inline-flex items-center gap-1.5">
+                <Heart className="size-3.5" aria-hidden /> {post.likeCount}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Repeat className="size-3.5" aria-hidden /> {post.repostCount}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MessageCircle className="size-3.5" aria-hidden /> {post.commentCount}
+              </span>
+            </>
+          )}
           <a
             href={postHref}
             target="_blank"

@@ -2,6 +2,7 @@
  * Admin audit logging + ban enforcement helpers.
  */
 
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 
 /** Record an admin action. Best-effort — never throws into the caller. */
@@ -23,6 +24,28 @@ export async function logAdminAction(
   } catch (err) {
     console.error('[audit] failed to log action:', err);
   }
+}
+
+/**
+ * Record an admin action INSIDE the caller's transaction. Unlike `logAdminAction`
+ * it does not swallow errors: for a money movement a failed audit write must roll
+ * the movement back.
+ */
+export async function recordAdminActionIn(
+  tx: Prisma.TransactionClient,
+  adminId: string,
+  action: string,
+  opts: { targetType?: string; targetId?: string; detail?: string } = {},
+): Promise<void> {
+  await tx.adminAuditLog.create({
+    data: {
+      adminId,
+      action: action.slice(0, 64),
+      targetType: opts.targetType ?? null,
+      targetId: opts.targetId ?? null,
+      detail: opts.detail?.slice(0, 500) ?? null,
+    },
+  });
 }
 
 /** Returns the active ban for a user (if currently banned), else null. */

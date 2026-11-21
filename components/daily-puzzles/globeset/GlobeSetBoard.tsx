@@ -23,6 +23,7 @@ import {
   m as motion,
 } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { globesetColorLabels } from './color-labels';
 import {
   colorParity,
   DOT_COLORS,
@@ -173,18 +174,8 @@ export function GlobeSetBoard({
     onKey,
   ]);
 
-  const colorName =
-    (
-      id: string,
-      fallback: string,
-    ) =>
-      t(
-        `globeset-color-${id}`,
-        {
-          defaultValue:
-            fallback,
-        },
-      );
+  const colorNames = globesetColorLabels(t);
+  const colorName = (id: string) => colorNames[id] ?? id;
 
   return (
     <div>
@@ -344,10 +335,7 @@ export function GlobeSetBoard({
                     style={{
                       background: `var(${dot.token})`,
                     }}
-                    title={colorName(
-                      dot.id,
-                      dot.id,
-                    )}
+                    title={colorName(dot.id)}
                   />
                   <span className="sr-only">
                     {odd
@@ -357,10 +345,7 @@ export function GlobeSetBoard({
                             defaultValue:
                               '{{color}}: odd — still unpaired',
                             color:
-                              colorName(
-                                dot.id,
-                                dot.id,
-                              ),
+                              colorName(dot.id),
                           },
                         )
                       : t(
@@ -369,10 +354,7 @@ export function GlobeSetBoard({
                             defaultValue:
                               '{{color}}: even',
                             color:
-                              colorName(
-                                dot.id,
-                                dot.id,
-                              ),
+                              colorName(dot.id),
                           },
                         )}
                   </span>

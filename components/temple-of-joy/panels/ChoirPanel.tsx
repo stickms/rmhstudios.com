@@ -14,12 +14,14 @@ import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { formatDuration } from '@/lib/temple-of-joy/numbers';
 import type { SaintId } from '@/lib/temple-of-joy/types';
-import { SAINTS, SAINT_MAP, STALL_NAMES, STALL_SHARE } from '@/lib/temple-of-joy/minigames/choir';
+import { SAINTS, SAINT_MAP, STALL_SHARE } from '@/lib/temple-of-joy/minigames/choir';
 import { useTempleSnapshot } from '../hooks';
+import { choirStallLabels } from '../temple-labels';
 import { TempleButton, TempleRow, TempleSection, Glyph } from '../ui';
 
 export function ChoirPanel() {
   const { t } = useTranslation('c-temple-of-joy');
+  const stallLabels = choirStallLabels(t);
   /** Which stall the player is filling. `null` = not choosing. */
   const [choosing, setChoosing] = useState<0 | 1 | 2 | null>(null);
 
@@ -62,7 +64,7 @@ export function ChoirPanel() {
               </span>
               <span className="toj-stall-body">
                 <span className="toj-stall-role">
-                  {t(`stall-${index}`, { defaultValue: STALL_NAMES[index] })} ·{' '}
+                  {stallLabels[index]} ·{' '}
                   {Math.round(share * 100)}%
                 </span>
                 <span className="toj-stall-name">
@@ -95,7 +97,7 @@ export function ChoirPanel() {
         <>
           <TempleSection>
             {t('choir-pick', {
-              stall: t(`stall-${choosing}`, { defaultValue: STALL_NAMES[choosing] }),
+              stall: stallLabels[choosing],
               defaultValue: 'Who sings in the {{stall}}?',
             })}
           </TempleSection>

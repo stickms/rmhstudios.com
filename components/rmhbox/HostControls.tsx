@@ -23,6 +23,7 @@ import { C2S } from '@/lib/rmhbox/events';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import GamePickerModal from './GamePickerModal';
 import GameSettingsModal from './GameSettingsModal';
+import { useAutoApplyDefaultPreset } from './use-presets';
 import type { LobbySettings } from '@/lib/rmhbox/types';
 
 interface HostControlsProps {
@@ -52,6 +53,8 @@ export default function HostControls({
 
   const { t } = useTranslation('c-rmhbox');
   const gameSettingsState = useRMHboxStore((s) => s.gameSettingsState);
+  // The host's default preset fills the form as soon as the minigame is picked, not when the modal opens.
+  useAutoApplyDefaultPreset(lobbyId, gameSettingsState?.minigameId, isHost && gameSettingsState?.mode === 'lobby');
 
   const handleUpdateSettings = useCallback(
     (partial: Partial<LobbySettings>) => {
@@ -125,6 +128,8 @@ export default function HostControls({
           isOpen={showGameSettings}
           onClose={() => setShowGameSettings(false)}
           displayName={gameSettingsState.displayName}
+          minigameId={gameSettingsState.minigameId}
+          lobbyId={lobbyId}
           schema={gameSettingsState.schema}
           values={gameSettingsState.currentValues}
           editable={true}

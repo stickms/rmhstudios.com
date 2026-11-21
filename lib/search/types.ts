@@ -177,7 +177,8 @@ export interface LegacyPost {
   id: string;
   content: string;
   createdAt: string;
-  likeCount: number;
+  /** `null` when the author hides the counts on their posts (search has no viewer; lib/feed/quiet-counts). */
+  likeCount: number | null;
   user: LegacyPerson;
   score?: number;
   confidence?: Confidence;

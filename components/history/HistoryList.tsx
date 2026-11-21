@@ -4,6 +4,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { historyEntityTypeLabels } from '@/components/history/entity-type-labels';
 import { toast } from '@/lib/toast';
 import {
   History,
@@ -59,6 +60,7 @@ export function HistoryList({
     useTranslation(
       'c-history',
     );
+  const typeLabels = historyEntityTypeLabels(t);
   const confirm =
     useConfirm();
   const [
@@ -396,13 +398,7 @@ export function HistoryList({
             ) => ({
               id: type,
               label:
-                t(
-                  `type-${type}`,
-                  {
-                    defaultValue:
-                      type,
-                  },
-                ),
+                typeLabels[type],
             }),
           ),
         ]}

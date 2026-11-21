@@ -59,6 +59,10 @@ const MUTUAL_NAMES = 2;
  * unique `(followerId, followingId)` index once per suggestion, so its cost is the viewer's follow count times the
  * page size (eight), whatever the suggested accounts' own follower counts are. The window functions do the counting
  * and the cap in the database, so a suggestion with thousands of mutual followers still returns two rows.
+ *
+ * A line names a member only when the viewer could browse that member's following list (follow-list-privacy, #18):
+ * the line says who they follow. The viewer already follows every named member, so `mutuals` needs only the follow
+ * back. The total counts only those members, so a hidden one is not revealed by the count either.
  */
 async function loadSuggestedMutuals(
   viewerId: string,
@@ -81,6 +85,13 @@ async function loadSuggestedMutuals(
       JOIN "user" u ON u.id = f."followerId"
       LEFT JOIN user_profile p ON p."userId" = u.id
       WHERE mine."followerId" = ${viewerId} AND NOT (f."followerId" = ANY(${hidden}::text[]))
+        AND (
+          COALESCE(p."followListVisibility", 'everyone') = 'everyone'
+          OR (
+            p."followListVisibility" = 'mutuals'
+            AND EXISTS (SELECT 1 FROM follow back WHERE back."followerId" = u.id AND back."followingId" = ${viewerId})
+          )
+        )
     ) m
     WHERE m.rn <= ${MUTUAL_NAMES}
     ORDER BY m."followingId", m.rn`);

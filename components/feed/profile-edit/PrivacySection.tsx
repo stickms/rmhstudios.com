@@ -3,17 +3,27 @@ import { Eye, LockKeyhole } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { DmRequestsSwitch } from './DmRequestsSwitch';
+import { FollowListSection } from './FollowListSection';
 
 export function PrivacySection({
   showLikes,
   onShowLikesChange,
   dmPrivacy,
   onDmPrivacyChange,
+  followListVisibility,
+  onFollowListVisibilityChange,
+  dmRequests,
+  onDmRequestsChange,
 }: {
   showLikes: boolean;
   onShowLikesChange: (value: boolean) => void;
   dmPrivacy: string;
   onDmPrivacyChange: (value: string) => void;
+  followListVisibility: string;
+  onFollowListVisibilityChange: (value: string) => void;
+  dmRequests: boolean;
+  onDmRequestsChange: (value: boolean) => void;
 }) {
   const { t } = useTranslation('feed');
   return (
@@ -88,7 +98,17 @@ export function PrivacySection({
                   defaultValue: 'No one can send you direct messages.',
                 })}
         </p>
+        <DmRequestsSwitch
+          dmPrivacy={dmPrivacy}
+          checked={dmRequests}
+          onChange={onDmRequestsChange}
+        />
       </section>
+
+      <FollowListSection
+        value={followListVisibility}
+        onChange={onFollowListVisibilityChange}
+      />
     </div>
   );
 }

@@ -50,6 +50,7 @@ import {
   plusFetch,
 } from '@/components/communities/plus-api';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
+import { HandoverBanner } from '@/components/communities/HandoverBanner';
 import type { FeedItem } from '@/lib/feed-types';
 
 const HallOfFamePanel =
@@ -444,6 +445,17 @@ export function CommunityPlusBody({
 
   return (
     <div>
+      {community.role ===
+        'MOD' && (
+        <HandoverBanner
+          slug={
+            slug
+          }
+          name={
+            community.name
+          }
+        />
+      )}
       {extras && (
         <CommunityRulesRail
           rules={
@@ -778,6 +790,10 @@ export function CommunityPlusBody({
               }
               isPrivate={
                 community.isPrivate
+              }
+              isOwner={
+                community.role ===
+                'ADMIN'
               }
               extras={
                 extras

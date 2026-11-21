@@ -89,6 +89,8 @@ export interface FeedItemUser {
   isVerified?: boolean;
   isAdmin?: boolean;
   isBot?: boolean;
+  /** The author hides the counts on their posts from other viewers (lib/feed/quiet-counts). */
+  hideCounts?: boolean;
   /** Equipped shop cosmetics (name color, avatar frame, badge, …). */
   cosmetics?: UserCosmetics;
 }
@@ -108,7 +110,13 @@ export interface FeedPoll {
   myVotes?: string[]; // option IDs the current user voted for
   closesAt?:
     | string
-    | null; // scheduled close time, if any
+    | null; // the effective end (the author's early end, else the scheduled close), if any
+  /** True once the poll has stopped taking votes, whichever way it ended (`lib/feed/poll-lifecycle`). */
+  ended?: boolean;
+  /** The author extended the poll at least once. */
+  extended?: boolean;
+  /** The extensions (days) still open to the author; empty when ended or untimed. */
+  extendDays?: number[];
 }
 
 export interface FeedItem {
@@ -119,10 +127,11 @@ export interface FeedItem {
   // RMHark fields
   content?: string;
   user?: FeedItemUser;
-  likeCount?: number;
-  commentCount?: number;
-  repostCount?: number;
-  viewCount?: number;
+  // `null` = withheld: the author hides the counts on their posts (lib/feed/quiet-counts).
+  likeCount?: number | null;
+  commentCount?: number | null;
+  repostCount?: number | null;
+  viewCount?: number | null;
   liked?: boolean;
   reposted?: boolean;
   bookmarked?: boolean;

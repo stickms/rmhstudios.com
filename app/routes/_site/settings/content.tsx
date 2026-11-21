@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { feedSignalsQuery } from '@/lib/feed/signals.queries';
+import { quietCountsQuery } from '@/lib/feed/quiet-counts.queries';
 import { altTextSettingQuery, autoDeleteSettingQuery } from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { FeedControlsSettings } from '@/components/settings/FeedControlsSettings';
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/_site/settings/content')({
       prefetchRouteQuery(context.queryClient, feedSignalsQuery()),
       prefetchRouteQuery(context.queryClient, altTextSettingQuery()),
       prefetchRouteQuery(context.queryClient, autoDeleteSettingQuery()),
+      prefetchRouteQuery(context.queryClient, quietCountsQuery()),
     ]);
     return undefined;
   },

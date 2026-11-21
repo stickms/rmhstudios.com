@@ -7,9 +7,12 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_URL } from '@/lib/seo';
 import { safeHref } from '@/lib/url-safety';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { useSession } from '@/components/Providers';
 import type { EventDTO, EventVenueKindValue, RsvpResult } from '@/lib/events.server';
 import { EventTime } from './EventTime';
 import { RsvpButton } from './RsvpButton';
+import { WaitlistPanel } from './WaitlistPanel';
 import { EventRecurrenceInfo } from '@/components/calendar/EventRecurrenceInfo';
 
 const VENUE_META: Record<
@@ -25,10 +28,15 @@ const VENUE_META: Record<
 
 export function EventCard({ event, className }: { event: EventDTO; className?: string }) {
   const { t } = useTranslation('site');
+  const { t: tr } = useTranslation('event-waitlist');
+  const { data: session } = useSession();
   // Local RSVP state so the button + counts update without a full refetch.
   const [going, setGoing] = useState(event.goingCount);
   const [maybe, setMaybe] = useState(event.maybeCount);
   const [viewerRsvp, setViewerRsvp] = useState(event.viewerRsvp);
+  const [waiting, setWaiting] = useState(event.waitlistCount);
+  const [place, setPlace] = useState(event.viewerWaitlistPosition);
+  const [hostOpen, setHostOpen] = useState(false);
 
   const canceled = !!event.canceledAt;
   const past = useMemo(() => new Date(event.startsAt).getTime() < Date.now(), [event.startsAt]);
@@ -48,7 +56,17 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
     setGoing(r.goingCount);
     setMaybe(r.maybeCount);
     setViewerRsvp(r.viewerRsvp);
+    setWaiting(r.waitlistCount ?? 0);
+    setPlace(r.viewerWaitlistPosition ?? null);
   };
+
+  const isHost = !!session && session.user.id === event.hostId;
+  const waitlistLine =
+    viewerRsvp === 'waitlist' && place != null
+      ? tr('card-waitlisted', { count: place, defaultValue: 'Waitlisted, number {{count}}' })
+      : waiting > 0
+        ? tr('card-full-waiting', { count: waiting, defaultValue: 'Full · {{count}} waiting' })
+        : null;
 
   return (
     <li
@@ -143,6 +161,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
             {maybe > 0
               ? ` · ${t('event-maybe-count', { count: maybe, defaultValue: '{{count}} maybe' })}`
               : ''}
+            {waitlistLine ? ` · ${waitlistLine}` : ''}
           </span>
         </div>
 
@@ -155,11 +174,35 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
               status={viewerRsvp}
               goingCount={going}
               capacity={event.capacity}
+              waitlistPosition={place}
               onChange={onChange}
             />
           )}
+          {!canceled && past && (waiting > 0 || viewerRsvp === 'waitlist') && (
+            <span className="t-meta">{tr('closed', { defaultValue: 'Waitlist closed' })}</span>
+          )}
         </div>
       </div>
+      {isHost && !event.recurrence && waiting > 0 && (
+        <div>
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-expanded={hostOpen}
+            aria-controls={`waitlist-${event.id}`}
+            onClick={() => setHostOpen((open) => !open)}
+          >
+            {hostOpen
+              ? tr('host-hide', { defaultValue: 'Hide waitlist' })
+              : tr('host-show', { count: waiting, defaultValue: 'Show waitlist ({{count}})' })}
+          </Button>
+          {hostOpen && (
+            <div id={`waitlist-${event.id}`} className="mt-2">
+              <WaitlistPanel eventId={event.id} onChange={setWaiting} />
+            </div>
+          )}
+        </div>
+      )}
       {event.recurrence && !canceled && !past && (
         <EventRecurrenceInfo event={{ ...event, viewerRsvp }} onChange={onChange} />
       )}

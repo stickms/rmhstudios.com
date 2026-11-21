@@ -81,7 +81,7 @@ Your notifications, newest first.
 
 ### `GET /api/v1/me/bookmarks`
 
-Posts you have bookmarked, newest first.
+Posts you have bookmarked, newest first. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
 
 **Scope:** `read:bookmarks` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyBookmarks`
 

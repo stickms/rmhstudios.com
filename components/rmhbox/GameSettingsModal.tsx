@@ -29,6 +29,9 @@ interface GameSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   displayName: string;
+  /** With `lobbyId`, the host's presets for this minigame show above the form. */
+  minigameId?: string;
+  lobbyId?: string;
   schema: GameSettingsSchema;
   values: GameSettingValues;
   /** If true the host can edit; otherwise all controls are disabled. */
@@ -51,6 +54,8 @@ export default function GameSettingsModal({
   isOpen,
   onClose,
   displayName,
+  minigameId,
+  lobbyId,
   schema,
   values,
   editable,
@@ -157,6 +162,12 @@ export default function GameSettingsModal({
             }
             onReset={
               onReset
+            }
+            lobbyId={
+              lobbyId
+            }
+            minigameId={
+              minigameId
             }
           />
         </div>
