@@ -10,6 +10,13 @@ const ctx = {
     connect: vi.fn(),
     disconnect: vi.fn(),
   })),
+  createBiquadFilter: vi.fn(() => ({
+    type: 'lowpass',
+    frequency: { value: 350 },
+    Q: { value: 1 },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  })),
   createGain: vi.fn(() => ({
     gain: { value: 1 },
     connect: vi.fn(),
@@ -196,26 +203,66 @@ describe('fftSizeFor', () => {
   });
 });
 
-describe('microphone gain', () => {
-  it('sits between the microphone and the analyser and follows setMicGain live', async () => {
-    const { setMicGain } = await import('./mic');
+describe('microphone chain', () => {
+  async function run(settings: Partial<import('./mic-gain').MicSettings>) {
+    const { setMicSettings } = await import('./mic');
+    const filters: {
+      type: string;
+      frequency: { value: number };
+      Q: { value: number };
+      connect: ReturnType<typeof vi.fn>;
+      disconnect: ReturnType<typeof vi.fn>;
+    }[] = [];
+    ctx.createBiquadFilter.mockImplementation(() => {
+      const f = { type: 'lowpass', frequency: { value: 350 }, Q: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() };
+      filters.push(f);
+      return f;
+    });
     const node = { gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() };
     const source = { connect: vi.fn(), disconnect: vi.fn() };
     ctx.createGain.mockReturnValueOnce(node);
     ctx.createMediaStreamSource.mockReturnValueOnce(source);
     const { stream } = fakeStream();
     vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) } });
-    setMicGain(4);
+    setMicSettings({ auto: false, gain: 1, gate: 0.01, hum: 'off', ...settings });
     const mic = createMicInput();
     await mic.start();
+    return { mic, node, source, filters, setMicSettings };
+  }
+
+  it('runs source → rumble filter → two hum notches → gain → analyser, with the gain following the setting live', async () => {
+    const { mic, node, source, filters, setMicSettings } = await run({ gain: 4 });
+    const [rumble, n1, n2] = filters;
+    expect(rumble!.type).toBe('highpass');
+    expect(rumble!.frequency.value).toBe(40);
+    expect(source.connect).toHaveBeenCalledWith(rumble);
+    expect(rumble!.connect).toHaveBeenCalledWith(n1);
+    expect(n1!.connect).toHaveBeenCalledWith(n2);
+    expect(n2!.connect).toHaveBeenCalledWith(node);
     expect(node.gain.value).toBe(4);
-    expect(source.connect).toHaveBeenCalledWith(node);
-    expect(node.connect).toHaveBeenCalledTimes(1);
-    setMicGain(8);
+    setMicSettings({ gain: 8 });
     expect(node.gain.value).toBe(8);
     await mic.stop();
     expect(node.disconnect).toHaveBeenCalled();
-    setMicGain(1);
+    expect(rumble!.disconnect).toHaveBeenCalled();
+    setMicSettings({ auto: true, gain: 1, hum: 'off' });
+    vi.unstubAllGlobals();
+  });
+
+  it('bypasses the hum notches when off, and tunes them to the mains frequency and its second harmonic', async () => {
+    const { mic, filters, setMicSettings } = await run({ hum: 'off' });
+    expect(filters.slice(1).map((f) => f.type)).toEqual(['allpass', 'allpass']);
+    setMicSettings({ hum: '50' });
+    expect(filters.slice(1).map((f) => [f.type, f.frequency.value])).toEqual([
+      ['notch', 50],
+      ['notch', 100],
+    ]);
+    setMicSettings({ hum: '60' });
+    expect(filters.slice(1).map((f) => f.frequency.value)).toEqual([60, 120]);
+    setMicSettings({ hum: 'off' });
+    expect(filters.slice(1).map((f) => f.type)).toEqual(['allpass', 'allpass']);
+    await mic.stop();
+    setMicSettings({ auto: true, gain: 1, hum: 'off' });
     vi.unstubAllGlobals();
   });
 });

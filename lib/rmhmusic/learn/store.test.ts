@@ -17,7 +17,7 @@ vi.mock('./input/hub', () => ({
   }),
 }));
 vi.mock('./input/mic', () => ({
-  setMicGain: vi.fn(),
+  setMicSettings: vi.fn(),
   createMicInput: vi.fn(
     () => (
       created.mic++,
@@ -70,6 +70,9 @@ const PROFILE: Profile = {
   voiceRange: null,
   practiceMode: 'learning',
   micGain: 1,
+  micAuto: true,
+  micGate: 0.01,
+  micHum: 'off',
 };
 const ROW: LessonProgressRow = {
   lessonId: 'staff-what-is-a-staff',
@@ -904,13 +907,16 @@ describe('profile settings that act outside the store', () => {
       voiceRange: null,
       practiceMode: 'test',
       micGain: 5.66,
+      micAuto: false,
+      micGate: 0.02,
+      micHum: '50',
     };
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ profile, progress: [] }) }),
     );
     await useLearnStore.getState().load();
-    expect(mic.setMicGain).toHaveBeenCalledWith(5.66);
+    expect(mic.setMicSettings).toHaveBeenCalledWith({ auto: false, gain: 5.66, gate: 0.02, hum: '50' });
     expect(mode.getPracticeMode()).toBe('test');
     vi.unstubAllGlobals();
   });

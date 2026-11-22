@@ -30,6 +30,28 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 2. Recent work
 
+### 2.0000000 Microphone sensitivity: automatic mode, cutoff, gain and hum filter — done
+
+- **Chain** (`input/mic.ts`): source → rumble high-pass (40 Hz) → two mains-hum notches (the mains
+  frequency and its second harmonic; all-pass, i.e. off, by default) → gain → analyser. The level
+  meter, the cutoff and the pitch detector all see that one signal. `detectPitch` is given the cutoff
+  as its `minRms` (it has its own silence gate, default 0.01, which would otherwise drop quiet notes).
+- **Automatic sensitivity** (`input/mic-auto.ts`, on by default, pure and unit-tested): the room's noise
+  floor is tracked from frames with no pitched note (falls fast, rises over ~10 s) and the cutoff sits
+  3x above it (0.002–0.04); while a pitch is found the gain is steered toward a steady level (down
+  quickly, up slowly, never while a note is only dying away, 0.25x–16x). With no note the gain holds, so
+  silence and noise are never amplified, and a steady noise (a fan) only moves the floor, never the gain.
+  A note too quiet to reach the detector at all is the manual gain's job.
+- **Manual**: with automatic off, a gain slider (1x–16x, log) and a cutoff slider (0.002–0.2 RMS, shown
+  in dB, drawn as a line over the live level bar) are the learner's; the hum filter is Off / 50 Hz / 60 Hz.
+- **Stored** on `MusicLearnProfile`: `micAuto`, `micGain`, `micGate`, `micHum` (migrations
+  `20261128010000`, `20261128020000`; a learner who had already raised the gain is moved to manual).
+- **Not built**: a neural noise suppressor (RNNoise is trained on speech and mangles instruments; the
+  browser's own is off on purpose because it bends pitch), source separation (Demucs/Spleeter are far
+  too heavy to run live), Essentia.js (AGPL), CREPE (heavy, adds delay). Basic Pitch (Spotify, Apache-2.0)
+  is the candidate if "check my chord" on the microphone is ever wanted: it hears several notes at once
+  but works in chunks of a couple of seconds.
+
 ### 2.000000 FSRS, Learning/Test mode and the wrong note on the staff — done
 
 - **Scheduler:** `srs/schedule.ts` now runs FSRS-6 (`srs/fsrs.ts`, default weights, no optimizer or
