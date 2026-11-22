@@ -1,5 +1,6 @@
 import { Suspense, lazy, startTransition, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { BarChart3, ImagePlay, ImagePlus, MoreHorizontal, Sparkles } from 'lucide-react';
+import { BarChart3, ImagePlus, MoreHorizontal, Sparkles } from 'lucide-react';
+import { GifIcon } from '@/components/ui/gif-icon';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { SpineItem } from '@/components/ui/spine';
@@ -289,7 +290,7 @@ export default function HomeComposerSignedIn({ arrival }: { arrival?: string }) 
                   onClick={() => fileRef.current?.click()}
                 />
                 <ComposerTool
-                  icon={ImagePlay}
+                  icon={GifIcon}
                   label={t('menu-add-gif', {
                     defaultValue: 'Add GIF',
                   })}

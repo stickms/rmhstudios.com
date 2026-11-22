@@ -6,7 +6,7 @@ import ChallengePanel from './ChallengePanel';
 export default function LibraryReadingStrip() {
   const { t } = useTranslation('f-reading');
   return (
-    <div className="mx-auto mb-4 w-full max-w-3xl space-y-2 px-4">
+    <div className="mb-4 w-full space-y-2">
       <ChallengePanel compact />
       <p className="text-sm text-site-text-muted">
         <Link
