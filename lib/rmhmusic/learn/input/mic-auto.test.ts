@@ -60,8 +60,8 @@ describe('automatic gain', () => {
 describe('automatic cutoff', () => {
   it('sits a fixed multiple above the room, inside its bounds', () => {
     const auto = createAutoLevel(1);
-    room(auto, 0.004, 400);
-    expect(auto.gate).toBeCloseTo(0.004 * GATE_FACTOR, 4);
+    room(auto, 0.004, 2500); // the floor rises toward the room over about ten seconds
+    expect(auto.gate).toBeCloseTo(0.004 * GATE_FACTOR, 3);
     const quiet = createAutoLevel(1);
     room(quiet, 0.0001, 400);
     expect(quiet.gate).toBe(AUTO_GATE_MIN);
@@ -72,7 +72,7 @@ describe('automatic cutoff', () => {
 
   it('learns a new noise (a fan) over seconds, but forgets a passing one at once', () => {
     const auto = createAutoLevel(1);
-    room(auto, 0.002, 200);
+    room(auto, 0.002, 2500);
     const base = auto.gate;
     room(auto, 0.01, 40); // one second of fan
     expect(auto.gate).toBeLessThan(base * 1.5);
@@ -80,6 +80,23 @@ describe('automatic cutoff', () => {
     expect(auto.gate).toBeGreaterThan(base * 2);
     room(auto, 0.002, 30);
     expect(auto.gate).toBeLessThan(base * 1.5);
+  });
+
+  it('does not learn a quiet note that is already sounding when the microphone opens as the room', () => {
+    // The first buffer is only partly filled, so its level reads low. The mic only calls the detector (and so only
+    // reports 'pitched') when the level reaches the cutoff in force; a floor snapped to that first low frame put the
+    // cutoff above the real note for good (seen in a real browser with a steady quiet tone).
+    const auto = createAutoLevel(1);
+    const tone = 0.0085;
+    let pitchedFrames = 0;
+    for (let i = 0; i < 400; i++) {
+      const rms = tone * auto.gain * (i === 0 ? 0.45 : 1);
+      const pitched = rms >= auto.gate;
+      if (pitched) pitchedFrames++;
+      auto.step({ rms, pitched });
+    }
+    expect(pitchedFrames).toBeGreaterThan(390);
+    expect(auto.gain).toBeGreaterThan(1);
   });
 
   it('keeps the floor in raw units, so changing the gain does not move it', () => {
