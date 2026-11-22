@@ -1,4 +1,5 @@
-import { contractQuery } from '@/lib/route/route-query';
+import type { QueryClient } from '@tanstack/react-query';
+import { contractQuery, prefetchRouteQuery } from '@/lib/route/route-query';
 import type { QueryOf } from '@/lib/contract/endpoint';
 import {
   getMedLiveApi,
@@ -8,8 +9,10 @@ import {
   getMedTodayApi,
   listMedSchoolsApi,
   type MedChartedTypeId,
+  type MedDegreeId,
   type MedProgramFilter,
 } from './medschools.contract';
+import type { LiveProgramFilter } from './engine/search';
 
 /** Client-safe option factories for the public pages. No server functions here (queries-server-fn-ratchet). */
 
@@ -43,3 +46,31 @@ export const historyQuery = (slug: string, q: { program: MedProgramFilter; type:
 
 export const liveQuery = (q: LiveFilters) =>
   contractQuery(['medschools', 'live', q], getMedLiveApi, { query: q }, { staleTime: 0 });
+
+/** What the live feed asks the API for, given the page's search and the school list (O5). */
+export function resolveLiveFilters(
+  search: { type?: LiveFilters['type']; school?: string; degree?: MedDegreeId; program: LiveProgramFilter },
+  schoolDegree: MedDegreeId | undefined,
+): LiveFilters {
+  // A degree that contradicts the one school the feed is filtered to is dropped.
+  const degree = schoolDegree && search.degree !== schoolDegree ? undefined : search.degree;
+  return { type: search.type, school: search.school, degree, program: search.program };
+}
+
+/** The degree of the school the live feed is filtered to, read from the (cached) school list. */
+export function schoolDegreeOf(schools: { slug: string; degree: MedDegreeId }[] | undefined, slug: string | undefined) {
+  return slug ? schools?.find((s) => s.slug === slug)?.degree : undefined;
+}
+
+/** Live route loader: the school list first (it decides the degree filter), then the first page of events. */
+export async function prefetchLivePage(
+  queryClient: QueryClient,
+  search: { type?: LiveFilters['type']; school?: string; degree?: MedDegreeId; program: LiveProgramFilter },
+): Promise<undefined> {
+  await prefetchRouteQuery(queryClient, schoolsQuery({}));
+  const list = queryClient.getQueryData(schoolsQuery({}).queryKey);
+  return prefetchRouteQuery(
+    queryClient,
+    liveQuery(resolveLiveFilters(search, schoolDegreeOf(list?.schools, search.school))),
+  );
+}

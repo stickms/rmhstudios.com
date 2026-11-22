@@ -299,6 +299,8 @@ import { Route as SiteRmhDatacenterFacilitiesRouteImport } from './routes/_site/
 import { Route as SiteRmhDatacenterNetworkRouteImport } from './routes/_site/rmh-datacenter/network'
 import { Route as SiteRmhDatacenterPlatformRouteImport } from './routes/_site/rmh-datacenter/platform'
 import { Route as SiteRmhDatacenterPowerRouteImport } from './routes/_site/rmh-datacenter/power'
+import { Route as SiteRmhMedschoolIndexRouteImport } from './routes/_site/rmh-medschool/index'
+import { Route as SiteRmhMedschoolLiveRouteImport } from './routes/_site/rmh-medschool/live'
 import { Route as SiteRmhladderIndexRouteImport } from './routes/_site/rmhladder/index'
 import { Route as SiteRmhladderAlertsRouteImport } from './routes/_site/rmhladder/alerts'
 import { Route as SiteRmhladderCompaniesRouteImport } from './routes/_site/rmhladder/companies'
@@ -2067,6 +2069,16 @@ const SiteRmhDatacenterPlatformRoute =
 const SiteRmhDatacenterPowerRoute = SiteRmhDatacenterPowerRouteImport.update({
   id: '/rmh-datacenter/power',
   path: '/rmh-datacenter/power',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteRmhMedschoolIndexRoute = SiteRmhMedschoolIndexRouteImport.update({
+  id: '/rmh-medschool/',
+  path: '/rmh-medschool/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteRmhMedschoolLiveRoute = SiteRmhMedschoolLiveRouteImport.update({
+  id: '/rmh-medschool/live',
+  path: '/rmh-medschool/live',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRmhladderIndexRoute = SiteRmhladderIndexRouteImport.update({
@@ -3943,6 +3955,7 @@ export interface FileRoutesByFullPath {
   '/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
   '/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
   '/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
+  '/rmh-medschool/live': typeof SiteRmhMedschoolLiveRoute
   '/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/rmhladder/health': typeof SiteRmhladderHealthRoute
@@ -4108,6 +4121,7 @@ export interface FileRoutesByFullPath {
   '/rideshare/': typeof SiteRideshareIndexRoute
   '/rings/': typeof SiteRingsIndexRoute
   '/rmh-datacenter/': typeof SiteRmhDatacenterIndexRoute
+  '/rmh-medschool/': typeof SiteRmhMedschoolIndexRoute
   '/rmhladder/': typeof SiteRmhladderIndexRoute
   '/saves/': typeof SiteSavesIndexRoute
   '/series/': typeof SiteSeriesIndexRoute
@@ -4518,6 +4532,7 @@ export interface FileRoutesByTo {
   '/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
   '/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
   '/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
+  '/rmh-medschool/live': typeof SiteRmhMedschoolLiveRoute
   '/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/rmhladder/health': typeof SiteRmhladderHealthRoute
@@ -4683,6 +4698,7 @@ export interface FileRoutesByTo {
   '/rideshare': typeof SiteRideshareIndexRoute
   '/rings': typeof SiteRingsIndexRoute
   '/rmh-datacenter': typeof SiteRmhDatacenterIndexRoute
+  '/rmh-medschool': typeof SiteRmhMedschoolIndexRoute
   '/rmhladder': typeof SiteRmhladderIndexRoute
   '/saves': typeof SiteSavesIndexRoute
   '/series': typeof SiteSeriesIndexRoute
@@ -5121,6 +5137,7 @@ export interface FileRoutesById {
   '/_site/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
   '/_site/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
   '/_site/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
+  '/_site/rmh-medschool/live': typeof SiteRmhMedschoolLiveRoute
   '/_site/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/_site/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/_site/rmhladder/health': typeof SiteRmhladderHealthRoute
@@ -5286,6 +5303,7 @@ export interface FileRoutesById {
   '/_site/rideshare/': typeof SiteRideshareIndexRoute
   '/_site/rings/': typeof SiteRingsIndexRoute
   '/_site/rmh-datacenter/': typeof SiteRmhDatacenterIndexRoute
+  '/_site/rmh-medschool/': typeof SiteRmhMedschoolIndexRoute
   '/_site/rmhladder/': typeof SiteRmhladderIndexRoute
   '/_site/saves/': typeof SiteSavesIndexRoute
   '/_site/series/': typeof SiteSeriesIndexRoute
@@ -5724,6 +5742,7 @@ export interface FileRouteTypes {
     | '/rmh-datacenter/network'
     | '/rmh-datacenter/platform'
     | '/rmh-datacenter/power'
+    | '/rmh-medschool/live'
     | '/rmhladder/alerts'
     | '/rmhladder/companies'
     | '/rmhladder/health'
@@ -5889,6 +5908,7 @@ export interface FileRouteTypes {
     | '/rideshare/'
     | '/rings/'
     | '/rmh-datacenter/'
+    | '/rmh-medschool/'
     | '/rmhladder/'
     | '/saves/'
     | '/series/'
@@ -6299,6 +6319,7 @@ export interface FileRouteTypes {
     | '/rmh-datacenter/network'
     | '/rmh-datacenter/platform'
     | '/rmh-datacenter/power'
+    | '/rmh-medschool/live'
     | '/rmhladder/alerts'
     | '/rmhladder/companies'
     | '/rmhladder/health'
@@ -6464,6 +6485,7 @@ export interface FileRouteTypes {
     | '/rideshare'
     | '/rings'
     | '/rmh-datacenter'
+    | '/rmh-medschool'
     | '/rmhladder'
     | '/saves'
     | '/series'
@@ -6901,6 +6923,7 @@ export interface FileRouteTypes {
     | '/_site/rmh-datacenter/network'
     | '/_site/rmh-datacenter/platform'
     | '/_site/rmh-datacenter/power'
+    | '/_site/rmh-medschool/live'
     | '/_site/rmhladder/alerts'
     | '/_site/rmhladder/companies'
     | '/_site/rmhladder/health'
@@ -7066,6 +7089,7 @@ export interface FileRouteTypes {
     | '/_site/rideshare/'
     | '/_site/rings/'
     | '/_site/rmh-datacenter/'
+    | '/_site/rmh-medschool/'
     | '/_site/rmhladder/'
     | '/_site/saves/'
     | '/_site/series/'
@@ -9453,6 +9477,20 @@ declare module '@tanstack/react-router' {
       path: '/rmh-datacenter/power'
       fullPath: '/rmh-datacenter/power'
       preLoaderRoute: typeof SiteRmhDatacenterPowerRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/rmh-medschool/': {
+      id: '/_site/rmh-medschool/'
+      path: '/rmh-medschool'
+      fullPath: '/rmh-medschool/'
+      preLoaderRoute: typeof SiteRmhMedschoolIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/rmh-medschool/live': {
+      id: '/_site/rmh-medschool/live'
+      path: '/rmh-medschool/live'
+      fullPath: '/rmh-medschool/live'
+      preLoaderRoute: typeof SiteRmhMedschoolLiveRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/rmhladder/': {
@@ -11902,6 +11940,7 @@ interface SiteRouteChildren {
   SiteRmhDatacenterNetworkRoute: typeof SiteRmhDatacenterNetworkRoute
   SiteRmhDatacenterPlatformRoute: typeof SiteRmhDatacenterPlatformRoute
   SiteRmhDatacenterPowerRoute: typeof SiteRmhDatacenterPowerRoute
+  SiteRmhMedschoolLiveRoute: typeof SiteRmhMedschoolLiveRoute
   SiteSafetyPileOnRoute: typeof SiteSafetyPileOnRoute
   SiteSeriesIdRoute: typeof SiteSeriesIdRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
@@ -11966,6 +12005,7 @@ interface SiteRouteChildren {
   SiteRideshareIndexRoute: typeof SiteRideshareIndexRoute
   SiteRingsIndexRoute: typeof SiteRingsIndexRoute
   SiteRmhDatacenterIndexRoute: typeof SiteRmhDatacenterIndexRoute
+  SiteRmhMedschoolIndexRoute: typeof SiteRmhMedschoolIndexRoute
   SiteSavesIndexRoute: typeof SiteSavesIndexRoute
   SiteSeriesIndexRoute: typeof SiteSeriesIndexRoute
   SiteSettingsIndexRoute: typeof SiteSettingsIndexRoute
@@ -12058,6 +12098,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhDatacenterNetworkRoute: SiteRmhDatacenterNetworkRoute,
   SiteRmhDatacenterPlatformRoute: SiteRmhDatacenterPlatformRoute,
   SiteRmhDatacenterPowerRoute: SiteRmhDatacenterPowerRoute,
+  SiteRmhMedschoolLiveRoute: SiteRmhMedschoolLiveRoute,
   SiteSafetyPileOnRoute: SiteSafetyPileOnRoute,
   SiteSeriesIdRoute: SiteSeriesIdRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
@@ -12122,6 +12163,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRideshareIndexRoute: SiteRideshareIndexRoute,
   SiteRingsIndexRoute: SiteRingsIndexRoute,
   SiteRmhDatacenterIndexRoute: SiteRmhDatacenterIndexRoute,
+  SiteRmhMedschoolIndexRoute: SiteRmhMedschoolIndexRoute,
   SiteSavesIndexRoute: SiteSavesIndexRoute,
   SiteSeriesIndexRoute: SiteSeriesIndexRoute,
   SiteSettingsIndexRoute: SiteSettingsIndexRoute,

@@ -28,11 +28,12 @@ export function ChartSkeleton() {
  */
 export function SkeletonSwap({
   ready,
-  skeleton,
+  skeleton = <ListSkeleton />,
   children,
 }: {
   ready: boolean;
-  skeleton: ReactNode;
+  /** Defaults to the list-row skeleton. */
+  skeleton?: ReactNode;
   children: ReactNode;
 }) {
   const arrival = useArrival(ready);
