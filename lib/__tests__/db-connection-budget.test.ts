@@ -34,14 +34,22 @@ const stock = {
 
 describe('documented compose sum', () => {
   it('matches the arithmetic in docker-compose.yml (no Go supervisor pool since D3; the wiki since its MediaWiki move)', () => {
-    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + 3 (medschools) + (2 + 2 slack) + 10 + 8 (wiki)
-    expect(peakConnections(DEFAULTS, 2)).toBe(173);
+    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + (3 + 1) (medschools: own client + AI metering pool) + (2 + 2 slack) + 10 + 8 (wiki)
+    expect(peakConnections(DEFAULTS, 2)).toBe(174);
   });
 
   it('keeps the compose comment in step with the sum', () => {
     const compose = readFileSync(join(__dirname, '../../docker-compose.yml'), 'utf8');
-    expect(compose).toContain('88 + 27 + 24 + 6 + 3 + 3 + 4 + 10 + 8 = 173');
+    expect(compose).toContain('88 + 27 + 24 + 6 + 3 + 3 + 1 + 4 + 10 + 8 = 174');
     expect(compose).not.toContain('GO_DB_POOL_SIZE=');
+  });
+
+  it('sizes the medschools-worker metering pool (lib/prisma.server, pulled in by the AI provider) at 1 and counts it', () => {
+    const compose = readFileSync(join(__dirname, '../../docker-compose.yml'), 'utf8');
+    const block = /\n {2}medschools-worker:\n[\s\S]*?\n {4}command:/.exec(compose)?.[0] ?? '';
+    expect(block).toContain('- DATABASE_POOL_SIZE=1');
+    const script = readFileSync(join(__dirname, '../../scripts/db-connection-budget.mjs'), 'utf8');
+    expect(script).toContain('(3 + 1) + STATUS_PROBE');
   });
 
   it('counts as many wiki connections as the wiki image allows Apache workers', () => {

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { recordAliasMiss } from '../scrape/run-support';
 import { createFakePrisma } from '../scrape/test-support';
 import { ignoreAliasMiss, listAliasMisses, mapAliasMiss } from './alias-admin.server';
 
@@ -138,6 +139,43 @@ describe('alias-admin', () => {
     });
     expect(fake.tables.medSchoolAlias).toHaveLength(1);
     expect(missRow(fake, m.id).resolvedSchoolId).toBeNull();
+  });
+
+  it('an SDN miss recorded by recordAliasMiss is listed and mapped; a second SDN key is accepted; the same key for another school is KEY_MAPPED_ELSEWHERE', async () => {
+    const fake = createFakePrisma();
+    const { a, b } = await seed(fake);
+    const now = () => new Date(5);
+    await recordAliasMiss(fake.prisma, 'SDN', 'Alpha Med', now);
+    await recordAliasMiss(fake.prisma, 'SDN', 'Alpha Medical School', now);
+    const listed = (await listAliasMisses(fake.prisma)).misses;
+    expect(listed.map((m) => [m.source, m.sourceKey]).sort()).toEqual([
+      ['SDN', 'Alpha Med'],
+      ['SDN', 'Alpha Medical School'],
+    ]);
+    const [first, second] = ['Alpha Med', 'Alpha Medical School'].map((k) => listed.find((m) => m.sourceKey === k)!);
+    expect(await mapAliasMiss(fake.prisma, { missId: first!.id, schoolId: a.id })).toMatchObject({ ok: true });
+    expect(await mapAliasMiss(fake.prisma, { missId: second!.id, schoolId: a.id })).toMatchObject({ ok: true });
+    expect(
+      (
+        fake.tables.medSchoolAlias as Array<{
+          source: string;
+          schoolId: string;
+        }>
+      ).filter((r) => r.source === 'SDN' && r.schoolId === a.id),
+    ).toHaveLength(2);
+    await recordAliasMiss(fake.prisma, 'SDN', 'Alpha Med', now);
+    const again = (await listAliasMisses(fake.prisma)).misses;
+    expect(again).toHaveLength(0);
+    // The same key offered for another school after being mapped is refused.
+    const row = (fake.tables.medSchoolAliasMiss as Array<Record<string, unknown>>).find(
+      (r) => r.sourceKey === 'Alpha Med',
+    )!;
+    expect(
+      await mapAliasMiss(fake.prisma, {
+        missId: row.id as string,
+        schoolId: b.id,
+      }),
+    ).toMatchObject({ ok: false, status: 409, code: 'KEY_MAPPED_ELSEWHERE' });
   });
 
   it('second ADMIT key → 409; second SDN key → ok', async () => {

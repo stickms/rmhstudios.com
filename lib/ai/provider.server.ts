@@ -55,6 +55,8 @@ export type AiTask =
   | 'summarize'
   /** Structured output, must be cheap and fast; never user-visible prose. */
   | 'moderate'
+  /** Background classifier: structured extraction from forum posts (RMH Med Schools, no user watching). */
+  | 'medschools-extract'
   /** Conversational, may carry a tool contract. */
   | 'concierge'
   /** Long-form generation (recaps, narrative Wrapped). */
@@ -102,6 +104,17 @@ const ROUTES: Record<AiTask, Route> = {
     model: DEEPSEEK_CHAT,
     maxTokens: 300,
     // Near-zero: a classifier that varies run to run is not a classifier.
+    temperature: 0,
+  },
+  'medschools-extract': {
+    provider: 'deepseek',
+    model: DEEPSEEK_CHAT,
+    // Sized from the schema's worst case, not the usual answer: a 12-post chunk (extract.ts) where every post has
+    // 5 events (~30 tokens each as JSON: type, date, program, inState) and 3 questions of 400 chars (~133 tokens at
+    // 3 chars/token) plus ~20 for the post's own keys is 12 x (150 + 400 + 20) = 6,840 tokens. 8,000 leaves ~17%
+    // headroom and stays inside deepseek-chat's 8,192 output cap. Billed on use, so a typical answer costs the same.
+    maxTokens: 8_000,
+    // A classifier, like `moderate`: the same post must give the same events.
     temperature: 0,
   },
   concierge: {

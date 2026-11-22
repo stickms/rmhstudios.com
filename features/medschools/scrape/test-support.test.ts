@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { assertNoLeak, createFakeHost, createFakePrisma, loadFixture, NEEDLES, gqlKey } from './test-support';
+import {
+  assertNoLeak,
+  createFakeHost,
+  createFakePrisma,
+  loadFixture,
+  NEEDLES,
+  SDN_HOSTILE_NEEDLES,
+  gqlKey,
+} from './test-support';
 
 const count = (over: Record<string, unknown> = {}) => ({
   schoolId: 's1',
@@ -255,6 +263,7 @@ describe('fake Admit tables', () => {
 
   it('NEEDLES folds the hostile Admit strings in with the CycleTrack ones', () => {
     expect(NEEDLES).toEqual(expect.arrayContaining(['drsmith42', 'user_id=9931', 'user-hostile-9931']));
+    expect(NEEDLES).toEqual(expect.arrayContaining([...SDN_HOSTILE_NEEDLES]));
   });
 
   it('createFakeHost serves POSTs by gqlKey with sorted variables and records them', async () => {
@@ -274,5 +283,51 @@ describe('fake Admit tables', () => {
       { op: 'other', variables: {} },
     ]);
     expect(gqlKey('/graphql', 'op', { b: 2, a: 1 })).toBe('POST /graphql op {"a":1,"b":2}');
+  });
+});
+
+describe('fake SDN tables and aggregate', () => {
+  it('startsWith filter on sourceKey', async () => {
+    const { prisma } = createFakePrisma();
+    await prisma.medSchoolAlias.create({ data: { schoolId: 's1', source: 'SDN', sourceKey: 'sdn:forum:12' } });
+    await prisma.medSchoolAlias.create({ data: { schoolId: 's2', source: 'SDN', sourceKey: 'other:1' } });
+    const hits = await prisma.medSchoolAlias.findMany({ where: { sourceKey: { startsWith: 'sdn:' } } });
+    expect(hits.map((r) => r.schoolId)).toEqual(['s1']);
+  });
+
+  it('aggregate sums costMicros for matched rows and returns null for none', async () => {
+    const { prisma, tables } = createFakePrisma();
+    tables.aiUsage!.push(
+      { id: 'a', feature: 'x', costMicros: 5 },
+      { id: 'b', feature: 'x', costMicros: 7 },
+      { id: 'c', feature: 'y', costMicros: 100 },
+    );
+    expect(await prisma.aiUsage.aggregate({ where: { feature: 'x' }, _sum: { costMicros: true } })).toEqual({
+      _sum: { costMicros: 12 },
+    });
+    expect(await prisma.aiUsage.aggregate({ where: { feature: 'none' }, _sum: { costMicros: true } })).toEqual({
+      _sum: { costMicros: null },
+    });
+  });
+
+  it('medSdnThread upsert on threadId', async () => {
+    const { prisma, tables } = createFakePrisma();
+    const create = { threadId: 42, slug: 's', schoolId: 's1', cycleYear: 2027, degree: 'MD', repliesSeen: 1 };
+    await prisma.medSdnThread.upsert({ where: { threadId: 42 }, create, update: { repliesSeen: 9 } });
+    await prisma.medSdnThread.upsert({ where: { threadId: 42 }, create, update: { repliesSeen: 9 } });
+    expect(tables.medSdnThread).toHaveLength(1);
+    expect(tables.medSdnThread![0]).toMatchObject({ threadId: 42, repliesSeen: 9 });
+  });
+
+  it('$transaction rollback restores medSdnThread', async () => {
+    const { prisma, tables } = createFakePrisma();
+    await prisma.medSdnThread.upsert({ where: { threadId: 1 }, create: { threadId: 1, repliesDone: -1 }, update: {} });
+    await expect(
+      prisma.$transaction(async (tx) => {
+        await tx.medSdnThread.update({ where: { threadId: 1 }, data: { repliesDone: 5 } });
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
+    expect(tables.medSdnThread![0]).toMatchObject({ threadId: 1, repliesDone: -1 });
   });
 });

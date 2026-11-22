@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/">
+  <channel>
+    <language>en-US</language>
+    <title>2026-2027 MD Medical School-Specific Discussions</title>
+    <description>Hostile feed fixture.</description>
+    <pubDate>Fri, 20 Nov 2026 16:11:30 +0000</pubDate>
+    <lastBuildDate>Fri, 20 Nov 2026 16:11:30 +0000</lastBuildDate>
+    <generator>Student Doctor Network Forums</generator>
+    <link>https://forums.studentdoctor.net/forums/2026-2027-md-medical-school-specific-discussions.1198/</link>
+    <item>
+      <title>2026-2027 Hostile Test School</title>
+      <pubDate>Fri, 20 Nov 2026 13:58:45 +0000</pubDate>
+      <link>https://forums.studentdoctor.net/threads/2026-2027-hostile-school.9990001/</link>
+      <guid isPermaLink="false">urn:xenforo:thread:9990001</guid>
+      <author>zq.person@example.com (hostile_author_zq)</author>
+      <dc:creator>hostile_author_zq</dc:creator>
+      <content:encoded><![CDATA[<div class="bbWrapper">Ping @handle_zq77 and MentionedUserZQ; avatar https://forums.example/data/avatars/zq.jpg sigzq-contact-line</div>]]></content:encoded>
+      <slash:comments>3</slash:comments>
+    </item>
+  </channel>
+</rss>

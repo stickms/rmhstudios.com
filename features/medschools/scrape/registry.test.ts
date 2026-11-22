@@ -5,6 +5,8 @@ import {
   parsePageTitle,
   seedAdmitAliases,
   seedAdmitIgnoredMisses,
+  seedSdnAliases,
+  seedSdnIgnoredMisses,
   seedCycles,
   seedRegistryIfEmpty,
   type RegistryFile,
@@ -456,6 +458,94 @@ describe('stable-key seeding', () => {
           admitSlug: 'yale-university',
         },
       ],
+    });
+  });
+});
+
+describe('SDN alias seeding', () => {
+  const sdn = (
+    aliases: Array<{
+      cycletrackKey: string;
+      threadStems: string[];
+      summary?: { code: string; slug: string };
+    }>,
+    ignoredStems: string[] = [],
+  ) => ({ generatedAt: '2026-11-20T00:00:00.000Z', ignoredStems, aliases });
+  const sdnKeys = (tables: ReturnType<typeof createFakePrisma>['tables']) =>
+    (
+      tables.medSchoolAlias as Array<{
+        source: string;
+        sourceKey: string;
+        schoolId: string;
+      }>
+    )
+      .filter((r) => r.source === 'SDN')
+      .map((r) => r.sourceKey)
+      .sort();
+
+  it('creates thread-stem and summary aliases through the CYCLETRACK key, and a second call creates nothing', async () => {
+    const { prisma, tables } = createFakePrisma();
+    await seedRegistryIfEmpty(prisma, file);
+    const data = sdn([
+      {
+        cycletrackKey: 'Yale',
+        threadStems: ['Yale', 'Yale School of Medicine'],
+        summary: { code: 'YALE', slug: 'yale-school-of-medicine' },
+      },
+      { cycletrackKey: 'Nowhere', threadStems: ['Nowhere U'] },
+    ]);
+    expect(await seedSdnAliases(prisma, data)).toEqual({
+      created: 3,
+      unmatched: ['Nowhere U'],
+      skipped: [],
+    });
+    expect(sdnKeys(tables)).toEqual(['Yale', 'Yale School of Medicine', 'summary:YALE/yale-school-of-medicine']);
+    expect(await seedSdnAliases(prisma, data)).toMatchObject({ created: 0 });
+    expect(sdnKeys(tables)).toHaveLength(3);
+  });
+
+  it('an existing key owned by another school is skipped and reported, never moved', async () => {
+    const { prisma, tables } = createFakePrisma();
+    await seedRegistryIfEmpty(prisma, file);
+    await seedSdnAliases(prisma, sdn([{ cycletrackKey: 'Yale', threadStems: ['Shared'] }]));
+    const owner = (tables.medSchoolAlias as Array<{ sourceKey: string; schoolId: string }>).find(
+      (r) => r.sourceKey === 'Shared',
+    )!.schoolId;
+    const res = await seedSdnAliases(prisma, sdn([{ cycletrackKey: 'Texas A&M', threadStems: ['Shared', 'Texas'] }]));
+    expect(res).toEqual({
+      created: 1,
+      unmatched: [],
+      skipped: [{ cycletrackKey: 'Texas A&M', key: 'Shared' }],
+    });
+    expect(
+      (tables.medSchoolAlias as Array<{ sourceKey: string; schoolId: string }>).find((r) => r.sourceKey === 'Shared')!
+        .schoolId,
+    ).toBe(owner);
+  });
+
+  it('seedSdnIgnoredMisses pre-ignores and never touches an existing miss', async () => {
+    const { prisma, tables } = createFakePrisma();
+    tables.medSchoolAliasMiss!.push({
+      id: 'm1',
+      source: 'SDN',
+      sourceKey: 'Seen',
+      ignored: false,
+      resolvedSchoolId: 's9',
+      seenCount: 4,
+    });
+    const data = sdn([], ['Junk', 'Seen']);
+    expect(await seedSdnIgnoredMisses(prisma, data)).toBe(1);
+    expect(await seedSdnIgnoredMisses(prisma, data)).toBe(0);
+    const rows = tables.medSchoolAliasMiss as Array<Record<string, unknown>>;
+    expect(rows.find((r) => r.sourceKey === 'Junk')).toMatchObject({
+      source: 'SDN',
+      ignored: true,
+      seenCount: 0,
+    });
+    expect(rows.find((r) => r.sourceKey === 'Seen')).toMatchObject({
+      ignored: false,
+      resolvedSchoolId: 's9',
+      seenCount: 4,
     });
   });
 });

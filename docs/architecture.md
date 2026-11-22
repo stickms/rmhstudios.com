@@ -103,7 +103,7 @@ flowchart LR
       JOBS["jobs<br/>pg-boss queues<br/>+ Discord bot gateway"]
       LAD["ladder-worker<br/>pg-boss consumer"]
       HOM["homes-worker<br/>pg-boss consumer"]
-      MED["medschools-worker<br/>pg-boss consumer"]
+      MED["medschools-worker<br/>pg-boss consumer<br/>CycleTrack · Admit · SDN"]
     end
 
     subgraph Go["Go tier (Bazel)"]

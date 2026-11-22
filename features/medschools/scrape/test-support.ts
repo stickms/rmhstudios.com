@@ -12,6 +12,7 @@ const UNIQUE_KEYS: Record<string, string[]> = {
   medSchoolAlias: ['source', 'sourceKey'],
   medSchoolAliasMiss: ['source', 'sourceKey'],
   medCycleEvent: ['dedupeHash'],
+  medSdnThread: ['threadId'],
   medInterviewQuestion: ['dedupeHash'],
   medInterviewProfile: ['schoolId', 'source'],
 };
@@ -62,11 +63,13 @@ function matches(row: Row, where: Row | undefined): boolean {
         gte?: Date | number;
         lt?: Date | number;
         not?: unknown;
+        startsWith?: string;
       };
       const cell = row[k];
       const n = (x: unknown) => (x instanceof Date ? x.getTime() : (x as number));
       if ('gte' in op && !(cell !== null && cell !== undefined && n(cell) >= n(op.gte))) return false;
       if ('lt' in op && !(cell !== null && cell !== undefined && n(cell) < n(op.lt))) return false;
+      if ('startsWith' in op && !(typeof cell === 'string' && cell.startsWith(op.startsWith ?? ''))) return false;
       if ('not' in op) {
         // `{ not: null }` means "has a value"; absent columns read as null.
         const val = cell === undefined ? null : cell;
@@ -97,6 +100,15 @@ export function createFakePrisma(): {
     }
     const row: Row = {
       id: `fake_${++seq}`,
+      // The schema's column defaults for a miss, so rows made by recordAliasMiss list like real ones.
+      ...(name === 'medSchoolAliasMiss'
+        ? {
+            resolvedSchoolId: null,
+            ignored: false,
+            firstSeenAt: new Date(0),
+            lastSeenAt: new Date(0),
+          }
+        : {}),
       ...data,
     };
     t.push(row);
@@ -187,6 +199,15 @@ export function createFakePrisma(): {
           ...insert(name, args.create),
         };
       },
+      async aggregate(args: { where?: Row; _sum: Record<string, true> }) {
+        const hits = t().filter((r) => matches(r, args.where));
+        const sum: Record<string, number | null> = {};
+        for (const col of Object.keys(args._sum)) {
+          const vals = hits.map((r) => r[col]).filter((v): v is number => typeof v === 'number');
+          sum[col] = vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+        }
+        return { _sum: sum };
+      },
       async delete(args: { where: Row }) {
         writes.push(args);
         const i = t().findIndex((r) => matches(r, args.where));
@@ -217,6 +238,8 @@ export function createFakePrisma(): {
     'medInterviewProfile',
     'medSchoolStats',
     'medSourceRun',
+    'medSdnThread',
+    'aiUsage',
   ];
   const prisma = Object.fromEntries(names.map((n) => [n, delegate(n)])) as unknown as MedPrisma;
   // A transaction runs against the same fake; a throw restores every table and the write log.
@@ -264,8 +287,24 @@ export const ADMIT_HOSTILE_NEEDLES = [
   'user-hostile-9931',
 ] as const;
 
+/**
+ * Person-shaped strings that only the synthetic hostile SDN fixtures may contain (a data-author, a username
+ * mention, an @handle, an email in a post body, an avatar URL, a signature line and a link-unfurl card carrying a member name).
+ */
+export const SDN_HOSTILE_NEEDLES = [
+  'hostile_author_zq',
+  'MentionedUserZQ',
+  '@handle_zq77',
+  'zq.person@example.com',
+  'https://forums.example/data/avatars/zq.jpg',
+  'sigzq-contact-line',
+  'unfurled_member_zq',
+] as const;
+
 /** Every person-shaped string any anonymization test hunts for; pass to `assertNoLeak`. */
-export const NEEDLES: string[] = [...new Set<string>([...CYCLETRACK_NEEDLES, ...ADMIT_HOSTILE_NEEDLES])];
+export const NEEDLES: string[] = [
+  ...new Set<string>([...CYCLETRACK_NEEDLES, ...ADMIT_HOSTILE_NEEDLES, ...SDN_HOSTILE_NEEDLES]),
+];
 
 /** Throws naming the needle if anything written contains it (e.g. a raw source id that must be hashed). */
 export function assertNoLeak(writes: unknown[], needles: string[]): void {
@@ -291,6 +330,15 @@ function sortKeys(v: unknown): unknown {
 export function gqlKey(path: string, operationName: string, variables: unknown): string {
   return `POST ${path} ${operationName} ${JSON.stringify(sortKeys(variables ?? {}))}`;
 }
+
+const STATUS_PREFIX = '\u0000status:';
+/** A fake-host route value that answers with this HTTP status and an empty body (a WAF's 403, say). */
+export const httpStatusRoute = (status: number): string => `${STATUS_PREFIX}${status}`;
+const answerFor = (body: string | null): { ok: boolean; status: number; body: string } => {
+  if (body === null) return { ok: false, status: 404, body: '' };
+  if (body.startsWith(STATUS_PREFIX)) return { ok: false, status: Number(body.slice(STATUS_PREFIX.length)), body: '' };
+  return { ok: true, status: 200, body };
+};
 
 /**
  * Fake PoliteHost serving canned bodies by path (GET) or by `gqlKey` (POST). A key mapped to `null` is a
@@ -320,15 +368,13 @@ export function createFakeHost(
         async get(path) {
           if (failures >= maxFailures) throw new SourceHaltedError(last ?? undefined);
           requested.push(path);
-          const body = lookup(path);
-          return body === null ? { ok: false, status: 404, body: '' } : { ok: true, status: 200, body };
+          return answerFor(lookup(path));
         },
         async post(path, body) {
           if (failures >= maxFailures) throw new SourceHaltedError(last ?? undefined);
           const parsed = JSON.parse(body) as { operationName: string; variables?: unknown };
           requestedPosts.push({ op: parsed.operationName, variables: parsed.variables ?? {} });
-          const out = lookup(gqlKey(path, parsed.operationName, parsed.variables));
-          return out === null ? { ok: false, status: 404, body: '' } : { ok: true, status: 200, body: out };
+          return answerFor(lookup(gqlKey(path, parsed.operationName, parsed.variables)));
         },
         noteSuccess() {
           failures = 0;

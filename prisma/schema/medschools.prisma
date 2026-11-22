@@ -83,6 +83,7 @@ model MedSchool {
   stats              MedSchoolStats[]
   interviewQuestions MedInterviewQuestion[]
   interviewProfiles  MedInterviewProfile[]
+  sdnThreads         MedSdnThread[]
 
   @@index([degree, state])
   @@map("med_school")
@@ -261,11 +262,45 @@ model MedInterviewProfile {
   feedbackNegative String[]
   feedbackBefore   String[]
   fetchedAt        DateTime
+  interviewStyle   String?
+  interviewLength  String?
+  avgStress        Float?
+  /// SDN only: mean of Positively = +1, No change = 0, Negatively = -1 over a school's reports.
+  avgImpression    Float?
+  inStateCount     Int?
+  outOfStateCount  Int?
 
   school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@unique([schoolId, source])
   @@map("med_interview_profile")
+}
+
+/// A public thread id and slug, not a person; `cursorPostHash` is an HMAC, never a raw post id.
+/// `cycleYear` is always set: live threads take it from the forum, archive threads from the title label.
+model MedSdnThread {
+  threadId       Int       @id
+  slug           String
+  schoolId       String
+  cycleYear      Int
+  degree         MedDegree
+  archive        Boolean   @default(false)
+  repliesSeen    Int       @default(0)
+  repliesDone    Int       @default(-1)
+  lastActivityAt DateTime?
+  cursorPage     Int       @default(1)
+  cursorPostHash String?
+  postsProcessed Int       @default(0)
+  parkedAt       DateTime?
+  failCount      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([archive, cycleYear])
+  @@index([schoolId, cycleYear])
+  @@map("med_sdn_thread")
 }
 
 /// Observability for the med schools worker's jobs, like `HomeScrapeRun`.

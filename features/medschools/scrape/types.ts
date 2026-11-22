@@ -82,6 +82,34 @@ export interface MedInterviewProfileRow {
   feedbackNegative: string[];
   feedbackBefore: string[];
   fetchedAt: Date;
+  interviewStyle: string | null;
+  interviewLength: string | null;
+  avgStress: number | null;
+  avgImpression: number | null;
+  inStateCount: number | null;
+  outOfStateCount: number | null;
+}
+
+/** A public thread id and slug, not a person; `cursorPostHash` is an HMAC, never a raw post id. */
+export interface MedSdnThreadRow {
+  threadId: number;
+  slug: string;
+  schoolId: string;
+  cycleYear: number;
+  degree: string;
+  archive: boolean;
+  repliesSeen: number;
+  repliesDone: number;
+  lastActivityAt: Date | null;
+  cursorPage: number;
+  cursorPostHash: string | null;
+  postsProcessed: number;
+  /** Set while the thread is parked (gone, or failing repeatedly); retried on the discovery tick after 24 h. */
+  parkedAt: Date | null;
+  /** Consecutive failed walks across runs; reset on success. */
+  failCount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface MedSchoolStatsRow {
@@ -174,24 +202,53 @@ export interface MedPrisma {
       select?: Record<string, boolean>;
       orderBy?: unknown;
     }): Promise<MedCycleEventRow[]>;
-    createMany(args: { data: Data[]; skipDuplicates?: boolean }): Promise<{ count: number }>;
+    createMany(args: { data: Data[]; skipDuplicates?: boolean }): Promise<{
+      count: number;
+    }>;
   };
   medInterviewQuestion: {
     findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedInterviewQuestionRow[]>;
-    createMany(args: { data: Data[]; skipDuplicates?: boolean }): Promise<{ count: number }>;
+    createMany(args: { data: Data[]; skipDuplicates?: boolean }): Promise<{
+      count: number;
+    }>;
     update(args: { where: Where; data: Data }): Promise<MedInterviewQuestionRow>;
-    deleteMany(args: { where: Where }): Promise<{ count: number }>;
+    deleteMany(args: { where: Where }): Promise<{
+      count: number;
+    }>;
   };
   medInterviewProfile: {
     findFirst(args?: { where?: Where }): Promise<MedInterviewProfileRow | null>;
-    upsert(args: { where: Where; create: Data; update: Data }): Promise<{ id: string }>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{
+      id: string;
+    }>;
   };
   medSchoolStats: {
     findFirst(args?: { where?: Where }): Promise<MedSchoolStatsRow | null>;
-    create(args: { data: Data }): Promise<{ id: string }>;
-    update(args: { where: Where; data: Data }): Promise<{ id: string }>;
+    create(args: { data: Data }): Promise<{
+      id: string;
+    }>;
+    update(args: { where: Where; data: Data }): Promise<{
+      id: string;
+    }>;
     upsert(args: { where: Where; create: Data; update: Data }): Promise<{
       id: string;
+    }>;
+  };
+  medSdnThread: {
+    findMany(args?: { where?: Where; select?: Record<string, boolean>; orderBy?: unknown }): Promise<MedSdnThreadRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSdnThreadRow>;
+    update(args: { where: Where; data: Data }): Promise<MedSdnThreadRow>;
+  };
+  aiUsage: {
+    aggregate(args: {
+      where: Where;
+      _sum: {
+        costMicros: true;
+      };
+    }): Promise<{
+      _sum: {
+        costMicros: number | null;
+      };
     }>;
   };
   medSourceRun: {
@@ -207,7 +264,13 @@ export interface MedPrisma {
       id: string;
     }>;
     findFirst(args?: { where?: Where; orderBy?: unknown }): Promise<MedSourceRunRow | null>;
+    findMany(args?: { where?: Where; orderBy?: unknown; take?: number }): Promise<MedSourceRunRow[]>;
   };
   /** Runs `fn` against a transaction client; the fake rolls its tables back if `fn` throws. */
-  $transaction<T>(fn: (tx: MedPrisma) => Promise<T>, options?: { isolationLevel?: 'Serializable' }): Promise<T>;
+  $transaction<T>(
+    fn: (tx: MedPrisma) => Promise<T>,
+    options?: {
+      isolationLevel?: 'Serializable';
+    },
+  ): Promise<T>;
 }

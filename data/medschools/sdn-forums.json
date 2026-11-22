@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-11-20T16:20:00.000Z",
+  "current": [
+    { "node": 1198, "slug": "2026-2027-md-medical-school-specific-discussions", "degree": "MD", "cycleYear": 2027 },
+    { "node": 1199, "slug": "2026-2027-do-medical-school-specific-discussions", "degree": "DO", "cycleYear": 2027 }
+  ],
+  "archive": [
+    { "node": 962, "slug": "md-medical-school-specific-discussions-prior-years", "degree": "MD", "cycleYear": null },
+    { "node": 603, "slug": "osteopathic-medical-school-discussions-prior-years", "degree": "DO", "cycleYear": null }
+  ]
+}

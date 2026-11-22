@@ -112,9 +112,10 @@ COPY server ./server/
 COPY lib ./lib/
 # Feature-sliced code (redesign A1): socket handlers and engines live in features/<id>/.
 COPY features ./features/
-# medschools-worker imports its seed JSON statically; esbuild inlines it, so only these two files
+# medschools-worker imports its seed JSON statically; esbuild inlines it, so only these files
 # are needed here (the runtime image carries no data lookup for it).
 COPY data/medschools/schools.json data/medschools/cycles.json data/medschools/admit-aliases.json ./data/medschools/
+COPY data/medschools/sdn-aliases.json data/medschools/sdn-forums.json ./data/medschools/
 
 # Only the Node services still served by compose (socket/rmhbox/rmhtube/rmhos-net +
 # ladder-worker + homes-worker + medschools-worker + jobs) are bundled here.

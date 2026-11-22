@@ -101,6 +101,10 @@ lookups are cached in memory for the current run only (so one applicant costs on
 limits) and the cache is discarded when the run ends. If the flag cannot be read, `program = null`. Phase 2's
 feasibility spike finds where the flag lives before the adapter is planned.
 
+**SDN program (2026-11-20, by analogy with the owner's Admit.org rule).** SDN threads are per school, not per program. A
+post counts as MD-PhD/DO-PhD only when the extractor reports it and the post text itself says MD-PhD, DO-PhD, MSTP or
+"PhD track"; every other SDN post counts as MD/DO, as an unflagged Admit.org applicant does.
+
 ## 5. Architecture
 
 ```
@@ -218,15 +222,16 @@ MD/DO) cross-checked against Admit's school list, then reviewed by hand. Alias m
 ## 9. SDN extraction
 
 New posts only (post id hash not yet seen). Strip `blockquote` (quoted replies) before anything else. A cheap regex
-prefilter (`\bII\b|interview|accept|\bA\b|waitlist|\bWL\b| reject|\bR\b|question`) skips chatter. Survivors go to
-`runTaskJson` (new `AiTask` `medschools-extract`) with a strict zod schema:
-`{ events: [{ type, date (ISO, resolved against post date), inState? }], questions: [string] }`. The prompt instructs:
-report only the poster's own event, resolve relative dates ("today") against the post timestamp, rewrite questions
-without names. The post's school and cycle come from the thread, not the model. Batched per thread page; costed into
-`AiUsage` under a system budget (`MEDSCHOOLS_AI_MONTHLY_USD`, default 20) with a per-run cap on LLM calls; when the
-month's budget is spent, extraction pauses and resumes next month from its cursor. Estimate: ~500 school threads per
-cycle × a few hundred posts, ~40% surviving the prefilter, a few hundred tokens each — tens of millions of tokens for
-the full prior-year backfill, a few dollars at DeepSeek prices — so the full backfill is in scope, newest cycles first.
+prefilter (`\bII\b|interview|accept|\bA\b|waitlist|\bWL\b| reject|\bR\b|question|secondary|2ndary`, secondary terms
+added 2026-11-20) skips chatter. Survivors go to `runTaskJson` (new `AiTask` `medschools-extract`) with a strict zod
+schema: `{ events: [{ type, date (ISO, resolved against post date), inState? }], questions: [string] }`. The prompt
+instructs: report only the poster's own event, resolve relative dates ("today") against the post timestamp, rewrite
+questions without names. The post's school and cycle come from the thread, not the model. Batched per thread page;
+costed into `AiUsage` under a system budget (`MEDSCHOOLS_AI_MONTHLY_USD`, default 20) with a per-run cap on LLM calls;
+when the month's budget is spent, extraction pauses and resumes next month from its cursor. Estimate: ~500 school
+threads per cycle × a few hundred posts, ~40% surviving the prefilter, a few hundred tokens each — tens of millions of
+tokens for the full prior-year backfill, a few dollars at DeepSeek prices — so the full backfill is in scope, newest
+cycles first.
 
 ## 10. Statistics and forecasting
 
@@ -303,7 +308,13 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
 1. Foundation: schema, registry + aliases seed, worker skeleton and wiring, CycleTrack adapter + historical backfill,
    anonymization tests.
 2. Admit.org adapter (live + backfill + interviews; phase 2a, shipped with the alias-miss admin page) and SDN adapter
-   (RSS live, prior-year backfill, LLM extraction).
+   (RSS live, prior-year backfill, LLM extraction). Phase 2b (SDN) shipped as three queues in the medschools worker:
+   `medschools.sdn-live` (10 min), `medschools.sdn-backfill` (its own queue rather than the shared backfill queue,
+   queued by the live tick while owed, no bootstrap trigger) and `medschools.sdn-interviews` (weekly). Program is MD
+   unless MD-PhD, DO-PhD or MSTP is stated (section 4a SDN paragraph); extraction is capped by
+   `MEDSCHOOLS_AI_MONTHLY_USD` (20, backfill 80%), pauses in DeepSeek peak hours and backs off after failed runs; phone
+   numbers and email addresses are redacted before the model, names may reach the model but are never stored. Detail:
+   `server/CLAUDE.md`.
 3. Public pages: index, live, school page Activity/History/Interviews, OG, i18n.
 4. Private tracker with anonymous sharing.
 5. Statistics + forecast tab + personal conditional chance.

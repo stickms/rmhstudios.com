@@ -32,4 +32,24 @@ describe('medschools sources', () => {
   it('CYCLETRACK has no extra headers', () => {
     expect(SOURCES.CYCLETRACK.headers).toBeUndefined();
   });
+
+  it('SDN_FORUMS politeness matches the plan', () => {
+    expect(SOURCES.SDN_FORUMS.origin).toBe('https://forums.studentdoctor.net');
+    expect(SOURCES.SDN_FORUMS.spacingMs).toBeGreaterThanOrEqual(1500);
+    expect(SOURCES.SDN_FORUMS.backfillSpacingMs).toBeGreaterThanOrEqual(2000);
+    expect(SOURCES.SDN_FORUMS.maxConsecutiveFailures).toBe(3);
+    expect(SOURCES.SDN_FORUMS.userAgent).toBe(MEDSCHOOLS_USER_AGENT);
+    expect(SOURCES.SDN_FORUMS.headers).toBeUndefined();
+  });
+
+  it('SDN_WWW is a separate host config', () => {
+    expect(SOURCES.SDN_WWW.origin).toBe('https://www.studentdoctor.net');
+    expect(SOURCES.SDN_WWW.spacingMs).toBeGreaterThanOrEqual(1500);
+    expect(SOURCES.SDN_WWW.backfillSpacingMs).toBeGreaterThanOrEqual(2000);
+    expect(SOURCES.SDN_WWW.userAgent).toBe(MEDSCHOOLS_USER_AGENT);
+  });
+
+  it('the two SDN hosts are distinct objects', () => {
+    expect(SOURCES.SDN_FORUMS).not.toBe(SOURCES.SDN_WWW);
+  });
 });
