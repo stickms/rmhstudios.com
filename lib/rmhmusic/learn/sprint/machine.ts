@@ -41,6 +41,15 @@
  * switch), so switching to the microphone mid-run cannot skip a hard prompt. If anything pauses a
  * run, `resume` draws the current prompt afresh (its clock and any notes so far are reset).
  *
+ * Learning mode (freeplay only; `learning` on the run). A wrong answer shows its feedback and the
+ * same prompt comes back, drawn and timed afresh, until it is answered right; the prompt's result
+ * (the one in `results`, hence the score, the time and the summary) is its FIRST attempt's, and a
+ * retry adds no result. A learning run is never scored: it ends at `complete` with reason
+ * `learning`, saves nothing and is never a best (the retries make runs incomparable); the screen
+ * posts its reviews instead. The daily challenge and any scored run are always Test mode, whatever
+ * the learner's setting: `initial` ignores `learning` for them, and the server never sees the mode.
+ * Test mode's states carry no learning fields at all.
+ *
  * Exactly one `complete` effect per run, after the last prompt's feedback. A scored run with at
  * least one prompt played then saves (`save`, carrying its attempt; a stale answer is ignored;
  * Retry is a new attempt). A run ends at `complete` with a reason (`why`) when it is not kept: a
@@ -85,6 +94,7 @@ export type SprintSaveOutcome =
 /** Why a finished run was not kept. */
 export type CompleteWhy =
   | 'practice'
+  | 'learning'
   | 'empty'
   | 'unsaved'
   | 'already-scored';
@@ -98,6 +108,8 @@ interface Run {
   instrument: Instrument;
   /** Whether this run's result is saved (false: a daily replay, practice). */
   scored: boolean;
+  /** Learning mode (a freeplay run that retries a wrong prompt until it is right); absent in Test. */
+  learning?: true;
   /** The input is the microphone (chords are skipped). Fixed while a run is under way. */
   mic: boolean;
   results: readonly PromptResult[];
@@ -131,14 +143,21 @@ export type SprintState =
         | null;
       /** Chord: windows closed with too few notes on this prompt. */
       tooFew: number;
+      /** Learning mode: wrong attempts already made at this prompt (absent on the first). */
+      misses?: number;
     })
   | (Run & {
       kind: 'feedback';
       index: number;
+      /** The prompt's result: its first attempt's, also while a retry is being shown. */
       result: PromptResult;
       played: readonly number[];
       /** Wrong only by the octave: the right letter at another pitch (exact matching, MIDI). */
       octaveOff: boolean;
+      /** Learning mode: THIS attempt was right (`result` is the first attempt's). */
+      right?: boolean;
+      /** Learning mode: wrong attempts at this prompt so far, this one included. */
+      misses?: number;
     })
   | (Run & {
       kind: 'complete';
@@ -249,6 +268,12 @@ function runOf(
       s.instrument,
     scored:
       s.scored,
+    ...(s.learning
+      ? {
+          learning:
+            true as const,
+        }
+      : {}),
     mic: s.mic,
     results:
       s.results,
@@ -261,6 +286,8 @@ export function initial(opts: {
   scored: boolean;
   mic: boolean;
   instrument?: Instrument;
+  /** Learning mode; honoured only for an unscored freeplay run. */
+  learning?: boolean;
 }): SprintState {
   const instrument =
     opts.instrument ??
@@ -283,6 +310,15 @@ export function initial(opts: {
     instrument,
     scored:
       opts.scored,
+    ...(opts.learning &&
+    opts.mode ===
+      'freeplay' &&
+    !opts.scored
+      ? {
+          learning:
+            true as const,
+        }
+      : {}),
     mic: opts.mic,
     results:
       [],
@@ -388,7 +424,9 @@ function finished(
             summary.played ===
             0
               ? 'empty'
-              : 'practice',
+              : run.learning
+                ? 'learning'
+                : 'practice',
         },
       effects:
         [
@@ -494,6 +532,21 @@ function freshPrompt(
   };
 }
 
+/** The first attempt's result for the prompt being retried (the last one recorded). */
+function firstResult(
+  s: Asking,
+):
+  | PromptResult
+  | undefined {
+  return s
+    .results[
+    s
+      .results
+      .length -
+      1
+  ];
+}
+
 type Asking =
   Extract<
     SprintState,
@@ -524,6 +577,51 @@ function answer(
     return same(
       s,
     );
+  const retrying =
+    (s.misses ??
+      0) >
+    0;
+  if (
+    s.learning &&
+    retrying
+  ) {
+    // A retry: the prompt's result stays its first attempt's; only this attempt's outcome shows.
+    const first =
+      firstResult(
+        s,
+      );
+    if (
+      !first
+    )
+      return same(
+        s,
+      );
+    return {
+      state:
+        {
+          ...runOf(
+            s,
+          ),
+          kind: 'feedback',
+          index:
+            s.index,
+          result:
+            first,
+          played,
+          octaveOff,
+          right:
+            correct,
+          misses:
+            (s.misses ??
+              0) +
+            (correct
+              ? 0
+              : 1),
+        },
+      effects:
+        [],
+    };
+  }
   const ms =
     Math.max(
       0,
@@ -566,6 +664,16 @@ function answer(
         result,
         played,
         octaveOff,
+        ...(s.learning
+          ? {
+              right:
+                correct,
+              misses:
+                correct
+                  ? 0
+                  : 1,
+            }
+          : {}),
       },
     effects:
       [],
@@ -1118,6 +1226,29 @@ export function step(
         return same(
           s,
         );
+      if (
+        s.learning &&
+        s.right ===
+          false
+      ) {
+        // Learning mode: the same prompt again, drawn and timed afresh, its misses remembered.
+        return {
+          state:
+            {
+              ...runOf(
+                s,
+              ),
+              ...freshPrompt(
+                s.index,
+              ),
+              misses:
+                s.misses ??
+                1,
+            },
+          effects:
+            [],
+        };
+      }
       return askFrom(
         runOf(
           s,

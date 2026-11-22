@@ -37,7 +37,6 @@ import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
 import {
   dailyRun,
-  makeRun,
   utcDate,
   type SprintPrompt,
 } from '@/lib/rmhmusic/learn/sprint/generate';
@@ -47,6 +46,7 @@ import {
   micAllowed,
   type SprintLevelId,
 } from '@/lib/rmhmusic/learn/sprint/levels';
+import { dealRun } from '@/lib/rmhmusic/learn/sprint/deal';
 import {
   createApiSaver,
   type SprintOverview,
@@ -64,6 +64,10 @@ import {
 } from '@/lib/rmhmusic/learn/social/share';
 import { DailyBoardLine } from '../social/DailyBoardLine';
 import { InputSetup } from '../InputSetup';
+import {
+  PracticeModeToggle,
+  usePracticeMode,
+} from '../PracticeModeToggle';
 import { Shell } from '../LessonScreen';
 import { useInputRelease } from '../useLearnInput';
 import { useLearnerShape } from '../useLearnerShape';
@@ -103,6 +107,8 @@ type Playing =
       mode: 'freeplay';
       level: SprintLevelId;
       prompts: SprintPrompt[];
+      /** Learning mode: a wrong prompt comes back until right; the run keeps no best. */
+      learning: boolean;
     }
   | {
       mode: 'daily';
@@ -159,6 +165,17 @@ export function SprintGame({
   ] =
     useState<Mode>(
       'freeplay',
+    );
+  // Learning or Test, for freeplay only: the daily challenge is always Test.
+  const practiceMode =
+    usePracticeMode();
+  // What the learner is due on and weak at: freeplay deals toward it (`sprint/deal.ts`).
+  const cards =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s.cards,
     );
   const [
     playing,
@@ -229,6 +246,9 @@ export function SprintGame({
     void useLearnStore
       .getState()
       .load();
+    void useLearnStore
+      .getState()
+      .loadCards();
   }, []);
 
   // Back from a run: focus goes to the first level, where the learner chooses again.
@@ -329,7 +349,7 @@ export function SprintGame({
     (
       level: SprintLevelId,
     ) =>
-      makeRun(
+      dealRun(
         level,
         FREEPLAY_PROMPTS,
         mulberry32(
@@ -337,6 +357,8 @@ export function SprintGame({
         ),
         instrument,
         range,
+        cards,
+        Date.now(),
       );
   const playDaily =
     async () => {
@@ -456,18 +478,42 @@ export function SprintGame({
     body =
       (
         <SprintRun
-          key={`${playing.mode}-${playing.mode === 'freeplay' ? playing.level : playing.date}`}
+          key={`${playing.mode}-${playing.mode === 'freeplay' ? `${playing.level}-${playing.learning ? 'learning' : 'test'}` : playing.date}`}
           prompts={
             playing.prompts
           }
           mode={
             playing.mode
           }
+          // A Learning run is never scored (its retries make it incomparable), so it keeps no best.
           scored={
             playing.mode ===
             'daily'
               ? playing.scored
-              : true
+              : !playing.learning
+          }
+          learning={
+            playing.mode ===
+              'freeplay' &&
+            playing.learning
+          }
+          review={
+            playing.mode ===
+            'freeplay'
+              ? (
+                  reviews,
+                ) => {
+                  void useLearnStore
+                    .getState()
+                    .saveReviews(
+                      reviews,
+                    )
+                    .catch(
+                      () =>
+                        undefined,
+                    );
+                }
+              : undefined
           }
           onStart={
             playing.mode ===
@@ -648,176 +694,213 @@ export function SprintGame({
           />
           {mode ===
           'freeplay' ? (
-            <ul
-              className="rmm-sheet divide-y divide-app-border"
-              aria-busy={
-                loading ||
-                undefined
-              }
-            >
-              {SPRINT_LEVELS.filter(
-                // A singer is offered the single-note levels only.
-                (
-                  level,
-                ) =>
-                  !singer ||
-                  micAllowed(
-                    level.kind,
-                  ),
-              ).map(
-                (
-                  level,
-                  i,
-                ) => (
-                  <li
-                    key={
-                      level.id
-                    }
-                  >
-                    {loading ? (
-                      <div
-                        aria-hidden="true"
-                        className={
-                          ROW
-                        }
-                      >
-                        <span className="text-base leading-6">
-                          <span
-                            className={
-                              SKELETON_TEXT
-                            }
-                          >
+            <div className="space-y-4">
+              <div>
+                <PracticeModeToggle />
+                <p className="text-sm leading-5 text-app-text-muted">
+                  {practiceMode ===
+                  'learning'
+                    ? t(
+                        'sprint-learning-says',
+                        {
+                          defaultValue:
+                            'In Learning mode a wrong prompt comes back until you get it right. Your first tries are scored, but no best is kept.',
+                        },
+                      )
+                    : t(
+                        'sprint-test-says',
+                        {
+                          defaultValue:
+                            'In Test mode a wrong prompt ends there and your best is kept.',
+                        },
+                      )}
+                </p>
+              </div>
+              <ul
+                className="rmm-sheet divide-y divide-app-border"
+                aria-busy={
+                  loading ||
+                  undefined
+                }
+              >
+                {SPRINT_LEVELS.filter(
+                  // A singer is offered the single-note levels only.
+                  (
+                    level,
+                  ) =>
+                    !singer ||
+                    micAllowed(
+                      level.kind,
+                    ),
+                ).map(
+                  (
+                    level,
+                    i,
+                  ) => (
+                    <li
+                      key={
+                        level.id
+                      }
+                    >
+                      {loading ? (
+                        <div
+                          aria-hidden="true"
+                          className={
+                            ROW
+                          }
+                        >
+                          <span className="text-base leading-6">
+                            <span
+                              className={
+                                SKELETON_TEXT
+                              }
+                            >
+                              {levelName(
+                                t,
+                                level.id,
+                              )}
+                            </span>
+                          </span>
+                          <span className="text-sm leading-5">
+                            <span
+                              className={
+                                SKELETON_TEXT
+                              }
+                            >
+                              {levelHint(
+                                t,
+                                level.id,
+                                guitar,
+                              )}
+                            </span>
+                          </span>
+                          <span className="flex h-5 items-center">
+                            <span className="app-skeleton h-3.5 w-32 max-w-full" />
+                          </span>
+                        </div>
+                      ) : mic &&
+                        !micAllowed(
+                          level.kind,
+                        ) ? (
+                        <div
+                          className={
+                            ROW
+                          }
+                        >
+                          <span className="text-base leading-6 text-app-text-muted">
                             {levelName(
                               t,
                               level.id,
                             )}
                           </span>
-                        </span>
-                        <span className="text-sm leading-5">
-                          <span
-                            className={
-                              SKELETON_TEXT
-                            }
-                          >
+                          <span className="text-sm leading-5 text-app-text-muted">
+                            {t(
+                              'sprint-level-mic',
+                              {
+                                defaultValue:
+                                  'Not with the microphone: it hears one note at a time.',
+                              },
+                            )}
+                          </span>
+                          <span className="min-h-5 text-sm leading-5 text-app-text-muted">
+                            {bestSentence(
+                              t,
+                              i18n.language,
+                              overview,
+                              level.id,
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          ref={
+                            i ===
+                            0
+                              ? firstRow
+                              : undefined
+                          }
+                          type="button"
+                          onClick={() =>
+                            setPlaying(
+                              {
+                                mode: 'freeplay',
+                                level:
+                                  level.id,
+                                prompts:
+                                  freeplayPrompts(
+                                    level.id,
+                                  ),
+                                learning:
+                                  practiceMode ===
+                                  'learning',
+                              },
+                            )
+                          }
+                          className={`${ROW} rounded-app-sm transition-colors hover:bg-app-surface-hover`}
+                        >
+                          <span className="text-base leading-6 text-app-text">
+                            {levelName(
+                              t,
+                              level.id,
+                            )}
+                          </span>
+                          <span className="text-sm leading-5 text-app-text-muted">
                             {levelHint(
                               t,
                               level.id,
                               guitar,
                             )}
                           </span>
-                        </span>
-                        <span className="flex h-5 items-center">
-                          <span className="app-skeleton h-3.5 w-32 max-w-full" />
-                        </span>
-                      </div>
-                    ) : mic &&
-                      !micAllowed(
-                        level.kind,
-                      ) ? (
-                      <div
-                        className={
-                          ROW
-                        }
-                      >
-                        <span className="text-base leading-6 text-app-text-muted">
-                          {levelName(
-                            t,
-                            level.id,
-                          )}
-                        </span>
-                        <span className="text-sm leading-5 text-app-text-muted">
-                          {t(
-                            'sprint-level-mic',
-                            {
-                              defaultValue:
-                                'Not with the microphone: it hears one note at a time.',
-                            },
-                          )}
-                        </span>
-                        <span className="min-h-5 text-sm leading-5 text-app-text-muted">
-                          {bestSentence(
-                            t,
-                            i18n.language,
-                            overview,
-                            level.id,
-                          )}
-                        </span>
-                      </div>
-                    ) : (
-                      <button
-                        ref={
-                          i ===
-                          0
-                            ? firstRow
-                            : undefined
-                        }
-                        type="button"
-                        onClick={() =>
-                          setPlaying(
-                            {
-                              mode: 'freeplay',
-                              level:
-                                level.id,
-                              prompts:
-                                freeplayPrompts(
-                                  level.id,
-                                ),
-                            },
-                          )
-                        }
-                        className={`${ROW} rounded-app-sm transition-colors hover:bg-app-surface-hover`}
-                      >
-                        <span className="text-base leading-6 text-app-text">
-                          {levelName(
-                            t,
-                            level.id,
-                          )}
-                        </span>
-                        <span className="text-sm leading-5 text-app-text-muted">
-                          {levelHint(
-                            t,
-                            level.id,
-                            guitar,
-                          )}
-                        </span>
-                        <span className="min-h-5 text-sm leading-5 text-app-text-muted">
-                          {bestSentence(
-                            t,
-                            i18n.language,
-                            overview,
-                            level.id,
-                          )}
-                        </span>
-                      </button>
-                    )}
-                  </li>
-                ),
-              )}
-            </ul>
+                          <span className="min-h-5 text-sm leading-5 text-app-text-muted">
+                            {bestSentence(
+                              t,
+                              i18n.language,
+                              overview,
+                              level.id,
+                            )}
+                          </span>
+                        </button>
+                      )}
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
           ) : (
-            <DailyIntro
-              loading={
-                loading
-              }
-              failed={
-                dailyFailed
-              }
-              mic={
-                mic ||
-                singer
-              }
-              standing={
-                overview
-                  ? dailyStateSentence(
-                      t,
-                      overview,
-                    )
-                  : ''
-              }
-              onPlay={() =>
-                void playDaily()
-              }
-            />
+            <div className="space-y-4">
+              <p className="text-sm leading-5 text-app-text-muted">
+                {t(
+                  'sprint-daily-test',
+                  {
+                    defaultValue:
+                      'The Daily challenge is always Test mode: one try at each prompt, whatever you chose for Freeplay.',
+                  },
+                )}
+              </p>
+              <DailyIntro
+                loading={
+                  loading
+                }
+                failed={
+                  dailyFailed
+                }
+                mic={
+                  mic ||
+                  singer
+                }
+                standing={
+                  overview
+                    ? dailyStateSentence(
+                        t,
+                        overview,
+                      )
+                    : ''
+                }
+                onPlay={() =>
+                  void playDaily()
+                }
+              />
+            </div>
           )}
         </div>
       );
