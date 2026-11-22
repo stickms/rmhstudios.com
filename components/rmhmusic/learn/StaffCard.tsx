@@ -58,6 +58,9 @@ export const STAFF_BOX =
 export const STAFF_LOW_ASPECT =
   'aspect-[200/117]';
 
+/** How far left of the right note the played (wrong) note sits: clear of a neighbouring head. */
+const PLAYED_DX = 28;
+
 export function StaffCard({
   card,
   state,
@@ -67,9 +70,16 @@ export function StaffCard({
   caption,
   label:
     labelOverride,
+  played,
 }: {
   card: Card;
   state: StaffCardState;
+  /**
+   * A wrong answer's pitch, drawn as a second (red pencil) notehead beside the right note, so the
+   * learner sees how far off it was. The right note then takes the accent colour. Only drawn once
+   * the card is answered wrong.
+   */
+  played?: number | null;
   className?: string;
   /** `low` reaches three ledger lines under the treble staff (the note finder; see the layout). */
   range?:
@@ -116,10 +126,57 @@ export function StaffCard({
     midiToName(
       card.midi,
     );
+  const miss =
+    state ===
+      'wrong' &&
+    played !==
+      undefined &&
+    played !==
+      null &&
+    Number.isFinite(
+      played,
+    )
+      ? {
+          layout:
+            cardLayout(
+              card.clef,
+              played,
+              low
+                ? CARD_LOW_MIN_STEP
+                : CARD_MIN_STEP,
+            ),
+          name: midiToName(
+            played,
+          ),
+        }
+      : null;
 
   const label =
     labelOverride
       ? labelOverride
+      : miss
+        ? card.clef ===
+          'bass'
+          ? t(
+              'flash-card-miss-bass',
+              {
+                note: name,
+                played:
+                  miss.name,
+                defaultValue:
+                  '{{note}} on the bass staff; you played {{played}}',
+              },
+            )
+          : t(
+              'flash-card-miss-treble',
+              {
+                note: name,
+                played:
+                  miss.name,
+                defaultValue:
+                  '{{note}} on the treble staff; you played {{played}}',
+              },
+            )
       : answered
         ? card.clef ===
           'bass'
@@ -158,7 +215,8 @@ export function StaffCard({
 
   const ink =
     state ===
-    'right'
+      'right' ||
+    miss
       ? 'text-app-accent'
       : state ===
           'wrong'
@@ -295,6 +353,57 @@ export function StaffCard({
             </text>
           ) : null}
         </g>
+        {miss ? (
+          // The note the learner played, left of the right one so two neighbouring notes do not
+          // overlap, in red pencil; the sentence under the card says it in words.
+          <g
+            className="text-app-danger"
+            stroke="currentColor"
+            fill="currentColor"
+            strokeLinecap="round"
+            data-played-note=""
+          >
+            {miss.layout.ledgerYs.map(
+              (
+                y,
+                i,
+              ) => (
+                <path
+                  key={
+                    y
+                  }
+                  d={ledgerLine(
+                    y,
+                    i,
+                    CARD_NOTE_X -
+                      PLAYED_DX,
+                  )}
+                  strokeWidth="1.4"
+                  fill="none"
+                />
+              ),
+            )}
+            <ellipse
+              cx={
+                CARD_NOTE_X -
+                PLAYED_DX
+              }
+              cy={
+                miss
+                  .layout
+                  .noteY
+              }
+              rx={
+                HEAD_RX
+              }
+              ry={
+                HEAD_RY
+              }
+              transform={`rotate(-20 ${CARD_NOTE_X - PLAYED_DX} ${miss.layout.noteY})`}
+              stroke="none"
+            />
+          </g>
+        ) : null}
       </svg>
       {caption ===
       undefined ? (

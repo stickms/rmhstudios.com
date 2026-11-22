@@ -5,8 +5,9 @@
  * a singer's is their range's deck, drawn as the range reads it, a tenor's with the treble 8), and
  * runs the same screen as a reading lesson (`FlashcardSession`, `flashcardsMachine`, unchanged).
  *
- * When the session ends it posts one review per card — `good` for a right answer, `again` for a
- * wrong one, no timers — and the server schedules each card with its own clock. Practice
+ * When the session ends it posts one review per card, graded from the first answer — `again` for a
+ * miss, `easy`/`good`/`hard` for a right one by its speed — and the server schedules each card
+ * (FSRS) with its own clock. Practice
  * completes no lesson and pays no XP or stars, so there is nothing to farm: its result is the
  * sentence saying how many notes were named. A failed post keeps the result on screen with Retry
  * (which posts the same reviews again), a sign-out with a sign-in link back here.
@@ -32,6 +33,10 @@ import {
   practiceDecks,
   stateFromRow,
 } from '@/lib/rmhmusic/learn/content/practice';
+import {
+  STAFF_TIMES,
+  gradeAttempt,
+} from '@/lib/rmhmusic/learn/srs/grade';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import {
   isVoiceRange,
@@ -61,7 +66,11 @@ import { useArrival } from '@/components/ui/arrive';
 const RETURN_TO =
   '/rmhmusic/practice';
 
-/** What a finished session posts: one review per card, in the order they were asked. */
+/**
+ * What a finished session posts: one review per card, in the order they were asked. The grade is
+ * the FIRST answer's (`gradeAttempt`): a miss is `again` even when Learning mode made the learner
+ * try again until it was right, and a right answer is `easy`, `good` or `hard` by how long it took.
+ */
 function reviewsOf(
   answered: readonly Answered[],
 ) {
@@ -74,9 +83,16 @@ function reviewsOf(
           .card
           .id,
       grade:
-        a.right
-          ? ('good' as const)
-          : ('again' as const),
+        gradeAttempt(
+          {
+            right:
+              a.right,
+            ms:
+              a.ms ??
+              null,
+          },
+          STAFF_TIMES,
+        ),
     }),
   );
 }

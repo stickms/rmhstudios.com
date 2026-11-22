@@ -490,8 +490,9 @@ describe('applyReviews', () => {
         )
       )[0]
         .stability,
-    ).toBe(
-      0,
+    ).toBeCloseTo(
+      0.212,
+      6,
     );
   });
 

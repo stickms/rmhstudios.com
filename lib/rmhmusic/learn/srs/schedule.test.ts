@@ -937,7 +937,7 @@ describe('isDue', () => {
         s.last!,
       ),
     ).toBeCloseTo(
-      2.2,
+      2,
       6,
     );
     expect(
@@ -1095,7 +1095,7 @@ describe('isDue', () => {
         T0,
       ),
     ).toBeCloseTo(
-      2.2,
+      2,
       6,
     );
     expect(

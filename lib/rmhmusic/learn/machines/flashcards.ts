@@ -76,6 +76,23 @@ export const step =
     isRight,
   );
 
+/** The step function for a session in Learning mode (retry until right) or Test mode. */
+export function stepFor(
+  learning: boolean,
+) {
+  return learning
+    ? sessionStep<
+        Card,
+        Answer
+      >(
+        isRight,
+        {
+          learning: true,
+        },
+      )
+    : step;
+}
+
 export function transition(
   s: State,
   e: Event,
@@ -108,13 +125,37 @@ export const flashcardsMachine =
 /** The machine for one session's cards, in the shape `createRunner` takes. */
 export function createFlashcardsMachine(
   cards: Card[],
+  /**
+   * Learning mode (retry until right) or Test mode, or a getter read at every event, so a learner
+   * who switches mode mid-session is obeyed from the next answer.
+   */
+  learning:
+    | boolean
+    | (() => boolean) = false,
 ): Machine<
   State,
   Event,
   Effect
 > {
+  const learn = stepFor(
+    true,
+  );
   return createSessionMachine(
     cards,
-    step,
+    typeof learning ===
+      'function'
+      ? (
+          s,
+          e,
+        ) =>
+          (learning()
+            ? learn
+            : step)(
+            s,
+            e,
+          )
+      : stepFor(
+          learning,
+        ),
   );
 }

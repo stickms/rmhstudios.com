@@ -195,6 +195,7 @@ export function ruledLine(
 export function ledgerLine(
   y: number,
   n: number,
+  x: number = CARD_NOTE_X,
 ): string {
   const t =
     n %
@@ -202,7 +203,7 @@ export function ledgerLine(
     0
       ? 0.35
       : -0.3;
-  return `M ${CARD_NOTE_X - 12} ${f(y + t)} L ${CARD_NOTE_X + 12} ${f(y - t)}`;
+  return `M ${x - 12} ${f(y + t)} L ${x + 12} ${f(y - t)}`;
 }
 
 // ── Calligraphic strokes ─────────────────────────────────────────────────────

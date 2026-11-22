@@ -32,15 +32,20 @@ export type SessionState<
       cards: C[];
       index: number;
       correct: number;
+      /** Wrong answers already given to this question (Learning mode keeps asking it). */
+      misses?: number;
     }
   | {
       kind: 'feedback';
       cards: C[];
       index: number;
-      /** Includes this question when it was right. */
+      /** Includes this question when it was right the first time. */
       correct: number;
+      /** This answer was right. A right answer after a miss (Learning mode) still scores nothing. */
       right: boolean;
       answer: A;
+      /** Wrong answers given to this question so far, this one included. */
+      misses?: number;
     }
   | {
       kind: 'saving';
@@ -150,6 +155,15 @@ function completeEffect(
   };
 }
 
+export interface SessionOptions {
+  /**
+   * Learning mode: a wrong answer shows its feedback and Next asks the same question again, so the
+   * session only moves on once the question is answered right. Only a first-try right answer
+   * counts toward the score. Test mode (the default) moves on after one answer either way.
+   */
+  learning?: boolean;
+}
+
 /** The step function of a session whose answers are judged by `isRight`. */
 export function sessionStep<
   C,
@@ -159,6 +173,7 @@ export function sessionStep<
     card: C,
     answer: A,
   ) => boolean,
+  options: SessionOptions = {},
 ): SessionStep<
   C,
   A
@@ -207,6 +222,9 @@ export function sessionStep<
             card,
             e.answer,
           );
+        const before =
+          s.misses ??
+          0;
         return {
           state:
             {
@@ -215,14 +233,27 @@ export function sessionStep<
                 s.cards,
               index:
                 s.index,
+              // Only a right first answer scores: a right answer after a miss does not.
               correct:
                 s.correct +
-                (right
+                (right &&
+                before ===
+                  0
                   ? 1
                   : 0),
               right,
               answer:
                 e.answer,
+              // Test mode's states are exactly what they always were: misses are Learning's.
+              ...(options.learning
+                ? {
+                    misses:
+                      before +
+                      (right
+                        ? 0
+                        : 1),
+                  }
+                : {}),
             },
           effects:
             [],
@@ -236,6 +267,29 @@ export function sessionStep<
           return same(
             s,
           );
+        if (
+          options.learning &&
+          !s.right
+        ) {
+          // Learning mode: the same question again, with its misses remembered.
+          return {
+            state:
+              {
+                kind: 'asking',
+                cards:
+                  s.cards,
+                index:
+                  s.index,
+                correct:
+                  s.correct,
+                misses:
+                  s.misses ??
+                  1,
+              },
+            effects:
+              [],
+          };
+        }
         if (
           s.index +
             1 <
