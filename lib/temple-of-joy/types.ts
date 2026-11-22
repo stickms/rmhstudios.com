@@ -274,12 +274,7 @@ export interface Sinner {
 
 // ─── Manna (the sugar-lump layer) ────────────────────────────────────────────
 
-export type MannaKind =
-  | 'plain'
-  | 'twin'
-  | 'gilded'
-  | 'rich'
-  | 'bitter';
+export type MannaKind = 'plain' | 'twin' | 'gilded' | 'rich' | 'bitter';
 
 export interface MannaState {
   /** Ripe manna in hand. */
@@ -296,11 +291,7 @@ export interface MannaState {
 
 // ─── Minigames ───────────────────────────────────────────────────────────────
 
-export type MinigameId =
-  | 'garden'
-  | 'choir'
-  | 'exchange'
-  | 'hours';
+export type MinigameId = 'garden' | 'choir' | 'exchange' | 'hours';
 
 /* ── Garden of Eden ── */
 
@@ -376,13 +367,7 @@ export interface GardenState {
   soilCooldown: number;
 }
 
-export type SoilId =
-  | 'dirt'
-  | 'sand'
-  | 'clay'
-  | 'ash'
-  | 'glass'
-  | 'grace';
+export type SoilId = 'dirt' | 'sand' | 'clay' | 'ash' | 'glass' | 'grace';
 
 export interface SoilDef {
   id: SoilId;
@@ -421,11 +406,7 @@ export interface SaintDef {
   epithet: string;
   icon: string;
   /** Effect at each of the three stalls: nave, transept, apse. Best first. */
-  effects: [
-    SaintEffect,
-    SaintEffect,
-    SaintEffect,
-  ];
+  effects: [SaintEffect, SaintEffect, SaintEffect];
 }
 
 export interface SaintEffect {
@@ -445,11 +426,7 @@ export interface SaintEffect {
 export interface ChoirState {
   unlocked: boolean;
   /** Nave (strongest), transept, apse. `null` = empty stall. */
-  stalls: [
-    SaintId | null,
-    SaintId | null,
-    SaintId | null,
-  ];
+  stalls: [SaintId | null, SaintId | null, SaintId | null];
   /** Seconds until the choir may be re-seated. Swapping is meant to hurt. */
   cooldown: number;
   /** How many times the choir has been re-seated, for the cooldown curve. */
@@ -459,16 +436,7 @@ export interface ChoirState {
 /* ── Indulgence Exchange ── */
 
 export type GoodId =
-  | 'incense'
-  | 'oil'
-  | 'linen'
-  | 'wine'
-  | 'gold'
-  | 'ivory'
-  | 'myrrhResin'
-  | 'relics'
-  | 'psalms'
-  | 'absolution';
+  'incense' | 'oil' | 'linen' | 'wine' | 'gold' | 'ivory' | 'myrrhResin' | 'relics' | 'psalms' | 'absolution';
 
 export interface GoodDef {
   id: GoodId;
@@ -492,10 +460,7 @@ export interface GoodState {
 
 export interface ExchangeState {
   unlocked: boolean;
-  goods: Record<
-    GoodId,
-    GoodState
-  >;
+  goods: Record<GoodId, GoodState>;
   /** ms not yet applied; the market moves on a fixed 60s beat. */
   carry: number;
   /** Cash on the desk, in joy. Profit is withdrawn to the temple. */
@@ -509,13 +474,7 @@ export interface ExchangeState {
 /* ── Book of Hours ── */
 
 export type PrayerId =
-  | 'conjureJoy'
-  | 'forceTheHand'
-  | 'raiseTheFallen'
-  | 'buildInAnInstant'
-  | 'stretchTime'
-  | 'gatherManna'
-  | 'diviningRod';
+  'conjureJoy' | 'forceTheHand' | 'raiseTheFallen' | 'buildInAnInstant' | 'stretchTime' | 'gatherManna' | 'diviningRod';
 
 export interface PrayerDef {
   id: PrayerId;
@@ -559,22 +518,9 @@ export interface HoursState {
 export type { BowlState };
 
 export type TabId =
-  | 'temple'
-  | 'sources'
-  | 'blessings'
-  | 'garden'
-  | 'choir'
-  | 'exchange'
-  | 'hours'
-  | 'legacy'
-  | 'trophies'
-  | 'settings';
+  'temple' | 'sources' | 'blessings' | 'garden' | 'choir' | 'exchange' | 'hours' | 'legacy' | 'trophies' | 'settings';
 
-export type BuyQty =
-  | 1
-  | 10
-  | 100
-  | 'max';
+export type BuyQty = 1 | 10 | 100 | 'max';
 
 export interface GameState {
   // ── Joy ──
@@ -587,20 +533,11 @@ export interface GameState {
   peakJoy: number;
 
   // ── Sources ──
-  sources: Record<
-    SourceId,
-    number
-  >;
+  sources: Record<SourceId, number>;
   /** Manna levels. +1% output each; level 1 opens a minigame on some sources. */
-  sourceLevels: Record<
-    SourceId,
-    number
-  >;
+  sourceLevels: Record<SourceId, number>;
   /** Joy each source has produced this run, for the ledger. */
-  sourceEarnings: Record<
-    SourceId,
-    number
-  >;
+  sourceEarnings: Record<SourceId, number>;
 
   // ── Globes ──
   /**
@@ -690,12 +627,8 @@ export interface GameState {
   };
 
   // ── Settings ──
-  theme:
-    | 'dawn'
-    | 'vespers';
-  numberFormat:
-    | 'named'
-    | 'scientific';
+  theme: 'dawn' | 'vespers';
+  numberFormat: 'named' | 'scientific';
   soundEnabled: boolean;
   musicVolume: number;
   sfxVolume: number;
@@ -708,9 +641,7 @@ export interface GameState {
 
   // ── UI ──
   tab: TabId;
-  blessingFilter:
-    | BlessingKind
-    | 'all';
+  blessingFilter: BlessingKind | 'all';
   buyQty: BuyQty;
   /** True while the player is spending Manna rather than buying copies. */
   levelMode: boolean;
@@ -738,10 +669,7 @@ export interface Notice {
   icon: string;
   title: string;
   body?: string;
-  kind:
-    | 'gift'
-    | 'trophy'
-    | 'warn';
+  kind: 'gift' | 'trophy' | 'warn';
 }
 
 // ─── Save ────────────────────────────────────────────────────────────────────
@@ -755,31 +683,14 @@ export interface Notice {
  * writer only ever emits the current one.
  */
 export interface SaveData {
-  version:
-    | 2
-    | 3;
+  version: 2 | 3;
   joy: number;
   runJoy: number;
   lifetimeJoy: number;
   peakJoy: number;
-  sources: Partial<
-    Record<
-      SourceId,
-      number
-    >
-  >;
-  sourceLevels: Partial<
-    Record<
-      SourceId,
-      number
-    >
-  >;
-  sourceEarnings: Partial<
-    Record<
-      SourceId,
-      number
-    >
-  >;
+  sources: Partial<Record<SourceId, number>>;
+  sourceLevels: Partial<Record<SourceId, number>>;
+  sourceEarnings: Partial<Record<SourceId, number>>;
   /** v3+. Absent on a v2 save, which is read as the one globe you start with. */
   globes?: number;
   globesBought?: number;
@@ -834,12 +745,8 @@ export interface LegacySaveV1 {
   totalPlaytime?: number;
   totalClicks?: number;
   achievements?: string[];
-  theme?:
-    | 'light'
-    | 'dark';
-  numberFormat?:
-    | 'abbreviated'
-    | 'scientific';
+  theme?: 'light' | 'dark';
+  numberFormat?: 'abbreviated' | 'scientific';
   soundEnabled?: boolean;
   musicVolume?: number;
   sfxVolume?: number;

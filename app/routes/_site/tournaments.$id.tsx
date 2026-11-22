@@ -14,7 +14,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
-import { BracketView } from '@/components/tournaments/BracketView';
+import { BracketViewSwitch } from '@/components/tournaments/BracketViewSwitch';
+import { parseBracketView, type BracketViewChoice } from '@/lib/tournaments/rounds-view';
+import { DisputesPanel } from '@/components/tournaments/DisputesPanel';
+import { CheckInPanel, EntrantCheckIn, useStartRefusal } from '@/components/tournaments/CheckInPanel';
+import { SeedingPanel } from '@/components/tournaments/SeedingPanel';
+import { DeadlineSettings, YourNextMatch } from '@/components/tournaments/MatchSchedule';
 import { SwissStandings } from '@/components/competitive/SwissStandings';
 import { PickemPanel } from '@/components/competitive/PickemPanel';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
@@ -87,12 +92,19 @@ export const Route = createFileRoute('/_site/tournaments/$id')({
       links: [buildCanonical(path)],
     };
   },
+  validateSearch: (search: Record<string, unknown>): { view?: BracketViewChoice } => {
+    const view = parseBracketView(search.view);
+    return view ? { view } : {};
+  },
   component: TournamentDetailPage,
 });
 
 function TournamentDetailPage() {
   const { t } = useTranslation('c-tournaments');
+  const startRefusal = useStartRefusal();
   const { id } = Route.useParams();
+  const { view } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
@@ -123,7 +135,11 @@ function TournamentDetailPage() {
       const res = await fetch(path, { method: 'POST' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? t('failed', { defaultValue: 'Something went wrong' }));
+        toast.error(
+          startRefusal(data.code, data.details) ??
+            data.error ??
+            t('failed', { defaultValue: 'Something went wrong' }),
+        );
         return;
       }
       toast.success(okMsg);
@@ -320,6 +336,12 @@ function TournamentDetailPage() {
           )}
         </div>
 
+        <CheckInPanel tourney={tourney} viewerId={viewerId} canManage={canManage} onChanged={load} />
+
+        <SeedingPanel tourney={tourney} canManage={canManage} onChanged={load} />
+
+        <DeadlineSettings tourney={tourney} canManage={canManage} onChanged={load} />
+
         {/* Bracket (live / complete, or cancelled after it started: its open matches read "Cancelled") */}
         {(tourney.status === 'LIVE' ||
           tourney.status === 'COMPLETE' ||
@@ -328,11 +350,17 @@ function TournamentDetailPage() {
             <h2 className="site-section-label mb-3">
               {t('bracket-tournaments-id', { defaultValue: 'Bracket' })}
             </h2>
-            <BracketView
+            <YourNextMatch tourney={tourney} viewerId={viewerId} />
+            {canReport && <DisputesPanel tournament={tourney} onChanged={load} />}
+            <BracketViewSwitch
               tournament={tourney}
               canReport={canReport}
               reportingId={reportingId}
               onReport={report}
+              viewerId={viewerId}
+              onChanged={load}
+              urlView={view ?? null}
+              onViewChange={(next) => void navigate({ search: { view: next }, replace: true })}
             />
             {canReport && (
               <p className="mt-3 text-xs text-site-text-muted">
@@ -382,6 +410,12 @@ function TournamentDetailPage() {
                   fallbackName={e.user?.name ?? '?'}
                 />
                 <span className="truncate text-sm">{e.user?.name}</span>
+                {e.placement != null && e.seed != null && (tourney.format === 'SINGLE_ELIM' || tourney.format === 'DOUBLE_ELIM') && (
+                  <span className="t-meta">
+                    {t('seed-label', { ns: 'tournament-seeding', defaultValue: 'Seed {{seed}}', seed: e.seed })}
+                  </span>
+                )}
+                <EntrantCheckIn tourney={tourney} entrant={e} canManage={canManage} onChanged={load} />
                 {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
                   <span className="ml-auto text-xs text-site-text-muted">
                     {e.wins}–{e.losses}

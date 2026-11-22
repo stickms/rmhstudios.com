@@ -11,6 +11,7 @@ import { connectToRmhStudy, emit, getSocket } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { toolsApi } from '@/lib/tools/client';
 import type { StudyPlanInput } from '@/lib/tools/schemas';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Draft = StudyPlanInput & { id: string | null };
 type SavedPlan = StudyPlanInput & { id: string };
@@ -39,7 +40,7 @@ const fmt = (m: number) =>
 
 const inputCls = 'surface-field h-10 rounded-app-sm px-3 text-sm text-app-text';
 
-export default function StudyPlanner() {
+export default function StudyPlanner() { const lfmt = useLocaleFormat(); 
   const { t } = useTranslation('f-tools');
   const router = useRouter();
   const [saved, setSaved] = useState<SavedPlan[]>([]);
@@ -339,7 +340,7 @@ export default function StudyPlanner() {
                   .map((d) => (
                     <li key={d.date} className="surface-card rounded-app p-3">
                       <h3 className="mb-2 text-sm font-semibold">
-                        {new Date(`${d.date}T00:00:00`).toLocaleDateString(undefined, {
+                        {lfmt.date(new Date(`${d.date}T00:00:00`), {
                           weekday: 'long',
                           month: 'short',
                           day: 'numeric',

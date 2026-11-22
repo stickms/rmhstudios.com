@@ -5,6 +5,8 @@ model RMHark {
   userId    String
   content   String   @db.Text
   gifUrl    String?  @db.Text
+  /// Description of the GIF (alt text), plain text; null = none (rendered as "GIF").
+  gifAlt    String?  @db.VarChar(1000)
   imageUrls String[] @default([])
   // Per-image alt text (accessibility), aligned by index with imageUrls.
   // May be shorter than imageUrls; a missing/empty entry means "no description".
@@ -52,12 +54,19 @@ model RMHark {
 
   // Content warning: media/text hidden behind a click-to-reveal overlay.
   isSensitive Boolean @default(false)
+  // Why the post is warned (sprint 06 #16): plain text, 1-80 characters, one line. A reason implies `isSensitive`
+  // and also covers the post's text; a warning without one covers media only, as before.
+  contentWarning String? @db.VarChar(80)
 
   // Who is allowed to reply to this post (anti-harassment control).
   replyControl RMHarkReplyControl @default(EVERYONE)
 
   // Author-pinned to the top of their profile (one per user, enforced in code).
   pinnedAt DateTime?
+
+  // The one reply the author pinned to the top of this post's conversation. No foreign
+  // key: the hide and delete handlers clear it (lib/feed/conversation-controls.server.ts).
+  pinnedCommentId String? @db.VarChar(64)
 
   // Edit history: editedAt set on first edit; prior versions stored separately.
   editedAt DateTime?
@@ -280,16 +289,32 @@ model RMHarkRepost {
 }
 
 model RMHarkPoll {
-  id          String    @id @default(cuid())
-  rmheetId    String    @unique
-  question    String    @db.VarChar(200)
-  multiSelect Boolean   @default(false)
-  closesAt    DateTime? // optional scheduled close; null = never closes
-  createdAt   DateTime  @default(now())
+  id            String    @id @default(cuid())
+  rmheetId      String    @unique
+  question      String    @db.VarChar(200)
+  multiSelect   Boolean   @default(false)
+  /// s06-19: a ranked-choice poll (3-6 options, a required end). Mutually exclusive with `multiSelect`.
+  ranked        Boolean   @default(false)
+  closesAt      DateTime? // optional scheduled close; null = never closes
+  createdAt     DateTime  @default(now())
+  /// s04-08: set when the author ends the poll early. The effective end is `closedAt ?? closesAt`.
+  closedAt      DateTime?
+  /// s04-08: set when the author extended the poll (the post's "Extended" marker).
+  extendedAt    DateTime?
+  /// s04-08: claimed (compare-and-set) by the per-minute job before it tells the author and the voters.
+  endNotifiedAt DateTime?
+  /// s06-19: the instant-runoff result of a ranked poll, computed once when the poll ends (`lib/feed/ranked-poll.server.ts`).
+  resultJson    Json?
+  /// s07-19: a quiz poll's one correct option (a plain ref, not a relation). Never leaves the server except through `quizRevealFor` (`lib/feed/quiz-poll`).
+  correctOptionId String? @db.VarChar(30)
+  /// s07-19: the quiz's explanation (at most 280 characters), revealed with the answer.
+  explanation     String? @db.VarChar(280)
 
   rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   options RMHarkPollOption[]
 
+  @@index([endNotifiedAt, closesAt])
+  @@index([endNotifiedAt, closedAt])
   @@map("rmheet_poll")
 }
 
@@ -348,6 +373,25 @@ model Follow {
   @@index([followingId, createdAt(sort: Desc)])
   @@index([followerId, createdAt(sort: Desc)])
   @@map("follow")
+}
+
+// Append-only log written beside every change to a Follow row (follow, unfollow, block removal,
+// removed follower), in the same transaction. It is what lets the audience view chart gains and
+// losses over time, which the Follow table alone cannot (an unfollow deletes the row).
+// No relations to User on purpose: events outlive a deleted follower and the ids are opaque;
+// the account-deletion path erases a member's rows (lib/social/follow-events.server.ts).
+model FollowEvent {
+  id          BigInt   @id @default(autoincrement())
+  followerId  String
+  followingId String
+  // 'follow' | 'unfollow' | 'blocked' | 'removed'
+  kind        String   @db.VarChar(8)
+  createdAt   DateTime @default(now())
+
+  @@index([followingId, createdAt])
+  // Account deletion erases the rows where the deleted member was the follower.
+  @@index([followerId])
+  @@map("follow_event")
 }
 
 /// Normalized hashtag registry. Tags are extracted from post content at write
@@ -510,11 +554,14 @@ model ScheduledPost {
   userId       String
   content      String             @db.Text
   gifUrl       String?            @db.Text
+  gifAlt       String?            @db.VarChar(1000)
   imageUrls    String[]           @default([])
   // Per-image alt text (accessibility), aligned by index with imageUrls.
   imageAlts    String[]           @default([])
   audience     RMHarkAudience     @default(PUBLIC)
   isSensitive  Boolean            @default(false)
+  // The reason for the warning, carried to the published post (sprint 06 #16).
+  contentWarning String?          @db.VarChar(80)
   replyControl RMHarkReplyControl @default(EVERYONE)
   unlockPrice  Int?
   communityId  String?
@@ -877,4 +924,21 @@ model MarathonList {
 
   @@index([userId, updatedAt])
   @@map("marathon_list")
+}
+
+/// "Turn off reposts from X": the viewer no longer sees X's reposts on the Following and For You timelines. X's own
+/// posts, quote posts and replies are unaffected and the reposts stay on X's profile. At most 1,000 rows per member.
+model RepostMute {
+  id        String   @id @default(cuid())
+  userId    String
+  targetId  String
+  createdAt DateTime @default(now())
+
+  user   User @relation("RepostMuteMuter", fields: [userId], references: [id], onDelete: Cascade)
+  target User @relation("RepostMuteTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([targetId])
+  @@map("repost_mute")
 }

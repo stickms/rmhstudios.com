@@ -1,58 +1,26 @@
 /** Play view of the Vibes Activity: the vibe's frame, bridged to the room (`room.*`) and the KV store (`store.*`). */
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
-import {
-  useVibeBridge,
-  type VibeBridgeHost,
-} from '@/components/rmhvibe/useVibeBridge';
+import { useVibeBridge, type VibeBridgeHost } from '@/components/rmhvibe/useVibeBridge';
 import { createVibeHostHandlers } from '@/components/rmhvibe/vibe-host-handlers';
-import {
-  BridgeError,
-  type BridgeArgs,
-} from '@/lib/rmhvibe/bridge';
+import { BridgeError, type BridgeArgs } from '@/lib/rmhvibe/bridge';
 import type { VibeRoomClient } from '@/lib/rmhvibe/room-socket';
 import type { VibeRoomMember } from '@/lib/rmhvibe/room-events';
-import {
-  resolveTweakValues,
-  type TweakSpec,
-  type TweakValue,
-} from '@/lib/rmhvibe/tweaks';
+import { resolveTweakValues, type TweakSpec, type TweakValue } from '@/lib/rmhvibe/tweaks';
 
 /** Per-frame ceiling on `room.send`, matching the hub's relay limit and the documented 10 per second. */
 const MAX_ROOM_SENDS_PER_SECOND = 10;
 
 /** What `RMHVibe.room.members()` and the `room:members` event carry to the frame. */
-function memberPayload(
-  members: VibeRoomMember[],
-  hostSid:
-    | string
-    | null,
-  selfSid:
-    | string
-    | null,
-) {
-  return members.map(
-    (
-      m,
-    ) => ({
-      name: m.name,
-      avatarUrl:
-        m.avatarUrl,
-      away: m.away,
-      host:
-        m.sid ===
-        hostSid,
-      self:
-        m.sid ===
-        selfSid,
-    }),
-  );
+function memberPayload(members: VibeRoomMember[], hostSid: string | null, selfSid: string | null) {
+  return members.map((m) => ({
+    name: m.name,
+    avatarUrl: m.avatarUrl,
+    away: m.away,
+    host: m.sid === hostSid,
+    self: m.sid === selfSid,
+  }));
 }
 
 export function VibePlayer({
@@ -72,255 +40,79 @@ export function VibePlayer({
   html: string;
   title: string;
   tweakSpec: TweakSpec[];
-  tweakValues: Record<
-    string,
-    TweakValue
-  >;
+  tweakValues: Record<string, TweakValue>;
   client: VibeRoomClient;
   members: VibeRoomMember[];
-  hostSid:
-    | string
-    | null;
+  hostSid: string | null;
   /** Discord's picture-in-picture tile: the frame stays mounted but hidden. */
   hidden: boolean;
   /** The Activity's Discord access token: the KV store's credential (this frame has no site session). */
   accessToken: string;
   sandbox: string;
 }) {
-  const [
-    frame,
-    setFrame,
-  ] =
-    useState<HTMLIFrameElement | null>(
-      null,
-    );
-  const tokenRef =
-    useRef(
-      accessToken,
-    );
-  tokenRef.current =
-    accessToken;
-  const handlers =
-    useMemo(
-      () =>
-        createVibeHostHandlers(
-          slug,
-          () =>
-            tokenRef.current,
-        ),
-      [
-        slug,
-      ],
-    );
-  const sendWindow =
-    useRef(
-      {
-        start: 0,
-        count: 0,
+  const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
+  const tokenRef = useRef(accessToken);
+  tokenRef.current = accessToken;
+  const handlers = useMemo(() => createVibeHostHandlers(slug, () => tokenRef.current), [slug]);
+  const sendWindow = useRef({
+    start: 0,
+    count: 0,
+  });
+  const payload = useMemo(() => memberPayload(members, hostSid, client.selfSid()), [members, hostSid, client]);
+  const payloadRef = useRef(payload);
+  payloadRef.current = payload;
+
+  const host = useMemo<VibeBridgeHost>(
+    () => ({
+      kind: 'discord',
+      handle: (op, args) => {
+        if (op === 'room.send') {
+          const w = sendWindow.current;
+          const now = Date.now();
+          if (now - w.start >= 1000) {
+            w.start = now;
+            w.count = 0;
+          }
+          if (++w.count > MAX_ROOM_SENDS_PER_SECOND) return Promise.reject(new BridgeError('rate'));
+          client.send((args as BridgeArgs['room.send']).data);
+          return Promise.resolve(undefined);
+        }
+        if (op === 'room.members') return Promise.resolve(payloadRef.current);
+        if (op.startsWith('store.')) return handlers.handle(op, args);
+        return Promise.reject(new BridgeError('unavailable'));
       },
-    );
-  const payload =
-    useMemo(
-      () =>
-        memberPayload(
-          members,
-          hostSid,
-          client.selfSid(),
-        ),
-      [
-        members,
-        hostSid,
-        client,
-      ],
-    );
-  const payloadRef =
-    useRef(
-      payload,
-    );
-  payloadRef.current =
-    payload;
-
-  const host =
-    useMemo<VibeBridgeHost>(
-      () => ({
-        kind: 'discord',
-        handle:
-          (
-            op,
-            args,
-          ) => {
-            if (
-              op ===
-              'room.send'
-            ) {
-              const w =
-                sendWindow.current;
-              const now =
-                Date.now();
-              if (
-                now -
-                  w.start >=
-                1000
-              ) {
-                w.start =
-                  now;
-                w.count = 0;
-              }
-              if (
-                ++w.count >
-                MAX_ROOM_SENDS_PER_SECOND
-              )
-                return Promise.reject(
-                  new BridgeError(
-                    'rate',
-                  ),
-                );
-              client.send(
-                (
-                  args as BridgeArgs['room.send']
-                )
-                  .data,
-              );
-              return Promise.resolve(
-                undefined,
-              );
-            }
-            if (
-              op ===
-              'room.members'
-            )
-              return Promise.resolve(
-                payloadRef.current,
-              );
-            if (
-              op.startsWith(
-                'store.',
-              )
-            )
-              return handlers.handle(
-                op,
-                args,
-              );
-            return Promise.reject(
-              new BridgeError(
-                'unavailable',
-              ),
-            );
-          },
-      }),
-      [
-        client,
-        handlers,
-      ],
-    );
-  const {
-    post,
-  } =
-    useVibeBridge(
-      frame,
-      host,
-    );
-  const values =
-    useMemo(
-      () =>
-        resolveTweakValues(
-          tweakSpec,
-          tweakValues,
-        ),
-      [
-        tweakSpec,
-        tweakValues,
-      ],
-    );
-
-  useEffect(() => {
-    if (
-      frame &&
-      tweakSpec.length
-    )
-      post(
-        'tweaks',
-        values,
-      );
-  }, [
-    frame,
-    tweakSpec,
-    values,
-    post,
-  ]);
-
-  useEffect(() => {
-    if (
-      frame
-    )
-      post(
-        'room:members',
-        payload,
-      );
-  }, [
-    frame,
-    payload,
-    post,
-  ]);
-
-  useEffect(
-    () =>
-      client.onMessage(
-        (
-          m,
-        ) =>
-          post(
-            'room:message',
-            m.data,
-          ),
-      ),
-    [
-      client,
-      post,
-    ],
+    }),
+    [client, handlers],
   );
+  const { post } = useVibeBridge(frame, host);
+  const values = useMemo(() => resolveTweakValues(tweakSpec, tweakValues), [tweakSpec, tweakValues]);
 
   useEffect(() => {
-    if (
-      frame
-    )
-      post(
-        'visibility',
-        {
-          hidden,
-        },
-      );
-  }, [
-    frame,
-    hidden,
-    post,
-  ]);
+    if (frame && tweakSpec.length) post('tweaks', values);
+  }, [frame, tweakSpec, values, post]);
+
+  useEffect(() => {
+    if (frame) post('room:members', payload);
+  }, [frame, payload, post]);
+
+  useEffect(() => client.onMessage((m) => post('room:message', m.data)), [client, post]);
+
+  useEffect(() => {
+    if (frame)
+      post('visibility', {
+        hidden,
+      });
+  }, [frame, hidden, post]);
 
   return (
     <div
       className="relative flex-1 min-h-0"
       style={{
-        visibility:
-          hidden
-            ? 'hidden'
-            : 'visible',
+        visibility: hidden ? 'hidden' : 'visible',
       }}
     >
       <VibeStyles />
-      <VibeFrame
-        html={
-          html
-        }
-        title={
-          title
-        }
-        sandbox={
-          sandbox
-        }
-        onFrame={
-          setFrame
-        }
-      />
+      <VibeFrame html={html} title={title} sandbox={sandbox} onFrame={setFrame} />
     </div>
   );
 }

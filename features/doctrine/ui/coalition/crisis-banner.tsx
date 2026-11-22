@@ -10,55 +10,25 @@ interface CrisisBannerProps {
   title: string;
 }
 
-const SEVERITY_COLORS: Record<
-  string,
-  string
-> =
-  {
-    COSMETIC:
-      '#6B7280',
-    DEGRADED:
-      '#F59E0B',
-    CRITICAL:
-      '#EF4444',
-    CATASTROPHIC:
-      '#DC2626',
-  };
+const SEVERITY_COLORS: Record<string, string> = {
+  COSMETIC: '#6B7280',
+  DEGRADED: '#F59E0B',
+  CRITICAL: '#EF4444',
+  CATASTROPHIC: '#DC2626',
+};
 
-export function CrisisBanner({
-  incidentId,
-  codename,
-  severity,
-  title,
-}: CrisisBannerProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-doctrine',
-    );
-  const color =
-    SEVERITY_COLORS[
-      severity
-    ] ??
-    '#EF4444';
+export function CrisisBanner({ incidentId, codename, severity, title }: CrisisBannerProps) {
+  const { t } = useTranslation('c-doctrine');
+  const color = SEVERITY_COLORS[severity] ?? '#EF4444';
 
   return (
-    <Link
-      to={`/strategies/incidents`}
-    >
+    <Link to={`/strategies/incidents`}>
       <motion.div
         animate={{
-          borderColor:
-            [
-              `${color}30`,
-              `${color}60`,
-              `${color}30`,
-            ],
+          borderColor: [`${color}30`, `${color}60`, `${color}30`],
         }}
         transition={{
-          repeat:
-            Infinity,
+          repeat: Infinity,
           duration: 2,
         }}
         className="rounded-lg p-3 flex items-center gap-3 cursor-pointer transition-colors hover:bg-white/[0.02]"
@@ -68,9 +38,7 @@ export function CrisisBanner({
         }}
       >
         <AlertTriangle
-          size={
-            16
-          }
+          size={16}
           style={{
             color,
           }}
@@ -83,9 +51,7 @@ export function CrisisBanner({
                 color,
               }}
             >
-              {
-                codename
-              }
+              {codename}
             </span>
             <span
               className="text-xs font-mono uppercase px-1 rounded"
@@ -94,25 +60,15 @@ export function CrisisBanner({
                 background: `${color}15`,
               }}
             >
-              {
-                severity
-              }
+              {severity}
             </span>
           </div>
-          <p className="text-sm text-white/80 truncate">
-            {
-              title
-            }
-          </p>
+          <p className="text-sm text-white/80 truncate">{title}</p>
         </div>
         <span className="text-xs text-white/50 shrink-0">
-          {t(
-            'view-arrow',
-            {
-              defaultValue:
-                'View →',
-            },
-          )}
+          {t('view-arrow', {
+            defaultValue: 'View →',
+          })}
         </span>
       </motion.div>
     </Link>

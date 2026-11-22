@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# The Toolbox suite (/tools, docs/autonomous/sprint-01): `pnpm test:toolbox`
+# (vitest.toolbox.config.ts). The utilities are pure client-side logic and not
+# mission-critical, so they are outside web-ci.yml's main suite (docs/testing.md
+# §What is not tested). Path-filtered so unrelated PRs don't pay for it.
+# ─────────────────────────────────────────────────────────────────────────────
+name: toolbox-tests
+
+on:
+  pull_request:
+    paths:
+      - 'lib/toolbox/**'
+      - 'vitest.toolbox.config.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/toolbox-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/toolbox/**'
+      - 'vitest.toolbox.config.ts'
+      - '.github/workflows/toolbox-tests.yml'
+
+concurrency:
+  group: toolbox-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # pnpm + Node + node_modules (cached by lockfile + schema), as web-ci.yml.
+      - uses: ./.github/actions/setup-deps
+
+      - name: Toolbox suite
+        run: pnpm test:toolbox

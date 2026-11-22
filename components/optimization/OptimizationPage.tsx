@@ -21,23 +21,12 @@ import { useScrollReveal } from './useScrollReveal';
  */
 
 export function OptimizationPage() {
-  const pageRef =
-    useScrollReveal();
+  const pageRef = useScrollReveal();
 
   return (
-    <div
-      className="sec-page"
-      ref={
-        pageRef
-      }
-    >
-      <a
-        className="sec-skip"
-        href="#opt-main"
-      >
-        Skip
-        to
-        content
+    <div className="sec-page" ref={pageRef}>
+      <a className="sec-skip" href="#opt-main">
+        Skip to content
       </a>
 
       <OptimizationNav />

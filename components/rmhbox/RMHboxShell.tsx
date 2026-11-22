@@ -10,33 +10,13 @@ import AppShell from '@/components/shared/AppShell';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { reconnectNow } from '@/lib/rmhbox/socket';
 
-export default function RMHboxShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const theme =
-    useRMHboxStore(
-      (
-        s,
-      ) =>
-        s
-          .settings
-          .theme,
-    );
-  const status =
-    useRMHboxStore(
-      (
-        s,
-      ) =>
-        s.connectionStatus,
-    );
+export default function RMHboxShell({ children }: { children: React.ReactNode }) {
+  const theme = useRMHboxStore((s) => s.settings.theme);
+  const status = useRMHboxStore((s) => s.connectionStatus);
   return (
     <AppShell
       appClassName="rmhbox-theme"
-      theme={
-        theme
-      }
+      theme={theme}
       realtime={{
         status,
         // RMHbox never pauses for a dropped player (games skip their turn,
@@ -44,15 +24,11 @@ export default function RMHboxShell({
         // the shared "Game paused" takeover was false and blocked everyone's
         // input for up to 15 s while timers ran on. The player list already
         // shows who is offline.
-        peersWaiting:
-          null,
-        onRetry:
-          reconnectNow,
+        peersWaiting: null,
+        onRetry: reconnectNow,
       }}
     >
-      {
-        children
-      }
+      {children}
     </AppShell>
   );
 }

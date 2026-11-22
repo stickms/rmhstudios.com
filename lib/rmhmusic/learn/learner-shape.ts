@@ -5,11 +5,7 @@
  * select on `music_learn_profile`, `getLearnerShape`) and hands it down as route context. Pure,
  * client-safe.
  */
-import {
-  INSTRUMENTS,
-  type Instrument,
-  type VoiceRange,
-} from './schemas';
+import { INSTRUMENTS, type Instrument, type VoiceRange } from './schemas';
 import { isVoiceRange } from './voice/range';
 
 export interface LearnerShape {
@@ -18,43 +14,26 @@ export interface LearnerShape {
   voiceRange: VoiceRange | null;
 }
 
-export const DEFAULT_LEARNER_SHAPE: LearnerShape =
-  {
-    instrument:
-      'piano',
-    voiceRange:
-      null,
-  };
+export const DEFAULT_LEARNER_SHAPE: LearnerShape = {
+  instrument: 'piano',
+  voiceRange: null,
+};
 
 /** Narrow the stored columns (plain strings) so a stale value never reaches the UI. */
 export function toLearnerShape(
   row: {
     instrument: string;
-    voiceRange:
-      | string
-      | null;
+    voiceRange: string | null;
   } | null,
 ): LearnerShape {
-  if (
-    !row
-  )
+  if (!row)
     return {
       ...DEFAULT_LEARNER_SHAPE,
     };
   return {
-    instrument:
-      (
-        INSTRUMENTS as readonly string[]
-      ).includes(
-        row.instrument,
-      )
-        ? (row.instrument as Instrument)
-        : DEFAULT_LEARNER_SHAPE.instrument,
-    voiceRange:
-      isVoiceRange(
-        row.voiceRange,
-      )
-        ? row.voiceRange
-        : null,
+    instrument: (INSTRUMENTS as readonly string[]).includes(row.instrument)
+      ? (row.instrument as Instrument)
+      : DEFAULT_LEARNER_SHAPE.instrument,
+    voiceRange: isVoiceRange(row.voiceRange) ? row.voiceRange : null,
   };
 }

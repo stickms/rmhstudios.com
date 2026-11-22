@@ -164,3 +164,29 @@ a.settings-row {
 .theme-choice .t-meta {
   margin-block-start: -4px;
 }
+
+/* Cosmetics (Settings → Profile customization): a carousel per kind, "Show all" opens the same tiles as a grid. The
+   rail keeps 16px under the tiles so its scrollbar sits clear of the Equip buttons, as the theme picker's does. */
+.cosmetic-rail {
+  gap: 12px;
+  padding: 4px;
+  padding-block-end: 16px;
+  scroll-snap-type: x mandatory;
+}
+.cosmetic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 16px 12px;
+  padding: 4px;
+}
+.cosmetic-tile {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  inline-size: 152px;
+  scroll-snap-align: start;
+}
+.cosmetic-grid > .cosmetic-tile {
+  inline-size: auto;
+}

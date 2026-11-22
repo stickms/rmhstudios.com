@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 /**
  * Laundry Sort leaderboards.
@@ -49,6 +51,7 @@ export const route = apiRoute('/api/laundry-sort/leaderboard', {
       const { mode, limit } = parsed.data;
 
       try {
+        const hidden = await leaderboardHiddenUserIds();
         const select = {
           username: true,
           highScore: true,
@@ -64,13 +67,13 @@ export const route = apiRoute('/api/laundry-sort/leaderboard', {
           mode === 'versus'
             ? await prisma.laundryPlayer.findMany({
                 // Someone who has never raced has nothing to rank.
-                where: { versusPlayed: { gt: 0 } },
+                where: { versusPlayed: { gt: 0 }, ...notHiddenWhere(hidden) },
                 take: limit,
                 orderBy: [{ versusWins: 'desc' }, { versusBest: 'desc' }],
                 select,
               })
             : await prisma.laundryPlayer.findMany({
-                where: { highScore: { gt: 0 } },
+                where: { highScore: { gt: 0 }, ...notHiddenWhere(hidden) },
                 take: limit,
                 orderBy: { highScore: 'desc' },
                 select,

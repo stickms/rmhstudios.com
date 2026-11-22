@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
 import { ColumnHeader } from './ColumnHeader';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -74,6 +75,7 @@ export function PlaylistsColumn({
 }) {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
+  const prompt = usePrompt();
   const [playlists, setPlaylists] = useState<Summary[]>(initialData.playlists ?? []);
   const signedIn = initialData.playlists !== null;
   const [newName, setNewName] = useState('');
@@ -149,10 +151,10 @@ export function PlaylistsColumn({
   };
 
   const rename = async (pl: Summary) => {
-    const name = window.prompt(
-      t('playlist-rename-prompt', { defaultValue: 'Rename playlist' }),
-      pl.name,
-    );
+    const name = await prompt({
+      title: t('playlist-rename-prompt', { defaultValue: 'Rename playlist' }),
+      initialValue: pl.name,
+    });
     if (name == null) return;
     const trimmed = name.trim();
     if (!trimmed || trimmed === pl.name) return;

@@ -49,7 +49,7 @@ A public user profile by handle.
 
 ### `GET /api/v1/users/{handle}/posts`
 
-A user’s public posts, newest first.
+A user’s public posts, newest first. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
 
 **Scope:** `read:users` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listUserPosts`
 
@@ -68,6 +68,8 @@ A user’s public posts, newest first.
       "id": "ck_post123",
       "content": "hello world",
       "audience": "PUBLIC",
+      "sensitive": false,
+      "contentWarning": null,
       "createdAt": "2026-06-30T10:00:00.000Z",
       "metrics": {
         "likes": 3,
@@ -89,7 +91,7 @@ A user’s public posts, newest first.
 
 ### `GET /api/v1/users/{handle}/followers`
 
-Users who follow this user.
+Users who follow this user. Answers 403 `list_private` when the member keeps the list private from the key’s account. Blocked accounts are left out.
 
 **Scope:** `read:users` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listUserFollowers`
 
@@ -117,7 +119,7 @@ Users who follow this user.
 
 ### `GET /api/v1/users/{handle}/following`
 
-Users this user follows.
+Users this user follows. Answers 403 `list_private` when the member keeps the list private from the key’s account. Blocked accounts are left out.
 
 **Scope:** `read:users` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listUserFollowing`
 

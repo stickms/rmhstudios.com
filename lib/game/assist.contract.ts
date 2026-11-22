@@ -13,27 +13,17 @@ export interface AssistView {
   honouredBy: string[];
 }
 
-export const getAssistsApi =
-  endpoint<{
-    res: AssistView;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/settings/game-assists',
-    },
-  );
+export const getAssistsApi = endpoint<{
+  res: AssistView;
+}>()({
+  method: 'GET',
+  path: '/api/settings/game-assists',
+});
 
-export const setAssistsApi =
-  endpoint<{
-    body: z.infer<
-      typeof assistPatchSchema
-    >;
-    res: AssistView;
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/settings/game-assists',
-    },
-  );
+export const setAssistsApi = endpoint<{
+  body: z.infer<typeof assistPatchSchema>;
+  res: AssistView;
+}>()({
+  method: 'POST',
+  path: '/api/settings/game-assists',
+});

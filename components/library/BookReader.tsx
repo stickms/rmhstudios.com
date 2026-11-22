@@ -19,6 +19,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { readerQualityLabels } from '@/components/library/reader-quality-labels';
 import { Link } from '@tanstack/react-router';
 import {
   ArrowLeft,
@@ -33,6 +34,7 @@ import {
   Minimize2,
   Minus,
   Plus,
+  Search,
   SlidersHorizontal,
   StickyNote,
   Trash2,
@@ -40,11 +42,16 @@ import {
 import type { LibraryBook } from '@/lib/library/library';
 import { liquidVTName } from '@/lib/view-transition';
 import { PageStore } from '@/lib/library/page-store';
-import { isReaderKeyBlocked } from '@/lib/library/reader-keys';
-import { useBookState, type Bookmark as BookmarkT, type Note } from '@/lib/library/reader-store';
+import { isFindShortcut, isReaderKeyBlocked, shouldOpenFind } from '@/lib/library/reader-keys';
+import type { FindTarget } from '@/lib/library/find';
+import type { FindSource } from '@/lib/library/find-index';
+import { useSyncedBookState, type Bookmark as BookmarkT, type Note } from '@/lib/library/reader-store';
+import { useSession } from '@/components/Providers';
+import { ContinuedNotice } from './ContinuedNotice';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { BookCanvas } from './BookCanvas';
 import { ReaderDetails } from './ReaderDetails';
+import { FindPanel } from './FindPanel';
 import { ReaderReadingTools, type ReaderTextSource } from '@/components/reading/ReaderReadingTools';
 import { pdfItemsToText, type PdfTextItem } from '@/lib/reading/pdf-text';
 import { useArrival } from '@/components/ui/arrive';
@@ -83,11 +90,6 @@ const QUALITY_CAP: Record<PageQuality, number> = {
   low: 1600,
   medium: 2600,
   high: 3600,
-};
-const QUALITY_LABEL: Record<PageQuality, string> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
 };
 const QUALITY_ORDER: PageQuality[] = ['high', 'medium', 'low'];
 const DEFAULT_QUALITY: PageQuality = 'high';
@@ -153,6 +155,7 @@ async function buildChapters(pdf: PdfDoc): Promise<Chapter[]> {
 
 export function BookReader({ book }: { book: LibraryBook }) {
   const { t } = useTranslation("c-library");
+  const { t: ts } = useTranslation('find-in-book');
   const readerRef = useRef<HTMLElement>(null);
   const [numPages, setNumPages] = useState(0);
   const [aspect, setAspect] = useState(0.72); // page width / height (from page 1)
@@ -176,11 +179,16 @@ export function BookReader({ book }: { book: LibraryBook }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const detailsTriggerRef = useRef<HTMLElement | null>(null);
+  // Find in book: the panel, the request to focus its field, and the match last chosen.
+  const [findOpen, setFindOpen] = useState(false);
+  const [findFocus, setFindFocus] = useState(0);
+  const [findJump, setFindJump] = useState<FindTarget | null>(null);
 
   const hasToc = book.toc.length > 0;
 
-  // The reader's personal, device-local state for this book.
-  const marks = useBookState(book.slug);
+  // The reader's personal state for this book: on the device first, synced to their account when signed in.
+  const session = useSession();
+  const marks = useSyncedBookState(book.slug, { signedIn: Boolean(session.data), pages: numPages });
 
   // The page-raster pipeline. Created once the PDF is open; owns all page textures.
   const storeRef = useRef<PageStore | null>(null);
@@ -307,6 +315,12 @@ export function BookReader({ book }: { book: LibraryBook }) {
     [marks],
   );
 
+  const loadPageText = useCallback(async (n: number) => {
+    const page = await pdfRef.current?.getPage(n);
+    if (!page) return '';
+    return pdfItemsToText((await page.getTextContent()).items);
+  }, []);
+
   // P13 reading (L1): the selectable-text view reads text a page at a time via pdf.js.
   const textSource = useMemo<ReaderTextSource | null>(
     () =>
@@ -316,14 +330,36 @@ export function BookReader({ book }: { book: LibraryBook }) {
             count: numPages,
             current: curPage,
             unitKey: (n) => `p${n}`,
-            load: async (n) => {
-              const page = await pdfRef.current?.getPage(n);
-              if (!page) return '';
-              return pdfItemsToText((await page.getTextContent()).items);
-            },
+            load: loadPageText,
           }
         : null,
-    [status, numPages, curPage],
+    [status, numPages, curPage, loadPageText],
+  );
+
+  // Find in book searches the same page text. Stable per document so the index survives page turns.
+  const findSource = useMemo<FindSource | null>(
+    () => (status === 'ready' && numPages > 0 ? { count: numPages, load: loadPageText } : null),
+    [status, numPages, loadPageText],
+  );
+  const openFind = useCallback(() => {
+    setFindOpen(true);
+    setFindFocus((n) => n + 1);
+  }, []);
+  const findButtonRef = useRef<HTMLButtonElement>(null);
+  const closeFind = useCallback((open: boolean) => {
+    setFindOpen(open);
+    if (!open) {
+      setFindJump(null);
+      // The panel unmounts with focus inside it; hand focus back to the button that opened it.
+      setTimeout(() => findButtonRef.current?.focus(), 0);
+    }
+  }, []);
+  const selectFind = useCallback(
+    (target: FindTarget) => {
+      setFindJump(target);
+      goToPage(target.unit);
+    },
+    [goToPage],
   );
 
   const bookmarked = marks.state.bookmarks.some((b) => b.page === curPage);
@@ -378,7 +414,17 @@ export function BookReader({ book }: { book: LibraryBook }) {
   }, []);
 
   return (
-    <main ref={readerRef} className="vibe-screen lib-reader">
+    <main
+      ref={readerRef}
+      tabIndex={-1}
+      className="vibe-screen lib-reader"
+      onKeyDown={(e) => {
+        // Mod+F finds in the book only while focus is inside the reader; elsewhere the browser keeps it.
+        if (status !== 'ready' || !isFindShortcut(e.nativeEvent) || !shouldOpenFind(e.target)) return;
+        e.preventDefault();
+        openFind();
+      }}
+    >
       <header className="lib-reader__bar">
         <Link to="/library" aria-label={t("back-to-library", { defaultValue: "Back to library" })} className="vibe-toolbar__icon transition-transform duration-site-fast active:scale-90">
           <ArrowLeft size={17} />
@@ -429,6 +475,20 @@ export function BookReader({ book }: { book: LibraryBook }) {
             </button>
           )}
           {status === 'ready' && (
+            <button
+              ref={findButtonRef}
+              type="button"
+              className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${findOpen ? ' is-on' : ''}`}
+              onClick={() => (findOpen ? closeFind(false) : openFind())}
+              aria-keyshortcuts="Control+F Meta+F"
+              aria-pressed={findOpen}
+              title={ts('panel-title', { defaultValue: 'Find in book' })}
+              aria-label={ts('panel-title', { defaultValue: 'Find in book' })}
+            >
+              <Search size={16} />
+            </button>
+          )}
+          {status === 'ready' && (
             <MarksMenu
               bookmarks={marks.state.bookmarks}
               notes={marks.state.notes}
@@ -446,6 +506,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
             curPage={curPage}
             ready={status === 'ready'}
             stageEl={readerRef.current?.querySelector<HTMLElement>('.lib-reader__stage') ?? null}
+            findJump={findJump}
             Dropdown={Dropdown}
           />
           {status === 'ready' && <QualityMenu quality={quality} onChange={setQuality} />}
@@ -460,6 +521,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           </a>
         </div>
       </header>
+      <ContinuedNotice page={marks.continuedFrom} />
 
       {/* §5.48 liquid-open hero — the shelf book cover morphs into this stage
           (no DOM cover in the WebGL reader, so the stage container is the closest
@@ -507,6 +569,14 @@ export function BookReader({ book }: { book: LibraryBook }) {
           </>
         )}
       </div>
+      <FindPanel
+        source={findSource}
+        unitLabel="page"
+        open={findOpen}
+        onOpenChange={closeFind}
+        onSelect={selectFind}
+        focusRequest={findFocus}
+      />
       {detailsOpen && (
         <ReaderDetails
           book={book}
@@ -516,6 +586,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           returnFocus={detailsTriggerRef.current}
           onJump={goToPage}
           onClose={() => setDetailsOpen(false)}
+          sync={marks.sync}
         />
       )}
     </main>
@@ -831,6 +902,7 @@ export function MarksMenu({
 /** Dropdown to pick the page raster quality (sharpness vs. memory). Defaults high. */
 function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q: PageQuality) => void }) {
   const { t } = useTranslation("c-library");
+  const qualityLabels = readerQualityLabels(t);
   return (
     <Dropdown icon={<SlidersHorizontal size={16} />} label={t('page-quality', { defaultValue: 'Page quality' })}>
       {(close) => (
@@ -847,7 +919,7 @@ function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q
                   close();
                 }}
               >
-                <span className="lib-reader__chapter-title">{t(`quality-${q}`, { defaultValue: QUALITY_LABEL[q] })}</span>
+                <span className="lib-reader__chapter-title">{qualityLabels[q]}</span>
                 {q === quality && <Check size={14} className="lib-reader__chapter-page" />}
               </button>
             </li>

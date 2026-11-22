@@ -19,8 +19,7 @@ import { createAuthCache } from '../shared/session-auth';
 import { createRateLimiter } from '../shared/rate-limit';
 import { createSingleFlight } from '../../lib/single-flight';
 
-const DISCORD_API =
-  'https://discord.com/api/v10';
+const DISCORD_API = 'https://discord.com/api/v10';
 const TIMEOUT_MS = 5_000;
 /** A looked-up member list is trusted this long. */
 const MEMBERS_TTL_MS = 30_000;
@@ -40,12 +39,7 @@ export interface InstanceVerifierDeps {
   appId: string;
   botToken: string;
   logger: {
-    warn(
-      entry: Record<
-        string,
-        unknown
-      >,
-    ): void;
+    warn(entry: Record<string, unknown>): void;
   };
 }
 
@@ -68,135 +62,72 @@ type Lookup =
 
 export interface InstanceVerifier {
   readonly enabled: boolean;
-  check(
-    discordId: string,
-    instanceId: string,
-  ): Promise<InstanceCheck>;
+  check(discordId: string, instanceId: string): Promise<InstanceCheck>;
   /** Test seam. */
   reset(): void;
 }
 
-export function createInstanceVerifier(
-  deps: InstanceVerifierDeps,
-): InstanceVerifier {
-  const enabled =
-    Boolean(
-      deps.appId &&
-      deps.botToken,
-    );
-  if (
-    !enabled
-  ) {
-    deps.logger.warn(
-      {
-        event:
-          'vibe_room_instance_check_disabled',
-        message:
-          'DISCORD_ACTIVITY_CLIENT_ID or DISCORD_ACTIVITY_BOT_TOKEN is not set: Discord sockets may join any vibe room instance',
-      },
-    );
+export function createInstanceVerifier(deps: InstanceVerifierDeps): InstanceVerifier {
+  const enabled = Boolean(deps.appId && deps.botToken);
+  if (!enabled) {
+    deps.logger.warn({
+      event: 'vibe_room_instance_check_disabled',
+      message:
+        'DISCORD_ACTIVITY_CLIENT_ID or DISCORD_ACTIVITY_BOT_TOKEN is not set: Discord sockets may join any vibe room instance',
+    });
   }
 
-  const members =
-    createAuthCache<Members>();
-  const unknown =
-    createAuthCache<true>();
-  const budget =
-    createRateLimiter(
-      {
-        'instance:lookup':
-          {
-            max: 20,
-            windowMs: 60_000,
-          },
-      },
-    );
-  const flight =
-    createSingleFlight<Lookup>();
+  const members = createAuthCache<Members>();
+  const unknown = createAuthCache<true>();
+  const budget = createRateLimiter({
+    'instance:lookup': {
+      max: 20,
+      windowMs: 60_000,
+    },
+  });
+  const flight = createSingleFlight<Lookup>();
 
-  async function lookup(
-    instanceId: string,
-  ): Promise<Lookup> {
+  async function lookup(instanceId: string): Promise<Lookup> {
     try {
-      const res =
-        await fetch(
-          `${DISCORD_API}/applications/${encodeURIComponent(deps.appId)}/activity-instances/${encodeURIComponent(instanceId)}`,
-          {
-            headers:
-              {
-                Authorization: `Bot ${deps.botToken}`,
-              },
-            signal:
-              AbortSignal.timeout(
-                TIMEOUT_MS,
-              ),
+      const res = await fetch(
+        `${DISCORD_API}/applications/${encodeURIComponent(deps.appId)}/activity-instances/${encodeURIComponent(instanceId)}`,
+        {
+          headers: {
+            Authorization: `Bot ${deps.botToken}`,
           },
-        );
-      if (
-        res.status ===
-        404
-      )
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        },
+      );
+      if (res.status === 404)
         return {
           kind: 'unknown',
         };
-      if (
-        res.status ===
-          429 ||
-        res.status >=
-          500 ||
-        res.status ===
-          401 ||
-        res.status ===
-          403
-      ) {
+      if (res.status === 429 || res.status >= 500 || res.status === 401 || res.status === 403) {
         // 401/403 is OUR bot token or permissions being wrong: an operator problem, not the caller's.
-        if (
-          res.status ===
-            401 ||
-          res.status ===
-            403
-        ) {
-          deps.logger.warn(
-            {
-              event:
-                'vibe_room_instance_lookup_rejected',
-              status:
-                res.status,
-            },
-          );
+        if (res.status === 401 || res.status === 403) {
+          deps.logger.warn({
+            event: 'vibe_room_instance_lookup_rejected',
+            status: res.status,
+          });
         }
         return {
           kind: 'transient',
         };
       }
-      if (
-        !res.ok
-      )
+      if (!res.ok)
         return {
           kind: 'unknown',
         };
-      const body =
-        (await res.json()) as {
-          users?: unknown;
-        };
-      if (
-        !Array.isArray(
-          body?.users,
-        )
-      )
+      const body = (await res.json()) as {
+        users?: unknown;
+      };
+      if (!Array.isArray(body?.users))
         return {
           kind: 'transient',
         };
       return {
         kind: 'users',
-        users:
-          body.users.filter(
-            (
-              u,
-            ): u is string =>
-              typeof u ===
-              'string',
-          ),
+        users: body.users.filter((u): u is string => typeof u === 'string'),
       };
     } catch {
       return {
@@ -207,87 +138,31 @@ export function createInstanceVerifier(
 
   return {
     enabled,
-    async check(
-      discordId,
-      instanceId,
-    ) {
-      if (
-        !enabled
-      )
-        return 'skipped';
-      if (
-        unknown.get(
-          instanceId,
-        )
-      )
-        return 'not_member';
+    async check(discordId, instanceId) {
+      if (!enabled) return 'skipped';
+      if (unknown.get(instanceId)) return 'not_member';
 
-      const cached =
-        members.get(
-          instanceId,
-        );
-      if (
-        cached?.users.includes(
-          discordId,
-        )
-      )
-        return 'member';
-      if (
-        cached &&
-        Date.now() -
-          cached.at <
-          REFRESH_AFTER_MS
-      )
-        return 'not_member';
+      const cached = members.get(instanceId);
+      if (cached?.users.includes(discordId)) return 'member';
+      if (cached && Date.now() - cached.at < REFRESH_AFTER_MS) return 'not_member';
 
-      if (
-        !budget.check(
-          discordId,
-          'instance:lookup',
-        )
-      )
-        return 'over_budget';
+      if (!budget.check(discordId, 'instance:lookup')) return 'over_budget';
 
-      const result =
-        await flight(
-          instanceId,
-          () =>
-            lookup(
-              instanceId,
-            ),
-        );
-      if (
-        result.kind ===
-        'transient'
-      )
-        return 'unavailable';
-      if (
-        result.kind ===
-        'unknown'
-      ) {
-        unknown.set(
-          instanceId,
-          true,
-          Date.now() +
-            UNKNOWN_TTL_MS,
-        );
+      const result = await flight(instanceId, () => lookup(instanceId));
+      if (result.kind === 'transient') return 'unavailable';
+      if (result.kind === 'unknown') {
+        unknown.set(instanceId, true, Date.now() + UNKNOWN_TTL_MS);
         return 'not_member';
       }
       members.set(
         instanceId,
         {
-          users:
-            result.users,
+          users: result.users,
           at: Date.now(),
         },
-        Date.now() +
-          MEMBERS_TTL_MS,
+        Date.now() + MEMBERS_TTL_MS,
       );
-      return result.users.includes(
-        discordId,
-      )
-        ? 'member'
-        : 'not_member';
+      return result.users.includes(discordId) ? 'member' : 'not_member';
     },
     reset() {
       members.clear();

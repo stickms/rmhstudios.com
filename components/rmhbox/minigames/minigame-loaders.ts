@@ -12,62 +12,26 @@
 import type { ComponentType } from 'react';
 import type { MinigameProps } from './MinigameRenderer';
 
-type MinigameModule =
-  {
-    default: ComponentType<MinigameProps>;
-  };
+type MinigameModule = {
+  default: ComponentType<MinigameProps>;
+};
 
-export const MINIGAME_LOADERS: Record<
-  string,
-  () => Promise<MinigameModule>
-> =
-  {
-    'rhyme-time':
-      () =>
-        import('./rhyme-time/RhymeTimeGame'),
-    'undercover-agent':
-      () =>
-        import('./undercover-agent/UndercoverAgentGame'),
-    'category-crash':
-      () =>
-        import('./category-crash/CategoryCrashGame'),
-    'wiki-race':
-      () =>
-        import('./wiki-race/WikiRaceGame'),
-    'wit-war':
-      () =>
-        import('./wit-war/WitWarGame'),
-    'fact-or-friction':
-      () =>
-        import('./fact-or-friction/FactOrFrictionGame'),
-    'undercover-editor':
-      () =>
-        import('./undercover-editor/UndercoverEditorGame'),
-    'minimalist-masterpiece':
-      () =>
-        import('./minimalist-masterpiece/MinimalistMasterpieceGame'),
-    'emoji-cinema':
-      () =>
-        import('./emoji-cinema/EmojiCinemaGame'),
-  };
+export const MINIGAME_LOADERS: Record<string, () => Promise<MinigameModule>> = {
+  'rhyme-time': () => import('./rhyme-time/RhymeTimeGame'),
+  'undercover-agent': () => import('./undercover-agent/UndercoverAgentGame'),
+  'category-crash': () => import('./category-crash/CategoryCrashGame'),
+  'wiki-race': () => import('./wiki-race/WikiRaceGame'),
+  'wit-war': () => import('./wit-war/WitWarGame'),
+  'fact-or-friction': () => import('./fact-or-friction/FactOrFrictionGame'),
+  'undercover-editor': () => import('./undercover-editor/UndercoverEditorGame'),
+  'minimalist-masterpiece': () => import('./minimalist-masterpiece/MinimalistMasterpieceGame'),
+  'emoji-cinema': () => import('./emoji-cinema/EmojiCinemaGame'),
+};
 
 /** Load a minigame's code. Resolves (never rejects) once it is loaded or has failed. */
-export async function preloadMinigame(
-  minigameId:
-    | string
-    | null
-    | undefined,
-): Promise<void> {
-  const load =
-    minigameId
-      ? MINIGAME_LOADERS[
-          minigameId
-        ]
-      : undefined;
-  if (
-    !load
-  )
-    return;
+export async function preloadMinigame(minigameId: string | null | undefined): Promise<void> {
+  const load = minigameId ? MINIGAME_LOADERS[minigameId] : undefined;
+  if (!load) return;
   try {
     await load();
   } catch {

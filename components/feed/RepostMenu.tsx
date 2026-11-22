@@ -1,8 +1,5 @@
 import type { RefObject } from 'react';
-import {
-  PenSquare,
-  Repeat,
-} from 'lucide-react';
+import { PenSquare, Repeat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
@@ -24,7 +21,7 @@ export default function RepostMenu({
   anchorRef,
   label,
   reposted,
-  repostCount,
+  hasQuotes,
   onRepost,
   onQuote,
   onViewQuotes,
@@ -34,78 +31,37 @@ export default function RepostMenu({
   anchorRef: RefObject<HTMLButtonElement | null>;
   label: string;
   reposted: boolean;
-  repostCount: number;
+  /** Whether "View quotes" is offered: the post has been reposted, or its count is withheld (then it cannot be ruled out). */
+  hasQuotes: boolean;
   onRepost: () => void;
   onQuote: () => void;
   onViewQuotes: () => void;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'feed',
-    );
+  const { t } = useTranslation('feed');
   return (
     <AnchoredMenu
-      open={
-        open
-      }
-      onClose={
-        onClose
-      }
-      anchorRef={
-        anchorRef
-      }
+      open={open}
+      onClose={onClose}
+      anchorRef={anchorRef}
       align="start"
       // Named after its trigger, so the panel's accessible name is not English-only.
-      label={
-        label
-      }
+      label={label}
       // Wide enough that "Undo repost" does not truncate inside the panel's own padding.
       className="w-48"
     >
-      <MenuItem
-        icon={
-          Repeat
-        }
-        onSelect={
-          onRepost
-        }
-      >
+      <MenuItem icon={Repeat} onSelect={onRepost}>
         {reposted
-          ? t(
-              'action-undo-repost',
-              {
-                defaultValue:
-                  'Undo repost',
-              },
-            )
+          ? t('action-undo-repost', {
+              defaultValue: 'Undo repost',
+            })
           : label}
       </MenuItem>
-      <MenuItem
-        icon={
-          PenSquare
-        }
-        onSelect={
-          onQuote
-        }
-      >
-        {t(
-          'quote',
-          {
-            defaultValue:
-              'Quote',
-          },
-        )}
+      <MenuItem icon={PenSquare} onSelect={onQuote}>
+        {t('quote', {
+          defaultValue: 'Quote',
+        })}
       </MenuItem>
-      {repostCount >
-        0 && (
-        <QuotesMenuItem
-          onSelect={
-            onViewQuotes
-          }
-        />
-      )}
+      {hasQuotes && <QuotesMenuItem onSelect={onViewQuotes} />}
     </AnchoredMenu>
   );
 }

@@ -10,6 +10,7 @@ import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdminBody } from '@/components/admin/AdminBody';
+import { FlagTargeting } from '@/components/admin/FlagTargeting';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -249,6 +250,7 @@ function FlagRow({
       >
         <Trash2 className="h-4 w-4" aria-hidden />
       </Button>
+      <FlagTargeting flagKey={flag.key} />
     </li>
   );
 }

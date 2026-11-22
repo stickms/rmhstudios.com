@@ -130,6 +130,8 @@ export function ProfileDialogs({
           onClose={onCloseSocial}
           userId={userId}
           type={socialModal}
+          canManage={profile.isOwnProfile}
+          ownerName={displayName ?? profile.name}
         />
       )}
     </>

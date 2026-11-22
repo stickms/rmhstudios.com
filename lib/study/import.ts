@@ -1,0 +1,432 @@
+/**
+ * Flashcard import parsing (pure, no I/O). Turns pasted text or a file's text
+ * into cards: detects the separator, honours CSV quoting, and reports every
+ * line it could not use. The tokenizer is a hand-written scanner, so a long
+ * quoted field costs one pass and never backtracks.
+ *
+ * Card types: a row whose front holds a `{{c1::…}}` deletion becomes a cloze card (its back
+ * column is ignored: the answers are the back of each generated card); a third column that reads
+ * `reverse` or `reversible` makes a reversible card, and `basic` or `cloze` states the type
+ * outright, which is what the exporter writes so a round trip is lossless.
+ */
+import { hasCloze, parseCloze, type CardKind } from '@/lib/study/card-types';
+import { CARD_IMAGE_ALT_MAX, cardImageProblem, type CardImage } from '@/lib/study/card-images';
+import { CARD_SIDE_MAX, CLOZE_TEXT_MAX } from '@/lib/study/limits';
+
+export type Separator = 'tab' | 'comma' | 'semicolon' | 'dash' | 'equals' | 'colon';
+
+/** Detection order: also the tie-break when two separators fit equally well. */
+export const SEPARATORS: readonly Separator[] = ['tab', 'semicolon', 'dash', 'equals', 'colon', 'comma'];
+
+export type RejectReason =
+  | 'missing-front'
+  | 'missing-back'
+  | 'front-too-long'
+  | 'back-too-long'
+  /** A cloze row whose deletions do not parse, or are too many. */
+  | 'invalid-cloze'
+  /** A JSON row whose picture has no description, sits on a cloze front, or is not an address the site stored. */
+  | 'invalid-picture';
+
+export interface ParsedCard {
+  front: string;
+  back: string;
+  /** Absent for a basic card read without a type column. */
+  kind?: CardKind;
+  /** Only a deck's own JSON export carries pictures; see {@link parseDeckJson}. */
+  frontImage?: CardImage;
+  backImage?: CardImage;
+}
+
+export interface ParseOptions {
+  /** Omit to detect it from the text. */
+  separator?: Separator;
+  /** The first row names the columns and is not a card. */
+  hasHeader?: boolean;
+  /** Put the second column on the front. */
+  swap?: boolean;
+}
+
+export interface ParseResult {
+  cards: ParsedCard[];
+  /** `line` is the 1-based line of the text where the rejected row starts. */
+  rejected: { line: number; reason: RejectReason }[];
+  /** The separator used (detected when none was given); null when none fits. */
+  separator: Separator | null;
+}
+
+interface RawRecord {
+  line: number;
+  fields: string[];
+  raw: string;
+}
+
+/** Separators read as CSV (quote-aware), keyed to their character. */
+const CSV_CHAR: Partial<Record<Separator, string>> = { tab: '\t', comma: ',', semicolon: ';' };
+
+/** Detection reads at most this many rows; the rest of a long paste adds nothing. */
+const SAMPLE_RECORDS = 50;
+/** A separator must split at least this share of the sampled rows to be chosen. */
+const MIN_COVERAGE = 0.5;
+
+/**
+ * Scan CSV-style text into records. A field that opens with a quote runs to the
+ * closing quote (`""` is a literal quote, newlines inside are kept); a quote
+ * anywhere else is plain text, and a quote that is never closed is plain text too.
+ */
+function tokenizeCsv(text: string, sep: string, limit = Infinity): RawRecord[] {
+  const records: RawRecord[] = [];
+  const n = text.length;
+  let i = 0;
+  let line = 1;
+  let recordLine = 1;
+  let recordStart = 0;
+  let fields: string[] = [];
+  let field = '';
+  let atFieldStart = true;
+  let quotesBroken = false;
+
+  const endRecord = (end: number) => {
+    fields.push(field);
+    records.push({ line: recordLine, fields, raw: text.slice(recordStart, end) });
+    fields = [];
+    field = '';
+    atFieldStart = true;
+  };
+
+  while (i < n && records.length < limit) {
+    const ch = text[i];
+    if (atFieldStart && ch === '"' && !quotesBroken) {
+      let j = i + 1;
+      let value = '';
+      let closed = false;
+      while (j < n) {
+        const c = text[j];
+        if (c === '"') {
+          if (text[j + 1] === '"') {
+            value += '"';
+            j += 2;
+            continue;
+          }
+          closed = true;
+          break;
+        }
+        value += c;
+        j++;
+      }
+      if (closed) {
+        value = value.replace(/\r\n?/g, '\n');
+        for (let k = 0; k < value.length; k++) if (value[k] === '\n') line++;
+        field = value;
+        atFieldStart = false;
+        i = j + 1;
+        continue;
+      }
+      // Never closed: this and every later quote is ordinary text.
+      quotesBroken = true;
+    }
+    if (ch === sep) {
+      fields.push(field);
+      field = '';
+      atFieldStart = true;
+      i++;
+      continue;
+    }
+    if (ch === '\n' || ch === '\r') {
+      const end = i;
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      i++;
+      endRecord(end);
+      line++;
+      recordLine = line;
+      recordStart = i;
+      continue;
+    }
+    field += ch;
+    atFieldStart = false;
+    i++;
+  }
+  if (records.length < limit && (fields.length > 0 || field !== '')) endRecord(n);
+  return records;
+}
+
+/** The first spaced dash, en dash or em dash: a hyphen inside a word is not a separator. */
+function dashIndex(line: string): { at: number; len: number } | null {
+  let best: { at: number; len: number } | null = null;
+  for (const d of [' - ', ' – ', ' — ']) {
+    const at = line.indexOf(d);
+    if (at >= 0 && (!best || at < best.at)) best = { at, len: d.length };
+  }
+  return best;
+}
+
+function splitLine(line: string, sep: Separator): string[] {
+  if (sep === 'dash') {
+    const hit = dashIndex(line);
+    return hit ? [line.slice(0, hit.at), line.slice(hit.at + hit.len)] : [line];
+  }
+  const ch = sep === 'equals' ? '=' : ':';
+  const at = line.indexOf(ch);
+  return at >= 0 ? [line.slice(0, at), line.slice(at + 1)] : [line];
+}
+
+function tokenizeLines(text: string, sep: Separator, limit = Infinity): RawRecord[] {
+  const records: RawRecord[] = [];
+  const lines = text.split(/\r\n|\r|\n/);
+  for (let i = 0; i < lines.length && records.length < limit; i++) {
+    records.push({ line: i + 1, fields: splitLine(lines[i], sep), raw: lines[i] });
+  }
+  return records;
+}
+
+function tokenize(text: string, sep: Separator, limit = Infinity): RawRecord[] {
+  const ch = CSV_CHAR[sep];
+  return ch === undefined ? tokenizeLines(text, sep, limit) : tokenizeCsv(text, ch, limit);
+}
+
+const isBlank = (r: RawRecord) => r.fields.every((f) => f.trim() === '');
+
+const DELETION = /\{\{c\d+::[\s\S]*?\}\}/g;
+const PLACEHOLDER = /\uE000(\d+)\uE001/g;
+
+/**
+ * A cloze deletion is full of the characters that separate columns (`::`, commas, dashes, even
+ * newlines). Before the text is scanned each deletion is swapped for a placeholder with none of them;
+ * `restore` puts the originals back into the fields that come out.
+ */
+function shieldDeletions(text: string): { text: string; restore: (s: string) => string } {
+  const saved: string[] = [];
+  let out = '';
+  let last = 0;
+  let quotes = 0;
+  for (const m of text.matchAll(DELETION)) {
+    const at = m.index ?? 0;
+    const before = text.slice(last, at);
+    for (let q = before.indexOf('"'); q >= 0; q = before.indexOf('"', q + 1)) quotes++;
+    // Inside a quoted field (an odd number of quotes so far) the exporter doubled every quote of the
+    // deletion; the scanner never sees them, so undo the doubling here.
+    const kept = quotes % 2 === 1 ? m[0].replaceAll('""', '"') : m[0];
+    out += `${before}\uE000${saved.push(kept) - 1}\uE001`;
+    last = at + m[0].length;
+    // The deletion's own quotes (even in number when quoted) leave the parity unchanged.
+  }
+  out += text.slice(last);
+  return {
+    text: out,
+    restore: saved.length === 0 ? (s) => s : (s) => s.replace(PLACEHOLDER, (_, i: string) => saved[Number(i)] ?? ''),
+  };
+}
+
+function stripBom(text: string): string {
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+}
+
+/** Where a separator first appears in a raw row, or -1. */
+function firstIndex(raw: string, sep: Separator): number {
+  if (sep === 'dash') return dashIndex(raw)?.at ?? -1;
+  const ch = CSV_CHAR[sep] ?? (sep === 'equals' ? '=' : ':');
+  return raw.indexOf(ch);
+}
+
+/**
+ * Guess how a paste separates term from definition. A tab wins whenever most
+ * rows have one (Anki and Quizlet exports); otherwise the separator that splits
+ * the most rows wins, then the one that comes first in the rows it splits (a
+ * definition may hold commas, a CSV rarely holds a spaced dash), then the fixed
+ * order of {@link SEPARATORS}. Null when nothing splits at least half the rows.
+ */
+export function detectSeparator(text: string): Separator | null {
+  const body = shieldDeletions(stripBom(text)).text;
+  const scored: { sep: Separator; coverage: number; first: number; order: number }[] = [];
+  let tabCoverage = 0;
+  const sampleCache = new Map<Separator, RawRecord[]>();
+  const sample = (sep: Separator) => {
+    let records = sampleCache.get(sep);
+    if (!records) {
+      records = tokenize(body, sep, SAMPLE_RECORDS * 4).filter((r) => !isBlank(r));
+      records = records.slice(0, SAMPLE_RECORDS);
+      sampleCache.set(sep, records);
+    }
+    return records;
+  };
+
+  if (sample('tab').length === 0) return null;
+
+  for (let order = 0; order < SEPARATORS.length; order++) {
+    const sep = SEPARATORS[order];
+    const records = sample(sep);
+    if (records.length === 0) continue;
+    const hits = records.filter((r) => r.fields.length >= 2).length;
+    const coverage = hits / records.length;
+    if (sep === 'tab') tabCoverage = coverage;
+    let first = 0;
+    for (const r of records) {
+      if (r.fields.length < 2) continue;
+      const mine = firstIndex(r.raw, sep);
+      const earliest = SEPARATORS.every((other) => {
+        const at = firstIndex(r.raw, other);
+        return at < 0 || mine <= at;
+      });
+      if (earliest) first++;
+    }
+    scored.push({ sep, coverage, first, order });
+  }
+
+  if (tabCoverage >= MIN_COVERAGE) return 'tab';
+  const fit = scored.filter((s) => s.coverage >= MIN_COVERAGE);
+  if (fit.length === 0) return null;
+  fit.sort((a, b) => b.coverage - a.coverage || b.first - a.first || a.order - b.order);
+  return fit[0].sep;
+}
+
+/** What a type column may say, in lower case. */
+const TYPE_WORDS: Record<string, CardKind> = {
+  basic: 'basic',
+  reverse: 'reversible',
+  reversible: 'reversible',
+  cloze: 'cloze',
+};
+
+/** A cloze row: the whole text on the front, no back. */
+function clozeRow(front: string): ParsedCard | RejectReason {
+  if (front === '') return 'missing-front';
+  if (front.length > CLOZE_TEXT_MAX) return 'front-too-long';
+  return parseCloze(front).ok ? { front, back: '', kind: 'cloze' } : 'invalid-cloze';
+}
+
+const JSON_KINDS: Record<string, CardKind> = { basic: 'basic', reversible: 'reversible', cloze: 'cloze' };
+
+/** `{ url, alt }` from a parsed JSON value, or null when it is not one. The address is checked by `cardImageProblem`. */
+function jsonImage(value: unknown): CardImage | null | 'bad' {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object') return 'bad';
+  const { url, alt } = value as { url?: unknown; alt?: unknown };
+  if (typeof url !== 'string' || typeof alt !== 'string' || alt.length > CARD_IMAGE_ALT_MAX * 2) return 'bad';
+  return { url, alt };
+}
+
+/**
+ * Read a deck's own JSON export (`{ "cards": [{ front, back, type, frontImage, backImage }] }`), the one text format
+ * that carries pictures. A picture is accepted only as an address the flashcard surface can have stored, and the
+ * server then checks it is one of the member's own uploads: nothing is fetched from a remote address. Null when the
+ * text is not such a file, so the caller reads it as a separated list instead. A `line` is the card's 1-based number.
+ */
+export function parseDeckJson(text: string): ParseResult | null {
+  const body = stripBom(text).trim();
+  if (!body.startsWith('{')) return null;
+  let data: unknown;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  const list = (data as { cards?: unknown } | null)?.cards;
+  if (!Array.isArray(list)) return null;
+  const cards: ParsedCard[] = [];
+  const rejected: ParseResult['rejected'] = [];
+  list.forEach((raw: unknown, index) => {
+    const line = index + 1;
+    const row = (raw ?? {}) as Record<string, unknown>;
+    const front = typeof row.front === 'string' ? row.front.trim() : '';
+    const back = typeof row.back === 'string' ? row.back.trim() : '';
+    const kind = typeof row.type === 'string' ? JSON_KINDS[row.type.trim().toLowerCase()] : undefined;
+    const frontImage = jsonImage(row.frontImage);
+    const backImage = jsonImage(row.backImage);
+    if (frontImage === 'bad' || backImage === 'bad') {
+      rejected.push({ line, reason: 'invalid-picture' });
+      return;
+    }
+    const pictures = { frontImage, backImage };
+    if (cardImageProblem(kind ?? 'basic', pictures)) {
+      rejected.push({ line, reason: 'invalid-picture' });
+      return;
+    }
+    const withPictures = (card: ParsedCard): ParsedCard => ({
+      ...card,
+      ...(frontImage ? { frontImage: { url: frontImage.url, alt: frontImage.alt.trim() } } : {}),
+      ...(backImage ? { backImage: { url: backImage.url, alt: backImage.alt.trim() } } : {}),
+    });
+    if (kind === 'cloze' || (kind === undefined && hasCloze(front))) {
+      const made = clozeRow(front);
+      if (typeof made === 'string') rejected.push({ line, reason: made });
+      else cards.push(withPictures(made));
+      return;
+    }
+    if (front === '') rejected.push({ line, reason: 'missing-front' });
+    else if (back === '') rejected.push({ line, reason: 'missing-back' });
+    else if (front.length > CARD_SIDE_MAX) rejected.push({ line, reason: 'front-too-long' });
+    else if (back.length > CARD_SIDE_MAX) rejected.push({ line, reason: 'back-too-long' });
+    else cards.push(withPictures(kind === 'reversible' ? { front, back, kind: 'reversible' } : { front, back }));
+  });
+  return { cards, rejected, separator: null };
+}
+
+/** Parse text into cards using the chosen (or detected) separator. */
+export function parseCards(text: string, options: ParseOptions = {}): ParseResult {
+  const json = parseDeckJson(text);
+  if (json) return json;
+  const shield = shieldDeletions(stripBom(text));
+  const body = shield.text;
+  const restore = shield.restore;
+  const separator = options.separator ?? detectSeparator(body);
+  const cards: ParsedCard[] = [];
+  const rejected: ParseResult['rejected'] = [];
+  if (separator === null) {
+    // Nothing splits the text: each non-blank line is a front without a back.
+    let first = true;
+    for (const r of tokenizeLines(body, 'colon').filter((x) => !isBlank(x))) {
+      if (first && options.hasHeader) {
+        first = false;
+        continue;
+      }
+      first = false;
+      // A cloze sentence with nothing to split it is still a card.
+      const text = restore((r.fields[0] ?? '').trim());
+      if (hasCloze(text)) {
+        const row = clozeRow(text);
+        if (typeof row === 'string') rejected.push({ line: r.line, reason: row });
+        else cards.push(row);
+        continue;
+      }
+      rejected.push({ line: r.line, reason: options.swap ? 'missing-front' : 'missing-back' });
+    }
+    return { cards, rejected, separator };
+  }
+
+  const csvChar = CSV_CHAR[separator];
+  const records = tokenize(body, separator).filter((r) => !isBlank(r));
+  if (options.hasHeader) records.shift();
+
+  for (const r of records) {
+    const first = restore(r.fields[0].trim());
+    // Tab files may carry extra columns (Anki tags); comma and semicolon rows
+    // that hold an unquoted separator in the definition keep it.
+    // A tab row's third column, or a comma or semicolon row's last, may name the card type.
+    const typeField =
+      csvChar === undefined || r.fields.length < 3
+        ? undefined
+        : separator === 'tab'
+          ? r.fields[2]
+          : r.fields[r.fields.length - 1];
+    const typed = typeField === undefined ? undefined : TYPE_WORDS[typeField.trim().toLowerCase()];
+    const rest =
+      csvChar === undefined || separator === 'tab'
+        ? (r.fields[1] ?? '')
+        : r.fields.slice(1, typed ? -1 : undefined).join(csvChar);
+    const second = restore(rest.trim());
+    const front = options.swap ? second : first;
+    const back = options.swap ? first : second;
+    if (typed === 'cloze' || (typed === undefined && hasCloze(front))) {
+      const row = clozeRow(front);
+      if (typeof row === 'string') rejected.push({ line: r.line, reason: row });
+      else cards.push(row);
+      continue;
+    }
+    if (front === '') rejected.push({ line: r.line, reason: 'missing-front' });
+    else if (back === '') rejected.push({ line: r.line, reason: 'missing-back' });
+    else if (front.length > CARD_SIDE_MAX) rejected.push({ line: r.line, reason: 'front-too-long' });
+    else if (back.length > CARD_SIDE_MAX) rejected.push({ line: r.line, reason: 'back-too-long' });
+    else cards.push(typed === 'reversible' ? { front, back, kind: 'reversible' } : { front, back });
+  }
+  return { cards, rejected, separator };
+}

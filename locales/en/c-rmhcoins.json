@@ -203,5 +203,11 @@
   "your-bets-this-round": "Your bets this round:",
   "your-chips": "Your chips:",
   "your-hand": "Your hand:",
-  "your-turn": "Your turn!"
+  "your-turn": "Your turn!",
+  "outside-black": "Black",
+  "outside-even": "Even",
+  "outside-high": "19-36",
+  "outside-low": "1-18",
+  "outside-odd": "Odd",
+  "outside-red": "Red"
 }

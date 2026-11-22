@@ -1,0 +1,8 @@
+{
+  "describe-count": "{{used}} / {{max}}",
+  "describe-label": "Describe this GIF",
+  "describe-placeholder": "What happens in the GIF",
+  "describe-required": "A description is required.",
+  "gif-fallback-alt": "GIF",
+  "menu-item-gif": "Describe GIF"
+}

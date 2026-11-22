@@ -7,7 +7,6 @@
 import { AdminBody } from '@/components/admin/AdminBody';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { Car, Check, X, MapPin, Route as RouteIcon } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +31,7 @@ import {
 } from '@/lib/rideshare/rideshare.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export const Route = createFileRoute('/_site/admin/rideshare')({
   head: () => ({ meta: [{ title: 'Rideshare Applications | RMH Studios' }] }),
@@ -124,7 +124,7 @@ function appStatusLabel(status: Status, t: TFn): string {
   }
 }
 
-function AdminRidesharePage() {
+function AdminRidesharePage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const [view, setView] = useState<View>('applications');
   const [status, setStatus] = useState<Status>('PENDING');
@@ -261,7 +261,7 @@ function AdminRidesharePage() {
                     </div>
                   </div>
                   <span className="t-meta">
-                    {formatDistanceToNow(new Date(app.createdAt), { addSuffix: true })}
+                    {fmt.relative(new Date(app.createdAt))}
                   </span>
                 </div>
 
@@ -366,7 +366,7 @@ function RideHistory({
   onStatus: (s: 'ALL' | RideStatus) => void;
   query: string;
   onQuery: (q: string) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const arrival = useArrival(!loading);
   return (
@@ -439,7 +439,7 @@ function RideHistory({
                     {ride.driver ? t('driver-name', { name: ride.driver.name ?? t('unknown', { defaultValue: 'Unknown' }), defaultValue: 'Driver: {{name}}' }) : t('no-driver-matched', { defaultValue: 'No driver matched' })}
                   </span>
                   <span className="ms-auto">
-                    {formatDistanceToNow(new Date(ride.scheduledFor ?? ride.requestedAt), { addSuffix: true })}
+                    {fmt.relative(new Date(ride.scheduledFor ?? ride.requestedAt))}
                   </span>
                 </div>
               </li>

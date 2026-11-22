@@ -54,6 +54,40 @@
 @source not "../features/hearthworks/engine";
 @source not "../features/hearthworks/ui";
 @source not "../features/hearthworks/server";
+/* Slice It: only ui/admin is imported by a site page (the admin content dashboard), so everything else in its UI is
+   skipped by name; the neumorphic shadow and gradient utilities of the game were on every page. */
+@source not "../features/slice-it/ui/CalibrationScreen.tsx";
+@source not "../features/slice-it/ui/ChartPicker.tsx";
+@source not "../features/slice-it/ui/GameCanvas.tsx";
+@source not "../features/slice-it/ui/GameOver.tsx";
+@source not "../features/slice-it/ui/HUD.tsx";
+@source not "../features/slice-it/ui/Leaderboard.tsx";
+@source not "../features/slice-it/ui/MainMenu.tsx";
+@source not "../features/slice-it/ui/MarginHud.tsx";
+@source not "../features/slice-it/ui/MatchResults.tsx";
+@source not "../features/slice-it/ui/MultiplayerLobby.tsx";
+@source not "../features/slice-it/ui/MultiplayerSidebar.tsx";
+@source not "../features/slice-it/ui/NeumorphicModal.tsx";
+@source not "../features/slice-it/ui/PhoneRecord.tsx";
+@source not "../features/slice-it/ui/Pressings.tsx";
+@source not "../features/slice-it/ui/ReplayViewer.tsx";
+@source not "../features/slice-it/ui/SettingsPanel.tsx";
+@source not "../features/slice-it/ui/SideWaves.tsx";
+@source not "../features/slice-it/ui/SliceItDiscordActivity.tsx";
+@source not "../features/slice-it/ui/SliceItHub.tsx";
+@source not "../features/slice-it/ui/SliceItLoading.tsx";
+@source not "../features/slice-it/ui/SliceThemeWrapper.tsx";
+@source not "../features/slice-it/ui/SongComments.tsx";
+@source not "../features/slice-it/ui/SongDetailsPanel.tsx";
+@source not "../features/slice-it/ui/SongLibrary.tsx";
+@source not "../features/slice-it/ui/SongTable.tsx";
+@source not "../features/slice-it/ui/VolumeMixer.tsx";
+@source not "../features/slice-it/ui/cut-fx.ts";
+@source not "../features/slice-it/ui/editor";
+@source not "../features/slice-it/ui/modes";
+@source not "../features/slice-it/ui/packs";
+@source not "../features/slice-it/ui/spectate";
+@source not "../features/slice-it/ui/useMarginRoom.ts";
 /* The island route helpers (redesign B1): reached only by island routes, and they render no classes. */
 @source not "../lib/islands";
 @source not "../components/blm";
@@ -82,7 +116,9 @@
 @source not "../components/optimization";
 @source not "../components/rebar-rutabaga";
 @source not "../components/render";
-@source not "../components/replays";
+@source not "../components/replays/GameReplayPlayer.tsx";
+@source not "../components/replays/SaveReplayButton.tsx";
+@source not "../components/replays/ReplayBoard.tsx";
 @source not "../components/rmh-capital";
 @source not "../components/rmh-pmc";
 @source not "../components/rmh-research";
@@ -115,7 +151,6 @@
 @source not "../components/versecraft";
 @source not "../features/void-breaker/engine";
 @source not "../features/void-breaker/ui";
-@source not "../lib/audio";
 @source not "../lib/cards";
 @source not "../lib/controller";
 @source not "../lib/cursed-logic";
@@ -124,7 +159,6 @@
 @source not "../lib/elections";
 @source not "../lib/fonts";
 @source not "../features/gabriels-horn/engine";
-@source not "../lib/game-saves";
 @source not "../lib/globeset";
 @source not "../lib/house-always-wins";
 @source not "../lib/kaikai-debt";
@@ -147,7 +181,6 @@
 @source not "../lib/sp-game";
 @source not "../lib/csgo-game";
 @source not "../lib/tf2-loadout";
-@source not "../lib/shortcuts";
 @source not "../features/signal-forge/engine";
 @source not "../lib/sohumtracker";
 @source not "../lib/store";

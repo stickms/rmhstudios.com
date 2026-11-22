@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# The product suite (docs/autonomous/sprint-02): `pnpm test:product`
+# (vitest.product.config.ts). Every `*.product.test.ts(x)` in the repo: pure
+# product logic that is not mission-critical, so it sits outside web-ci.yml's
+# main suite (docs/testing.md §What is not tested). The tests sit beside the
+# code they cover in many directories, so this runs on any TypeScript change.
+# ─────────────────────────────────────────────────────────────────────────────
+name: product-tests
+
+on:
+  pull_request:
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
+      - 'vitest.product.config.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/product-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
+      - 'vitest.product.config.ts'
+      - '.github/workflows/product-tests.yml'
+
+concurrency:
+  group: product-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # pnpm + Node + node_modules (cached by lockfile + schema), as web-ci.yml.
+      - uses: ./.github/actions/setup-deps
+
+      - name: Product suite
+        run: pnpm test:product

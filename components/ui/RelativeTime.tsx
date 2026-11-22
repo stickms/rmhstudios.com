@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * Hydration-safe relative timestamps ("3h", "15 minutes ago").
@@ -26,63 +27,29 @@ import { useSyncExternalStore } from 'react';
 /** Coarse enough that a minute-granularity label is never visibly stale. */
 const TICK_MS = 30_000;
 
-let clockNow =
-  Date.now();
-let timer: ReturnType<
-  typeof setInterval
-> | null =
-  null;
-const listeners =
-  new Set<
-    () => void
-  >();
+let clockNow = Date.now();
+let timer: ReturnType<typeof setInterval> | null = null;
+const listeners = new Set<() => void>();
 
-function subscribe(
-  onChange: () => void,
-): () => void {
-  listeners.add(
-    onChange,
-  );
-  if (
-    timer ===
-    null
-  ) {
-    timer =
-      setInterval(
-        () => {
-          clockNow =
-            Date.now();
-          for (const l of listeners)
-            l();
-        },
-        TICK_MS,
-      );
+function subscribe(onChange: () => void): () => void {
+  listeners.add(onChange);
+  if (timer === null) {
+    timer = setInterval(() => {
+      clockNow = Date.now();
+      for (const l of listeners) l();
+    }, TICK_MS);
   }
   return () => {
-    listeners.delete(
-      onChange,
-    );
-    if (
-      listeners.size ===
-        0 &&
-      timer !==
-        null
-    ) {
-      clearInterval(
-        timer,
-      );
-      timer =
-        null;
+    listeners.delete(onChange);
+    if (listeners.size === 0 && timer !== null) {
+      clearInterval(timer);
+      timer = null;
     }
   };
 }
 
-const getClientSnapshot =
-  () =>
-    clockNow;
-const getServerSnapshot =
-  () =>
-    null;
+const getClientSnapshot = () => clockNow;
+const getServerSnapshot = () => null;
 
 /**
  * The current time in ms, or `null` on the server and during hydration.
@@ -90,105 +57,46 @@ const getServerSnapshot =
  * Render something derived only from your own data while it is `null` — never
  * a relative string, which is the whole point.
  */
-export function useLiveNow():
-  | number
-  | null {
-  return useSyncExternalStore(
-    subscribe,
-    getClientSnapshot,
-    getServerSnapshot,
-  );
+export function useLiveNow(): number | null {
+  return useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 }
 
 export interface RelativeTimeProps {
   /** ISO string or epoch ms. */
-  date:
-    | string
-    | number
-    | Date;
+  date: string | number | Date;
   /**
    * Formats the elapsed time once the clock is available. Receives the
    * timestamp and the current time, both in ms.
    */
-  format: (
-    timestampMs: number,
-    nowMs: number,
-  ) => string;
+  format: (timestampMs: number, nowMs: number) => string;
   /**
    * Rendered before hydration completes — must depend only on `date`. Defaults
    * to a short absolute date, which is meaningful on its own (so this also
    * reads correctly with JS off, in print, and in reader mode).
    */
-  fallback?: (
-    timestampMs: number,
-  ) => string;
+  fallback?: (timestampMs: number) => string;
   className?: string;
 }
 
-function defaultFallback(
-  ms: number,
-): string {
-  return new Date(
-    ms,
-  ).toLocaleDateString(
-    undefined,
-    {
-      month:
-        'short',
-      day: 'numeric',
-    },
-  );
+function defaultFallback(ms: number, formatDay: (ms: number, opts: Intl.DateTimeFormatOptions) => string): string {
+  return formatDay(ms, {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
-export function RelativeTime({
-  date,
-  format,
-  fallback,
-  className,
-}: RelativeTimeProps) {
-  const ms =
-    date instanceof
-    Date
-      ? date.getTime()
-      : new Date(
-          date,
-        ).getTime();
-  const now =
-    useLiveNow();
+export function RelativeTime({ date, format, fallback, className }: RelativeTimeProps) {
+  const ms = date instanceof Date ? date.getTime() : new Date(date).getTime();
+  const now = useLiveNow();
+  const lf = useLocaleFormat();
 
-  if (
-    Number.isNaN(
-      ms,
-    )
-  )
-    return null;
+  if (Number.isNaN(ms)) return null;
 
-  const text =
-    now ===
-    null
-      ? (
-          fallback ??
-          defaultFallback
-        )(
-          ms,
-        )
-      : format(
-          ms,
-          now,
-        );
+  const text = now === null ? (fallback ? fallback(ms) : defaultFallback(ms, lf.date)) : format(ms, now);
 
   return (
-    <time
-      dateTime={new Date(
-        ms,
-      ).toISOString()}
-      className={
-        className
-      }
-    >
-      {
-        text
-      }
+    <time dateTime={new Date(ms).toISOString()} className={className}>
+      {text}
     </time>
   );
 }

@@ -13,61 +13,24 @@ import { deriveAppliedTheme } from '@/lib/themes/tokens';
 import { officialThemeFor } from '@/lib/themes/official';
 import { useThemeStore } from '@/stores/themeStore';
 
-export async function refreshAppliedTheme(
-  id: string,
-): Promise<void> {
+export async function refreshAppliedTheme(id: string): Promise<void> {
   // An official site theme's tokens are in code: re-derive without a request.
-  const official =
-    officialThemeFor(
-      id,
-    );
-  if (
-    official
-  ) {
-    if (
-      useThemeStore.getState()
-        .userTheme
-        ?.id ===
-      id
-    )
-      useThemeStore
-        .getState()
-        .setUserTheme(
-          deriveAppliedTheme(
-            id,
-            official.tokens,
-          ),
-        );
+  const official = officialThemeFor(id);
+  if (official) {
+    if (useThemeStore.getState().userTheme?.id === id)
+      useThemeStore.getState().setUserTheme(deriveAppliedTheme(id, official.tokens));
     return;
   }
   try {
-    const theme =
-      await api(
-        getThemeApi,
-        {
-          params:
-            {
-              id,
-            },
-          retries: 0,
-        },
-      );
+    const theme = await api(getThemeApi, {
+      params: {
+        id,
+      },
+      retries: 0,
+    });
     // The user may have switched or removed the theme while the request was in flight.
-    if (
-      useThemeStore.getState()
-        .userTheme
-        ?.id !==
-      id
-    )
-      return;
-    useThemeStore
-      .getState()
-      .setUserTheme(
-        deriveAppliedTheme(
-          id,
-          theme.tokens,
-        ),
-      );
+    if (useThemeStore.getState().userTheme?.id !== id) return;
+    useThemeStore.getState().setUserTheme(deriveAppliedTheme(id, theme.tokens));
   } catch {
     // Keep the cached look.
   }

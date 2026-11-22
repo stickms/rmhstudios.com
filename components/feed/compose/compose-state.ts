@@ -6,39 +6,44 @@
  */
 import type { FeedItem } from '@/lib/feed-types';
 import { MIN_POLL_OPTIONS } from '@/lib/rmhark-limits';
+import { rankedPollIssues } from '@/lib/feed/ranked-poll';
+import { quizPollIssues } from '@/lib/feed/quiz-poll';
 
 export const MAX_IMAGES = 4;
 
-export type Attachment =
-  | 'poll'
-  | 'gif'
-  | null;
-export type AudienceValue =
-  | 'PUBLIC'
-  | 'FOLLOWERS'
-  | 'PRIVATE'
-  | 'CIRCLE';
-export type ReplyControlValue =
-  | 'EVERYONE'
-  | 'FOLLOWING'
-  | 'MENTIONED';
+export type Attachment = 'poll' | 'gif' | null;
+export type AudienceValue = 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'CIRCLE';
+export type ReplyControlValue = 'EVERYONE' | 'FOLLOWING' | 'MENTIONED';
 
 export interface PollDraft {
   question: string;
   options: string[];
   multiSelect: boolean;
+  /** s06-19: a ranked-choice poll (3 to 6 options, a required length). Absent means false. */
+  ranked?: boolean;
+  /** s07-19: a quiz (single choice, 2 to 4 options, one correct answer). Absent means false. */
+  quiz?: boolean;
+  /** A quiz: the position of the correct answer among ALL option rows (a blank row may sit before it). */
+  correctIndex?: number;
+  /** A quiz: the explanation shown with the answer (280 characters at most). */
+  explanation?: string;
+}
+
+/**
+ * A quiz's correct answer as a position among the FILLED options (what the server stores), or null when the marked
+ * row is blank or nothing is marked. Blank rows are dropped before posting, so the raw row index would drift.
+ */
+export function quizCorrectAmongFilled(poll: PollDraft): number | null {
+  if (!poll.quiz || poll.correctIndex === undefined) return null;
+  if (!poll.options[poll.correctIndex]?.trim()) return null;
+  return poll.options.slice(0, poll.correctIndex).filter((o) => o.trim()).length;
 }
 
 /** A fresh, empty poll. A new object each call — state must never share one. */
 export function emptyPoll(): PollDraft {
   return {
-    question:
-      '',
-    options:
-      [
-        '',
-        '',
-      ],
+    question: '',
+    options: ['', ''],
     multiSelect: false,
   };
 }
@@ -47,33 +52,33 @@ export function emptyPoll(): PollDraft {
 export function isPollPostable(
   attachment: Attachment,
   poll: PollDraft,
+  /** The poll's length in hours (0 = no limit); a ranked poll needs one. Omitted when the caller has none. */
+  pollDuration?: number,
 ): boolean {
-  return (
-    attachment ===
-      'poll' &&
-    !!poll.question.trim() &&
-    poll.options.filter(
-      (
-        o,
-      ) =>
-        o.trim(),
-    )
-      .length >=
-      MIN_POLL_OPTIONS
-  );
+  const filled = poll.options.filter((o) => o.trim()).length;
+  const rankedOk =
+    !poll.ranked ||
+    rankedPollIssues({
+      ranked: true,
+      multiSelect: poll.multiSelect,
+      optionCount: filled,
+      durationHours: pollDuration ?? 1,
+    }).length === 0;
+  const quizOk =
+    !poll.quiz ||
+    quizPollIssues({
+      quiz: true,
+      multiSelect: poll.multiSelect,
+      ranked: poll.ranked,
+      optionCount: filled,
+      correctIndex: quizCorrectAmongFilled(poll),
+      explanation: poll.explanation,
+    }).length === 0;
+  return attachment === 'poll' && !!poll.question.trim() && filled >= MIN_POLL_OPTIONS && rankedOk && quizOk;
 }
 
-export function isGifPostable(
-  attachment: Attachment,
-  gifUrl: string,
-): boolean {
-  return (
-    attachment ===
-      'gif' &&
-    gifUrl.trim()
-      .length >
-      0
-  );
+export function isGifPostable(attachment: Attachment, gifUrl: string): boolean {
+  return attachment === 'gif' && gifUrl.trim().length > 0;
 }
 
 export interface CanSubmitInput {
@@ -88,22 +93,13 @@ export interface CanSubmitInput {
   missingAltCount: number;
 }
 
-export function computeCanSubmit(
-  i: CanSubmitInput,
-): boolean {
+export function computeCanSubmit(i: CanSubmitInput): boolean {
   return (
-    (i.hasContent ||
-      i.hasPoll ||
-      i.hasGif ||
-      i.hasImages ||
-      i.hasCodeEmbed) &&
-    i.remaining >=
-      0 &&
+    (i.hasContent || i.hasPoll || i.hasGif || i.hasImages || i.hasCodeEmbed) &&
+    i.remaining >= 0 &&
     !i.submitting &&
-    i.uploadingCount ===
-      0 &&
-    i.missingAltCount ===
-      0
+    i.uploadingCount === 0 &&
+    i.missingAltCount === 0
   );
 }
 
@@ -116,44 +112,17 @@ export function threadBlockedBy(i: {
   isSensitive: boolean;
   replyControl: ReplyControlValue;
   unlockPrice: string;
-}):
-  | 'attachments'
-  | 'options'
-  | null {
-  if (
-    i.hasImages ||
-    i.hasGif ||
-    i.hasPoll
-  )
-    return 'attachments';
-  if (
-    i.audience !==
-      'PUBLIC' ||
-    i.isSensitive ||
-    i.replyControl !==
-      'EVERYONE' ||
-    parseInt(
-      i.unlockPrice,
-      10,
-    ) >
-      0
-  ) {
+}): 'attachments' | 'options' | null {
+  if (i.hasImages || i.hasGif || i.hasPoll) return 'attachments';
+  if (i.audience !== 'PUBLIC' || i.isSensitive || i.replyControl !== 'EVERYONE' || parseInt(i.unlockPrice, 10) > 0) {
     return 'options';
   }
   return null;
 }
 
 /** Colour class for the remaining-characters counter. */
-export function counterToneClass(
-  remaining: number,
-): string {
-  return remaining <=
-    0
-    ? 'text-site-danger'
-    : remaining <=
-        20
-      ? 'text-site-warning'
-      : 'text-site-text-muted';
+export function counterToneClass(remaining: number): string {
+  return remaining <= 0 ? 'text-site-danger' : remaining <= 20 ? 'text-site-warning' : 'text-site-text-muted';
 }
 
 export interface ComposeBodyInput {
@@ -163,176 +132,87 @@ export interface ComposeBodyInput {
   pollDuration: number;
   hasGif: boolean;
   gifUrl: string;
+  /** The GIF's description (s06-15); sent only beside a GIF, and only when it is not blank. */
+  gifAlt?: string;
   hasImages: boolean;
   imageUrls: string[];
   imageAlts: string[];
   audience: AudienceValue;
   isSensitive: boolean;
+  /** Why the post is warned (s06-16); sent only while the warning is on, and only when not blank. */
+  contentWarning?: string;
   isTake: boolean;
   replyControl: ReplyControlValue;
   unlockPrice: string;
   communityId?: string;
-  extraBody?: Record<
-    string,
-    unknown
-  >;
+  extraBody?: Record<string, unknown>;
   /** Field bags contributed by the posts-plus and code-embed features. */
-  featureFields: Array<
-    Record<
-      string,
-      unknown
-    >
-  >;
+  featureFields: Array<Record<string, unknown>>;
 }
 
 /** The `POST /api/rmharks` body for the composer's current contents. */
-export function buildComposeBody(
-  i: ComposeBodyInput,
-): Record<
-  string,
-  unknown
-> {
-  const body: Record<
-    string,
-    unknown
-  > =
-    {};
-  if (
-    i.content.trim()
-  )
-    body.content =
-      i.content.trim();
-  if (
-    i.hasPoll
-  ) {
-    body.poll =
-      {
-        question:
-          i.poll.question.trim(),
-        options:
-          i.poll.options
-            .filter(
-              (
-                o,
-              ) =>
-                o.trim(),
-            )
-            .map(
-              (
-                o,
-              ) =>
-                o.trim(),
-            ),
-        multiSelect:
-          i
-            .poll
-            .multiSelect,
-        ...(i.pollDuration >
-        0
-          ? {
-              durationHours:
-                i.pollDuration,
-            }
-          : {}),
-      };
+export function buildComposeBody(i: ComposeBodyInput): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  if (i.content.trim()) body.content = i.content.trim();
+  if (i.hasPoll) {
+    body.poll = {
+      question: i.poll.question.trim(),
+      options: i.poll.options.filter((o) => o.trim()).map((o) => o.trim()),
+      multiSelect: i.poll.multiSelect,
+      ...(i.poll.ranked
+        ? {
+            ranked: true,
+          }
+        : {}),
+      ...(i.poll.quiz
+        ? {
+            quiz: true,
+            correctIndex: quizCorrectAmongFilled(i.poll) ?? undefined,
+            ...(i.poll.explanation?.trim()
+              ? {
+                  explanation: i.poll.explanation.trim(),
+                }
+              : {}),
+          }
+        : {}),
+      ...(i.pollDuration > 0
+        ? {
+            durationHours: i.pollDuration,
+          }
+        : {}),
+    };
   }
-  if (
-    i.hasGif
-  )
-    body.gifUrl =
-      i.gifUrl.trim();
-  if (
-    i.hasImages
-  ) {
-    body.imageUrls =
-      i.imageUrls;
+  if (i.hasGif) {
+    body.gifUrl = i.gifUrl.trim();
+    if (i.gifAlt?.trim()) body.gifAlt = i.gifAlt.trim();
+  }
+  if (i.hasImages) {
+    body.imageUrls = i.imageUrls;
     // Only send alts when the author described at least one image; send the
     // full index-aligned array so the server can pair them by position.
-    if (
-      i.imageAlts.some(
-        (
-          a,
-        ) =>
-          a?.trim(),
-      )
-    ) {
-      body.imageAlts =
-        i.imageUrls.map(
-          (
-            _,
-            idx,
-          ) =>
-            i.imageAlts[
-              idx
-            ]?.trim() ??
-            '',
-        );
+    if (i.imageAlts.some((a) => a?.trim())) {
+      body.imageAlts = i.imageUrls.map((_, idx) => i.imageAlts[idx]?.trim() ?? '');
     }
   }
-  if (
-    i.audience !==
-    'PUBLIC'
-  )
-    body.audience =
-      i.audience;
-  if (
-    i.isSensitive
-  )
-    body.isSensitive = true;
-  if (
-    i.isTake
-  )
-    body.isTake = true;
-  if (
-    i.replyControl !==
-    'EVERYONE'
-  )
-    body.replyControl =
-      i.replyControl;
-  const price =
-    parseInt(
-      i.unlockPrice,
-      10,
-    );
-  if (
-    price >
-    0
-  )
-    body.unlockPrice =
-      price;
-  if (
-    i.communityId
-  )
-    body.communityId =
-      i.communityId;
-  if (
-    i.extraBody
-  )
-    Object.assign(
-      body,
-      i.extraBody,
-    );
-  Object.assign(
-    body,
-    ...i.featureFields,
-  );
+  if (i.audience !== 'PUBLIC') body.audience = i.audience;
+  if (i.isSensitive) body.isSensitive = true;
+  if (i.isSensitive && i.contentWarning?.trim()) body.contentWarning = i.contentWarning.trim();
+  if (i.isTake) body.isTake = true;
+  if (i.replyControl !== 'EVERYONE') body.replyControl = i.replyControl;
+  const price = parseInt(i.unlockPrice, 10);
+  if (price > 0) body.unlockPrice = price;
+  if (i.communityId) body.communityId = i.communityId;
+  if (i.extraBody) Object.assign(body, i.extraBody);
+  Object.assign(body, ...i.featureFields);
   return body;
 }
 
 export interface SessionUserShape {
   id: string;
-  name?:
-    | string
-    | null;
-  image?:
-    | string
-    | null;
-  handle?:
-    | string
-    | null;
-  username?:
-    | string
-    | null;
+  name?: string | null;
+  image?: string | null;
+  handle?: string | null;
+  username?: string | null;
   isVerified?: boolean;
   isAdmin?: boolean;
 }
@@ -342,24 +222,20 @@ export interface OptimisticItemInput {
   content: string;
   sessionUser: SessionUserShape;
   resolvedUser: {
-    name?:
-      | string
-      | null;
-    image?:
-      | string
-      | null;
-    handle?:
-      | string
-      | null;
+    name?: string | null;
+    image?: string | null;
+    handle?: string | null;
   } | null;
   hasImages: boolean;
   imageUrls: string[];
   imageAlts: string[];
   isSensitive: boolean;
+  contentWarning?: string;
   isTake: boolean;
   replyControl: ReplyControlValue;
   hasGif: boolean;
   gifUrl: string;
+  gifAlt?: string;
   hasPoll: boolean;
   poll: PollDraft;
   unlockPrice: string;
@@ -370,106 +246,57 @@ export interface OptimisticItemInput {
  * instant they hit Post — before the server has replied. The real record
  * (correct id, poll option ids, etc.) is swapped in on reconcile.
  */
-export function buildOptimisticItem(
-  i: OptimisticItemInput,
-): FeedItem {
-  const price =
-    parseInt(
-      i.unlockPrice,
-      10,
-    );
-  const {
-    sessionUser,
-    resolvedUser,
-    id,
-  } =
-    i;
+export function buildOptimisticItem(i: OptimisticItemInput): FeedItem {
+  const price = parseInt(i.unlockPrice, 10);
+  const { sessionUser, resolvedUser, id } = i;
   return {
     id,
     type: 'rmhark',
-    createdAt:
-      new Date().toISOString(),
-    content:
-      i.content.trim() ||
-      undefined,
+    createdAt: new Date().toISOString(),
+    content: i.content.trim() || undefined,
     user: {
       id: sessionUser.id,
-      name:
-        resolvedUser?.name ??
-        sessionUser.name ??
-        null,
-      image:
-        resolvedUser?.image ??
-        sessionUser.image ??
-        null,
-      handle:
-        resolvedUser?.handle ??
-        sessionUser.handle ??
-        null,
-      username:
-        sessionUser.username ??
-        null,
-      isVerified:
-        sessionUser.isVerified,
-      isAdmin:
-        sessionUser.isAdmin,
+      name: resolvedUser?.name ?? sessionUser.name ?? null,
+      image: resolvedUser?.image ?? sessionUser.image ?? null,
+      handle: resolvedUser?.handle ?? sessionUser.handle ?? null,
+      username: sessionUser.username ?? null,
+      isVerified: sessionUser.isVerified,
+      isAdmin: sessionUser.isAdmin,
     },
-    imageUrls:
-      i.hasImages
-        ? i.imageUrls
-        : undefined,
-    imageAlts:
-      i.hasImages
-        ? i.imageUrls.map(
-            (
-              _,
-              idx,
-            ) =>
-              i.imageAlts[
-                idx
-              ]?.trim() ??
-              '',
-          )
-        : undefined,
-    isSensitive:
-      i.isSensitive,
-    isTake:
-      i.isTake ||
-      undefined,
-    replyControl:
-      i.replyControl,
-    gifUrl:
-      i.hasGif
-        ? i.gifUrl.trim()
-        : undefined,
+    imageUrls: i.hasImages ? i.imageUrls : undefined,
+    imageAlts: i.hasImages ? i.imageUrls.map((_, idx) => i.imageAlts[idx]?.trim() ?? '') : undefined,
+    isSensitive: i.isSensitive,
+    contentWarning: (i.isSensitive && i.contentWarning?.trim()) || undefined,
+    isTake: i.isTake || undefined,
+    replyControl: i.replyControl,
+    gifUrl: i.hasGif ? i.gifUrl.trim() : undefined,
+    gifAlt: i.hasGif && i.gifAlt?.trim() ? i.gifAlt.trim() : undefined,
     poll: i.hasPoll
       ? {
           id: `${id}-poll`,
-          question:
-            i.poll.question.trim(),
-          multiSelect:
-            i
-              .poll
-              .multiSelect,
+          question: i.poll.question.trim(),
+          multiSelect: i.poll.multiSelect,
+          ...(i.poll.ranked
+            ? {
+                ranked: true as const,
+              }
+            : {}),
+          // The author wrote the answer, so their own optimistic card carries it (s07-19).
+          ...(i.poll.quiz && quizCorrectAmongFilled(i.poll) !== null
+            ? {
+                quiz: true as const,
+                correctOptionId: `${id}-opt-${quizCorrectAmongFilled(i.poll)}`,
+                ...(i.poll.explanation?.trim() ? { explanation: i.poll.explanation.trim() } : {}),
+              }
+            : {}),
           totalVotes: 0,
-          options:
-            i.poll.options
-              .filter(
-                (
-                  o,
-                ) =>
-                  o.trim(),
-              )
-              .map(
-                (
-                  o,
-                  idx,
-                ) => ({
-                  id: `${id}-opt-${idx}`,
-                  text: o.trim(),
-                  voteCount: 0,
-                }),
-              ),
+          options: i.poll.options
+            .filter((o) => o.trim())
+            .map((o, idx) => ({
+              id: `${id}-opt-${idx}`,
+              text: o.trim(),
+              voteCount: 0,
+            })),
         }
       : undefined,
     likeCount: 0,
@@ -481,11 +308,7 @@ export function buildOptimisticItem(
     bookmarked: false,
     // The author always sees their own content, even a paid post.
     locked: false,
-    unlockPrice:
-      price >
-      0
-        ? price
-        : undefined,
+    unlockPrice: price > 0 ? price : undefined,
     pending: true,
   };
 }
@@ -494,13 +317,8 @@ export function buildOptimisticItem(
  * Fold a failed post's text back into a box the user has already started
  * writing in: prepended, never overwriting.
  */
-export function prependFailedContent(
-  failed: string,
-  current: string,
-): string {
-  return current.trim()
-    ? `${failed}\n\n${current}`
-    : failed;
+export function prependFailedContent(failed: string, current: string): string {
+  return current.trim() ? `${failed}\n\n${current}` : failed;
 }
 
 /** Whether the composer is still as `resetForm` left it. */
@@ -511,71 +329,26 @@ export function isComposerEmpty(i: {
   gifUrl: string;
   hasCodeEmbed: boolean;
 }): boolean {
-  return (
-    !i.content.trim() &&
-    i.attachment ===
-      null &&
-    i.imageCount ===
-      0 &&
-    !i.gifUrl.trim() &&
-    !i.hasCodeEmbed
-  );
+  return !i.content.trim() && i.attachment === null && i.imageCount === 0 && !i.gifUrl.trim() && !i.hasCodeEmbed;
 }
 
 /** New uploads appended after the existing ones, capped at the image limit. */
-export function appendImages(
-  prev: string[],
-  added: string[],
-): string[] {
-  return [
-    ...prev,
-    ...added,
-  ].slice(
-    0,
-    MAX_IMAGES,
-  );
+export function appendImages(prev: string[], added: string[]): string[] {
+  return [...prev, ...added].slice(0, MAX_IMAGES);
 }
 
 /**
  * Set the alt text for one image. The array is padded so the edited index is
  * addressable even if earlier images have no description yet.
  */
-export function setAltAt(
-  prev: string[],
-  index: number,
-  value: string,
-): string[] {
-  const next =
-    [
-      ...prev,
-    ];
-  while (
-    next.length <=
-    index
-  )
-    next.push(
-      '',
-    );
-  next[
-    index
-  ] =
-    value;
+export function setAltAt(prev: string[], index: number, value: string): string[] {
+  const next = [...prev];
+  while (next.length <= index) next.push('');
+  next[index] = value;
   return next;
 }
 
 /** Drop element `index` (used to remove an image and its alt together). */
-export function removeAt<
-  T,
->(
-  list: T[],
-  index: number,
-): T[] {
-  return list.filter(
-    (
-      _,
-      j,
-    ) =>
-      j !==
-      index,
-  );
+export function removeAt<T>(list: T[], index: number): T[] {
+  return list.filter((_, j) => j !== index);
 }

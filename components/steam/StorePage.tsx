@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Search, Star, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { StoreCard, StoreData } from '@/lib/games/store-types';
+import { capsuleTilt } from './tilt';
 import { StoreNav } from './StoreNav';
 import { CAPSULE_SIZES, TitleArt } from './TitleArt';
 
@@ -12,7 +13,7 @@ function Capsules({ items }: { items: StoreCard[] }) {
     <ul className="stm-capsules stm-web-pad">
       {items.map((c) => (
         <li key={c.id}>
-          <Link to="/games/$gameId" params={{ gameId: c.id }} className="stm-capsule">
+          <Link to="/games/$gameId" params={{ gameId: c.id }} className="stm-capsule" {...capsuleTilt}>
             <TitleArt build={c} width={240} height={360} sizes={CAPSULE_SIZES} />
             <span className="stm-capsule-name">{c.title}</span>
             <span className="stm-capsule-sub">

@@ -8,32 +8,18 @@
  */
 
 import type { BaseMinigame } from './minigames/base-minigame';
-import type {
-  LobbyState,
-  LobbySettings,
-  ChatMessage,
-  GameSettingValues,
-} from '../../lib/rmhbox/types';
+import type { LobbyState, LobbySettings, ChatMessage, GameSettingValues } from '../../lib/rmhbox/types';
 
 // Re-export shared types for server convenience
-export type {
-  LobbyState,
-  LobbySettings,
-  ChatMessage,
-  GameSettingValues,
-};
+export type { LobbyState, LobbySettings, ChatMessage, GameSettingValues };
 
 // ─── Player ──────────────────────────────────────────────────────
 
 export interface RMHboxPlayer {
   userId: string;
   userName: string;
-  avatarUrl:
-    | string
-    | null;
-  socketId:
-    | string
-    | null; // null when disconnected
+  avatarUrl: string | null;
+  socketId: string | null; // null when disconnected
   isConnected: boolean;
   isReady: boolean;
   isAway: boolean; // true when in PiP/minimized in Discord Activity
@@ -49,12 +35,8 @@ export interface RMHboxPlayer {
 export interface RMHboxSpectator {
   userId: string;
   userName: string;
-  avatarUrl:
-    | string
-    | null;
-  socketId:
-    | string
-    | null;
+  avatarUrl: string | null;
+  socketId: string | null;
   isConnected: boolean;
   joinedAt: number;
   role: 'spectator';
@@ -89,14 +71,8 @@ export interface RMHboxLobby {
   id: string;
   hostUserId: string;
   settings: LobbySettings;
-  players: Map<
-    string,
-    RMHboxPlayer
-  >;
-  spectators: Map<
-    string,
-    RMHboxSpectator
-  >;
+  players: Map<string, RMHboxPlayer>;
+  spectators: Map<string, RMHboxSpectator>;
   state: LobbyState;
   chat: ChatMessage[];
   createdAt: number;
@@ -118,15 +94,10 @@ export interface RMHboxLobby {
    * for an Activity voice channel. Used to auto-connect everyone in the same
    * voice chat to the same lobby. `null` for code-based lobbies.
    */
-  discordChannelKey:
-    | string
-    | null;
+  discordChannelKey: string | null;
 }
 
 // ─── Minigame Context ────────────────────────────────────────────
 // (Re-exported from base-minigame.ts for convenience)
 
-export type {
-  MinigameContext,
-  MinigameResults,
-} from './minigames/base-minigame';
+export type { MinigameContext, MinigameResults } from './minigames/base-minigame';

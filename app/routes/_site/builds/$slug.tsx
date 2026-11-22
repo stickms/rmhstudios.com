@@ -25,7 +25,8 @@ import { WatchControl } from '@/components/discovery/WatchControl';
 import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
 import { games, apps } from '@/lib/catalog';
 import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
-import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
+import { RssLink } from '@/components/feed/RssLink';
+import { SITE_URL, buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
 const allOfficial = [...games, ...apps];
 
@@ -72,11 +73,22 @@ export const Route = createFileRoute('/_site/builds/$slug')({
           loaderData.kind === 'official'
             ? ogCardPath(games.some((g) => g.id === d.id) ? 'game' : 'app', d.id)
             : ogCardPath('build', 'slug' in d ? d.slug : params.slug),
-        imageAlt: `${d.title} on RMH Studios`,
+        imageAlt: ('thumbnailAlt' in d && d.thumbnailAlt) || `${d.title} on RMH Studios`,
         type: 'article',
       }),
       links: [
         buildCanonical(`/builds/${params.slug}`),
+        // Only a public member build has releases to subscribe to (an unlisted one has no feed).
+        ...(loaderData.kind === 'user-build' && loaderData.data.visibility === 'PUBLIC' && loaderData.data.publishedAt
+          ? [
+              {
+                rel: 'alternate',
+                type: 'application/rss+xml',
+                title: `${d.title} releases — RMH Studios`,
+                href: `${SITE_URL}/builds/${params.slug}/rss.xml`,
+              },
+            ]
+          : []),
         // The hero is this page's LCP element on both branches — a full-bleed
         // 1280px image, the only large graphic above the fold — and the loader
         // resolved its URL, so the fetch can start from the HTML. Both branches
@@ -109,7 +121,8 @@ function BuildPage() {
       >
         <div className="px-4 pt-4 pb-12">
           <BuildDetail build={build} />
-          <div className="mt-[var(--site-section-gap)] flex justify-end">
+          <div className="mt-[var(--site-section-gap)] flex flex-wrap items-center justify-end gap-x-4">
+            {build.visibility === 'PUBLIC' && build.publishedAt && <RssLink href={`/builds/${build.slug}/rss.xml`} />}
             <WatchControl kind="build" targetId={build.id} />
           </div>
         </div>

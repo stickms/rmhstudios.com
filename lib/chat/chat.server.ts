@@ -18,6 +18,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { hiddenFromRecipient, type RequestFacts } from '@/lib/messages/requests';
 
 export type ChatDb = Prisma.TransactionClient | typeof prisma;
 
@@ -38,6 +39,8 @@ export interface DmRow {
   themeKey: string | null;
   lastMessageAt: Date;
   createdAt: Date;
+  /** The message request on this chat, if it has one (sprint 04 #16). */
+  request?: RequestFacts | null;
 }
 
 export const dmChatSelect = {
@@ -47,6 +50,7 @@ export const dmChatSelect = {
   lastMessageAt: true,
   createdAt: true,
   members: { select: { userId: true, slot: true }, orderBy: { slot: 'asc' } },
+  messageRequest: { select: { senderId: true, recipientId: true, status: true, decidedAt: true } },
 } as const satisfies Prisma.ChatSelect;
 
 type DmChat = Prisma.ChatGetPayload<{ select: typeof dmChatSelect }>;
@@ -67,6 +71,7 @@ export function toDmRow(chat: DmChat): DmRow | null {
     themeKey: chat.themeKey,
     lastMessageAt: chat.lastMessageAt,
     createdAt: chat.createdAt,
+    request: chat.messageRequest ?? null,
   };
 }
 
@@ -76,11 +81,16 @@ export async function findDm(id: string, db: ChatDb = prisma): Promise<DmRow | n
   return chat ? toDmRow(chat) : null;
 }
 
-/** A DM by id, only if `userId` is one of its participants. */
+/**
+ * A DM by id, only if `userId` is one of its participants. A chat whose message
+ * request still waits for `userId` to decide does not exist for them: it is
+ * answered from the Requests folder alone, so nothing else can open it.
+ */
 export async function findDmFor(id: string, userId: string, db: ChatDb = prisma): Promise<DmRow | null> {
   const dm = await findDm(id, db);
   if (!dm) return null;
-  return dm.participantOneId === userId || dm.participantTwoId === userId ? dm : null;
+  if (dm.participantOneId !== userId && dm.participantTwoId !== userId) return null;
+  return hiddenFromRecipient(dm.request, userId) ? null : dm;
 }
 
 /** A DM by its ordered pair. */
@@ -137,6 +147,26 @@ export async function upsertDm(
 /** `where` for "DMs this user is a participant in". */
 export function dmsOf(userId: string): Prisma.ChatWhereInput {
   return { kind: DM_KIND, members: { some: { userId } } };
+}
+
+/**
+ * `where` for the chats a recipient's inbox may show (sprint 04 #16): not one whose
+ * message request waits for them (it lives in the Requests folder), and not one
+ * they declined unless they have written in it since. Combine with `dmsOf` through
+ * `AND`; with no requests anywhere it matches every chat.
+ */
+export function inboxVisibleTo(userId: string): Prisma.ChatWhereInput {
+  return {
+    NOT: [
+      { messageRequest: { is: { recipientId: userId, status: { in: ['pending', 'draft'] } } } },
+      {
+        AND: [
+          { messageRequest: { is: { recipientId: userId, status: 'declined' } } },
+          { messages: { none: { senderId: userId } } },
+        ],
+      },
+    ],
+  };
 }
 
 /** `where` for "group chats this user is a member of". */

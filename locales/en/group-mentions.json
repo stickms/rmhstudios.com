@@ -1,0 +1,20 @@
+{
+  "member-fallback": "Member",
+  "mentions-empty": "No one has mentioned you here.",
+  "mentions-failed": "Could not load your mentions.",
+  "message-older": "The message you opened is older than the messages shown here.",
+  "notifications": "Notifications",
+  "notifications-all": "All",
+  "notifications-all-desc": "You are told about every message in this group.",
+  "notifications-error": "Could not change notifications for this group.",
+  "notifications-mentions": "Mentions only",
+  "notifications-mentions-desc": "When someone writes your @handle, you are told. Other messages stay quiet.",
+  "notifications-none": "Muted",
+  "notifications-none-desc": "You are not told about anything in this group.",
+  "picker-label": "Members to mention",
+  "picker-results_one": "{{count}} member",
+  "picker-results_other": "{{count}} members",
+  "retry": "Try again",
+  "show-more": "Show more",
+  "your-mentions": "Your mentions"
+}

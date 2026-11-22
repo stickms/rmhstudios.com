@@ -180,6 +180,21 @@ model UserAchievement {
   @@map("user_achievement")
 }
 
+/// An achievement a member pinned to work toward (at most five, never a secret
+/// one). `notifiedPct` is the highest milestone (50 or 90) already announced, so
+/// each threshold notifies once. The row is removed when the achievement unlocks.
+model AchievementTrack {
+  userId        String
+  achievementId String   @db.VarChar(64) // matches a catalog key
+  notifiedPct   Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@map("achievement_track")
+}
+
 /// Idempotency key for drops: a drop is granted once per (user, title, dropIndex).
 model CardDrop {
   userId    String
@@ -409,6 +424,32 @@ model CoinTransaction {
   /// Drives the economy dashboard: supply by type over a time window.
   @@index([createdAt(sort: Desc), type])
   @@map("coin_transaction")
+}
+
+/// One signed, reasoned admin adjustment of a member's coins (s04-06). The coins
+/// themselves move through the ledger (`CoinTransaction`, type ADMIN, linked by
+/// `transactionId`); this row says who, why, and the one-time reversal link. It
+/// is a financial record, so it outlives the member's erasure (only `note` is
+/// cleared). `reversesId` / `reversedById` are plain ids, claimed with a
+/// conditional update, so two reversals can never both apply.
+model CoinAdjustment {
+  id            String   @id @default(cuid())
+  userId        String
+  adminId       String?
+  /// Signed: positive credits the member, negative debits.
+  delta         Int
+  reason        String   @db.VarChar(24)
+  note          String?  @db.VarChar(280)
+  transactionId String   @unique
+  reversesId    String?  @unique
+  reversedById  String?  @unique
+  createdAt     DateTime @default(now())
+
+  user  User  @relation("CoinAdjustmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin User? @relation("CoinAdjustmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("coin_adjustment")
 }
 
 // ─── Progression: Quests ──────────────────────────────────────────────────

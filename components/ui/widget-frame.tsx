@@ -61,65 +61,25 @@ export function WidgetFrame({
   // Once a widget has real content, background refreshes keep that subtree
   // mounted. This protects charts/media/local state from restarting just because
   // the widget is fetching a fresher snapshot.
-  const hasResolved =
-    React.useRef(
-      !loading,
-    );
-  if (
-    !loading
-  )
-    hasResolved.current = true;
-  const initialLoading =
-    loading &&
-    !hasResolved.current;
+  const hasResolved = React.useRef(!loading);
+  if (!loading) hasResolved.current = true;
+  const initialLoading = loading && !hasResolved.current;
   // Steel M9: the body replaces the first skeleton with a fade, opacity only.
-  const arrival =
-    useArrival(
-      !initialLoading,
-    );
+  const arrival = useArrival(!initialLoading);
 
   return (
-    <Card
-      data-slot="widget-frame"
-      className={cn(
-        'gap-0 py-0 overflow-hidden',
-        className,
-      )}
-    >
+    <Card data-slot="widget-frame" className={cn('gap-0 py-0 overflow-hidden', className)}>
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-site-border">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
-          {Icon ? (
-            <Icon
-              className="h-4 w-4 text-site-text-muted"
-              aria-hidden
-            />
-          ) : null}
-          <span className="truncate">
-            {
-              title
-            }
-          </span>
+          {Icon ? <Icon className="h-4 w-4 text-site-text-muted" aria-hidden /> : null}
+          <span className="truncate">{title}</span>
         </h3>
-        {action ? (
-          <div className="shrink-0">
-            {
-              action
-            }
-          </div>
-        ) : null}
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
 
-      <div
-        className="px-4 py-3"
-        aria-busy={
-          loading
-        }
-      >
+      <div className="px-4 py-3" aria-busy={loading}>
         {initialLoading ? (
-          <div
-            className="space-y-2"
-            aria-hidden
-          >
+          <div className="space-y-2" aria-hidden>
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-4 w-2/3" />
@@ -128,27 +88,16 @@ export function WidgetFrame({
           <div
             className={cn(
               'transition-opacity duration-site-fast',
-              loading &&
-                hasResolved.current &&
-                'opacity-70',
+              loading && hasResolved.current && 'opacity-70',
               arrival,
             )}
           >
             {empty ? (
               <EmptyState
-                icon={
-                  emptyIcon ??
-                  Icon
-                }
-                title={
-                  emptyTitle
-                }
-                description={
-                  emptyDescription
-                }
-                action={
-                  emptyAction
-                }
+                icon={emptyIcon ?? Icon}
+                title={emptyTitle}
+                description={emptyDescription}
+                action={emptyAction}
                 className="py-8"
               />
             ) : (

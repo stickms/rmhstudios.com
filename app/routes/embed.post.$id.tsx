@@ -10,8 +10,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
+import { useGifAlt } from '@/components/feed/use-gif-alt';
+import { CoveredLine } from '@/components/feed/CoveredLine';
+import { contentWarningOrNull } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { nullPostCounts } from '@/lib/feed/quiet-counts';
 import { ExternalLink, Heart, MessageCircle, Repeat } from 'lucide-react';
 
 const fetchEmbed = createServerFn({ method: 'GET' })
@@ -32,6 +36,10 @@ const fetchEmbed = createServerFn({ method: 'GET' })
         repostCount: true,
         imageUrls: true,
         imageAlts: true,
+        gifUrl: true,
+        gifAlt: true,
+        isSensitive: true,
+        contentWarning: true,
         user: { select: userDisplaySelect },
       },
     });
@@ -45,15 +53,25 @@ const fetchEmbed = createServerFn({ method: 'GET' })
       return null;
     }
     const user = resolveUser(post.user as any);
+    // An embed has no viewer: an author who hides their counts gets an embed without them (lib/feed/quiet-counts).
+    const counts = {
+      likeCount: post.likeCount as number | null,
+      commentCount: post.commentCount as number | null,
+      repostCount: post.repostCount as number | null,
+    };
+    // An embed has no way to reveal a post, so a content warning reason stands in for the text and media (sprint 06 #16).
+    const reason = contentWarningOrNull(post.contentWarning);
     return {
       id: post.id,
-      content: post.content,
+      content: reason ? '' : post.content,
+      contentWarning: reason,
       createdAt: post.createdAt.toISOString(),
-      likeCount: post.likeCount,
-      commentCount: post.commentCount,
-      repostCount: post.repostCount,
-      imageUrl: post.imageUrls?.[0] ?? null,
-      imageAlt: post.imageAlts?.[0]?.trim() || null,
+      ...(user.hideCounts ? nullPostCounts(counts) : counts),
+      imageUrl: reason ? null : (post.imageUrls?.[0] ?? null),
+      imageAlt: reason ? null : (post.imageAlts?.[0]?.trim() || null),
+      // The GIF (sprint 06 #15) with its description; a sensitive post's GIF stays out of an embed.
+      gifUrl: post.isSensitive || reason ? null : (post.gifUrl ?? null),
+      gifAlt: post.isSensitive || reason ? null : (post.gifAlt?.trim() || null),
       user: { name: user.name, handle: user.handle, image: user.image, id: user.id },
     };
   });
@@ -67,6 +85,7 @@ export const Route = createFileRoute('/embed/post/$id')({
 function EmbedPost() {
   const { t } = useTranslation("pages");
   const { post } = Route.useLoaderData();
+  const gifAltText = useGifAlt();
   const profileHref = post ? `https://rmhstudios.com/u/${post.user.handle || post.user.id}` : '#';
   const postHref = post ? `https://rmhstudios.com/u/${post.user.handle || post.user.id}/post/${post.id}` : '#';
 
@@ -97,23 +116,33 @@ function EmbedPost() {
           </a>
         </div>
 
+        {post.contentWarning && (
+          <CoveredLine reason={post.contentWarning} className="mt-3 whitespace-pre-wrap break-words text-base text-site-text" />
+        )}
         {post.content && (
           <p className="mt-3 whitespace-pre-wrap break-words text-base text-site-text">{post.content}</p>
         )}
         {post.imageUrl && (
           <img src={post.imageUrl} alt={post.imageAlt ?? ''} className="mt-3 max-h-80 w-full rounded-site-sm object-cover" />
         )}
+        {!post.imageUrl && post.gifUrl && (
+          <img src={post.gifUrl} alt={gifAltText(post.gifAlt)} className="mt-3 max-h-80 w-full rounded-site-sm object-cover" />
+        )}
 
         <div className="mt-3 flex items-center gap-4 text-xs text-site-text-muted">
-          <span className="inline-flex items-center gap-1.5">
-            <Heart className="size-3.5" aria-hidden /> {post.likeCount}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Repeat className="size-3.5" aria-hidden /> {post.repostCount}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <MessageCircle className="size-3.5" aria-hidden /> {post.commentCount}
-          </span>
+          {post.likeCount !== null && (
+            <>
+              <span className="inline-flex items-center gap-1.5">
+                <Heart className="size-3.5" aria-hidden /> {post.likeCount}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Repeat className="size-3.5" aria-hidden /> {post.repostCount}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MessageCircle className="size-3.5" aria-hidden /> {post.commentCount}
+              </span>
+            </>
+          )}
           <a
             href={postHref}
             target="_blank"

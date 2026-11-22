@@ -199,15 +199,11 @@
       ]
     },
     "kick": {
-      "valid": [
-        {}
-      ],
+      "valid": [{}],
       "invalid": []
     },
     "leave": {
-      "valid": [
-        {}
-      ],
+      "valid": [{}],
       "invalid": []
     },
     "setup": {
@@ -583,9 +579,7 @@
       ]
     },
     "deck_req": {
-      "valid": [
-        {}
-      ],
+      "valid": [{}],
       "invalid": []
     },
     "deck_res": {
@@ -604,9 +598,7 @@
       ]
     },
     "stats_req": {
-      "valid": [
-        {}
-      ],
+      "valid": [{}],
       "invalid": []
     },
     "stats_res": {
@@ -614,9 +606,7 @@
         {
           "reroll_count": 5,
           "reroll_cost_total": 27,
-          "vouchers": [
-            "v_overstock_norm"
-          ]
+          "vouchers": ["v_overstock_norm"]
         }
       ],
       "invalid": [

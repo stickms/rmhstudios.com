@@ -3,7 +3,6 @@ import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
 import { Coins, Gift, Package, Banknote } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -19,6 +18,7 @@ import { serverError } from '@/lib/http';
 import { reviewRedemptionApi } from '@/lib/admin/admin-tools.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 export const Route = createFileRoute('/_site/admin/redemptions')({
   head: () => ({ meta: [{ title: 'Redemption Queue | RMH Studios' }] }),
   loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminRedemptionsQuery()),
@@ -38,7 +38,7 @@ interface RedemptionRow {
 
 const KIND_ICON = { SUB_CREDIT: Gift, MERCH: Package, PAYOUT: Banknote } as const;
 
-function AdminRedemptionsPage() {
+function AdminRedemptionsPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const query = adminRedemptionsQuery();
@@ -114,7 +114,7 @@ function AdminRedemptionsPage() {
                         <div className="t-body text-site-text-muted">
                           @{r.user.handle ?? r.user.name ?? r.user.id.slice(0, 6)}
                           {' · '}
-                          {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
+                          {fmt.relative(new Date(r.createdAt))}
                         </div>
                       </div>
                     </div>

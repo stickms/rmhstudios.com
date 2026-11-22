@@ -1,4 +1,6 @@
 import { prisma } from './prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
+import { findLogForAdmin } from '@/lib/blog/publication.server';
 
 export interface Post {
   slug: string;
@@ -10,237 +12,114 @@ export interface Post {
   content: string;
 }
 
+/** Slugs of the live Logs. */
 export async function getPostSlugs() {
-  const posts =
-    await prisma.blogPost.findMany(
-      {
-        select:
-          {
-            slug: true,
-          },
-      },
-    );
-  return posts.map(
-    (
-      p,
-    ) =>
-      p.slug,
-  );
+  const posts = await prisma.blogPost.findMany({
+    where: publishedLogWhere(new Date()),
+    select: {
+      slug: true,
+    },
+  });
+  return posts.map((p) => p.slug);
 }
 
-export async function getPostBySlug(
-  slug: string,
-  fields: string[] = [],
-) {
-  if (
-    !slug
-  )
-    throw new Error(
-      'Slug cannot be empty',
-    );
+type Items = Record<string, string | string[] | boolean | undefined | null>;
 
-  const post =
-    await prisma.blogPost.findUnique(
-      {
-        where:
-          {
-            slug,
-          },
-      },
-    );
+interface PickablePost {
+  slug: string;
+  title: string;
+  date: string;
+  description: string;
+  image: string | null;
+  tags: string[];
+  content: string;
+  announcement: boolean;
+  announcementPostId: string | null;
+  business: string;
+  announcedAt: Date | null;
+  announcementExpiresAt: Date | null;
+  status: string;
+  publishAt: Date | null;
+}
 
-  if (
-    !post
-  ) {
-    throw new Error(
-      `Post not found: ${slug}`,
-    );
+const iso = (d: Date | null) => (d ? d.toISOString() : null);
+
+/** The requested fields of a Log, in the shape the routes read. */
+function pickFields(post: PickablePost, fields: string[]): Items {
+  const available: Items = {
+    slug: post.slug,
+    content: post.content,
+    title: post.title,
+    date: post.date,
+    description: post.description,
+    image: post.image,
+    tags: post.tags,
+    announcement: post.announcement,
+    announcementPostId: post.announcementPostId,
+    business: post.business,
+    announcedAt: iso(post.announcedAt),
+    announcementExpiresAt: iso(post.announcementExpiresAt),
+    status: post.status,
+    publishAt: iso(post.publishAt),
+  };
+  const items: Items = {};
+  for (const field of fields) {
+    if (field in available) items[field] = available[field];
   }
-
-  type Items =
-    {
-      [
-        key: string
-      ]:
-        | string
-        | string[]
-        | boolean
-        | undefined
-        | null;
-    };
-
-  const items: Items =
-    {};
-
-  fields.forEach(
-    (
-      field,
-    ) => {
-      if (
-        field ===
-        'slug'
-      ) {
-        items[
-          field
-        ] =
-          post.slug;
-      } else if (
-        field ===
-        'content'
-      ) {
-        items[
-          field
-        ] =
-          post.content;
-      } else if (
-        field ===
-        'title'
-      ) {
-        items[
-          field
-        ] =
-          post.title;
-      } else if (
-        field ===
-        'date'
-      ) {
-        items[
-          field
-        ] =
-          post.date;
-      } else if (
-        field ===
-        'description'
-      ) {
-        items[
-          field
-        ] =
-          post.description;
-      } else if (
-        field ===
-        'image'
-      ) {
-        items[
-          field
-        ] =
-          post.image;
-      } else if (
-        field ===
-        'tags'
-      ) {
-        items[
-          field
-        ] =
-          post.tags;
-      } else if (
-        field ===
-        'announcement'
-      ) {
-        items[
-          field
-        ] =
-          post.announcement;
-      } else if (
-        field ===
-        'announcementPostId'
-      ) {
-        items[
-          field
-        ] =
-          post.announcementPostId;
-      } else if (
-        field ===
-        'business'
-      ) {
-        items[
-          field
-        ] =
-          post.business;
-      } else if (
-        field ===
-        'announcedAt'
-      ) {
-        items[
-          field
-        ] =
-          post.announcedAt
-            ? post.announcedAt.toISOString()
-            : null;
-      } else if (
-        field ===
-        'announcementExpiresAt'
-      ) {
-        items[
-          field
-        ] =
-          post.announcementExpiresAt
-            ? post.announcementExpiresAt.toISOString()
-            : null;
-      }
-    },
-  );
-
   return items;
 }
 
-export async function getAllPosts(
+/**
+ * One Log by slug; throws when there is none. Only a live Log is found unless `admin` is set, which is for the
+ * editor and for an admin previewing a draft at its real address.
+ */
+export async function getPostBySlug(
+  slug: string,
   fields: string[] = [],
+  opts: {
+    admin?: boolean;
+  } = {},
 ) {
-  const isAllEmpty =
-    fields.length ===
-    0;
+  if (!slug) throw new Error('Slug cannot be empty');
 
-  // if fields is empty, just fetch everything
-  const posts =
-    await prisma.blogPost.findMany(
-      {
-        orderBy:
-          {
-            date: 'desc',
-          },
-        select:
-          isAllEmpty
-            ? undefined
-            : {
-                slug: fields.includes(
-                  'slug',
-                ),
-                title:
-                  fields.includes(
-                    'title',
-                  ),
-                date: fields.includes(
-                  'date',
-                ),
-                description:
-                  fields.includes(
-                    'description',
-                  ),
-                image:
-                  fields.includes(
-                    'image',
-                  ),
-                tags: fields.includes(
-                  'tags',
-                ),
-                content:
-                  fields.includes(
-                    'content',
-                  ),
-                announcement:
-                  fields.includes(
-                    'announcement',
-                  ),
-                business:
-                  fields.includes(
-                    'business',
-                  ),
-              },
-      },
-    );
+  const post = opts.admin
+    ? await findLogForAdmin(slug)
+    : await prisma.blogPost.findFirst({
+        where: {
+          slug,
+          ...publishedLogWhere(new Date()),
+        },
+      });
 
-  return posts as unknown as Record<
-    string,
-    any
-  >[];
+  if (!post) {
+    throw new Error(`Post not found: ${slug}`);
+  }
+  return pickFields(post, fields);
+}
+
+/** The live Logs, newest first. */
+export async function getAllPosts(fields: string[] = []) {
+  const isAllEmpty = fields.length === 0;
+
+  const posts = await prisma.blogPost.findMany({
+    where: publishedLogWhere(new Date()),
+    orderBy: {
+      date: 'desc',
+    },
+    select: isAllEmpty
+      ? undefined
+      : {
+          slug: fields.includes('slug'),
+          title: fields.includes('title'),
+          date: fields.includes('date'),
+          description: fields.includes('description'),
+          image: fields.includes('image'),
+          tags: fields.includes('tags'),
+          content: fields.includes('content'),
+          announcement: fields.includes('announcement'),
+          business: fields.includes('business'),
+        },
+  });
+
+  return posts as unknown as Record<string, any>[];
 }

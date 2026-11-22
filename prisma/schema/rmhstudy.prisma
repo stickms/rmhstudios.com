@@ -9,6 +9,10 @@ model RmhStudyProfile {
   currentStreak     Int               @default(0)
   longestStreak     Int               @default(0)
   lastStudyDate     DateTime?
+  /// Weekly focus goal in minutes (30 to 3,000); null when none is set.
+  weeklyGoalMinutes Int?
+  /// The member's IANA zone, sent on joining a room and validated by the hub; streak days are counted in it (UTC when null).
+  timeZone          String?           @db.VarChar(40)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   sessions          RmhStudySession[]
@@ -34,6 +38,7 @@ model RmhStudySession {
   @@index([profileId])
   @@index([userId])
   @@index([startedAt(sort: Desc)])
+  @@index([userId, startedAt(sort: Desc)])
   @@map("rmhstudy_session")
 }
 
@@ -49,30 +54,88 @@ model FlashcardDeck {
   // the "you already added this deck" guard. Not a relation (the source may be
   // deleted); it just records the source deck id.
   clonedFromId String?
+  /// When this copy last had nothing left pending from its source (set by clone, link and apply).
+  sourceSyncedAt  DateTime?
+  /// Set whenever an authored card is added, edited or deleted (not on reorder). `updatedAt` does not
+  /// move for a card edit, so copies compare this with their `sourceSyncedAt`.
+  cardsChangedAt  DateTime?
+  /// "Tell me about updates": the copy's owner wants the deck page to show the author's changes.
+  notifyUpdates   Boolean  @default(true)
+  /// The owner's private folder for this deck (null: "No folder"). Never in a public payload.
+  folderId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cards Flashcard[]
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder      DeckFolder?           @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  cards       Flashcard[]
+  testResults FlashcardTestResult[]
 
   @@index([userId])
   @@index([isPublic, updatedAt(sort: Desc)])
   @@index([userId, clonedFromId])
+  @@index([userId, folderId])
   @@map("flashcard_deck")
 }
 
-model Flashcard {
+/// A member's private, one-level folder of decks: name, order and collapse state follow the member across devices.
+model DeckFolder {
   id        String   @id @default(cuid())
-  deckId    String
-  front     String   @db.Text
-  back      String   @db.Text
-  position  Int      @default(0)
+  userId    String
+  name      String   @db.VarChar(40)
+  position  Int
+  collapsed Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  deck    FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
-  reviews FlashcardReview[]
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decks FlashcardDeck[]
+
+  @@index([userId, position])
+  @@map("deck_folder")
+}
+
+model Flashcard {
+  id         String   @id @default(cuid())
+  deckId     String
+  front      String   @db.Text
+  back       String   @db.Text
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  /// basic | reversible | cloze. An authored card (`sourceId` null) carries the
+  /// kind the owner chose; generated siblings carry `reversible` (the reverse
+  /// side) or `cloze` (one per deletion index). An authored cloze row is never
+  /// reviewed; its siblings are.
+  kind       String   @default("basic") @db.VarChar(10)
+  /// The authored card this row was generated from; null for an authored card.
+  sourceId   String?
+  /// The cloze deletion index (cN) a cloze sibling hides; null otherwise.
+  clozeIndex Int?
+  /// On a copied authored card: the source deck's card it came from, and the hash of that card's
+  /// kind, front and back when it was copied or last synced. Null on cards the member wrote.
+  originCardId String? @db.VarChar(30)
+  originHash   String? @db.VarChar(64)
+  /// The member's own key for an authored card, set through the developer API so a script can upsert by it.
+  /// Unique per deck; null (the default) never collides.
+  externalId   String? @db.VarChar(100)
+  /// One optional picture per side of an authored card, each with the description a screen reader reads (s08-15).
+  /// Generated siblings carry none: they read their source card's. A copy shares the object (same URL); the
+  /// object is deleted only when no card references its URL any more.
+  frontImageUrl String? @db.VarChar(500)
+  frontImageAlt String? @db.VarChar(1000)
+  backImageUrl  String? @db.VarChar(500)
+  backImageAlt  String? @db.VarChar(1000)
+
+  deck       FlashcardDeck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  source     Flashcard?           @relation("FlashcardSiblings", fields: [sourceId], references: [id], onDelete: Cascade)
+  siblings   Flashcard[]          @relation("FlashcardSiblings")
+  reviews    FlashcardReview[]
+  reviewLogs FlashcardReviewLog[]
 
   @@index([deckId])
+  @@index([sourceId])
+  @@index([frontImageUrl])
+  @@index([backImageUrl])
+  @@unique([deckId, externalId])
   @@map("flashcard")
 }
 
@@ -87,6 +150,11 @@ model FlashcardReview {
   repetitions  Int      @default(0)
   dueAt        DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  /// Set aside by the member (`manual`) or after 8 lapses (`leech`); a suspended card is in no queue or due count.
+  suspendedAt   DateTime?
+  suspendReason String?   @db.VarChar(8)
+  /// Grades of "Again" on a card that had already been learned (repetitions > 0).
+  lapses        Int       @default(0)
 
   user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
@@ -94,6 +162,72 @@ model FlashcardReview {
   @@unique([userId, cardId])
   @@index([userId, dueAt])
   @@map("flashcard_review")
+}
+
+/// Append-only history of every review (grade and the schedule it produced), written in the
+/// same transaction as the FlashcardReview update. Feeds /study/stats. `deckId` is copied
+/// from the card so a per-deck query needs no join; it is not a relation.
+model FlashcardReviewLog {
+  id           BigInt   @id @default(autoincrement())
+  userId       String
+  cardId       String
+  deckId       String
+  grade        Int
+  intervalDays Int
+  easeFactor   Float
+  reviewedAt   DateTime @default(now())
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([userId, reviewedAt])
+  @@index([userId, deckId, reviewedAt])
+  @@map("flashcard_review_log")
+}
+
+/// A member's opt-in daily "cards are due" reminder (one row per member). `nextAt` is the UTC
+/// instant of the next send, precomputed from `localTime` in `timeZone` so the per-minute sweep
+/// reads only due rows. `lastSentDay` (the member's local day key) is the compare-and-set that
+/// keeps it to one reminder a day; after 14 reminders with no review in between the reminder
+/// pauses until the member resumes it.
+model FlashcardReminder {
+  userId          String   @id
+  enabled         Boolean  @default(false)
+  /// HH:MM on a 15-minute grid, read in `timeZone`.
+  localTime       String   @db.VarChar(5)
+  timeZone        String   @db.VarChar(64)
+  nextAt          DateTime?
+  lastSentDay     String?  @db.VarChar(10)
+  sentSinceReview Int      @default(0)
+  paused          Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([enabled, nextAt])
+  @@map("flashcard_reminder")
+}
+
+/// One finished practice test (/study/$deckId/test): append-only, separate from SM-2 state, so
+/// a test never changes a card's schedule. `total` and `correct` count points (one per question,
+/// one per pair in a matching question). `seed` rebuilds the same questions.
+model FlashcardTestResult {
+  id            BigInt   @id @default(autoincrement())
+  userId        String
+  deckId        String
+  total         Int
+  correct       Int
+  kinds         String[]
+  durationMs    Int
+  missedCardIds String[]
+  seed          Int
+  createdAt     DateTime @default(now())
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deckId, createdAt(sort: Desc)])
+  @@map("flashcard_test_result")
 }
 
 /// F5 — a request to body-double. 'now' requests queue for ten minutes; 'slot'

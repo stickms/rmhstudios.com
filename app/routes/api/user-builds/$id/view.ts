@@ -4,16 +4,12 @@ import { createFileRoute } from '@tanstack/react-router';
  * POST /api/user-builds/[id]/view - Record a view
  */
 
-import { createHash } from 'crypto';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { hashIp } from '@/lib/hash-ip.server';
 
 type RouteParams = { params: Promise<{ id: string }> };
-
-function hashIp(ip: string): string {
-  return createHash('sha256').update(ip + process.env.IP_HASH_SALT || 'rmh-salt').digest('hex').slice(0, 32);
-}
 
 export const Route = createFileRoute('/api/user-builds/$id/view')({
   server: {
@@ -70,7 +66,7 @@ export const Route = createFileRoute('/api/user-builds/$id/view')({
 
     // Get IP hash for anonymous users
     const ip = getClientIp(request);
-    const ipHash = userId ? null : hashIp(ip);
+    const ipHash = userId ? null : hashIp(ip).slice(0, 32);
 
     // Check for existing view
     let existingView = null;

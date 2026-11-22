@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { Plus, X, AlertCircle } from 'lucide-react';
@@ -16,6 +16,9 @@ import {
   updateUserBuildApi,
   userBuildCategoriesApi,
 } from '@/lib/user-builds.contract';
+
+// The editor is loaded on demand: most visits to this form never touch pictures.
+const ScreenshotEditor = lazy(() => import('./ScreenshotEditor'));
 
 const FIELD_LABEL = 'block text-sm font-medium text-site-text';
 
@@ -66,6 +69,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
   const [repoUrl, setRepoUrl] = useState(build?.repoUrl || '');
   const [demoUrl, setDemoUrl] = useState(build?.demoUrl || '');
   const [thumbnailUrl, setThumbnailUrl] = useState(build?.thumbnailUrl || '');
+  const [thumbnailAlt, setThumbnailAlt] = useState(build?.thumbnailAlt || '');
   const [categoryId, setCategoryId] = useState(build?.category?.id || '');
   // The title this build is for (its Workshop). `?forGame=<id>` pre-selects it.
   const [gameId, setGameId] = useState(
@@ -101,6 +105,8 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         repoUrl: repoUrl || undefined,
         demoUrl: demoUrl || undefined,
         thumbnailUrl: thumbnailUrl || undefined,
+        // '' clears it on edit; a description needs a cover to describe.
+        thumbnailAlt: thumbnailUrl ? thumbnailAlt : isEditing ? '' : undefined,
         categoryId: categoryId || undefined,
         // '' clears it on edit; omitted on create when none is chosen.
         gameId: gameId || (isEditing ? '' : undefined),
@@ -411,6 +417,18 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           </div>
         )}
       </div>
+
+      {/* Cover upload and description, and the screenshots (s07-17) */}
+      <Suspense fallback={null}>
+        <ScreenshotEditor
+          buildId={build?.id}
+          screenshots={build?.screenshots ?? []}
+          thumbnailUrl={thumbnailUrl}
+          onThumbnailUrl={setThumbnailUrl}
+          thumbnailAlt={thumbnailAlt}
+          onThumbnailAlt={setThumbnailAlt}
+        />
+      </Suspense>
 
       {/* README */}
       <div className="space-y-2">

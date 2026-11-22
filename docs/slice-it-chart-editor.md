@@ -791,7 +791,7 @@ Everything a chart editor is expected to have. Each maps to a `Command`.
 | Change type           | `1`–`7`                   | STANDARD / MOVING / LONG / SILENT / SPEED / BOMB / SWITCH |
 | Quantise selection    | `Q`                       | Snap existing notes to the current division               |
 | Scale timing          | `Ctrl+Shift+S`            | Stretch a selection's spacing — for a mis-tracked tempo   |
-| Insert / remove time  | `Ctrl+I` / `Ctrl+Shift+I` | Shift everything after the playhead                       |
+| Insert / remove time  | `Ctrl+I` / `Ctrl+Shift+L` (not Ctrl+Shift+I: devtools) | Shift everything after the playhead                       |
 | Undo / redo           | `Ctrl+Z` / `Ctrl+Y`       | 200 deep, drags merged                                    |
 
 ### 5.3 Multi-note selection and the lane constraint

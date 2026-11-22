@@ -91,7 +91,12 @@ export function partialBoosts(c: Pf2eCharacter): Ability[] {
   for (const a of ABILITIES) {
     let m = 0;
     for (const x of c.boosts.ancestryAltFree ? [] : c.boosts.ancestryFlaws) if (x === a) m -= 1;
-    for (const x of [...c.boosts.ancestry, ...c.boosts.background, ...(c.boosts.class ? [c.boosts.class] : []), ...(c.boosts.levels['1'] ?? [])])
+    for (const x of [
+      ...c.boosts.ancestry,
+      ...c.boosts.background,
+      ...(c.boosts.class ? [c.boosts.class] : []),
+      ...(c.boosts.levels['1'] ?? []),
+    ])
       if (x === a) m += 1;
     let half = false;
     for (const lvl of [5, 10, 15, 20]) {
@@ -120,7 +125,9 @@ export function statRank(c: Pf2eCharacter, d: Pf2eData, stat: Pf2eStat): Pf2eRan
 /** Skill rank: trained at 1st, plus each skill increase taken up to this level (capped by level). */
 export function skillRank(c: Pf2eCharacter, skill: string): Pf2eRank {
   let rank = c.trainedSkills.includes(skill) ? 1 : 0;
-  const levels = Object.keys(c.skillIncreases).map(Number).sort((a, b) => a - b);
+  const levels = Object.keys(c.skillIncreases)
+    .map(Number)
+    .sort((a, b) => a - b);
   for (const lvl of levels) {
     if (lvl > c.level || c.skillIncreases[String(lvl)] !== skill) continue;
     const cap = lvl >= 15 ? 4 : lvl >= 7 ? 3 : 2;
@@ -162,7 +169,14 @@ export function skillLines(c: Pf2eCharacter, d: Pf2eData): SkillLine[] {
   });
   for (const lore of c.lores) {
     const rank = skillRank(c, lore);
-    lines.push({ id: lore, name: lore, ability: 'int', rank: (rank || 1) as Pf2eRank, armorPenalty: 0, bonus: mods.int + profBonus((rank || 1) as Pf2eRank, c.level) });
+    lines.push({
+      id: lore,
+      name: lore,
+      ability: 'int',
+      rank: (rank || 1) as Pf2eRank,
+      armorPenalty: 0,
+      bonus: mods.int + profBonus((rank || 1) as Pf2eRank, c.level),
+    });
   }
   return lines;
 }
@@ -185,7 +199,11 @@ export function maxHp(c: Pf2eCharacter, d: Pf2eData): number {
   return Math.max(1, hp);
 }
 
-export function save(c: Pf2eCharacter, d: Pf2eData, stat: 'fortitude' | 'reflex' | 'will'): { bonus: number; rank: Pf2eRank } {
+export function save(
+  c: Pf2eCharacter,
+  d: Pf2eData,
+  stat: 'fortitude' | 'reflex' | 'will',
+): { bonus: number; rank: Pf2eRank } {
   const ability: Ability = stat === 'fortitude' ? 'con' : stat === 'reflex' ? 'dex' : 'wis';
   const rank = statRank(c, d, stat);
   return { rank, bonus: attributeMods(c)[ability] + profBonus(rank, c.level) };
@@ -326,10 +344,14 @@ export function featSlots(c: Pf2eCharacter, d: Pf2eData, upTo = c.level): Slot[]
   const out: Slot[] = [{ slot: 'bonus-1', level: 1, type: 'bonus', label: 'Background skill feat' }];
   const humanBonus = c.ancestryId === 'human' && c.feats.some((f) => f.featId === 'natural-ambition');
   for (let lvl = 1; lvl <= upTo; lvl++) {
-    if (ANCESTRY_FEAT_LEVELS.includes(lvl)) out.push({ slot: `ancestry-${lvl}`, level: lvl, type: 'ancestry', label: 'Ancestry feat' });
-    if ((klass?.classFeatLevels ?? []).includes(lvl)) out.push({ slot: `class-${lvl}`, level: lvl, type: 'class', label: 'Class feat' });
-    if ((klass?.skillFeatLevels ?? []).includes(lvl)) out.push({ slot: `skill-${lvl}`, level: lvl, type: 'skill', label: 'Skill feat' });
-    if (GENERAL_FEAT_LEVELS.includes(lvl)) out.push({ slot: `general-${lvl}`, level: lvl, type: 'general', label: 'General feat' });
+    if (ANCESTRY_FEAT_LEVELS.includes(lvl))
+      out.push({ slot: `ancestry-${lvl}`, level: lvl, type: 'ancestry', label: 'Ancestry feat' });
+    if ((klass?.classFeatLevels ?? []).includes(lvl))
+      out.push({ slot: `class-${lvl}`, level: lvl, type: 'class', label: 'Class feat' });
+    if ((klass?.skillFeatLevels ?? []).includes(lvl))
+      out.push({ slot: `skill-${lvl}`, level: lvl, type: 'skill', label: 'Skill feat' });
+    if (GENERAL_FEAT_LEVELS.includes(lvl))
+      out.push({ slot: `general-${lvl}`, level: lvl, type: 'general', label: 'General feat' });
   }
   if (humanBonus) out.push({ slot: 'class-bonus-1', level: 1, type: 'class', label: 'Natural Ambition class feat' });
   return out;
@@ -383,7 +405,9 @@ export function previewLevelUp(c: Pf2eCharacter, d: Pf2eData): Pf2eLevelUpPrevie
     newLevel: next,
     hpGain: (klass?.hp ?? 8) + con + (hasFeat(c, 'toughness') ? 1 : 0),
     features: (klass?.features ?? []).filter((f) => f.level === next),
-    improvements: (klass?.progression ?? []).filter((p) => p.level === next).map((p) => ({ stat: p.stat, rank: p.rank })),
+    improvements: (klass?.progression ?? [])
+      .filter((p) => p.level === next)
+      .map((p) => ({ stat: p.stat, rank: p.rank })),
     slots: featSlots(c, d, next).filter((s) => s.level === next),
     skillIncrease: skillIncreaseLevels(c, d, next).includes(next),
     attributeBoosts: (BOOST_LEVELS as readonly number[]).includes(next),
@@ -420,14 +444,21 @@ export function validate(c: Pf2eCharacter, d: Pf2eData): string[] {
     else if (!distinct(set)) issues.push(`Level ${lvl}: boosts must go to four different attributes.`);
   }
   const mods = attributeMods(c);
-  for (const a of ABILITIES) if (c.level === 1 && mods[a] > 4) issues.push(`${ABILITY_NAMES[a]} is above +4 at 1st level.`);
+  for (const a of ABILITIES)
+    if (c.level === 1 && mods[a] > 4) issues.push(`${ABILITY_NAMES[a]} is above +4 at 1st level.`);
   if (klass) {
-    const expected = klass.trainedSkills.length + klass.additionalSkills + Math.max(0, mods.int) + (backgroundOf(d, c)?.skills.length ?? 0);
+    const expected =
+      klass.trainedSkills.length +
+      klass.additionalSkills +
+      Math.max(0, mods.int) +
+      (backgroundOf(d, c)?.skills.length ?? 0);
     if (c.trainedSkills.length < expected) issues.push(`Train ${expected - c.trainedSkills.length} more skill(s).`);
     if (klass.subclasses?.length && !c.subclassId) issues.push(`Choose a ${klass.subclassLabel ?? 'class option'}.`);
   }
   const filled = new Set(c.feats.filter((f) => f.featId || f.customName).map((f) => f.slot));
-  for (const s of featSlots(c, d)) if (!filled.has(s.slot)) issues.push(`Level ${s.level}: choose a ${s.label.toLowerCase()}.`);
-  for (const lvl of skillIncreaseLevels(c, d)) if (!c.skillIncreases[String(lvl)]) issues.push(`Level ${lvl}: choose a skill increase.`);
+  for (const s of featSlots(c, d))
+    if (!filled.has(s.slot)) issues.push(`Level ${s.level}: choose a ${s.label.toLowerCase()}.`);
+  for (const lvl of skillIncreaseLevels(c, d))
+    if (!c.skillIncreases[String(lvl)]) issues.push(`Level ${lvl}: choose a skill increase.`);
   return issues;
 }

@@ -21,11 +21,17 @@ export interface BuildItem {
   likeCount: number;
   viewCount: number;
   createdAt: string;
-  publishedAt:
-    | string
-    | null;
+  publishedAt: string | null;
 }
 
 export interface ApiError {
   error: string;
+}
+
+export interface ReleaseItem {
+  id: string;
+  version: string;
+  changelog: string | null;
+  commitHash: string | null;
+  createdAt: string;
 }

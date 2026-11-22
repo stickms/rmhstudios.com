@@ -15,11 +15,7 @@ import type { FailReason } from './load-machine';
 import type { Zone } from './types';
 
 export const CONCURRENCY = 4;
-export const RETRY_DELAYS_MS: readonly number[] =
-  [
-    400,
-    1200,
-  ];
+export const RETRY_DELAYS_MS: readonly number[] = [400, 1200];
 /**
  * How long one zone's request may take, response and body together (ms). Past it the request is
  * aborted and the zone fails as `network`, without a retry: a server that hangs once is likely to
@@ -41,28 +37,16 @@ export interface LoaderDeps {
     status: number;
     arrayBuffer(): Promise<ArrayBuffer>;
   }>;
-  decode(
-    data: ArrayBuffer,
-  ): Promise<AudioBuffer>;
-  sleep(
-    ms: number,
-  ): Promise<void>;
+  decode(data: ArrayBuffer): Promise<AudioBuffer>;
+  sleep(ms: number): Promise<void>;
   /** Whether `url` is on another origin than the page. */
-  crossOrigin(
-    url: string,
-  ): boolean;
+  crossOrigin(url: string): boolean;
   online(): boolean;
 }
 
 export interface ZoneResult {
-  buffers: Map<
-    string,
-    AudioBuffer
-  >;
-  failures: Map<
-    string,
-    FailReason
-  >;
+  buffers: Map<string, AudioBuffer>;
+  failures: Map<string, FailReason>;
 }
 
 export function classifyFetchError(
@@ -72,13 +56,7 @@ export function classifyFetchError(
     online: boolean;
   },
 ): FailReason {
-  if (
-    err instanceof
-      TypeError &&
-    ctx.crossOrigin &&
-    ctx.online
-  )
-    return 'cors';
+  if (err instanceof TypeError && ctx.crossOrigin && ctx.online) return 'cors';
   return 'network';
 }
 
@@ -99,123 +77,47 @@ export async function loadZone(
       timedOut?: true;
     }
 > {
-  let bytes: ArrayBuffer | null =
-    null;
+  let bytes: ArrayBuffer | null = null;
   let timedOut = false;
-  let reason: FailReason =
-    'network';
-  for (
-    let attempt = 0;
-    attempt <=
-    RETRY_DELAYS_MS.length;
-    attempt++
-  ) {
+  let reason: FailReason = 'network';
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     // One deadline per attempt: the abort stops a real request, and the race settles even a fetch
     // (or body) that ignores the signal and never answers.
-    const controller =
-      new AbortController();
-    let timer:
-      | ReturnType<
-          typeof setTimeout
-        >
-      | undefined;
-    const deadline =
-      new Promise<never>(
-        (
-          _,
-          reject,
-        ) => {
-          timer =
-            setTimeout(
-              () => {
-                controller.abort();
-                reject(
-                  new ZoneTimeout(),
-                );
-              },
-              ZONE_TIMEOUT_MS,
-            );
-        },
-      );
-    deadline.catch(
-      () => {},
-    );
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(new ZoneTimeout());
+      }, ZONE_TIMEOUT_MS);
+    });
+    deadline.catch(() => {});
     try {
-      const res =
-        await Promise.race(
-          [
-            deps.fetch(
-              url,
-              controller.signal,
-            ),
-            deadline,
-          ],
-        );
-      if (
-        !res.ok
-      ) {
-        reason =
-          'network';
-        if (
-          res.status <
-          500
-        )
-          break;
+      const res = await Promise.race([deps.fetch(url, controller.signal), deadline]);
+      if (!res.ok) {
+        reason = 'network';
+        if (res.status < 500) break;
       } else {
-        bytes =
-          await Promise.race(
-            [
-              res.arrayBuffer(),
-              deadline,
-            ],
-          );
+        bytes = await Promise.race([res.arrayBuffer(), deadline]);
         break;
       }
     } catch (err) {
-      if (
-        err instanceof
-        ZoneTimeout
-      ) {
-        reason =
-          'network';
+      if (err instanceof ZoneTimeout) {
+        reason = 'network';
         timedOut = true;
         break;
       }
-      reason =
-        classifyFetchError(
-          err,
-          {
-            crossOrigin:
-              deps.crossOrigin(
-                url,
-              ),
-            online:
-              deps.online(),
-          },
-        );
-      if (
-        reason ===
-        'cors'
-      )
-        break;
+      reason = classifyFetchError(err, {
+        crossOrigin: deps.crossOrigin(url),
+        online: deps.online(),
+      });
+      if (reason === 'cors') break;
     } finally {
-      clearTimeout(
-        timer,
-      );
+      clearTimeout(timer);
     }
-    if (
-      attempt <
-      RETRY_DELAYS_MS.length
-    )
-      await deps.sleep(
-        RETRY_DELAYS_MS[
-          attempt
-        ],
-      );
+    if (attempt < RETRY_DELAYS_MS.length) await deps.sleep(RETRY_DELAYS_MS[attempt]);
   }
-  if (
-    !bytes
-  )
+  if (!bytes)
     return timedOut
       ? {
           ok: false,
@@ -229,16 +131,12 @@ export async function loadZone(
   try {
     return {
       ok: true,
-      buffer:
-        await deps.decode(
-          bytes,
-        ),
+      buffer: await deps.decode(bytes),
     };
   } catch {
     return {
       ok: false,
-      reason:
-        'decode',
+      reason: 'decode',
     };
   }
 }
@@ -253,9 +151,7 @@ export async function loadZone(
  */
 export async function loadZones(
   zones: readonly Zone[],
-  urlOf: (
-    zone: Zone,
-  ) => string,
+  urlOf: (zone: Zone) => string,
   deps: LoaderDeps,
   onZone: (
     zone: Zone,
@@ -269,97 +165,42 @@ export async function loadZones(
         },
   ) => void = () => {},
 ): Promise<ZoneResult> {
-  const result: ZoneResult =
-    {
-      buffers:
-        new Map(),
-      failures:
-        new Map(),
-    };
+  const result: ZoneResult = {
+    buffers: new Map(),
+    failures: new Map(),
+  };
   let next = 0;
   let hung = false;
-  const fail =
-    (
-      zone: Zone,
-      reason: FailReason,
-    ) => {
-      result.failures.set(
-        zone.file,
-        reason,
-      );
-      onZone(
-        zone,
-        {
-          ok: false,
-          reason,
-        },
-      );
-    };
-  const worker =
-    async () => {
-      while (
-        !hung &&
-        next <
-          zones.length
-      ) {
-        const zone =
-          zones[
-            next++
-          ];
-        const r =
-          await loadZone(
-            zone,
-            urlOf(
-              zone,
-            ),
-            deps,
-          );
-        if (
-          r.ok
-        ) {
-          result.buffers.set(
-            zone.file,
-            r.buffer,
-          );
-          onZone(
-            zone,
-            {
-              ok: true,
-            },
-          );
-        } else {
-          if (
-            r.timedOut
-          )
-            hung = true;
-          fail(
-            zone,
-            r.reason,
-          );
-        }
+  const fail = (zone: Zone, reason: FailReason) => {
+    result.failures.set(zone.file, reason);
+    onZone(zone, {
+      ok: false,
+      reason,
+    });
+  };
+  const worker = async () => {
+    while (!hung && next < zones.length) {
+      const zone = zones[next++];
+      const r = await loadZone(zone, urlOf(zone), deps);
+      if (r.ok) {
+        result.buffers.set(zone.file, r.buffer);
+        onZone(zone, {
+          ok: true,
+        });
+      } else {
+        if (r.timedOut) hung = true;
+        fail(zone, r.reason);
       }
-    };
+    }
+  };
   await Promise.all(
     Array.from(
       {
-        length:
-          Math.min(
-            CONCURRENCY,
-            zones.length,
-          ),
+        length: Math.min(CONCURRENCY, zones.length),
       },
       worker,
     ),
   );
-  while (
-    next <
-    zones.length
-  )
-    fail(
-      zones[
-        next++
-      ],
-      'network',
-    );
+  while (next < zones.length) fail(zones[next++], 'network');
   return result;
 }

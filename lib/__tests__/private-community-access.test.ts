@@ -35,6 +35,10 @@ vi.mock('@/lib/prisma.server', () => ({
     event: h.event,
     rsvp: h.rsvp,
     closeFriend: { findMany: async () => [] },
+    // s05-05: the event summary reads its accepted co-hosts.
+    eventCohost: { findMany: async () => [] },
+    // s06-01: join checks for an active community ban or timeout first.
+    communityBan: { findFirst: async () => null },
     $transaction: h.transaction,
   },
 }));
@@ -73,6 +77,9 @@ vi.mock('@/lib/communities/flairs.server', () => ({
   listFlairs: async () => [],
 }));
 vi.mock('@/lib/communities/sisters.server', () => ({ getSisters: async () => [] }));
+// s03: rules ride the extras request; join and leave record a member event.
+vi.mock('@/lib/communities/rules.server', () => ({ listRules: async () => [] }));
+vi.mock('@/lib/communities/member-events.server', () => ({ recordMemberEvent: async () => undefined }));
 vi.mock('@/lib/communities/onboarding.server', () => ({ getUnansweredQuestions: async () => [] }));
 vi.mock('@/lib/communities/settings.server', () => ({
   getCommunitySettings: async () => ({ verification: { level: 'none', value: 0 } }),

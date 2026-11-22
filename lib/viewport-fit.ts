@@ -25,36 +25,10 @@ export function viewportFitTranslation(
   let x = 0;
   let y = 0;
 
-  if (
-    rect.right >
-    bounds.right
-  )
-    x =
-      bounds.right -
-      rect.right;
-  if (
-    rect.left +
-      x <
-    bounds.left
-  )
-    x =
-      bounds.left -
-      rect.left;
-  if (
-    rect.bottom >
-    bounds.bottom
-  )
-    y =
-      bounds.bottom -
-      rect.bottom;
-  if (
-    rect.top +
-      y <
-    bounds.top
-  )
-    y =
-      bounds.top -
-      rect.top;
+  if (rect.right > bounds.right) x = bounds.right - rect.right;
+  if (rect.left + x < bounds.left) x = bounds.left - rect.left;
+  if (rect.bottom > bounds.bottom) y = bounds.bottom - rect.bottom;
+  if (rect.top + y < bounds.top) y = bounds.top - rect.top;
 
   return {
     x,

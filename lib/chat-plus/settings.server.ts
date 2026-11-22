@@ -9,6 +9,7 @@ import { type ChatAccess, publishChatUpdate } from '@/lib/chat-plus/access.serve
 import { postSystemLine } from '@/lib/chat-plus/post.server';
 import { DISAPPEAR_OPTIONS } from '@/lib/chat-plus/flags';
 import { isValidThemeKey } from '@/lib/chat-plus/themes';
+import { getAccountReceiptPrefs } from '@/lib/chat-plus/receipts.server';
 import { listPins } from '@/lib/chat-plus/pins.server';
 import type { ChatMeta } from '@/lib/chat-plus/settings.client';
 
@@ -38,13 +39,14 @@ export type { ChatMeta } from '@/lib/chat-plus/settings.client';
 
 /** Everything the chat header needs, in one request. */
 export async function getChatMeta(access: ChatAccess): Promise<ChatMeta> {
-  const [pref, pins] = await Promise.all([
+  const [pref, account, pins] = await Promise.all([
     access.kind === 'dm'
       ? prisma.conversationPref.findUnique({
           where: { userId_scopeKey: { userId: access.viewerId, scopeKey: access.scopeKey } },
           select: { hideReceipts: true, hideTyping: true },
         })
       : null,
+    getAccountReceiptPrefs(access.viewerId),
     listPins(access),
   ]);
   return {
@@ -52,6 +54,7 @@ export async function getChatMeta(access: ChatAccess): Promise<ChatMeta> {
     themeKey: access.themeKey,
     isSelf: access.isSelf,
     prefs: { hideReceipts: pref?.hideReceipts ?? false, hideTyping: pref?.hideTyping ?? false },
+    account,
     pins,
   };
 }

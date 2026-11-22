@@ -17,6 +17,7 @@
 @import '../../app/globals.css';
 
 @source "./";
+@source "../../components/games/assist-run-island.tsx";
 @source "../../components/games/result-moment-slot.tsx";
 @source "../../components/games/SessionHighlight.tsx";
 @source "../../components/i18n/AppI18nProvider.tsx";

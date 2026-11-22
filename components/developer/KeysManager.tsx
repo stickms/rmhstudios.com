@@ -12,6 +12,7 @@ import {
   X,
   BookOpen,
   Activity,
+  Settings2,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
@@ -24,28 +25,26 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 import { KeyUsage } from '@/components/developer/KeyUsage';
+import { KeySuspendedLine } from '@/components/developer/KeySuspendedLine';
 import { TestKeyCreator } from '@/components/developer/TestKeyCreator';
+import {
+  KeyRefusalLine,
+  KeyRestrictionFields,
+  KeyRestrictionsPanel,
+  restrictionsDraft,
+} from '@/components/developer/KeyRestrictions';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import {
   createDeveloperKeyApi,
   revokeDeveloperKeyApi,
   updateDeveloperKeyApi,
+  type DeveloperKeyListRow,
 } from '@/lib/developer/keys.contract';
 import { developerKeysQuery } from '@/lib/developer/developer.queries';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-
-interface ApiKey {
-  id: string;
-  name: string;
-  prefix: string;
-  lastFour: string | null;
-  scopes: string[];
-  expiresAt: string | null;
-  lastUsedAt: string | null;
-  createdAt: string;
-}
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const EXPIRY_OPTIONS = [
   { key: 'keys-expiry-never', label: 'Never', days: 0 },
@@ -54,14 +53,16 @@ const EXPIRY_OPTIONS = [
   { key: 'keys-expiry-365', label: '1 year', days: 365 },
 ];
 
-export function KeysManager() {
+export function KeysManager() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-devplatform');
+  const { t: tr } = useTranslation('key-restrictions');
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const query = developerKeysQuery();
   // A failed read leaves the previous list in place (or an empty one).
   const { data, isPending: loading } = useQuery(query);
-  const keys: ApiKey[] = data?.keys ?? [];
+  const keys: DeveloperKeyListRow[] = data?.keys ?? [];
+  const maxLimit = data?.maxRateLimitPerMinute ?? 120;
   const hasAccess = !!data?.hasApiAccess;
   const arrival = useArrival(!loading);
   const [creating, setCreating] = useState(false);
@@ -69,8 +70,14 @@ export function KeysManager() {
   const [scopes, setScopes] = useState<string[]>([...DEFAULT_SCOPES]);
   /** Which key's usage panel is expanded, if any. */
   const [usageFor, setUsageFor] = useState<string | null>(null);
+  /** Which key's restrictions panel is expanded, if any. */
+  const [restrictionsFor, setRestrictionsFor] = useState<string | null>(null);
+  const [cidrText, setCidrText] = useState('');
+  const [limitText, setLimitText] = useState('');
   const [expiryDays, setExpiryDays] = useState(0);
   const [newKey, setNewKey] = useState<string | null>(null);
+
+  const draft = restrictionsDraft(cidrText, limitText, maxLimit);
 
   const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
@@ -79,14 +86,22 @@ export function KeysManager() {
   }
 
   async function create() {
-    if (!name.trim()) return;
+    if (!name.trim() || !draft.valid) return;
     setCreating(true);
     try {
       const data = await api(createDeveloperKeyApi, {
-        body: { name: name.trim(), scopes, expiresInDays: expiryDays || undefined },
+        body: {
+          name: name.trim(),
+          scopes,
+          expiresInDays: expiryDays || undefined,
+          allowedCidrs: draft.allowedCidrs,
+          rateLimitPerMinute: draft.rateLimitPerMinute,
+        },
       });
       setNewKey(data.key);
       setName('');
+      setCidrText('');
+      setLimitText('');
       await load();
     } catch (e) {
       toast.error(
@@ -259,6 +274,15 @@ export function KeysManager() {
           </div>
         </div>
 
+        <KeyRestrictionFields
+          idPrefix="new-key"
+          cidrText={cidrText}
+          onCidrText={setCidrText}
+          limitText={limitText}
+          onLimitText={setLimitText}
+          maxLimit={maxLimit}
+        />
+
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="api-key-expiry" className="text-xs text-site-text-muted">
             {t('keys-expires', { defaultValue: 'Expires' })}
@@ -280,7 +304,7 @@ export function KeysManager() {
             size="sm"
             variant="default"
             loading={creating}
-            disabled={!name.trim()}
+            disabled={!name.trim() || !draft.valid}
             onClick={create}
           >
             <Plus aria-hidden /> {t('keys-create', { defaultValue: 'Create key' })}
@@ -308,13 +332,20 @@ export function KeysManager() {
                 <div className="flex items-center gap-3">
                   <KeyRound className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-site-text">{k.name}</p>
+                    <p className="flex items-center gap-2 text-sm font-semibold text-site-text">
+                      <span className="truncate">{k.name}</span>
+                      {k.allowedCidrs.length > 0 && (
+                        <Badge variant="default" className="shrink-0 font-normal">
+                          {tr('restricted', { defaultValue: 'Restricted' })}
+                        </Badge>
+                      )}
+                    </p>
                     <p className="font-mono text-xs text-site-text-muted">
                       {k.prefix}…{k.lastFour ?? ''} ·{' '}
                       {k.lastUsedAt
                         ? t('keys-last-used', {
                             defaultValue: 'last used {{date}}',
-                            date: new Date(k.lastUsedAt).toLocaleDateString(),
+                            date: fmt.date(new Date(k.lastUsedAt)),
                           })
                         : t('keys-never-used', { defaultValue: 'never used' })}
                       {k.expiresAt && (
@@ -325,7 +356,7 @@ export function KeysManager() {
                             ? t('keys-expired', { defaultValue: 'expired' })
                             : t('keys-expires-on', {
                                 defaultValue: 'expires {{date}}',
-                                date: new Date(k.expiresAt).toLocaleDateString(),
+                                date: fmt.date(new Date(k.expiresAt)),
                               })}
                         </span>
                       )}
@@ -343,6 +374,16 @@ export function KeysManager() {
                       onClick={() => setUsageFor((cur) => (cur === k.id ? null : k.id))}
                     />
                     <IconButton
+                      icon={Settings2}
+                      label={
+                        restrictionsFor === k.id
+                          ? tr('hide-restrictions', { defaultValue: 'Hide restrictions' })
+                          : tr('show-restrictions', { defaultValue: 'Restrictions' })
+                      }
+                      aria-expanded={restrictionsFor === k.id}
+                      onClick={() => setRestrictionsFor((cur) => (cur === k.id ? null : k.id))}
+                    />
+                    <IconButton
                       icon={RefreshCw}
                       label={t('keys-rotate', { defaultValue: 'Rotate key' })}
                       onClick={() => rotate(k.id)}
@@ -355,7 +396,12 @@ export function KeysManager() {
                     />
                   </div>
                 </div>
+                <KeyRefusalLine refusals={k.refusals} />
+                <KeySuspendedLine suspendedAt={k.suspendedAt} reason={k.suspendReason} />
                 {usageFor === k.id && <KeyUsage keyId={k.id} />}
+                {restrictionsFor === k.id && (
+                  <KeyRestrictionsPanel keyRow={k} maxLimit={maxLimit} onSaved={load} />
+                )}
                 {k.scopes.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {k.scopes.map((s) => (

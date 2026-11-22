@@ -18,6 +18,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import type { TabItem } from '@/components/ui/tabs';
 import { walletBalanceQuery } from '@/lib/economy/wallet.queries';
+import { playLimitsQuery } from '@/lib/settings/privacy.queries';
+import { SpendBudgetMeter } from './SpendBudgetMeter';
 
 import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
 export { WALLET_TABS, type WalletTab };
@@ -45,6 +47,7 @@ export function WalletPage({
   onTabChange: (tab: WalletTab) => void;
 }) {
   const { t, i18n } = useTranslation('f-economy-plus');
+  const { t: tl } = useTranslation('spending-budget');
   const { data: session, isPending } = useSession();
   const signedIn = !!session && !isPending;
   // The session can still be resolving on the first paint (PanelFallback below).
@@ -52,6 +55,9 @@ export function WalletPage({
 
   // Seeded by the /wallet loader, so the balance is in the first paint.
   const { data: balance } = useQuery({ ...walletBalanceQuery(), enabled: signedIn });
+  // The monthly budget, when one is set. A failed read just leaves the line out.
+  const { data: limits } = useQuery({ ...playLimitsQuery(), enabled: signedIn });
+  const budget = limits?.spendBudget;
 
   const tabs: TabItem[] = [
     { id: 'goals', label: t('wallet-tab-goals', { defaultValue: 'Goals' }), icon: Target },
@@ -98,6 +104,25 @@ export function WalletPage({
                 <CoinIcon className="size-6" />
                 {balance ? balance.coins.toLocaleString(i18n.language) : '—'}
               </p>
+              {budget && budget.monthlySpendCap !== null && (
+                <div className="mt-2 w-56 max-w-full space-y-1">
+                  <SpendBudgetMeter
+                    spent={budget.spentThisMonth}
+                    cap={budget.monthlySpendCap}
+                    month={budget.month}
+                    caption={false}
+                  />
+                  <p className="t-meta">
+                    {tl('left-this-month', {
+                      defaultValue: '{{left}} of {{cap}} left this month',
+                      left: Math.max(0, budget.monthlySpendCap - budget.spentThisMonth).toLocaleString(
+                        i18n.language,
+                      ),
+                      cap: budget.monthlySpendCap.toLocaleString(i18n.language),
+                    })}
+                  </p>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="default" size="sm">

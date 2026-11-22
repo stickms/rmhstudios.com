@@ -12,92 +12,44 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import {
-  TriviaQuestionSchema,
-  type TriviaQuestion,
-} from './schemas';
+import { TriviaQuestionSchema, type TriviaQuestion } from './schemas';
 import { FF_QUESTION_DISTRIBUTION } from '../constants';
 import { logger } from '../../../server/rmhbox/logger';
 
 // ─── Singleton Cache ─────────────────────────────────────────────
 
-let cachedQuestions:
-  | TriviaQuestion[]
-  | null =
-  null;
+let cachedQuestions: TriviaQuestion[] | null = null;
 
 /**
  * Load and validate all trivia questions from questions.json.
  * Uses singleton caching — returns the same array on subsequent calls.
  */
 export function loadQuestions(): TriviaQuestion[] {
-  if (
-    cachedQuestions
-  )
-    return cachedQuestions;
+  if (cachedQuestions) return cachedQuestions;
 
-  const filePath =
-    join(
-      process.cwd(),
-      'data',
-      'rmhbox',
-      'fact-or-friction',
-      'questions.json',
-    );
-  const raw =
-    JSON.parse(
-      readFileSync(
-        filePath,
-        'utf-8',
-      ),
-    ) as unknown[];
+  const filePath = join(process.cwd(), 'data', 'rmhbox', 'fact-or-friction', 'questions.json');
+  const raw = JSON.parse(readFileSync(filePath, 'utf-8')) as unknown[];
 
-  const valid: TriviaQuestion[] =
-    [];
+  const valid: TriviaQuestion[] = [];
   for (const entry of raw) {
-    const result =
-      TriviaQuestionSchema.safeParse(
-        entry,
-      );
-    if (
-      result.success
-    ) {
-      valid.push(
-        result.data,
-      );
+    const result = TriviaQuestionSchema.safeParse(entry);
+    if (result.success) {
+      valid.push(result.data);
     } else {
-      logger.warn(
-        {
-          event:
-            'ff_question_validation_failed',
-          error:
-            result
-              .error
-              .message,
-          entry:
-            JSON.stringify(
-              entry,
-            ).slice(
-              0,
-              200,
-            ),
-        },
-      );
+      logger.warn({
+        event: 'ff_question_validation_failed',
+        error: result.error.message,
+        entry: JSON.stringify(entry).slice(0, 200),
+      });
     }
   }
 
-  cachedQuestions =
-    valid;
-  logger.info(
-    {
-      event:
-        'ff_questions_loaded',
-      totalLoaded:
-        valid.length,
-      totalRaw:
-        raw.length,
-    },
-  );
+  cachedQuestions = valid;
+  logger.info({
+    event: 'ff_questions_loaded',
+    totalLoaded: valid.length,
+    totalRaw: raw.length,
+  });
   return cachedQuestions;
 }
 
@@ -105,8 +57,7 @@ export function loadQuestions(): TriviaQuestion[] {
  * Reset the cached questions (useful for testing).
  */
 export function resetQuestionCache(): void {
-  cachedQuestions =
-    null;
+  cachedQuestions = null;
 }
 
 // ─── Question Selection ──────────────────────────────────────────
@@ -115,132 +66,51 @@ export function resetQuestionCache(): void {
  * Fisher-Yates shuffle (in-place).
  */
 // eslint-disable-next-line no-restricted-syntax -- shuffles IN PLACE (caller ignores the return value)
-function shuffle<
-  T,
->(
-  arr: T[],
-): T[] {
-  for (
-    let i =
-      arr.length -
-      1;
-    i >
-    0;
-    i--
-  ) {
-    const j =
-      Math.floor(
-        Math.random() *
-          (i +
-            1),
-      );
-    [
-      arr[
-        i
-      ],
-      arr[
-        j
-      ],
-    ] =
-      [
-        arr[
-          j
-        ],
-        arr[
-          i
-        ],
-      ];
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
 
 /** A question tagged with its original pool index for deduplication. */
-export type IndexedQuestion =
-  TriviaQuestion & {
-    poolIndex: number;
-  };
+export type IndexedQuestion = TriviaQuestion & {
+  poolIndex: number;
+};
 
 /** Difficulty filter accepted by the host's `difficulty` game setting. */
-export type FFDifficultySetting =
-  | 'easy'
-  | 'medium'
-  | 'hard'
-  | 'mixed';
+export type FFDifficultySetting = 'easy' | 'medium' | 'hard' | 'mixed';
 
-type Difficulty =
-  | 'easy'
-  | 'medium'
-  | 'hard';
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 /**
  * Bucket order to draw from when the chosen difficulty runs short: the chosen
  * one first, then the nearest neighbour, then the farthest.
  */
-const DIFFICULTY_FALLBACK: Record<
-  Difficulty,
-  Difficulty[]
-> =
-  {
-    easy: [
-      'easy',
-      'medium',
-      'hard',
-    ],
-    medium:
-      [
-        'medium',
-        'easy',
-        'hard',
-      ],
-    hard: [
-      'hard',
-      'medium',
-      'easy',
-    ],
-  };
+const DIFFICULTY_FALLBACK: Record<Difficulty, Difficulty[]> = {
+  easy: ['easy', 'medium', 'hard'],
+  medium: ['medium', 'easy', 'hard'],
+  hard: ['hard', 'medium', 'easy'],
+};
 
 /**
  * Scale the default mix (FF_QUESTION_DISTRIBUTION, 3 easy / 3 medium / 2 hard
  * for 8 questions) to `count` questions: a quarter hard, the rest split
  * evenly between easy and medium (easy takes the odd one).
  */
-export function mixedDistribution(
-  count: number,
-): Record<
-  Difficulty,
-  number
-> {
-  const base =
-    FF_QUESTION_DISTRIBUTION;
-  const baseTotal =
-    base.easy +
-    base.medium +
-    base.hard;
-  if (
-    count ===
-    baseTotal
-  )
+export function mixedDistribution(count: number): Record<Difficulty, number> {
+  const base = FF_QUESTION_DISTRIBUTION;
+  const baseTotal = base.easy + base.medium + base.hard;
+  if (count === baseTotal)
     return {
       ...base,
     };
-  const hard =
-    Math.round(
-      (count *
-        base.hard) /
-        baseTotal,
-    );
-  const easy =
-    Math.round(
-      (count -
-        hard) /
-        2,
-    );
+  const hard = Math.round((count * base.hard) / baseTotal);
+  const easy = Math.round((count - hard) / 2);
   return {
     easy,
-    medium:
-      count -
-      hard -
-      easy,
+    medium: count - hard - easy,
     hard,
   };
 }
@@ -264,179 +134,52 @@ export function mixedDistribution(
 export function selectQuestionsForGame(
   pool: TriviaQuestion[],
   usedIndices: Set<number>,
-  count: number = FF_QUESTION_DISTRIBUTION.easy +
-    FF_QUESTION_DISTRIBUTION.medium +
-    FF_QUESTION_DISTRIBUTION.hard,
+  count: number = FF_QUESTION_DISTRIBUTION.easy + FF_QUESTION_DISTRIBUTION.medium + FF_QUESTION_DISTRIBUTION.hard,
   difficulty: FFDifficultySetting = 'mixed',
 ): IndexedQuestion[] {
-  const target =
-    Math.max(
-      0,
-      Math.floor(
-        count,
-      ),
-    );
+  const target = Math.max(0, Math.floor(count));
 
   // Tag each question with its original pool index, then split unused / used
-  const tagged: IndexedQuestion[] =
-    pool.map(
-      (
-        q,
-        index,
-      ) => ({
-        ...q,
-        poolIndex:
-          index,
-      }),
-    );
-  const available =
-    tagged.filter(
-      (
-        q,
-      ) =>
-        !usedIndices.has(
-          q.poolIndex,
-        ),
-    );
+  const tagged: IndexedQuestion[] = pool.map((q, index) => ({
+    ...q,
+    poolIndex: index,
+  }));
+  const available = tagged.filter((q) => !usedIndices.has(q.poolIndex));
 
   // Group by difficulty
-  const byDifficulty: Record<
-    Difficulty,
-    IndexedQuestion[]
-  > =
-    {
-      easy: shuffle(
-        available.filter(
-          (
-            q,
-          ) =>
-            q.difficulty ===
-            'easy',
-        ),
-      ),
-      medium:
-        shuffle(
-          available.filter(
-            (
-              q,
-            ) =>
-              q.difficulty ===
-              'medium',
-          ),
-        ),
-      hard: shuffle(
-        available.filter(
-          (
-            q,
-          ) =>
-            q.difficulty ===
-            'hard',
-        ),
-      ),
-    };
+  const byDifficulty: Record<Difficulty, IndexedQuestion[]> = {
+    easy: shuffle(available.filter((q) => q.difficulty === 'easy')),
+    medium: shuffle(available.filter((q) => q.difficulty === 'medium')),
+    hard: shuffle(available.filter((q) => q.difficulty === 'hard')),
+  };
 
-  const selected: IndexedQuestion[] =
-    [];
-  const take =
-    (
-      bucket: Difficulty,
-      n: number,
-    ) => {
-      if (
-        n <=
-        0
-      )
-        return;
-      selected.push(
-        ...byDifficulty[
-          bucket
-        ].splice(
-          0,
-          n,
-        ),
-      );
-    };
+  const selected: IndexedQuestion[] = [];
+  const take = (bucket: Difficulty, n: number) => {
+    if (n <= 0) return;
+    selected.push(...byDifficulty[bucket].splice(0, n));
+  };
 
-  if (
-    difficulty ===
-    'mixed'
-  ) {
-    const mix =
-      mixedDistribution(
-        target,
-      );
-    for (const diff of [
-      'easy',
-      'medium',
-      'hard',
-    ] as const)
-      take(
-        diff,
-        mix[
-          diff
-        ],
-      );
+  if (difficulty === 'mixed') {
+    const mix = mixedDistribution(target);
+    for (const diff of ['easy', 'medium', 'hard'] as const) take(diff, mix[diff]);
     // A short bucket is made up from the others (medium sits between both)
-    for (const fallback of DIFFICULTY_FALLBACK.medium)
-      take(
-        fallback,
-        target -
-          selected.length,
-      );
+    for (const fallback of DIFFICULTY_FALLBACK.medium) take(fallback, target - selected.length);
   } else {
-    for (const fallback of DIFFICULTY_FALLBACK[
-      difficulty
-    ])
-      take(
-        fallback,
-        target -
-          selected.length,
-      );
+    for (const fallback of DIFFICULTY_FALLBACK[difficulty]) take(fallback, target - selected.length);
   }
 
   // Last resort: the session has used up the pool — reuse played questions
-  if (
-    selected.length <
-    target
-  ) {
-    const chosen =
-      new Set(
-        selected.map(
-          (
-            q,
-          ) =>
-            q.poolIndex,
-        ),
-      );
-    const reusable =
-      shuffle(
-        tagged.filter(
-          (
-            q,
-          ) =>
-            !chosen.has(
-              q.poolIndex,
-            ),
-        ),
-      );
-    selected.push(
-      ...reusable.slice(
-        0,
-        target -
-          selected.length,
-      ),
-    );
+  if (selected.length < target) {
+    const chosen = new Set(selected.map((q) => q.poolIndex));
+    const reusable = shuffle(tagged.filter((q) => !chosen.has(q.poolIndex)));
+    selected.push(...reusable.slice(0, target - selected.length));
   }
 
   // Shuffle all selected questions
-  shuffle(
-    selected,
-  );
+  shuffle(selected);
 
   // Reorder to avoid consecutive same-category (best effort)
-  return deconflictCategories(
-    selected,
-  );
+  return deconflictCategories(selected);
 }
 
 /**
@@ -444,58 +187,21 @@ export function selectQuestionsForGame(
  * Uses a greedy algorithm — picks the first question from remaining
  * that doesn't share a category with the last placed question.
  */
-function deconflictCategories(
-  questions: IndexedQuestion[],
-): IndexedQuestion[] {
-  if (
-    questions.length <=
-    1
-  )
-    return questions;
+function deconflictCategories(questions: IndexedQuestion[]): IndexedQuestion[] {
+  if (questions.length <= 1) return questions;
 
-  const remaining =
-    [
-      ...questions,
-    ];
-  const result: IndexedQuestion[] =
-    [
-      remaining.shift()!,
-    ];
+  const remaining = [...questions];
+  const result: IndexedQuestion[] = [remaining.shift()!];
 
-  while (
-    remaining.length >
-    0
-  ) {
-    const lastCategory =
-      result[
-        result.length -
-          1
-      ]
-        .category;
-    const diffIdx =
-      remaining.findIndex(
-        (
-          q,
-        ) =>
-          q.category !==
-          lastCategory,
-      );
+  while (remaining.length > 0) {
+    const lastCategory = result[result.length - 1].category;
+    const diffIdx = remaining.findIndex((q) => q.category !== lastCategory);
 
-    if (
-      diffIdx >=
-      0
-    ) {
-      result.push(
-        remaining.splice(
-          diffIdx,
-          1,
-        )[0],
-      );
+    if (diffIdx >= 0) {
+      result.push(remaining.splice(diffIdx, 1)[0]);
     } else {
       // No choice — must use same category
-      result.push(
-        remaining.shift()!,
-      );
+      result.push(remaining.shift()!);
     }
   }
 

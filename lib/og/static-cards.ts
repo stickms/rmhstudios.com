@@ -17,10 +17,7 @@
  * imports it and `buildMeta` runs during SSR of every route.
  */
 
-import {
-  OG_CARD_VERSION,
-  staticCardImageFor,
-} from '@/lib/og/static-card-index';
+import { OG_CARD_VERSION, staticCardImageFor } from '@/lib/og/static-card-index';
 
 export interface StaticCard {
   /** Path prefix this card answers for. `/` matches only the home page. */
@@ -49,817 +46,571 @@ export interface StaticCard {
  * Ordered longest-path-first at lookup time, not here — keep this list grouped
  * by area so it stays readable.
  */
-export const STATIC_CARDS: StaticCard[] =
-  [
-    {
-      path: '/',
-      file: 'default',
-      eyebrow:
-        'The everything platform',
-      title:
-        'Make it, play it, share it.',
-      subtitle:
-        'A social-first home for original games, creative tools, music, learning, and the people making them.',
-      stats:
-        [
-          {
-            value:
-              '20',
-            label:
-              'games',
-            lead: true,
-          },
-          {
-            value:
-              '16',
-            label:
-              'apps',
-          },
-          {
-            value:
-              '9',
-            label:
-              'languages',
-          },
-        ],
-    },
-    {
-      path: '/games',
-      file: 'games',
-      eyebrow:
-        'Games',
-      title:
-        'Games, in the browser.',
-      subtitle:
-        'Party games, puzzles, roguelikes and 3D — multiplayer where it matters, no download anywhere.',
-      stats:
-        [
-          {
-            value:
-              '20',
-            label:
-              'to play',
-            lead: true,
-          },
-        ],
-    },
-    {
-      path: '/apps',
-      file: 'apps',
-      eyebrow:
-        'Apps',
-      title:
-        'Tools that live here.',
-      subtitle:
-        'Watch parties, music, typing, study, code, ladders — full apps, not demos, all on one account.',
-      stats:
-        [
-          {
-            value:
-              '16',
-            label:
-              'apps',
-            lead: true,
-          },
-        ],
-    },
-    {
-      path: '/blog',
-      file: 'blog',
-      eyebrow:
-        'Devlog',
-      title:
-        'How the site gets built.',
-      subtitle:
-        'Notes on the design language, the physics, the rewrites, and what each one cost.',
-    },
-    {
-      path: '/elections',
-      file: 'elections',
-      eyebrow:
-        'Elections',
-      title:
-        'Live results. Your calls.',
-      subtitle:
-        'Every race, every margin, updated every 20 seconds — plus the map you paint yourself.',
-      stats:
-        [
-          {
-            value:
-              '35',
-            label:
-              'Senate',
-            lead: true,
-          },
-          {
-            value:
-              '435',
-            label:
-              'House',
-          },
-          {
-            value:
-              '36',
-            label:
-              'governors',
-          },
-        ],
-    },
-    {
-      path: '/news',
-      file: 'news',
-      eyebrow:
-        'News',
-      title:
-        'What changed, and when.',
-      subtitle:
-        'Releases, write-ups and announcements from RMH Studios.',
-    },
-    {
-      path: '/rmhladder',
-      file: 'rmhladder',
-      eyebrow:
-        'RMH Ladder',
-      title:
-        'Verified early-career jobs.',
-      subtitle:
-        'Internships and new-grad roles, pulled from company boards, checked for whether they are still open.',
-    },
-    {
-      path: '/library',
-      file: 'library',
-      eyebrow:
-        'Library',
-      title:
-        'The reading room.',
-      subtitle:
-        'Books, albums and collections, kept in one place and readable in the browser.',
-    },
-    {
-      path: '/daily',
-      file: 'daily',
-      eyebrow:
-        'Daily puzzles',
-      title:
-        'A new set every day.',
-      subtitle:
-        'One run at each, a shared board, and a streak worth keeping.',
-    },
-    {
-      path: '/market',
-      file: 'market',
-      eyebrow:
-        'Marketplace',
-      title:
-        'Themes, cosmetics and cards.',
-      subtitle:
-        'Bought with coins you earned, made by people who play here.',
-    },
-    {
-      // `/pricing` is a redirect into this page's default tab now, so the card
-      // answers for `/store` — which otherwise fell through to `default.png`.
-      path: '/store',
-      file: 'pricing',
-      eyebrow:
-        'Membership',
-      title:
-        'Everything, or everything plus.',
-      subtitle:
-        'The whole platform is free. Membership adds coins, cosmetics and the developer API.',
-    },
-    {
-      path: '/leaderboard',
-      file: 'leaderboard',
-      eyebrow:
-        'Leaderboards',
-      title:
-        'Who is actually winning.',
-      subtitle:
-        'Ranked ladders, arcade boards and daily streaks, across every game on the site.',
-    },
-    {
-      path: '/rmh-capital',
-      file: 'rmh-capital',
-      eyebrow:
-        'RMH Capital',
-      title:
-        'RMH Capital',
-      subtitle:
-        'The investment arm of RMH Studios.',
-    },
-    {
-      path: '/rmh-datacenter',
-      file: 'rmh-datacenter',
-      eyebrow:
-        'RMH Datacenter',
-      title:
-        'RMH Datacenter',
-      subtitle:
-        'Six campuses, 148 MW, one backbone.',
-    },
-    {
-      path: '/rmh-research',
-      file: 'rmh-research',
-      eyebrow:
-        'RMH Research',
-      title:
-        'Twelve fields, one archive.',
-      subtitle:
-        'The research institute of RMH Studios, and the r-index.',
-    },
-    {
-      path: '/rmh-pmc',
-      file: 'rmh-pmc',
-      eyebrow:
-        'RMH PMC',
-      title:
-        'RMH PMC',
-      subtitle:
-        'Operations, intelligence and capability.',
-    },
-    {
-      path: '/ventures',
-      file: 'ventures',
-      eyebrow:
-        'Ventures',
-      title:
-        'The rest of the portfolio.',
-      subtitle:
-        'What RMH Studios runs beyond the platform itself.',
-    },
+export const STATIC_CARDS: StaticCard[] = [
+  {
+    path: '/',
+    file: 'default',
+    eyebrow: 'The everything platform',
+    title: 'Make it, play it, share it.',
+    subtitle: 'A social-first home for original games, creative tools, music, learning, and the people making them.',
+    stats: [
+      {
+        value: '20',
+        label: 'games',
+        lead: true,
+      },
+      {
+        value: '16',
+        label: 'apps',
+      },
+      {
+        value: '9',
+        label: 'languages',
+      },
+    ],
+  },
+  {
+    path: '/games',
+    file: 'games',
+    eyebrow: 'Games',
+    title: 'Games, in the browser.',
+    subtitle: 'Party games, puzzles, roguelikes and 3D — multiplayer where it matters, no download anywhere.',
+    stats: [
+      {
+        value: '20',
+        label: 'to play',
+        lead: true,
+      },
+    ],
+  },
+  {
+    path: '/apps',
+    file: 'apps',
+    eyebrow: 'Apps',
+    title: 'Tools that live here.',
+    subtitle: 'Watch parties, music, typing, study, code, ladders — full apps, not demos, all on one account.',
+    stats: [
+      {
+        value: '16',
+        label: 'apps',
+        lead: true,
+      },
+    ],
+  },
+  {
+    path: '/blog',
+    file: 'blog',
+    eyebrow: 'Devlog',
+    title: 'How the site gets built.',
+    subtitle: 'Notes on the design language, the physics, the rewrites, and what each one cost.',
+  },
+  {
+    path: '/elections',
+    file: 'elections',
+    eyebrow: 'Elections',
+    title: 'Live results. Your calls.',
+    subtitle: 'Every race, every margin, updated every 20 seconds — plus the map you paint yourself.',
+    stats: [
+      {
+        value: '35',
+        label: 'Senate',
+        lead: true,
+      },
+      {
+        value: '435',
+        label: 'House',
+      },
+      {
+        value: '36',
+        label: 'governors',
+      },
+    ],
+  },
+  {
+    path: '/news',
+    file: 'news',
+    eyebrow: 'News',
+    title: 'What changed, and when.',
+    subtitle: 'Releases, write-ups and announcements from RMH Studios.',
+  },
+  {
+    path: '/rmhladder',
+    file: 'rmhladder',
+    eyebrow: 'RMH Ladder',
+    title: 'Verified early-career jobs.',
+    subtitle: 'Internships and new-grad roles, pulled from company boards, checked for whether they are still open.',
+  },
+  {
+    path: '/library',
+    file: 'library',
+    eyebrow: 'Library',
+    title: 'The reading room.',
+    subtitle: 'Books, albums and collections, kept in one place and readable in the browser.',
+  },
+  {
+    path: '/daily',
+    file: 'daily',
+    eyebrow: 'Daily puzzles',
+    title: 'A new set every day.',
+    subtitle: 'One run at each, a shared board, and a streak worth keeping.',
+  },
+  {
+    path: '/market',
+    file: 'market',
+    eyebrow: 'Marketplace',
+    title: 'Themes, cosmetics and cards.',
+    subtitle: 'Bought with coins you earned, made by people who play here.',
+  },
+  {
+    // `/pricing` is a redirect into this page's default tab now, so the card
+    // answers for `/store` — which otherwise fell through to `default.png`.
+    path: '/store',
+    file: 'pricing',
+    eyebrow: 'Membership',
+    title: 'Everything, or everything plus.',
+    subtitle: 'The whole platform is free. Membership adds coins, cosmetics and the developer API.',
+  },
+  {
+    path: '/leaderboard',
+    file: 'leaderboard',
+    eyebrow: 'Leaderboards',
+    title: 'Who is actually winning.',
+    subtitle: 'Ranked ladders, arcade boards and daily streaks, across every game on the site.',
+  },
+  {
+    path: '/rmh-capital',
+    file: 'rmh-capital',
+    eyebrow: 'RMH Capital',
+    title: 'RMH Capital',
+    subtitle: 'The investment arm of RMH Studios.',
+  },
+  {
+    path: '/rmh-datacenter',
+    file: 'rmh-datacenter',
+    eyebrow: 'RMH Datacenter',
+    title: 'RMH Datacenter',
+    subtitle: 'Six campuses, 148 MW, one backbone.',
+  },
+  {
+    path: '/rmh-research',
+    file: 'rmh-research',
+    eyebrow: 'RMH Research',
+    title: 'Twelve fields, one archive.',
+    subtitle: 'The research institute of RMH Studios, and the r-index.',
+  },
+  {
+    path: '/rmh-pmc',
+    file: 'rmh-pmc',
+    eyebrow: 'RMH PMC',
+    title: 'RMH PMC',
+    subtitle: 'Operations, intelligence and capability.',
+  },
+  {
+    path: '/ventures',
+    file: 'ventures',
+    eyebrow: 'Ventures',
+    title: 'The rest of the portfolio.',
+    subtitle: 'What RMH Studios runs beyond the platform itself.',
+  },
 
-    // ── Sections that used to unfurl as the home card ───────────────────────────────────────────────────────────
-    // Every entry below answers for a page that had no card of its own, so a link to `/tf2/workshop` and a link to
-    // `/communities` and a link to the home page were the same picture. Copy rules (design.md §1): short, literal, the
-    // eyebrow says what kind of page it is, the title is a sentence and not a slogan, the subtitle is one line.
-    {
-      path: '/communities',
-      file: 'communities',
-      eyebrow:
-        'Communities',
-      title:
-        'Find your people.',
-      subtitle:
-        'Public communities with their own spaces, events and conversation.',
-    },
-    {
-      path: '/groups',
-      file: 'groups',
-      eyebrow:
-        'Group chats',
-      title:
-        'Talk it through.',
-      subtitle:
-        'Start a group chat with friends, or drop into a public room.',
-    },
-    {
-      path: '/create/builds',
-      file: 'user-builds',
-      eyebrow:
-        'User builds',
-      title:
-        'Made here, by members.',
-      subtitle:
-        'Games and apps published by the community.',
-    },
-    {
-      path: '/create/personas',
-      file: 'personas',
-      eyebrow:
-        'AI personas',
-      title:
-        'Characters you can talk to.',
-      subtitle:
-        'Create a persona, give it a voice, and chat across the site.',
-    },
-    {
-      path: '/create',
-      file: 'create',
-      eyebrow:
-        'Create',
-      title:
-        'Make something here.',
-      subtitle:
-        'Shareable pages, community builds and AI personas, in one place.',
-    },
-    {
-      path: '/create/builds',
-      file: 'user-builds',
-      eyebrow:
-        'User builds',
-      title:
-        'Made here, by members.',
-      subtitle:
-        'Games and apps published by the community.',
-    },
-    {
-      path: '/builds',
-      file: 'user-builds',
-      eyebrow:
-        'User builds',
-      title:
-        'Made here, by members.',
-      subtitle:
-        'Games and apps published by the community.',
-    },
-    {
-      path: '/developer',
-      file: 'developer',
-      eyebrow:
-        'Developer API',
-      title:
-        'Build on RMH Studios.',
-      subtitle:
-        'Scoped API keys, a documented REST API, webhooks and quotas.',
-    },
-    {
-      path: '/rmh-research/psychology',
-      file: 'psychology',
-      eyebrow:
-        'Psychology',
-      title:
-        'The research behind the site.',
-      subtitle:
-        'What a century of research found, and where you meet it here.',
-      // The page's own pictures: four of the portraits it credits (Zeigarnik,
-      // Kahneman, Csikszentmihalyi, Jung), composited by hand from
-      // public/images/psychology/*.webp.
-      art: '/images/psychology/og-art.jpg',
-    },
-    {
-      path: '/site-history',
-      file: 'site-history',
-      eyebrow:
-        'Site history',
-      title:
-        'Every version of the site.',
-      subtitle:
-        'Each homepage redesign and each game and app as it arrived, from the first commit to today.',
-    },
-    {
-      path: '/progress',
-      file: 'progress',
-      eyebrow:
-        'Progress',
-      title:
-        'Your level, your streak, your year.',
-      subtitle:
-        'Achievements, the weekly recap, Wrapped, and the last 24 hours on RMH Studios.',
-    },
-    {
-      path: '/arcade',
-      file: 'arcade',
-      eyebrow:
-        'Arcade',
-      title:
-        "Today's challenges and the standings.",
-      subtitle:
-        'Daily challenges, your streak and your ranked standing.',
-    },
-    {
-      path: '/compete',
-      file: 'compete',
-      eyebrow:
-        'Compete',
-      title:
-        'Ladders, brackets, records and stakes.',
-      subtitle:
-        'Ranked, tournaments, replay-verified speedruns, wager matches and the player leaderboard.',
-    },
-    {
-      path: '/connections',
-      file: 'connections',
-      eyebrow:
-        'Connections grids',
-      title:
-        'Find the four groups of four.',
-      subtitle:
-        'Member-made Connections grids. Solve them, rate them and catch the daily pick.',
-    },
-    {
-      path: '/quotes',
-      file: 'quotes',
-      eyebrow:
-        'Steve Jobs quotes',
-      title:
-        'Stay hungry. Stay foolish.',
-      subtitle:
-        'Quotes on innovation, design, life and technology.',
-    },
-    {
-      path: '/rmhbox-packs',
-      file: 'rmhbox-packs',
-      eyebrow:
-        'RMHBox prompt packs',
-      title:
-        'Write the prompts. Play them tonight.',
-      subtitle:
-        'Community-made Wit-War prompt packs to share by code and play in an RMHBox lobby.',
-    },
-    {
-      path: '/kaikaidebtcounter',
-      file: 'kaikaidebtcounter',
-      eyebrow:
-        'Kaikai Debt Counter',
-      title:
-        'Everything Kaikai owes, live.',
-      subtitle:
-        'A compounding, public record. Anyone can add to it. Nobody can pay it down.',
-    },
-    {
-      path: '/explore',
-      file: 'explore',
-      eyebrow:
-        'Explore',
-      title:
-        'Find people, posts and places.',
-      subtitle:
-        'Search the feed, communities, games and apps, or ask the feed a question.',
-    },
-    {
-      path: '/sections',
-      file: 'sections',
-      eyebrow:
-        'Sections',
-      title:
-        'Every place on RMH Studios.',
-      subtitle:
-        'The feed, games, apps, communities, the store and the rest, as one list.',
-    },
-    {
-      path: '/strategies',
-      file: 'strategies',
-      eyebrow:
-        'RMH Strategies',
-      title:
-        'Puzzles, incidents and the sahur clock.',
-      subtitle:
-        'Daily and practice puzzles, live incident reports and the countdown to the next sahur.',
-    },
-    {
-      path: '/controller',
-      file: 'controller',
-      eyebrow:
-        'Phone controller',
-      title:
-        'Your phone is the controller.',
-      subtitle:
-        'Join a game on the big screen and play it from the phone in your hand.',
-    },
-    {
-      path: '/help',
-      file: 'help',
-      eyebrow:
-        'Help',
-      title:
-        'Ask the concierge.',
-      subtitle:
-        'Games, apps, coins, settings, and where to find them.',
-    },
-    {
-      path: '/roadmap',
-      file: 'roadmap',
-      eyebrow:
-        'Roadmap',
-      title:
-        'What is coming next.',
-      subtitle:
-        'Plus a public request board: vote on what you want and read the replies.',
-    },
-    {
-      path: '/jams',
-      file: 'jams',
-      eyebrow:
-        'Game jams',
-      title:
-        'One secret theme. One build.',
-      subtitle:
-        'Ship it as a User Build and get rated by the community.',
-    },
-    {
-      path: '/rings',
-      file: 'rings',
-      eyebrow:
-        'Webrings',
-      title:
-        'Small circles, on purpose.',
-      subtitle:
-        'Member-run rings, with previous and next on every profile.',
-    },
-    {
-      path: '/services/cars',
-      file: 'cars',
-      eyebrow:
-        'RMH Cars',
-      title:
-        'The whole fleet, in 3D.',
-      subtitle:
-        'Every model behind RMH Rideshare, turnable.',
-    },
-    {
-      path: '/services/fashion',
-      file: 'fashion',
-      eyebrow:
-        'RMH Fashion',
-      title:
-        'A wardrobe for a figure you design.',
-      subtitle:
-        'Dress it in 3D.',
-    },
-    {
-      path: '/services/rebar-rutabaga',
-      file: 'rebar-rutabaga',
-      eyebrow:
-        'Restaurant',
-      title:
-        'Rebar & Rutabaga.',
-      subtitle:
-        'Nine spherified courses in a decommissioned Göteborg rebar foundry.',
-    },
-    {
-      path: '/services',
-      file: 'services',
-      eyebrow:
-        'Services',
-      title:
-        'Housing, jobs, rides and more.',
-      subtitle:
-        'RMHHomes, RMHLadder, Rideshare, RMH Cars and RMH Fashion.',
-    },
-    {
-      path: '/homes/rent-split',
-      file: 'rent-split',
-      eyebrow:
-        'RMHHomes',
-      title:
-        'Split the rent fairly.',
-      subtitle:
-        'By room size and features, with every number explained.',
-    },
-    {
-      path: '/homes',
-      file: 'homes',
-      eyebrow:
-        'RMHHomes',
-      title:
-        'Rentals and houses, posted by members.',
-      subtitle:
-        'Search, map every result, save favorites, message the poster.',
-    },
-    {
-      path: '/rideshare',
-      file: 'rideshare',
-      eyebrow:
-        'RMH Rideshare',
-      title:
-        'Request a ride, or drive.',
-      subtitle:
-        'RMH-X, XL, Comfort and more, mapped on OpenStreetMap.',
-    },
-    {
-      path: '/tf2/play',
-      file: 'tf2-play',
-      eyebrow:
-        'Team Fortress 2',
-      title:
-        'Play TF2 in your browser.',
-      subtitle:
-        'All nine classes, online or against bots.',
-    },
-    {
-      path: '/tf2/workshop',
-      file: 'tf2-workshop',
-      eyebrow:
-        'TF2 Workshop',
-      title:
-        'Community HUDs and loadouts.',
-      subtitle:
-        'Preview, like, and copy them into your own.',
-    },
-    {
-      path: '/tf2/loadout',
-      file: 'tf2-loadout',
-      eyebrow:
-        'TF2 Loadout Builder',
-      title:
-        'Plan every class.',
-      subtitle:
-        'Weapons, cosmetics, paints, unusuals and taunts.',
-    },
-    {
-      path: '/tf2/hud-editor',
-      file: 'tf2-hud-editor',
-      eyebrow:
-        'TF2 HUD Editor',
-      title:
-        'Build a HUD with a live preview.',
-      subtitle:
-        'Then download it ready to install.',
-    },
-    {
-      path: '/tf2',
-      file: 'tf2',
-      eyebrow:
-        'Team Fortress 2',
-      title:
-        'TF2, in your browser.',
-      subtitle:
-        'Play it, edit a HUD, build a loadout, share them in the workshop.',
-    },
-    {
-      path: '/predictions',
-      file: 'predictions',
-      eyebrow:
-        'Predictions',
-      title:
-        'Back your call.',
-      subtitle:
-        'Prediction markets, plus casino games, played with RMH Coins.',
-    },
-    {
-      path: '/qotd',
-      file: 'qotd',
-      eyebrow:
-        'Question of the day',
-      title:
-        'One question. Everyone answers.',
-      subtitle:
-        'Read the answers, or add your own.',
-    },
-    {
-      path: '/photo-of-the-day',
-      file: 'photo-of-the-day',
-      eyebrow:
-        'Photo of the day',
-      title:
-        'Nominate. Vote. Feature.',
-      subtitle:
-        'One image a day, chosen by members.',
-    },
-    {
-      path: '/calendar',
-      file: 'calendar',
-      eyebrow:
-        'Calendar',
-      title:
-        'Everything on this week.',
-      subtitle:
-        'Puzzle drops, game nights, tournaments and events.',
-    },
-    {
-      path: '/when',
-      file: 'when',
-      eyebrow:
-        'Find a time',
-      title:
-        'Everyone paints when they are free.',
-      subtitle:
-        'In their own timezone. The best slot rises to the top.',
-    },
-    {
-      path: '/canvas',
-      file: 'canvas',
-      eyebrow:
-        'Community canvas',
-      title:
-        'One pixel at a time.',
-      subtitle:
-        'A shared canvas, with a timelapse when the event ends.',
-    },
-    {
-      path: '/museum',
-      file: 'museum',
-      eyebrow:
-        'Site museum',
-      title:
-        'Every era of RMH Studios.',
-      subtitle:
-        'A timeline, with screenshots and what changed in each.',
-    },
-    {
-      path: '/emoji-packs',
-      file: 'emoji-packs',
-      eyebrow:
-        'Emoji & stickers',
-      title:
-        'Packs made by the community.',
-      subtitle:
-        'Install the ones you like, or build your own.',
-    },
-    {
-      path: '/study',
-      file: 'study',
-      eyebrow:
-        'RMHStudy',
-      title:
-        'Flashcards that stick.',
-      subtitle:
-        'Spaced repetition, public decks, and synced study rooms.',
-      art: '/images/games/rmhstudy.webp',
-    },
-    {
-      path: '/slice-it',
-      file: 'slice-it',
-      eyebrow:
-        'Slice It!',
-      title:
-        'Upload a track. Get a chart.',
-      subtitle:
-        'Then race up to eight players.',
-      art: '/images/games/slice_it.webp',
-    },
-    {
-      path: '/rmhbox',
-      file: 'rmhbox',
-      eyebrow:
-        'RMHbox',
-      title:
-        'Every minigame, in one lobby.',
-      subtitle:
-        'Leaderboards and match history for each.',
-      art: '/images/games/rmhbox.webp',
-    },
-    {
-      path: '/rmhcalculator',
-      file: 'rmhcalculator',
-      eyebrow:
-        'RMHCalculator',
-      title:
-        'Graphs, computed by AI.',
-      subtitle:
-        'A graphing and scientific calculator.',
-    },
-    {
-      path: '/dunesday',
-      file: 'dunesday',
-      eyebrow:
-        'Dunesday',
-      title:
-        'An MCU and Dune marathon.',
-      subtitle:
-        'Planned night by night, before Doomsday.',
-    },
-    {
-      path: '/design',
-      file: 'design',
-      eyebrow:
-        'Design',
-      title:
-        'Spatial minimalism.',
-      subtitle:
-        'Simple color, editorial hierarchy, purposeful motion.',
-    },
-    {
-      path: '/adaptive-intelligence',
-      file: 'adaptive-intelligence',
-      eyebrow:
-        'Adaptive Intelligence',
-      title:
-        'Adaptive Intelligence.',
-      subtitle:
-        'An RMH Studios programme.',
-    },
-  ];
+  // ── Sections that used to unfurl as the home card ───────────────────────────────────────────────────────────
+  // Every entry below answers for a page that had no card of its own, so a link to `/tf2/workshop` and a link to
+  // `/communities` and a link to the home page were the same picture. Copy rules (design.md §1): short, literal, the
+  // eyebrow says what kind of page it is, the title is a sentence and not a slogan, the subtitle is one line.
+  {
+    path: '/communities',
+    file: 'communities',
+    eyebrow: 'Communities',
+    title: 'Find your people.',
+    subtitle: 'Public communities with their own spaces, events and conversation.',
+  },
+  {
+    path: '/groups',
+    file: 'groups',
+    eyebrow: 'Group chats',
+    title: 'Talk it through.',
+    subtitle: 'Start a group chat with friends, or drop into a public room.',
+  },
+  {
+    path: '/create/builds',
+    file: 'user-builds',
+    eyebrow: 'User builds',
+    title: 'Made here, by members.',
+    subtitle: 'Games and apps published by the community.',
+  },
+  {
+    path: '/create/personas',
+    file: 'personas',
+    eyebrow: 'AI personas',
+    title: 'Characters you can talk to.',
+    subtitle: 'Create a persona, give it a voice, and chat across the site.',
+  },
+  {
+    path: '/create',
+    file: 'create',
+    eyebrow: 'Create',
+    title: 'Make something here.',
+    subtitle: 'Shareable pages, community builds and AI personas, in one place.',
+  },
+  {
+    path: '/create/builds',
+    file: 'user-builds',
+    eyebrow: 'User builds',
+    title: 'Made here, by members.',
+    subtitle: 'Games and apps published by the community.',
+  },
+  {
+    path: '/builds',
+    file: 'user-builds',
+    eyebrow: 'User builds',
+    title: 'Made here, by members.',
+    subtitle: 'Games and apps published by the community.',
+  },
+  {
+    path: '/developer',
+    file: 'developer',
+    eyebrow: 'Developer API',
+    title: 'Build on RMH Studios.',
+    subtitle: 'Scoped API keys, a documented REST API, webhooks and quotas.',
+  },
+  {
+    path: '/rmh-research/psychology',
+    file: 'psychology',
+    eyebrow: 'Psychology',
+    title: 'The research behind the site.',
+    subtitle: 'What a century of research found, and where you meet it here.',
+    // The page's own pictures: four of the portraits it credits (Zeigarnik,
+    // Kahneman, Csikszentmihalyi, Jung), composited by hand from
+    // public/images/psychology/*.webp.
+    art: '/images/psychology/og-art.jpg',
+  },
+  {
+    path: '/site-history',
+    file: 'site-history',
+    eyebrow: 'Site history',
+    title: 'Every version of the site.',
+    subtitle: 'Each homepage redesign and each game and app as it arrived, from the first commit to today.',
+  },
+  {
+    path: '/progress',
+    file: 'progress',
+    eyebrow: 'Progress',
+    title: 'Your level, your streak, your year.',
+    subtitle: 'Achievements, the weekly recap, Wrapped, and the last 24 hours on RMH Studios.',
+  },
+  {
+    path: '/arcade',
+    file: 'arcade',
+    eyebrow: 'Arcade',
+    title: "Today's challenges and the standings.",
+    subtitle: 'Daily challenges, your streak and your ranked standing.',
+  },
+  {
+    path: '/compete',
+    file: 'compete',
+    eyebrow: 'Compete',
+    title: 'Ladders, brackets, records and stakes.',
+    subtitle: 'Ranked, tournaments, replay-verified speedruns, wager matches and the player leaderboard.',
+  },
+  {
+    path: '/connections',
+    file: 'connections',
+    eyebrow: 'Connections grids',
+    title: 'Find the four groups of four.',
+    subtitle: 'Member-made Connections grids. Solve them, rate them and catch the daily pick.',
+  },
+  {
+    path: '/quotes',
+    file: 'quotes',
+    eyebrow: 'Steve Jobs quotes',
+    title: 'Stay hungry. Stay foolish.',
+    subtitle: 'Quotes on innovation, design, life and technology.',
+  },
+  {
+    path: '/rmhbox-packs',
+    file: 'rmhbox-packs',
+    eyebrow: 'RMHBox prompt packs',
+    title: 'Write the prompts. Play them tonight.',
+    subtitle: 'Community-made Wit-War prompt packs to share by code and play in an RMHBox lobby.',
+  },
+  {
+    path: '/kaikaidebtcounter',
+    file: 'kaikaidebtcounter',
+    eyebrow: 'Kaikai Debt Counter',
+    title: 'Everything Kaikai owes, live.',
+    subtitle: 'A compounding, public record. Anyone can add to it. Nobody can pay it down.',
+  },
+  {
+    path: '/explore',
+    file: 'explore',
+    eyebrow: 'Explore',
+    title: 'Find people, posts and places.',
+    subtitle: 'Search the feed, communities, games and apps, or ask the feed a question.',
+  },
+  {
+    path: '/sections',
+    file: 'sections',
+    eyebrow: 'Sections',
+    title: 'Every place on RMH Studios.',
+    subtitle: 'The feed, games, apps, communities, the store and the rest, as one list.',
+  },
+  {
+    path: '/strategies',
+    file: 'strategies',
+    eyebrow: 'RMH Strategies',
+    title: 'Puzzles, incidents and the sahur clock.',
+    subtitle: 'Daily and practice puzzles, live incident reports and the countdown to the next sahur.',
+  },
+  {
+    path: '/controller',
+    file: 'controller',
+    eyebrow: 'Phone controller',
+    title: 'Your phone is the controller.',
+    subtitle: 'Join a game on the big screen and play it from the phone in your hand.',
+  },
+  {
+    path: '/help',
+    file: 'help',
+    eyebrow: 'Help',
+    title: 'Ask the concierge.',
+    subtitle: 'Games, apps, coins, settings, and where to find them.',
+  },
+  {
+    path: '/roadmap',
+    file: 'roadmap',
+    eyebrow: 'Roadmap',
+    title: 'What is coming next.',
+    subtitle: 'Plus a public request board: vote on what you want and read the replies.',
+  },
+  {
+    path: '/jams',
+    file: 'jams',
+    eyebrow: 'Game jams',
+    title: 'One secret theme. One build.',
+    subtitle: 'Ship it as a User Build and get rated by the community.',
+  },
+  {
+    path: '/rings',
+    file: 'rings',
+    eyebrow: 'Webrings',
+    title: 'Small circles, on purpose.',
+    subtitle: 'Member-run rings, with previous and next on every profile.',
+  },
+  {
+    path: '/services/cars',
+    file: 'cars',
+    eyebrow: 'RMH Cars',
+    title: 'The whole fleet, in 3D.',
+    subtitle: 'Every model behind RMH Rideshare, turnable.',
+  },
+  {
+    path: '/services/fashion',
+    file: 'fashion',
+    eyebrow: 'RMH Fashion',
+    title: 'A wardrobe for a figure you design.',
+    subtitle: 'Dress it in 3D.',
+  },
+  {
+    path: '/services/rebar-rutabaga',
+    file: 'rebar-rutabaga',
+    eyebrow: 'Restaurant',
+    title: 'Rebar & Rutabaga.',
+    subtitle: 'Nine spherified courses in a decommissioned Göteborg rebar foundry.',
+  },
+  {
+    path: '/services',
+    file: 'services',
+    eyebrow: 'Services',
+    title: 'Housing, jobs, rides and more.',
+    subtitle: 'RMHHomes, RMHLadder, Rideshare, RMH Cars and RMH Fashion.',
+  },
+  {
+    path: '/homes/rent-split',
+    file: 'rent-split',
+    eyebrow: 'RMHHomes',
+    title: 'Split the rent fairly.',
+    subtitle: 'By room size and features, with every number explained.',
+  },
+  {
+    path: '/homes',
+    file: 'homes',
+    eyebrow: 'RMHHomes',
+    title: 'Rentals and houses, posted by members.',
+    subtitle: 'Search, map every result, save favorites, message the poster.',
+  },
+  {
+    path: '/rideshare',
+    file: 'rideshare',
+    eyebrow: 'RMH Rideshare',
+    title: 'Request a ride, or drive.',
+    subtitle: 'RMH-X, XL, Comfort and more, mapped on OpenStreetMap.',
+  },
+  {
+    path: '/tf2/play',
+    file: 'tf2-play',
+    eyebrow: 'Team Fortress 2',
+    title: 'Play TF2 in your browser.',
+    subtitle: 'All nine classes, online or against bots.',
+  },
+  {
+    path: '/tf2/workshop',
+    file: 'tf2-workshop',
+    eyebrow: 'TF2 Workshop',
+    title: 'Community HUDs and loadouts.',
+    subtitle: 'Preview, like, and copy them into your own.',
+  },
+  {
+    path: '/tf2/loadout',
+    file: 'tf2-loadout',
+    eyebrow: 'TF2 Loadout Builder',
+    title: 'Plan every class.',
+    subtitle: 'Weapons, cosmetics, paints, unusuals and taunts.',
+  },
+  {
+    path: '/tf2/hud-editor',
+    file: 'tf2-hud-editor',
+    eyebrow: 'TF2 HUD Editor',
+    title: 'Build a HUD with a live preview.',
+    subtitle: 'Then download it ready to install.',
+  },
+  {
+    path: '/tf2',
+    file: 'tf2',
+    eyebrow: 'Team Fortress 2',
+    title: 'TF2, in your browser.',
+    subtitle: 'Play it, edit a HUD, build a loadout, share them in the workshop.',
+  },
+  {
+    path: '/predictions',
+    file: 'predictions',
+    eyebrow: 'Predictions',
+    title: 'Back your call.',
+    subtitle: 'Prediction markets, plus casino games, played with RMH Coins.',
+  },
+  {
+    path: '/qotd',
+    file: 'qotd',
+    eyebrow: 'Question of the day',
+    title: 'One question. Everyone answers.',
+    subtitle: 'Read the answers, or add your own.',
+  },
+  {
+    path: '/tools',
+    file: 'tools',
+    eyebrow: 'Toolbox',
+    title: 'Twenty tools. Nothing leaves your device.',
+    subtitle: 'Text, JSON, regex, hashes, IDs, colours, dates and money, in the browser.',
+  },
+  {
+    path: '/photo-of-the-day',
+    file: 'photo-of-the-day',
+    eyebrow: 'Photo of the day',
+    title: 'Nominate. Vote. Feature.',
+    subtitle: 'One image a day, chosen by members.',
+  },
+  {
+    path: '/calendar',
+    file: 'calendar',
+    eyebrow: 'Calendar',
+    title: 'Everything on this week.',
+    subtitle: 'Puzzle drops, game nights, tournaments and events.',
+  },
+  {
+    path: '/when',
+    file: 'when',
+    eyebrow: 'Find a time',
+    title: 'Everyone paints when they are free.',
+    subtitle: 'In their own timezone. The best slot rises to the top.',
+  },
+  {
+    path: '/canvas',
+    file: 'canvas',
+    eyebrow: 'Community canvas',
+    title: 'One pixel at a time.',
+    subtitle: 'A shared canvas, with a timelapse when the event ends.',
+  },
+  {
+    path: '/museum',
+    file: 'museum',
+    eyebrow: 'Site museum',
+    title: 'Every era of RMH Studios.',
+    subtitle: 'A timeline, with screenshots and what changed in each.',
+  },
+  {
+    path: '/emoji-packs',
+    file: 'emoji-packs',
+    eyebrow: 'Emoji & stickers',
+    title: 'Packs made by the community.',
+    subtitle: 'Install the ones you like, or build your own.',
+  },
+  {
+    path: '/study',
+    file: 'study',
+    eyebrow: 'RMHStudy',
+    title: 'Flashcards that stick.',
+    subtitle: 'Spaced repetition, public decks, and synced study rooms.',
+    art: '/images/games/rmhstudy.webp',
+  },
+  {
+    path: '/slice-it',
+    file: 'slice-it',
+    eyebrow: 'Slice It!',
+    title: 'Upload a track. Get a chart.',
+    subtitle: 'Then race up to eight players.',
+    art: '/images/games/slice_it.webp',
+  },
+  {
+    path: '/rmhbox',
+    file: 'rmhbox',
+    eyebrow: 'RMHbox',
+    title: 'Every minigame, in one lobby.',
+    subtitle: 'Leaderboards and match history for each.',
+    art: '/images/games/rmhbox.webp',
+  },
+  {
+    path: '/rmhcalculator',
+    file: 'rmhcalculator',
+    eyebrow: 'RMHCalculator',
+    title: 'Graphs, computed by AI.',
+    subtitle: 'A graphing and scientific calculator.',
+  },
+  {
+    path: '/dunesday',
+    file: 'dunesday',
+    eyebrow: 'Dunesday',
+    title: 'An MCU and Dune marathon.',
+    subtitle: 'Planned night by night, before Doomsday.',
+  },
+  {
+    path: '/design',
+    file: 'design',
+    eyebrow: 'Design',
+    title: 'Spatial minimalism.',
+    subtitle: 'Simple color, editorial hierarchy, purposeful motion.',
+  },
+  {
+    path: '/adaptive-intelligence',
+    file: 'adaptive-intelligence',
+    eyebrow: 'Adaptive Intelligence',
+    title: 'Adaptive Intelligence.',
+    subtitle: 'An RMH Studios programme.',
+  },
+];
 
 /** Legal pages share one card — they are the same kind of page. */
-const LEGAL_PATHS =
-  [
-    '/terms',
-    '/privacy',
-    '/cookies',
-    '/copyright',
-  ];
+const LEGAL_PATHS = ['/terms', '/privacy', '/cookies', '/copyright'];
 for (const path of LEGAL_PATHS) {
-  STATIC_CARDS.push(
-    {
-      path,
-      file: 'legal',
-      eyebrow:
-        'Legal',
-      title:
-        'Terms, privacy and policies.',
-      subtitle:
-        'How RMH Studios handles your account, your data and your content.',
-    },
-  );
+  STATIC_CARDS.push({
+    path,
+    file: 'legal',
+    eyebrow: 'Legal',
+    title: 'Terms, privacy and policies.',
+    subtitle: 'How RMH Studios handles your account, your data and your content.',
+  });
 }
 
 /** Cheap lookup index, longest path first so the most specific match wins. */
-const BY_LENGTH =
-  [
-    ...STATIC_CARDS,
-  ].sort(
-    (
-      a,
-      b,
-    ) =>
-      b
-        .path
-        .length -
-      a
-        .path
-        .length,
-  );
+const BY_LENGTH = [...STATIC_CARDS].sort((a, b) => b.path.length - a.path.length);
 
 /**
  * The static card a path should share, or null when nothing matches.
@@ -867,48 +618,10 @@ const BY_LENGTH =
  * `/` is exact-matched: without that, every path on the site would "match" the
  * home card by prefix and nothing else would ever be reached.
  */
-export function staticCardFor(
-  path: string,
-): StaticCard | null {
-  const clean =
-    path
-      .split(
-        /[?#]/,
-      )[0]
-      .replace(
-        /\/+$/,
-        '',
-      ) ||
-    '/';
-  if (
-    clean ===
-    '/'
-  )
-    return (
-      BY_LENGTH.find(
-        (
-          c,
-        ) =>
-          c.path ===
-          '/',
-      ) ??
-      null
-    );
-  return (
-    BY_LENGTH.find(
-      (
-        c,
-      ) =>
-        c.path !==
-          '/' &&
-        (clean ===
-          c.path ||
-          clean.startsWith(
-            `${c.path}/`,
-          )),
-    ) ??
-    null
-  );
+export function staticCardFor(path: string): StaticCard | null {
+  const clean = path.split(/[?#]/)[0].replace(/\/+$/, '') || '/';
+  if (clean === '/') return BY_LENGTH.find((c) => c.path === '/') ?? null;
+  return BY_LENGTH.find((c) => c.path !== '/' && (clean === c.path || clean.startsWith(`${c.path}/`))) ?? null;
 }
 
 /**
@@ -924,10 +637,6 @@ export function staticCardFor(
 // (./static-card-index), so there is one definition of it.
 export { OG_CARD_VERSION };
 
-export function staticCardImage(
-  card: StaticCard,
-): string {
-  return staticCardImageFor(
-    card.file,
-  );
+export function staticCardImage(card: StaticCard): string {
+  return staticCardImageFor(card.file);
 }

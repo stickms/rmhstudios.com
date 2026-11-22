@@ -18,6 +18,8 @@ import { PgBoss } from 'pg-boss';
 
 const CONN = process.env.DATABASE_URL;
 const SCHEMA = process.env.PGBOSS_SCHEMA || 'pgboss';
+/** The schema pg-boss keeps its tables in; the admin jobs console reads them directly. */
+export const PGBOSS_SCHEMA = SCHEMA;
 
 /** Best-effort engagement progression (achievements/XP/quests/webhook). */
 export const PROGRESSION_QUEUE = 'engagement.progression';

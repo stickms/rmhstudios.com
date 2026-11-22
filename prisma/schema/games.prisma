@@ -218,6 +218,28 @@ model GameSave {
   @@map("game_save")
 }
 
+/// A previous version of a `GameSave`, kept so a bad autosave, a restore or a delete can be undone.
+///
+/// Taken inside the same transaction as the write that replaces the live blob
+/// (`lib/game-saves/snapshots.server.ts`): at most one automatic snapshot per
+/// game per six hours, plus one before every restore and delete, ten kept per
+/// game. `sizeBytes` is stored so lists never have to read `saveData`.
+model GameSaveSnapshot {
+  id        BigInt   @id @default(autoincrement())
+  userId    String
+  gameId    String   @db.VarChar(48)
+  saveData  Json
+  sizeBytes Int
+  /// `auto`, `before-restore` or `before-delete`.
+  reason    String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, gameId, createdAt(sort: Desc)])
+  @@map("game_save_snapshot")
+}
+
 model NeonDriftwayPlayer {
   id           String   @id @default(uuid())
   username     String   @unique
@@ -572,6 +594,28 @@ model GameStat {
   @@map("game_stat")
 }
 
+/// One row each time a score through `submitGameScore` set a first score or a new personal best
+/// (sprint 05 #04). The adapters keep only the current best; this is the history of how it moved.
+/// Private to the member: no endpoint reads another member's rows. At most 100 per (user, game);
+/// `lib/game/personal-bests.server.ts` prunes the oldest on insert. The unique key makes a retried
+/// submission a no-op, because a score can only be a new best once.
+model GamePersonalBest {
+  id        BigInt   @id @default(autoincrement())
+  userId    String
+  gameId    String   @db.VarChar(60)
+  score     Int
+  /// The best before this run; null for the first score.
+  previous  Int?
+  progress  Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId, score])
+  @@index([userId, gameId, createdAt(sort: Desc)])
+  @@map("game_personal_best")
+}
+
 // ─── Rebar & Rutabaga — reservations (W1, 2026-09-19) ─────────────────────
 // The first piece of state behind any of the eleven /services and /ventures
 // microsites. Before this the whole section was brochureware: a signed-in
@@ -747,6 +791,20 @@ model GamePatchNote {
   @@unique([gameId, version])
   @@index([gameId, createdAt(sort: Desc)])
   @@map("game_patch_note")
+}
+
+/// A member following a game: told in-site when it gets a patch note or a new published guide (s03-10).
+/// `gameId` is a catalogue id, not a relation (the catalogue is code).
+model GameFollow {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId])
+  @@index([gameId])
+  @@map("game_follow")
 }
 
 // ── P19 canvas: Z5 community pixel canvas, X3 context notes ──

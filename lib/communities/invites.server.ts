@@ -11,8 +11,12 @@
  * exhausted, or for a different community — yields the same `invalid` result, so
  * codes cannot be probed for which state they are in.
  */
+import { activeSanction } from '@/lib/communities/bans.server';
+import type { SanctionKind } from '@/lib/communities/bans';
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
+import { recordMemberEvent } from '@/lib/communities/member-events.server';
 
 /** Bounds on what a moderator may create. */
 export const INVITE_LIMITS = {
@@ -102,15 +106,28 @@ export async function createInvite(
   });
   if (active >= INVITE_LIMITS.activePerCommunity) return { ok: false, reason: 'limit' };
 
-  const row = await prisma.communityInvite.create({
-    data: {
+  const row = await prisma.$transaction(async (tx) => {
+    const created = await tx.communityInvite.create({
+      data: {
+        communityId,
+        createdById,
+        code: generateInviteCode(),
+        maxUses: opts.maxUses ?? null,
+        expiresAt: opts.expiresInDays
+          ? new Date(now.getTime() + opts.expiresInDays * DAY_MS)
+          : null,
+      },
+      select: SELECT,
+    });
+    await logModAction(tx, {
       communityId,
-      createdById,
-      code: generateInviteCode(),
-      maxUses: opts.maxUses ?? null,
-      expiresAt: opts.expiresInDays ? new Date(now.getTime() + opts.expiresInDays * DAY_MS) : null,
-    },
-    select: SELECT,
+      actorId: createdById,
+      action: 'invite_created',
+      targetType: 'invite',
+      targetId: String(created.id),
+      detail: { maxUses: opts.maxUses ?? null, expiresInDays: opts.expiresInDays ?? null },
+    });
+    return created;
   });
   return { ok: true, invite: toDTO(row, now) };
 }
@@ -128,18 +145,34 @@ export async function listInvites(communityId: string): Promise<InviteDTO[]> {
 }
 
 /** Revoke one link. Idempotent: `false` when it was already revoked or is not this community's. */
-export async function revokeInvite(communityId: string, id: bigint): Promise<boolean> {
-  const res = await prisma.communityInvite.updateMany({
-    where: { id, communityId, revokedAt: null },
-    data: { revokedAt: new Date() },
+export async function revokeInvite(
+  communityId: string,
+  id: bigint,
+  actorId: string,
+): Promise<boolean> {
+  return prisma.$transaction(async (tx) => {
+    const res = await tx.communityInvite.updateMany({
+      where: { id, communityId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    if (res.count === 0) return false;
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'invite_revoked',
+      targetType: 'invite',
+      targetId: String(id),
+    });
+    return true;
   });
-  return res.count > 0;
 }
 
 export type AcceptInviteResult =
   | { ok: true; alreadyMember: boolean }
   /** Unknown, revoked, expired, exhausted or another community's code — deliberately indistinguishable. */
-  | { ok: false; reason: 'invalid' };
+  | { ok: false; reason: 'invalid' }
+  /** s06-01: the member has an active ban in this community. */
+  | { ok: false; reason: 'banned'; kind: SanctionKind; endsAt: Date | null };
 
 class RolledBack extends Error {}
 
@@ -157,6 +190,10 @@ export async function acceptInvite(
     select: { id: true },
   });
   if (existing) return { ok: true, alreadyMember: true };
+
+  // A banned member does not get in on a live link (s06-01, BAN_ENFORCEMENT_PATHS).
+  const banned = await activeSanction(communityId, userId);
+  if (banned) return { ok: false, reason: 'banned', kind: banned.kind, endsAt: banned.endsAt };
 
   // A member a moderator removed does not walk back in on a live link (a
   // multi-use code can outlive the removal by months); they ask again instead.
@@ -194,6 +231,7 @@ export async function acceptInvite(
         where: { id: communityId },
         data: { memberCount: { increment: 1 } },
       });
+      await recordMemberEvent(tx, communityId, userId, 'join');
       // A pending request is answered by being let in.
       await tx.communityJoinRequest.updateMany({
         where: { communityId, userId, status: 'PENDING' },

@@ -5,18 +5,8 @@ const XP_PER_STAR = 10;
  * XP for finishing a lesson: 10 per star gained over what the learner already
  * held. A replay, or a worse result, earns nothing.
  */
-export function xpForCompletion(
-  prevStars: number,
-  nextStars: number,
-): number {
-  return (
-    XP_PER_STAR *
-    Math.max(
-      0,
-      nextStars -
-        prevStars,
-    )
-  );
+export function xpForCompletion(prevStars: number, nextStars: number): number {
+  return XP_PER_STAR * Math.max(0, nextStars - prevStars);
 }
 
 export interface StoredResult {
@@ -39,25 +29,10 @@ export function mergeLessonResult(
     score: number;
   },
 ): MergedResult {
-  const prevStars =
-    prev?.stars ??
-    0;
+  const prevStars = prev?.stars ?? 0;
   return {
-    stars:
-      Math.max(
-        prevStars,
-        next.stars,
-      ),
-    bestScore:
-      Math.max(
-        prev?.bestScore ??
-          0,
-        next.score,
-      ),
-    xpAwarded:
-      xpForCompletion(
-        prevStars,
-        next.stars,
-      ),
+    stars: Math.max(prevStars, next.stars),
+    bestScore: Math.max(prev?.bestScore ?? 0, next.score),
+    xpAwarded: xpForCompletion(prevStars, next.stars),
   };
 }

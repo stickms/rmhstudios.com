@@ -13,13 +13,10 @@ import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { prisma } from '@/lib/prisma.server';
 
 /** The report entity type of a Daily score (`lib/moderation/report-schema.ts`). */
-export const MUSIC_SCORE_ENTITY =
-  'music-score';
+export const MUSIC_SCORE_ENTITY = 'music-score';
 
 /** How long one auto report about a learner covers their later perfect runs. */
-const AUTO_DEDUPE_MS =
-  30 *
-  86_400_000;
+const AUTO_DEDUPE_MS = 30 * 86_400_000;
 
 export interface BoardReviewArgs {
   userId: string;
@@ -27,133 +24,72 @@ export interface BoardReviewArgs {
   rowId: string;
   date: string;
   score: number;
-  avgMs:
-    | number
-    | null;
+  avgMs: number | null;
   now: number;
 }
 
 /** File the `[Auto]` report for a run that asks for a look. True when one was filed. */
-export async function fileBoardReview(
-  args: BoardReviewArgs,
-): Promise<boolean> {
+export async function fileBoardReview(args: BoardReviewArgs): Promise<boolean> {
   try {
-    const open =
-      await prisma.contentReport.findFirst(
-        {
-          where:
-            {
-              entityType:
-                MUSIC_SCORE_ENTITY,
-              entityId:
-                args.rowId,
-              status:
-                {
-                  in: [
-                    'PENDING',
-                    'REVIEWING',
-                  ],
-                },
-            },
-          select:
-            {
-              id: true,
-            },
-        },
-      );
-    if (
-      open
-    )
-      return false;
-    const recent =
-      await prisma.contentReport.findFirst(
-        {
-          where:
-            {
-              entityType:
-                MUSIC_SCORE_ENTITY,
-              targetUserId:
-                args.userId,
-              details:
-                {
-                  startsWith:
-                    '[Auto]',
-                },
-              createdAt:
-                {
-                  gte: new Date(
-                    args.now -
-                      AUTO_DEDUPE_MS,
-                  ),
-                },
-            },
-          select:
-            {
-              id: true,
-            },
-        },
-      );
-    if (
-      recent
-    )
-      return false;
-    const admin =
-      await prisma.user.findFirst(
-        {
-          where:
-            {
-              isAdmin: true,
-            },
-          select:
-            {
-              id: true,
-            },
-          orderBy:
-            {
-              createdAt:
-                'asc',
-            },
-        },
-      );
-    if (
-      !admin
-    )
-      return false;
-    const avg =
-      args.avgMs ===
-      null
-        ? 'no right answers'
-        : `a mean answer of ${args.avgMs} ms`;
-    await prisma.contentReport.create(
-      {
-        data: {
-          reporterId:
-            admin.id,
-          entityType:
-            MUSIC_SCORE_ENTITY,
-          entityId:
-            args.rowId,
-          reason:
-            'OTHER',
-          details: `[Auto] RMH Music Daily board: ${args.score} points on ${args.date} with ${avg}. Please check the run looks human; "Resolve & remove content" takes it off the board.`,
-          targetUserId:
-            args.userId,
+    const open = await prisma.contentReport.findFirst({
+      where: {
+        entityType: MUSIC_SCORE_ENTITY,
+        entityId: args.rowId,
+        status: {
+          in: ['PENDING', 'REVIEWING'],
         },
       },
-    );
-    void notifyAdminsOfReview(
-      {
-        preview:
-          'A Daily board score asks for a look (automated check)',
-        kind: 'reports',
+      select: {
+        id: true,
       },
-    );
+    });
+    if (open) return false;
+    const recent = await prisma.contentReport.findFirst({
+      where: {
+        entityType: MUSIC_SCORE_ENTITY,
+        targetUserId: args.userId,
+        details: {
+          startsWith: '[Auto]',
+        },
+        createdAt: {
+          gte: new Date(args.now - AUTO_DEDUPE_MS),
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (recent) return false;
+    const admin = await prisma.user.findFirst({
+      where: {
+        isAdmin: true,
+      },
+      select: {
+        id: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+    if (!admin) return false;
+    const avg = args.avgMs === null ? 'no right answers' : `a mean answer of ${args.avgMs} ms`;
+    await prisma.contentReport.create({
+      data: {
+        reporterId: admin.id,
+        entityType: MUSIC_SCORE_ENTITY,
+        entityId: args.rowId,
+        reason: 'OTHER',
+        details: `[Auto] RMH Music Daily board: ${args.score} points on ${args.date} with ${avg}. Please check the run looks human; "Resolve & remove content" takes it off the board.`,
+        targetUserId: args.userId,
+      },
+    });
+    void notifyAdminsOfReview({
+      preview: 'A Daily board score asks for a look (automated check)',
+      kind: 'reports',
+    });
     return true;
   } catch (err) {
-    console.error(
-      '[rmhmusic] board review report failed:',
-      err,
-    );
+    console.error('[rmhmusic] board review report failed:', err);
     return false;
   }
 }

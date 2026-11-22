@@ -7,25 +7,17 @@
  * a token is `redeemLookupToken`, which `client.ts` calls to build the md_phd request. Nothing here is re-exported by
  * `index.ts` except the types.
  */
-import type {
-  MedProgram,
-  MedResidence,
-  NormalizedEvent,
-} from '../../../engine/types';
+import type { MedProgram, MedResidence, NormalizedEvent } from '../../../engine/types';
 
 declare const lookupTokenBrand: unique symbol;
 
 /** Opaque handle to one feed row's author, redeemable only for the md_phd flag. Serializes to `{}`. */
-export type LookupToken =
-  Readonly<{
-    readonly [lookupTokenBrand]: true;
-  }>;
+export type LookupToken = Readonly<{
+  readonly [lookupTokenBrand]: true;
+}>;
 
 /** What Admit says about a user's MD/PhD flag. UNREADABLE = the profile does not exist or is hidden. */
-export type ProgramFlag =
-  | 'PHD'
-  | 'REG'
-  | 'UNREADABLE';
+export type ProgramFlag = 'PHD' | 'REG' | 'UNREADABLE';
 
 export interface FeedItem {
   event: NormalizedEvent;
@@ -39,30 +31,18 @@ export interface AdmitSchoolRef {
   shortName: string;
   city: string;
   state: string;
-  avgDifficulty:
-    | number
-    | null;
+  avgDifficulty: number | null;
   interviewCount: number;
   /** `null` = Admit published no total (unknown, not zero). */
-  totalInterviewCount:
-    | number
-    | null;
+  totalInterviewCount: number | null;
 }
 
 export interface NormalizedAdmitProfile {
   schoolKey: string;
-  format:
-    | string
-    | null;
-  fileType:
-    | string
-    | null;
-  avgDifficulty:
-    | number
-    | null;
-  interviewCount:
-    | number
-    | null;
+  format: string | null;
+  fileType: string | null;
+  avgDifficulty: number | null;
+  interviewCount: number | null;
   positive: string[];
   negative: string[];
   before: string[];
@@ -71,9 +51,7 @@ export interface NormalizedAdmitProfile {
 export interface NormalizedAdmitQuestion {
   schoolKey: string;
   text: string;
-  votes:
-    | number
-    | null;
+  votes: number | null;
   dedupeHash: string;
 }
 
@@ -81,75 +59,34 @@ export interface NormalizedAdmitStats {
   schoolKey: string;
   residence: MedResidence;
   /** The row's own lowercase `residence_type` as published; the run maps it explicitly and skips a mismatch. */
-  residenceType:
-    | string
-    | null;
+  residenceType: string | null;
   applicationCount: number;
   interviewCount: number;
-  admittedCount:
-    | number
-    | null;
+  admittedCount: number | null;
   /** Fractions 0-1, as published. */
-  applicationToInterviewPct:
-    | number
-    | null;
-  interviewToAdmittedPct:
-    | number
-    | null;
-  gpaMedian:
-    | number
-    | null;
-  mcatMedian:
-    | number
-    | null;
-  researchHours:
-    | number
-    | null;
-  clinicalHours:
-    | number
-    | null;
-  nonClinicalHours:
-    | number
-    | null;
+  applicationToInterviewPct: number | null;
+  interviewToAdmittedPct: number | null;
+  gpaMedian: number | null;
+  mcatMedian: number | null;
+  researchHours: number | null;
+  clinicalHours: number | null;
+  nonClinicalHours: number | null;
 }
 
 export type { MedProgram };
 
-const userIds =
-  new WeakMap<
-    object,
-    string
-  >();
+const userIds = new WeakMap<object, string>();
 
 /** Internal: wrap a user id. Only `client.ts` calls this. */
-export function mintLookupToken(
-  userId: string,
-): LookupToken {
-  const token =
-    Object.freeze(
-      {},
-    ) as LookupToken;
-  userIds.set(
-    token,
-    userId,
-  );
+export function mintLookupToken(userId: string): LookupToken {
+  const token = Object.freeze({}) as LookupToken;
+  userIds.set(token, userId);
   return token;
 }
 
 /** Internal: the user id behind a token, for the one md_phd request. Only `client.ts` calls this. */
-export function redeemLookupToken(
-  token: LookupToken,
-): string {
-  const id =
-    userIds.get(
-      token,
-    );
-  if (
-    id ===
-    undefined
-  )
-    throw new Error(
-      'unknown lookup token',
-    );
+export function redeemLookupToken(token: LookupToken): string {
+  const id = userIds.get(token);
+  if (id === undefined) throw new Error('unknown lookup token');
   return id;
 }

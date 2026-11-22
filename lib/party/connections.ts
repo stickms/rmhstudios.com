@@ -14,24 +14,14 @@ export interface GridSummary {
   id: string;
   title: string;
   author: {
-    name:
-      | string
-      | null;
-    handle:
-      | string
-      | null;
+    name: string | null;
+    handle: string | null;
   } | null;
   plays: number;
-  solveRate:
-    | number
-    | null;
-  rating:
-    | number
-    | null;
+  solveRate: number | null;
+  rating: number | null;
   ratingCount: number;
-  dailyDate:
-    | string
-    | null;
+  dailyDate: string | null;
 }
 
 export interface GridPlayView extends GridSummary {
@@ -44,80 +34,22 @@ export interface GridPlayView extends GridSummary {
     items: string[];
   }[];
   mistakes: number;
-  status:
-    | 'active'
-    | 'solved'
-    | 'failed';
-  myRating:
-    | number
-    | null;
+  status: 'active' | 'solved' | 'failed';
+  myRating: number | null;
   /** Revealed once the play is finished (or to the author). */
-  solution:
-    | GridGroup[]
-    | null;
+  solution: GridGroup[] | null;
 }
 
 /** Order used to rank "top rated": average rating, then solve rate. */
-export function gridScore(
-  g: Pick<
-    GridSummary,
-    | 'rating'
-    | 'ratingCount'
-    | 'solveRate'
-  >,
-): number {
-  if (
-    g.rating ==
-      null ||
-    g.ratingCount <
-      MIN_RATINGS_FOR_RANK
-  )
-    return -1;
-  return (
-    g.rating *
-      10 +
-    (g.solveRate ??
-      0)
-  );
+export function gridScore(g: Pick<GridSummary, 'rating' | 'ratingCount' | 'solveRate'>): number {
+  if (g.rating == null || g.ratingCount < MIN_RATINGS_FOR_RANK) return -1;
+  return g.rating * 10 + (g.solveRate ?? 0);
 }
 
 /** Emoji result for sharing: one row per guess is not stored, so rows are the groups found. */
-export function shareText(
-  title: string,
-  view: Pick<
-    GridPlayView,
-    | 'found'
-    | 'mistakes'
-    | 'status'
-  >,
-  url: string,
-) {
-  const sq =
-    [
-      '🟨',
-      '🟩',
-      '🟦',
-      '🟪',
-    ];
-  const rows =
-    view.found
-      .map(
-        (
-          f,
-        ) =>
-          sq[
-            f.index %
-              4
-          ].repeat(
-            4,
-          ),
-      )
-      .join(
-        '\n',
-      );
-  const miss =
-    '❌'.repeat(
-      view.mistakes,
-    );
+export function shareText(title: string, view: Pick<GridPlayView, 'found' | 'mistakes' | 'status'>, url: string) {
+  const sq = ['🟨', '🟩', '🟦', '🟪'];
+  const rows = view.found.map((f) => sq[f.index % 4].repeat(4)).join('\n');
+  const miss = '❌'.repeat(view.mistakes);
   return `RMHConnections "${title}" ${view.status === 'solved' ? '✅' : '💀'}\n${rows}${miss ? `\n${miss}` : ''}\n${url}`;
 }

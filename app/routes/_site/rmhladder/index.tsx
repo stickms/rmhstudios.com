@@ -23,6 +23,7 @@ import { StatBlock } from '@/components/rmhladder/StatBlock';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { EmptyState } from '@/components/ui/empty-state';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 
@@ -122,7 +123,7 @@ function QuickList({
   );
 }
 
-function OverviewPage() {
+function OverviewPage() { const fmt = useLocaleFormat(); 
   const { overview, topRows, expiringRows, isAdmin, isAuthenticated } = Route.useLoaderData();
   const { t } = useTranslation('site');
   const lastRun = useLastRunLine(overview.lastRun);
@@ -193,7 +194,7 @@ function OverviewPage() {
             <span className="rl-quicklist__meta rl-mono rl-expiring">
               <Flag className="size-3" aria-hidden />
               {row.applicationDeadline
-                ? new Date(row.applicationDeadline as Date).toLocaleDateString('en-US', {
+                ? fmt.date(new Date(row.applicationDeadline as Date), {
                     month: 'short',
                     day: 'numeric',
                   })

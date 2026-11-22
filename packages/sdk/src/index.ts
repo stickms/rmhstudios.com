@@ -50,7 +50,7 @@ export interface ListMyBookmarksArgs {
   cursor?: string;
 }
 
-export type ListMyBookmarksResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string }; bookmarkedAt: string }[]; nextCursor: string | null };
+export type ListMyBookmarksResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string }; bookmarkedAt: string }[]; nextCursor: string | null };
 
 export interface ListMyFollowingArgs {
   /** Page size, 1–50 (default 20). */
@@ -77,7 +77,7 @@ export interface ListMyPostsArgs {
   cursor?: string;
 }
 
-export type ListMyPostsResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number } }[]; nextCursor: string };
+export type ListMyPostsResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null }[]; nextCursor: string };
 
 export interface CreatePostBody {
   /** 1–280 characters. Optional if at least one `media_ids` entry is supplied. */
@@ -86,6 +86,14 @@ export interface CreatePostBody {
   media_ids?: string[];
   /** `PUBLIC` (default), `FOLLOWERS`, or `PRIVATE`. */
   audience?: string;
+  /** Post into this community instead of only your timeline. Needs the `write:communities` scope as well as `write:posts`, and you must be a member. The community's own rules apply (flair, verification, AutoMod, image descriptions, bans and timeouts): a held post answers `202` with `{ "status": "held", "id": … }`, an AutoMod removal `422` with the rule name, and a refusal the gate's `code` (a ban or timeout also carries `endsAt`). */
+  communityId?: string;
+  /** A flair of that community (needs `communityId`); required when the community requires one. */
+  flairId?: string;
+  /** With `communityId`: a description for each `media_ids` image, in order. A community can require one on every image. */
+  media_alts?: string[];
+  /** A poll on the post (not with `communityId`): `question`, 2 to 4 `options` (strings), optional `multiSelect` and `durationHours` (1 to 720). A quiz adds `quiz: true`, `correctIndex` (the zero-based position of the one correct option) and an optional `explanation` of at most 280 characters; a quiz is single choice, so it cannot also set `multiSelect`. A post may carry just a poll, with no `content`. */
+  poll?: { question: string; options: string[]; multiSelect?: boolean; durationHours?: number; quiz?: boolean; correctIndex?: number; explanation?: string };
 }
 
 export interface CreatePostArgs {
@@ -101,7 +109,7 @@ export interface GetPostArgs {
   id: string;
 }
 
-export type GetPostResponse = { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } };
+export type GetPostResponse = { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null; poll: { id: string; question: string; multiSelect: boolean; ranked: boolean; quiz: boolean; correctOptionId: string | null; explanation: string | null; ended: boolean; closesAt: string | null; options: { id: string; text: string }[]; result: { winnerOptionId: string | null; percentOnly: boolean; rounds: { tally: Record<string, number>; eliminatedOptionId: string | null }[] } | null } | null; author: { id: string; name: string; handle: string; image: string } };
 
 export interface DeletePostArgs {
   /** The post id. */
@@ -181,7 +189,7 @@ export interface GetFeedArgs {
   cursor?: string;
 }
 
-export type GetFeedResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string };
+export type GetFeedResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string };
 
 export interface GetUserArgs {
   /** The user’s handle (without @). */
@@ -199,7 +207,7 @@ export interface ListUserPostsArgs {
   cursor?: string;
 }
 
-export type ListUserPostsResponse = { data: { id: string; content: string; audience: string; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string | null };
+export type ListUserPostsResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string | null };
 
 export interface ListUserFollowersArgs {
   /** The user’s handle. */
@@ -263,7 +271,7 @@ export interface GetBuildArgs {
   slug: string;
 }
 
-export type GetBuildResponse = { slug: string; title: string; description: string; readme: string; repoUrl: unknown; demoUrl: unknown; author: { id: string; name: string; handle: string; image: string }; technologies: string[]; metrics: { likes: number; comments: number; views: number } };
+export type GetBuildResponse = { slug: string; title: string; description: string; readme: string; repoUrl: unknown; demoUrl: unknown; thumbnailAlt: string | null; screenshots: { url: string; width: number; height: number; description: string }[]; author: { id: string; name: string; handle: string; image: string }; technologies: string[]; metrics: { likes: number; comments: number; views: number }; versions: { version: string; changelog: string; createdAt: string }[]; releases: { version: string; changelog: string; commitHash: string; createdAt: string }[] };
 
 export interface ListBlogArgs {
   /** Page size, 1–50 (default 20). */
@@ -307,6 +315,39 @@ export interface GetLeaderboardArgs {
 }
 
 export type GetLeaderboardResponse = { game: string; metric: string; data: { rank: number; username: string; score: number; gamesPlayed: number }[] };
+
+export type ListGamesResponse = { data: { id: string; title: string; description: string; href: string; multiplayer: boolean; tags: string[] }[] };
+
+export type ListMyGamesResponse = { data: { gameId: string; totalMinutes: number; lastPlayedAt: string; minutesLast7Days: number; minutesLast30Days: number }[] };
+
+export interface GetMyGameDaysArgs {
+  /** A game id from `GET /api/v1/games`. */
+  gameId: string;
+  /** First day, ISO date `YYYY-MM-DD` (default: 29 days before `to`). */
+  from?: string;
+  /** Last day, ISO date `YYYY-MM-DD` (default: today, UTC). */
+  to?: string;
+}
+
+export type GetMyGameDaysResponse = { gameId: string; from: string; to: string; data: { date: string; minutes: number }[] };
+
+export interface ListMyAchievementsArgs {
+  /** Only achievements for this game id. */
+  gameId?: string;
+  /** Page size, 1–100 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyAchievementsResponse = { data: { id: string; gameId: string; title: string; unlockedAt: string; rarityPercent: number }[]; nextCursor: string | null };
+
+export interface ListUserGamesArgs {
+  /** The member’s handle, with or without a leading `@`. */
+  handle: string;
+}
+
+export type ListUserGamesResponse = { data: { gameId: string; totalMinutes: number; lastPlayedAt: string; minutesLast7Days: number; minutesLast30Days: number }[] };
 
 export type ListWebhooksResponse = { data: { id: string; url: string; events: string[]; enabled: boolean; createdAt: string }[] };
 
@@ -359,6 +400,571 @@ export interface DeleteWebhookArgs {
 }
 
 export type GetOpenApiResponse = { openapi: string; info: { title: string; version: string } };
+
+export interface ListMyPersonalBestsArgs {
+  /** Only this game. */
+  gameId?: string;
+  /** ISO 8601 time; only games whose current best was set at or after it. */
+  since?: string;
+  /** Page size, 1–100 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyPersonalBestsResponse = { data: { gameId: string; gameTitle: string; score: number; previousScore: number | null; achievedAt: string }[]; nextCursor: string | null };
+
+export interface ListMyDecksArgs {
+  /** Page size, 1–100 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyDecksResponse = { data: { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; suspended: number; updatedAt: string }[]; nextCursor: string | null };
+
+export interface CreateMyDeckBody {
+  /** 1–100 characters. */
+  title?: string;
+  /** Up to 500 characters. */
+  description?: string;
+  /** List the deck in the public marketplace (default false). */
+  isPublic?: boolean;
+}
+
+export interface CreateMyDeckArgs {
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateMyDeckBody;
+}
+
+export type CreateMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; suspended: number; updatedAt: string };
+
+export interface GetMyDeckArgs {
+  /** The deck id. */
+  id: string;
+}
+
+export type GetMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; suspended: number; updatedAt: string };
+
+export interface UpdateMyDeckBody {
+  /** 1–100 characters. */
+  title?: string;
+  /** Up to 500 characters; empty clears it. */
+  description?: string;
+  /** Public in the marketplace. */
+  isPublic?: boolean;
+}
+
+export interface UpdateMyDeckArgs {
+  /** The deck id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyDeckBody;
+}
+
+export type UpdateMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; suspended: number; updatedAt: string };
+
+export interface DeleteMyDeckArgs {
+  /** The deck id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface ListMyDeckCardsArgs {
+  /** The deck id. */
+  id: string;
+  /** Page size, 1–100 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null }[]; nextCursor: string | null };
+
+export interface CreateMyDeckCardsBody {
+  /** 1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. */
+  cards?: string[];
+}
+
+export interface CreateMyDeckCardsArgs {
+  /** The deck id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateMyDeckCardsBody;
+}
+
+export type CreateMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null }[]; cardCount: number };
+
+export interface UpdateMyDeckCardBody {
+  /** `basic`, `reversible` or `cloze`. */
+  kind?: string;
+  /** The front (a cloze card’s whole text). */
+  front?: string;
+  /** The back. */
+  back?: string;
+  /** A picture for this side: `{ media_id, alt }`, where `media_id` is an upload of yours from `POST /api/v1/images` with `surface=flashcard` and `alt` is the description a screen reader reads (required, up to 1,000 characters). `null` removes the picture. A cloze card takes a picture on the back only. You can have pictures on at most 500 cards. */
+  frontImage?: Record<string, unknown>;
+  /** The picture on the back, the same shape as `frontImage`. */
+  backImage?: Record<string, unknown>;
+}
+
+export interface UpdateMyDeckCardArgs {
+  /** The deck id. */
+  id: string;
+  /** The card id. */
+  cardId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyDeckCardBody;
+}
+
+export type UpdateMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null };
+
+export interface DeleteMyDeckCardArgs {
+  /** The deck id. */
+  id: string;
+  /** The card id. */
+  cardId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface UpsertMyDeckCardBody {
+  /** `basic` (default), `reversible` or `cloze`. */
+  kind?: string;
+  /** The front. */
+  front?: string;
+  /** The back (not used by cloze cards). */
+  back?: string;
+  /** A picture for this side: `{ media_id, alt }`, where `media_id` is an upload of yours from `POST /api/v1/images` with `surface=flashcard` and `alt` is the description a screen reader reads (required, up to 1,000 characters). `null` removes the picture. A cloze card takes a picture on the back only. You can have pictures on at most 500 cards. A side you leave out keeps its picture. */
+  frontImage?: Record<string, unknown>;
+  /** The picture on the back, the same shape as `frontImage`. */
+  backImage?: Record<string, unknown>;
+}
+
+export interface UpsertMyDeckCardArgs {
+  /** The deck id. */
+  id: string;
+  /** Your own id for the card, up to 100 characters, unique in the deck. */
+  externalId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpsertMyDeckCardBody;
+}
+
+export type UpsertMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null };
+
+export interface GetMyDeckDueArgs {
+  /** The deck id. */
+  id: string;
+}
+
+export type GetMyDeckDueResponse = { deckId: string; dueNow: number; dueNext24h: number; asOf: string };
+
+export interface ListEventsArgs {
+  /** Start of the window, an ISO 8601 date or timestamp (default now). */
+  from?: string;
+  /** End of the window (default 31 days after `from`; at most 31 days after it). */
+  to?: string;
+  /** Only events of this community (id or slug). */
+  community?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListEventsResponse = { data: { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null }[]; nextCursor: string | null };
+
+export interface GetEventArgs {
+  /** The event id. */
+  id: string;
+}
+
+export type GetEventResponse = { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null; nextOccurrences: { occurrence: string; startsAt: string; endsAt: string; state: string; note: string }[]; updates: { id: string; body: string; occurrence: string | null; createdAt: string }[] };
+
+export interface ListEventAttendeesArgs {
+  /** The event id. */
+  id: string;
+  /** The date's original start, an ISO 8601 timestamp (repeating events). */
+  occurrence?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListEventAttendeesResponse = { data: { id: string; handle: string; name: string; status: string }[]; nextCursor: string | null };
+
+export interface ListMyEventsArgs {
+  /** Start of the window, an ISO 8601 date or timestamp (default now). */
+  from?: string;
+  /** End of the window (default 31 days after `from`; at most 31 days after it). */
+  to?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyEventsResponse = { data: { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null }[]; nextCursor: string | null };
+
+export interface RsvpToEventBody {
+  /** `going` or `maybe`. */
+  status?: string;
+  /** The date's original start, an ISO 8601 timestamp (repeating events). */
+  occurrence?: string;
+  /** Answer for every date of a repeating event. */
+  everyTime?: boolean;
+}
+
+export interface RsvpToEventArgs {
+  /** The event id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: RsvpToEventBody;
+}
+
+export type RsvpToEventResponse = { eventId: string; status: string; occurrence: string | null; everyTime: boolean; counts: { going: number; maybe: number; waitlisted: number }; waitlistPosition: number | null };
+
+export interface CancelEventRsvpArgs {
+  /** The event id. */
+  id: string;
+  /** The date's original start, an ISO 8601 timestamp (repeating events). */
+  occurrence?: string;
+  /** `true` to leave the whole series. */
+  everyTime?: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type CancelEventRsvpResponse = { eventId: string; status: string; occurrence: string | null; everyTime: boolean; counts: { going: number; maybe: number; waitlisted: number }; waitlistPosition: number | null };
+
+export interface ListMyCommunitiesArgs {
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyCommunitiesResponse = { data: { id: string; slug: string; name: string; icon: string; isPrivate: boolean; memberCount: number; role: string; joinedAt: string }[]; nextCursor: string | null };
+
+export interface GetCommunityArgs {
+  /** The community slug. */
+  slug: string;
+}
+
+export type GetCommunityResponse = { id: string; slug: string; name: string; description: string; icon: string; color: string; isPrivate: boolean; memberCount: number; createdAt: string; isMember: boolean; role: string; posting: { verification: { level: string; value: number }; flairRequired: boolean; requireImageAlt: boolean }; flairs: { id: string; name: string; color: string }[] };
+
+export interface GetCommunityRulesArgs {
+  /** The community slug. */
+  slug: string;
+}
+
+export type GetCommunityRulesResponse = { data: { id: string; position: number; title: string; description: string }[] };
+
+export interface ListCommunityPostsArgs {
+  /** The community slug. */
+  slug: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+  /** Only posts with this flair id. */
+  flair?: string;
+}
+
+export type ListCommunityPostsResponse = { data: { id: string; content: string; imageUrls: unknown[]; imageAlts: unknown[]; gifUrl: string | null; gifAlt: string | null; sensitive: boolean; contentWarning: string | null; pinnedReplyId: string | null; createdAt: string; author: { id: string; name: string; handle: string; image: string }; metrics: { likes: number; comments: number; reposts: number; views: number }; flair: { id: string; name: string; color: string } }[]; nextCursor: string | null };
+
+export interface ListMyHighlightsArgs {
+  /** Page size, 1–100 (default 30). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor`. */
+  cursor?: string;
+  /** Only `library`, `blog` or `news` highlights. */
+  kind?: string;
+  /** Only highlights updated after this ISO 8601 instant, oldest update first. */
+  since?: string;
+  /** `true` for highlights with a note, `false` for those without. */
+  hasNote?: boolean;
+  /** `public` or `private`. */
+  visibility?: string;
+}
+
+export type ListMyHighlightsResponse = { data: { id: string; kind: string; key: string; document: { title: string; url: string } | null; quote: string; note: string | null; isPublic: boolean; createdAt: string; updatedAt: string }[]; nextCursor: string | null };
+
+export interface UpdateMyHighlightBody {
+  /** Up to 2000 characters; null or empty clears it. */
+  note?: string;
+  /** Show the highlight and its note publicly. */
+  isPublic?: boolean;
+}
+
+export interface UpdateMyHighlightArgs {
+  /** The highlight id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyHighlightBody;
+}
+
+export type UpdateMyHighlightResponse = { id: string; kind: string; key: string; document: { title: string; url: string } | null; quote: string; note: string | null; isPublic: boolean; createdAt: string; updatedAt: string };
+
+export interface DeleteMyHighlightArgs {
+  /** The highlight id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface ListMyShelvesArgs {
+  /** `want`, `reading` or `read`. */
+  shelf?: string;
+}
+
+export type ListMyShelvesResponse = { data: { slug: string; title: string; shelf: string; pages: number; finishedAt: string | null; updatedAt: string }[] };
+
+export interface SetMyShelfBody {
+  /** `want`, `reading` or `read`. */
+  shelf?: string;
+  /** Page count, used only when the book has none of its own. */
+  pages?: number;
+  /** ISO 8601 finish date; only with `read`, not in the future. */
+  finishedAt?: string;
+}
+
+export interface SetMyShelfArgs {
+  /** The library book slug. */
+  slug: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: SetMyShelfBody;
+}
+
+export type SetMyShelfResponse = { slug: string; title: string; shelf: string; pages: number; finishedAt: string | null; updatedAt: string };
+
+export interface RemoveMyShelfArgs {
+  /** The library book slug. */
+  slug: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface GetMyReadingGoalArgs {
+  /** The year, 2000–2200 (default the current UTC year). */
+  year?: number;
+}
+
+export type GetMyReadingGoalResponse = { year: number; goal: { unit: 'books' | 'pages'; target: number; books: number; pages: number; done: number } | null };
+
+export interface ListTournamentsArgs {
+  /** Only tournaments in this status. */
+  status?: string;
+  /** Only tournaments of this game id. */
+  game?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListTournamentsResponse = { data: { id: string; name: string; gameId: string; gameTitle: string | null; format: string; status: string; entryFeeCoins: number; prizePoolCoins: number; minPlayers: number; maxPlayers: number; playerCount: number; swissRounds: number | null; seeding: string; startsAt: string | null; checkInMinutes: number | null; checkInOpensAt: string | null; matchDeadlineHours: number | null; startedAt: string | null; completedAt: string | null; createdAt: string; host: { handle: string; name: string } }[]; nextCursor: string | null };
+
+export interface GetTournamentArgs {
+  /** The tournament id. */
+  id: string;
+}
+
+export type GetTournamentResponse = { id: string; name: string; gameId: string; gameTitle: string | null; format: string; status: string; entryFeeCoins: number; prizePoolCoins: number; minPlayers: number; maxPlayers: number; playerCount: number; swissRounds: number | null; seeding: string; startsAt: string | null; checkInMinutes: number | null; checkInOpensAt: string | null; matchDeadlineHours: number | null; startedAt: string | null; completedAt: string | null; createdAt: string; host: { handle: string; name: string }; you: { entered: boolean; checkedIn: boolean } };
+
+export interface ListTournamentMatchesArgs {
+  /** The tournament id. */
+  id: string;
+  /** Page size, 1–200 (default 100). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListTournamentMatchesResponse = { data: { id: string; round: number; slot: number; bracket: string; state: string; playerA: { entrantId: string; seed: number | null; handle: string; name: string } | null; playerB: { entrantId: string; seed: number | null; handle: string; name: string } | null; winnerEntrantId: string | null; resultSource: string | null; scheduledAt: string | null; deadlineAt: string | null; claim: { state: 'open' | 'disputed'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null }[]; nextCursor: string | null };
+
+export interface ListMyTournamentsArgs {
+  /** Only tournaments in this status. */
+  status?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyTournamentsResponse = { data: { tournament: { id: string; name: string; gameId: string; gameTitle: string | null; format: string; status: string; entryFeeCoins: number; prizePoolCoins: number; minPlayers: number; maxPlayers: number; playerCount: number; swissRounds: number | null; seeding: string; startsAt: string | null; checkInMinutes: number | null; checkInOpensAt: string | null; matchDeadlineHours: number | null; startedAt: string | null; completedAt: string | null; createdAt: string; host: { handle: string; name: string } }; entry: { entrantId: string; seed: number | null; placement: number | null; checkedIn: boolean; wins: number; losses: number }; nextMatch: { id: string; round: number; slot: number; bracket: string; state: string; playerA: { entrantId: string; seed: number | null; handle: string; name: string } | null; playerB: { entrantId: string; seed: number | null; handle: string; name: string } | null; winnerEntrantId: string | null; resultSource: string | null; scheduledAt: string | null; deadlineAt: string | null; claim: { state: 'open' | 'disputed'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null } | null }[]; nextCursor: string | null };
+
+export interface CheckInToTournamentArgs {
+  /** The tournament id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type CheckInToTournamentResponse = { tournamentId: string; checkedIn: boolean };
+
+export interface ClaimTournamentMatchResultBody {
+  /** `me` or `opponent`. */
+  winner?: string;
+}
+
+export interface ClaimTournamentMatchResultArgs {
+  /** The tournament id. */
+  id: string;
+  /** The match id. */
+  matchId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: ClaimTournamentMatchResultBody;
+}
+
+export type ClaimTournamentMatchResultResponse = { status: string; settled: boolean; tournamentComplete: boolean };
+
+export interface ConfirmTournamentMatchResultArgs {
+  /** The tournament id. */
+  id: string;
+  /** The match id. */
+  matchId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type ConfirmTournamentMatchResultResponse = { settled: boolean; tournamentComplete: boolean };
+
+export interface WithdrawTournamentMatchResultArgs {
+  /** The tournament id. */
+  id: string;
+  /** The match id. */
+  matchId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type WithdrawTournamentMatchResultResponse = { withdrawn: boolean };
+
+export interface ListMyScheduledArgs {
+  /** Filter: `draft`, `scheduled` or `capsule`. */
+  kind?: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyScheduledResponse = { data: { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string }[]; nextCursor: string | null };
+
+export interface CreateMyScheduledBody {
+  /** The post text, up to 1,000 characters. A post needs text, a poll or an image. */
+  content?: string;
+  /** ISO 8601 time to publish, UTC. 2 minutes to 365 days ahead. Absent or null saves a draft. */
+  scheduledAt?: string;
+  /** `PUBLIC` (default), `FOLLOWERS` or `PRIVATE`. */
+  audience?: string;
+  /** `EVERYONE` (default), `FOLLOWING` or `MENTIONED`. */
+  replyControl?: string;
+  /** A reason for a content warning, 1–80 characters on one line; null removes it. */
+  contentWarning?: string;
+  /** Up to 4 ids from `POST /api/v1/images`, your own uploads. */
+  media_ids?: string[];
+  /** A description per image, in the same order, up to 1,000 characters each. */
+  media_alts?: string[];
+  /** A poll (`question`, `options`, optionally `multiSelect`, `ranked`, `durationHours`, or a quiz). Cannot be combined with `communityId`. */
+  poll?: { question: string; options: string[]; multiSelect?: boolean; durationHours?: number; quiz?: boolean; correctIndex?: number; explanation?: string };
+  /** Post into a community you belong to. Needs `write:communities` too, and the community gate (membership, bans, flair, descriptions, AutoMod) runs when you save. */
+  communityId?: string;
+}
+
+export interface CreateMyScheduledArgs {
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateMyScheduledBody;
+}
+
+export type CreateMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+
+export interface GetMyScheduledArgs {
+  /** The draft or scheduled post id. */
+  id: string;
+}
+
+export type GetMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+
+export interface UpdateMyScheduledBody {
+  /** The post text, up to 1,000 characters. A post needs text, a poll or an image. */
+  content?: string;
+  /** ISO 8601 time to publish, UTC. 2 minutes to 365 days ahead. Absent or null saves a draft. */
+  scheduledAt?: string;
+  /** `PUBLIC` (default), `FOLLOWERS` or `PRIVATE`. */
+  audience?: string;
+  /** `EVERYONE` (default), `FOLLOWING` or `MENTIONED`. */
+  replyControl?: string;
+  /** A reason for a content warning, 1–80 characters on one line; null removes it. */
+  contentWarning?: string;
+  /** Up to 4 ids from `POST /api/v1/images`, your own uploads. */
+  media_ids?: string[];
+  /** A description per image, in the same order, up to 1,000 characters each. */
+  media_alts?: string[];
+  /** A poll (`question`, `options`, optionally `multiSelect`, `ranked`, `durationHours`, or a quiz). Cannot be combined with `communityId`. */
+  poll?: { question: string; options: string[]; multiSelect?: boolean; durationHours?: number; quiz?: boolean; correctIndex?: number; explanation?: string };
+  /** Post into a community you belong to. Needs `write:communities` too, and the community gate (membership, bans, flair, descriptions, AutoMod) runs when you save. */
+  communityId?: string;
+}
+
+export interface UpdateMyScheduledArgs {
+  /** The draft or scheduled post id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyScheduledBody;
+}
+
+export type UpdateMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+
+export interface DeleteMyScheduledArgs {
+  /** The draft or scheduled post id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface PublishMyScheduledArgs {
+  /** The draft or scheduled post id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type PublishMyScheduledResponse = { published: boolean; postId: string };
+
+export interface SearchPostsArgs {
+  /** The query, 1–200 characters. Free text plus the site's operators: `from:@handle`, `in:community-slug`, `has:media`, `before:YYYY-MM-DD`, `after:YYYY-MM-DD`. Operators alone return matching posts newest first. */
+  q: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. Ranked results page through the best 120 matches. */
+  cursor?: string;
+}
+
+export type SearchPostsResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string | null };
+
+export interface SearchPeopleArgs {
+  /** A name, handle or display name, 1–100 characters. */
+  q: string;
+  /** Page size, 1–25 (default 10). */
+  limit?: number;
+}
+
+export type SearchPeopleResponse = { data: { id: string; name: string; handle: string; image: string; bio: string | null; location: string | null; website: string | null; createdAt: string }[]; nextCursor: string | null };
 
 export class RmhClient {
   private apiKey: string;
@@ -546,6 +1152,31 @@ export class RmhClient {
     return this.request<GetLeaderboardResponse>("GET", { path: "/api/v1/leaderboards/{game}", pathParams: { game: args.game }, query: { limit: args.limit } });
   }
 
+  /** List games (scope: none) */
+  listGames(): Promise<ListGamesResponse> {
+    return this.request<ListGamesResponse>("GET", { path: "/api/v1/games" });
+  }
+
+  /** List your played games (scope: read:games) */
+  listMyGames(): Promise<ListMyGamesResponse> {
+    return this.request<ListMyGamesResponse>("GET", { path: "/api/v1/me/games" });
+  }
+
+  /** Get your minutes per day for a game (scope: read:games) */
+  getMyGameDays(args: GetMyGameDaysArgs): Promise<GetMyGameDaysResponse> {
+    return this.request<GetMyGameDaysResponse>("GET", { path: "/api/v1/me/games/{gameId}/days", pathParams: { gameId: args.gameId }, query: { from: args.from, to: args.to } });
+  }
+
+  /** List your achievements (scope: read:games) */
+  listMyAchievements(args: ListMyAchievementsArgs = {}): Promise<ListMyAchievementsResponse> {
+    return this.request<ListMyAchievementsResponse>("GET", { path: "/api/v1/me/achievements", query: { gameId: args.gameId, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List a member’s played games (scope: read:games) */
+  listUserGames(args: ListUserGamesArgs): Promise<ListUserGamesResponse> {
+    return this.request<ListUserGamesResponse>("GET", { path: "/api/v1/users/{handle}/games", pathParams: { handle: args.handle } });
+  }
+
   /** List webhook endpoints (scope: manage:webhooks) */
   listWebhooks(): Promise<ListWebhooksResponse> {
     return this.request<ListWebhooksResponse>("GET", { path: "/api/v1/webhooks" });
@@ -574,5 +1205,230 @@ export class RmhClient {
   /** OpenAPI document (scope: none) */
   getOpenApi(): Promise<GetOpenApiResponse> {
     return this.request<GetOpenApiResponse>("GET", { path: "/api/v1/openapi.json" });
+  }
+
+  /** List your personal bests (scope: read:games) */
+  listMyPersonalBests(args: ListMyPersonalBestsArgs = {}): Promise<ListMyPersonalBestsResponse> {
+    return this.request<ListMyPersonalBestsResponse>("GET", { path: "/api/v1/me/personal-bests", query: { gameId: args.gameId, since: args.since, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List your decks (scope: read:study) */
+  listMyDecks(args: ListMyDecksArgs = {}): Promise<ListMyDecksResponse> {
+    return this.request<ListMyDecksResponse>("GET", { path: "/api/v1/me/decks", query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Create a deck (scope: write:study) */
+  createMyDeck(args: CreateMyDeckArgs): Promise<CreateMyDeckResponse> {
+    return this.request<CreateMyDeckResponse>("POST", { path: "/api/v1/me/decks", body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Get a deck (scope: read:study) */
+  getMyDeck(args: GetMyDeckArgs): Promise<GetMyDeckResponse> {
+    return this.request<GetMyDeckResponse>("GET", { path: "/api/v1/me/decks/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Update a deck (scope: write:study) */
+  updateMyDeck(args: UpdateMyDeckArgs): Promise<UpdateMyDeckResponse> {
+    return this.request<UpdateMyDeckResponse>("PATCH", { path: "/api/v1/me/decks/{id}", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Delete a deck (scope: write:study) */
+  deleteMyDeck(args: DeleteMyDeckArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/decks/{id}", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List a deck’s cards (scope: read:study) */
+  listMyDeckCards(args: ListMyDeckCardsArgs): Promise<ListMyDeckCardsResponse> {
+    return this.request<ListMyDeckCardsResponse>("GET", { path: "/api/v1/me/decks/{id}/cards", pathParams: { id: args.id }, query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Add cards (scope: write:study) */
+  createMyDeckCards(args: CreateMyDeckCardsArgs): Promise<CreateMyDeckCardsResponse> {
+    return this.request<CreateMyDeckCardsResponse>("POST", { path: "/api/v1/me/decks/{id}/cards", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Update a card (scope: write:study) */
+  updateMyDeckCard(args: UpdateMyDeckCardArgs): Promise<UpdateMyDeckCardResponse> {
+    return this.request<UpdateMyDeckCardResponse>("PATCH", { path: "/api/v1/me/decks/{id}/cards/{cardId}", pathParams: { id: args.id, cardId: args.cardId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Delete a card (scope: write:study) */
+  deleteMyDeckCard(args: DeleteMyDeckCardArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/decks/{id}/cards/{cardId}", pathParams: { id: args.id, cardId: args.cardId }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Create or update a card by external id (scope: write:study) */
+  upsertMyDeckCard(args: UpsertMyDeckCardArgs): Promise<UpsertMyDeckCardResponse> {
+    return this.request<UpsertMyDeckCardResponse>("PUT", { path: "/api/v1/me/decks/{id}/cards/by-external-id/{externalId}", pathParams: { id: args.id, externalId: args.externalId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Get due counts (scope: read:study) */
+  getMyDeckDue(args: GetMyDeckDueArgs): Promise<GetMyDeckDueResponse> {
+    return this.request<GetMyDeckDueResponse>("GET", { path: "/api/v1/me/decks/{id}/due", pathParams: { id: args.id } });
+  }
+
+  /** List events (scope: read:events) */
+  listEvents(args: ListEventsArgs = {}): Promise<ListEventsResponse> {
+    return this.request<ListEventsResponse>("GET", { path: "/api/v1/events", query: { from: args.from, to: args.to, community: args.community, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Get an event (scope: read:events) */
+  getEvent(args: GetEventArgs): Promise<GetEventResponse> {
+    return this.request<GetEventResponse>("GET", { path: "/api/v1/events/{id}", pathParams: { id: args.id } });
+  }
+
+  /** List attendees (scope: read:events) */
+  listEventAttendees(args: ListEventAttendeesArgs): Promise<ListEventAttendeesResponse> {
+    return this.request<ListEventAttendeesResponse>("GET", { path: "/api/v1/events/{id}/attendees", pathParams: { id: args.id }, query: { occurrence: args.occurrence, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List your events (scope: read:events) */
+  listMyEvents(args: ListMyEventsArgs = {}): Promise<ListMyEventsResponse> {
+    return this.request<ListMyEventsResponse>("GET", { path: "/api/v1/me/events", query: { from: args.from, to: args.to, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** RSVP to an event (scope: write:events) */
+  rsvpToEvent(args: RsvpToEventArgs): Promise<RsvpToEventResponse> {
+    return this.request<RsvpToEventResponse>("PUT", { path: "/api/v1/events/{id}/rsvp", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Cancel your RSVP (scope: write:events) */
+  cancelEventRsvp(args: CancelEventRsvpArgs): Promise<CancelEventRsvpResponse> {
+    return this.request<CancelEventRsvpResponse>("DELETE", { path: "/api/v1/events/{id}/rsvp", pathParams: { id: args.id }, query: { occurrence: args.occurrence, everyTime: args.everyTime }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your communities (scope: read:communities) */
+  listMyCommunities(args: ListMyCommunitiesArgs = {}): Promise<ListMyCommunitiesResponse> {
+    return this.request<ListMyCommunitiesResponse>("GET", { path: "/api/v1/me/communities", query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Get a community (scope: read:communities) */
+  getCommunity(args: GetCommunityArgs): Promise<GetCommunityResponse> {
+    return this.request<GetCommunityResponse>("GET", { path: "/api/v1/communities/{slug}", pathParams: { slug: args.slug } });
+  }
+
+  /** Get a community's rules (scope: read:communities) */
+  getCommunityRules(args: GetCommunityRulesArgs): Promise<GetCommunityRulesResponse> {
+    return this.request<GetCommunityRulesResponse>("GET", { path: "/api/v1/communities/{slug}/rules", pathParams: { slug: args.slug } });
+  }
+
+  /** List a community's posts (scope: read:communities) */
+  listCommunityPosts(args: ListCommunityPostsArgs): Promise<ListCommunityPostsResponse> {
+    return this.request<ListCommunityPostsResponse>("GET", { path: "/api/v1/communities/{slug}/posts", pathParams: { slug: args.slug }, query: { limit: args.limit, cursor: args.cursor, flair: args.flair } });
+  }
+
+  /** List your highlights and notes (scope: read:reading) */
+  listMyHighlights(args: ListMyHighlightsArgs = {}): Promise<ListMyHighlightsResponse> {
+    return this.request<ListMyHighlightsResponse>("GET", { path: "/api/v1/me/highlights", query: { limit: args.limit, cursor: args.cursor, kind: args.kind, since: args.since, hasNote: args.hasNote, visibility: args.visibility } });
+  }
+
+  /** Edit a highlight (scope: write:reading) */
+  updateMyHighlight(args: UpdateMyHighlightArgs): Promise<UpdateMyHighlightResponse> {
+    return this.request<UpdateMyHighlightResponse>("PATCH", { path: "/api/v1/me/highlights/{id}", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Delete a highlight (scope: write:reading) */
+  deleteMyHighlight(args: DeleteMyHighlightArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/highlights/{id}", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your shelves (scope: read:reading) */
+  listMyShelves(args: ListMyShelvesArgs = {}): Promise<ListMyShelvesResponse> {
+    return this.request<ListMyShelvesResponse>("GET", { path: "/api/v1/me/shelves", query: { shelf: args.shelf } });
+  }
+
+  /** Put a book on a shelf (scope: write:reading) */
+  setMyShelf(args: SetMyShelfArgs): Promise<SetMyShelfResponse> {
+    return this.request<SetMyShelfResponse>("PUT", { path: "/api/v1/me/shelves/{slug}", pathParams: { slug: args.slug }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Take a book off your shelves (scope: write:reading) */
+  removeMyShelf(args: RemoveMyShelfArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/shelves/{slug}", pathParams: { slug: args.slug }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Get your reading goal (scope: read:reading) */
+  getMyReadingGoal(args: GetMyReadingGoalArgs = {}): Promise<GetMyReadingGoalResponse> {
+    return this.request<GetMyReadingGoalResponse>("GET", { path: "/api/v1/me/reading-goal", query: { year: args.year } });
+  }
+
+  /** List tournaments (scope: read:tournaments) */
+  listTournaments(args: ListTournamentsArgs = {}): Promise<ListTournamentsResponse> {
+    return this.request<ListTournamentsResponse>("GET", { path: "/api/v1/tournaments", query: { status: args.status, game: args.game, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Get a tournament (scope: read:tournaments) */
+  getTournament(args: GetTournamentArgs): Promise<GetTournamentResponse> {
+    return this.request<GetTournamentResponse>("GET", { path: "/api/v1/tournaments/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Read a tournament bracket (scope: read:tournaments) */
+  listTournamentMatches(args: ListTournamentMatchesArgs): Promise<ListTournamentMatchesResponse> {
+    return this.request<ListTournamentMatchesResponse>("GET", { path: "/api/v1/tournaments/{id}/matches", pathParams: { id: args.id }, query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List your tournaments (scope: read:tournaments) */
+  listMyTournaments(args: ListMyTournamentsArgs = {}): Promise<ListMyTournamentsResponse> {
+    return this.request<ListMyTournamentsResponse>("GET", { path: "/api/v1/me/tournaments", query: { status: args.status, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Check in to a tournament (scope: write:tournaments) */
+  checkInToTournament(args: CheckInToTournamentArgs): Promise<CheckInToTournamentResponse> {
+    return this.request<CheckInToTournamentResponse>("POST", { path: "/api/v1/tournaments/{id}/check-in", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Report a match result (scope: write:tournaments) */
+  claimTournamentMatchResult(args: ClaimTournamentMatchResultArgs): Promise<ClaimTournamentMatchResultResponse> {
+    return this.request<ClaimTournamentMatchResultResponse>("POST", { path: "/api/v1/tournaments/{id}/matches/{matchId}/claim", pathParams: { id: args.id, matchId: args.matchId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Confirm a reported result (scope: write:tournaments) */
+  confirmTournamentMatchResult(args: ConfirmTournamentMatchResultArgs): Promise<ConfirmTournamentMatchResultResponse> {
+    return this.request<ConfirmTournamentMatchResultResponse>("POST", { path: "/api/v1/tournaments/{id}/matches/{matchId}/claim/confirm", pathParams: { id: args.id, matchId: args.matchId }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Withdraw a reported result (scope: write:tournaments) */
+  withdrawTournamentMatchResult(args: WithdrawTournamentMatchResultArgs): Promise<WithdrawTournamentMatchResultResponse> {
+    return this.request<WithdrawTournamentMatchResultResponse>("POST", { path: "/api/v1/tournaments/{id}/matches/{matchId}/claim/withdraw", pathParams: { id: args.id, matchId: args.matchId }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your drafts and scheduled posts (scope: read:scheduled) */
+  listMyScheduled(args: ListMyScheduledArgs = {}): Promise<ListMyScheduledResponse> {
+    return this.request<ListMyScheduledResponse>("GET", { path: "/api/v1/me/scheduled", query: { kind: args.kind, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Save a draft or schedule a post (scope: write:scheduled) */
+  createMyScheduled(args: CreateMyScheduledArgs): Promise<CreateMyScheduledResponse> {
+    return this.request<CreateMyScheduledResponse>("POST", { path: "/api/v1/me/scheduled", body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Get a draft or scheduled post (scope: read:scheduled) */
+  getMyScheduled(args: GetMyScheduledArgs): Promise<GetMyScheduledResponse> {
+    return this.request<GetMyScheduledResponse>("GET", { path: "/api/v1/me/scheduled/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Change a draft or scheduled post (scope: write:scheduled) */
+  updateMyScheduled(args: UpdateMyScheduledArgs): Promise<UpdateMyScheduledResponse> {
+    return this.request<UpdateMyScheduledResponse>("PATCH", { path: "/api/v1/me/scheduled/{id}", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Discard a draft or scheduled post (scope: write:scheduled) */
+  deleteMyScheduled(args: DeleteMyScheduledArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/scheduled/{id}", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Publish a draft or scheduled post now (scope: write:scheduled) */
+  publishMyScheduled(args: PublishMyScheduledArgs): Promise<PublishMyScheduledResponse> {
+    return this.request<PublishMyScheduledResponse>("POST", { path: "/api/v1/me/scheduled/{id}/publish", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Search public posts (scope: read:search) */
+  searchPosts(args: SearchPostsArgs): Promise<SearchPostsResponse> {
+    return this.request<SearchPostsResponse>("GET", { path: "/api/v1/search/posts", query: { q: args.q, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Search people (scope: read:search) */
+  searchPeople(args: SearchPeopleArgs): Promise<SearchPeopleResponse> {
+    return this.request<SearchPeopleResponse>("GET", { path: "/api/v1/search/people", query: { q: args.q, limit: args.limit } });
   }
 }

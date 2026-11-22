@@ -13,23 +13,13 @@
  * that fills out every category across all rarities.
  */
 
-import {
-  OFFICIAL_SITE_THEMES,
-  officialThemePicture,
-} from '@/lib/themes/official';
+import { OFFICIAL_SITE_THEMES, officialThemePicture } from '@/lib/themes/official';
 
 import type { ShopItemKind } from '@/lib/shop/kinds';
 export type { ShopItemKind } from '@/lib/shop/kinds';
 export { KIND_ORDER } from '@/lib/shop/kinds';
 
-export type Rarity =
-  | 'common'
-  | 'uncommon'
-  | 'rare'
-  | 'epic'
-  | 'legendary'
-  | 'mythic'
-  | 'exotic';
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'exotic';
 
 export interface ShopItem {
   id: string;
@@ -51,581 +41,439 @@ export interface ShopItem {
     art?: string;
   };
   /** Requires this subscription tier or higher to purchase (optional). */
-  requiresTier?:
-    | 'starter'
-    | 'pro';
+  requiresTier?: 'starter' | 'pro';
 }
 
-export const RARITY_COLORS: Record<
-  Rarity,
-  string
-> =
-  {
-    common:
-      '#9ca3af',
-    uncommon:
-      '#22c55e',
-    rare: '#3b82f6',
-    epic: '#a855f7',
-    legendary:
-      '#f59e0b',
-    mythic:
-      '#ec4899',
-    exotic:
-      '#06b6d4',
-  };
+export const RARITY_COLORS: Record<Rarity, string> = {
+  common: '#9ca3af',
+  uncommon: '#22c55e',
+  rare: '#3b82f6',
+  epic: '#a855f7',
+  legendary: '#f59e0b',
+  mythic: '#ec4899',
+  exotic: '#06b6d4',
+};
 
 /** Low → high. Used for sorting the shop and any rarity comparisons. */
-export const RARITY_ORDER: Rarity[] =
-  [
-    'common',
-    'uncommon',
-    'rare',
-    'epic',
-    'legendary',
-    'mythic',
-    'exotic',
-  ];
+export const RARITY_ORDER: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'exotic'];
 
 /** Default coin price per rarity tier (generated items). */
-const PRICE: Record<
-  Rarity,
-  number
-> =
+const PRICE: Record<Rarity, number> = {
+  common: 100,
+  uncommon: 175,
+  rare: 300,
+  epic: 600,
+  legendary: 1100,
+  mythic: 2000,
+  exotic: 3500,
+};
+
+export const KIND_LABELS: Record<ShopItemKind, string> = {
+  NAME_COLOR: 'Name Colors',
+  AVATAR_FRAME: 'Avatar Frames',
+  BADGE: 'Badges',
+  POST_FLAIR: 'Post Flair',
+  BANNER: 'Profile Banners',
+  PET: 'Pets',
+  THEME: 'Profile Themes',
+  SITE_THEME: 'Site Themes',
+};
+
+const LEGACY_SHOP_ITEMS: ShopItem[] = [
+  // ─── Name Colors ───────────────────────────────────────────────────────
   {
-    common: 100,
-    uncommon: 175,
-    rare: 300,
-    epic: 600,
-    legendary: 1100,
-    mythic: 2000,
-    exotic: 3500,
-  };
-
-export const KIND_LABELS: Record<
-  ShopItemKind,
-  string
-> =
+    id: 'color.sunset',
+    kind: 'NAME_COLOR',
+    name: 'Sunset',
+    description: 'Warm orange name color.',
+    price: 100,
+    rarity: 'common',
+    data: {
+      color: '#fb923c',
+    },
+  },
   {
-    NAME_COLOR:
-      'Name Colors',
-    AVATAR_FRAME:
-      'Avatar Frames',
-    BADGE:
-      'Badges',
-    POST_FLAIR:
-      'Post Flair',
-    BANNER:
-      'Profile Banners',
-    PET: 'Pets',
-    THEME:
-      'Profile Themes',
-    SITE_THEME:
-      'Site Themes',
-  };
+    id: 'color.ocean',
+    kind: 'NAME_COLOR',
+    name: 'Ocean',
+    description: 'Cool blue name color.',
+    price: 100,
+    rarity: 'common',
+    data: {
+      color: '#38bdf8',
+    },
+  },
+  {
+    id: 'color.mint',
+    kind: 'NAME_COLOR',
+    name: 'Mint',
+    description: 'Fresh green name color.',
+    price: 100,
+    rarity: 'common',
+    data: {
+      color: '#34d399',
+    },
+  },
+  {
+    id: 'color.crimson',
+    kind: 'NAME_COLOR',
+    name: 'Crimson',
+    description: 'Bold red name color.',
+    price: 150,
+    rarity: 'rare',
+    data: {
+      color: '#f43f5e',
+    },
+  },
+  {
+    id: 'color.violet',
+    kind: 'NAME_COLOR',
+    name: 'Violet',
+    description: 'Royal purple name color.',
+    price: 150,
+    rarity: 'rare',
+    data: {
+      color: '#a78bfa',
+    },
+  },
+  {
+    id: 'color.gold',
+    kind: 'NAME_COLOR',
+    name: 'Gold',
+    description: 'Shimmering gold name color.',
+    price: 400,
+    rarity: 'epic',
+    data: {
+      color: '#fbbf24',
+    },
+  },
+  {
+    id: 'color.rainbow',
+    kind: 'NAME_COLOR',
+    name: 'Twilight',
+    description: 'A soft pink-to-indigo gradient name.',
+    price: 1000,
+    rarity: 'legendary',
+    data: {
+      gradient: 'linear-gradient(90deg,#f472b6,#c084fc,#818cf8)',
+    },
+  },
 
-const LEGACY_SHOP_ITEMS: ShopItem[] =
-  [
-    // ─── Name Colors ───────────────────────────────────────────────────────
-    {
-      id: 'color.sunset',
-      kind: 'NAME_COLOR',
-      name: 'Sunset',
-      description:
-        'Warm orange name color.',
-      price: 100,
-      rarity:
-        'common',
-      data: {
-        color:
-          '#fb923c',
-      },
+  // ─── Avatar Frames ─────────────────────────────────────────────────────
+  {
+    id: 'frame.gold',
+    kind: 'AVATAR_FRAME',
+    name: 'Gold Ring',
+    description: 'A polished gold ring.',
+    price: 250,
+    rarity: 'rare',
+    data: {
+      color: '#fbbf24',
     },
-    {
-      id: 'color.ocean',
-      kind: 'NAME_COLOR',
-      name: 'Ocean',
-      description:
-        'Cool blue name color.',
-      price: 100,
-      rarity:
-        'common',
-      data: {
-        color:
-          '#38bdf8',
-      },
+  },
+  // Onboarding v2 "First Week" graduation pack (also cheaply buyable). See lib/quests/onboarding.ts.
+  {
+    id: 'frame.starter',
+    kind: 'AVATAR_FRAME',
+    name: 'Newcomer Ring',
+    description: 'A welcoming ring for finishing your first week.',
+    price: 120,
+    rarity: 'common',
+    data: {
+      color: '#34d399',
     },
-    {
-      id: 'color.mint',
-      kind: 'NAME_COLOR',
-      name: 'Mint',
-      description:
-        'Fresh green name color.',
-      price: 100,
-      rarity:
-        'common',
-      data: {
-        color:
-          '#34d399',
-      },
+  },
+  {
+    id: 'frame.neon',
+    kind: 'AVATAR_FRAME',
+    name: 'Neon Ring',
+    description: 'A glowing neon ring.',
+    price: 250,
+    rarity: 'rare',
+    data: {
+      color: '#22d3ee',
     },
-    {
-      id: 'color.crimson',
-      kind: 'NAME_COLOR',
-      name: 'Crimson',
-      description:
-        'Bold red name color.',
-      price: 150,
-      rarity:
-        'rare',
-      data: {
-        color:
-          '#f43f5e',
-      },
+  },
+  {
+    id: 'frame.fire',
+    kind: 'AVATAR_FRAME',
+    name: 'Inferno',
+    description: 'A warm orange-to-red frame.',
+    price: 600,
+    rarity: 'epic',
+    data: {
+      gradient: 'conic-gradient(#f97316,#ef4444,#f97316)',
     },
-    {
-      id: 'color.violet',
-      kind: 'NAME_COLOR',
-      name: 'Violet',
-      description:
-        'Royal purple name color.',
-      price: 150,
-      rarity:
-        'rare',
-      data: {
-        color:
-          '#a78bfa',
-      },
+  },
+  {
+    id: 'frame.ice',
+    kind: 'AVATAR_FRAME',
+    name: 'Frostbite',
+    description: 'A frozen crystalline frame.',
+    price: 600,
+    rarity: 'epic',
+    data: {
+      gradient: 'conic-gradient(#38bdf8,#a5f3fc,#38bdf8)',
     },
-    {
-      id: 'color.gold',
-      kind: 'NAME_COLOR',
-      name: 'Gold',
-      description:
-        'Shimmering gold name color.',
-      price: 400,
-      rarity:
-        'epic',
-      data: {
-        color:
-          '#fbbf24',
-      },
+  },
+  {
+    id: 'frame.rainbow',
+    kind: 'AVATAR_FRAME',
+    name: 'Prism',
+    description: 'A cool blue-to-violet frame.',
+    price: 1200,
+    rarity: 'legendary',
+    data: {
+      gradient: 'conic-gradient(#38bdf8,#818cf8,#c084fc,#818cf8,#38bdf8)',
     },
-    {
-      id: 'color.rainbow',
-      kind: 'NAME_COLOR',
-      name: 'Twilight',
-      description:
-        'A soft pink-to-indigo gradient name.',
-      price: 1000,
-      rarity:
-        'legendary',
-      data: {
-        gradient:
-          'linear-gradient(90deg,#f472b6,#c084fc,#818cf8)',
-      },
-    },
+  },
 
-    // ─── Avatar Frames ─────────────────────────────────────────────────────
-    {
-      id: 'frame.gold',
-      kind: 'AVATAR_FRAME',
-      name: 'Gold Ring',
-      description:
-        'A polished gold ring.',
-      price: 250,
-      rarity:
-        'rare',
-      data: {
-        color:
-          '#fbbf24',
-      },
+  // ─── Badges (flair next to your name) ──────────────────────────────────
+  {
+    id: 'badge.star',
+    kind: 'BADGE',
+    name: 'Star',
+    description: 'A shining star badge.',
+    price: 80,
+    rarity: 'common',
+    data: {
+      emoji: '⭐',
     },
-    // Onboarding v2 "First Week" graduation pack (also cheaply buyable). See lib/quests/onboarding.ts.
-    {
-      id: 'frame.starter',
-      kind: 'AVATAR_FRAME',
-      name: 'Newcomer Ring',
-      description:
-        'A welcoming ring for finishing your first week.',
-      price: 120,
-      rarity:
-        'common',
-      data: {
-        color:
-          '#34d399',
-      },
+  },
+  // Onboarding v2 "First Week" graduation pack (also cheaply buyable). See lib/quests/onboarding.ts.
+  {
+    id: 'badge.newcomer',
+    kind: 'BADGE',
+    name: 'Newcomer',
+    description: 'Awarded for completing the First Week arc.',
+    price: 80,
+    rarity: 'common',
+    data: {
+      emoji: '🌱',
     },
-    {
-      id: 'frame.neon',
-      kind: 'AVATAR_FRAME',
-      name: 'Neon Ring',
-      description:
-        'A glowing neon ring.',
-      price: 250,
-      rarity:
-        'rare',
-      data: {
-        color:
-          '#22d3ee',
-      },
+  },
+  {
+    id: 'badge.fire',
+    kind: 'BADGE',
+    name: 'Flame',
+    description: 'A blazing flame badge.',
+    price: 80,
+    rarity: 'common',
+    data: {
+      emoji: '🔥',
     },
-    {
-      id: 'frame.fire',
-      kind: 'AVATAR_FRAME',
-      name: 'Inferno',
-      description:
-        'A warm orange-to-red frame.',
-      price: 600,
-      rarity:
-        'epic',
-      data: {
-        gradient:
-          'conic-gradient(#f97316,#ef4444,#f97316)',
-      },
+  },
+  {
+    id: 'badge.heart',
+    kind: 'BADGE',
+    name: 'Heart',
+    description: 'A lovely heart badge.',
+    price: 80,
+    rarity: 'common',
+    data: {
+      emoji: '💖',
     },
-    {
-      id: 'frame.ice',
-      kind: 'AVATAR_FRAME',
-      name: 'Frostbite',
-      description:
-        'A frozen crystalline frame.',
-      price: 600,
-      rarity:
-        'epic',
-      data: {
-        gradient:
-          'conic-gradient(#38bdf8,#a5f3fc,#38bdf8)',
-      },
+  },
+  {
+    id: 'badge.bolt',
+    kind: 'BADGE',
+    name: 'Bolt',
+    description: 'An electric bolt badge.',
+    price: 120,
+    rarity: 'rare',
+    data: {
+      emoji: '⚡',
     },
-    {
-      id: 'frame.rainbow',
-      kind: 'AVATAR_FRAME',
-      name: 'Prism',
-      description:
-        'A cool blue-to-violet frame.',
-      price: 1200,
-      rarity:
-        'legendary',
-      data: {
-        gradient:
-          'conic-gradient(#38bdf8,#818cf8,#c084fc,#818cf8,#38bdf8)',
-      },
+  },
+  {
+    id: 'badge.crown',
+    kind: 'BADGE',
+    name: 'Crown',
+    description: 'A regal crown badge.',
+    price: 500,
+    rarity: 'epic',
+    data: {
+      emoji: '👑',
     },
+  },
+  {
+    id: 'badge.diamond',
+    kind: 'BADGE',
+    name: 'Diamond',
+    description: 'A brilliant diamond badge.',
+    price: 500,
+    rarity: 'epic',
+    data: {
+      emoji: '💎',
+    },
+  },
+  {
+    id: 'badge.galaxy',
+    kind: 'BADGE',
+    name: 'Galaxy',
+    description: 'A cosmic galaxy badge.',
+    price: 900,
+    rarity: 'legendary',
+    data: {
+      emoji: '🌌',
+    },
+  },
 
-    // ─── Badges (flair next to your name) ──────────────────────────────────
-    {
-      id: 'badge.star',
-      kind: 'BADGE',
-      name: 'Star',
-      description:
-        'A shining star badge.',
-      price: 80,
-      rarity:
-        'common',
-      data: {
-        emoji:
-          '⭐',
-      },
+  // ─── Post Flair (decoration on your posts) ─────────────────────────────
+  {
+    id: 'flair.accent',
+    kind: 'POST_FLAIR',
+    name: 'Accent Edge',
+    description: 'An accent stripe on your posts.',
+    price: 200,
+    rarity: 'rare',
+    data: {
+      className: 'flair-accent',
+      color: 'var(--site-accent)',
     },
-    // Onboarding v2 "First Week" graduation pack (also cheaply buyable). See lib/quests/onboarding.ts.
-    {
-      id: 'badge.newcomer',
-      kind: 'BADGE',
-      name: 'Newcomer',
-      description:
-        'Awarded for completing the First Week arc.',
-      price: 80,
-      rarity:
-        'common',
-      data: {
-        emoji:
-          '🌱',
-      },
+  },
+  {
+    id: 'flair.gold',
+    kind: 'POST_FLAIR',
+    name: 'Gilded',
+    description: 'A muted gold edge on your posts.',
+    price: 450,
+    rarity: 'epic',
+    data: {
+      className: 'flair-gold',
+      color: '#cfa94f',
     },
-    {
-      id: 'badge.fire',
-      kind: 'BADGE',
-      name: 'Flame',
-      description:
-        'A blazing flame badge.',
-      price: 80,
-      rarity:
-        'common',
-      data: {
-        emoji:
-          '🔥',
-      },
+  },
+  {
+    id: 'flair.rainbow',
+    kind: 'POST_FLAIR',
+    name: 'Aurora',
+    description: 'A soft pink-to-violet edge on your posts.',
+    price: 1000,
+    rarity: 'legendary',
+    data: {
+      className: 'flair-rainbow',
+      gradient: 'linear-gradient(180deg,#d98aa6,#c18ad6)',
     },
-    {
-      id: 'badge.heart',
-      kind: 'BADGE',
-      name: 'Heart',
-      description:
-        'A lovely heart badge.',
-      price: 80,
-      rarity:
-        'common',
-      data: {
-        emoji:
-          '💖',
-      },
-    },
-    {
-      id: 'badge.bolt',
-      kind: 'BADGE',
-      name: 'Bolt',
-      description:
-        'An electric bolt badge.',
-      price: 120,
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '⚡',
-      },
-    },
-    {
-      id: 'badge.crown',
-      kind: 'BADGE',
-      name: 'Crown',
-      description:
-        'A regal crown badge.',
-      price: 500,
-      rarity:
-        'epic',
-      data: {
-        emoji:
-          '👑',
-      },
-    },
-    {
-      id: 'badge.diamond',
-      kind: 'BADGE',
-      name: 'Diamond',
-      description:
-        'A brilliant diamond badge.',
-      price: 500,
-      rarity:
-        'epic',
-      data: {
-        emoji:
-          '💎',
-      },
-    },
-    {
-      id: 'badge.galaxy',
-      kind: 'BADGE',
-      name: 'Galaxy',
-      description:
-        'A cosmic galaxy badge.',
-      price: 900,
-      rarity:
-        'legendary',
-      data: {
-        emoji:
-          '🌌',
-      },
-    },
+  },
 
-    // ─── Post Flair (decoration on your posts) ─────────────────────────────
-    {
-      id: 'flair.accent',
-      kind: 'POST_FLAIR',
-      name: 'Accent Edge',
-      description:
-        'An accent stripe on your posts.',
-      price: 200,
-      rarity:
-        'rare',
-      data: {
-        className:
-          'flair-accent',
-        color:
-          'var(--site-accent)',
-      },
+  // ─── Profile Banners ───────────────────────────────────────────────────
+  {
+    id: 'banner.dusk',
+    kind: 'BANNER',
+    name: 'Dusk',
+    description: 'A warm dusk gradient banner.',
+    price: 150,
+    rarity: 'common',
+    data: {
+      gradient: 'linear-gradient(135deg,#f97316,#db2777)',
     },
-    {
-      id: 'flair.gold',
-      kind: 'POST_FLAIR',
-      name: 'Gilded',
-      description:
-        'A gold edge on your posts.',
-      price: 450,
-      rarity:
-        'epic',
-      data: {
-        className:
-          'flair-gold',
-        color:
-          '#fbbf24',
-      },
+  },
+  {
+    id: 'banner.aurora',
+    kind: 'BANNER',
+    name: 'Aurora',
+    description: 'An aurora gradient banner.',
+    price: 150,
+    rarity: 'common',
+    data: {
+      gradient: 'linear-gradient(135deg,#22d3ee,#a78bfa)',
     },
-    {
-      id: 'flair.rainbow',
-      kind: 'POST_FLAIR',
-      name: 'Spectrum',
-      description:
-        'A rainbow edge on your posts.',
-      price: 1000,
-      rarity:
-        'legendary',
-      data: {
-        className:
-          'flair-rainbow',
-        gradient:
-          'linear-gradient(180deg,#f43f5e,#38bdf8)',
-      },
+  },
+  {
+    id: 'banner.matrix',
+    kind: 'BANNER',
+    name: 'Matrix',
+    description: 'A green code banner.',
+    price: 300,
+    rarity: 'rare',
+    data: {
+      gradient: 'linear-gradient(135deg,#022c22,#16a34a)',
     },
+  },
+  {
+    id: 'banner.galaxy',
+    kind: 'BANNER',
+    name: 'Nebula',
+    description: 'A deep-space nebula banner.',
+    price: 700,
+    rarity: 'epic',
+    data: {
+      gradient: 'linear-gradient(135deg,#1e1b4b,#7c3aed,#db2777)',
+    },
+  },
 
-    // ─── Profile Banners ───────────────────────────────────────────────────
-    {
-      id: 'banner.dusk',
-      kind: 'BANNER',
-      name: 'Dusk',
-      description:
-        'A warm dusk gradient banner.',
-      price: 150,
-      rarity:
-        'common',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#f97316,#db2777)',
-      },
+  // ─── Pets ──────────────────────────────────────────────────────────────
+  {
+    id: 'pet.cat',
+    kind: 'PET',
+    name: 'Cat Companion',
+    description: 'A cat that follows your profile.',
+    price: 200,
+    rarity: 'rare',
+    data: {
+      emoji: '🐱',
     },
-    {
-      id: 'banner.aurora',
-      kind: 'BANNER',
-      name: 'Aurora',
-      description:
-        'An aurora gradient banner.',
-      price: 150,
-      rarity:
-        'common',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#22d3ee,#a78bfa)',
-      },
+  },
+  {
+    id: 'pet.dragon',
+    kind: 'PET',
+    name: 'Baby Dragon',
+    description: 'A tiny dragon companion.',
+    price: 800,
+    rarity: 'epic',
+    data: {
+      emoji: '🐲',
     },
-    {
-      id: 'banner.matrix',
-      kind: 'BANNER',
-      name: 'Matrix',
-      description:
-        'A green code banner.',
-      price: 300,
-      rarity:
-        'rare',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#022c22,#16a34a)',
-      },
+  },
+  {
+    id: 'pet.ghost',
+    kind: 'PET',
+    name: 'Friendly Ghost',
+    description: 'A spooky companion.',
+    price: 400,
+    rarity: 'rare',
+    data: {
+      emoji: '👻',
     },
-    {
-      id: 'banner.galaxy',
-      kind: 'BANNER',
-      name: 'Nebula',
-      description:
-        'A deep-space nebula banner.',
-      price: 700,
-      rarity:
-        'epic',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#1e1b4b,#7c3aed,#db2777)',
-      },
+  },
+  {
+    id: 'pet.robot',
+    kind: 'PET',
+    name: 'Bot Buddy',
+    description: 'A loyal robot companion.',
+    price: 400,
+    rarity: 'rare',
+    data: {
+      emoji: '🤖',
     },
+  },
 
-    // ─── Pets ──────────────────────────────────────────────────────────────
-    {
-      id: 'pet.cat',
-      kind: 'PET',
-      name: 'Cat Companion',
-      description:
-        'A cat that follows your profile.',
-      price: 200,
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '🐱',
-      },
+  // ─── Premium Themes (bragging rights) ──────────────────────────────────
+  {
+    id: 'theme.midnight',
+    kind: 'THEME',
+    name: 'Midnight (Premium)',
+    description: 'An exclusive deep-blue theme.',
+    price: 1500,
+    rarity: 'legendary',
+    data: {
+      themeId: 'midnight',
     },
-    {
-      id: 'pet.dragon',
-      kind: 'PET',
-      name: 'Baby Dragon',
-      description:
-        'A tiny dragon companion.',
-      price: 800,
-      rarity:
-        'epic',
-      data: {
-        emoji:
-          '🐲',
-      },
+    requiresTier: 'pro',
+  },
+  {
+    id: 'theme.vapor',
+    kind: 'THEME',
+    name: 'Vaporwave (Premium)',
+    description: 'An exclusive retro theme.',
+    price: 1500,
+    rarity: 'legendary',
+    data: {
+      themeId: 'vapor',
     },
-    {
-      id: 'pet.ghost',
-      kind: 'PET',
-      name: 'Friendly Ghost',
-      description:
-        'A spooky companion.',
-      price: 400,
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '👻',
-      },
-    },
-    {
-      id: 'pet.robot',
-      kind: 'PET',
-      name: 'Bot Buddy',
-      description:
-        'A loyal robot companion.',
-      price: 400,
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '🤖',
-      },
-    },
-
-    // ─── Premium Themes (bragging rights) ──────────────────────────────────
-    {
-      id: 'theme.midnight',
-      kind: 'THEME',
-      name: 'Midnight (Premium)',
-      description:
-        'An exclusive deep-blue theme.',
-      price: 1500,
-      rarity:
-        'legendary',
-      data: {
-        themeId:
-          'midnight',
-      },
-      requiresTier:
-        'pro',
-    },
-    {
-      id: 'theme.vapor',
-      kind: 'THEME',
-      name: 'Vaporwave (Premium)',
-      description:
-        'An exclusive retro theme.',
-      price: 1500,
-      rarity:
-        'legendary',
-      data: {
-        themeId:
-          'vapor',
-      },
-    },
-  ];
+  },
+];
 
 // ───────────────────────────────────────────────────────────────────────────
 // Curated expansion set. A focused, varied selection per category (not just
@@ -633,1451 +481,1211 @@ const LEGACY_SHOP_ITEMS: ShopItem[] =
 // never reused.
 // ───────────────────────────────────────────────────────────────────────────
 
-const co =
-  (
-    rarity: Rarity,
-  ) =>
-    PRICE[
-      rarity
-    ];
+const co = (rarity: Rarity) => PRICE[rarity];
 
-const GENERATED_ITEMS: ShopItem[] =
-  [
-    // ─── Name Colors (a few solids + standout gradients) ────────────────────
-    {
-      id: 'color.x.coral',
-      kind: 'NAME_COLOR',
-      name: 'Coral',
-      description:
-        'A warm coral name color.',
-      price:
-        co(
-          'common',
-        ),
-      rarity:
-        'common',
-      data: {
-        color:
-          '#ff7f6b',
-      },
+const GENERATED_ITEMS: ShopItem[] = [
+  // ─── Name Colors (a few solids + standout gradients) ────────────────────
+  {
+    id: 'color.x.coral',
+    kind: 'NAME_COLOR',
+    name: 'Coral',
+    description: 'A warm coral name color.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      color: '#ff7f6b',
     },
-    {
-      id: 'color.x.teal',
-      kind: 'NAME_COLOR',
-      name: 'Teal',
-      description:
-        'A cool teal name color.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        color:
-          '#14b8a6',
-      },
+  },
+  {
+    id: 'color.x.teal',
+    kind: 'NAME_COLOR',
+    name: 'Teal',
+    description: 'A cool teal name color.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      color: '#14b8a6',
     },
-    {
-      id: 'color.x.magenta',
-      kind: 'NAME_COLOR',
-      name: 'Magenta',
-      description:
-        'A vivid magenta name color.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        color:
-          '#d946ef',
-      },
+  },
+  {
+    id: 'color.x.magenta',
+    kind: 'NAME_COLOR',
+    name: 'Magenta',
+    description: 'A vivid magenta name color.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      color: '#d946ef',
     },
-    {
-      id: 'color.x.lime',
-      kind: 'NAME_COLOR',
-      name: 'Electric Lime',
-      description:
-        'A punchy lime name color.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        color:
-          '#a3e635',
-      },
+  },
+  {
+    id: 'color.x.lime',
+    kind: 'NAME_COLOR',
+    name: 'Electric Lime',
+    description: 'A punchy lime name color.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      color: '#a3e635',
     },
-    {
-      id: 'color.x.aurora',
-      kind: 'NAME_COLOR',
-      name: 'Aurora',
-      description:
-        'A cool aurora gradient name.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        gradient:
-          'linear-gradient(90deg,#22d3ee,#60a5fa,#a78bfa)',
-      },
+  },
+  {
+    id: 'color.x.aurora',
+    kind: 'NAME_COLOR',
+    name: 'Aurora',
+    description: 'A cool aurora gradient name.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      gradient: 'linear-gradient(90deg,#22d3ee,#60a5fa,#a78bfa)',
     },
-    {
-      id: 'color.x.molten',
-      kind: 'NAME_COLOR',
-      name: 'Molten',
-      description:
-        'A fiery molten gradient name.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        gradient:
-          'linear-gradient(90deg,#f97316,#ef4444,#fbbf24)',
-      },
+  },
+  {
+    id: 'color.x.molten',
+    kind: 'NAME_COLOR',
+    name: 'Molten',
+    description: 'A fiery molten gradient name.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      gradient: 'linear-gradient(90deg,#f97316,#ef4444,#fbbf24)',
     },
-    {
-      id: 'color.x.galaxy',
-      kind: 'NAME_COLOR',
-      name: 'Galaxy',
-      description:
-        'A deep-space gradient name.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        gradient:
-          'linear-gradient(90deg,#4f46e5,#7c3aed,#c026d3)',
-      },
+  },
+  {
+    id: 'color.x.galaxy',
+    kind: 'NAME_COLOR',
+    name: 'Galaxy',
+    description: 'A deep-space gradient name.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      gradient: 'linear-gradient(90deg,#4f46e5,#7c3aed,#c026d3)',
     },
-    {
-      id: 'color.x.holographic',
-      kind: 'NAME_COLOR',
-      name: 'Holographic',
-      description:
-        'An iridescent holo gradient name.',
-      price:
-        co(
-          'exotic',
-        ),
-      rarity:
-        'exotic',
-      data: {
-        gradient:
-          'linear-gradient(90deg,#a5f3fc,#bfdbfe,#ddd6fe)',
-      },
+  },
+  {
+    id: 'color.x.holographic',
+    kind: 'NAME_COLOR',
+    name: 'Holographic',
+    description: 'An iridescent holo gradient name.',
+    price: co('exotic'),
+    rarity: 'exotic',
+    data: {
+      gradient: 'linear-gradient(90deg,#a5f3fc,#bfdbfe,#ddd6fe)',
     },
+  },
 
-    // ─── Avatar Frames (distinct effects, not plain colors) ─────────────────
-    {
-      id: 'frame.x.silver',
-      kind: 'AVATAR_FRAME',
-      name: 'Silver Ring',
-      description:
-        'A brushed silver ring.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        color:
-          '#cbd5e1',
-      },
+  // ─── Avatar Frames (distinct effects, not plain colors) ─────────────────
+  {
+    id: 'frame.x.silver',
+    kind: 'AVATAR_FRAME',
+    name: 'Silver Ring',
+    description: 'A brushed silver ring.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      color: '#cbd5e1',
     },
-    {
-      id: 'frame.x.sakura',
-      kind: 'AVATAR_FRAME',
-      name: 'Sakura',
-      description:
-        'Soft cherry-blossom petals.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        gradient:
-          'conic-gradient(#fb7185,#fbcfe8,#fda4af,#fb7185)',
-      },
+  },
+  {
+    id: 'frame.x.sakura',
+    kind: 'AVATAR_FRAME',
+    name: 'Sakura',
+    description: 'Soft cherry-blossom petals.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      gradient: 'conic-gradient(#fb7185,#fbcfe8,#fda4af,#fb7185)',
     },
-    {
-      id: 'frame.x.ember',
-      kind: 'AVATAR_FRAME',
-      name: 'Emberglow',
-      description:
-        'A smouldering ember frame.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        gradient:
-          'conic-gradient(#f97316,#fbbf24,#ef4444,#f97316)',
-      },
+  },
+  {
+    id: 'frame.x.ember',
+    kind: 'AVATAR_FRAME',
+    name: 'Emberglow',
+    description: 'A smouldering ember frame.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      gradient: 'conic-gradient(#f97316,#fbbf24,#ef4444,#f97316)',
     },
-    {
-      id: 'frame.x.glacier',
-      kind: 'AVATAR_FRAME',
-      name: 'Glacier',
-      description:
-        'A crystalline glacier frame.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        gradient:
-          'conic-gradient(#38bdf8,#a5f3fc,#e0f2fe,#38bdf8)',
-      },
+  },
+  {
+    id: 'frame.x.glacier',
+    kind: 'AVATAR_FRAME',
+    name: 'Glacier',
+    description: 'A crystalline glacier frame.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      gradient: 'conic-gradient(#38bdf8,#a5f3fc,#e0f2fe,#38bdf8)',
     },
-    {
-      id: 'frame.x.venom',
-      kind: 'AVATAR_FRAME',
-      name: 'Venom',
-      description:
-        'A toxic green frame.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        gradient:
-          'conic-gradient(#22c55e,#a3e635,#16a34a,#22c55e)',
-      },
+  },
+  {
+    id: 'frame.x.venom',
+    kind: 'AVATAR_FRAME',
+    name: 'Venom',
+    description: 'A toxic green frame.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      gradient: 'conic-gradient(#22c55e,#a3e635,#16a34a,#22c55e)',
     },
-    {
-      id: 'frame.x.nebula',
-      kind: 'AVATAR_FRAME',
-      name: 'Nebula Ring',
-      description:
-        'A cosmic nebula halo.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        gradient:
-          'conic-gradient(#4f46e5,#7c3aed,#c026d3,#7c3aed,#4f46e5)',
-      },
+  },
+  {
+    id: 'frame.x.nebula',
+    kind: 'AVATAR_FRAME',
+    name: 'Nebula Ring',
+    description: 'A cosmic nebula halo.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      gradient: 'conic-gradient(#4f46e5,#7c3aed,#c026d3,#7c3aed,#4f46e5)',
     },
-    {
-      id: 'frame.x.prismatic',
-      kind: 'AVATAR_FRAME',
-      name: 'Prismatic Halo',
-      description:
-        'A pale cyan-to-lilac halo.',
-      price:
-        co(
-          'exotic',
-        ),
-      rarity:
-        'exotic',
-      data: {
-        gradient:
-          'conic-gradient(#a5f3fc,#bfdbfe,#ddd6fe,#bfdbfe,#a5f3fc)',
-      },
+  },
+  {
+    id: 'frame.x.prismatic',
+    kind: 'AVATAR_FRAME',
+    name: 'Prismatic Halo',
+    description: 'A pale cyan-to-lilac halo.',
+    price: co('exotic'),
+    rarity: 'exotic',
+    data: {
+      gradient: 'conic-gradient(#a5f3fc,#bfdbfe,#ddd6fe,#bfdbfe,#a5f3fc)',
     },
+  },
 
-    // ─── Badges (emoji variety) ─────────────────────────────────────────────
-    {
-      id: 'badge.x.sparkle',
-      kind: 'BADGE',
-      name: 'Sparkle',
-      description:
-        'A sparkle badge.',
-      price:
-        co(
-          'common',
-        ),
-      rarity:
-        'common',
-      data: {
-        emoji:
-          '✨',
-      },
+  // ─── Badges (emoji variety) ─────────────────────────────────────────────
+  {
+    id: 'badge.x.sparkle',
+    kind: 'BADGE',
+    name: 'Sparkle',
+    description: 'A sparkle badge.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      emoji: '✨',
     },
-    {
-      id: 'badge.x.rocket',
-      kind: 'BADGE',
-      name: 'Rocket',
-      description:
-        'A rocket badge.',
-      price:
-        co(
-          'common',
-        ),
-      rarity:
-        'common',
-      data: {
-        emoji:
-          '🚀',
-      },
+  },
+  {
+    id: 'badge.x.rocket',
+    kind: 'BADGE',
+    name: 'Rocket',
+    description: 'A rocket badge.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      emoji: '🚀',
     },
-    {
-      id: 'badge.x.clover',
-      kind: 'BADGE',
-      name: 'Clover',
-      description:
-        'A lucky clover badge.',
-      price:
-        co(
-          'common',
-        ),
-      rarity:
-        'common',
-      data: {
-        emoji:
-          '🍀',
-      },
+  },
+  {
+    id: 'badge.x.clover',
+    kind: 'BADGE',
+    name: 'Clover',
+    description: 'A lucky clover badge.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      emoji: '🍀',
     },
-    {
-      id: 'badge.x.trophy',
-      kind: 'BADGE',
-      name: 'Trophy',
-      description:
-        'A trophy badge.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        emoji:
-          '🏆',
-      },
+  },
+  {
+    id: 'badge.x.trophy',
+    kind: 'BADGE',
+    name: 'Trophy',
+    description: 'A trophy badge.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      emoji: '🏆',
     },
-    {
-      id: 'badge.x.game',
-      kind: 'BADGE',
-      name: 'Gamepad',
-      description:
-        'A gamepad badge.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        emoji:
-          '🎮',
-      },
+  },
+  {
+    id: 'badge.x.game',
+    kind: 'BADGE',
+    name: 'Gamepad',
+    description: 'A gamepad badge.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      emoji: '🎮',
     },
-    {
-      id: 'badge.x.crystal',
-      kind: 'BADGE',
-      name: 'Crystal Ball',
-      description:
-        'A crystal ball badge.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '🔮',
-      },
+  },
+  {
+    id: 'badge.x.crystal',
+    kind: 'BADGE',
+    name: 'Crystal Ball',
+    description: 'A crystal ball badge.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      emoji: '🔮',
     },
-    {
-      id: 'badge.x.comet',
-      kind: 'BADGE',
-      name: 'Comet',
-      description:
-        'A comet badge.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '☄️',
-      },
+  },
+  {
+    id: 'badge.x.comet',
+    kind: 'BADGE',
+    name: 'Comet',
+    description: 'A comet badge.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      emoji: '☄️',
     },
-    {
-      id: 'badge.x.unicorn',
-      kind: 'BADGE',
-      name: 'Unicorn',
-      description:
-        'A unicorn badge.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        emoji:
-          '🦄',
-      },
+  },
+  {
+    id: 'badge.x.unicorn',
+    kind: 'BADGE',
+    name: 'Unicorn',
+    description: 'A unicorn badge.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      emoji: '🦄',
     },
-    {
-      id: 'badge.x.skull',
-      kind: 'BADGE',
-      name: 'Skull',
-      description:
-        'A skull badge.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        emoji:
-          '💀',
-      },
+  },
+  {
+    id: 'badge.x.skull',
+    kind: 'BADGE',
+    name: 'Skull',
+    description: 'A skull badge.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      emoji: '💀',
     },
-    {
-      id: 'badge.x.dragon',
-      kind: 'BADGE',
-      name: 'Dragon',
-      description:
-        'A dragon badge.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        emoji:
-          '🐉',
-      },
+  },
+  {
+    id: 'badge.x.dragon',
+    kind: 'BADGE',
+    name: 'Dragon',
+    description: 'A dragon badge.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      emoji: '🐉',
     },
-    {
-      id: 'badge.x.atom',
-      kind: 'BADGE',
-      name: 'Atom',
-      description:
-        'An atom badge.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        emoji:
-          '⚛️',
-      },
+  },
+  {
+    id: 'badge.x.atom',
+    kind: 'BADGE',
+    name: 'Atom',
+    description: 'An atom badge.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      emoji: '⚛️',
     },
-    {
-      id: 'badge.x.milky-way',
-      kind: 'BADGE',
-      name: 'Milky Way',
-      description:
-        'A galaxy badge.',
-      price:
-        co(
-          'exotic',
-        ),
-      rarity:
-        'exotic',
-      data: {
-        emoji:
-          '🌌',
-      },
+  },
+  {
+    id: 'badge.x.milky-way',
+    kind: 'BADGE',
+    name: 'Milky Way',
+    description: 'A galaxy badge.',
+    price: co('exotic'),
+    rarity: 'exotic',
+    data: {
+      emoji: '🌌',
     },
+  },
 
-    // ─── Post Flair (varied edges) ──────────────────────────────────────────
-    {
-      id: 'flair.x.neon',
-      kind: 'POST_FLAIR',
-      name: 'Neon Edge',
-      description:
-        'A glowing neon edge on your posts.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        className:
-          'flair-solid',
-        color:
-          '#22d3ee',
-      },
+  // ─── Post Flair (varied edges) ──────────────────────────────────────────
+  {
+    id: 'flair.x.neon',
+    kind: 'POST_FLAIR',
+    name: 'Lagoon Edge',
+    description: 'A muted cyan edge on your posts.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      className: 'flair-solid',
+      color: '#5fb3c4',
     },
-    {
-      id: 'flair.x.ocean',
-      kind: 'POST_FLAIR',
-      name: 'Tidal Edge',
-      description:
-        'An ocean gradient edge on your posts.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        className:
-          'flair-gradient',
-        gradient:
-          'linear-gradient(180deg,#0ea5e9,#22d3ee)',
-      },
+  },
+  {
+    id: 'flair.x.ocean',
+    kind: 'POST_FLAIR',
+    name: 'Tidal Edge',
+    description: 'A calm blue-to-teal edge on your posts.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#5b9fc4,#6bbfc9)',
     },
-    {
-      id: 'flair.x.ember',
-      kind: 'POST_FLAIR',
-      name: 'Ember Edge',
-      description:
-        'A fiery edge on your posts.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        className:
-          'flair-gradient',
-        gradient:
-          'linear-gradient(180deg,#f97316,#ef4444)',
-      },
+  },
+  {
+    id: 'flair.x.ember',
+    kind: 'POST_FLAIR',
+    name: 'Ember Edge',
+    description: 'A warm orange-to-red edge on your posts.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#d98a5b,#c9645f)',
     },
-    {
-      id: 'flair.x.frost',
-      kind: 'POST_FLAIR',
-      name: 'Frost Edge',
-      description:
-        'An icy edge on your posts.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        className:
-          'flair-solid',
-        color:
-          '#bae6fd',
-      },
+  },
+  {
+    id: 'flair.x.frost',
+    kind: 'POST_FLAIR',
+    name: 'Frost Edge',
+    description: 'A pale ice-blue edge on your posts.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      className: 'flair-solid',
+      color: '#bcd6e6',
     },
-    {
-      id: 'flair.x.toxic',
-      kind: 'POST_FLAIR',
-      name: 'Toxic Edge',
-      description:
-        'A toxic gradient edge on your posts.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        className:
-          'flair-gradient',
-        gradient:
-          'linear-gradient(180deg,#a3e635,#14b8a6)',
-      },
+  },
+  {
+    id: 'flair.x.toxic',
+    kind: 'POST_FLAIR',
+    name: 'Moss Edge',
+    description: 'A soft lime-to-sage edge on your posts.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#9fbf6e,#74b98a)',
     },
-    {
-      id: 'flair.x.prism',
-      kind: 'POST_FLAIR',
-      name: 'Prism Edge',
-      description:
-        'A full-spectrum edge on your posts.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        className:
-          'flair-gradient',
-        gradient:
-          'linear-gradient(180deg,#f43f5e,#fbbf24,#34d399,#38bdf8,#a78bfa)',
-      },
+  },
+  {
+    id: 'flair.x.prism',
+    kind: 'POST_FLAIR',
+    name: 'Golden Hour Edge',
+    description: 'A soft rose-to-amber edge on your posts.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#d98a9c,#d9a67a,#cfc27a)',
     },
+  },
 
-    // ─── Profile Banners (distinct scenes) ──────────────────────────────────
-    {
-      id: 'banner.x.mono-noir',
-      kind: 'BANNER',
-      name: 'Noir',
-      description:
-        'A moody monochrome banner.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#0a0a0a,#3f3f46)',
-      },
+  // ─── Post Flair (palettes: editor themes and well-known colour schemes, kept soft) ───
+  {
+    id: 'flair.x.ink',
+    kind: 'POST_FLAIR',
+    name: 'Ink Edge',
+    description: 'An edge in your ink colour.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      className: 'flair-solid',
+      color: 'var(--site-text)',
     },
-    {
-      id: 'banner.x.candy',
-      kind: 'BANNER',
-      name: 'Candy',
-      description:
-        'A sweet candy banner.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#f472b6,#c084fc)',
-      },
+  },
+  {
+    id: 'flair.x.slate',
+    kind: 'POST_FLAIR',
+    name: 'Slate Edge',
+    description: 'A quiet grey-blue edge on your posts.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      className: 'flair-solid',
+      color: '#8a96a8',
     },
-    {
-      id: 'banner.x.sandstorm',
-      kind: 'BANNER',
-      name: 'Sandstorm',
-      description:
-        'A desert sandstorm banner.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#b45309,#fcd34d)',
-      },
+  },
+  {
+    id: 'flair.x.sage',
+    kind: 'POST_FLAIR',
+    name: 'Sage Edge',
+    description: 'A soft sage edge on your posts.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      className: 'flair-solid',
+      color: '#9bb59b',
     },
-    {
-      id: 'banner.x.vaporwave',
-      kind: 'BANNER',
-      name: 'Vaporwave',
-      description:
-        'A retro vaporwave banner.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#a21caf,#22d3ee)',
-      },
+  },
+  {
+    id: 'flair.x.sakura',
+    kind: 'POST_FLAIR',
+    name: 'Sakura Edge',
+    description: 'A pale pink edge on your posts.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      className: 'flair-solid',
+      color: '#e0a3b4',
     },
-    {
-      id: 'banner.x.sunrise',
-      kind: 'BANNER',
-      name: 'Sunrise',
-      description:
-        'A glowing sunrise banner.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#fde047,#fb923c,#f43f5e)',
-      },
+  },
+  {
+    id: 'flair.x.honey',
+    kind: 'POST_FLAIR',
+    name: 'Honey Edge',
+    description: 'A warm honey edge on your posts.',
+    price: co('common'),
+    rarity: 'common',
+    data: {
+      className: 'flair-solid',
+      color: '#d9b45f',
     },
-    {
-      id: 'banner.x.forest',
-      kind: 'BANNER',
-      name: 'Forest Canopy',
-      description:
-        'A lush forest banner.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#14532d,#16a34a,#a3e635)',
-      },
+  },
+  {
+    id: 'flair.x.terracotta',
+    kind: 'POST_FLAIR',
+    name: 'Terracotta Edge',
+    description: 'A baked-clay orange edge on your posts.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      className: 'flair-solid',
+      color: '#d9825f',
     },
-    {
-      id: 'banner.x.firestorm',
-      kind: 'BANNER',
-      name: 'Firestorm',
-      description:
-        'A blazing firestorm banner.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#7f1d1d,#ef4444,#fbbf24)',
-      },
+  },
+  {
+    id: 'flair.x.fern',
+    kind: 'POST_FLAIR',
+    name: 'Fern Edge',
+    description: 'A fresh green edge on your posts.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      className: 'flair-solid',
+      color: '#5fb87a',
     },
-    {
-      id: 'banner.x.northern-lights',
-      kind: 'BANNER',
-      name: 'Northern Lights',
-      description:
-        'An aurora-lit banner.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#064e3b,#22d3ee,#a78bfa)',
-      },
+  },
+  {
+    id: 'flair.x.periwinkle',
+    kind: 'POST_FLAIR',
+    name: 'Periwinkle Edge',
+    description: 'A soft blue-violet edge on your posts.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      className: 'flair-solid',
+      color: '#7a85d9',
     },
-    {
-      id: 'banner.x.cosmos',
-      kind: 'BANNER',
-      name: 'Cosmos',
-      description:
-        'A cosmic banner.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#1e1b4b,#7c3aed,#2563eb,#db2777)',
-      },
+  },
+  {
+    id: 'flair.x.lilac',
+    kind: 'POST_FLAIR',
+    name: 'Lilac Edge',
+    description: 'A gentle lilac edge on your posts.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      className: 'flair-solid',
+      color: '#b9a3e0',
     },
-    {
-      id: 'banner.x.spectra',
-      kind: 'BANNER',
-      name: 'Spectra',
-      description:
-        'A full-spectrum banner.',
-      price:
-        co(
-          'exotic',
-        ),
-      rarity:
-        'exotic',
-      data: {
-        gradient:
-          'linear-gradient(135deg,#f43f5e,#fbbf24,#34d399,#38bdf8,#a78bfa)',
-      },
+  },
+  {
+    id: 'flair.x.copper',
+    kind: 'POST_FLAIR',
+    name: 'Copper Edge',
+    description: 'A brushed copper edge on your posts.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      className: 'flair-solid',
+      color: '#b87a5f',
     },
+  },
+  {
+    id: 'flair.x.nord',
+    kind: 'POST_FLAIR',
+    name: 'Nordic Edge',
+    description: 'Frosted blue to sea green, after the Nord palette.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#88a9c4,#8fbcbb)',
+    },
+  },
+  {
+    id: 'flair.x.vampire',
+    kind: 'POST_FLAIR',
+    name: 'Vampire Edge',
+    description: 'Soft violet to pink, after the Dracula palette.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#b48ad9,#d98ab4)',
+    },
+  },
+  {
+    id: 'flair.x.tokyo',
+    kind: 'POST_FLAIR',
+    name: 'Neon Night Edge',
+    description: 'Calm blue to violet, after Tokyo Night.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#7aa2d9,#a58ad9)',
+    },
+  },
+  {
+    id: 'flair.x.rose-pine',
+    kind: 'POST_FLAIR',
+    name: 'Rosé Edge',
+    description: 'Dusty rose to gold, after Rosé Pine.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#d98aa0,#e0b88a)',
+    },
+  },
+  {
+    id: 'flair.x.gruvbox',
+    kind: 'POST_FLAIR',
+    name: 'Amber Edge',
+    description: 'Retro amber to rust, after Gruvbox.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#c99a4f,#b9764f)',
+    },
+  },
+  {
+    id: 'flair.x.solar',
+    kind: 'POST_FLAIR',
+    name: 'Solar Edge',
+    description: 'Mustard to orange, after Solarized.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#c9a24f,#c9774f)',
+    },
+  },
+  {
+    id: 'flair.x.mocha',
+    kind: 'POST_FLAIR',
+    name: 'Mocha Edge',
+    description: 'Blush to mauve, after Catppuccin.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#dba7cf,#bba8dc)',
+    },
+  },
+  {
+    id: 'flair.x.lagoon-deep',
+    kind: 'POST_FLAIR',
+    name: 'Deep Water Edge',
+    description: 'Deep blue to teal.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#4f7ab8,#4fa5b8)',
+    },
+  },
+  {
+    id: 'flair.x.forest',
+    kind: 'POST_FLAIR',
+    name: 'Forest Edge',
+    description: 'Leaf green to olive.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#6a9f6e,#9fb55f)',
+    },
+  },
+  {
+    id: 'flair.x.volcano',
+    kind: 'POST_FLAIR',
+    name: 'Volcano Edge',
+    description: 'Brick red to burnt orange.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#b8574f,#d98a4f)',
+    },
+  },
+  {
+    id: 'flair.x.rose-gold',
+    kind: 'POST_FLAIR',
+    name: 'Rose Gold Edge',
+    description: 'Rose to champagne.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#d9a3a0,#d9b88a)',
+    },
+  },
+  {
+    id: 'flair.x.dusk-violet',
+    kind: 'POST_FLAIR',
+    name: 'Dusk Violet Edge',
+    description: 'Orchid to indigo, like a synthwave sky.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#b872c4,#8a7ad9)',
+    },
+  },
+  {
+    id: 'flair.x.northern',
+    kind: 'POST_FLAIR',
+    name: 'Northern Lights Edge',
+    description: 'Green to teal to violet, kept soft.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#7ad9a8,#6ab8c9,#8a85d9)',
+    },
+  },
+  {
+    id: 'flair.x.sunrise',
+    kind: 'POST_FLAIR',
+    name: 'Sunrise Edge',
+    description: 'Rose to coral to gold, like an evening sky.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      className: 'flair-gradient',
+      gradient: 'linear-gradient(180deg,#c9748f,#d98a5b,#d9b062)',
+    },
+  },
 
-    // ─── Pets (emoji variety) ───────────────────────────────────────────────
-    {
-      id: 'pet.x.fox',
-      kind: 'PET',
-      name: 'Fox',
-      description:
-        'A clever fox companion.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        emoji:
-          '🦊',
-      },
+  // ─── Profile Banners (distinct scenes) ──────────────────────────────────
+  {
+    id: 'banner.x.mono-noir',
+    kind: 'BANNER',
+    name: 'Noir',
+    description: 'A moody monochrome banner.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      gradient: 'linear-gradient(135deg,#0a0a0a,#3f3f46)',
     },
-    {
-      id: 'pet.x.panda',
-      kind: 'PET',
-      name: 'Panda',
-      description:
-        'A cuddly panda companion.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        emoji:
-          '🐼',
-      },
+  },
+  {
+    id: 'banner.x.candy',
+    kind: 'BANNER',
+    name: 'Candy',
+    description: 'A sweet candy banner.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      gradient: 'linear-gradient(135deg,#f472b6,#c084fc)',
     },
-    {
-      id: 'pet.x.penguin',
-      kind: 'PET',
-      name: 'Penguin',
-      description:
-        'A dapper penguin companion.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        emoji:
-          '🐧',
-      },
+  },
+  {
+    id: 'banner.x.sandstorm',
+    kind: 'BANNER',
+    name: 'Sandstorm',
+    description: 'A desert sandstorm banner.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      gradient: 'linear-gradient(135deg,#b45309,#fcd34d)',
     },
-    {
-      id: 'pet.x.owl',
-      kind: 'PET',
-      name: 'Owl',
-      description:
-        'A wise owl companion.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '🦉',
-      },
+  },
+  {
+    id: 'banner.x.vaporwave',
+    kind: 'BANNER',
+    name: 'Vaporwave',
+    description: 'A retro vaporwave banner.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      gradient: 'linear-gradient(135deg,#a21caf,#22d3ee)',
     },
-    {
-      id: 'pet.x.tiger',
-      kind: 'PET',
-      name: 'Tiger Cub',
-      description:
-        'A fierce tiger cub companion.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '🐯',
-      },
+  },
+  {
+    id: 'banner.x.sunrise',
+    kind: 'BANNER',
+    name: 'Sunrise',
+    description: 'A glowing sunrise banner.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      gradient: 'linear-gradient(135deg,#fde047,#fb923c,#f43f5e)',
     },
-    {
-      id: 'pet.x.octopus',
-      kind: 'PET',
-      name: 'Octopus',
-      description:
-        'An inky octopus companion.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        emoji:
-          '🐙',
-      },
+  },
+  {
+    id: 'banner.x.forest',
+    kind: 'BANNER',
+    name: 'Forest Canopy',
+    description: 'A lush forest banner.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      gradient: 'linear-gradient(135deg,#14532d,#16a34a,#a3e635)',
     },
-    {
-      id: 'pet.x.dino',
-      kind: 'PET',
-      name: 'Dino',
-      description:
-        'A prehistoric dino companion.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        emoji:
-          '🦕',
-      },
+  },
+  {
+    id: 'banner.x.firestorm',
+    kind: 'BANNER',
+    name: 'Firestorm',
+    description: 'A blazing firestorm banner.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      gradient: 'linear-gradient(135deg,#7f1d1d,#ef4444,#fbbf24)',
     },
-    {
-      id: 'pet.x.whale',
-      kind: 'PET',
-      name: 'Whale',
-      description:
-        'A gentle whale companion.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        emoji:
-          '🐳',
-      },
+  },
+  {
+    id: 'banner.x.northern-lights',
+    kind: 'BANNER',
+    name: 'Northern Lights',
+    description: 'An aurora-lit banner.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      gradient: 'linear-gradient(135deg,#064e3b,#22d3ee,#a78bfa)',
     },
-    {
-      id: 'pet.x.dragon2',
-      kind: 'PET',
-      name: 'Wyrmling',
-      description:
-        'A mighty dragon companion.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        emoji:
-          '🐉',
-      },
+  },
+  {
+    id: 'banner.x.cosmos',
+    kind: 'BANNER',
+    name: 'Cosmos',
+    description: 'A cosmic banner.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      gradient: 'linear-gradient(135deg,#1e1b4b,#7c3aed,#2563eb,#db2777)',
     },
-    {
-      id: 'pet.x.fairy',
-      kind: 'PET',
-      name: 'Fairy',
-      description:
-        'A magical fairy companion.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        emoji:
-          '🧚',
-      },
+  },
+  {
+    id: 'banner.x.spectra',
+    kind: 'BANNER',
+    name: 'Spectra',
+    description: 'A full-spectrum banner.',
+    price: co('exotic'),
+    rarity: 'exotic',
+    data: {
+      gradient: 'linear-gradient(135deg,#f43f5e,#fbbf24,#34d399,#38bdf8,#a78bfa)',
     },
-    {
-      id: 'pet.x.void-cat',
-      kind: 'PET',
-      name: 'Void Cat',
-      description:
-        'A mysterious void cat companion.',
-      price:
-        co(
-          'exotic',
-        ),
-      rarity:
-        'exotic',
-      data: {
-        emoji:
-          '🐈‍⬛',
-      },
-    },
+  },
 
-    // ─── Premium Themes (decorative; preview gradient + themeId) ─────────────
-    {
-      id: 'theme.x.arctic',
-      kind: 'THEME',
-      name: 'Arctic',
-      description:
-        'The Arctic premium theme.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        themeId:
-          'arctic',
-        gradient:
-          'linear-gradient(135deg,#0e7490,#a5f3fc)',
-      },
+  // ─── Pets (emoji variety) ───────────────────────────────────────────────
+  {
+    id: 'pet.x.fox',
+    kind: 'PET',
+    name: 'Fox',
+    description: 'A clever fox companion.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      emoji: '🦊',
     },
-    {
-      id: 'theme.x.meadow',
-      kind: 'THEME',
-      name: 'Meadow',
-      description:
-        'The Meadow premium theme.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        themeId:
-          'meadow',
-        gradient:
-          'linear-gradient(135deg,#166534,#a3e635)',
-      },
+  },
+  {
+    id: 'pet.x.panda',
+    kind: 'PET',
+    name: 'Panda',
+    description: 'A cuddly panda companion.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      emoji: '🐼',
     },
-    {
-      id: 'theme.x.neon-city',
-      kind: 'THEME',
-      name: 'Neon City',
-      description:
-        'The Neon City premium theme.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        themeId:
-          'neon-city',
-        gradient:
-          'linear-gradient(135deg,#0f172a,#22d3ee,#db2777)',
-      },
+  },
+  {
+    id: 'pet.x.penguin',
+    kind: 'PET',
+    name: 'Penguin',
+    description: 'A dapper penguin companion.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      emoji: '🐧',
     },
-    {
-      id: 'theme.x.golden-hour',
-      kind: 'THEME',
-      name: 'Golden Hour',
-      description:
-        'The Golden Hour premium theme.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        themeId:
-          'golden-hour',
-        gradient:
-          'linear-gradient(135deg,#b45309,#fbbf24,#fde68a)',
-      },
+  },
+  {
+    id: 'pet.x.owl',
+    kind: 'PET',
+    name: 'Owl',
+    description: 'A wise owl companion.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      emoji: '🦉',
     },
-    {
-      id: 'theme.x.deep-space',
-      kind: 'THEME',
-      name: 'Deep Space',
-      description:
-        'The Deep Space premium theme.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        themeId:
-          'deep-space',
-        gradient:
-          'linear-gradient(135deg,#020617,#4338ca,#7c3aed)',
-      },
+  },
+  {
+    id: 'pet.x.tiger',
+    kind: 'PET',
+    name: 'Tiger Cub',
+    description: 'A fierce tiger cub companion.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      emoji: '🐯',
     },
-    {
-      id: 'theme.x.cyberpunk',
-      kind: 'THEME',
-      name: 'Cyberpunk',
-      description:
-        'The Cyberpunk premium theme.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        themeId:
-          'cyberpunk',
-        gradient:
-          'linear-gradient(135deg,#831843,#22d3ee,#fde047)',
-      },
+  },
+  {
+    id: 'pet.x.octopus',
+    kind: 'PET',
+    name: 'Octopus',
+    description: 'An inky octopus companion.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      emoji: '🐙',
     },
-    {
-      id: 'theme.x.inferno',
-      kind: 'THEME',
-      name: 'Inferno',
-      description:
-        'The Inferno premium theme.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        themeId:
-          'inferno',
-        gradient:
-          'linear-gradient(135deg,#450a0a,#ef4444,#fbbf24)',
-      },
+  },
+  {
+    id: 'pet.x.dino',
+    kind: 'PET',
+    name: 'Dino',
+    description: 'A prehistoric dino companion.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      emoji: '🦕',
     },
-    {
-      id: 'theme.x.prism-break',
-      kind: 'THEME',
-      name: 'Prism Break',
-      description:
-        'The Prism Break premium theme.',
-      price:
-        co(
-          'exotic',
-        ),
-      rarity:
-        'exotic',
-      data: {
-        themeId:
-          'prism-break',
-        gradient:
-          'linear-gradient(135deg,#f43f5e,#fbbf24,#34d399,#38bdf8,#a78bfa)',
-      },
+  },
+  {
+    id: 'pet.x.whale',
+    kind: 'PET',
+    name: 'Whale',
+    description: 'A gentle whale companion.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      emoji: '🐳',
     },
-    {
-      id: 'theme.x.iridescence',
-      kind: 'THEME',
-      name: 'Iridescence',
-      description:
-        'The Iridescence premium theme.',
-      price:
-        co(
-          'exotic',
-        ),
-      rarity:
-        'exotic',
-      data: {
-        themeId:
-          'iridescence',
-        gradient:
-          'linear-gradient(135deg,#fca5a5,#fde68a,#a7f3d0,#bfdbfe,#ddd6fe)',
-      },
-      requiresTier:
-        'pro',
+  },
+  {
+    id: 'pet.x.dragon2',
+    kind: 'PET',
+    name: 'Wyrmling',
+    description: 'A mighty dragon companion.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      emoji: '🐉',
     },
+  },
+  {
+    id: 'pet.x.fairy',
+    kind: 'PET',
+    name: 'Fairy',
+    description: 'A magical fairy companion.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      emoji: '🧚',
+    },
+  },
+  {
+    id: 'pet.x.void-cat',
+    kind: 'PET',
+    name: 'Void Cat',
+    description: 'A mysterious void cat companion.',
+    price: co('exotic'),
+    rarity: 'exotic',
+    data: {
+      emoji: '🐈‍⬛',
+    },
+  },
 
-    // ─── Premium Themes, accent expansion ───────────────────────────────────
-    // Palettes live in `lib/shop/themes.ts`; each `gradient` here is that
-    // palette's own gradient so the shop swatch shows the theme it sells. The
-    // set above only ran from `epic` up, which made a theme the one cosmetic
-    // slot a new account could never afford — these start at `uncommon`.
-    {
-      id: 'theme.x.seafoam',
-      kind: 'THEME',
-      name: 'Seafoam',
-      description:
-        'A cool teal accent over shallow-water greens.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        themeId:
-          'seafoam',
-        gradient:
-          'linear-gradient(135deg,#134e4a,#2dd4bf,#ccfbf1)',
-      },
+  // ─── Premium Themes (decorative; preview gradient + themeId) ─────────────
+  {
+    id: 'theme.x.arctic',
+    kind: 'THEME',
+    name: 'Arctic',
+    description: 'The Arctic premium theme.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      themeId: 'arctic',
+      gradient: 'linear-gradient(135deg,#0e7490,#a5f3fc)',
     },
-    {
-      id: 'theme.x.ember',
-      kind: 'THEME',
-      name: 'Ember',
-      description:
-        'A burnt-orange accent banked in low coals.',
-      price:
-        co(
-          'uncommon',
-        ),
-      rarity:
-        'uncommon',
-      data: {
-        themeId:
-          'ember',
-        gradient:
-          'linear-gradient(135deg,#7c2d12,#f97316,#fdba74)',
-      },
+  },
+  {
+    id: 'theme.x.meadow',
+    kind: 'THEME',
+    name: 'Meadow',
+    description: 'The Meadow premium theme.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      themeId: 'meadow',
+      gradient: 'linear-gradient(135deg,#166534,#a3e635)',
     },
-    {
-      id: 'theme.x.jade',
-      kind: 'THEME',
-      name: 'Jade',
-      description:
-        'A deep emerald accent with a polished-stone sheen.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        themeId:
-          'jade',
-        gradient:
-          'linear-gradient(135deg,#064e3b,#10b981,#6ee7b7)',
-      },
+  },
+  {
+    id: 'theme.x.neon-city',
+    kind: 'THEME',
+    name: 'Neon City',
+    description: 'The Neon City premium theme.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      themeId: 'neon-city',
+      gradient: 'linear-gradient(135deg,#0f172a,#22d3ee,#db2777)',
     },
-    {
-      id: 'theme.x.orchid',
-      kind: 'THEME',
-      name: 'Orchid',
-      description:
-        'A bright fuchsia accent over plum shadow.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        themeId:
-          'orchid',
-        gradient:
-          'linear-gradient(135deg,#4a044e,#d946ef,#f5d0fe)',
-      },
+  },
+  {
+    id: 'theme.x.golden-hour',
+    kind: 'THEME',
+    name: 'Golden Hour',
+    description: 'The Golden Hour premium theme.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      themeId: 'golden-hour',
+      gradient: 'linear-gradient(135deg,#b45309,#fbbf24,#fde68a)',
     },
-    {
-      id: 'theme.x.steel',
-      kind: 'THEME',
-      name: 'Steel',
-      description:
-        'A neutral slate accent for a quieter profile.',
-      price:
-        co(
-          'rare',
-        ),
-      rarity:
-        'rare',
-      data: {
-        themeId:
-          'steel',
-        gradient:
-          'linear-gradient(135deg,#0f172a,#475569,#cbd5e1)',
-      },
+  },
+  {
+    id: 'theme.x.deep-space',
+    kind: 'THEME',
+    name: 'Deep Space',
+    description: 'The Deep Space premium theme.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      themeId: 'deep-space',
+      gradient: 'linear-gradient(135deg,#020617,#4338ca,#7c3aed)',
     },
-    {
-      id: 'theme.x.indigo-drift',
-      kind: 'THEME',
-      name: 'Indigo Drift',
-      description:
-        'A deep indigo accent drifting into midnight.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        themeId:
-          'indigo-drift',
-        gradient:
-          'linear-gradient(135deg,#1e1b4b,#4f46e5,#a5b4fc)',
-      },
+  },
+  {
+    id: 'theme.x.cyberpunk',
+    kind: 'THEME',
+    name: 'Cyberpunk',
+    description: 'The Cyberpunk premium theme.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      themeId: 'cyberpunk',
+      gradient: 'linear-gradient(135deg,#831843,#22d3ee,#fde047)',
     },
-    {
-      id: 'theme.x.tidepool',
-      kind: 'THEME',
-      name: 'Tidepool',
-      description:
-        'A bright sky-blue accent over deep water.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        themeId:
-          'tidepool',
-        gradient:
-          'linear-gradient(135deg,#082f49,#38bdf8,#bae6fd)',
-      },
+  },
+  {
+    id: 'theme.x.inferno',
+    kind: 'THEME',
+    name: 'Inferno',
+    description: 'The Inferno premium theme.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      themeId: 'inferno',
+      gradient: 'linear-gradient(135deg,#450a0a,#ef4444,#fbbf24)',
     },
-    {
-      id: 'theme.x.harvest',
-      kind: 'THEME',
-      name: 'Harvest',
-      description:
-        'A warm yellow accent over late-season bronze.',
-      price:
-        co(
-          'epic',
-        ),
-      rarity:
-        'epic',
-      data: {
-        themeId:
-          'harvest',
-        gradient:
-          'linear-gradient(135deg,#713f12,#eab308,#fef08a)',
-      },
+  },
+  {
+    id: 'theme.x.prism-break',
+    kind: 'THEME',
+    name: 'Prism Break',
+    description: 'The Prism Break premium theme.',
+    price: co('exotic'),
+    rarity: 'exotic',
+    data: {
+      themeId: 'prism-break',
+      gradient: 'linear-gradient(135deg,#f43f5e,#fbbf24,#34d399,#38bdf8,#a78bfa)',
     },
-    {
-      id: 'theme.x.royal-plum',
-      kind: 'THEME',
-      name: 'Royal Plum',
-      description:
-        'A regal purple accent on a velvet backdrop.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        themeId:
-          'royal-plum',
-        gradient:
-          'linear-gradient(135deg,#2e1065,#9333ea,#e9d5ff)',
-      },
+  },
+  {
+    id: 'theme.x.iridescence',
+    kind: 'THEME',
+    name: 'Iridescence',
+    description: 'The Iridescence premium theme.',
+    price: co('exotic'),
+    rarity: 'exotic',
+    data: {
+      themeId: 'iridescence',
+      gradient: 'linear-gradient(135deg,#fca5a5,#fde68a,#a7f3d0,#bfdbfe,#ddd6fe)',
     },
-    {
-      id: 'theme.x.moss',
-      kind: 'THEME',
-      name: 'Moss',
-      description:
-        'A fresh green accent over forest floor.',
-      price:
-        co(
-          'legendary',
-        ),
-      rarity:
-        'legendary',
-      data: {
-        themeId:
-          'moss',
-        gradient:
-          'linear-gradient(135deg,#14532d,#4ade80,#d9f99d)',
-      },
+    requiresTier: 'pro',
+  },
+
+  // ─── Premium Themes, accent expansion ───────────────────────────────────
+  // Palettes live in `lib/shop/themes.ts`; each `gradient` here is that
+  // palette's own gradient so the shop swatch shows the theme it sells. The
+  // set above only ran from `epic` up, which made a theme the one cosmetic
+  // slot a new account could never afford — these start at `uncommon`.
+  {
+    id: 'theme.x.seafoam',
+    kind: 'THEME',
+    name: 'Seafoam',
+    description: 'A cool teal accent over shallow-water greens.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      themeId: 'seafoam',
+      gradient: 'linear-gradient(135deg,#134e4a,#2dd4bf,#ccfbf1)',
     },
-    {
-      id: 'theme.x.obsidian',
-      kind: 'THEME',
-      name: 'Obsidian',
-      description:
-        'A brushed-gold accent struck against volcanic glass.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        themeId:
-          'obsidian',
-        gradient:
-          'linear-gradient(135deg,#09090b,#3f3f46,#e5c07b)',
-      },
+  },
+  {
+    id: 'theme.x.ember',
+    kind: 'THEME',
+    name: 'Ember',
+    description: 'A burnt-orange accent banked in low coals.',
+    price: co('uncommon'),
+    rarity: 'uncommon',
+    data: {
+      themeId: 'ember',
+      gradient: 'linear-gradient(135deg,#7c2d12,#f97316,#fdba74)',
     },
-    {
-      id: 'theme.x.venom',
-      kind: 'THEME',
-      name: 'Venom',
-      description:
-        'An acid-lime accent cut through toxic violet.',
-      price:
-        co(
-          'mythic',
-        ),
-      rarity:
-        'mythic',
-      data: {
-        themeId:
-          'venom',
-        gradient:
-          'linear-gradient(135deg,#1a0b2e,#4c1d95,#bef264)',
-      },
+  },
+  {
+    id: 'theme.x.jade',
+    kind: 'THEME',
+    name: 'Jade',
+    description: 'A deep emerald accent with a polished-stone sheen.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      themeId: 'jade',
+      gradient: 'linear-gradient(135deg,#064e3b,#10b981,#6ee7b7)',
     },
-    {
-      id: 'theme.x.nebula',
-      kind: 'THEME',
-      name: 'Nebula',
-      description:
-        'A luminous violet accent adrift in deep-field colour.',
-      price:
-        co(
-          'exotic',
-        ),
-      rarity:
-        'exotic',
-      data: {
-        themeId:
-          'nebula',
-        gradient:
-          'linear-gradient(135deg,#0b1026,#4338ca,#c084fc,#f472b6,#38bdf8)',
-      },
+  },
+  {
+    id: 'theme.x.orchid',
+    kind: 'THEME',
+    name: 'Orchid',
+    description: 'A bright fuchsia accent over plum shadow.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      themeId: 'orchid',
+      gradient: 'linear-gradient(135deg,#4a044e,#d946ef,#f5d0fe)',
     },
-  ];
+  },
+  {
+    id: 'theme.x.steel',
+    kind: 'THEME',
+    name: 'Steel',
+    description: 'A neutral slate accent for a quieter profile.',
+    price: co('rare'),
+    rarity: 'rare',
+    data: {
+      themeId: 'steel',
+      gradient: 'linear-gradient(135deg,#0f172a,#475569,#cbd5e1)',
+    },
+  },
+  {
+    id: 'theme.x.indigo-drift',
+    kind: 'THEME',
+    name: 'Indigo Drift',
+    description: 'A deep indigo accent drifting into midnight.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      themeId: 'indigo-drift',
+      gradient: 'linear-gradient(135deg,#1e1b4b,#4f46e5,#a5b4fc)',
+    },
+  },
+  {
+    id: 'theme.x.tidepool',
+    kind: 'THEME',
+    name: 'Tidepool',
+    description: 'A bright sky-blue accent over deep water.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      themeId: 'tidepool',
+      gradient: 'linear-gradient(135deg,#082f49,#38bdf8,#bae6fd)',
+    },
+  },
+  {
+    id: 'theme.x.harvest',
+    kind: 'THEME',
+    name: 'Harvest',
+    description: 'A warm yellow accent over late-season bronze.',
+    price: co('epic'),
+    rarity: 'epic',
+    data: {
+      themeId: 'harvest',
+      gradient: 'linear-gradient(135deg,#713f12,#eab308,#fef08a)',
+    },
+  },
+  {
+    id: 'theme.x.royal-plum',
+    kind: 'THEME',
+    name: 'Royal Plum',
+    description: 'A regal purple accent on a velvet backdrop.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      themeId: 'royal-plum',
+      gradient: 'linear-gradient(135deg,#2e1065,#9333ea,#e9d5ff)',
+    },
+  },
+  {
+    id: 'theme.x.moss',
+    kind: 'THEME',
+    name: 'Moss',
+    description: 'A fresh green accent over forest floor.',
+    price: co('legendary'),
+    rarity: 'legendary',
+    data: {
+      themeId: 'moss',
+      gradient: 'linear-gradient(135deg,#14532d,#4ade80,#d9f99d)',
+    },
+  },
+  {
+    id: 'theme.x.obsidian',
+    kind: 'THEME',
+    name: 'Obsidian',
+    description: 'A brushed-gold accent struck against volcanic glass.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      themeId: 'obsidian',
+      gradient: 'linear-gradient(135deg,#09090b,#3f3f46,#e5c07b)',
+    },
+  },
+  {
+    id: 'theme.x.venom',
+    kind: 'THEME',
+    name: 'Venom',
+    description: 'An acid-lime accent cut through toxic violet.',
+    price: co('mythic'),
+    rarity: 'mythic',
+    data: {
+      themeId: 'venom',
+      gradient: 'linear-gradient(135deg,#1a0b2e,#4c1d95,#bef264)',
+    },
+  },
+  {
+    id: 'theme.x.nebula',
+    kind: 'THEME',
+    name: 'Nebula',
+    description: 'A luminous violet accent adrift in deep-field colour.',
+    price: co('exotic'),
+    rarity: 'exotic',
+    data: {
+      themeId: 'nebula',
+      gradient: 'linear-gradient(135deg,#0b1026,#4338ca,#c084fc,#f472b6,#38bdf8)',
+    },
+  },
+];
 
 /**
  * Official site themes (lib/themes/official.ts): each recolours the whole site for its owner, unlike a `THEME`, which
  * recolours only their profile. Priced by rarity like every other item; applied from the store, Settings or the theme
  * studio rather than equipped.
  */
-const SITE_THEME_ITEMS: ShopItem[] =
-  Object.entries(
-    OFFICIAL_SITE_THEMES,
-  ).map(
-    ([
-      id,
-      theme,
-    ]) => ({
-      id: `site.${id}`,
-      kind: 'SITE_THEME',
-      name: theme.name,
-      description:
-        theme.description,
-      price:
-        co(
-          theme.rarity,
-        ),
-      rarity:
-        theme.rarity,
-      data: {
-        siteThemeId:
-          id,
-        gradient:
-          officialThemePicture(
-            theme.tokens,
-          ),
-      },
-    }),
-  );
+const SITE_THEME_ITEMS: ShopItem[] = Object.entries(OFFICIAL_SITE_THEMES).map(([id, theme]) => ({
+  id: `site.${id}`,
+  kind: 'SITE_THEME',
+  name: theme.name,
+  description: theme.description,
+  price: co(theme.rarity),
+  rarity: theme.rarity,
+  data: {
+    siteThemeId: id,
+    gradient: officialThemePicture(theme.tokens),
+  },
+}));
 
 /** Badges and pets carry their art key in `data`, so every payload that already sends `item.data` (the shop, the market,
  *  the equipped cosmetics) can draw the art; the emoji stays as the fallback for anything that cannot. */
 const withArt = (item: ShopItem): ShopItem =>
   item.kind === 'BADGE' || item.kind === 'PET' ? { ...item, data: { ...item.data, art: item.id } } : item;
 
-export const SHOP_ITEMS: ShopItem[] =
-  [
-    ...LEGACY_SHOP_ITEMS,
-    ...GENERATED_ITEMS,
-    ...SITE_THEME_ITEMS,
-  ].map(withArt);
+export const SHOP_ITEMS: ShopItem[] = [...LEGACY_SHOP_ITEMS, ...GENERATED_ITEMS, ...SITE_THEME_ITEMS].map(withArt);
 
-const BY_ID =
-  new Map(
-    SHOP_ITEMS.map(
-      (
-        i,
-      ) => [
-        i.id,
-        i,
-      ],
-    ),
-  );
-export function getShopItem(
-  id: string,
-):
-  | ShopItem
-  | undefined {
-  return BY_ID.get(
-    id,
-  );
+const BY_ID = new Map(SHOP_ITEMS.map((i) => [i.id, i]));
+export function getShopItem(id: string): ShopItem | undefined {
+  return BY_ID.get(id);
 }

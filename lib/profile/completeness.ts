@@ -18,21 +18,12 @@
  */
 
 export interface CompletenessSubject {
-  image:
-    | string
-    | null
-    | undefined;
-  bio:
-    | string
-    | null
-    | undefined;
+  image: string | null | undefined;
+  bio: string | null | undefined;
   linkCount: number;
   postCount: number;
   followingCount: number;
-  themeId:
-    | string
-    | null
-    | undefined;
+  themeId: string | null | undefined;
 }
 
 export interface CompletenessStep {
@@ -51,71 +42,49 @@ const MIN_BIO_CHARS = 20;
 /** Following this many accounts is roughly where a feed stops looking empty. */
 const MIN_FOLLOWING = 3;
 
-export function completenessSteps(
-  subject: CompletenessSubject,
-): CompletenessStep[] {
+export function completenessSteps(subject: CompletenessSubject): CompletenessStep[] {
   return [
     {
       id: 'avatar',
       weight: 20,
-      labelKey:
-        'profile-step-avatar',
+      labelKey: 'profile-step-avatar',
       href: '/settings/profile',
-      done: Boolean(
-        subject.image,
-      ),
+      done: Boolean(subject.image),
     },
     {
       id: 'bio',
       weight: 15,
-      labelKey:
-        'profile-step-bio',
+      labelKey: 'profile-step-bio',
       href: '/settings/profile',
-      done:
-        (subject.bio?.trim()
-          .length ??
-          0) >=
-        MIN_BIO_CHARS,
+      done: (subject.bio?.trim().length ?? 0) >= MIN_BIO_CHARS,
     },
     {
       id: 'links',
       weight: 10,
-      labelKey:
-        'profile-step-links',
+      labelKey: 'profile-step-links',
       href: '/settings/profile',
-      done:
-        subject.linkCount >
-        0,
+      done: subject.linkCount > 0,
     },
     {
       id: 'first-post',
       weight: 25,
-      labelKey:
-        'profile-step-post',
+      labelKey: 'profile-step-post',
       href: '/',
-      done:
-        subject.postCount >
-        0,
+      done: subject.postCount > 0,
     },
     {
       id: 'follow',
       weight: 15,
-      labelKey:
-        'profile-step-follow',
+      labelKey: 'profile-step-follow',
       href: '/explore',
-      done:
-        subject.followingCount >=
-        MIN_FOLLOWING,
+      done: subject.followingCount >= MIN_FOLLOWING,
     },
     {
       id: 'theme',
       weight: 15,
-      labelKey:
-        'profile-step-theme',
+      labelKey: 'profile-step-theme',
       href: '/settings/appearance',
-      done: Boolean(
-        subject.themeId,
-      ),
+      done: Boolean(subject.themeId),
     },
   ];
 }
@@ -129,71 +98,20 @@ export interface Completeness {
   next: CompletenessStep | null;
 }
 
-export function completeness(
-  subject: CompletenessSubject,
-): Completeness {
-  const steps =
-    completenessSteps(
-      subject,
-    );
-  const total =
-    steps.reduce(
-      (
-        sum,
-        s,
-      ) =>
-        sum +
-        s.weight,
-      0,
-    );
-  const earned =
-    steps.reduce(
-      (
-        sum,
-        s,
-      ) =>
-        s.done
-          ? sum +
-            s.weight
-          : sum,
-      0,
-    );
-  const percent =
-    total >
-    0
-      ? Math.round(
-          (earned /
-            total) *
-            100,
-        )
-      : 100;
+export function completeness(subject: CompletenessSubject): Completeness {
+  const steps = completenessSteps(subject);
+  const total = steps.reduce((sum, s) => sum + s.weight, 0);
+  const earned = steps.reduce((sum, s) => (s.done ? sum + s.weight : sum), 0);
+  const percent = total > 0 ? Math.round((earned / total) * 100) : 100;
 
   // Surface ONE next step rather than a checklist. A list of six things to do
   // is a chore; a single suggestion is a nudge.
-  const next =
-    steps
-      .filter(
-        (
-          s,
-        ) =>
-          !s.done,
-      )
-      .sort(
-        (
-          a,
-          b,
-        ) =>
-          b.weight -
-          a.weight,
-      )[0] ??
-    null;
+  const next = steps.filter((s) => !s.done).sort((a, b) => b.weight - a.weight)[0] ?? null;
 
   return {
     steps,
     percent,
-    complete:
-      percent >=
-      100,
+    complete: percent >= 100,
     next,
   };
 }
@@ -206,23 +124,16 @@ export function completeness(
  * it. That check belongs to the caller (`awardCoins` with a `refId`), which is
  * why this module only declares the amounts.
  */
-export const STEP_REWARD_COINS: Record<
-  string,
-  number
-> =
-  {
-    avatar: 100,
-    bio: 100,
-    links: 50,
-    'first-post': 250,
-    follow: 100,
-    theme: 100,
-  };
+export const STEP_REWARD_COINS: Record<string, number> = {
+  avatar: 100,
+  bio: 100,
+  links: 50,
+  'first-post': 250,
+  follow: 100,
+  theme: 100,
+};
 
 /** Ledger reference for a step's one-time grant. */
-export function stepRewardRef(
-  userId: string,
-  stepId: string,
-): string {
+export function stepRewardRef(userId: string, stepId: string): string {
   return `completeness:${userId}:${stepId}`;
 }

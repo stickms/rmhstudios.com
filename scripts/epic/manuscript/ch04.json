@@ -6,10 +6,7 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": [
-      "折旗蠻嶺英魂烈",
-      "問死篝燈兄語長"
-    ],
+    "zh": ["折旗蠻嶺英魂烈", "問死篝燈兄語長"],
     "en": [
       "A banner breaks on savage ridges — the hero's soul blazes",
       "By firelight brothers speak of death — those words outlast the night"
@@ -23,12 +20,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "蠻山萬仞鎖雲煙",
-        "敵壘層層鐵甲連",
-        "五千戈矛映寒日",
-        "誰敢孤騎入陣前"
-      ],
+      "zh": ["蠻山萬仞鎖雲煙", "敵壘層層鐵甲連", "五千戈矛映寒日", "誰敢孤騎入陣前"],
       "en": [
         "Ten thousand fathoms of savage mountain locked in cloud and smoke",
         "Enemy ramparts tier on tier, iron armor linked in rows",
@@ -55,12 +47,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "孤騎衝煙指大纛",
-        "刀光一道裂霜寒",
-        "五千甲士屏息立",
-        "只聽蠻嶺風聲歎"
-      ],
+      "zh": ["孤騎衝煙指大纛", "刀光一道裂霜寒", "五千甲士屏息立", "只聽蠻嶺風聲歎"],
       "en": [
         "A lone rider charges through smoke and points at the great war-banner",
         "One arc of blade-light splits the freezing air",
@@ -160,12 +147,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "烽火熄時山色老",
-        "英雄醉後夢魂輕",
-        "不知篝影搖搖處",
-        "已有西風識此情"
-      ],
+      "zh": ["烽火熄時山色老", "英雄醉後夢魂輕", "不知篝影搖搖處", "已有西風識此情"],
       "en": [
         "When beacon fires go out, the mountain's color ages",
         "When heroes fall asleep drunk, their dreaming souls grow weightless",

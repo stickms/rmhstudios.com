@@ -11,31 +11,12 @@
  * await the first call's promise instead. The slot clears when the call settles,
  * so a later call (after a disconnect, or after a failure) starts fresh.
  */
-export function singleFlight<
-  A extends
-    unknown[],
-  T,
->(
-  run: (
-    ...args: A
-  ) => Promise<T>,
-): (
-  ...args: A
-) => Promise<T> {
-  let inflight: Promise<T> | null =
-    null;
-  return (
-    ...args: A
-  ) => {
-    inflight ??=
-      run(
-        ...args,
-      ).finally(
-        () => {
-          inflight =
-            null;
-        },
-      );
+export function singleFlight<A extends unknown[], T>(run: (...args: A) => Promise<T>): (...args: A) => Promise<T> {
+  let inflight: Promise<T> | null = null;
+  return (...args: A) => {
+    inflight ??= run(...args).finally(() => {
+      inflight = null;
+    });
     return inflight;
   };
 }

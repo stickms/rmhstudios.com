@@ -7,6 +7,7 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 import { playerProfile, type PlayerProfile } from '@features/slice-it/engine/player.server';
 import { gradeFor } from '@features/slice-it/engine/scoring';
 import type { Lamp } from '@features/slice-it/engine/types';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * A Slice It player page — where every leaderboard row now goes (`X11`/`X12`).
@@ -119,7 +120,7 @@ function Panel({ children, title }: { children: React.ReactNode; title: string }
   );
 }
 
-function PlayerHeader({ profile }: { profile: PlayerProfile }) {
+function PlayerHeader({ profile }: { profile: PlayerProfile }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
   const { user, career } = profile;
 
@@ -166,7 +167,7 @@ function PlayerHeader({ profile }: { profile: PlayerProfile }) {
             {t('player-total-score', { defaultValue: 'Total score' })}
           </dt>
           <dd className="text-xl font-black tabular-nums text-(--slice-primary)">
-            {(career?.totalScore ?? 0).toLocaleString()}
+            {fmt.number((career?.totalScore ?? 0))}
           </dd>
         </div>
         <div className="text-right">
@@ -174,7 +175,7 @@ function PlayerHeader({ profile }: { profile: PlayerProfile }) {
             {t('player-games-played', { defaultValue: 'Runs' })}
           </dt>
           <dd className="text-xl font-black tabular-nums text-slice-text">
-            {(career?.gamesPlayed ?? 0).toLocaleString()}
+            {fmt.number((career?.gamesPlayed ?? 0))}
           </dd>
         </div>
       </dl>
@@ -235,7 +236,7 @@ function LampDot({ lamp }: { lamp: Lamp }) {
   );
 }
 
-function BestScores({ profile }: { profile: PlayerProfile }) {
+function BestScores({ profile }: { profile: PlayerProfile }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
 
   return (
@@ -263,7 +264,7 @@ function BestScores({ profile }: { profile: PlayerProfile }) {
               </span>
               <span className="shrink-0 text-right">
                 <span className="block font-black tabular-nums text-(--slice-primary)">
-                  {best.score.toLocaleString()}
+                  {fmt.number(best.score)}
                 </span>
                 {best.accuracy !== null && (
                   <span className="block font-mono text-xs font-bold text-slice-text-light">
@@ -279,7 +280,7 @@ function BestScores({ profile }: { profile: PlayerProfile }) {
   );
 }
 
-function RecentRuns({ profile }: { profile: PlayerProfile }) {
+function RecentRuns({ profile }: { profile: PlayerProfile }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
 
   return (
@@ -307,7 +308,7 @@ function RecentRuns({ profile }: { profile: PlayerProfile }) {
               </span>
               <span className="shrink-0 text-right">
                 <span className="block font-black tabular-nums text-slice-text">
-                  {run.score.toLocaleString()}
+                  {fmt.number(run.score)}
                 </span>
                 <span className="block font-mono text-xs font-bold text-slice-text-light">
                   {(run.accuracy * 100).toFixed(1)}%

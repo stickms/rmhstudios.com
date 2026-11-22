@@ -9,7 +9,9 @@
  * author. It runs from the worker (see jobs.server.ts) and, idempotently, from
  * the first read after the deadline so the result never waits for a cron tick.
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import type { ChallengeDTO } from '@/lib/communities/plus';
@@ -76,11 +78,26 @@ export async function createChallenge(
 }
 
 /** Cancel the running challenge (entries are deleted; their posts stay). */
-export async function cancelChallenge(communityId: string, challengeId: string): Promise<void> {
-  const res = await prisma.communityChallenge.deleteMany({
-    where: { id: challengeId, communityId, finalizedAt: null },
+export async function cancelChallenge(
+  communityId: string,
+  challengeId: string,
+  actorId: string,
+): Promise<void> {
+  const cancelled = await prisma.$transaction(async (tx) => {
+    const res = await tx.communityChallenge.deleteMany({
+      where: { id: challengeId, communityId, finalizedAt: null },
+    });
+    if (res.count === 0) return false;
+    await logModAction(tx, {
+      communityId,
+      actorId,
+      action: 'challenge_cancelled',
+      targetType: 'challenge',
+      targetId: challengeId,
+    });
+    return true;
   });
-  if (res.count === 0) throw new ChallengeError('Challenge not found or already finished', 404);
+  if (!cancelled) throw new ChallengeError('Challenge not found or already finished', 404);
 }
 
 export async function castVote(args: {
@@ -221,6 +238,8 @@ export async function getCurrentChallenge(
             imageUrls: true,
             imageAlts: true,
             gifUrl: true,
+            gifAlt: true,
+            contentWarning: true,
             user: { select: userDisplaySelect },
           },
         },
@@ -248,10 +267,13 @@ export async function getCurrentChallenge(
       id: e.id,
       postId: e.postId,
       author: resolveUser(e.post.user),
-      content: e.post.content.slice(0, 280),
-      imageUrl: e.post.imageUrls[0] ?? null,
-      imageAlt: e.post.imageAlts[0] ?? null,
-      gifUrl: e.post.gifUrl,
+      // An entry with a content warning reason shows the reason in place of its text and media (sprint 06 #16): the
+      // panel has no reveal control, so what it cannot reveal it leaves out.
+      content: (previewTextFor(e.post) ?? '').slice(0, 280),
+      imageUrl: e.post.contentWarning ? null : (e.post.imageUrls[0] ?? null),
+      imageAlt: e.post.contentWarning ? null : (e.post.imageAlts[0] ?? null),
+      gifUrl: e.post.contentWarning ? null : e.post.gifUrl,
+      gifAlt: e.post.contentWarning ? null : e.post.gifAlt,
       voteCount: phase === 'closed' ? e.voteCount : null,
       mine: e.userId === viewerId,
       isWinner: e.id === challenge.winnerEntryId,

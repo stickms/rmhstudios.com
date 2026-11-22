@@ -1,0 +1,33 @@
+// ─── Durable fan-outs (s08-05) ────────────────────────────────────────────
+// One row per notification fan-out (community post alerts, event updates). It holds the lease a runner owns, the
+// recipient cursor and the counters, so a worker killed mid-send is resumed where it stopped. No member column:
+// the run is about a subject (a post, an update), never a person.
+enum FanoutStatus {
+  RUNNING
+  DONE
+  FAILED
+}
+
+model FanoutRun {
+  id          String       @id @default(cuid())
+  /// 'post-alert' | 'event-update'
+  kind        String       @db.VarChar(24)
+  /// The post id or the event update id.
+  subjectId   String       @db.VarChar(64)
+  /// The last recipient id whose batch was fully sent; null before the first batch.
+  cursor      String?
+  sent        Int          @default(0)
+  collapsed   Int          @default(0)
+  /// Audience members read so far (the post-alert cap counts these, not only those notified).
+  scanned     Int          @default(0)
+  status      FanoutStatus @default(RUNNING)
+  /// The lease: a runner owns the run while this is newer than two minutes; every progress write compares-and-sets it.
+  heartbeatAt DateTime     @default(now())
+  reclaims    Int          @default(0)
+  startedAt   DateTime     @default(now())
+  finishedAt  DateTime?
+
+  @@unique([kind, subjectId])
+  @@index([status, heartbeatAt])
+  @@map("fanout_run")
+}

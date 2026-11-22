@@ -12,6 +12,9 @@ import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import './SynapseStorm.css';
 import { useGameSession } from '@/hooks/useGameSession';
 import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
+import { AssistStartNotice, parseRanked, useAssistRun } from '@/components/games/assist-run';
+import { SynapseAssistContext } from './assist-context';
+import { NO_ASSIST_FLAGS, synapseAssistFlags, type SynapseAssistFlags } from '../engine/assist-profile';
 
 interface SynapseStormGameProps {
     /** Resolves with the score endpoint's JSON body (or nothing for a guest). */
@@ -25,11 +28,23 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
     const [topView, setTopView] = useState<TopLevelView>('main');
     const [scoreSaved, setScoreSaved] = useState(false);
     const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
-    const { state, startGame, startCustomGame, solvePuzzle, skipMemoryPhase, returnToMenu } = useGameEngine();
+    const { state, startGame, startCustomGame, solvePuzzle, skipMemoryPhase, returnToMenu, configureAssist, endRun } = useGameEngine();
     // R14: set while the current run is an unranked training storm. Such a run never submits.
     const [training, setTraining] = useState<PuzzleCategory[] | null>(null);
-    const playStorm = () => { setTraining(null); startGame(); };
-    const playTraining = (categories: PuzzleCategory[]) => { setTraining(categories); startCustomGame(categories); };
+    // Assists (settings > Game assists): the server hands the profile out at run start and records that the
+    // run is assisted; the run starts once it answers (a failed call is the plain game).
+    const signedIn = Boolean(currentUserId);
+    const startAssistRun = useAssistRun('synapse-storm', signedIn);
+    const [assist, setAssist] = useState<SynapseAssistFlags>(NO_ASSIST_FLAGS);
+    const [ranked, setRanked] = useState<boolean | null>(null);
+    const beginRun = async (begin: () => void) => {
+        const flags = synapseAssistFlags(await startAssistRun());
+        setAssist(flags);
+        configureAssist(flags);
+        begin();
+    };
+    const playStorm = () => { setTraining(null); setRanked(null); void beginRun(startGame); };
+    const playTraining = (categories: PuzzleCategory[]) => { setTraining(categories); setRanked(null); void beginRun(() => startCustomGame(categories)); };
     // Session contract: keep the screen on while a round is running.
     useGameSession({ id: 'synapse-storm', active: state.status === 'playing' });
     useEffect(() => {
@@ -60,6 +75,7 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
                 totalTime: state.totalTime,
             }).then((body) => {
                 setScoreSaved(true);
+                setRanked(parseRanked(body));
                 void takeScoreMoment(body);
             });
         }
@@ -74,9 +90,15 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
     }
 
     return (
-        <div className="synapse-storm-root">
+        <SynapseAssistContext.Provider value={assist}>
+        <div
+            className="synapse-storm-root"
+            data-assist-calm={assist.calm ? '' : undefined}
+            data-assist-color-safe={assist.colorSafe ? '' : undefined}
+        >
             <div className="scanline-overlay" />
             <div className="app-container">
+                {state.status === 'menu' && <AssistStartNotice signedIn={signedIn} className="assist-note" />}
                 {state.status === 'menu' && (
                     <MainMenu
                         onStart={playStorm}
@@ -86,15 +108,16 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
                     />
                 )}
                 {state.status === 'playing' && (
-                    <GameBoard state={state} onSolve={solvePuzzle} onSkipPhase={skipMemoryPhase} />
+                    <GameBoard state={state} onSolve={solvePuzzle} onSkipPhase={skipMemoryPhase} onEndRun={endRun} />
                 )}
                 {state.status === 'gameover' && (
                     <ResultMomentSlot moment={scoreMoment} gameName="Synapse Storm" onDismiss={clearScoreMoment} />
                 )}
                 {state.status === 'gameover' && (
-                    <GameOver state={state} onRestart={training ? () => playTraining(training) : playStorm} onMenu={returnToMenu} currentUserId={currentUserId} scoreSaved={scoreSaved} newBest={!!scoreMoment} training={!!training} />
+                    <GameOver state={state} onRestart={training ? () => playTraining(training) : playStorm} onMenu={returnToMenu} currentUserId={currentUserId} scoreSaved={scoreSaved} newBest={!!scoreMoment} training={!!training} ranked={ranked} />
                 )}
             </div>
         </div>
+        </SynapseAssistContext.Provider>
     );
 };

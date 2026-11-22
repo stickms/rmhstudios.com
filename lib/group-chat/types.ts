@@ -7,15 +7,9 @@ import type { ReactionRow } from '@/lib/social/reactions';
 
 export interface Sender {
   id: string;
-  name:
-    | string
-    | null;
-  handle:
-    | string
-    | null;
-  image:
-    | string
-    | null;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
 }
 
 export interface Poll {
@@ -25,9 +19,7 @@ export interface Poll {
     votes: number;
   }[];
   totalVotes: number;
-  myVote:
-    | number
-    | null;
+  myVote: number | null;
 }
 
 export interface Msg {
@@ -35,10 +27,10 @@ export interface Msg {
   content: string;
   createdAt: string;
   sender: Sender;
-  gifUrl?:
-    | string
-    | null;
+  gifUrl?: string | null;
+  gifAlt?: string | null;
   imageUrls?: string[];
+  imageAlts?: string[];
   poll?: Poll | null;
   reactions?: ReactionRow[];
   /** P04 — message kind (text when absent), structured payload, forward hops, thread replies, expiry. */
@@ -46,15 +38,20 @@ export interface Msg {
   meta?: unknown;
   forwardCount?: number;
   replyCount?: number;
-  expiresAt?:
-    | string
-    | null;
+  expiresAt?: string | null;
+}
+
+/** A member of a group: an author plus their role (s07-04). The owner is `Group.ownerId` and has role `member`. */
+export interface GroupMember extends Sender {
+  role: 'member' | 'admin';
 }
 
 export interface Group {
   id: string;
   name: string;
   isOwner: boolean;
-  members: Sender[];
+  /** The owner's id, for the member list's Owner mark. */
+  ownerId: string | null;
+  members: GroupMember[];
   messages: Msg[];
 }

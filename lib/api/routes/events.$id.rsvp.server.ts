@@ -2,9 +2,11 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { rsvp, unrsvp, EventError } from '@/lib/events.server';
+import { denyCode, denyText } from '@/lib/communities/bans';
 
 const rsvpSchema = z.object({
-  status: z.enum(['going', 'maybe']),
+  // 'waitlist' joins the waitlist of a full one-off event; a plain 'going' on a full event is still refused.
+  status: z.enum(['going', 'maybe', 'waitlist']),
   // K4 — repeating events: carry the RSVP over to every occurrence, or pin it to one date.
   everyTime: z.boolean().optional(),
   occurrenceAt: z.coerce.date().optional(),
@@ -20,15 +22,21 @@ function mapEventError(err: EventError): [string, number] {
       return ['Not found', 404];
     case 'CAPACITY_FULL':
       return ['This event is full', 409];
+    case 'WAITLIST_CLOSED':
+      return ['The waitlist is closed', 409];
+    case 'WAITLIST_FULL':
+      return ['The waitlist is full', 409];
     case 'CANCELED':
       return ['This event was canceled', 409];
+    case 'OCCURRENCE_SKIPPED':
+      return ['This date was skipped', 409];
     default:
       return ['Could not update RSVP', 400];
   }
 }
 
 /**
- * POST   /api/events/$id/rsvp — RSVP going/maybe (schedules reminders on 'going').
+ * POST   /api/events/$id/rsvp — RSVP going/maybe, or join the waitlist of a full event (schedules reminders on 'going').
  * DELETE /api/events/$id/rsvp — withdraw RSVP.
  */
 export const route = apiRoute('/api/events/$id/rsvp', {
@@ -48,6 +56,18 @@ export const route = apiRoute('/api/events/$id/rsvp', {
         return Response.json(result);
       } catch (error) {
         if (error instanceof EventError) {
+          if (error.code === 'COMMUNITY_SANCTIONED' && error.sanction) {
+            // The same refusal body as the community's join and write paths (useSanctionRefusal reads it).
+            const { kind, endsAt } = error.sanction;
+            return Response.json(
+              {
+                error: denyText(kind, endsAt),
+                code: denyCode(kind),
+                endsAt: endsAt ? endsAt.toISOString() : null,
+              },
+              { status: 403 },
+            );
+          }
           const [message, status] = mapEventError(error);
           return Response.json({ error: message }, { status });
         }

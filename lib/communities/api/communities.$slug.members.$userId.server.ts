@@ -4,6 +4,8 @@ import * as C from '@/lib/communities/communities.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getCommunityBySlug, getRole, canModerate } from '@/lib/communities/access.server';
 import { markRemoved } from '@/lib/communities/join-requests.server';
+import { logModAction } from '@/lib/communities/modlog.server';
+import { recordMemberEvent } from '@/lib/communities/member-events.server';
 import { z } from 'zod';
 
 /**
@@ -38,9 +40,19 @@ export const route = apiRoute('/api/communities/$slug/members/$userId', {
     if (target.role === 'ADMIN')
       return Response.json({ error: "Can't change an admin" }, { status: 400 });
 
-    await prisma.communityMember.update({
-      where: { id: target.id },
-      data: { role: parsed.data.role },
+    await prisma.$transaction(async (tx) => {
+      await tx.communityMember.update({
+        where: { id: target.id },
+        data: { role: parsed.data.role },
+      });
+      await logModAction(tx, {
+        communityId: community.id,
+        actorId: session.user.id,
+        action: 'member_role_changed',
+        targetUserId: params.userId,
+        targetType: 'member',
+        detail: { role: parsed.data.role },
+      });
     });
     return Response.json({ success: true, role: parsed.data.role });
   }),
@@ -65,15 +77,23 @@ export const route = apiRoute('/api/communities/$slug/members/$userId', {
       return Response.json({ error: 'Only the owner can remove a mod' }, { status: 403 });
     }
 
-    await prisma.$transaction([
-      prisma.communityMember.delete({ where: { id: target.id } }),
-      prisma.community.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.communityMember.delete({ where: { id: target.id } });
+      await tx.community.update({
         where: { id: community.id },
         data: { memberCount: { decrement: 1 } },
-      }),
+      });
       // Remember the removal so a live invite link / instant re-request can't undo it.
-      markRemoved(prisma, community.id, params.userId, session.user.id),
-    ]);
+      await markRemoved(tx, community.id, params.userId, session.user.id);
+      await recordMemberEvent(tx, community.id, params.userId, 'removed');
+      await logModAction(tx, {
+        communityId: community.id,
+        actorId: session.user.id,
+        action: 'member_removed',
+        targetUserId: params.userId,
+        targetType: 'member',
+      });
+    });
     return Response.json({ success: true });
   }),
 });

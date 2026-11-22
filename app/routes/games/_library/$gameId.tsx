@@ -14,8 +14,13 @@ import { GAMES_INDEX_PATH, appHubHead } from '@/lib/seo-catalog';
 import { aiAvailable } from '@/lib/developer/ai.server';
 import { listReviews, getRatingAgg, listGuides } from '@/lib/games/meta.server';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
+import { getFollowState, latestPatchNotes, updatesGame } from '@/lib/arcade/updates.server';
+import type { PatchNoteItem } from '@/lib/arcade/updates';
+import type { FollowState } from '@/lib/arcade/updates.contract';
 import { getTrickOfTheWeek } from '@/lib/trick-week/trick-week.server';
 import type { TrickView } from '@/lib/trick-week/trick-week';
+import { boardForGame } from '@/lib/replays.server';
+import type { BoardReplay } from '@/lib/game/replay-library';
 
 interface HubPayload {
   gameId: string;
@@ -43,6 +48,10 @@ interface HubPayload {
   extras: LibraryExtras;
   /** Titles people who play this also play (public players, totals only). */
   alsoPlayed: AlsoPlayed[];
+  /** The latest three patch notes and the viewer's follow state; null for an app or an off-site title. */
+  updates: { notes: PatchNoteItem[]; follow: FollowState } | null;
+  /** The game's top public replays; null when the title records no replays (no Replays section). */
+  replays: BoardReplay[] | null;
 }
 
 const NO_RATINGS: RatingAgg = { average: 0, count: 0 };
@@ -59,13 +68,21 @@ const fetchHub = createServerFn({ method: 'GET' })
     const kind = game ? 'game' : 'app';
     const session = await getRequestSession();
     const viewerId = session?.user.id ?? null;
-    const [reviews, agg, guides, trickOfTheWeek, extras, alsoPlayed] = await Promise.all([
+    const hasUpdates = kind === 'game' && !!updatesGame(gameId);
+    const [reviews, agg, guides, trickOfTheWeek, extras, alsoPlayed, updates, replays] = await Promise.all([
       kind === 'game' ? listReviews(gameId, viewerId) : [],
       kind === 'game' ? getRatingAgg(gameId) : NO_RATINGS,
       kind === 'game' ? listGuides(gameId, viewerId) : [],
       gameId === 'nightrail' ? getTrickOfTheWeek().catch(() => null) : null,
       getLibraryExtras(viewerId, gameId),
       getAlsoPlayed(gameId),
+      hasUpdates
+        ? Promise.all([latestPatchNotes(gameId, 3), getFollowState(viewerId, gameId)]).then(([notes, follow]) => ({
+            notes,
+            follow,
+          }))
+        : null,
+      kind === 'game' ? boardForGame(gameId, viewerId) : null,
     ]);
     return {
       gameId,
@@ -87,6 +104,8 @@ const fetchHub = createServerFn({ method: 'GET' })
       trickOfTheWeek,
       extras,
       alsoPlayed,
+      updates,
+      replays,
     };
   });
 

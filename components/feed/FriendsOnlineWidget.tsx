@@ -8,6 +8,7 @@ import { useEffect, useState } from'react';
 import { Link } from'@tanstack/react-router';
 import { Users } from'lucide-react';
 import { useTranslation } from'react-i18next';
+import { friendActivityLabel } from '@/components/feed/activity-labels';
 import { useSession } from'@/components/Providers';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { useIsDesktop } from'@/hooks/useIsDesktop';
@@ -81,7 +82,7 @@ export function FriendsOnlineWidget({ onSettled }: { onSettled?: () => void } = 
  <span className="block truncate text-sm font-medium text-site-text">{name}</span>
  <span className="block truncate text-xs text-site-text-muted">
  {activity
- ? t(`activity-${activity.kind}`, { defaultValue: activity.label })
+ ? friendActivityLabel(t, activity)
  : t('activity-online', { defaultValue:'Online'})}
  </span>
  </span>

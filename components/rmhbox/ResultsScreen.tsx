@@ -18,6 +18,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
 import { m as motion } from 'framer-motion';
 import { useCelebration } from '@/hooks/useCelebration';
 import { Trophy, Medal, Award as AwardIcon, ChevronRight } from 'lucide-react';
@@ -99,7 +100,13 @@ export default function ResultsScreen({
               <span className={`text-2xl font-bold ${PODIUM_COLORS[podiumIndex]}`}>
                 {podiumIndex === 0 ? <Trophy className="h-6 w-6" /> : <Medal className="h-5 w-5" />}
               </span>
-              <span className="text-sm font-semibold">{player.userName}</span>
+              <Link
+                to="/rmhbox/players/$userId"
+                params={{ userId: player.userId }}
+                className="text-sm font-semibold hover:text-app-accent hover:underline"
+              >
+                {player.userName}
+              </Link>
               <span className="text-xs text-app-text-muted">{t("score-pts", { defaultValue: "{{score}} pts", score: player.score })}</span>
               <div
                 className={`${PODIUM_HEIGHTS[podiumIndex]} w-20 rounded-t-app-sm bg-app-accent`}
@@ -121,7 +128,13 @@ export default function ResultsScreen({
               <li key={p.userId} className="flex items-center justify-between text-sm">
                 <span>
                   <span className="mr-2 font-mono text-app-text-muted">{p.rank}.</span>
-                  {p.userName}
+                  <Link
+                    to="/rmhbox/players/$userId"
+                    params={{ userId: p.userId }}
+                    className="hover:text-app-accent hover:underline"
+                  >
+                    {p.userName}
+                  </Link>
                 </span>
                 <span className="font-mono">{p.score}</span>
               </li>
@@ -176,7 +189,15 @@ export default function ResultsScreen({
               {sessionStandings.map((s) => (
                 <tr key={s.userId} className="border-t border-app-border">
                   <td className="py-1 font-bold text-app-accent">{s.rank}</td>
-                  <td className="py-1">{s.userName}</td>
+                  <td className="py-1">
+                  <Link
+                    to="/rmhbox/players/$userId"
+                    params={{ userId: s.userId }}
+                    className="hover:text-app-accent hover:underline"
+                  >
+                    {s.userName}
+                  </Link>
+                </td>
                   <td className="py-1 text-right font-mono">{s.totalScore}</td>
                   <td className="py-1 text-right font-mono">{s.wins}</td>
                 </tr>

@@ -10,12 +10,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": ".cache/tsc/site.tsbuildinfo"
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.mts",
-    "app/routeTree.gen.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.mts", "app/routeTree.gen.ts"],
   "exclude": [
     "node_modules",
     "bazel-*",
@@ -47,6 +42,7 @@
   "files": [
     "lib/contract/__tests__/contract.test.ts",
     "lib/core/__tests__/core.test.ts",
+    "lib/core/__tests__/locale-format.product.test.ts",
     "lib/core/__tests__/persist.test.ts",
     "lib/core/__tests__/zoned-time.test.ts",
     "lib/shared/p2p/__tests__/direct-connection.test.ts",

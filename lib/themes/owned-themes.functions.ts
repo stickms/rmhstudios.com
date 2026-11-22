@@ -6,34 +6,12 @@
 import { createServerFn } from '@tanstack/react-start';
 import type { UserThemeView } from '@/lib/themes/tokens';
 
-export const fetchOwnedThemes =
-  createServerFn(
-    {
-      method:
-        'GET',
-    },
-  ).handler(
-    async (): Promise<
-      UserThemeView[]
-    > => {
-      const {
-        getRequestSession,
-      } =
-        await import('@/lib/auth-session.server');
-      const session =
-        await getRequestSession();
-      if (
-        !session
-      )
-        return [];
-      const {
-        listOwnedThemes,
-      } =
-        await import('@/lib/themes/themes.server');
-      return listOwnedThemes(
-        session
-          .user
-          .id,
-      );
-    },
-  );
+export const fetchOwnedThemes = createServerFn({
+  method: 'GET',
+}).handler(async (): Promise<UserThemeView[]> => {
+  const { getRequestSession } = await import('@/lib/auth-session.server');
+  const session = await getRequestSession();
+  if (!session) return [];
+  const { listOwnedThemes } = await import('@/lib/themes/themes.server');
+  return listOwnedThemes(session.user.id);
+});

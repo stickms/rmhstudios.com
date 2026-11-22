@@ -11,11 +11,7 @@ export interface LockManagerLike {
     options: {
       ifAvailable: true;
     },
-    cb: (
-      lock:
-        | object
-        | null,
-    ) => Promise<void> | void,
+    cb: (lock: object | null) => Promise<void> | void,
   ): Promise<unknown>;
 }
 
@@ -24,86 +20,43 @@ export interface HomeLock {
 }
 
 export interface AcquireOptions {
-  locks?:
-    | LockManagerLike
-    | undefined;
+  locks?: LockManagerLike | undefined;
   /** Extra tries after the first, for a lock the previous machine of this tab is still releasing. */
   retries?: number;
   retryDelayMs?: number;
 }
 
-const sleep =
-  (
-    ms: number,
-  ) =>
-    new Promise<void>(
-      (
-        r,
-      ) =>
-        setTimeout(
-          r,
-          ms,
-        ),
-    );
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-async function tryOnce(
-  locks: LockManagerLike,
-  name: string,
-): Promise<HomeLock | null> {
-  return new Promise<HomeLock | null>(
-    (
-      resolve,
-      reject,
-    ) => {
-      let release!: () => void;
-      const held =
-        new Promise<void>(
-          (
-            r,
-          ) =>
-            (release =
-              r),
-        );
-      locks
-        .request(
-          name,
-          {
-            ifAvailable: true,
-          },
-          (
-            lock,
-          ) => {
-            if (
-              !lock
-            ) {
-              resolve(
-                null,
-              );
-              return;
-            }
-            resolve(
-              {
-                release,
-              },
-            );
-            return held; // the lock lives until release()
-          },
-        )
-        .catch(
-          reject,
-        );
-    },
-  );
+async function tryOnce(locks: LockManagerLike, name: string): Promise<HomeLock | null> {
+  return new Promise<HomeLock | null>((resolve, reject) => {
+    let release!: () => void;
+    const held = new Promise<void>((r) => (release = r));
+    locks
+      .request(
+        name,
+        {
+          ifAvailable: true,
+        },
+        (lock) => {
+          if (!lock) {
+            resolve(null);
+            return;
+          }
+          resolve({
+            release,
+          });
+          return held; // the lock lives until release()
+        },
+      )
+      .catch(reject);
+  });
 }
 
 /** Resolves to the held lock, or null when another tab holds it. */
-export async function acquireHomeLock(
-  userId: string,
-  opts: AcquireOptions = {},
-): Promise<HomeLock | null> {
+export async function acquireHomeLock(userId: string, opts: AcquireOptions = {}): Promise<HomeLock | null> {
   const locks =
-    'locks' in
-    opts
+    'locks' in opts
       ? opts.locks
       : (
           globalThis.navigator as
@@ -111,39 +64,17 @@ export async function acquireHomeLock(
                 locks?: LockManagerLike;
               }
             | undefined
-        )
-          ?.locks;
-  if (
-    !locks
-  )
+        )?.locks;
+  if (!locks)
     return {
-      release:
-        () => {},
+      release: () => {},
     };
   const name = `rmhos:${userId}`;
-  const retries =
-    opts.retries ??
-    3;
-  for (
-    let i = 0;
-    ;
-    i++
-  ) {
-    const got =
-      await tryOnce(
-        locks,
-        name,
-      );
-    if (
-      got ||
-      i >=
-        retries
-    )
-      return got;
-    await sleep(
-      opts.retryDelayMs ??
-        150,
-    );
+  const retries = opts.retries ?? 3;
+  for (let i = 0; ; i++) {
+    const got = await tryOnce(locks, name);
+    if (got || i >= retries) return got;
+    await sleep(opts.retryDelayMs ?? 150);
   }
 }
 
@@ -158,30 +89,14 @@ export interface HeldLock {
   release(): void;
 }
 
-export function holdHomeLock(
-  userId: string,
-  opts: AcquireOptions = {},
-): HeldLock {
+export function holdHomeLock(userId: string, opts: AcquireOptions = {}): HeldLock {
   let released = false;
-  let got: HomeLock | null =
-    null;
-  const ready =
-    acquireHomeLock(
-      userId,
-      opts,
-    ).then(
-      (
-        lock,
-      ) => {
-        got =
-          lock;
-        if (
-          released
-        )
-          lock?.release();
-        return lock;
-      },
-    );
+  let got: HomeLock | null = null;
+  const ready = acquireHomeLock(userId, opts).then((lock) => {
+    got = lock;
+    if (released) lock?.release();
+    return lock;
+  });
   return {
     ready,
     release() {

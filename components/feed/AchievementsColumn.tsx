@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchJson } from '@/lib/http';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { errorField, fetchJson } from '@/lib/http';
+import { toast } from '@/lib/toast';
 import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from'lucide-react';
 import { AchievementMedal } from './AchievementMedal';
 import { useTranslation } from'react-i18next';
@@ -15,6 +17,19 @@ import {
 import { ColumnHeader } from'./ColumnHeader';
 import { AchievementTips } from'@/components/arcade/AchievementTips';
 import { useArrival } from '@/components/ui/arrive';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AchievementFilters, type AchievementListView } from '@/components/achievements/AchievementFilters';
+import { AchievementProgress } from '@/components/achievements/AchievementProgress';
+import { ClosestStrip } from '@/components/achievements/ClosestStrip';
+import { TrackedStrip, type StripRow } from '@/components/achievements/TrackedStrip';
+import { TrackToggle } from '@/components/achievements/TrackToggle';
+import { CompareWithField } from '@/components/achievements/CompareWithField';
+import {
+ TRACKED_ACHIEVEMENTS_KEY,
+ setAchievementTracked,
+ trackedAchievementsQuery,
+} from '@/lib/achievements/tracking.queries';
+import { closest, filterAchievements, sortAchievements } from '@/lib/achievements/tracking';
 
 // Library icons per achievement category (replaces emoji badges).
 const CATEGORY_ICON: Record<AchievementCategory, typeof Users> = {
@@ -50,17 +65,22 @@ const CATEGORY_ORDER: AchievementCategory[] = ['social','games','creator','econo
 export function AchievementsColumn({
  userId,
  hideHeader = false,
+ own = false,
  initialData,
  onLoaded,
 }: {
  userId: string;
  hideHeader?: boolean;
+ /** The viewer's own achievements: adds tracking, the "Closest to unlocking" strip and the list filters. */
+ own?: boolean;
  /** Called once the list has rendered with data (the profile scrolls its tab bar into view then). */
  onLoaded?: () => void;
  /** Achievement payload prefetched by the route loader; `null`when signed out. */
  initialData?: Payload | null;
 }) {
  const { t } = useTranslation('feed');
+ const { t: tn } = useTranslation('achievement-tracker');
+ const queryClient = useQueryClient();
  // The route loader's payload seeds the cache so the grid paints immediately; otherwise
  // (another tab, another user) it is fetched like any query.
  const { data, isPending: loading } = useQuery({
@@ -70,6 +90,28 @@ export function AchievementsColumn({
  staleTime: 15_000,
  });
  const hasData = Boolean(data);
+ const trackedQuery = useQuery(trackedAchievementsQuery(own));
+ const [view, setView] = useState<AchievementListView>({ state: 'all', category: 'all', sort: 'catalog' });
+ const toggle = useMutation({
+ mutationFn: ({ id, tracked }: { id: string; tracked: boolean }) => setAchievementTracked(id, tracked),
+ onSuccess: (next) => queryClient.setQueryData(TRACKED_ACHIEVEMENTS_KEY, next),
+ onError: (error) => {
+ toast.error(
+ errorField(error, 'code') === 'limit'
+ ? tn('track-limit', {
+ count: trackedQuery.data?.max ?? 5,
+ defaultValue: 'You can track up to {{count}} achievements. Untrack one first.',
+ })
+ : tn('track-failed', { defaultValue: 'Could not update your tracked achievements.' }),
+ );
+ },
+ });
+ const busyId = toggle.isPending ? (toggle.variables?.id ?? null) : null;
+ const trackedIds = useMemo(() => new Set(trackedQuery.data?.tracked ?? []), [trackedQuery.data]);
+ const rarity = useMemo(
+ () => new Map(Object.entries(trackedQuery.data?.rarity ?? {}).map(([id, pct]) => [id, { pct }])),
+ [trackedQuery.data],
+ );
  useEffect(() => {
  if (hasData) onLoaded?.();
  // Once per arrival of data; a new `onLoaded` identity each render must not re-fire it.
@@ -95,6 +137,38 @@ export function AchievementsColumn({
  />
  );
  }
+
+ const byId = new Map(data.achievements.map((a) => [a.id, a]));
+ const trackedLoaded = own && trackedQuery.data !== undefined;
+ const toRow = (id: string, progress: number): StripRow | null => {
+ const a = byId.get(id);
+ return a ? { id, name: a.name, progress, target: a.target } : null;
+ };
+ const closestRows = trackedLoaded
+ ? closest(
+ data.achievements,
+ data.achievements.map((a) => ({ achievementId: a.id, progress: a.progress, unlockedAt: a.unlockedAt })),
+ rarity,
+ )
+ .map((e) => toRow(e.id, e.progress))
+ .filter((r): r is StripRow => r !== null)
+ : [];
+ const trackedRows = (trackedQuery.data?.tracked ?? [])
+ .filter((id) => byId.get(id)?.unlocked === false)
+ .map((id) => toRow(id, byId.get(id)?.progress ?? 0))
+ .filter((r): r is StripRow => r !== null);
+ const shown = own
+ ? sortAchievements(
+ filterAchievements(data.achievements, {
+ state: view.state,
+ category: view.category === 'all' ? null : view.category,
+ tracked: trackedIds,
+ }),
+ view.sort,
+ rarity,
+ )
+ : data.achievements;
+ const onToggle = (id: string, tracked: boolean) => toggle.mutate({ id, tracked });
 
  const pct = data.stats.total ? Math.round((data.stats.unlocked / data.stats.total) * 100) : 0;
 
@@ -141,9 +215,40 @@ export function AchievementsColumn({
  </>
  )}
 
+ {own && <CompareWithField />}
+ {own && trackedQuery.isPending && <Skeleton className="mt-6 h-24 w-full" />}
+ {own && trackedQuery.isError && (
+ <p className="t-meta pt-6">
+ {tn('tracked-load-failed', { defaultValue: 'Could not load your tracked achievements.' })}
+ </p>
+ )}
+ {trackedLoaded && (
+ <>
+ <TrackedStrip
+ rows={trackedRows}
+ max={trackedQuery.data?.max ?? 5}
+ busyId={busyId}
+ onUntrack={(id) => onToggle(id, true)}
+ />
+ <ClosestStrip rows={closestRows} tracked={trackedIds} busyId={busyId} onToggle={onToggle} />
+ </>
+ )}
+ {own && (
+ <AchievementFilters
+ value={view}
+ categories={CATEGORY_ORDER.map((id) => ({ id, label: CATEGORY_LABELS[id] }))}
+ onChange={setView}
+ />
+ )}
+
+ {own && shown.length === 0 && (
+ <EmptyState
+ description={tn('no-matches', { defaultValue: 'No achievements match these filters.' })}
+ />
+ )}
  <div className="space-y-6 pt-4 pb-12">
  {CATEGORY_ORDER.map((cat) => {
- const list = data.achievements.filter((a) => a.category === cat);
+ const list = shown.filter((a) => a.category === cat);
  if (list.length === 0) return null;
  return (
  <section key={cat}>
@@ -188,20 +293,23 @@ export function AchievementsColumn({
  <p className="mt-1 text-xs text-site-text-muted">{a.description}</p>
  {incremental && (
  <div className="mt-2">
- <div className="h-1.5 w-full overflow-hidden rounded-full bg-site-surface">
- <div
- className="h-full rounded-full bg-site-accent"
- style={{
- width: `${Math.min(100, (a.progress / a.target) * 100)}%`,
- }}
- />
- </div>
+ <AchievementProgress name={a.name} progress={a.progress} target={a.target} />
  <p className="mt-1 text-xs text-site-text-muted">
  {a.progress} / {a.target}
  </p>
  </div>
  )}
  {!(a.secret && !a.unlocked) && <AchievementTips achievementId={a.id} name={a.name} />}
+ {own && !a.unlocked && !a.secret && (
+ <div className="mt-2">
+ <TrackToggle
+ name={a.name}
+ tracked={trackedIds.has(a.id)}
+ busy={busyId === a.id}
+ onToggle={() => onToggle(a.id, trackedIds.has(a.id))}
+ />
+ </div>
+ )}
  {a.unlocked && a.coinReward > 0 && (
  <p className="mt-1 inline-flex items-center gap-1 text-xs text-site-text-muted">
  <Coins className="h-3 w-3 text-site-warning"/> +{a.coinReward}

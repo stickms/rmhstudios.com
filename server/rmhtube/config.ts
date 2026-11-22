@@ -103,6 +103,7 @@ export const config = {
 
     // Queue
     'rmhtube:queue:add': { max: 20, windowMs: 60_000 },
+    'rmhtube:queue:add_playlist': { max: 5, windowMs: 60_000 },
     'rmhtube:queue:remove': { max: 30, windowMs: 60_000 },
     'rmhtube:queue:reorder': { max: 60, windowMs: 60_000 },
     'rmhtube:queue:play_item': { max: 30, windowMs: 60_000 },

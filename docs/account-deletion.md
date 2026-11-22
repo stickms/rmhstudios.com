@@ -1,0 +1,435 @@
+<!--
+  GENERATED FILE — do not edit by hand.
+  Source: lib/account/erasure-registry.ts (scripts/generate-account-deletion-doc.ts).
+  Regenerate with `pnpm docs:deletion`.
+-->
+# Account deletion
+
+What happens to a member's data when they delete their account, and where each table stands.
+
+## What deletion does
+
+Deleting an account is two phases (`lib/account/deletion.server.ts`):
+
+1. **Schedule.** `scheduleDeletion` sets `deletionScheduledAt` 30 days out (`DELETION_GRACE_DAYS`), signs the member out and hides the account. Signing back in cancels it. The grace period is as it is; changing it is an open owner decision.
+2. **Finalise.** A nightly sweep (`finalizeDueDeletions`) runs `anonymizeAccount`: one transaction of explicit deletes and updates, plus per-domain `…ErasureOps` helpers.
+
+The `User` row is anonymised in place, never removed, so `onDelete: Cascade` from `User` never fires. A table is therefore erased only when `anonymizeAccount` says so. Posts and other published content stay under "Deleted user".
+
+## The registry
+
+`lib/account/erasure-registry.ts` classifies every model that has a relation to `User`: `erase`, `deidentify`, `cascade`, `keep`, `owner` or `todo`, each with a one-line reason. The registry is the source and this page is generated from it (`pnpm docs:deletion`; `pnpm docs:deletion --check` fails when the page is stale): `lib/account/__tests__/erasure-coverage.test.ts` fails for a model with a `User` relation that has no entry, for an `erase` entry with no delete in `anonymizeAccount`, for a `deidentify` entry with no update, for a missing reason, for a row missing from this page, and for a `todo` count above `TODO_CEILING`. A new model lands classified, not as `todo`.
+
+The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, and private reading highlights) are erased by `coverageErasureOps` in `lib/account/erasure-coverage.server.ts`.
+
+382 models are classified.
+
+## Erased
+
+Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 189 models.
+
+| Model | Decision | Reason |
+| --- | --- | --- |
+| `Account` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
+| `AchievementTrack` | erase | The member's trading cards, drop ledger, badges, pinned achievements, library collections and showcase; the cascade never fires. |
+| `AltairCoopProfile` | erase | The co-op board orders this table (`totalCoopWins`, `totalRevivesGiven` indexes) at read time; the row going takes the member off it. |
+| `AltairMatchPlayer` | deidentify | A row in a shared co-op match (up to four players): `userId` is required so the row stays and the copied `userName` becomes "Deleted user"; no board lists it by name. |
+| `AltairMetaProgress` | erase | Solo meta progress (in-game coins only; the site ledger is separate); no board. |
+| `AltairPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `AltairSoloRun` | erase | Solo runs (in-game coins only); no board reads them by member. |
+| `AppearancePreference` | erase | Rule 1: settings only the member sees. |
+| `ArcadeRival` | erase | Both directions: the member's own rivals, and rows naming them as a rival (`rivalUserId` is indexed). |
+| `ArcadeSeedRun` | erase | Daily, seed and basket boards read these rows in `board()` (`lib/arcade/runs.server.ts`), cached 30 s per seed key; the TTL is the drop. |
+| `AvailabilityPollInvitee` | erase | The member's invitation rows on a poll; their answers are `AvailabilityPollResponse`, kept for the poll's integrity. |
+| `AwayMessage` | erase | The away message and its reply markers are the member's own. |
+| `BlogAnnouncementSeen` | erase | The member's seen markers. |
+| `BuildComment` | deidentify | Published build comments stay under "Deleted user" (as post comments do); only where the member hid comments is the reference (hiddenById) nulled. |
+| `BuildView` | deidentify | A first view is a count on the creator's insights; the row stays without its viewer. |
+| `BulkOperation` | erase | Bulk clean-up operations (sprint 07 bulk-durable); a run in progress stops at its next chunk. |
+| `CalcNotebook` | erase | Rule 1: the member's own calculator notebooks. |
+| `CalendarFeed` | erase | The private calendar URL token is a credential that calendar apps send. |
+| `CallMute` | erase | Both directions: the member's own mutes, and rows naming them as the muted user. `mutedUserId` is unindexed; the small table is scanned once per deletion. |
+| `CanvasCooldown` | erase | A placement timer; no board. |
+| `CardBuyOrder` | erase | Open buy orders only; nothing was held for them, so nothing is refunded. Scope: status: OPEN rows only. |
+| `CardDrop` | erase | The member's trading cards, drop ledger, badges, pinned achievements, library collections and showcase; the cascade never fires. |
+| `CardTrade` | erase | Pending trade offers in either direction; finished trades stay as anonymous history. Scope: status: PENDING rows only. |
+| `Chat` | erase | A message request of theirs still waiting has its chat deleted so its one message cannot surface as "Deleted user". Scope: chats of pending or draft message requests only. |
+| `ChatFolder` | erase | Inbox arrangement (folder items go by cascade). |
+| `ChatInvite` | erase | Group invite links the member created. |
+| `ChatMention` | erase | Group mentions that name the member (sprint 07 group-mentions). |
+| `CoinAdjustment` | deidentify | Adjustments are financial records; the admin's free-text note about the member goes. |
+| `CommunityBan` | erase | Sanctions about the member are deleted; where they were the moderator the reference is nulled. |
+| `CommunityHandover` | erase | Open ownership offers to or from the member; a decided offer only names the tombstone. Scope: status: pending rows only. |
+| `CommunityInvite` | erase | Invite links the member created grant entry without approval and must stop working. |
+| `CommunityMember` | deidentify | Membership survives an anonymised account, so post alerts are reset to off. |
+| `CommunityRecurringThread` | deidentify | Thread templates the member authored are handed to the community owner and paused (nothing posts under their name until a moderator saves one); when the member owned the community, or it has no owner, they are deleted. |
+| `ConnectionsPlay` | erase | The member's own plays; no board. No children: it is the child of `ConnectionsGrid`, whose anonymous play and rating tallies stay (counter rule). |
+| `ContentReport` | deidentify | The report stays as the moderators' record; the reporter's free-text details are nulled. |
+| `ConversationPref` | erase | Per-conversation notification choices (muted posts and chats). |
+| `DailyPuzzleScore` | erase | The daily leaderboard and results endpoints read at request time; the member's cached stats (`dailyStatsKey`) are dropped after the transaction. |
+| `DeckFolder` | erase | Private deck folders (sprint 07 deck-folders); decks stay, folderless. |
+| `DeveloperApiKey` | erase | Hashed developer API keys; deleting a key also cascades its usage, refusal and idempotency rows. |
+| `DevRecipe` | erase | The member's automation recipes (webhook and DM actions). |
+| `DirectMessageHide` | erase | Inbox arrangement: the member's hidden messages. |
+| `DiscordWatchAlert` | erase | The member's alert subscriptions. |
+| `DoctrineRecruitmentCode` | erase | Recruitment codes the member issued (recruiterId). |
+| `DreamRiftCoopRun` | deidentify | A co-op run loses its host (hostUserId nulled); the run stays for its other players. |
+| `DreamRiftPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `EmailCampaignRecipient` | deidentify | The row stays as the campaign's delivery record; queued mail (pending or claimed) is set to skipped so no later send picks it up. |
+| `EventCohost` | erase | The member's co-host rows and every row on events they host. |
+| `ExperimentExposure` | erase | Analytics exposure tied to the member; experiment counts computed at read drop by one, accepted. |
+| `Feedback` | erase | The member's feedback is deleted; rows they handled as an admin are unlinked. |
+| `FlashcardReminder` | erase | The member's own study reminder. |
+| `FlashcardReview` | erase | Private study history and SM-2 state. |
+| `FlashcardReviewLog` | erase | Private study history and SM-2 state. |
+| `FortuneCookie` | erase | The text is the member's own words and nothing names its author; if today's fortune is theirs the next approved one replaces it after the 60 s cache. |
+| `GabrielsHornPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `GabrielsHornTableRead` | erase | The member's own tells statistics; no board. |
+| `GameAssistPreference` | erase | The cross-game assist preference (sprint 07 game-assists). |
+| `GameBadge` | erase | The member's trading cards, drop ledger, badges, pinned achievements, library collections and showcase; the cascade never fires. |
+| `GameCollectionItem` | erase | The member's trading cards, drop ledger, badges, pinned achievements, library collections and showcase; the cascade never fires. |
+| `GameFollow` | erase | Games the member follows would keep notifying the erased account. |
+| `GameJamFeedback` | erase | Feedback the member wrote on jam entries. |
+| `GameJamTeamMember` | erase | The member's team rows and pending invitations on their entries. |
+| `GameJamThemeVote` | erase | The member's theme votes (sprint 07 jam-themes). |
+| `GamePersonalBest` | erase | The member's own record history. |
+| `GamePlayStatus` | erase | The member's own play statuses; counts by status are computed at read, no board. |
+| `GamePlaytime` | erase | Per-title playtime would keep a tombstone in "Most played by" with its hours. |
+| `GamePlaytimeDay` | erase | Per-title playtime would keep a tombstone in "Most played by" with its hours. |
+| `GameProfileShowcase` | erase | The member's trading cards, drop ledger, badges, pinned achievements, library collections and showcase; the cascade never fires. |
+| `GameReplay` | erase | Saved replays, except the proofs behind speedrun entries, which stay as board history. Scope: rows not backing a speedrun entry. |
+| `GameSave` | erase | Cloud saves and their version history: private progress. |
+| `GameSaveSnapshot` | erase | Cloud saves and their version history: private progress. |
+| `GameStat` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `GameThread` | erase | Community Hub discussions: replies, then threads (with everyone's replies). |
+| `GameThreadPost` | erase | Community Hub discussions: replies, then threads (with everyone's replies). |
+| `GemEntry` | erase | Gem balance and entries. |
+| `GlobeSetPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `HeldNotification` | erase | Rule 1: notifications held for the member by quiet hours. |
+| `HistoryEntry` | erase | Rule 1: the member's own browsing history. |
+| `HomeFavorite` | erase | The member's saved homes. |
+| `HomeWatch` | erase | The member's saved home searches. |
+| `HuntProgress` | erase | The hunt's finish board orders `durationMs` at read; the row going takes the member off it. |
+| `KeyboardPreference` | erase | Rule 1: settings only the member sees. |
+| `KeywordAlertHit` | erase | Rule 1: the member's own keyword-alert hits. |
+| `LadderAiTask` | erase | Nullable resume relation: tasks that carry only a job id are not reached by the resume cascade. |
+| `LadderAlert` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderAlertEvent` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderAnswerBank` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderApplication` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderApplicationEvent` | cascade | Timeline rows of an application, deleted by the database with the application. Parent: `LadderApplication`. |
+| `LadderJobAction` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderJobMatch` | erase | Explicit delete by userId (not `cascade`: the coverage test needs a direct cascade relation to an erase parent). The database cascade also fires when the resume goes. |
+| `LadderKeyword` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderOffer` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderProductEvent` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderReferralOffer` | erase | The member's offers (company, roles, note). Requests other members sent to them go by the database cascade, the one place rows another member wrote are removed: a request to a deleted offer can never be answered and would keep the member's company beside it. |
+| `LadderReferralRequest` | erase | The member's requests to others' offers (by applicant). |
+| `LadderResume` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderResumeReview` | erase | Explicit delete by userId (not `cascade`: its direct parent is itself a cascade entry). |
+| `LadderResumeVersion` | cascade | Version history of a resume, deleted by the database with the resume. Parent: `LadderResume`. |
+| `LadderSavedSearch` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderUserPrefs` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LadderWatchlistEntry` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
+| `LaundryPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `LayoutPreference` | erase | Rule 1: settings only the member sees. |
+| `LibraryReaderMark` | erase | Synced reading places, bookmarks and notes (sprint 04 reading-sync). |
+| `Listing` | erase | Live market listings (the escrowed card goes with the inventory); finished sales stay as anonymous price history. Scope: active listings only. |
+| `LoadoutPreset` | erase | Saved cosmetic loadouts; the items stay with the inventory decision. |
+| `MemoriesOptIn` | erase | Rule 1: the member's own opt-in to memories. |
+| `MessageRequest` | erase | Requests the member sent or received; decided ones are removed too. |
+| `ModeratorNote` | erase | Notes about the member go with them; notes they wrote or deleted as a moderator lose the reference. |
+| `MusicLearnCard` | erase | Every RMH Music learning table (owner decision Q4). |
+| `MusicLearnLessonProgress` | erase | Every RMH Music learning table (owner decision Q4). |
+| `MusicLearnProfile` | erase | Every RMH Music learning table (owner decision Q4). |
+| `MusicPracticeEntry` | erase | Every RMH Music learning table (owner decision Q4). |
+| `MusicShare` | erase | Every RMH Music learning table (owner decision Q4). |
+| `MusicSocial` | erase | Every RMH Music learning table (owner decision Q4). |
+| `MusicSongBest` | erase | Every RMH Music learning table (owner decision Q4). |
+| `MusicSprintBest` | erase | Every RMH Music learning table (owner decision Q4). |
+| `MusicSprintDaily` | erase | Every RMH Music learning table (owner decision Q4). |
+| `NdwLivery` | erase | A cosmetic save; no board. |
+| `NeonDriftwayPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `NightrailPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `Notification` | erase | Rule 1: notifications addressed to the member (userId); notifications about them sent to others (actorId, onDelete SetNull) stay and render "Deleted user". Scope: rows addressed to the member (userId). |
+| `NotificationPreference` | erase | Rule 1: settings only the member sees. |
+| `OfficeHoursConfig` | erase | Availability settings (windows go by cascade); bookings others made have their own entry. |
+| `Passkey` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
+| `Player` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `ProfileLayout` | erase | The member's profile layout. |
+| `ProfileLink` | erase | The member's profile links; the profile itself is scrubbed, so the links go with it. |
+| `ProfilePlus` | erase | Pronunciation clip, pronouns, time zone and visit counts of the member's profile (`ProfileVisitDay` goes by cascade); the clip's stored object is deleted by the deletion request. |
+| `ProfileStamp` | erase | The member's placement of a `Stamp`; the stamp stays and `Stamp.addCount` is not decremented (an anonymous tally on a kept model). |
+| `PushSubscription` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
+| `ReadingGoal` | erase | Rule 1: the member's own yearly reading goal. |
+| `ReadingHighlight` | erase | Rule 1: private highlights (with their notes) are the member's own; public highlights follow the published-content rule and stay. Scope: isPublic: false rows only. |
+| `ReadingPrefs` | erase | Rule 1: the member's own reading preferences. |
+| `ReadingShelfEntry` | erase | The member's shelves; only ever shown on their own profile (no cross-member aggregate), which the deletion scrubs. |
+| `ReadingTimeDay` | erase | Rule 1: the member's own reading-time rows, erased by readingTimeErasureOps (sprint 07 reading-time). |
+| `RecoveryCode` | erase | Account-recovery secrets (single-use codes, in-flight request token hash) must not outlive the account. |
+| `RecoveryRequest` | erase | Account-recovery secrets (single-use codes, in-flight request token hash) must not outlive the account. |
+| `Reminder` | erase | Rule 1: the member's own reminders. |
+| `RepostMute` | erase | The member's own mute and block lists (and reposts muted); rows where others blocked or muted them are the others' safety choices and stay. Scope: rows where the member is either side. |
+| `RideSavedPlace` | erase | The member's saved places. |
+| `RMHark` | deidentify | Posts are published content and stay under "Deleted user"; only the member's pin (pinnedAt) is cleared. |
+| `RMHboxProfile` | deidentify | Has children (`RMHboxMatchPlayer.profile` cascades), so the profile is reset to defaults, never deleted; the RMHBox boards (socket and `/api/rmhbox/leaderboard`) list only `totalGamesPlayed > 0`. The `RMHboxMatchPlayer.userName` copies and the name inside `RMHboxMatch.results` become "Deleted user"; `RMHboxMatch.gameLog` (free-form) is a follow-up. |
+| `RmhboxSettingsPreset` | erase | Saved RMHBox game settings. |
+| `RmhCharacter` | erase | The member's characters; private (only the owner-scoped character API reads them). |
+| `RmhCodeToken` | erase | Hashed bearer tokens for the rmhcode CLI would stay valid for a tombstone. |
+| `RmhTubeRoom` | deidentify | A party the member hosts and has not held is closed so it cannot open as the erased account; the room row stays. |
+| `RmhTubeRoomRsvp` | erase | Going marks on watch parties (sprint 03). |
+| `RmhTubeUserStats` | erase | Rule 1: the member's own watch statistics; deleted in anonymizeAccount (sprint 08 01). |
+| `RmhTubeWatchDay` | erase | Rule 1: the member's per-day minutes; deleted in anonymizeAccount (sprint 08 01). |
+| `RmhTubeWatchLater` | erase | Rule 1: the member's own watch-later list. |
+| `RmhTypeDailyEntry` | erase | The RMHType daily board orders `wpm` at read; the row going takes the member off it. |
+| `RmhTypeGhost` | erase | Rule 1: the member's own best-run progress curves; deleted in anonymizeAccount (sprint 08 11). |
+| `RmhTypeKeyStat` | erase | Private per-key counters; no board. |
+| `RmhTypeLessonProgress` | erase | Private lesson progress; no board. |
+| `RmhTypeProfile` | deidentify | Has children (`RmhTypeMatchPlayer.profile` cascades), so totals and bests are reset to defaults, never deleted; `fetchLeaderboard` already requires `bestWpm > 0`. The `RmhTypeMatchPlayer.userName` copies become "Deleted user". |
+| `SavedItem` | erase | Rule 1: saved items with a private note; erased before SaveFolder. |
+| `SavedReply` | erase | Private saved replies. |
+| `SaveFolder` | erase | Rule 1: the member's own save folders; erased after SavedItem, which refers to them. |
+| `ScheduledChatMessage` | erase | Messages held for later would still deliver as the erased account. |
+| `ScheduledPost` | erase | Rule 1: drafts and sealed capsules; a post already published from one stays, as posts do. |
+| `Session` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
+| `SignalForgePlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `SiteIdempotencyKey` | erase | Short-lived; stored responses may hold member data. |
+| `SliceDailyEntry` | erase | The Slice It daily board reads at request time; the row going takes the member off it. |
+| `SliceRun` | erase | Per-chart boards read at request time; the library shelves cache lists songs, never players. |
+| `SliceSetlist` | erase | Private setlists go; the daily and chart boards do not read them. Scope: `isPublic = false`; public setlists are published lists other members open (an open owner decision), they stay under "Deleted user". |
+| `SongLeaderboard` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `SongPlay` | erase | Per-member play counts; no board. `Song.plays` is an anonymous tally and stays (counter rule). |
+| `StudioProject` | erase | Cloud copies of Studio projects. |
+| `StudyPlan` | erase | Rule 1: the member's own study plans. |
+| `SynapseStormPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `TargetedNoticeDismissal` | erase | Rule 1: which site notices the member dismissed. |
+| `TempleOfJoySave` | erase | A game save; no board. |
+| `Tf2HudUserBlob` | erase | The member's link to a content-addressed blob other members may share; the blob stays (an orphan sweep is not this feature's). |
+| `TrustedContact` | erase | The vouch graph is deleted in both directions (as owner and as someone else's contact). |
+| `UserBirthday` | erase | Rule 1: the member's own birthday, shown to no one once the account is gone. |
+| `UserBlock` | erase | The member's own mute and block lists (and reposts muted); rows where others blocked or muted them are the others' safety choices and stay. Scope: rows where the member is either side. |
+| `UserCard` | erase | The member's trading cards, drop ledger, badges, pinned achievements, library collections and showcase; the cascade never fires. |
+| `UserGems` | erase | Gem balance and entries. |
+| `UserMute` | erase | The member's own mute and block lists (and reposts muted); rows where others blocked or muted them are the others' safety choices and stay. Scope: rows where the member is either side. |
+| `UserPlayLimits` | erase | The member's own staking caps, cool-off and exclusion dates (sprint 04 spending-budget). |
+| `UserProfile` | deidentify | Profile PII (display name, bio, location, website, image, profile song) is nulled; the row stays. |
+| `VegaPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `VersecraftProgress` | erase | A game save; no board. |
+| `VersecraftSave` | erase | A game save; no board. |
+| `VibePage` | deidentify | Vibe pages are remixed and embedded by others, so they move to the shared "Deleted user" owner rather than being erased. |
+| `VoidBreakerPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `WebhookEndpoint` | erase | Would keep POSTing the account's events to third-party URLs; cascades its queued deliveries. |
+
+## Kept on purpose
+
+Kept for a stated reason: a ledger, an audit trail, another member's record, or published content that stays under "Deleted user" as posts do. 144 models.
+
+| Model | Decision | Reason |
+| --- | --- | --- |
+| `AchievementTip` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `AchievementTipVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `AdminAuditLog` | keep | Rule 4: admin audit trail. |
+| `AdventClaim` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `AiUsage` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `AvailabilityPoll` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `AvailabilityPollResponse` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `BlogComment` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `BotQueuedComment` | keep | Rows of a bot persona (botId), not a member's data; bots are never deleted through member deletion. |
+| `BotQueuedPost` | keep | Rows of a bot persona (botId), not a member's data; bots are never deleted through member deletion. |
+| `BotReaction` | keep | Rows of a bot persona (botId), not a member's data; bots are never deleted through member deletion. |
+| `BuildGrant` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `BuildLike` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `BuildUnlock` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `Call` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `CanvasPlacement` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `Chart` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `ChartPack` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `ChartReview` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `ChatMember` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `ChatMessage` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `ChatMessageReaction` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `ChatPin` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `ChatPollVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `CoinStake` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `CoinTransaction` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `Community` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `CommunityAnnouncement` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `CommunityCensusParticipant` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `CommunityChallengeEntry` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `CommunityChallengeVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `CommunityGoalPledge` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `CommunityModItem` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `CommunityPageRevision` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `ComputeGrant` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `ConnectionsGrid` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `ContentAward` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `ContextNote` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `ContextNoteRating` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `CreatorMembership` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `CreatorTier` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `CustomFeedMember` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `DailyWheelSpin` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `DoctrineAccessLog` | keep | Rule 4: access and incident logs are a security and moderation record. |
+| `DoctrineIncidentReport` | keep | Rule 4: access and incident logs are a security and moderation record. |
+| `DoctrineReaction` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `ElectionLeague` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `ElectionLeagueMember` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `ElectionRoom` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `EmailCampaign` | keep | Rule 4: an admin's campaign record. |
+| `EmailDelivery` | keep | Rule 4: delivery audit for mail already sent. |
+| `EmojiPack` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `Event` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `FeatureRequest` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `FeatureRequestVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `FeatureRestriction` | keep | Rule 4: a moderation action about the member. |
+| `FeedAnnouncement` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `FeedAnnouncementPollVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `FriendlyChallenge` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `GameJam` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `GameJamRating` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `GiftExchange` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `GiftExchangeMember` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `GiftMembership` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `GlossaryTerm` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `GroupCall` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `GroupCallMessage` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `GroupCallParticipant` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `GuestbookEntry` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `KaikaiDebtEntry` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `Kudos` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `LadderInterviewReport` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `LibraryDocument` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `ListingPurchase` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `Media` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `ModerationSweep` | keep | Rule 4: the audit trail of an admin moderation action (who removed what from whom, and why); the sweep and its items stay when either member is deleted. Its items hold only ids and a timestamp. |
+| `NewsStory` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `NightrailTrick` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `NightrailTrickVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `PhotoNomination` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `PhotoVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `PileOnGuard` | keep | Rule 4: abuse-prevention guard record, not shown to anyone. |
+| `Playlist` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `PlaylistCollaborator` | keep | Rule 2: a collaborator slot on another member's playlist; the playlist and its other contributors are unaffected. |
+| `Pool` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `PoolContribution` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `PostSeries` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `PostUnlock` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `Prediction` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `PredictionComment` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `PredictionPosition` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `PromoClaim` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `QotdAnswer` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `QotdPrompt` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `RankedChallenge` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `RedemptionRequest` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `Referral` | keep | Rule 4: referral record that explains reward coins; the other member's record too. |
+| `RemixEdge` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `Ride` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `RideMessage` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `RMHarkComment` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `RMHarkCommentLike` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `RMHarkCommentReaction` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `RMHarkCommentRepost` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `RMHarkCommentView` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `RMHarkLike` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `RMHarkPollVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `RMHarkReaction` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `RMHarkRepost` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `RMHarkTakeVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `RmhboxPack` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `RmhboxPackReport` | keep | Rule 4: a report about someone else's pack is a moderation record. |
+| `RmhTubeCommentaryTrack` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `RmhTubeQueueItem` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `RmhTubeRoomMember` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `RmhTubeTimedComment` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `ScheduledGift` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `SecurityEvent` | keep | Rule 4: security audit trail. |
+| `SkillEndorsement` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `Song` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `SongComment` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `SongLike` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `SpeedrunEntry` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `Stamp` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `StudioChallengeEntry` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `StudioChallengeVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `StudyBuddyMatch` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `Tf2Hud` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `Tf2HudLike` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `Tf2Loadout` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `Tf2LoadoutLike` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `Tournament` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `TournamentEntrant` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `TranslationSuggestion` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
+| `TranslationVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `UserBuild` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `UserStrike` | keep | Rule 4: strikes are the moderation trail. |
+| `UserTheme` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `VelumContract` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
+| `VersecraftSeedListing` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `VersecraftSeedRating` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+| `WagerMatch` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `Webring` | keep | Rule 3: published content others use stays under "Deleted user". |
+| `WebringMember` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
+
+## Owner decision
+
+An open owner decision from an earlier sprint. Their handling is unchanged and a test pins it until the owner decides. 6 models.
+
+| Model | Decision | Reason |
+| --- | --- | --- |
+| `FlashcardDeck` | owner | Open owner decision: public decks of a deleted member. Today decks stay and only their folder is cleared; private decks (cards, reviews, clones) are a candidate for a later change. |
+| `Follow` | owner | Open owner decision: a deleted member's follows (sprint 05 README). Rows stay today; followEvent history is handled separately. |
+| `GameGuide` | owner | Open owner decision: a deleted member's guides (sprint 05 README); rows untouched. |
+| `GameJamEntry` | owner | Open owner decision: a deleted member's jam entries (sprint 05 README); entries stay. |
+| `GameReview` | owner | Open owner decision: a deleted member's game reviews (sprint 05 README); rows untouched. |
+| `GameReviewVote` | owner | Votes on reviews follow the open game-reviews decision; rows untouched. |
+
+## TODO
+
+Not handled yet, each with the reason it was deferred. Each is a later, reviewable change that lowers `TODO_CEILING` (now 43). 43 models.
+
+| Model | Decision | Reason |
+| --- | --- | --- |
+| `Activity` | todo | Rule 2: activity feed rows that followers see; needs a product call. |
+| `AiPersona` | todo | Rule 1: the member's own persona chats and subscriptions; erase candidates. |
+| `AiPersonaMessage` | todo | Rule 1: the member's own persona chats and subscriptions; erase candidates. |
+| `BracketPick` | todo | Rule 1: the member's own bracket predictions; erase candidate once pick'em standings are reviewed. |
+| `CloseFriend` | todo | Rule 2: the member's close-friends list and rows where they are listed by others; needs a product call on the second direction. |
+| `CommunityContributorScore` | todo | Rule 2: a denormalised score shown on contributor lists; needs a counter correction. |
+| `CommunityJoinRequest` | todo | Rule 5: a pending request is visible to moderators; needs a product call on withdrawal versus keeping for the mod queue. |
+| `CommunityOnboardingAnswer` | todo | Rule 1: the member's own answers to a community's onboarding questions; an erase candidate shown only to that community's moderators. |
+| `CustomFeed` | todo | Rule 1: the member's own custom feeds (with members and subscribers); has children. |
+| `CustomFeedSubscription` | todo | Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision. |
+| `DoctrinePuzzleReplay` | todo | Rule 2: puzzle progress and reputation shown on Doctrine boards; needs a product call and a counter correction. |
+| `DoctrinePuzzleSubmission` | todo | Rule 2: puzzle progress and reputation shown on Doctrine boards; needs a product call and a counter correction. |
+| `DoctrineReputation` | todo | Rule 2: puzzle progress and reputation shown on Doctrine boards; needs a product call and a counter correction. |
+| `EloRating` | todo | Rule 2: public rating on ranked boards; needs a product call (the game boards were erased by leaderboard-privacy, ratings were not). |
+| `EmojiPackSubscription` | todo | Rule 1: the member's own persona chats and subscriptions; erase candidates. |
+| `FeedSignal` | todo | Rule 1: the member's own feed signals, auto-delete rules and lists; MarathonList has a public share link, so check it first. |
+| `FlashcardTestResult` | todo | Rule 1: the member's own study profile, test results and buddy requests; have children or counters, so not one deleteMany. |
+| `HandleChange` | todo | Rule 4/5: audit trail of former handles; needs a product call on keeping them for impersonation guards. |
+| `HomeListing` | todo | Rule 5: a public housing listing or roommate profile with personal details; needs a product call on removal. |
+| `HomeRoommateProfile` | todo | Rule 5: a public housing listing or roommate profile with personal details; needs a product call on removal. |
+| `LibraryCollection` | todo | Rule 5: library collections can be shared and a quota request is an admin workflow; needs a product call. |
+| `LibraryQuotaRequest` | todo | Rule 5: library collections can be shared and a quota request is an admin workflow; needs a product call. |
+| `MarathonList` | todo | Rule 1: the member's own feed signals, auto-delete rules and lists; MarathonList has a public share link, so check it first. |
+| `MemberMemory` | todo | Rule 1: private memories; has children, so not one deleteMany. |
+| `PostAutoDelete` | todo | Rule 1: the member's own feed signals, auto-delete rules and lists; MarathonList has a public share link, so check it first. |
+| `PostSeriesFollow` | todo | Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision. |
+| `RankedSeasonRating` | todo | Rule 2: public rating on ranked boards; needs a product call (the game boards were erased by leaderboard-privacy, ratings were not). |
+| `ReadingSubscription` | todo | Rule 1: the member's own reading subscriptions; has children, so not one deleteMany. |
+| `RebarReservation` | todo | Rule 5: a table booking holds name, e-mail and an allergy note (userId is nullable for guests); needs a product call on how long bookings are kept. |
+| `RideshareDriver` | todo | Rule 5: a driver application with vehicle and plate details and an aggregate rating; needs a product call. |
+| `RmhStudyProfile` | todo | Rule 1: the member's own study profile, test results and buddy requests; have children or counters, so not one deleteMany. |
+| `RmhTubeSubscription` | todo | Rule 2: subscriber counts shown on a channel; needs a counter correction and a link to the follows decision. |
+| `Rsvp` | todo | Rule 2: attendee lists show the member to hosts; releaseSeatsOf frees seats but the row stays; needs a product call on attendee lists. |
+| `SavingsGoal` | todo | Rule 1: the member's own wishlist and savings goals; have children or counters, so not one deleteMany. |
+| `SharedMoment` | todo | Rule 3: a moment the member shared, possibly shown to others; needs a product call. |
+| `Streak` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
+| `StudyBuddyRequest` | todo | Rule 1: the member's own study profile, test results and buddy requests; have children or counters, so not one deleteMany. |
+| `UserAchievement` | todo | Rule 1: the member's own achievement progress; shown on a public profile, which is scrubbed; erase candidate. |
+| `UserInventory` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
+| `UserQuest` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
+| `UserSeasonProgress` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
+| `Watch` | todo | Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision. |
+| `WishlistEntry` | todo | Rule 1: the member's own wishlist and savings goals; have children or counters, so not one deleteMany. |

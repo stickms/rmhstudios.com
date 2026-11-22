@@ -12,6 +12,14 @@ import {
   type VoiceRange,
 } from './schemas';
 import { isVoiceRange } from './voice/range';
+import {
+  clampMicGain,
+  clampMicGate,
+  DEFAULT_MIC_SETTINGS,
+  normalizeMicSettings,
+  type MicHum,
+} from './input/mic-gain';
+import { DEFAULT_PRACTICE_MODE, isPracticeMode, type PracticeMode } from './practice-mode';
 import { isInstrumentId } from './audio/instruments/catalog';
 import type { InstrumentId } from './audio/instruments/types';
 import { mergeLessonResult } from './xp';
@@ -26,6 +34,16 @@ export interface Profile {
   sound: InstrumentId | null;
   /** A voice learner's range, or null until chosen (lessons in the range ask for it first). */
   voiceRange: VoiceRange | null;
+  /** Learning or Test mode (`practice-mode.ts`). */
+  practiceMode: PracticeMode;
+  /** The manual microphone input gain, 1 to 16 (`input/mic-gain.ts`); used when `micAuto` is off. */
+  micGain: number;
+  /** Automatic microphone sensitivity: the gain and the cutoff follow the room and the notes. */
+  micAuto: boolean;
+  /** The manual cutoff: sound quieter than this level (RMS) is ignored; used when `micAuto` is off. */
+  micGate: number;
+  /** The mains-hum filter: off, 50 Hz or 60 Hz. */
+  micHum: MicHum;
 }
 
 export interface LessonProgressRow {
@@ -42,6 +60,11 @@ export const DEFAULT_PROFILE: Profile = {
   dailyGoal: 1,
   sound: null,
   voiceRange: null,
+  practiceMode: DEFAULT_PRACTICE_MODE,
+  micGain: DEFAULT_MIC_SETTINGS.gain,
+  micAuto: DEFAULT_MIC_SETTINGS.auto,
+  micGate: DEFAULT_MIC_SETTINGS.gate,
+  micHum: DEFAULT_MIC_SETTINGS.hum,
 };
 
 /** Thrown by `completeLesson` for an id that is not in the catalogue. */
@@ -59,6 +82,11 @@ function toProfile(row: {
   dailyGoal: number;
   sound?: string | null;
   voiceRange?: string | null;
+  practiceMode?: string;
+  micGain?: number;
+  micAuto?: boolean;
+  micGate?: number;
+  micHum?: string;
 }): Profile {
   // Columns are plain strings; narrow them so a stale value never reaches the UI.
   return {
@@ -72,6 +100,11 @@ function toProfile(row: {
     dailyGoal: row.dailyGoal,
     sound: isInstrumentId(row.sound) ? row.sound : null,
     voiceRange: isVoiceRange(row.voiceRange) ? row.voiceRange : null,
+    practiceMode: isPracticeMode(row.practiceMode) ? row.practiceMode : DEFAULT_PRACTICE_MODE,
+    ...(() => {
+      const mic = normalizeMicSettings({ auto: row.micAuto, gain: row.micGain, gate: row.micGate, hum: row.micHum });
+      return { micAuto: mic.auto, micGain: mic.gain, micGate: mic.gate, micHum: mic.hum };
+    })(),
   };
 }
 
@@ -102,6 +135,11 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     // Absent: leave the stored sound alone; null: follow the instrument again.
     ...(input.sound !== undefined ? { sound: input.sound } : {}),
     ...(input.voiceRange !== undefined ? { voiceRange: input.voiceRange } : {}),
+    ...(input.practiceMode !== undefined ? { practiceMode: input.practiceMode } : {}),
+    ...(input.micGain !== undefined ? { micGain: clampMicGain(input.micGain) } : {}),
+    ...(input.micAuto !== undefined ? { micAuto: input.micAuto } : {}),
+    ...(input.micGate !== undefined ? { micGate: clampMicGate(input.micGate) } : {}),
+    ...(input.micHum !== undefined ? { micHum: input.micHum } : {}),
   };
   const row = await prisma.musicLearnProfile.upsert({
     where: { userId },

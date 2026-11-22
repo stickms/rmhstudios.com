@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getSignalForgeLeaderboardApi } from '@features/signal-forge/engine/signal-forge.contract';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export const route = apiRoute('/api/signal-forge/leaderboard', {
   GET: implement(
@@ -15,7 +17,9 @@ export const route = apiRoute('/api/signal-forge/leaderboard', {
     },
     async () => {
       try {
+        const hidden = await leaderboardHiddenUserIds();
         const leaderboard = await prisma.signalForgePlayer.findMany({
+          where: notHiddenWhere(hidden),
           take: 100,
           orderBy: [{ highScore: 'desc' }, { floorReached: 'desc' }],
           select: {

@@ -68,6 +68,7 @@ people
 adsense
 albums-storage
 coins
+account-deletion
 rmhos
 translations
 ```
@@ -103,6 +104,7 @@ website-improvement-plan
 plans/**
 feed/**
 superpowers/**
+autonomous/**
 ```
 
 ```{toctree}

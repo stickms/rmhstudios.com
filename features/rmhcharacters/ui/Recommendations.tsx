@@ -60,14 +60,21 @@ export function Recommendations({
         {recs.map((rec, i) => {
           const r = resolveRecommendation(rec, c, data);
           const expanded = open === i;
-          const preview = r.details ? `${r.details.meta}\n\n${r.details.text.length > PREVIEW_CHARS ? `${r.details.text.slice(0, PREVIEW_CHARS)}…` : r.details.text}` : '';
+          const preview = r.details
+            ? `${r.details.meta}\n\n${r.details.text.length > PREVIEW_CHARS ? `${r.details.text.slice(0, PREVIEW_CHARS)}…` : r.details.text}`
+            : '';
           return (
             <li key={`${rec.kind}-${rec.name}`} className="border-b border-app-border py-2.5 last:border-b-0">
               <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
                     {r.details ? (
-                      <Tooltip className="w-72" content={<span className="block whitespace-pre-line text-left text-xs font-normal">{preview}</span>}>
+                      <Tooltip
+                        className="w-72"
+                        content={
+                          <span className="block whitespace-pre-line text-left text-xs font-normal">{preview}</span>
+                        }
+                      >
                         <button
                           type="button"
                           aria-expanded={expanded}
@@ -75,15 +82,22 @@ export function Recommendations({
                           className="inline-flex items-center gap-1 rounded-app-sm text-left text-sm font-semibold text-app-text underline decoration-dotted underline-offset-4 hover:decoration-solid"
                         >
                           {r.details.title}
-                          <ChevronDown className={`size-3.5 transition-transform duration-150 ${expanded ? 'rotate-180' : ''}`} aria-hidden />
+                          <ChevronDown
+                            className={`size-3.5 transition-transform duration-150 ${expanded ? 'rotate-180' : ''}`}
+                            aria-hidden
+                          />
                         </button>
                       </Tooltip>
                     ) : (
                       <span className="text-sm font-semibold text-app-text">{rec.name}</span>
                     )}
-                    <span className="rounded-app-sm border border-app-border px-1.5 py-0.5 font-mono text-caption text-app-text-muted">{kindLabel[rec.kind] ?? rec.kind}</span>
+                    <span className="rounded-app-sm border border-app-border px-1.5 py-0.5 font-mono text-caption text-app-text-muted">
+                      {kindLabel[rec.kind] ?? rec.kind}
+                    </span>
                     {!r.details ? (
-                      <span className="font-mono text-caption text-app-text-muted">{t('rec.notInData', { defaultValue: 'not in the built-in rules' })}</span>
+                      <span className="font-mono text-caption text-app-text-muted">
+                        {t('rec.notInData', { defaultValue: 'not in the built-in rules' })}
+                      </span>
                     ) : null}
                   </div>
                   {rec.why ? (

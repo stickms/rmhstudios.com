@@ -2,6 +2,7 @@ import { readJson, readString, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
+import { useCopyFallback } from '@/components/ui/copy-fallback';
 import {
   Columns2,
   Copy,
@@ -122,6 +123,7 @@ export function RoomOverlay({
   onUseSolo: () => void;
 }) {
   const { t } = useTranslation('c-elections');
+  const showCopy = useCopyFallback();
   const { data: session } = useSession();
   const code = source.kind === 'hosted' ? source.code : null;
   const { config, setConfig, meta, status, canEdit, applyRemote } = useRoomState(cycle, source);
@@ -238,7 +240,7 @@ export function RoomOverlay({
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      window.prompt(t('room.copyPrompt', { defaultValue: 'Copy the invite link:' }), inviteUrl);
+      showCopy({ title: t('room.copyPrompt', { defaultValue: 'Copy the invite link:' }), text: inviteUrl });
     }
   };
 

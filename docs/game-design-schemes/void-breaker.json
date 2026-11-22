@@ -23,13 +23,7 @@
     "borderStyle": "1px solid gold at 50% with a gold glow on focus",
     "texture": "faint hexagon grid"
   },
-  "motifs": [
-    "orbiting gold shards",
-    "arena ring",
-    "red polygon enemies",
-    "dash trail",
-    "obsidian and gold"
-  ],
+  "motifs": ["orbiting gold shards", "arena ring", "red polygon enemies", "dash trail", "obsidian and gold"],
   "buttonStyle": "Primary is a gold gradient hex-cornered button with near-black Black Ops One text; secondary is an obsidian button with a gold hairline and orange hover glow.",
   "backdrop": "Near-black ground with a faint gold hex grid and a slowly rotating ring of twelve gold shards around the title; shards only rotate, no flashing.",
   "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."

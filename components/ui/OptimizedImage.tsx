@@ -1,18 +1,8 @@
-import {
-  ImgHTMLAttributes,
-  memo,
-  useState,
-} from 'react';
-import {
-  IMAGE_VARIANTS,
-  variantUrl,
-} from '@/lib/images/variants.gen';
+import { ImgHTMLAttributes, memo, useState } from 'react';
+import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
 import { useDataSaverAtMount } from '@/hooks/useDataSaver';
 
-interface OptimizedImageProps extends Omit<
-  ImgHTMLAttributes<HTMLImageElement>,
-  'srcSet'
-> {
+interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'srcSet'> {
   /** Image source URL */
   src: string;
   /** Alt text */
@@ -22,18 +12,11 @@ interface OptimizedImageProps extends Omit<
   /** Desired display height */
   height?: number;
   /** Layout mode: 'fullWidth' makes image fill container */
-  layout?:
-    | 'fullWidth'
-    | 'fixed'
-    | 'constrained';
+  layout?: 'fullWidth' | 'fixed' | 'constrained';
   /** Image quality 1-100 (default 80) */
   quality?: number;
   /** Output format override (auto-negotiated via Accept header if omitted) */
-  format?:
-    | 'webp'
-    | 'avif'
-    | 'jpeg'
-    | 'png';
+  format?: 'webp' | 'avif' | 'jpeg' | 'png';
   /**
    * Mark this image as the page's LCP candidate: `fetchpriority=high`, eager
    * loading and a synchronous decode. Without it the browser has to finish
@@ -61,17 +44,7 @@ interface OptimizedImageProps extends Omit<
 // Breakpoints for responsive srcSet. 160 is for avatars and list icons: a
 // 22–48px slot at 3x needs 66–144 device pixels, and without it the smallest
 // candidate was 320. The server's ladder (lib/images/variant-params) has the rung.
-const WIDTHS =
-  [
-    160,
-    320,
-    480,
-    640,
-    800,
-    1024,
-    1280,
-    1600,
-  ];
+const WIDTHS = [160, 320, 480, 640, 800, 1024, 1280, 1600];
 
 /**
  * Pictures this tab has already shown, by their resolved `src`.
@@ -87,37 +60,19 @@ const WIDTHS =
  * agrees. Bounded, so a very long session cannot grow it without limit.
  */
 const SEEN_LIMIT = 2000;
-const seen =
-  new Set<string>();
+const seen = new Set<string>();
 /** Record that this tab has shown the picture at `url` (called from the image's `load` event). */
-export function markSeen(
-  url: string,
-): void {
-  if (
-    seen.size >=
-    SEEN_LIMIT
-  )
-    seen.clear();
-  seen.add(
-    url,
-  );
+export function markSeen(url: string): void {
+  if (seen.size >= SEEN_LIMIT) seen.clear();
+  seen.add(url);
 }
 /** Has this tab already shown the picture at `url`? Exported for the tests. */
-export function imageSeen(
-  url: string,
-): boolean {
-  return seen.has(
-    url,
-  );
+export function imageSeen(url: string): boolean {
+  return seen.has(url);
 }
 
 // Internal routes that resize/re-encode on demand via query params (w/h/q/f).
-const RESIZABLE_PREFIXES =
-  [
-    '/api/admin/curated-builds/image/',
-    '/api/feed/image/',
-    '/api/library/cover/',
-  ];
+const RESIZABLE_PREFIXES = ['/api/admin/curated-builds/image/', '/api/feed/image/', '/api/library/cover/'];
 
 /**
  * Build an optimized URL for a given source.
@@ -125,55 +80,15 @@ const RESIZABLE_PREFIXES =
  * - Other local/static paths: serve as-is (no optimization available)
  * - External / CDN https images: route through /api/image-proxy
  */
-export function buildOptimizedUrl(
-  src: string,
-  w?: number,
-  q?: number,
-  f?: string,
-): string {
+export function buildOptimizedUrl(src: string, w?: number, q?: number, f?: string): string {
   // Internal routes that support on-demand optimization — append query params.
-  if (
-    RESIZABLE_PREFIXES.some(
-      (
-        p,
-      ) =>
-        src.startsWith(
-          p,
-        ),
-    )
-  ) {
-    const params =
-      new URLSearchParams();
-    if (
-      w
-    )
-      params.set(
-        'w',
-        String(
-          w,
-        ),
-      );
-    if (
-      q
-    )
-      params.set(
-        'q',
-        String(
-          q,
-        ),
-      );
-    if (
-      f
-    )
-      params.set(
-        'f',
-        f,
-      );
-    const qs =
-      params.toString();
-    return qs
-      ? `${src}?${qs}`
-      : src;
+  if (RESIZABLE_PREFIXES.some((p) => src.startsWith(p))) {
+    const params = new URLSearchParams();
+    if (w) params.set('w', String(w));
+    if (q) params.set('q', String(q));
+    if (f) params.set('f', f);
+    const qs = params.toString();
+    return qs ? `${src}?${qs}` : src;
   }
 
   // Static assets under public/images/** with build-time variants (OPT-24).
@@ -181,109 +96,37 @@ export function buildOptimizedUrl(
   // records what it wrote in variants.gen.ts, so this only ever points at a
   // file that exists — an image missing from the manifest falls through to the
   // as-is branch below and behaves exactly as it did before.
-  const entry =
-    w
-      ? IMAGE_VARIANTS[
-          src
-        ]
-      : undefined;
-  if (
-    entry
-  ) {
+  const entry = w ? IMAGE_VARIANTS[src] : undefined;
+  if (entry) {
     // Smallest variant that still covers the requested width; otherwise the
     // largest one we have (never upscale past the source).
-    const pick =
-      entry.widths.find(
-        (
-          candidate,
-        ) =>
-          candidate >=
-          w!,
-      ) ??
-      entry.widths.at(
-        -1,
-      )!;
-    return (
-      variantUrl(
-        src,
-        pick,
-      ) ??
-      src
-    );
+    const pick = entry.widths.find((candidate) => candidate >= w!) ?? entry.widths.at(-1)!;
+    return variantUrl(src, pick) ?? src;
   }
 
   // Other local/static paths — serve as-is, no optimization available.
-  if (
-    src.startsWith(
-      '/',
-    )
-  ) {
+  if (src.startsWith('/')) {
     return src;
   }
 
   // External URL — proxy through our optimizer
-  const params =
-    new URLSearchParams();
-  params.set(
-    'url',
-    src,
-  );
-  if (
-    w
-  )
-    params.set(
-      'w',
-      String(
-        w,
-      ),
-    );
-  if (
-    q
-  )
-    params.set(
-      'q',
-      String(
-        q,
-      ),
-    );
-  if (
-    f
-  )
-    params.set(
-      'f',
-      f,
-    );
+  const params = new URLSearchParams();
+  params.set('url', src);
+  if (w) params.set('w', String(w));
+  if (q) params.set('q', String(q));
+  if (f) params.set('f', f);
   return `/api/image-proxy?${params.toString()}`;
 }
 
 /** True if `src` can be resized/re-encoded by our optimizer (so a tiny blur
  * placeholder and a responsive srcSet are available). Static local assets
  * can't be, so callers fall back to serving them as-is. */
-export function isOptimizable(
-  src: string,
-): boolean {
-  if (
-    RESIZABLE_PREFIXES.some(
-      (
-        p,
-      ) =>
-        src.startsWith(
-          p,
-        ),
-    )
-  )
-    return true;
+export function isOptimizable(src: string): boolean {
+  if (RESIZABLE_PREFIXES.some((p) => src.startsWith(p))) return true;
   // Static art with build-time variants (OPT-24) is resizable too — it just
   // resolves to a pre-generated file instead of an on-demand resize.
-  if (
-    IMAGE_VARIANTS[
-      src
-    ]
-  )
-    return true;
-  return !src.startsWith(
-    '/',
-  );
+  if (IMAGE_VARIANTS[src]) return true;
+  return !src.startsWith('/');
 }
 
 /**
@@ -291,75 +134,26 @@ export function isOptimizable(
  * srcset is never empty. No cap leaves the list as it is. Data saver passes the
  * slot's CSS width: the browser then picks about a 1x file instead of 2–3x.
  */
-function capWidths(
-  widths: readonly number[],
-  maxWidth?: number,
-): readonly number[] {
-  if (
-    maxWidth ==
-    null
-  )
-    return widths;
-  const kept =
-    widths.filter(
-      (
-        w,
-      ) =>
-        w <=
-        maxWidth,
-    );
-  return kept.length
-    ? kept
-    : widths.slice(
-        0,
-        1,
-      );
+function capWidths(widths: readonly number[], maxWidth?: number): readonly number[] {
+  if (maxWidth == null) return widths;
+  const kept = widths.filter((w) => w <= maxWidth);
+  return kept.length ? kept : widths.slice(0, 1);
 }
 
-export function generateSrcSet(
-  src: string,
-  quality?: number,
-  format?: string,
-  maxWidth?: number,
-): string {
+export function generateSrcSet(src: string, quality?: number, format?: string, maxWidth?: number): string {
   // A build-time-variant image advertises exactly the widths that were
   // generated. Running it through `WIDTHS` instead would emit descriptors that
   // lie — `…-640.webp 480w` claims a 640px file is 480px wide, and the browser
   // picks its candidate from the descriptor, not from the file.
-  const entry =
-    IMAGE_VARIANTS[
-      src
-    ];
-  if (
-    entry
-  ) {
-    return capWidths(
-      entry.widths,
-      maxWidth,
-    )
-      .map(
-        (
-          w,
-        ) =>
-          `${variantUrl(src, w)} ${w}w`,
-      )
-      .join(
-        ', ',
-      );
+  const entry = IMAGE_VARIANTS[src];
+  if (entry) {
+    return capWidths(entry.widths, maxWidth)
+      .map((w) => `${variantUrl(src, w)} ${w}w`)
+      .join(', ');
   }
-  return capWidths(
-    WIDTHS,
-    maxWidth,
-  )
-    .map(
-      (
-        w,
-      ) =>
-        `${buildOptimizedUrl(src, w, quality, format)} ${w}w`,
-    )
-    .join(
-      ', ',
-    );
+  return capWidths(WIDTHS, maxWidth)
+    .map((w) => `${buildOptimizedUrl(src, w, quality, format)} ${w}w`)
+    .join(', ');
 }
 
 /**
@@ -375,33 +169,12 @@ export function generateSrcSet(
  * negotiated by the optimizer instead and a second `<source>` would just be a
  * duplicate request waiting to happen.
  */
-function avifSrcSet(
-  src: string,
-  maxWidth?: number,
-):
-  | string
-  | null {
-  const entry =
-    IMAGE_VARIANTS[
-      src
-    ];
-  if (
-    !entry
-  )
-    return null;
-  return capWidths(
-    entry.widths,
-    maxWidth,
-  )
-    .map(
-      (
-        w,
-      ) =>
-        `${variantUrl(src, w, 'avif')} ${w}w`,
-    )
-    .join(
-      ', ',
-    );
+function avifSrcSet(src: string, maxWidth?: number): string | null {
+  const entry = IMAGE_VARIANTS[src];
+  if (!entry) return null;
+  return capWidths(entry.widths, maxWidth)
+    .map((w) => `${variantUrl(src, w, 'avif')} ${w}w`)
+    .join(', ');
 }
 
 /**
@@ -419,8 +192,7 @@ function OptimizedImageImpl({
   className,
   loading = 'lazy',
   priority = false,
-  sizes:
-    sizesProp,
+  sizes: sizesProp,
   onError,
   ...rest
 }: OptimizedImageProps) {
@@ -433,182 +205,73 @@ function OptimizedImageImpl({
   // which is always on disk. Tracked by VALUE rather than a boolean so a changed
   // `src` stops matching on its own and re-attempts the variants, instead of a
   // recycled element inheriting the previous image's failure.
-  const [
-    failedSrc,
-    setFailedSrc,
-  ] =
-    useState<
-      | string
-      | null
-    >(
-      null,
-    );
-  const degraded =
-    failedSrc ===
-    src;
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const degraded = failedSrc === src;
   // Data saver caps the candidates at the slot's CSS width (~1x). Decided once, at
   // mount: on the server from the request (its setting cookie or `Save-Data`), and
   // read back unchanged while hydrating; on a client mount from the live setting.
   // Never changed after, because the image is already downloading
   // (hooks/useDataSaver#useDataSaverAtMount, lib/data-saver-request.ts).
-  const saving =
-    useDataSaverAtMount();
-  const maxWidth =
-    saving
-      ? width ||
-        640
-      : undefined;
+  const saving = useDataSaverAtMount();
+  const maxWidth = saving ? width || 640 : undefined;
 
-  if (
-    !src
-  )
-    return null;
+  if (!src) return null;
 
   // Static local paths can't be optimized — skip srcSet
-  const srcSet =
-    !degraded &&
-    isOptimizable(
-      src,
-    )
-      ? generateSrcSet(
-          src,
-          quality,
-          format,
-          maxWidth,
-        )
-      : undefined;
+  const srcSet = !degraded && isOptimizable(src) ? generateSrcSet(src, quality, format, maxWidth) : undefined;
 
   // The caller's slot width when given, else a default based on layout.
   const sizes =
     sizesProp ??
-    (layout ===
-    'fullWidth'
+    (layout === 'fullWidth'
       ? '100vw'
       : width
         ? `(max-width: ${width}px) 100vw, ${width}px`
         : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw');
 
   // Optimized default src (pick a reasonable middle size)
-  const defaultSrc =
-    degraded
-      ? src
-      : buildOptimizedUrl(
-          src,
-          width ||
-            800,
-          quality,
-          format,
-        );
+  const defaultSrc = degraded ? src : buildOptimizedUrl(src, width || 800, quality, format);
 
   // AVIF is offered through a `<source>` rather than mixed into `srcSet`, because
   // `srcSet` selects on WIDTH and `<source type>` selects on FORMAT — a single
   // srcSet cannot express "prefer AVIF, fall back to WebP at the same widths".
   // Skipped when the caller pinned an explicit `format`, and when the image has
   // already failed once and degraded to its master.
-  const avif =
-    !degraded &&
-    !format
-      ? avifSrcSet(
-          src,
-          maxWidth,
-        )
-      : null;
+  const avif = !degraded && !format ? avifSrcSet(src, maxWidth) : null;
 
   // Shown before in this tab: skip the lazy gate and the async decode (see `seen`).
-  const again =
-    seen.has(
-      defaultSrc,
-    );
-  const eager =
-    priority ||
-    again;
-  const {
-    onLoad,
-    ...imgRest
-  } =
-    rest;
+  const again = seen.has(defaultSrc);
+  const eager = priority || again;
+  const { onLoad, ...imgRest } = rest;
 
-  const img =
-    (
-      <img
-        src={
-          defaultSrc
-        }
-        srcSet={
-          srcSet
-        }
-        sizes={
-          srcSet
-            ? sizes
-            : undefined
-        }
-        alt={
-          alt
-        }
-        width={
-          layout !==
-          'fullWidth'
-            ? width
-            : undefined
-        }
-        height={
-          layout !==
-          'fullWidth'
-            ? height
-            : undefined
-        }
-        // `priority` overrides the lazy/async defaults rather than reading them:
-        // an eager fetch that the browser still schedules at Low priority buys
-        // nothing, so the three attributes move together or not at all.
-        fetchPriority={
-          priority
-            ? 'high'
-            : undefined
-        }
-        loading={
-          eager
-            ? 'eager'
-            : loading
-        }
-        decoding={
-          eager
-            ? 'sync'
-            : 'async'
-        }
-        onLoad={(
-          e,
-        ) => {
-          markSeen(
-            defaultSrc,
-          );
-          onLoad?.(
-            e,
-          );
-        }}
-        className={
-          className
-        }
-        onError={(
-          e,
-        ) => {
-          if (
-            !degraded
-          )
-            setFailedSrc(
-              src,
-            );
-          onError?.(
-            e,
-          );
-        }}
-        {...imgRest}
-      />
-    );
+  const img = (
+    <img
+      src={defaultSrc}
+      srcSet={srcSet}
+      sizes={srcSet ? sizes : undefined}
+      alt={alt}
+      width={layout !== 'fullWidth' ? width : undefined}
+      height={layout !== 'fullWidth' ? height : undefined}
+      // `priority` overrides the lazy/async defaults rather than reading them:
+      // an eager fetch that the browser still schedules at Low priority buys
+      // nothing, so the three attributes move together or not at all.
+      fetchPriority={priority ? 'high' : undefined}
+      loading={eager ? 'eager' : loading}
+      decoding={eager ? 'sync' : 'async'}
+      onLoad={(e) => {
+        markSeen(defaultSrc);
+        onLoad?.(e);
+      }}
+      className={className}
+      onError={(e) => {
+        if (!degraded) setFailedSrc(src);
+        onError?.(e);
+      }}
+      {...imgRest}
+    />
+  );
 
-  if (
-    !avif
-  )
-    return img;
+  if (!avif) return img;
 
   // The `<img>` keeps its own `srcSet` (WebP) and stays the styled, measured,
   // error-handling element — `<picture>` is a selection wrapper with no box of its
@@ -623,18 +286,8 @@ function OptimizedImageImpl({
   // falls back to the untouched master.
   return (
     <picture>
-      <source
-        type="image/avif"
-        srcSet={
-          avif
-        }
-        sizes={
-          sizes
-        }
-      />
-      {
-        img
-      }
+      <source type="image/avif" srcSet={avif} sizes={sizes} />
+      {img}
     </picture>
   );
 }
@@ -643,7 +296,4 @@ function OptimizedImageImpl({
  * Memoized: images recur throughout feed/library/build grids, so skipping
  * re-renders when props are unchanged avoids redundant srcSet recomputation.
  */
-export const OptimizedImage =
-  memo(
-    OptimizedImageImpl,
-  );
+export const OptimizedImage = memo(OptimizedImageImpl);

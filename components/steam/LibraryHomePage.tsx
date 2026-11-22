@@ -4,6 +4,7 @@ import {
   getRouteApi,
 } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
+import { FollowingEmpty, FollowingLabel, UnfollowButton } from './FollowingFilter';
 import { useTranslation } from 'react-i18next';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import {
@@ -11,6 +12,7 @@ import {
   groupRail,
 } from '@/lib/games/library';
 import { CAPSULE_SIZES, TitleArt } from './TitleArt';
+import { capsuleTilt } from './tilt';
 
 const layoutApi =
   getRouteApi(
@@ -32,10 +34,12 @@ export function LibraryHomePage() {
     );
   const {
     recentIds,
+    followedIds,
   } =
     layoutApi.useLoaderData();
   const {
     kind = 'all',
+    following = false,
   } =
     layoutApi.useSearch();
 
@@ -44,7 +48,7 @@ export function LibraryHomePage() {
     all,
   } =
     useMemo(() => {
-      const items =
+      const filtered =
         filterRail(
           listCuratedBuilds(),
           {
@@ -53,6 +57,9 @@ export function LibraryHomePage() {
               '',
           },
         );
+      const items = following
+        ? filtered.filter((b) => followedIds.includes(b.id))
+        : filtered;
       const {
         recent:
           r,
@@ -83,6 +90,8 @@ export function LibraryHomePage() {
       };
     }, [
       kind,
+      following,
+      followedIds,
       recentIds,
     ]);
 
@@ -99,7 +108,7 @@ export function LibraryHomePage() {
       </h1>
 
       {recent.length >
-      0 ? (
+      0 && !following ? (
         <section aria-labelledby="stm-recent">
           <h2
             id="stm-recent"
@@ -132,7 +141,9 @@ export function LibraryHomePage() {
           id="stm-all"
           className="stm-shelf-head"
         >
-          {kind ===
+          {following
+            ? <FollowingLabel />
+            : kind ===
           'app'
             ? t(
                 'steam-all-apps',
@@ -180,10 +191,16 @@ export function LibraryHomePage() {
             )}
           </span>
         </h2>
+        {following && all.length === 0 ? (
+          <p className="stm-muted stm-card-note">
+            <FollowingEmpty />
+          </p>
+        ) : null}
         <Capsules
           items={
             all
           }
+          unfollowable={following}
         />
       </section>
     </div>
@@ -192,10 +209,13 @@ export function LibraryHomePage() {
 
 function Capsules({
   items,
+  unfollowable = false,
 }: {
   items: ReturnType<
     typeof listCuratedBuilds
   >;
+  /** Set on the Following filter: each capsule then carries an Unfollow button. */
+  unfollowable?: boolean;
 }) {
   return (
     <ul className="stm-capsules">
@@ -215,6 +235,7 @@ function Capsules({
                   b.id,
               }}
               className="stm-capsule"
+              {...capsuleTilt}
             >
               <TitleArt
                 build={
@@ -233,6 +254,7 @@ function Capsules({
                 }
               </span>
             </Link>
+            {unfollowable ? <UnfollowButton gameId={b.id} title={b.title} /> : null}
           </li>
         ),
       )}

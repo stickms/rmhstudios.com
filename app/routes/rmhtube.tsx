@@ -8,18 +8,25 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
+import { safeInternalPath } from '@/lib/auth/redirect';
 import { getRequestSession } from '@/lib/auth-session.server';
 import RmhTubeShell from '@/components/rmhtube/RmhTubeShell';
 import rmhtubeCss from '@/components/rmhtube/rmhtube.css?url';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
-  if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhtube' } });
-  return { user: session.user };
+  return { user: session?.user ?? null };
 });
 
 export const Route = createFileRoute('/rmhtube')({
-  beforeLoad: () => checkAuth(),
+  beforeLoad: async ({ location }) => {
+    const { user } = await checkAuth();
+    // Carry the visited path (+search) through sign-in so a shared party link
+    // lands on the party, not the landing page. safeInternalPath keeps it a
+    // same-site path (no open redirect).
+    if (!user) throw redirect({ to: '/login', search: { callbackURL: safeInternalPath(location.href) } });
+    return { user };
+  },
   head: () => appRouteHead('rmhtube', { links: [{ rel: 'stylesheet', href: rmhtubeCss }] }),
   component: () => (
     <RmhTubeShell>

@@ -18,6 +18,7 @@
    seven type classes. The old Plasmatic Jelly stylesheets (glass roles, jelly material, arcs, coverage, jelly-group)
    are deleted, not deprecated: nothing imports them. */
 @import './styles/steel-surfaces.css';
+@import './styles/setting-focus.css';
 @import './styles/steel-type.css';
 @import './styles/steel-chrome.css';
 @import './styles/steel-overlay.css';

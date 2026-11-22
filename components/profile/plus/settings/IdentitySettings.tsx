@@ -7,10 +7,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -133,6 +133,7 @@ export default function IdentitySettings({
     useState(
       false,
     );
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const arrival =
     useArrival(
       view !==
@@ -206,53 +207,34 @@ export default function IdentitySettings({
         )
       : null;
 
-  async function save() {
-    setSaving(
-      true,
-    );
+  // Saves as the person goes: a switch or the time zone the moment it changes, a text field when they leave it. `next`
+  // carries the value that just changed, because the state setter has not landed yet. A save that would change nothing
+  // is skipped, so tabbing through the fields costs no request.
+  async function save(next: Partial<Record<'pronouns' | 'timezone' | 'nowText', string>> & Partial<Record<'counter' | 'endorse', boolean>> = {}) {
+    if (!view) return;
+    const body = {
+      pronouns: next.pronouns ?? pronouns,
+      timezone: next.timezone ?? timezone,
+      nowText: next.nowText ?? nowText,
+      counterEnabled: next.counter ?? counter,
+      endorsementsEnabled: next.endorse ?? endorse,
+    };
+    const unchanged =
+      body.pronouns === (view.pronouns ?? '') &&
+      body.timezone === (view.timezone ?? '') &&
+      body.nowText === (view.nowText ?? '') &&
+      body.counterEnabled === view.counterEnabled &&
+      body.endorsementsEnabled === view.endorsementsEnabled;
+    if (unchanged) return;
+    setSaving(true);
     try {
-      setView(
-        await api(
-          updateOwnProfilePlusApi,
-          {
-            body: {
-              pronouns,
-              timezone,
-              nowText,
-              counterEnabled:
-                counter,
-              endorsementsEnabled:
-                endorse,
-            },
-          },
-        ),
-      );
-      invalidateProfilePlus(
-        userId,
-      );
-      toast.success(
-        t(
-          'identity-saved',
-          {
-            defaultValue:
-              'Saved',
-          },
-        ),
-      );
+      setView(await api(updateOwnProfilePlusApi, { body }));
+      invalidateProfilePlus(userId);
+      setSavedAt(Date.now());
     } catch {
-      toast.error(
-        t(
-          'identity-failed',
-          {
-            defaultValue:
-              "Couldn't save your changes",
-          },
-        ),
-      );
+      toast.error(t('identity-failed', { defaultValue: "Couldn't save your changes" }));
     } finally {
-      setSaving(
-        false,
-      );
+      setSaving(false);
     }
   }
 
@@ -304,6 +286,7 @@ export default function IdentitySettings({
                 .value,
             )
           }
+          onBlur={() => void save()}
         />
         <p className="text-xs text-site-text-muted">
           {t(
@@ -374,13 +357,10 @@ export default function IdentitySettings({
             }
             onChange={(
               e,
-            ) =>
-              setTimezone(
-                e
-                  .target
-                  .value,
-              )
-            }
+            ) => {
+              setTimezone(e.target.value);
+              void save({ timezone: e.target.value });
+            }}
             containerClassName="min-w-0 flex-1"
             placeholder={t(
               'timezone-none',
@@ -426,12 +406,10 @@ export default function IdentitySettings({
               const here =
                 Intl.DateTimeFormat().resolvedOptions()
                   .timeZone;
-              if (
-                here
-              )
-                setTimezone(
-                  here,
-                );
+              if (here) {
+                setTimezone(here);
+                void save({ timezone: here });
+              }
             }}
           >
             {t(
@@ -500,6 +478,7 @@ export default function IdentitySettings({
                 .value,
             )
           }
+          onBlur={() => void save()}
         />
         <p className="flex justify-between text-xs text-site-text-muted">
           <span>
@@ -551,9 +530,10 @@ export default function IdentitySettings({
             checked={
               endorse
             }
-            onCheckedChange={
-              setEndorse
-            }
+            onCheckedChange={(v) => {
+              setEndorse(v);
+              void save({ endorse: v });
+            }}
           />
         </div>
         <div className="flex items-start justify-between gap-4">
@@ -582,30 +562,22 @@ export default function IdentitySettings({
             checked={
               counter
             }
-            onCheckedChange={
-              setCounter
-            }
+            onCheckedChange={(v) => {
+              setCounter(v);
+              void save({ counter: v });
+            }}
           />
         </div>
       </div>
 
-      <Button
-        variant="default"
-        loading={
-          saving
-        }
-        onClick={() =>
-          void save()
-        }
-      >
-        {t(
-          'identity-save',
-          {
-            defaultValue:
-              'Save',
-          },
-        )}
-      </Button>
+      {/* No Save button: changes save as they are made. This line only says so. */}
+      <p className="t-meta" role="status" aria-live="polite">
+        {saving
+          ? t('identity-saving', { defaultValue: 'Saving…' })
+          : savedAt
+            ? t('identity-saved-auto', { defaultValue: 'Saved' })
+            : t('identity-autosave-hint', { defaultValue: 'Changes save automatically.' })}
+      </p>
     </div>
   );
 }

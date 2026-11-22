@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
+import { consumeAssistRun } from '@/lib/game/assist-run.server';
 
 const DIFFICULTY_FIELDS = {
   easy: 'highScoreEasy',
@@ -65,6 +66,12 @@ export const route = apiRoute('/api/dream-rift/score', {
             ? Math.round(spellsCaptured)
             : 0;
 
+        // An assisted run never reaches the board (P7). The high-score columns ARE this game's
+        // board, so they are left alone; plays, graze and spells still count. The claim is peeked,
+        // not consumed, so the seeded-run submit that follows reaches the same answer.
+        const assisted = await consumeAssistRun(userId, 'dream-rift', { keepClaim: true, settleClaim: true });
+        const ranked = !assisted;
+
         const existingProfile = await prisma.dreamRiftPlayer.findUnique({
           where: { userId },
         });
@@ -73,8 +80,12 @@ export const route = apiRoute('/api/dream-rift/score', {
           await prisma.dreamRiftPlayer.update({
             where: { id: profile.id },
             data: {
-              [scoreField]: Math.max(profile[scoreField] as number, Math.round(score)),
-              bestStage: Math.max(profile.bestStage, safeStage),
+              ...(ranked
+                ? {
+                    [scoreField]: Math.max(profile[scoreField] as number, Math.round(score)),
+                    bestStage: Math.max(profile.bestStage, safeStage),
+                  }
+                : {}),
               character: safeCharacter,
               gamesPlayed: { increment: 1 },
               totalGraze: { increment: safeGraze },
@@ -83,7 +94,7 @@ export const route = apiRoute('/api/dream-rift/score', {
             },
           });
           await recordGamePlay(userId);
-          return Response.json({ success: true, linked: true });
+          return Response.json({ success: true, linked: true, ranked });
         };
 
         if (existingProfile) return applyToProfile(existingProfile);
@@ -101,8 +112,7 @@ export const route = apiRoute('/api/dream-rift/score', {
             data: {
               userId,
               username,
-              [scoreField]: Math.round(score),
-              bestStage: safeStage,
+              ...(ranked ? { [scoreField]: Math.round(score), bestStage: safeStage } : {}),
               character: safeCharacter,
               gamesPlayed: 1,
               totalGraze: safeGraze,
@@ -118,7 +128,7 @@ export const route = apiRoute('/api/dream-rift/score', {
           return applyToProfile(raced);
         }
         await recordGamePlay(userId);
-        return Response.json({ success: true, created: true });
+        return Response.json({ success: true, created: true, ranked });
       } catch (e) {
         console.error('Failed to submit dream-rift score:', e);
         return Response.json({ error: 'Internal Server Error' }, { status: 500 });

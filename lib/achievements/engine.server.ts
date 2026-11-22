@@ -15,8 +15,12 @@ import { creditCoins } from '@/lib/economy/ledger.server';
 import { getAchievement } from '@/lib/achievements/catalog';
 import { createNotification } from '@/lib/notifications.server';
 import { maybeRewardReferral } from '@/lib/referrals.server';
+import { onProgress } from '@/lib/achievements/tracking.server';
+import { emitAchievementUnlocked } from '@/lib/webhooks/game-emit.server';
 
 async function rewardUnlock(userId: string, achievementId: string, name: string, coinReward: number) {
+  // Both callers reach here only after winning the `unlockedAt: null` claim, so this fires once per unlock.
+  void emitAchievementUnlocked(userId, { achievementId, name, group: getAchievement(achievementId)?.group });
   if (coinReward > 0) {
     await creditCoins(userId, coinReward, {
       type: 'REWARD',
@@ -58,6 +62,8 @@ export async function grantAchievement(userId: string, achievementId: string): P
     });
     if (claim.count === 0) return false;
 
+    // An unlocked achievement is no longer tracked. (`onProgress` never throws.)
+    await onProgress(userId, achievementId, 0, def.target);
     await rewardUnlock(userId, achievementId, def.name, def.coinReward);
     return true;
   } catch (err) {
@@ -80,10 +86,12 @@ export async function progressAchievement(
   if (!def) return false;
   try {
     // Ensure the row exists (still locked), then advance progress atomically.
-    await prisma.userAchievement.upsert({
+    // The upsert returns the row as it was before this change: the milestone check's `prev`.
+    const before = await prisma.userAchievement.upsert({
       where: { userId_achievementId: { userId, achievementId } },
       create: { userId, achievementId, progress: 0, unlockedAt: null },
       update: {},
+      select: { progress: true },
     });
 
     // Apply the progress change only while still locked. `increment` avoids the
@@ -98,7 +106,10 @@ export async function progressAchievement(
       where: { userId_achievementId: { userId, achievementId } },
       select: { progress: true },
     });
-    if ((row?.progress ?? 0) < def.target) return false;
+    const next = row?.progress ?? 0;
+    // Milestone notices, and the end of tracking on unlock; an untracked achievement costs one lookup here.
+    await onProgress(userId, achievementId, before.progress, next);
+    if (next < def.target) return false;
 
     // Atomically claim the unlock so the reward is paid exactly once.
     const claim = await prisma.userAchievement.updateMany({

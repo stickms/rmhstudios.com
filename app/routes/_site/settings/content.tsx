@@ -2,11 +2,16 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { feedSignalsQuery } from '@/lib/feed/signals.queries';
+import { quietCountsQuery } from '@/lib/feed/quiet-counts.queries';
+import { contentWarningSettingQuery } from '@/lib/feed/content-warning.queries';
 import { altTextSettingQuery, autoDeleteSettingQuery } from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { FeedControlsSettings } from '@/components/settings/FeedControlsSettings';
 import { RequireAltTextSetting } from '@/components/settings/RequireAltTextSetting';
 import { AutoDeleteSetting } from '@/components/posts-plus/AutoDeleteSetting';
+import { RepostMutesSection } from '@/components/settings/RepostMutesSection';
+import { ContentWarningsSection } from '@/components/settings/ContentWarningsSection';
+import { MissingAltTextSection } from '@/components/settings/MissingAltTextSection';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/content')({
@@ -18,6 +23,8 @@ export const Route = createFileRoute('/_site/settings/content')({
       prefetchRouteQuery(context.queryClient, feedSignalsQuery()),
       prefetchRouteQuery(context.queryClient, altTextSettingQuery()),
       prefetchRouteQuery(context.queryClient, autoDeleteSettingQuery()),
+      prefetchRouteQuery(context.queryClient, quietCountsQuery()),
+      prefetchRouteQuery(context.queryClient, contentWarningSettingQuery()),
     ]);
     return undefined;
   },
@@ -40,6 +47,9 @@ function ContentSettingsPage() {
         <RequireAltTextSetting />
         <AutoDeleteSetting />
         <FeedControlsSettings />
+        <ContentWarningsSection />
+        <RepostMutesSection />
+        <MissingAltTextSection />
       </SettingsPageBody>
     </PageLayout>
   );

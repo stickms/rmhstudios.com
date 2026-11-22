@@ -9,6 +9,7 @@
 
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type AnyRow = Record<string, unknown>;
 
@@ -56,7 +57,7 @@ function ApplicationCard({
   selected: boolean;
   onSelect: (app: AnyRow) => void;
   onMove: (app: AnyRow, direction: 1 | -1) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const job = app.job as AnyRow | undefined;
   const { t } = useTranslation('site');
   const company = (job?.company as AnyRow | undefined)?.name as string | undefined;
@@ -89,7 +90,7 @@ function ApplicationCard({
       <span className="rl-app-card__title">{(job?.title as string) ?? t('ladder.pipeline.untitled', { defaultValue: 'Untitled role' })}</span>
       {app.appliedDate ? (
         <span className="rl-mono rl-app-card__date">
-          {new Date(app.appliedDate as Date).toLocaleDateString('en-US', {
+          {fmt.date(new Date(app.appliedDate as Date), {
             month: 'short',
             day: 'numeric',
           })}

@@ -51,29 +51,16 @@ import {
 import { SITE_STYLES } from '@/stores/themeStore';
 
 /** The `rmh-style` key, as `themeScript` and `Providers` both read it. */
-export const STYLE_STORAGE_KEY =
-  'rmh-style';
+export const STYLE_STORAGE_KEY = 'rmh-style';
 
 /** The columns of `AppearancePreference` this needs, all optional and nullable. */
 export interface AccountAppearanceRow {
-  style?:
-    | string
-    | null;
-  fontScale?:
-    | number
-    | null;
-  density?:
-    | string
-    | null;
-  readableFont?:
-    | boolean
-    | null;
-  colorVision?:
-    | string
-    | null;
-  jellyMotion?:
-    | string
-    | null;
+  style?: string | null;
+  fontScale?: number | null;
+  density?: string | null;
+  readableFont?: boolean | null;
+  colorVision?: string | null;
+  jellyMotion?: string | null;
 }
 
 /**
@@ -82,22 +69,9 @@ export interface AccountAppearanceRow {
  * device's own value stands — the same thing the runtime does when it falls back
  * to `store.style` or skips a setter.
  */
-export type AppearanceSeed =
-  Record<
-    string,
-    | string
-    | null
-  >;
+export type AppearanceSeed = Record<string, string | null>;
 
-const STYLE_IDS =
-  new Set<string>(
-    SITE_STYLES.map(
-      (
-        s,
-      ) =>
-        s.id,
-    ),
-  );
+const STYLE_IDS = new Set<string>(SITE_STYLES.map((s) => s.id));
 
 /**
  * The account-sync merge from `components/Providers.tsx`, as storage writes.
@@ -107,30 +81,12 @@ const STYLE_IDS =
  * store holds: a font scale of 1000 and a density of `cozy` are the defaults, and
  * the script expresses a default by the key being absent.
  */
-export function accountAppearanceSeed(
-  row:
-    | AccountAppearanceRow
-    | null
-    | undefined,
-): AppearanceSeed {
-  const seed: AppearanceSeed =
-    {};
-  if (
-    !row
-  )
-    return seed;
+export function accountAppearanceSeed(row: AccountAppearanceRow | null | undefined): AppearanceSeed {
+  const seed: AppearanceSeed = {};
+  if (!row) return seed;
 
   // `remote.style && SITE_STYLES.some(...) ? remote.style : store.style`
-  if (
-    row.style &&
-    STYLE_IDS.has(
-      row.style,
-    )
-  )
-    seed[
-      STYLE_STORAGE_KEY
-    ] =
-      row.style;
+  if (row.style && STYLE_IDS.has(row.style)) seed[STYLE_STORAGE_KEY] = row.style;
 
   // Text size and density are retired (settings audit, 2026-11-19): whatever the account row holds, the device's
   // stored values are cleared rather than applied (only when the row holds one, so the seed stays as small as before).
@@ -139,48 +95,19 @@ export function accountAppearanceSeed(
 
   // `if (typeof r.readableFont === 'boolean') setReadableFont(...)` — see the
   // header: the API sends `false` for unset, so this always applies.
-  if (
-    typeof row.readableFont ===
-    'boolean'
-  )
-    seed[
-      READABLE_FONT_KEY
-    ] =
-      row.readableFont
-        ? '1'
-        : null;
+  if (typeof row.readableFont === 'boolean') seed[READABLE_FONT_KEY] = row.readableFont ? '1' : null;
 
   // `if (isColorVisionMode(r.colorVision)) setColorVision(...)` — `none` is the
   // default, which the script expresses by absence.
-  if (
-    isColorVisionMode(
-      row.colorVision,
-    )
-  ) {
-    seed[
-      COLOR_VISION_KEY
-    ] =
-      row.colorVision ===
-      'none'
-        ? null
-        : row.colorVision;
+  if (isColorVisionMode(row.colorVision)) {
+    seed[COLOR_VISION_KEY] = row.colorVision === 'none' ? null : row.colorVision;
   }
 
   // `if (isJellyMotion(r.jellyMotion)) setJellyMotion(...)` — `lively` is the
   // default, which the script expresses by absence. A null column means the
   // account never chose, so the device's value stands.
-  if (
-    isJellyMotion(
-      row.jellyMotion,
-    )
-  ) {
-    seed[
-      JELLY_MOTION_KEY
-    ] =
-      row.jellyMotion ===
-      DEFAULT_JELLY_MOTION
-        ? null
-        : row.jellyMotion;
+  if (isJellyMotion(row.jellyMotion)) {
+    seed[JELLY_MOTION_KEY] = row.jellyMotion === DEFAULT_JELLY_MOTION ? null : row.jellyMotion;
   }
 
   return seed;

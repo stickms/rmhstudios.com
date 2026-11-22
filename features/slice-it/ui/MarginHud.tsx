@@ -7,6 +7,7 @@ import { JUDGEMENT_ORDER } from '@features/slice-it/engine/constants';
 import { calculateScoreMultiplier } from '@features/slice-it/engine/scoring';
 import { useSliceItStore } from '@features/slice-it/engine/store';
 import type { Difficulty, RunStats } from '@features/slice-it/engine/types';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const PRESSING_CODE: Record<Difficulty, string> = {
   easy: 'EZ',
@@ -51,7 +52,7 @@ export function MarginHud({
 }: {
   engine: GameEngine | null | undefined;
   room: MarginRoom;
-}) {
+}) { const lfmt = useLocaleFormat(); 
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
   const nowPlaying = useSliceItStore((s) => s.nowPlaying);
@@ -84,7 +85,7 @@ export function MarginHud({
 
           <div className="slice-mh__score">
             <div className="flex items-center gap-4">
-              <span className="slice-mh__figure">{r.score.toLocaleString()}</span>
+              <span className="slice-mh__figure">{lfmt.number(r.score)}</span>
               <span className="slice-hud-stamp">{r.grade}</span>
             </div>
             <span className="slice-figure text-[13px] text-slice-text">

@@ -15,9 +15,19 @@ import { CollectionMenu } from './CollectionMenu';
 import { SteamCards } from './SteamCards';
 import type { AlsoPlayed } from '@/lib/games/store-types';
 import { SteamGuides } from './SteamGuides';
+import { FollowGameButton } from './FollowGameButton';
+import { SteamUpdates, UpdatesLabel } from './GameUpdates';
+import type { PatchNoteItem } from '@/lib/arcade/updates';
+import type { FollowState } from '@/lib/arcade/updates.contract';
 import { SteamCommunity, SteamFriends } from './SteamPeople';
 import { SteamReviews } from './SteamReviews';
+import { ReplayBoard } from '@/components/replays/ReplayBoard';
+import type { BoardReplay } from '@/lib/game/replay-library';
 import { TitleArt } from './TitleArt';
+import { PersonalBests } from './PersonalBests';
+import { PlayingThisGame } from './PlayingThisGame';
+import { capabilitiesFor } from '@/lib/game-capabilities';
+import { scoredGameIds } from '@/lib/game/registry';
 
 export type GamePageData = {
   gameId: string;
@@ -39,6 +49,9 @@ export type GamePageData = {
   trickOfTheWeek: TrickView | null;
   extras: LibraryExtras;
   alsoPlayed: AlsoPlayed[];
+  updates: { notes: PatchNoteItem[]; follow: FollowState } | null;
+  /** Top public replays; null when the title records none. */
+  replays: BoardReplay[] | null;
 };
 
 /**
@@ -90,6 +103,9 @@ export function GamePage({ data }: { data: GamePageData }) {
           {data.cta || t('play', { defaultValue: 'Play' })}
         </a>
         <CollectionMenu gameId={data.gameId} />
+        {data.updates ? (
+          <FollowGameButton gameId={data.gameId} signedIn={data.signedIn} initial={data.updates.follow} />
+        ) : null}
         {offSite ? null : (
           <dl className="stm-stats">
             {data.signedIn ? (
@@ -135,6 +151,7 @@ export function GamePage({ data }: { data: GamePageData }) {
         {total > 0 ? <a href="#achievements">{t('steam-achievements', { defaultValue: 'Achievements' })}</a> : null}
         {extras.cards ? <a href="#cards">{t('steam-trading-cards', { defaultValue: 'Trading Cards' })}</a> : null}
         {offSite ? null : <a href="#friends">{t('steam-friends-short', { defaultValue: 'Friends' })}</a>}
+        {data.updates ? <a href="#updates"><UpdatesLabel /></a> : null}
         {isGame ? <a href="#reviews">{t('reviews', { defaultValue: 'Reviews' })}</a> : null}
         {isGame ? <a href="#guides">{t('guides', { defaultValue: 'Player guides' })}</a> : null}
         <Link to="/games/hub/$gameId" params={{ gameId: data.gameId }}>
@@ -149,11 +166,15 @@ export function GamePage({ data }: { data: GamePageData }) {
           {extras.cards ? (
             <SteamCards gameId={data.gameId} title={data.title} hue={data.hue} cards={extras.cards} />
           ) : null}
+          {isGame && data.signedIn && scoredGameIds().includes(data.gameId) ? (
+            <PersonalBests gameId={data.gameId} />
+          ) : null}
           {data.gameId === 'nightrail' ? (
             <div className="stm-legacy">
               <NightrailTrickBoard winner={data.trickOfTheWeek ?? null} signedIn={data.signedIn} />
             </div>
           ) : null}
+          {data.updates ? <SteamUpdates gameId={data.gameId} notes={data.updates.notes} /> : null}
           {isGame ? (
             <>
               <div className="stm-legacy">
@@ -166,6 +187,7 @@ export function GamePage({ data }: { data: GamePageData }) {
                 initialAgg={data.agg}
               />
               <SteamGuides gameId={data.gameId} guides={data.guides} signedIn={data.signedIn} />
+              {data.replays ? <ReplayBoard gameId={data.gameId} initial={data.replays} /> : null}
               {data.aiEnabled ? (
                 <div className="stm-legacy">
                   <HowToPlay gameId={data.gameId} />
@@ -187,6 +209,7 @@ export function GamePage({ data }: { data: GamePageData }) {
               ))}
             </ul>
           </section>
+          {isGame ? <PlayingThisGame gameId={data.gameId} caps={capabilitiesFor(data.gameId)} /> : null}
           {data.alsoPlayed.length > 0 ? (
             <section className="stm-card" aria-labelledby="stm-also-h">
               <h2 id="stm-also-h" className="stm-card-head">

@@ -8,6 +8,7 @@ import { useTranslation } from'react-i18next';
 import { unlockPostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Paywall card shown in place of a locked post's content. */
 export function PostLockedCard({
@@ -18,7 +19,7 @@ export function PostLockedCard({
  postId: string;
  price: number;
  onUnlocked: (content: string) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
  const [loading, setLoading] = useState(false);
 
@@ -57,7 +58,7 @@ export function PostLockedCard({
  {loading ? (
  <Loader2 className="h-4 w-4 animate-spin"/>
  ) : (
- <span className="inline-flex items-center gap-1">{t('unlock-for', { defaultValue:'Unlock for'})} <CoinIcon className="h-4 w-4"/> {price.toLocaleString()}</span>
+ <span className="inline-flex items-center gap-1">{t('unlock-for', { defaultValue:'Unlock for'})} <CoinIcon className="h-4 w-4"/> {fmt.number(price)}</span>
  )}
  </Button>
  </div>

@@ -8,6 +8,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { clearPinnedReplyIf } from '@/lib/feed/conversation-controls.server';
 
 export type SetReplyHiddenResult =
   { ok: true; hidden: boolean } | { ok: false; status: number; error: string };
@@ -32,5 +33,7 @@ export async function setReplyHidden(
     where: { id: commentId },
     data: { hiddenAt: hidden ? new Date() : null },
   });
+  // A hidden reply cannot stay pinned to the top of the conversation.
+  if (hidden) await clearPinnedReplyIf(postId, commentId);
   return { ok: true, hidden };
 }

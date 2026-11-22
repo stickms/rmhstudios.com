@@ -1,0 +1,11 @@
+{
+  "break-ratio": "Break to focus",
+  "break-ratio-sentence_one": "1 minute of break for every minute of focus",
+  "break-ratio-sentence_other": "1 minute of break for every {{count}} of focus",
+  "break-total": "Break time this week",
+  "longest-streak": "Longest streak",
+  "streak-column": "Streak",
+  "streak-day": "Streak day",
+  "study-today_one": "Study today to keep your {{count}}-day streak",
+  "study-today_other": "Study today to keep your {{count}}-day streak"
+}

@@ -38,6 +38,7 @@ import {
 } from '@features/slice-it/engine/play.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 /**
  * The song / global leaderboard panel.
  *
@@ -886,7 +887,7 @@ function Row({
     replayId: string,
   ) => void;
   className?: string;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -1000,7 +1001,7 @@ function Row({
             </Tooltip>
           )}
           <span className="text-blue-500 font-mono font-bold tabular-nums ml-1">
-            {entry.score.toLocaleString()}
+            {fmt.number(entry.score)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -1065,7 +1066,7 @@ function Row({
                         defaultValue:
                           'lifetime {{total}}',
                         total:
-                          entry.totalScore.toLocaleString(),
+                          fmt.number(entry.totalScore),
                       },
                     )}
                   </span>

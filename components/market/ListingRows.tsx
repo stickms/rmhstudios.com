@@ -34,9 +34,7 @@ export function ListingRows({
           >
             <span className="min-w-0 flex-1">
               <span className="t-body block truncate text-site-text">{row.title}</span>
-              {row.detail && (
-                <span className="t-meta block truncate">{row.detail}</span>
-              )}
+              {row.detail && <span className="t-meta block truncate">{row.detail}</span>}
             </span>
             <span className="t-meta shrink-0">
               {row.kind === 'card'

@@ -29,6 +29,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from '@/lib/toast';
 import { type TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { SearchField } from '@/components/ui/search-field';
@@ -45,6 +46,7 @@ import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
 import { BookLeaves } from '@/components/library/BookLeaves';
 import { LibraryReadingMount } from '@/components/reading/LibraryReadingMount';
+import { ContinueReading } from '@/components/library/ContinueReading';
 import { MyReadingView } from '@/components/reading/MyReadingView';
 import { parseReadingTab, type ReadingTab } from '@/lib/reading/tabs';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
@@ -70,6 +72,7 @@ import {
   adminLibraryMigrateApi,
   adminLibraryReorderApi,
 } from '@/lib/library/admin-library.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
@@ -435,10 +438,9 @@ function Library() {
         defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
       });
       const reasons =
-        Array.isArray(summary.errors) && summary.errors.length
-          ? `\n\n${summary.errors.join('\n')}`
-          : '';
-      window.alert(base + reasons);
+        Array.isArray(summary.errors) && summary.errors.length ? summary.errors.join('; ') : null;
+      if (reasons) toast.error(base, { description: reasons });
+      else toast.success(base);
       void refresh();
     }
   }
@@ -538,6 +540,8 @@ function Library() {
               )
             }
           />
+
+          {shows('books') ? <ContinueReading /> : null}
 
           {shows('books') ? <LibraryReadingMount /> : null}
 
@@ -801,7 +805,7 @@ function BookSpine({
   onInspect: () => void;
   onChanged: () => void;
   dnd?: BookDnd;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('library');
   const revealRef = useReveal();
   const menu = useContextMenu();
@@ -813,7 +817,7 @@ function BookSpine({
   const uploader = book.uploadedBy?.handle
     ? `@${book.uploadedBy.handle}`
     : (book.uploadedBy?.name ?? null);
-  const date = book.createdAt ? new Date(book.createdAt).toLocaleDateString() : null;
+  const date = book.createdAt ? fmt.date(new Date(book.createdAt)) : null;
 
   const wrapClass = [
     'lib-book__wrap',
@@ -878,7 +882,7 @@ function BookSpine({
               <span className="lib-book__title">{book.title}</span>
             )}
             {book.pages > 0 && (
-              <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>
+              <span className="lib-book__pages-badge">{fmt.number(book.pages)} pp</span>
             )}
             {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
             {book.reported && isAdmin && (

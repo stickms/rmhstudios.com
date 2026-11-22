@@ -374,6 +374,50 @@ html.ios-webkit .steam {
   border-color: transparent;
 }
 
+.stm-access-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stm-kinds-wrap {
+  flex-wrap: wrap;
+}
+.stm-kinds-wrap button {
+  flex: 0 1 auto;
+  min-height: 28px;
+}
+
+@media (pointer: coarse) {
+  .stm-kinds-wrap button {
+    min-height: 44px;
+  }
+}
+
+.stm-access {
+  padding: 4px 16px 0;
+}
+.stm-access h3 {
+  margin: 12px 0 4px;
+  color: var(--stm-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.stm-access ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-access li,
+.stm-access p {
+  margin: 0;
+  padding: 2px 0;
+  color: var(--stm-text);
+  font-size: 13px;
+}
+.stm-access a {
+  color: var(--stm-link);
+}
+
 .stm-list {
   flex: 1;
   min-height: 0;
@@ -2482,11 +2526,39 @@ html[dir='rtl'] .stm-drawer-panel {
     box-shadow var(--stm-dur) var(--stm-ease),
     opacity var(--stm-dur) var(--stm-ease);
 }
+/* Capsule tilt: the capsule leans toward the cursor in 3D and a specular highlight follows it, the way a glossy card
+   catches a light. `tilt.ts` only writes --tilt-x/-y and --glare-x/-y on pointer move; the transform and the glare
+   are compositor work (transform and opacity), so nothing runs per frame and a capsule at rest costs nothing. */
 .stm-capsule {
-  transition: transform var(--stm-dur) var(--stm-ease);
+  position: relative;
+  transition: transform 320ms var(--stm-ease);
 }
-.stm-capsule:hover {
-  transform: translateY(-2px);
+.stm-capsule::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--stm-radius);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms linear;
+  background: radial-gradient(
+    circle at var(--glare-x, 50%) var(--glare-y, 30%),
+    rgb(255 255 255 / 0.55),
+    rgb(255 255 255 / 0.12) 38%,
+    transparent 62%
+  );
+  mix-blend-mode: soft-light;
+}
+@media (hover: hover) and (pointer: fine) {
+  .stm-capsule:hover {
+    z-index: 1;
+    transform: perspective(700px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(1.06);
+    transition: transform 90ms linear;
+  }
+  .stm-capsule:hover::after {
+    opacity: 1;
+  }
 }
 
 /* In-page links (Achievements, Reviews, ...) land between the pinned bars, not under either. */
@@ -2601,4 +2673,124 @@ html[dir='rtl'] .stm-drawer-panel {
 }
 .stm-shop > p {
   margin: 0 0 16px;
+}
+
+/* ─── Game updates (patch notes) ──────────────────────────────────────────── */
+
+.stm-updates {
+  margin: 0;
+  padding: 0;
+}
+.stm-update {
+  padding: 12px 16px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-update:first-child {
+  border-top: 0;
+}
+.stm-update-title {
+  margin: 0;
+  color: var(--stm-bright);
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.stm-update-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 2px 0 0;
+  color: var(--stm-muted);
+  font-size: 12px;
+}
+.stm-update-body {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.stm-updates-page .stm-updates {
+  background: var(--stm-pane-deep);
+  border-radius: var(--stm-radius);
+}
+.stm-updates-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 0 0 12px;
+}
+.stm-updates-bar p {
+  margin: 0;
+}
+.stm-updates-more {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 0;
+}
+.stm-capsule-action {
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* Your bests (sprint 05 #04): the record history card on a game's page. */
+.stm-pb {
+  --chart-ink: var(--stm-text);
+  --chart-ink-2: var(--stm-muted);
+  --chart-rule: var(--stm-line);
+  padding: 12px 16px 0;
+}
+.stm-pb-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin: 0 0 8px;
+}
+.stm-pb-best {
+  color: var(--stm-bright);
+  font-size: 22px;
+  font-weight: 600;
+}
+.stm-pb-note {
+  color: var(--stm-muted);
+  font-size: 13px;
+}
+.stm-pb-rows {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-pb-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: baseline;
+  min-height: 36px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--stm-line);
+  font-size: 13px;
+}
+.stm-pb-date {
+  color: var(--stm-muted);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+}
+.stm-pb-score {
+  color: var(--stm-bright);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stm-pb-change {
+  min-width: 6ch;
+  color: var(--stm-muted);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.stm-pb-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0 0;
 }

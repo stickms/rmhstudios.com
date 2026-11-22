@@ -25,6 +25,12 @@ model Community {
   flairRequired     Boolean  @default(false)
   // N2: ⭐ reactions needed for the hall of fame.
   starThreshold     Int      @default(5)
+  // s03-13: joining needs the member to tick "I have read the rules".
+  rulesRequireAgreement Boolean @default(false)
+  // s03-14: members may read the content part of the moderation log.
+  publicModLog      Boolean  @default(false)
+  // s07-16: every image posted here needs a description.
+  requireImageAlt   Boolean  @default(false)
   createdById       String
   createdAt         DateTime @default(now())
   /// Catalog id of the game/app this community is the home of (shown on that
@@ -41,6 +47,13 @@ model Community {
   contributorScoresP06 CommunityContributorScore[]
   sistersOutP06        CommunitySister[]             @relation("CommunitySisterFrom")
   sistersInP06         CommunitySister[]             @relation("CommunitySisterTo")
+  rules                CommunityRule[]
+  modActions           CommunityModAction[]
+  memberEvents         CommunityMemberEvent[]
+  handovers            CommunityHandover[]
+  bans                 CommunityBan[]
+  memberNotes          CommunityMemberNote[]
+  recurringThreads     CommunityRecurringThread[]
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -142,13 +155,28 @@ model CommunityMember {
   // granted by onboarding answers. Labels never carry permissions.
   followedFlairIds String[]      @default([])
   roleTags         String[]      @default([])
+  // s03-13: when the member ticked the community's rules (set only on a join that agreed).
+  rulesAcceptedAt  DateTime?
+  /// s05-17: "off" (default) or "all" — notify this member of every new visible post in the community.
+  postAlerts       String        @default("off") @db.VarChar(4)
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([communityId, userId])
   @@index([userId])
+  // The post-alert fan-out reads a community's opted-in members. Built CONCURRENTLY in its own migration.
+  @@index([communityId, postAlerts])
   @@map("community_member")
+}
+
+/// s05-17 — one row per post whose new-post alerts have been claimed by the fan-out job (insert-if-absent), so a
+/// retried or duplicated job never notifies twice. Not a member's data (no user column), so not exported or erased.
+model CommunityPostAlertRun {
+  postId    String   @id
+  claimedAt DateTime @default(now())
+
+  @@map("community_post_alert_run")
 }
 
 // ─── RMHEvents (§6) ────────────────────────────────────────────────────────
@@ -512,4 +540,173 @@ model QotdAnswer {
   @@index([dayKey, createdAt(sort: Desc)])
   @@index([userId, dayKey])
   @@map("qotd_answer")
+}
+
+/// s03-13 — a community's written rules, in the order moderators set (position 0 first).
+/// A removal or a report quotes the title as a copy, so deleting a rule never rewrites history.
+model CommunityRule {
+  id          String   @id @default(cuid())
+  communityId String
+  position    Int
+  title       String   @db.VarChar(60)
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, position])
+  @@map("community_rule")
+}
+
+/// s03-14 — one row per community moderation action, written in the action's own
+/// transaction by `logModAction`. Append-only. `actorId` / `targetUserId` are plain
+/// columns (no relation to User): account deletion anonymises in place and nulls them.
+model CommunityModAction {
+  id           BigInt   @id @default(autoincrement())
+  communityId  String
+  actorId      String?
+  /// A code from `MOD_ACTIONS` (lib/communities/modlog.ts), never English.
+  action       String   @db.VarChar(32)
+  targetUserId String?
+  targetType   String?  @db.VarChar(16)
+  targetId     String?  @db.VarChar(64)
+  ruleId       String?
+  ruleTitle    String?  @db.VarChar(60)
+  reason       String?  @db.VarChar(300)
+  detail       Json?
+  createdAt    DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt(sort: Desc)])
+  @@index([communityId, actorId, createdAt])
+  @@map("community_mod_action")
+}
+
+/// s03-15 — one row per membership change (join, leave, removed), written in the change's own
+/// transaction by `recordMemberEvent`. Append-only; the Insights tab counts them. `userId` is a plain
+/// column (no relation to User): account deletion anonymises in place and sets it to null, so the totals
+/// stay right and nothing links a row to a person. Before the first row existed only joins can be known.
+model CommunityMemberEvent {
+  id          BigInt   @id @default(autoincrement())
+  communityId String
+  userId      String?
+  /// join | leave | removed (`MEMBER_EVENT_KINDS` in lib/communities/insights.ts).
+  kind        String   @db.VarChar(8)
+  createdAt   DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt])
+  @@map("community_member_event")
+}
+
+/// s04-17 — an offer of a community from its owner to one of its moderators. One pending offer per
+/// community (taken under an advisory lock in the offer transaction); it expires after 7 days (read as
+/// expired, no job). `status`: pending | accepted | declined | cancelled. A community record, not exported.
+model CommunityHandover {
+  id          String    @id @default(cuid())
+  communityId String
+  fromId      String
+  toId        String
+  status      String    @default("pending") @db.VarChar(10)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  decidedAt   DateTime?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  from      User      @relation("CommunityHandoverFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        User      @relation("CommunityHandoverTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, status])
+  @@index([toId, status])
+  @@map("community_handover")
+}
+
+/// s06-01 — a ban or a timeout of one member of one community. At most one is active per member (a new one lifts the
+/// old in the same transaction); expiry is read-time (`endsAt <= now()`), no job. `reason` is the moderators' private
+/// note and is never sent to the member. `createdById` / `liftedById` are plain columns: erasure nulls them.
+model CommunityBan {
+  id          String    @id @default(cuid())
+  communityId String
+  userId      String
+  /// 'ban' | 'timeout'
+  kind        String    @db.VarChar(8)
+  /// Null = until a moderator lifts it (bans only).
+  endsAt      DateTime?
+  ruleId      String?
+  reason      String?   @db.VarChar(300)
+  createdById String?
+  createdAt   DateTime  @default(now())
+  liftedAt    DateTime?
+  liftedById  String?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation("CommunityBanSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, userId, liftedAt])
+  @@index([communityId, createdAt(sort: Desc)])
+  @@map("community_ban")
+}
+
+/// s06-02 — a private moderator note on a member, scoped to one community. Ids are plain columns (no `User`
+/// relation, like `CommunityModAction`); account deletion removes the notes about a member and nulls the author.
+model CommunityMemberNote {
+  id          String    @id @default(cuid())
+  communityId String
+  subjectId   String
+  authorId    String?
+  body        String    @db.VarChar(500)
+  /// The sanction (`CommunityBan.id`) or mod-queue item it was written with.
+  banId       String?
+  modItemId   String?
+  createdAt   DateTime  @default(now())
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  deletedById String?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, subjectId, createdAt(sort: Desc)])
+  @@map("community_member_note")
+}
+
+/// s08-09 — a thread template a community's moderators set to post itself, weekly or monthly, at a local time in a
+/// chosen time zone. Text only (title, body, flair). `nextAt` is the next occurrence in UTC; the minute cron moves
+/// it to the following occurrence in a compare-and-set before it posts, so an occurrence is posted once. The
+/// template posts as `createdById`, the moderator who last saved it.
+model CommunityRecurringThread {
+  id           String    @id @default(cuid())
+  communityId  String
+  createdById  String
+  title        String    @db.VarChar(120)
+  body         String    @db.VarChar(2000)
+  /// Plain id (no relation): a flair deleted later just posts without one.
+  flairId      String?   @db.VarChar(64)
+  /// 'weekly' | 'monthly'
+  cadence      String    @db.VarChar(8)
+  /// 0 (Sunday) to 6, for a weekly template.
+  weekday      Int?
+  /// 1 to 28, for a monthly template.
+  dayOfMonth   Int?
+  /// Minutes after local midnight, 0 to 1439.
+  minuteOfDay  Int
+  timeZone     String    @db.VarChar(64)
+  nextAt       DateTime
+  active       Boolean   @default(true)
+  /// Why a paused template stopped (a short code), null while active.
+  pausedReason String?   @db.VarChar(32)
+  lastPostId   String?
+  lastPostedAt DateTime?
+  failures     Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("CommunityRecurringThreadAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([active, nextAt])
+  @@index([communityId])
+  @@map("community_recurring_thread")
 }

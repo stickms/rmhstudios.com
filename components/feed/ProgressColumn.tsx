@@ -3,6 +3,7 @@ import { useState, useCallback } from'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { battlepassQuery, progressSummaryQuery } from '@/lib/progress.queries';
 import { useTranslation } from'react-i18next';
+import { toast } from '@/lib/toast';
 import {
  Loader2,
  Zap,
@@ -31,8 +32,9 @@ import {
 } from'@/lib/battlepass/battlepass.contract';
 import type { PassReward, PassTier } from '@/lib/battlepass/season';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
-export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
  const queryClient = useQueryClient();
  const progressQ = useQuery(progressSummaryQuery());
@@ -81,7 +83,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  await load();
  } catch (e) {
  const message = serverError(e);
- if (message) alert(message);
+ if (message) toast.error(message);
  } finally {
  setBusy(null);
  }
@@ -129,13 +131,13 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  {t('level-number', { level: lvl.level, defaultValue:'Level {{level}}'})}
  </p>
  <p className="text-xs text-site-text-muted">
- {t('total-xp', { xp: lvl.xp.toLocaleString(), defaultValue:'{{xp}} total XP'})}
+ {t('total-xp', { xp: fmt.number(lvl.xp), defaultValue:'{{xp}} total XP'})}
  </p>
  </div>
  </div>
  <div className="inline-flex items-center gap-2 rounded-site-sm bg-site-bg px-3 py-1.5 text-sm font-semibold text-site-text">
  <CoinIcon className="h-4 w-4"/>
- {data.coins.toLocaleString()}
+ {fmt.number(data.coins)}
  </div>
  </div>
  <div className="mt-3">
@@ -147,8 +149,8 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  </div>
  <p className="mt-2 text-xs text-site-text-muted">
  {t('xp-to-next-level', {
- xpIntoLevel: lvl.xpIntoLevel.toLocaleString(),
- xpForNextLevel: lvl.xpForNextLevel.toLocaleString(),
+ xpIntoLevel: fmt.number(lvl.xpIntoLevel),
+ xpForNextLevel: fmt.number(lvl.xpForNextLevel),
  nextLevel: lvl.level + 1,
  defaultValue:'{{xpIntoLevel}} / {{xpForNextLevel}} XP to level {{nextLevel}}',
  })}
@@ -200,7 +202,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  {t('unlock-premium', { defaultValue:'Unlock premium'})}
  <span className="inline-flex items-center gap-1">
  <CoinIcon className="h-3.5 w-3.5"/>
- {pass.season.premiumPrice.toLocaleString()}
+ {fmt.number(pass.season.premiumPrice)}
  </span>
  </Button>
  )}
@@ -209,7 +211,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  {t('tier-progress', {
  currentTier: pass.currentTier,
  totalTiers: pass.tiers.length,
- seasonXp: pass.seasonXp.toLocaleString(),
+ seasonXp: fmt.number(pass.seasonXp),
  defaultValue:'Tier {{currentTier}} / {{totalTiers}} · {{seasonXp}} season XP',
  })}
  </p>

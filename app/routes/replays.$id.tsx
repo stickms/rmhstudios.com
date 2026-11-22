@@ -7,29 +7,40 @@
  * by anyone (including signed-out); unlisted replays are owner-only.
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Clock, Trophy } from 'lucide-react';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { getReplay } from '@/lib/replays.server';
+import { canViewReplay, getReplay, isSpeedrunProof } from '@/lib/replays.server';
+import { replayKind, type ReplayKind, type ReplayVisibility } from '@/lib/game/replay-library';
+import { toast } from '@/lib/toast';
 import { REPLAY_GAME_TITLES } from '@/lib/game/replay-meta';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { GameReplayPlayer } from '@/components/replays/GameReplayPlayer';
 import { formatDurationMs } from '@/lib/core/format';
+import { ReplayOwnerActions } from '@/components/replays/ReplayOwnerActions';
+import { useState } from 'react';
 
 const fetchReplay = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
   .handler(async ({ data: id }) => {
     const replay = await getReplay(id);
-    if (!replay) return { replay: null };
+    if (!replay) return { replay: null, mine: null };
 
-    // Unlisted replays only render for their owner.
-    if (replay.visibility !== 'public') {
-      const session = await getRequestSession();
-      if (!session || session.user.id !== replay.author.id) return { replay: null };
-    }
-    return { replay };
+    const session = await getRequestSession();
+    const isOwner = !!session && session.user.id === replay.author.id;
+    // Unlisted replays only render for their owner, and a blocked pair cannot open each other's.
+    if (!(await canViewReplay(replay, session?.user.id ?? null))) return { replay: null, mine: null };
+
+    // The owner's controls need to know what the replay is (a speedrun proof cannot be deleted or unlisted).
+    const mine: { kind: ReplayKind; visibility: ReplayVisibility } | null = isOwner
+      ? {
+          kind: replayKind(replay.game, await isSpeedrunProof(replay.id)),
+          visibility: replay.visibility === 'public' ? 'public' : 'unlisted',
+        }
+      : null;
+    return { replay, mine };
   });
 
 function gameTitle(game: string): string {
@@ -64,7 +75,11 @@ export const Route = createFileRoute('/replays/$id')({
 
 function ReplayPage() {
   const { t } = useTranslation('site');
-  const { replay } = Route.useLoaderData();
+  const { replay, mine } = Route.useLoaderData();
+  const navigate = useNavigate();
+  const { t: tl } = useTranslation('replay-library');
+  // The owner's switch changes the visibility shown here without reloading the page.
+  const [visibility, setVisibility] = useState<ReplayVisibility | null>(null);
 
   return (
     <div className="flex min-h-screen flex-col bg-site-bg text-site-text">
@@ -125,6 +140,31 @@ function ReplayPage() {
                 </span>
               </div>
             </div>
+
+            {mine ? (
+              <div className="mb-4 border-b border-site-border pb-4">
+                <ReplayOwnerActions
+                  replay={{
+                    id: replay.id,
+                    game: replay.game,
+                    score: replay.score,
+                    kind: mine.kind,
+                    visibility: visibility ?? mine.visibility,
+                  }}
+                  onVisibilityChanged={(row) => setVisibility(row.visibility)}
+                  onDeleted={() => {
+                    toast.success(tl('deleted', { defaultValue: 'Replay deleted.' }));
+                    void navigate({ to: '/settings/replays' });
+                  }}
+                />
+                <Link
+                  to="/settings/replays"
+                  className="t-meta mt-2 inline-block underline"
+                >
+                  {tl('your-replays', { defaultValue: 'Your replays' })}
+                </Link>
+              </div>
+            ) : null}
 
             <GameReplayPlayer
               game={replay.game}

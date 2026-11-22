@@ -42,7 +42,13 @@ def row($label; $job; $step; $timing):
      elif $j.status == "completed" then {status: "completed", conclusion: $j.conclusion}
      else {status: "queued"} end) as $r
   | (if $timing == "job" then $j else $r end) as $t
-  | {label: $label, status: $r.status, conclusion: $r.conclusion,
+  # A check step its own job skipped on purpose (go-test skips Bazel when a push
+  # touches no Go) is done, not pending: once the job passed, the row is a pass,
+  # labelled as such, rather than a ⏭️ that reads as "never ran".
+  | (($r.status == "completed" and $r.conclusion == "skipped"
+      and $j.status == "completed" and $j.conclusion == "success")) as $unneeded
+  | {label: (if $unneeded then $label + " (no changes)" else $label end),
+     status: $r.status, conclusion: (if $unneeded then "success" else $r.conclusion end),
      secs: (if $r.status == "completed" and $t.started_at and $t.completed_at
             then (($t.completed_at | fromdate) - ($t.started_at | fromdate)) else null end)};
 def icon:
@@ -55,10 +61,18 @@ def dur:
   if .secs == null then ""
   elif .secs >= 60 then " · \(.secs / 60 | floor)m \(.secs % 60 | tostring | if length == 1 then "0" + . else . end)s"
   else " · \(.secs)s" end;
-[ row("Typecheck"; "ci / typecheck"; "Typecheck"; "step"),
+# The unit shards are read from the run, not listed by hand: the rows used to name
+# "ci / test (1/2)" and "(2/2)" after ci-checks.yml went to three shards, so those
+# rows matched no job and sat at ⬜ forever. A matrix that was skipped lists one
+# job with the unexpanded "${{ matrix.shard }}" name; it is not a shard.
+([.jobs[].name | select(startswith("ci / test (") and (contains("${{") | not))] | unique) as $shards
+| [ row("Typecheck"; "ci / typecheck"; "Typecheck"; "step"),
   row("Lint"; "ci / typecheck"; "Lint"; "step"),
-  row("Unit tests 1/2"; "ci / test (1/2)"; "Test"; "job"),
-  row("Unit tests 2/2"; "ci / test (2/2)"; "Test"; "job"),
+  row("Lint ratchets"; "ci / ratchets"; "Accessibility ratchet (jsx-a11y findings only go down)"; "job"),
+  (if ($shards | length) > 0
+   then $shards[] as $n | row("Unit tests " + ($n | ltrimstr("ci / test (") | rtrimstr(")")); $n; "Test"; "job")
+   else row("Unit tests"; "ci / test (1/3)"; "Test"; "job") end),
+  row("Dependency audit"; "ci / audit"; "Production dependency audit"; "step"),
   row("Integration tests"; "integration / integration"; "Integration tests"; "job"),
   row("Go tests"; "go-test"; "build + test (bazel)"; "job"),
   row("Candidate smoke"; "build"; "Smoke the published production images"; "step"),
@@ -69,7 +83,7 @@ def dur:
             else "running" end) }'
 
 render() {
-    gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=50" 2>/dev/null |
+    gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" 2>/dev/null |
         jq -c "$CHECKLIST_JQ" 2>/dev/null
 }
 

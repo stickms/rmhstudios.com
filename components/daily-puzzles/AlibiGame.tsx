@@ -395,7 +395,7 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                                 </ul>
                             </PuzzleSection>
 
-                            <PuzzleShareRow shareText={shareText} />
+                            <PuzzleShareRow gameMode="alibi" shareText={shareText} />
                             <PuzzleFootnote>
                                 {t("new-case-tomorrow", { defaultValue: "A new case unlocks tomorrow — same for everyone worldwide." })}
                             </PuzzleFootnote>

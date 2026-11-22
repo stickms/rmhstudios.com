@@ -1,8 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   Aliases,
   assertClean,
@@ -26,152 +22,51 @@ const THREAD = `<html><head><title>2026-2027 X</title><link rel="canonical" href
 
 describe('SDN fixture sanitiser', () => {
   it('replaces authors, members, avatars and post ids, and passes the re-scan', () => {
-    const c =
-      newCollected();
-    const out =
-      sanitiseThreadPage(
-        THREAD,
-        c,
-        {
-          maxPosts: 12,
-          pick: 'first',
-        },
-      );
-    expect(
-      out,
-    ).toMatch(
-      /data-author="author-001"/,
-    );
-    expect(
-      out,
-    ).toMatch(
-      /data-content="post-9000001"/,
-    );
-    expect(
-      out,
-    ).toMatch(
-      /\/members\/user-001\.1\//,
-    );
-    expect(
-      out,
-    ).toContain(
-      'post: 9500001',
-    );
-    expect(
-      out,
-    ).not.toMatch(
-      /RealPerson|OtherGuy|Somebody|4242|25000001|a\.b@c\.org|x\.example/i,
-    );
-    expect(
-      out,
-    ).toContain(
-      'datetime="2026-11-05T22:31:44-0500"',
-    );
-    expect(
-      () =>
-        assertClean(
-          't',
-          out,
-          c,
-        ),
-    ).not.toThrow();
+    const c = newCollected();
+    const out = sanitiseThreadPage(THREAD, c, {
+      maxPosts: 12,
+      pick: 'first',
+    });
+    expect(out).toMatch(/data-author="author-001"/);
+    expect(out).toMatch(/data-content="post-9000001"/);
+    expect(out).toMatch(/\/members\/user-001\.1\//);
+    expect(out).toContain('post: 9500001');
+    expect(out).not.toMatch(/RealPerson|OtherGuy|Somebody|4242|25000001|a\.b@c\.org|x\.example/i);
+    expect(out).toContain('datetime="2026-11-05T22:31:44-0500"');
+    expect(() => assertClean('t', out, c)).not.toThrow();
   });
 
   it('assertClean throws without naming the value when a collected handle survives', () => {
-    const c =
-      newCollected();
-    c.handles.add(
-      'secretname',
-    );
-    expect(
-      () =>
-        assertClean(
-          't.html',
-          '<p>hi SecretName</p>',
-          c,
-        ),
-    ).toThrowError(
+    const c = newCollected();
+    c.handles.add('secretname');
+    expect(() => assertClean('t.html', '<p>hi SecretName</p>', c)).toThrowError(
       /t\.html still contains a collected handle/,
     );
     try {
-      assertClean(
-        't.html',
-        '<p>hi SecretName</p>',
-        c,
-      );
+      assertClean('t.html', '<p>hi SecretName</p>', c);
     } catch (e) {
-      expect(
-        String(
-          e,
-        ),
-      ).not.toMatch(
-        /secretname/i,
-      );
+      expect(String(e)).not.toMatch(/secretname/i);
     }
   });
 
   it('redactForFixture handles emails, urls, mentions and collected handles', () => {
-    const c =
-      newCollected();
-    c.handles.add(
-      'quietuser',
-    );
-    const out =
-      redactForFixture(
-        'a@b.co https://z.example @bob QuietUser 555-123-4567',
-        c,
-        new Aliases(),
-      );
-    expect(
-      out,
-    ).not.toMatch(
-      /a@b\.co|z\.example|bob|quietuser|555-123/i,
-    );
+    const c = newCollected();
+    c.handles.add('quietuser');
+    const out = redactForFixture('a@b.co https://z.example @bob QuietUser 555-123-4567', c, new Aliases());
+    expect(out).not.toMatch(/a@b\.co|z\.example|bob|quietuser|555-123/i);
   });
 
   it('the RSS sanitiser drops creators and opening-post bodies', () => {
     const xml = `<rss><channel><item><title>t</title><author>invalid@example.com (RealPerson)</author><dc:creator>RealPerson</dc:creator><content:encoded><![CDATA[<p>RealPerson wrote</p>]]></content:encoded><slash:comments>3</slash:comments></item></channel></rss>`;
-    const c =
-      newCollected();
-    const out =
-      sanitiseRss(
-        xml,
-        c,
-        5,
-      );
-    expect(
-      out,
-    ).not.toMatch(
-      /RealPerson/,
-    );
-    expect(
-      out,
-    ).toContain(
-      '<slash:comments>3</slash:comments>',
-    );
+    const c = newCollected();
+    const out = sanitiseRss(xml, c, 5);
+    expect(out).not.toMatch(/RealPerson/);
+    expect(out).toContain('<slash:comments>3</slash:comments>');
   });
 
   it('questionIsFixtureSafe rejects person-shaped questions', () => {
-    expect(
-      questionIsFixtureSafe(
-        'Why medicine?\n\nWhy us?',
-      ),
-    ).toBe(
-      true,
-    );
-    expect(
-      questionIsFixtureSafe(
-        'Dr. Smith asked about me',
-      ),
-    ).toBe(
-      false,
-    );
-    expect(
-      questionIsFixtureSafe(
-        'mail me a@b.co',
-      ),
-    ).toBe(
-      false,
-    );
+    expect(questionIsFixtureSafe('Why medicine?\n\nWhy us?')).toBe(true);
+    expect(questionIsFixtureSafe('Dr. Smith asked about me')).toBe(false);
+    expect(questionIsFixtureSafe('mail me a@b.co')).toBe(false);
   });
 });

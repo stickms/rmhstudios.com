@@ -20,97 +20,41 @@
  * upgrade that changes the tag set flows through untouched. The only thing that
  * differs from `HeadContent` is {@link deprioritizeModulePreloads}.
  */
-import {
-  Asset,
-  type RouterManagedTag,
-  useRouter,
-  useTags,
-} from '@tanstack/react-router';
+import { Asset, type RouterManagedTag, useRouter, useTags } from '@tanstack/react-router';
 import { useIsStaticDocument } from '@/lib/static-document';
 
 /** Adds `fetchPriority: 'low'` to modulepreload links; every other tag is returned as-is. */
-export function deprioritizeModulePreloads(
-  tags: readonly RouterManagedTag[],
-): RouterManagedTag[] {
-  return tags.map(
-    (
-      tag,
-    ) =>
-      tag.tag ===
-        'link' &&
-      tag
-        .attrs
-        ?.rel ===
-        'modulepreload' &&
-      tag
-        .attrs
-        .fetchPriority ===
-        undefined
-        ? {
-            ...tag,
-            attrs:
-              {
-                ...tag.attrs,
-                fetchPriority:
-                  'low',
-              },
-          }
-        : tag,
+export function deprioritizeModulePreloads(tags: readonly RouterManagedTag[]): RouterManagedTag[] {
+  return tags.map((tag) =>
+    tag.tag === 'link' && tag.attrs?.rel === 'modulepreload' && tag.attrs.fetchPriority === undefined
+      ? {
+          ...tag,
+          attrs: {
+            ...tag.attrs,
+            fetchPriority: 'low',
+          },
+        }
+      : tag,
   );
 }
 
 export function SiteHeadContent() {
-  const staticDocument =
-    useIsStaticDocument();
-  const all =
-    deprioritizeModulePreloads(
-      useTags(),
-    );
+  const staticDocument = useIsStaticDocument();
+  const all = deprioritizeModulePreloads(useTags());
   // A static document (lib/static-document.ts) boots no client app: no entry
   // module and nothing preloaded for one.
-  const tags =
-    staticDocument
-      ? all.filter(
-          (
-            tag,
-          ) =>
-            !(
-              tag.tag ===
-                'link' &&
-              tag
-                .attrs
-                ?.rel ===
-                'modulepreload'
-            ) &&
-            !(
-              tag.tag ===
-                'script' &&
-              tag
-                .attrs
-                ?.src
-            ),
-        )
-      : all;
-  const nonce =
-    useRouter()
-      .options
-      .ssr
-      ?.nonce;
+  const tags = staticDocument
+    ? all.filter(
+        (tag) =>
+          !(tag.tag === 'link' && tag.attrs?.rel === 'modulepreload') && !(tag.tag === 'script' && tag.attrs?.src),
+      )
+    : all;
+  const nonce = useRouter().options.ssr?.nonce;
   return (
     <>
-      {tags.map(
-        (
-          tag,
-        ) => (
-          <Asset
-            {...tag}
-            key={`tsr-meta-${JSON.stringify(tag)}`}
-            nonce={
-              nonce
-            }
-          />
-        ),
-      )}
+      {tags.map((tag) => (
+        <Asset {...tag} key={`tsr-meta-${JSON.stringify(tag)}`} nonce={nonce} />
+      ))}
     </>
   );
 }

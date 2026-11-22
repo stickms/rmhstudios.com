@@ -21,9 +21,13 @@ import { useTranslation } from 'react-i18next';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { formatCount } from './format-count';
+import { useHideCountsInFeed } from './use-hide-counts-in-feed';
+import { bumpCount, displayCount } from '@/lib/feed/quiet-counts';
 import { cn } from '@/lib/utils';
-import { likePostApi, repostPostApi } from '@/lib/feed/rmhark-actions.contract';
+import { bookmarkPostApi, likePostApi, repostPostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
+import { usePostAction } from './feed-nav';
+import { toast } from '@/lib/toast';
 
 interface RMHarkActionsProps {
   item: FeedItem;
@@ -62,6 +66,12 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
   const { run: runLike } = useOptimisticAction();
   const { run: runRepost } = useOptimisticAction();
   const promptSignIn = useSignInPrompt();
+  // "Hide counts while browsing": the viewer's own switch. The author's switch arrives as `null` counts from the server.
+  const hideCounts = useHideCountsInFeed();
+  const likeCount = displayCount(item.likeCount, hideCounts);
+  const repostCount = displayCount(item.repostCount, hideCounts);
+  const commentCount = displayCount(item.commentCount, hideCounts);
+  const viewCount = displayCount(item.viewCount, hideCounts);
 
   // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
   // close animation all live in AnchoredMenu now. This file used to carry its own
@@ -73,8 +83,8 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
   const updateItem = onUpdate ?? storeUpdate;
   const actualId = item.actualId ?? item.id;
 
-  const handleCommentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCommentClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (onReply) {
       onReply();
       return;
@@ -82,8 +92,8 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
     navigate({ to: `/u/${item.user?.handle || item.user?.id}/post/${actualId}` });
   };
 
-  const toggleLike = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const toggleLike = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!session) {
       promptSignIn(t('like-sign-in', { defaultValue: 'Sign in to like RMHarks.' }));
       return;
@@ -94,7 +104,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
       apply: () =>
         updateItem(item.id, {
           liked: !wasLiked,
-          likeCount: (item.likeCount ?? 0) + (wasLiked ? -1 : 1),
+          likeCount: bumpCount(item.likeCount, wasLiked ? -1 : 1),
         }),
       rollback: () => updateItem(item.id, { liked: wasLiked, likeCount: prevCount }),
       commit: () => api(likePostApi, { params: { id: actualId } }),
@@ -113,12 +123,55 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
       apply: () =>
         updateItem(item.id, {
           reposted: !wasReposted,
-          repostCount: (item.repostCount ?? 0) + (wasReposted ? -1 : 1),
+          repostCount: bumpCount(item.repostCount, wasReposted ? -1 : 1),
         }),
       rollback: () => updateItem(item.id, { reposted: wasReposted, repostCount: prevCount }),
       commit: () => api(repostPostApi, { params: { id: actualId } }),
     });
   };
+
+  // The repost button's click, also the `t` key's.
+  const toggleRepostMenu = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    // Every item in this menu needs an account, so a signed-out visitor gets
+    // the prompt at the trigger instead of a menu that dead-ends.
+    if (!session) {
+      promptSignIn(t('rermhark-sign-in', { defaultValue: 'Sign in to reRMHark.' }));
+      return;
+    }
+    setRepostMenu((v) => !v);
+  };
+
+  // The `s` key: the post menu's Bookmark row, without the menu (the home row's menu is not mounted until it opens).
+  const { run: runBookmark } = useOptimisticAction();
+  const toggleSave = () => {
+    if (!session) {
+      toast.error(t('bookmark-sign-in', { defaultValue: 'Please sign in to bookmark posts.' }));
+      return;
+    }
+    const was = !!item.bookmarked;
+    runBookmark({
+      apply: () => updateItem(item.id, { bookmarked: !was }),
+      rollback: () => updateItem(item.id, { bookmarked: was }),
+      commit: async () => {
+        const data = await api(bookmarkPostApi, { params: { id: actualId } });
+        updateItem(item.id, { bookmarked: !!data.bookmarked });
+        toast.success(
+          data.bookmarked
+            ? t('bookmark-saved', { defaultValue: 'Saved to bookmarks' })
+            : t('bookmark-removed', { defaultValue: 'Removed from bookmarks' }),
+        );
+      },
+    });
+  };
+
+  // Keyboard: `l`, `t`, `r` and `s` on the focused post run these same handlers (feed-nav.tsx).
+  // An optimistic or deleted post has nothing to act on (its card ignores the pointer too).
+  const actable = !item.pending && !item.deletedAt;
+  usePostAction(item.id, 'like', toggleLike, actable);
+  usePostAction(item.id, 'repost', toggleRepostMenu, actable);
+  usePostAction(item.id, 'reply', handleCommentClick, actable);
+  usePostAction(item.id, 'save', toggleSave, actable);
 
   const repostLabel = t('action-repost', { defaultValue: 'Repost' });
   const likeLabel = t('like', { defaultValue: 'Like' });
@@ -140,7 +193,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
       >
         <Heart className="feed-action__icon" data-fill="" aria-hidden />
         <span className="sr-only">{likeLabel}</span>
-        <ActionCount value={item.likeCount} />
+        <ActionCount value={likeCount} />
       </button>
 
       <div className="relative">
@@ -151,16 +204,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
           onPointerEnter={session ? () => void loadRepostMenu() : undefined}
           onPointerDown={session ? () => void loadRepostMenu() : undefined}
           onFocus={session ? () => void loadRepostMenu() : undefined}
-          onClick={(e) => {
-            e.stopPropagation();
-            // Every item in this menu needs an account, so a signed-out visitor gets
-            // the prompt at the trigger instead of a menu that dead-ends.
-            if (!session) {
-              promptSignIn(t('rermhark-sign-in', { defaultValue: 'Sign in to reRMHark.' }));
-              return;
-            }
-            setRepostMenu((v) => !v);
-          }}
+          onClick={toggleRepostMenu}
           data-on={item.reposted ? '' : undefined}
           className="feed-action"
           aria-haspopup="menu"
@@ -169,7 +213,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
         >
           <Repeat2 className="feed-action__icon" aria-hidden />
           <span className="sr-only">{repostLabel}</span>
-          <ActionCount value={item.repostCount} />
+          <ActionCount value={repostCount} />
           {item.reposted && (
             <span className="sr-only">{t('action-reposted', { defaultValue: 'Reposted' })}</span>
           )}
@@ -182,7 +226,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
               anchorRef={repostBtnRef}
               label={repostLabel}
               reposted={!!item.reposted}
-              repostCount={item.repostCount ?? 0}
+              hasQuotes={item.repostCount === null || (item.repostCount ?? 0) > 0}
               onRepost={() => {
                 setRepostMenu(false);
                 toggleRepost();
@@ -223,13 +267,13 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
       <button type="button" onClick={handleCommentClick} className="feed-action" title={replyLabel}>
         <MessageCircle className="feed-action__icon" aria-hidden />
         <span className="sr-only">{replyLabel}</span>
-        <ActionCount value={item.commentCount} />
+        <ActionCount value={commentCount} />
       </button>
 
       {/* Views are a fact, not an action: metadata at the inline end of the row, in `t-meta`. */}
-      {(item.viewCount ?? 0) > 0 && (
+      {(viewCount ?? 0) > 0 && (
         <span className="feed-actions__views t-meta">
-          {t('post-views', { n: formatCount(item.viewCount), defaultValue: '{{n}} views' })}
+          {t('post-views', { n: formatCount(viewCount), defaultValue: '{{n}} views' })}
         </span>
       )}
     </div>
@@ -237,7 +281,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
 }
 
 /** The plain number beside an action word. Nothing at zero, and no animation (K8). */
-function ActionCount({ value }: { value: number | undefined }) {
+function ActionCount({ value }: { value: number | null }) {
   const text = formatCount(value);
   return text ? <span className="feed-action__count">{text}</span> : null;
 }

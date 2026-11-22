@@ -5,18 +5,10 @@
  * esbuild server bundle compiles this file directly.
  */
 
-import type {
-  Difficulty,
-  HitResult,
-  SliceType,
-} from './constants';
+import type { Difficulty, HitResult, SliceType } from './constants';
 import type { ModPool } from './pools';
 
-export type {
-  Difficulty,
-  HitResult,
-  SliceType,
-};
+export type { Difficulty, HitResult, SliceType };
 
 /** One note in a chart. `hit`/`hitTime` are runtime render state, never stored. */
 export interface Slice {
@@ -48,10 +40,7 @@ export interface Slice {
    * pattern it is charting rather than one sample repeated. Optional: charts
    * generated before this carry nothing and fall back to `mid`.
    */
-  sound?:
-    | 'low'
-    | 'mid'
-    | 'high';
+  sound?: 'low' | 'mid' | 'high';
   hit?: boolean;
   /** `performance.now()` when it was resolved, for the fade-out. */
   hitTime?: number;
@@ -85,12 +74,7 @@ export interface BeatMap {
   artist: string;
   audioUrl: string;
   bpm: number;
-  slices:
-    | Slice[]
-    | Record<
-        Difficulty,
-        Slice[]
-      >;
+  slices: Slice[] | Record<Difficulty, Slice[]>;
 }
 
 /** The per-player run configuration. Chosen client-side, verified server-side. */
@@ -202,13 +186,7 @@ export interface RunStats {
    */
   notesResolved: number;
   /** Judgement histogram, for the results screen. */
-  judgements: Record<
-    Exclude<
-      HitResult,
-      'NONE'
-    >,
-    number
-  >;
+  judgements: Record<Exclude<HitResult, 'NONE'>, number>;
   /** 0–`HEALTH_MAX`. Pinned at full unless the gauge modifier is on. */
   health: number;
   /** True once the opt-in gauge has touched zero. Forfeits its score bonus. */
@@ -220,10 +198,7 @@ export interface RunStats {
    * is false. Distinct from `failed` so the results screen can say *why*
    * rather than assuming it was always the health gauge.
    */
-  failReason:
-    | 'health'
-    | 'perfectionist'
-    | null;
+  failReason: 'health' | 'perfectionist' | null;
   /**
    * Nothing missed and nothing BAD. Derived from {@link judgements} rather than
    * tracked as its own flag, so it cannot drift out of step with the histogram
@@ -247,26 +222,18 @@ export interface SliceSong {
   id: string;
   title: string;
   artist: string;
-  album:
-    | string
-    | null;
-  description:
-    | string
-    | null;
+  album: string | null;
+  description: string | null;
   /** Seconds. */
   duration: number;
   bpm: number;
-  coverUrl:
-    | string
-    | null;
+  coverUrl: string | null;
   /** The stream endpoint, never a storage key. */
   audioUrl: string;
   uploader: {
     id: string;
     name: string;
-    image:
-      | string
-      | null;
+    image: string | null;
   };
   /** True when the signed-in caller uploaded it. */
   isOwner: boolean;
@@ -286,21 +253,13 @@ export interface SliceSong {
    */
   lamp: Lamp;
   /** Best lamp per difficulty, for a card that breaks the tiers out. */
-  lampByDifficulty?: Partial<
-    Record<
-      Difficulty,
-      Lamp
-    >
-  >;
+  lampByDifficulty?: Partial<Record<Difficulty, Lamp>>;
   createdAt: string;
   /**
    * O3 — where charting got to. `'ready'` for every song that predates the
    * queue, so a client that ignores this field behaves exactly as before.
    */
-  analysisState?:
-    | 'ready'
-    | 'pending'
-    | 'failed';
+  analysisState?: 'ready' | 'pending' | 'failed';
   /**
    * C7 — where the library's 20-second hover preview starts, in seconds.
    * Already clamped against the song's duration by the server.
@@ -319,9 +278,7 @@ export interface SliceSong {
 export interface SongPage {
   songs: SliceSong[];
   /** Opaque cursor for the next page, or null at the end. */
-  nextCursor:
-    | string
-    | null;
+  nextCursor: string | null;
   /**
    * Total matching rows — present on the FIRST page only.
    *
@@ -345,17 +302,11 @@ export interface LeaderboardEntry {
    * `username`, which is display text, is not unique, and is whatever the
    * account's owner most recently set it to.
    */
-  handle:
-    | string
-    | null;
-  image:
-    | string
-    | null;
+  handle: string | null;
+  image: string | null;
   score: number;
   maxCombo: number;
-  accuracy:
-    | number
-    | null;
+  accuracy: number | null;
   speedMod: number;
   modifiers: Partial<Modifiers> | null;
   /** Which tier this run was played on. Absent on the global career board. */
@@ -370,9 +321,7 @@ export interface LeaderboardEntry {
   isFullCombo?: boolean;
   isPerfect?: boolean;
   /** When the best was set; `null` on the global board, which aggregates many runs and has no single moment. */
-  achievedAt:
-    | string
-    | null;
+  achievedAt: string | null;
   /** True for the signed-in caller's own row. */
   isSelf: boolean;
 }
@@ -385,13 +334,5 @@ export interface LeaderboardEntry {
  * have not attempted and a chart that has beaten you are different facts about
  * a library, and collapsing them is what makes a library page uninformative.
  */
-export const LAMPS =
-  [
-    'none',
-    'failed',
-    'cleared',
-    'fc',
-    'perfect',
-  ] as const;
-export type Lamp =
-  (typeof LAMPS)[number];
+export const LAMPS = ['none', 'failed', 'cleared', 'fc', 'perfect'] as const;
+export type Lamp = (typeof LAMPS)[number];

@@ -11,6 +11,7 @@
  * here; `lib/search/parse.ts` turns the raw query into them.
  */
 
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { Prisma } from '@prisma/client';
 import { prisma, prismaRead } from '@/lib/prisma.server';
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
@@ -35,6 +36,8 @@ export interface PostSearchOptions extends PostSearchFilters {
   limit?: number;
   hiddenAuthorIds?: string[];
   floor?: number;
+  /** Skip the semantic retriever (it spends embedding compute per call); the developer API sets this. */
+  lexicalOnly?: boolean;
 }
 
 export interface ScoredPost {
@@ -114,7 +117,7 @@ export async function searchPostsScored(
   // about the thing with the spheres" and worse at a name; the failure people
   // actually notice is an exact match that stopped coming first, so the tie is
   // broken toward the retriever that does not make that mistake.
-  const semantic = hasText && isEmbeddingAvailable()
+  const semantic = hasText && !opts.lexicalOnly && isEmbeddingAvailable()
     ? await nearest('rmhark', terms.q, CANDIDATE_POOL).catch(() => [])
     : [];
 
@@ -153,6 +156,7 @@ export async function searchPostsScored(
     select: {
       id: true,
       content: true,
+      contentWarning: true,
       createdAt: true,
       likeCount: true,
       imageUrls: true,
@@ -189,9 +193,12 @@ export async function searchPostsScored(
       return {
         post: {
           id: row.id,
-          content: row.content,
+          // A result cannot be revealed, so a post with a content warning reason shows the reason in its text's place.
+          content: previewTextFor(row) ?? '',
           createdAt: row.createdAt.toISOString(),
-          likeCount: row.likeCount,
+          // Ranked on the real number above; shown only when the author has not hidden it. Search results are
+          // shared across viewers, so an author's switch withholds the figure from the author too.
+          likeCount: user.hideCounts ? null : row.likeCount,
           user,
           score: boosted,
           confidence: confidenceOf(boosted),

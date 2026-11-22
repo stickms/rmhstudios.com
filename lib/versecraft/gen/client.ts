@@ -18,52 +18,21 @@ import type {
 /** fetch with a hard timeout so a stalled connection (common on flaky mobile
  *  networks) falls through to the local generator instead of hanging the
  *  "generating" screen forever. */
-export async function fetchWithTimeout(
-  input: string,
-  init: RequestInit = {},
-  ms = 45000,
-): Promise<Response> {
-  const ctrl =
-    new AbortController();
-  const timer =
-    setTimeout(
-      () =>
-        ctrl.abort(),
-      ms,
-    );
+export async function fetchWithTimeout(input: string, init: RequestInit = {}, ms = 45000): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
   try {
-    return await fetch(
-      input,
-      {
-        ...init,
-        signal:
-          ctrl.signal,
-      },
-    );
+    return await fetch(input, {
+      ...init,
+      signal: ctrl.signal,
+    });
   } finally {
-    clearTimeout(
-      timer,
-    );
+    clearTimeout(timer);
   }
 }
 
-function validWorld(
-  w:
-    | GeneratedWorld
-    | null
-    | undefined,
-): w is GeneratedWorld {
-  return (
-    !!w &&
-    Array.isArray(
-      w.characters,
-    ) &&
-    w
-      .characters
-      .length >
-      0 &&
-    !!w.routePlan
-  );
+function validWorld(w: GeneratedWorld | null | undefined): w is GeneratedWorld {
+  return !!w && Array.isArray(w.characters) && w.characters.length > 0 && !!w.routePlan;
 }
 
 /**
@@ -84,67 +53,37 @@ export async function createWorldWithOpening(
   } | null;
 } | null> {
   try {
-    const res =
-      await fetchWithTimeout(
-        '/api/versecraft/world',
-        {
-          method:
-            'POST',
-          headers:
-            {
-              'Content-Type':
-                'application/json',
-            },
-          body: JSON.stringify(
-            {
-              seed,
-              prompt,
-              pronouns,
-              attraction,
-              withOpening: true,
-            },
-          ),
-        },
-      );
-    if (
-      !res.ok
-    )
-      return null;
-    const data =
-      (await res.json()) as {
-        world: GeneratedWorld | null;
-        opening?: {
-          chapter: GenChapter;
-          partial: boolean;
-        } | null;
-      };
-    if (
-      !validWorld(
-        data.world,
-      )
-    )
-      return null;
+    const res = await fetchWithTimeout('/api/versecraft/world', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        seed,
+        prompt,
+        pronouns,
+        attraction,
+        withOpening: true,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      world: GeneratedWorld | null;
+      opening?: {
+        chapter: GenChapter;
+        partial: boolean;
+      } | null;
+    };
+    if (!validWorld(data.world)) return null;
     const opening =
-      data.opening &&
-      validChapter(
-        data
-          .opening
-          .chapter,
-      )
+      data.opening && validChapter(data.opening.chapter)
         ? {
-            chapter:
-              data
-                .opening
-                .chapter,
-            partial:
-              !!data
-                .opening
-                .partial,
+            chapter: data.opening.chapter,
+            partial: !!data.opening.partial,
           }
         : null;
     return {
-      world:
-        data.world,
+      world: data.world,
       opening,
     };
   } catch {
@@ -152,33 +91,12 @@ export async function createWorldWithOpening(
   }
 }
 
-function validChapter(
-  c:
-    | GenChapter
-    | null
-    | undefined,
-): c is GenChapter {
+function validChapter(c: GenChapter | null | undefined): c is GenChapter {
   return (
     !!c &&
-    Array.isArray(
-      c.scenes,
-    ) &&
-    c
-      .scenes
-      .length >
-      0 &&
-    c.scenes.some(
-      (
-        s,
-      ) =>
-        Array.isArray(
-          s.nodes,
-        ) &&
-        s
-          .nodes
-          .length >
-          0,
-    )
+    Array.isArray(c.scenes) &&
+    c.scenes.length > 0 &&
+    c.scenes.some((s) => Array.isArray(s.nodes) && s.nodes.length > 0)
   );
 }
 
@@ -199,54 +117,30 @@ export async function fetchChapter(
   ledgerEntry: LedgerEntry | null;
 } | null> {
   try {
-    const res =
-      await fetchWithTimeout(
-        '/api/versecraft/chapter',
-        {
-          method:
-            'POST',
-          headers:
-            {
-              'Content-Type':
-                'application/json',
-            },
-          body: JSON.stringify(
-            {
-              seed,
-              index,
-              choicePathHash:
-                opts.choicePathHash,
-              beat: opts.beat,
-              ledger:
-                opts.ledger ??
-                [],
-              context:
-                opts.context ??
-                '',
-              opening:
-                opts.opening,
-            },
-          ),
-        },
-      );
-    if (
-      !res.ok
-    )
-      return null;
-    const data =
-      (await res.json()) as {
-        chapter: GenChapter | null;
-        ledgerEntry?: LedgerEntry | null;
-      };
-    return validChapter(
-      data.chapter,
-    )
+    const res = await fetchWithTimeout('/api/versecraft/chapter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        seed,
+        index,
+        choicePathHash: opts.choicePathHash,
+        beat: opts.beat,
+        ledger: opts.ledger ?? [],
+        context: opts.context ?? '',
+        opening: opts.opening,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      chapter: GenChapter | null;
+      ledgerEntry?: LedgerEntry | null;
+    };
+    return validChapter(data.chapter)
       ? {
-          chapter:
-            data.chapter,
-          ledgerEntry:
-            data.ledgerEntry ??
-            null,
+          chapter: data.chapter,
+          ledgerEntry: data.ledgerEntry ?? null,
         }
       : null;
   } catch {
@@ -255,48 +149,24 @@ export async function fetchChapter(
 }
 
 /** Fetch the detailed Arc Outline (Tier-2 enrich, or act-boundary revision). */
-export async function fetchOutline(
-  seed: string,
-  ledger: LedgerEntry[] = [],
-  fromAct = 1,
-): Promise<ArcOutline | null> {
+export async function fetchOutline(seed: string, ledger: LedgerEntry[] = [], fromAct = 1): Promise<ArcOutline | null> {
   try {
-    const res =
-      await fetchWithTimeout(
-        '/api/versecraft/outline',
-        {
-          method:
-            'POST',
-          headers:
-            {
-              'Content-Type':
-                'application/json',
-            },
-          body: JSON.stringify(
-            {
-              seed,
-              ledger,
-              fromAct,
-            },
-          ),
-        },
-      );
-    if (
-      !res.ok
-    )
-      return null;
-    const data =
-      (await res.json()) as {
-        outline: ArcOutline | null;
-      };
-    return data.outline &&
-      Array.isArray(
-        data
-          .outline
-          .chapters,
-      )
-      ? data.outline
-      : null;
+    const res = await fetchWithTimeout('/api/versecraft/outline', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        seed,
+        ledger,
+        fromAct,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      outline: ArcOutline | null;
+    };
+    return data.outline && Array.isArray(data.outline.chapters) ? data.outline : null;
   } catch {
     return null;
   }

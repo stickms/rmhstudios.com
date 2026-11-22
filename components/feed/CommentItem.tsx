@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   ShieldAlert,
   Languages,
+  Pin,
+  PinOff,
   Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,7 +66,10 @@ import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { translateCommentApi } from '@/lib/ai/ai.contract';
 
 import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
+import { pinReplyApi, unpinReplyApi } from '@/lib/feed/conversation-controls.contract';
 import { ARRIVE } from '@/components/ui/arrive';
+import { toast } from '@/lib/toast';
 export interface Comment {
   id: string;
   content: string;
@@ -118,6 +123,10 @@ interface CommentItemProps {
   postAuthorId?: string;
   /** Called after the author hides/unhides a reply so the page can regroup it. */
   onHiddenChange?: (commentId: string, hidden: boolean) => void;
+  /** The reply the post's author pinned; this row is labelled when it is the one. */
+  pinnedReplyId?: string | null;
+  /** Called after the author pins this reply (its id) or unpins it (null). */
+  onPinnedChange?: (replyId: string | null) => void;
 }
 
 export function CommentItem({
@@ -130,8 +139,11 @@ export function CommentItem({
   replyingTo = null,
   postAuthorId,
   onHiddenChange,
+  pinnedReplyId,
+  onPinnedChange,
 }: CommentItemProps) {
   const { t } = useTranslation('feed');
+  const { t: ts } = useTranslation('conversation-controls');
   const confirm = useConfirm();
   const locale = useLocaleStore((s) => s.locale);
   const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
@@ -306,6 +318,7 @@ export function CommentItem({
   );
 
   const reconsider = useReconsider();
+  const sanctionRefusalText = useSanctionRefusal();
   const handleSubmitReply = async () => {
     if (!replyContent.trim() || submitting) return;
     setSubmitting(true);
@@ -325,9 +338,29 @@ export function CommentItem({
       setReplyContent('');
       setReplyOpen(false);
     } catch (error) {
-      console.error('Reply error:', error);
+      const refused = sanctionRefusalText(error);
+      if (refused) toast.error(refused);
+      else console.error('Reply error:', error);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const pinnedHere =
+    !!pinnedReplyId && pinnedReplyId === comment.id && !comment.deletedAt && !comment.hidden;
+  const togglePinned = async () => {
+    try {
+      const next = pinnedHere
+        ? await api(unpinReplyApi, { params: { id: postId } })
+        : await api(pinReplyApi, { params: { id: postId }, body: { commentId: comment.id } });
+      onPinnedChange?.(next.pinnedReplyId);
+      toast.success(
+        pinnedHere
+          ? ts('toast-unpinned', { defaultValue: 'Reply unpinned.' })
+          : ts('toast-pinned', { defaultValue: 'Reply pinned to the top.' }),
+      );
+    } catch {
+      toast.error(ts('error-pin', { defaultValue: 'Could not update the pinned reply.' }));
     }
   };
 
@@ -337,6 +370,12 @@ export function CommentItem({
     // A reply is a spine item (Steel section 10, Post and replies): one dot, no card. The replies under it are ONE nested
     // spine inside this row, indented 8px (P2), flattened however deep they were written.
     <SpineItem as="article" {...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}>
+      {pinnedHere && (
+        <p className="t-meta mb-2 flex items-center gap-1">
+          <Pin className="size-3 shrink-0" aria-hidden />
+          {ts('pinned-label', { defaultValue: 'Pinned by the author' })}
+        </p>
+      )}
       <div className="flex items-center gap-2.5">
         <UserAvatar user={freshCommentUser} size="sm" />
         <div className="min-w-0">
@@ -490,6 +529,24 @@ export function CommentItem({
                   onDone={() => setMenuOpen(false)}
                 />
               )}
+              {!!sessionUser?.id &&
+                sessionUser.id === postAuthorId &&
+                depth === 0 &&
+                !comment.pending &&
+                !comment.hidden &&
+                !comment.deletedAt && (
+                  <MenuItem
+                    icon={pinnedHere ? PinOff : Pin}
+                    onSelect={() => {
+                      setMenuOpen(false);
+                      void togglePinned();
+                    }}
+                  >
+                    {pinnedHere
+                      ? ts('unpin-reply', { defaultValue: 'Unpin reply' })
+                      : ts('pin-reply', { defaultValue: 'Pin reply' })}
+                  </MenuItem>
+                )}
               {isAuthor && (
                 <MenuItem
                   icon={Trash2}
@@ -632,7 +689,7 @@ export function CommentItem({
               <GifPicker
                 className="mt-2"
                 onClose={() => setShowGifPicker(false)}
-                onSelect={(u) => {
+                onSelect={({ url: u }) => {
                   setReplyContent((c) => (c ? `${c} ${u}` : u));
                   setShowGifPicker(false);
                 }}

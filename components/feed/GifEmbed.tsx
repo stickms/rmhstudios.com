@@ -5,6 +5,7 @@ import { useNearViewport } from'@/hooks/useNearViewport';
 import { api } from '@/lib/contract/client';
 import { gifOembedApi } from '@/lib/unfurl/oembed.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useGifAlt } from '@/components/feed/use-gif-alt';
 import { cn } from '@/lib/utils';
 
 // ─── URL resolution ──────────────────────────────────────────────
@@ -123,10 +124,16 @@ interface GifEmbedProps {
  * which breaks the card's own hit area.
  */
  linked?: boolean;
+ /**
+ * Set for a GIF a member posted (sprint 06 #15): its description, or null when it has none, in which case the alt is
+ * the word "GIF". Left undefined for a link embed that is not a picker GIF, which keeps "Embedded image".
+ */
+ gifAlt?: string | null;
 }
 
-export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
+export function GifEmbed({ url, className ='', linked = true, gifAlt }: GifEmbedProps) {
  const { t } = useTranslation("feed");
+ const gifAltText = useGifAlt();
  const info = parseGifUrl(url);
  const needsResolve = !!info?.needsResolve;
  // Only Tenor share URLs need an `/api/oembed`resolution; defer that fetch
@@ -174,7 +181,7 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  const media = (
  <img
  src={src}
- alt={t("embedded-image-alt", { defaultValue:"Embedded image"})}
+ alt={gifAlt === undefined ? t("embedded-image-alt", { defaultValue:"Embedded image"}) : gifAltText(gifAlt)}
  loading="lazy"
  onError={() => setError(true)}
  className="w-full max-h-72 object-contain"

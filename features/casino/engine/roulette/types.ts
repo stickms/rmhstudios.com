@@ -1,13 +1,6 @@
-import type {
-  Bet,
-  BetType,
-} from './logic';
+import type { Bet, BetType } from './logic';
 
-export type TablePhase =
-  | 'idle'
-  | 'betting'
-  | 'spinning'
-  | 'results';
+export type TablePhase = 'idle' | 'betting' | 'spinning' | 'results';
 
 export interface PlayerBetClient {
   type: BetType;
@@ -18,9 +11,7 @@ export interface PlayerBetClient {
 export interface PlayerSeatClient {
   userId: string;
   userName: string;
-  avatarUrl:
-    | string
-    | null;
+  avatarUrl: string | null;
   seatIndex: number;
   bets: PlayerBetClient[];
   totalBetThisRound: number;
@@ -39,12 +30,8 @@ export interface TableStateSnapshot {
   phase: TablePhase;
   roundNumber: number;
   players: PlayerSeatClient[];
-  bettingCountdown:
-    | number
-    | null;
-  lastResult:
-    | number
-    | null;
+  bettingCountdown: number | null;
+  lastResult: number | null;
   history: number[];
 }
 
@@ -78,8 +65,6 @@ export interface RoomInfo {
   ownerId: string;
   ownerName: string;
   maxPlayers: number;
-  privacy:
-    | 'public'
-    | 'unlisted';
+  privacy: 'public' | 'unlisted';
   joinCode: string;
 }

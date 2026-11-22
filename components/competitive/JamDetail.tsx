@@ -15,19 +15,34 @@ import { serverError } from '@/lib/http';
 import { enterJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
 import { jamQuery } from '@/lib/competitive/jams.queries';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
+import { FEEDBACK_MIN, type MyFeedbackDTO } from '@/lib/competitive/jam-feedback';
+import { JamFeedbackField } from './JamFeedbackField';
+import { JamFeedbackList } from './JamFeedbackList';
+import type { TeamPersonDTO, ViewerTeamState } from '@/lib/competitive/jam-teams';
+import { EntryCredit, JamTeamPanel } from './JamTeamPanel';
 import { PhaseBadge } from './JamsList';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { JamThemeVote } from './JamThemeVote';
+import { JamThemeResults } from './JamThemeResults';
 
 type Scores = Record<JamCategory, number>;
 interface Entry {
   id: string;
   own: boolean;
   build: { slug: string; title: string; description: string; thumbnailUrl: string | null };
-  user: { name?: string | null };
+  user: TeamPersonDTO;
+  /** Accepted teammates, credited beside the submitter. */
+  team: TeamPersonDTO[];
+  viewerTeamState: ViewerTeamState;
+  /** The server's answer to whether the viewer may rate this entry. */
+  rateable: boolean;
   averages: Scores | null;
   ratingCount: number;
   score: number;
+  /** s06-07: feedback on this entry; null unless the viewer is on its team. */
+  feedbackCount: number | null;
 }
 interface Jam {
   slug: string;
@@ -38,9 +53,15 @@ interface Jam {
   submitEndsAt: string;
   ratingEndsAt: string;
   phase: 'upcoming' | 'open' | 'rating' | 'done';
+  /** s07-07: members vote on this jam's theme. */
+  themeVoting: boolean;
   entries: Entry[];
   myEntryId: string | null;
+  /** The entry the viewer is credited on as a teammate; they cannot submit their own. */
+  teamEntryId: string | null;
   myRatings: Record<string, Scores>;
+  /** s06-07: the viewer's own feedback per entry (to re-open the form with it). */
+  myFeedback: Record<string, MyFeedbackDTO>;
   myBuilds: { id: string; title: string }[];
   results: boolean;
 }
@@ -49,15 +70,19 @@ function RateForm({
   slug,
   entry,
   initial,
+  initialFeedback,
   onSaved,
 }: {
   slug: string;
   entry: Entry;
   initial?: Scores;
+  initialFeedback?: MyFeedbackDTO;
   onSaved: () => void;
 }) {
   const { t } = useTranslation('f-competitive');
   const [scores, setScores] = useState<Partial<Scores>>(initial ?? {});
+  const [feedback, setFeedback] = useState(initialFeedback?.body ?? '');
+  const [anonymous, setAnonymous] = useState(initialFeedback?.anonymous ?? false);
   const [busy, setBusy] = useState(false);
   const names: Record<JamCategory, string> = {
     fun: t('cat-fun', { defaultValue: 'Fun' }),
@@ -65,15 +90,22 @@ function RateForm({
     theme: t('cat-theme', { defaultValue: 'Theme' }),
     polish: t('cat-polish', { defaultValue: 'Polish' }),
   };
-  const ready = JAM_CATEGORIES.every((c) => scores[c]);
+  const feedbackLength = feedback.trim().length;
+  const ready = JAM_CATEGORIES.every((c) => scores[c]) && (feedbackLength === 0 || feedbackLength >= FEEDBACK_MIN);
   const save = async () => {
     setBusy(true);
     try {
-      await api(rateJamEntryApi, {
+      const res = await api(rateJamEntryApi, {
         params: { slug },
-        body: { entryId: entry.id, ...(scores as Scores) },
+        body: { entryId: entry.id, ...(scores as Scores), feedback, anonymous },
       });
-      toast.success(t('jam-rated', { defaultValue: 'Rating saved' }));
+      if (res.feedback === 'blocked' || res.feedback === 'banned') {
+        toast.error(
+          t('feedback-not-saved', { ns: 'jam-feedback', defaultValue: 'Your scores were saved, but your feedback could not be.' }),
+        );
+      } else {
+        toast.success(t('jam-rated', { defaultValue: 'Rating saved' }));
+      }
       onSaved();
     } catch (e) {
       toast.error(
@@ -101,6 +133,12 @@ function RateForm({
           </Select>
         </label>
       ))}
+      <JamFeedbackField
+        value={feedback}
+        anonymous={anonymous}
+        onChange={setFeedback}
+        onAnonymousChange={setAnonymous}
+      />
       <Button size="sm" className="col-span-2" disabled={!ready} loading={busy} onClick={save}>
         {t('jam-rate', { defaultValue: 'Save rating' })}
       </Button>
@@ -108,7 +146,7 @@ function RateForm({
   );
 }
 
-export function JamDetail({ slug }: { slug: string }) {
+export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-competitive');
   const { data: session } = useSession();
   const signedIn = !!session?.user?.id;
@@ -147,7 +185,7 @@ export function JamDetail({ slug }: { slug: string }) {
     }
   };
 
-  const canRate = jam.phase === 'open' || jam.phase === 'rating';
+  const viewerId = session?.user?.id ?? '';
   return (
     <div className={cn('space-y-4 max-w-3xl', arrival)}>
       <Card className="gap-3 px-4 py-4" pane>
@@ -162,16 +200,19 @@ export function JamDetail({ slug }: { slug: string }) {
           </strong>
         </p>
         <p className="text-xs text-site-text-muted">
-          {new Date(jam.startsAt).toLocaleString()} → {new Date(jam.submitEndsAt).toLocaleString()}{' '}
+          {fmt.dateTime(new Date(jam.startsAt))} → {fmt.dateTime(new Date(jam.submitEndsAt))}{' '}
           ·{' '}
           {t('jam-rating-until', {
             defaultValue: 'rating until {{when}}',
-            when: new Date(jam.ratingEndsAt).toLocaleString(),
+            when: fmt.dateTime(new Date(jam.ratingEndsAt)),
           })}
         </p>
       </Card>
 
-      {jam.phase === 'open' && signedIn && (
+      {jam.themeVoting && jam.phase === 'upcoming' && <JamThemeVote slug={slug} signedIn={signedIn} />}
+      {jam.themeVoting && jam.phase !== 'upcoming' && <JamThemeResults slug={slug} />}
+
+      {jam.phase === 'open' && signedIn && !jam.teamEntryId && (
         <Card className="gap-3 px-4 py-4" pane>
           <h2 className="site-section-label">
             {t('jam-submit', { defaultValue: 'Submit a build' })}
@@ -236,7 +277,7 @@ export function JamDetail({ slug }: { slug: string }) {
                 {jam.results && <span className="font-medium">{e.score.toFixed(2)}</span>}
               </div>
               <p className="text-xs text-site-text-muted">
-                {e.user.name}
+                <EntryCredit owner={e.user} team={e.team} />
                 {jam.results &&
                   ` · ${t('jam-ratings', { defaultValue: '{{n}} ratings', n: e.ratingCount })}`}
               </p>
@@ -245,8 +286,32 @@ export function JamDetail({ slug }: { slug: string }) {
                   {JAM_CATEGORIES.map((c) => `${c} ${e.averages![c].toFixed(1)}`).join(' · ')}
                 </p>
               )}
-              {canRate && signedIn && !e.own && (
-                <RateForm slug={slug} entry={e} initial={jam.myRatings[e.id]} onSaved={load} />
+              {e.rateable && (
+                <RateForm
+                  slug={slug}
+                  entry={e}
+                  initial={jam.myRatings[e.id]}
+                  initialFeedback={jam.myFeedback[e.id]}
+                  onSaved={load}
+                />
+              )}
+              {e.feedbackCount !== null && (
+                <JamFeedbackList slug={slug} entryId={e.id} count={e.feedbackCount} />
+              )}
+              {jam.myFeedback[e.id]?.helpful && (
+                <p className="t-meta">
+                  {t('team-found-helpful', { ns: 'jam-feedback', defaultValue: 'The team found this helpful' })}
+                </p>
+              )}
+              {signedIn && (
+                <JamTeamPanel
+                  slug={slug}
+                  entryId={e.id}
+                  state={e.viewerTeamState}
+                  open={jam.phase === 'open'}
+                  viewerId={viewerId}
+                  onChanged={() => void load()}
+                />
               )}
             </Card>
           ))}

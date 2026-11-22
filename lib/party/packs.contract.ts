@@ -11,30 +11,20 @@ export interface PackLists {
 }
 
 /** Featured shelf, newest community packs, the caller's own. */
-export const listPacksApi =
-  endpoint<{
-    res: PackLists;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmhbox/packs',
-    },
-  );
+export const listPacksApi = endpoint<{
+  res: PackLists;
+}>()({
+  method: 'GET',
+  path: '/api/rmhbox/packs',
+});
 
 /** Author a prompt pack; the 201 carries its share code. */
-export const createPackApi =
-  endpoint<{
-    body: z.infer<
-      typeof createPackSchema
-    >;
-    res: {
-      pack: PackView;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/rmhbox/packs',
-    },
-  );
+export const createPackApi = endpoint<{
+  body: z.infer<typeof createPackSchema>;
+  res: {
+    pack: PackView;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/rmhbox/packs',
+});

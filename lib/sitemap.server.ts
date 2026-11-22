@@ -17,6 +17,7 @@
 
 import { researchSitemapRoutes } from '@/lib/rmh-research/sitemap';
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { cachedSWR } from '@/lib/cached.server';
 import type { Prisma } from '@prisma/client';
 import { PUBLIC_POST_WHERE } from '@/lib/feed/rss.server';
@@ -174,7 +175,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
     cap: CAPS.content,
     count: async () => {
       const [blog, news, docs, albums, guides] = await Promise.all([
-        prisma.blogPost.count(),
+        prisma.blogPost.count({ where: publishedLogWhere(new Date()) }),
         prisma.newsArticle.count({ where: { status: 'PUBLISHED' } }),
         prisma.libraryDocument.count({ where: { hidden: false, reported: false } }),
         prisma.album.count(),
@@ -188,6 +189,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
       // query for no crawler-visible benefit.
       const [blog, news, docs, albums, guides] = await Promise.all([
         prisma.blogPost.findMany({
+          where: publishedLogWhere(new Date()),
           select: { slug: true, updatedAt: true },
           orderBy: { updatedAt: 'desc' },
           take: CAPS.content,

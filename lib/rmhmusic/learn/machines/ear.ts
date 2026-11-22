@@ -19,23 +19,10 @@
  */
 import { shuffle } from '../content/decks';
 import type { Lesson } from '../content/path';
-import {
-  CHORDS,
-  chordNotes,
-  type ChordQuality,
-} from '../theory/chords';
-import {
-  INTERVALS,
-  type IntervalName,
-} from '../theory/intervals';
+import { CHORDS, chordNotes, type ChordQuality } from '../theory/chords';
+import { INTERVALS, type IntervalName } from '../theory/intervals';
 import type { Machine } from './runner';
-import {
-  sessionInitial,
-  sessionStep,
-  type SessionEffect,
-  type SessionEvent,
-  type SessionState,
-} from './session';
+import { sessionInitial, sessionStep, type SessionEffect, type SessionEvent, type SessionState } from './session';
 
 /** Questions in one lesson. */
 export const EAR_QUESTIONS = 10;
@@ -48,14 +35,10 @@ const RANGE_MIN = 36;
 const RANGE_MAX = 84;
 
 /** What a lesson asks about: two notes in turn, or three together. */
-export type EarKind =
-  | 'interval'
-  | 'chord';
+export type EarKind = 'interval' | 'chord';
 
 /** A name from the answer buttons: an interval's or a chord quality's. */
-export type EarName =
-  | IntervalName
-  | ChordQuality;
+export type EarName = IntervalName | ChordQuality;
 
 /**
  * One question: what kind it is (an interval's notes sound in turn, a chord's together), the notes
@@ -72,11 +55,7 @@ export interface Answer {
   name: EarName;
 }
 
-type Base =
-  SessionState<
-    Question,
-    Answer
-  >;
+type Base = SessionState<Question, Answer>;
 
 export type State =
   | Exclude<
@@ -114,45 +93,12 @@ export type Effect =
       notes: readonly number[];
     };
 
-const unit =
-  (
-    r: number,
-  ) =>
-    Number.isFinite(
-      r,
-    )
-      ? Math.min(
-          Math.max(
-            r,
-            0,
-          ),
-          1 -
-            Number.EPSILON,
-        )
-      : 0;
-const pick =
-  (
-    n: number,
-    rand: () => number,
-  ) =>
-    Math.floor(
-      unit(
-        rand(),
-      ) *
-        n,
-    );
+const unit = (r: number) => (Number.isFinite(r) ? Math.min(Math.max(r, 0), 1 - Number.EPSILON) : 0);
+const pick = (n: number, rand: () => number) => Math.floor(unit(rand()) * n);
 
 /** Whether `name` is a name of this kind (an interval word is never a chord quality). */
-function isName(
-  kind: EarKind,
-  name: string,
-): name is EarName {
-  return kind ===
-    'interval'
-    ? name in
-        INTERVALS
-    : name in
-        CHORDS;
+function isName(kind: EarKind, name: string): name is EarName {
+  return kind === 'interval' ? name in INTERVALS : name in CHORDS;
 }
 
 /**
@@ -160,95 +106,23 @@ function isName(
  * size of a third). A chord: a root-position triad of one of its qualities. Either on a root in C3
  * to C5, or the given `root`, kept so every note stays in C2 to C6.
  */
-export function makeQuestion(
-  kind: EarKind,
-  pool: readonly EarName[],
-  rand: () => number,
-  root?: number,
-): Question {
-  if (
-    pool.length ===
-    0
-  )
-    throw new RangeError(
-      'ear: an empty pool',
-    );
-  const answer =
-    pool[
-      pick(
-        pool.length,
-        rand,
-      )
-    ];
-  if (
-    !isName(
-      kind,
-      answer,
-    )
-  )
-    throw new RangeError(
-      `ear: "${answer}" is not a ${kind}`,
-    );
+export function makeQuestion(kind: EarKind, pool: readonly EarName[], rand: () => number, root?: number): Question {
+  if (pool.length === 0) throw new RangeError('ear: an empty pool');
+  const answer = pool[pick(pool.length, rand)];
+  if (!isName(kind, answer)) throw new RangeError(`ear: "${answer}" is not a ${kind}`);
   const size =
-    kind ===
-    'interval'
+    kind === 'interval'
       ? (() => {
-          const sizes =
-            INTERVALS[
-              answer as IntervalName
-            ]
-              .semitones;
-          return sizes[
-            pick(
-              sizes.length,
-              rand,
-            )
-          ];
+          const sizes = INTERVALS[answer as IntervalName].semitones;
+          return sizes[pick(sizes.length, rand)];
         })()
-      : Math.max(
-          ...CHORDS[
-            answer as ChordQuality
-          ],
-        );
+      : Math.max(...CHORDS[answer as ChordQuality]);
   const low =
-    root ===
-      undefined ||
-    !Number.isFinite(
-      root,
-    )
-      ? ROOT_MIN +
-        pick(
-          ROOT_MAX -
-            ROOT_MIN +
-            1,
-          rand,
-        )
-      : Math.round(
-          root,
-        );
-  const start =
-    Math.min(
-      Math.max(
-        low,
-        RANGE_MIN,
-      ),
-      RANGE_MAX -
-        size,
-    );
+    root === undefined || !Number.isFinite(root) ? ROOT_MIN + pick(ROOT_MAX - ROOT_MIN + 1, rand) : Math.round(root);
+  const start = Math.min(Math.max(low, RANGE_MIN), RANGE_MAX - size);
   return {
     kind,
-    notes:
-      kind ===
-      'interval'
-        ? [
-            start,
-            start +
-              size,
-          ]
-        : chordNotes(
-            start,
-            answer as ChordQuality,
-          ),
+    notes: kind === 'interval' ? [start, start + size] : chordNotes(start, answer as ChordQuality),
     answer,
   };
 }
@@ -257,311 +131,150 @@ export function makeQuestion(
  * `count` questions: each name of the pool about as often (so a two-name pool is never a coin the
  * learner can beat without listening), in a random order that may repeat a name.
  */
-export function dealQuestions(
-  kind: EarKind,
-  pool: readonly EarName[],
-  count: number,
-  rand: () => number,
-): Question[] {
-  if (
-    !Number.isFinite(
-      count,
-    ) ||
-    count <
-      1 ||
-    pool.length ===
-      0
-  )
-    return [];
+export function dealQuestions(kind: EarKind, pool: readonly EarName[], count: number, rand: () => number): Question[] {
+  if (!Number.isFinite(count) || count < 1 || pool.length === 0) return [];
   // The names go round the pool starting at a random one, so the questions left over when the
   // count is not a multiple of the pool go to random names, not always the first.
-  const offset =
-    pick(
-      pool.length,
-      rand,
-    );
-  const names =
-    Array.from(
-      {
-        length:
-          Math.floor(
-            count,
-          ),
-      },
-      (
-        _,
-        i,
-      ) =>
-        pool[
-          (i +
-            offset) %
-            pool.length
-        ],
-    );
-  return shuffle(
-    names,
-    rand,
-  ).map(
-    (
-      name,
-    ) =>
-      makeQuestion(
-        kind,
-        [
-          name,
-        ],
-        rand,
-      ),
+  const offset = pick(pool.length, rand);
+  const names = Array.from(
+    {
+      length: Math.floor(count),
+    },
+    (_, i) => pool[(i + offset) % pool.length],
   );
+  return shuffle(names, rand).map((name) => makeQuestion(kind, [name], rand));
 }
 
 /** What a lesson asks about, from its mode (a missing lesson reads as intervals). */
-export function earKind(
-  lesson:
-    | Pick<
-        Lesson,
-        'mode'
-      >
-    | undefined,
-): EarKind {
-  return lesson?.mode ===
-    'ear-chord'
-    ? 'chord'
-    : 'interval';
+export function earKind(lesson: Pick<Lesson, 'mode'> | undefined): EarKind {
+  return lesson?.mode === 'ear-chord' ? 'chord' : 'interval';
 }
 
 /** The pool a lesson gets when its path entry has none (or none that fits its kind). */
-const DEFAULT_POOL: Record<
-  EarKind,
-  EarName[]
-> =
-  {
-    interval:
-      [
-        'second',
-        'third',
-      ],
-    chord:
-      [
-        'major',
-        'minor',
-      ],
-  };
+const DEFAULT_POOL: Record<EarKind, EarName[]> = {
+  interval: ['second', 'third'],
+  chord: ['major', 'minor'],
+};
 
 /**
  * The names a lesson's answer buttons offer and its questions are drawn from: the `pool` field of
  * its path entry, keeping only names of the lesson's kind, or a default when nothing is left.
  */
-export function earPool(
-  lesson:
-    | Pick<
-        Lesson,
-        | 'mode'
-        | 'pool'
-      >
-    | undefined,
-): EarName[] {
-  const kind =
-    earKind(
-      lesson,
-    );
-  const names =
-    (
-      lesson?.pool ??
-      []
-    ).filter(
-      (
-        name,
-      ): name is EarName =>
-        isName(
-          kind,
-          name,
-        ),
-    );
-  return names.length >
-    0
-    ? names
-    : [
-        ...DEFAULT_POOL[
-          kind
-        ],
-      ];
+export function earPool(lesson: Pick<Lesson, 'mode' | 'pool'> | undefined): EarName[] {
+  const kind = earKind(lesson);
+  const names = (lesson?.pool ?? []).filter((name): name is EarName => isName(kind, name));
+  return names.length > 0 ? names : [...DEFAULT_POOL[kind]];
 }
 
-const base =
-  sessionStep<
-    Question,
-    Answer
-  >(
-    (
-      q,
-      a,
-    ) =>
-      q.answer ===
-      a.name,
-  );
+const isRight = (q: Question, a: Answer) => q.answer === a.name;
 
-export function initial(
-  questions: Question[],
-): State {
-  const s =
-    sessionInitial<
-      Question,
-      Answer
-    >(
-      questions,
-    );
+const testBase = sessionStep<Question, Answer>(isRight);
+const learningBase = sessionStep<Question, Answer>(isRight, {
+  learning: true,
+});
+
+export function initial(questions: Question[]): State {
+  const s = sessionInitial<Question, Answer>(questions);
   return {
     ...s,
     heard: false,
   } as State;
 }
 
-const same =
-  (
-    state: State,
-  ) => ({
-    state,
-    effects:
-      [] as Effect[],
-  });
+const same = (state: State) => ({
+  state,
+  effects: [] as Effect[],
+});
 
-export function step(
+function stepWith(
+  base: typeof testBase,
   s: State,
   e: Event,
 ): {
   state: State;
   effects: Effect[];
 } {
-  if (
-    e.type ===
-    'replay'
-  ) {
-    if (
-      s.kind !==
-        'asking' &&
-      s.kind !==
-        'feedback'
-    )
-      return same(
-        s,
-      );
-    const q =
-      s
-        .cards[
-        s
-          .index
-      ];
-    if (
-      !q
-    )
-      return same(
-        s,
-      );
+  if (e.type === 'replay') {
+    if (s.kind !== 'asking' && s.kind !== 'feedback') return same(s);
+    const q = s.cards[s.index];
+    if (!q) return same(s);
     return {
-      state:
-        s,
-      effects:
-        [
-          {
-            type: 'play',
-            index:
-              s.index,
-            kind: q.kind,
-            notes:
-              q.notes,
-          },
-        ],
-    };
-  }
-  if (
-    e.type ===
-    'played'
-  ) {
-    if (
-      s.kind !==
-        'asking' ||
-      s.index !==
-        e.index ||
-      s.heard
-    )
-      return same(
-        s,
-      );
-    return {
-      state:
+      state: s,
+      effects: [
         {
-          ...s,
-          heard: true,
+          type: 'play',
+          index: s.index,
+          kind: q.kind,
+          notes: q.notes,
         },
-      effects:
-        [],
+      ],
     };
   }
-  if (
-    e.type ===
-      'answer' &&
-    s.kind ===
-      'asking' &&
-    !s.heard
-  )
-    return same(
-      s,
-    );
-  const r =
-    base(
-      s,
-      e,
-    );
-  if (
-    r.state ===
-    s
-  )
+  if (e.type === 'played') {
+    if (s.kind !== 'asking' || s.index !== e.index || s.heard) return same(s);
     return {
-      state:
-        s,
-      effects:
-        r.effects,
+      state: {
+        ...s,
+        heard: true,
+      },
+      effects: [],
     };
-  // A question reached by Next starts unheard.
-  const state =
-    (
-      r
-        .state
-        .kind ===
-      'asking'
-        ? {
-            ...r.state,
-            heard: false,
-          }
-        : r.state
-    ) as State;
+  }
+  if (e.type === 'answer' && s.kind === 'asking' && !s.heard) return same(s);
+  const r = base(s, e);
+  if (r.state === s)
+    return {
+      state: s,
+      effects: r.effects,
+    };
+  // A question reached by Next starts unheard. The same question asked again (Learning mode, after
+  // a miss) was already heard, so it can be answered at once; Replay still plays it.
+  const retry = r.state.kind === 'asking' && s.kind === 'feedback' && r.state.index === s.index;
+  const state = (
+    r.state.kind === 'asking'
+      ? {
+          ...r.state,
+          heard: retry,
+        }
+      : r.state
+  ) as State;
   return {
     state,
-    effects:
-      r.effects,
+    effects: r.effects,
   };
 }
 
-export const earMachine =
-  {
-    initial,
-    step,
-  };
+/** One step in Test mode: one answer per question, then on to the next. */
+export function step(s: State, e: Event) {
+  return stepWith(testBase, s, e);
+}
 
-/** The machine for one lesson's questions, in the shape `createRunner` takes. */
+/** One step in Learning mode: a wrong answer brings the same question back, already heard. */
+export function learningStep(s: State, e: Event) {
+  return stepWith(learningBase, s, e);
+}
+
+export const earMachine = {
+  initial,
+  step,
+};
+
+/**
+ * The machine for one lesson's questions, in the shape `createRunner` takes. `learning` is Learning
+ * mode (retry until right) or Test mode, or a getter read at every event so a mode switched
+ * mid-lesson is obeyed from the next answer.
+ */
 export function createEarMachine(
   questions: Question[],
-): Machine<
-  State,
-  Event,
-  Effect
-> {
+  learning: boolean | (() => boolean) = false,
+): Machine<State, Event, Effect> {
   return {
-    initial:
-      initial(
-        questions,
-      ),
-    step,
+    initial: initial(questions),
+    step:
+      typeof learning === 'function'
+        ? (s, e) => (learning() ? learningStep : step)(s, e)
+        : learning
+          ? learningStep
+          : step,
   };
 }

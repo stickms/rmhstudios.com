@@ -96,11 +96,7 @@ export async function claimListing(
  * the caller's conditions (owner, the statuses it may close from). Returns
  * whether this call won, so whatever was escrowed is returned exactly once.
  */
-export async function closeListing(
-  tx: Db,
-  kind: ListingKind,
-  where: Prisma.ListingWhereInput,
-): Promise<boolean> {
+export async function closeListing(tx: Db, kind: ListingKind, where: Prisma.ListingWhereInput): Promise<boolean> {
   const res = await tx.listing.updateMany({
     where: { ...where, kind },
     data: { status: 'CANCELED', closedAt: new Date() },

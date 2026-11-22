@@ -12,24 +12,15 @@
 import { getAudioContext } from '@/lib/shared/platform';
 import { resumeAudio } from '../audio/resume';
 import { freqToMidi } from '../pitch/notes';
-import {
-  DEFAULT_MIN_RMS,
-  detectPitch,
-} from '../pitch/yin';
-import type {
-  InputAdapter,
-  NoteEvent,
-  NoteListener,
-} from './events';
+import { detectPitch } from '../pitch/yin';
+import { DEFAULT_MIC_SETTINGS, normalizeMicSettings, type MicHum, type MicSettings } from './mic-gain';
+import { createAutoLevel, type AutoLevel } from './mic-auto';
+import type { InputAdapter, NoteEvent, NoteListener } from './events';
 import { createDeviceRunner } from './device-runner';
-import {
-  createSegmenter,
-  type Segmenter,
-} from './mic-segmenter';
+import { createSegmenter, type Segmenter } from './mic-segmenter';
 
 /** The `name` of the error raised when sound would not start; `InputDetails` maps it to a sentence. */
-export const AUDIO_START_ERROR =
-  'AudioStartError';
+export const AUDIO_START_ERROR = 'AudioStartError';
 
 /** Analysis rate. A timer, not requestAnimationFrame: the repo gates rAF loops. */
 const POLL_MS = 25;
@@ -40,24 +31,10 @@ const MAX_FFT_SIZE = 32768;
 const LOWEST_HZ = 60;
 
 /** The analyser size that holds two periods of the lowest pitch at this rate (88.2/96 kHz devices need 4096). */
-export function fftSizeFor(
-  sampleRate: number,
-): number {
-  const need =
-    2 *
-    Math.ceil(
-      sampleRate /
-        LOWEST_HZ,
-    );
-  let size =
-    MIN_FFT_SIZE;
-  while (
-    size <
-      need &&
-    size <
-      MAX_FFT_SIZE
-  )
-    size *= 2;
+export function fftSizeFor(sampleRate: number): number {
+  const need = 2 * Math.ceil(sampleRate / LOWEST_HZ);
+  let size = MIN_FFT_SIZE;
+  while (size < need && size < MAX_FFT_SIZE) size *= 2;
   return size;
 }
 
@@ -69,9 +46,7 @@ export interface MicFrame {
   /** `performance.now()` of the poll. */
   time: number;
   /** Fundamental in Hz, or null for silence and noise. */
-  freq:
-    | number
-    | null;
+  freq: number | null;
   /** YIN's confidence 0..1 (0 when nothing was heard). */
   clarity: number;
   rms: number;
@@ -84,385 +59,266 @@ export interface MicFrame {
  */
 let reattackOn = false;
 
-export function setMicReattack(
-  on: boolean,
-): void {
-  reattackOn =
-    on;
+export function setMicReattack(on: boolean): void {
+  reattackOn = on;
+}
+
+/**
+ * The microphone chain's settings (`mic-gain.ts`), read live: a slider moved while the mic runs
+ * changes what it hears at once. The signal goes source → rumble filter → hum notches → gain →
+ * analyser, so the level meter, the cutoff and the pitch detector all see the same cleaned, amplified
+ * signal. With `auto` the level controller (`mic-auto.ts`) owns the gain and the cutoff; otherwise
+ * `gain` and `gate` are used as set.
+ */
+let settings: MicSettings = { ...DEFAULT_MIC_SETTINGS };
+
+interface Chain {
+  gain: GainNode;
+  /** The mains-hum notches (the fundamental and its second harmonic), bypassed when the hum is off. */
+  notches: BiquadFilterNode[];
+  /** Present while `auto` is on. */
+  auto: AutoLevel | null;
+}
+let chain: Chain | null = null;
+
+/** Below the lowest note anyone sings or plays here (a guitar's E2 is 82 Hz): rumble, wind, handling. */
+const RUMBLE_HZ = 40;
+/** Narrow, so the notes next to a hum frequency are barely touched. */
+const NOTCH_Q = 35;
+
+function applyHum(notches: readonly BiquadFilterNode[], hum: MicHum): void {
+  notches.forEach((n, i) => {
+    if (hum === 'off') {
+      // An all-pass leaves the level alone, so "off" costs nothing and the chain keeps its shape.
+      n.type = 'allpass';
+    } else {
+      n.type = 'notch';
+      n.frequency.value = Number(hum) * (i + 1);
+      n.Q.value = NOTCH_Q;
+    }
+  });
+}
+
+function applyChain(c: Chain, was: MicSettings | null): void {
+  if (settings.auto) {
+    // Start the controller from the gain in force, so switching to automatic does not jump.
+    if (!c.auto || !was?.auto) c.auto = createAutoLevel(c.gain.gain.value);
+  } else {
+    c.auto = null;
+    c.gain.gain.value = settings.gain;
+  }
+  applyHum(c.notches, settings.hum);
+}
+
+export function setMicSettings(next: Partial<MicSettings>): void {
+  const was = settings;
+  settings = normalizeMicSettings({ ...settings, ...next });
+  if (chain) applyChain(chain, was);
+}
+
+export function getMicSettings(): MicSettings {
+  return settings;
 }
 
 export function createMicInput(
   opts: {
-    onLevel?: (
-      rms: number,
-    ) => void;
+    /** Every poll: the level, the cutoff in force (the learner's, or the automatic one) and the gain. */
+    onLevel?: (rms: number, gate: number, gain: number) => void;
     /** Every poll's frame while the mic runs (about 40 a second): the tuner's input. */
-    onFrame?: (
-      frame: Readonly<MicFrame>,
-    ) => void;
+    onFrame?: (frame: Readonly<MicFrame>) => void;
   } = {},
 ): InputAdapter {
-  const listeners =
-    new Set<NoteListener>();
-  const emit =
-    (
-      e: NoteEvent,
-    ) => {
-      for (const l of [
-        ...listeners,
-      ])
-        l(
-          e,
-        );
-    };
+  const listeners = new Set<NoteListener>();
+  const emit = (e: NoteEvent) => {
+    for (const l of [...listeners]) l(e);
+  };
 
-  let timer: ReturnType<
-    typeof setInterval
-  > | null =
-    null;
-  let stream: MediaStream | null =
-    null;
-  let source: MediaStreamAudioSourceNode | null =
-    null;
-  let analyser: AnalyserNode | null =
-    null;
-  let segmenter: Segmenter | null =
-    null;
+  let timer: ReturnType<typeof setInterval> | null = null;
+  let stream: MediaStream | null = null;
+  let source: MediaStreamAudioSourceNode | null = null;
+  let rumble: BiquadFilterNode | null = null;
+  let notches: BiquadFilterNode[] = [];
+  let gain: GainNode | null = null;
+  let analyser: AnalyserNode | null = null;
+  let segmenter: Segmenter | null = null;
 
-  const teardown =
-    () => {
-      if (
-        timer !==
-        null
-      )
-        clearInterval(
-          timer,
-        );
-      timer =
-        null;
-      stream
-        ?.getTracks()
-        .forEach(
-          (
-            t,
-          ) =>
-            t.stop(),
-        );
-      source?.disconnect();
-      analyser?.disconnect();
-      stream =
-        null;
-      source =
-        null;
-      analyser =
-        null;
-    };
+  const teardown = () => {
+    if (timer !== null) clearInterval(timer);
+    timer = null;
+    stream?.getTracks().forEach((t) => t.stop());
+    source?.disconnect();
+    rumble?.disconnect();
+    notches.forEach((n) => n.disconnect());
+    gain?.disconnect();
+    analyser?.disconnect();
+    if (chain?.gain === gain) chain = null;
+    stream = null;
+    source = null;
+    rumble = null;
+    notches = [];
+    gain = null;
+    analyser = null;
+  };
 
   /** Acquire the mic for one run of the lifecycle; `wanted()` turns false when a stop() arrives. */
-  const open =
-    async (
-      wanted: () => boolean,
-    ): Promise<void> => {
-      const ctx =
-        getAudioContext();
-      if (
-        !ctx
-      )
-        throw unsupported(
-          'Web Audio is not available in this browser.',
-        );
-      // No API at all (an insecure origin, some embedded webviews): a different sentence from a
-      // busy or broken microphone, so the setup row can say what is actually wrong.
-      if (
-        typeof navigator ===
-          'undefined' ||
-        !navigator
-          .mediaDevices
-          ?.getUserMedia
-      ) {
-        throw unsupported(
-          'Microphone access is not available in this browser.',
-        );
+  const open = async (wanted: () => boolean): Promise<void> => {
+    const ctx = getAudioContext();
+    if (!ctx) throw unsupported('Web Audio is not available in this browser.');
+    // No API at all (an insecure origin, some embedded webviews): a different sentence from a
+    // busy or broken microphone, so the setup row can say what is actually wrong.
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      throw unsupported('Microphone access is not available in this browser.');
+    }
+    // iOS Safari starts suspended; start() runs from a user click, which is
+    // what allows the resume. Do it before the (possibly slow) permission prompt,
+    // and never wait on it forever (an audio interruption, no output device).
+    const running = await resumeAudio(ctx);
+    if (!wanted()) return;
+    if (!running) throw audioStartError('Sound could not start in this browser.');
+
+    // Rejections keep their original `name` (NotAllowedError, NotFoundError).
+    const media = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+    // stop() arrived while the permission prompt was open: release what we
+    // were just handed rather than leave the mic recording.
+    if (!wanted()) {
+      media.getTracks().forEach((t) => t.stop());
+      return;
+    }
+
+    stream = media;
+    // From here a failure must not leave the mic open.
+    try {
+      source = ctx.createMediaStreamSource(media);
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = fftSizeFor(ctx.sampleRate);
+      // The cleaning and the gain sit before the analyser, so the meter, the cutoff and the pitch
+      // detector all see the same signal (a quiet microphone is raised, not just drawn louder).
+      rumble = ctx.createBiquadFilter();
+      rumble.type = 'highpass';
+      rumble.frequency.value = RUMBLE_HZ;
+      rumble.Q.value = Math.SQRT1_2;
+      notches = [ctx.createBiquadFilter(), ctx.createBiquadFilter()];
+      gain = ctx.createGain();
+      gain.gain.value = settings.gain;
+      source.connect(rumble);
+      let tail: AudioNode = rumble;
+      for (const n of notches) {
+        tail.connect(n);
+        tail = n;
       }
-      // iOS Safari starts suspended; start() runs from a user click, which is
-      // what allows the resume. Do it before the (possibly slow) permission prompt,
-      // and never wait on it forever (an audio interruption, no output device).
-      const running =
-        await resumeAudio(
-          ctx,
-        );
-      if (
-        !wanted()
-      )
-        return;
-      if (
-        !running
-      )
-        throw audioStartError(
-          'Sound could not start in this browser.',
-        );
+      tail.connect(gain);
+      gain.connect(analyser);
+      chain = { gain, notches, auto: null };
+      applyChain(chain, null);
+      segmenter = createSegmenter({
+        reattack: () => reattackOn,
+      });
 
-      // Rejections keep their original `name` (NotAllowedError, NotFoundError).
-      const media =
-        await navigator.mediaDevices.getUserMedia(
-          {
-            audio:
-              {
-                echoCancellation: false,
-                noiseSuppression: false,
-                autoGainControl: false,
-              },
-          },
-        );
-      // stop() arrived while the permission prompt was open: release what we
-      // were just handed rather than leave the mic recording.
-      if (
-        !wanted()
-      ) {
-        media
-          .getTracks()
-          .forEach(
-            (
-              t,
-            ) =>
-              t.stop(),
-          );
-        return;
-      }
+      const node = analyser;
+      const seg = segmenter;
+      const rate = ctx.sampleRate;
+      // Reused every poll: the frame buffer and the one pitch frame handed to the segmenter.
+      const buf = new Float32Array(node.fftSize);
+      const frame = {
+        midi: 0,
+        cents: 0,
+        rms: 0,
+      };
+      const heard: MicFrame = {
+        time: 0,
+        freq: null,
+        clarity: 0,
+        rms: 0,
+      };
+      timer = setInterval(() => {
+        node.getFloatTimeDomainData(buf);
+        const now = performance.now();
 
-      stream =
-        media;
-      // From here a failure must not leave the mic open.
-      try {
-        source =
-          ctx.createMediaStreamSource(
-            media,
-          );
-        analyser =
-          ctx.createAnalyser();
-        analyser.fftSize =
-          fftSizeFor(
-            ctx.sampleRate,
-          );
-        source.connect(
-          analyser,
-        );
-        segmenter =
-          createSegmenter(
-            {
-              reattack:
-                () =>
-                  reattackOn,
-            },
-          );
+        let sumSq = 0;
+        for (let i = 0; i < buf.length; i++) sumSq += buf[i] * buf[i];
+        const rms = Math.sqrt(sumSq / buf.length);
+        // The cutoff in force: the automatic one while the controller runs, else the learner's.
+        const live = chain;
+        const gate = live?.auto ? live.auto.gate : settings.gate;
+        opts.onLevel?.(rms, gate, live ? live.gain.gain.value : settings.gain);
 
-        const node =
-          analyser;
-        const seg =
-          segmenter;
-        const rate =
-          ctx.sampleRate;
-        // Reused every poll: the frame buffer and the one pitch frame handed to the segmenter.
-        const buf =
-          new Float32Array(
-            node.fftSize,
-          );
-        const frame =
-          {
-            midi: 0,
-            cents: 0,
-            rms: 0,
-          };
-        const heard: MicFrame =
-          {
-            time: 0,
-            freq: null,
-            clarity: 0,
-            rms: 0,
-          };
-        timer =
-          setInterval(
-            () => {
-              node.getFloatTimeDomainData(
-                buf,
-              );
-              const now =
-                performance.now();
-
-              let sumSq = 0;
-              for (
-                let i = 0;
-                i <
-                buf.length;
-                i++
-              )
-                sumSq +=
-                  buf[
-                    i
-                  ] *
-                  buf[
-                    i
-                  ];
-              const rms =
-                Math.sqrt(
-                  sumSq /
-                    buf.length,
-                );
-              opts.onLevel?.(
-                rms,
-              );
-
-              heard.time =
-                now;
-              heard.rms =
-                rms;
-              heard.freq =
-                null;
-              heard.clarity = 0;
-              // Silence (most frames) skips the detector entirely; a NaN level fails this test too.
-              let pitched = false;
-              if (
-                rms >=
-                DEFAULT_MIN_RMS
-              ) {
-                // detectPitch only ever returns a finite, positive freq (or null).
-                const pitch =
-                  detectPitch(
-                    buf,
-                    rate,
-                  );
-                if (
-                  pitch
-                ) {
-                  heard.freq =
-                    pitch.freq;
-                  heard.clarity =
-                    pitch.clarity;
-                  const exact =
-                    freqToMidi(
-                      pitch.freq,
-                    );
-                  frame.midi =
-                    Math.round(
-                      exact,
-                    );
-                  frame.cents =
-                    (exact -
-                      frame.midi) *
-                    100;
-                  frame.rms =
-                    rms;
-                  pitched = true;
-                }
-              }
-              const events =
-                seg.push(
-                  pitched
-                    ? frame
-                    : null,
-                  now,
-                );
-              for (
-                let i = 0;
-                i <
-                events.length;
-                i++
-              )
-                emit(
-                  events[
-                    i
-                  ],
-                );
-              // The notes first: a frame listener (the tuner) runs after them, and its own bug
-              // can neither drop a note event nor stop this poll.
-              if (
-                opts.onFrame
-              ) {
-                try {
-                  opts.onFrame(
-                    heard,
-                  );
-                } catch {
-                  // Swallowed on purpose (see above); the store's fan-out also isolates listeners.
-                }
-              }
-            },
-            POLL_MS,
-          );
-      } catch (err) {
-        teardown();
-        segmenter =
-          null;
-        throw err;
-      }
-    };
+        heard.time = now;
+        heard.rms = rms;
+        heard.freq = null;
+        heard.clarity = 0;
+        // Silence (most frames) skips the detector entirely; a NaN level fails this test too.
+        let pitched = false;
+        if (rms >= gate) {
+          // detectPitch only ever returns a finite, positive freq (or null). It has its own silence
+          // gate, so it is given ours: left at its default it would drop every note below 0.01.
+          const pitch = detectPitch(buf, rate, { minRms: gate });
+          if (pitch) {
+            heard.freq = pitch.freq;
+            heard.clarity = pitch.clarity;
+            const exact = freqToMidi(pitch.freq);
+            frame.midi = Math.round(exact);
+            frame.cents = (exact - frame.midi) * 100;
+            frame.rms = rms;
+            pitched = true;
+          }
+        }
+        // Steer the automatic gain from this frame (a no-op when it is off).
+        if (live?.auto) live.gain.gain.value = live.auto.step({ rms, pitched }).gain;
+        const events = seg.push(pitched ? frame : null, now);
+        for (let i = 0; i < events.length; i++) emit(events[i]);
+        // The notes first: a frame listener (the tuner) runs after them, and its own bug
+        // can neither drop a note event nor stop this poll.
+        if (opts.onFrame) {
+          try {
+            opts.onFrame(heard);
+          } catch {
+            // Swallowed on purpose (see above); the store's fan-out also isolates listeners.
+          }
+        }
+      }, POLL_MS);
+    } catch (err) {
+      teardown();
+      segmenter = null;
+      throw err;
+    }
+  };
 
   // Start/stop/cancel is the shared device lifecycle; this adapter only says how to open and release the mic.
-  const life =
-    createDeviceRunner(
-      {
-        launch:
-          (
-            _run,
-            wanted,
-          ) =>
-            open(
-              wanted,
-            ),
-        stopDevice() {
-          teardown();
-          // Release the sounding note, if the mic was running.
-          if (
-            segmenter
-          )
-            for (const e of segmenter.flush(
-              performance.now(),
-            ))
-              emit(
-                e,
-              );
-          segmenter =
-            null;
-        },
-      },
-    );
+  const life = createDeviceRunner({
+    launch: (_run, wanted) => open(wanted),
+    stopDevice() {
+      teardown();
+      // Release the sounding note, if the mic was running.
+      if (segmenter) for (const e of segmenter.flush(performance.now())) emit(e);
+      segmenter = null;
+    },
+  });
 
-  const adapter: InputAdapter =
-    {
-      source:
-        'mic',
-      start:
-        () =>
-          life.start(),
-      stop: () =>
-        life.stop(),
+  const adapter: InputAdapter = {
+    source: 'mic',
+    start: () => life.start(),
+    stop: () => life.stop(),
 
-      subscribe(
-        l,
-      ) {
-        listeners.add(
-          l,
-        );
-        return () => {
-          listeners.delete(
-            l,
-          );
-        };
-      },
-    };
+    subscribe(l) {
+      listeners.add(l);
+      return () => {
+        listeners.delete(l);
+      };
+    },
+  };
   return adapter;
 }
 
 /** An error named like the DOMException a browser raises for a missing capability. */
-function unsupported(
-  message: string,
-): Error {
-  const error =
-    new Error(
-      message,
-    );
-  error.name =
-    'NotSupportedError';
+function unsupported(message: string): Error {
+  const error = new Error(message);
+  error.name = 'NotSupportedError';
   return error;
 }
 
@@ -470,14 +326,8 @@ function unsupported(
  * Web Audio exists but would not run (it never resumed: an audio interruption, no output device).
  * Named so the setup row can say so instead of blaming another app for the microphone.
  */
-function audioStartError(
-  message: string,
-): Error {
-  const error =
-    new Error(
-      message,
-    );
-  error.name =
-    AUDIO_START_ERROR;
+function audioStartError(message: string): Error {
+  const error = new Error(message);
+  error.name = AUDIO_START_ERROR;
   return error;
 }

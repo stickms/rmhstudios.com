@@ -1,6 +1,6 @@
 import { Suspense, lazy, memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { BadgeCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
@@ -16,6 +16,10 @@ import { cn, relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
 import { useLocaleStore } from '@/stores/localeStore';
 import { ARRIVE } from '@/components/ui/arrive';
+import { CoveredLine } from '@/components/feed/CoveredLine';
+import { useAppliedContentWarning } from '@/components/feed/use-show-content-warnings';
+import { feedKickerLabel } from '@/components/feed/kicker-labels';
+import { usePostAction } from '@/components/feed/feed-nav';
 
 /** The post menu's rows and dialogs: fetched the first time a row's three dots are used, never with the feed. */
 const loadFeedRowMenu = () => import('@/components/feed/FeedRowMenu');
@@ -54,12 +58,25 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
   const contentRef = useRef<HTMLParagraphElement | null>(null);
   const [clamped, setClamped] = useState(false);
   const isRmhark = item.type === 'rmhark';
+  const warning = useAppliedContentWarning({
+    isSensitive: item.isSensitive,
+    contentWarning: item.contentWarning,
+    userId: item.user?.id,
+  });
+  const covered = isRmhark && warning.coverText;
   const rawKicker = item.category || item.type;
-  const kicker = t(`kicker.${rawKicker}`, { defaultValue: humanizeKicker(rawKicker) });
+  const kicker = feedKickerLabel(t, rawKicker) ?? humanizeKicker(rawKicker);
   const href = hrefFor(item);
   const external = href.startsWith('http');
   // An optimistic post has a temporary id: there is nothing to open and nothing to like until the server answers.
   const pending = Boolean(item.pending);
+  // `o` and Enter on the focused row (feed-nav.tsx): the row's one link.
+  const navigate = useNavigate();
+  const openRow = () => {
+    if (external) window.open(href, '_blank', 'noopener,noreferrer');
+    else navigate({ to: href } as never);
+  };
+  usePostAction(item.id, 'open', openRow, !pending);
   const menuAnchor = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
@@ -132,17 +149,21 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
           </span>
         </div>
       </div>
-      {item.content ? (
+      {covered ? (
+        // A content warning reason stands in for the text and media (sprint 06 #16). The row is one link, so there is
+        // no button here: the post page has the reveal.
+        <CoveredLine reason={warning.reason} className="t-post mt-2 break-words" />
+      ) : item.content ? (
         <p ref={contentRef} className="t-post mt-2 line-clamp-5 break-words whitespace-pre-wrap">
           {item.content}
         </p>
       ) : null}
-      {clamped ? (
+      {clamped && !covered ? (
         <span className="t-body mt-1 block font-medium underline">
           {t('read-more', { defaultValue: 'Read more' })}
         </span>
       ) : null}
-      {translation ? (
+      {translation && !covered ? (
         <p
           className={cn(
             't-body mt-2 border-s border-site-border ps-3 break-words whitespace-pre-wrap',
@@ -154,11 +175,12 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
       ) : null}
       {pending ? (
         <span className="t-meta mt-2 block">{t('posting', { defaultValue: 'Posting…' })}</span>
-      ) : (
+      ) : covered ? null : (
         <FeedMedia
           imageUrls={item.imageUrls}
           imageAlts={item.imageAlts}
           gifUrl={item.gifUrl}
+          gifAlt={item.gifAlt}
           sensitive={item.isSensitive}
         />
       )}
@@ -187,6 +209,15 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
       as="article"
       className={pending ? 'opacity-60' : undefined}
       aria-busy={pending || undefined}
+      // The current post of the feed keys (j / k): a real focus target. Enter on the row itself opens it.
+      data-feed-post={item.id}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && e.target === e.currentTarget && !pending) {
+          e.preventDefault();
+          openRow();
+        }
+      }}
     >
       {postFlair ? <span aria-hidden className="post-flair" style={{ background: postFlair }} /> : null}
       {pending ? (

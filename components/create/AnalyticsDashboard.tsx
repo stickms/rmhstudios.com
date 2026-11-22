@@ -17,6 +17,7 @@ import {
   formatCount,
 } from '@/lib/utils';
 import { useArrival } from '@/components/ui/arrive';
+import { AudienceInsights } from '@/components/create/AudienceInsights';
 import { creatorAnalyticsQuery } from '@/lib/profile/analytics.queries';
 
 export function AnalyticsDashboard() {
@@ -405,6 +406,8 @@ export function AnalyticsDashboard() {
           </ul>
         )}
       </div>
+
+      <AudienceInsights />
     </div>
   );
 }

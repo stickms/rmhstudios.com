@@ -6,19 +6,23 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Shuffle, Repeat, ChevronDown, ChevronUp, History } from 'lucide-react';
+import { Plus, Shuffle, Repeat, ChevronDown, ChevronUp, History, ListPlus } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatTotalDuration } from '@/lib/rmhtube/utils';
 import QueueItem from './QueueItem';
 import AddMediaModal from './AddMediaModal';
+import { durationSecToMs } from '@/lib/rmhtube/playlist-queue';
+import SaveQueueDialog from './SaveQueueDialog';
+import { PlaylistResultNotice } from './PlaylistPicker';
 import { AddToPlaylistDialog, type PlaylistItemInput } from '@/components/feed/AddToPlaylistDialog';
 
 export default function MediaQueue() {
   const room = useRmhTubeStore((s) => s.room);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSave, setShowSave] = useState(false);
   const [playlistItem, setPlaylistItem] = useState<PlaylistItemInput | null>(null);
 
   // Total queue duration (sum of all item durations)
@@ -110,6 +114,18 @@ export default function MediaQueue() {
             </button>
           )}
 
+          {/* Save the queue as a playlist */}
+          {room.queue.length > 0 && (
+            <button
+              onClick={() => setShowSave(true)}
+              className="p-1 rounded-app-sm transition-colors text-app-text-dim hover:text-app-text-muted hover:bg-app-surface-hover"
+              title={t('save-as-playlist', { ns: 'rmhtube-playlists', defaultValue: 'Save as playlist' })}
+              aria-label={t('save-as-playlist', { ns: 'rmhtube-playlists', defaultValue: 'Save as playlist' })}
+            >
+              <ListPlus className="h-3.5 w-3.5" />
+            </button>
+          )}
+
           {/* Add */}
           {canAdd && (
             <button
@@ -122,6 +138,8 @@ export default function MediaQueue() {
           )}
         </div>
       </div>
+
+      <PlaylistResultNotice />
 
       {/* Queue Items */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -151,7 +169,7 @@ export default function MediaQueue() {
                     subtitle: item.addedByName ?? null,
                     thumbnail: item.thumbnailUrl,
                     url: item.url,
-                    durationMs: item.duration ?? null,
+                    durationMs: durationSecToMs(item.duration),
                   })
                 }
               />
@@ -214,8 +232,14 @@ export default function MediaQueue() {
             for (const { url, title } of items) emit(C2S.QUEUE_ADD, { url, title: title || undefined });
             setShowAddModal(false);
           }}
+          onAddPlaylist={(playlistId) => {
+            emit(C2S.QUEUE_ADD_PLAYLIST, { playlistId });
+            setShowAddModal(false);
+          }}
         />
       )}
+
+      {showSave && <SaveQueueDialog queue={room.queue} onClose={() => setShowSave(false)} />}
 
       <AddToPlaylistDialog
         item={playlistItem}

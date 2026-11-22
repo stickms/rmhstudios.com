@@ -14,6 +14,7 @@
 
 @source "./";
 @source "../../components/games/PhotoMode.tsx";
+@source "../../components/games/assist-run-island.tsx";
 @source "../../components/games/result-moment-slot.tsx";
 @source "../../components/games/SessionHighlight.tsx";
 @source "../../components/games/ResultMoment.tsx";

@@ -1,0 +1,9 @@
+{
+  "button-label-all": "Post alerts: all new posts",
+  "button-label-off": "Post alerts: off",
+  "level-all": "All new posts",
+  "level-off": "Off",
+  "menu-label": "Post alerts",
+  "save-failed": "Could not change your post alerts.",
+  "too-large": "This community is too large to alert for every post. Use the feed."
+}

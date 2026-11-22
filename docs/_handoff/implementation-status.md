@@ -1,9 +1,6 @@
 # Slice It implementation status
 
-Final
-status
-for
-[`../plans/2026-08-06-slice-it-feature-ideas.md`](../plans/2026-08-06-slice-it-feature-ideas.md).
+Final status for [`../plans/2026-08-06-slice-it-feature-ideas.md`](../plans/2026-08-06-slice-it-feature-ideas.md).
 
 ## Totals
 
@@ -16,33 +13,8 @@ for
 
 ## Held for design (2)
 
-These
-were
-implemented
-or
-specified
-and
-then
-deliberately
-not
-shipped.
-Both
-are
-recorded
-rather
-than
-quietly
-dropped,
-because
-in
-each
-case
-the
-_reason_
-is
-the
-useful
-artefact.
+These were implemented or specified and then deliberately not shipped. Both are recorded rather than quietly dropped,
+because in each case the _reason_ is the useful artefact.
 
 | ID    | Idea                                  | Why it is held                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ----- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,13 +23,7 @@ artefact.
 
 ## Blocked externally (5)
 
-Nothing
-in
-this
-repository
-can
-complete
-these.
+Nothing in this repository can complete these.
 
 | ID    | Idea                                    | What it needs                                                                                                                                                                       |
 | ----- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -69,197 +35,19 @@ these.
 
 ## Standing caveats
 
-Read
-these
-before
-deploying.
+Read these before deploying.
 
-1. **The
-   migrations
-   have
-   never
-   run
-   against
-   Postgres.**
-   There
-   is
-   no
-   database
-   in
-   the
-   environment
-   this
-   branch
-   was
-   authored
-   in.
-   Every
-   migration
-   was
-   verified
-   statement-for-statement
-   against
-   `prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script`,
-   which
-   is
-   the
-   strongest
-   check
-   available
-   without
-   one,
-   and
-   each
-   carries
-   a
-   header
-   saying
-   so.
-   Review
-   them
-   as
-   SQL
-   and
-   run
-   them
-   against
-   a
-   copy
-   first.
-2. **`R2`'s
-   skill
-   rating
-   stays
-   at
-   0
-   until
-   a
-   moderator
-   promotes
-   a
-   chart.**
-   The
-   ranked
-   pool
-   is
-   reachable
-   (`/admin/slice-it`)
-   and
-   the
-   qualification
-   gate
-   is
-   automatic,
-   but
-   `ranked`
-   is
-   only
-   ever
-   set
-   by
-   a
-   human
-   —
-   by
-   design
+1. **The migrations have never run against Postgres.** There is no database in the environment this branch was authored
+   in. Every migration was verified statement-for-statement against
+   `prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script`, which is the strongest check available
+   without one, and each carries a header saying so. Review them as SQL and run them against a copy first.
+2. **`R2`'s skill rating stays at 0 until a moderator promotes a chart.** The ranked pool is reachable
+   (`/admin/slice-it`) and the qualification gate is automatic, but `ranked` is only ever set by a human — by design
    (`R10`).
-3. **`S3`'s
-   dan
-   ladder
-   ships
-   empty.**
-   `DAN_COURSES`
-   is
-   `[]`
-   on
-   purpose:
-   seeding
-   it
-   from
-   whatever
-   happened
-   to
-   be
-   in
-   the
-   library
-   would
-   define
-   a
-   certification
-   by
-   an
-   accident
-   of
-   timing.
-   It
-   needs
-   a
-   moderator
-   to
-   choose
-   the
-   setlists,
-   and
-   once
-   published
-   a
-   course's
-   chart
-   list
-   must
-   never
-   change.
-4. **`O4`
-   stores
-   one
-   encode,
-   not
-   one
-   per
-   client.**
-   Opus,
-   with
-   `SLICE_AUDIO_CODEC=aac`
-   as
-   the
-   escape
-   hatch.
-   The
-   exposure
-   is
-   Safari
-   before
-   17,
-   which
-   cannot
-   play
-   Ogg
-   Opus
-   through
-   `decodeAudioData`.
-5. **The
-   Go
-   fleet
-   is
-   untouched.**
-   Every
-   worker
-   added
-   here
-   (`O3`'s
-   charting,
-   `C8`'s
-   regeneration
-   sweep)
-   runs
-   in
-   the
-   Node
-   `jobs`
-   service,
-   which
-   is
-   where
-   pg-boss
-   lives.
+3. **`S3`'s dan ladder ships empty.** `DAN_COURSES` is `[]` on purpose: seeding it from whatever happened to be in the
+   library would define a certification by an accident of timing. It needs a moderator to choose the setlists, and once
+   published a course's chart list must never change.
+4. **`O4` stores one encode, not one per client.** Opus, with `SLICE_AUDIO_CODEC=aac` as the escape hatch. The exposure
+   is Safari before 17, which cannot play Ogg Opus through `decodeAudioData`.
+5. **The Go fleet is untouched.** Every worker added here (`O3`'s charting, `C8`'s regeneration sweep) runs in the Node
+   `jobs` service, which is where pg-boss lives.

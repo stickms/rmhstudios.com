@@ -16,6 +16,9 @@ import { formatRelativeTime } from '@/lib/rmhtube/utils';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
 import type { PublicRoomInfo, RoomHistoryStatus } from '@/lib/rmhtube/types';
 import { useRouter } from '@tanstack/react-router';
+import { ScheduleButton } from '@/components/rmhtube/party/ScheduleDialog';
+import UpcomingParties from '@/components/rmhtube/party/UpcomingParties';
+import WatchStatsPanel from '@/components/rmhtube/WatchStatsPanel';
 import { useTranslation } from "react-i18next";
 
 export default function RmhTubeLanding() {
@@ -180,6 +183,7 @@ export default function RmhTubeLanding() {
               >
                 {t("create-room", { defaultValue: "Create Room" })}
               </button>
+              <ScheduleButton className="mt-2 w-full py-3 rounded-app-sm font-semibold text-app-text transition-colors border border-app-border hover:bg-app-surface-hover" />
             </div>
 
             {/* Join Room */}
@@ -209,6 +213,10 @@ export default function RmhTubeLanding() {
               </form>
             </div>
           </div>
+
+          <UpcomingParties />
+
+          <WatchStatsPanel />
 
           {/* Favorite Rooms (Phase 4) */}
           {favoriteRooms.length > 0 && (

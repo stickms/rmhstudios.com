@@ -186,6 +186,18 @@ export class EpubRasterStore {
     }
   }
 
+  /** 1-based page on which a chapter (0-based spine index) starts. */
+  pageForChapter(index: number): number {
+    try {
+      const section = this.book.spine.get(index);
+      if (!section) return 1;
+      const loc = this.book.locations.locationFromCfi(`epubcfi(${section.cfiBase}!/4/2)`);
+      return typeof loc === 'number' && loc >= 0 ? loc + 1 : 1;
+    } catch {
+      return 1;
+    }
+  }
+
   /** Plain text of one chapter: block elements as paragraphs, blank-line separated. */
   async chapterText(index: number): Promise<string> {
     const section = this.book.spine.get(index);

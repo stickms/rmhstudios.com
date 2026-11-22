@@ -1,6 +1,7 @@
 import { useLocation } from '@tanstack/react-router';
 import type { Collection } from '@/lib/games/collections';
 import type { LibraryKind } from '@/lib/games/library';
+import type { AccessFilter } from '@/lib/games/access-filter';
 import { LibraryList } from './LibraryList';
 import { PlaytimeNotice } from './PlaytimeNotice';
 
@@ -14,78 +15,55 @@ export function LibraryFrame({
   signedIn,
   kind,
   onKindChange,
+  following,
+  followedIds,
+  onFollowingChange,
+  accessFilter,
+  onAccessChange,
   children,
 }: {
   recentIds: string[];
   collections: Collection[];
   signedIn: boolean;
   kind: LibraryKind;
-  onKindChange: (
-    k: LibraryKind,
-  ) => void;
+  /** Show only the games the member follows. */
+  following: boolean;
+  followedIds: string[];
+  onFollowingChange: (on: boolean) => void;
+  /** The "Can be played with" and "Accessibility" selection, kept in the URL by the route. */
+  accessFilter: AccessFilter;
+  onAccessChange: (next: AccessFilter) => void;
+  onKindChange: (k: LibraryKind) => void;
   children: React.ReactNode;
 }) {
-  const pathname =
-    useLocation(
-      {
-        select:
-          (
-            l,
-          ) =>
-            l.pathname,
-      },
-    );
-  const onIndex =
-    pathname ===
-      '/games' ||
-    pathname ===
-      '/games/';
-  const activeId =
-    onIndex
-      ? null
-      : (pathname.split(
-          '/',
-        )[2] ??
-        null);
+  const pathname = useLocation({
+    select: (l) => l.pathname,
+  });
+  const onIndex = pathname === '/games' || pathname === '/games/';
+  const activeId = onIndex ? null : (pathname.split('/')[2] ?? null);
 
   return (
     <div className="stm-lib">
       <LibraryList
-        kind={
-          kind
-        }
-        onKindChange={
-          onKindChange
-        }
-        recentIds={
-          recentIds
-        }
-        collections={
-          collections
-        }
-        signedIn={
-          signedIn
-        }
-        activeId={
-          activeId
-        }
-        onIndex={
-          onIndex
-        }
+        kind={kind}
+        onKindChange={onKindChange}
+        following={following}
+        followedIds={followedIds}
+        onFollowingChange={onFollowingChange}
+        accessFilter={accessFilter}
+        onAccessChange={onAccessChange}
+        recentIds={recentIds}
+        collections={collections}
+        signedIn={signedIn}
+        activeId={activeId}
+        onIndex={onIndex}
       />
       <main className="stm-main">
         <PlaytimeNotice />
         {/* Keyed by page so a different game remounts the pane and fades up (`.stm-enter`);
             the list beside it stays mounted, so it keeps its scroll and selection. */}
-        <div
-          key={
-            pathname
-          }
-          className="stm-enter"
-        >
-          {
-            children
-          }
+        <div key={pathname} className="stm-enter">
+          {children}
         </div>
       </main>
     </div>

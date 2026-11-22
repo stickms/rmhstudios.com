@@ -35,86 +35,55 @@ export type Answer =
       midi: number;
     };
 
-export type State =
-  SessionState<
-    Card,
-    Answer
-  >;
-export type Event =
-  SessionEvent<Answer>;
-export type Effect =
-  SessionEffect;
+export type State = SessionState<Card, Answer>;
+export type Event = SessionEvent<Answer>;
+export type Effect = SessionEffect;
 
-export function initial(
-  cards: Card[],
-): State {
-  return sessionInitial(
-    cards,
-  );
+export function initial(cards: Card[]): State {
+  return sessionInitial(cards);
 }
 
 /** Whether `answer` is right for `card`. */
-export function isRight(
-  card: Card,
-  answer: Answer,
-): boolean {
-  return answer.kind ===
-    'letter'
-    ? answer.letter ===
-        noteLetter(
-          card.midi,
-        )
-    : answer.midi ===
-        card.midi;
+export function isRight(card: Card, answer: Answer): boolean {
+  return answer.kind === 'letter' ? answer.letter === noteLetter(card.midi) : answer.midi === card.midi;
 }
 
-export const step =
-  sessionStep<
-    Card,
-    Answer
-  >(
-    isRight,
-  );
+export const step = sessionStep<Card, Answer>(isRight);
 
-export function transition(
-  s: State,
-  e: Event,
-): State {
-  return step(
-    s,
-    e,
-  )
-    .state;
+/** The step function for a session in Learning mode (retry until right) or Test mode. */
+export function stepFor(learning: boolean) {
+  return learning
+    ? sessionStep<Card, Answer>(isRight, {
+        learning: true,
+      })
+    : step;
 }
 
-export function effects(
-  prev: State,
-  _next: State,
-  e: Event,
-): Effect[] {
-  return step(
-    prev,
-    e,
-  )
-    .effects;
+export function transition(s: State, e: Event): State {
+  return step(s, e).state;
 }
 
-export const flashcardsMachine =
-  {
-    initial,
-    step,
-  };
+export function effects(prev: State, _next: State, e: Event): Effect[] {
+  return step(prev, e).effects;
+}
+
+export const flashcardsMachine = {
+  initial,
+  step,
+};
 
 /** The machine for one session's cards, in the shape `createRunner` takes. */
 export function createFlashcardsMachine(
   cards: Card[],
-): Machine<
-  State,
-  Event,
-  Effect
-> {
+  /**
+   * Learning mode (retry until right) or Test mode, or a getter read at every event, so a learner
+   * who switches mode mid-session is obeyed from the next answer.
+   */
+  learning: boolean | (() => boolean) = false,
+): Machine<State, Event, Effect> {
+  const learn = stepFor(true);
   return createSessionMachine(
     cards,
-    step,
+    typeof learning === 'function' ? (s, e) => (learning() ? learn : step)(s, e) : stepFor(learning),
   );
 }

@@ -9,13 +9,15 @@
  *
  * Each delivery is signed so receivers can verify authenticity:
  *   X-RMH-Signature: t=<unix-seconds>,v1=<hex hmac-sha256 of `t.body`>
- * with the endpoint's `secret`. See `signWebhookPayload`.
+ * with the endpoint's `secret`. While a rotated-out secret is still inside its
+ * overlap window the header carries a second `v1=` signed with it. See
+ * `signatureHeader`.
  */
 
 import { prisma } from '@/lib/prisma.server';
 import { mapWithConcurrency } from '@/lib/async-pool';
 import { matchesEvent } from '@/lib/webhooks/events';
-import { signWebhookPayload } from '@/lib/webhooks/signature';
+import { activeSigningSecrets, signatureHeader } from '@/lib/webhooks/signature';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 
 // Pure crypto + URL validation live in ./signature; re-exported for route use.
@@ -44,7 +46,12 @@ interface EndpointRow {
   url: string;
   secret: string;
   failureCount: number;
+  previousSecret?: string | null;
+  previousSecretExpiresAt?: Date | null;
 }
+
+/** The endpoint columns a delivery needs, selected wherever an endpoint is loaded for sending. */
+const ENDPOINT_SEND_SELECT = { id: true, url: true, secret: true, failureCount: true, previousSecret: true, previousSecretExpiresAt: true } as const;
 
 /** Attempt a single delivery and record the outcome. */
 async function attemptDelivery(deliveryId: string, event: string, payload: unknown, endpoint: EndpointRow, attemptNo: number): Promise<void> {
@@ -64,10 +71,11 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
 
   const body = JSON.stringify(payload);
   const timestamp = Math.floor(Date.now() / 1000);
-  const signature = `t=${timestamp},v1=${signWebhookPayload(endpoint.secret, timestamp, body)}`;
+  const signature = signatureHeader(activeSigningSecrets(endpoint, new Date()), timestamp, body);
 
   let status = 0;
   let errMsg: string | null = null;
+  const startedAt = Date.now();
   try {
     // Deliver through the SSRF guard, NOT native fetch. Endpoint URLs are
     // user-supplied and only lexically validated at registration
@@ -99,6 +107,7 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
           : 'delivery failed';
   }
 
+  const durationMs = Date.now() - startedAt;
   const ok = status >= 200 && status < 300;
   if (ok) {
     // Result writes are conditional on still owning attempt N, so they can
@@ -106,7 +115,7 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
     await prisma.$transaction([
       prisma.webhookDelivery.updateMany({
         where: { id: deliveryId, status: 'PENDING', attempts: attemptNo },
-        data: { status: 'DELIVERED', responseStatus: status, deliveredAt: new Date(), error: null },
+        data: { status: 'DELIVERED', responseStatus: status, deliveredAt: new Date(), error: null, durationMs },
       }),
       prisma.webhookEndpoint.update({ where: { id: endpoint.id }, data: { failureCount: 0, lastDeliveryAt: new Date() } }),
     ]).catch((e) => console.error('[webhooks] mark delivered failed:', e));
@@ -121,6 +130,7 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
       data: {
         status: exhausted ? 'FAILED' : 'PENDING',
         responseStatus: status || null,
+        durationMs,
         error: errMsg ?? `HTTP ${status}`,
         nextAttemptAt,
       },
@@ -141,6 +151,47 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
 }
 
 /**
+ * Record a PENDING delivery. It is not due yet: the immediate first attempt owns
+ * the send. If that never claims (process exit), the drain picks it up after the
+ * lease. `redeliveryOfId` marks a manual redelivery of an earlier row.
+ */
+function createDelivery(endpointId: string, event: string, payloadBase: object, redeliveryOfId?: string) {
+  return prisma.webhookDelivery.create({
+    data: {
+      endpointId,
+      event,
+      payload: payloadBase,
+      status: 'PENDING',
+      attempts: 0,
+      nextAttemptAt: new Date(Date.now() + ATTEMPT_LEASE_MS),
+      ...(redeliveryOfId ? { redeliveryOfId } : {}),
+    },
+    select: { id: true },
+  });
+}
+
+/**
+ * Send one event to one endpoint on the owner's request (the console's test
+ * ping and redelivery). Unlike `emitWebhookEvent` it ignores the endpoint's
+ * event list and enabled flag, and it awaits the first attempt so the caller can
+ * show its outcome. Retries still go through the normal drain. Returns the new
+ * delivery's id, or null when the endpoint does not exist. The caller has
+ * already checked ownership.
+ */
+export async function deliverToEndpoint(
+  endpointId: string,
+  event: string,
+  payload: object,
+  opts: { redeliveryOfId?: string } = {},
+): Promise<{ id: string } | null> {
+  const endpoint = await prisma.webhookEndpoint.findUnique({ where: { id: endpointId }, select: ENDPOINT_SEND_SELECT });
+  if (!endpoint) return null;
+  const delivery = await createDelivery(endpoint.id, event, payload, opts.redeliveryOfId);
+  await attemptDelivery(delivery.id, event, { id: delivery.id, ...payload }, endpoint, 1);
+  return delivery;
+}
+
+/**
  * Emit an event to all of a user's matching, enabled endpoints. Best-effort:
  * never throws into the caller (a failed webhook must not break the action that
  * produced the event).
@@ -149,7 +200,7 @@ export async function emitWebhookEvent(userId: string, event: string, data: unkn
   try {
     const endpoints = await prisma.webhookEndpoint.findMany({
       where: { userId, enabled: true },
-      select: { id: true, url: true, secret: true, events: true, failureCount: true },
+      select: { ...ENDPOINT_SEND_SELECT, events: true },
     });
     const targets = endpoints.filter((e) => matchesEvent(e.events, event));
     if (targets.length === 0) return;
@@ -157,19 +208,7 @@ export async function emitWebhookEvent(userId: string, event: string, data: unkn
     const payloadBase = { event, created: new Date().toISOString(), data };
     await Promise.all(
       targets.map(async (endpoint) => {
-        const delivery = await prisma.webhookDelivery.create({
-          // Not due yet: the immediate attempt below owns the first send. If it
-          // never claims (process exit), the drain picks it up after the lease.
-          data: {
-            endpointId: endpoint.id,
-            event,
-            payload: payloadBase as object,
-            status: 'PENDING',
-            attempts: 0,
-            nextAttemptAt: new Date(Date.now() + ATTEMPT_LEASE_MS),
-          },
-          select: { id: true },
-        });
+        const delivery = await createDelivery(endpoint.id, event, payloadBase);
         // Fire-and-forget the first attempt; retries are handled by the drain.
         void attemptDelivery(delivery.id, event, { id: delivery.id, ...payloadBase }, endpoint, 1);
       })
@@ -191,7 +230,7 @@ export async function deliverDuePending(max = 50): Promise<number> {
     where: { status: 'PENDING', nextAttemptAt: { lte: new Date() } },
     orderBy: { nextAttemptAt: 'asc' },
     take: max,
-    include: { endpoint: { select: { id: true, url: true, secret: true, failureCount: true, enabled: true } } },
+    include: { endpoint: { select: { ...ENDPOINT_SEND_SELECT, enabled: true } } },
   });
 
   // Deliveries whose endpoint was disabled after queueing are all failed in one
@@ -219,7 +258,7 @@ export async function deliverDuePending(max = 50): Promise<number> {
 
   await mapWithConcurrency([...byEndpoint.values()], ENDPOINT_DELIVERY_CONCURRENCY, async (group) => {
     for (const d of group) {
-      await attemptDelivery(d.id, d.event, d.payload, { id: d.endpoint.id, url: d.endpoint.url, secret: d.endpoint.secret, failureCount: d.endpoint.failureCount }, d.attempts + 1);
+      await attemptDelivery(d.id, d.event, d.payload, d.endpoint, d.attempts + 1);
     }
   });
 

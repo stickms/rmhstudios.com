@@ -3,40 +3,28 @@ import { endpoint } from '@/lib/contract/endpoint';
 
 export interface MessagesSidebarUser {
   id: string;
-  name:
-    | string
-    | null;
-  image:
-    | string
-    | null;
-  username:
-    | string
-    | null;
+  name: string | null;
+  image: string | null;
+  username: string | null;
 }
 
-export const messagesSidebarApi =
-  endpoint<{
-    res: {
-      recent: MessagesSidebarUser[];
-      suggested: MessagesSidebarUser[];
-    };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/messages/sidebar',
-    },
-  );
+export const messagesSidebarApi = endpoint<{
+  res: {
+    recent: MessagesSidebarUser[];
+    suggested: MessagesSidebarUser[];
+    /** Message requests waiting for the viewer: the "Requests (n)" row (s04-16). */
+    requestCount: number;
+  };
+}>()({
+  method: 'GET',
+  path: '/api/messages/sidebar',
+});
 
-export const unreadCountApi =
-  endpoint<{
-    res: {
-      count: number;
-    };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/messages/unread-count',
-    },
-  );
+export const unreadCountApi = endpoint<{
+  res: {
+    count: number;
+  };
+}>()({
+  method: 'GET',
+  path: '/api/messages/unread-count',
+});

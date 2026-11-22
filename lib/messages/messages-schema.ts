@@ -3,37 +3,21 @@
  * ROUTE only; the client reaches the type through `messages.contract.ts`.
  */
 import { z } from 'zod';
+import { feedImageUrlSchema, gifUrlSchema } from '@/lib/rmhark-schema';
 import {
-  feedImageUrlSchema,
-  gifUrlSchema,
-} from '@/lib/rmhark-schema';
+  ALTS_MISMATCH_ISSUE,
+  altsMatchImages,
+  messageImageAltsField,
+  messageGifAltField,
+} from '@/lib/messages/image-alts-schema';
 
-export const sendMessageSchema =
-  z.object(
-    {
-      recipientId:
-        z
-          .string()
-          .min(
-            1,
-          ),
-      content:
-        z
-          .string()
-          .max(
-            2000,
-          )
-          .optional(),
-      gifUrl:
-        gifUrlSchema.optional(),
-      imageUrls:
-        z
-          .array(
-            feedImageUrlSchema,
-          )
-          .max(
-            4,
-          )
-          .optional(),
-    },
-  );
+export const sendMessageSchema = z
+  .object({
+    recipientId: z.string().min(1),
+    content: z.string().max(2000).optional(),
+    gifUrl: gifUrlSchema.optional(),
+    gifAlt: messageGifAltField,
+    imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
+    imageAlts: messageImageAltsField,
+  })
+  .refine(altsMatchImages, ALTS_MISMATCH_ISSUE);

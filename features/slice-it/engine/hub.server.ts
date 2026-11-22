@@ -13,6 +13,8 @@
 
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { prisma } from '@/lib/prisma.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { userDisplaySelect, resolveUser, type ResolvedUser } from '@/lib/user-display';
 
 export interface HubChart {
@@ -115,11 +117,13 @@ async function fetchTopCharts(take: number): Promise<HubChart[]> {
 }
 
 async function fetchRecentRecords(take: number): Promise<HubRecord[]> {
+  // A member who left the leaderboards (switch off, or banned now) has no public record here either.
+  const hidden = await leaderboardHiddenUserIds();
   const rows = await prisma.songLeaderboard.findMany({
     // Public songs only. A personal best on a private upload is not a public
     // record, and surfacing one here would leak both the song and the fact
     // somebody played it.
-    where: { song: { isPublic: true } },
+    where: { song: { isPublic: true }, ...userNotHiddenWhere(hidden) },
     orderBy: { createdAt: 'desc' },
     take,
     select: {

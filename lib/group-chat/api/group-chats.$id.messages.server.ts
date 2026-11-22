@@ -1,4 +1,3 @@
-import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { pollGroupMessagesApi, sendGroupMessageApi } from '@/lib/group-chat/group-chat.contract';
@@ -6,25 +5,32 @@ import { prisma } from '@/lib/prisma.server';
 import { findGroupMembership } from '@/lib/chat/chat.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
-import { getActiveBan } from '@/lib/admin-audit.server';
-import { publishGroupMessage } from '@/lib/group-events';
 import { gifUrlSchema, feedImageUrlSchema } from '@/lib/rmhark-schema';
-import { ownsFeedImageUrl } from '@/lib/storage/keys';
+import {
+  ALTS_MISMATCH_ISSUE,
+  altsMatchImages,
+  messageImageAltsField,
+  messageGifAltField,
+} from '@/lib/messages/image-alts-schema';
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
+import { guardGroupAccount, guardGroupMembership, sendGroupMessage } from '@/lib/messages/send.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
-import { messageStamp } from '@/lib/chat-plus/post.server';
 
-const schema = z.object({
-  content: z.string().max(2000).optional(),
-  gifUrl: gifUrlSchema.optional(),
-  imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
-  poll: z
-    .object({
-      question: z.string().trim().min(1).max(300),
-      options: z.array(z.string().trim().min(1).max(100)).min(2).max(6),
-    })
-    .optional(),
-});
+const schema = z
+  .object({
+    content: z.string().max(2000).optional(),
+    gifUrl: gifUrlSchema.optional(),
+    gifAlt: messageGifAltField,
+    imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
+    imageAlts: messageImageAltsField,
+    poll: z
+      .object({
+        question: z.string().trim().min(1).max(300),
+        options: z.array(z.string().trim().min(1).max(100)).min(2).max(6),
+      })
+      .optional(),
+  })
+  .refine(altsMatchImages, ALTS_MISMATCH_ISSUE);
 
 /**
  * GET  /api/group-chats/$id/messages?after= — poll for new messages.
@@ -62,69 +68,20 @@ export const route = apiRoute('/api/group-chats/$id/messages', {
   POST: implement(sendGroupMessageApi, {}, async ({ request, params, session }) => {
     const userId = session.user.id;
 
-    const ban = await getActiveBan(userId);
-    if (ban) return Response.json({ error: 'Your account is suspended' }, { status: 403 });
-    const restricted = await restrictionResponse(userId, 'message');
-    if (restricted) return restricted;
+    const denied = await guardGroupAccount(userId);
+    if (denied) return denied.response;
 
     const ip = getClientIp(request);
     const { allowed } = rateLimit(ip, { limit: 40, windowMs: 60_000, prefix: 'group-msg' });
     if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-    const membership = await findGroupMembership(params.id, userId, { id: true, chat: { select: { disappearAfterSec: true } } });
-    if (!membership) return Response.json({ error: 'Not found' }, { status: 404 });
+    const gate = await guardGroupMembership(userId, params.id);
+    if (!gate.ok) return gate.response;
 
     const parsed = schema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) return Response.json({ error: 'Invalid message' }, { status: 400 });
-    const { content, gifUrl, imageUrls, poll } = parsed.data;
 
-    const text = content?.trim() ?? '';
-    const hasMedia = !!gifUrl || (imageUrls?.length ?? 0) > 0;
-    if (!text && !hasMedia && !poll) {
-      return Response.json({ error: 'Empty message' }, { status: 400 });
-    }
-    // Images must belong to the sender (filename is prefixed with their id).
-    if (imageUrls?.some((u) => !ownsFeedImageUrl(u, userId))) {
-      return Response.json({ error: 'Invalid image reference' }, { status: 400 });
-    }
-
-    const [message] = await prisma.$transaction([
-      prisma.chatMessage.create({
-        data: {
-          chatId: params.id,
-          senderId: userId,
-          content: text,
-          gifUrl: gifUrl ?? null,
-          imageUrls: imageUrls ?? [],
-          pollQuestion: poll?.question ?? null,
-          pollOptions: poll?.options ?? [],
-          // M3 + M6: expiry from the group's timer, and the shared-media flags.
-          ...messageStamp(membership.chat.disappearAfterSec, {
-            content: text,
-            gifUrl,
-            imageUrls,
-          }),
-        },
-        select: groupMessageSelect,
-      }),
-      prisma.chat.update({
-        where: { id: params.id },
-        data: { lastMessageAt: new Date() },
-      }),
-      prisma.chatMember.update({
-        where: { chatId_userId: { chatId: params.id, userId } },
-        data: { lastReadAt: new Date() },
-      }),
-    ]);
-
-    const [payload] = await serializeGroupMessages([message], userId);
-    // Push to connected members over SSE (best-effort). myVote is per-viewer,
-    // so it stays null in the fan-out; recipients haven't voted yet anyway.
-    publishGroupMessage(params.id, {
-      ...payload,
-      poll: payload.poll ? { ...payload.poll, myVote: null } : null,
-    });
-
-    return Response.json({ message: payload }, { status: 201 });
+    const sent = await sendGroupMessage({ userId, groupId: params.id, input: parsed.data, membership: gate.value });
+    return sent.ok ? Response.json({ message: sent.value.message }, { status: 201 }) : sent.response;
   }),
 });

@@ -55,6 +55,7 @@ model User {
   signalForgeProfile   SignalForgePlayer?
   templeOfJoyProfile   TempleOfJoySave?
   gameSaves            GameSave[]
+  gameSaveSnapshots    GameSaveSnapshot[]
   neonDriftwayProfile  NeonDriftwayPlayer?
   nightrailProfile     NightrailPlayer?
   synapseStormProfile  SynapseStormPlayer?
@@ -125,9 +126,10 @@ model User {
   notificationsSent Notification[] @relation("UserNotificationActor")
 
   // Engagement: bookmarks, achievements, daily streak
-  achievements UserAchievement[]
-  streaks      Streak[]
-  postUnlocks  PostUnlock[]
+  achievements      UserAchievement[]
+  achievementTracks AchievementTrack[]
+  streaks           Streak[]
+  postUnlocks       PostUnlock[]
 
   // Communities created + memberships
   communitiesCreated      Community[]             @relation("CommunityCreator")
@@ -166,8 +168,10 @@ model User {
   giftMembershipsSent     GiftMembership[] @relation("GiftGifter")
 
   // RMHStudy flashcards
-  flashcardDecks   FlashcardDeck[]
-  flashcardReviews FlashcardReview[]
+  flashcardDecks      FlashcardDeck[]
+  flashcardReviews    FlashcardReview[]
+  flashcardReviewLogs FlashcardReviewLog[]
+  flashcardTestResults FlashcardTestResult[]
 
   // Saved media playlists (music/video)
   playlists              Playlist[]
@@ -326,6 +330,9 @@ model User {
   // Layout preferences (sidebar pin/hide + home widget stack), synced (§15)
   layoutPreference LayoutPreference?
 
+  // Keyboard shortcut mode and remaps (WCAG 2.1.4)
+  keyboardPreference KeyboardPreference?
+
   // ─── Platform expansion (2026-07-19 design) ──────────────────────────────
   creatorTiers         CreatorTier[]
   groupCallMessages    GroupCallMessage[]
@@ -364,8 +371,11 @@ model User {
   recoveryRequests RecoveryRequest[]
   messageHides     DirectMessageHide[]
   typingKeyStats   RmhTypeKeyStat[]
+  typingLessons    RmhTypeLessonProgress[]
+  typingDaily      RmhTypeDailyEntry[]
   profileLinks     ProfileLink[]
   handleChanges    HandleChange[]
+  securityEvents   SecurityEvent[]
   speedrunEntries  SpeedrunEntry[]
   ladderAnswers    LadderAnswerBank?
   emojiPackSubs    EmojiPackSubscription[]
@@ -522,6 +532,7 @@ model User {
   readingPrefs               ReadingPrefs?
   glossaryTermsCreated       GlossaryTerm[]               @relation("GlossaryTermAuthor")
   newsStoriesCreated         NewsStory[]                  @relation("NewsStoryAuthor")
+  readingSubscriptions       ReadingSubscription[]
   communityContributorScores CommunityContributorScore[]
   // P09 calendar: K1 polls, K2 office hours, K3 feed, K4 occurrence RSVPs, F5 study buddy
   availabilityPolls          AvailabilityPoll[]
@@ -579,6 +590,111 @@ model User {
   cardTradesReceived        CardTrade[]          @relation("CardTradeTo")
   gameThreads               GameThread[]
   gameThreadPosts           GameThreadPost[]
+
+  // Sprint 03 back-relations (one block per feature, docs/autonomous/sprint-03/plan.md)
+  // s03-01 music-history
+  musicPracticeEntries      MusicPracticeEntry[]
+
+  // s03-04 mod-notes
+  moderatorNotesAbout   ModeratorNote[] @relation("ModeratorNoteSubject")
+  moderatorNotesWritten ModeratorNote[] @relation("ModeratorNoteAuthor")
+
+  // s03-09 watch-parties
+  rmhTubeRoomRsvps RmhTubeRoomRsvp[] @relation("RmhTubeRoomRsvps")
+
+  // s03-10 game-updates
+  gameFollows GameFollow[]
+
+  // s03-12 send-later
+  scheduledChatMessages ScheduledChatMessage[] @relation("ScheduledChatMessageSender")
+
+  // s03-17 ladder-offers
+  ladderOffers LadderOffer[]
+
+  // Sprint 04 back-relations (one block per feature, docs/autonomous/sprint-04/plan.md)
+  // s04-06 coin-adjustments
+  coinAdjustments      CoinAdjustment[] @relation("CoinAdjustmentUser")
+  coinAdjustmentsMade  CoinAdjustment[] @relation("CoinAdjustmentAdmin")
+
+  // s04-09 reading-sync
+  readerMarks LibraryReaderMark[]
+
+  // s04-13 rmhbox-presets
+  rmhboxPresets RmhboxSettingsPreset[]
+
+  // s04-16 message-requests
+  messageRequestsSent     MessageRequest[] @relation("MessageRequestSender")
+  messageRequestsReceived MessageRequest[] @relation("MessageRequestRecipient")
+
+  // s04-17 community-handover
+  handoversOffered  CommunityHandover[] @relation("CommunityHandoverFrom")
+  handoversReceived CommunityHandover[] @relation("CommunityHandoverTo")
+
+  // Sprint 05 back-relations (one block per feature, docs/autonomous/sprint-05/plan.md)
+  // s05-04 personal-bests
+  gamePersonalBests GamePersonalBest[]
+
+  // s05-05 event-cohosts
+  eventCohosts EventCohost[] @relation("EventCohosts")
+
+  // s05-06 studio-projects
+  studioProjects StudioProject[]
+
+  // s05-07 repost-mutes
+  repostMutesMade     RepostMute[] @relation("RepostMuteMuter")
+  repostMutesReceived RepostMute[] @relation("RepostMuteTarget")
+
+  // s05-13 saved-replies
+  savedReplies SavedReply[]
+
+  // s05-15 jam-teams
+  jamTeamMemberships GameJamTeamMember[]
+
+  // s05-20 flashcard-reminders
+  flashcardReminder FlashcardReminder?
+
+  // Sprint 06 back-relations (one block per feature, docs/autonomous/sprint-06/plan.md)
+  // s06-01 community-bans
+  communityBansAbout CommunityBan[] @relation("CommunityBanSubject")
+
+  // s06-07 jam-feedback
+  jamFeedbackWritten GameJamFeedback[] @relation("JamFeedbackAuthor")
+
+  // s06-09 group-invites
+  chatInvitesCreated ChatInvite[] @relation("ChatInviteCreator")
+
+  // s06-14 build-comments
+  buildCommentsHidden BuildComment[] @relation("BuildCommentHider")
+
+  // s06-18 away-message
+  awayMessage AwayMessage? @relation("AwayMessageOwner")
+
+  // Sprint 07 back-relations (one block per feature, docs/autonomous/sprint-07/plan.md)
+  // s07-05 group-mentions
+  chatMentions ChatMention[] @relation("ChatMentionTarget")
+
+  // s07-07 jam-themes
+  jamThemeVotes GameJamThemeVote[]
+
+  // s07-09 deck-folders
+  deckFolders DeckFolder[]
+
+  // s07-18 reading-time
+  readingTimeDays ReadingTimeDay[]
+
+  // Sprint 08 back-relations (one block per feature, docs/autonomous/sprint-08/plan.md)
+  // s08-01 rmhtube-stats
+  rmhTubeWatchDays RmhTubeWatchDay[] @relation("RmhTubeWatchDays")
+
+  // s08-09 recurring-threads
+  recurringThreads CommunityRecurringThread[] @relation("CommunityRecurringThreadAuthor")
+
+  // s08-11 type-ghost
+  rmhTypeGhosts RmhTypeGhost[] @relation("RmhTypeGhosts")
+
+  // s08-18 admin-spam-sweep
+  sweepsAsSubject ModerationSweep[] @relation("SweepSubject")
+  sweepsAsAdmin   ModerationSweep[] @relation("SweepAdmin")
 
   @@index([isBot])
   @@index([followerCount])
@@ -866,6 +982,28 @@ model HandleChange {
   @@map("handle_change")
 }
 
+/// Append-only account security log: sign-ins, sessions ended, sign-in methods and passkeys, handle/email changes,
+/// deletion scheduled/cancelled. Written by lib/auth/security-log.server (never throws), pruned after 365 days.
+/// Holds no raw IP, no full user agent and no secret: `device` is the coarse fingerprint ("Chrome on macOS"),
+/// `ipHash` the salted hash the page only compares ("same network as this device").
+model SecurityEvent {
+  id        BigInt   @id @default(autoincrement())
+  userId    String
+  kind      String   @db.VarChar(32)
+  device    String?  @db.VarChar(80)
+  ipHash    String?  @db.VarChar(64)
+  sessionId String?  @db.VarChar(64)
+  /// Provider id, old/new handle. Never a secret.
+  detail    Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt])
+  @@map("security_event")
+}
+
 // ─── Responsible play (W8, 2026-09-19) ────────────────────────────────────
 // The guard rails every coin-risking surface on the site shipped without.
 //
@@ -908,6 +1046,18 @@ model UserPlayLimits {
   /// a null `pendingCap` is a meaningful request, not an empty slot.
   pendingCap   Int?
   pendingCapAt DateTime?
+
+  /// Monthly spending budget (s04-07): most coins the member may spend per UTC
+  /// calendar month on PURCHASE, TIP, GIFT, MEMBERSHIP and MARKET debits. Null =
+  /// no budget. Enforced in the ledger (`lib/economy/spend-budget-core.ts`),
+  /// under a per-member advisory lock. Raising or removing it waits 24 hours in
+  /// `pendingSpendCap`/`pendingSpendCapAt`, with the same rule as `pendingCap`
+  /// (`pendingSpendCapAt != null` is the only test for "a change is in flight").
+  monthlySpendCap   Int?
+  pendingSpendCap   Int?
+  pendingSpendCapAt DateTime?
+  /// The `YYYY-MM` the 80% notice was last sent for, so it goes out once a month.
+  spendNoticeMonth  String?   @db.VarChar(7)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

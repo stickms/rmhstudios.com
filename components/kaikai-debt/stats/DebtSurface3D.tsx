@@ -45,6 +45,7 @@ import { pointerOnStage, useCanvasStage, type StageFrame } from '@/hooks/useCanv
 import { DEBT_PAINT } from './debt-paint';
 import { categoryLabel } from './CompositionCharts';
 import { clamp } from '@/lib/core/math';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Camera distance in world units. Far enough that the far row is not a smear. */
 const CAMERA_DISTANCE = 3.6;
@@ -73,7 +74,7 @@ interface DebtSurface3DProps {
   selected: ReadonlySet<string>;
 }
 
-export function DebtSurface3D({ grid, nowMs, selected }: DebtSurface3DProps) {
+export function DebtSurface3D({ grid, nowMs, selected }: DebtSurface3DProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-kaikai-debt');
 
   const [yaw, setYaw] = useState(-32);
@@ -459,7 +460,7 @@ export function DebtSurface3D({ grid, nowMs, selected }: DebtSurface3DProps) {
             />
             <ReadoutRow
               label={t('stats.readout.lines', { defaultValue: 'Lines' })}
-              value={hoveredCell.count.toLocaleString('en-US')}
+              value={fmt.number(hoveredCell.count)}
             />
           </Readout>
         )}

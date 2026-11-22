@@ -3,6 +3,8 @@
  *   1. A coarse per-IP gate (before auth) so invalid-key floods can't hammer
  *      the DB.
  *   2. API-key authentication + real-time entitlement / ban / expiry checks.
+ *   2b. The key's source-address allowlist (refused with 403 `ip_not_allowed`
+ *      before any quota is touched).
  *   3. Per-key, tier-scaled rate limiting with `X-RateLimit-*` headers on every
  *      response (not just 429s).
  *   4. Per-endpoint scope enforcement.
@@ -15,7 +17,7 @@
  */
 
 import { randomBytes, createHash } from 'crypto';
-import { authenticateApiKey, CORS_HEADERS } from '@/lib/api/developer-auth.server';
+import { authenticateApiKey, touchApiKeyLastUsed, CORS_HEADERS } from '@/lib/api/developer-auth.server';
 import { errorBody, defaultStatus } from '@/lib/api/errors';
 import { hasScope } from '@/lib/api/scopes';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -24,6 +26,9 @@ import { prisma } from '@/lib/prisma.server';
 import { recordUsage } from '@/lib/api/usage.server';
 import type { Tier } from '@/lib/entitlements';
 import { sandboxResponse } from '@/lib/api/test-mode';
+import { ipAllowed } from '@/lib/api/ip-allowlist';
+import { recordKeyRefusal } from '@/lib/api/key-refusals.server';
+import { effectiveRateLimit } from '@/lib/admin/api-keys';
 
 interface LimitResult {
   allowed: boolean;
@@ -37,10 +42,15 @@ interface LimitResult {
  * Cross-instance rate limit when Redis is configured, else the per-instance
  * in-process limiter. Both return { allowed, retryAfter, limit, remaining, reset }.
  */
-async function limit(key: string, max: number, windowMs: number): Promise<LimitResult> {
+async function limit(
+  key: string,
+  max: number,
+  windowMs: number,
+  applyMultiplier = true,
+): Promise<LimitResult> {
   const viaRedis = await redisRateLimit(key, max, windowMs);
   if (viaRedis) return viaRedis;
-  return rateLimit(key, { limit: max, windowMs });
+  return rateLimit(key, { limit: max, windowMs, applyMultiplier });
 }
 
 /** A short, sortable-ish opaque request id for tracing/support. */
@@ -94,9 +104,6 @@ export interface ApiHandlerOptions {
    */
   cost?: number;
 }
-
-// Per-key per-minute request budget. Pro+ gets a higher ceiling than HARD-R.
-const LIMITS: Record<string, number> = { starter: 120, pro: 600, enterprise: 600 };
 
 // Per-key DAILY quota (request units). Programmatic clients get a firm ceiling —
 // unlike interactive human traffic, an API key should not be able to run
@@ -176,9 +183,33 @@ export async function withDeveloperApi(
   const auth = await authenticateApiKey(request);
   if (!auth.ok) return pre.error(auth.code, auth.message, auth.status);
 
-  // 3. Per-key, tier-scaled per-minute rate limit.
-  const max = LIMITS[auth.tier] ?? 120;
-  const rl = await limit(`dev-api:apikey:${auth.keyId}`, max, 60_000);
+  // 2b. Source-address allowlist. Runs before every per-key limit, so a refused
+  // request spends no quota; it is counted per key per day (masked address only)
+  // so the owner can see a leaked key being tried. Test-mode keys follow it too.
+  if (auth.allowedCidrs.length > 0) {
+    const clientIp = getClientIp(request);
+    if (!ipAllowed(clientIp, auth.allowedCidrs)) {
+      recordKeyRefusal(auth.keyId, clientIp);
+      return pre.error('ip_not_allowed', 'This API key cannot be used from this address.', 403);
+    }
+  }
+
+  // The key is now known to be used from an address it allows: stamp last-used
+  // (a refused request must not mark the key used).
+  touchApiKeyLastUsed(auth.keyId);
+
+  // 3. Per-key per-minute rate limit: the tier's, or the key's own when lower.
+  // A limit the owner chose is exact; the deployment-wide multiplier only
+  // widens the tier default.
+  // An admin's cap is exact too, and the lowest of the tier, the owner's limit and the cap wins.
+  const adminCap = auth.adminRateLimitPerMinute ?? null;
+  const max = effectiveRateLimit(auth.tier, auth.rateLimitPerMinute, adminCap);
+  const rl = await limit(
+    `dev-api:apikey:${auth.keyId}`,
+    max,
+    60_000,
+    auth.rateLimitPerMinute === null && adminCap === null,
+  );
   const minuteHeaders = rateHeaders(rl);
   if (!rl.allowed) {
     return makeResponder(requestId, minuteHeaders).error(

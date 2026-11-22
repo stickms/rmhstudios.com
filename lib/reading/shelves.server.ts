@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { emitReadingFinished } from '@/lib/webhooks/activity-emit.server';
 import { getBook } from '@/lib/library/library.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import type { GoalProgress, ShelfEntryView, ShelfId, ShelfPrefs, ShelfPublicView } from './schema';
@@ -106,6 +107,15 @@ export async function setShelf(
       updatedAt: true,
     },
   });
+  // First time this book is shelved as read: `finishedAt` was empty before. Best-effort, after the write.
+  if (input.shelf === 'read' && !existing?.finishedAt && finishedAt) {
+    await emitReadingFinished(userId, {
+      docKind: 'library',
+      docKey: input.slug,
+      title: book.title,
+      finishedAt,
+    });
+  }
   return { ok: true, entry: toView(row) };
 }
 

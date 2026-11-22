@@ -16,17 +16,10 @@
  * the moment do not go through here: they must arrive every time.
  */
 import { prisma } from '@/lib/prisma.server';
-import {
-  sendEmail,
-  type SendEmailInput,
-} from '@/lib/email/send.server';
+import { sendEmail, type SendEmailInput } from '@/lib/email/send.server';
 import { securityAllowed } from '@/lib/email/frequency';
 
-export type DeliveryKind =
-  | 'campaign'
-  | 'service'
-  | 'security'
-  | 'digest';
+export type DeliveryKind = 'campaign' | 'service' | 'security' | 'digest';
 
 /**
  * Claim delivery rows for many users at once. Returns the users whose claim
@@ -37,73 +30,37 @@ export async function claimDeliveries(
   userIds: readonly string[],
   kind: DeliveryKind,
   dedupeKey: string,
-  campaignId:
-    | string
-    | null = null,
-  db: Pick<
-    typeof prisma,
-    '$queryRaw'
-  > = prisma,
-): Promise<
-  Set<string>
-> {
-  if (
-    userIds.length ===
-    0
-  )
-    return new Set();
-  const rows =
-    await db.$queryRaw<
-      {
-        userId: string;
-      }[]
-    >`
+  campaignId: string | null = null,
+  db: Pick<typeof prisma, '$queryRaw'> = prisma,
+): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set();
+  const rows = await db.$queryRaw<
+    {
+      userId: string;
+    }[]
+  >`
     INSERT INTO "email_delivery" ("userId", "kind", "dedupeKey", "campaignId")
     SELECT u, ${kind}, ${dedupeKey}, ${campaignId}
     FROM unnest(${[...userIds]}::text[]) AS u
     ON CONFLICT ("userId", "dedupeKey") DO NOTHING
     RETURNING "userId"`;
-  return new Set(
-    rows.map(
-      (
-        r,
-      ) =>
-        r.userId,
-    ),
-  );
+  return new Set(rows.map((r) => r.userId));
 }
 
 /** Undo claims whose send failed, so the message is not recorded as received. */
-export async function releaseDeliveries(
-  userIds: readonly string[],
-  dedupeKey: string,
-): Promise<void> {
-  if (
-    userIds.length ===
-    0
-  )
-    return;
-  await prisma.emailDelivery.deleteMany(
-    {
-      where:
-        {
-          userId:
-            {
-              in: [
-                ...userIds,
-              ],
-            },
-          dedupeKey,
-        },
+export async function releaseDeliveries(userIds: readonly string[], dedupeKey: string): Promise<void> {
+  if (userIds.length === 0) return;
+  await prisma.emailDelivery.deleteMany({
+    where: {
+      userId: {
+        in: [...userIds],
+      },
+      dedupeKey,
     },
-  );
+  });
 }
 
-export type SendOnceResult =
-  | 'sent'
-  | 'duplicate'
-  | 'throttled'
-  | 'failed';
+export type SendOnceResult = 'sent' | 'duplicate' | 'throttled' | 'failed';
 
 /**
  * Send one email to one user at most once per `dedupeKey`. Security mail is
@@ -116,86 +73,30 @@ export async function sendOnce(
     dedupeKey: string;
   },
 ): Promise<SendOnceResult> {
-  const {
-    userId,
-    kind,
-    dedupeKey,
-    ...message
-  } =
-    input;
+  const { userId, kind, dedupeKey, ...message } = input;
   try {
-    if (
-      kind ===
-      'security'
-    ) {
-      const recent =
-        await prisma.emailDelivery.findMany(
-          {
-            where:
-              {
-                userId,
-                kind: 'security',
-                createdAt:
-                  {
-                    gt: new Date(
-                      Date.now() -
-                        3_600_000,
-                    ),
-                  },
-              },
-            select:
-              {
-                createdAt: true,
-              },
-          },
-        );
-      if (
-        !securityAllowed(
-          recent.map(
-            (
-              r,
-            ) =>
-              r.createdAt,
-          ),
-        )
-      )
-        return 'throttled';
-    }
-    const claimed =
-      await claimDeliveries(
-        [
+    if (kind === 'security') {
+      const recent = await prisma.emailDelivery.findMany({
+        where: {
           userId,
-        ],
-        kind,
-        dedupeKey,
-      );
-    if (
-      !claimed.has(
-        userId,
-      )
-    )
-      return 'duplicate';
-    if (
-      await sendEmail(
-        message,
-      )
-    )
-      return 'sent';
-    await releaseDeliveries(
-      [
-        userId,
-      ],
-      dedupeKey,
-    );
+          kind: 'security',
+          createdAt: {
+            gt: new Date(Date.now() - 3_600_000),
+          },
+        },
+        select: {
+          createdAt: true,
+        },
+      });
+      if (!securityAllowed(recent.map((r) => r.createdAt))) return 'throttled';
+    }
+    const claimed = await claimDeliveries([userId], kind, dedupeKey);
+    if (!claimed.has(userId)) return 'duplicate';
+    if (await sendEmail(message)) return 'sent';
+    await releaseDeliveries([userId], dedupeKey);
     return 'failed';
   } catch (error) {
-    console.error(
-      '[email] sendOnce failed:',
-      error instanceof
-        Error
-        ? error.message
-        : error,
-    );
+    console.error('[email] sendOnce failed:', error instanceof Error ? error.message : error);
     return 'failed';
   }
 }

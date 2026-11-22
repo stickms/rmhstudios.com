@@ -93,7 +93,10 @@ model MedTrackerCycle {
     const m = parseModels(schema()).find((x) => x.model === 'MedCycleCount');
     const line = m?.body.split('\n').find((l) => l.includes('@@unique'));
     expect(line).toBeDefined();
-    const fields = /\[([^\]]+)\]/.exec(line ?? '')?.[1]?.split(',').map((s) => s.trim());
+    const fields = /\[([^\]]+)\]/
+      .exec(line ?? '')?.[1]
+      ?.split(',')
+      .map((s) => s.trim());
     expect(fields).toEqual(['schoolId', 'program', 'cycleYear', 'date', 'eventType', 'source']);
   });
 
@@ -107,14 +110,20 @@ model MedTrackerCycle {
   it('MedSchoolStats unique includes source and residence', () => {
     const m = parseModels(schema()).find((x) => x.model === 'MedSchoolStats');
     const line = m?.body.split('\n').find((l) => l.includes('@@unique'));
-    const fields = /\[([^\]]+)\]/.exec(line ?? '')?.[1]?.split(',').map((s) => s.trim());
+    const fields = /\[([^\]]+)\]/
+      .exec(line ?? '')?.[1]
+      ?.split(',')
+      .map((s) => s.trim());
     expect(fields).toEqual(['schoolId', 'program', 'cycleYear', 'source', 'residence']);
     expect(m?.body).toMatch(/\bprogram\s+MedProgram\?/);
   });
 
   it('MedEventType has WITHDRAWN and HOLD', () => {
     const body = /enum MedEventType \{([\s\S]*?)\}/.exec(schema())?.[1] ?? '';
-    const values = body.split('\n').map((l) => l.trim()).filter(Boolean);
+    const values = body
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     expect(values).toEqual(expect.arrayContaining(['WITHDRAWN', 'HOLD']));
   });
 
@@ -139,6 +148,8 @@ model MedTrackerCycle {
       'cursorPage',
       'cursorPostHash',
       'postsProcessed',
+      'parkedAt',
+      'failCount',
       'createdAt',
       'updatedAt',
     ]);

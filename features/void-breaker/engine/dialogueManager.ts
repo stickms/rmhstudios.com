@@ -268,9 +268,10 @@ export class DialogueManager {
         }
     }
 
-    update(dt: number): void {
+    /** `hold` keeps the current line up until it is dismissed (assist: no timed input). */
+    update(dt: number, hold = false): void {
         if (this.active) {
-            this.active.timer -= dt;
+            if (!hold) this.active.timer -= dt;
             this.active.typewriterProgress = Math.min(
                 1,
                 this.active.typewriterProgress + (dt * this.active.typewriterSpeed) / this.active.line.text.length,

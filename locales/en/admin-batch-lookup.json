@@ -1,0 +1,18 @@
+{
+  "ambiguous_one": "Matches {{count}} things",
+  "ambiguous_other": "Matches {{count}} things",
+  "copied": "Copied",
+  "copy-results": "Copy results",
+  "copy-title": "Copy these results:",
+  "error-description": "Try again in a moment.",
+  "error-title": "The lookup failed",
+  "field-label": "Ids, handles, e-mail addresses or links, one per line",
+  "hint": "One per line, up to {{max}}.",
+  "item-count_one": "{{count}} item",
+  "item-count_other": "{{count}} items",
+  "item-failed": "This item could not be looked up",
+  "result-count_one": "{{count}} item looked up",
+  "result-count_other": "{{count}} items looked up",
+  "submit": "Look up",
+  "too-many": "At most {{max}} items"
+}

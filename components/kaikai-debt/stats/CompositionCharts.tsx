@@ -50,6 +50,7 @@ import {
   seriesClass,
   useHoverIndex,
 } from './chart-kit';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * The category names, translated.
@@ -103,7 +104,7 @@ export function CategoryBars({
   onToggle,
   byCount,
   onByCountChange,
-}: CategoryBarsProps) {
+}: CategoryBarsProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-kaikai-debt');
   const [hover, setHover] = useHoverIndex();
 
@@ -199,7 +200,7 @@ export function CategoryBars({
                 textAnchor="start"
                 dominantBaseline="middle"
               >
-                {byCount ? row.value.toLocaleString('en-US') : formatCompactDebt(row.value)}
+                {byCount ? fmt.number(row.value) : formatCompactDebt(row.value)}
               </text>
             </g>
           );
@@ -229,7 +230,7 @@ export function CategoryBars({
           />
           <ReadoutRow
             label={t('stats.readout.lines', { defaultValue: 'Lines' })}
-            value={active.stat.count.toLocaleString('en-US')}
+            value={fmt.number(active.stat.count)}
           />
           <ReadoutRow
             label={t('stats.readout.share', { defaultValue: 'Share' })}
@@ -261,7 +262,7 @@ export function CategoryTreemap({
   nowMs: number;
   selected: ReadonlySet<string>;
   onToggle: (id: string) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-kaikai-debt');
   const [hover, setHover] = useHoverIndex();
 
@@ -370,7 +371,7 @@ export function CategoryTreemap({
           />
           <ReadoutRow
             label={t('stats.readout.lines', { defaultValue: 'Lines' })}
-            value={activeStat.count.toLocaleString('en-US')}
+            value={fmt.number(activeStat.count)}
           />
         </Readout>
       )}
@@ -392,7 +393,7 @@ export function DistributionChart({
   distribution: readonly DistributionBucket[];
   logY: boolean;
   onLogYChange: (next: boolean) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-kaikai-debt');
   const [hover, setHover] = useHoverIndex();
 
@@ -488,7 +489,7 @@ export function DistributionChart({
           <p className="mb-1 font-medium text-site-text">{distributionLabel(active.index)}</p>
           <ReadoutRow
             label={t('stats.readout.lines', { defaultValue: 'Lines' })}
-            value={active.count.toLocaleString('en-US')}
+            value={fmt.number(active.count)}
           />
           <ReadoutRow
             label={t('stats.readout.share', { defaultValue: 'Share' })}
@@ -526,7 +527,7 @@ export function SourceSplit({
   ledgerCents: number;
   memberCount: number;
   ledgerCount: number;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-kaikai-debt');
   const total = Math.max(1, memberCents + ledgerCents);
   const memberShare = memberCents / total;
@@ -549,7 +550,7 @@ export function SourceSplit({
             {t('stats.source.member', { defaultValue: 'Put there by people' })}
           </dt>
           <dd className="font-medium text-site-text tabular-nums">
-            {formatDebt(memberCents)} · {memberCount.toLocaleString('en-US')}
+            {formatDebt(memberCents)} · {fmt.number(memberCount)}
           </dd>
         </div>
         <div className="flex flex-col gap-0.5">
@@ -558,7 +559,7 @@ export function SourceSplit({
             {t('stats.source.ledger', { defaultValue: 'Recovered from his history' })}
           </dt>
           <dd className="font-medium text-site-text tabular-nums">
-            {formatDebt(ledgerCents)} · {ledgerCount.toLocaleString('en-US')}
+            {formatDebt(ledgerCents)} · {fmt.number(ledgerCount)}
           </dd>
         </div>
       </dl>

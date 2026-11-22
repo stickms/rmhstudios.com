@@ -24,12 +24,16 @@ import { safeHref } from '@/lib/url-safety';
 import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
 import { ProfileIdentityExtras, ProfileShareCardButton } from './plus/ProfileIdentityExtras';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { PresenceDot } from './PresenceDot';
+import { AwayStatusLine } from '@/components/messages/AwayLine';
 import { BadgeMark } from '@/components/shop/art/BadgeMark';
 import { PetMark } from '@/components/shop/art/PetMark';
+import { CompareProfileLink } from '@/components/achievements/CompareProfileLink';
 import type { ProfileData } from './profile-types';
 import { ProfileBanner } from './ProfileBanner';
 import './profile.css';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
 
@@ -130,6 +134,33 @@ export interface ProfileHeroProps {
   onShowAchievements: () => void;
 }
 
+/** A public count. It opens its list only when `onOpen` is given: a viewer who may not browse the list sees the number as text. */
+function SocialCount({
+  value,
+  label,
+  format,
+  onOpen,
+}: {
+  value: number;
+  label: string;
+  format: (n: number) => string;
+  onOpen?: () => void;
+}) {
+  const body = (
+    <>
+      <AnimatedCount value={value} format={format} className="font-semibold text-site-text" />{' '}
+      <span className="text-site-text-muted">{label}</span>
+    </>
+  );
+  return onOpen ? (
+    <button type="button" onClick={onOpen} className="text-start">
+      {body}
+    </button>
+  ) : (
+    <span>{body}</span>
+  );
+}
+
 export function ProfileHero({
   profile,
   displayName,
@@ -148,15 +179,13 @@ export function ProfileHero({
   onJoinMembership,
   onShowSocial,
   onShowAchievements,
-}: ProfileHeroProps) {
+}: ProfileHeroProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('feed');
   const name = displayName || profile.username || t('user', { defaultValue: 'User' });
   // The banner box holds the uploaded picture; without one, the equipped banner cosmetic, or else the equipped theme's
   // backdrop. Steel phase 5 dropped the element that drew this value and left the line that computed it.
   const headerBackdrop = profile.cosmetics?.banner?.gradient ?? profile.cosmetics?.theme?.gradient;
-  const joined = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(
-    new Date(profile.createdAt),
-  );
+  const joined = fmt.date(new Date(profile.createdAt), { month: 'long', year: 'numeric' });
   const shareUrl = `${SITE_URL}/u/${profile.handle || profile.id}`;
   // A link the site pins to this profile, distinct from the owner-editable
   // `profile.links`. Null for everyone who isn't in the registry.
@@ -175,7 +204,7 @@ export function ProfileHero({
     : profile.cosmetics?.nameColor?.color
       ? { color: profile.cosmetics.nameColor.color }
       : undefined;
-  const count = (n: number) => n.toLocaleString();
+  const count = (n: number) => fmt.number(n);
 
   // The head row ends in a column: the profile song, then the share card and the link copy under it, or in the song's
   // place when there is none. The facts line (location, website, joined) leads each fact with a decorative icon.
@@ -183,12 +212,14 @@ export function ProfileHero({
   // (the one primary) and Message. No banner box, no stat tiles, no chips: what is left is words. The person's history
   // is the spine below (ProfileColumn).
   return (
-    <header className="profile-head">
+    // Two columns: everything hangs in the first, and the song / share column sits beside it in the second, spanning
+    // down the side, so it never pushes the bio below its own height (the bio follows the avatar row directly).
+    <header className="profile-head grid sm:grid-cols-[1fr_auto] sm:gap-x-4">
       {profile.bannerUrl || headerBackdrop ? (
         <ProfileBanner
           src={profile.bannerUrl}
           backdrop={headerBackdrop}
-          className="profile-head__banner"
+          className="profile-head__banner col-span-full"
         />
       ) : null}
 
@@ -202,13 +233,6 @@ export function ProfileHero({
           {profile.presence ? (
             <PresenceDot presence={profile.presence} className="absolute end-0 bottom-0" />
           ) : null}
-          {/* The equipped pet keeps the avatar company at its lower start corner; the presence dot has the other one. */}
-          <PetMark
-            pet={profile.cosmetics?.pet}
-            size={36}
-            title={t('equipped-pet', { defaultValue: 'Equipped pet' })}
-            className="pointer-events-none absolute -start-4 -bottom-3"
-          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
@@ -216,27 +240,44 @@ export function ProfileHero({
               <EmojiText>{name}</EmojiText>
             </h1>
             <IdentityBadges profile={profile} />
+            {/* The equipped pet sits after the name and its badges, in the row, not on the avatar's edge. */}
+            <PetMark
+              pet={profile.cosmetics?.pet}
+              size={28}
+              title={t('equipped-pet', { defaultValue: 'Equipped pet' })}
+              className="pointer-events-none shrink-0"
+            />
           </div>
           {profile.handle ? (
             <p className="t-meta mt-1" dir="ltr">
               @{profile.handle}
             </p>
           ) : null}
+          {profile.isOwnProfile ? null : <AwayStatusLine userId={profile.id} context="profile" />}
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
-            <VinylRecord
-              albumArt={profile.profileSongAlbumArt}
-              title={profile.profileSongTitle ?? t('unknown', { defaultValue: 'Unknown' })}
-              artist={profile.profileSongArtist ?? t('unknown', { defaultValue: 'Unknown' })}
-              isPlaying={isPlaying}
-              onToggle={onTogglePlay}
-            />
-          ) : null}
+      </div>
+      <div className="flex items-center gap-3 sm:col-start-2 sm:row-span-[20] sm:shrink-0 sm:flex-col sm:items-end sm:gap-1 sm:self-start">
+        {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
+          <VinylRecord
+            albumArt={profile.profileSongAlbumArt}
+            title={profile.profileSongTitle ?? t('unknown', { defaultValue: 'Unknown' })}
+            artist={profile.profileSongArtist ?? t('unknown', { defaultValue: 'Unknown' })}
+            isPlaying={isPlaying}
+            onToggle={onTogglePlay}
+          />
+        ) : null}
+        {/* The two icon actions share one row; each names itself in a tooltip. */}
+        <div className="flex items-center gap-1">
           <ProfileShareCardButton profile={profile} />
-          <CopyButton value={shareUrl} variant="ghost" size="xs">
-            {t('copy-profile-link-short', { defaultValue: 'Copy link' })}
-          </CopyButton>
+          <Tooltip content={t('copy-profile-link-short', { defaultValue: 'Copy link' })}>
+            <CopyButton
+              value={shareUrl}
+              icon={Link2}
+              variant="ghost"
+              label={t('copy-profile-link-short', { defaultValue: 'Copy link' })}
+              title={undefined}
+            />
+          </Tooltip>
         </div>
       </div>
 
@@ -308,6 +349,7 @@ export function ProfileHero({
               }}
             />
             <OfficeHoursProfileButton userId={profile.id} />
+            <CompareProfileLink handle={profile.handle} id={profile.id} />
             <Button variant="ghost" onClick={onTip}>
               {t('send-a-tip', { defaultValue: 'Send a tip' })}
             </Button>
@@ -342,26 +384,18 @@ export function ProfileHero({
         className="t-body mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-1"
         aria-label={t('profile-stats', { defaultValue: 'Profile stats' })}
       >
-        <button type="button" onClick={() => onShowSocial('followers')} className="text-start">
-          <AnimatedCount
-            value={profile.followerCount}
-            format={count}
-            className="font-semibold text-site-text"
-          />{' '}
-          <span className="text-site-text-muted">
-            {t('followers-label', { defaultValue: 'Followers' })}
-          </span>
-        </button>
-        <button type="button" onClick={() => onShowSocial('following')} className="text-start">
-          <AnimatedCount
-            value={profile.followingCount}
-            format={count}
-            className="font-semibold text-site-text"
-          />{' '}
-          <span className="text-site-text-muted">
-            {t('following-label', { defaultValue: 'Following' })}
-          </span>
-        </button>
+        <SocialCount
+          value={profile.followerCount}
+          label={t('followers-label', { defaultValue: 'Followers' })}
+          format={count}
+          onOpen={profile.canSeeFollowLists === false ? undefined : () => onShowSocial('followers')}
+        />
+        <SocialCount
+          value={profile.followingCount}
+          label={t('following-label', { defaultValue: 'Following' })}
+          format={count}
+          onOpen={profile.canSeeFollowLists === false ? undefined : () => onShowSocial('following')}
+        />
         <span>
           <AnimatedCount
             value={profile.rmharkCount}
@@ -509,7 +543,7 @@ export function ProfileHero({
               {profile.tipGoalLabel || t('tip-goal', { defaultValue: 'Tip goal' })}
             </h2>
             <span className="t-meta tabular-nums">
-              {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}
+              {fmt.number((profile.tipsThisMonth ?? 0))} / {fmt.number(profile.tipGoal)}
             </span>
           </div>
           <div

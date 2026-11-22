@@ -6,30 +6,15 @@
 import { prisma } from './prisma.server';
 
 /** The site user id linked to this Discord id, or null when they never signed in with Discord. */
-export async function findLinkedUserId(
-  discordId: string,
-): Promise<
-  | string
-  | null
-> {
-  const row =
-    await prisma.account.findFirst(
-      {
-        where:
-          {
-            providerId:
-              'discord',
-            accountId:
-              discordId,
-          },
-        select:
-          {
-            userId: true,
-          },
-      },
-    );
-  return (
-    row?.userId ??
-    null
-  );
+export async function findLinkedUserId(discordId: string): Promise<string | null> {
+  const row = await prisma.account.findFirst({
+    where: {
+      providerId: 'discord',
+      accountId: discordId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+  return row?.userId ?? null;
 }

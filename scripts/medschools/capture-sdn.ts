@@ -139,17 +139,8 @@
  * Nothing person-shaped is saved or printed.
  */
 /* eslint-disable no-console -- a one-off capture script reports on stdout */
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
-import {
-  dirname,
-  join,
-  resolve,
-} from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   Aliases,
@@ -163,574 +154,251 @@ import {
 } from '../../features/medschools/scrape/adapters/sdn/fixture-sanitise';
 import { SOURCES } from '../../features/medschools/scrape/sources';
 
-const FIXTURES =
-  join(
-    dirname(
-      fileURLToPath(
-        import.meta
-          .url,
-      ),
-    ),
-    '../../features/medschools/scrape/adapters/sdn/__fixtures__',
-  );
+const FIXTURES = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../features/medschools/scrape/adapters/sdn/__fixtures__',
+);
 const MAX_REQUESTS = 30;
-const FORUMS =
-  SOURCES.SDN_FORUMS;
-const WWW =
-  SOURCES.SDN_WWW;
+const FORUMS = SOURCES.SDN_FORUMS;
+const WWW = SOURCES.SDN_WWW;
 
 interface Step {
   name: string;
   origin: string;
   path: string;
-  headers?: Record<
-    string,
-    string
-  >;
+  headers?: Record<string, string>;
 }
 
-const THREAD_BUSY =
-  '/threads/2026-2027-university-of-texas-medical-branch-sealy-school-of-medicine.1517862';
-const MD =
-  '/forums/2026-2027-md-medical-school-specific-discussions.1198/';
-const SUMMARY =
-  '/schools-database/medical-school/interview-feedback/summary';
+const THREAD_BUSY = '/threads/2026-2027-university-of-texas-medical-branch-sealy-school-of-medicine.1517862';
+const MD = '/forums/2026-2027-md-medical-school-specific-discussions.1198/';
+const SUMMARY = '/schools-database/medical-school/interview-feedback/summary';
 
 /** The planned requests; the live run adds nothing else. (A real run also did two exploratory probes, see FINDINGS.) */
-const STEPS: Step[] =
-  [
-    {
-      name: 'forums-robots',
-      origin:
-        FORUMS.origin,
-      path: '/robots.txt',
-    },
-    {
-      name: 'www-robots',
-      origin:
-        WWW.origin,
-      path: '/robots.txt',
-    },
-    {
-      name: 'rss1198',
-      origin:
-        FORUMS.origin,
-      path: '/forums/1198/index.rss',
-    },
-    {
-      name: 'rss1199',
-      origin:
-        FORUMS.origin,
-      path: '/forums/1199/index.rss',
-    },
-    {
-      name: 'f1198p1',
-      origin:
-        FORUMS.origin,
-      path: MD,
-    },
-    {
-      name: 'f1198p2',
-      origin:
-        FORUMS.origin,
-      path: `${MD}page-2`,
-    },
-    {
-      name: 'f962c',
-      origin:
-        FORUMS.origin,
-      path: '/forums/md-medical-school-specific-discussions-prior-years.962/',
-    },
-    {
-      name: 'f603c',
-      origin:
-        FORUMS.origin,
-      path: '/forums/osteopathic-medical-school-discussions-prior-years.603/',
-    },
-    {
-      name: 'tsmall',
-      origin:
-        FORUMS.origin,
-      path: '/threads/2026-2027-mayo-clinic-arizona.1517730/',
-    },
-    {
-      name: 'tbusy',
-      origin:
-        FORUMS.origin,
-      path: `${THREAD_BUSY}/page-6`,
-    },
-    {
-      name: 'tq',
-      origin:
-        FORUMS.origin,
-      path: `${THREAD_BUSY}/page-3`,
-    },
-    {
-      name: 'wwwmed',
-      origin:
-        WWW.origin,
-      path: '/schools-database/medical-school',
-    },
-    {
-      name: 'sumcolfb',
-      origin:
-        WWW.origin,
-      path: `${SUMMARY}/CUCPS/columbia-university-college-of-physicians-and-surgeons`,
-    },
-    {
-      name: 'sumsmall',
-      origin:
-        WWW.origin,
-      path: `${SUMMARY}/ACOM/alabama-college-of-osteopathic-medicine`,
-    },
-  ];
-
-const sleep =
-  (
-    ms: number,
-  ) =>
-    new Promise(
-      (
-        r,
-      ) =>
-        setTimeout(
-          r,
-          ms,
-        ),
-    );
-const args =
-  process.argv.slice(
-    2,
-  );
-const force =
-  args.includes(
-    '--force',
-  );
-const live =
-  args.includes(
-    '--live',
-  );
-const rawDirArg =
-  args[
-    args.indexOf(
-      '--raw-dir',
-    ) +
-      1
-  ];
-if (
-  !rawDirArg ||
-  rawDirArg.startsWith(
-    '--',
-  )
-)
-  throw new Error(
-    '--raw-dir <dir> is required (outside the repo)',
-  );
-const RAW =
-  resolve(
-    rawDirArg,
-  );
-mkdirSync(
-  RAW,
+const STEPS: Step[] = [
   {
-    recursive: true,
+    name: 'forums-robots',
+    origin: FORUMS.origin,
+    path: '/robots.txt',
   },
-);
+  {
+    name: 'www-robots',
+    origin: WWW.origin,
+    path: '/robots.txt',
+  },
+  {
+    name: 'rss1198',
+    origin: FORUMS.origin,
+    path: '/forums/1198/index.rss',
+  },
+  {
+    name: 'rss1199',
+    origin: FORUMS.origin,
+    path: '/forums/1199/index.rss',
+  },
+  {
+    name: 'f1198p1',
+    origin: FORUMS.origin,
+    path: MD,
+  },
+  {
+    name: 'f1198p2',
+    origin: FORUMS.origin,
+    path: `${MD}page-2`,
+  },
+  {
+    name: 'f962c',
+    origin: FORUMS.origin,
+    path: '/forums/md-medical-school-specific-discussions-prior-years.962/',
+  },
+  {
+    name: 'f603c',
+    origin: FORUMS.origin,
+    path: '/forums/osteopathic-medical-school-discussions-prior-years.603/',
+  },
+  {
+    name: 'tsmall',
+    origin: FORUMS.origin,
+    path: '/threads/2026-2027-mayo-clinic-arizona.1517730/',
+  },
+  {
+    name: 'tbusy',
+    origin: FORUMS.origin,
+    path: `${THREAD_BUSY}/page-6`,
+  },
+  {
+    name: 'tq',
+    origin: FORUMS.origin,
+    path: `${THREAD_BUSY}/page-3`,
+  },
+  {
+    name: 'wwwmed',
+    origin: WWW.origin,
+    path: '/schools-database/medical-school',
+  },
+  {
+    name: 'sumcolfb',
+    origin: WWW.origin,
+    path: `${SUMMARY}/CUCPS/columbia-university-college-of-physicians-and-surgeons`,
+  },
+  {
+    name: 'sumsmall',
+    origin: WWW.origin,
+    path: `${SUMMARY}/ACOM/alabama-college-of-osteopathic-medicine`,
+  },
+];
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const args = process.argv.slice(2);
+const force = args.includes('--force');
+const live = args.includes('--live');
+const rawDirArg = args[args.indexOf('--raw-dir') + 1];
+if (!rawDirArg || rawDirArg.startsWith('--')) throw new Error('--raw-dir <dir> is required (outside the repo)');
+const RAW = resolve(rawDirArg);
+mkdirSync(RAW, {
+  recursive: true,
+});
 
 let requests = 0;
-async function fetchRaw(
-  step: Step,
-): Promise<void> {
-  if (
-    requests >=
-    MAX_REQUESTS
-  )
-    throw new Error(
-      `request cap ${MAX_REQUESTS} reached; aborting`,
-    );
-  if (
-    requests >
-    0
-  )
-    await sleep(
-      step.origin ===
-        WWW.origin
-        ? 2100
-        : 1600,
-    );
+async function fetchRaw(step: Step): Promise<void> {
+  if (requests >= MAX_REQUESTS) throw new Error(`request cap ${MAX_REQUESTS} reached; aborting`);
+  if (requests > 0) await sleep(step.origin === WWW.origin ? 2100 : 1600);
   requests += 1;
-  const res =
-    await fetch(
-      step.origin +
-        step.path,
-      {
-        headers:
-          {
-            'user-agent':
-              FORUMS.userAgent,
-            ...step.headers,
-          },
-        redirect:
-          'follow',
-        signal:
-          AbortSignal.timeout(
-            FORUMS.timeoutMs,
-          ),
-      },
-    );
-  const body =
-    await res.text();
+  const res = await fetch(step.origin + step.path, {
+    headers: {
+      'user-agent': FORUMS.userAgent,
+      ...step.headers,
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(FORUMS.timeoutMs),
+  });
+  const body = await res.text();
+  writeFileSync(join(RAW, `${step.name}.body`), body);
   writeFileSync(
-    join(
-      RAW,
-      `${step.name}.body`,
-    ),
-    body,
-  );
-  writeFileSync(
-    join(
-      RAW,
-      `${step.name}.hdr`,
-    ),
+    join(RAW, `${step.name}.hdr`),
     `${res.status}\n${[...res.headers].map(([k, v]) => `${k}: ${v}`).join('\n')}\n`,
   );
 }
 
-const rawText =
-  (
-    name: string,
-  ): string => {
-    const p =
-      join(
-        RAW,
-        `${name}.body`,
-      );
-    if (
-      !existsSync(
-        p,
-      )
-    )
-      throw new Error(
-        `missing raw response ${name}`,
-      );
-    return readFileSync(
-      p,
-      'utf8',
-    );
-  };
+const rawText = (name: string): string => {
+  const p = join(RAW, `${name}.body`);
+  if (!existsSync(p)) throw new Error(`missing raw response ${name}`);
+  return readFileSync(p, 'utf8');
+};
 
-function write(
-  name: string,
-  body: string,
-): void {
-  const dest =
-    join(
-      FIXTURES,
-      name,
-    );
-  if (
-    existsSync(
-      dest,
-    ) &&
-    !force
-  )
-    throw new Error(
-      `${name} exists; pass --force`,
-    );
-  writeFileSync(
-    dest,
-    body,
-  );
-  console.log(
-    `  ${name} (${body.length} bytes)`,
-  );
+function write(name: string, body: string): void {
+  const dest = join(FIXTURES, name);
+  if (existsSync(dest) && !force) throw new Error(`${name} exists; pass --force`);
+  writeFileSync(dest, body);
+  console.log(`  ${name} (${body.length} bytes)`);
 }
 
 async function main(): Promise<void> {
-  if (
-    live
-  )
-    for (const s of STEPS)
-      if (
-        !existsSync(
-          join(
-            RAW,
-            `${s.name}.body`,
-          ),
-        ) ||
-        force
-      )
-        await fetchRaw(
-          s,
-        );
-  console.log(
-    `${requests} requests`,
-  );
-  mkdirSync(
-    FIXTURES,
-    {
-      recursive: true,
-    },
-  );
+  if (live) for (const s of STEPS) if (!existsSync(join(RAW, `${s.name}.body`)) || force) await fetchRaw(s);
+  console.log(`${requests} requests`);
+  mkdirSync(FIXTURES, {
+    recursive: true,
+  });
 
-  const c =
-    newCollected();
+  const c = newCollected();
   // pass 1: collect every person-shaped value from every raw page, so each output is checked against all of them
-  const outputs: Array<
-    [
-      string,
-      () => string,
-    ]
-  > =
-    [];
-  const aliases =
+  const outputs: Array<[string, () => string]> = [];
+  const aliases = () => new Aliases();
+  outputs.push(['forum-1198.rss', () => sanitiseRss(rawText('rss1198'), c, 8)]);
+  outputs.push(['forum-1199.rss', () => sanitiseRss(rawText('rss1199'), c, 8)]);
+  outputs.push([
+    'forum-1198-p1.html',
     () =>
-      new Aliases();
-  outputs.push(
-    [
-      'forum-1198.rss',
-      () =>
-        sanitiseRss(
-          rawText(
-            'rss1198',
-          ),
-          c,
-          8,
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'forum-1199.rss',
-      () =>
-        sanitiseRss(
-          rawText(
-            'rss1199',
-          ),
-          c,
-          8,
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'forum-1198-p1.html',
-      () =>
-        sanitiseListingPage(
-          rawText(
-            'f1198p1',
-          ),
-          c,
-          {
-            maxRows: 10,
-            aliases:
-              aliases(),
-          },
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'forum-1198-p2.html',
-      () =>
-        sanitiseListingPage(
-          rawText(
-            'f1198p2',
-          ),
-          c,
-          {
-            maxRows: 8,
-            aliases:
-              aliases(),
-          },
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'forum-962-p1.html',
-      () =>
-        sanitiseListingPage(
-          rawText(
-            'f962c',
-          ),
-          c,
-          {
-            maxRows: 8,
-            aliases:
-              aliases(),
-          },
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'forum-603-p1.html',
-      () =>
-        sanitiseListingPage(
-          rawText(
-            'f603c',
-          ),
-          c,
-          {
-            maxRows: 8,
-            aliases:
-              aliases(),
-          },
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'thread-small-p1.html',
-      () =>
-        sanitiseThreadPage(
-          rawText(
-            'tsmall',
-          ),
-          c,
-          {
-            maxPosts: 12,
-            pick: 'first',
-          },
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'thread-busy-last.html',
-      () =>
-        sanitiseThreadPage(
-          rawText(
-            'tbusy',
-          ),
-          c,
-          {
-            maxPosts: 12,
-            pick: 'last',
-          },
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'thread-questions.html',
-      () =>
-        sanitiseThreadPage(
-          rawText(
-            'tq',
-          ),
-          c,
-          {
-            maxPosts: 12,
-            pick: 'questions',
-          },
-        ),
-    ],
-  );
+      sanitiseListingPage(rawText('f1198p1'), c, {
+        maxRows: 10,
+        aliases: aliases(),
+      }),
+  ]);
+  outputs.push([
+    'forum-1198-p2.html',
+    () =>
+      sanitiseListingPage(rawText('f1198p2'), c, {
+        maxRows: 8,
+        aliases: aliases(),
+      }),
+  ]);
+  outputs.push([
+    'forum-962-p1.html',
+    () =>
+      sanitiseListingPage(rawText('f962c'), c, {
+        maxRows: 8,
+        aliases: aliases(),
+      }),
+  ]);
+  outputs.push([
+    'forum-603-p1.html',
+    () =>
+      sanitiseListingPage(rawText('f603c'), c, {
+        maxRows: 8,
+        aliases: aliases(),
+      }),
+  ]);
+  outputs.push([
+    'thread-small-p1.html',
+    () =>
+      sanitiseThreadPage(rawText('tsmall'), c, {
+        maxPosts: 12,
+        pick: 'first',
+      }),
+  ]);
+  outputs.push([
+    'thread-busy-last.html',
+    () =>
+      sanitiseThreadPage(rawText('tbusy'), c, {
+        maxPosts: 12,
+        pick: 'last',
+      }),
+  ]);
+  outputs.push([
+    'thread-questions.html',
+    () =>
+      sanitiseThreadPage(rawText('tq'), c, {
+        maxPosts: 12,
+        pick: 'questions',
+      }),
+  ]);
   // GET .../page-999 answers 303 -> the last page; the polite client follows, so the parser sees the last page.
-  outputs.push(
-    [
-      'thread-past-end.html',
-      () =>
-        `<!-- response to GET ${THREAD_BUSY}/page-999 after following the 303 to .../page-6 -->\n${sanitiseThreadPage(rawText('tbusy'), c, { maxPosts: 3, pick: 'last' })}`,
-    ],
-  );
-  outputs.push(
-    [
-      'summary-columbia.html',
-      () =>
-        sanitiseSummaryPage(
-          rawText(
-            'sumcolfb',
-          ),
-          c,
-          {
-            maxReports: 12,
-          },
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'summary-small.html',
-      () =>
-        sanitiseSummaryPage(
-          rawText(
-            'sumsmall',
-          ),
-          c,
-          {
-            maxReports: 12,
-          },
-        ),
-    ],
-  );
-  outputs.push(
-    [
-      'school-index.html',
-      () =>
-        sanitiseSchoolIndex(
-          rawText(
-            'wwwmed',
-          ),
-          {
-            maxRows: 12,
-            mustInclude:
-              [
-                'CUCPS',
-                'ACOM',
-              ],
-          },
-        ),
-    ],
-  );
+  outputs.push([
+    'thread-past-end.html',
+    () =>
+      `<!-- response to GET ${THREAD_BUSY}/page-999 after following the 303 to .../page-6 -->\n${sanitiseThreadPage(rawText('tbusy'), c, { maxPosts: 3, pick: 'last' })}`,
+  ]);
+  outputs.push([
+    'summary-columbia.html',
+    () =>
+      sanitiseSummaryPage(rawText('sumcolfb'), c, {
+        maxReports: 12,
+      }),
+  ]);
+  outputs.push([
+    'summary-small.html',
+    () =>
+      sanitiseSummaryPage(rawText('sumsmall'), c, {
+        maxReports: 12,
+      }),
+  ]);
+  outputs.push([
+    'school-index.html',
+    () =>
+      sanitiseSchoolIndex(rawText('wwwmed'), {
+        maxRows: 12,
+        mustInclude: ['CUCPS', 'ACOM'],
+      }),
+  ]);
 
-  const built =
-    outputs.map(
-      ([
-        name,
-        make,
-      ]) =>
-        [
-          name,
-          make(),
-        ] as const,
-    );
-  for (const [
-    name,
-    body,
-  ] of built)
-    assertClean(
-      name,
-      body,
-      c,
-    ); // nothing is written unless every output is clean
-  for (const [
-    name,
-    body,
-  ] of built)
-    write(
-      name,
-      body,
-    );
+  const built = outputs.map(([name, make]) => [name, make()] as const);
+  for (const [name, body] of built) assertClean(name, body, c); // nothing is written unless every output is clean
+  for (const [name, body] of built) write(name, body);
   console.log(
     `sanitised: 0 raw handles remain (${c.handles.size} collected, ${c.memberIds.size} member ids, ${c.avatars.size} avatars)`,
   );
 }
 
-main().catch(
-  (
-    e: unknown,
-  ) => {
-    console.error(
-      e instanceof
-        Error
-        ? e.message
-        : 'failed',
-    );
-    process.exit(
-      1,
-    );
-  },
-);
+main().catch((e: unknown) => {
+  console.error(e instanceof Error ? e.message : 'failed');
+  process.exit(1);
+});

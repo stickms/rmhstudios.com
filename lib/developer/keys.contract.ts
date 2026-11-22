@@ -6,99 +6,85 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  createKeyBody,
-  patchKeyBody,
-} from '@/lib/developer/keys-schema';
+import type { createKeyBody, patchKeyBody } from '@/lib/developer/keys-schema';
 
 /** A key's metadata. The secret is never part of it. */
 export interface DeveloperKeyRow {
   id: string;
   name: string;
   prefix: string;
-  lastFour:
-    | string
-    | null;
+  lastFour: string | null;
   scopes: string[];
   testMode: boolean;
-  expiresAt:
-    | string
-    | null;
-  lastUsedAt:
-    | string
-    | null;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
   createdAt: string;
+  /** Allowed addresses/ranges; empty means any address. */
+  allowedCidrs: string[];
+  /** The key's own per-minute limit; null means the tier's. */
+  rateLimitPerMinute: number | null;
 }
 
-export const listDeveloperKeysApi =
-  endpoint<{
-    res: {
-      keys: DeveloperKeyRow[];
-      hasApiAccess: boolean;
-      tier: string;
-      availableScopes: string[];
-    };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/developer/keys',
-    },
-  );
+/** Requests refused for coming from an address outside a key's list. */
+export interface KeyRefusals {
+  /** Refused in the last 7 days. */
+  count: number;
+  /** Masked address of the latest refusal (`203.0.113.x`). */
+  lastPrefix: string | null;
+}
+
+/** A key as listed on /developer: its metadata plus its refusal summary. */
+export interface DeveloperKeyListRow extends DeveloperKeyRow {
+  refusals: KeyRefusals;
+  /** An admin suspended the key (it answers 403 `key_suspended`), and the reason the owner is shown. */
+  suspendedAt: string | null;
+  suspendReason: string | null;
+}
+
+export const listDeveloperKeysApi = endpoint<{
+  res: {
+    keys: DeveloperKeyListRow[];
+    hasApiAccess: boolean;
+    tier: string;
+    /** The tier's per-minute limit: the ceiling for a key's own limit. */
+    maxRateLimitPerMinute: number;
+    availableScopes: string[];
+  };
+}>()({
+  method: 'GET',
+  path: '/api/developer/keys',
+});
 
 /** 201. `key` is the plaintext secret, returned exactly once. */
-export const createDeveloperKeyApi =
-  endpoint<{
-    body: z.infer<
-      typeof createKeyBody
-    >;
-    res: Omit<
-      DeveloperKeyRow,
-      | 'lastUsedAt'
-      | 'testMode'
-    > & {
-      key: string;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/developer/keys',
-    },
-  );
+export const createDeveloperKeyApi = endpoint<{
+  body: z.infer<typeof createKeyBody>;
+  res: Omit<DeveloperKeyRow, 'lastUsedAt' | 'testMode'> & {
+    key: string;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/developer/keys',
+});
 
 /** Rename, re-scope, change expiry or rotate. `key` is present only when rotated. */
-export const updateDeveloperKeyApi =
-  endpoint<{
-    body: z.infer<
-      typeof patchKeyBody
-    >;
-    res: Omit<
-      DeveloperKeyRow,
-      'testMode'
-    > & {
-      key?: string;
-    };
-  }>()(
-    {
-      method:
-        'PATCH',
-      path: '/api/developer/keys/$id',
-    },
-  );
+export const updateDeveloperKeyApi = endpoint<{
+  body: z.infer<typeof patchKeyBody>;
+  res: Omit<DeveloperKeyRow, 'testMode'> & {
+    key?: string;
+  };
+}>()({
+  method: 'PATCH',
+  path: '/api/developer/keys/$id',
+});
 
-export const revokeDeveloperKeyApi =
-  endpoint<{
-    res: {
-      success: true;
-    };
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/developer/keys/$id',
-    },
-  );
+export const revokeDeveloperKeyApi = endpoint<{
+  res: {
+    success: true;
+  };
+}>()({
+  method: 'DELETE',
+  path: '/api/developer/keys/$id',
+});
 
 export interface KeyUsageDay {
   date: string;
@@ -124,18 +110,12 @@ export interface DeveloperKeyUsage {
 }
 
 /** A key's own usage history (owner only; `days` is clamped to 1..90, default 30). 404 when the key is not theirs. */
-export const getDeveloperKeyUsageApi =
-  endpoint<{
-    query: {
-      days?:
-        | number
-        | undefined;
-    };
-    res: DeveloperKeyUsage;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/developer/keys/$id/usage',
-    },
-  );
+export const getDeveloperKeyUsageApi = endpoint<{
+  query: {
+    days?: number | undefined;
+  };
+  res: DeveloperKeyUsage;
+}>()({
+  method: 'GET',
+  path: '/api/developer/keys/$id/usage',
+});

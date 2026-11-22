@@ -3,6 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { deleteCommentApi } from '@/lib/feed/rmhark-actions.contract';
+import { clearPinnedReplyIf } from '@/lib/feed/conversation-controls.server';
 
 export const route = apiRoute('/api/rmharks/$id/comment/$commentId', {
   DELETE: implement(deleteCommentApi, {}, async ({ params, session }) => {
@@ -10,7 +11,7 @@ export const route = apiRoute('/api/rmharks/$id/comment/$commentId', {
 
     const comment = await prisma.rMHarkComment.findUnique({
       where: { id: commentId },
-      select: { userId: true },
+      select: { userId: true, rmheetId: true },
     });
 
     if (!comment) {
@@ -31,6 +32,9 @@ export const route = apiRoute('/api/rmharks/$id/comment/$commentId', {
         ...(deletedByAdmin ? { deletedBy: 'moderator' } : {}),
       },
     });
+
+    // A deleted reply cannot stay pinned.
+    await clearPinnedReplyIf(comment.rmheetId, commentId);
 
     if (deletedByAdmin) {
       await logAdminAction(session.user.id, 'rmhark.comment.delete', {

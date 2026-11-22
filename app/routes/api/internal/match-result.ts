@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { authorizeInternalRequest } from '@/lib/internal-auth';
 import { settleWagerByGameSession } from '@/lib/wager/wager.server';
-import { reportTournamentMatchByGameSession } from '@/lib/tournaments/tournament.server';
+import { reportTournamentMatchByGameSession } from '@/lib/tournaments/report.server';
 
 // Authoritative match-result seam. A game hub (e.g. the socket-server RMHType
 // handler) POSTs the server-validated winner here after a match tied to a wager

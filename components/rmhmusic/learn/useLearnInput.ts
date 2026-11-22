@@ -108,24 +108,41 @@ export function useMidiDevices(): MidiDevice[] {
 /** Level updates faster than this are dropped: a meter needs ~15 fps, not 40. */
 const LEVEL_MIN_INTERVAL_MS = 66;
 
-/** The microphone's level, 0..1, throttled for a meter (0 while the mic is off). */
-export function useMicLevel(): number {
-  const [level, setLevel] = useState(0);
+/** What the setup meter draws: the level, the cutoff drawn over it and the gain, all 0..1 except the gain. */
+export interface MicMeter {
+  level: number;
+  /** Where the cutoff sits on the same scale as `level`: sound left of it is ignored. */
+  gate: number;
+  /** The gain now applied (it moves by itself in automatic mode). */
+  gain: number;
+}
+
+const NO_METER: MicMeter = { level: 0, gate: 0, gain: 1 };
+/** Speech and a plucked string sit around 0.02–0.2 RMS; scale so they fill the bar. */
+const METER_SCALE = 5;
+
+/** The microphone's level, cutoff and gain for a meter, throttled (all zero while the mic is off). */
+export function useMicMeter(): MicMeter {
+  const [meter, setMeter] = useState<MicMeter>(NO_METER);
   useEffect(() => {
     let last = 0;
-    const off = subscribeMicLevel((rms) => {
+    const off = subscribeMicLevel((rms, gate, gain) => {
       const now = performance.now();
       if (now - last < LEVEL_MIN_INTERVAL_MS) return;
       last = now;
-      // Speech and a plucked string sit around 0.02–0.2 RMS; scale so they fill the bar.
-      setLevel(Math.min(1, rms * 5));
+      setMeter({ level: Math.min(1, rms * METER_SCALE), gate: Math.min(1, gate * METER_SCALE), gain });
     });
     return () => {
       off();
-      setLevel(0);
+      setMeter(NO_METER);
     };
   }, []);
-  return level;
+  return meter;
+}
+
+/** The microphone's level, 0..1, throttled for a meter (0 while the mic is off). */
+export function useMicLevel(): number {
+  return useMicMeter().level;
 }
 
 const NO_PHASES: InputPhases = { mic: 'idle', midi: 'idle', keys: 'idle', screen: 'idle' };

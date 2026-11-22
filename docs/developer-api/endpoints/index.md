@@ -5,7 +5,7 @@
 
 # Endpoint reference
 
-Every endpoint in the public `v1` API — 36 across 9 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
+Every endpoint in the public `v1` API — 86 across 17 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
 
 | Group | Endpoints | Covers |
 | ----- | --------- | ------ |
@@ -16,8 +16,16 @@ Every endpoint in the public `v1` API — 36 across 9 groups. Paths are relative
 | [Users](./users.md) | 6 | `read:users`, `write:follows` |
 | [Media](./media.md) | 1 | `write:media` |
 | [Content](./content.md) | 7 | `read:builds`, `read:content`, `read:leaderboards` |
+| [Games](./games.md) | 6 | `read:games` |
 | [Webhooks](./webhooks.md) | 5 | `manage:webhooks` |
 | [Meta](./meta.md) | 1 | no scope required |
+| [Study](./study.md) | 11 | `read:study`, `write:study` |
+| [Events](./events.md) | 6 | `read:events`, `write:events` |
+| [Communities](./communities.md) | 4 | `read:communities` |
+| [Reading](./reading.md) | 7 | `read:reading`, `write:reading` |
+| [Tournaments](./tournaments.md) | 8 | `read:tournaments`, `write:tournaments` |
+| [Scheduled](./scheduled.md) | 6 | `read:scheduled`, `write:scheduled` |
+| [Search](./search.md) | 2 | `read:search` |
 
 ```{toctree}
 :maxdepth: 2
@@ -30,6 +38,14 @@ feed
 users
 media
 content
+games
 webhooks
 meta
+study
+events
+communities
+reading
+tournaments
+scheduled
+search
 ```

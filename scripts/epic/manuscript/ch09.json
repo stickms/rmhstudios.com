@@ -6,10 +6,7 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": [
-      "不死之水飲者悲",
-      "無言之母示真機"
-    ],
+    "zh": ["不死之水飲者悲", "無言之母示真機"],
     "en": [
       "The water that will not die brings grief to the one who drinks",
       "The mother of silence reveals the true mechanism"
@@ -35,10 +32,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "英雄千里來一問，問在唇邊意已違。",
-        "鏡中無顏映者何，悲字未出淚先歸。"
-      ],
+      "zh": ["英雄千里來一問，問在唇邊意已違。", "鏡中無顏映者何，悲字未出淚先歸。"],
       "en": [
         "A hero travels a thousand li to ask one question; by the time it reaches the lips, the meaning has already shifted.",
         "The mirror holds no face — what then does it reflect? The word 'grief' is not yet spoken, yet the tears have already turned home."

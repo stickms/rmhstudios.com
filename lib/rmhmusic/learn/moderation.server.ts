@@ -16,56 +16,28 @@ import { prisma } from '@/lib/prisma.server';
 import { invalidateBoard } from './social/board-cache.server';
 
 /** The learner a music report is about, for triage; null when unknown or not a music type. */
-export async function musicReportOwner(
-  entityType: string,
-  entityId: string,
-): Promise<
-  | string
-  | null
-> {
-  if (
-    entityType ===
-    'music-score'
-  ) {
-    const row =
-      await prisma.musicSprintDaily.findUnique(
-        {
-          where:
-            {
-              id: entityId,
-            },
-          select:
-            {
-              userId: true,
-            },
-        },
-      );
-    return (
-      row?.userId ??
-      null
-    );
+export async function musicReportOwner(entityType: string, entityId: string): Promise<string | null> {
+  if (entityType === 'music-score') {
+    const row = await prisma.musicSprintDaily.findUnique({
+      where: {
+        id: entityId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+    return row?.userId ?? null;
   }
-  if (
-    entityType ===
-    'music-share'
-  ) {
-    const row =
-      await prisma.musicShare.findUnique(
-        {
-          where:
-            {
-              id: entityId,
-            },
-          select:
-            {
-              userId: true,
-            },
-        },
-      );
-    return (
-      row?.userId ??
-      null
-    );
+  if (entityType === 'music-share') {
+    const row = await prisma.musicShare.findUnique({
+      where: {
+        id: entityId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+    return row?.userId ?? null;
   }
   return null;
 }
@@ -75,70 +47,39 @@ export async function musicReportOwner(
  * already hidden row keeps its first time) and a row that is gone is not a failure; a real
  * database error throws, so the admin action leaves the report open.
  */
-export async function hideMusicContent(
-  entityType: string,
-  entityId: string,
-  now: Date = new Date(),
-): Promise<void> {
-  if (
-    entityType ===
-    'music-share'
-  ) {
+export async function hideMusicContent(entityType: string, entityId: string, now: Date = new Date()): Promise<void> {
+  if (entityType === 'music-share') {
     // The page and the card read `hiddenAt` on every request; the card's HTTP cache is 10 minutes.
-    await prisma.musicShare.updateMany(
-      {
-        where:
-          {
-            id: entityId,
-            hiddenAt:
-              null,
-          },
-        data: {
-          hiddenAt:
-            now,
-        },
+    await prisma.musicShare.updateMany({
+      where: {
+        id: entityId,
+        hiddenAt: null,
       },
-    );
+      data: {
+        hiddenAt: now,
+      },
+    });
     return;
   }
-  if (
-    entityType !==
-    'music-score'
-  )
-    return;
-  const row =
-    await prisma.musicSprintDaily.findUnique(
-      {
-        where:
-          {
-            id: entityId,
-          },
-        select:
-          {
-            date: true,
-          },
-      },
-    );
-  if (
-    !row
-  )
-    return;
-  await prisma.musicSprintDaily.updateMany(
-    {
-      where:
-        {
-          id: entityId,
-          hiddenAt:
-            null,
-        },
-      data: {
-        hiddenAt:
-          now,
-      },
+  if (entityType !== 'music-score') return;
+  const row = await prisma.musicSprintDaily.findUnique({
+    where: {
+      id: entityId,
     },
-  );
+    select: {
+      date: true,
+    },
+  });
+  if (!row) return;
+  await prisma.musicSprintDaily.updateMany({
+    where: {
+      id: entityId,
+      hiddenAt: null,
+    },
+    data: {
+      hiddenAt: now,
+    },
+  });
   // Off the board at once, not when the cached list expires.
-  await invalidateBoard(
-    row.date,
-  );
+  await invalidateBoard(row.date);
 }

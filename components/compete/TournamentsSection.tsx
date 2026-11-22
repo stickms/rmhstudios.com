@@ -74,9 +74,7 @@ export function TournamentsSection() {
           title={t('empty', { defaultValue: 'No tournaments here yet. Host one and set the prize!' })}
           action={
             viewerId ? (
-              <Button onClick={() => setCreating(true)}>
-                {t('host', { defaultValue: 'Host a tournament' })}
-              </Button>
+              <Button onClick={() => setCreating(true)}>{t('host', { defaultValue: 'Host a tournament' })}</Button>
             ) : null
           }
         />
@@ -91,16 +89,18 @@ export function TournamentsSection() {
                     <p className="text-sm text-site-text-muted truncate">
                       {tourney.gameTitle ?? tourney.gameId}
                       {' · '}
-                      {tourney.format === 'SWISS'
-                        ? <SwissLabel />
-                        : tourney.format === 'ROUND_ROBIN'
-                        ? t('round-robin', { defaultValue: 'Round robin' })
-                        : t('single-elim-tournaments-index', { defaultValue: 'Single elim' })}
+                      {tourney.format === 'SWISS' ? (
+                        <SwissLabel />
+                      ) : tourney.format === 'DOUBLE_ELIM' ? (
+                        t('double-elim-label', { ns: 'double-elimination', defaultValue: 'Double elim' })
+                      ) : tourney.format === 'ROUND_ROBIN' ? (
+                        t('round-robin', { defaultValue: 'Round robin' })
+                      ) : (
+                        t('single-elim-tournaments-index', { defaultValue: 'Single elim' })
+                      )}
                     </p>
                   </div>
-                  {tourney.status === 'LIVE' && (
-                    <Badge variant="default">{t('live', { defaultValue: 'Live' })}</Badge>
-                  )}
+                  {tourney.status === 'LIVE' && <Badge variant="default">{t('live', { defaultValue: 'Live' })}</Badge>}
                   {tourney.status === 'COMPLETE' && (
                     <Badge variant="success">{t('done', { defaultValue: 'Done' })}</Badge>
                   )}

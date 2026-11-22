@@ -6,66 +6,46 @@
 
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { useId } from 'react';
+import { useId, type RefObject } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useReadingRuler } from '@/lib/reading/ruler';
+import { ListenButton } from './ListenButton';
 
-export function ReadingToolbar() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'f-reading',
-    );
-  const [
-    ruler,
-    setRuler,
-  ] =
-    useReadingRuler();
-  const id =
-    useId();
+export function ReadingToolbar({
+  rootRef,
+  resetKey,
+}: {
+  /** The article body Listen reads from. */
+  rootRef: RefObject<HTMLElement | null>;
+  resetKey: string;
+}) {
+  const { t } = useTranslation('f-reading');
+  const [ruler, setRuler] = useReadingRuler();
+  const id = useId();
   return (
     <div
       data-rf-skip=""
-      className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-site-text-muted"
+      className="mb-6 flex min-h-9 flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-site-text-muted pointer-coarse:min-h-11"
     >
-      <span className="inline-flex items-center gap-2">
+      <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
         <Switch
-          id={
-            id
-          }
-          checked={
-            ruler
-          }
-          onCheckedChange={
-            setRuler
-          }
+          id={id}
+          checked={ruler}
+          onCheckedChange={setRuler}
           aria-labelledby={`${id}-label`}
           aria-describedby={`${id}-hint`}
         />
-        <span
-          id={`${id}-label`}
-        >
-          {t(
-            'ruler-label',
-            {
-              defaultValue:
-                'Reading ruler',
-            },
-          )}
+        <span id={`${id}-label`}>
+          {t('ruler-label', {
+            defaultValue: 'Reading ruler',
+          })}
         </span>
-        <span
-          id={`${id}-hint`}
-          className="sr-only"
-        >
-          {t(
-            'ruler-hint',
-            {
-              defaultValue:
-                'Dims everything except a line of text. Move it with the up and down arrow keys.',
-            },
-          )}
+        <span id={`${id}-hint`} className="sr-only">
+          {t('ruler-hint', {
+            defaultValue: 'Dims everything except a line of text. Move it with the up and down arrow keys.',
+          })}
         </span>
+        <ListenButton rootRef={rootRef} resetKey={resetKey} />
       </span>
       <Link
         to="/library"
@@ -75,13 +55,9 @@ export function ReadingToolbar() {
         }}
         className="text-site-accent underline-offset-4 hover:underline"
       >
-        {t(
-          'my-highlights-link',
-          {
-            defaultValue:
-              'My highlights',
-          },
-        )}
+        {t('my-highlights-link', {
+          defaultValue: 'My highlights',
+        })}
       </Link>
     </div>
   );

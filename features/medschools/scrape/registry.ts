@@ -6,39 +6,24 @@
  * whatever lands in `review` through `data/medschools/overrides.json`.
  * The seed functions load the committed, reviewed files into the database.
  */
-import {
-  isCanadianLocation,
-  normalizeSchoolKey,
-  slugify,
-} from '../engine/names';
+import { isCanadianLocation, normalizeSchoolKey, slugify } from '../engine/names';
 import type { FirstRow } from './adapters/cycletrack';
 import { planAliasMapping } from '../engine/alias-rules';
 import { summaryKey } from '../engine/sdn-title';
 import type { MedSource } from '../engine/types';
 import type { MedPrisma } from './types';
 
-type SeedPrisma =
-  Pick<
-    MedPrisma,
-    | 'medSchool'
-    | 'medSchoolAlias'
-    | 'medSchoolAliasMiss'
-    | 'medCycle'
-  >;
+type SeedPrisma = Pick<MedPrisma, 'medSchool' | 'medSchoolAlias' | 'medSchoolAliasMiss' | 'medCycle'>;
 
 export interface RegistrySchool {
   slug: string;
   name: string;
   shortName: string;
-  degree:
-    | 'MD'
-    | 'DO';
+  degree: 'MD' | 'DO';
   city: string;
   state: string;
   country: 'US';
-  website:
-    | string
-    | null;
+  website: string | null;
   aliases: Array<{
     source: 'CYCLETRACK';
     sourceKey: string;
@@ -52,98 +37,42 @@ export interface RegistryFile {
 
 export interface CycleSeed {
   cycleYear: number;
-  amcasOpensOn:
-    | string
-    | null;
-  amcasSubmitOn:
-    | string
-    | null;
-  aacomasOpensOn:
-    | string
-    | null;
+  amcasOpensOn: string | null;
+  amcasSubmitOn: string | null;
+  aacomasOpensOn: string | null;
   dayZeroOn: string;
   dateEstimated: boolean;
 }
 
-export type ExcludeReason =
-  | 'canadian'
-  | 'no-first-row'
-  | 'no-title';
+export type ExcludeReason = 'canadian' | 'no-first-row' | 'no-title';
 
-const TITLE =
-  /^(.*?)(?:\s+(MD|DO))?\s+Admissions Data(?:\s+\((.*)\))?\s*\|\s*CycleTrack$/s;
+const TITLE = /^(.*?)(?:\s+(MD|DO))?\s+Admissions Data(?:\s+\((.*)\))?\s*\|\s*CycleTrack$/s;
 
 /** "Yale School of Medicine MD Admissions Data (New Haven, CT) | CycleTrack". */
-export function parsePageTitle(
-  html: string,
-): {
+export function parsePageTitle(html: string): {
   name: string;
-  degree:
-    | 'MD'
-    | 'DO'
-    | null;
+  degree: 'MD' | 'DO' | null;
   city: string;
   state: string;
 } | null {
-  const raw =
-    /<title[^>]*>([\s\S]*?)<\/title>/i.exec(
-      html,
-    )?.[1];
-  if (
-    raw ===
-    undefined
-  )
-    return null;
-  const m =
-    TITLE.exec(
-      normalizeSchoolKey(
-        raw.replace(
-          /\s+/g,
-          ' ',
-        ),
-      ),
-    );
-  if (
-    !m
-  )
-    return null;
-  const location =
-    /^(.*),\s*([A-Za-z]{2})$/.exec(
-      (
-        m[3] ??
-        ''
-      ).trim(),
-    );
+  const raw = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1];
+  if (raw === undefined) return null;
+  const m = TITLE.exec(normalizeSchoolKey(raw.replace(/\s+/g, ' ')));
+  if (!m) return null;
+  const location = /^(.*),\s*([A-Za-z]{2})$/.exec((m[3] ?? '').trim());
   return {
     name: m[1]!.trim(),
-    degree:
-      m[2] ===
-        'MD' ||
-      m[2] ===
-        'DO'
-        ? m[2]
-        : null,
-    city: location
-      ? location[1]!.trim()
-      : '',
-    state:
-      location
-        ? location[2]!.toUpperCase()
-        : '',
+    degree: m[2] === 'MD' || m[2] === 'DO' ? m[2] : null,
+    city: location ? location[1]!.trim() : '',
+    state: location ? location[2]!.toUpperCase() : '',
   };
 }
 
 export function buildRegistry(input: {
   schoolKeys: string[];
   first: FirstRow[];
-  titles: Record<
-    string,
-    string
-  >;
-  overrides: Record<
-    string,
-    Partial<RegistrySchool>
-  >;
+  titles: Record<string, string>;
+  overrides: Record<string, Partial<RegistrySchool>>;
 }): {
   schools: RegistrySchool[];
   excluded: Array<{
@@ -152,225 +81,95 @@ export function buildRegistry(input: {
   }>;
   review: string[];
 } {
-  const firstByKey =
-    new Map(
-      input.first.map(
-        (
-          r,
-        ) => [
-          r.key,
-          r,
-        ],
-      ),
-    );
+  const firstByKey = new Map(input.first.map((r) => [r.key, r]));
   const excluded: Array<{
     key: string;
     reason: ExcludeReason;
-  }> =
-    [];
-  const review: string[] =
-    [];
-  const built: RegistrySchool[] =
-    [];
+  }> = [];
+  const review: string[] = [];
+  const built: RegistrySchool[] = [];
 
-  for (const key of [
-    ...input.schoolKeys,
-  ].sort()) {
-    const html =
-      input
-        .titles[
-        key
-      ];
-    const title =
-      html ===
-      undefined
-        ? null
-        : parsePageTitle(
-            html,
-          );
-    if (
-      title &&
-      isCanadianLocation(
-        `${title.city}, ${title.state}`,
-      )
-    ) {
-      excluded.push(
-        {
-          key,
-          reason:
-            'canadian',
-        },
-      );
-      continue;
-    }
-    const firstRow =
-      firstByKey.get(
+  for (const key of [...input.schoolKeys].sort()) {
+    const html = input.titles[key];
+    const title = html === undefined ? null : parsePageTitle(html);
+    if (title && isCanadianLocation(`${title.city}, ${title.state}`)) {
+      excluded.push({
         key,
-      );
-    if (
-      !firstRow
-    ) {
-      excluded.push(
-        {
-          key,
-          reason:
-            'no-first-row',
-        },
-      );
+        reason: 'canadian',
+      });
       continue;
     }
-    if (
-      !title
-    ) {
-      excluded.push(
-        {
-          key,
-          reason:
-            'no-title',
-        },
-      );
+    const firstRow = firstByKey.get(key);
+    if (!firstRow) {
+      excluded.push({
+        key,
+        reason: 'no-first-row',
+      });
+      continue;
+    }
+    if (!title) {
+      excluded.push({
+        key,
+        reason: 'no-title',
+      });
       continue;
     }
 
-    const {
-      aliases:
-        _ignored,
-      ...override
-    } =
-      input
-        .overrides[
-        key
-      ] ??
-      {};
-    const degreeAgrees =
-      title.degree ===
-      firstRow.degree;
-    const school: RegistrySchool =
-      {
-        slug: '',
-        name: title.name,
-        shortName:
-          key,
-        degree:
-          firstRow.degree,
-        city: title.city,
-        state:
-          title.state,
-        country:
-          'US',
-        website:
-          null,
-        aliases:
-          [
-            {
-              source:
-                'CYCLETRACK',
-              sourceKey:
-                key,
-            },
-          ],
-        ...override,
-      };
-    const unsettled =
-      (!degreeAgrees &&
-        override.degree ===
-          undefined) ||
-      !school.city ||
-      !school.state;
-    if (
-      unsettled
-    ) {
-      review.push(
-        key,
-      );
+    const { aliases: _ignored, ...override } = input.overrides[key] ?? {};
+    const degreeAgrees = title.degree === firstRow.degree;
+    const school: RegistrySchool = {
+      slug: '',
+      name: title.name,
+      shortName: key,
+      degree: firstRow.degree,
+      city: title.city,
+      state: title.state,
+      country: 'US',
+      website: null,
+      aliases: [
+        {
+          source: 'CYCLETRACK',
+          sourceKey: key,
+        },
+      ],
+      ...override,
+    };
+    const unsettled = (!degreeAgrees && override.degree === undefined) || !school.city || !school.state;
+    if (unsettled) {
+      review.push(key);
       continue;
     }
     // A canadian province code that only an override reveals is still out.
-    if (
-      isCanadianLocation(
-        `${school.city}, ${school.state}`,
-      )
-    ) {
-      excluded.push(
-        {
-          key,
-          reason:
-            'canadian',
-        },
-      );
+    if (isCanadianLocation(`${school.city}, ${school.state}`)) {
+      excluded.push({
+        key,
+        reason: 'canadian',
+      });
       continue;
     }
-    built.push(
-      school,
-    );
+    built.push(school);
   }
 
-  const taken =
-    new Set(
-      built.flatMap(
-        (
-          s,
-        ) =>
-          s.slug
-            ? [
-                s.slug,
-              ]
-            : [],
-      ),
-    );
+  const taken = new Set(built.flatMap((s) => (s.slug ? [s.slug] : [])));
   for (const s of built) {
-    if (
-      s.slug
-    )
-      continue;
-    let slug =
-      slugify(
-        s.shortName,
-      );
-    if (
-      taken.has(
-        slug,
-      )
-    )
-      slug = `${slug}-${s.state.toLowerCase()}`;
-    for (
-      let n = 2;
-      taken.has(
-        slug,
-      );
-      n++
-    ) {
+    if (s.slug) continue;
+    let slug = slugify(s.shortName);
+    if (taken.has(slug)) slug = `${slug}-${s.state.toLowerCase()}`;
+    for (let n = 2; taken.has(slug); n++) {
       slug = `${slugify(s.shortName)}-${s.state.toLowerCase()}-${n}`;
     }
-    taken.add(
-      slug,
-    );
-    s.slug =
-      slug;
+    taken.add(slug);
+    s.slug = slug;
   }
-  built.sort(
-    (
-      a,
-      b,
-    ) =>
-      a.slug.localeCompare(
-        b.slug,
-      ),
-  );
+  built.sort((a, b) => a.slug.localeCompare(b.slug));
   return {
-    schools:
-      built,
+    schools: built,
     excluded,
     review,
   };
 }
 
-const aliasId =
-  (
-    source: string,
-    key: string,
-  ) =>
-    `${source}\u0000${key}`;
+const aliasId = (source: string, key: string) => `${source}\u0000${key}`;
 
 /**
  * Seeds the registry and converges: every call creates whichever schools and
@@ -387,208 +186,89 @@ export async function seedRegistryIfEmpty(
   schools: number;
   aliases: number;
 }> {
-  const idBySlug =
-    new Map(
-      (
-        await prisma.medSchool.findMany()
-      ).map(
-        (
-          r,
-        ) => [
-          r.slug,
-          r.id,
-        ],
-      ),
-    );
-  const existing =
-    await prisma.medSchoolAlias.findMany();
-  const ownerOf =
-    new Map(
-      existing.map(
-        (
-          a,
-        ) => [
-          aliasId(
-            a.source,
-            a.sourceKey,
-          ),
-          a.schoolId,
-        ],
-      ),
-    );
-  const aliasesOf =
-    new Map<
-      string,
-      Array<{
-        source: MedSource;
-        sourceKey: string;
-      }>
-    >();
+  const idBySlug = new Map((await prisma.medSchool.findMany()).map((r) => [r.slug, r.id]));
+  const existing = await prisma.medSchoolAlias.findMany();
+  const ownerOf = new Map(existing.map((a) => [aliasId(a.source, a.sourceKey), a.schoolId]));
+  const aliasesOf = new Map<
+    string,
+    Array<{
+      source: MedSource;
+      sourceKey: string;
+    }>
+  >();
   for (const a of existing) {
-    const list =
-      aliasesOf.get(
-        a.schoolId,
-      ) ??
-      [];
-    list.push(
-      {
-        source:
-          a.source,
-        sourceKey:
-          a.sourceKey,
-      },
-    );
-    aliasesOf.set(
-      a.schoolId,
-      list,
-    );
+    const list = aliasesOf.get(a.schoolId) ?? [];
+    list.push({
+      source: a.source,
+      sourceKey: a.sourceKey,
+    });
+    aliasesOf.set(a.schoolId, list);
   }
   let schools = 0;
   let aliases = 0;
   for (const s of file.schools) {
-    const stableKey =
-      s.aliases.find(
-        (
-          a,
-        ) =>
-          a.source ===
-          'CYCLETRACK',
-      )?.sourceKey;
+    const stableKey = s.aliases.find((a) => a.source === 'CYCLETRACK')?.sourceKey;
     let id =
-      (stableKey ===
-      undefined
-        ? undefined
-        : ownerOf.get(
-            aliasId(
-              'CYCLETRACK',
-              stableKey,
-            ),
-          )) ??
-      idBySlug.get(
-        s.slug,
-      );
-    if (
-      id ===
-      undefined
-    ) {
-      const row =
-        await prisma.medSchool.upsert(
-          {
-            where:
-              {
-                slug: s.slug,
-              },
-            create:
-              {
-                slug: s.slug,
-                name: s.name,
-                shortName:
-                  s.shortName,
-                degree:
-                  s.degree,
-                city: s.city,
-                state:
-                  s.state,
-                country:
-                  s.country,
-                website:
-                  s.website,
-              },
-            update:
-              {},
-          },
-        );
-      id =
-        row.id;
-      idBySlug.set(
-        s.slug,
-        id,
-      );
+      (stableKey === undefined ? undefined : ownerOf.get(aliasId('CYCLETRACK', stableKey))) ?? idBySlug.get(s.slug);
+    if (id === undefined) {
+      const row = await prisma.medSchool.upsert({
+        where: {
+          slug: s.slug,
+        },
+        create: {
+          slug: s.slug,
+          name: s.name,
+          shortName: s.shortName,
+          degree: s.degree,
+          city: s.city,
+          state: s.state,
+          country: s.country,
+          website: s.website,
+        },
+        update: {},
+      });
+      id = row.id;
+      idBySlug.set(s.slug, id);
       schools++;
     }
     for (const a of s.aliases) {
-      const owner =
-        ownerOf.get(
-          aliasId(
-            a.source,
-            a.sourceKey,
-          ),
-        );
-      const schoolAliases =
-        aliasesOf.get(
-          id,
-        ) ??
-        [];
-      const plan =
-        planAliasMapping(
-          {
-            source:
-              a.source,
-            sourceKey:
-              a.sourceKey,
-            schoolId:
-              id,
-            schoolAliases,
-            keyOwner:
-              owner ===
-              undefined
-                ? null
-                : {
-                    schoolId:
-                      owner,
-                  },
+      const owner = ownerOf.get(aliasId(a.source, a.sourceKey));
+      const schoolAliases = aliasesOf.get(id) ?? [];
+      const plan = planAliasMapping({
+        source: a.source,
+        sourceKey: a.sourceKey,
+        schoolId: id,
+        schoolAliases,
+        keyOwner:
+          owner === undefined
+            ? null
+            : {
+                schoolId: owner,
+              },
+      });
+      if (!plan.ok || owner !== undefined) continue;
+      await prisma.medSchoolAlias.upsert({
+        where: {
+          source_sourceKey: {
+            source: a.source,
+            sourceKey: a.sourceKey,
           },
-        );
-      if (
-        !plan.ok ||
-        owner !==
-          undefined
-      )
-        continue;
-      await prisma.medSchoolAlias.upsert(
-        {
-          where:
-            {
-              source_sourceKey:
-                {
-                  source:
-                    a.source,
-                  sourceKey:
-                    a.sourceKey,
-                },
-            },
-          create:
-            {
-              schoolId:
-                id,
-              source:
-                a.source,
-              sourceKey:
-                a.sourceKey,
-            },
-          update:
-            {},
         },
-      );
-      ownerOf.set(
-        aliasId(
-          a.source,
-          a.sourceKey,
-        ),
-        id,
-      );
-      aliasesOf.set(
-        id,
-        [
-          ...schoolAliases,
-          {
-            source:
-              a.source,
-            sourceKey:
-              a.sourceKey,
-          },
-        ],
-      );
+        create: {
+          schoolId: id,
+          source: a.source,
+          sourceKey: a.sourceKey,
+        },
+        update: {},
+      });
+      ownerOf.set(aliasId(a.source, a.sourceKey), id);
+      aliasesOf.set(id, [
+        ...schoolAliases,
+        {
+          source: a.source,
+          sourceKey: a.sourceKey,
+        },
+      ]);
       aliases++;
     }
   }
@@ -626,166 +306,79 @@ export async function seedAdmitAliases(
     admitSlug: string;
   }>;
 }> {
-  const existing =
-    await prisma.medSchoolAlias.findMany();
-  const ownerOf =
-    new Map(
-      existing.map(
-        (
-          a,
-        ) => [
-          aliasId(
-            a.source,
-            a.sourceKey,
-          ),
-          a.schoolId,
-        ],
-      ),
-    );
-  const aliasesOf =
-    new Map<
-      string,
-      Array<{
-        source: MedSource;
-        sourceKey: string;
-      }>
-    >();
+  const existing = await prisma.medSchoolAlias.findMany();
+  const ownerOf = new Map(existing.map((a) => [aliasId(a.source, a.sourceKey), a.schoolId]));
+  const aliasesOf = new Map<
+    string,
+    Array<{
+      source: MedSource;
+      sourceKey: string;
+    }>
+  >();
   for (const a of existing) {
-    const list =
-      aliasesOf.get(
-        a.schoolId,
-      ) ??
-      [];
-    list.push(
-      {
-        source:
-          a.source,
-        sourceKey:
-          a.sourceKey,
-      },
-    );
-    aliasesOf.set(
-      a.schoolId,
-      list,
-    );
+    const list = aliasesOf.get(a.schoolId) ?? [];
+    list.push({
+      source: a.source,
+      sourceKey: a.sourceKey,
+    });
+    aliasesOf.set(a.schoolId, list);
   }
   let created = 0;
-  const unmatched: string[] =
-    [];
+  const unmatched: string[] = [];
   const skipped: Array<{
     cycletrackKey: string;
     admitSlug: string;
-  }> =
-    [];
+  }> = [];
   for (const pair of file.aliases) {
-    const schoolId =
-      ownerOf.get(
-        aliasId(
-          'CYCLETRACK',
-          pair.cycletrackKey,
-        ),
-      );
-    if (
-      schoolId ===
-      undefined
-    ) {
-      unmatched.push(
-        pair.admitSlug,
-      );
+    const schoolId = ownerOf.get(aliasId('CYCLETRACK', pair.cycletrackKey));
+    if (schoolId === undefined) {
+      unmatched.push(pair.admitSlug);
       continue;
     }
-    const owner =
-      ownerOf.get(
-        aliasId(
-          'ADMIT',
-          pair.admitSlug,
-        ),
-      );
-    const schoolAliases =
-      aliasesOf.get(
-        schoolId,
-      ) ??
-      [];
-    const plan =
-      planAliasMapping(
-        {
-          source:
-            'ADMIT',
-          sourceKey:
-            pair.admitSlug,
-          schoolId,
-          schoolAliases,
-          keyOwner:
-            owner ===
-            undefined
-              ? null
-              : {
-                  schoolId:
-                    owner,
-                },
-        },
-      );
-    if (
-      !plan.ok
-    ) {
-      skipped.push(
-        {
-          cycletrackKey:
-            pair.cycletrackKey,
-          admitSlug:
-            pair.admitSlug,
-        },
-      );
+    const owner = ownerOf.get(aliasId('ADMIT', pair.admitSlug));
+    const schoolAliases = aliasesOf.get(schoolId) ?? [];
+    const plan = planAliasMapping({
+      source: 'ADMIT',
+      sourceKey: pair.admitSlug,
+      schoolId,
+      schoolAliases,
+      keyOwner:
+        owner === undefined
+          ? null
+          : {
+              schoolId: owner,
+            },
+    });
+    if (!plan.ok) {
+      skipped.push({
+        cycletrackKey: pair.cycletrackKey,
+        admitSlug: pair.admitSlug,
+      });
       continue;
     }
-    if (
-      owner !==
-      undefined
-    )
-      continue;
-    await prisma.medSchoolAlias.upsert(
-      {
-        where:
-          {
-            source_sourceKey:
-              {
-                source:
-                  'ADMIT',
-                sourceKey:
-                  pair.admitSlug,
-              },
-          },
-        create:
-          {
-            schoolId,
-            source:
-              'ADMIT',
-            sourceKey:
-              pair.admitSlug,
-          },
-        update:
-          {},
+    if (owner !== undefined) continue;
+    await prisma.medSchoolAlias.upsert({
+      where: {
+        source_sourceKey: {
+          source: 'ADMIT',
+          sourceKey: pair.admitSlug,
+        },
       },
-    );
-    ownerOf.set(
-      aliasId(
-        'ADMIT',
-        pair.admitSlug,
-      ),
-      schoolId,
-    );
-    aliasesOf.set(
-      schoolId,
-      [
-        ...schoolAliases,
-        {
-          source:
-            'ADMIT',
-          sourceKey:
-            pair.admitSlug,
-        },
-      ],
-    );
+      create: {
+        schoolId,
+        source: 'ADMIT',
+        sourceKey: pair.admitSlug,
+      },
+      update: {},
+    });
+    ownerOf.set(aliasId('ADMIT', pair.admitSlug), schoolId);
+    aliasesOf.set(schoolId, [
+      ...schoolAliases,
+      {
+        source: 'ADMIT',
+        sourceKey: pair.admitSlug,
+      },
+    ]);
     created++;
   }
   return {
@@ -800,28 +393,16 @@ export async function seedAdmitAliases(
  * queue on day one. A miss row that already exists is never touched (an admin's resolution or ignore stays).
  * Returns the number of rows created.
  */
-export async function seedAdmitIgnoredMisses(
-  prisma: SeedPrisma,
-  file: AdmitAliasFile,
-): Promise<number> {
+export async function seedAdmitIgnoredMisses(prisma: SeedPrisma, file: AdmitAliasFile): Promise<number> {
   let created = 0;
-  for (const sourceKey of file.ignoredSlugs ??
-    []) {
-    const existing =
-      await prisma.medSchoolAliasMiss.findFirst(
-        {
-          where:
-            {
-              source:
-                'ADMIT',
-              sourceKey,
-            },
-        },
-      );
-    if (
-      existing
-    )
-      continue;
+  for (const sourceKey of file.ignoredSlugs ?? []) {
+    const existing = await prisma.medSchoolAliasMiss.findFirst({
+      where: {
+        source: 'ADMIT',
+        sourceKey,
+      },
+    });
+    if (existing) continue;
     await prisma.medSchoolAliasMiss.upsert({
       where: { source_sourceKey: { source: 'ADMIT', sourceKey } },
       create: { source: 'ADMIT', sourceKey, seenCount: 0, ignored: true },
@@ -858,13 +439,8 @@ export async function seedSdnAliases(
   skipped: Array<{ cycletrackKey: string; key: string }>;
 }> {
   const existing = await prisma.medSchoolAlias.findMany();
-  const ownerOf = new Map(
-    existing.map((a) => [aliasId(a.source, a.sourceKey), a.schoolId]),
-  );
-  const aliasesOf = new Map<
-    string,
-    Array<{ source: MedSource; sourceKey: string }>
-  >();
+  const ownerOf = new Map(existing.map((a) => [aliasId(a.source, a.sourceKey), a.schoolId]));
+  const aliasesOf = new Map<string, Array<{ source: MedSource; sourceKey: string }>>();
   for (const a of existing) {
     const list = aliasesOf.get(a.schoolId) ?? [];
     list.push({ source: a.source, sourceKey: a.sourceKey });
@@ -874,12 +450,7 @@ export async function seedSdnAliases(
   const unmatched: string[] = [];
   const skipped: Array<{ cycletrackKey: string; key: string }> = [];
   for (const entry of file.aliases) {
-    const keys = [
-      ...entry.threadStems,
-      ...(entry.summary
-        ? [summaryKey(entry.summary.code, entry.summary.slug)]
-        : []),
-    ];
+    const keys = [...entry.threadStems, ...(entry.summary ? [summaryKey(entry.summary.code, entry.summary.slug)] : [])];
     const schoolId = ownerOf.get(aliasId('CYCLETRACK', entry.cycletrackKey));
     if (schoolId === undefined) {
       unmatched.push(...keys);
@@ -906,10 +477,7 @@ export async function seedSdnAliases(
         update: {},
       });
       ownerOf.set(aliasId('SDN', key), schoolId);
-      aliasesOf.set(schoolId, [
-        ...schoolAliases,
-        { source: 'SDN', sourceKey: key },
-      ]);
+      aliasesOf.set(schoolId, [...schoolAliases, { source: 'SDN', sourceKey: key }]);
       created++;
     }
   }
@@ -920,10 +488,7 @@ export async function seedSdnAliases(
  * Pre-ignores the SDN stems the reviewed data deliberately leaves unmapped, so they do not land in the admin
  * queue on day one. A miss row that already exists is never touched. Returns the number of rows created.
  */
-export async function seedSdnIgnoredMisses(
-  prisma: SeedPrisma,
-  file: SdnAliasFile,
-): Promise<number> {
+export async function seedSdnIgnoredMisses(prisma: SeedPrisma, file: SdnAliasFile): Promise<number> {
   let created = 0;
   for (const sourceKey of file.ignoredStems ?? []) {
     const existing = await prisma.medSchoolAliasMiss.findFirst({
@@ -940,62 +505,27 @@ export async function seedSdnIgnoredMisses(
   return created;
 }
 
-const dateOnly =
-  (
-    d:
-      | string
-      | null,
-  ): Date | null =>
-    d ===
-    null
-      ? null
-      : new Date(
-          `${d}T00:00:00.000Z`,
-        );
+const dateOnly = (d: string | null): Date | null => (d === null ? null : new Date(`${d}T00:00:00.000Z`));
 
-export async function seedCycles(
-  prisma: SeedPrisma,
-  cycles: CycleSeed[],
-): Promise<number> {
+export async function seedCycles(prisma: SeedPrisma, cycles: CycleSeed[]): Promise<number> {
   for (const c of cycles) {
-    const data =
-      {
-        amcasOpensOn:
-          dateOnly(
-            c.amcasOpensOn,
-          ),
-        amcasSubmitOn:
-          dateOnly(
-            c.amcasSubmitOn,
-          ),
-        aacomasOpensOn:
-          dateOnly(
-            c.aacomasOpensOn,
-          ),
-        dayZeroOn:
-          dateOnly(
-            c.dayZeroOn,
-          ),
-        dateEstimated:
-          c.dateEstimated,
-      };
-    await prisma.medCycle.upsert(
-      {
-        where:
-          {
-            cycleYear:
-              c.cycleYear,
-          },
-        create:
-          {
-            cycleYear:
-              c.cycleYear,
-            ...data,
-          },
-        update:
-          data,
+    const data = {
+      amcasOpensOn: dateOnly(c.amcasOpensOn),
+      amcasSubmitOn: dateOnly(c.amcasSubmitOn),
+      aacomasOpensOn: dateOnly(c.aacomasOpensOn),
+      dayZeroOn: dateOnly(c.dayZeroOn),
+      dateEstimated: c.dateEstimated,
+    };
+    await prisma.medCycle.upsert({
+      where: {
+        cycleYear: c.cycleYear,
       },
-    );
+      create: {
+        cycleYear: c.cycleYear,
+        ...data,
+      },
+      update: data,
+    });
   }
   return cycles.length;
 }

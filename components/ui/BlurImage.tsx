@@ -1,30 +1,15 @@
-import {
-  ImgHTMLAttributes,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { ImgHTMLAttributes, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useDataSaverAtMount } from '@/hooks/useDataSaver';
-import {
-  buildOptimizedUrl,
-  generateSrcSet,
-  isOptimizable,
-} from './OptimizedImage';
+import { buildOptimizedUrl, generateSrcSet, isOptimizable } from './OptimizedImage';
 
-interface BlurImageProps extends Omit<
-  ImgHTMLAttributes<HTMLImageElement>,
-  | 'srcSet'
-  | 'placeholder'
-> {
+interface BlurImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'srcSet' | 'placeholder'> {
   /** Image source URL (CDN, /api/feed/image/..., or external). */
   src: string;
   /** Alt text. */
   alt: string;
   /** object-fit behaviour of the rendered image (default 'cover'). */
-  fit?:
-    | 'cover'
-    | 'contain';
+  fit?: 'cover' | 'contain';
   /** Largest size this image is displayed at — drives the default src + `sizes`. */
   width?: number;
   /** Quality 1-100 for the full image (default 80). */
@@ -47,10 +32,7 @@ interface BlurImageProps extends Omit<
    * cache hit). Lets callers learn the ratio of legacy images so later renders
    * can reserve space for them.
    */
-  onNaturalSize?: (
-    width: number,
-    height: number,
-  ) => void;
+  onNaturalSize?: (width: number, height: number) => void;
   /**
    * Mark this image as the page's LCP candidate: `fetchpriority=high`, eager
    * loading, synchronous decode — and no blur-up. The placeholder is dropped
@@ -88,37 +70,21 @@ export function blurImagePreload({
   quality?: number;
   sizes?: string;
 }) {
-  const optimizable =
-    isOptimizable(
-      src,
-    );
+  const optimizable = isOptimizable(src);
   return {
     rel: 'preload' as const,
     as: 'image' as const,
-    href: optimizable
-      ? buildOptimizedUrl(
-          src,
-          width ||
-            800,
-          quality,
-        )
-      : src,
+    href: optimizable ? buildOptimizedUrl(src, width || 800, quality) : src,
     // Only when the component will actually emit a srcSet. It drops `sizes` in
     // the non-optimizable case, and a preload carrying `imagesizes` for an
     // `<img>` that has no `sizes` is exactly the mismatch described above.
     ...(optimizable
       ? {
-          imageSrcSet:
-            generateSrcSet(
-              src,
-              quality,
-            ),
-          imageSizes:
-            sizes,
+          imageSrcSet: generateSrcSet(src, quality),
+          imageSizes: sizes,
         }
       : {}),
-    fetchPriority:
-      'high' as const,
+    fetchPriority: 'high' as const,
   };
 }
 
@@ -151,139 +117,59 @@ export function BlurImage({
   priority = false,
   ...rest
 }: BlurImageProps) {
-  const imgRef =
-    useRef<HTMLImageElement>(
-      null,
-    );
-  const [
-    loaded,
-    setLoaded,
-  ] =
-    useState(
-      false,
-    );
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [loaded, setLoaded] = useState(false);
 
-  const reportSize =
-    (
-      img: HTMLImageElement | null,
-    ) => {
-      if (
-        img &&
-        img.naturalWidth >
-          0
-      )
-        onNaturalSize?.(
-          img.naturalWidth,
-          img.naturalHeight,
-        );
-    };
+  const reportSize = (img: HTMLImageElement | null) => {
+    if (img && img.naturalWidth > 0) onNaturalSize?.(img.naturalWidth, img.naturalHeight);
+  };
 
   // If the image is already cached the browser fires `load` before React
   // attaches the handler, so reconcile from `.complete` after mount.
   useEffect(() => {
-    if (
-      imgRef
-        .current
-        ?.complete
-    ) {
-      setLoaded(
-        true,
-      );
-      reportSize(
-        imgRef.current,
-      );
+    if (imgRef.current?.complete) {
+      setLoaded(true);
+      reportSize(imgRef.current);
     }
     // reportSize/onNaturalSize are stable enough for this reconcile-on-src effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    src,
-  ]);
+  }, [src]);
 
   // Data saver caps the candidates at the slot's CSS width, decided once at mount:
   // from the request on the server, from the live setting on a client mount
   // (hooks/useDataSaver#useDataSaverAtMount). Never for `priority`:
   // its <link rel=preload> is built from the uncapped srcset by
   // `blurImagePreload`, and a preload that disagrees with its <img> downloads twice.
-  const saving =
-    useDataSaverAtMount() &&
-    !priority;
+  const saving = useDataSaverAtMount() && !priority;
 
-  const fitClass =
-    fit ===
-    'contain'
-      ? 'object-contain'
-      : 'object-cover';
+  const fitClass = fit === 'contain' ? 'object-contain' : 'object-cover';
 
-  if (
-    !src
-  )
-    return null;
+  if (!src) return null;
 
-  const optimizable =
-    isOptimizable(
-      src,
-    );
-  const fullSrc =
-    optimizable
-      ? buildOptimizedUrl(
-          src,
-          width ||
-            800,
-          quality,
-        )
-      : src;
-  const srcSet =
-    optimizable
-      ? generateSrcSet(
-          src,
-          quality,
-          undefined,
-          saving
-            ? width ||
-                800
-            : undefined,
-        )
-      : undefined;
+  const optimizable = isOptimizable(src);
+  const fullSrc = optimizable ? buildOptimizedUrl(src, width || 800, quality) : src;
+  const srcSet = optimizable ? generateSrcSet(src, quality, undefined, saving ? width || 800 : undefined) : undefined;
   // No blur-up for the LCP candidate: the placeholder is a second request
   // competing with the one being prioritised, and the fade it exists to cover
   // is itself what would delay the measured paint.
   const placeholderSrc =
-    optimizable &&
-    !priority
-      ? buildOptimizedUrl(
-          src,
-          PLACEHOLDER_WIDTH,
-          PLACEHOLDER_QUALITY,
-        )
-      : undefined;
+    optimizable && !priority ? buildOptimizedUrl(src, PLACEHOLDER_WIDTH, PLACEHOLDER_QUALITY) : undefined;
   // `loaded` still tracks the real load (the skeleton and `onNaturalSize`
   // depend on it); `visible` is only about opacity, and a priority image is
   // never hidden.
-  const visible =
-    loaded ||
-    priority;
+  const visible = loaded || priority;
 
   // With a known ratio the wrapper reserves the box and the image fills it, so
   // the layout is stable before/after load. Without one, the image sizes itself.
-  const reserve =
-    typeof aspectRatio ===
-      'number' &&
-    aspectRatio >
-      0;
+  const reserve = typeof aspectRatio === 'number' && aspectRatio > 0;
 
   return (
     <span
-      className={cn(
-        'relative block overflow-hidden',
-        className,
-      )}
+      className={cn('relative block overflow-hidden', className)}
       style={
         reserve
           ? {
-              aspectRatio:
-                String(
-                  aspectRatio,
-                ),
+              aspectRatio: String(aspectRatio),
               ...style,
             }
           : style
@@ -291,90 +177,40 @@ export function BlurImage({
     >
       {/* Skeleton behind everything so there's always a placeholder holding the
  space — even for non-optimizable images with no blur preview. */}
-      {!loaded && (
-        <span
+      {!loaded && <span aria-hidden="true" className="absolute inset-0 bg-site-surface" />}
+      {placeholderSrc && !loaded && (
+        <img
+          src={placeholderSrc}
+          alt=""
           aria-hidden="true"
-          className="absolute inset-0 bg-site-surface"
+          draggable={false}
+          // Match the main image's loading mode so a below-fold card's tiny blur
+          // placeholder doesn't fire an eager request during hydration (it stayed
+          // eager while the full image was already lazy).
+          loading={loading}
+          decoding="async"
+          className={cn('pointer-events-none absolute inset-0 h-full w-full scale-110 blur-xl', fitClass)}
         />
       )}
-      {placeholderSrc &&
-        !loaded && (
-          <img
-            src={
-              placeholderSrc
-            }
-            alt=""
-            aria-hidden="true"
-            draggable={
-              false
-            }
-            // Match the main image's loading mode so a below-fold card's tiny blur
-            // placeholder doesn't fire an eager request during hydration (it stayed
-            // eager while the full image was already lazy).
-            loading={
-              loading
-            }
-            decoding="async"
-            className={cn(
-              'pointer-events-none absolute inset-0 h-full w-full scale-110 blur-xl',
-              fitClass,
-            )}
-          />
-        )}
       <img
-        ref={
-          imgRef
-        }
-        src={
-          fullSrc
-        }
-        srcSet={
-          srcSet
-        }
-        sizes={
-          srcSet
-            ? sizes
-            : undefined
-        }
-        alt={
-          alt
-        }
-        fetchPriority={
-          priority
-            ? 'high'
-            : undefined
-        }
-        loading={
-          priority
-            ? 'eager'
-            : loading
-        }
-        decoding={
-          priority
-            ? 'sync'
-            : 'async'
-        }
-        onLoad={(
-          e,
-        ) => {
-          setLoaded(
-            true,
-          );
-          reportSize(
-            e.currentTarget,
-          );
-          onLoad?.(
-            e,
-          );
+        ref={imgRef}
+        src={fullSrc}
+        srcSet={srcSet}
+        sizes={srcSet ? sizes : undefined}
+        alt={alt}
+        fetchPriority={priority ? 'high' : undefined}
+        loading={priority ? 'eager' : loading}
+        decoding={priority ? 'sync' : 'async'}
+        onLoad={(e) => {
+          setLoaded(true);
+          reportSize(e.currentTarget);
+          onLoad?.(e);
         }}
         className={cn(
           fitClass,
           'transition-opacity duration-site-slow',
-          visible
-            ? 'opacity-100'
-            : 'opacity-0',
-          reserve &&
-            'absolute inset-0 h-full w-full',
+          visible ? 'opacity-100' : 'opacity-0',
+          reserve && 'absolute inset-0 h-full w-full',
           imgClassName,
         )}
         {...rest}

@@ -22,15 +22,43 @@ model BlogPost {
   // links to it any more (the discussion is `comments` below); the column stays so no data changes.
   announcementPostId    String?
 
+  // s03-05: draft / scheduled / published. `published` is the database default so a release that knows no
+  // status keeps creating live Logs. `publishAt` is the wanted time of a scheduled Log; `publishedAt` is when
+  // it went live (the date readers sort and fan out by), defaulted so an older release's inserts carry one too.
+  status      String    @default("published") @db.VarChar(12)
+  publishAt   DateTime?
+  publishedAt DateTime? @default(now())
+  updatedById String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  seenBy   BlogAnnouncementSeen[]
-  comments BlogComment[]
+  seenBy    BlogAnnouncementSeen[]
+  comments  BlogComment[]
+  revisions BlogPostRevision[]
 
   @@index([date(sort: Desc)])
+  @@index([status, publishedAt(sort: Desc)])
   @@index([announcement, announcedAt(sort: Desc)])
   @@map("blog_post")
+}
+
+/// s03-05 — one saved version of a Log (a save that changed title, description, tags or content). At most 50
+/// are kept per Log; the oldest are pruned. `authorId` is de-identified when the editor's account is erased.
+model BlogPostRevision {
+  id          BigInt   @id @default(autoincrement())
+  postId      String
+  authorId    String?
+  title       String
+  description String
+  tags        String[]
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt(sort: Desc)])
+  @@map("blog_post_revision")
 }
 
 /// One row per signed-in member who dismissed a sitewide announcement popup.
@@ -484,10 +512,31 @@ model ReadingPrefs {
   wantPublic    Boolean @default(false)
   readingPublic Boolean @default(false)
   readPublic    Boolean @default(false)
+  /// s07-18 — opt-in reading time; nothing is measured while this is false.
+  trackTime           Boolean @default(false)
+  /// s07-18 — weekly target in minutes (10-2000), shown on /reading only.
+  weeklyMinutesTarget Int?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("reading_prefs")
+}
+
+/// s07-18 — seconds a member spent reading one document on one day (the
+/// member's own time zone). Private: never in a public payload.
+model ReadingTimeDay {
+  userId    String
+  day       String         @db.VarChar(10)
+  docKind   ReadingDocKind
+  docKey    String         @db.VarChar(200)
+  seconds   Int
+  updatedAt DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day, docKind, docKey])
+  @@index([userId, day])
+  @@map("reading_time_day")
 }
 
 /// L5 — a news "story": a set of related articles shown as one timeline.
@@ -535,4 +584,64 @@ model GlossaryTerm {
   createdBy User? @relation("GlossaryTermAuthor", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@map("glossary_term")
+}
+
+/// A member's follow of the Logs, a Log tag, a News category or a News story. `target` is "" for `blog`, the tag,
+/// the category name, or the story slug. The 15-minute fan-out (`lib/reading/subscriptions.server.ts`) notifies
+/// `inApp` rows; the daily email batch sends to `email` rows with new items since `lastEmailedAt`.
+model ReadingSubscription {
+  id            String    @id @default(cuid())
+  userId        String
+  kind          String    @db.VarChar(16)
+  target        String    @default("") @db.VarChar(80)
+  inApp         Boolean   @default(true)
+  email         Boolean   @default(false)
+  lastEmailedAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, target])
+  @@index([kind, target])
+  @@map("reading_subscription")
+}
+
+/// Where the subscription fan-out stopped, one row per source (`blog`, `news`). It advances only after the batch
+/// it covers has been written, so a crash re-reads the batch and the notification dedupe absorbs the repeat.
+model ReadingFanoutCursor {
+  name       String   @id
+  lastSeenAt DateTime
+
+  @@map("reading_fanout_cursor")
+}
+
+/// s04-09 — a signed-in reader's place, bookmarks and page notes for one book, so
+/// they follow the member across devices. `kind` is `place` (one row per book,
+/// `clientId` fixed to "place"), `bookmark` or `note`. `page` is the 1-based PDF page
+/// (or the EPUB chapter-level page), `location` the EPUB fine location. A bookmark's
+/// caption is `label`; a note's text is `body` and its colour token rides in `label`.
+/// `updatedAt` is the edit time the merge compares (client time clamped to the server's
+/// clock on write), not a database `@updatedAt`. Deletions are tombstones (`deletedAt`)
+/// kept 30 days so other devices learn of them. Private to the owner: no endpoint reads
+/// another member's rows, the uploader's included.
+model LibraryReaderMark {
+  id        String    @id @default(cuid())
+  userId    String
+  docSlug   String    @db.VarChar(200)
+  clientId  String    @db.VarChar(40)
+  kind      String    @db.VarChar(8)
+  page      Int
+  location  String?   @db.VarChar(200)
+  label     String?   @db.VarChar(120)
+  body      String?   @db.VarChar(2000)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, docSlug, clientId])
+  @@index([userId, docSlug])
+  @@index([userId, kind, updatedAt(sort: Desc)])
+  @@map("library_reader_mark")
 }

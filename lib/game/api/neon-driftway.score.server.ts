@@ -42,7 +42,7 @@ export const route = apiRoute('/api/neon-driftway/score', {
           { status: result.status },
         );
       }
-      return Response.json({ success: true, linked: true, moment: result.moment ?? null });
+      return Response.json({ success: true, ranked: result.ranked, linked: true, moment: result.moment ?? null });
     },
   ),
 });

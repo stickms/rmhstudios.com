@@ -42,6 +42,16 @@ export const Route = createFileRoute('/api/group-chats/$id/stream')({
               }
               if ('type' in event && event.type === 'chat-update') {
                 send('chat-update', JSON.stringify(event.update));
+                // A member the owner removed stops hearing the group at once, not when their stream recycles.
+                const u = event.update;
+                if (u.op === 'group' && u.change === 'removed' && u.userId === userId) {
+                  cleanup?.();
+                  try {
+                    controller.close();
+                  } catch {
+                    // already closed
+                  }
+                }
                 return;
               }
               send('message', JSON.stringify(event));

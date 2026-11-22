@@ -8,13 +8,10 @@
  * (the help sheet hand-maintains its own list, which drifts) and *does this new
  * one collide with an existing one* (nobody can tell, so collisions ship).
  *
- * This is the missing index. It is deliberately a **declaration** registry, not
- * a dispatcher: entries carry the binding as data, and an entry may or may not
- * carry a `run`. `KeyboardShortcuts.tsx` keeps its own handler and is not
- * touched by this change — its bindings are mirrored below as `SITE_SHORTCUTS`
- * so the conflict check has the real site set to test new shortcuts against
- * from day one. When that component is eventually rewritten to dispatch from
- * here, the declarations are already correct.
+ * This is the missing index. Entries carry the binding as data; an entry may or
+ * may not carry a `run`. `KeyboardShortcuts.tsx` dispatches from these
+ * declarations after `lib/shortcuts/bindings.ts` has applied the person's
+ * overrides and single-key mode, and conflicts are checked against the same set.
  *
  * Key notation matches how the existing handlers compare: one array entry per
  * keystroke in the sequence (`['g', 'h']` is "g then h"), each entry a
@@ -110,7 +107,11 @@ export function matchesKeystroke(spec: string, event: KeyboardEvent): boolean {
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
-  return /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return true;
+  // Custom editors (code editors, rich-text widgets) expose a text role instead.
+  return (
+    target.closest?.('[role="textbox"], [role="searchbox"], [role="combobox"]') != null
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -132,10 +133,23 @@ const GO: Array<[key: string, id: string, labelKey: string, label: string]> = [
   ['s', 'site.go.settings', 'kbd-go-settings', 'Settings'],
 ];
 
+// Post navigation, mirroring FEED_NAV_IDS in `feed-nav.ts`: [id suffix, key, English label].
+const FEED_NAV: Array<[name: string, key: string, label: string]> = [
+  ['next', 'j', 'Next post'],
+  ['prev', 'k', 'Previous post'],
+  ['open', 'o', 'Open post'],
+  ['like', 'l', 'Like or unlike'],
+  ['reply', 'r', 'Reply'],
+  ['repost', 't', 'Repost menu'],
+  ['save', 's', 'Save or unsave'],
+  ['reveal', 'x', 'Show or hide a content warning'],
+  ['leave', 'escape', 'Leave post navigation'],
+];
+
 /**
- * What the site binds today, as data. These are declarations — the handlers
- * still live in `KeyboardShortcuts.tsx` and `CommandPalette.tsx` — so nothing
- * here fires anything. They are seeded into the registry at module load so
+ * The site's default bindings, as data. The handlers are attached by
+ * `KeyboardShortcuts.tsx` (and `CommandPalette.tsx` for the palette), which
+ * look up each id's effective keys, so nothing here fires anything. They are seeded into the registry at module load so
  * `findShortcutConflicts()` compares new shortcuts against the real set rather
  * than against whatever happens to be mounted.
  *
@@ -182,6 +196,17 @@ export const SITE_SHORTCUTS: readonly Shortcut[] = Object.freeze([
     labelKey,
     label,
     ns: 'feed',
+  })),
+  // Moving through a list of posts (sprint 08 07). Character keys, so the single-key mode and remapping apply with no
+  // code of their own; `components/feed/feed-nav.tsx` runs them. `Enter` opens the focused post natively and is not a
+  // binding. The `g s` sequence above is not a bare `s`: a sequence's first key is `g`.
+  ...FEED_NAV.map(([name, key, label]): Shortcut => ({
+    id: `feed.nav.${name}`,
+    keys: [key],
+    scope: 'feed',
+    labelKey: `kbd-${name}`,
+    label,
+    ns: 'feed-keyboard',
   })),
 ]);
 

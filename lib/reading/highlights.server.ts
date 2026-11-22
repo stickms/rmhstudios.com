@@ -16,21 +16,27 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { getBook } from '@/lib/library/library.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
+import { emitHighlightCreated } from '@/lib/webhooks/activity-emit.server';
 import { MIN_READERS_TO_SHOW, type PassageRef } from './passages';
 import {
   MAX_HIGHLIGHTS_PER_DOC,
   type DocBundle,
   type HighlightView,
+  type MyHighlightRow,
   type MyHighlightsPage,
   type PopularPassage,
   type PublicNoteView,
   type ReadingDocKind,
 } from './schema';
 import { listGlossary } from './glossary.server';
+import { SITE_URL } from '@/lib/seo';
+import { EXPORT_CAP, type ExportRow } from './highlights-export';
+import type { HighlightsFilter } from './highlights-search-schema';
 
 type Tx = Prisma.TransactionClient;
 
@@ -53,7 +59,10 @@ export async function docExists(kind: ReadingDocKind, key: string): Promise<bool
     return a !== null && a.status === 'PUBLISHED';
   }
   return (
-    (await prisma.blogPost.findUnique({ where: { slug: key }, select: { id: true } })) !== null
+    (await prisma.blogPost.findFirst({
+      where: { slug: key, ...publishedLogWhere(new Date()) },
+      select: { id: true },
+    })) !== null
   );
 }
 
@@ -298,6 +307,13 @@ export async function createHighlight(userId: string, input: NewHighlight): Prom
     return created;
   });
   invalidateDoc(input.kind, input.key);
+  // After commit; the payload names the document and the highlight, never its text or note.
+  await emitHighlightCreated(userId, {
+    highlightId: row.id,
+    docKind: input.kind,
+    docKey: input.key,
+    createdAt: row.createdAt,
+  });
   return { ok: true, highlight: toView(row) };
 }
 
@@ -349,28 +365,20 @@ export async function deleteHighlight(userId: string, id: string): Promise<boole
   return true;
 }
 
-/** The "My highlights" page: newest first, across every document. */
-export async function listMyHighlights(
-  userId: string,
-  cursor: string | null,
-  limit = 30,
-): Promise<MyHighlightsPage> {
-  const rows = await prisma.readingHighlight.findMany({
-    where: { userId },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    select: { ...VIEW_SELECT, docKind: true, docKey: true },
-  });
-  const page = rows.slice(0, limit);
+const hrefFor = (kind: ReadingDocKind, key: string) =>
+  kind === 'blog' ? `/blog/${key}` : kind === 'news' ? `/news/${key}` : `/library/${key}`;
 
+/** Titles for a set of highlights' documents, keyed `kind:key`; a missing document falls back to its key. */
+async function documentTitles(
+  rows: readonly { docKind: ReadingDocKind; docKey: string }[],
+): Promise<Map<string, string>> {
   const slugsOf = (k: ReadingDocKind) => [
-    ...new Set(page.filter((r) => r.docKind === k).map((r) => r.docKey)),
+    ...new Set(rows.filter((r) => r.docKind === k).map((r) => r.docKey)),
   ];
   const [blog, news, lib] = await Promise.all([
     slugsOf('blog').length
       ? prisma.blogPost.findMany({
-          where: { slug: { in: slugsOf('blog') } },
+          where: { slug: { in: slugsOf('blog') }, ...publishedLogWhere(new Date()) },
           select: { slug: true, title: true },
         })
       : [],
@@ -391,18 +399,120 @@ export async function listMyHighlights(
   for (const r of blog) titles.set(`blog:${r.slug}`, r.title);
   for (const r of news) titles.set(`news:${r.slug}`, r.title);
   for (const r of lib) titles.set(`library:${r.slug}`, r.title);
+  return titles;
+}
 
-  const hrefFor = (kind: ReadingDocKind, key: string) =>
-    kind === 'blog' ? `/blog/${key}` : kind === 'news' ? `/news/${key}` : `/library/${key}`;
+type MyRow = Awaited<ReturnType<typeof loadRows>>[number];
 
+function loadRows(where: Prisma.ReadingHighlightWhereInput, orderBy: Prisma.ReadingHighlightOrderByWithRelationInput[], extra: { take: number; cursor?: string | null }) {
+  return prisma.readingHighlight.findMany({
+    where,
+    orderBy,
+    take: extra.take,
+    ...(extra.cursor ? { cursor: { id: extra.cursor }, skip: 1 } : {}),
+    select: { ...VIEW_SELECT, docKind: true, docKey: true },
+  });
+}
+
+async function toMyRows(rows: MyRow[]): Promise<MyHighlightRow[]> {
+  const titles = await documentTitles(rows);
+  return rows.map((r) => ({
+    ...toView(r),
+    kind: r.docKind,
+    key: r.docKey,
+    title: titles.get(`${r.docKind}:${r.docKey}`) ?? r.docKey,
+    href: hrefFor(r.docKind, r.docKey),
+  }));
+}
+
+const NEWEST: Prisma.ReadingHighlightOrderByWithRelationInput[] = [{ createdAt: 'desc' }, { id: 'desc' }];
+const ORDERS: Record<NonNullable<HighlightsFilter['sort']>, Prisma.ReadingHighlightOrderByWithRelationInput[]> = {
+  newest: NEWEST,
+  oldest: [{ createdAt: 'asc' }, { id: 'asc' }],
+  document: [{ docKind: 'asc' }, { docKey: 'asc' }, { unit: 'asc' }, { start: 'asc' }, { id: 'asc' }],
+};
+
+/** The "My highlights" page: newest first, across every document. */
+export async function listMyHighlights(
+  userId: string,
+  cursor: string | null,
+  limit = 30,
+): Promise<MyHighlightsPage> {
+  const rows = await loadRows({ userId }, NEWEST, { take: limit + 1, cursor });
+  const page = rows.slice(0, limit);
   return {
-    items: page.map((r) => ({
-      ...toView(r),
-      kind: r.docKind,
-      key: r.docKey,
-      title: titles.get(`${r.docKind}:${r.docKey}`) ?? r.docKey,
-      href: hrefFor(r.docKind, r.docKey),
-    })),
+    items: await toMyRows(page),
     nextCursor: rows.length > limit ? page[page.length - 1]!.id : null,
   };
+}
+
+/** Every query starts from the member's own rows; the filter only narrows them. */
+function filterWhere(userId: string, f: HighlightsFilter): Prisma.ReadingHighlightWhereInput {
+  const q = f.q?.trim();
+  return {
+    userId,
+    ...(f.kind ? { docKind: f.kind } : {}),
+    ...(f.visibility ? { isPublic: f.visibility === 'public' } : {}),
+    ...(f.hasNote ? { note: { not: null } } : {}),
+    ...(q
+      ? {
+          OR: [
+            { exact: { contains: q, mode: 'insensitive' as const } },
+            { note: { contains: q, mode: 'insensitive' as const } },
+          ],
+        }
+      : {}),
+  };
+}
+
+const SEARCH_PAGE = 30;
+
+/** The notebook's list: the member's highlights narrowed by search and filters, one page at a time. */
+export async function searchHighlights(
+  userId: string,
+  filter: HighlightsFilter,
+  cursor: string | null,
+  limit = SEARCH_PAGE,
+): Promise<MyHighlightsPage & { total: number }> {
+  const where = filterWhere(userId, filter);
+  const [rows, total] = await Promise.all([
+    loadRows(where, ORDERS[filter.sort ?? 'newest'], { take: limit + 1, cursor }),
+    prisma.readingHighlight.count({ where }),
+  ]);
+  const page = rows.slice(0, limit);
+  return {
+    items: await toMyRows(page),
+    nextCursor: rows.length > limit ? page[page.length - 1]!.id : null,
+    total,
+  };
+}
+
+/**
+ * Everything an export needs, with document titles and absolute links resolved.
+ * `ids` narrows the filter's matches to a selection; ids that are not the
+ * member's simply match nothing. At most EXPORT_CAP rows.
+ */
+export async function exportHighlights(
+  userId: string,
+  filter: HighlightsFilter,
+  ids?: readonly string[],
+): Promise<ExportRow[]> {
+  const where = filterWhere(userId, filter);
+  const rows = await loadRows(ids ? { ...where, id: { in: [...ids] } } : where, ORDERS[filter.sort ?? 'newest'], {
+    take: EXPORT_CAP,
+  });
+  const titles = await documentTitles(rows);
+  return rows.map((r) => ({
+    id: r.id,
+    kind: r.docKind,
+    key: r.docKey,
+    unit: r.unit,
+    start: r.start,
+    title: titles.get(`${r.docKind}:${r.docKey}`) ?? r.docKey,
+    url: `${SITE_URL}${hrefFor(r.docKind, r.docKey)}`,
+    exact: r.exact,
+    note: r.note,
+    isPublic: r.isPublic,
+    createdAt: r.createdAt.toISOString(),
+  }));
 }

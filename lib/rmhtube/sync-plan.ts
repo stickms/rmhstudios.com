@@ -47,13 +47,9 @@ export interface PlayerSample {
   /** Effective playback rate the element reports. */
   rate: number;
   /** Furthest reachable position, or null when the provider won't say. */
-  seekableEnd:
-    | number
-    | null;
+  seekableEnd: number | null;
   /** Earliest reachable position (> 0 for a DVR window), or null. */
-  seekableStart:
-    | number
-    | null;
+  seekableStart: number | null;
 }
 
 export interface SyncPlanInput {
@@ -117,14 +113,7 @@ export type SyncPlan =
       drift: number;
     };
 
-export type HoldReason =
-  | 'suspended'
-  | 'not-ready'
-  | 'live'
-  | 'ended'
-  | 'buffering'
-  | 'paused'
-  | 'coarse-rate';
+export type HoldReason = 'suspended' | 'not-ready' | 'live' | 'ended' | 'buffering' | 'paused' | 'coarse-rate';
 
 /**
  * The room position this player should be at, clamped to what it can reach.
@@ -132,118 +121,50 @@ export type HoldReason =
  * unreachable; seeking outside the seekable range is a request the player
  * either ignores or answers with a stall.
  */
-export function targetPosition(
-  state: VideoState,
-  serverNow: number,
-  sample: PlayerSample,
-): number {
-  const raw =
-    extrapolate(
-      state,
-      serverNow,
-    );
-  let target =
-    Math.max(
-      0,
-      raw,
-    );
-  if (
-    sample.seekableStart !=
-    null
-  )
-    target =
-      Math.max(
-        target,
-        sample.seekableStart,
-      );
-  if (
-    sample.seekableEnd !=
-    null
-  )
-    target =
-      Math.min(
-        target,
-        sample.seekableEnd,
-      );
+export function targetPosition(state: VideoState, serverNow: number, sample: PlayerSample): number {
+  const raw = extrapolate(state, serverNow);
+  let target = Math.max(0, raw);
+  if (sample.seekableStart != null) target = Math.max(target, sample.seekableStart);
+  if (sample.seekableEnd != null) target = Math.min(target, sample.seekableEnd);
   return target;
 }
 
-export function planSync(
-  input: SyncPlanInput,
-): SyncPlan {
-  const {
-    state,
-    serverNow,
-    sample,
-    canCorrect,
-    canNudge,
-    force,
-  } =
-    input;
-  const roomRate =
-    state.playbackRate ||
-    1;
+export function planSync(input: SyncPlanInput): SyncPlan {
+  const { state, serverNow, sample, canCorrect, canNudge, force } = input;
+  const roomRate = state.playbackRate || 1;
 
   // A live source has no position to agree on. Play/pause still mirrors the
   // room (the caller handles that); the playhead is the provider's business.
-  if (
-    state.mode ===
-    'live'
-  )
+  if (state.mode === 'live')
     return {
-      action:
-        'hold',
-      reason:
-        'live',
+      action: 'hold',
+      reason: 'live',
       drift: 0,
     };
 
-  if (
-    !canCorrect
-  )
+  if (!canCorrect)
     return {
-      action:
-        'hold',
-      reason:
-        'suspended',
+      action: 'hold',
+      reason: 'suspended',
       drift: 0,
     };
-  if (
-    !sample.ready
-  )
+  if (!sample.ready)
     return {
-      action:
-        'hold',
-      reason:
-        'not-ready',
+      action: 'hold',
+      reason: 'not-ready',
       drift: 0,
     };
 
-  const target =
-    targetPosition(
-      state,
-      serverNow,
-      sample,
-    );
-  const drift =
-    target -
-    sample.position;
-  const absDrift =
-    Math.abs(
-      drift,
-    );
+  const target = targetPosition(state, serverNow, sample);
+  const drift = target - sample.position;
+  const absDrift = Math.abs(drift);
 
   // The end of the item is the queue's business, not the timeline's. Seeking a
   // finished element only restarts it.
-  if (
-    sample.ended &&
-    !force
-  )
+  if (sample.ended && !force)
     return {
-      action:
-        'hold',
-      reason:
-        'ended',
+      action: 'hold',
+      reason: 'ended',
       drift,
     };
 
@@ -251,86 +172,43 @@ export function planSync(
   // stutter loop the old code shipped: buffering held the position still, the
   // timeline ran on, the gap crossed the threshold, the seek dropped the
   // buffer, and the stall started again one seek deeper.
-  if (
-    sample.buffering &&
-    drift >
-      0 &&
-    !force
-  ) {
+  if (sample.buffering && drift > 0 && !force) {
     return {
-      action:
-        'hold',
-      reason:
-        'buffering',
+      action: 'hold',
+      reason: 'buffering',
       drift,
     };
   }
 
   // A player that can nudge closes mid-sized gaps smoothly, so it only needs
   // to jump for bigger ones; one that can't tolerates up to the full 2 s.
-  const hardTolerance =
-    canNudge
-      ? SYNC_HARD_TOLERANCE_NUDGE_S
-      : SYNC_HARD_TOLERANCE_S;
-  if (
-    force ||
-    absDrift >
-      hardTolerance
-  ) {
+  const hardTolerance = canNudge ? SYNC_HARD_TOLERANCE_NUDGE_S : SYNC_HARD_TOLERANCE_S;
+  if (force || absDrift > hardTolerance) {
     // Lead a seek on a playing room by the time the player will spend refilling,
     // so it lands where the room will be, not where it was.
-    const lead =
-      state.playing
-        ? Math.min(
-            Math.max(
-              0,
-              input.seekLeadS ??
-                0,
-            ),
-            SYNC_MAX_SEEK_LEAD_S,
-          ) *
-          roomRate
-        : 0;
-    const to =
-      sample.seekableEnd !=
-      null
-        ? Math.min(
-            target +
-              lead,
-            sample.seekableEnd,
-          )
-        : target +
-          lead;
+    const lead = state.playing ? Math.min(Math.max(0, input.seekLeadS ?? 0), SYNC_MAX_SEEK_LEAD_S) * roomRate : 0;
+    const to = sample.seekableEnd != null ? Math.min(target + lead, sample.seekableEnd) : target + lead;
     return {
-      action:
-        'seek',
+      action: 'seek',
       to,
       drift,
-      lead:
-        to -
-        target,
+      lead: to - target,
     };
   }
 
   // While the room is paused the anchor is static: a gap under a few frames is
   // not worth a seek, anything more is where this viewer would resume from.
-  if (
-    !state.playing
-  ) {
-    return absDrift >
-      SYNC_PAUSED_TOLERANCE_S
+  if (!state.playing) {
+    return absDrift > SYNC_PAUSED_TOLERANCE_S
       ? {
-          action:
-            'seek',
+          action: 'seek',
           to: target,
           drift,
           lead: 0,
         }
       : {
-          action:
-            'hold',
-          reason:
-            'paused',
+          action: 'hold',
+          reason: 'paused',
           drift,
         };
   }
@@ -340,19 +218,10 @@ export function planSync(
   // viewer that started 0.4 s off stay there for good — a rate nudge is
   // inaudible, so there is no reason to tolerate a gap that size on a player
   // that can make one (HLS run, 2026-10-11).
-  const settleBand =
-    !canNudge
-      ? SYNC_SOFT_TOLERANCE_S
-      : input.nudging
-        ? SYNC_SETTLE_TARGET_S
-        : SYNC_NUDGE_ENTER_S;
-  if (
-    absDrift <=
-    settleBand
-  ) {
+  const settleBand = !canNudge ? SYNC_SOFT_TOLERANCE_S : input.nudging ? SYNC_SETTLE_TARGET_S : SYNC_NUDGE_ENTER_S;
+  if (absDrift <= settleBand) {
     return {
-      action:
-        'settled',
+      action: 'settled',
       rate: roomRate,
       drift,
     };
@@ -360,33 +229,15 @@ export function planSync(
 
   // Mid-band: close the gap by running slightly fast or slow, which nobody
   // sees, instead of jumping, which everybody does.
-  if (
-    canNudge
-  ) {
+  if (canNudge) {
     // Proportional: 0.2 s off runs 5 % fast or slow, 0.4 s and beyond the full
     // 10 % — between the floor that is inaudible and the ceiling that is not.
     // (A gain of 0.08 left a 0.4 s post-seek residual at the 5 % floor, eight
     // seconds to close.)
-    const amount =
-      Math.min(
-        SYNC_MAX_NUDGE_RATE,
-        Math.max(
-          SYNC_NUDGE_RATE,
-          absDrift *
-            0.25,
-        ),
-      );
-    const rate =
-      roomRate *
-      (drift >
-      0
-        ? 1 +
-          amount
-        : 1 -
-          amount);
+    const amount = Math.min(SYNC_MAX_NUDGE_RATE, Math.max(SYNC_NUDGE_RATE, absDrift * 0.25));
+    const rate = roomRate * (drift > 0 ? 1 + amount : 1 - amount);
     return {
-      action:
-        'rate',
+      action: 'rate',
       rate,
       drift,
     };
@@ -395,10 +246,8 @@ export function planSync(
   // No usable rate control: tolerate up to the hard threshold. A sub-2 s gap on
   // an embedded player is cheaper than the re-buffer a seek costs.
   return {
-    action:
-      'hold',
-    reason:
-      'coarse-rate',
+    action: 'hold',
+    reason: 'coarse-rate',
     drift,
   };
 }
@@ -435,35 +284,15 @@ export function observePosition(
   playing: boolean,
   jumpToleranceS: number,
 ): PositionObservation {
-  const delta =
-    current -
-    previous;
-  const expected =
-    playing
-      ? (elapsedMs /
-          1000) *
-        (rate ||
-          1)
-      : 0;
+  const delta = current - previous;
+  const expected = playing ? (elapsedMs / 1000) * (rate || 1) : 0;
   return {
     delta,
     expected,
-    jumped:
-      Math.abs(
-        delta -
-          expected,
-      ) >
-      jumpToleranceS,
+    jumped: Math.abs(delta - expected) > jumpToleranceS,
     // Only a claim of playing makes a still playhead meaningful; a paused
     // player is supposed to sit still.
-    stalled:
-      playing &&
-      elapsedMs >
-        0 &&
-      delta <=
-        0 &&
-      expected >
-        0,
+    stalled: playing && elapsedMs > 0 && delta <= 0 && expected > 0,
   };
 }
 
@@ -478,28 +307,7 @@ export function observePosition(
  * lead every seek by ~1.4 s and land that far AHEAD (found in a two-browser
  * run, 2026-10-11).
  */
-export function refineSeekLead(
-  current: number,
-  leadUsed: number,
-  driftAfter: number,
-  roomRate = 1,
-): number {
-  const measured =
-    Math.min(
-      SYNC_MAX_SEEK_LEAD_S,
-      Math.max(
-        0,
-        (leadUsed -
-          driftAfter) /
-          (roomRate ||
-            1),
-      ),
-    );
-  return current ===
-    0
-    ? measured
-    : current *
-        0.6 +
-        measured *
-          0.4;
+export function refineSeekLead(current: number, leadUsed: number, driftAfter: number, roomRate = 1): number {
+  const measured = Math.min(SYNC_MAX_SEEK_LEAD_S, Math.max(0, (leadUsed - driftAfter) / (roomRate || 1)));
+  return current === 0 ? measured : current * 0.6 + measured * 0.4;
 }

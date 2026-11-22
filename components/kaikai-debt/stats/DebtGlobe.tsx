@@ -69,6 +69,7 @@ import { ChartCard, ChartToggle, Readout, ReadoutRow, Swatch } from './chart-kit
 import { pointerOnStage, useCanvasStage, type StageFrame } from '@/hooks/useCanvasStage';
 import { DEBT_PAINT } from './debt-paint';
 import { categoryLabel } from './CompositionCharts';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const DEG = Math.PI / 180;
 
@@ -111,7 +112,7 @@ export function DebtGlobe({
   grid: readonly GridCell[];
   nowMs: number;
   selected: ReadonlySet<string>;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-kaikai-debt');
 
   const [byCount, setByCount] = useState(false);
@@ -586,7 +587,7 @@ export function DebtGlobe({
             />
             <ReadoutRow
               label={t('stats.readout.lines', { defaultValue: 'Lines' })}
-              value={hoveredCell.count.toLocaleString('en-US')}
+              value={fmt.number(hoveredCell.count)}
             />
           </Readout>
         )}

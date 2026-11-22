@@ -57,6 +57,7 @@ export const route = apiRoute('/api/communities', {
           isPrivate: body.isPrivate ?? false,
           createdById: session.user.id,
           members: { create: { userId: session.user.id, role: 'ADMIN' } },
+          memberEvents: { create: { userId: session.user.id, kind: 'join' } },
         },
       });
       return Response.json({ success: true, slug: community.slug }, { status: 201 });

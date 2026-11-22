@@ -4,10 +4,5 @@
  * frame and nothing shifts on hydration. Renders nothing visible.
  */
 export function NoMargin() {
-  return (
-    <span
-      hidden
-      data-shell-margin="off"
-    />
-  );
+  return <span hidden data-shell-margin="off" />;
 }

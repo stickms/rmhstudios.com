@@ -1,17 +1,7 @@
-import {
-  describe,
-  it,
-  expect,
-} from 'vitest';
-import {
-  readFileSync,
-  readdirSync,
-} from 'node:fs';
+import { describe, it, expect } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  FULLSCREEN_TIER_DIRS,
-  isSiteTier,
-} from '../../eslint-local-rules/design-scope.js';
+import { FULLSCREEN_TIER_DIRS, isSiteTier } from '../../eslint-local-rules/design-scope.js';
 import { readCss } from './css-source';
 import { APP_TIER_DIRS } from './css-tiers';
 
@@ -53,28 +43,14 @@ import { APP_TIER_DIRS } from './css-tiers';
  * must catch those by eye; rule 4 only nails the most common escapee shape.
  */
 
-const ROOT =
-  process.cwd();
-const SCAN_DIRS =
-  [
-    'components',
-    'features',
-    join(
-      'app',
-      'routes',
-    ),
-  ];
+const ROOT = process.cwd();
+const SCAN_DIRS = ['components', 'features', join('app', 'routes')];
 const POINTER =
   'Use the shared <Tabs> renderer (components/ui/tabs.tsx). See the ' +
   'liquid-glass v2 plan §16.2 (one tablist renderer + enforcement).';
 
 /** The single sanctioned tablist renderer. */
-const RENDERER =
-  join(
-    'components',
-    'ui',
-    'tabs.tsx',
-  );
+const RENDERER = join('components', 'ui', 'tabs.tsx');
 
 /**
  * Rule 1 allowlist — the ONLY `role="tablist"` usages permitted outside the
@@ -90,27 +66,12 @@ const RENDERER =
  *    material (flat, square, 100% Team Fortress 2), and Tabs' capsule is jelly.
  * New tablists get NO entry here — they must use Tabs.
  */
-const TABLIST_ALLOW =
-  new Set(
-    [
-      RENDERER,
-      join(
-        'components',
-        'library',
-        'AlbumViewer.tsx',
-      ),
-      join(
-        'components',
-        'temple-of-joy',
-        'TempleTabs.tsx',
-      ),
-      join(
-        'components',
-        'tf2-hud',
-        'TfTabs.tsx',
-      ),
-    ],
-  );
+const TABLIST_ALLOW = new Set([
+  RENDERER,
+  join('components', 'library', 'AlbumViewer.tsx'),
+  join('components', 'temple-of-joy', 'TempleTabs.tsx'),
+  join('components', 'tf2-hud', 'TfTabs.tsx'),
+]);
 
 /**
  * Rule 3 allowlist — files permitted to host an inline tab/nav-capsule `layoutId`
@@ -125,110 +86,38 @@ const TABLIST_ALLOW =
  * games and apps), never on a site page's tab strip (low-bandwidth audit,
  * 2026-11-18). Imported by tabs.tsx alone.
  */
-const RENDERER_CAPSULE =
-  join(
-    'components',
-    'ui',
-    'tab-capsule.tsx',
-  );
+const RENDERER_CAPSULE = join('components', 'ui', 'tab-capsule.tsx');
 
-const LAYOUTID_ALLOW =
-  new Set(
-    [
-      RENDERER,
-      RENDERER_CAPSULE,
-    ],
-  );
+const LAYOUTID_ALLOW = new Set([RENDERER, RENDERER_CAPSULE]);
 
 /** Recursively collect production `.tsx` sources (skip generated + test files). */
-function collectTsx(
-  dir: string,
-  out: string[] = [],
-): string[] {
+function collectTsx(dir: string, out: string[] = []): string[] {
   let entries;
   try {
-    entries =
-      readdirSync(
-        join(
-          ROOT,
-          dir,
-        ),
-        {
-          withFileTypes: true,
-        },
-      );
+    entries = readdirSync(join(ROOT, dir), {
+      withFileTypes: true,
+    });
   } catch {
     return out;
   }
   for (const entry of entries) {
-    const rel =
-      join(
-        dir,
-        entry.name,
-      );
-    if (
-      entry.isDirectory()
-    ) {
-      if (
-        entry.name ===
-          'node_modules' ||
-        entry.name ===
-          '__tests__'
-      )
-        continue;
-      collectTsx(
-        rel,
-        out,
-      );
-    } else if (
-      entry.name.endsWith(
-        '.tsx',
-      ) &&
-      !entry.name.endsWith(
-        '.test.tsx',
-      ) &&
-      entry.name !==
-        'routeTree.gen.ts'
-    ) {
-      out.push(
-        rel,
-      );
+    const rel = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'node_modules' || entry.name === '__tests__') continue;
+      collectTsx(rel, out);
+    } else if (entry.name.endsWith('.tsx') && !entry.name.endsWith('.test.tsx') && entry.name !== 'routeTree.gen.ts') {
+      out.push(rel);
     }
   }
   return out;
 }
 
-const FILES =
-  SCAN_DIRS.flatMap(
-    (
-      d,
-    ) =>
-      collectTsx(
-        d,
-      ),
-  );
+const FILES = SCAN_DIRS.flatMap((d) => collectTsx(d));
 
 /** 1-based line number for a source-string index. */
-function lineAt(
-  src: string,
-  idx: number,
-): number {
+function lineAt(src: string, idx: number): number {
   let line = 1;
-  for (
-    let i = 0;
-    i <
-      idx &&
-    i <
-      src.length;
-    i++
-  )
-    if (
-      src[
-        i
-      ] ===
-      '\n'
-    )
-      line++;
+  for (let i = 0; i < idx && i < src.length; i++) if (src[i] === '\n') line++;
   return line;
 }
 
@@ -237,78 +126,33 @@ function lineAt(
  * first `>` at brace-depth 0 (so `=>` and `>` inside `{…}` attribute expressions
  * don't close the tag early). Used to test co-occurrence WITHIN one element.
  */
-function enclosingTag(
-  src: string,
-  idx: number,
-): string {
-  let start =
-    idx;
-  while (
-    start >
-      0 &&
-    src[
-      start
-    ] !==
-      '<'
-  )
-    start--;
+function enclosingTag(src: string, idx: number): string {
+  let start = idx;
+  while (start > 0 && src[start] !== '<') start--;
   let depth = 0;
-  let end =
-    idx;
-  for (
-    let i =
-      idx;
-    i <
-    src.length;
-    i++
-  ) {
-    const c =
-      src[
-        i
-      ];
-    if (
-      c ===
-      '{'
-    )
-      depth++;
-    else if (
-      c ===
-      '}'
-    )
-      depth--;
-    else if (
-      c ===
-        '>' &&
-      depth <=
-        0
-    ) {
-      end =
-        i;
+  let end = idx;
+  for (let i = idx; i < src.length; i++) {
+    const c = src[i];
+    if (c === '{') depth++;
+    else if (c === '}') depth--;
+    else if (c === '>' && depth <= 0) {
+      end = i;
       break;
     }
-    end =
-      i;
+    end = i;
   }
-  return src.slice(
-    start,
-    end +
-      1,
-  );
+  return src.slice(start, end + 1);
 }
 
 // The site-tier exemption lists (FULLSCREEN_TIER_DIRS, FULLSCREEN_ROUTE_SEGMENTS, RAW_COLOR_ALLOW)
 // live in eslint-local-rules/design-scope.js — the one list, shared with eslint.config.mjs.
-const SITE_FILES =
-  FILES.filter(
-    isSiteTier,
-  );
+const SITE_FILES = FILES.filter(isSiteTier);
 
-type Violation =
-  {
-    file: string;
-    line: number;
-    detail: string;
-  };
+type Violation = {
+  file: string;
+  line: number;
+  detail: string;
+};
 
 function scanAll(): {
   tablist: Violation[];
@@ -317,177 +161,74 @@ function scanAll(): {
   accentBar: Violation[];
   floatingTier: Violation[];
 } {
-  const tablist: Violation[] =
-    [];
-  const underline: Violation[] =
-    [];
-  const layoutId: Violation[] =
-    [];
-  const accentBar: Violation[] =
-    [];
-  const floatingTier: Violation[] =
-    [];
+  const tablist: Violation[] = [];
+  const underline: Violation[] = [];
+  const layoutId: Violation[] = [];
+  const accentBar: Violation[] = [];
+  const floatingTier: Violation[] = [];
 
   // A bottom-border marker (border-b / -2 / -4 / -[..]) but NOT border-b-0.
-  const borderBottom =
-    /\bborder-b(?!-0)(?:-(?:2|4|\[[^\]]*\]))?(?![\w-])/;
+  const borderBottom = /\bborder-b(?!-0)(?:-(?:2|4|\[[^\]]*\]))?(?![\w-])/;
   // An `underline` utility used as a marker — excludes no-underline / hover: etc.
-  const underlineUtil =
-    /(?<![\w:-])underline\b/;
-  const ariaSelected =
-    /aria-selected/g;
-  const roleTablist =
-    /role=(["'])tablist\1/g;
-  const layoutIdProp =
-    /\blayoutId\s*=\s*[{"]/g;
+  const underlineUtil = /(?<![\w:-])underline\b/;
+  const ariaSelected = /aria-selected/g;
+  const roleTablist = /role=(["'])tablist\1/g;
+  const layoutIdProp = /\blayoutId\s*=\s*[{"]/g;
   // Rule 4 (§17.5) — the conditional accent-underline bar. `bg-site-accent` (not
   // -dim/-fg), enclosed in a tag that is also `absolute`, anchored `bottom-0` (a
   // real word token, so `-bottom-0.5` badges are excluded), with a hairline height.
-  const accentFill =
-    /\bbg-site-accent(?![\w-])/g;
-  const isAbsolute =
-    /(?<![\w-])absolute(?![\w-])/;
-  const bottomZero =
-    /(?<![\w.-])bottom-0(?![\w.-])/;
-  const hairline =
-    /\bh-(?:px|0\.5|1)(?![\d.])/;
+  const accentFill = /\bbg-site-accent(?![\w-])/g;
+  const isAbsolute = /(?<![\w-])absolute(?![\w-])/;
+  const bottomZero = /(?<![\w.-])bottom-0(?![\w.-])/;
+  const hairline = /\bh-(?:px|0\.5|1)(?![\d.])/;
 
   for (const file of FILES) {
-    const src =
-      readFileSync(
-        join(
-          ROOT,
-          file,
-        ),
-        'utf8',
-      );
+    const src = readFileSync(join(ROOT, file), 'utf8');
 
-    if (
-      !TABLIST_ALLOW.has(
-        file,
-      )
-    ) {
+    if (!TABLIST_ALLOW.has(file)) {
       let m: RegExpExecArray | null;
-      while (
-        (m =
-          roleTablist.exec(
-            src,
-          ))
-      ) {
-        tablist.push(
-          {
-            file,
-            line: lineAt(
-              src,
-              m.index,
-            ),
-            detail:
-              'role="tablist"',
-          },
-        );
+      while ((m = roleTablist.exec(src))) {
+        tablist.push({
+          file,
+          line: lineAt(src, m.index),
+          detail: 'role="tablist"',
+        });
       }
     }
 
-    if (
-      !LAYOUTID_ALLOW.has(
-        file,
-      )
-    ) {
+    if (!LAYOUTID_ALLOW.has(file)) {
       let m: RegExpExecArray | null;
-      while (
-        (m =
-          layoutIdProp.exec(
-            src,
-          ))
-      ) {
-        layoutId.push(
-          {
-            file,
-            line: lineAt(
-              src,
-              m.index,
-            ),
-            detail:
-              'inline tab-capsule layoutId=',
-          },
-        );
+      while ((m = layoutIdProp.exec(src))) {
+        layoutId.push({
+          file,
+          line: lineAt(src, m.index),
+          detail: 'inline tab-capsule layoutId=',
+        });
       }
     }
 
     // Steel K5: the shared renderer IS the one place that draws the active tab's 2px ink underline.
     let m: RegExpExecArray | null;
-    while (
-      file !==
-        RENDERER &&
-      (m =
-        ariaSelected.exec(
-          src,
-        ))
-    ) {
-      const tag =
-        enclosingTag(
-          src,
-          m.index,
-        );
-      const marker =
-        borderBottom.test(
-          tag,
-        )
-          ? 'border-b'
-          : underlineUtil.test(
-                tag,
-              )
-            ? 'underline'
-            : null;
-      if (
-        marker
-      ) {
-        underline.push(
-          {
-            file,
-            line: lineAt(
-              src,
-              m.index,
-            ),
-            detail: `aria-selected co-occurs with ${marker} (underline-active-tab antipattern)`,
-          },
-        );
+    while (file !== RENDERER && (m = ariaSelected.exec(src))) {
+      const tag = enclosingTag(src, m.index);
+      const marker = borderBottom.test(tag) ? 'border-b' : underlineUtil.test(tag) ? 'underline' : null;
+      if (marker) {
+        underline.push({
+          file,
+          line: lineAt(src, m.index),
+          detail: `aria-selected co-occurs with ${marker} (underline-active-tab antipattern)`,
+        });
       }
     }
 
-    while (
-      (m =
-        accentFill.exec(
-          src,
-        ))
-    ) {
-      const tag =
-        enclosingTag(
-          src,
-          m.index,
-        );
-      if (
-        isAbsolute.test(
-          tag,
-        ) &&
-        bottomZero.test(
-          tag,
-        ) &&
-        hairline.test(
-          tag,
-        )
-      ) {
-        accentBar.push(
-          {
-            file,
-            line: lineAt(
-              src,
-              m.index,
-            ),
-            detail:
-              'conditional accent-underline bar (hand-rolled active-tab indicator)',
-          },
-        );
+    while ((m = accentFill.exec(src))) {
+      const tag = enclosingTag(src, m.index);
+      if (isAbsolute.test(tag) && bottomZero.test(tag) && hairline.test(tag)) {
+        accentBar.push({
+          file,
+          line: lineAt(src, m.index),
+          detail: 'conditional accent-underline bar (hand-rolled active-tab indicator)',
+        });
       }
     }
   }
@@ -499,74 +240,34 @@ function scanAll(): {
   // (eslint-local-rules/, scoped by eslint-local-rules/design-scope.js).
   // This reads `className=` values SPECIFICALLY rather than string literals
   // generally: a class-shaped word in prose is a comment, not a call site.
-  const classAttr =
-    /class(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`|\{([\s\S]{0,1200}?)\}\s*(?=[\s/>]))/g;
+  const classAttr = /class(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`|\{([\s\S]{0,1200}?)\}\s*(?=[\s/>]))/g;
   // Floating UI must ride L4. A surface that is positioned, stacked and anchored
   // to an edge is a dropdown/popover/menu whatever its role attribute says.
-  const positioned =
-    /(?<![\w-])(?:absolute|fixed)(?![\w-])/;
-  const stacked =
-    /(?<![\w-])z-(?:\d{1,3}|\[\d+\])(?![\w-])/;
-  const edgeAnchored =
-    /(?<![\w-])(?:top-full|bottom-full|mt-\d|mb-\d|left-0|right-0|inset-x-0)(?![\w-])/;
-  const lowerTier =
-    /(?<![\w-])(?:surface-(?:card|panel|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
-  const l4Tier =
-    /(?<![\w-])(?:surface-overlay|glass-scrim)(?![\w-])/;
+  const positioned = /(?<![\w-])(?:absolute|fixed)(?![\w-])/;
+  const stacked = /(?<![\w-])z-(?:\d{1,3}|\[\d+\])(?![\w-])/;
+  const edgeAnchored = /(?<![\w-])(?:top-full|bottom-full|mt-\d|mb-\d|left-0|right-0|inset-x-0)(?![\w-])/;
+  const lowerTier = /(?<![\w-])(?:surface-(?:card|panel|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
+  const l4Tier = /(?<![\w-])(?:surface-overlay|glass-scrim)(?![\w-])/;
   for (const file of SITE_FILES) {
-    const src =
-      readFileSync(
-        join(
-          ROOT,
-          file,
-        ),
-        'utf8',
-      );
+    const src = readFileSync(join(ROOT, file), 'utf8');
     classAttr.lastIndex = 0;
     let m: RegExpExecArray | null;
-    while (
-      (m =
-        classAttr.exec(
-          src,
-        ))
-    ) {
-      const value =
-        m[1] ??
-        m[2] ??
-        m[3] ??
-        m[4] ??
-        '';
-      const line =
-        lineAt(
-          src,
-          m.index,
-        );
+    while ((m = classAttr.exec(src))) {
+      const value = m[1] ?? m[2] ?? m[3] ?? m[4] ?? '';
+      const line = lineAt(src, m.index);
 
       if (
-        positioned.test(
-          value,
-        ) &&
-        stacked.test(
-          value,
-        ) &&
-        edgeAnchored.test(
-          value,
-        ) &&
-        lowerTier.test(
-          value,
-        ) &&
-        !l4Tier.test(
-          value,
-        )
+        positioned.test(value) &&
+        stacked.test(value) &&
+        edgeAnchored.test(value) &&
+        lowerTier.test(value) &&
+        !l4Tier.test(value)
       ) {
-        floatingTier.push(
-          {
-            file,
-            line,
-            detail:
-              'floating surface below L4 (no legibility floor → text ghosts through)',
-          },
-        );
+        floatingTier.push({
+          file,
+          line,
+          detail: 'floating surface below L4 (no legibility floor → text ghosts through)',
+        });
       }
     }
   }
@@ -580,121 +281,40 @@ function scanAll(): {
   };
 }
 
-function report(
-  label: string,
-  v: Violation[],
-): string {
+function report(label: string, v: Violation[]): string {
   return (
-    `\n${label} (${v.length}):\n` +
-    v
-      .map(
-        (
-          x,
-        ) =>
-          `  ${x.file}:${x.line} — ${x.detail}`,
-      )
-      .join(
-        '\n',
-      ) +
-    `\n\n${POINTER}\n`
+    `\n${label} (${v.length}):\n` + v.map((x) => `  ${x.file}:${x.line} — ${x.detail}`).join('\n') + `\n\n${POINTER}\n`
   );
 }
 
 describe('design consistency — one tab-strip grammar (§16.2)', () => {
-  const {
-    tablist,
-    underline,
-    layoutId,
-    accentBar,
-    floatingTier,
-  } =
-    scanAll();
+  const { tablist, underline, layoutId, accentBar, floatingTier } = scanAll();
 
   it('scans a non-trivial set of production sources', () => {
     // Guards the walker itself — a broken path would make every rule vacuously pass.
-    expect(
-      FILES.length,
-    ).toBeGreaterThan(
-      200,
-    );
-    expect(
-      FILES,
-    ).toContain(
-      RENDERER,
-    );
+    expect(FILES.length).toBeGreaterThan(200);
+    expect(FILES).toContain(RENDERER);
     // …and the site-tier filter, which rules 5–7 depend on. If the exemption
     // lists ever swallowed the site the new rules would pass on an empty set.
-    expect(
-      SITE_FILES.length,
-    ).toBeGreaterThan(
-      200,
-    );
-    expect(
-      SITE_FILES,
-    ).toContain(
-      join(
-        'components',
-        'feed',
-        'PageLayout.tsx',
-      ),
-    );
-    expect(
-      SITE_FILES,
-    ).not.toContain(
-      join(
-        'components',
-        'temple-of-joy',
-        'TempleTabs.tsx',
-      ),
-    );
+    expect(SITE_FILES.length).toBeGreaterThan(200);
+    expect(SITE_FILES).toContain(join('components', 'feed', 'PageLayout.tsx'));
+    expect(SITE_FILES).not.toContain(join('components', 'temple-of-joy', 'TempleTabs.tsx'));
   });
 
   it('role="tablist" lives only in Tabs (+ documented allowlist)', () => {
-    expect(
-      tablist,
-      report(
-        'Stray role="tablist"',
-        tablist,
-      ),
-    ).toEqual(
-      [],
-    );
+    expect(tablist, report('Stray role="tablist"', tablist)).toEqual([]);
   });
 
   it('no aria-selected element also carries a border-b / underline marker', () => {
-    expect(
-      underline,
-      report(
-        'Underline-active-tab pattern',
-        underline,
-      ),
-    ).toEqual(
-      [],
-    );
+    expect(underline, report('Underline-active-tab pattern', underline)).toEqual([]);
   });
 
   it('tab-capsule layoutId props live only in sanctioned files', () => {
-    expect(
-      layoutId,
-      report(
-        'Ad-hoc tab-capsule layoutId',
-        layoutId,
-      ),
-    ).toEqual(
-      [],
-    );
+    expect(layoutId, report('Ad-hoc tab-capsule layoutId', layoutId)).toEqual([]);
   });
 
   it('no conditional accent-underline bar (§17.5 hand-rolled active-tab indicator)', () => {
-    expect(
-      accentBar,
-      report(
-        'Conditional accent-underline bar',
-        accentBar,
-      ),
-    ).toEqual(
-      [],
-    );
+    expect(accentBar, report('Conditional accent-underline bar', accentBar)).toEqual([]);
   });
 
   /**
@@ -720,57 +340,28 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
    * before it fires.
    */
   it('no `transition-[…transform…]` beside a scale/translate/rotate utility', () => {
-    const TRANSFORM_LIST =
-      /transition-\[[^\]]*\btransform\b[^\]]*\]/;
-    const UTILITY =
-      /(?:^|[\s'"`:])(?:group-)?(?:hover|active|focus|focus-visible)?:?-?(?:scale|translate|rotate)-/;
-    const offenders: string[] =
-      [];
+    const TRANSFORM_LIST = /transition-\[[^\]]*\btransform\b[^\]]*\]/;
+    const UTILITY = /(?:^|[\s'"`:])(?:group-)?(?:hover|active|focus|focus-visible)?:?-?(?:scale|translate|rotate)-/;
+    const offenders: string[] = [];
     for (const file of FILES) {
-      const src =
-        readFileSync(
-          join(
-            ROOT,
-            file,
-          ),
-          'utf8',
-        );
-      for (const line of src.split(
-        '\n',
-      )) {
-        if (
-          !TRANSFORM_LIST.test(
-            line,
-          )
-        )
-          continue;
-        if (
-          !UTILITY.test(
-            line,
-          )
-        )
-          continue;
-        offenders.push(
-          file,
-        );
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      for (const line of src.split('\n')) {
+        if (!TRANSFORM_LIST.test(line)) continue;
+        if (!UTILITY.test(line)) continue;
+        offenders.push(file);
         break;
       }
     }
     expect(
       offenders,
       'Tailwind v4 emits scale/translate/rotate as their own properties. Name those in the transition list (`transition-[scale,color]`), or use the bare `transition-transform`, which already covers all four.',
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 
   it('floating UI rides the L4 overlay tier', () => {
     expect(
       floatingTier,
-      report(
-        'Floating surface below L4',
-        floatingTier,
-      ).replace(
+      report('Floating surface below L4', floatingTier).replace(
         POINTER,
         'A dropdown / popover / menu / autocomplete is `.surface-overlay` ' +
           '(design-language.md §5.1). L1 `.surface-card` is the tier for repeated ' +
@@ -779,9 +370,7 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
           '`.surface-overlay` carries the ≥78% opaque legibility floor shared by every ' +
           'user, and is first in line for the calm haze (docs/archive/2026/plasmatic-jelly-system.md).',
       ),
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 });
 
@@ -805,60 +394,29 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
  * exempt from rules 5–7: Temple of Joy is supposed to be candlelit.
  */
 
-function collectCss(
-  dir: string,
-  out: string[] = [],
-): string[] {
+function collectCss(dir: string, out: string[] = []): string[] {
   let entries;
   try {
-    entries =
-      readdirSync(
-        join(
-          ROOT,
-          dir,
-        ),
-        {
-          withFileTypes: true,
-        },
-      );
+    entries = readdirSync(join(ROOT, dir), {
+      withFileTypes: true,
+    });
   } catch {
     return out;
   }
   for (const entry of entries) {
-    const rel =
-      join(
-        dir,
-        entry.name,
-      );
-    if (
-      entry.isDirectory()
-    ) {
-      if (
-        entry.name !==
-        'node_modules'
-      )
-        collectCss(
-          rel,
-          out,
-        );
-    } else if (
-      entry.name.endsWith(
-        '.css',
-      )
-    ) {
-      out.push(
-        rel,
-      );
+    const rel = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== 'node_modules') collectCss(rel, out);
+    } else if (entry.name.endsWith('.css')) {
+      out.push(rel);
     }
   }
   return out;
 }
 
 /** `#abc`, `#abcd`, `#aabbcc`, `#aabbccdd` — but not a 5- or 7-digit run. */
-const CSS_HEX =
-  /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9a-fA-F])/g;
-const CSS_RADIUS =
-  /border-radius:\s*([^;}\n]+)/g;
+const CSS_HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9a-fA-F])/g;
+const CSS_RADIUS = /border-radius:\s*([^;}\n]+)/g;
 
 /**
  * A radius that should have been a token.
@@ -867,35 +425,12 @@ const CSS_RADIUS =
  * idiom, which are *shapes* (a circle, a pill) rather than the theme's corner
  * rounding — no theme wants a "circle" to stop being a circle.
  */
-function isThemeableRadius(
-  value: string,
-): boolean {
-  const v =
-    value.trim();
-  if (
-    /var\(|inherit|unset|initial|revert/.test(
-      v,
-    )
-  )
-    return false;
-  if (
-    /^0(px|rem|em|%)?$/.test(
-      v,
-    )
-  )
-    return false;
-  if (
-    /50%/.test(
-      v,
-    ) ||
-    /\b9{3,}px\b/.test(
-      v,
-    )
-  )
-    return false;
-  return /\d/.test(
-    v,
-  );
+function isThemeableRadius(value: string): boolean {
+  const v = value.trim();
+  if (/var\(|inherit|unset|initial|revert/.test(v)) return false;
+  if (/^0(px|rem|em|%)?$/.test(v)) return false;
+  if (/50%/.test(v) || /\b9{3,}px\b/.test(v)) return false;
+  return /\d/.test(v);
 }
 
 /**
@@ -907,8 +442,7 @@ function isThemeableRadius(
  * read before Steel replaced them, L8) to that list: in an app-tier sheet a `--site-*` declaration is the same kind
  * of definition. Everywhere else, and for every other property, a hex still counts.
  */
-const APP_PALETTE_DECL =
-  /--(?:app|site)-[\w-]+\s*:[^;{}]*;/g;
+const APP_PALETTE_DECL = /--(?:app|site)-[\w-]+\s*:[^;{}]*;/g;
 
 function cssViolations(
   src: string,
@@ -918,51 +452,13 @@ function cssViolations(
   radius: number;
 } {
   // A comment is not a colour: `(#989)` is the owner's issue number, not a hex.
-  let body =
-    src.replace(
-      /\/\*[\s\S]*?\*\//g,
-      '',
-    );
-  if (
-    APP_TIER_DIRS.has(
-      file.split(
-        /[\\/]/,
-      )[1] ??
-        '',
-    )
-  )
-    body =
-      body.replace(
-        APP_PALETTE_DECL,
-        '',
-      );
-  const hex =
-    (
-      body.match(
-        CSS_HEX,
-      ) ??
-      []
-    )
-      .length;
+  let body = src.replace(/\/\*[\s\S]*?\*\//g, '');
+  if (APP_TIER_DIRS.has(file.split(/[\\/]/)[1] ?? '')) body = body.replace(APP_PALETTE_DECL, '');
+  const hex = (body.match(CSS_HEX) ?? []).length;
   let radius = 0;
   CSS_RADIUS.lastIndex = 0;
-  for (
-    let m =
-      CSS_RADIUS.exec(
-        body,
-      );
-    m;
-    m =
-      CSS_RADIUS.exec(
-        body,
-      )
-  ) {
-    if (
-      isThemeableRadius(
-        m[1],
-      )
-    )
-      radius++;
+  for (let m = CSS_RADIUS.exec(body); m; m = CSS_RADIUS.exec(body)) {
+    if (isThemeableRadius(m[1])) radius++;
   }
   return {
     hex,
@@ -985,67 +481,45 @@ const CSS_DEBT: Record<
     hex: number;
     radius: number;
   }
-> =
-  {
-    'components/library/library/catalog-reader.css':
-      {
-        hex: 7,
-        radius: 10,
-      },
-    'components/library/library/sections-refresh.css':
-      {
-        hex: 23,
-        radius: 2,
-      },
-    'components/rmhtech/rmhtech.css':
-      {
-        hex: 16,
-        radius: 5,
-      },
-    'components/library/album-viewer.css':
-      {
-        hex: 7,
-        radius: 3,
-      },
-    'components/create/storefront.css':
-      {
-        hex: 2,
-        radius: 0,
-      },
-    'components/security/security.css':
-      {
-        hex: 0,
-        radius: 4,
-      },
-    'components/rmhcalculator/rmhcalculator.css':
-      {
-        hex: 0,
-        radius: 3,
-      },
-    'components/library/book-3d.css':
-      {
-        hex: 1,
-        radius: 2,
-      },
-  };
+> = {
+  'components/library/library/catalog-reader.css': {
+    hex: 7,
+    radius: 10,
+  },
+  'components/library/library/sections-refresh.css': {
+    hex: 23,
+    radius: 2,
+  },
+  'components/rmhtech/rmhtech.css': {
+    hex: 16,
+    radius: 5,
+  },
+  'components/library/album-viewer.css': {
+    hex: 7,
+    radius: 3,
+  },
+  'components/create/storefront.css': {
+    hex: 2,
+    radius: 0,
+  },
+  'components/security/security.css': {
+    hex: 0,
+    radius: 4,
+  },
+  'components/rmhcalculator/rmhcalculator.css': {
+    hex: 0,
+    radius: 3,
+  },
+  'components/library/book-3d.css': {
+    hex: 1,
+    radius: 2,
+  },
+};
 
-const SITE_CSS =
-  collectCss(
-    'components',
-  ).filter(
-    (
-      f,
-    ) => {
-      const parts =
-        f.split(
-          /[\\/]/,
-        );
-      return !FULLSCREEN_TIER_DIRS.has(
-        parts[1] ??
-          '',
-      );
-    },
-  );
+const SITE_CSS = collectCss('components').filter((f) => {
+  const parts = f.split(/[\\/]/);
+  return !FULLSCREEN_TIER_DIRS.has(parts[1] ?? '');
+});
 
 /**
  * E7 — one motion source. A site-tier stylesheet never writes its own
@@ -1056,185 +530,54 @@ const SITE_CSS =
  * DOWN anywhere else. The jelly material's `--spring-*` `linear()` curves are
  * not `cubic-bezier` and are governed by their own test.
  */
-const CUBIC_BEZIER_BASELINE: Record<
-  string,
-  number
-> =
-  {
-    'app/globals.css': 14,
-  };
+const CUBIC_BEZIER_BASELINE: Record<string, number> = {
+  'app/globals.css': 14,
+};
 
 describe('one motion source in CSS (E7)', () => {
-  const files =
-    [
-      ...SITE_CSS,
-      ...readdirSync(
-        join(
-          ROOT,
-          'app',
-        ),
-      )
-        .filter(
-          (
-            f,
-          ) =>
-            f.endsWith(
-              '.css',
-            ),
-        )
-        .map(
-          (
-            f,
-          ) =>
-            join(
-              'app',
-              f,
-            ),
-        ),
-    ].map(
-      (
-        f,
-      ) =>
-        f
-          .split(
-            /[\\/]/,
-          )
-          .join(
-            '/',
-          ),
-    );
-  const count =
+  const files = [
+    ...SITE_CSS,
+    ...readdirSync(join(ROOT, 'app'))
+      .filter((f) => f.endsWith('.css'))
+      .map((f) => join('app', f)),
+  ].map((f) => f.split(/[\\/]/).join('/'));
+  const count = (file: string) =>
     (
-      file: string,
-    ) =>
-      (
-        readFileSync(
-          join(
-            ROOT,
-            file,
-          ),
-          'utf8',
-        )
-          .replace(
-            /\/\*[\s\S]*?\*\//g,
-            '',
-          )
-          .match(
-            /cubic-bezier\(/g,
-          ) ??
-        []
-      )
-        .length;
+      readFileSync(join(ROOT, file), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .match(/cubic-bezier\(/g) ?? []
+    ).length;
 
   it('writes no raw cubic-bezier beyond the token definitions', () => {
-    const over =
-      files
-        .filter(
-          (
-            f,
-          ) =>
-            count(
-              f,
-            ) >
-            (CUBIC_BEZIER_BASELINE[
-              f
-            ] ??
-              0),
-        )
-        .map(
-          (
-            f,
-          ) =>
-            `${f} — ${CUBIC_BEZIER_BASELINE[f] ?? 0} → ${count(f)}`,
-        );
+    const over = files
+      .filter((f) => count(f) > (CUBIC_BEZIER_BASELINE[f] ?? 0))
+      .map((f) => `${f} — ${CUBIC_BEZIER_BASELINE[f] ?? 0} → ${count(f)}`);
     expect(
       over,
       'Raw cubic-bezier( in site-tier CSS. Use var(--ease-smooth) or a named curve token from app/globals.css; ' +
         'if a genuinely new curve is needed, define it there as a token (and mirror it in lib/motion.ts if TS needs it).',
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 });
 
 describe('the token contract holds in CSS too', () => {
-  const measured =
-    SITE_CSS.map(
-      (
-        file,
-      ) => ({
-        file: file
-          .split(
-            /[\\/]/,
-          )
-          .join(
-            '/',
-          ),
-        ...cssViolations(
-          readFileSync(
-            join(
-              ROOT,
-              file,
-            ),
-            'utf8',
-          ),
-          file,
-        ),
-      }),
-    );
+  const measured = SITE_CSS.map((file) => ({
+    file: file.split(/[\\/]/).join('/'),
+    ...cssViolations(readFileSync(join(ROOT, file), 'utf8'), file),
+  }));
 
   it('scans the site-tier stylesheets at all', () => {
     // Guards the collector: if `SITE_CSS` ever silently goes empty (a rename, a
     // changed tier set) every assertion below would pass vacuously.
-    expect(
-      measured.length,
-    ).toBeGreaterThan(
-      10,
-    );
-    expect(
-      measured.map(
-        (
-          m,
-        ) =>
-          m.file,
-      ),
-    ).toContain(
-      'components/feed/feed.css',
-    );
-    expect(
-      measured.map(
-        (
-          m,
-        ) =>
-          m.file,
-      ),
-    ).not.toContain(
-      'components/temple-of-joy/temple-of-joy.css',
-    );
+    expect(measured.length).toBeGreaterThan(10);
+    expect(measured.map((m) => m.file)).toContain('components/feed/feed.css');
+    expect(measured.map((m) => m.file)).not.toContain('components/temple-of-joy/temple-of-joy.css');
   });
 
   it('adds no raw hex colour or hardcoded radius to a clean stylesheet', () => {
-    const offenders =
-      measured
-        .filter(
-          (
-            m,
-          ) =>
-            !(
-              m.file in
-              CSS_DEBT
-            ) &&
-            (m.hex >
-              0 ||
-              m.radius >
-                0),
-        )
-        .map(
-          (
-            m,
-          ) =>
-            `${m.file} — ${m.hex} hex, ${m.radius} hardcoded radius`,
-        );
+    const offenders = measured
+      .filter((m) => !(m.file in CSS_DEBT) && (m.hex > 0 || m.radius > 0))
+      .map((m) => `${m.file} — ${m.hex} hex, ${m.radius} hardcoded radius`);
     expect(
       offenders,
       'Raw colour / radius in a site-tier stylesheet. Use the token contract: ' +
@@ -1244,47 +587,19 @@ describe('the token contract holds in CSS too', () => {
         'is invisible to every theme, to high contrast, and to the colour-vision ' +
         'modes. If a value is genuinely domain-fixed (a playing card, a rarity ' +
         'tier), give it a scoped variable group in globals.css instead.',
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 
   it('never lets a stylesheet get worse than its frozen count', () => {
-    const regressions: string[] =
-      [];
-    for (const [
-      file,
-      frozen,
-    ] of Object.entries(
-      CSS_DEBT,
-    )) {
-      const now =
-        measured.find(
-          (
-            m,
-          ) =>
-            m.file ===
-            file,
-        );
-      if (
-        !now
-      )
-        continue; // deleted or renamed — the drained check below reports it
-      if (
-        now.hex >
-        frozen.hex
-      ) {
-        regressions.push(
-          `${file} — hex ${frozen.hex} → ${now.hex}`,
-        );
+    const regressions: string[] = [];
+    for (const [file, frozen] of Object.entries(CSS_DEBT)) {
+      const now = measured.find((m) => m.file === file);
+      if (!now) continue; // deleted or renamed — the drained check below reports it
+      if (now.hex > frozen.hex) {
+        regressions.push(`${file} — hex ${frozen.hex} → ${now.hex}`);
       }
-      if (
-        now.radius >
-        frozen.radius
-      ) {
-        regressions.push(
-          `${file} — radius ${frozen.radius} → ${now.radius}`,
-        );
+      if (now.radius > frozen.radius) {
+        regressions.push(`${file} — radius ${frozen.radius} → ${now.radius}`);
       }
     }
     expect(
@@ -1293,54 +608,22 @@ describe('the token contract holds in CSS too', () => {
         'ratchet: these files are allowed to stay as bad as they are while they ' +
         'get cleaned up, and are not allowed to get worse. Put new colours and ' +
         'radii on tokens.',
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 
   it('drains the debt list as files are cleaned', () => {
-    const stale: string[] =
-      [];
-    for (const [
-      file,
-      frozen,
-    ] of Object.entries(
-      CSS_DEBT,
-    )) {
-      const now =
-        measured.find(
-          (
-            m,
-          ) =>
-            m.file ===
-            file,
-        );
-      if (
-        !now
-      ) {
-        stale.push(
-          `${file} — no longer scanned; remove it from CSS_DEBT`,
-        );
+    const stale: string[] = [];
+    for (const [file, frozen] of Object.entries(CSS_DEBT)) {
+      const now = measured.find((m) => m.file === file);
+      if (!now) {
+        stale.push(`${file} — no longer scanned; remove it from CSS_DEBT`);
         continue;
       }
-      if (
-        now.hex ===
-          0 &&
-        now.radius ===
-          0
-      ) {
+      if (now.hex === 0 && now.radius === 0) {
+        stale.push(`${file} — now clean; remove it from CSS_DEBT`);
+      } else if (now.hex < frozen.hex || now.radius < frozen.radius) {
         stale.push(
-          `${file} — now clean; remove it from CSS_DEBT`,
-        );
-      } else if (
-        now.hex <
-          frozen.hex ||
-        now.radius <
-          frozen.radius
-      ) {
-        stale.push(
-          `${file} — improved to ${now.hex} hex / ${now.radius} radius; ` +
-            `lower its CSS_DEBT entry to match`,
+          `${file} — improved to ${now.hex} hex / ${now.radius} radius; ` + `lower its CSS_DEBT entry to match`,
         );
       }
     }
@@ -1348,9 +631,7 @@ describe('the token contract holds in CSS too', () => {
       stale,
       'CSS_DEBT is out of date. Lowering these numbers when you clean a file is ' +
         'what stops the list from quietly becoming permission.',
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 });
 
@@ -1372,83 +653,25 @@ describe('the token contract holds in CSS too', () => {
  * The allowlist is empty on purpose. If a page genuinely needs a bespoke
  * frame, add it here with a reason rather than importing around the rule.
  */
-const FRAME_ALLOW =
-  new Set<string>(
-    [],
-  );
+const FRAME_ALLOW = new Set<string>([]);
 
 describe('site pages take the shared frame', () => {
-  const routeFiles =
-    FILES.filter(
-      (
-        f,
-      ) =>
-        f
-          .split(
-            /[\\/]/,
-          )
-          .slice(
-            0,
-            3,
-          )
-          .join(
-            '/',
-          ) ===
-          'app/routes/_site' ||
-        f.startsWith(
-          join(
-            'app',
-            'routes',
-            '_site',
-          ),
-        ),
-    );
+  const routeFiles = FILES.filter(
+    (f) =>
+      f.split(/[\\/]/).slice(0, 3).join('/') === 'app/routes/_site' || f.startsWith(join('app', 'routes', '_site')),
+  );
 
   it('finds the _site routes at all', () => {
-    expect(
-      routeFiles.length,
-    ).toBeGreaterThan(
-      100,
-    );
+    expect(routeFiles.length).toBeGreaterThan(100);
   });
 
   it('imports no frame primitive directly', () => {
-    const offenders: string[] =
-      [];
+    const offenders: string[] = [];
     for (const file of routeFiles) {
-      if (
-        FRAME_ALLOW.has(
-          file,
-        )
-      )
-        continue;
-      const src =
-        readFileSync(
-          join(
-            ROOT,
-            file,
-          ),
-          'utf8',
-        );
-      const bad =
-        [
-          'feed/AnimatedMain',
-          'feed/ContextRail',
-        ].filter(
-          (
-            m,
-          ) =>
-            src.includes(
-              m,
-            ),
-        );
-      if (
-        bad.length >
-        0
-      )
-        offenders.push(
-          `${file} — imports ${bad.join(' + ')}`,
-        );
+      if (FRAME_ALLOW.has(file)) continue;
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      const bad = ['feed/AnimatedMain', 'feed/ContextRail'].filter((m) => src.includes(m));
+      if (bad.length > 0) offenders.push(`${file} — imports ${bad.join(' + ')}`);
     }
     expect(
       offenders,
@@ -1458,9 +681,7 @@ describe('site pages take the shared frame', () => {
         '@/components/feed/PageLayout. Both live in one file so the reading ' +
         'measure, the pb-dock inset and the live-rail portal are stated once. ' +
         'See docs/page-consistency.md.',
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 });
 
@@ -1487,84 +708,34 @@ describe('site pages take the shared frame', () => {
  * One-directional, like every allowlist in this file — entries come out, they do
  * not go in.
  */
-const SECTION_LABEL_ALLOW =
-  new Set(
-    [
-      join(
-        'components',
-        'rebar-rutabaga',
-        'Reservations.tsx',
-      ),
-      join(
-        'components',
-        'rebar-rutabaga',
-        'TastingMenu.tsx',
-      ),
-    ],
-  );
+const SECTION_LABEL_ALLOW = new Set([
+  join('components', 'rebar-rutabaga', 'Reservations.tsx'),
+  join('components', 'rebar-rutabaga', 'TastingMenu.tsx'),
+]);
 
 describe('design consistency — no eyebrows (owner decision, 2026-11-03)', () => {
   it('no site-tier element is set in letterspaced all-caps', () => {
     // `uppercase` with wide tracking is the eyebrow signature. A short badge or key cap may still be `uppercase`
     // (ALT, GIF, ESC), but never letterspaced; a group label is `site-section-label`, a page kicker `site-kicker`
     // (sentence case), a category a soft chip.
-    const classAttr =
-      /className=(?:\{`([^`]*)`\}|(["'])([^"']*)\2)/g;
-    const offenders: Violation[] =
-      [];
+    const classAttr = /className=(?:\{`([^`]*)`\}|(["'])([^"']*)\2)/g;
+    const offenders: Violation[] = [];
     // Surfaces with a scheme of their own keep it (like the games and apps): a themed restaurant microsite, the casino
     // tables, the Balatro lane, game replays and result screens.
-    const OWN_SCHEME =
-      /(^|\/)(rebar-rutabaga|rmhcoins|casino|balatro|replays|games)\//;
+    const OWN_SCHEME = /(^|\/)(rebar-rutabaga|rmhcoins|casino|balatro|replays|games)\//;
     for (const file of SITE_FILES) {
-      if (
-        OWN_SCHEME.test(
-          file,
-        ) ||
-        file.includes(
-          'rebar-rutabaga',
-        )
-      )
-        continue;
-      const src =
-        readFileSync(
-          join(
-            ROOT,
-            file,
-          ),
-          'utf8',
-        );
+      if (OWN_SCHEME.test(file) || file.includes('rebar-rutabaga')) continue;
+      const src = readFileSync(join(ROOT, file), 'utf8');
       classAttr.lastIndex = 0;
       let m: RegExpExecArray | null;
-      while (
-        (m =
-          classAttr.exec(
-            src,
-          ))
-      ) {
-        const classes =
-          m[1] ??
-          m[3] ??
-          '';
-        if (
-          /(^|\s)uppercase(\s|$)/.test(
-            classes,
-          ) &&
-          /(^|\s)tracking-(wide|wider|widest|\[)/.test(
-            classes,
-          )
-        ) {
-          offenders.push(
-            {
-              file,
-              line: lineAt(
-                src,
-                m.index,
-              ),
-              detail:
-                'uppercase + wide tracking',
-            },
-          );
+      while ((m = classAttr.exec(src))) {
+        const classes = m[1] ?? m[3] ?? '';
+        if (/(^|\s)uppercase(\s|$)/.test(classes) && /(^|\s)tracking-(wide|wider|widest|\[)/.test(classes)) {
+          offenders.push({
+            file,
+            line: lineAt(src, m.index),
+            detail: 'uppercase + wide tracking',
+          });
         }
       }
     }
@@ -1575,121 +746,48 @@ describe('design consistency — no eyebrows (owner decision, 2026-11-03)', () =
           '(sentence case) for the line over a heading, or a soft category chip',
         offenders,
       ),
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 
   it('the shared eyebrow classes are sentence case', () => {
-    const css =
-      [
-        readCss(
-          join(
-            ROOT,
-            'app/globals.css',
-          ),
-        ),
-        readFileSync(
-          join(
-            ROOT,
-            'components/feed/feed.css',
-          ),
-          'utf8',
-        ),
-      ].join(
-        '\n',
-      );
-    for (const selector of [
-      '.site-kicker',
-      '.apple-hero__eyebrow',
-      '.feed-hero__eyebrow',
-      '.rmhark__kicker',
-    ]) {
-      const rule =
-        css.match(
-          new RegExp(
-            `${selector.replace('.', '\\.')}\\s*\\{[^}]*\\}`,
-          ),
-        )?.[0];
-      if (
-        !rule
-      )
-        continue; // .rmhark__kicker lives in radial.css
-      expect(
-        rule,
-        selector,
-      ).not.toContain(
-        'text-transform: uppercase',
-      );
+    const css = [
+      readCss(join(ROOT, 'app/globals.css')),
+      readFileSync(join(ROOT, 'components/feed/feed.css'), 'utf8'),
+    ].join('\n');
+    for (const selector of ['.site-kicker', '.apple-hero__eyebrow', '.feed-hero__eyebrow', '.rmhark__kicker']) {
+      const rule = css.match(new RegExp(`${selector.replace('.', '\\.')}\\s*\\{[^}]*\\}`))?.[0];
+      if (!rule) continue; // .rmhark__kicker lives in radial.css
+      expect(rule, selector).not.toContain('text-transform: uppercase');
     }
   });
 });
 
 describe('design consistency — section headings (minimalism audit 2026-10-09)', () => {
   it('no site-tier h2/h3 is styled as an uppercase eyebrow', () => {
-    const heading =
-      /<(h2|h3)\b[^>]*\bclassName=(["'])([^"']*)\2/g;
-    const offenders: Violation[] =
-      [];
+    const heading = /<(h2|h3)\b[^>]*\bclassName=(["'])([^"']*)\2/g;
+    const offenders: Violation[] = [];
     for (const file of SITE_FILES) {
-      if (
-        SECTION_LABEL_ALLOW.has(
-          file,
-        )
-      )
-        continue;
-      const src =
-        readFileSync(
-          join(
-            ROOT,
-            file,
-          ),
-          'utf8',
-        );
+      if (SECTION_LABEL_ALLOW.has(file)) continue;
+      const src = readFileSync(join(ROOT, file), 'utf8');
       heading.lastIndex = 0;
       let m: RegExpExecArray | null;
-      while (
-        (m =
-          heading.exec(
-            src,
-          ))
-      ) {
-        if (
-          /(^|\s)uppercase(\s|$)/.test(
-            m[3],
-          )
-        ) {
-          offenders.push(
-            {
-              file,
-              line: lineAt(
-                src,
-                m.index,
-              ),
-              detail: `<${m[1]}> with uppercase`,
-            },
-          );
+      while ((m = heading.exec(src))) {
+        if (/(^|\s)uppercase(\s|$)/.test(m[3])) {
+          offenders.push({
+            file,
+            line: lineAt(src, m.index),
+            detail: `<${m[1]}> with uppercase`,
+          });
         }
       }
     }
     // The allowlist only shrinks: an entry that no longer violates must be removed.
     for (const file of SECTION_LABEL_ALLOW) {
-      const src =
-        readFileSync(
-          join(
-            ROOT,
-            file,
-          ),
-          'utf8',
-        );
+      const src = readFileSync(join(ROOT, file), 'utf8');
       expect(
-        /<(h2|h3)\b[^>]*\bclassName=(["'])[^"']*\buppercase\b/.test(
-          src,
-        ),
+        /<(h2|h3)\b[^>]*\bclassName=(["'])[^"']*\buppercase\b/.test(src),
         `${file} no longer has an uppercase heading — remove it from SECTION_LABEL_ALLOW`,
-      ).toBe(
-        true,
-      );
+      ).toBe(true);
     }
     expect(
       offenders,
@@ -1698,9 +796,7 @@ describe('design consistency — section headings (minimalism audit 2026-10-09)'
           'heading of a group within a page',
         offenders,
       ),
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 });
 
@@ -1723,38 +819,18 @@ describe('design consistency — section headings (minimalism audit 2026-10-09)'
  */
 describe('design consistency — no debossed surfaces (audit 2026-10-09)', () => {
   it('no site-tier shadow-inner or dark inset shadow', () => {
-    const debossed =
-      /\bshadow-inner\b|\bshadow-\[inset_[^\]]*(?:rgba?\(0,\s*0,\s*0|rgb\(0_0_0|#000\b|black)/g;
-    const offenders: Violation[] =
-      [];
+    const debossed = /\bshadow-inner\b|\bshadow-\[inset_[^\]]*(?:rgba?\(0,\s*0,\s*0|rgb\(0_0_0|#000\b|black)/g;
+    const offenders: Violation[] = [];
     for (const file of SITE_FILES) {
-      const src =
-        readFileSync(
-          join(
-            ROOT,
-            file,
-          ),
-          'utf8',
-        );
+      const src = readFileSync(join(ROOT, file), 'utf8');
       debossed.lastIndex = 0;
       let m: RegExpExecArray | null;
-      while (
-        (m =
-          debossed.exec(
-            src,
-          ))
-      ) {
-        offenders.push(
-          {
-            file,
-            line: lineAt(
-              src,
-              m.index,
-            ),
-            detail:
-              m[0],
-          },
-        );
+      while ((m = debossed.exec(src))) {
+        offenders.push({
+          file,
+          line: lineAt(src, m.index),
+          detail: m[0],
+        });
       }
     }
     expect(
@@ -1764,9 +840,7 @@ describe('design consistency — no debossed surfaces (audit 2026-10-09)', () =>
           'above and never carved into the page (design.md §3, "Nothing is debossed")',
         offenders,
       ),
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 });
 
@@ -1783,177 +857,50 @@ describe('design consistency — no debossed surfaces (audit 2026-10-09)', () =>
  * 2026-10-23 and only go down; new code gets zero. Hover and press feedback on a site surface comes from its role
  * class or a `data-jelly="card|control"` mark — nothing else.
  */
-const FRAMER_GESTURE_DEBT: Record<
-  string,
-  number
-> =
-  {
-    'components/arcade/ArcadeHub.tsx': 2,
-  };
+const FRAMER_GESTURE_DEBT: Record<string, number> = {
+  'components/arcade/ArcadeHub.tsx': 2,
+};
 
 /** The `{…}` expression that starts at `open` (balanced braces), or '' if it never closes within 400 chars. */
-function braced(
-  src: string,
-  open: number,
-): string {
+function braced(src: string, open: number): string {
   let depth = 0;
-  for (
-    let i =
-      open;
-    i <
-    Math.min(
-      src.length,
-      open +
-        400,
-    );
-    i++
-  ) {
-    if (
-      src[
-        i
-      ] ===
-      '{'
-    )
-      depth++;
-    else if (
-      src[
-        i
-      ] ===
-        '}' &&
-      --depth ===
-        0
-    )
-      return src.slice(
-        open,
-        i +
-          1,
-      );
+  for (let i = open; i < Math.min(src.length, open + 400); i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(open, i + 1);
   }
   return '';
 }
 
 describe('design consistency — no framer gesture transform on a jelly surface (N11)', () => {
-  const gesture =
-    /\bwhile(?:Hover|Tap)\s*=\s*\{/g;
-  const transformKey =
-    /(?:^|[{,\s])(?:scale|scaleX|scaleY|x|y)\s*:/;
-  const measured =
-    new Map<
-      string,
-      number
-    >();
+  const gesture = /\bwhile(?:Hover|Tap)\s*=\s*\{/g;
+  const transformKey = /(?:^|[{,\s])(?:scale|scaleX|scaleY|x|y)\s*:/;
+  const measured = new Map<string, number>();
   for (const file of SITE_FILES) {
-    const src =
-      readFileSync(
-        join(
-          ROOT,
-          file,
-        ),
-        'utf8',
-      );
+    const src = readFileSync(join(ROOT, file), 'utf8');
     gesture.lastIndex = 0;
     let n = 0;
-    for (
-      let m =
-        gesture.exec(
-          src,
-        );
-      m;
-      m =
-        gesture.exec(
-          src,
-        )
-    ) {
-      if (
-        transformKey.test(
-          braced(
-            src,
-            m.index +
-              m[0]
-                .length -
-              1,
-          ),
-        )
-      )
-        n++;
+    for (let m = gesture.exec(src); m; m = gesture.exec(src)) {
+      if (transformKey.test(braced(src, m.index + m[0].length - 1))) n++;
     }
-    if (
-      n >
-      0
-    )
-      measured.set(
-        file
-          .split(
-            /[\\/]/,
-          )
-          .join(
-            '/',
-          ),
-        n,
-      );
+    if (n > 0) measured.set(file.split(/[\\/]/).join('/'), n);
   }
 
   it('adds no framer whileHover/whileTap scale or x/y to a site-tier file', () => {
-    const offenders =
-      [
-        ...measured,
-      ]
-        .filter(
-          ([
-            file,
-            n,
-          ]) =>
-            n >
-            (FRAMER_GESTURE_DEBT[
-              file
-            ] ??
-              0),
-        )
-        .map(
-          ([
-            file,
-            n,
-          ]) =>
-            `${file} — ${n} (frozen: ${FRAMER_GESTURE_DEBT[file] ?? 0})`,
-        );
+    const offenders = [...measured]
+      .filter(([file, n]) => n > (FRAMER_GESTURE_DEBT[file] ?? 0))
+      .map(([file, n]) => `${file} — ${n} (frozen: ${FRAMER_GESTURE_DEBT[file] ?? 0})`);
     expect(
       offenders,
       'framer-motion `whileHover`/`whileTap` animating scale / x / y: Steel M6 allows no hover lifts or springs ' +
         '(docs/plans/2026-11-11-steel-design-implementation.md section 11). Drop the gesture prop. ' +
         'Opacity/colour gestures are fine.',
-    ).toEqual(
-      [],
-    );
+    ).toEqual([]);
   });
 
   it('drains the framer gesture debt as files are cleaned', () => {
-    const stale =
-      Object.entries(
-        FRAMER_GESTURE_DEBT,
-      )
-        .filter(
-          ([
-            file,
-            n,
-          ]) =>
-            (measured.get(
-              file,
-            ) ??
-              0) <
-            n,
-        )
-        .map(
-          ([
-            file,
-            n,
-          ]) =>
-            `${file} — now ${measured.get(file) ?? 0}, frozen ${n}: lower or remove it`,
-        );
-    expect(
-      stale,
-      'FRAMER_GESTURE_DEBT is one-directional; lower the number when you clean a file.',
-    ).toEqual(
-      [],
-    );
+    const stale = Object.entries(FRAMER_GESTURE_DEBT)
+      .filter(([file, n]) => (measured.get(file) ?? 0) < n)
+      .map(([file, n]) => `${file} — now ${measured.get(file) ?? 0}, frozen ${n}: lower or remove it`);
+    expect(stale, 'FRAMER_GESTURE_DEBT is one-directional; lower the number when you clean a file.').toEqual([]);
   });
 });

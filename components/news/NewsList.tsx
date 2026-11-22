@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/select';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
+import { FollowButton } from '@/components/reading/FollowButton';
 import type { NewsArticle } from '@/lib/news';
 
 const ARTICLES_PER_PAGE = 12;
@@ -176,6 +177,7 @@ export function NewsList({
             onCategoryChange={setSelectedCategory}
             availableCategories={availableCategories}
           />
+          {selectedCategory ? <FollowButton kind="news_category" target={selectedCategory} /> : null}
 
           {/* Search + Sort Row */}
           <div className="flex flex-col gap-3 rounded-site p-4">

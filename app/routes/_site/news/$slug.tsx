@@ -9,6 +9,8 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { setResponseHeader } from '@tanstack/react-start/server';
+import { isAdminRequest } from '@/lib/auth/server-fn-guards.server';
 import { getNewsArticleBySlug } from '@/lib/news';
 import { buildCanonical, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
@@ -29,6 +31,12 @@ const fetchArticle = createServerFn({ method: 'GET' })
   .handler(async ({ data: slug }) => {
     const article = await getNewsArticleBySlug(slug);
     if (!article) return null;
+    // A STAGING article is unpublished: the listing, feed and sitemap already hide it, and a server function is
+    // its own HTTP endpoint, so this one has to as well. An admin may preview it, and that view is never cached.
+    if (article.status !== 'PUBLISHED') {
+      if (!(await isAdminRequest())) return null;
+      setResponseHeader('Cache-Control', 'private, no-store');
+    }
     // L5: "Part of story: X" is part of the server HTML, so it never shifts the layout.
     return { ...article, story: await getStoryForArticle(slug) };
   });

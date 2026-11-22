@@ -10,20 +10,13 @@
  * schemas live in `./sitewide-announcement-schema.ts`.
  */
 
-import {
-  readJson,
-  writeJson,
-} from '@/lib/core/persist';
+import { readJson, writeJson } from '@/lib/core/persist';
 import type { BusinessId } from './businesses';
 
 /** With no explicit end date, an announcement stops popping up after this long. */
 export const ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS = 30;
 
-const DAY_MS =
-  24 *
-  60 *
-  60 *
-  1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** What `GET /api/sitewide-announcement` returns about the current announcement. */
 export interface SitewideAnnouncementSummary {
@@ -33,9 +26,7 @@ export interface SitewideAnnouncementSummary {
   title: string;
   description: string;
   /** Cover image URL, if the post has one. */
-  image:
-    | string
-    | null;
+  image: string | null;
   business: BusinessId;
   /** ISO timestamp of when the post was (last) announced. */
   announcedAt: string;
@@ -52,130 +43,46 @@ export interface SitewideAnnouncementResponse {
 }
 
 /** When an announcement stops being live. */
-export function announcementExpiry(
-  announcedAt: Date,
-  explicitExpiry?: Date | null,
-): Date {
-  return (
-    explicitExpiry ??
-    new Date(
-      announcedAt.getTime() +
-        ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS *
-          DAY_MS,
-    )
-  );
+export function announcementExpiry(announcedAt: Date, explicitExpiry?: Date | null): Date {
+  return explicitExpiry ?? new Date(announcedAt.getTime() + ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS * DAY_MS);
 }
 
 /** Client-side liveness check for a summary the browser may have cached. */
 export function isAnnouncementLive(
-  a: Pick<
-    SitewideAnnouncementSummary,
-    'expiresAt'
-  >,
+  a: Pick<SitewideAnnouncementSummary, 'expiresAt'>,
   now: number = Date.now(),
 ): boolean {
-  const expires =
-    Date.parse(
-      a.expiresAt,
-    );
-  return (
-    Number.isFinite(
-      expires,
-    ) &&
-    expires >
-      now
-  );
+  const expires = Date.parse(a.expiresAt);
+  return Number.isFinite(expires) && expires > now;
 }
 
 /**
  * Identity of one "announcing" of a post. Re-announcing a post (switching the
  * flag off and on) changes `announcedAt`, so it counts as unseen again.
  */
-export function announcementVersion(
-  a: Pick<
-    SitewideAnnouncementSummary,
-    | 'id'
-    | 'announcedAt'
-  >,
-): string {
+export function announcementVersion(a: Pick<SitewideAnnouncementSummary, 'id' | 'announcedAt'>): string {
   return `${a.id}@${a.announcedAt}`;
 }
 
 // ─── Device-local "seen" state (logged-out visitors, and instant for members) ──
 
-export const ANNOUNCEMENT_SEEN_STORAGE_KEY =
-  'rmh-sitewide-announcements-seen';
+export const ANNOUNCEMENT_SEEN_STORAGE_KEY = 'rmh-sitewide-announcements-seen';
 const MAX_LOCAL_SEEN = 20;
 
 function readLocalSeen(): string[] {
-  return readJson<
-    string[]
-  >(
-    ANNOUNCEMENT_SEEN_STORAGE_KEY,
-    [],
-    {
-      validate:
-        (
-          value,
-        ) =>
-          Array.isArray(
-            value,
-          )
-            ? value.filter(
-                (
-                  v,
-                ): v is string =>
-                  typeof v ===
-                  'string',
-              )
-            : undefined,
-    },
-  );
+  return readJson<string[]>(ANNOUNCEMENT_SEEN_STORAGE_KEY, [], {
+    validate: (value) => (Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : undefined),
+  });
 }
 
 /** Has this browser already dismissed this announcing of the post? */
-export function hasSeenLocally(
-  a: Pick<
-    SitewideAnnouncementSummary,
-    | 'id'
-    | 'announcedAt'
-  >,
-): boolean {
-  return readLocalSeen().includes(
-    announcementVersion(
-      a,
-    ),
-  );
+export function hasSeenLocally(a: Pick<SitewideAnnouncementSummary, 'id' | 'announcedAt'>): boolean {
+  return readLocalSeen().includes(announcementVersion(a));
 }
 
 /** Remember the dismissal in this browser. Safe when storage is unavailable. */
-export function markSeenLocally(
-  a: Pick<
-    SitewideAnnouncementSummary,
-    | 'id'
-    | 'announcedAt'
-  >,
-): void {
-  const version =
-    announcementVersion(
-      a,
-    );
-  const next =
-    [
-      version,
-      ...readLocalSeen().filter(
-        (
-          v,
-        ) =>
-          v !==
-          version,
-      ),
-    ].slice(
-      0,
-      MAX_LOCAL_SEEN,
-    );
-  writeJson(
-    ANNOUNCEMENT_SEEN_STORAGE_KEY,
-    next,
-  );
+export function markSeenLocally(a: Pick<SitewideAnnouncementSummary, 'id' | 'announcedAt'>): void {
+  const version = announcementVersion(a);
+  const next = [version, ...readLocalSeen().filter((v) => v !== version)].slice(0, MAX_LOCAL_SEEN);
+  writeJson(ANNOUNCEMENT_SEEN_STORAGE_KEY, next);
 }

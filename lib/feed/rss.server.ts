@@ -25,6 +25,8 @@ import { prisma } from '@/lib/prisma.server';
 import type { Prisma } from '@prisma/client';
 import { SITE_URL } from '@/lib/seo';
 import type { RssItem } from '@/lib/rss';
+import { DEFAULT_LOCALE } from '@/lib/i18n/config';
+import { contentWarningNotice, contentWarningOrNull } from '@/lib/feed/content-warning';
 
 /** Most items any single feed will emit. */
 export const FEED_LIMIT = 40;
@@ -41,7 +43,7 @@ export const PUBLIC_POST_WHERE: Prisma.RMHarkWhereInput = {
 };
 
 /** Collapse a post body into a one-line plain-text summary. */
-function summarize(content: string, max = 400): string {
+export function summarize(content: string, max = 400): string {
   const flat = content.replace(/\s+/g, ' ').trim();
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
@@ -49,26 +51,55 @@ function summarize(content: string, max = 400): string {
 interface FeedPost {
   id: string;
   content: string;
+  contentWarning?: string | null;
   createdAt: Date;
   user: { handle: string | null; name: string | null };
 }
 
-function toItems(posts: FeedPost[]): RssItem[] {
-  return posts.map((p) => {
-    const link = `${SITE_URL}/thread/${p.id}`;
-    return {
-      title: summarize(p.content, 100) || 'Post',
-      link,
-      guid: link,
-      description: summarize(p.content),
-      pubDate: p.createdAt,
-    };
-  });
+/**
+ * "Content warning: <reason>" in the site's default locale. A feed has no reader locale, so it goes through the same
+ * server-side catalog the other server-written strings use (`getServerI18n`); a failed load falls back to the English
+ * default, so a feed never fails over a string.
+ */
+export async function warningNotice(reason: string): Promise<string> {
+  try {
+    const { getServerI18n } = await import('@/lib/i18n/instances');
+    return getServerI18n(DEFAULT_LOCALE).t('content-warnings:rss-description', {
+      reason,
+      // The site config already turns HTML escaping off (lib/i18n/config.ts); the feed escapes for XML itself.
+      defaultValue: 'Content warning: {{reason}}',
+    });
+  } catch {
+    return contentWarningNotice(reason);
+  }
+}
+
+async function toItems(posts: FeedPost[]): Promise<RssItem[]> {
+  return Promise.all(
+    posts.map(async (p) => {
+      const link = `${SITE_URL}/thread/${p.id}`;
+      // A feed item cannot be revealed, so a post with a content warning reason carries the reason and none of the
+      // text (sprint 06 #16).
+      const reason = contentWarningOrNull(p.contentWarning);
+      if (reason) {
+        const notice = await warningNotice(reason);
+        return { title: summarize(notice, 100), link, guid: link, description: notice, pubDate: p.createdAt };
+      }
+      return {
+        title: summarize(p.content, 100) || 'Post',
+        link,
+        guid: link,
+        description: summarize(p.content),
+        pubDate: p.createdAt,
+      };
+    }),
+  );
 }
 
 const POST_SELECT = {
   id: true,
   content: true,
+  contentWarning: true,
   createdAt: true,
   user: { select: { handle: true, name: true } },
 } as const;
@@ -110,6 +141,6 @@ export async function userFeedItems(
 
   return {
     displayName: user.name ?? user.handle ?? 'RMH Studios user',
-    items: toItems(posts),
+    items: await toItems(posts),
   };
 }

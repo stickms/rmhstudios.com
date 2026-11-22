@@ -18,17 +18,18 @@ import { prisma } from '@/lib/prisma.server';
  * merge itself handles:
  *  - `account`, `passkey`: the sign-in methods. They are what moves.
  *  - `session`: ended when the merge starts; deleted with the account.
+ *  - `security_event`: the account's own security log (`lib/auth/security-log.server.ts`).
+ *    Signing up and signing in write to it before the member has done anything,
+ *    so its rows say how the account was entered, not what was done with it.
  * Measured against a real sign-up (email and provider) followed by a visit to
  * the home page, settings and `/account/connect`; see the design doc.
  */
-export const EMPTY_ACCOUNT_ALLOWED_TABLES: ReadonlySet<string> =
-  new Set(
-    [
-      'account',
-      'passkey',
-      'session',
-    ],
-  );
+export const EMPTY_ACCOUNT_ALLOWED_TABLES: ReadonlySet<string> = new Set([
+  'account',
+  'passkey',
+  'session',
+  'security_event',
+]);
 
 /** One statement checks every table; this bounds it on a large database. */
 const CHECK_TIMEOUT_MS = 5_000;
@@ -44,22 +45,14 @@ interface UserReference {
   indexed: boolean;
 }
 
-let referencesPromise: Promise<
-  UserReference[]
-> | null =
-  null;
+let referencesPromise: Promise<UserReference[]> | null = null;
 
 /**
  * Every single-column foreign key to `user(id)`. Read once per process: the
  * schema only changes with a deploy, which restarts the process.
  */
-function userReferences(): Promise<
-  UserReference[]
-> {
-  referencesPromise ??=
-    prisma.$queryRaw<
-      UserReference[]
-    >`
+function userReferences(): Promise<UserReference[]> {
+  referencesPromise ??= prisma.$queryRaw<UserReference[]>`
       SELECT quote_ident(ns.nspname) || '.' || quote_ident(cl.relname) AS "table",
              quote_ident(att.attname) AS "column",
              cl.relname AS "name",
@@ -74,15 +67,10 @@ function userReferences(): Promise<
        WHERE con.contype = 'f'
          AND con.confrelid = 'public."user"'::regclass
          AND array_length(con.conkey, 1) = 1
-       ORDER BY 4 DESC, 1, 2`.catch(
-      (
-        error: unknown,
-      ) => {
-        referencesPromise =
-          null;
-        throw error;
-      },
-    );
+       ORDER BY 4 DESC, 1, 2`.catch((error: unknown) => {
+    referencesPromise = null;
+    throw error;
+  });
   return referencesPromise;
 }
 
@@ -95,93 +83,31 @@ function userReferences(): Promise<
  * so an account with history (nearly every account that opens Settings) costs a
  * handful of index lookups; only a genuinely empty account reads every table.
  */
-export async function findAccountHistory(
-  userId: string,
-): Promise<
-  | string[]
-  | null
-> {
+export async function findAccountHistory(userId: string): Promise<string[] | null> {
   try {
-    const refs =
-      (
-        await userReferences()
-      ).filter(
-        (
-          r,
-        ) =>
-          !EMPTY_ACCOUNT_ALLOWED_TABLES.has(
-            r.name,
-          ),
-      );
-    if (
-      refs.length ===
-      0
-    )
-      return [];
+    const refs = (await userReferences()).filter((r) => !EMPTY_ACCOUNT_ALLOWED_TABLES.has(r.name));
+    if (refs.length === 0) return [];
     // Identifiers come from the catalogue above, already quoted by
     // quote_ident; the user id is the one bound parameter ($1).
     const sql = `SELECT i FROM (${refs
-      .map(
-        (
-          r,
-          i,
-        ) =>
-          `SELECT ${i} AS i WHERE EXISTS (SELECT 1 FROM ${r.table} WHERE ${r.column} = $1)`,
-      )
-      .join(
-        ' UNION ALL ',
-      )}) AS hit LIMIT 1`;
-    const rows =
-      await prisma.$transaction(
-        async (
-          tx,
-        ) => {
-          await tx.$executeRawUnsafe(
-            `SET LOCAL statement_timeout = ${CHECK_TIMEOUT_MS}`,
-          );
-          return tx.$queryRawUnsafe<
-            Array<{
-              i: number;
-            }>
-          >(
-            sql,
-            userId,
-          );
-        },
-      );
-    return [
-      ...new Set(
-        rows.map(
-          (
-            row,
-          ) =>
-            refs[
-              Number(
-                row.i,
-              )
-            ]
-              ?.name ??
-            'unknown',
-        ),
-      ),
-    ];
+      .map((r, i) => `SELECT ${i} AS i WHERE EXISTS (SELECT 1 FROM ${r.table} WHERE ${r.column} = $1)`)
+      .join(' UNION ALL ')}) AS hit LIMIT 1`;
+    const rows = await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`SET LOCAL statement_timeout = ${CHECK_TIMEOUT_MS}`);
+      return tx.$queryRawUnsafe<
+        Array<{
+          i: number;
+        }>
+      >(sql, userId);
+    });
+    return [...new Set(rows.map((row) => refs[Number(row.i)]?.name ?? 'unknown'))];
   } catch (error) {
     console.error(
-      JSON.stringify(
-        {
-          level:
-            'error',
-          event:
-            'account.history_check_failed',
-          message:
-            error instanceof
-            Error
-              ? error.message
-              : String(
-                  error,
-                ),
-        },
-      ),
+      JSON.stringify({
+        level: 'error',
+        event: 'account.history_check_failed',
+        message: error instanceof Error ? error.message : String(error),
+      }),
     );
     return null;
   }

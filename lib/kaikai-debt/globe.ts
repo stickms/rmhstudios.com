@@ -32,23 +32,9 @@ import { LAT_SPAN_DEG } from '@/lib/globe';
  * the ring a colour lives on is the same on every visit — the globe is a map,
  * and a map whose features move is not one.
  */
-export function categoryLatitude(
-  index: number,
-  count: number,
-): number {
-  if (
-    count <=
-    1
-  )
-    return 0;
-  return (
-    LAT_SPAN_DEG -
-    (2 *
-      LAT_SPAN_DEG *
-      index) /
-      (count -
-        1)
-  );
+export function categoryLatitude(index: number, count: number): number {
+  if (count <= 1) return 0;
+  return LAT_SPAN_DEG - (2 * LAT_SPAN_DEG * index) / (count - 1);
 }
 
 /**
@@ -59,23 +45,11 @@ export function categoryLatitude(
  * mapping rescales as the archive grows rather than compressing everything into
  * a wedge.
  */
-export function timeLongitude(
-  index: number,
-  count: number,
-): number {
-  if (
-    count <=
-    1
-  )
-    return 0;
+export function timeLongitude(index: number, count: number): number {
+  if (count <= 1) return 0;
   // index 0 is the OLDEST bucket, so it is pushed round the back; the newest
   // ends up at 0°.
-  return (
-    -180 +
-    (360 *
-      index) /
-      count
-  );
+  return -180 + (360 * index) / count;
 }
 
 /**
@@ -87,28 +61,7 @@ export function timeLongitude(
  * bucket with a single small debt in it is still visibly a pin standing on the
  * surface rather than a mark painted on it.
  */
-export function liftFor(
-  value: number,
-  maxValue: number,
-  max = 0.42,
-): number {
-  if (
-    !(
-      maxValue >
-      0
-    ) ||
-    !(
-      value >
-      0
-    )
-  )
-    return 0.02;
-  return (
-    0.02 +
-    Math.sqrt(
-      value /
-        maxValue,
-    ) *
-      max
-  );
+export function liftFor(value: number, maxValue: number, max = 0.42): number {
+  if (!(maxValue > 0) || !(value > 0)) return 0.02;
+  return 0.02 + Math.sqrt(value / maxValue) * max;
 }

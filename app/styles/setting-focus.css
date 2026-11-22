@@ -1,0 +1,14 @@
+/* A setting someone was sent to (lib/settings/focus-setting.ts): its block takes the hover-fill token for a moment and
+   fades back. A solid token, no glow or shadow (R1); the 8px of padding is pulled back out with a negative margin so
+   the layout does not move and the tint has room around the text. */
+.setting-target {
+  margin: -8px;
+  padding: 8px;
+  border-radius: var(--site-radius);
+  background-color: transparent;
+  transition: background-color 900ms ease-out;
+}
+.setting-target[data-flash] {
+  background-color: var(--site-bg-subtle);
+  transition: none;
+}

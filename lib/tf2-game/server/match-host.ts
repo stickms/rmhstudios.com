@@ -23,24 +23,15 @@
  */
 
 import type { Tf2Mode } from '../data/maps';
-import type {
-  BotDifficulty,
-  ClassChoice,
-  TeamChoice,
-} from '../net/events';
+import type { BotDifficulty, ClassChoice, TeamChoice } from '../net/events';
 import type { ExtraCommandArgs } from '../net/extra-commands';
-import type {
-  LoadoutSlots,
-  TfClass,
-} from '../../tf2-loadout/catalog-types';
+import type { LoadoutSlots, TfClass } from '../../tf2-loadout/catalog-types';
 
 /**
  * The game a match plays. TF2 is the default; another game on the engine registers its host with
  * `registerMatchGame` (./game-registry.ts). Every match runs in a browser's listen server.
  */
-export type MatchGame =
-  | 'tf2'
-  | 'csgo';
+export type MatchGame = 'tf2' | 'csgo';
 
 /** What a match is created with. Validated by the hub before it gets here. */
 export interface MatchOptions {
@@ -89,10 +80,7 @@ export type MatchCommand =
     }
   | {
       kind: 'voice';
-      menu:
-        | 0
-        | 1
-        | 2;
+      menu: 0 | 1 | 2;
       item: number;
     }
   /**
@@ -127,9 +115,7 @@ export interface PlayerInfo {
 /** One packet for the hub to deliver. */
 export interface OutgoingPacket {
   /** A player id, or every human in the match. */
-  to:
-    | number
-    | 'all';
+  to: number | 'all';
   /**
    * `false` → sent as `tf2:snapshot` with socket.io's volatile flag (dropped
    * rather than queued behind a slow connection). `true` → `tf2:events`, in
@@ -164,58 +150,34 @@ export interface RoomSummary {
   tick: number;
   players: PlayerSummary[];
   /** [RED, BLU] round/capture/score — whatever the mode counts. */
-  teamScores: [
-    number,
-    number,
-  ];
+  teamScores: [number, number];
   /** The round for the server browser: the rules' state and the HUD timer's time left. */
   round?: {
     state: string;
-    timeLeft:
-      | number
-      | null;
+    timeLeft: number | null;
   } | null;
 }
 
 export interface MatchHost {
-  addPlayer(
-    id: number,
-    info: PlayerInfo,
-  ): void;
-  removePlayer(
-    id: number,
-  ): void;
+  addPlayer(id: number, info: PlayerInfo): void;
+  removePlayer(id: number): void;
   /** One opaque packet from the player's client; at most `TF2_LIMITS.INPUT_MAX_BYTES`. */
-  onInput(
-    id: number,
-    packet: Uint8Array,
-  ): void;
-  onCommand(
-    id: number,
-    cmd: MatchCommand,
-  ): void;
+  onInput(id: number, packet: Uint8Array): void;
+  onCommand(id: number, cmd: MatchCommand): void;
   /**
    * The player's client starts over on the same seat: forget what it had
    * acknowledged (the next snapshot is full), resend server info and the
    * roster, and accept command numbers from 1 again. Optional; a host without
    * it treats a rejoin as nothing (the runner ignores the message).
    */
-  resyncPlayer?(
-    id: number,
-  ): void;
+  resyncPlayer?(id: number): void;
   /**
    * Move the match to another map (`changelevel`; the caller checked the allowlist and who asked).
    * Humans keep their seats; resolves false when the map could not be loaded. Optional.
    */
-  changeLevel?(
-    map: string,
-  ): Promise<boolean>;
+  changeLevel?(map: string): Promise<boolean>;
   /** A dedicated room's owner (hub player id) may change the match settings — never cheats. Optional. */
-  setOwner?(
-    id:
-      | number
-      | null,
-  ): void;
+  setOwner?(id: number | null): void;
   /** The host's own tick count, when it does not start at 0 (a restored match, after a level change). */
   tickCount?(): number;
   /** Advance one simulation tick (TICK_INTERVAL = 15 ms of game time). */
@@ -232,7 +194,4 @@ export interface MatchHost {
  * Builds a match. Async because the host fetches and parses the map package
  * before the first tick; a rejection closes the room with `map-failed`.
  */
-export type MatchFactory =
-  (
-    opts: MatchOptions,
-  ) => Promise<MatchHost>;
+export type MatchFactory = (opts: MatchOptions) => Promise<MatchHost>;

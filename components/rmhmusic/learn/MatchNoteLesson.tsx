@@ -35,37 +35,17 @@
  * the same as LessonScreen's MatchNoteSkeleton.
  */
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getLesson } from '@/lib/rmhmusic/learn/content/path';
 import type { IntervalName } from '@/lib/rmhmusic/learn/theory/intervals';
-import {
-  resolveVoiceRange,
-  staffCardRange,
-} from '@/lib/rmhmusic/learn/voice/range';
-import {
-  playNote,
-  soundReleaseMs,
-  soundStatus,
-  type PlayOptions,
-} from '@/lib/rmhmusic/learn/audio/voice';
+import { resolveVoiceRange, staffCardRange } from '@/lib/rmhmusic/learn/voice/range';
+import { playNote, soundReleaseMs, soundStatus, type PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import { resumeAudio } from '@/lib/rmhmusic/learn/audio/resume';
-import {
-  createEchoGuard,
-  hearStillWanted,
-  type GuardNote,
-} from '@/lib/rmhmusic/learn/input/echo-window';
-import {
-  dealTargets,
-  targetStaff,
-} from '@/lib/rmhmusic/learn/machines/find-note';
+import { createEchoGuard, hearStillWanted, type GuardNote } from '@/lib/rmhmusic/learn/input/echo-window';
+import { dealTargets, targetStaff } from '@/lib/rmhmusic/learn/machines/find-note';
 import {
   MATCH_TARGETS,
   MATCH_TRIES,
@@ -79,15 +59,9 @@ import {
   type Target,
 } from '@/lib/rmhmusic/learn/machines/match-note';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
-import {
-  pitchVerdict,
-  type PlayedPitch,
-} from '@/lib/rmhmusic/learn/scoring/pitch';
+import { pitchVerdict, type PlayedPitch } from '@/lib/rmhmusic/learn/scoring/pitch';
 import { starsFor } from '@/lib/rmhmusic/learn/scoring/stars';
-import type {
-  Instrument,
-  VoiceRange,
-} from '@/lib/rmhmusic/learn/schemas';
+import type { Instrument, VoiceRange } from '@/lib/rmhmusic/learn/schemas';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
 import { cn } from '@/lib/utils';
@@ -95,90 +69,40 @@ import { TEXT_BUTTON } from './buttons';
 import { DeviceLine } from './FindNoteLesson';
 import { LessonResult } from './LessonParts';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
-import {
-  SessionFrame,
-  SessionSheet,
-  cardStateOf,
-  sessionTitle,
-  useQuestionSession,
-} from './QuestionSession';
-import {
-  STAFF_BOX,
-  STAFF_LOW_ASPECT,
-  StaffCard,
-} from './StaffCard';
-import {
-  useInputPhases,
-  useLessonInputStart,
-  useNoteEvents,
-  useNoteSound,
-} from './useLearnInput';
-import {
-  fallbackLine,
-  useFallbackNotice,
-  useSoundStatus,
-} from './useSoundNotice';
-import {
-  matchSoundLine,
-  soundLineKey,
-} from './sound-line';
+import { SessionFrame, SessionSheet, cardStateOf, sessionTitle, useQuestionSession } from './QuestionSession';
+import { STAFF_BOX, STAFF_LOW_ASPECT, StaffCard } from './StaffCard';
+import { useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from './useLearnInput';
+import { fallbackLine, useFallbackNotice, useSoundStatus } from './useSoundNotice';
+import { matchSoundLine, soundLineKey } from './sound-line';
 
 /** Interval singing's instruction: one sentence per interval, so a translation can word each. */
-function singIntervalLine(
-  t: TFunction,
-  interval:
-    | IntervalName
-    | undefined,
-  note: string,
-): string {
-  switch (
-    interval
-  ) {
+function singIntervalLine(t: TFunction, interval: IntervalName | undefined, note: string): string {
+  switch (interval) {
     case 'second':
-      return t(
-        'sing-interval-second',
-        {
-          note,
-          defaultValue:
-            'Sing a second above {{note}}.',
-        },
-      );
+      return t('sing-interval-second', {
+        note,
+        defaultValue: 'Sing a second above {{note}}.',
+      });
     case 'third':
-      return t(
-        'sing-interval-third',
-        {
-          note,
-          defaultValue:
-            'Sing a third above {{note}}.',
-        },
-      );
+      return t('sing-interval-third', {
+        note,
+        defaultValue: 'Sing a third above {{note}}.',
+      });
     case 'fifth':
-      return t(
-        'sing-interval-fifth',
-        {
-          note,
-          defaultValue:
-            'Sing a fifth above {{note}}.',
-        },
-      );
+      return t('sing-interval-fifth', {
+        note,
+        defaultValue: 'Sing a fifth above {{note}}.',
+      });
     case 'octave':
-      return t(
-        'sing-interval-octave',
-        {
-          note,
-          defaultValue:
-            'Sing an octave above {{note}}.',
-        },
-      );
+      return t('sing-interval-octave', {
+        note,
+        defaultValue: 'Sing an octave above {{note}}.',
+      });
     default:
-      return t(
-        'sing-interval-other',
-        {
-          note,
-          defaultValue:
-            'Hear it, then sing the second note above {{note}}.',
-        },
-      );
+      return t('sing-interval-other', {
+        note,
+        defaultValue: 'Hear it, then sing the second note above {{note}}.',
+      });
   }
 }
 
@@ -190,18 +114,12 @@ type HintEvent =
   | {
       type: 'hear-answer';
     };
-type Sound =
-  | 'ok'
-  | 'waking'
-  | 'blocked'
-  | 'none'
-  | 'loading';
+type Sound = 'ok' | 'waking' | 'blocked' | 'none' | 'loading';
 
 export function MatchNoteLesson({
   lessonId,
   paused = false,
-  sound:
-    voice,
+  sound: voice,
 }: {
   lessonId: string;
   /** A dialog is open over the lesson: nothing answers. */
@@ -209,1279 +127,537 @@ export function MatchNoteLesson({
   /** How the learner's notes are voiced (the lesson's sound); the synth when absent. */
   sound?: PlayOptions;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
+  const { t } = useTranslation('c-rmhmusic');
   // Read once: the staff is drawn for the instrument the lesson opened with.
-  const [
-    instrument,
-  ] =
-    useState<Instrument>(
-      () =>
-        useLearnStore.getState()
-          .profile
-          ?.instrument ??
-        'piano',
-    );
-  const input =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s
-          .profile
-          ?.input ??
-        'screen',
-    );
-  const guitar =
-    instrument ===
-    'guitar';
+  const [instrument] = useState<Instrument>(() => useLearnStore.getState().profile?.instrument ?? 'piano');
+  const input = useLearnStore((s) => s.profile?.input ?? 'screen');
+  const guitar = instrument === 'guitar';
   // A singer's range, read once like the instrument (LessonScreen asks a singer to choose one first).
-  const [
-    range,
-  ] =
-    useState<VoiceRange>(
-      () =>
-        resolveVoiceRange(
-          useLearnStore.getState()
-            .profile
-            ?.voiceRange,
-        ),
-    );
-  const singer =
-    instrument ===
-    'voice';
+  const [range] = useState<VoiceRange>(() => resolveVoiceRange(useLearnStore.getState().profile?.voiceRange));
+  const singer = instrument === 'voice';
   // An alto's range reaches G3, below the deck card: their targets go on the low card.
-  const lowCard =
-    singer &&
-    staffCardRange(
-      range,
-    ) ===
-      'low';
-  const lessonInfo =
-    getLesson(
-      lessonId,
-    );
+  const lowCard = singer && staffCardRange(range) === 'low';
+  const lessonInfo = getLesson(lessonId);
   // Interval singing (`sing-interval`): the staff shows the first note, Hear it plays it alone, and
   // the learner sings the second.
-  const intervals =
-    lessonInfo?.mode ===
-    'sing-interval';
+  const intervals = lessonInfo?.mode === 'sing-interval';
   // How the last Hear it went, and where in the lesson (`position`): a problem is said only until
   // the learner moves on.
-  const [
-    sound,
-    setSound,
-  ] =
-    useState<{
-      kind: Sound;
-      at: string;
-    }>(
-      {
-        kind: 'ok',
-        at: '',
-      },
-    );
-  const soundRef =
-    useRef(
-      voice,
-    );
-  soundRef.current =
-    voice;
+  const [sound, setSound] = useState<{
+    kind: Sound;
+    at: string;
+  }>({
+    kind: 'ok',
+    at: '',
+  });
+  const soundRef = useRef(voice);
+  soundRef.current = voice;
   // When the microphone may not be believed (the hint, the keys' sounds), and the note it may still
   // owe the learner (`input/echo-window.ts`). The release is asked at each note, so it follows the
   // sound in use now (the samples, or the simple tone the lesson fell back to), not the one at mount.
-  const [
-    guard,
-  ] =
-    useState(
-      () =>
-        createEchoGuard(
-          {
-            releaseMs:
-              () =>
-                soundReleaseMs(
-                  soundRef.current,
-                ),
-          },
-        ),
-    );
-  const replayTimer =
-    useRef<ReturnType<
-      typeof setTimeout
-    > | null>(
-      null,
-    );
-  const deliverRef =
-    useRef<
-      (
-        e: GuardNote,
-      ) => void
-    >(
-      () => {},
-    );
-  const mounted =
-    useRef(
-      false,
-    );
-  // The target in view (-1: none), and whether a Hear it is waiting for the audio context.
-  const indexRef =
-    useRef(
-      -1,
-    );
-  const hearing =
-    useRef(
-      false,
-    );
-  // Hints still sounding: each one's release, called by its timer or when the target changes.
-  const hints =
-    useRef(
-      new Map<
-        ReturnType<
-          typeof setTimeout
-        >,
-        () => void
-      >(),
-    );
-
-  const session =
-    useQuestionSession<
-      Target,
-      Played,
-      State,
-      HintEvent,
-      Effect
-    >(
-      {
-        machine:
-          () =>
-            createMatchNoteMachine(
-              intervals
-                ? singIntervalTargets(
-                    lessonInfo?.pool ??
-                      [],
-                    range,
-                    MATCH_TARGETS,
-                    Math.random,
-                  )
-                : dealTargets(
-                    matchNotePool(
-                      lessonId,
-                      singer
-                        ? range
-                        : undefined,
-                    ),
-                    MATCH_TARGETS,
-                    Math.random,
-                  ),
-            ),
-        save: (
-          fx,
-        ) =>
-          useLearnStore
-            .getState()
-            .completeLesson(
-              lessonId,
-              fx.stars,
-              fx.score,
-            ),
-        paused,
-        focusFirst:
-          '.rmm-keys__bed button:not([tabindex="-1"])',
-        onEffect:
-          (
-            fx,
-          ) => {
-            if (
-              fx.type !==
-              'play'
-            )
-              return;
-            // A note alone (a target, or an interval's first note), or an interval's answer: the
-            // first note, then the second as it ends. The microphone is deaf for the whole hint.
-            const plan =
-              hintSchedule(
-                fx,
-              );
-            guard.hint(
-              performance.now(),
-              plan.lengthMs,
-            );
-            const releases: (() => void)[] =
-              [];
-            const later: ReturnType<
-              typeof setTimeout
-            >[] =
-              [];
-            for (const n of plan.notes) {
-              if (
-                n.atMs ===
-                0
-              ) {
-                releases.push(
-                  playNote(
-                    n.midi,
-                    soundRef.current,
-                  ),
-                );
-                continue;
-              }
-              later.push(
-                setTimeout(
-                  () => {
-                    for (const r of releases.splice(
-                      0,
-                    ))
-                      r();
-                    releases.push(
-                      playNote(
-                        n.midi,
-                        soundRef.current,
-                      ),
-                    );
-                  },
-                  n.atMs,
-                ),
-              );
-            }
-            const release =
-              () => {
-                for (const l of later.splice(
-                  0,
-                ))
-                  clearTimeout(
-                    l,
-                  );
-                for (const r of releases.splice(
-                  0,
-                ))
-                  r();
-              };
-            const timer =
-              setTimeout(
-                () => {
-                  hints.current.delete(
-                    timer,
-                  );
-                  release();
-                },
-                plan.lengthMs,
-              );
-            hints.current.set(
-              timer,
-              release,
-            );
-          },
-      },
-    );
-  const {
-    lesson,
-    total,
-    answer,
-    answerGroup,
-  } =
-    session;
-  const inSession =
-    lesson.kind ===
-      'asking' ||
-    lesson.kind ===
-      'feedback';
-  const phases =
-    useInputPhases();
-  useNoteSound(
-    !paused,
-    voice,
+  const [guard] = useState(() =>
+    createEchoGuard({
+      releaseMs: () => soundReleaseMs(soundRef.current),
+    }),
   );
+  const replayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deliverRef = useRef<(e: GuardNote) => void>(() => {});
+  const mounted = useRef(false);
+  // The target in view (-1: none), and whether a Hear it is waiting for the audio context.
+  const indexRef = useRef(-1);
+  const hearing = useRef(false);
+  // Hints still sounding: each one's release, called by its timer or when the target changes.
+  const hints = useRef(new Map<ReturnType<typeof setTimeout>, () => void>());
+
+  const session = useQuestionSession<Target, Played, State, HintEvent, Effect>({
+    machine: () =>
+      createMatchNoteMachine(
+        intervals
+          ? singIntervalTargets(lessonInfo?.pool ?? [], range, MATCH_TARGETS, Math.random)
+          : dealTargets(matchNotePool(lessonId, singer ? range : undefined), MATCH_TARGETS, Math.random),
+      ),
+    save: (fx) => useLearnStore.getState().completeLesson(lessonId, fx.stars, fx.score),
+    paused,
+    focusFirst: '.rmm-keys__bed button:not([tabindex="-1"])',
+    onEffect: (fx) => {
+      if (fx.type !== 'play') return;
+      // A note alone (a target, or an interval's first note), or an interval's answer: the
+      // first note, then the second as it ends. The microphone is deaf for the whole hint.
+      const plan = hintSchedule(fx);
+      guard.hint(performance.now(), plan.lengthMs);
+      const releases: (() => void)[] = [];
+      const later: ReturnType<typeof setTimeout>[] = [];
+      for (const n of plan.notes) {
+        if (n.atMs === 0) {
+          releases.push(playNote(n.midi, soundRef.current));
+          continue;
+        }
+        later.push(
+          setTimeout(() => {
+            for (const r of releases.splice(0)) r();
+            releases.push(playNote(n.midi, soundRef.current));
+          }, n.atMs),
+        );
+      }
+      const release = () => {
+        for (const l of later.splice(0)) clearTimeout(l);
+        for (const r of releases.splice(0)) r();
+      };
+      const timer = setTimeout(() => {
+        hints.current.delete(timer);
+        release();
+      }, plan.lengthMs);
+      hints.current.set(timer, release);
+    },
+  });
+  const { lesson, total, answer, answerGroup } = session;
+  const inSession = lesson.kind === 'asking' || lesson.kind === 'feedback';
+  const phases = useInputPhases();
+  useNoteSound(!paused, voice);
   useLessonInputStart();
 
   // A new target (or the end): the last target's hint stops now, so the microphone is deaf to it
   // for the tail only, never to the learner's first note of the next one; a note dropped for the
   // last target is forgotten; and on unmount.
-  const index =
-    inSession
-      ? lesson.index
-      : -1;
+  const index = inSession ? lesson.index : -1;
   useEffect(() => {
-    indexRef.current =
-      index;
-    const live =
-      hints.current;
-    const stop =
-      () => {
-        if (
-          live.size ===
-          0
-        )
-          return;
-        for (const [
-          timer,
-          release,
-        ] of live) {
-          clearTimeout(
-            timer,
-          );
-          release();
-        }
-        live.clear();
-        guard.hintStopped(
-          performance.now(),
-        );
-      };
+    indexRef.current = index;
+    const live = hints.current;
+    const stop = () => {
+      if (live.size === 0) return;
+      for (const [timer, release] of live) {
+        clearTimeout(timer);
+        release();
+      }
+      live.clear();
+      guard.hintStopped(performance.now());
+    };
     stop();
     guard.forgetPending();
     return stop;
-  }, [
-    index,
-    guard,
-  ]);
+  }, [index, guard]);
 
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
-      if (
-        replayTimer.current !==
-        null
-      )
-        clearTimeout(
-          replayTimer.current,
-        );
+      if (replayTimer.current !== null) clearTimeout(replayTimer.current);
     };
   }, []);
 
   // Only the microphone measures cents; every other source plays exact pitches.
-  const deliver =
-    (
-      e: GuardNote,
-    ) =>
-      answer(
-        {
-          type: e.type,
-          midi: e.midi,
-          time: e.time,
-          ...(e.source ===
-            'mic' &&
-          e.cents !==
-            undefined
-            ? {
-                cents:
-                  e.cents,
-              }
-            : {}),
-        },
-      );
-  useEffect(
-    () => {
-      deliverRef.current =
-        deliver;
-    },
-  );
+  const deliver = (e: GuardNote) =>
+    answer({
+      type: e.type,
+      midi: e.midi,
+      time: e.time,
+      ...(e.source === 'mic' && e.cents !== undefined
+        ? {
+            cents: e.cents,
+          }
+        : {}),
+    });
+  useEffect(() => {
+    deliverRef.current = deliver;
+  });
 
   // A microphone note dropped inside the window and still sounding when it closes is the learner's
   // (singing along with the hint): arm a timer for the window's end, and again if it moved.
-  const arm =
-    useCallback(() => {
-      if (
-        replayTimer.current !==
-        null
-      )
-        clearTimeout(
-          replayTimer.current,
-        );
-      replayTimer.current =
-        null;
-      const wait =
-        guard.waitMs(
-          performance.now(),
-        );
-      if (
-        wait ===
-        null
-      )
-        return;
-      replayTimer.current =
-        setTimeout(
-          () => {
-            replayTimer.current =
-              null;
-            const note =
-              guard.takeReplay(
-                performance.now(),
-              );
-            if (
-              note
-            )
-              deliverRef.current(
-                note,
-              );
-            else
-              arm();
-          },
-          wait +
-            1,
-        );
-    }, [
-      guard,
-    ]);
+  const arm = useCallback(() => {
+    if (replayTimer.current !== null) clearTimeout(replayTimer.current);
+    replayTimer.current = null;
+    const wait = guard.waitMs(performance.now());
+    if (wait === null) return;
+    replayTimer.current = setTimeout(() => {
+      replayTimer.current = null;
+      const note = guard.takeReplay(performance.now());
+      if (note) deliverRef.current(note);
+      else arm();
+    }, wait + 1);
+  }, [guard]);
 
-  useNoteEvents(
-    (
-      e,
-    ) => {
-      const admitted =
-        guard.admit(
-          e,
-        );
-      arm();
-      if (
-        admitted
-      )
-        deliver(
-          e,
-        );
-    },
-  );
+  useNoteEvents((e) => {
+    const admitted = guard.admit(e);
+    arm();
+    if (admitted) deliver(e);
+  });
 
   // Where the learner is: the target and how many tries it has had (a problem with the sound is
   // said here until this changes).
-  const position =
-    inSession
-      ? `${lesson.kind}-${lesson.index}-${lesson.kind === 'asking' ? lesson.tries.length : 'fb'}`
-      : lesson.kind;
+  const position = inSession
+    ? `${lesson.kind}-${lesson.index}-${lesson.kind === 'asking' ? lesson.tries.length : 'fb'}`
+    : lesson.kind;
 
   // Hear it: sound the target, waking the audio context first (inside this tap) if it sleeps. One
   // tap waits at a time, and a hint that was waiting sounds only for the target it was asked for.
-  const hear =
-    (
-      ask: HintEvent = {
-        type: 'hear',
-      },
-    ) => {
+  const hear = (
+    ask: HintEvent = {
+      type: 'hear',
+    },
+  ) => {
+    if (hearing.current) return;
+    const at = position;
+    const askedIndex = index;
+    const ctx = getAudioContext();
+    if (!ctx) {
+      setSound({
+        kind: 'none',
+        at,
+      });
+      return;
+    }
+    if (ctx.state === 'running') {
+      // The lesson's samples are still on the way: the hint would be dropped, so say so instead.
+      if (soundStatus() === 'loading') {
+        setSound({
+          kind: 'loading',
+          at,
+        });
+        return;
+      }
+      setSound({
+        kind: 'ok',
+        at,
+      });
+      session.send(ask);
+      return;
+    }
+    setSound({
+      kind: 'waking',
+      at,
+    });
+    hearing.current = true;
+    void resumeAudio(ctx).then((ok) => {
+      hearing.current = false;
       if (
-        hearing.current
+        !hearStillWanted({
+          askedIndex,
+          currentIndex: indexRef.current,
+          mounted: mounted.current,
+        })
       )
         return;
-      const at =
-        position;
-      const askedIndex =
-        index;
-      const ctx =
-        getAudioContext();
-      if (
-        !ctx
-      ) {
-        setSound(
-          {
-            kind: 'none',
-            at,
-          },
-        );
-        return;
-      }
-      if (
-        ctx.state ===
-        'running'
-      ) {
-        // The lesson's samples are still on the way: the hint would be dropped, so say so instead.
-        if (
-          soundStatus() ===
-          'loading'
-        ) {
-          setSound(
-            {
-              kind: 'loading',
-              at,
-            },
-          );
-          return;
-        }
-        setSound(
-          {
-            kind: 'ok',
-            at,
-          },
-        );
-        session.send(
-          ask,
-        );
-        return;
-      }
-      setSound(
-        {
-          kind: 'waking',
-          at,
-        },
-      );
-      hearing.current = true;
-      void resumeAudio(
-        ctx,
-      ).then(
-        (
-          ok,
-        ) => {
-          hearing.current = false;
-          if (
-            !hearStillWanted(
-              {
-                askedIndex,
-                currentIndex:
-                  indexRef.current,
-                mounted:
-                  mounted.current,
-              },
-            )
-          )
-            return;
-          setSound(
-            {
-              kind: ok
-                ? 'ok'
-                : 'blocked',
-              at,
-            },
-          );
-          if (
-            ok
-          )
-            session.send(
-              ask,
-            );
-        },
-      );
-    };
+      setSound({
+        kind: ok ? 'ok' : 'blocked',
+        at,
+      });
+      if (ok) session.send(ask);
+    });
+  };
 
-  const target =
-    session.card;
+  const target = session.card;
   // What the staff shows and the sentence names: the target, or an interval's first note.
-  const shown =
-    target?.from ??
-    target?.midi;
-  const name =
-    shown !==
-    undefined
-      ? midiToName(
-          shown,
-        )
-      : '';
+  const shown = target?.from ?? target?.midi;
+  const name = shown !== undefined ? midiToName(shown) : '';
 
-  const title =
-    sessionTitle(
-      session,
-      inSession
-        ? t(
-            'match-count',
-            {
-              n:
-                lesson.index +
-                1,
-              total,
-              defaultValue:
-                'Note {{n}} of {{total}}',
-            },
-          )
-        : '',
-      t(
-        'lesson-complete',
-        {
-          defaultValue:
-            'Lesson complete',
-        },
-      ),
-      t(
-        'lesson-not-saved',
-        {
-          defaultValue:
-            'Not saved yet',
-        },
-      ),
-    );
+  const title = sessionTitle(
+    session,
+    inSession
+      ? t('match-count', {
+          n: lesson.index + 1,
+          total,
+          defaultValue: 'Note {{n}} of {{total}}',
+        })
+      : '',
+    t('lesson-complete', {
+      defaultValue: 'Lesson complete',
+    }),
+    t('lesson-not-saved', {
+      defaultValue: 'Not saved yet',
+    }),
+  );
 
   /** One missed try, in one sentence that also says how many tries are left (`left`: 2 or 1). */
-  const tryLine =
-    (
-      played: PlayedPitch,
-      left: number,
-    ): string => {
-      if (
-        !target
-      )
-        return '';
-      const v =
-        pitchVerdict(
-          target.midi,
-          played,
-        );
-      const note =
-        midiToName(
-          v.heard,
-        );
-      const two =
-        left >
-        1;
-      switch (
-        v.kind
-      ) {
-        case 'spot-on':
-          return t(
-            'match-spot-on',
-            {
-              defaultValue:
-                'Spot on.',
-            },
-          );
-        case 'a-little-flat':
-          return two
-            ? t(
-                'match-try-little-flat-two',
-                {
-                  defaultValue:
-                    'Close: a little flat. Two tries left.',
-                },
-              )
-            : t(
-                'match-try-little-flat-one',
-                {
-                  defaultValue:
-                    'Close: a little flat. One try left.',
-                },
-              );
-        case 'a-little-sharp':
-          return two
-            ? t(
-                'match-try-little-sharp-two',
-                {
-                  defaultValue:
-                    'Close: a little sharp. Two tries left.',
-                },
-              )
-            : t(
-                'match-try-little-sharp-one',
-                {
-                  defaultValue:
-                    'Close: a little sharp. One try left.',
-                },
-              );
-        case 'flat':
-          return two
-            ? t(
-                'match-try-flat-two',
-                {
-                  defaultValue:
-                    'Quite flat: bring it up. Two tries left.',
-                },
-              )
-            : t(
-                'match-try-flat-one',
-                {
-                  defaultValue:
-                    'Quite flat: bring it up. One try left.',
-                },
-              );
-        case 'sharp':
-          return two
-            ? t(
-                'match-try-sharp-two',
-                {
-                  defaultValue:
-                    'Quite sharp: bring it down. Two tries left.',
-                },
-              )
-            : t(
-                'match-try-sharp-one',
-                {
-                  defaultValue:
-                    'Quite sharp: bring it down. One try left.',
-                },
-              );
-        case 'octave':
-          return two
-            ? t(
-                'match-try-octave-two',
-                {
-                  note,
-                  defaultValue:
-                    'Wrong octave: that was {{note}}. Two tries left.',
-                },
-              )
-            : t(
-                'match-try-octave-one',
-                {
-                  note,
-                  defaultValue:
-                    'Wrong octave: that was {{note}}. One try left.',
-                },
-              );
-        default:
-          return two
-            ? t(
-                'match-try-wrong-two',
-                {
-                  note,
-                  defaultValue:
-                    'Not quite: that was {{note}}. Two tries left.',
-                },
-              )
-            : t(
-                'match-try-wrong-one',
-                {
-                  note,
-                  defaultValue:
-                    'Not quite: that was {{note}}. One try left.',
-                },
-              );
-      }
-    };
+  const tryLine = (played: PlayedPitch, left: number): string => {
+    if (!target) return '';
+    const v = pitchVerdict(target.midi, played);
+    const note = midiToName(v.heard);
+    const two = left > 1;
+    switch (v.kind) {
+      case 'spot-on':
+        return t('match-spot-on', {
+          defaultValue: 'Spot on.',
+        });
+      case 'a-little-flat':
+        return two
+          ? t('match-try-little-flat-two', {
+              defaultValue: 'Close: a little flat. Two tries left.',
+            })
+          : t('match-try-little-flat-one', {
+              defaultValue: 'Close: a little flat. One try left.',
+            });
+      case 'a-little-sharp':
+        return two
+          ? t('match-try-little-sharp-two', {
+              defaultValue: 'Close: a little sharp. Two tries left.',
+            })
+          : t('match-try-little-sharp-one', {
+              defaultValue: 'Close: a little sharp. One try left.',
+            });
+      case 'flat':
+        return two
+          ? t('match-try-flat-two', {
+              defaultValue: 'Quite flat: bring it up. Two tries left.',
+            })
+          : t('match-try-flat-one', {
+              defaultValue: 'Quite flat: bring it up. One try left.',
+            });
+      case 'sharp':
+        return two
+          ? t('match-try-sharp-two', {
+              defaultValue: 'Quite sharp: bring it down. Two tries left.',
+            })
+          : t('match-try-sharp-one', {
+              defaultValue: 'Quite sharp: bring it down. One try left.',
+            });
+      case 'octave':
+        return two
+          ? t('match-try-octave-two', {
+              note,
+              defaultValue: 'Wrong octave: that was {{note}}. Two tries left.',
+            })
+          : t('match-try-octave-one', {
+              note,
+              defaultValue: 'Wrong octave: that was {{note}}. One try left.',
+            });
+      default:
+        return two
+          ? t('match-try-wrong-two', {
+              note,
+              defaultValue: 'Not quite: that was {{note}}. Two tries left.',
+            })
+          : t('match-try-wrong-one', {
+              note,
+              defaultValue: 'Not quite: that was {{note}}. One try left.',
+            });
+    }
+  };
 
   let line: string;
-  let lineKey =
-    'hint';
-  let heardMidi:
-    | number
-    | null =
-    null;
-  if (
-    lesson.kind ===
-    'asking'
-  ) {
-    const last =
-      lesson
-        .tries[
-        lesson
-          .tries
-          .length -
-          1
-      ];
-    if (
-      !last
-    ) {
+  let lineKey = 'hint';
+  let heardMidi: number | null = null;
+  if (lesson.kind === 'asking') {
+    const last = lesson.tries[lesson.tries.length - 1];
+    if (!last) {
       line =
-        lesson.heard ===
-        false
-          ? t(
-              'sing-interval-hear-first',
-              {
-                defaultValue:
-                  'Tap Hear it for the first note, then sing.',
-              },
-            )
-          : intervals &&
-              target?.from !==
-                undefined
-            ? singIntervalLine(
-                t,
-                target.interval,
-                name,
-              )
+        lesson.heard === false
+          ? t('sing-interval-hear-first', {
+              defaultValue: 'Tap Hear it for the first note, then sing.',
+            })
+          : intervals && target?.from !== undefined
+            ? singIntervalLine(t, target.interval, name)
             : singer
-              ? t(
-                  'match-hint-sing',
-                  {
-                    defaultValue:
-                      'Sing the note you see.',
-                  },
-                )
-              : input ===
-                  'screen'
-                ? t(
-                    'match-hint-screen',
-                    {
-                      defaultValue:
-                        'Play the note you see on the keys below.',
-                    },
-                  )
-                : t(
-                    'match-hint',
-                    {
-                      defaultValue:
-                        'Play the note you see.',
-                    },
-                  );
+              ? t('match-hint-sing', {
+                  defaultValue: 'Sing the note you see.',
+                })
+              : input === 'screen'
+                ? t('match-hint-screen', {
+                    defaultValue: 'Play the note you see on the keys below.',
+                  })
+                : t('match-hint', {
+                    defaultValue: 'Play the note you see.',
+                  });
     } else {
       lineKey = `try-${lesson.index}-${lesson.tries.length}`;
-      line =
-        tryLine(
-          last,
-          MATCH_TRIES -
-            lesson
-              .tries
-              .length,
-        );
+      line = tryLine(last, MATCH_TRIES - lesson.tries.length);
     }
-  } else if (
-    lesson.kind ===
-    'feedback'
-  ) {
+  } else if (lesson.kind === 'feedback') {
     lineKey = `fb-${lesson.index}`;
-    if (
-      target
-    )
-      heardMidi =
-        pitchVerdict(
-          target.midi,
-          lesson.answer,
-        ).heard;
-    line =
-      lesson.right
-        ? t(
-            'match-spot-on',
-            {
-              defaultValue:
-                'Spot on.',
-            },
-          )
-        : lesson.best >
-            0
-          ? t(
-              'match-out-close',
-              {
-                defaultValue:
-                  'Out of tries, but your best was close.',
-              },
-            )
-          : t(
-              'match-out',
-              {
-                defaultValue:
-                  'Out of tries: hear it, then go on.',
-              },
-            );
+    if (target) heardMidi = pitchVerdict(target.midi, lesson.answer).heard;
+    line = lesson.right
+      ? t('match-spot-on', {
+          defaultValue: 'Spot on.',
+        })
+      : lesson.best > 0
+        ? t('match-out-close', {
+            defaultValue: 'Out of tries, but your best was close.',
+          })
+        : t('match-out', {
+            defaultValue: 'Out of tries: hear it, then go on.',
+          });
   } else {
-    lineKey =
-      'score';
-    line =
-      t(
-        'match-score',
-        {
-          correct:
-            lesson.correct,
-          total,
-          defaultValue:
-            'You matched {{correct}} of {{total}} notes.',
-        },
-      );
+    lineKey = 'score';
+    line = t('match-score', {
+      correct: lesson.correct,
+      total,
+      defaultValue: 'You matched {{correct}} of {{total}} notes.',
+    });
   }
 
   // Live: a "Loading sound…" line goes once the session settles; the fallback is said once, where
   // the lesson first saw it.
-  const liveSound =
-    useSoundStatus();
+  const liveSound = useSoundStatus();
   // Interval singing is echo matching: each target's first note sounds by itself, through the same
   // guarded hint as Hear it (so the microphone ignores it), once per target and only when sound is
   // ready (no tap needed); otherwise the line asks for Hear it. A timer, so StrictMode's
   // mount-cleanup-mount starts it once.
-  const askingUnheard =
-    lesson.kind ===
-      'asking' &&
-    lesson.heard ===
-      false;
-  const hearRef =
-    useRef(
-      hear,
-    );
-  useEffect(
-    () => {
-      hearRef.current =
-        hear;
-    },
-  );
-  const autoFor =
-    useRef(
-      -1,
-    );
+  const askingUnheard = lesson.kind === 'asking' && lesson.heard === false;
+  const hearRef = useRef(hear);
   useEffect(() => {
-    if (
-      !askingUnheard ||
-      paused ||
-      liveSound !==
-        'ready' ||
-      autoFor.current ===
-        index
-    )
-      return;
-    const timer =
-      setTimeout(
-        () => {
-          autoFor.current =
-            index;
-          hearRef.current();
-        },
-        0,
-      );
-    return () =>
-      clearTimeout(
-        timer,
-      );
-  }, [
-    askingUnheard,
-    index,
-    paused,
-    liveSound,
-  ]);
-  const fellBack =
-    useFallbackNotice(
-      position,
-    );
+    hearRef.current = hear;
+  });
+  const autoFor = useRef(-1);
+  useEffect(() => {
+    if (!askingUnheard || paused || liveSound !== 'ready' || autoFor.current === index) return;
+    const timer = setTimeout(() => {
+      autoFor.current = index;
+      hearRef.current();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [askingUnheard, index, paused, liveSound]);
+  const fellBack = useFallbackNotice(position);
   // A Hear it that could not sound takes the sentence line (a fixed box, so nothing moves) until
   // the learner plays or moves on. Each sound line has its own key (sound-line.ts), so Loading
   // sound... turning into the fallback notice is a new line, not the old one re-wrapped in place.
-  const soundKind =
-    matchSoundLine(
-      {
-        here:
-          sound.at ===
-          position,
-        heard:
-          sound.kind,
-        live: liveSound,
-        fellBack:
-          fellBack !=
-          null,
-        asking:
-          lesson.kind ===
-          'asking',
-      },
-    );
-  let soundLine =
-    '';
-  if (
-    soundKind ===
-    'blocked'
-  ) {
-    soundLine =
-      t(
-        'match-sound-blocked',
-        {
-          defaultValue:
-            "Sound didn't start. Tap Hear it again.",
-        },
-      );
-  } else if (
-    soundKind ===
-    'none'
-  ) {
-    soundLine =
-      t(
-        'match-sound-none',
-        {
-          defaultValue:
-            "This browser can't play sound.",
-        },
-      );
-  } else if (
-    soundKind ===
-    'loading'
-  ) {
-    soundLine =
-      t(
-        'ear-sound-loading',
-        {
-          defaultValue:
-            'Loading sound…',
-        },
-      );
-  } else if (
-    soundKind ===
-      'fallback' &&
-    fellBack
-  ) {
-    soundLine =
-      fallbackLine(
-        t,
-        fellBack,
-      );
+  const soundKind = matchSoundLine({
+    here: sound.at === position,
+    heard: sound.kind,
+    live: liveSound,
+    fellBack: fellBack != null,
+    asking: lesson.kind === 'asking',
+  });
+  let soundLine = '';
+  if (soundKind === 'blocked') {
+    soundLine = t('match-sound-blocked', {
+      defaultValue: "Sound didn't start. Tap Hear it again.",
+    });
+  } else if (soundKind === 'none') {
+    soundLine = t('match-sound-none', {
+      defaultValue: "This browser can't play sound.",
+    });
+  } else if (soundKind === 'loading') {
+    soundLine = t('ear-sound-loading', {
+      defaultValue: 'Loading sound…',
+    });
+  } else if (soundKind === 'fallback' && fellBack) {
+    soundLine = fallbackLine(t, fellBack);
   }
-  if (
-    soundKind &&
-    soundLine
-  ) {
-    line =
-      soundLine;
-    lineKey =
-      soundLineKey(
-        soundKind,
-        position,
-      );
+  if (soundKind && soundLine) {
+    line = soundLine;
+    lineKey = soundLineKey(soundKind, position);
   }
 
-  const said =
-    soundLine
-      ? soundLine
-      : lesson.kind ===
-          'asking'
-        ? lesson
-            .tries
-            .length >
-          0
-          ? line
-          : session.announce
-            ? intervals &&
-              target?.from !==
-                undefined
-              ? `${title}. ${singIntervalLine(t, target.interval, name)}`
-              : `${title}. ${name}.`
-            : ''
-        : line;
+  const said = soundLine
+    ? soundLine
+    : lesson.kind === 'asking'
+      ? lesson.tries.length > 0
+        ? line
+        : session.announce
+          ? intervals && target?.from !== undefined
+            ? `${title}. ${singIntervalLine(t, target.interval, name)}`
+            : `${title}. ${name}.`
+          : ''
+      : line;
 
-  let question: ReactNode =
-    (
-      <MatchStaffBox
-        low={
-          lowCard
-        }
+  let question: ReactNode = <MatchStaffBox low={lowCard} />;
+  if (target) {
+    const staff = targetStaff(shown ?? target.midi, instrument, range);
+    const octaveClef = guitar || (singer && range === 'tenor');
+    const written = midiToName(staff.midi);
+    const label = octaveClef
+      ? t('find-staff-guitar', {
+          note: name,
+          written,
+          defaultValue: '{{note}}, written as {{written}} on the treble staff',
+        })
+      : staff.clef === 'bass'
+        ? t('flash-card-named-bass', {
+            note: name,
+            defaultValue: '{{note}} on the bass staff',
+          })
+        : t('flash-card-named-treble', {
+            note: name,
+            defaultValue: '{{note}} on the treble staff',
+          });
+    question = (
+      <StaffCard
+        card={{
+          id: `${instrument}:${target.from ?? ''}:${target.midi}`,
+          clef: staff.clef,
+          midi: staff.midi,
+        }}
+        state={cardStateOf(session)}
+        octaveClef={octaveClef}
+        range={lowCard ? 'low' : 'deck'}
+        caption={name}
+        label={label}
       />
     );
-  if (
-    target
-  ) {
-    const staff =
-      targetStaff(
-        shown ??
-          target.midi,
-        instrument,
-        range,
-      );
-    const octaveClef =
-      guitar ||
-      (singer &&
-        range ===
-          'tenor');
-    const written =
-      midiToName(
-        staff.midi,
-      );
-    const label =
-      octaveClef
-        ? t(
-            'find-staff-guitar',
-            {
-              note: name,
-              written,
-              defaultValue:
-                '{{note}}, written as {{written}} on the treble staff',
-            },
-          )
-        : staff.clef ===
-            'bass'
-          ? t(
-              'flash-card-named-bass',
-              {
-                note: name,
-                defaultValue:
-                  '{{note}} on the bass staff',
-              },
-            )
-          : t(
-              'flash-card-named-treble',
-              {
-                note: name,
-                defaultValue:
-                  '{{note}} on the treble staff',
-              },
-            );
-    question =
-      (
-        <StaffCard
-          card={{
-            id: `${instrument}:${target.from ?? ''}:${target.midi}`,
-            clef: staff.clef,
-            midi: staff.midi,
-          }}
-          state={cardStateOf(
-            session,
-          )}
-          octaveClef={
-            octaveClef
-          }
-          range={
-            lowCard
-              ? 'low'
-              : 'deck'
-          }
-          caption={
-            name
-          }
-          label={
-            label
-          }
-        />
-      );
   }
 
   // Interval singing, after a miss: both notes, the interval sung right.
   const missed =
     intervals &&
-    ((lesson.kind ===
-      'asking' &&
-      lesson
-        .tries
-        .length >
-        0) ||
-      (lesson.kind ===
-        'feedback' &&
-        !lesson.right));
+    ((lesson.kind === 'asking' && lesson.tries.length > 0) || (lesson.kind === 'feedback' && !lesson.right));
   let answers: ReactNode;
-  if (
-    !inSession
-  ) {
-    const stars =
-      lesson.kind ===
-      'saved'
-        ? lesson.stars
-        : starsFor(
-            lesson.score,
-          );
-    answers =
-      (
-        <LessonResult
-          kind={
-            lesson.kind
-          }
-          stars={
-            stars
-          }
-          returnTo={`/rmhmusic/lesson/${lessonId}`}
-          onRetry={
-            session.retry
-          }
-          className="flex-1"
-        />
-      );
+  if (!inSession) {
+    const stars = lesson.kind === 'saved' ? lesson.stars : starsFor(lesson.score);
+    answers = (
+      <LessonResult
+        kind={lesson.kind}
+        stars={stars}
+        returnTo={`/rmhmusic/lesson/${lessonId}`}
+        onRetry={session.retry}
+        className="flex-1"
+      />
+    );
   } else {
-    const fb =
-      lesson.kind ===
-      'feedback';
-    answers =
-      (
-        <>
-          <div
-            ref={
-              answerGroup
-            }
-            className="rmm-input-region"
-          >
-            <OnScreenKeyboard
-              rightKey={
-                fb &&
-                target
-                  ? target.midi
-                  : null
-              }
-              wrongKey={
-                fb &&
-                !lesson.right
-                  ? heardMidi
-                  : null
-              }
-            />
-          </div>
-          <DeviceLine
-            input={
-              input
-            }
-            phase={
-              input ===
-              'screen'
-                ? 'active'
-                : phases[
-                    input
-                  ]
-            }
+    const fb = lesson.kind === 'feedback';
+    answers = (
+      <>
+        <div ref={answerGroup} className="rmm-input-region">
+          <OnScreenKeyboard
+            rightKey={fb && target ? target.midi : null}
+            wrongKey={fb && !lesson.right ? heardMidi : null}
           />
-        </>
-      );
+        </div>
+        <DeviceLine input={input} phase={input === 'screen' ? 'active' : phases[input]} />
+      </>
+    );
   }
 
   return (
     <SessionFrame className="rmm-match space-y-4">
       <SessionSheet
-        session={
-          session
-        }
-        title={
-          title
-        }
+        session={session}
+        title={title}
         question={
           <>
-            {
-              question
-            }
+            {question}
             {/* Hidden (and inert) once the session is over, so the sheet keeps its height. */}
             <div
-              className={cn(
-                'flex h-11 items-center justify-center gap-6',
-                !inSession &&
-                  'invisible',
-              )}
-              inert={
-                !inSession ||
-                undefined
-              }
+              className={cn('flex h-11 items-center justify-center gap-6', !inSession && 'invisible')}
+              inert={!inSession || undefined}
             >
-              <button
-                type="button"
-                onClick={() =>
-                  hear()
-                }
-                className={
-                  TEXT_BUTTON
-                }
-              >
-                {t(
-                  'match-hear',
-                  {
-                    defaultValue:
-                      'Hear it',
-                  },
-                )}
+              <button type="button" onClick={() => hear()} className={TEXT_BUTTON}>
+                {t('match-hear', {
+                  defaultValue: 'Hear it',
+                })}
               </button>
               {missed && (
                 <button
                   type="button"
                   onClick={() =>
-                    hear(
-                      {
-                        type: 'hear-answer',
-                      },
-                    )
+                    hear({
+                      type: 'hear-answer',
+                    })
                   }
-                  className={
-                    TEXT_BUTTON
-                  }
+                  className={TEXT_BUTTON}
                 >
-                  {t(
-                    'sing-interval-hear-answer',
-                    {
-                      defaultValue:
-                        'Hear the answer',
-                    },
-                  )}
+                  {t('sing-interval-hear-answer', {
+                    defaultValue: 'Hear the answer',
+                  })}
                 </button>
               )}
             </div>
           </>
         }
-        line={
-          line
-        }
-        lineKey={
-          lineKey
-        }
-        said={
-          said
-        }
+        line={line}
+        lineKey={lineKey}
+        said={said}
       />
-      <div
-        ref={
-          session.answersBox
-        }
-        className="rmm-match__answers"
-      >
-        {
-          answers
-        }
+      <div ref={session.answersBox} className="rmm-match__answers">
+        {answers}
       </div>
     </SessionFrame>
   );
@@ -1497,22 +673,8 @@ export function MatchStaffBox({
   low?: boolean;
 }) {
   return (
-    <div
-      aria-hidden="true"
-      className={
-        STAFF_BOX
-      }
-    >
-      <div
-        className={cn(
-          skeleton &&
-            'app-skeleton',
-          low
-            ? STAFF_LOW_ASPECT
-            : 'aspect-[200/102]',
-          'w-full',
-        )}
-      />
+    <div aria-hidden="true" className={STAFF_BOX}>
+      <div className={cn(skeleton && 'app-skeleton', low ? STAFF_LOW_ASPECT : 'aspect-[200/102]', 'w-full')} />
     </div>
   );
 }

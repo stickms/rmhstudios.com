@@ -26,12 +26,48 @@ model Chat {
   /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
   themeKey          String?  @db.VarChar(24)
 
-  owner    User?         @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members  ChatMember[]
-  messages ChatMessage[]
+  owner             User?                  @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members           ChatMember[]
+  messages          ChatMessage[]
+  scheduledMessages ScheduledChatMessage[]
+  messageRequest    MessageRequest?
+  invites           ChatInvite[]
+  removals          ChatRemoval[]
 
   @@index([ownerId])
   @@map("chat")
+}
+
+/// A direct or group message held for later (s03-12). Delivered by the
+/// `messages.send-scheduled` cron through the same send function the endpoints
+/// use, so every check runs again at delivery; the row is deleted once sent and
+/// kept as `failed` (with `failCode`) when a check no longer passes. The
+/// recipient never sees a pending row: nothing is published before delivery.
+model ScheduledChatMessage {
+  id        String   @id @default(cuid())
+  chatId    String
+  senderId  String
+  content   String   @db.VarChar(2000)
+  gifUrl    String?  @db.Text
+  gifAlt    String?  @db.VarChar(1000)
+  imageUrls String[] @default([])
+  /// Image descriptions, index-aligned with imageUrls ('' = none).
+  imageAlts String[] @default([])
+  sendAt    DateTime
+  /// 'pending' | 'sending' | 'failed'
+  status    String   @default("pending") @db.VarChar(10)
+  failCode  String?  @db.VarChar(24)
+  /// Delivery attempts; a row stuck in 'sending' is retried once, then failed.
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User @relation("ScheduledChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([status, sendAt])
+  @@index([senderId, chatId])
+  @@map("scheduled_chat_message")
 }
 
 /// A person in a chat. Deleting either participant's account deletes a DM
@@ -47,6 +83,10 @@ model ChatMember {
   /// (ChatMessage.read); for a DM this is informational.
   lastReadAt DateTime @default(now())
   joinedAt   DateTime @default(now())
+  /// s06-09: the invite link this member joined through (FR-4). Null for members added by the owner.
+  joinedViaInviteId String?
+  /// s07-04: groups only. 'member' or 'admin' (at most 5 admins; the owner is Chat.ownerId, never an admin row).
+  role       String   @default("member") @db.VarChar(8)
 
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
   user User @relation("ChatMembership", fields: [userId], references: [id], onDelete: Cascade)
@@ -64,7 +104,12 @@ model ChatMessage {
   content         String    @db.VarChar(2000)
   // Optional rich media: a single GIF and/or up to 4 feed images the sender owns.
   gifUrl          String?   @db.Text
+  gifAlt          String?   @db.VarChar(1000)
   imageUrls       String[]  @default([])
+  /// Image descriptions (alt text), index-aligned with imageUrls ('' = none).
+  imageAlts       String[]  @default([])
+  /// When the descriptions were last changed after sending; keeps offline catch-up honest (editedAt stays put).
+  altsEditedAt    DateTime?
   /// Group inline poll: a question + 2–6 option labels (votes in ChatPollVote).
   pollQuestion    String?   @db.VarChar(300)
   pollOptions     String[]  @default([])
@@ -103,6 +148,7 @@ model ChatMessage {
   pollVotes     ChatPollVote[]
   threadParent  ChatMessage?          @relation("ChatMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
   threadReplies ChatMessage[]         @relation("ChatMessageThread")
+  mentions      ChatMention[]
 
   @@index([chatId, createdAt])
   @@index([senderId])
@@ -112,6 +158,21 @@ model ChatMessage {
   // DM unread badge: chatId IN (...) AND read = false AND senderId <> me.
   @@index([chatId, read, senderId])
   @@map("chat_message")
+}
+
+/// s07-05: a current member @mentioned in a group message. "Your mentions" in the group info dialog is one indexed read.
+model ChatMention {
+  messageId String
+  chatId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation("ChatMentionTarget", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId, chatId, createdAt(sort: Desc)])
+  @@map("chat_mention")
 }
 
 model ChatMessageReaction {
@@ -185,6 +246,8 @@ model Notification {
   // Without this they fell back to (userId, read, createdAt) and scanned every
   // unread row the recipient has.
   @@index([userId, read, type, entityId])
+  // The inbox's type filter (Mentions and replies, Follows, …): newest first within a type.
+  @@index([userId, type, createdAt(sort: Desc)])
   @@map("notification")
 }
 
@@ -712,4 +775,116 @@ model CalendarFeed {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("calendar_feed")
+}
+
+/// A first message from someone the recipient's DM privacy refuses, held in the
+/// recipient's Requests folder (sprint 04 #16). One row per chat: a pending
+/// request hides the chat from the recipient and blocks every further send;
+/// accepting makes it an ordinary conversation, declining hides it and starts a
+/// 30-day cooldown (`decidedAt`) during which the sender gets the usual privacy
+/// refusal. After the cooldown the same row is reset to pending for a new request.
+model MessageRequest {
+  id          String    @id @default(cuid())
+  chatId      String    @unique
+  senderId    String
+  recipientId String
+  /// 'draft' (chat opened, no message yet; visible to nobody else) | 'pending' | 'accepted' | 'declined'
+  status      String    @default("pending") @db.VarChar(10)
+  createdAt   DateTime  @default(now())
+  decidedAt   DateTime?
+
+  chat      Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User @relation("MessageRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("MessageRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, status, createdAt(sort: Desc)])
+  @@index([senderId, recipientId, decidedAt])
+  @@map("message_request")
+}
+
+/// A member's private saved reply (sprint 05 #13): a titled piece of text the DM and
+/// group composers insert (never send). At most 50 per member, enforced under an
+/// advisory lock; `position` is the manual order in the manage dialog.
+model SavedReply {
+  id         String    @id @default(cuid())
+  userId     String
+  title      String    @db.VarChar(60)
+  body       String    @db.VarChar(2000)
+  position   Int
+  useCount   Int       @default(0)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, position])
+  @@map("saved_reply")
+}
+
+/// s06-09: an owner-made invite link for a group chat. `code` is the whole credential (10 base58 characters).
+model ChatInvite {
+  id          String    @id @default(cuid())
+  chatId      String
+  createdById String
+  code        String    @unique @db.VarChar(16)
+  maxUses     Int?
+  uses        Int       @default(0)
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  chat      Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  createdBy User @relation("ChatInviteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([chatId, revokedAt])
+  @@index([createdById])
+  @@map("chat_invite")
+}
+
+/// s06-09: written when the owner removes a member, so a live invite link cannot bring them back. Cleared when the
+/// owner adds them again. Leaving voluntarily writes nothing.
+model ChatRemoval {
+  chatId    String
+  userId    String
+  removedAt DateTime @default(now())
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@id([chatId, userId])
+  @@index([userId])
+  @@map("chat_removal")
+}
+
+/// s06-18: a member's away message. One per member; it ends by itself at `endsAt` (a read-time check, no job). Editing an
+/// active one keeps `id`, so nobody gets a second reply; a new period gets a new row id. `tz` is the member's time zone.
+model AwayMessage {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  body          String   @db.VarChar(300)
+  startsAt      DateTime
+  endsAt        DateTime
+  tz            String   @db.VarChar(64)
+  /// Opt-in: also show "Away until ..." on the profile (to people who can message the member).
+  showOnProfile Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  user    User             @relation("AwayMessageOwner", fields: [userId], references: [id], onDelete: Cascade)
+  replies AwayReplySent[]
+
+  @@map("away_message")
+}
+
+/// s06-18: the claim that one automatic reply went to a conversation in one away period. Inserted before sending, so two
+/// concurrent messages produce one reply.
+model AwayReplySent {
+  awayId String
+  chatId String
+  sentAt DateTime @default(now())
+
+  away AwayMessage @relation(fields: [awayId], references: [id], onDelete: Cascade)
+
+  @@id([awayId, chatId])
+  @@index([chatId])
+  @@map("away_reply_sent")
 }

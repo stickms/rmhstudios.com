@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * The profile song (P7): tap to play, never autoplay, nothing loaded until the
@@ -21,12 +16,8 @@ import {
  *    vinyl could not play at all.
  */
 export interface ProfileSongSource {
-  spotifyId:
-    | string
-    | null;
-  previewUrl:
-    | string
-    | null;
+  spotifyId: string | null;
+  previewUrl: string | null;
 }
 
 export interface ProfileSongControls {
@@ -38,131 +29,46 @@ export interface ProfileSongControls {
   closeEmbed: () => void;
 }
 
-export function useProfileSong(
-  song: ProfileSongSource | null,
-): ProfileSongControls {
-  const [
-    isPlaying,
-    setIsPlaying,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    embedOpen,
-    setEmbedOpen,
-  ] =
-    useState(
-      false,
-    );
-  const audioRef =
-    useRef<HTMLAudioElement | null>(
-      null,
-    );
+export function useProfileSong(song: ProfileSongSource | null): ProfileSongControls {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const previewUrl =
-    song?.previewUrl ??
-    null;
-  const spotifyId =
-    song?.spotifyId ??
-    null;
+  const previewUrl = song?.previewUrl ?? null;
+  const spotifyId = song?.spotifyId ?? null;
 
   // A different profile (or a different pick) starts silent and closed.
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
-      audioRef.current =
-        null;
-      setIsPlaying(
-        false,
-      );
-      setEmbedOpen(
-        false,
-      );
+      audioRef.current = null;
+      setIsPlaying(false);
+      setEmbedOpen(false);
     };
-  }, [
-    previewUrl,
-    spotifyId,
-  ]);
+  }, [previewUrl, spotifyId]);
 
-  const toggle =
-    useCallback(() => {
-      if (
-        previewUrl
-      ) {
-        let audio =
-          audioRef.current;
-        if (
-          !audio
-        ) {
-          audio =
-            new Audio(
-              previewUrl,
-            );
-          audio.preload =
-            'none';
-          audio.addEventListener(
-            'playing',
-            () =>
-              setIsPlaying(
-                true,
-              ),
-          );
-          audio.addEventListener(
-            'pause',
-            () =>
-              setIsPlaying(
-                false,
-              ),
-          );
-          audio.addEventListener(
-            'ended',
-            () =>
-              setIsPlaying(
-                false,
-              ),
-          );
-          audioRef.current =
-            audio;
-        }
-        if (
-          audio.paused
-        ) {
-          void audio
-            .play()
-            .catch(
-              () =>
-                setIsPlaying(
-                  false,
-                ),
-            );
-        } else {
-          audio.pause();
-        }
-        return;
+  const toggle = useCallback(() => {
+    if (previewUrl) {
+      let audio = audioRef.current;
+      if (!audio) {
+        audio = new Audio(previewUrl);
+        audio.preload = 'none';
+        audio.addEventListener('playing', () => setIsPlaying(true));
+        audio.addEventListener('pause', () => setIsPlaying(false));
+        audio.addEventListener('ended', () => setIsPlaying(false));
+        audioRef.current = audio;
       }
-      if (
-        spotifyId
-      )
-        setEmbedOpen(
-          (
-            open,
-          ) =>
-            !open,
-        );
-    }, [
-      previewUrl,
-      spotifyId,
-    ]);
+      if (audio.paused) {
+        void audio.play().catch(() => setIsPlaying(false));
+      } else {
+        audio.pause();
+      }
+      return;
+    }
+    if (spotifyId) setEmbedOpen((open) => !open);
+  }, [previewUrl, spotifyId]);
 
-  const closeEmbed =
-    useCallback(
-      () =>
-        setEmbedOpen(
-          false,
-        ),
-      [],
-    );
+  const closeEmbed = useCallback(() => setEmbedOpen(false), []);
 
   return {
     isPlaying,

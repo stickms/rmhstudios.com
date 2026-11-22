@@ -3,8 +3,8 @@ import { implement } from '@/lib/api/implement.server';
 import { getGroupChatApi } from '@/lib/group-chat/group-chat.contract';
 import { prisma } from '@/lib/prisma.server';
 import { GROUP_KIND, findGroupMembership } from '@/lib/chat/chat.server';
-import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
+import { userDisplaySelect } from '@/lib/user-display';
+import { groupMessageSelect, serializeGroupMembers, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 
 /** GET /api/group-chats/$id — group detail + messages (members only). */
@@ -21,7 +21,7 @@ export const route = apiRoute('/api/group-chats/$id', {
         id: true,
         name: true,
         ownerId: true,
-        members: { select: { user: { select: userDisplaySelect } } },
+        members: { select: { role: true, user: { select: userDisplaySelect } } },
         messages: {
           // Side-thread replies (M7) and expired disappearing messages (M3)
           // are not part of the main stream. `take` on an ascending order
@@ -46,7 +46,8 @@ export const route = apiRoute('/api/group-chats/$id', {
         id: group.id,
         name: group.name ?? '',
         isOwner: group.ownerId === userId,
-        members: group.members.map((m) => resolveUser(m.user)),
+        ownerId: group.ownerId,
+        members: serializeGroupMembers(group.members),
         messages: await serializeGroupMessages(group.messages, userId),
       },
     });

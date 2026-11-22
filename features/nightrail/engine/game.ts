@@ -61,6 +61,14 @@ import {
   TRAIN_LENGTH,
   TRICKS,
 } from './constants';
+import {
+  NO_ASSIST_FLAGS,
+  cappedSpeed,
+  comboGraceFor,
+  landingToleranceFor,
+  trickBufferFor,
+  type NightrailAssistFlags,
+} from './assist-profile';
 import { bakeLevel, railOffset, sampleTrack, trackLength, type TrackPoint } from './track';
 import type {
   Combo,
@@ -74,6 +82,7 @@ import type {
   TrickDirection,
 } from './types';
 import { clamp } from '@/lib/core/math';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 /**
  * Something worth reacting to that happened during a step.
@@ -139,6 +148,10 @@ export interface RunState {
   seed: number;
   /** Leftover time carried between frames by the fixed-step accumulator. */
   accumulator: number;
+  /** Assists for this run (settings > Game assists); the plain game by default. */
+  assist: NightrailAssistFlags;
+  /** A trick pressed just before take-off (no-timed-input), and the seconds it has left. */
+  pendingTrick: { direction: TrickDirection; left: number } | null;
   /**
    * The train's pose as it was BEFORE the most recent fixed step, or null when
    * there is nothing to interpolate from (fresh run, pause, wreck). Read only
@@ -283,6 +296,8 @@ export function createRun(level: LevelConfig, seed = 1): RunState {
     features: level.features.map((f) => ({ ...f, consumed: false })),
     particles: [],
     popups: [],
+    assist: NO_ASSIST_FLAGS,
+    pendingTrick: null,
     phase: 'countdown',
     resumePhase: 'playing',
     countdown: COUNTDOWN_SECONDS,
@@ -329,7 +344,7 @@ function bankCombo(state: RunState): void {
     state.stats.bestComboMultiplier = combo.multiplier;
   }
   state.events.push({ type: 'combo', points, multiplier: combo.multiplier });
-  addPopup(state, `+${points.toLocaleString()}`, '#7dd3fc', Math.min(3, combo.multiplier / 4));
+  addPopup(state, `+${formatNumber(points, currentDocumentLocale())}`, '#7dd3fc', Math.min(3, combo.multiplier / 4));
   combo.pending = 0;
   combo.multiplier = 1;
   combo.chain = [];
@@ -531,7 +546,7 @@ function launch(state: RunState, velocity: number): void {
 function land(state: RunState): void {
   const { train } = state;
   const residual = residualRotation(train);
-  const clean = residual <= LANDING_TOLERANCE;
+  const clean = residual <= landingToleranceFor(LANDING_TOLERANCE, state.assist);
 
   train.height = 0;
   train.vy = 0;
@@ -552,7 +567,7 @@ function land(state: RunState): void {
   }
 
   train.trick = null;
-  state.combo.graceLeft = COMBO_GRACE;
+  state.combo.graceLeft = comboGraceFor(COMBO_GRACE, state.assist);
   state.events.push({ type: 'land', clean: true });
   for (let i = 0; i < 4; i += 1) addParticle(state, train.s, train.lateral, 0.3, '#fde68a', 4);
 }
@@ -623,7 +638,7 @@ function resolveFeatures(state: RunState, dt: number): void {
 
       case 'grindrail':
         if (onRail && train.mode === 'airborne' && train.vy <= 0 && train.height < 1.4) {
-          if (residualRotation(train) > LANDING_TOLERANCE) break;
+          if (residualRotation(train) > landingToleranceFor(LANDING_TOLERANCE, state.assist)) break;
           train.trick = null;
           train.mode = 'grinding';
           train.height = 0.6;
@@ -754,7 +769,7 @@ function stepPhysics(state: RunState, input: InputState, dt: number): void {
         const points = Math.round(DRIFT_POINTS * train.driftCharge);
         combo.pending += points;
         combo.multiplier = Math.min(MAX_MULTIPLIER, combo.multiplier + MULT_PER_TRICK);
-        combo.graceLeft = COMBO_GRACE;
+        combo.graceLeft = comboGraceFor(COMBO_GRACE, state.assist);
         combo.chain.push('Drift');
         state.stats.bestMultiplier = Math.max(state.stats.bestMultiplier, combo.multiplier);
         state.events.push({ type: 'driftRelease', charge: train.driftCharge });
@@ -781,7 +796,20 @@ function stepPhysics(state: RunState, input: InputState, dt: number): void {
   }
 
   // ── Tricks ──
-  if (input.trick) startTrick(state, input.trick);
+  if (input.trick) {
+    if (train.mode === 'airborne') startTrick(state, input.trick);
+    else if (state.assist.untimed)
+      state.pendingTrick = { direction: input.trick, left: trickBufferFor(state.assist) };
+  }
+  if (state.pendingTrick) {
+    if (train.mode === 'airborne') {
+      startTrick(state, state.pendingTrick.direction);
+      state.pendingTrick = null;
+    } else {
+      state.pendingTrick.left -= dt;
+      if (state.pendingTrick.left <= 0) state.pendingTrick = null;
+    }
+  }
   if (train.trick) {
     train.trick.progress = Math.min(1, train.trick.progress + dt / train.trick.duration);
     const p = train.trick.progress;
@@ -810,8 +838,8 @@ function stepPhysics(state: RunState, input: InputState, dt: number): void {
   }
   train.boostTime = Math.max(0, train.boostTime - dt);
 
-  const cap = level.maxSpeed * (boosting ? BOOST_SPEED_CAP : 1);
-  const target = boosting ? cap : level.targetSpeed;
+  const cap = cappedSpeed(level.maxSpeed * (boosting ? BOOST_SPEED_CAP : 1), state.assist);
+  const target = boosting ? cap : cappedSpeed(level.targetSpeed, state.assist);
   if (train.speed < target) {
     train.speed += (boosting ? BOOST_ACCEL : ACCEL) * dt;
   }
@@ -827,7 +855,7 @@ function stepPhysics(state: RunState, input: InputState, dt: number): void {
     train.speed -= Math.abs(curve.curvature) * train.speed * CORNER_SCRUB * relief * dt;
   }
 
-  train.speed = clamp(train.speed, 6, cap);
+  train.speed = clamp(train.speed, Math.min(6, cap), cap);
   train.s += train.speed * dt;
 
   // ── Visual lean ──

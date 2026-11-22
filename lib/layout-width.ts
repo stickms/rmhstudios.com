@@ -10,8 +10,7 @@ export const WIDE_WIDTH = 800;
  * responsive `--site-rail-width` token (80 → 252 → 276 across breakpoints, set
  * in components/feed/feed.css); reference it rather than a fixed number.
  */
-export const RIGHT_SIDEBAR_WIDTH =
-  'var(--site-rail-width)';
+export const RIGHT_SIDEBAR_WIDTH = 'var(--site-rail-width)';
 
 /** Trailing gutter reserved on wide, space-filling pages that have no rail. */
 export const RIGHT_SIDEBAR_RIGHT_PADDING = 16;
@@ -22,7 +21,4 @@ export const RIGHT_SIDEBAR_RIGHT_PADDING = 16;
  * only a slim trailing gutter. Uses the widest rail value (276) as the constant
  * so the number stays stable regardless of the runtime token.
  */
-export const WIDE_NO_RIGHT_SIDEBAR_WIDTH =
-  DEFAULT_WIDTH +
-  276 -
-  RIGHT_SIDEBAR_RIGHT_PADDING;
+export const WIDE_NO_RIGHT_SIDEBAR_WIDTH = DEFAULT_WIDTH + 276 - RIGHT_SIDEBAR_RIGHT_PADDING;

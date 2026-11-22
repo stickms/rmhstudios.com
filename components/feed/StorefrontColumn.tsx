@@ -33,6 +33,7 @@ import { PageLayout } from './PageLayout';
 import { UserAvatar } from './UserAvatar';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Product {
   id: string;
@@ -51,8 +52,6 @@ interface Creator {
   handle: string | null;
   image: string | null;
 }
-
-const fmt = (n: number) => n.toLocaleString();
 const EMPTY_FORM = { title: '', description: '', price: '', deliverable: '' };
 
 /**
@@ -76,7 +75,7 @@ export function StorefrontColumn({
     isOwner: boolean;
     signedIn: boolean;
   } | null;
-}) {
+}) { const fmt = useLocaleFormat().number; 
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
   const formId = useId();

@@ -18,8 +18,9 @@
  * to know whether a message named you. It is the middle option rather than
  * something buried under a submenu for exactly that reason.
  *
- * A scope key is `dm:<id>` | `group:<id>` | `space:<id>` — one namespace for all
- * three conversation kinds, so the preference table does not grow a column every
+ * A scope key is `dm:<id>` | `group:<id>` | `space:<id>` | `post:<rootId>` — one
+ * namespace for every conversation kind (`post:` is a feed post's whole reply
+ * thread, keyed by its root post), so the preference table does not grow a column every
  * time a new surface gains a thread.
  */
 
@@ -30,7 +31,7 @@ import { prisma } from '@/lib/prisma.server';
 /* Scope keys                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export const CONVERSATION_SCOPES = ['dm', 'group', 'space'] as const;
+export const CONVERSATION_SCOPES = ['dm', 'group', 'space', 'post'] as const;
 export type ConversationScope = (typeof CONVERSATION_SCOPES)[number];
 
 /**
@@ -39,7 +40,7 @@ export type ConversationScope = (typeof CONVERSATION_SCOPES)[number];
  * and lands in a `@db.VarChar(80)` primary key — an unbounded string would
  * either error at the database or let one user mint unbounded rows.
  */
-export const CONVERSATION_SCOPE_KEY = /^(?:dm|group|space):[A-Za-z0-9_-]{1,60}$/;
+export const CONVERSATION_SCOPE_KEY = /^(?:dm|group|space|post):[A-Za-z0-9_-]{1,60}$/;
 
 export function isConversationScopeKey(value: string): boolean {
   return CONVERSATION_SCOPE_KEY.test(value);
@@ -158,6 +159,28 @@ export async function getConversationPref(
     select: { muteUntil: true, mentionsOnly: true, pinned: true },
   });
   return row ?? null;
+}
+
+/**
+ * One conversation, many recipients — the fan-out shape (a post's @mentions
+ * notify several members about the same thread). One `findMany`, however many
+ * recipients; a member with no row is simply absent from the map.
+ */
+export async function getConversationPrefs(
+  userIds: readonly string[],
+  scopeKey: string,
+): Promise<Map<string, ConversationPrefState>> {
+  if (userIds.length === 0 || !isConversationScopeKey(scopeKey)) return new Map();
+  const rows = await prisma.conversationPref.findMany({
+    where: { scopeKey, userId: { in: [...userIds] } },
+    select: { userId: true, muteUntil: true, mentionsOnly: true, pinned: true },
+  });
+  return new Map(
+    rows.map((r) => [
+      r.userId,
+      { muteUntil: r.muteUntil, mentionsOnly: r.mentionsOnly, pinned: r.pinned },
+    ]),
+  );
 }
 
 /** Read several at once — the conversation list needs pins + mutes per row and

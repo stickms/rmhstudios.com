@@ -30,48 +30,27 @@
  * result. The lesson needs no instrument: the letter buttons always answer.
  */
 
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  DECKS,
-  voiceDeck,
-  buildSession,
-  type Card,
-} from '@/lib/rmhmusic/learn/content/decks';
-import {
-  VOICE_RANGE_DECK,
-  getLesson,
-} from '@/lib/rmhmusic/learn/content/path';
+import { DECKS, voiceDeck, buildSession, type Card } from '@/lib/rmhmusic/learn/content/decks';
+import { VOICE_RANGE_DECK, getLesson } from '@/lib/rmhmusic/learn/content/path';
 import { resolveVoiceRange } from '@/lib/rmhmusic/learn/voice/range';
-import {
-  createFlashcardsMachine,
-  type Answer,
-  type Effect,
-} from '@/lib/rmhmusic/learn/machines/flashcards';
+import { createFlashcardsMachine, type Answer, type Effect } from '@/lib/rmhmusic/learn/machines/flashcards';
 import type { CompleteOutcome } from '@/lib/rmhmusic/learn/machines/learn-data';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
-import {
-  starsFor,
-  scoreFrom,
-} from '@/lib/rmhmusic/learn/scoring/stars';
+import { describeMiss, type Miss } from '@/lib/rmhmusic/learn/miss';
+import { getPracticeMode } from '@/lib/rmhmusic/learn/practice-mode';
+import { starsFor, scoreFrom } from '@/lib/rmhmusic/learn/scoring/stars';
 import { isSharp } from '@/lib/rmhmusic/learn/staff';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
-import {
-  noteLetter,
-  type NoteLetter,
-} from '@/lib/rmhmusic/learn/theory/clef';
+import { noteLetter, type NoteLetter } from '@/lib/rmhmusic/learn/theory/clef';
 import { cn } from '@/lib/utils';
-import {
-  DeviceRegion,
-  LessonResult,
-} from './LessonParts';
+import { DeviceRegion, LessonResult } from './LessonParts';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
+import { PracticeModeToggle } from './PracticeModeToggle';
 import {
+  SaidParts,
   SessionFrame,
   SessionSheet,
   cardStateOf,
@@ -79,75 +58,88 @@ import {
   useQuestionSession,
   type AnsweredQuestion,
 } from './QuestionSession';
-import {
-  STAFF_BOX,
-  STAFF_LOW_ASPECT,
-  StaffCard,
-  type StaffCardState,
-} from './StaffCard';
-import {
-  useInputPhases,
-  useLessonInputStart,
-  useNoteEvents,
-  useNoteSound,
-} from './useLearnInput';
+import { STAFF_BOX, STAFF_LOW_ASPECT, StaffCard, type StaffCardState } from './StaffCard';
+import { useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from './useLearnInput';
 import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 
 /** Cards in one lesson. */
 export const SESSION_CARDS = 10;
 
-const LETTERS: readonly NoteLetter[] =
-  [
-    'A',
-    'B',
-    'C',
-    'D',
-    'E',
-    'F',
-    'G',
-  ];
+const LETTERS: readonly NoteLetter[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 /** True when a key press here is typing, not an answer (form fields, rich text). */
-function isTypingTarget(
-  target: EventTarget | null,
-): boolean {
-  const el =
-    target as HTMLElement | null;
-  if (
-    !el ||
-    typeof el.tagName !==
-      'string'
-  )
-    return false;
-  const tag =
-    el.tagName;
-  return (
-    tag ===
-      'INPUT' ||
-    tag ===
-      'TEXTAREA' ||
-    tag ===
-      'SELECT' ||
-    el.isContentEditable ===
-      true
-  );
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el || typeof el.tagName !== 'string') return false;
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable === true;
 }
 
 /** The letter the learner gave (letter answers) or the note they played (midi answers). */
-function answerName(
-  answer: Answer,
-): string {
-  return answer.kind ===
-    'letter'
-    ? answer.letter
-    : midiToName(
-        answer.midi,
-      );
+function answerName(answer: Answer): string {
+  return answer.kind === 'letter' ? answer.letter : midiToName(answer.midi);
+}
+
+/**
+ * The sentences that tell a wrong answer: what was played (or named) against the right note, then
+ * how far off it sits on the staff. Each is its own translated string.
+ */
+export function missSentences(
+  t: (key: string, options: Record<string, unknown>) => string,
+  miss: Miss,
+  played: boolean,
+  note: string,
+  said: string,
+): string[] {
+  const lead = played
+    ? t('flash-miss-played', {
+        played: said,
+        note,
+        defaultValue: 'You played {{played}}, not {{note}}.',
+      })
+    : t('flash-miss-named', {
+        played: said,
+        note,
+        defaultValue: 'You named {{played}}, not {{note}}.',
+      });
+  const above = miss.direction === 'above';
+  let how: string;
+  if (miss.direction === 'level') {
+    how = t('flash-miss-level', {
+      defaultValue: 'Right line or space, wrong accidental.',
+    });
+  } else if (miss.steps === 7 && miss.sameLetter) {
+    how = above
+      ? t('flash-miss-octave-above', {
+          defaultValue: 'An octave above the right note.',
+        })
+      : t('flash-miss-octave-below', {
+          defaultValue: 'An octave below the right note.',
+        });
+  } else if (miss.steps === 1) {
+    how = above
+      ? t('flash-miss-above-one', {
+          defaultValue: 'One step above the right note.',
+        })
+      : t('flash-miss-below-one', {
+          defaultValue: 'One step below the right note.',
+        });
+  } else {
+    how = above
+      ? t('flash-miss-above', {
+          n: miss.steps,
+          defaultValue: '{{n}} steps above the right note.',
+        })
+      : t('flash-miss-below', {
+          n: miss.steps,
+          defaultValue: '{{n}} steps below the right note.',
+        });
+  }
+  return [lead, how];
 }
 
 /** One card of a finished session and whether it was named right. */
-export type Answered =
-  AnsweredQuestion<Card>;
+export type Answered = AnsweredQuestion<Card>;
 
 /** A staff-reading lesson: ten cards from the lesson's deck, saved as a lesson completion. */
 export function FlashcardLesson({
@@ -161,89 +153,28 @@ export function FlashcardLesson({
   /** How the learner's notes are voiced (the lesson's sound); the synth when absent. */
   sound?: PlayOptions;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
+  const { t } = useTranslation('c-rmhmusic');
   // A singer's staff lesson deals from their range's deck (`voice-range`), read once at mount.
-  const [
-    deck,
-  ] =
-    useState(
-      () => {
-        const named =
-          getLesson(
-            lessonId,
-          )
-            ?.deck ??
-          '';
-        return named ===
-          VOICE_RANGE_DECK
-          ? voiceDeck(
-              resolveVoiceRange(
-                useLearnStore.getState()
-                  .profile
-                  ?.voiceRange,
-              ),
-            )
-          : DECKS[
-              named
-            ];
-      },
-    );
-  const [
-    cards,
-  ] =
-    useState(
-      () => {
-        return deck
-          ? buildSession(
-              deck,
-              SESSION_CARDS,
-              Math.random,
-            )
-          : [];
-      },
-    );
+  const [deck] = useState(() => {
+    const named = getLesson(lessonId)?.deck ?? '';
+    return named === VOICE_RANGE_DECK
+      ? voiceDeck(resolveVoiceRange(useLearnStore.getState().profile?.voiceRange))
+      : DECKS[named];
+  });
+  const [cards] = useState(() => {
+    return deck ? buildSession(deck, SESSION_CARDS, Math.random) : [];
+  });
   return (
     <FlashcardSession
-      cards={
-        cards
-      }
-      octaveClef={
-        deck?.octaveClef ??
-        false
-      }
-      lowCard={
-        deck?.lowCard ??
-        false
-      }
-      paused={
-        paused
-      }
-      sound={
-        sound
-      }
-      save={(
-        fx,
-      ) =>
-        useLearnStore
-          .getState()
-          .completeLesson(
-            lessonId,
-            fx.stars,
-            fx.score,
-          )
-      }
-      doneTitle={t(
-        'lesson-complete',
-        {
-          defaultValue:
-            'Lesson complete',
-        },
-      )}
+      cards={cards}
+      octaveClef={deck?.octaveClef ?? false}
+      lowCard={deck?.lowCard ?? false}
+      paused={paused}
+      sound={sound}
+      save={(fx) => useLearnStore.getState().completeLesson(lessonId, fx.stars, fx.score)}
+      doneTitle={t('lesson-complete', {
+        defaultValue: 'Lesson complete',
+      })}
       returnTo={`/rmhmusic/lesson/${lessonId}`}
     />
   );
@@ -261,8 +192,7 @@ export function FlashcardSession({
   save,
   doneTitle,
   returnTo,
-  stars:
-    showStars = true,
+  stars: showStars = true,
   sound,
   octaveClef = false,
   lowCard = false,
@@ -274,10 +204,7 @@ export function FlashcardSession({
   lowCard?: boolean;
   /** A dialog is open over the session: nothing answers. */
   paused?: boolean;
-  save: (
-    fx: Effect,
-    answered: readonly Answered[],
-  ) => Promise<CompleteOutcome>;
+  save: (fx: Effect, answered: readonly Answered[]) => Promise<CompleteOutcome>;
   /** The title once the session is over and saving or saved. */
   doneTitle: string;
   /** Where the sign-in link comes back to. */
@@ -286,588 +213,284 @@ export function FlashcardSession({
   /** How the learner's notes are voiced (the lesson's sound); the synth when absent. */
   sound?: PlayOptions;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
-  const input =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s
-          .profile
-          ?.input ??
-        'screen',
-    );
-  const session =
-    useQuestionSession<
-      Card,
-      Answer
-    >(
-      {
-        machine:
-          () =>
-            createFlashcardsMachine(
-              cards,
-            ),
-        save,
-        paused,
-      },
-    );
-  const {
-    lesson,
-    total,
-    answer,
-    answerGroup,
-  } =
-    session;
-  const inSession =
-    lesson.kind ===
-      'asking' ||
-    lesson.kind ===
-      'feedback';
-  const phases =
-    useInputPhases();
-  useNoteSound(
-    !paused,
-    sound,
-  );
+  const { t } = useTranslation('c-rmhmusic');
+  const input = useLearnStore((s) => s.profile?.input ?? 'screen');
+  const session = useQuestionSession<Card, Answer>({
+    machine: () => createFlashcardsMachine(cards, () => getPracticeMode() === 'learning'),
+    save,
+    paused,
+  });
+  const { lesson, total, answer, answerGroup } = session;
+  const inSession = lesson.kind === 'asking' || lesson.kind === 'feedback';
+  const phases = useInputPhases();
+  useNoteSound(!paused, sound);
   useLessonInputStart();
 
-  const needsDevice =
-    input ===
-      'mic' ||
-    input ===
-      'midi';
-  const inputOn =
-    !needsDevice ||
-    phases[
-      input
-    ] ===
-      'active';
-  const keysPlayNotes =
-    input ===
-      'keys' ||
-    phases.keys ===
-      'active';
+  const needsDevice = input === 'mic' || input === 'midi';
+  const inputOn = !needsDevice || phases[input] === 'active';
+  const keysPlayNotes = input === 'keys' || phases.keys === 'active';
 
-  useNoteEvents(
-    (
-      e,
-    ) => {
-      if (
-        e.type !==
-        'on'
-      )
-        return;
-      if (
-        e.source ===
-          'keys' ||
-        e.source ===
-          'mic'
-      ) {
-        answer(
-          isSharp(
-            e.midi,
-          )
-            ? {
-                kind: 'midi',
-                midi: e.midi,
-              }
-            : {
-                kind: 'letter',
-                letter:
-                  noteLetter(
-                    e.midi,
-                  ),
-              },
-        );
-      } else {
-        answer(
-          {
-            kind: 'midi',
-            midi: e.midi,
-          },
-        );
-      }
-    },
-  );
+  useNoteEvents((e) => {
+    if (e.type !== 'on') return;
+    if (e.source === 'keys' || e.source === 'mic') {
+      answer(
+        isSharp(e.midi)
+          ? {
+              kind: 'midi',
+              midi: e.midi,
+            }
+          : {
+              kind: 'letter',
+              letter: noteLetter(e.midi),
+            },
+      );
+    } else {
+      answer({
+        kind: 'midi',
+        midi: e.midi,
+      });
+    }
+  });
 
   // The letters A–G on a physical keyboard, unless those keys are playing notes (see above).
-  const answerRef =
-    useRef(
-      answer,
-    );
-  useEffect(
-    () => {
-      answerRef.current =
-        answer;
-    },
-  );
+  const answerRef = useRef(answer);
   useEffect(() => {
-    if (
-      keysPlayNotes
-    )
-      return;
-    const onKeyDown =
-      (
-        e: KeyboardEvent,
-      ) => {
-        if (
-          e.repeat ||
-          e.ctrlKey ||
-          e.metaKey ||
-          e.altKey ||
-          e
-            .key
-            .length !==
-            1
-        )
-          return;
-        // Typing in a field never answers; while the setup dialog is open the lesson is `paused`.
-        if (
-          isTypingTarget(
-            e.target,
-          )
-        )
-          return;
-        const letter =
-          e.key.toUpperCase();
-        if (
-          !(
-            LETTERS as readonly string[]
-          ).includes(
-            letter,
-          )
-        )
-          return;
-        answerRef.current(
-          {
-            kind: 'letter',
-            letter,
-          },
-        );
-      };
-    window.addEventListener(
-      'keydown',
-      onKeyDown,
-    );
-    return () =>
-      window.removeEventListener(
-        'keydown',
-        onKeyDown,
-      );
-  }, [
-    keysPlayNotes,
-  ]);
+    answerRef.current = answer;
+  });
+  useEffect(() => {
+    if (keysPlayNotes) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+      // Typing in a field never answers; while the setup dialog is open the lesson is `paused`.
+      if (isTypingTarget(e.target)) return;
+      const letter = e.key.toUpperCase();
+      if (!(LETTERS as readonly string[]).includes(letter)) return;
+      answerRef.current({
+        kind: 'letter',
+        letter,
+      });
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [keysPlayNotes]);
 
-  const card =
-    session.card;
-  const cardState: StaffCardState =
-    cardStateOf(
-      session,
-    );
+  const card = session.card;
+  const cardState: StaffCardState = cardStateOf(session);
 
-  const title =
-    sessionTitle(
-      session,
-      inSession
-        ? t(
-            'flash-card-count',
-            {
-              n:
-                lesson.index +
-                1,
-              total,
-              defaultValue:
-                'Card {{n}} of {{total}}',
-            },
-          )
-        : '',
-      doneTitle,
-      t(
-        'lesson-not-saved',
-        {
-          defaultValue:
-            'Not saved yet',
-        },
-      ),
-    );
+  const title = sessionTitle(
+    session,
+    inSession
+      ? t('flash-card-count', {
+          n: lesson.index + 1,
+          total,
+          defaultValue: 'Card {{n}} of {{total}}',
+        })
+      : '',
+    doneTitle,
+    t('lesson-not-saved', {
+      defaultValue: 'Not saved yet',
+    }),
+  );
   const hint =
-    input ===
-    'keys'
-      ? t(
-          'flash-hint-keys',
-          {
-            defaultValue:
-              'Tap its letter, or play it on your computer keys.',
-          },
-        )
-      : input ===
-          'midi'
-        ? t(
-            'flash-hint-midi',
-            {
-              defaultValue:
-                'Tap its letter, or play it on your MIDI controller.',
-            },
-          )
-        : input ===
-            'mic'
-          ? t(
-              'flash-hint-mic',
-              {
-                defaultValue:
-                  'Tap its letter, or play or sing it.',
-              },
-            )
-          : t(
-              'flash-hint-screen',
-              {
-                defaultValue:
-                  'Tap its letter, or play it on the piano below.',
-              },
-            );
+    input === 'keys'
+      ? t('flash-hint-keys', {
+          defaultValue: 'Tap its letter, or play it on your computer keys.',
+        })
+      : input === 'midi'
+        ? t('flash-hint-midi', {
+            defaultValue: 'Tap its letter, or play it on your MIDI controller.',
+          })
+        : input === 'mic'
+          ? t('flash-hint-mic', {
+              defaultValue: 'Tap its letter, or play or sing it.',
+            })
+          : t('flash-hint-screen', {
+              defaultValue: 'Tap its letter, or play it on the piano below.',
+            });
 
-  // The sentence line: the hint while asking; after a wrong answer what the note was (with its
-  // octave when a note was played, since then the octave counted); the score at the end.
-  let line =
-    '';
-  let lineKey =
-    'hint';
-  if (
-    lesson.kind ===
-    'asking'
-  ) {
-    line =
-      hint;
-  } else if (
-    lesson.kind ===
-    'feedback'
-  ) {
-    lineKey = `fb-${lesson.index}`;
-    if (
-      !lesson.right
-    ) {
-      const c =
-        lesson
-          .cards[
-          lesson
-            .index
-        ];
-      line =
-        t(
-          'flash-that-was',
-          {
-            note:
-              lesson
-                .answer
-                .kind ===
-              'midi'
-                ? midiToName(
-                    c.midi,
-                  )
-                : noteLetter(
-                    c.midi,
-                  ),
-            defaultValue:
-              'That was {{note}}.',
-          },
-        );
+  // The sentence line: the hint while asking; after a wrong answer what was played against the
+  // right note (with how far off it sits on the staff); the score at the end.
+  let line: ReactNode = '';
+  let lineKey = 'hint';
+  // The sentences of a wrong answer, one string each (the live region reads them as they are).
+  let missParts: string[] = [];
+  let miss: Miss | null = null;
+  if (lesson.kind === 'asking') {
+    line = hint;
+  } else if (lesson.kind === 'feedback') {
+    lineKey = `fb-${lesson.index}-${lesson.misses ?? 0}`;
+    if (!lesson.right) {
+      const c = lesson.cards[lesson.index];
+      miss = describeMiss(c.midi, lesson.answer);
+      missParts = miss
+        ? missSentences(
+            t,
+            miss,
+            lesson.answer.kind === 'midi',
+            midiToName(c.midi),
+            lesson.answer.kind === 'letter' ? lesson.answer.letter : miss.name,
+          )
+        : [
+            t('flash-that-was', {
+              note: lesson.answer.kind === 'midi' ? midiToName(c.midi) : noteLetter(c.midi),
+              defaultValue: 'That was {{note}}.',
+            }),
+          ];
+      line = (
+        <>
+          {missParts.map((part, i) => (
+            <span key={i} className="block">
+              {part}
+            </span>
+          ))}
+        </>
+      );
     }
   } else {
-    lineKey =
-      'score';
-    line =
-      t(
-        'flash-score',
-        {
-          correct:
-            lesson.correct,
-          total,
-          defaultValue:
-            'You named {{correct}} of {{total}} notes.',
-        },
-      );
+    lineKey = 'score';
+    line = t('flash-score', {
+      correct: lesson.correct,
+      total,
+      defaultValue: 'You named {{correct}} of {{total}} notes.',
+    });
   }
 
   // What a screen reader hears once a card is answered, the next card when it is dealt (its
   // visible title, "Card 2 of 10"), and the score at the end.
-  const said =
-    lesson.kind ===
-    'feedback'
-      ? lesson.right
-        ? t(
-            'flash-right-sr',
-            {
-              note: answerName(
-                lesson.answer,
-              ),
-              defaultValue:
-                'Right: {{note}}.',
-            },
-          )
-        : line
-      : lesson.kind ===
-          'asking'
-        ? session.announce
-          ? title
-          : ''
-        : inSession
-          ? ''
-          : line;
+  const said: ReactNode =
+    lesson.kind === 'feedback' ? (
+      lesson.right ? (
+        t('flash-right-sr', {
+          note: answerName(lesson.answer),
+          defaultValue: 'Right: {{note}}.',
+        })
+      ) : (
+        <SaidParts parts={missParts} />
+      )
+    ) : lesson.kind === 'asking' ? (
+      session.announce ? (
+        title
+      ) : (
+        ''
+      )
+    ) : inSession ? (
+      ''
+    ) : typeof line === 'string' ? (
+      line
+    ) : (
+      ''
+    );
 
-  const correctLetter =
-    lesson.kind ===
-    'feedback'
-      ? noteLetter(
-          lesson
-            .cards[
-            lesson
-              .index
-          ]
-            .midi,
-        )
-      : null;
-  const givenLetter =
-    lesson.kind ===
-      'feedback' &&
-    lesson
-      .answer
-      .kind ===
-      'letter'
-      ? lesson
-          .answer
-          .letter
-      : null;
+  const correctLetter = lesson.kind === 'feedback' ? noteLetter(lesson.cards[lesson.index].midi) : null;
+  const givenLetter = lesson.kind === 'feedback' && lesson.answer.kind === 'letter' ? lesson.answer.letter : null;
 
   let answers: ReactNode;
-  if (
-    !inSession
-  ) {
-    const stars =
-      lesson.kind ===
-      'saved'
-        ? lesson.stars
-        : starsFor(
-            scoreFrom(
-              lesson.correct,
-              total,
-            ),
-          );
-    answers =
-      (
-        <LessonResult
-          kind={
-            lesson.kind
-          }
-          stars={
-            showStars
-              ? stars
-              : null
-          }
-          returnTo={
-            returnTo
-          }
-          onRetry={
-            session.retry
-          }
-          className="flex-1"
-        />
-      );
+  if (!inSession) {
+    const stars = lesson.kind === 'saved' ? lesson.stars : starsFor(scoreFrom(lesson.correct, total));
+    answers = (
+      <LessonResult
+        kind={lesson.kind}
+        stars={showStars ? stars : null}
+        returnTo={returnTo}
+        onRetry={session.retry}
+        className="flex-1"
+      />
+    );
   } else {
     let region: ReactNode;
-    if (
-      needsDevice
-    ) {
-      region =
-        (
-          <DeviceRegion
-            input={
-              input
-            }
-            on={
-              inputOn
-            }
-          />
-        );
-    } else if (
-      input ===
-      'keys'
-    ) {
-      region =
-        (
-          <div className="rmm-sheet flex h-full items-center justify-center p-4 text-center">
-            <p className="text-sm leading-6 text-app-text-muted">
-              {t(
-                'flash-keys-region',
-                {
-                  defaultValue:
-                    'Your computer keys are a piano: A, S, D, F, G, H, J and K play C, D, E, F, G, A, B and C.',
-                },
-              )}
-            </p>
-          </div>
-        );
+    if (needsDevice) {
+      region = <DeviceRegion input={input} on={inputOn} />;
+    } else if (input === 'keys') {
+      region = (
+        <div className="rmm-sheet flex h-full items-center justify-center p-4 text-center">
+          <p className="text-sm leading-6 text-app-text-muted">
+            {t('flash-keys-region', {
+              defaultValue: 'Your computer keys are a piano: A, S, D, F, G, H, J and K play C, D, E, F, G, A, B and C.',
+            })}
+          </p>
+        </div>
+      );
     } else {
       // As in the first lesson: the keys bleed into the page gutter so seven white keys stay ≥ 44px.
-      region =
-        (
-          <OnScreenKeyboard className="-mx-2 max-[332px]:-mx-3.5 sm:mx-0" />
-        );
+      region = <OnScreenKeyboard className="-mx-2 max-[332px]:-mx-3.5 sm:mx-0" />;
     }
-    const asking =
-      lesson.kind ===
-      'asking';
-    answers =
-      (
-        <>
-          <div
-            ref={
-              answerGroup
-            }
-            role="group"
-            aria-label={t(
-              'flash-letters',
-              {
-                defaultValue:
-                  'Note names',
-              },
-            )}
-            className="rmm-flash__letters"
-          >
-            {LETTERS.map(
-              (
-                letter,
-              ) => {
-                const isCorrect =
-                  letter ===
-                  correctLetter;
-                const isGiven =
-                  letter ===
-                  givenLetter;
-                return (
-                  <button
-                    key={
-                      letter
-                    }
-                    type="button"
-                    aria-label={
-                      letter
-                    }
-                    aria-keyshortcuts={
-                      keysPlayNotes
-                        ? undefined
-                        : letter
-                    }
-                    aria-disabled={
-                      !asking ||
-                      undefined
-                    }
-                    onClick={() =>
-                      answer(
-                        {
-                          kind: 'letter',
-                          letter,
-                        },
-                      )
-                    }
-                    className={cn(
-                      'rmm-display flex h-full min-h-11 min-w-0 items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
-                      asking
-                        ? 'border-app-border-bright text-app-text'
-                        : isCorrect
-                          ? 'border-app-accent text-app-accent'
-                          : isGiven
-                            ? 'rmm-flash__struck border-app-border text-app-text-dim'
-                            : 'border-app-border text-app-text-dim',
-                    )}
-                  >
-                    {
-                      letter
-                    }
-                  </button>
-                );
-              },
-            )}
-          </div>
-          <div className="rmm-input-region">
-            {
-              region
-            }
-          </div>
-        </>
-      );
+    const asking = lesson.kind === 'asking';
+    answers = (
+      <>
+        <div
+          ref={answerGroup}
+          role="group"
+          aria-label={t('flash-letters', {
+            defaultValue: 'Note names',
+          })}
+          className="rmm-flash__letters"
+        >
+          {LETTERS.map((letter) => {
+            const isCorrect = letter === correctLetter;
+            const isGiven = letter === givenLetter;
+            return (
+              <button
+                key={letter}
+                type="button"
+                aria-label={letter}
+                aria-keyshortcuts={keysPlayNotes ? undefined : letter}
+                aria-disabled={!asking || undefined}
+                onClick={() =>
+                  answer({
+                    kind: 'letter',
+                    letter,
+                  })
+                }
+                className={cn(
+                  'rmm-display flex h-full min-h-11 min-w-0 items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
+                  asking
+                    ? 'border-app-border-bright text-app-text'
+                    : isCorrect
+                      ? 'border-app-accent text-app-accent'
+                      : isGiven
+                        ? 'rmm-flash__struck border-app-border text-app-text-dim'
+                        : 'border-app-border text-app-text-dim',
+                )}
+              >
+                {letter}
+              </button>
+            );
+          })}
+        </div>
+        <div className="rmm-input-region">{region}</div>
+      </>
+    );
   }
 
   return (
     <SessionFrame className="rmm-flash space-y-4">
+      <PracticeModeToggle />
       <SessionSheet
-        session={
-          session
-        }
-        title={
-          title
-        }
+        session={session}
+        title={title}
         question={
           card ? (
             <StaffCard
-              card={
-                card
-              }
-              octaveClef={
-                octaveClef
-              }
-              range={
-                lowCard
-                  ? 'low'
-                  : 'deck'
-              }
-              state={
-                cardState
-              }
+              card={card}
+              octaveClef={octaveClef}
+              range={lowCard ? 'low' : 'deck'}
+              state={cardState}
+              played={miss?.midi}
             />
           ) : (
-            <div
-              aria-hidden="true"
-              className={
-                STAFF_BOX
-              }
-            >
-              <div
-                className={cn(
-                  lowCard
-                    ? STAFF_LOW_ASPECT
-                    : 'aspect-[200/102]',
-                  'w-full',
-                )}
-              />
+            <div aria-hidden="true" className={STAFF_BOX}>
+              <div className={cn(lowCard ? STAFF_LOW_ASPECT : 'aspect-[200/102]', 'w-full')} />
               <div className="h-9" />
             </div>
           )
         }
-        line={
-          line
-        }
-        lineKey={
-          lineKey
-        }
-        said={
-          said
-        }
+        line={line}
+        lineKey={lineKey}
+        said={said}
+        retry={lesson.kind === 'feedback' && !lesson.right && getPracticeMode() === 'learning'}
       />
-      <div
-        ref={
-          session.answersBox
-        }
-        className="rmm-flash__answers"
-      >
-        {
-          answers
-        }
+      <div ref={session.answersBox} className="rmm-flash__answers">
+        {answers}
       </div>
     </SessionFrame>
   );

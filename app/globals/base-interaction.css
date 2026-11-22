@@ -100,6 +100,37 @@ html:not(.app-route) {
   scrollbar-gutter: stable;
 }
 
+/* A bought theme's glow wash (R1 amendment, `themeWash` in lib/themes/tokens.ts) is painted on <body>, over body's own
+   opaque `--site-bg`. Body keeps an opaque background-color on purpose: iOS Safari takes the colour of its status-bar and
+   tab-bar strips from body's background-color, and a transparent body made both strips pure white. Body spans the whole
+   document and runs under the strips (viewport-fit=cover), so the wash is behind them too wherever Safari lets the page
+   show. It is a BACKGROUND, not a fixed layer, so no element sits at an edge (the iOS bar contract); with no user theme
+   the image is `none`. Held to the viewport on desktop; iOS ignores `fixed`, so there it is stretched over the document. */
+html:not(.app-route) body {
+  background-image: var(--site-theme-wash, none);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+html.ios-webkit:not(.app-route) body {
+  background-attachment: scroll;
+  /* Safari fills the strips outside the page with one flat colour (the ground): at scroll top the one behind the status
+     bar, and past the document's end the one behind the floating tab bar. The wash is a gradient, so it met each as a
+     hard line. `--site-theme-wash-top` and `--site-theme-wash-bottom` (lib/themes/tokens.ts) hold the ground over those
+     strips and fade it into the wash. They are anchored to the top and bottom of the DOCUMENT, so a scrolled page shows
+     the wash itself. */
+  background-image:
+    var(--site-theme-wash-top, none), var(--site-theme-wash-bottom, none), var(--site-theme-wash, none);
+  background-size:
+    100% calc(env(safe-area-inset-top, 0px) + 96px),
+    100% calc(env(safe-area-inset-bottom, 0px) + 96px),
+    100% 100%;
+  background-position:
+    0 0,
+    0 100%,
+    0 0;
+}
+
 /* App/game routes are excluded above because they do not scroll the document —
    reserving a gutter there would just take a scrollbar's width off a game for
    nothing. `.app-page` is the exception: it is a full-screen screen that IS a

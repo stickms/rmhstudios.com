@@ -10,36 +10,21 @@ export interface StorageLike {
   persisted?: () => Promise<boolean>;
 }
 
-const defaultStorage =
-  ():
-    | StorageLike
-    | undefined =>
-    (
-      globalThis as {
-        navigator?: {
-          storage?: StorageLike;
-        };
-      }
-    )
-      .navigator
-      ?.storage;
+const defaultStorage = (): StorageLike | undefined =>
+  (
+    globalThis as {
+      navigator?: {
+        storage?: StorageLike;
+      };
+    }
+  ).navigator?.storage;
 
 /**
  * true: the browser keeps the files. false: it may delete them. null: this browser cannot say
  * (no Storage API); nothing is claimed either way.
  */
-export async function readPersisted(
-  storage:
-    | StorageLike
-    | undefined = defaultStorage(),
-): Promise<
-  | boolean
-  | null
-> {
-  if (
-    !storage?.persisted
-  )
-    return null;
+export async function readPersisted(storage: StorageLike | undefined = defaultStorage()): Promise<boolean | null> {
+  if (!storage?.persisted) return null;
   try {
     return await storage.persisted();
   } catch {
@@ -52,15 +37,8 @@ export async function readPersisted(
  * browsers show needs that user activation) and read `persisted()` again after it settles.
  * Resolves to the browser's answer; false when it cannot be asked or refuses.
  */
-export async function requestPersist(
-  storage:
-    | StorageLike
-    | undefined = defaultStorage(),
-): Promise<boolean> {
-  if (
-    !storage?.persist
-  )
-    return false;
+export async function requestPersist(storage: StorageLike | undefined = defaultStorage()): Promise<boolean> {
+  if (!storage?.persist) return false;
   try {
     return await storage.persist();
   } catch {
@@ -69,34 +47,17 @@ export async function requestPersist(
 }
 
 /** The standing line is shown when the browser says it may delete the files (and not when it cannot say). */
-export const evictionRisk =
-  (
-    persisted:
-      | boolean
-      | null,
-  ): boolean =>
-    persisted ===
-    false;
+export const evictionRisk = (persisted: boolean | null): boolean => persisted === false;
 
 /**
  * Wraps a request so it runs at most once: Save asks the browser through this, so a click on Save
  * never re-prompts (Firefox) after the first answer. The explicit "Keep my files in this
  * browser" button calls the request itself and is not limited.
  */
-export function askOnce<
-  T,
->(
-  ask: () => Promise<T>,
-): () => Promise<
-  | T
-  | undefined
-> {
+export function askOnce<T>(ask: () => Promise<T>): () => Promise<T | undefined> {
   let asked = false;
   return async () => {
-    if (
-      asked
-    )
-      return undefined;
+    if (asked) return undefined;
     asked = true;
     return ask();
   };

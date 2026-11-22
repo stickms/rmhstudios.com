@@ -3,8 +3,11 @@ import { implement } from '@/lib/api/implement.server';
 import { reviewCardApi } from '@/lib/study/decks.contract';
 import { reviewCardBody } from '@/lib/study/decks-schema';
 import { prisma } from '@/lib/prisma.server';
+import { isReviewable } from '@/lib/study/card-types';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { nextState, type Grade } from '@/lib/rmhstudy/srs';
+import { isLapse } from '@/lib/study/queue';
+import { saveReview } from '@/lib/study/review-log.server';
 import { recordStudyReview } from '@/lib/quests/engine.server';
 
 /** POST /api/study/cards/$id/review — submit an SRS grade for a card. */
@@ -28,9 +31,11 @@ export const route = apiRoute('/api/study/cards/$id/review', {
 
       const card = await prisma.flashcard.findUnique({
         where: { id: params.id },
-        select: { id: true, deck: { select: { isPublic: true, userId: true } } },
+        select: { id: true, deckId: true, kind: true, sourceId: true, deck: { select: { isPublic: true, userId: true } } },
       });
       if (!card) return Response.json({ error: 'Not found' }, { status: 404 });
+      // An authored cloze card is never reviewed; its generated cards are.
+      if (!isReviewable(card)) return Response.json({ error: 'Not found' }, { status: 404 });
       if (!card.deck.isPublic && card.deck.userId !== userId) {
         return Response.json({ error: 'Not found' }, { status: 404 });
       }
@@ -42,22 +47,13 @@ export const route = apiRoute('/api/study/cards/$id/review', {
       const prev = existing ?? { easeFactor: 2.5, intervalDays: 0, repetitions: 0 };
       const next = nextState(prev, body.grade as Grade);
 
-      await prisma.flashcardReview.upsert({
-        where: { userId_cardId: { userId, cardId: params.id } },
-        create: {
-          userId,
-          cardId: params.id,
-          easeFactor: next.easeFactor,
-          intervalDays: next.intervalDays,
-          repetitions: next.repetitions,
-          dueAt: next.dueAt,
-        },
-        update: {
-          easeFactor: next.easeFactor,
-          intervalDays: next.intervalDays,
-          repetitions: next.repetitions,
-          dueAt: next.dueAt,
-        },
+      const { leech } = await saveReview({
+        lapse: isLapse(body.grade, prev.repetitions),
+        userId,
+        cardId: params.id,
+        deckId: card.deckId,
+        grade: body.grade,
+        next,
       });
 
       // Progress the daily "study" quest + award XP (best-effort, rate-limited).
@@ -67,6 +63,7 @@ export const route = apiRoute('/api/study/cards/$id/review', {
         success: true,
         dueAt: next.dueAt,
         intervalDays: next.intervalDays,
+        leech,
       });
     },
   ),

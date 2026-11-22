@@ -1,0 +1,73 @@
+import { describe, expect, it } from 'vitest';
+import {
+  LEECH_RESET,
+  LEECH_THRESHOLD,
+  NEW_PER_SESSION,
+  SESSION_MAX,
+  isLapse,
+  isLeech,
+  isSuspendReason,
+  lapsesAfterUnsuspend,
+} from '@/lib/study/queue';
+import { reviewQueueQuery, suspendCardBody } from '@/lib/study/queue-schema';
+
+describe('study queue rules', () => {
+  it('keeps the documented numbers', () => {
+    expect([LEECH_THRESHOLD, LEECH_RESET, NEW_PER_SESSION, SESSION_MAX]).toEqual([8, 4, 20, 200]);
+  });
+
+  it('counts a lapse only for "Again" on a learned card', () => {
+    expect(isLapse(0, 1)).toBe(true);
+    expect(isLapse(0, 5)).toBe(true);
+    expect(isLapse(0, 0)).toBe(false);
+    expect(isLapse(1, 3)).toBe(false);
+    expect(isLapse(3, 3)).toBe(false);
+  });
+
+  it('sets a card aside at the eighth lapse', () => {
+    expect(isLeech(7)).toBe(false);
+    expect(isLeech(8)).toBe(true);
+    expect(isLeech(9)).toBe(true);
+  });
+
+  it('gives a leech four more tries and leaves a manual suspension alone', () => {
+    expect(lapsesAfterUnsuspend('leech', 8)).toBe(4);
+    expect(lapsesAfterUnsuspend('manual', 3)).toBe(3);
+    expect(lapsesAfterUnsuspend(null, 2)).toBe(2);
+  });
+
+  it('knows the suspension reasons', () => {
+    expect(isSuspendReason('manual')).toBe(true);
+    expect(isSuspendReason('leech')).toBe(true);
+    expect(isSuspendReason('other')).toBe(false);
+  });
+
+  it('validates the cursor and the suspend body', () => {
+    expect(reviewQueueQuery.safeParse({}).success).toBe(true);
+    expect(
+      reviewQueueQuery.safeParse({
+        after: 'abc123',
+      }).success,
+    ).toBe(true);
+    expect(
+      reviewQueueQuery.safeParse({
+        after: 'a,b',
+      }).success,
+    ).toBe(false);
+    expect(
+      reviewQueueQuery.safeParse({
+        after: 'x'.repeat(65),
+      }).success,
+    ).toBe(false);
+    expect(
+      suspendCardBody.safeParse({
+        suspended: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      suspendCardBody.safeParse({
+        suspended: 'yes',
+      }).success,
+    ).toBe(false);
+  });
+});

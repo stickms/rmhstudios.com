@@ -9,7 +9,7 @@ export const route = apiRoute('/api/communities/$slug/census/$id/close', {
     const guard = await requireMod(params.slug, userId);
     if (!guard.ok) return guard.response;
     try {
-      await closeCensus(guard.value.id, params.id);
+      await closeCensus(guard.value.id, params.id, userId);
       return Response.json({ success: true });
     } catch (e) {
       if (e instanceof CensusError) {

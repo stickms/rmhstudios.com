@@ -59,10 +59,9 @@ export type Effect =
       attempt: number;
     };
 
-export const initial: State =
-  {
-    kind: 'listening',
-  };
+export const initial: State = {
+  kind: 'listening',
+};
 
 export function step(
   s: State,
@@ -71,163 +70,105 @@ export function step(
   state: State;
   effects: Effect[];
 } {
-  switch (
-    e.type
-  ) {
+  switch (e.type) {
     case 'note':
-      if (
-        s.kind !==
-        'listening'
-      )
+      if (s.kind !== 'listening')
         return {
-          state:
-            s,
-          effects:
-            [],
+          state: s,
+          effects: [],
         };
       // The first note wins: its note is the one shown.
       return {
-        state:
+        state: {
+          kind: 'saving',
+          midi: e.midi,
+          attempt: 1,
+        },
+        effects: [
           {
-            kind: 'saving',
-            midi: e.midi,
+            type: 'release-mic',
+          },
+          {
+            type: 'complete',
             attempt: 1,
           },
-        effects:
-          [
-            {
-              type: 'release-mic',
-            },
-            {
-              type: 'complete',
-              attempt: 1,
-            },
-          ],
+        ],
       };
     case 'answered':
-      if (
-        s.kind !==
-          'saving' ||
-        s.attempt !==
-          e.attempt
-      )
+      if (s.kind !== 'saving' || s.attempt !== e.attempt)
         return {
-          state:
-            s,
-          effects:
-            [],
+          state: s,
+          effects: [],
         };
-      switch (
-        e.outcome
-      ) {
+      switch (e.outcome) {
         case 'saved':
           return {
-            state:
-              {
-                kind: 'saved',
-                midi: s.midi,
-              },
-            effects:
-              [],
+            state: {
+              kind: 'saved',
+              midi: s.midi,
+            },
+            effects: [],
           };
         case 'unauthorized':
           return {
-            state:
-              {
-                kind: 'signed-out',
-                midi: s.midi,
-              },
-            effects:
-              [],
+            state: {
+              kind: 'signed-out',
+              midi: s.midi,
+            },
+            effects: [],
           };
         case 'failed':
         case 'invalid':
           return {
-            state:
-              {
-                kind: 'failed',
-                midi: s.midi,
-                attempt:
-                  s.attempt,
-              },
-            effects:
-              [],
+            state: {
+              kind: 'failed',
+              midi: s.midi,
+              attempt: s.attempt,
+            },
+            effects: [],
           };
         default:
-          return unreachable(
-            e.outcome,
-          );
+          return unreachable(e.outcome);
       }
     case 'retry': {
-      if (
-        s.kind !==
-        'failed'
-      )
+      if (s.kind !== 'failed')
         return {
-          state:
-            s,
-          effects:
-            [],
+          state: s,
+          effects: [],
         };
-      const attempt =
-        s.attempt +
-        1;
+      const attempt = s.attempt + 1;
       return {
-        state:
+        state: {
+          kind: 'saving',
+          midi: s.midi,
+          attempt,
+        },
+        effects: [
           {
-            kind: 'saving',
-            midi: s.midi,
+            type: 'complete',
             attempt,
           },
-        effects:
-          [
-            {
-              type: 'complete',
-              attempt,
-            },
-          ],
+        ],
       };
     }
     default:
-      return unreachable(
-        e,
-      );
+      return unreachable(e);
   }
 }
 
-export function transition(
-  s: State,
-  e: Event,
-): State {
-  return step(
-    s,
-    e,
-  )
-    .state;
+export function transition(s: State, e: Event): State {
+  return step(s, e).state;
 }
 
-export function effects(
-  prev: State,
-  _next: State,
-  e: Event,
-): Effect[] {
-  return step(
-    prev,
-    e,
-  )
-    .effects;
+export function effects(prev: State, _next: State, e: Event): Effect[] {
+  return step(prev, e).effects;
 }
 
-export const firstNoteMachine =
-  {
-    initial,
-    step,
-  };
+export const firstNoteMachine = {
+  initial,
+  step,
+};
 
-function unreachable(
-  x: never,
-): never {
-  throw new Error(
-    `first-note: unhandled ${JSON.stringify(x)}`,
-  );
+function unreachable(x: never): never {
+  throw new Error(`first-note: unhandled ${JSON.stringify(x)}`);
 }

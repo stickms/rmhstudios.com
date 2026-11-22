@@ -14,23 +14,10 @@
  */
 import { cycleYearOf } from '../engine/cycle';
 import type { MedResidence } from '../engine/types';
-import {
-  createAdmitClient,
-  type NormalizedAdmitStats,
-} from './adapters/admit';
-import {
-  SourceHaltedError,
-  type PoliteHost,
-} from './http';
-import {
-  brief,
-  closeStaleRuns,
-  recordAliasMiss,
-} from './run-support';
-import type {
-  Logger,
-  MedPrisma,
-} from './types';
+import { createAdmitClient, type NormalizedAdmitStats } from './adapters/admit';
+import { SourceHaltedError, type PoliteHost } from './http';
+import { brief, closeStaleRuns, recordAliasMiss } from './run-support';
+import type { Logger, MedPrisma } from './types';
 
 export interface AdmitInterviewsDeps {
   prisma: MedPrisma;
@@ -128,9 +115,7 @@ export async function runAdmitInterviews(
 
   try {
     const aliases = await prisma.medSchoolAlias.findMany({ where: { source: 'ADMIT' } });
-    const active = new Set(
-      (await prisma.medSchool.findMany({ where: { active: true } })).map((s) => s.id),
-    );
+    const active = new Set((await prisma.medSchool.findMany({ where: { active: true } })).map((s) => s.id));
     const schoolBySlug = new Map(aliases.map((a) => [a.sourceKey, a.schoolId]));
     const missed = new Set<string>();
     /** Known active school for a slug; an unknown slug is one miss per slug per run (D8). */

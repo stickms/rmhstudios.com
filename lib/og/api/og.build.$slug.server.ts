@@ -27,16 +27,20 @@ export const route = apiRoute('/api/og/build/$slug', {
     const build = await getPublicBuildDetail(params.slug);
     if (!build) return new Response('Not found', { status: 404 });
 
+    // The cover, or the first screenshot of a build that has none: a described picture beats the bare frame.
+    const art = build.thumbnailUrl ?? build.screenshots?.[0]?.url ?? null;
+
     const png = await renderPageCard({
       // Likes move; bucketing keeps a busy build from re-rendering on every one.
-      cacheKey: `build:${build.id}:${build.updatedAt}:${Math.floor(build.likeCount / 5)}:${build.price}`,
+      // Screenshots change without touching the build row, so the first one is part of the key.
+      cacheKey: `build:${build.id}:${build.updatedAt}:${Math.floor(build.likeCount / 5)}:${build.price}:${art ?? ''}`,
       eyebrow: 'User build',
       lead: build.category?.name ?? null,
       title: build.title,
       // The thumbnail takes ~40% of the pane, so the text column is narrow: three lines of subtitle is what
       // leaves the author line its room above the pane's edge. Without a picture the column is the full width.
-      subtitle: clip(build.description, build.thumbnailUrl ? 64 : 100),
-      art: build.thumbnailUrl,
+      subtitle: clip(build.description, art ? 64 : 100),
+      art,
       byline: build.user?.name
         ? {
             name: build.user.name,

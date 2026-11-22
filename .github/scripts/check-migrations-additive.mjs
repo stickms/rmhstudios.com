@@ -3,7 +3,7 @@
  * Expand/contract gate for NEW Prisma migrations.
  *
  * A release is rolled back by redeploying the previous image on the already
- * migrated database (post-deploy guard, post-deploy-verify). That only works if
+ * migrated database (the post-deploy guard). That only works if
  * the previous release still runs on the new schema, so a migration must not
  * remove or tighten anything the old code uses. This flags the statements that
  * do, in migrations ADDED since the base commit (history is not re-judged).

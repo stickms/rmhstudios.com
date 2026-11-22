@@ -18,6 +18,12 @@ import { socialProviderConfig, steamApiKey } from '@/lib/auth/provider-config.se
 import { steam } from '@/lib/auth/steam.server';
 import { consolidation } from '@/lib/auth/consolidation.server';
 import { notifySignInChange } from '@/lib/auth/security-notice.server';
+import { recordSecurityEvent } from '@/lib/auth/security-log.server';
+import {
+  captureSecurityActor,
+  recordSecurityAfter,
+  trackSignIn,
+} from '@/lib/auth/security-hooks.server';
 import { sendExistingAccountNotice } from '@/lib/auth/existing-account-notice.server';
 import { startRecoveryHold } from '@/lib/recovery/hold.server';
 import { CREDENTIAL_PROVIDER_ID } from '@/lib/auth/providers';
@@ -195,7 +201,10 @@ export const auth = betterAuth({
     revokeSessionsOnPasswordReset: true,
     // A reset by email is how an account is recovered, so it starts the 72-hour economy hold (no tips, gifts or
     // redemptions) and tells the inbox it happened. Neither may fail the reset itself.
-    onPasswordReset: async ({ user }) => {
+    // Also logged for the member (their security log, "Not you?"). Only the account and the request's device and
+    // network are stored: never the token. The record never throws and is not awaited.
+    onPasswordReset: async ({ user }, request) => {
+      void recordSecurityEvent({ userId: user.id, kind: 'password_reset_completed', request });
       await startRecoveryHold(user.id, 'password reset by email').catch((err) =>
         console.error('[auth] recovery hold failed:', err),
       );
@@ -216,7 +225,10 @@ export const auth = betterAuth({
     // reset for an unknown address without sending, so waiting on the send
     // would make a real address answer slower and give it away. sendEmail
     // never throws, so nothing is lost by not waiting.
-    sendResetPassword: async ({ user, url }) => {
+    // The request is logged for the member the same way (existing accounts only, since this hook runs only for
+    // them): fire-and-forget, with no URL or token stored.
+    sendResetPassword: async ({ user, url }, request) => {
+      void recordSecurityEvent({ userId: user.id, kind: 'password_reset_requested', request });
       void sendEmail({
         to: user.email,
         subject: 'Reset your RMH Studios password',
@@ -334,12 +346,18 @@ export const auth = betterAuth({
     // address, and their first Steam sign-in would then be refused as an
     // unlinked existing account.
     before: createAuthMiddleware(async (ctx) => {
+      // Security log: remember who is acting before sign-out / revoke deletes the session.
+      await captureSecurityActor(ctx);
       if (ctx.path !== '/sign-up/email' && ctx.path !== '/change-email') return;
       const body = ctx.body as { email?: unknown; newEmail?: unknown } | undefined;
       const claimed = ctx.path === '/sign-up/email' ? body?.email : body?.newEmail;
       if (typeof claimed === 'string' && isPlaceholderEmail(claimed)) {
         throw new APIError('BAD_REQUEST', { message: 'Enter a valid email address.' });
       }
+    }),
+    // Security log: passkeys, sessions, sign-out, password and email changes, once they have succeeded.
+    after: createAuthMiddleware(async (ctx) => {
+      await recordSecurityAfter(ctx);
     }),
   },
   databaseHooks: {
@@ -354,11 +372,21 @@ export const auth = betterAuth({
           const total = await prisma.account.count({ where: { userId: account.userId } });
           if (total <= 1) return;
           void notifySignInChange(account.userId, { kind: 'connected', providerId: account.providerId });
+          void recordSecurityEvent({
+            userId: account.userId,
+            kind: 'method_connected',
+            detail: { providerId: account.providerId },
+          });
         },
       },
       delete: {
         after: async (account) => {
           void notifySignInChange(account.userId, { kind: 'removed', providerId: account.providerId });
+          void recordSecurityEvent({
+            userId: account.userId,
+            kind: 'method_removed',
+            detail: { providerId: account.providerId },
+          });
         },
       },
     },
@@ -408,9 +436,10 @@ export const auth = betterAuth({
           // B11 — fingerprint the device and alert the owner the first time an
           // unfamiliar one signs in. Sessions were listable but never
           // announced, which only helps someone who already suspects a problem.
-          void import('@/lib/auth/session-alert.server')
-            .then((m) => m.onSessionCreated(session, request))
-            .catch((err) => console.error('[auth] session alert failed:', err));
+          //
+          // The security log records the sign-in from the same chain, as `sign_in_new_device`
+          // when that alert was sent and `sign_in` otherwise.
+          trackSignIn(session, request);
 
           // B12 — signing back in is the cancel flow for a scheduled deletion.
           // It is the only one users reliably find, so it has to be the one

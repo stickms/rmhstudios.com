@@ -19,8 +19,13 @@ import { subscribeMessageStream } from '@/hooks/useUnreadCount';
 import { toast } from '@/lib/toast';
 import { ChatFolderBar } from '@/components/chat-plus/ChatFolderBar';
 import { SavedMessagesRow } from '@/components/chat-plus/SavedMessagesRow';
+import { RequestsEntry } from '@/components/messages/RequestsEntry';
+import { AwayMessageDialog } from '@/components/messages/AwayMessageDialog';
+import { AutoRepliedMark, AwayInboxLine } from '@/components/messages/AwayLine';
+import { useAwayQuery } from '@/components/messages/useAway';
 import { SavedMessagesLabel } from '@/components/chat-plus/MessageBadges';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
+import { ScheduledClock, useScheduledChatIds } from '@/components/messages/ScheduledClock';
 import { api } from '@/lib/contract/client';
 import { searchUsersApi } from '@/lib/discovery/explore.contract';
 import { HttpError, serverError } from '@/lib/http';
@@ -30,6 +35,7 @@ import {
   searchConversationsApi,
   sendMessageApi,
 } from '@/lib/messages/messages.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export interface ConversationItem {
   id: string;
@@ -65,7 +71,7 @@ export function MessagesColumn({
     nextCursor: string | null;
     hasMore: boolean;
   } | null;
-} = {}) {
+} = {}) { const fmt = useLocaleFormat(); 
   const [conversations, setConversations] = useState<ConversationItem[]>(
     initialData?.conversations ?? [],
   );
@@ -94,6 +100,10 @@ export function MessagesColumn({
   const listArrival = useArrival(!loading);
   const searchArrival = useArrival(!searching);
   const isNew = useArrivingKeys(loading ? [] : conversations.map((c) => c.id));
+  const scheduledChats = useScheduledChatIds(!!session);
+  const awayQuery = useAwayQuery(!!session);
+  const [awayOpen, setAwayOpen] = useState(false);
+  const autoReplied = new Set(awayQuery.data?.autoRepliedChatIds ?? []);
 
   const fetchConversations = useCallback(
     async (isInitial = false) => {
@@ -281,7 +291,7 @@ export function MessagesColumn({
     if (diffMins < 60) return t('time-minutes', { count: diffMins, defaultValue: '{{count}}m' });
     if (diffHours < 24) return t('time-hours', { count: diffHours, defaultValue: '{{count}}h' });
     if (diffDays < 7) return t('time-days', { count: diffDays, defaultValue: '{{count}}d' });
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return fmt.date(d, { month: 'short', day: 'numeric' });
   };
 
   if (!session) {
@@ -323,7 +333,20 @@ export function MessagesColumn({
         <Button variant="ghost" onClick={markAllAsRead} disabled={!hasUnread || markingAll}>
           {t('mark-all-as-read', { defaultValue: 'Mark all as read' })}
         </Button>
+        {!awayQuery.data?.away && (
+          <Button variant="ghost" onClick={() => setAwayOpen(true)}>
+            {t('set-away-message', { ns: 'away-message', defaultValue: 'Set an away message' })}
+          </Button>
+        )}
       </div>
+      <AwayInboxLine onEdit={() => setAwayOpen(true)} />
+      {awayOpen && (
+        <AwayMessageDialog
+          open={awayOpen}
+          onOpenChange={setAwayOpen}
+          current={awayQuery.data?.away ?? null}
+        />
+      )}
       <ChatFolderBar value={folder} onChange={setFolder} />
 
       {query.trim() ? (
@@ -341,6 +364,8 @@ export function MessagesColumn({
               <ConversationRow
                 key={conv.id}
                 conv={conv}
+                hasScheduled={scheduledChats.has(conv.id)}
+                autoReplied={autoReplied.has(conv.id)}
                 currentUserId={session.user.id}
                 t={t}
                 formatTime={formatTime}
@@ -360,6 +385,7 @@ export function MessagesColumn({
         <>
           {/* Saved Messages (M2) is always there, even in an empty inbox. */}
           <Spine className={listArrival}>
+            <RequestsEntry />
             <SavedMessagesRow />
           </Spine>
           <EmptyState
@@ -379,12 +405,15 @@ export function MessagesColumn({
         <>
           {/* One dot per unread thread (section 10, Inbox): the rows hang on the spine, read ones with no dot. */}
           <Spine className={listArrival}>
+            {folder === 'all' && <RequestsEntry />}
             {folder === 'all' && <SavedMessagesRow />}
             {conversations.map((conv) => (
               <ConversationRow
                 key={conv.id}
                 className={isNew(conv.id) ? ARRIVE : undefined}
                 conv={conv}
+                hasScheduled={scheduledChats.has(conv.id)}
+                autoReplied={autoReplied.has(conv.id)}
                 currentUserId={session.user.id}
                 t={t}
                 formatTime={formatTime}
@@ -426,12 +455,16 @@ type TFn = ReturnType<typeof useTranslation>['t'];
 
 function ConversationRow({
   conv,
+  hasScheduled,
+  autoReplied,
   currentUserId,
   t,
   formatTime,
   className,
 }: {
   conv: ConversationItem;
+  hasScheduled: boolean;
+  autoReplied: boolean;
   currentUserId: string;
   t: TFn;
   formatTime: (s: string) => string;
@@ -476,6 +509,8 @@ function ConversationRow({
               {conv.otherUser.isBot && <AutomatedBadge />}
             </div>
             <div className="flex shrink-0 items-baseline gap-2">
+              {hasScheduled && <ScheduledClock />}
+              {autoReplied && <AutoRepliedMark />}
               {conv.lastMessage && (
                 <span className="t-meta">{formatTime(conv.lastMessage.createdAt)}</span>
               )}

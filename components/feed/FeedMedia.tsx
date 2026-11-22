@@ -34,6 +34,8 @@ interface FeedMediaProps {
   /** Per-image alt text, aligned by index with `imageUrls` (may be shorter). */
   imageAlts?: string[];
   gifUrl?: string;
+  /** The GIF's description (sprint 06 #15); absent = undescribed, announced as "GIF". */
+  gifAlt?: string;
   /** Author-flagged sensitive media: covered until the post itself is opened. */
   sensitive?: boolean;
 }
@@ -56,6 +58,7 @@ export const FeedMedia = memo(function FeedMedia({
   imageUrls,
   imageAlts,
   gifUrl,
+  gifAlt,
   sensitive,
 }: FeedMediaProps) {
   const { t } = useTranslation('feed');
@@ -82,7 +85,7 @@ export const FeedMedia = memo(function FeedMedia({
 
   return (
     <div className="mt-3">
-      {gifUrl && <GifEmbed url={gifUrl} linked={false} />}
+      {gifUrl && <GifEmbed url={gifUrl} gifAlt={gifAlt ?? null} linked={false} />}
       {tiles.length > 0 && (
         <div
           className={`grid gap-0.5 ${FRAME} ${single ? 'grid-cols-1' : 'grid-cols-2'}`}

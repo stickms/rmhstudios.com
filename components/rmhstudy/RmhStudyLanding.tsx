@@ -39,6 +39,8 @@ import { useRouter } from '@tanstack/react-router';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
 import PlannerLink from '@/components/rmhstudy/PlannerLink';
+import HistoryLink from '@/components/rmhstudy/HistoryLink';
+import StudyStreakPrompt from '@/components/rmhstudy/StudyStreakPrompt';
 
 // F5 — body-doubling match; fetched after idle, not with the landing.
 const BodyDoublePanel =
@@ -376,6 +378,10 @@ export default function RmhStudyLanding() {
           </button>
 
           <PlannerLink />
+
+          <StudyStreakPrompt />
+
+          <HistoryLink />
 
           {idle && (
             <Suspense

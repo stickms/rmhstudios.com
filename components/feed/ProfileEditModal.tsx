@@ -150,6 +150,10 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   onShowLikesChange={form.setShowLikes}
                   dmPrivacy={form.dmPrivacy}
                   onDmPrivacyChange={form.setDmPrivacy}
+                  followListVisibility={form.followListVisibility}
+                  onFollowListVisibilityChange={form.setFollowListVisibility}
+                  dmRequests={form.dmRequests}
+                  onDmRequestsChange={form.setDmRequests}
                 />
               ) : null}
             </div>

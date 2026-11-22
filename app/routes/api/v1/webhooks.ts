@@ -4,8 +4,7 @@ import { z } from 'zod';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
 import { generateWebhookSecret, validateWebhookUrl } from '@/lib/webhooks/emit.server';
 import { normalizeWebhookEvents } from '@/lib/webhooks/events';
-
-const MAX_ENDPOINTS = 10;
+import { MAX_WEBHOOK_ENDPOINTS } from '@/lib/webhooks/limits';
 
 const createSchema = z.object({
   url: z.string().url(),
@@ -55,7 +54,7 @@ export const Route = createFileRoute('/api/v1/webhooks')({
             if (events.length === 0) return error('invalid_request', 'Provide at least one valid event name (or ["*"]).', 400);
 
             const count = await prisma.webhookEndpoint.count({ where: { userId } });
-            if (count >= MAX_ENDPOINTS) return error('invalid_request', `You can register at most ${MAX_ENDPOINTS} webhook endpoints.`, 400);
+            if (count >= MAX_WEBHOOK_ENDPOINTS) return error('invalid_request', `You can register at most ${MAX_WEBHOOK_ENDPOINTS} webhook endpoints.`, 400);
 
             const secret = generateWebhookSecret();
             const created = await prisma.webhookEndpoint.create({

@@ -13,6 +13,8 @@ import { isBirthdayOn } from '@/lib/gifting/birthday';
 import { filterOnlineUsers } from '@/lib/hot-counters.server';
 import { getActivity } from '@/lib/presence.server';
 import type { ProfilePresence } from '@/lib/presence-types';
+import { canSeeFollowLists } from '@/lib/social/follow-list-privacy.server';
+import { normalizeFollowListVisibility, type FollowListVisibility } from '@/lib/social/follow-list-privacy';
 
 /**
  * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
@@ -52,6 +54,7 @@ const profileSelect = {
       showLikes: true,
       guestbookMode: true,
       dmPrivacy: true,
+      dmRequests: true,
       profileSongSpotifyId: true,
       profileSongTitle: true,
       profileSongArtist: true,
@@ -62,6 +65,7 @@ const profileSelect = {
       statusExpires: true,
       presenceVisibility: true,
       presenceDetail: true,
+      followListVisibility: true,
       tipGoal: true,
       tipGoalLabel: true,
       membershipPriceCoins: true,
@@ -113,6 +117,12 @@ export interface ProfilePayload {
   /** G1 — true only on the owner's opted-in birthday (UTC). */
   birthdayToday: boolean;
   dmPrivacy: string;
+  /** Takes message requests when DM privacy refuses a sender (sprint 04 #16). */
+  dmRequests: boolean;
+  /** Who may browse the followers and following lists (lib/social/follow-list-privacy). */
+  followListVisibility: FollowListVisibility;
+  /** Whether THIS viewer may browse them; the counts above are public either way. */
+  canSeeFollowLists: boolean;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;
   profileSongArtist: string | null;
@@ -238,6 +248,7 @@ export async function getProfile(
     ? Boolean((user as Record<string, unknown>).followers) &&
       ((user as Record<string, unknown>).followers as unknown[]).length > 0
     : false;
+  const followListVisibility = normalizeFollowListVisibility(user.profile?.followListVisibility);
   const presence = await resolveProfilePresence({
     userId: user.id,
     viewerId,
@@ -278,6 +289,9 @@ export async function getProfile(
     guestbookMode: user.profile?.guestbookMode ?? 'off',
     birthdayToday: !!user.birthday && isBirthdayOn(user.birthday.month, user.birthday.day, new Date()),
     dmPrivacy: user.profile?.dmPrivacy ?? 'EVERYONE',
+    dmRequests: user.profile?.dmRequests ?? false,
+    followListVisibility,
+    canSeeFollowLists: await canSeeFollowLists(viewerId, user.id, followListVisibility),
     profileSongSpotifyId: user.profile?.profileSongSpotifyId ?? null,
     profileSongTitle: user.profile?.profileSongTitle ?? null,
     profileSongArtist: user.profile?.profileSongArtist ?? null,

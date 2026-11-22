@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { GameState } from '../engine/types';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
 import { TrainingNote } from './CustomStormPicker';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { NotRankedNote } from '@/components/games/assist-run';
 
 interface GameOverProps {
     state: GameState;
@@ -14,9 +16,11 @@ interface GameOverProps {
     newBest?: boolean;
     /** R14: an unranked custom storm — no leaderboard, nothing was submitted. */
     training?: boolean;
+    /** The server's verdict on the saved run: false when assists kept it off the board. */
+    ranked?: boolean | null;
 }
 
-export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved, newBest, training }) => {
+export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved, newBest, training, ranked }) => { const fmt = useLocaleFormat(); 
     const { t } = useTranslation("c-synapse-storm");
     const accuracy = state.puzzlesSolved > 0
         ? Math.round((state.puzzlesSolved / (state.puzzlesSolved + state.puzzlesMissed)) * 100)
@@ -33,7 +37,7 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
                     {t("neural-collapse", { defaultValue: "NEURAL COLLAPSE" })}
                 </h2>
 
-                <div className="go-final-score">{state.score.toLocaleString()}</div>
+                <div className="go-final-score">{fmt.number(state.score)}</div>
                 <p className="menu-tagline">{t("final-rating-prefix", { defaultValue: "Final Neural Efficiency Rating:" })} <span style={{ color: 'var(--accent-cyan)', fontWeight: 800 }}>{rank}</span></p>
 
                 <div className="go-stats-grid">
@@ -64,6 +68,8 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
                         </div>
                     </div>
                 </div>
+
+                <NotRankedNote ranked={ranked ?? null} className="assist-note assist-note--results" />
 
                 {training ? (
                     <TrainingNote />

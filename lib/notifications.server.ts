@@ -21,6 +21,7 @@ import {
   type NotifyMatrix,
 } from '@/lib/notify/categories';
 import { holdNotification } from '@/lib/notify/held.server';
+import { getConversationPref, shouldDeliver } from '@/lib/notify/conversation-prefs.server';
 import type { NotificationType } from '@prisma/client';
 
 /**
@@ -87,11 +88,24 @@ export interface NotificationListItem {
  */
 export async function listNotifications(
   userId: string,
-  opts: { cursor?: string | null; limit?: number } = {},
+  opts: {
+    cursor?: string | null;
+    limit?: number;
+    /** Only these types (a filter's types). */
+    types?: NotificationType[];
+    /** The inbox's Unread view: rows unread now, plus these ids (unread when the inbox opened). Scoped to the caller. */
+    unread?: { alsoIds: string[] };
+  } = {},
 ): Promise<{ items: NotificationListItem[]; nextCursor: string | null }> {
   const limit = pageSize(opts.limit);
   const rows = await prisma.notification.findMany({
-    where: { userId },
+    where: {
+      userId,
+      ...(opts.types ? { type: { in: opts.types } } : {}),
+      ...(opts.unread
+        ? { OR: [{ read: false }, ...(opts.unread.alsoIds.length ? [{ id: { in: opts.unread.alsoIds } }] : [])] }
+        : {}),
+    },
     orderBy: { createdAt: 'desc' },
     take: limit + 1,
     ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
@@ -142,6 +156,17 @@ export interface CreateNotificationInput {
    * toggles so a user un-liking and re-liking doesn't spam the recipient.
    */
   dedupeUnread?: boolean;
+  /**
+   * The conversation this is about (`scopeKeyFor('post', rootId)`). Present: the recipient's per-conversation
+   * All / Mentions only / None choice is applied first, exactly as `dispatch()` does for chats. Absent (every other
+   * caller): nothing changes.
+   */
+  conversationKey?: string;
+  /**
+   * Whether the recipient was personally addressed (a direct reply to their reply, an @mention): the input to
+   * "Mentions only". Only read with `conversationKey`; defaults to `type === 'MENTION'`.
+   */
+  addressed?: boolean;
 }
 
 /** Which preference column governs each notification type. */
@@ -288,6 +313,12 @@ export async function createNotification(input: CreateNotificationInput): Promis
   if (input.actorId && input.actorId === input.userId) return;
 
   try {
+    // The conversation gate runs before anything is read or written: a muted thread is not a notification source.
+    if (input.conversationKey && !isUnmutable(input)) {
+      const pref = await getConversationPref(input.userId, input.conversationKey);
+      if (!shouldDeliver(pref, input.addressed ?? input.type === 'MENTION')) return;
+    }
+
     const prefs = await loadPrefs(input.userId);
     if (isMuted(input, prefs)) return;
 

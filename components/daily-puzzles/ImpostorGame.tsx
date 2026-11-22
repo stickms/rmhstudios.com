@@ -327,7 +327,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                                 }
                                 emoji={<Trophy className="mx-auto size-8 text-site-warning" />}
                             />
-                            <PuzzleShareRow shareText={shareText} />
+                            <PuzzleShareRow gameMode="impostor" shareText={shareText} />
                         </PuzzleResultStack>
                     </motion.div>
                 )}

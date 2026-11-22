@@ -1,17 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
-import type {
-  BurnSummary,
-  HourlyPoint,
-} from '@/lib/ai/deepseek-balance';
-import {
-  fetchJson,
-  HttpError,
-  type FetchJsonOptions,
-} from '@/lib/http';
+import { useCallback, useEffect, useState } from 'react';
+import type { BurnSummary, HourlyPoint } from '@/lib/ai/deepseek-balance';
+import { fetchJson, HttpError, type FetchJsonOptions } from '@/lib/http';
 
 export interface LiveBalance {
   isAvailable: boolean;
@@ -38,9 +27,7 @@ export interface BalanceState {
   live: LiveBalance | null;
   latest: Snapshot[];
   /** Error code from the API (`not_configured`, `http_401`, `timeout`, …). */
-  error:
-    | string
-    | null;
+  error: string | null;
 }
 
 export interface HistorySeries {
@@ -49,11 +36,7 @@ export interface HistorySeries {
   summary: BurnSummary;
 }
 
-type JsonRecord =
-  Record<
-    string,
-    unknown
-  >;
+type JsonRecord = Record<string, unknown>;
 
 /**
  * `fetchJson` that hands back a failed call's JSON body instead of throwing it:
@@ -70,208 +53,86 @@ async function getJson(
   json: JsonRecord | null;
 }> {
   try {
-    const json =
-      await fetchJson<JsonRecord | null>(
-        url,
-        {
-          cache:
-            'no-store',
-          ...init,
-        },
-      );
+    const json = await fetchJson<JsonRecord | null>(url, {
+      cache: 'no-store',
+      ...init,
+    });
     return {
       ok: true,
       status: 200,
       json,
     };
   } catch (err) {
-    if (
-      !(err instanceof
-        HttpError)
-    )
-      throw err;
-    const body =
-      err.body;
+    if (!(err instanceof HttpError)) throw err;
+    const body = err.body;
     return {
       ok: false,
-      status:
-        err.status,
-      json:
-        typeof body ===
-          'object' &&
-        body !==
-          null &&
-        !Array.isArray(
-          body,
-        )
-          ? (body as JsonRecord)
-          : null,
+      status: err.status,
+      json: typeof body === 'object' && body !== null && !Array.isArray(body) ? (body as JsonRecord) : null,
     };
   }
 }
 
-function errorCode(
-  json: Record<
-    string,
-    unknown
-  > | null,
-  status: number,
-): string {
-  return typeof json?.error ===
-    'string'
-    ? json.error
-    : `http_${status}`;
+function errorCode(json: Record<string, unknown> | null, status: number): string {
+  return typeof json?.error === 'string' ? json.error : `http_${status}`;
 }
 
 /** Live balance + newest persisted snapshots, with a manual refresh action. */
 export function useDeepseekBalance() {
-  const [
-    state,
-    setState,
-  ] =
-    useState<BalanceState | null>(
-      null,
-    );
-  const [
-    loading,
-    setLoading,
-  ] =
-    useState(
-      true,
-    );
-  const [
-    refreshing,
-    setRefreshing,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    updatedAt,
-    setUpdatedAt,
-  ] =
-    useState<
-      | number
-      | null
-    >(
-      null,
-    );
+  const [state, setState] = useState<BalanceState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
 
-  const reload =
-    useCallback(async () => {
-      try {
-        const r =
-          await getJson(
-            '/api/admin/deepseek/balance',
-          );
-        const latest =
-          (r
-            .json
-            ?.latest as
-            | Snapshot[]
-            | undefined) ??
-          [];
-        if (
-          r.ok
-        ) {
-          setState(
-            {
-              live: r
-                .json
-                ?.live as LiveBalance,
-              latest,
-              error:
-                null,
-            },
-          );
-          setUpdatedAt(
-            Date.now(),
-          );
-        } else {
-          setState(
-            (
-              prev,
-            ) => ({
-              live:
-                r.status ===
-                503
-                  ? null
-                  : (prev?.live ??
-                    null),
-              latest,
-              error:
-                errorCode(
-                  r.json,
-                  r.status,
-                ),
-            }),
-          );
-        }
-      } catch {
-        setState(
-          (
-            prev,
-          ) => ({
-            live:
-              prev?.live ??
-              null,
-            latest:
-              prev?.latest ??
-              [],
-            error:
-              'network',
-          }),
-        );
-      } finally {
-        setLoading(
-          false,
-        );
+  const reload = useCallback(async () => {
+    try {
+      const r = await getJson('/api/admin/deepseek/balance');
+      const latest = (r.json?.latest as Snapshot[] | undefined) ?? [];
+      if (r.ok) {
+        setState({
+          live: r.json?.live as LiveBalance,
+          latest,
+          error: null,
+        });
+        setUpdatedAt(Date.now());
+      } else {
+        setState((prev) => ({
+          live: r.status === 503 ? null : (prev?.live ?? null),
+          latest,
+          error: errorCode(r.json, r.status),
+        }));
       }
-    }, []);
+    } catch {
+      setState((prev) => ({
+        live: prev?.live ?? null,
+        latest: prev?.latest ?? [],
+        error: 'network',
+      }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void reload();
-  }, [
-    reload,
-  ]);
+  }, [reload]);
 
   /** Fetch + persist a manual snapshot. Resolves to an error code or null. */
-  const refresh =
-    useCallback(async (): Promise<
-      | string
-      | null
-    > => {
-      setRefreshing(
-        true,
-      );
-      try {
-        const r =
-          await getJson(
-            '/api/admin/deepseek/refresh',
-            {
-              method:
-                'POST',
-            },
-          );
-        if (
-          !r.ok
-        )
-          return errorCode(
-            r.json,
-            r.status,
-          );
-        await reload();
-        return null;
-      } catch {
-        return 'network';
-      } finally {
-        setRefreshing(
-          false,
-        );
-      }
-    }, [
-      reload,
-    ]);
+  const refresh = useCallback(async (): Promise<string | null> => {
+    setRefreshing(true);
+    try {
+      const r = await getJson('/api/admin/deepseek/refresh', {
+        method: 'POST',
+      });
+      if (!r.ok) return errorCode(r.json, r.status);
+      await reload();
+      return null;
+    } catch {
+      return 'network';
+    } finally {
+      setRefreshing(false);
+    }
+  }, [reload]);
 
   return {
     state,
@@ -284,96 +145,32 @@ export function useDeepseekBalance() {
 }
 
 /** Hourly series for the window; refetches when `hours` or `nonce` changes. */
-export function useDeepseekHistory(
-  hours: number,
-  nonce: number,
-) {
-  const [
-    series,
-    setSeries,
-  ] =
-    useState<
-      | HistorySeries[]
-      | null
-    >(
-      null,
-    );
-  const [
-    loading,
-    setLoading,
-  ] =
-    useState(
-      true,
-    );
-  const [
-    failed,
-    setFailed,
-  ] =
-    useState(
-      false,
-    );
+export function useDeepseekHistory(hours: number, nonce: number) {
+  const [series, setSeries] = useState<HistorySeries[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(
-      true,
-    );
-    getJson(
-      `/api/admin/deepseek/history?hours=${hours}`,
-    )
-      .then(
-        (
-          r,
-        ) => {
-          if (
-            cancelled
-          )
-            return;
-          if (
-            r.ok
-          ) {
-            setSeries(
-              (r
-                .json
-                ?.series as HistorySeries[]) ??
-                [],
-            );
-            setFailed(
-              false,
-            );
-          } else
-            setFailed(
-              true,
-            );
-        },
-      )
-      .catch(
-        () => {
-          if (
-            !cancelled
-          )
-            setFailed(
-              true,
-            );
-        },
-      )
-      .finally(
-        () => {
-          if (
-            !cancelled
-          )
-            setLoading(
-              false,
-            );
-        },
-      );
+    setLoading(true);
+    getJson(`/api/admin/deepseek/history?hours=${hours}`)
+      .then((r) => {
+        if (cancelled) return;
+        if (r.ok) {
+          setSeries((r.json?.series as HistorySeries[]) ?? []);
+          setFailed(false);
+        } else setFailed(true);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, [
-    hours,
-    nonce,
-  ]);
+  }, [hours, nonce]);
 
   return {
     series,

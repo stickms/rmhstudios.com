@@ -26,7 +26,9 @@ export type LessonMode =
   | 'ear-interval'
   | 'ear-chord'
   | 'play-chord'
-  | 'sing-interval';
+  | 'sing-interval'
+  | 'play-scale'
+  | 'key-signature';
 
 export interface Lesson {
   id: string;
@@ -83,6 +85,31 @@ const RHYTHM_UNIT: Unit = {
       available: true,
     },
   ],
+};
+
+/**
+ * Scales and keys: the lessons are shared objects, so the singer's path (which gets only the two
+ * key-signature lessons, no instrument needed) and the piano and guitar path (all five) agree on
+ * every id and every learner's progress. Ids are stored: add new ones, never rename.
+ */
+const SCALES_UNIT_ID = 'scales-and-keys';
+
+const KEY_SIGNATURES_MAJOR: Lesson = {
+  id: 'key-signatures-major',
+  unit: SCALES_UNIT_ID,
+  title: 'Major key signatures',
+  summary: 'Read the sharps or flats at the start of a staff and name the major key.',
+  mode: 'key-signature',
+  available: true,
+};
+
+const KEY_SIGNATURES_MINOR: Lesson = {
+  id: 'key-signatures-minor',
+  unit: SCALES_UNIT_ID,
+  title: 'Minor key signatures',
+  summary: 'Name the minor key a signature belongs to, and see it share its signature with a major.',
+  mode: 'key-signature',
+  available: true,
 };
 
 export const PATH: Unit[] = [
@@ -206,6 +233,38 @@ export const PATH: Unit[] = [
       },
     ],
   },
+  {
+    id: SCALES_UNIT_ID,
+    title: 'Scales and keys',
+    lessons: [
+      {
+        id: 'scales-major-white',
+        unit: SCALES_UNIT_ID,
+        title: 'Play C, G, D and F major',
+        summary: 'Play four major scales one octave up, note by note in order.',
+        mode: 'play-scale',
+        available: true,
+      },
+      KEY_SIGNATURES_MAJOR,
+      {
+        id: 'scales-major-all',
+        unit: SCALES_UNIT_ID,
+        title: 'Every major scale',
+        summary: 'Play all fifteen major scales, with the sharps and flats spelled right.',
+        mode: 'play-scale',
+        available: true,
+      },
+      KEY_SIGNATURES_MINOR,
+      {
+        id: 'scales-minor-natural',
+        unit: SCALES_UNIT_ID,
+        title: 'Natural minor scales',
+        summary: 'Play A, E, D, G and C natural minor, one octave up.',
+        mode: 'play-scale',
+        available: true,
+      },
+    ],
+  },
   RHYTHM_UNIT,
 ];
 
@@ -280,6 +339,14 @@ export const VOICE_PATH: Unit[] = [
       },
     ],
   },
+  {
+    id: SCALES_UNIT_ID,
+    title: 'Key signatures',
+    lessons: [
+      KEY_SIGNATURES_MAJOR,
+      KEY_SIGNATURES_MINOR,
+    ],
+  },
   RHYTHM_UNIT,
 ];
 
@@ -291,6 +358,8 @@ export function pathFor(instrument: Instrument): Unit[] {
 const RANGE_LESSONS = new Set(
   VOICE_PATH.filter((u) => u !== RHYTHM_UNIT)
     .flatMap((u) => u.lessons)
+    // A key signature is read from the page: it needs no range, and no instrument either.
+    .filter((l) => l.mode !== 'key-signature')
     .map((l) => l.id),
 );
 

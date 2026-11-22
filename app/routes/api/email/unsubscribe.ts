@@ -2,13 +2,13 @@ import { createFileRoute } from '@tanstack/react-router';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
-import { verifyUnsubToken } from '@/lib/email/unsubscribe';
+import { verifyUnsubToken, type UnsubList } from '@/lib/email/unsubscribe';
 
 /**
  * /api/email/unsubscribe?token=... — PUBLIC, no login required.
  *
  * CAN-SPAM-compliant unsubscribe from the weekly digest and the admin mailing
- * lists (`?list=announcements|product`), split by method so a
+ * lists (`?list=announcements|product`) and the Logs-and-News email (`?list=logs`), split by method so a
  * GET never writes (redesign audit C2):
  *
  * - **GET** verifies the signed token and returns a confirmation page with one
@@ -79,18 +79,29 @@ const failed = (error: unknown): Response => {
  * digest, so every digest link already in an inbox keeps working. The list is
  * bound into the token's signature (`lib/email/unsubscribe.ts`).
  */
-type List = 'digest' | 'announcements' | 'product';
+type List = UnsubList;
 
-const LISTS: Record<List, { column: 'emailDigest' | 'emailAnnouncements' | 'emailProduct'; name: string }> = {
-  digest: { column: 'emailDigest', name: 'the weekly digest' },
-  announcements: { column: 'emailAnnouncements', name: 'site announcement emails' },
-  product: { column: 'emailProduct', name: 'product news emails' },
+/**
+ * The preference column each list turns off. `logs` has none: its email switch lives on each of the member's
+ * reading subscriptions, so the link turns email off on all of them.
+ */
+const COLUMNS: Partial<Record<List, 'emailDigest' | 'emailAnnouncements' | 'emailProduct'>> = {
+  digest: 'emailDigest',
+  announcements: 'emailAnnouncements',
+  product: 'emailProduct',
+};
+
+const NAMES: Record<List, string> = {
+  digest: 'the weekly digest',
+  announcements: 'site announcement emails',
+  product: 'product news emails',
+  logs: 'emails about new Logs and News',
 };
 
 const listOf = (url: URL): List | null => {
   const raw = url.searchParams.get('list');
-  if (raw === null || raw === 'digest') return 'digest';
-  return raw === 'announcements' || raw === 'product' ? raw : null;
+  if (raw === null) return 'digest';
+  return Object.hasOwn(NAMES, raw) ? (raw as List) : null;
 };
 
 /** The confirmation form. The token travels in the action URL, as it does for RFC 8058 one-click. */
@@ -111,7 +122,7 @@ export const Route = createFileRoute('/api/email/unsubscribe')({
           const token = url.searchParams.get('token') ?? '';
           const list = listOf(url);
           if (!list || !verifyUnsubToken(token, list)) return expired();
-          const { name } = LISTS[list];
+          const name = NAMES[list];
           return page(
             `Unsubscribe from ${name}?`,
             `You’ll stop receiving ${name}. You can turn them back on any time from your notification settings.`,
@@ -133,13 +144,21 @@ export const Route = createFileRoute('/api/email/unsubscribe')({
           const userId = list ? verifyUnsubToken(token, list) : null;
           if (!list || !userId) return expired();
 
-          const { column, name } = LISTS[list];
-          await prisma.notificationPreference.upsert({
-            where: { userId },
-            create: { userId, [column]: false },
-            update: { [column]: false },
-          });
-          invalidateNotificationPrefs(userId);
+          const name = NAMES[list];
+          const column = COLUMNS[list];
+          if (column) {
+            await prisma.notificationPreference.upsert({
+              where: { userId },
+              create: { userId, [column]: false },
+              update: { [column]: false },
+            });
+            invalidateNotificationPrefs(userId);
+          } else {
+            await prisma.readingSubscription.updateMany({
+              where: { userId, email: true },
+              data: { email: false },
+            });
+          }
 
           return page(
             'You’re unsubscribed',

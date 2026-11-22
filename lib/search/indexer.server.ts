@@ -20,6 +20,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { publishedLogWhere } from '@/lib/blog/publication';
 import {
   isEmbeddingStoreReady,
   upsertEmbedding,
@@ -135,7 +136,7 @@ async function loadBatch(
     }
     case 'blog': {
       const rows = await prisma.blogPost.findMany({
-        where: cursor,
+        where: { ...cursor, ...publishedLogWhere(new Date()) },
         select: { id: true, title: true, description: true },
         ...page,
       });

@@ -26,6 +26,7 @@ import {
   type ShelfId,
   type ShelfPrefs,
 } from '@/lib/reading/schema';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const PREF_KEY: Record<ShelfId, keyof ShelfPrefs> = {
   want: 'wantPublic',
@@ -33,7 +34,7 @@ const PREF_KEY: Record<ShelfId, keyof ShelfPrefs> = {
   read: 'readPublic',
 };
 
-export default function ShelvesPanel() {
+export default function ShelvesPanel() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-reading');
   const { data: session } = useSession();
   const labels = useShelfLabels();
@@ -140,7 +141,7 @@ export default function ShelvesPanel() {
                     </Link>
                     {e.finishedAt ? (
                       <time dateTime={e.finishedAt} className="text-sm text-site-text-muted">
-                        {new Date(e.finishedAt).toLocaleDateString()}
+                        {fmt.date(new Date(e.finishedAt))}
                       </time>
                     ) : null}
                     <Select

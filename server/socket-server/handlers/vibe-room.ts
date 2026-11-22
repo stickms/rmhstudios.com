@@ -15,10 +15,7 @@
  * NOTE: server code imports `lib/` RELATIVELY — server/CLAUDE.md gotcha 7.
  */
 
-import type {
-  Server,
-  Socket,
-} from 'socket.io';
+import type { Server, Socket } from 'socket.io';
 import {
   VIBE_ROOM_C2S,
   VIBE_ROOM_LIMITS,
@@ -30,10 +27,7 @@ import {
 import { config } from '../config';
 import { logger } from '../logger';
 import { getPrismaClient } from '../prisma-client';
-import {
-  createInstanceVerifier,
-  type InstanceVerifier,
-} from '../discord-instance';
+import { createInstanceVerifier, type InstanceVerifier } from '../discord-instance';
 import { checkRateLimit } from '../rate-limit';
 import { sanitizeString } from '../utils';
 
@@ -43,41 +37,22 @@ interface Member extends VibeRoomMember {
 
 interface Room {
   instanceId: string;
-  slug:
-    | string
-    | null;
-  members: Map<
-    string,
-    Member
-  >;
+  slug: string | null;
+  members: Map<string, Member>;
 }
 
-const rooms =
-  new Map<
-    string,
-    Room
-  >();
+const rooms = new Map<string, Room>();
 /** socket id -> the instance it is in (a socket is in at most one room). */
-const roomOf =
-  new Map<
-    string,
-    string
-  >();
+const roomOf = new Map<string, string>();
 
-let verifier: InstanceVerifier | null =
-  null;
+let verifier: InstanceVerifier | null = null;
 /** Created at boot (or on first use), which logs once if the bot token is not configured. */
 function instanceVerifier(): InstanceVerifier {
-  verifier ??=
-    createInstanceVerifier(
-      {
-        appId:
-          config.DISCORD_ACTIVITY_CLIENT_ID,
-        botToken:
-          config.DISCORD_ACTIVITY_BOT_TOKEN,
-        logger,
-      },
-    );
+  verifier ??= createInstanceVerifier({
+    appId: config.DISCORD_ACTIVITY_CLIENT_ID,
+    botToken: config.DISCORD_ACTIVITY_BOT_TOKEN,
+    logger,
+  });
   return verifier;
 }
 
@@ -87,32 +62,18 @@ export function initVibeRoomInstanceCheck(): void {
 }
 
 /** Test seam: replace (or clear) the instance verifier. */
-export function setInstanceVerifierForTests(
-  v: InstanceVerifier | null,
-): void {
-  verifier =
-    v;
+export function setInstanceVerifierForTests(v: InstanceVerifier | null): void {
+  verifier = v;
 }
 
-const SLUG_RE =
-  /^[A-Za-z0-9_-]{1,100}$/;
+const SLUG_RE = /^[A-Za-z0-9_-]{1,100}$/;
 
-const roomName =
-  (
-    instanceId: string,
-  ) =>
-    `vibe:room:${instanceId}`;
+const roomName = (instanceId: string) => `vibe:room:${instanceId}`;
 
-function fail(
-  socket: Socket,
-  code: VibeRoomErrorCode,
-): void {
-  socket.emit(
-    VIBE_ROOM_S2C.ERROR,
-    {
-      code,
-    },
-  );
+function fail(socket: Socket, code: VibeRoomErrorCode): void {
+  socket.emit(VIBE_ROOM_S2C.ERROR, {
+    code,
+  });
 }
 
 /**
@@ -120,62 +81,29 @@ function fail(
  * approach as Slice It's `identity()`: a linked account (`userId`) or a
  * verified Discord guest (`discordGuest`, name and avatar only).
  */
-function identity(
-  socket: Socket,
-): {
+function identity(socket: Socket): {
   name: string;
-  avatarUrl:
-    | string
-    | null;
+  avatarUrl: string | null;
   linked: boolean;
 } | null {
-  const data =
-    socket.data ??
-    {};
-  if (
-    typeof data.userId ===
-      'string' &&
-    data.userId
-  ) {
+  const data = socket.data ?? {};
+  if (typeof data.userId === 'string' && data.userId) {
     return {
-      name:
-        sanitizeString(
-          data.userName,
-          32,
-        ) ||
-        'Player',
-      avatarUrl:
-        typeof data.avatarUrl ===
-        'string'
-          ? data.avatarUrl
-          : null,
+      name: sanitizeString(data.userName, 32) || 'Player',
+      avatarUrl: typeof data.avatarUrl === 'string' ? data.avatarUrl : null,
       linked: true,
     };
   }
-  const guest =
-    data.discordGuest as
-      | {
-          name?: unknown;
-          avatarUrl?: unknown;
-        }
-      | undefined;
-  if (
-    guest &&
-    typeof guest.name ===
-      'string'
-  ) {
+  const guest = data.discordGuest as
+    | {
+        name?: unknown;
+        avatarUrl?: unknown;
+      }
+    | undefined;
+  if (guest && typeof guest.name === 'string') {
     return {
-      name:
-        sanitizeString(
-          guest.name,
-          32,
-        ) ||
-        'Guest',
-      avatarUrl:
-        typeof guest.avatarUrl ===
-        'string'
-          ? guest.avatarUrl
-          : null,
+      name: sanitizeString(guest.name, 32) || 'Guest',
+      avatarUrl: typeof guest.avatarUrl === 'string' ? guest.avatarUrl : null,
       linked: false,
     };
   }
@@ -183,578 +111,195 @@ function identity(
 }
 
 /** Earliest `joinedAt` wins; Map insertion order breaks a same-millisecond tie. */
-function hostSid(
-  room: Room,
-):
-  | string
-  | null {
-  let host: Member | null =
-    null;
+function hostSid(room: Room): string | null {
+  let host: Member | null = null;
   for (const m of room.members.values()) {
-    if (
-      !host ||
-      m.joinedAt <
-        host.joinedAt
-    )
-      host =
-        m;
+    if (!host || m.joinedAt < host.joinedAt) host = m;
   }
-  return (
-    host?.sid ??
-    null
-  );
+  return host?.sid ?? null;
 }
 
-function stateOf(
-  room: Room,
-): VibeRoomState {
+function stateOf(room: Room): VibeRoomState {
   return {
-    instanceId:
-      room.instanceId,
+    instanceId: room.instanceId,
     slug: room.slug,
-    hostSid:
-      hostSid(
-        room,
-      ),
-    members:
-      [
-        ...room.members.values(),
-      ].map(
-        ({
-          sid,
-          name,
-          avatarUrl,
-          linked,
-          away,
-        }) => ({
-          sid,
-          name,
-          avatarUrl,
-          linked,
-          away,
-        }),
-      ),
+    hostSid: hostSid(room),
+    members: [...room.members.values()].map(({ sid, name, avatarUrl, linked, away }) => ({
+      sid,
+      name,
+      avatarUrl,
+      linked,
+      away,
+    })),
   };
 }
 
-function broadcast(
-  io: Server,
-  room: Room,
-): void {
-  io.to(
-    roomName(
-      room.instanceId,
-    ),
-  ).emit(
-    VIBE_ROOM_S2C.STATE,
-    stateOf(
-      room,
-    ),
-  );
+function broadcast(io: Server, room: Room): void {
+  io.to(roomName(room.instanceId)).emit(VIBE_ROOM_S2C.STATE, stateOf(room));
 }
 
-function leaveRoom(
-  io: Server,
-  socket: Socket,
-): void {
-  const instanceId =
-    roomOf.get(
-      socket.id,
-    );
-  if (
-    !instanceId
-  )
-    return;
-  roomOf.delete(
-    socket.id,
-  );
-  void socket.leave(
-    roomName(
-      instanceId,
-    ),
-  );
-  const room =
-    rooms.get(
-      instanceId,
-    );
-  if (
-    !room
-  )
-    return;
-  room.members.delete(
-    socket.id,
-  );
-  if (
-    room
-      .members
-      .size ===
-    0
-  ) {
-    rooms.delete(
-      instanceId,
-    );
+function leaveRoom(io: Server, socket: Socket): void {
+  const instanceId = roomOf.get(socket.id);
+  if (!instanceId) return;
+  roomOf.delete(socket.id);
+  void socket.leave(roomName(instanceId));
+  const room = rooms.get(instanceId);
+  if (!room) return;
+  room.members.delete(socket.id);
+  if (room.members.size === 0) {
+    rooms.delete(instanceId);
     return;
   }
-  broadcast(
-    io,
-    room,
-  );
+  broadcast(io, room);
 }
 
-export function registerVibeRoomHandlers(
-  io: Server,
-  socket: Socket,
-): void {
-  const limited =
-    (
-      event: string,
-    ): boolean => {
-      if (
-        checkRateLimit(
-          socket.id,
-          event,
-        )
-      )
-        return false;
-      fail(
-        socket,
-        'RATE',
-      );
-      return true;
-    };
+export function registerVibeRoomHandlers(io: Server, socket: Socket): void {
+  const limited = (event: string): boolean => {
+    if (checkRateLimit(socket.id, event)) return false;
+    fail(socket, 'RATE');
+    return true;
+  };
 
-  socket.on(
-    VIBE_ROOM_C2S.JOIN,
-    async (
-      payload: unknown,
-    ) => {
-      if (
-        limited(
-          VIBE_ROOM_C2S.JOIN,
-        )
-      )
-        return;
-      const who =
-        identity(
-          socket,
-        );
-      if (
-        !who
-      )
-        return fail(
-          socket,
-          'AUTH',
-        );
-      const instanceId =
-        (
-          payload as {
-            instanceId?: unknown;
-          } | null
-        )
-          ?.instanceId;
-      if (
-        typeof instanceId !==
-          'string' ||
-        !VIBE_ROOM_LIMITS.INSTANCE_ID.test(
-          instanceId,
-        )
-      ) {
-        return fail(
-          socket,
-          'BAD_INSTANCE',
-        );
-      }
+  socket.on(VIBE_ROOM_C2S.JOIN, async (payload: unknown) => {
+    if (limited(VIBE_ROOM_C2S.JOIN)) return;
+    const who = identity(socket);
+    if (!who) return fail(socket, 'AUTH');
+    const instanceId = (
+      payload as {
+        instanceId?: unknown;
+      } | null
+    )?.instanceId;
+    if (typeof instanceId !== 'string' || !VIBE_ROOM_LIMITS.INSTANCE_ID.test(instanceId)) {
+      return fail(socket, 'BAD_INSTANCE');
+    }
 
-      // A Discord-authenticated socket may only join an instance Discord says it is in. The id is the
-      // one Discord returned for the token (`socket.data.discordId`), never anything from the payload.
-      // A web-session socket keeps today's behaviour (the instance id is unguessable). The await is
-      // inside the branch, so a socket with no Discord id runs the rest of the join synchronously.
-      const discordId =
-        typeof socket
-          .data
-          ?.discordId ===
-        'string'
-          ? socket
-              .data
-              .discordId
-          : null;
-      if (
-        discordId &&
-        roomOf.get(
-          socket.id,
-        ) !==
-          instanceId
-      ) {
-        const verdict =
-          await instanceVerifier().check(
-            discordId,
-            instanceId,
-          );
-        if (
-          socket.disconnected
-        )
-          return;
-        // 'unavailable' (Discord down, or our bot token refused) lets the join through: the
-        // instance id is unguessable, and an outage or a misconfigured token must not lock every
-        // Activity out. Spraying made-up ids is what 'over_budget' and 'not_member' refuse.
-        if (
-          verdict ===
-            'not_member' ||
-          verdict ===
-            'over_budget'
-        ) {
-          return fail(
-            socket,
-            'BAD_INSTANCE',
-          );
-        }
+    // A Discord-authenticated socket may only join an instance Discord says it is in. The id is the
+    // one Discord returned for the token (`socket.data.discordId`), never anything from the payload.
+    // A web-session socket keeps today's behaviour (the instance id is unguessable). The await is
+    // inside the branch, so a socket with no Discord id runs the rest of the join synchronously.
+    const discordId = typeof socket.data?.discordId === 'string' ? socket.data.discordId : null;
+    if (discordId && roomOf.get(socket.id) !== instanceId) {
+      const verdict = await instanceVerifier().check(discordId, instanceId);
+      if (socket.disconnected) return;
+      // 'unavailable' (Discord down, or our bot token refused) lets the join through: the
+      // instance id is unguessable, and an outage or a misconfigured token must not lock every
+      // Activity out. Spraying made-up ids is what 'over_budget' and 'not_member' refuse.
+      if (verdict === 'not_member' || verdict === 'over_budget') {
+        return fail(socket, 'BAD_INSTANCE');
       }
+    }
 
-      const current =
-        roomOf.get(
-          socket.id,
-        );
-      if (
-        current ===
-        instanceId
-      ) {
-        // Idempotent rejoin: just resend the state.
-        const existing =
-          rooms.get(
-            instanceId,
-          );
-        if (
-          existing
-        )
-          broadcast(
-            io,
-            existing,
-          );
-        return;
-      }
+    const current = roomOf.get(socket.id);
+    if (current === instanceId) {
+      // Idempotent rejoin: just resend the state.
+      const existing = rooms.get(instanceId);
+      if (existing) broadcast(io, existing);
+      return;
+    }
 
-      // Refuse a full room BEFORE leaving the current one, so a refused join leaves the socket where it was.
-      let room =
-        rooms.get(
-          instanceId,
-        );
-      if (
-        room &&
-        room
-          .members
-          .size >=
-          VIBE_ROOM_LIMITS.MAX_MEMBERS
-      ) {
-        return fail(
-          socket,
-          'FULL',
-        );
-      }
-      if (
-        current
-      )
-        leaveRoom(
-          io,
-          socket,
-        );
-      if (
-        !room
-      ) {
-        room =
-          {
-            instanceId,
-            slug: null,
-            members:
-              new Map(),
-          };
-        rooms.set(
-          instanceId,
-          room,
-        );
-      }
-      room.members.set(
-        socket.id,
-        {
-          sid: socket.id,
-          ...who,
-          away: false,
-          joinedAt:
-            Date.now(),
-        },
-      );
-      roomOf.set(
-        socket.id,
+    // Refuse a full room BEFORE leaving the current one, so a refused join leaves the socket where it was.
+    let room = rooms.get(instanceId);
+    if (room && room.members.size >= VIBE_ROOM_LIMITS.MAX_MEMBERS) {
+      return fail(socket, 'FULL');
+    }
+    if (current) leaveRoom(io, socket);
+    if (!room) {
+      room = {
         instanceId,
-      );
-      void socket.join(
-        roomName(
-          instanceId,
-        ),
-      );
-      broadcast(
-        io,
-        room,
-      );
-    },
-  );
+        slug: null,
+        members: new Map(),
+      };
+      rooms.set(instanceId, room);
+    }
+    room.members.set(socket.id, {
+      sid: socket.id,
+      ...who,
+      away: false,
+      joinedAt: Date.now(),
+    });
+    roomOf.set(socket.id, instanceId);
+    void socket.join(roomName(instanceId));
+    broadcast(io, room);
+  });
 
-  socket.on(
-    VIBE_ROOM_C2S.LEAVE,
-    () => {
-      if (
-        limited(
-          VIBE_ROOM_C2S.LEAVE,
-        )
-      )
-        return;
-      leaveRoom(
-        io,
-        socket,
-      );
-    },
-  );
+  socket.on(VIBE_ROOM_C2S.LEAVE, () => {
+    if (limited(VIBE_ROOM_C2S.LEAVE)) return;
+    leaveRoom(io, socket);
+  });
 
-  socket.on(
-    VIBE_ROOM_C2S.SELECT,
-    async (
-      payload: unknown,
-    ) => {
-      if (
-        limited(
-          VIBE_ROOM_C2S.SELECT,
-        )
-      )
-        return;
-      const instanceId =
-        roomOf.get(
-          socket.id,
-        );
-      const room =
-        instanceId
-          ? rooms.get(
-              instanceId,
-            )
-          : undefined;
-      if (
-        !room
-      )
-        return;
-      if (
-        hostSid(
-          room,
-        ) !==
-        socket.id
-      )
-        return fail(
-          socket,
-          'NOT_HOST',
-        );
-      const slug =
-        (
-          payload as {
-            slug?: unknown;
-          } | null
-        )
-          ?.slug;
-      if (
-        slug !==
-          null &&
-        (typeof slug !==
-          'string' ||
-          !SLUG_RE.test(
-            slug,
-          ))
-      ) {
-        return fail(
-          socket,
-          'BAD_SLUG',
-        );
-      }
-      if (
-        slug !==
-        null
-      ) {
-        try {
-          const page =
-            await getPrismaClient().vibePage.findUnique(
-              {
-                where:
-                  {
-                    slug,
-                  },
-                select:
-                  {
-                    status: true,
-                  },
-              },
-            );
-          if (
-            page?.status !==
-            'ready'
-          )
-            return fail(
-              socket,
-              'BAD_SLUG',
-            );
-        } catch {
-          return fail(
-            socket,
-            'BAD_SLUG',
-          );
-        }
-      }
-      // Re-check after the await: the room or host may have changed meanwhile.
-      if (
-        rooms.get(
-          room.instanceId,
-        ) !==
-          room ||
-        hostSid(
-          room,
-        ) !==
-          socket.id
-      )
-        return;
-      room.slug =
-        slug;
-      broadcast(
-        io,
-        room,
-      );
-    },
-  );
-
-  const setAway =
-    (
-      event: string,
-      away: boolean,
-    ) => {
-      if (
-        limited(
-          event,
-        )
-      )
-        return;
-      const instanceId =
-        roomOf.get(
-          socket.id,
-        );
-      const room =
-        instanceId
-          ? rooms.get(
-              instanceId,
-            )
-          : undefined;
-      const member =
-        room?.members.get(
-          socket.id,
-        );
-      if (
-        !room ||
-        !member ||
-        member.away ===
-          away
-      )
-        return;
-      member.away =
-        away;
-      broadcast(
-        io,
-        room,
-      );
-    };
-  socket.on(
-    VIBE_ROOM_C2S.AWAY,
-    () =>
-      setAway(
-        VIBE_ROOM_C2S.AWAY,
-        true,
-      ),
-  );
-  socket.on(
-    VIBE_ROOM_C2S.ACTIVE,
-    () =>
-      setAway(
-        VIBE_ROOM_C2S.ACTIVE,
-        false,
-      ),
-  );
-
-  socket.on(
-    VIBE_ROOM_C2S.SEND,
-    (
-      payload: unknown,
-    ) => {
-      if (
-        limited(
-          VIBE_ROOM_C2S.SEND,
-        )
-      )
-        return;
-      const instanceId =
-        roomOf.get(
-          socket.id,
-        );
-      if (
-        !instanceId
-      )
-        return;
-      const data =
-        (
-          payload as {
-            data?: unknown;
-          } | null
-        )
-          ?.data;
-      let size: number;
+  socket.on(VIBE_ROOM_C2S.SELECT, async (payload: unknown) => {
+    if (limited(VIBE_ROOM_C2S.SELECT)) return;
+    const instanceId = roomOf.get(socket.id);
+    const room = instanceId ? rooms.get(instanceId) : undefined;
+    if (!room) return;
+    if (hostSid(room) !== socket.id) return fail(socket, 'NOT_HOST');
+    const slug = (
+      payload as {
+        slug?: unknown;
+      } | null
+    )?.slug;
+    if (slug !== null && (typeof slug !== 'string' || !SLUG_RE.test(slug))) {
+      return fail(socket, 'BAD_SLUG');
+    }
+    if (slug !== null) {
       try {
-        size =
-          JSON.stringify(
-            data,
-          )
-            ?.length ??
-          0;
-      } catch {
-        // cyclic or otherwise unserialisable
-        return fail(
-          socket,
-          'BAD_PAYLOAD',
-        );
-      }
-      if (
-        size >
-        VIBE_ROOM_LIMITS.MAX_MESSAGE_CHARS
-      )
-        return fail(
-          socket,
-          'TOO_LARGE',
-        );
-      socket
-        .to(
-          roomName(
-            instanceId,
-          ),
-        )
-        .emit(
-          VIBE_ROOM_S2C.MESSAGE,
-          {
-            fromSid:
-              socket.id,
-            data,
+        const page = await getPrismaClient().vibePage.findUnique({
+          where: {
+            slug,
           },
-        );
-    },
-  );
+          select: {
+            status: true,
+          },
+        });
+        if (page?.status !== 'ready') return fail(socket, 'BAD_SLUG');
+      } catch {
+        return fail(socket, 'BAD_SLUG');
+      }
+    }
+    // Re-check after the await: the room or host may have changed meanwhile.
+    if (rooms.get(room.instanceId) !== room || hostSid(room) !== socket.id) return;
+    room.slug = slug;
+    broadcast(io, room);
+  });
+
+  const setAway = (event: string, away: boolean) => {
+    if (limited(event)) return;
+    const instanceId = roomOf.get(socket.id);
+    const room = instanceId ? rooms.get(instanceId) : undefined;
+    const member = room?.members.get(socket.id);
+    if (!room || !member || member.away === away) return;
+    member.away = away;
+    broadcast(io, room);
+  };
+  socket.on(VIBE_ROOM_C2S.AWAY, () => setAway(VIBE_ROOM_C2S.AWAY, true));
+  socket.on(VIBE_ROOM_C2S.ACTIVE, () => setAway(VIBE_ROOM_C2S.ACTIVE, false));
+
+  socket.on(VIBE_ROOM_C2S.SEND, (payload: unknown) => {
+    if (limited(VIBE_ROOM_C2S.SEND)) return;
+    const instanceId = roomOf.get(socket.id);
+    if (!instanceId) return;
+    const data = (
+      payload as {
+        data?: unknown;
+      } | null
+    )?.data;
+    let size: number;
+    try {
+      size = JSON.stringify(data)?.length ?? 0;
+    } catch {
+      // cyclic or otherwise unserialisable
+      return fail(socket, 'BAD_PAYLOAD');
+    }
+    if (size > VIBE_ROOM_LIMITS.MAX_MESSAGE_CHARS) return fail(socket, 'TOO_LARGE');
+    socket.to(roomName(instanceId)).emit(VIBE_ROOM_S2C.MESSAGE, {
+      fromSid: socket.id,
+      data,
+    });
+  });
 }
 
-export function handleVibeRoomDisconnect(
-  io: Server,
-  socket: Socket,
-): void {
-  leaveRoom(
-    io,
-    socket,
-  );
+export function handleVibeRoomDisconnect(io: Server, socket: Socket): void {
+  leaveRoom(io, socket);
 }
 
 /** Test hook: forget every room. */

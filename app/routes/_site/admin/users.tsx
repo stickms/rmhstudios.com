@@ -19,16 +19,18 @@ import { PageTabs } from '@/components/feed/PageTabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import {
   grantAdminMembershipApi,
-  setAdminUserCoinsApi,
   updateAdminUserApi,
 } from '@/lib/admin/admin-ops.contract';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { UserModerationPanel } from '@/components/admin/UserModerationPanel';
+import { CoinAdjustButton } from '@/components/admin/CoinAdjustDialog';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type AccountFilter = 'all' | 'people' | 'bots';
 
@@ -55,18 +57,25 @@ interface User {
 
 export const Route = createFileRoute('/_site/admin/users')({
   head: () => ({ meta: [{ title: 'Users | Admin | RMH Studios' }] }),
+  // s03-04: the reports queue links here with the reported member's handle and id, which opens their panel at the notes.
+  validateSearch: (search: Record<string, unknown>): { q?: string; open?: string } => ({
+    ...(typeof search.q === 'string' && search.q ? { q: search.q.slice(0, 100) } : {}),
+    ...(typeof search.open === 'string' && search.open ? { open: search.open.slice(0, 64) } : {}),
+  }),
   component: AdminUsersPage,
 });
 
-function AdminUsersPage() {
+function AdminUsersPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("admin");
   const confirm = useConfirm();
+  const prompt = usePrompt();
   const { data: session } = useSession();
   const navigate = useNavigate();
+  const linked = Route.useSearch();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(linked.q ?? '');
   const [updating, setUpdating] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -77,7 +86,7 @@ function AdminUsersPage() {
   // flat list — this narrows the table to one population or the other.
   const [accounts, setAccounts] = useState<AccountFilter>('all');
   // The one user whose moderation record is open under their row.
-  const [moderating, setModerating] = useState<string | null>(null);
+  const [moderating, setModerating] = useState<string | null>(linked.open ?? null);
   const arrival = useArrival(!(loading && users.length === 0));
   const isNewUser = useArrivingKeys(users.map((u) => u.id));
 
@@ -149,14 +158,14 @@ function AdminUsersPage() {
   };
 
   const grantMembership = async (userId: string) => {
-    const choice = prompt(t("prompt-grant-membership", { defaultValue: 'Grant membership — enter "starter" or "pro" (or "revoke" to remove):' }), 'pro');
+    const choice = await prompt({ title: t("prompt-grant-membership", { defaultValue: 'Grant membership — enter "starter" or "pro" (or "revoke" to remove):' }), initialValue: 'pro' });
     if (!choice) return;
     const action = choice.trim().toLowerCase();
     let body: { revoke: true } | { tier: 'starter' | 'pro'; months: number };
     if (action === 'revoke') {
       body = { revoke: true };
     } else if (action === 'starter' || action === 'pro') {
-      const monthsStr = prompt(t("prompt-how-many-months", { defaultValue: 'How many months?' }), '1');
+      const monthsStr = await prompt({ title: t("prompt-how-many-months", { defaultValue: 'How many months?' }), initialValue: '1' });
       const months = Math.max(1, Math.min(24, parseInt(monthsStr || '1', 10) || 1));
       body = { tier: action, months };
     } else {
@@ -172,29 +181,6 @@ function AdminUsersPage() {
       } catch (e) {
         // An HTTP refusal reports the server's message; anything else is "can't connect".
         if (e instanceof HttpError) toast.error(t("alert-membership-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
-        else throw e;
-      }
-    } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
-  };
-
-  const setCoins = async (user: User) => {
-    const current = user.profile?.coins ?? 0;
-    const input = prompt(t("prompt-set-coins", { defaultValue: "Set RMH coin balance for this user:" }), String(current));
-    if (input === null) return;
-    const coins = parseInt(input.trim(), 10);
-    if (!Number.isFinite(coins) || coins < 0) {
-      toast.error(t("alert-invalid-coins", { defaultValue: "Enter a whole number of 0 or more." }));
-      return;
-    }
-    if (updating !== null) return;
-    setUpdating(user.id);
-    try {
-      try {
-        const data = await api(setAdminUserCoinsApi, { params: { id: user.id }, body: { coins } });
-        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, profile: { coins: data.coins } } : u));
-        toast.success(t("alert-coins-updated", { defaultValue: "Coin balance updated." }));
-      } catch (e) {
-        if (e instanceof HttpError) toast.error(t("alert-set-coins-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
         else throw e;
       }
     } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
@@ -337,7 +323,7 @@ function AdminUsersPage() {
                     <div className="t-meta flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1 sm:order-last sm:w-24 sm:flex-none sm:flex-col sm:items-end">
                       <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
                       <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
-                      <span className="flex items-center gap-1"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
+                      <span className="flex items-center gap-1"><Coins className="size-3" aria-hidden />{fmt.number((user.profile?.coins ?? 0))}</span>
                       <span className={cn(user.activeStrikes > 0 && 'text-site-danger')}>
                         {t("user-strikes", { count: user.activeStrikes, defaultValue_one: "{{count}} strike", defaultValue: "{{count}} strikes" })}
                       </span>
@@ -371,7 +357,7 @@ function AdminUsersPage() {
                         aria-expanded={moderating === user.id}
                         label={t("title-moderation", { defaultValue: "Strikes and timeouts" })}
                       />
-                      <IconButton icon={Coins} size="icon-sm" variant="default" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
+                      <CoinAdjustButton userId={user.id} userName={user.name} balance={user.profile?.coins ?? 0} disabled={busy} onBalanceChange={(coins) => setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, profile: { coins } } : u)))} />
                       <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
                       <IconButton
                         icon={Shield}
@@ -388,6 +374,8 @@ function AdminUsersPage() {
                       <UserModerationPanel
                         userId={user.id}
                         isAdminUser={user.isAdmin}
+                        displayName={user.name || user.handle || user.username}
+                        revealNotes={linked.open === user.id}
                         onChanged={(summary) =>
                           setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, ...summary } : u)))
                         }

@@ -66,6 +66,7 @@ model RmhTypeMatchPlayer {
   @@unique([matchId, userId])
   @@index([profileId])
   @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
   @@index([wpm(sort: Desc)])
   @@map("rmhtype_match_player")
 }
@@ -88,4 +89,65 @@ model RmhTypeKeyStat {
 
   @@id([userId, key, layout])
   @@map("rmhtype_key_stat")
+}
+
+/// Touch-typing course progress: one row per member and lesson, bests only.
+///
+/// `stars` is recomputed on the server from speed and accuracy
+/// (`lib/rmhtype/lessons.ts`), never taken from a client. Lesson ids live in the
+/// curriculum, not in a table, so a lesson can be reworded without a migration.
+model RmhTypeLessonProgress {
+  userId       String
+  lessonId     String    @db.VarChar(32)
+  bestWpm      Float
+  bestAccuracy Float
+  stars        Int
+  attempts     Int       @default(0)
+  completedAt  DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lessonId])
+  @@map("rmhtype_lesson_progress")
+}
+
+/// One member's attempt at one day's passage. The row is created by Start and is the
+/// server's clock: `startedAt` is never rewritten, so the elapsed time is always
+/// measured from the first Start. `day` is the UTC day, `YYYYMMDD`. `wpm`, `accuracy`
+/// and `timeMs` stay null until a plausible Finish lands; a Finish past the window
+/// sets `finishedAt` alone (did not finish).
+model RmhTypeDailyEntry {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day        String    @db.VarChar(8)
+  passageId  String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  wpm        Float?
+  accuracy   Float?
+  timeMs     Int?
+
+  @@unique([userId, day])
+  @@index([day, wpm(sort: Desc)])
+  @@map("rmhtype_daily_entry")
+}
+
+/// A member's best run on one passage, kept as a coarse progress curve so the next
+/// attempt can race it. Positions only (characters reached per 250 ms) — no key
+/// identities, no errors, nothing a key logger would want. At most 500 per member.
+model RmhTypeGhost {
+  userId    String
+  user      User     @relation("RmhTypeGhosts", fields: [userId], references: [id], onDelete: Cascade)
+  passageId String
+  wpm       Float
+  timeMs    Int
+  samples   Int[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, passageId])
+  @@index([userId, updatedAt])
+  @@map("rmhtype_ghost")
 }

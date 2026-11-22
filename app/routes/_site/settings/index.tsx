@@ -5,9 +5,11 @@
  */
 
 import { useMemo, useState } from 'react';
+import { SendFeedback } from '@/components/feedback/SendFeedback';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { fetchOwnedThemes } from '@/lib/themes/owned-themes.functions';
 import { useTranslation } from 'react-i18next';
+import { settingsNavText } from '@/components/settings/settings-nav-labels';
 import { ChevronRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
@@ -76,12 +78,13 @@ function SettingsPage() {
     (d) => !isAlert(d),
   );
   const accountItems = groups.filter((g) => g.group !== 'personalization').flatMap((g) => g.items);
+  const navText = settingsNavText(t);
   const row = (d: (typeof lookItems)[number]) => (
     <DestinationRow
       key={d.id}
       to={d.to}
-      label={t(`settings-nav-${d.id}`, { defaultValue: d.label })}
-      hint={t(`settings-nav-${d.id}-hint`, { defaultValue: d.hint })}
+      label={navText[d.id]?.label ?? d.label}
+      hint={navText[d.id]?.hint ?? d.hint}
     />
   );
 
@@ -162,6 +165,20 @@ function SettingsPage() {
           {!isPending && !signedIn && signInPrompt}
           <div>
             {accountItems.map(row)}
+            {signedIn && !query && (
+              <SendFeedback className="settings-row w-full text-start">
+                <span className="settings-row__text">
+                  <span className="settings-row__name block">
+                    {t('settings-send-feedback', { ns: 'feedback-inbox', defaultValue: 'Send feedback' })}
+                  </span>
+                  <span className="settings-row__hint block">
+                    {t('settings-send-feedback-hint', { ns: 'feedback-inbox',
+                      defaultValue: 'Report a bug or an accessibility barrier, with the page attached',
+                    })}
+                  </span>
+                </span>
+              </SendFeedback>
+            )}
             {signedIn && handle && !query && (
               <DestinationRow
                 to={`/u/${handle}`}

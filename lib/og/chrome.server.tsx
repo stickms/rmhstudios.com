@@ -54,16 +54,14 @@ import { Resvg } from '@resvg/resvg-js';
 /* Card sizes                                                                 */
 /* -------------------------------------------------------------------------- */
 
-export const LANDSCAPE =
-  {
-    width: 1200,
-    height: 630,
-  } as const;
-export const STORY =
-  {
-    width: 1080,
-    height: 1920,
-  } as const;
+export const LANDSCAPE = {
+  width: 1200,
+  height: 630,
+} as const;
+export const STORY = {
+  width: 1080,
+  height: 1920,
+} as const;
 
 /* -------------------------------------------------------------------------- */
 /* The mark                                                                   */
@@ -71,70 +69,34 @@ export const STORY =
 
 // Same lookup as the fonts (lib/og/fonts.server.ts): dev and tests run from the
 // app root, the production image serves the built tree under .output/public.
-const FAVICON_PATHS =
-  [
-    path.join(
-      process.cwd(),
-      'public',
-      'favicon.svg',
-    ),
-    path.join(
-      process.cwd(),
-      '.output',
-      'public',
-      'favicon.svg',
-    ),
-    path.join(
-      process.cwd(),
-      'dist',
-      'public',
-      'favicon.svg',
-    ),
-  ];
+const FAVICON_PATHS = [
+  path.join(process.cwd(), 'public', 'favicon.svg'),
+  path.join(process.cwd(), '.output', 'public', 'favicon.svg'),
+  path.join(process.cwd(), 'dist', 'public', 'favicon.svg'),
+];
 
 /** Rasterised once per process, at the largest size a card draws it. */
 const FAVICON_PX = 256;
-let faviconUri:
-  | string
-  | null
-  | undefined;
+let faviconUri: string | null | undefined;
 
-function faviconDataUri():
-  | string
-  | null {
-  if (
-    faviconUri !==
-    undefined
-  )
-    return faviconUri;
-  faviconUri =
-    null;
+function faviconDataUri(): string | null {
+  if (faviconUri !== undefined) return faviconUri;
+  faviconUri = null;
   for (const file of FAVICON_PATHS) {
     try {
-      const svg =
-        readFileSync(
-          file,
-          'utf8',
-        );
-      const png =
-        new Resvg(
-          svg,
-          {
-            fitTo:
-              {
-                mode: 'width',
-                value:
-                  FAVICON_PX,
-              },
-            background:
-              'rgba(0,0,0,0)',
-            font: {
-              loadSystemFonts: false,
-            },
-          },
-        )
-          .render()
-          .asPng();
+      const svg = readFileSync(file, 'utf8');
+      const png = new Resvg(svg, {
+        fitTo: {
+          mode: 'width',
+          value: FAVICON_PX,
+        },
+        background: 'rgba(0,0,0,0)',
+        font: {
+          loadSystemFonts: false,
+        },
+      })
+        .render()
+        .asPng();
       faviconUri = `data:image/png;base64,${Buffer.from(png).toString('base64')}`;
       break;
     } catch {
@@ -150,47 +112,23 @@ function faviconDataUri():
  * logo. The favicon is a white disc, which would vanish into Steel's #fafafa
  * page, so it gets the 1px hairline ring every picture takes (S5).
  */
-export function brandMark(
-  size: number,
-): React.ReactElement {
-  const src =
-    faviconDataUri();
+export function brandMark(size: number): React.ReactElement {
+  const src = faviconDataUri();
   return (
     <div
       style={{
-        display:
-          'flex',
-        width:
-          size,
-        height:
-          size,
-        borderRadius:
-          size,
+        display: 'flex',
+        width: size,
+        height: size,
+        borderRadius: size,
         border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
-        backgroundColor:
-          SURFACE,
-        overflow:
-          'hidden',
+        backgroundColor: SURFACE,
+        overflow: 'hidden',
       }}
     >
       {src ? (
         // satori is handed this tree, not the DOM: `alt` is inert here.
-        <img
-          src={
-            src
-          }
-          alt=""
-          width={
-            size -
-            HAIRLINE_W *
-              2
-          }
-          height={
-            size -
-            HAIRLINE_W *
-              2
-          }
-        />
+        <img src={src} alt="" width={size - HAIRLINE_W * 2} height={size - HAIRLINE_W * 2} />
       ) : null}
     </div>
   );
@@ -205,25 +143,16 @@ export function brandMark(
  * `t-label` (13px, 600, muted), doubled by `SCALE`: sentence case and no
  * tracking, because Steel sets no letterspaced capitals (Y2).
  */
-export function kicker(
-  text: string,
-  color = MUTED,
-  scale = 1,
-): React.ReactElement {
+export function kicker(text: string, color = MUTED, scale = 1): React.ReactElement {
   return (
     <span
       style={{
-        fontSize:
-          13 *
-          SCALE *
-          scale,
+        fontSize: 13 * SCALE * scale,
         fontWeight: 600,
         color,
       }}
     >
-      {
-        text
-      }
+      {text}
     </span>
   );
 }
@@ -232,9 +161,7 @@ export function kicker(
  * Display tracking: `t-title`'s -0.025em at every size. Kept as a function so
  * the renderers' call sites read the same.
  */
-export function displayTracking(
-  _fontSize: number,
-): string {
+export function displayTracking(_fontSize: number): string {
   // Steel has one display tracking, `t-title`'s (design.md §3).
   return '-0.025em';
 }
@@ -268,45 +195,13 @@ export interface FitOptions {
  * approximate by construction, so callers should also cap the input length: the
  * estimate protects the layout, the cap protects the estimate.
  */
-export function fitText(
-  text: string,
-  {
-    width,
-    height,
-    steps,
-    lineHeight = 1.28,
-  }: FitOptions,
-): number {
+export function fitText(text: string, { width, height, steps, lineHeight = 1.28 }: FitOptions): number {
   for (const size of steps) {
-    const perLine =
-      Math.max(
-        1,
-        Math.floor(
-          width /
-            (size *
-              AVG_ADVANCE),
-        ),
-      );
-    const lines =
-      Math.max(
-        1,
-        Math.ceil(
-          text.length /
-            perLine,
-        ),
-      );
-    if (
-      lines *
-        size *
-        lineHeight <=
-      height
-    )
-      return size;
+    const perLine = Math.max(1, Math.floor(width / (size * AVG_ADVANCE)));
+    const lines = Math.max(1, Math.ceil(text.length / perLine));
+    if (lines * size * lineHeight <= height) return size;
   }
-  return steps[
-    steps.length -
-      1
-  ];
+  return steps[steps.length - 1];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -327,27 +222,16 @@ interface PaneOptions {
  * the rim from the width they lay out), and there is no horizontal padding so
  * the content lines up with the brand row above it.
  */
-export function pane({
-  style,
-  children,
-}: PaneOptions): React.ReactElement {
-  const row =
-    style?.flexDirection ===
-    'row';
+export function pane({ style, children }: PaneOptions): React.ReactElement {
+  const row = style?.flexDirection === 'row';
   return (
     <div
       style={{
-        display:
-          'flex',
-        flexDirection:
-          'column',
+        display: 'flex',
+        flexDirection: 'column',
         border: `${HAIRLINE_W}px solid transparent`,
-        paddingTop:
-          24 *
-          SCALE,
-        paddingBottom:
-          24 *
-          SCALE,
+        paddingTop: 24 * SCALE,
+        paddingBottom: 24 * SCALE,
         ...style,
         // After the caller's style, which sets an all-round `padding`: the
         // content hangs from the same left edge as the brand row and the rules.
@@ -358,15 +242,12 @@ export function pane({
         paddingRight: 0,
         ...(row
           ? {
-              justifyContent:
-                'space-between' as const,
+              justifyContent: 'space-between' as const,
             }
           : {}),
       }}
     >
-      {
-        children
-      }
+      {children}
     </div>
   );
 }
@@ -375,31 +256,20 @@ export function pane({
  * A quoted or embedded fragment of the page's own content: Steel's picture
  * treatment (`--site-bg-subtle`, a 1px border, the 8px radius; S5).
  */
-export function inset({
-  style,
-  children,
-}: PaneOptions): React.ReactElement {
+export function inset({ style, children }: PaneOptions): React.ReactElement {
   return (
     <div
       style={{
-        display:
-          'flex',
-        flexDirection:
-          'column',
-        backgroundColor:
-          WELL,
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: WELL,
         border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
-        borderRadius:
-          RADIUS,
-        padding:
-          18 *
-          SCALE,
+        borderRadius: RADIUS,
+        padding: 18 * SCALE,
         ...style,
       }}
     >
-      {
-        children
-      }
+      {children}
     </div>
   );
 }
@@ -423,111 +293,54 @@ export interface Stat {
  * hairline-outlined for the rest, so one number survives being shrunk to an
  * iMessage thumbnail.
  */
-export function statChips(
-  stats: Stat[],
-  scale = 1,
-): React.ReactElement | null {
-  const shown =
-    stats.filter(
-      (
-        s,
-      ) =>
-        s.value,
-    );
-  if (
-    !shown.length
-  )
-    return null;
+export function statChips(stats: Stat[], scale = 1): React.ReactElement | null {
+  const shown = stats.filter((s) => s.value);
+  if (!shown.length) return null;
   return (
     <div
       style={{
-        display:
-          'flex',
-        alignItems:
-          'center',
-        gap:
-          10 *
-          SCALE,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10 * SCALE,
       }}
     >
-      {shown.map(
-        (
-          s,
-        ) => (
-          <div
-            key={`${s.label}:${s.value}`}
+      {shown.map((s) => (
+        <div
+          key={`${s.label}:${s.value}`}
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 5 * SCALE,
+            paddingLeft: 11 * SCALE * scale,
+            paddingRight: 11 * SCALE * scale,
+            paddingTop: 5 * SCALE * scale,
+            paddingBottom: 6 * SCALE * scale,
+            borderRadius: RADIUS,
+            backgroundColor: s.lead ? INK : SURFACE,
+            border: `${HAIRLINE_W}px solid ${s.lead ? INK : HAIRLINE}`,
+          }}
+        >
+          <span
             style={{
-              display:
-                'flex',
-              alignItems:
-                'baseline',
-              gap:
-                5 *
-                SCALE,
-              paddingLeft:
-                11 *
-                SCALE *
-                scale,
-              paddingRight:
-                11 *
-                SCALE *
-                scale,
-              paddingTop:
-                5 *
-                SCALE *
-                scale,
-              paddingBottom:
-                6 *
-                SCALE *
-                scale,
-              borderRadius:
-                RADIUS,
-              backgroundColor:
-                s.lead
-                  ? INK
-                  : SURFACE,
-              border: `${HAIRLINE_W}px solid ${s.lead ? INK : HAIRLINE}`,
+              fontSize: 15 * SCALE * scale,
+              fontWeight: 600,
+              letterSpacing: '-0.022em',
+              color: s.lead ? INK_FG : INK,
             }}
           >
-            <span
-              style={{
-                fontSize:
-                  15 *
-                  SCALE *
-                  scale,
-                fontWeight: 600,
-                letterSpacing:
-                  '-0.022em',
-                color:
-                  s.lead
-                    ? INK_FG
-                    : INK,
-              }}
-            >
-              {
-                s.value
-              }
-            </span>
-            <span
-              style={{
-                fontSize:
-                  11 *
-                  SCALE *
-                  scale,
-                fontWeight: 500,
-                color:
-                  s.lead
-                    ? INK_FG
-                    : MUTED,
-              }}
-            >
-              {
-                s.label
-              }
-            </span>
-          </div>
-        ),
-      )}
+            {s.value}
+          </span>
+          <span
+            style={{
+              fontSize: 11 * SCALE * scale,
+              fontWeight: 500,
+              color: s.lead ? INK_FG : MUTED,
+            }}
+          >
+            {s.label}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -541,59 +354,36 @@ export function statChips(
  * the same hairline every surface takes, so a transparent PNG doesn't dissolve
  * into the white canvas.
  */
-export function avatarDisc(
-  dataUri:
-    | string
-    | null,
-  initial: string,
-  size: number,
-): React.ReactElement {
-  if (
-    dataUri
-  ) {
+export function avatarDisc(dataUri: string | null, initial: string, size: number): React.ReactElement {
+  if (dataUri) {
     return (
       <div
         style={{
-          display:
-            'flex',
-          position:
-            'relative',
-          width:
-            size,
-          height:
-            size,
+          display: 'flex',
+          position: 'relative',
+          width: size,
+          height: size,
         }}
       >
         {/* This tree is handed to satori, not to the DOM — `alt` is inert here,
             and the card's text alternative is the route's `og:image:alt`. */}
         <img
-          src={
-            dataUri
-          }
+          src={dataUri}
           alt=""
-          width={
-            size
-          }
-          height={
-            size
-          }
+          width={size}
+          height={size}
           style={{
-            borderRadius:
-              size,
+            borderRadius: size,
           }}
         />
         <div
           style={{
-            position:
-              'absolute',
+            position: 'absolute',
             left: 0,
             top: 0,
-            width:
-              size,
-            height:
-              size,
-            borderRadius:
-              size,
+            width: size,
+            height: size,
+            borderRadius: size,
             border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
           }}
         />
@@ -603,32 +393,20 @@ export function avatarDisc(
   return (
     <div
       style={{
-        display:
-          'flex',
-        alignItems:
-          'center',
-        justifyContent:
-          'center',
-        width:
-          size,
-        height:
-          size,
-        borderRadius:
-          size,
-        backgroundColor:
-          WELL,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        borderRadius: size,
+        backgroundColor: WELL,
         border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
-        color:
-          INK,
-        fontSize:
-          size *
-          0.42,
+        color: INK,
+        fontSize: size * 0.42,
         fontWeight: 600,
       }}
     >
-      {
-        initial
-      }
+      {initial}
     </div>
   );
 }
@@ -663,51 +441,35 @@ export function framedImage(
   return (
     <div
       style={{
-        display:
-          'flex',
-        position:
-          'relative',
-        width:
-          image.width,
-        height:
-          image.height,
+        display: 'flex',
+        position: 'relative',
+        width: image.width,
+        height: image.height,
       }}
     >
       {/* satori is handed this tree, not the DOM: `alt` is inert here, and the
           card's text alternative is the route's `og:image:alt`. */}
       <img
-        src={
-          image.src
-        }
+        src={image.src}
         alt=""
-        width={
-          image.width
-        }
-        height={
-          image.height
-        }
+        width={image.width}
+        height={image.height}
         style={{
-          borderRadius:
-            radius,
+          borderRadius: radius,
         }}
       />
       <div
         style={{
-          position:
-            'absolute',
+          position: 'absolute',
           left: 0,
           top: 0,
-          width:
-            image.width,
-          height:
-            image.height,
-          borderRadius:
-            radius,
+          width: image.width,
+          height: image.height,
+          borderRadius: radius,
           border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
         }}
       />
-      {overlay ??
-        null}
+      {overlay ?? null}
     </div>
   );
 }
@@ -719,51 +481,28 @@ export function framedImage(
  * Positioned by the caller; it is absolute so it can sit inside a `framedImage`
  * without being measured as part of the tile.
  */
-export function mediaTag(
-  text: string,
-  inset: number,
-): React.ReactElement {
+export function mediaTag(text: string, inset: number): React.ReactElement {
   return (
     <div
       style={{
-        position:
-          'absolute',
+        position: 'absolute',
         left: inset,
-        bottom:
-          inset,
-        display:
-          'flex',
-        alignItems:
-          'center',
-        paddingLeft:
-          8 *
-          SCALE,
-        paddingRight:
-          8 *
-          SCALE,
-        paddingTop:
-          3 *
-          SCALE,
-        paddingBottom:
-          4 *
-          SCALE,
-        borderRadius:
-          RADIUS_SM,
-        backgroundColor:
-          INK,
-        color:
-          INK_FG,
-        fontSize:
-          11 *
-          SCALE,
+        bottom: inset,
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: 8 * SCALE,
+        paddingRight: 8 * SCALE,
+        paddingTop: 3 * SCALE,
+        paddingBottom: 4 * SCALE,
+        borderRadius: RADIUS_SM,
+        backgroundColor: INK,
+        color: INK_FG,
+        fontSize: 11 * SCALE,
         fontWeight: 600,
-        letterSpacing:
-          '0',
+        letterSpacing: '0',
       }}
     >
-      {
-        text
-      }
+      {text}
     </div>
   );
 }
@@ -776,55 +515,29 @@ export function mediaTag(
  * shape degrades honestly: if a renderer ever drops `transform`, what is left is
  * a mark inside a disc rather than a missing-glyph box.
  */
-export function verifiedBadge(
-  size: number,
-): React.ReactElement {
-  const arm =
-    Math.round(
-      size *
-        0.34,
-    );
-  const weight =
-    Math.max(
-      2,
-      Math.round(
-        size *
-          0.12,
-      ),
-    );
+export function verifiedBadge(size: number): React.ReactElement {
+  const arm = Math.round(size * 0.34);
+  const weight = Math.max(2, Math.round(size * 0.12));
   return (
     <div
       style={{
-        display:
-          'flex',
-        alignItems:
-          'center',
-        justifyContent:
-          'center',
-        width:
-          size,
-        height:
-          size,
-        borderRadius:
-          size,
-        backgroundColor:
-          INK,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        borderRadius: size,
+        backgroundColor: INK,
       }}
     >
       <div
         style={{
-          width:
-            arm,
-          height:
-            arm *
-            0.62,
-          marginBottom:
-            arm *
-            0.24,
+          width: arm,
+          height: arm * 0.62,
+          marginBottom: arm * 0.24,
           borderLeft: `${weight}px solid ${INK_FG}`,
           borderBottom: `${weight}px solid ${INK_FG}`,
-          transform:
-            'rotate(-45deg)',
+          transform: 'rotate(-45deg)',
         }}
       />
     </div>
@@ -839,26 +552,14 @@ export function verifiedBadge(
 /* Frame metrics                                                              */
 /* -------------------------------------------------------------------------- */
 
-const PAD =
-  24 *
-  SCALE;
-const PAD_STORY =
-  44 *
-  SCALE;
-const MARK =
-  21 *
-  SCALE;
-const MARK_STORY =
-  30 *
-  SCALE;
+const PAD = 24 * SCALE;
+const PAD_STORY = 44 * SCALE;
+const MARK = 21 * SCALE;
+const MARK_STORY = 30 * SCALE;
 /** The chip row / URL line at the bottom. Tallest thing that goes there. */
-const FOOTER =
-  27 *
-  SCALE;
+const FOOTER = 27 * SCALE;
 /** Gap between the brand row, the body and the footer. */
-const GUTTER =
-  14 *
-  SCALE;
+const GUTTER = 14 * SCALE;
 
 export interface FrameMetrics {
   /** Width available to the body, inside the frame's padding. */
@@ -878,37 +579,14 @@ export interface FrameMetrics {
  * arithmetic here — rather than as a magic number in each renderer — is what
  * stops the two drifting apart the next time the frame's padding changes.
  */
-export function frameMetrics(
-  width: number,
-  height: number,
-  centred = false,
-): FrameMetrics {
-  const pad =
-    centred
-      ? PAD_STORY
-      : PAD;
-  const mark =
-    centred
-      ? MARK_STORY
-      : MARK;
+export function frameMetrics(width: number, height: number, centred = false): FrameMetrics {
+  const pad = centred ? PAD_STORY : PAD;
+  const mark = centred ? MARK_STORY : MARK;
   return {
-    width:
-      width -
-      pad *
-        2,
-    height:
-      height -
-      pad *
-        2 -
-      mark -
-      FOOTER -
-      GUTTER *
-        2 -
-      HAIRLINE_W *
-        2,
+    width: width - pad * 2,
+    height: height - pad * 2 - mark - FOOTER - GUTTER * 2 - HAIRLINE_W * 2,
     pad,
-    gutter:
-      GUTTER,
+    gutter: GUTTER,
   };
 }
 
@@ -944,189 +622,118 @@ export function cardFrame({
   footerRight,
   centred = false,
 }: CardFrameOptions): React.ReactElement {
-  const pad =
-    centred
-      ? PAD_STORY
-      : PAD;
-  const markSize =
-    centred
-      ? MARK_STORY
-      : MARK;
+  const pad = centred ? PAD_STORY : PAD;
+  const markSize = centred ? MARK_STORY : MARK;
 
   return (
     <div
       style={{
         width,
         height,
-        display:
-          'flex',
-        flexDirection:
-          'column',
-        backgroundColor:
-          CANVAS,
-        padding:
-          pad,
-        fontFamily:
-          OG_FONT_SANS,
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: CANVAS,
+        padding: pad,
+        fontFamily: OG_FONT_SANS,
       }}
     >
       {/* Brand row */}
       <div
         style={{
-          display:
-            'flex',
-          alignItems:
-            'center',
-          justifyContent:
-            centred
-              ? 'center'
-              : 'space-between',
-          gap:
-            12 *
-            SCALE,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: centred ? 'center' : 'space-between',
+          gap: 12 * SCALE,
         }}
       >
         <div
           style={{
-            display:
-              'flex',
-            alignItems:
-              'center',
-            gap:
-              10 *
-              SCALE,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10 * SCALE,
           }}
         >
-          {brandMark(
-            markSize,
-          )}
+          {brandMark(markSize)}
           <span
             style={{
-              fontSize:
-                (centred
-                  ? 20
-                  : 15) *
-                SCALE,
+              fontSize: (centred ? 20 : 15) * SCALE,
               fontWeight: 600,
-              letterSpacing:
-                '-0.022em',
-              color:
-                INK,
+              letterSpacing: '-0.022em',
+              color: INK,
             }}
           >
-            RMH
-            Studios
+            RMH Studios
           </span>
         </div>
-        {eyebrow &&
-        !centred
-          ? kicker(
-              eyebrow,
-              MUTED,
-            )
-          : null}
+        {eyebrow && !centred ? kicker(eyebrow, MUTED) : null}
       </div>
 
       {/* A 1px rule under the brand row: rules before boxes (R3). */}
       <div
         style={{
-          display:
-            'flex',
-          height:
-            HAIRLINE_W,
-          backgroundColor:
-            HAIRLINE,
-          marginTop:
-            GUTTER,
+          display: 'flex',
+          height: HAIRLINE_W,
+          backgroundColor: HAIRLINE,
+          marginTop: GUTTER,
         }}
       />
 
       {/* Body */}
       <div
         style={{
-          display:
-            'flex',
-          flexDirection:
-            'column',
+          display: 'flex',
+          flexDirection: 'column',
           flex: 1,
-          justifyContent:
-            'center',
+          justifyContent: 'center',
           minHeight: 0,
         }}
       >
-        {centred &&
-        eyebrow ? (
+        {centred && eyebrow ? (
           <div
             style={{
-              display:
-                'flex',
-              justifyContent:
-                'center',
-              marginBottom:
-                20 *
-                SCALE,
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: 20 * SCALE,
             }}
           >
-            {kicker(
-              eyebrow,
-              MUTED,
-              1.4,
-            )}
+            {kicker(eyebrow, MUTED, 1.4)}
           </div>
         ) : null}
-        {
-          children
-        }
+        {children}
       </div>
 
       {/* And one over the footer. */}
       <div
         style={{
-          display:
-            'flex',
-          height:
-            HAIRLINE_W,
-          backgroundColor:
-            HAIRLINE,
-          marginBottom:
-            GUTTER,
+          display: 'flex',
+          height: HAIRLINE_W,
+          backgroundColor: HAIRLINE,
+          marginBottom: GUTTER,
         }}
       />
 
       {/* Footer */}
       <div
         style={{
-          display:
-            'flex',
-          alignItems:
-            'center',
-          justifyContent:
-            centred
-              ? 'center'
-              : 'space-between',
-          gap:
-            12 *
-            SCALE,
-          height:
-            FOOTER,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: centred ? 'center' : 'space-between',
+          gap: 12 * SCALE,
+          height: FOOTER,
         }}
       >
         {footerLeft ?? (
           <span
             style={{
-              fontSize:
-                13 *
-                SCALE,
+              fontSize: 13 * SCALE,
               fontWeight: 500,
-              color:
-                DIM,
+              color: DIM,
             }}
           >
             rmhstudios.com
           </span>
         )}
-        {footerRight ??
-          null}
+        {footerRight ?? null}
       </div>
     </div>
   );

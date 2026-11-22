@@ -16,78 +16,39 @@
  * `saveFailed`; the store holds no user-facing copy, the UI translates it.
  */
 import { create } from 'zustand';
-import {
-  createInputHub,
-  type InputHub,
-} from './input/hub';
+import { createInputHub, type InputHub } from './input/hub';
 import { createKeyboardInput } from './input/keyboard';
 import { createFanOut } from './input/fan-out';
-import {
-  createMicInput,
-  type MicFrame,
-} from './input/mic';
-import {
-  createMidiInput,
-  type MidiInputAdapter,
-} from './input/midi';
+import { createMicInput, setMicSettings, type MicFrame } from './input/mic';
+import { clampMicGain, clampMicGate, isMicHum, type MicHum } from './input/mic-gain';
+import { hydratePracticeMode, isPracticeMode, type PracticeMode } from './practice-mode';
+import { createMidiInput, type MidiInputAdapter } from './input/midi';
 import { createScreenInput } from './input/screen';
-import type {
-  LessonProgressRow,
-  Profile,
-} from './progress.server';
+import type { LessonProgressRow, Profile } from './progress.server';
 import type { CardRow } from './content/practice';
+import { activityDurationMs, endActivity } from './activity-clock';
 import * as data from './machines/learn-data';
-import type {
-  CompleteOutcome,
-  ProfileKey,
-} from './machines/learn-data';
-import {
-  INPUTS,
-  INSTRUMENTS,
-  profileSchema,
-} from './schemas';
+import type { CompleteOutcome, ProfileKey } from './machines/learn-data';
+import { INPUTS, INSTRUMENTS, profileSchema } from './schemas';
 import { isInstrumentId } from './audio/instruments/catalog';
 import type { InstrumentId } from './audio/instruments/types';
 import { isVoiceRange } from './voice/range';
-import type {
-  VoiceRange,
-  Instrument,
-  LearnInput,
-  LessonCompleteInput,
-  ReviewInput,
-} from './schemas';
+import type { VoiceRange, Instrument, LearnInput, LessonCompleteInput, ReviewInput } from './schemas';
 
-export type {
-  CardRow,
-  LessonProgressRow,
-  Profile,
-};
+export type { CardRow, LessonProgressRow, Profile };
 
 /**
  * The remembered cards' load, kept apart from the profile's so a failed card request never
  * breaks the home: the home just shows no Practice link, and Practice says so itself.
  */
-export type CardsStatus =
-  | 'idle'
-  | 'loading'
-  | 'ready'
-  | 'load_failed'
-  | 'unauthorized';
+export type CardsStatus = 'idle' | 'loading' | 'ready' | 'load_failed' | 'unauthorized';
 
-export type LearnStatus =
-  data.Status;
-export type {
-  CompleteOutcome,
-  ProfileKey,
-};
-export type ScreenInput =
-  ReturnType<
-    typeof createScreenInput
-  >;
+export type LearnStatus = data.Status;
+export type { CompleteOutcome, ProfileKey };
+export type ScreenInput = ReturnType<typeof createScreenInput>;
 
 /** Stable codes for `error`; the UI decides what to say. */
-export type LearnError =
-  data.ErrorCode;
+export type LearnError = data.ErrorCode;
 
 export interface LearnState {
   profile: Profile | null;
@@ -111,29 +72,25 @@ export interface LearnState {
   sync: data.State;
 
   load(): Promise<void>;
-  setInstrument(
-    instrument: Instrument,
-  ): Promise<void>;
-  setInput(
-    input: LearnInput,
-  ): Promise<void>;
-  setLatency(
-    ms: number,
-  ): Promise<void>;
+  setInstrument(instrument: Instrument): Promise<void>;
+  setInput(input: LearnInput): Promise<void>;
+  setLatency(ms: number): Promise<void>;
   /** The sound lessons play; null follows the instrument. */
-  setSound(
-    sound: InstrumentId | null,
-  ): Promise<void>;
+  setSound(sound: InstrumentId | null): Promise<void>;
   /** A singer's range (soprano, alto, tenor, bass). */
-  setVoiceRange(
-    range: VoiceRange,
-  ): Promise<void>;
+  setVoiceRange(range: VoiceRange): Promise<void>;
+  /** Learning or Test mode, saved on the profile (and applied at once). */
+  setPracticeMode(mode: PracticeMode): Promise<void>;
+  /** The microphone's manual input gain, 1 to 16 (applied to the running microphone at once). */
+  setMicGain(gain: number): Promise<void>;
+  /** Automatic microphone sensitivity on or off. */
+  setMicAuto(auto: boolean): Promise<void>;
+  /** The manual cutoff: sound quieter than this level (RMS) is ignored. */
+  setMicGate(gate: number): Promise<void>;
+  /** The mains-hum filter. */
+  setMicHum(hum: MicHum): Promise<void>;
   /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
-  completeLesson(
-    lessonId: string,
-    stars: number,
-    score: number,
-  ): Promise<CompleteOutcome>;
+  completeLesson(lessonId: string, stars: number, score: number): Promise<CompleteOutcome>;
 
   /** The learner's remembered cards (Practice), as the server last answered. */
   cards: readonly CardRow[];
@@ -144,125 +101,71 @@ export interface LearnState {
    * Post one Practice session's reviews. On success the returned rows replace the stored ones, so
    * the home and the next session see the new schedule without a reload. Pays nothing.
    */
-  saveReviews(
-    reviews: ReviewInput[],
-  ): Promise<CompleteOutcome>;
+  saveReviews(reviews: ReviewInput[]): Promise<CompleteOutcome>;
 }
 
-const PROFILE_URL =
-  '/api/rmhmusic/learn/profile';
-const COMPLETE_URL =
-  '/api/rmhmusic/learn/lesson-complete';
-const CARDS_URL =
-  '/api/rmhmusic/learn/cards';
+const PROFILE_URL = '/api/rmhmusic/learn/profile';
+const COMPLETE_URL = '/api/rmhmusic/learn/lesson-complete';
+const CARDS_URL = '/api/rmhmusic/learn/cards';
 
 // ─── Input (client only) ─────────────────────────────────────────
 
-type BuiltInput =
-  {
-    hub: InputHub;
-    screen: ScreenInput;
-    midi: MidiInputAdapter;
-  };
+type BuiltInput = {
+  hub: InputHub;
+  screen: ScreenInput;
+  midi: MidiInputAdapter;
+};
 
-let input: BuiltInput | null =
-  null;
+let input: BuiltInput | null = null;
 
-/** Listeners for the microphone's input level (RMS, 0..1), fed while the mic runs. */
-const micLevelListeners =
-  new Set<
-    (
-      rms: number,
-    ) => void
-  >();
+/**
+ * Listeners for the microphone's input level (RMS, 0..1), fed while the mic runs, with the cutoff in
+ * force and the gain applied (both move by themselves in automatic mode).
+ */
+type MicLevelListener = (rms: number, gate: number, gain: number) => void;
+const micLevelListeners = new Set<MicLevelListener>();
 
 /**
  * Hear the microphone's level (about 40 times a second while it is on), for a
  * level meter. Returns a function that removes the listener.
  */
-export function subscribeMicLevel(
-  l: (
-    rms: number,
-  ) => void,
-): () => void {
-  micLevelListeners.add(
-    l,
-  );
+export function subscribeMicLevel(l: MicLevelListener): () => void {
+  micLevelListeners.add(l);
   return () => {
-    micLevelListeners.delete(
-      l,
-    );
+    micLevelListeners.delete(l);
   };
 }
 
 /** Listeners for the microphone's analysis frames (the tuner), fed while the mic runs. */
-const micFrames =
-  createFanOut<
-    Readonly<MicFrame>
-  >();
+const micFrames = createFanOut<Readonly<MicFrame>>();
 
 /**
  * Hear every analysis frame of the microphone (about 40 a second while it is on, nothing while it
  * is off): the tuner's input. The frame object is reused; copy what you keep. Returns a function
  * that removes the listener.
  */
-export function subscribeMicFrames(
-  l: (
-    frame: Readonly<MicFrame>,
-  ) => void,
-): () => void {
-  return micFrames.add(
-    l,
-  );
+export function subscribeMicFrames(l: (frame: Readonly<MicFrame>) => void): () => void {
+  return micFrames.add(l);
 }
 
 function ensureInput(): BuiltInput | null {
   // The adapters read browser APIs; on the server there is nothing to build.
-  if (
-    typeof window ===
-    'undefined'
-  )
-    return null;
-  if (
-    !input
-  ) {
-    const screen =
-      createScreenInput();
-    const midi =
-      createMidiInput();
-    const mic =
-      createMicInput(
-        {
-          onFrame:
-            micFrames.emit,
-          onLevel:
-            (
-              rms,
-            ) => {
-              for (const l of [
-                ...micLevelListeners,
-              ])
-                l(
-                  rms,
-                );
-            },
-        },
-      );
-    const hub =
-      createInputHub(
-        [
-          mic,
-          midi,
-          createKeyboardInput(),
-          screen,
-        ],
-      );
-    input =
-      {
-        hub,
-        screen,
-        midi,
-      };
+  if (typeof window === 'undefined') return null;
+  if (!input) {
+    const screen = createScreenInput();
+    const midi = createMidiInput();
+    const mic = createMicInput({
+      onFrame: micFrames.emit,
+      onLevel: (rms, gate, gain) => {
+        for (const l of [...micLevelListeners]) l(rms, gate, gain);
+      },
+    });
+    const hub = createInputHub([mic, midi, createKeyboardInput(), screen]);
+    input = {
+      hub,
+      screen,
+      midi,
+    };
   }
   return input;
 }
@@ -279,53 +182,26 @@ type Reply =
       unauthorized: boolean;
     };
 
-async function request(
-  url: string,
-  method: string,
-  body?: unknown,
-): Promise<Reply> {
+async function request(url: string, method: string, body?: unknown): Promise<Reply> {
   try {
-    const res =
-      await fetch(
-        url,
-        {
-          method,
-          credentials:
-            'include',
-          headers:
-            {
-              Accept:
-                'application/json',
-              'Content-Type':
-                'application/json',
-            },
-          body:
-            body ===
-            undefined
-              ? undefined
-              : JSON.stringify(
-                  body,
-                ),
-        },
-      );
-    if (
-      !res.ok
-    )
+    const res = await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (!res.ok)
       return {
         ok: false,
-        unauthorized:
-          res.status ===
-          401,
+        unauthorized: res.status === 401,
       };
     // A write's body is not needed; only `load` and `completeLesson` validate it.
     return {
       ok: true,
-      data: await res
-        .json()
-        .catch(
-          () =>
-            null,
-        ),
+      data: await res.json().catch(() => null),
     };
   } catch {
     return {
@@ -335,795 +211,380 @@ async function request(
   }
 }
 
-const isRow =
-  (
-    v: unknown,
-  ): v is LessonProgressRow =>
-    typeof v ===
-      'object' &&
-    v !==
-      null &&
-    typeof (
-      v as LessonProgressRow
-    )
-      .lessonId ===
-      'string' &&
-    typeof (
-      v as LessonProgressRow
-    )
-      .stars ===
-      'number';
+const isRow = (v: unknown): v is LessonProgressRow =>
+  typeof v === 'object' &&
+  v !== null &&
+  typeof (v as LessonProgressRow).lessonId === 'string' &&
+  typeof (v as LessonProgressRow).stars === 'number';
 
-const isProfile =
-  (
-    v: unknown,
-  ): v is Profile =>
-    profileSchema.safeParse(
-      v,
-    )
-      .success;
+const isProfile = (v: unknown): v is Profile => profileSchema.safeParse(v).success;
 
-const isCardRow =
-  (
-    v: unknown,
-  ): v is CardRow => {
-    if (
-      typeof v !==
-        'object' ||
-      v ===
-        null
-    )
-      return false;
-    const r =
-      v as CardRow;
-    return (
-      typeof r.cardId ===
-        'string' &&
-      typeof r.due ===
-        'string' &&
-      (r.lastReviewAt ===
-        null ||
-        typeof r.lastReviewAt ===
-          'string') &&
-      typeof r.stability ===
-        'number' &&
-      typeof r.difficulty ===
-        'number' &&
-      typeof r.reps ===
-        'number' &&
-      typeof r.lapses ===
-        'number'
-    );
-  };
+const isCardRow = (v: unknown): v is CardRow => {
+  if (typeof v !== 'object' || v === null) return false;
+  const r = v as CardRow;
+  return (
+    typeof r.cardId === 'string' &&
+    typeof r.due === 'string' &&
+    (r.lastReviewAt === null || typeof r.lastReviewAt === 'string') &&
+    typeof r.stability === 'number' &&
+    typeof r.difficulty === 'number' &&
+    typeof r.reps === 'number' &&
+    typeof r.lapses === 'number'
+  );
+};
 
 /** `prev` with `updated` written over it by card id (the server's answer to a review batch). */
-export function mergeCards(
-  prev: readonly CardRow[],
-  updated: readonly CardRow[],
-): CardRow[] {
-  const byId =
-    new Map(
-      updated.map(
-        (
-          r,
-        ) => [
-          r.cardId,
-          r,
-        ],
-      ),
-    );
-  const out =
-    prev.map(
-      (
-        r,
-      ) =>
-        byId.get(
-          r.cardId,
-        ) ??
-        r,
-    );
-  const seen =
-    new Set(
-      prev.map(
-        (
-          r,
-        ) =>
-          r.cardId,
-      ),
-    );
-  for (const r of updated)
-    if (
-      !seen.has(
-        r.cardId,
-      )
-    )
-      out.push(
-        r,
-      );
+export function mergeCards(prev: readonly CardRow[], updated: readonly CardRow[]): CardRow[] {
+  const byId = new Map(updated.map((r) => [r.cardId, r]));
+  const out = prev.map((r) => byId.get(r.cardId) ?? r);
+  const seen = new Set(prev.map((r) => r.cardId));
+  for (const r of updated) if (!seen.has(r.cardId)) out.push(r);
   return out;
 }
 
 // ─── Store ───────────────────────────────────────────────────────
 
 /** The machine's state projected onto the store's public fields. */
-type Projection =
-  Pick<
-    LearnState,
-    | 'profile'
-    | 'progress'
-    | 'status'
-    | 'error'
-    | 'saveFailed'
-  >;
+type Projection = Pick<LearnState, 'profile' | 'progress' | 'status' | 'error' | 'saveFailed'>;
 
-const sameProfile =
-  (
-    a: Profile | null,
-    b: Profile | null,
-  ) =>
-    a ===
-      b ||
-    (!!a &&
-      !!b &&
-      a.instrument ===
-        b.instrument &&
-      a.input ===
-        b.input &&
-      a.latencyMs ===
-        b.latencyMs &&
-      a.dailyGoal ===
-        b.dailyGoal &&
-      a.sound ===
-        b.sound &&
-      a.voiceRange ===
-        b.voiceRange);
+const sameProfile = (a: Profile | null, b: Profile | null) =>
+  a === b ||
+  (!!a &&
+    !!b &&
+    a.instrument === b.instrument &&
+    a.input === b.input &&
+    a.latencyMs === b.latencyMs &&
+    a.dailyGoal === b.dailyGoal &&
+    a.sound === b.sound &&
+    a.voiceRange === b.voiceRange &&
+    a.practiceMode === b.practiceMode &&
+    a.micGain === b.micGain &&
+    a.micAuto === b.micAuto &&
+    a.micGate === b.micGate &&
+    a.micHum === b.micHum);
 
-const sameList =
-  <
-    T,
-  >(
-    a: readonly T[],
-    b: readonly T[],
-  ) =>
-    a ===
-      b ||
-    (a.length ===
-      b.length &&
-      a.every(
-        (
-          v,
-          i,
-        ) =>
-          v ===
-          b[
-            i
-          ],
-      ));
+const sameList = <T>(a: readonly T[], b: readonly T[]) =>
+  a === b || (a.length === b.length && a.every((v, i) => v === b[i]));
 
 /**
  * The public fields for `sync`, reusing the previous objects when nothing in
  * them changed, so a selector over `profile` or `progress` does not re-render
  * on an unrelated transition.
  */
-export function project(
-  sync: data.State,
-  prev?: Projection,
-): Projection {
-  const profile =
-    data.viewProfile(
-      sync,
-    );
-  const progress =
-    data.viewProgress(
-      sync,
-    );
+export function project(sync: data.State, prev?: Projection): Projection {
+  const profile = data.viewProfile(sync);
+  const progress = data.viewProgress(sync);
   return {
-    profile:
-      prev &&
-      sameProfile(
-        prev.profile,
-        profile,
-      )
-        ? prev.profile
-        : profile,
-    progress:
-      prev &&
-      sameList(
-        prev.progress,
-        progress,
-      )
-        ? prev.progress
-        : (progress as LessonProgressRow[]),
-    status:
-      data.status(
-        sync,
-      ),
-    error:
-      data.errorCode(
-        sync,
-      ),
-    saveFailed:
-      prev &&
-      sameList(
-        prev.saveFailed,
-        sync.failed,
-      )
-        ? prev.saveFailed
-        : sync.failed,
+    profile: prev && sameProfile(prev.profile, profile) ? prev.profile : profile,
+    progress: prev && sameList(prev.progress, progress) ? prev.progress : (progress as LessonProgressRow[]),
+    status: data.status(sync),
+    error: data.errorCode(sync),
+    saveFailed: prev && sameList(prev.saveFailed, sync.failed) ? prev.saveFailed : sync.failed,
   };
 }
 
-export const useLearnStore =
-  create<LearnState>()(
-    (
-      set,
-      get,
-    ) => {
-      /** Callers waiting on an id (a load token, a write, a completion). */
-      const waiters =
-        new Map<
-          number,
-          ((
-            outcome?: CompleteOutcome,
-          ) => void)[]
-        >();
+/** The profile's settings that act outside the store: the microphone's gain and the practice mode. */
+function applyProfileSettings(profile: Profile): void {
+  setMicSettings({ auto: profile.micAuto, gain: profile.micGain, gate: profile.micGate, hum: profile.micHum });
+  hydratePracticeMode(profile.practiceMode);
+}
 
-      /** Feed one event to the machine, publish the result, then carry out its effects. */
-      function send(
-        event: data.Event,
-        waiter?: (
-          outcome?: CompleteOutcome,
-        ) => void,
-      ): void {
-        const current =
-          get();
-        const {
-          state,
-          effects,
-        } =
-          data.step(
-            current.sync,
-            event,
+export const useLearnStore = create<LearnState>()((set, get) => {
+  /** Callers waiting on an id (a load token, a write, a completion). */
+  const waiters = new Map<number, ((outcome?: CompleteOutcome) => void)[]>();
+
+  /** Feed one event to the machine, publish the result, then carry out its effects. */
+  function send(event: data.Event, waiter?: (outcome?: CompleteOutcome) => void): void {
+    const current = get();
+    const { state, effects } = data.step(current.sync, event);
+    if (state !== current.sync) {
+      const next = project(state, current);
+      set({
+        sync: state,
+        ...next,
+      });
+      // The profile carries two settings that act outside the store: apply them as they change.
+      if (next.profile !== current.profile && next.profile) applyProfileSettings(next.profile);
+    }
+    for (const fx of effects) {
+      switch (fx.type) {
+        case 'fetch':
+          void fetchProfile(fx.token);
+          break;
+        case 'put':
+          void put(fx.id, fx.body);
+          break;
+        case 'post':
+          void post(fx.id, fx.body);
+          break;
+        case 'schedule-flush':
+          queueMicrotask(() =>
+            send({
+              type: 'flush',
+            }),
           );
-        if (
-          state !==
-          current.sync
-        )
-          set(
-            {
-              sync: state,
-              ...project(
-                state,
-                current,
-              ),
-            },
-          );
-        for (const fx of effects) {
-          switch (
-            fx.type
-          ) {
-            case 'fetch':
-              void fetchProfile(
-                fx.token,
-              );
-              break;
-            case 'put':
-              void put(
-                fx.id,
-                fx.body,
-              );
-              break;
-            case 'post':
-              void post(
-                fx.id,
-                fx.body,
-              );
-              break;
-            case 'schedule-flush':
-              queueMicrotask(
-                () =>
-                  send(
-                    {
-                      type: 'flush',
-                    },
-                  ),
-              );
-              break;
-            case 'join':
-              if (
-                waiter
-              )
-                waiters.set(
-                  fx.id,
-                  [
-                    ...(waiters.get(
-                      fx.id,
-                    ) ??
-                      []),
-                    waiter,
-                  ],
-                );
-              break;
-            case 'answer-now':
-              waiter?.(
-                fx.outcome,
-              );
-              break;
-            case 'settle': {
-              const list =
-                waiters.get(
-                  fx.id,
-                ) ??
-                [];
-              waiters.delete(
-                fx.id,
-              );
-              for (const w of list)
-                w(
-                  fx.outcome,
-                );
-              break;
-            }
-            default: {
-              const never: never =
-                fx;
-              throw new Error(
-                `learn store: unhandled effect ${JSON.stringify(never)}`,
-              );
-            }
-          }
+          break;
+        case 'join':
+          if (waiter) waiters.set(fx.id, [...(waiters.get(fx.id) ?? []), waiter]);
+          break;
+        case 'answer-now':
+          waiter?.(fx.outcome);
+          break;
+        case 'settle': {
+          const list = waiters.get(fx.id) ?? [];
+          waiters.delete(fx.id);
+          for (const w of list) w(fx.outcome);
+          break;
+        }
+        default: {
+          const never: never = fx;
+          throw new Error(`learn store: unhandled effect ${JSON.stringify(never)}`);
         }
       }
+    }
+  }
 
-      const ask =
-        <
-          T =
-            void,
-        >(
-          event: data.Event,
-        ) =>
-          new Promise<T>(
-            (
-              resolve,
-            ) =>
-              send(
-                event,
-                (
-                  outcome,
-                ) =>
-                  resolve(
-                    outcome as T,
-                  ),
-              ),
-          );
+  const ask = <T = void>(event: data.Event) =>
+    new Promise<T>((resolve) => send(event, (outcome) => resolve(outcome as T)));
 
-      async function fetchProfile(
-        token: number,
-      ) {
-        const reply =
-          await request(
-            PROFILE_URL,
-            'GET',
-          );
-        if (
-          !reply.ok
-        ) {
-          send(
-            {
-              type: 'load-failed',
-              token,
-              unauthorized:
-                reply.unauthorized,
-            },
-          );
-          return;
-        }
-        const body =
-          reply.data as {
-            profile?: unknown;
-            progress?: unknown;
-          } | null;
-        if (
-          !body ||
-          !isProfile(
-            body.profile,
-          ) ||
-          !Array.isArray(
-            body.progress,
-          )
-        ) {
-          send(
-            {
-              type: 'load-failed',
-              token,
-              unauthorized: false,
-            },
-          );
-          return;
-        }
-        send(
-          {
-            type: 'loaded',
-            token,
-            profile:
-              body.profile,
-            progress:
-              body.progress.filter(
-                isRow,
-              ),
+  async function fetchProfile(token: number) {
+    const reply = await request(PROFILE_URL, 'GET');
+    if (!reply.ok) {
+      send({
+        type: 'load-failed',
+        token,
+        unauthorized: reply.unauthorized,
+      });
+      return;
+    }
+    const body = reply.data as {
+      profile?: unknown;
+      progress?: unknown;
+    } | null;
+    if (!body || !isProfile(body.profile) || !Array.isArray(body.progress)) {
+      send({
+        type: 'load-failed',
+        token,
+        unauthorized: false,
+      });
+      return;
+    }
+    send({
+      type: 'loaded',
+      token,
+      profile: body.profile,
+      progress: body.progress.filter(isRow),
+    });
+  }
+
+  async function put(id: number, body: Profile) {
+    const reply = await request(PROFILE_URL, 'PUT', body);
+    if (!reply.ok) {
+      send({
+        type: 'put-failed',
+        id,
+        unauthorized: reply.unauthorized,
+      });
+      return;
+    }
+    const returned = (
+      reply.data as {
+        profile?: unknown;
+      } | null
+    )?.profile;
+    send({
+      type: 'put-ok',
+      id,
+      profile: isProfile(returned) ? returned : body,
+    });
+  }
+
+  async function post(id: number, body: LessonCompleteInput) {
+    const durationMs = activityDurationMs();
+    const reply = await request(
+      COMPLETE_URL,
+      'POST',
+      durationMs === undefined
+        ? body
+        : {
+            ...body,
+            durationMs,
           },
-        );
-      }
+    );
+    if (reply.ok) endActivity();
+    if (!reply.ok) {
+      send({
+        type: 'post-failed',
+        id,
+        unauthorized: reply.unauthorized,
+      });
+      return;
+    }
+    const rows = (
+      reply.data as {
+        progress?: unknown;
+      } | null
+    )?.progress;
+    send({
+      type: 'post-ok',
+      id,
+      progress: Array.isArray(rows) ? rows.filter(isRow) : null,
+    });
+  }
 
-      async function put(
-        id: number,
-        body: Profile,
-      ) {
-        const reply =
-          await request(
-            PROFILE_URL,
-            'PUT',
-            body,
-          );
-        if (
-          !reply.ok
-        ) {
-          send(
-            {
-              type: 'put-failed',
-              id,
-              unauthorized:
-                reply.unauthorized,
-            },
-          );
-          return;
-        }
-        const returned =
-          (
-            reply.data as {
-              profile?: unknown;
-            } | null
-          )
-            ?.profile;
-        send(
-          {
-            type: 'put-ok',
-            id,
-            profile:
-              isProfile(
-                returned,
-              )
-                ? returned
-                : body,
-          },
-        );
-      }
+  const change = (c: data.Change) =>
+    ask({
+      type: 'change',
+      change: c,
+    });
 
-      async function post(
-        id: number,
-        body: LessonCompleteInput,
-      ) {
-        const reply =
-          await request(
-            COMPLETE_URL,
-            'POST',
-            body,
-          );
-        if (
-          !reply.ok
-        ) {
-          send(
-            {
-              type: 'post-failed',
-              id,
-              unauthorized:
-                reply.unauthorized,
-            },
-          );
-          return;
-        }
-        const rows =
-          (
-            reply.data as {
-              progress?: unknown;
-            } | null
-          )
-            ?.progress;
-        send(
-          {
-            type: 'post-ok',
-            id,
-            progress:
-              Array.isArray(
-                rows,
-              )
-                ? rows.filter(
-                    isRow,
-                  )
-                : null,
-          },
-        );
-      }
+  let cardsLoading: Promise<void> | null = null;
 
-      const change =
-        (
-          c: data.Change,
-        ) =>
-          ask(
-            {
-              type: 'change',
-              change:
-                c,
-            },
-          );
+  return {
+    ...project(data.initial),
+    sync: data.initial,
+    hub: null,
+    screen: null,
+    midi: null,
 
-      let cardsLoading: Promise<void> | null =
-        null;
+    load() {
+      const built = ensureInput();
+      if (built && get().hub !== built.hub) set(built);
+      return ask({
+        type: 'load',
+      });
+    },
 
-      return {
-        ...project(
-          data.initial,
-        ),
-        sync: data.initial,
-        hub: null,
-        screen:
-          null,
-        midi: null,
+    setInstrument(instrument) {
+      if (!INSTRUMENTS.includes(instrument)) return Promise.resolve();
+      return change({
+        key: 'instrument',
+        value: instrument,
+      });
+    },
 
-        load() {
-          const built =
-            ensureInput();
-          if (
-            built &&
-            get()
-              .hub !==
-              built.hub
-          )
-            set(
-              built,
-            );
-          return ask(
-            {
-              type: 'load',
-            },
-          );
-        },
+    setInput(next) {
+      if (!INPUTS.includes(next)) return Promise.resolve();
+      return change({
+        key: 'input',
+        value: next,
+      });
+    },
 
-        setInstrument(
-          instrument,
-        ) {
-          if (
-            !INSTRUMENTS.includes(
-              instrument,
-            )
-          )
-            return Promise.resolve();
-          return change(
-            {
-              key: 'instrument',
-              value:
-                instrument,
-            },
-          );
-        },
+    setSound(sound) {
+      if (sound !== null && !isInstrumentId(sound)) return Promise.resolve();
+      return change({
+        key: 'sound',
+        value: sound,
+      });
+    },
 
-        setInput(
-          next,
-        ) {
-          if (
-            !INPUTS.includes(
-              next,
-            )
-          )
-            return Promise.resolve();
-          return change(
-            {
-              key: 'input',
-              value:
-                next,
-            },
-          );
-        },
+    setVoiceRange(range) {
+      if (!isVoiceRange(range)) return Promise.resolve();
+      return change({
+        key: 'voiceRange',
+        value: range,
+      });
+    },
+    setPracticeMode(mode) {
+      if (!isPracticeMode(mode)) return Promise.resolve();
+      return change({
+        key: 'practiceMode',
+        value: mode,
+      });
+    },
+    setMicGain(gain) {
+      if (typeof gain !== 'number' || !Number.isFinite(gain)) return Promise.resolve();
+      return change({
+        key: 'micGain',
+        value: clampMicGain(gain),
+      });
+    },
+    setMicAuto(auto) {
+      if (typeof auto !== 'boolean') return Promise.resolve();
+      return change({ key: 'micAuto', value: auto });
+    },
+    setMicGate(gate) {
+      if (typeof gate !== 'number' || !Number.isFinite(gate)) return Promise.resolve();
+      return change({ key: 'micGate', value: clampMicGate(gate) });
+    },
+    setMicHum(hum) {
+      if (!isMicHum(hum)) return Promise.resolve();
+      return change({ key: 'micHum', value: hum });
+    },
+    setLatency(ms) {
+      if (!Number.isFinite(ms)) return Promise.resolve();
+      return change({
+        key: 'latencyMs',
+        value: Math.max(-500, Math.min(500, Math.round(ms))),
+      });
+    },
 
-        setSound(
-          sound,
-        ) {
-          if (
-            sound !==
-              null &&
-            !isInstrumentId(
-              sound,
-            )
-          )
-            return Promise.resolve();
-          return change(
-            {
-              key: 'sound',
-              value:
-                sound,
-            },
-          );
-        },
+    completeLesson(lessonId, stars, score) {
+      return ask<CompleteOutcome>({
+        type: 'complete',
+        lessonId,
+        stars,
+        score,
+        at: new Date().toISOString(),
+      });
+    },
 
-        setVoiceRange(
-          range,
-        ) {
-          if (
-            !isVoiceRange(
-              range,
-            )
-          )
-            return Promise.resolve();
-          return change(
-            {
-              key: 'voiceRange',
-              value:
-                range,
-            },
-          );
-        },
-        setLatency(
-          ms,
-        ) {
-          if (
-            !Number.isFinite(
-              ms,
-            )
-          )
-            return Promise.resolve();
-          return change(
-            {
-              key: 'latencyMs',
-              value:
-                Math.max(
-                  -500,
-                  Math.min(
-                    500,
-                    Math.round(
-                      ms,
-                    ),
-                  ),
-                ),
-            },
-          );
-        },
+    cards: [],
+    cardsStatus: 'idle',
 
-        completeLesson(
-          lessonId,
-          stars,
-          score,
-        ) {
-          return ask<CompleteOutcome>(
-            {
-              type: 'complete',
-              lessonId,
-              stars,
-              score,
-              at: new Date().toISOString(),
-            },
-          );
-        },
-
-        cards:
-          [],
-        cardsStatus:
-          'idle',
-
-        loadCards() {
-          const {
-            cardsStatus,
-          } =
-            get();
-          if (
-            cardsStatus ===
-            'ready'
-          )
-            return Promise.resolve();
-          if (
-            cardsLoading
-          )
-            return cardsLoading;
-          set(
-            {
-              cardsStatus:
-                'loading',
-            },
-          );
-          cardsLoading =
-            request(
-              CARDS_URL,
-              'GET',
-            ).then(
-              (
-                reply,
-              ) => {
-                cardsLoading =
-                  null;
-                const rows =
-                  reply.ok
-                    ? (
-                        reply.data as {
-                          cards?: unknown;
-                        } | null
-                      )
-                        ?.cards
-                    : null;
-                if (
-                  !reply.ok ||
-                  !Array.isArray(
-                    rows,
-                  )
-                ) {
-                  set(
-                    {
-                      cardsStatus:
-                        !reply.ok &&
-                        reply.unauthorized
-                          ? 'unauthorized'
-                          : 'load_failed',
-                    },
-                  );
-                  return;
-                }
-                set(
-                  {
-                    cards:
-                      rows.filter(
-                        isCardRow,
-                      ),
-                    cardsStatus:
-                      'ready',
-                  },
-                );
-              },
-            );
-          return cardsLoading;
-        },
-
-        async saveReviews(
-          reviews,
-        ) {
-          const reply =
-            await request(
-              CARDS_URL,
-              'POST',
-              {
-                reviews,
-              },
-            );
-          if (
-            !reply.ok
-          )
-            return reply.unauthorized
-              ? 'unauthorized'
-              : 'failed';
-          const rows =
-            (
+    loadCards() {
+      const { cardsStatus } = get();
+      if (cardsStatus === 'ready') return Promise.resolve();
+      if (cardsLoading) return cardsLoading;
+      set({
+        cardsStatus: 'loading',
+      });
+      cardsLoading = request(CARDS_URL, 'GET').then((reply) => {
+        cardsLoading = null;
+        const rows = reply.ok
+          ? (
               reply.data as {
                 cards?: unknown;
               } | null
-            )
-              ?.cards;
-          if (
-            !Array.isArray(
-              rows,
-            )
-          )
-            return 'failed';
-          set(
-            {
-              cards:
-                mergeCards(
-                  get()
-                    .cards,
-                  rows.filter(
-                    isCardRow,
-                  ),
-                ),
-            },
-          );
-          return 'saved';
-        },
-      };
+            )?.cards
+          : null;
+        if (!reply.ok || !Array.isArray(rows)) {
+          set({
+            cardsStatus: !reply.ok && reply.unauthorized ? 'unauthorized' : 'load_failed',
+          });
+          return;
+        }
+        set({
+          cards: rows.filter(isCardRow),
+          cardsStatus: 'ready',
+        });
+      });
+      return cardsLoading;
     },
-  );
+
+    async saveReviews(reviews) {
+      const durationMs = activityDurationMs();
+      const reply = await request(CARDS_URL, 'POST', {
+        reviews,
+        ...(durationMs === undefined
+          ? {}
+          : {
+              durationMs,
+            }),
+      });
+      if (reply.ok) endActivity();
+      if (!reply.ok) return reply.unauthorized ? 'unauthorized' : 'failed';
+      const rows = (
+        reply.data as {
+          cards?: unknown;
+        } | null
+      )?.cards;
+      if (!Array.isArray(rows)) return 'failed';
+      set({
+        cards: mergeCards(get().cards, rows.filter(isCardRow)),
+      });
+      return 'saved';
+    },
+  };
+});

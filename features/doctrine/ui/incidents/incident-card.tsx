@@ -3,6 +3,7 @@ import { Clock, MessageSquare } from 'lucide-react';
 import type { ReactionCount } from '@features/doctrine/engine/types';
 import { ReactionBar } from '../reaction-bar';
 import { DivisivenessBadge } from '../divisiveness-badge';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface IncidentCardProps {
   id: string;
@@ -30,7 +31,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   LEGENDARY: { label: 'LEGENDARY', color: '#A855F7' },
 };
 
-export function IncidentCard({ id, codename, severity, title, narrative, status, reportCount, createdAt, reactions }: IncidentCardProps) {
+export function IncidentCard({ id, codename, severity, title, narrative, status, reportCount, createdAt, reactions }: IncidentCardProps) { const fmt = useLocaleFormat(); 
   const sevColor = SEVERITY_COLORS[severity] ?? '#EF4444';
   const statusInfo = STATUS_LABELS[status] ?? { label: status, color: '#6B7280' };
 
@@ -63,7 +64,7 @@ export function IncidentCard({ id, codename, severity, title, narrative, status,
             <MessageSquare size={10} /> {reportCount}
           </span>
           <span className="flex items-center gap-1 text-xs md:text-xs">
-            <Clock size={10} /> {new Date(createdAt).toLocaleDateString()}
+            <Clock size={10} /> {fmt.date(new Date(createdAt))}
           </span>
         </div>
       </div>

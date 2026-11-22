@@ -215,6 +215,7 @@ export async function getCommunityFeed(
     loadFlairsForPosts(page.map((p) => p.id)),
   ]);
   for (const item of items) {
+    item.communitySlug = slug;
     const flair = flairs.get(item.id);
     if (flair) item.communityFlair = flair;
   }

@@ -52,14 +52,13 @@ export interface AssistSettings {
   noTimedInput: boolean;
 }
 
-export const ASSIST_DEFAULTS: AssistSettings =
-  {
-    holdToPress: false,
-    speedFloor: 1,
-    calmVisuals: false,
-    colorSafe: false,
-    noTimedInput: false,
-  };
+export const ASSIST_DEFAULTS: AssistSettings = {
+  holdToPress: false,
+  speedFloor: 1,
+  calmVisuals: false,
+  colorSafe: false,
+  noTimedInput: false,
+};
 
 /** Slowest we will run a game. Below this, most games stop being the game. */
 export const MIN_SPEED_FLOOR = 0.5;
@@ -85,34 +84,22 @@ export type AssistProfile =
     } & AssistSettings);
 
 /** The one profile a leaderboard will accept. */
-export const NO_ASSISTS: AssistProfile =
-  {
-    ranked: true,
-    holdToPress: false,
-    speedFloor: 1,
-    calmVisuals: false,
-    colorSafe: false,
-    noTimedInput: false,
-  };
+export const NO_ASSISTS: AssistProfile = {
+  ranked: true,
+  holdToPress: false,
+  speedFloor: 1,
+  calmVisuals: false,
+  colorSafe: false,
+  noTimedInput: false,
+};
 
 /** Has the member asked for anything at all? */
-export function hasAnyAssist(
-  s: AssistSettings,
-): boolean {
-  return (
-    s.holdToPress ||
-    s.calmVisuals ||
-    s.colorSafe ||
-    s.noTimedInput ||
-    s.speedFloor <
-      1
-  );
+export function hasAnyAssist(s: AssistSettings): boolean {
+  return s.holdToPress || s.calmVisuals || s.colorSafe || s.noTimedInput || s.speedFloor < 1;
 }
 
 /** Narrow a profile for a caller that needs to branch on eligibility. */
-export function profileIsRanked(
-  p: AssistProfile,
-): p is Extract<
+export function profileIsRanked(p: AssistProfile): p is Extract<
   AssistProfile,
   {
     ranked: true;
@@ -128,45 +115,14 @@ export function profileIsRanked(
  * these arrive from a settings form and from a database row written by an older
  * version of this file, and neither is worth a 400.
  */
-export function normalizeAssists(
-  raw:
-    | Partial<AssistSettings>
-    | null
-    | undefined,
-): AssistSettings {
-  const speed =
-    Number(
-      raw?.speedFloor,
-    );
+export function normalizeAssists(raw: Partial<AssistSettings> | null | undefined): AssistSettings {
+  const speed = Number(raw?.speedFloor);
   return {
-    holdToPress:
-      Boolean(
-        raw?.holdToPress,
-      ),
-    speedFloor:
-      Number.isFinite(
-        speed,
-      )
-        ? Math.min(
-            1,
-            Math.max(
-              MIN_SPEED_FLOOR,
-              speed,
-            ),
-          )
-        : 1,
-    calmVisuals:
-      Boolean(
-        raw?.calmVisuals,
-      ),
-    colorSafe:
-      Boolean(
-        raw?.colorSafe,
-      ),
-    noTimedInput:
-      Boolean(
-        raw?.noTimedInput,
-      ),
+    holdToPress: Boolean(raw?.holdToPress),
+    speedFloor: Number.isFinite(speed) ? Math.min(1, Math.max(MIN_SPEED_FLOOR, speed)) : 1,
+    calmVisuals: Boolean(raw?.calmVisuals),
+    colorSafe: Boolean(raw?.colorSafe),
+    noTimedInput: Boolean(raw?.noTimedInput),
   };
 }
 
@@ -178,22 +134,9 @@ export function normalizeAssists(
  * important direction: a member with assists switched on should not silently
  * lose leaderboard eligibility in a game that was never going to honour them.
  */
-export function profileFor(
-  game: string,
-  settings: AssistSettings,
-): AssistProfile {
-  if (
-    !ASSIST_CAPABLE.has(
-      game,
-    )
-  )
-    return NO_ASSISTS;
-  if (
-    !hasAnyAssist(
-      settings,
-    )
-  )
-    return NO_ASSISTS;
+export function profileFor(game: string, settings: AssistSettings): AssistProfile {
+  if (!ASSIST_CAPABLE.has(game)) return NO_ASSISTS;
+  if (!hasAnyAssist(settings)) return NO_ASSISTS;
   return {
     ranked: false,
     ...settings,
@@ -203,15 +146,19 @@ export function profileFor(
 /**
  * Games whose client actually honours an assist profile.
  *
- * **Empty, and that is the correct state today.** See the module header: a game
+ * **Two games today: Synapse Storm and Void Breaker.** See the module header: a game
  * added here without client support trades its players' leaderboard
  * eligibility for nothing. Adding an entry is part of the change that teaches
  * the game to read the profile, alongside the `accessibility` entries in
  * `lib/game-capabilities.ts` — and `lib/__tests__/game-assist.test.ts` holds
  * those two to each other so the two halves cannot ship apart.
  */
-export const ASSIST_CAPABLE: ReadonlySet<string> =
-  new Set<string>();
+export const ASSIST_CAPABLE: ReadonlySet<string> = new Set<string>([
+  'synapse-storm',
+  'void-breaker',
+  'dream-rift',
+  'nightrail',
+]);
 
 /**
  * Which `AccessibilityFeature` strings a game must declare once it adopts.
@@ -219,13 +166,7 @@ export const ASSIST_CAPABLE: ReadonlySet<string> =
  * The join between this layer and the capabilities registry: a game in
  * {@link ASSIST_CAPABLE} has to claim these, because they are then true of it.
  */
-export const ASSIST_FEATURES =
-  [
-    'assist-mode',
-    'reduced-flashing',
-    'colorblind-safe',
-    'no-timed-input',
-  ] as const;
+export const ASSIST_FEATURES = ['assist-mode', 'reduced-flashing', 'colorblind-safe', 'no-timed-input'] as const;
 
 /**
  * Games with their own assist implementation, predating this layer.
@@ -256,9 +197,4 @@ export const ASSIST_FEATURES =
  * refactor of three shipped, working systems and belongs in its own change,
  * not smuggled into the commit that adds a fourth.
  */
-export const OWN_ASSIST_IMPLEMENTATION: ReadonlySet<string> =
-  new Set(
-    [
-      'slice-it',
-    ],
-  );
+export const OWN_ASSIST_IMPLEMENTATION: ReadonlySet<string> = new Set(['slice-it']);

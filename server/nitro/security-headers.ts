@@ -26,56 +26,24 @@
 // one, so per-route responses (auth CORS, image caching, etc.) win, and any
 // failure is swallowed so header logic can never take a response down.
 
-import {
-  buildCspPolicy,
-  carriesFramePolicy,
-  FRAME_ANCESTORS,
-  REPORTING_ENDPOINTS,
-} from '../../lib/csp/policy.server';
+import { buildCspPolicy, carriesFramePolicy, FRAME_ANCESTORS, REPORTING_ENDPOINTS } from '../../lib/csp/policy.server';
 
-const HSTS =
-  'max-age=31536000; includeSubDomains';
+const HSTS = 'max-age=31536000; includeSubDomains';
 
 /** Best-effort check for a request that arrived over HTTPS (direct or proxied). */
-function isHttps(
-  event: unknown,
-): boolean {
+function isHttps(event: unknown): boolean {
   try {
-    const req =
-      (
-        event as {
-          req?: {
-            url?: string;
-            headers?: Headers;
-          };
-        }
-      )
-        ?.req;
-    const proto =
-      req?.headers?.get?.(
-        'x-forwarded-proto',
-      );
-    if (
-      proto
-    )
-      return (
-        proto
-          .split(
-            ',',
-          )[0]
-          .trim() ===
-        'https'
-      );
-    if (
-      req?.url
-    )
-      return (
-        new URL(
-          req.url,
-        )
-          .protocol ===
-        'https:'
-      );
+    const req = (
+      event as {
+        req?: {
+          url?: string;
+          headers?: Headers;
+        };
+      }
+    )?.req;
+    const proto = req?.headers?.get?.('x-forwarded-proto');
+    if (proto) return proto.split(',')[0].trim() === 'https';
+    if (req?.url) return new URL(req.url).protocol === 'https:';
   } catch {
     /* fall through */
   }
@@ -83,20 +51,8 @@ function isHttps(
 }
 
 /** Set `name` to `value` only when the handler has not already set it. */
-function setIfAbsent(
-  headers: Headers,
-  name: string,
-  value: string,
-): void {
-  if (
-    !headers.has(
-      name,
-    )
-  )
-    headers.set(
-      name,
-      value,
-    );
+function setIfAbsent(headers: Headers, name: string, value: string): void {
+  if (!headers.has(name)) headers.set(name, value);
 }
 
 /**
@@ -115,44 +71,24 @@ function setIfAbsent(
  * `anon-html-cache.ts` set went into a throwaway bag and was discarded. Both
  * plugins were silently no-ops on every response.
  */
-export function responseHeaders(
-  res: unknown,
-  event: unknown,
-): Headers | null {
-  const fromRes =
-    (
-      res as {
-        headers?: Headers;
-      }
-    )
-      ?.headers;
-  if (
-    fromRes &&
-    typeof fromRes.set ===
-      'function' &&
-    typeof fromRes.has ===
-      'function'
-  ) {
+export function responseHeaders(res: unknown, event: unknown): Headers | null {
+  const fromRes = (
+    res as {
+      headers?: Headers;
+    }
+  )?.headers;
+  if (fromRes && typeof fromRes.set === 'function' && typeof fromRes.has === 'function') {
     return fromRes;
   }
   // Fallback for any runtime that hands the hook a bare event instead.
-  const fromEvent =
-    (
-      event as {
-        res?: {
-          headers?: Headers;
-        };
-      }
-    )
-      ?.res
-      ?.headers;
-  if (
-    fromEvent &&
-    typeof fromEvent.set ===
-      'function' &&
-    typeof fromEvent.has ===
-      'function'
-  ) {
+  const fromEvent = (
+    event as {
+      res?: {
+        headers?: Headers;
+      };
+    }
+  )?.res?.headers;
+  if (fromEvent && typeof fromEvent.set === 'function' && typeof fromEvent.has === 'function') {
     return fromEvent;
   }
   return null;
@@ -163,112 +99,42 @@ export function responseHeaders(
 // in vite.config.ts under nitro({ plugins: [...] })).
 export default function securityHeadersPlugin(nitroApp: {
   hooks: {
-    hook: (
-      name: string,
-      fn: (
-        res: unknown,
-        event: unknown,
-      ) => void,
-    ) => void;
+    hook: (name: string, fn: (res: unknown, event: unknown) => void) => void;
   };
 }): void {
-  nitroApp.hooks.hook(
-    'response',
-    (
-      res: unknown,
-      event: unknown,
-    ) => {
-      try {
-        const headers =
-          responseHeaders(
-            res,
-            event,
-          );
-        if (
-          !headers ||
-          typeof headers.set !==
-            'function' ||
-          typeof headers.has !==
-            'function'
-        ) {
-          return;
-        }
-
-        // A frame loader (`GET /vibe-frame`) carries its own complete policy, with a CSP
-        // `sandbox` directive. The site's report-only policy and reporting endpoint must
-        // not ride along: that document is the one place user code runs, and its header
-        // is the whole policy (docs/csp.md, "Frames that run user code"). Report-Only
-        // would also be mintRequestCspNonce's, which Start's getRouter() sets even for a
-        // server route, so it is removed here too.
-        if (
-          carriesFramePolicy(
-            headers.get(
-              'Content-Security-Policy',
-            ),
-          )
-        ) {
-          headers.delete(
-            'Content-Security-Policy-Report-Only',
-          );
-          headers.delete(
-            'Reporting-Endpoints',
-          );
-          setIfAbsent(
-            headers,
-            'X-Content-Type-Options',
-            'nosniff',
-          );
-          return;
-        }
-
-        setIfAbsent(
-          headers,
-          'X-Content-Type-Options',
-          'nosniff',
-        );
-        setIfAbsent(
-          headers,
-          'Referrer-Policy',
-          'strict-origin-when-cross-origin',
-        );
-        setIfAbsent(
-          headers,
-          'X-Permitted-Cross-Domain-Policies',
-          'none',
-        );
-        setIfAbsent(
-          headers,
-          'Content-Security-Policy',
-          FRAME_ANCESTORS,
-        );
-        // A page Start rendered already carries the nonce'd report-only policy (set in
-        // getRouter() via mintRequestCspNonce). Anything else gets the hash-only one.
-        setIfAbsent(
-          headers,
-          'Content-Security-Policy-Report-Only',
-          buildCspPolicy(
-            {},
-          ),
-        );
-        setIfAbsent(
-          headers,
-          'Reporting-Endpoints',
-          REPORTING_ENDPOINTS,
-        );
-        if (
-          isHttps(
-            event,
-          )
-        ) {
-          setIfAbsent(
-            headers,
-            'Strict-Transport-Security',
-            HSTS,
-          );
-        }
-      } catch {
-        // Never let header logic break a response.
+  nitroApp.hooks.hook('response', (res: unknown, event: unknown) => {
+    try {
+      const headers = responseHeaders(res, event);
+      if (!headers || typeof headers.set !== 'function' || typeof headers.has !== 'function') {
+        return;
       }
-    },
-  );
+
+      // A frame loader (`GET /vibe-frame`) carries its own complete policy, with a CSP
+      // `sandbox` directive. The site's report-only policy and reporting endpoint must
+      // not ride along: that document is the one place user code runs, and its header
+      // is the whole policy (docs/csp.md, "Frames that run user code"). Report-Only
+      // would also be mintRequestCspNonce's, which Start's getRouter() sets even for a
+      // server route, so it is removed here too.
+      if (carriesFramePolicy(headers.get('Content-Security-Policy'))) {
+        headers.delete('Content-Security-Policy-Report-Only');
+        headers.delete('Reporting-Endpoints');
+        setIfAbsent(headers, 'X-Content-Type-Options', 'nosniff');
+        return;
+      }
+
+      setIfAbsent(headers, 'X-Content-Type-Options', 'nosniff');
+      setIfAbsent(headers, 'Referrer-Policy', 'strict-origin-when-cross-origin');
+      setIfAbsent(headers, 'X-Permitted-Cross-Domain-Policies', 'none');
+      setIfAbsent(headers, 'Content-Security-Policy', FRAME_ANCESTORS);
+      // A page Start rendered already carries the nonce'd report-only policy (set in
+      // getRouter() via mintRequestCspNonce). Anything else gets the hash-only one.
+      setIfAbsent(headers, 'Content-Security-Policy-Report-Only', buildCspPolicy({}));
+      setIfAbsent(headers, 'Reporting-Endpoints', REPORTING_ENDPOINTS);
+      if (isHttps(event)) {
+        setIfAbsent(headers, 'Strict-Transport-Security', HSTS);
+      }
+    } catch {
+      // Never let header logic break a response.
+    }
+  });
 }

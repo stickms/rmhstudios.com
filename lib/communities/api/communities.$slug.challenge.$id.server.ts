@@ -9,7 +9,7 @@ export const route = apiRoute('/api/communities/$slug/challenge/$id', {
     const guard = await requireMod(params.slug, userId);
     if (!guard.ok) return guard.response;
     try {
-      await cancelChallenge(guard.value.id, params.id);
+      await cancelChallenge(guard.value.id, params.id, userId);
       return Response.json({ success: true });
     } catch (e) {
       if (e instanceof ChallengeError) {

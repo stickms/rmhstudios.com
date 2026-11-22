@@ -15,192 +15,68 @@
 //   node scripts/rmhos/print-pin.mjs [dir]      (default public/rmhos-dev)
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import {
-  fileURLToPath,
-  pathToFileURL,
-} from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /** manifest.json file name -> the role the page uses for it. */
-export const ROLES =
-  {
-    bzImage:
-      'bzImage',
-    'rootfs.ext4':
-      'rootfs',
-    'state.zst':
-      'state',
-    'seabios.bin':
-      'seabios',
-    'vgabios.bin':
-      'vgabios',
-  };
+export const ROLES = {
+  bzImage: 'bzImage',
+  'rootfs.ext4': 'rootfs',
+  'state.zst': 'state',
+  'seabios.bin': 'seabios',
+  'vgabios.bin': 'vgabios',
+};
 
 /** The pin for a manifest: `{ version, files: { <role>: { size, sha256 } } }`. Throws on a gap. */
-export function toPin(
-  manifest,
-) {
-  if (
-    !/^[0-9a-f]{12}$/.test(
-      manifest?.version ??
-        '',
-    )
-  )
-    throw new Error(
-      'manifest has no valid version',
-    );
-  const files =
-    {};
-  for (const [
-    name,
-    role,
-  ] of Object.entries(
-    ROLES,
-  )) {
-    const f =
-      manifest
-        .files?.[
-        name
-      ];
-    if (
-      !f ||
-      !Number.isSafeInteger(
-        f.size,
-      ) ||
-      f.size <=
-        0 ||
-      !/^[0-9a-f]{64}$/.test(
-        f.sha256 ??
-          '',
-      )
-    ) {
-      throw new Error(
-        `manifest.files["${name}"] is missing or malformed`,
-      );
+export function toPin(manifest) {
+  if (!/^[0-9a-f]{12}$/.test(manifest?.version ?? '')) throw new Error('manifest has no valid version');
+  const files = {};
+  for (const [name, role] of Object.entries(ROLES)) {
+    const f = manifest.files?.[name];
+    if (!f || !Number.isSafeInteger(f.size) || f.size <= 0 || !/^[0-9a-f]{64}$/.test(f.sha256 ?? '')) {
+      throw new Error(`manifest.files["${name}"] is missing or malformed`);
     }
-    files[
-      role
-    ] =
-      {
-        size: f.size,
-        sha256:
-          f.sha256,
-      };
+    files[role] = {
+      size: f.size,
+      sha256: f.sha256,
+    };
   }
   return {
-    version:
-      manifest.version,
+    version: manifest.version,
     files,
   };
 }
 
 /** The TypeScript source for a pin (2-space indent, single quotes, trailing commas). */
-export function renderPin(
-  pin,
-  constName = 'PUBLISHED_IMAGE',
-  type = 'PinnedImage | null',
-) {
-  const lines =
-    [
-      `export const ${constName}: ${type} = {`,
-      `  version: '${pin.version}',`,
-      '  files: {',
-    ];
-  for (const [
-    role,
-    f,
-  ] of Object.entries(
-    pin.files,
-  )) {
-    lines.push(
-      `    ${role}: {`,
-      `      size: ${f.size},`,
-      `      sha256: '${f.sha256}',`,
-      '    },',
-    );
+export function renderPin(pin, constName = 'PUBLISHED_IMAGE', type = 'PinnedImage | null') {
+  const lines = [`export const ${constName}: ${type} = {`, `  version: '${pin.version}',`, '  files: {'];
+  for (const [role, f] of Object.entries(pin.files)) {
+    lines.push(`    ${role}: {`, `      size: ${f.size},`, `      sha256: '${f.sha256}',`, '    },');
   }
-  lines.push(
-    '  },',
-    '};',
-  );
-  return lines.join(
-    '\n',
-  );
+  lines.push('  },', '};');
+  return lines.join('\n');
 }
 
 /** What the workflow and publish-r2.mjs print at the end. */
-export function pinReport(
-  manifest,
-) {
-  const b =
-    manifest.build ??
-    {};
+export function pinReport(manifest) {
+  const b = manifest.build ?? {};
   return [
     '',
     'Paste this into features/rmhos/engine/image-manifest.ts (replace the published-image constant):',
     '',
-    renderPin(
-      toPin(
-        manifest,
-      ),
-    ),
+    renderPin(toPin(manifest)),
     '',
     `// built from commit ${b.commit ?? 'unknown'}${b.runUrl ? `, ${b.runUrl}` : ''}${b.date ? `, ${b.date}` : ''}`,
     '',
-  ].join(
-    '\n',
-  );
+  ].join('\n');
 }
 
-if (
-  process
-    .argv[1] &&
-  import.meta
-    .url ===
-    pathToFileURL(
-      process
-        .argv[1],
-    )
-      .href
-) {
-  const here =
-    path.dirname(
-      fileURLToPath(
-        import.meta
-          .url,
-      ),
-    );
-  const dir =
-    path.resolve(
-      process
-        .argv[2] ??
-        path.join(
-          here,
-          '..',
-          '..',
-          'public',
-          'rmhos-dev',
-        ),
-    );
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const dir = path.resolve(process.argv[2] ?? path.join(here, '..', '..', 'public', 'rmhos-dev'));
   try {
-    console.log(
-      pinReport(
-        JSON.parse(
-          readFileSync(
-            path.join(
-              dir,
-              'manifest.json',
-            ),
-            'utf8',
-          ),
-        ),
-      ),
-    );
+    console.log(pinReport(JSON.parse(readFileSync(path.join(dir, 'manifest.json'), 'utf8'))));
   } catch (e) {
-    console.error(
-      `print-pin: ${e instanceof Error ? e.message : e}`,
-    );
-    process.exit(
-      1,
-    );
+    console.error(`print-pin: ${e instanceof Error ? e.message : e}`);
+    process.exit(1);
   }
 }

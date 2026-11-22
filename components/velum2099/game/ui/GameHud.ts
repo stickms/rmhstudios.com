@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 /* ═══════════════════════════════════════════
    NEURODRIVE — Gameplay HUD
    DOM overlay showing the active objective,
@@ -6,8 +7,7 @@
    speed, pursuit bar and event toasts.
    ═══════════════════════════════════════════ */
 
-const STYLE_ID =
-  'neurodrive-hud-style';
+const STYLE_ID = 'neurodrive-hud-style';
 const CSS = `
 @keyframes nd-toast-in { from { opacity:0; transform:translateY(-8px) scale(0.96);} to { opacity:1; transform:none;} }
 /* Inset by the device's safe area rather than \`inset:0\`. Every panel below pins
@@ -78,19 +78,12 @@ const CSS = `
 `;
 
 export class GameHud {
-  constructor(
-    container,
-  ) {
-    this._container =
-      container;
+  constructor(container) {
+    this._container = container;
     this._injectStyle();
 
-    const root =
-      document.createElement(
-        'div',
-      );
-    root.className =
-      'nd-hud';
+    const root = document.createElement('div');
+    root.className = 'nd-hud';
     root.innerHTML = `
           <div class="nd-panel nd-obj">
             <div class="lbl">OBJECTIVE</div>
@@ -115,345 +108,149 @@ export class GameHud {
           </div>
           <div class="nd-toasts"></div>
         `;
-    this._container.appendChild(
-      root,
-    );
-    this._root =
-      root;
+    this._container.appendChild(root);
+    this._root = root;
 
-    this._el =
-      {
-        objLbl:
-          root.querySelector(
-            '.nd-obj .lbl',
-          ),
-        arrow:
-          root.querySelector(
-            '.nd-obj .arrow',
-          ),
-        dist: root.querySelector(
-          '.nd-obj .dist',
-        ),
-        timebar:
-          root.querySelector(
-            '.nd-obj .nd-timebar',
-          ),
-        timebarFill:
-          root.querySelector(
-            '.nd-obj .nd-timebar > i',
-          ),
-        credits:
-          root.querySelector(
-            '.nd-credits .amt',
-          ),
-        best: root.querySelector(
-          '.nd-credits .best',
-        ),
-        wanted:
-          root.querySelector(
-            '.nd-credits .wanted',
-          ),
-        speed:
-          root.querySelector(
-            '.nd-speed .v',
-          ),
-        weapon:
-          root.querySelector(
-            '.nd-weapon',
-          ),
-        weaponBar:
-          root.querySelector(
-            '.nd-weapon .nd-wbar',
-          ),
-        weaponFill:
-          root.querySelector(
-            '.nd-weapon .nd-wbar > i',
-          ),
-        weaponLbl:
-          root.querySelector(
-            '.nd-weapon .lbl',
-          ),
-        pursuit:
-          root.querySelector(
-            '.nd-pursuit',
-          ),
-        pursuitTtl:
-          root.querySelector(
-            '.nd-pursuit .ttl',
-          ),
-        pbar: root.querySelector(
-          '.nd-pursuit .nd-pbar',
-        ),
-        pbarFill:
-          root.querySelector(
-            '.nd-pursuit .nd-pbar > i',
-          ),
-        toasts:
-          root.querySelector(
-            '.nd-toasts',
-          ),
-      };
-    this._toasts =
-      [];
+    this._el = {
+      objLbl: root.querySelector('.nd-obj .lbl'),
+      arrow: root.querySelector('.nd-obj .arrow'),
+      dist: root.querySelector('.nd-obj .dist'),
+      timebar: root.querySelector('.nd-obj .nd-timebar'),
+      timebarFill: root.querySelector('.nd-obj .nd-timebar > i'),
+      credits: root.querySelector('.nd-credits .amt'),
+      best: root.querySelector('.nd-credits .best'),
+      wanted: root.querySelector('.nd-credits .wanted'),
+      speed: root.querySelector('.nd-speed .v'),
+      weapon: root.querySelector('.nd-weapon'),
+      weaponBar: root.querySelector('.nd-weapon .nd-wbar'),
+      weaponFill: root.querySelector('.nd-weapon .nd-wbar > i'),
+      weaponLbl: root.querySelector('.nd-weapon .lbl'),
+      pursuit: root.querySelector('.nd-pursuit'),
+      pursuitTtl: root.querySelector('.nd-pursuit .ttl'),
+      pbar: root.querySelector('.nd-pursuit .nd-pbar'),
+      pbarFill: root.querySelector('.nd-pursuit .nd-pbar > i'),
+      toasts: root.querySelector('.nd-toasts'),
+    };
+    this._toasts = [];
   }
 
   show() {
-    this._root.style.display =
-      'block';
+    this._root.style.display = 'block';
   }
   hide() {
-    this._root.style.display =
-      'none';
+    this._root.style.display = 'none';
   }
 
-  update(
-    state,
-    weapon,
-  ) {
-    const e =
-      this
-        ._el;
+  update(state, weapon) {
+    const e = this._el;
 
     // Weapon heat gauge
-    if (
-      weapon
-    ) {
-      e.weapon.style.display =
-        'block';
-      const over =
-        !!weapon.overheated;
-      e.weapon.classList.toggle(
-        'over',
-        over,
-      );
-      e.weaponBar.classList.toggle(
-        'over',
-        over,
-      );
-      e.weaponLbl.textContent =
-        over
-          ? 'OVERHEAT'
-          : 'LASER';
+    if (weapon) {
+      e.weapon.style.display = 'block';
+      const over = !!weapon.overheated;
+      e.weapon.classList.toggle('over', over);
+      e.weaponBar.classList.toggle('over', over);
+      e.weaponLbl.textContent = over ? 'OVERHEAT' : 'LASER';
       e.weaponFill.style.width = `${Math.min(1, weapon.heat) * 100}%`;
     } else {
-      e.weapon.style.display =
-        'none';
+      e.weapon.style.display = 'none';
     }
 
     // Objective + pointer
-    e.objLbl.textContent =
-      state.objective;
-    if (
-      state.distance !=
-      null
-    ) {
+    e.objLbl.textContent = state.objective;
+    if (state.distance != null) {
       e.dist.textContent = `${Math.round(state.distance)}m`;
       e.arrow.style.transform = `rotate(${state.bearing}rad)`;
-      e.arrow.style.visibility =
-        'visible';
+      e.arrow.style.visibility = 'visible';
     } else {
-      e.dist.textContent =
-        '...';
-      e.arrow.style.visibility =
-        'hidden';
+      e.dist.textContent = '...';
+      e.arrow.style.visibility = 'hidden';
     }
 
     // Delivery timer
-    if (
-      state.timeLeft !=
-        null &&
-      state.timeMax
-    ) {
-      const frac =
-        Math.max(
-          0,
-          Math.min(
-            1,
-            state.timeLeft /
-              state.timeMax,
-          ),
-        );
-      e.timebar.style.display =
-        'block';
+    if (state.timeLeft != null && state.timeMax) {
+      const frac = Math.max(0, Math.min(1, state.timeLeft / state.timeMax));
+      e.timebar.style.display = 'block';
       e.timebarFill.style.width = `${frac * 100}%`;
-      e.timebar.classList.toggle(
-        'warn',
-        state.timeLeft <
-          8,
-      );
+      e.timebar.classList.toggle('warn', state.timeLeft < 8);
       e.dist.textContent = `${Math.round(state.distance)}m · ${Math.ceil(state.timeLeft)}s`;
     } else {
-      e.timebar.style.display =
-        'none';
+      e.timebar.style.display = 'none';
     }
 
     // Credits / wanted
-    e.credits.textContent = `¥${state.credits.toLocaleString()}`;
-    e.best.textContent = `BEST ¥${state.best.toLocaleString()}`;
-    if (
-      state.heat >
-      0
-    ) {
-      e.wanted.style.color =
-        '#ff5a72';
-      e.wanted.textContent =
-        '★'.repeat(
-          state.heat,
-        ) +
-        '☆'.repeat(
-          Math.max(
-            0,
-            5 -
-              state.heat,
-          ),
-        );
+    e.credits.textContent = `¥${formatNumber(state.credits, currentDocumentLocale())}`;
+    e.best.textContent = `BEST ¥${formatNumber(state.best, currentDocumentLocale())}`;
+    if (state.heat > 0) {
+      e.wanted.style.color = '#ff5a72';
+      e.wanted.textContent = '★'.repeat(state.heat) + '☆'.repeat(Math.max(0, 5 - state.heat));
     } else {
-      e.wanted.textContent =
-        '';
+      e.wanted.textContent = '';
     }
 
     // Speed
-    e.speed.textContent =
-      Math.round(
-        state.speedKmh,
-      );
+    e.speed.textContent = Math.round(state.speedKmh);
 
     // Pursuit bar
-    if (
-      state.police >
-      0
-    ) {
-      e.pursuit.style.display =
-        'block';
-      if (
-        state.escapeProgress >
-          state.bustProgress &&
-        state.escapeProgress >
-          0
-      ) {
-        e.pursuitTtl.textContent =
-          '↑ LOSING THEM — KEEP GOING';
-        e.pbar.className =
-          'nd-pbar esc';
+    if (state.police > 0) {
+      e.pursuit.style.display = 'block';
+      if (state.escapeProgress > state.bustProgress && state.escapeProgress > 0) {
+        e.pursuitTtl.textContent = '↑ LOSING THEM — KEEP GOING';
+        e.pbar.className = 'nd-pbar esc';
         e.pbarFill.style.width = `${state.escapeProgress * 100}%`;
       } else {
         e.pursuitTtl.textContent = `⚠ POLICE PURSUIT — ${state.police} UNIT${state.police > 1 ? 'S' : ''}`;
-        e.pbar.className =
-          'nd-pbar bust';
+        e.pbar.className = 'nd-pbar bust';
         e.pbarFill.style.width = `${state.bustProgress * 100}%`;
       }
     } else {
-      e.pursuit.style.display =
-        'none';
+      e.pursuit.style.display = 'none';
     }
   }
 
-  toast(
-    text,
-    kind = 'info',
-  ) {
-    const el =
-      document.createElement(
-        'div',
-      );
+  toast(text, kind = 'info') {
+    const el = document.createElement('div');
     el.className = `nd-toast ${kind}`;
-    el.textContent =
-      text;
-    this._el.toasts.appendChild(
+    el.textContent = text;
+    this._el.toasts.appendChild(el);
+    const entry = {
       el,
-    );
-    const entry =
-      {
-        el,
-        life: 3.4,
-      };
-    this._toasts.push(
-      entry,
-    );
+      life: 3.4,
+    };
+    this._toasts.push(entry);
     // Cap visible toasts
-    while (
-      this
-        ._toasts
-        .length >
-      4
-    ) {
-      const old =
-        this._toasts.shift();
+    while (this._toasts.length > 4) {
+      const old = this._toasts.shift();
       old.el.remove();
     }
   }
 
-  tickToasts(
-    dt,
-  ) {
-    for (
-      let i =
-        this
-          ._toasts
-          .length -
-        1;
-      i >=
-      0;
-      i--
-    ) {
-      const t =
-        this
-          ._toasts[
-          i
-        ];
-      t.life -=
-        dt;
-      if (
-        t.life <=
-        0
-      ) {
-        t.el.style.transition =
-          'opacity 0.4s';
-        t.el.style.opacity =
-          '0';
-        if (
-          t.life <
-          -0.4
-        ) {
+  tickToasts(dt) {
+    for (let i = this._toasts.length - 1; i >= 0; i--) {
+      const t = this._toasts[i];
+      t.life -= dt;
+      if (t.life <= 0) {
+        t.el.style.transition = 'opacity 0.4s';
+        t.el.style.opacity = '0';
+        if (t.life < -0.4) {
           t.el.remove();
-          this._toasts.splice(
-            i,
-            1,
-          );
+          this._toasts.splice(i, 1);
         }
       }
     }
   }
 
   _injectStyle() {
-    if (
-      document.getElementById(
-        STYLE_ID,
-      )
-    )
-      return;
-    const s =
-      document.createElement(
-        'style',
-      );
-    s.id =
-      STYLE_ID;
-    s.textContent =
-      CSS;
-    document.head.appendChild(
-      s,
-    );
+    if (document.getElementById(STYLE_ID)) return;
+    const s = document.createElement('style');
+    s.id = STYLE_ID;
+    s.textContent = CSS;
+    document.head.appendChild(s);
   }
 
   dispose() {
-    if (
-      this
-        ._root
-    )
-      this._root.remove();
-    this._root =
-      null;
-    this._toasts =
-      [];
+    if (this._root) this._root.remove();
+    this._root = null;
+    this._toasts = [];
   }
 }

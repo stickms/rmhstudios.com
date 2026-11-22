@@ -9,6 +9,7 @@ import { canBuy, visibleShopItems, type SteamShopItem } from './shop-view';
 import { purchaseShopItemApi, equipShopItemApi } from '@/lib/shop/shop.contract';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface ShopPageData {
   coins: number;
@@ -36,7 +37,7 @@ export function Swatch({ data }: { data: { emoji?: string; color?: string; gradi
 }
 
 /** The points shop, in the Steam frame: spend coins on cosmetics, then equip them. */
-export function ShopPage({ data }: { data: ShopPageData }) {
+export function ShopPage({ data }: { data: ShopPageData }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('games-hub');
   const pathname = useLocation({ select: (l) => l.pathname });
   const [items, setItems] = useState(data.items);
@@ -83,7 +84,7 @@ export function ShopPage({ data }: { data: ShopPageData }) {
           <h1 className="stm-web-title">{t('steam-shop-title', { defaultValue: 'Points shop' })}</h1>
           {data.signedIn ? (
             <span className="stm-shop-coins" aria-label={t('steam-shop-coins', { defaultValue: 'Coins: {{n}}', n: coins })}>
-              <CoinIcon className="h-4 w-4" aria-hidden /> {coins.toLocaleString()}
+              <CoinIcon className="h-4 w-4" aria-hidden /> {fmt.number(coins)}
             </span>
           ) : null}
         </header>

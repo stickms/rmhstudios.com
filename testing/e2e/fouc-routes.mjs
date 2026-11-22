@@ -103,6 +103,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of the build detail page.',
   },
+  '/create/builds/$slug/insights': {
+    path: '/create/builds/fouc-audit-no-such-build/insights',
+    fidelity: 'shell',
+    why: 'Owner-only insights for an unknown build: the page frame with its signed-out or not-found branch.',
+  },
   '/tf2/loadout/l/$slug': {
     path: '/tf2/loadout/l/fouc-audit-no-such-loadout',
     fidelity: 'shell',
@@ -153,6 +158,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Real game, absent guide — the guide shell with its not-found branch.',
   },
+  '/games/$gameId/updates': {
+    path: '/games/hearthworks/updates',
+    fidelity: 'content',
+    why: 'A catalog id, so the changelog renders with its real notes (or its empty state).',
+  },
   '/games/profile/$id': {
     path: '/games/profile/fouc-audit',
     fidelity: 'shell',
@@ -182,6 +192,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     path: '/games/groups/fouc-audit',
     fidelity: 'shell',
     why: 'A 301 to `/c/$slug`; the audited paint is the community page it lands on.',
+  },
+  '/groups/join/$code': {
+    path: '/groups/join/fouc-audit-no-such-code',
+    fidelity: 'shell',
+    why: 'Invalid-link branch of the group invite page (the same generic state every bad code renders).',
   },
   '/groups/$id': {
     path: '/groups/fouc-audit',
@@ -258,6 +273,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'A non-existent room code renders the lobby-not-found state in RMHBox chrome.',
   },
+  '/rmhbox/players/$userId': {
+    path: '/rmhbox/players/fouc-audit',
+    fidelity: 'shell',
+    why: 'An unknown player: the RMHBox shell with the not-found state.',
+  },
   '/rmhbox/minigames/$minigameId/history': {
     path: '/rmhbox/minigames/fouc-audit/history',
     fidelity: 'shell',
@@ -293,10 +313,20 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'As above, for RMHTube.',
   },
+  '/rmhtube/party/$roomId': {
+    path: '/rmhtube/party/FOUC00',
+    fidelity: 'shell',
+    why: 'Absent party code: the party page shell with its not-found branch.',
+  },
   '/rmhtype/$roomId': {
     path: '/rmhtype/fouc-audit',
     fidelity: 'shell',
     why: 'As above, for RMHType.',
+  },
+  '/rmhtype/lessons/$lessonId': {
+    path: '/rmhtype/lessons/fouc-audit',
+    fidelity: 'shell',
+    why: 'An unknown lesson renders the not-found branch inside the RMHType shell (sign-in gated).',
   },
   '/sitemaps/$name': {
     path: null,
@@ -368,12 +398,25 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a deck page.',
   },
+  '/study/$deckId/edit': {
+    path: '/study/fouc-audit/edit',
+    fidelity: 'shell',
+    why: 'Not-found branch of the deck editor (owner-only).',
+  },
+  '/study/$deckId/practice': {
+    path: '/study/fouc-audit/practice',
+    fidelity: 'shell',
+    why: 'Not-found branch of a practice test.',
+  },
   '/tag/$tag': {
     path: '/tag/fouc-audit',
     fidelity: 'content',
     why: 'A tag with no posts still renders the populated tag shell plus its empty state.',
   },
   '/tag/$tag/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
+  '/c/$slug/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
+  '/builds/$slug/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
+  '/games/$gameId/updates/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
   '/thread/$rootId': {
     path: '/thread/fouc-audit',
     fidelity: 'shell',

@@ -16,18 +16,8 @@ export function aimPoint(
   z: number;
 } {
   return {
-    x:
-      x +
-      Math.sin(
-        yaw,
-      ) *
-        AIM_DISTANCE,
-    z:
-      z +
-      Math.cos(
-        yaw,
-      ) *
-        AIM_DISTANCE,
+    x: x + Math.sin(yaw) * AIM_DISTANCE,
+    z: z + Math.cos(yaw) * AIM_DISTANCE,
   };
 }
 
@@ -39,108 +29,48 @@ export function aimPoint(
 export function createCombatControls(
   store: HearthworksStore,
   runtime: Runtime,
-  now: () => number = () =>
-    performance.now(),
+  now: () => number = () => performance.now(),
 ) {
-  let last =
-    -Infinity;
-  const me =
-    () => {
-      const s =
-        store.getState();
-      return s
-        .world
-        .players[
-        s
-          .playerId
-      ];
-    };
+  let last = -Infinity;
+  const me = () => {
+    const s = store.getState();
+    return s.world.players[s.playerId];
+  };
   return {
     /** True when a shot was sent. */
     fire(): boolean {
-      const p =
-        me();
-      const gun =
-        p
-          ?.arms
-          .equipped;
-      if (
-        !p ||
-        !gun
-      )
-        return false;
-      const t =
-        now();
-      if (
-        t -
-          last <
-        WEAPONS[
-          gun
-        ]
-          .fireTicks *
-          TICK_MS
-      )
-        return false;
-      last =
-        t;
-      const a =
-        runtime.avatar;
-      const {
-        dispatch,
-      } =
-        store.getState();
+      const p = me();
+      const gun = p?.arms.equipped;
+      if (!p || !gun) return false;
+      const t = now();
+      if (t - last < WEAPONS[gun].fireTicks * TICK_MS) return false;
+      last = t;
+      const a = runtime.avatar;
+      const { dispatch } = store.getState();
       // The sim shoots from where the world thinks you are, which trails the avatar by up to a sync interval.
-      if (
-        Math.hypot(
-          p.x -
-            a.x,
-          p.z -
-            a.z,
-        ) >
-        0.05
-      )
-        dispatch(
-          {
-            type: 'move',
-            x: a.x,
-            z: a.z,
-          },
-        );
-      const aim =
-        aimPoint(
-          a.x,
-          a.z,
-          a.yaw,
-        );
-      dispatch(
-        {
-          type: 'shoot',
-          x: aim.x,
-          z: aim.z,
-        },
-      );
+      if (Math.hypot(p.x - a.x, p.z - a.z) > 0.05)
+        dispatch({
+          type: 'move',
+          x: a.x,
+          z: a.z,
+        });
+      const aim = aimPoint(a.x, a.z, a.yaw);
+      dispatch({
+        type: 'shoot',
+        x: aim.x,
+        z: aim.z,
+      });
       return true;
     },
     reload(): boolean {
-      if (
-        !me()
-          ?.arms
-          .equipped
-      )
-        return false;
-      store
-        .getState()
-        .dispatch(
-          {
-            type: 'reload',
-          },
-        );
+      if (!me()?.arms.equipped) return false;
+      store.getState().dispatch({
+        type: 'reload',
+      });
       return true;
     },
     armed(): boolean {
-      return !!me()
-        ?.arms
-        .equipped;
+      return !!me()?.arms.equipped;
     },
   };
 }

@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
 import { prisma } from '@/lib/prisma.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { getCommunityBySlug, getRole, canModerate } from '@/lib/communities/access.server';
 import { createAnnouncementBody } from '@/lib/communities/communities-schema';
 
@@ -59,14 +60,24 @@ export const route = apiRoute('/api/communities/$slug/announcements', {
       if (!canModerate(role))
         return Response.json({ error: 'Only mods can post announcements' }, { status: 403 });
 
-      const created = await prisma.communityAnnouncement.create({
-        data: { communityId: community.id, authorId: session.user.id, body: body.body },
-        select: {
-          id: true,
-          body: true,
-          createdAt: true,
-          author: { select: { name: true, handle: true, image: true } },
-        },
+      const created = await prisma.$transaction(async (tx) => {
+        const row = await tx.communityAnnouncement.create({
+          data: { communityId: community.id, authorId: session.user.id, body: body.body },
+          select: {
+            id: true,
+            body: true,
+            createdAt: true,
+            author: { select: { name: true, handle: true, image: true } },
+          },
+        });
+        await logModAction(tx, {
+          communityId: community.id,
+          actorId: session.user.id,
+          action: 'announcement_posted',
+          targetType: 'announcement',
+          targetId: row.id,
+        });
+        return row;
       });
       return Response.json(
         { announcement: { ...created, createdAt: created.createdAt.toISOString() } },

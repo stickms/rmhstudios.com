@@ -24,11 +24,94 @@ const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const key = (k: string) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : JSON.stringify(k));
 
 /** Structural TS type of an example value. */
+// Example values that are `null` say nothing about the type, so the nullable
+// fields of the API are named here.
+const NULLABLE: Record<string, string> = {
+  nextCursor: 'string | null',
+  pinnedOrder: 'number | null',
+  contentWarning: 'string | null',
+  previousScore: 'number | null',
+  description: 'string | null',
+  externalId: 'string | null',
+  poll: '{ id: string; question: string; multiSelect: boolean; ranked: boolean; quiz: boolean; correctOptionId: string | null; explanation: string | null; ended: boolean; closesAt: string | null; options: { id: string; text: string }[]; result: { winnerOptionId: string | null; percentOnly: boolean; rounds: { tally: Record<string, number>; eliminatedOptionId: string | null }[] } | null } | null',
+
+  // Sprint 07
+  // s07-10 api-events
+  endsAt: 'string | null',
+  timeZone: 'string | null',
+  occurrence: 'string | null',
+  note: 'string | null',
+  venue: 'string | null',
+  capacity: 'number | null',
+  communityId: 'string | null',
+  yourRsvp: "'going' | 'maybe' | 'waitlisted' | null",
+  waitlistPosition: 'number | null',
+
+  // s07-11 api-communities
+  gifUrl: 'string | null',
+  gifAlt: 'string | null',
+  pinnedReplyId: 'string | null',
+  flair: '{ id: string; name: string; color: string } | null',
+
+  // s07-12 api-reading
+  document: '{ title: string; url: string } | null',
+  goal: "{ unit: 'books' | 'pages'; target: number; books: number; pages: number; done: number } | null",
+  finishedAt: 'string | null',
+
+  // s07-17 build-screenshots
+  thumbnailAlt: 'string | null',
+
+  // Sprint 08
+  // s08-02 api-tournaments
+  gameTitle: 'string | null',
+  swissRounds: 'number | null',
+  startsAt: 'string | null',
+  checkInMinutes: 'number | null',
+  checkInOpensAt: 'string | null',
+  matchDeadlineHours: 'number | null',
+  startedAt: 'string | null',
+  completedAt: 'string | null',
+  playerA: '{ entrantId: string; seed: number | null; handle: string; name: string } | null',
+  playerB: '{ entrantId: string; seed: number | null; handle: string; name: string } | null',
+  seed: 'number | null',
+  placement: 'number | null',
+  winnerEntrantId: 'string | null',
+  resultSource: 'string | null',
+  scheduledAt: 'string | null',
+  deadlineAt: 'string | null',
+  claim: "{ state: 'open' | 'disputed'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null",
+  nextMatch: '{ id: string; round: number; slot: number; bracket: string; state: string; playerA: { entrantId: string; seed: number | null; handle: string; name: string } | null; playerB: { entrantId: string; seed: number | null; handle: string; name: string } | null; winnerEntrantId: string | null; resultSource: string | null; scheduledAt: string | null; deadlineAt: string | null; claim: { state: \'open\' | \'disputed\'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null } | null',
+
+  // s08-03 api-scheduled
+  held: "'community_sanction' | 'image_descriptions' | null",
+  postId: 'string | null',
+
+  // s08-14 api-search
+  bio: 'string | null',
+  location: 'string | null',
+  website: 'string | null',
+
+  // s08-15 card-images
+  frontImage: '{ url: string; alt: string } | null',
+  backImage: '{ url: string; alt: string } | null',
+
+};
+
+const SCHEDULED_ROW_FIELDS: Record<string, string> = {
+  scheduledAt: 'string | null',
+  poll: 'Record<string, unknown> | null',
+};
+
 function tsOf(v: unknown, k = ''): string {
-  if (v === null) return k === 'nextCursor' ? 'string | null' : 'unknown';
+  if (v === null) return NULLABLE[k] ?? 'unknown';
   if (Array.isArray(v)) return v.length ? `${tsOf(v[0])}[]` : 'unknown[]';
   if (typeof v === 'object') {
-    const entries = Object.entries(v as Json).map(([k, x]) => `${key(k)}: ${tsOf(x, k)}`);
+    // A drafts/scheduled row (s08-03): `scheduledAt` is null on a draft and `poll` is the stored payload, not a post's poll.
+    const row = 'held' in (v as Json) && 'postId' in (v as Json) && 'kind' in (v as Json);
+    const entries = Object.entries(v as Json).map(([k, x]) => {
+      const over = row ? SCHEDULED_ROW_FIELDS[k] : undefined;
+      return `${key(k)}: ${over ?? tsOf(x, k)}`;
+    });
     return entries.length ? `{ ${entries.join('; ')} }` : 'Record<string, unknown>';
   }
   return typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
@@ -36,11 +119,17 @@ function tsOf(v: unknown, k = ''): string {
     : 'unknown';
 }
 
-function propType(p: Json): string {
+// Request-body fields whose value is an object: spelled out so the SDK never types them loosely.
+const OBJECT_BODY_FIELDS: Record<string, string> = {
+  // s07-19 quiz polls
+  poll: '{ question: string; options: string[]; multiSelect?: boolean; durationHours?: number; quiz?: boolean; correctIndex?: number; explanation?: string }',
+};
+
+function propType(p: Json, name = ''): string {
   if (p.type === 'array') return 'string[]';
   if (p.type === 'integer' || p.type === 'number') return 'number';
   if (p.type === 'boolean') return 'boolean';
-  if (p.type === 'object') return 'Record<string, unknown>';
+  if (p.type === 'object') return OBJECT_BODY_FIELDS[name] ?? 'Record<string, unknown>';
   return 'string';
 }
 
@@ -67,7 +156,7 @@ function generate(): string {
       } else if (bodyType) {
         const props = Object.entries<Json>(bodyContent[bodyType].schema.properties ?? {}).map(
           ([k, p]) =>
-            `  /** ${String(p.description).replace(/\*\//g, '')} */\n  ${key(k)}?: ${propType(p)};`,
+            `  /** ${String(p.description).replace(/\*\//g, '')} */\n  ${key(k)}?: ${propType(p, k)};`,
         );
         types.push(`export interface ${T}Body {\n${props.join('\n')}\n}`);
         bodyField = `  body: ${T}Body;`;

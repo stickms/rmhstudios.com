@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { GROUP_KIND } from '@/lib/chat/chat.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { listGroupChats } from '@/lib/group-chats.server';
+import { refusedForGroup } from '@/lib/group-chat/manage.server';
 import { z } from 'zod';
 
 const createSchema = z.object({
@@ -47,12 +48,10 @@ export const route = apiRoute('/api/group-chats', {
       if (count >= MAX_GROUPS)
         return Response.json({ error: 'You are in too many groups' }, { status: 400 });
 
-      // Resolve members (by id or handle), excluding the creator (added below).
-      const users = await prisma.user.findMany({
-        where: { OR: body.members.flatMap((m) => [{ id: m }, { handle: m }]) },
-        select: { id: true },
-      });
-      const memberIds = new Set(users.map((u) => u.id));
+      // Resolve members (by id or handle), leaving out anyone in a block with the creator, banned accounts and
+      // names that match nobody. The creator is added below. Refusals are counted, never explained.
+      const vetted = await refusedForGroup(userId, body.members);
+      const memberIds = new Set(vetted.allowed.map((u) => u.id));
       memberIds.delete(userId);
       if (memberIds.size === 0)
         return Response.json({ error: 'Add at least one other member' }, { status: 400 });
@@ -69,7 +68,7 @@ export const route = apiRoute('/api/group-chats', {
         select: { id: true },
       });
 
-      return Response.json({ success: true, id: group.id }, { status: 201 });
+      return Response.json({ success: true, id: group.id, refused: vetted.refused }, { status: 201 });
     },
   ),
 });

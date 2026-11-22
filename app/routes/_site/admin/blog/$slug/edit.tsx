@@ -7,18 +7,29 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { Spinner } from '@/components/ui/spinner';
 import { getPostBySlug } from '@/lib/blog';
+import { requireAdminServerFn } from '@/lib/auth/server-fn-guards.server';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // Heavy, admin-only editor — code-split it out of the shared bundle.
 const MDXEditor = lazy(() => import('@/components/admin/MDXEditor').then((m) => ({ default: m.MDXEditor })));
 
 const fetchPostForEdit = createServerFn({ method: 'GET' })
-  .validator((slug: string) => slug)
-  // Admin gating lives once, in `/_site/admin/route.tsx` — its `beforeLoad`
-  // runs before this loader, so a second session resolution here bought nothing.
+  // A hand check rather than zod: this route module is in the shell's static closure, and zod is not.
+  .validator((slug: unknown): string => {
+    if (typeof slug !== 'string' || slug.length < 1 || slug.length > 200) throw new Error('Invalid slug');
+    return slug;
+  })
+  // A server function is its own HTTP endpoint: `/_site/admin/route.tsx`'s `beforeLoad` does not run before a direct
+  // call, and this one now returns drafts (s03-05), so it checks the admin flag itself and answers 404 otherwise.
   .handler(async ({ data: slug }) => {
     try {
-      const post = await getPostBySlug(slug, ["title", "slug", "date", "description", "image", "tags", "content", "announcement", "business", "announcementExpiresAt"]);
+      await requireAdminServerFn();
+      // `admin`: the editor opens a Log in any state, drafts and scheduled Logs included.
+      const post = await getPostBySlug(
+        slug,
+        ['title', 'slug', 'date', 'description', 'image', 'tags', 'content', 'announcement', 'business', 'announcementExpiresAt', 'status', 'publishAt'],
+        { admin: true },
+      );
       return post;
     } catch {
       throw notFound();

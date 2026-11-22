@@ -22,6 +22,7 @@ import {
 } from '@/lib/predictions/predictions.contract';
 import type { SerializedMarket } from '@/lib/predictions/predictions.server';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type AdminMarket = SerializedMarket;
 
@@ -30,7 +31,7 @@ export const Route = createFileRoute('/_site/admin/predictions')({
   component: AdminPredictionsPage,
 });
 
-function AdminPredictionsPage() {
+function AdminPredictionsPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const confirm = useConfirm();
   const [pending, setPending] = useState<AdminMarket[]>([]);
@@ -123,7 +124,7 @@ function AdminPredictionsPage() {
                       {m.description && <p className="mt-1 t-body text-site-text-muted">{m.description}</p>}
                       <p className="mt-2 t-body text-site-text-muted">
                         {m.creator ? `@${m.creator.handle ?? m.creator.name ?? t('user-fallback', { defaultValue: 'user' })}` : t('system', { defaultValue: 'system' })}
-                        {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
+                        {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: fmt.dateTime(new Date(m.closesAt)) })}` : ''}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:shrink-0">
@@ -156,7 +157,7 @@ function AdminPredictionsPage() {
                       </h3>
                       <p className="mt-1 t-body text-site-text-muted">
                         {t('market-stats', { defaultValue: '{{percent}}% YES · {{volume}} vol', percent: m.yesPercent, volume: m.volume })}
-                        {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
+                        {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: fmt.dateTime(new Date(m.closesAt)) })}` : ''}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:shrink-0">

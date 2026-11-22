@@ -1,8 +1,9 @@
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
+import { usePostAction } from './feed-nav';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import { BadgeCheck, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, Pin, ShieldCheck } from 'lucide-react';
 import { AutomatedBadge } from './AutomatedBadge';
 import { toast } from '@/lib/toast';
 import { RMHarkOverflowMenu } from './RMHarkOverflowMenu';
@@ -43,6 +44,7 @@ import { reactToPostApi, viewPostApi } from '@/lib/feed/rmhark-actions.contract'
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { translatePostApi } from '@/lib/ai/ai.contract';
 import { ARRIVE } from '@/components/ui/arrive';
+import { ContentWarningCover } from '@/components/feed/ContentWarningCover';
 import { BadgeMark } from '@/components/shop/art/BadgeMark';
 
 interface RMHarkCardProps {
@@ -236,6 +238,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   // could not open a thread from the feed at all. Same `role="link"` + Enter/Space
   // contract the quoted-original block below already uses.
   const openable = !item.pending && !item.deletedAt;
+  // `o` on the focused post (feed-nav.tsx): the card click, minus the selection and link checks.
+  usePostAction(
+    item.id,
+    'open',
+    () => navigate({ to: postHref(item.user, actualId), resetScroll: false }),
+    openable,
+  );
   const handleCardKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     // Let a focused link/button inside the card handle its own activation.
@@ -252,7 +261,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       ref={cardRef}
       {...(item.pending || item.deletedAt ? {} : reactionTrigger)}
       role={openable ? 'link' : undefined}
-      tabIndex={openable ? 0 : undefined}
+      // The current post of the feed keys (j / k): a real focus target, in the Tab order when the card opens.
+      data-feed-post={item.id}
+      tabIndex={openable ? 0 : -1}
       className={item.pending ? 'pointer-events-none opacity-60 select-none' : 'cursor-pointer'}
       onClick={item.pending ? undefined : handleCardClick}
       onKeyDown={openable ? handleCardKeyDown : undefined}
@@ -266,7 +277,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         <span aria-hidden className="post-flair" style={{ background: postFlair }} />
       ) : null}
       {/* Pinned and reposted-by labels: plain `t-meta` lines above the author. */}
-      {item.pinned && <p className="t-meta mb-2">{t('pinned', { defaultValue: 'Pinned' })}</p>}
+      {item.pinned && (
+        <p className="t-meta mb-2 inline-flex items-center gap-1">
+          <Pin className="h-3 w-3" aria-hidden />
+          {t('pinned-label', { ns: 'profile-pins', defaultValue: 'Pinned' })}
+        </p>
+      )}
       {freshRepostedBy && (
         <p className="t-meta mb-2">
           <Link to={userProfileHref(freshRepostedBy)} className="hover:underline">
@@ -385,7 +401,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           ) : (
             <>
               {item.communityFlair && <FlairChip flair={item.communityFlair} className="mt-2" />}
-              {/* Content */}
+              {/* Content: a post with a content warning reason is covered whole (text, poll, media) until shown */}
+              <ContentWarningCover
+                postId={item.id}
+                post={{ isSensitive: item.isSensitive, contentWarning: item.contentWarning, userId: item.user?.id }}
+              >
               {item.content && (
                 <RMHarkContent
                   text={item.content}
@@ -460,7 +480,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               {/* Image / GIF: hidden behind a content warning when marked sensitive */}
               {(item.gifUrl || (item.imageUrls && item.imageUrls.length > 0)) && (
                 <SensitiveMedia sensitive={item.isSensitive} className="mt-3">
-                  {item.gifUrl && <GifEmbed url={item.gifUrl} />}
+                  {item.gifUrl && <GifEmbed url={item.gifUrl} gifAlt={item.gifAlt ?? null} />}
                   {item.imageUrls && item.imageUrls.length > 0 && (
                     <PostImageGrid
                       urls={item.imageUrls}
@@ -473,6 +493,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
               {/* Link preview: only when no poll, gif, or image */}
               {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
+              </ContentWarningCover>
             </>
           )}
 
@@ -539,12 +560,20 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   </span>
                 )}
               </div>
+              <ContentWarningCover
+                post={{
+                  isSensitive: item.original.isSensitive,
+                  contentWarning: item.original.contentWarning,
+                  userId: item.original.user?.id,
+                }}
+              >
               <RMHarkContent
                 text={item.original.content ?? ''}
                 className="t-body break-words whitespace-pre-wrap text-site-text"
               />
-              {/* Original's media (server omits these for paid/non-public posts) */}
-              {item.original.gifUrl && <GifEmbed url={item.original.gifUrl} className="mt-2" />}
+              {/* Original's media (server omits these for paid/non-public posts); a warning without a reason covers it alone */}
+              <SensitiveMedia sensitive={item.original.isSensitive}>
+              {item.original.gifUrl && <GifEmbed url={item.original.gifUrl} gifAlt={item.original.gifAlt ?? null} className="mt-2" />}
               {!item.original.gifUrl &&
                 item.original.imageUrls &&
                 item.original.imageUrls.length > 0 && (
@@ -554,6 +583,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                     className="mt-2"
                   />
                 )}
+              </SensitiveMedia>
+              </ContentWarningCover>
             </div>
           )}
 

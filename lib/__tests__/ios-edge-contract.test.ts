@@ -115,7 +115,8 @@ describe('iOS edge contract: invariants', () => {
     // The old design mirrored the veil's tint onto the root's canvas so the strips behind the bars matched the menu.
     // With a flat `--site-bg` ground and a `--site-bg` veil there is nothing to mirror, and no rule may bring a root
     // background-image back (it is the band).
-    for (const css of [shell, globe]) expect(css).not.toMatch(/html\.ios-webkit[^{]*:has\(|--site-canvas/);
+    for (const css of [shell, globe]) // Root-targeting `:has()` only: a descendant rule like `.site-main:has(~ .globe-nav[data-open])` tints nothing at an edge.
+    expect(css).not.toMatch(/html\.ios-webkit(\.[\w-]+)*:has\(|--site-canvas/);
   });
 });
 
