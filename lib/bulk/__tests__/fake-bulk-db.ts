@@ -66,6 +66,8 @@ export interface FakeState {
   rMHarkRepost: Row[];
   rMHark: Row[];
   notification: Row[];
+  savedItem: Row[];
+  syncTombstone: Row[];
 }
 
 type Hook = (table: string, args: Row) => void;
@@ -77,6 +79,8 @@ export function createFakeDb(initial: Partial<FakeState> = {}) {
     rMHarkRepost: [],
     rMHark: [],
     notification: [],
+    savedItem: [],
+    syncTombstone: [],
     ...initial,
   };
   /** Called before every findMany, so a test can interleave another actor between a read and the write that follows. */
@@ -139,6 +143,14 @@ export function createFakeDb(initial: Partial<FakeState> = {}) {
     rMHarkRepost: table('rMHarkRepost'),
     rMHark: table('rMHark'),
     notification: table('notification'),
+    savedItem: table('savedItem'),
+    syncTombstone: {
+      ...table('syncTombstone'),
+      createMany: async (args: { data: Row[] }) => {
+        state.syncTombstone.push(...args.data.map((d) => ({ ...d })));
+        return { count: args.data.length };
+      },
+    },
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => {
       const before = structuredClone(state);
       try {
@@ -170,6 +182,8 @@ export function opRow(over: Row = {}): Row {
     heartbeatAt: null,
     cursorId: null,
     reclaims: 0,
+    claimedAt: null,
+    reclaimedAt: null,
     ...over,
   };
 }

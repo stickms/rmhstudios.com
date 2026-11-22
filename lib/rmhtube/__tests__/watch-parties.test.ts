@@ -1,3 +1,4 @@
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -437,7 +438,7 @@ describe('who may change a party', () => {
     expect(notifications.sent[0]).toMatchObject({
       userId: 'a',
       entityType: 'rmhtube_party',
-      preview: 'Time changed: Movie night',
+      preview: expect.objectContaining({ fallback: 'Time changed: Movie night' }),
     });
     expect(db.rsvps[0]!.remindedAt).toBeNull();
     // A rename alone tells nobody.
@@ -459,7 +460,7 @@ describe('who may change a party', () => {
     expect(notifications.sent).toHaveLength(1);
     expect(notifications.sent[0]).toMatchObject({
       userId: 'a',
-      preview: 'Cancelled: Movie night',
+      preview: expect.objectContaining({ fallback: 'Cancelled: Movie night' }),
     });
   });
 });
@@ -560,7 +561,8 @@ describe('the reminder job', () => {
     });
     await setGoing(party.roomId, 'a', true, NOW);
     await setGoing(party.roomId, 'b', true, NOW);
-    const previews = () => notifications.sent.map((n) => `${n.userId}:${n.preview}`).sort();
+    const previews = () =>
+      notifications.sent.map((n) => `${n.userId}:${noticeFallbackText(n.preview as never)}`).sort();
 
     // Nothing is due two hours out.
     expect(await runPartyReminders(at(0))).toEqual({
@@ -622,7 +624,9 @@ describe('the reminder job', () => {
     });
     await setGoing(party.roomId, 'a', true, NOW);
     await runPartyReminders(at(125));
-    expect(notifications.sent.map((n) => n.preview)).toEqual(['Starting now: Movie night']);
+    expect(notifications.sent.map((n) => noticeFallbackText(n.preview as never))).toEqual([
+      'Starting now: Movie night',
+    ]);
   });
 
   it('sends nothing for a cancelled party', async () => {

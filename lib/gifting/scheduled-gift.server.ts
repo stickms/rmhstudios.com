@@ -18,6 +18,7 @@
  * exclusive, and the one refund key `sgift-refund:<id>` makes a refund
  * single-use even if two code paths somehow both reached it.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { creditCoins, debitCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -263,7 +264,7 @@ async function deliverOne(id: string, now: Date): Promise<Outcome> {
       type: 'SYSTEM',
       entityType: 'sgift',
       entityId: id,
-      preview: 'You have a gift waiting to be unwrapped!',
+      preview: notice('gift-waiting', {}),
       link: '/wallet?tab=gifts',
     });
   } else if (settled.outcome === 'refunded') {
@@ -272,7 +273,7 @@ async function deliverOne(id: string, now: Date): Promise<Outcome> {
       type: 'SYSTEM',
       entityType: 'sgift',
       entityId: id,
-      preview: `Your scheduled gift (${settled.itemName}) could not be delivered, so you were refunded.`,
+      preview: notice('gift-refunded', { item: settled.itemName }),
       link: '/wallet?tab=gifts',
     });
   }

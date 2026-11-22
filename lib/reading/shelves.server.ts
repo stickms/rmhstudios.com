@@ -8,6 +8,7 @@
  * needs no join against the library.
  */
 
+import { recordTombstone } from '@/lib/sync/tombstones.server';
 import { prisma } from '@/lib/prisma.server';
 import { emitReadingFinished } from '@/lib/webhooks/activity-emit.server';
 import { getBook } from '@/lib/library/library.server';
@@ -121,6 +122,8 @@ export async function setShelf(
 
 export async function removeShelf(userId: string, slug: string): Promise<boolean> {
   const { count } = await prisma.readingShelfEntry.deleteMany({ where: { userId, docSlug: slug } });
+  // The entry's id in the API is its slug; one statement, so the tombstone follows it.
+  if (count > 0) await recordTombstone(prisma, userId, 'shelf_entry', slug);
   return count > 0;
 }
 

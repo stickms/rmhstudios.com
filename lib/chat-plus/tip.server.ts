@@ -9,6 +9,7 @@
  * succeeds, so it cannot be faked.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -89,7 +90,7 @@ export async function sendChatTip(
     type: 'SYSTEM',
     category: 'economy',
     entityType: 'tip',
-    preview: `${args.senderName} tipped you 🪙 ${args.amount}`,
+    preview: notice('tip-received', { sender: args.senderName, amount: args.amount }),
     link: access.kind === 'dm' ? `/messages/${access.id}` : `/groups/${access.id}`,
   });
   await grantAchievement(access.viewerId, 'economy.first_tip_sent');

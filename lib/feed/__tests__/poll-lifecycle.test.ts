@@ -3,6 +3,7 @@
  * 409 `POLL_CLOSED` (also when the end lands between the vote's first check and its write), and the notice job
  * tells the author and the voters once. Prisma is mocked; nothing here touches a database.
  */
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
@@ -782,12 +783,12 @@ describe('the poll-ended notice job', () => {
     expect(author).toMatchObject({
       type: 'SYSTEM',
       entityType: 'poll_result',
-      preview: 'Your poll ended: Cats won with 54%',
+      preview: expect.objectContaining({ fallback: 'Your poll ended: Cats won with 54%' }),
       link: '/u/ann/post/post1',
       groupKey: 'poll-ended:poll1',
     });
     expect(calls.find((c) => c.userId === 'v1')).toMatchObject({
-      preview: 'A poll you voted in ended',
+      preview: expect.objectContaining({ fallback: 'A poll you voted in ended' }),
       groupKey: 'poll-ended:poll1',
     });
   });
@@ -879,6 +880,6 @@ describe('the poll-ended notice job', () => {
     const author = h.createNotification.mock.calls
       .map((c) => c[0] as unknown as Record<string, unknown>)
       .find((c) => c.userId === 'author')!;
-    expect(author.preview).toBe('Your poll ended in a tie: Cats and Dogs with 50% each');
+    expect(noticeFallbackText(author.preview as never)).toBe('Your poll ended in a tie: Cats and Dogs with 50% each');
   });
 });

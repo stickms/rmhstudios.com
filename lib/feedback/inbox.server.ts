@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { userChipSelect } from '@/lib/user-display';
@@ -419,7 +420,7 @@ export async function notifyReply(id: string): Promise<boolean> {
       type: 'SYSTEM',
       entityType: 'feedback_reply',
       entityId: id,
-      preview: 'We replied to your feedback',
+      preview: notice('feedback-replied', {}),
       link: '/settings/feedback',
     });
   } catch (e) {

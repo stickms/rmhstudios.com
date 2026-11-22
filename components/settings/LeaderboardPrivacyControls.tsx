@@ -17,7 +17,7 @@ import { leaderboardPrivacyQuery } from '@/lib/game/leaderboard-privacy.queries'
  * answers) and goes back if the save fails.
  */
 export function LeaderboardPrivacyControls() {
-  const { t } = useTranslation('leaderboard-privacy');
+  const { t } = useTranslation(['leaderboard-privacy', 'board-privacy']);
   const nameId = useId();
   const hintId = useId();
   const queryClient = useQueryClient();
@@ -55,9 +55,10 @@ export function LeaderboardPrivacyControls() {
               ? t('load-failed', {
                   defaultValue: 'Could not load this setting. Reload the page to try again.',
                 })
-              : t('show-me-hint', {
+              : t('show-me-hint-every-board', {
+                  ns: 'board-privacy',
                   defaultValue:
-                    'When this is off, your scores stay yours but you are left off every public board. You still see your own best and where it would rank.',
+                    "Leave me off every public board and ranking: game scores, daily puzzles, typing, ranked, speedruns, pick'em and community contributors. You still see your own place.",
                 })}
           </span>
         </span>

@@ -131,7 +131,7 @@ export function FlashcardsColumn({
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-site-text">{d.title}</p>
-        {d.description && <p className="truncate text-xs text-site-text-muted">{d.description}</p>}
+        {d.description && <p dir="auto" className="truncate text-xs text-site-text-muted">{d.description}</p>}
         <p className="mt-0.5 text-xs text-site-text-muted">
           {t('card-count', {
             count: d.cardCount,

@@ -7,6 +7,7 @@
  * is a room like any other. What this file owns is everything before that moment: creating the row, who may
  * change it, who is going, and the calendar entry.
  */
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -334,7 +335,7 @@ export async function listUpcoming(viewerId: string | null, now: Date = new Date
 
 const NOTIFY_ENTITY = 'rmhtube_party';
 
-async function notifyGoing(roomId: string, name: string, preview: (name: string) => string, link: string) {
+async function notifyGoing(roomId: string, name: string, preview: (name: string) => NoticePreview, link: string) {
   const going = await prisma.rmhTubeRoomRsvp.findMany({
     where: {
       roomId,
@@ -451,7 +452,7 @@ export async function updateParty(
         startedNotifiedAt: null,
       },
     });
-    await notifyGoing(roomId, name, (n) => `Time changed: ${n}`, partyPath(roomId));
+    await notifyGoing(roomId, name, (n) => notice('party-time-changed', { name: n }), partyPath(roomId));
   }
   const row = await prisma.rmhTubeRoom.findUnique({
     where: {
@@ -502,7 +503,12 @@ export async function cancelParty(roomId: string, userId: string, now: Date = ne
       ok: false,
       reason: 'CLOSED',
     };
-  await notifyGoing(roomId, room.name ?? FALLBACK_NAME, (n) => `Cancelled: ${n}`, partyPath(roomId));
+  await notifyGoing(
+    roomId,
+    room.name ?? FALLBACK_NAME,
+    (n) => notice('party-cancelled', { name: n }),
+    partyPath(roomId),
+  );
   return {
     ok: true,
     value: null,
@@ -677,7 +683,7 @@ export async function runPartyReminders(now: Date = new Date()): Promise<Reminde
         category: 'events',
         entityType: NOTIFY_ENTITY,
         entityId: room.id,
-        preview: `Starting in 15 minutes: ${name}`,
+        preview: notice('party-starting-soon', { name }),
         link: roomPath(room.id),
       });
       result.soon++;
@@ -700,7 +706,7 @@ export async function runPartyReminders(now: Date = new Date()): Promise<Reminde
         category: 'events',
         entityType: NOTIFY_ENTITY,
         entityId: room.id,
-        preview: `Starting now: ${name}`,
+        preview: notice('party-starting-now', { name }),
         link: roomPath(room.id),
       });
       result.started++;

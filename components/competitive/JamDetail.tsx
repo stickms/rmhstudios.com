@@ -190,7 +190,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
     <div className={cn('space-y-4 max-w-3xl', arrival)}>
       <Card className="gap-3 px-4 py-4" pane>
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm">{jam.description}</p>
+          <p dir="auto" className="text-sm">{jam.description}</p>
           <PhaseBadge phase={jam.phase} />
         </div>
         <p className="text-sm">

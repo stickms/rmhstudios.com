@@ -236,7 +236,7 @@ export function ProfileHero({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
-            <h1 className="t-title truncate" style={nameStyle}>
+            <h1 dir="auto" className="t-title truncate" style={nameStyle}>
               <EmojiText>{name}</EmojiText>
             </h1>
             <IdentityBadges profile={profile} />
@@ -282,7 +282,7 @@ export function ProfileHero({
       </div>
 
       {profile.bio ? (
-        <p className="t-body mt-3 max-w-2xl whitespace-pre-wrap break-words">
+        <p dir="auto" className="t-body mt-3 max-w-2xl whitespace-pre-wrap break-words">
           <EmojiText>{profile.bio}</EmojiText>
         </p>
       ) : profile.isOwnProfile ? (

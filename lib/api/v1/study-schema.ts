@@ -4,8 +4,10 @@
  */
 import { z } from 'zod';
 import { CARD_KINDS, validateCard } from '@/lib/study/card-types';
+import { sinceParam } from '@/lib/api/v1/sync-schema';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX } from '@/lib/study/limits';
 import { CARD_IMAGE_ALT_MAX } from '@/lib/study/card-images';
+import { occlusionInput } from '@/lib/study/occlusion-schema';
 
 /** Cards one `POST …/cards` request may add. */
 export const API_BATCH_MAX = 100;
@@ -36,6 +38,9 @@ export const pageQuery = z.object({
   cursor: z.string().min(1).max(200).optional(),
 });
 
+/** `?limit=&cursor=&since=` on a deck's cards: `since` is an ISO 8601 instant; cards created after it. */
+export const cardsQuery = pageQuery.extend({ since: sinceParam });
+
 /**
  * A picture to set on a card side: `media_id` is one the key owner uploaded through `POST /api/v1/images` (with
  * `surface=flashcard`), `alt` is the description a screen reader reads and is required. `null` removes a picture.
@@ -52,11 +57,20 @@ const pictureFields = {
   backImage: pictureInput.nullable().optional(),
 };
 
+/**
+ * The masks of an occlusion card (`kind: 'occlusion'`, s09-03): `{ mode: 'hide-all' | 'hide-one', masks: [{ id?, x, y,
+ * w, h, label }] }` in picture-relative units. Send back the `id`s a read returned so a card keeps its review history;
+ * a mask with no `id` takes the next free one. `null` clears them (a card changed to another kind).
+ */
+const occlusionField = { occlusion: occlusionInput.nullable().optional() };
+
 const cardFields = {
   kind: z.enum(CARD_KINDS).optional(),
-  front: z.string().trim().min(1).max(CLOZE_TEXT_MAX),
+  // Required for every kind but occlusion, where it is the optional prompt (`validateCard` says which).
+  front: z.string().trim().max(CLOZE_TEXT_MAX).default(''),
   back: z.string().trim().max(CARD_SIDE_MAX).optional(),
   ...pictureFields,
+  ...occlusionField,
 };
 
 /** A picture needs its description, and a cloze card's front takes none. */
@@ -115,10 +129,23 @@ function checked(
         }
       | null
       | undefined;
+    occlusion?: unknown;
   },
   ctx: z.RefinementCtx,
 ) {
   pictureIssues(card, ctx);
+  if (card.kind === 'occlusion') {
+    if (!card.frontImage)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'An occlusion card needs a front picture.',
+      });
+    if (card.backImage)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'An occlusion card takes a picture on the front only.',
+      });
+  }
   const result = validateCard(card);
   if (!result.ok)
     ctx.addIssue({
@@ -149,9 +176,10 @@ export const batchBody = z
 export const patchCardBody = z
   .object({
     kind: z.enum(CARD_KINDS).optional(),
-    front: z.string().trim().min(1).max(CLOZE_TEXT_MAX).optional(),
+    front: z.string().trim().max(CLOZE_TEXT_MAX).optional(),
     back: z.string().trim().max(CARD_SIDE_MAX).optional(),
     ...pictureFields,
+    ...occlusionField,
   })
   .strict()
   .superRefine((b, ctx) => {
@@ -160,11 +188,12 @@ export const patchCardBody = z
       b.back === undefined &&
       b.kind === undefined &&
       b.frontImage === undefined &&
-      b.backImage === undefined
+      b.backImage === undefined &&
+      b.occlusion === undefined
     )
       ctx.addIssue({
         code: 'custom',
-        message: 'Provide kind, front, back or a picture.',
+        message: 'Provide kind, front, back, a picture or occlusion.',
       });
     pictureIssues(b, ctx);
   });

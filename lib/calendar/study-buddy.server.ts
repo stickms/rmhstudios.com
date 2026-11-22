@@ -12,6 +12,7 @@
  * creation — so a no-show leaves nothing behind. Unmatched requests and old
  * matches expire in `sweepStudyBuddy`.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -199,8 +200,6 @@ export async function requestMatch(
   const people = await loadPeople([userId, outcome.partnerId]);
   const m = outcome.match;
   const link = `/rmhstudy/${m.roomCode}?bd=${m.id}`;
-  const when =
-    mode === 'now' ? 'right now' : `at ${m.startsAt.toUTCString().replace(':00 GMT', ' UTC')}`;
   for (const [to, other] of [
     [userId, outcome.partnerId],
     [outcome.partnerId, userId],
@@ -211,7 +210,19 @@ export async function requestMatch(
       type: 'SYSTEM',
       entityType: 'study-buddy',
       entityId: m.id,
-      preview: `Study buddy found: ${people.get(other)?.name ?? 'a member'} will do ${m.lengthMin} minutes of ${m.subject} with you ${when}.`,
+      preview:
+        mode === 'now'
+          ? notice('study-buddy-found-now', {
+              name: people.get(other)?.name ?? 'a member',
+              minutes: m.lengthMin,
+              subject: m.subject,
+            })
+          : notice('study-buddy-found-at', {
+              name: people.get(other)?.name ?? 'a member',
+              minutes: m.lengthMin,
+              subject: m.subject,
+              startsAt: m.startsAt,
+            }),
       link,
     });
   }
@@ -311,8 +322,8 @@ export async function sweepStudyBuddy(
       entityId: r.id,
       preview:
         r.mode === 'now'
-          ? `No study partner for ${r.subject} turned up this time. Try again or book a slot.`
-          : `Nobody else booked your ${r.subject} study slot. Try another time.`,
+          ? notice('study-buddy-nobody-now', { subject: r.subject })
+          : notice('study-buddy-nobody-slot', { subject: r.subject }),
       link: '/rmhstudy',
     });
   }

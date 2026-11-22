@@ -96,7 +96,7 @@ export function RequestCard({ request, signedIn, isAdmin, onChanged, onVoted, cl
             <RequestStatusBadge status={request.status} />
           </div>
 
-          <p className="mt-1 text-sm leading-relaxed break-words whitespace-pre-wrap text-site-text-muted">
+          <p dir="auto" className="mt-1 text-sm leading-relaxed break-words whitespace-pre-wrap text-site-text-muted">
             {request.body}
           </p>
 

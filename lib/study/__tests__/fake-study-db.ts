@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 /**
  * An in-memory stand-in for the Prisma calls the deck, card and review code makes on `flashcard`,
  * `flashcard_deck` and `flashcard_review`. It is small but real where it matters: `where` clauses
@@ -33,6 +35,8 @@ export interface FakeCard {
   frontImageAlt?: string | null;
   backImageUrl?: string | null;
   backImageAlt?: string | null;
+  /** The masks of an occlusion card (s09-03). */
+  occlusion?: unknown;
 }
 /** A `Media` row, for the pictures on cards (s08-15). */
 export interface FakeMedia {
@@ -59,6 +63,8 @@ export interface FakeDb {
   reviews: FakeReview[];
   /** `Media` rows (only the pictures-on-cards code reads them). */
   media?: FakeMedia[];
+  /** Sync tombstones written (s09-10): the deletion functions record one each. */
+  tombstones?: { userId: string; kind: string; entityId: string }[];
   /** Practice-test results written. */
   results?: Record<string, unknown>[];
   /** Counts every mutating call, so a refused request can be shown to have written nothing. */
@@ -71,6 +77,10 @@ export interface FakeDb {
 export const newFakeDb = (): FakeDb => ({ decks: [], cards: [], reviews: [], writes: 0, locks: [], nextId: 1 });
 
 type Row = Record<string, unknown>;
+
+/** A write's data as the database stores it: `Prisma.DbNull` (clear a JSON column) is a plain null. */
+const stored = <T extends object>(data: T): T =>
+  Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v === Prisma.DbNull ? null : v])) as T;
 
 function matches(db: FakeDb, row: Row, where: Row | undefined): boolean {
   if (!where) return true;
@@ -108,6 +118,7 @@ const withDefaults = (c: FakeCard): Required<FakeCard> => ({
   frontImageAlt: null,
   backImageUrl: null,
   backImageAlt: null,
+  occlusion: null,
   ...c,
 });
 
@@ -239,13 +250,13 @@ export function makeStudyPrisma(db: FakeDb) {
       update: async ({ where, data }: { where: { id: string }; data: Partial<FakeCard> }) => {
         const card = db.cards.find((c) => c.id === where.id);
         if (!card) throw new Error('no such card');
-        Object.assign(card, data);
+        Object.assign(card, stored(data));
         db.writes++;
         return asCard(card);
       },
       updateMany: async ({ where, data }: { where: Row; data: Partial<FakeCard> }) => {
         const found = cardsOf(where);
-        for (const c of found) Object.assign(c, data);
+        for (const c of found) Object.assign(c, stored(data));
         if (found.length > 0) db.writes++;
         return { count: found.length };
       },
@@ -281,6 +292,13 @@ export function makeStudyPrisma(db: FakeDb) {
         return { count: doomed.length };
       },
     },
+    syncTombstone: {
+      // Not counted in `writes`: it is bookkeeping beside the write a test is watching.
+      create: async ({ data }: { data: { userId: string; kind: string; entityId: string } }) => {
+        (db.tombstones ??= []).push({ userId: data.userId, kind: data.kind, entityId: data.entityId });
+        return { id: BigInt(db.tombstones.length) };
+      },
+    },
   };
 
   const extras = {
@@ -307,6 +325,7 @@ export function makeStudyPrisma(db: FakeDb) {
         cards: db.cards,
         reviews: db.reviews,
         media: db.media ?? [],
+        tombstones: db.tombstones ?? [],
       });
       try {
         return await fn(client);

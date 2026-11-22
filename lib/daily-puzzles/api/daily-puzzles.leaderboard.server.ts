@@ -3,6 +3,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getDailyPuzzleLeaderboardApi } from '@/lib/daily-puzzles/daily-puzzles.contract';
 import { prisma } from '@/lib/prisma.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
 
 const VALID_MODES = [
@@ -62,8 +64,10 @@ export const route = apiRoute('/api/daily-puzzles/leaderboard', {
 
         const limit = pageSize(searchParams.get('limit'), 20, 50);
 
+        // Left off before `take`, so the next member moves up and the board stays full.
+        const hidden = await leaderboardHiddenUserIds();
         const entries = await prisma.dailyPuzzleScore.findMany({
-          where: { gameMode, dateKey },
+          where: { gameMode, dateKey, ...userNotHiddenWhere(hidden) },
           orderBy: orderByForMode(gameMode),
           take: limit,
           select: {

@@ -201,7 +201,11 @@ export function InterviewReports({
                   </Badge>
                 ))}
               </div>
-              {r.body && <p className="mt-2 whitespace-pre-line text-site-text-muted">{r.body}</p>}
+              {r.body && (
+                <p dir="auto" className="mt-2 whitespace-pre-line text-site-text-muted">
+                  {r.body}
+                </p>
+              )}
             </li>
           ))}
         </ul>

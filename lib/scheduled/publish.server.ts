@@ -11,15 +11,15 @@
  * safe to race.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import type { ScheduledPost } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
 import { createNotification } from '@/lib/notifications.server';
-import { activeSanction } from '@/lib/communities/bans.server';
-import { getCommunitySettings } from '@/lib/communities/settings.server';
-import { communityAltMissing, communityGifAltMissing } from '@/lib/communities/alt-required';
+import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
+import { evaluateScheduledGate, type ScheduledGateOutcome } from '@/lib/scheduled/gate.server';
 import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
 import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { normalizeExplanation, quizAnswerOptionId } from '@/lib/feed/quiz-poll';
@@ -36,10 +36,24 @@ interface PollPayload {
   explanation?: string;
 }
 
-/** The one SYSTEM notice for a scheduled community post held back by the image-description rule. */
-async function notifyAltRequired(sp: ScheduledPost): Promise<void> {
+/**
+ * One SYSTEM notice per draft per edit: a draft refused, edited and refused again tells the author again, so the
+ * dedupe is on the draft id and the notices newer than the draft's `updatedAt`. The drafts page reads the newest one
+ * back as the row's reason (`lib/scheduled/list.server.ts`).
+ */
+async function notifyOnce(
+  sp: ScheduledPost,
+  entityType: 'scheduled-alt-required' | 'scheduled-refused',
+  tail: string,
+): Promise<void> {
   const already = await prisma.notification.findFirst({
-    where: { userId: sp.userId, type: 'SYSTEM', entityType: 'scheduled-alt-required', entityId: sp.id },
+    where: {
+      userId: sp.userId,
+      type: 'SYSTEM',
+      entityType,
+      entityId: sp.id,
+      ...(sp.updatedAt ? { createdAt: { gt: sp.updatedAt } } : {}),
+    },
     select: { id: true },
   });
   if (already) return;
@@ -52,31 +66,77 @@ async function notifyAltRequired(sp: ScheduledPost): Promise<void> {
   await createNotification({
     userId: sp.userId,
     type: 'SYSTEM',
-    entityType: 'scheduled-alt-required',
+    entityType,
     entityId: sp.id,
-    preview: `Your scheduled post to ${community?.name ?? 'a community'} was not published: an image needs a description`,
+    preview:
+      entityType === 'scheduled-alt-required'
+        ? notice('scheduled-alt-required', { community: community?.name ?? 'a community' })
+        : notice('scheduled-refused', { community: community?.name ?? 'a community', reason: tail }),
     link: '/drafts',
   });
+}
+
+/** The gate's refusal, told to the author once. */
+async function notifyRefusal(sp: ScheduledPost, gate: Extract<ScheduledGateOutcome, { kind: 'refuse' }>): Promise<void> {
+  if (gate.notice === 'alt-required') {
+    await notifyOnce(sp, 'scheduled-alt-required', 'an image needs a description');
+  } else {
+    await notifyOnce(sp, 'scheduled-refused', gate.reason.replace(/[.\s]+$/, ''));
+  }
+}
+
+/** A held scheduled post counts as published: the author hears once, and it is never attempted again. */
+async function notifyHeld(sp: ScheduledPost): Promise<void> {
+  const community = sp.communityId
+    ? await prisma.community.findUnique({ where: { id: sp.communityId }, select: { name: true, slug: true } })
+    : null;
+  await createNotification({
+    userId: sp.userId,
+    type: 'SYSTEM',
+    entityType: 'scheduled-held',
+    entityId: sp.id,
+    preview: notice('scheduled-held', { community: community?.name ?? 'a community' }),
+    link: community ? `/c/${community.slug}` : '/drafts',
+  });
+}
+
+/**
+ * A refused draft is not gated again on every due pass: AutoMod's "remove" outcome writes the removal log each time it
+ * runs. A draft whose refusal notice is newer than its last edit waits this long before the sweep tries it again (a
+ * ban or timeout that ended then lets it out); editing the draft (`updatedAt`) or "Post now" decides at once.
+ */
+export const DUE_REFUSAL_BACKOFF_MS = 15 * 60_000;
+
+/** Drop the drafts the sweep refused and need not look at again yet. One query for the whole batch. */
+export async function withoutRecentlyRefused(rows: ScheduledPost[], now: Date = new Date()): Promise<ScheduledPost[]> {
+  const candidates = rows.filter((r) => r.communityId);
+  if (candidates.length === 0) return rows;
+  const notices = await prisma.notification.findMany({
+    where: {
+      type: 'SYSTEM',
+      entityType: { in: ['scheduled-refused', 'scheduled-alt-required'] },
+      entityId: { in: candidates.map((r) => r.id) },
+      userId: { in: [...new Set(candidates.map((r) => r.userId))] },
+      createdAt: { gt: new Date(now.getTime() - DUE_REFUSAL_BACKOFF_MS) },
+    },
+    select: { entityId: true, userId: true, createdAt: true },
+  });
+  const waiting = new Set<string>();
+  for (const n of notices) {
+    const row = candidates.find((r) => r.id === n.entityId && r.userId === n.userId);
+    if (row && n.createdAt.getTime() > row.updatedAt.getTime()) waiting.add(row.id);
+  }
+  return rows.filter((r) => !waiting.has(r.id));
 }
 
 /** Materialize one scheduled post into a real RMHark. Returns the new post id. */
 export async function publishScheduledPost(sp: ScheduledPost): Promise<string | null> {
   if (sp.publishedId) return sp.publishedId;
 
-  // s06-01: a member banned or timed out after scheduling does not get the post into
-  // the community. It stays a draft (publishedId null) and goes out once the sanction ends.
-  if (sp.communityId && (await activeSanction(sp.communityId, sp.userId))) return null;
-
-  // s07-16: a post that no longer meets the community's image-description rule is not published. It stays a draft and
-  // its author is told once (the notification is deduplicated on the draft id).
-  if (sp.communityId && (sp.imageUrls?.length || sp.gifUrl)) {
-    const community = await getCommunitySettings(sp.communityId);
-    const on = community?.requireImageAlt === true;
-    if (communityAltMissing(on, sp.imageUrls, sp.imageAlts).length > 0 || communityGifAltMissing(on, sp.gifUrl, sp.gifAlt)) {
-      await notifyAltRequired(sp).catch((e) => console.error('[scheduled] alt-required notice error:', e));
-      return null;
-    }
-  }
+  // s09-14: while the author's deletion is scheduled the draft is held, not published (the account is paused; a
+  // sign-in that cancels the deletion leaves it a draft for the member to look at).
+  const author = await prisma.user.findUnique({ where: { id: sp.userId }, select: { deletionScheduledAt: true } });
+  if (author?.deletionScheduledAt) return null;
 
   const poll = (sp.poll as PollPayload | null) ?? null;
 
@@ -88,6 +148,13 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
       SELECT "id" FROM "scheduled_post"
       WHERE "id" = ${sp.id} AND "publishedId" IS NULL FOR UPDATE`;
     if (claim.length === 0) return null;
+
+    // s09-11: the community gate (membership, sanctions, flair, image descriptions, AutoMod), run once per attempt,
+    // here under the lock and after the `publishedId` re-check. Allowed publishes, held is stored as a held post,
+    // refused leaves the draft (a ban or timeout lifts on its own and the next pass publishes).
+    const gate = await evaluateScheduledGate(sp);
+    if (gate.kind === 'refuse') return gate;
+    const held = gate.kind === 'hold';
 
     // Uploads made through the developer API (`media_ids`) are `Media` rows that only a post's attachment keeps
     // from the orphan sweep. Claim the author's pending ones for this post; one already attached to another post
@@ -115,6 +182,8 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
         replyControl: sp.replyControl,
         unlockPrice: sp.unlockPrice && sp.unlockPrice > 0 ? sp.unlockPrice : null,
         communityId: sp.communityId ?? null,
+        // A held post is stored as a live held post is: soft-deleted with the AutoMod marker until a moderator decides.
+        ...(held ? { deletedAt: new Date(), deletedBy: HELD_BY } : {}),
       },
       select: { id: true },
     });
@@ -123,17 +192,19 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
     // (lib/feed/api/rmharks.server.ts): the author's post total and, when the post
     // targets a community, that community's post count. The RMHark.create above
     // succeeds only if the community FK resolves, so the update is safe.
-    await tx.user.update({
-      where: { id: sp.userId },
-      data: { postCount: { increment: 1 } },
-    });
+    if (!held) {
+      await tx.user.update({
+        where: { id: sp.userId },
+        data: { postCount: { increment: 1 } },
+      });
+    }
     if (mediaUrls.length > 0) {
       await tx.media.updateMany({
         where: { userId: sp.userId, url: { in: mediaUrls }, status: 'PENDING' },
         data: { status: 'ATTACHED', postId: post.id, attachedAt: new Date() },
       });
     }
-    if (sp.communityId) {
+    if (sp.communityId && !held) {
       await tx.community.update({
         where: { id: sp.communityId },
         data: { postCount: { increment: 1 } },
@@ -175,8 +246,13 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
       data: { publishedId: post.id },
     });
 
-    return post;
+    return { kind: 'created' as const, id: post.id, held, gate };
   });
+
+  if (created?.kind === 'refuse') {
+    await notifyRefusal(sp, created).catch((e) => console.error('[scheduled] refusal notice error:', e));
+    return null;
+  }
 
   if (!created) {
     // Lost the race; the winner's id is on the row.
@@ -185,6 +261,25 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
       select: { publishedId: true },
     });
     return row?.publishedId ?? null;
+  }
+
+  // A held or flagged post goes to the mod queue exactly as a live one does (best-effort, like the live path).
+  const queueRule = created.gate.kind === 'hold' ? created.gate.holdRule : created.gate.flagRule;
+  if (sp.communityId && (created.held || queueRule)) {
+    await recordModItem({
+      communityId: sp.communityId,
+      entityType: 'rmhark',
+      entityId: created.id,
+      postId: created.id,
+      authorId: sp.userId,
+      action: created.held ? 'hold' : 'flag',
+      ruleName: queueRule ?? 'AutoMod',
+      snapshot: sp.content.trim() || '(media post)',
+    }).catch((e) => console.error('[scheduled] automod queue error:', e));
+  }
+  if (created.held) {
+    await notifyHeld(sp).catch((e) => console.error('[scheduled] held notice error:', e));
+    return created.id;
   }
 
   // A scheduled community post is visible from now: queue the opted-in members' alerts.
@@ -202,7 +297,7 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
         type: 'SYSTEM',
         entityType: 'capsule',
         entityId: created.id,
-        preview: 'Your time capsule has opened',
+        preview: notice('time-capsule-opened', {}),
         link: `/u/${author?.handle ?? sp.userId}/post/${created.id}`,
       });
     } catch (e) {
@@ -244,7 +339,7 @@ export async function publishDueForUser(userId: string): Promise<number> {
       take: 25,
     });
     let published = 0;
-    for (const sp of due) {
+    for (const sp of await withoutRecentlyRefused(due)) {
       const id = await publishScheduledPost(sp).catch((e) => {
         console.error('[scheduled] publish failed:', e);
         return null;

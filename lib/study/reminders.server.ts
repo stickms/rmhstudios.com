@@ -3,6 +3,7 @@
  * the review and erasure code call. A row's `nextAt` is the UTC instant of its next send, so the sweep reads
  * only rows that are due; every evaluation moves it on, sent or not, so no row is read twice.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { PgBoss } from 'pg-boss';
 import { dayOf } from '@/lib/calendar/tz';
 import { createNotification } from '@/lib/notifications.server';
@@ -158,7 +159,7 @@ async function sweepOne(
     type: 'SYSTEM',
     entityType: 'study_due',
     entityId: today,
-    preview: count === 1 ? '1 flashcard is due' : `${count} flashcards are due`,
+    preview: count === 1 ? notice('flashcards-due-one', {}) : notice('flashcards-due', { count }),
     link: '/study',
     groupKey: `study-due:${today}`,
   });

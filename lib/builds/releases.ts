@@ -7,6 +7,8 @@
  */
 
 export const VERSION_MAX = 20;
+
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 export const CHANGELOG_MAX = 5000;
 /** How many releases the build page and the public API carry. */
 export const RELEASES_PAGE = 20;
@@ -81,6 +83,6 @@ export function splitReleases<T extends { createdAt: string; id: string }>(
 }
 
 /** The line a watcher or an unlocker is told. */
-export function releasePreview(title: string, version: string): string {
-  return `${title} ${version} is out`;
+export function releasePreview(title: string, version: string): NoticePreview {
+  return notice('build-release', { title, version });
 }

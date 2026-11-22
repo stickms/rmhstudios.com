@@ -137,6 +137,23 @@ export function systemLabels(t: TFunction): Record<string, string> {
       defaultValue: 'Content restored',
     }),
 
+    // Sprint 09 system labels (docs/autonomous/sprint-09/plan.md §Anchors)
+    // s09-06 community-pins
+    'community-pin': t('system-label-community-pin', { ns: 'feed', defaultValue: 'Post pinned' }),
+
+    // s09-11 scheduled-gate
+    'scheduled-held': t('system-label-scheduled-held', { ns: 'feed', defaultValue: 'Scheduled post in review' }),
+    'scheduled-refused': t('system-label-scheduled-refused', {
+      ns: 'feed',
+      defaultValue: 'Scheduled post not published',
+    }),
+
+    // s09-14 deletion-pause
+    'deletion-drafts-waited': t('system-label-deletion-drafts-waited', {
+      ns: 'feed',
+      defaultValue: 'Scheduled posts waited',
+    }),
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

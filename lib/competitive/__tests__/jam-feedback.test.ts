@@ -1,3 +1,4 @@
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Written feedback on jam entries: only raters write (never the submitter or a teammate), the words are saved
@@ -401,7 +402,7 @@ describe('the batched notification', () => {
     await rate('b', { feedback: WORDS });
     await rate('c', { feedback: WORDS });
     expect(h.notify).toHaveBeenCalledTimes(2);
-    expect(h.notify.mock.calls[0]![0].preview).toContain('New feedback');
+    expect(noticeFallbackText(h.notify.mock.calls[0]![0].preview as never)).toContain('New feedback');
   });
 
   it('an edit, or scores alone, notify nobody', async () => {

@@ -346,7 +346,11 @@ export default function ChallengePanel({
                     className="max-h-64 w-full rounded-site-sm object-cover"
                   />
                 )}
-                {e.content && <p className="line-clamp-4 break-words text-sm text-site-text">{e.content}</p>}
+                {e.content && (
+                  <p dir="auto" className="line-clamp-4 break-words text-sm text-site-text">
+                    {e.content}
+                  </p>
+                )}
                 <div className="mt-auto flex items-center justify-between gap-2">
                   <Link
                     to={`/u/${e.author?.handle || e.author?.id}/post/${e.postId}` as string}

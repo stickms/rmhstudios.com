@@ -361,6 +361,17 @@ function AdminDashboardPage() {
             })}
           />
 
+          {/* Sprint 09 admin tools */}
+          {/* s09-12 media-sweep */}
+          <AdminHubCard
+            to="/admin/media-sweep"
+            title={t('card-title', { ns: 'media-sweep', defaultValue: 'Media sweep' })}
+            description={t('card-description', {
+              ns: 'media-sweep',
+              defaultValue: 'Uploads nobody uses, removed from storage. Preview what a run would delete, then run it.',
+            })}
+          />
+
         </div>
       </AdminBody>
     </PageLayout>

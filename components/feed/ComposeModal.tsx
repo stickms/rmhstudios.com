@@ -433,7 +433,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  <p className="text-xs font-semibold text-site-text">
  {quoteItem.user?.name || quoteItem.user?.handle ||'Someone'}
  </p>
- <p className="mt-0.5 line-clamp-3 text-sm text-site-text-muted">
+ <p dir="auto" className="mt-0.5 line-clamp-3 text-sm text-site-text-muted">
  {quoteItem.content}
  </p>
  </div>

@@ -9,6 +9,7 @@
  *   20's bulk decisions both call it after the status change.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -17,7 +18,6 @@ import type { ReportEntityType, ReportReason } from '@/lib/moderation/report-sch
 import {
   MY_REPORTS_LINK,
   MY_REPORTS_PAGE_SIZE,
-  OUTCOME_PREVIEW,
   REPORT_OUTCOME_ENTITY_TYPE,
   canWithdraw,
   outcomeOf,
@@ -215,7 +215,7 @@ export async function notifyReportersOfOutcome(reportIds: readonly string[]): Pr
       type: 'SYSTEM',
       entityType: REPORT_OUTCOME_ENTITY_TYPE,
       entityId: row.id,
-      preview: OUTCOME_PREVIEW[outcome],
+      preview: outcome === 'ACTION_TAKEN' ? notice('report-action-taken', {}) : notice('report-no-violation', {}),
       link: MY_REPORTS_LINK,
     });
     told += 1;

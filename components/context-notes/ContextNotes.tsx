@@ -120,7 +120,9 @@ export default function ContextNotes({ postId }: { postId: string }) {
       </h3>
       {q.data?.shown.map((n) => (
         <div key={n.id} className={cn('space-y-2', arrival)}>
-          <p className="text-sm text-site-text">{n.body}</p>
+          <p dir="auto" className="text-sm text-site-text">
+            {n.body}
+          </p>
           <p className="text-xs text-site-text-muted">
             {t('note-bridged', {
               defaultValue: 'Rated helpful by people who often disagree with each other.',
@@ -138,7 +140,9 @@ export default function ContextNotes({ postId }: { postId: string }) {
           </p>
           {q.data.pending.map((n) => (
             <div key={n.id} className="space-y-2">
-              <p className="text-sm text-site-text">{n.body}</p>
+              <p dir="auto" className="text-sm text-site-text">
+                {n.body}
+              </p>
               {n.mine ? (
                 <Button
                   size="xs"

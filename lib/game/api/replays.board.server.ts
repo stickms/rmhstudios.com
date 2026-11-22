@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { replayBoardApi } from '@/lib/game/replay-library.contract';
-import { BOARD_SIZE, replayBoardQuery } from '@/lib/game/replay-library-schema';
+import { BOARD_SIZE, TODAY_BOARD_SIZE, replayBoardQuery } from '@/lib/game/replay-library-schema';
 import { listReplaysForGame } from '@/lib/replays.server';
 
 /**
@@ -14,7 +14,13 @@ export const route = apiRoute('/api/replays/board', {
     replayBoardApi,
     { auth: 'optional', rateLimit: 'read', query: replayBoardQuery },
     async ({ userId, query }) => {
-      const items = await listReplaysForGame(query.game, BOARD_SIZE, userId);
+      // `seed` (Lights Out only) is one day's puzzle: its board is the three fewest-move replays.
+      const items = await listReplaysForGame(
+        query.game,
+        query.seed === undefined ? BOARD_SIZE : TODAY_BOARD_SIZE,
+        userId,
+        query.seed,
+      );
       return Response.json(
         { items },
         {

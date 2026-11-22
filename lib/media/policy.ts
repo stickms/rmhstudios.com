@@ -1,3 +1,4 @@
+import { orphanCutoff } from '@/lib/media/sweep-policy';
 import { validateImageBuffer, detectImageExt } from '@features/slice-it/engine/upload-validation';
 
 export const MEDIA_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -39,11 +40,21 @@ export function attachError(
   media: {
     userId: string;
     status: string;
+    createdAt?: Date;
   } | null,
   ownerId: string,
+  now: Date = new Date(),
 ): string | null {
   // Treat foreign-owned the same as missing — don't leak existence.
   if (!media || media.userId !== ownerId) return 'Media not found.';
   if (media.status !== 'PENDING') return 'Media already attached to a post.';
+  // Past the sweep's threshold the object may already be deleted (or about to be): same constant, so they
+  // cannot drift. Answered like a missing upload, so nothing points at a deleted object.
+  if (mediaExpired(media, now)) return 'Media not found.';
   return null;
+}
+
+/** A PENDING upload older than the media sweep's orphan threshold. */
+export function mediaExpired(media: { status: string; createdAt?: Date }, now: Date = new Date()): boolean {
+  return media.status === 'PENDING' && !!media.createdAt && media.createdAt < orphanCutoff(now);
 }

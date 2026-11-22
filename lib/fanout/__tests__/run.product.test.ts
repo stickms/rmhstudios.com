@@ -1,82 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import {
-  LEASE_MS,
-  MAX_RECLAIMS,
-  isFanoutKind,
-  leaseExpired,
-  pageAfter,
-  shouldReclaim,
-  toldIds,
-  withoutTold,
-} from '@/lib/fanout/run';
+import { LEASE_MS, isFanoutKind, leaseExpired, pageAfter, toldIds, withoutTold } from '@/lib/fanout/run';
 
 const NOW = new Date('2026-12-01T12:00:00Z');
 const beat = (msAgo: number) => new Date(NOW.getTime() - msAgo);
 
-describe('shouldReclaim', () => {
-  it('keeps a live lease, re-queues after two minutes and fails after the fifth reclaim', () => {
-    expect(LEASE_MS).toBe(120_000);
-    expect(
-      shouldReclaim(
-        {
-          status: 'RUNNING',
-          heartbeatAt: beat(LEASE_MS - 1),
-          reclaims: 0,
-        },
-        NOW,
-      ),
-    ).toBe('keep');
-    expect(
-      shouldReclaim(
-        {
-          status: 'RUNNING',
-          heartbeatAt: beat(LEASE_MS + 1),
-          reclaims: 0,
-        },
-        NOW,
-      ),
-    ).toBe('requeue');
-    expect(
-      shouldReclaim(
-        {
-          status: 'RUNNING',
-          heartbeatAt: beat(LEASE_MS + 1),
-          reclaims: MAX_RECLAIMS - 1,
-        },
-        NOW,
-      ),
-    ).toBe('requeue');
-    expect(
-      shouldReclaim(
-        {
-          status: 'RUNNING',
-          heartbeatAt: beat(LEASE_MS + 1),
-          reclaims: MAX_RECLAIMS,
-        },
-        NOW,
-      ),
-    ).toBe('fail');
+describe('leaseExpired', () => {
+  it('is true only for a RUNNING run whose lease is older than two minutes', () => {
+    expect(leaseExpired({ status: 'RUNNING', heartbeatAt: beat(LEASE_MS - 1) }, NOW)).toBe(false);
+    expect(leaseExpired({ status: 'RUNNING', heartbeatAt: beat(LEASE_MS + 1) }, NOW)).toBe(true);
   });
   it('never touches a finished run', () => {
-    expect(
-      shouldReclaim(
-        {
-          status: 'DONE',
-          heartbeatAt: beat(10 * LEASE_MS),
-          reclaims: 0,
-        },
-        NOW,
-      ),
-    ).toBe('keep');
-    expect(
-      leaseExpired(
-        {
-          status: 'FAILED',
-          heartbeatAt: beat(10 * LEASE_MS),
-        },
-        NOW,
-      ),
-    ).toBe(false);
+    expect(leaseExpired({ status: 'DONE', heartbeatAt: beat(10 * LEASE_MS) }, NOW)).toBe(false);
+    expect(leaseExpired({ status: 'FAILED', heartbeatAt: beat(10 * LEASE_MS) }, NOW)).toBe(false);
   });
 });
 

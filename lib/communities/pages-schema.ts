@@ -25,6 +25,8 @@ export const communityPageUpdateSchema = z
     title: z.string().trim().min(2).max(MAX_PAGE_TITLE).optional(),
     body: z.string().min(1).max(MAX_PAGE_BODY).optional(),
     summary: z.string().trim().max(MAX_REVISION_SUMMARY).nullable().optional(),
+    /** The page's `updatedAt` (ISO) the editor started from; a newer page is a 409. */
+    baseUpdatedAt: z.string().datetime(),
     editPolicy: z.enum(EDIT_POLICIES).optional(),
     pinned: z.boolean().optional(),
   })
@@ -37,6 +39,8 @@ export const communityPageUpdateSchema = z
 
 export const communityPageRollbackSchema = z.object({
   revisionId: z.string().regex(/^\d+$/, 'Invalid revision'),
+  /** The page's `updatedAt` (ISO) the viewer was looking at; a newer page is a 409. */
+  baseUpdatedAt: z.string().datetime(),
 });
 
 export const communityPageListQuerySchema = z.object({

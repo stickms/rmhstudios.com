@@ -53,6 +53,11 @@ vi.mock('../../../lib/rate-limit.server', () => ({
     mockLimited.on ? Response.json({ error: 'Too many requests', retryAfter: 15 }, { status: 429 }) : null,
 }));
 vi.mock('../../../lib/messages/send.server', () => ({ isBlockedPair: async () => false }));
+// The boards drop members hidden from leaderboards (sprint 05 #01, applied to the RMHBox boards in sprint 09 #07);
+// these tests are about the board itself, so nobody is hidden.
+vi.mock('../../../lib/game/leaderboard-privacy.server', () => ({
+  leaderboardHiddenUserIds: async () => new Set<string>(),
+}));
 
 // Mock Prisma
 const mockPrisma = {

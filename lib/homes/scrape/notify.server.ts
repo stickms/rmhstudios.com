@@ -9,6 +9,7 @@
  * mirroring stays on the interactive API path via lib/notifications.server.)
  */
 
+import { notice, noticeColumns } from '@/lib/notifications/notice-keys';
 import { listingMatchesWatch, type MatchableListing, type WatchCriteria } from '../watch-match';
 
 type WatchRow = WatchCriteria & { id: string; userId: string; label: string };
@@ -69,11 +70,15 @@ export async function notifyWatchersOfExternalListing(
         type: 'SYSTEM' as const,
         entityType: 'home_listing',
         entityId: listing.id,
-        preview:
-          `New ${kind} matching “${w.label}”: ${listing.title} — $${priceDollars} in ${listing.city}, ${listing.state}`.slice(
-            0,
-            280,
-          ),
+        ...noticeColumns(
+          notice(kind === 'rental' ? 'home-watch-rental' : 'home-watch-sale', {
+            label: w.label,
+            title: listing.title,
+            price: priceDollars,
+            city: listing.city,
+            state: listing.state,
+          }),
+        ),
         link: `/homes/listing/${listing.id}`,
       })),
     });

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { CARD_KINDS, validateCard } from '@/lib/study/card-types';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX, MAX_DECK_CARDS, MAX_IMPORT_CARDS } from '@/lib/study/limits';
 import { addPictureIssue, cardPicturesShape } from '@/lib/study/card-images-schema';
+import { occlusionShape } from '@/lib/study/occlusion-schema';
 
 export const createDeckBody = z.object({
   title: z.string().min(1).max(100),
@@ -21,15 +22,17 @@ export const reviewCardBody = z.object({
 
 /**
  * A card as authored: its kind (basic when absent), a front (a cloze card's whole text, up to
- * 1,000 characters) and a back (none for a cloze card). The per-kind rules are `validateCard`'s,
+ * 1,000 characters; an occlusion card's optional prompt) and a back (none for a cloze card; an occlusion
+ * card's optional note), plus the masks of an occlusion card. The per-kind rules are `validateCard`'s,
  * the same ones the editor shows inline and the server re-checks.
  */
 const authoredCard = z
   .object({
     kind: z.enum(CARD_KINDS).optional(),
-    front: z.string().trim().min(1).max(CLOZE_TEXT_MAX),
+    front: z.string().trim().max(CLOZE_TEXT_MAX).default(''),
     back: z.string().trim().max(CARD_SIDE_MAX).optional(),
     ...cardPicturesShape,
+    ...occlusionShape,
   })
   .superRefine((card, ctx) => {
     const checked = validateCard(card);
@@ -61,9 +64,10 @@ export const updateDeckBody = z
 export const updateCardBody = z
   .object({
     kind: z.enum(CARD_KINDS).optional(),
-    front: z.string().trim().min(1).max(CLOZE_TEXT_MAX).optional(),
+    front: z.string().trim().max(CLOZE_TEXT_MAX).optional(),
     back: z.string().trim().max(CARD_SIDE_MAX).optional(),
     ...cardPicturesShape,
+    ...occlusionShape,
   })
   .refine(
     (b) =>
@@ -71,7 +75,8 @@ export const updateCardBody = z
       b.back !== undefined ||
       b.kind !== undefined ||
       b.frontImage !== undefined ||
-      b.backImage !== undefined,
+      b.backImage !== undefined ||
+      b.occlusion !== undefined,
   );
 
 /** POST bulk cards: one import, at most 500 authored cards. */

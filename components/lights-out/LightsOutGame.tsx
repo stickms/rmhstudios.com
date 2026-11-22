@@ -46,9 +46,18 @@ import {
     PuzzleFootnote,
 } from '@/components/daily-puzzles/PuzzleShell';
 import { useArrival } from '@/components/ui/arrive';
+import { SaveReplayButton } from '@/components/replays/SaveReplayButton';
+import { FewestMovesToday } from '@/components/lights-out/FewestMovesToday';
+import {
+    appendMove,
+    buildReplayData,
+    emptyMoveLog,
+    undoMove,
+    type LightsOutMove,
+} from '@/lib/lights-out/replay-log';
 
 export function LightsOutGame() {
-    const { t } = useTranslation("c-lights-out");
+    const { t } = useTranslation(["c-lights-out", "lights-out-replays"]);
     // Same EST drop day as the hub, leaderboard and every other daily mode; the
     // visitor's local date disagreed with the hub for part of every day.
     const todayKey = formatDateKey(getTodayEST());
@@ -76,6 +85,11 @@ export function LightsOutGame() {
     const [bestMoves, setBestMoves] = useState<number | null>(null);
     const [optimalMoves, setOptimalMoves] = useState<number | null>(null);
 
+    // The ordered cells toggled in this attempt, kept for "Save replay"; cleared on restart.
+    const [moveLog, setMoveLog] = useState<LightsOutMove[]>(emptyMoveLog);
+    const [startedAt, setStartedAt] = useState<number | null>(null);
+    const [solveMs, setSolveMs] = useState(0);
+
     // Past puzzles
     const [showHistory, setShowHistory] = useState(false);
 
@@ -92,6 +106,9 @@ export function LightsOutGame() {
         setSolved(false);
         setGaveUp(false);
         setMoveHistory([]);
+        setMoveLog(emptyMoveLog());
+        setStartedAt(null);
+        setSolveMs(0);
         setHintedCell(null);
         setHintsUsed(loadHintsUsed(dateKey));
 
@@ -180,6 +197,10 @@ export function LightsOutGame() {
         if (!isActiveCell(shape, r, c)) return;
 
         setMoveHistory((prev) => [...prev, grid.map((row) => [...row])]);
+        setMoveLog((prev) => appendMove(prev, r, c));
+        const now = Date.now();
+        const began = startedAt ?? now;
+        if (startedAt == null) setStartedAt(now);
         const next = toggleCellInGrid(grid, r, c, shape);
         setGrid(next);
         const newMoves = moves + 1;
@@ -187,6 +208,7 @@ export function LightsOutGame() {
 
         if (isSolved(next, shape)) {
             setSolved(true);
+            setSolveMs(now - began);
             const prevBest = loadSave(dateKey)?.moves;
             const isNewBest = prevBest == null || newMoves < prevBest;
             if (isNewBest) setBestMoves(newMoves);
@@ -209,6 +231,7 @@ export function LightsOutGame() {
         if (!grid || solved || moveHistory.length === 0) return;
         const prev = moveHistory[moveHistory.length - 1];
         setMoveHistory((h) => h.slice(0, -1));
+        setMoveLog((log) => undoMove(log));
         setGrid(prev);
         setMoves((m) => m - 1);
         saveProgress(dateKey, moves - 1, false);
@@ -282,6 +305,17 @@ export function LightsOutGame() {
         solved && optimalMoves != null
             ? generateShareText(dateKey, shape, moves, optimalMoves, gaveUp, hintsUsed > 0)
             : '';
+
+    // A solve restored from a saved result has no log, so only a solve played here can be saved. The post text is
+    // in the player's language ("Lights Out, 2026-11-22: solved in 9 moves").
+    const replayData = solved && !gaveUp ? buildReplayData(seed, moveLog, moves) : null;
+    const replayShareText = t('replay-share-text', {
+        ns: 'lights-out-replays',
+        defaultValue: 'Lights Out, {{date}}: solved in {{count}} moves',
+        defaultValue_one: 'Lights Out, {{date}}: solved in {{count}} move',
+        date: dateKey,
+        count: moves,
+    });
 
     const cellBase =
         'touch-manipulation rounded-site-sm transition-colors duration-site-fast disabled:cursor-default';
@@ -534,6 +568,15 @@ export function LightsOutGame() {
                             )}
 
                             <PuzzleShareRow gameMode="lights-out" shareText={shareText} disabled={!shareText} />
+                            {replayData && (
+                                <SaveReplayButton
+                                    game="lights-out"
+                                    data={replayData}
+                                    score={moves}
+                                    durationMs={solveMs}
+                                    shareText={replayShareText}
+                                />
+                            )}
                             <PuzzleFootnote>
                                 {isToday
                                     ? t("new-puzzle-tomorrow", { defaultValue: "A new puzzle unlocks tomorrow — same for everyone worldwide." })
@@ -543,6 +586,8 @@ export function LightsOutGame() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {isToday && solved && !gaveUp && <FewestMovesToday seed={seed} />}
 
             {/* Leaderboard — generic component, only for today's puzzle */}
             {isToday && (

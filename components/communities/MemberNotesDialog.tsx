@@ -234,7 +234,9 @@ export function MemberNotesDialog({
                   </div>
                 ) : (
                   <>
-                    <p className="t-body whitespace-pre-wrap break-words text-site-text">{n.body}</p>
+                    <p dir="auto" className="t-body whitespace-pre-wrap break-words text-site-text">
+                      {n.body}
+                    </p>
                     <div className="flex gap-2">
                       {n.canEdit && (
                         <Button

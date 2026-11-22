@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { previousWeekKey, type TrickView } from './trick-week';
 
@@ -45,8 +46,10 @@ export async function getTrickOfTheWeek(): Promise<TrickView | null> {
     key,
     10 * 60_000,
     async () => {
+      // A hidden member does not win the public hub card; the next trick does.
+      const hidden = await leaderboardHiddenUserIds();
       const row = await prisma.nightrailTrick.findFirst({
-        where: { week, votes: { gt: 0 } },
+        where: { week, votes: { gt: 0 }, ...(hidden.size > 0 ? { authorId: { notIn: [...hidden] } } : {}) },
         orderBy: [{ votes: 'desc' }, { score: 'desc' }],
         include: authorInclude,
       });

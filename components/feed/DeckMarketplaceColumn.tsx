@@ -130,7 +130,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  </Link>
  {deck.preview && <CardPicture image={deck.preview.image} compact className="mt-3"/>}
  {deck.description && (
- <p className="mt-1 line-clamp-2 text-xs text-site-text-muted">
+ <p dir="auto" className="mt-1 line-clamp-2 text-xs text-site-text-muted">
  {deck.description}
  </p>
  )}

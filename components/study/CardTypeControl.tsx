@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { CARD_KINDS, isCardKind, type CardKind } from '@/lib/study/card-types';
 
-/** Basic, Reversible or Cloze: the shared tabs primitive as a segmented control. */
+/** Basic, Reversible, Cloze or Picture occlusion: the shared tabs primitive as a segmented control. */
 export function CardTypeControl({
   value,
   onChange,
@@ -18,6 +18,7 @@ export function CardTypeControl({
     basic: t('type-basic', { defaultValue: 'Basic' }),
     reversible: t('type-reversible', { defaultValue: 'Reversible' }),
     cloze: t('type-cloze', { defaultValue: 'Cloze' }),
+    occlusion: t('type-occlusion', { ns: 'occlusion-cards', defaultValue: 'Picture occlusion' }),
   };
   return (
     <Tabs

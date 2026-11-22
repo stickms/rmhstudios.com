@@ -1,7 +1,10 @@
 /**
  * Flashcard export (pure). TSV for Anki and Quizlet, CSV for spreadsheets,
- * JSON for everything else. Each returns the file's text.
+ * JSON for everything else. Each returns the file's text. An occlusion card (a picture with masks) cannot be
+ * written as text columns, so the two text formats leave it out and `buildExport` says how many it left out;
+ * only the JSON file carries it (`type: 'occlusion'`, its picture and its masks).
  */
+import type { Occlusion } from '@/lib/study/occlusion';
 
 export interface ExportCard {
   front: string;
@@ -11,6 +14,8 @@ export interface ExportCard {
   backImage?: { url: string; alt: string } | null | undefined;
   /** Basic when absent. A cloze card's text is its front, unchanged, and its back is empty. */
   kind?: string | undefined;
+  /** The masks of an occlusion card (JSON only). */
+  occlusion?: Occlusion | null | undefined;
 }
 
 export interface ExportDeck {
@@ -41,8 +46,16 @@ function typed(cards: readonly ExportCard[]): boolean {
 }
 const typeOf = (c: ExportCard): string => c.kind ?? 'basic';
 
+const isOcclusion = (c: ExportCard): boolean => c.kind === 'occlusion';
+
+/** How many cards the text formats (TSV, CSV) leave out: the occlusion cards. */
+export function skippedInText(cards: readonly ExportCard[]): number {
+  return cards.filter(isOcclusion).length;
+}
+
 /** Quoted only where a tab, newline or quote would break the row; reads back exactly. */
-export function toTsv(cards: ExportCard[]): string {
+export function toTsv(all: ExportCard[]): string {
+  const cards = all.filter((c) => !isOcclusion(c));
   const withType = typed(cards);
   return cards.map((c) => `${tsvCell(c.front)}\t${tsvCell(c.back)}${withType ? `\t${typeOf(c)}` : ''}\n`).join('');
 }
@@ -53,7 +66,8 @@ function csvCell(cell: string): string {
 }
 
 /** RFC 4180: CRLF rows, a header row, quotes where needed; formula-looking cells get a leading `'`. */
-export function toCsv(cards: ExportCard[]): string {
+export function toCsv(all: ExportCard[]): string {
+  const cards = all.filter((c) => !isOcclusion(c));
   const withType = typed(cards);
   const rows = [
     withType ? ['front', 'back', 'type'] : ['front', 'back'],
@@ -73,6 +87,9 @@ export function toJson(deck: ExportDeck): string {
         ...(typed(deck.cards) ? { type: typeOf(c) } : {}),
         ...(c.frontImage ? { frontImage: { url: c.frontImage.url, alt: c.frontImage.alt } } : {}),
         ...(c.backImage ? { backImage: { url: c.backImage.url, alt: c.backImage.alt } } : {}),
+        ...(c.kind === 'occlusion' && c.occlusion
+          ? { occlusion: { mode: c.occlusion.mode, masks: c.occlusion.masks.map((m) => ({ ...m })) } }
+          : {}),
       })),
     },
     null,
@@ -86,8 +103,11 @@ const MIME: Record<ExportFormat, string> = {
   json: 'application/json;charset=utf-8',
 };
 
-/** The file's text, MIME type and a filename made from the deck title. */
-export function buildExport(format: ExportFormat, deck: ExportDeck): { text: string; mime: string; filename: string } {
+/** The file's text, MIME type and a filename made from the deck title, and how many cards the format left out. */
+export function buildExport(
+  format: ExportFormat,
+  deck: ExportDeck,
+): { text: string; mime: string; filename: string; skipped: number } {
   const text = format === 'tsv' ? toTsv(deck.cards) : format === 'csv' ? toCsv(deck.cards) : toJson(deck);
   const base =
     deck.title
@@ -97,5 +117,10 @@ export function buildExport(format: ExportFormat, deck: ExportDeck): { text: str
       .replace(/^-+|-+$/g, '')
       .toLowerCase()
       .slice(0, 60) || 'deck';
-  return { text, mime: MIME[format], filename: `${base}.${format}` };
+  return {
+    text,
+    mime: MIME[format],
+    filename: `${base}.${format}`,
+    skipped: format === 'json' ? 0 : skippedInText(deck.cards),
+  };
 }

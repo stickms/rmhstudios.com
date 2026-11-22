@@ -34,6 +34,7 @@ import { games } from '@/lib/catalog';
 import { gameIdOfLink } from '@/lib/arcade/updates';
 import { knownLabel } from '@/lib/i18n/known-label';
 import { notificationVerbs, systemLabels } from '@/components/feed/notification-labels';
+import { inboxPreview } from '@/components/feed/notice-previews';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
@@ -53,11 +54,16 @@ interface NotificationItem {
   entityType: string | null;
   entityId: string | null;
   preview: string | null;
+  previewKey?: string | null;
+  previewParams?: unknown;
   link: string | null;
   read: boolean;
   createdAt: string;
   actor: NotificationActor | null;
 }
+
+// A notice's instant, in the reader's format and language: "1 December, 15:30".
+const NOTICE_INSTANT: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
 
 // The label of a system notification (no human actor), keyed by the entity the notification refers to.
 // `labels` is `systemLabels(t)`: every entity type has its own literal translation key there.
@@ -155,6 +161,8 @@ export function NotificationsColumn({
 } = {}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('feed');
   const { t: tn } = useTranslation('notifications-inbox');
+  // The notice catalogue (`notice-previews.ts`) holds the literal keys; this only hands it the language.
+  const { t: tNotice } = useTranslation('notice-language');
   const verbs = notificationVerbs(t);
   const sysLabels = systemLabels(t);
   const navigate = useNavigate();
@@ -588,6 +596,9 @@ export function NotificationsColumn({
             // System notifications have no human actor: lead with the message.
             const isSystem = n.type === 'SYSTEM' || !n.actor;
             const sys = isSystem ? systemIdentity(sysLabels, n.entityType, n.link) : null;
+            // A site-written notice reads in the reader's language, its instants in their format; an old row keeps its
+            // English preview.
+            const previewText = inboxPreview(tNotice, n, (iso) => fmt.dateTime(iso, NOTICE_INSTANT));
             const firstName =
               n.actor?.name || n.actor?.handle || t('someone', { defaultValue: 'Someone' });
             const actorName = grouped
@@ -602,7 +613,7 @@ export function NotificationsColumn({
                 kind: 'notification',
                 targetId: n.id,
                 label:
-                  n.preview?.slice(0, 120) ||
+                  previewText?.slice(0, 120) ||
                   `${actorName} ${verb}`,
                 // A reminder only ever opens a same-site path (the route enforces it).
                 url: (() => {
@@ -611,8 +622,8 @@ export function NotificationsColumn({
                 })(),
               });
             const rowSummary =
-              n.preview && sys
-                ? n.preview
+              previewText && sys
+                ? previewText
                 : `${actorName} ${verb}`.trim();
             // One dot per unread item (section 10): a read notification is a plain row.
             return (
@@ -640,19 +651,19 @@ export function NotificationsColumn({
                       <div className="min-w-0 flex-1">
                         {sys ? (
                           <p className="t-body font-semibold text-site-text">
-                            {n.preview || sys.label}
+                            {previewText || sys.label}
                           </p>
                         ) : (
                           <>
                             <p className={`t-body text-site-text ${g.read ? '' : 'font-semibold'}`}>
-                              <span className="font-semibold">{actorName}</span>{' '}
+                              <bdi className="font-semibold">{actorName}</bdi>{' '}
                               <span className={g.read ? 'text-site-text-muted' : ''}>
                                 {verb}
                               </span>
                             </p>
-                            {n.preview && (
+                            {previewText && (
                               <p className="t-body mt-0.5 line-clamp-2 text-site-text-muted">
-                                {n.preview}
+                                {previewText}
                               </p>
                             )}
                           </>

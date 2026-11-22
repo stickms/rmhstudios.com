@@ -508,10 +508,10 @@ describe('the result', () => {
           }
         ).userId === 'author',
     )?.[0] as unknown as {
-      preview: string;
+      preview: { fallback: string };
     };
-    expect(authorNotice.preview).toContain(winnerText);
-    expect(authorNotice.preview).toContain('ranked poll');
+    expect(authorNotice.preview.fallback).toContain(winnerText);
+    expect(authorNotice.preview.fallback).toContain('ranked poll');
   });
 });
 

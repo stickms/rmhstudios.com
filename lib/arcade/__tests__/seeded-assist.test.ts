@@ -24,6 +24,10 @@ const h = vi.hoisted(() => ({
   rows: [] as Array<Record<string, unknown>>,
 }));
 
+// Who is left off public boards has its own tests (board-privacy-coverage); here nobody is hidden.
+vi.mock('@/lib/game/leaderboard-privacy.server', () => ({
+  leaderboardHiddenUserIds: async () => new Set<string>(),
+}));
 vi.mock('@/lib/game/assist-run.server', () => ({
   consumeAssistRun: (...args: unknown[]) => {
     h.consume(...args);

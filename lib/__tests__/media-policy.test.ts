@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ORPHAN_TTL_MS } from '@/lib/media/sweep-policy';
 import { MEDIA_MAX_BYTES, MAX_MEDIA_PER_POST, validateUpload, attachError } from '@/lib/media/policy';
 
 // Minimal valid magic-byte buffers.
@@ -62,6 +63,13 @@ describe('attachError', () => {
         'u1',
       ),
     ).toMatch(/already/i);
+  });
+
+  it('rejects a pending upload older than the sweep threshold (the scheduled-draft and API attach check)', () => {
+    const now = new Date('2026-06-22T12:00:00.000Z');
+    const at = (ms: number) => ({ userId: 'u1', status: 'PENDING', createdAt: new Date(now.getTime() - ms) });
+    expect(attachError(at(ORPHAN_TTL_MS + 1), 'u1', now)).toMatch(/not found/i);
+    expect(attachError(at(ORPHAN_TTL_MS), 'u1', now)).toBeNull();
   });
 
   it('MAX_MEDIA_PER_POST is 4', () => {

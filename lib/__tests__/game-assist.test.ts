@@ -16,6 +16,7 @@ import {
   ASSIST_CAPABLE,
   ASSIST_DEFAULTS,
   ASSIST_FEATURES,
+  HONOURED_SETTINGS,
   OWN_ASSIST_IMPLEMENTATION,
   MIN_SPEED_FLOOR,
   NO_ASSISTS,
@@ -135,12 +136,29 @@ describe('normalizeAssists', () => {
   });
 });
 
+/**
+ * Assist features a game does not honour, with the reason, so claiming it would be a lie.
+ * Sprint 09 17: Neon Driftway has no tap input or reaction window to extend; Laundry Sort has
+ * no flash or shake to remove. Everything else in ASSIST_FEATURES is required of an adopter.
+ */
+const NOT_HONOURED: Record<string, readonly string[]> = {
+  'neon-driftway': ['no-timed-input'],
+  'laundry-sort': ['reduced-flashing'],
+};
+
 describe('the honesty rule', () => {
   it('lists exactly the games whose client reads a profile', () => {
     // A game added here without client support trades its players' leaderboard
     // eligibility for nothing at all. Each entry changes in the same commit that
     // teaches its client to honour the settings.
-    expect([...ASSIST_CAPABLE].sort()).toEqual(['dream-rift', 'nightrail', 'synapse-storm', 'void-breaker']);
+    expect([...ASSIST_CAPABLE].sort()).toEqual([
+      'dream-rift',
+      'laundry-sort',
+      'neon-driftway',
+      'nightrail',
+      'synapse-storm',
+      'void-breaker',
+    ]);
   });
 
   it('every adopting game is a real game in the catalog', () => {
@@ -155,16 +173,50 @@ describe('the honesty rule', () => {
     }
   });
 
+  it('NOT_HONOURED agrees with HONOURED_SETTINGS: a feature is waived only when its settings are dropped', () => {
+    const settingsFor: Record<string, readonly string[]> = {
+      'reduced-flashing': ['calmVisuals'],
+      'colorblind-safe': ['colorSafe'],
+      'no-timed-input': ['holdToPress', 'noTimedInput'],
+      'assist-mode': [],
+    };
+    for (const id of ASSIST_CAPABLE) {
+      const honoured: readonly string[] = HONOURED_SETTINGS[id] ?? [
+        'holdToPress',
+        'speedFloor',
+        'calmVisuals',
+        'colorSafe',
+        'noTimedInput',
+      ];
+      const waived = new Set<string>(NOT_HONOURED[id] ?? []);
+      for (const feature of ASSIST_FEATURES) {
+        const needs = settingsFor[feature] ?? [];
+        if (needs.length === 0) continue;
+        const honoursAny = needs.some((n) => honoured.includes(n));
+        expect({ id, feature, waived: waived.has(feature) }).toEqual({ id, feature, waived: !honoursAny });
+      }
+    }
+  });
+
   it('every adopting game claims the accessibility features it now has', () => {
     for (const id of ASSIST_CAPABLE) {
       const declared = new Set(GAME_CAPABILITIES[id]?.accessibility ?? []);
-      const missing = ASSIST_FEATURES.filter((f) => !declared.has(f));
+      const notHonoured = new Set<string>(NOT_HONOURED[id] ?? []);
+      const missing = ASSIST_FEATURES.filter((f) => !notHonoured.has(f) && !declared.has(f));
       expect({
         id,
         missing,
       }).toEqual({
         id,
         missing: [],
+      });
+      // The other direction: a feature a game says it does not honour is not claimed either.
+      expect({
+        id,
+        overclaimed: [...notHonoured].filter((f) => declared.has(f as never)),
+      }).toEqual({
+        id,
+        overclaimed: [],
       });
     }
   });

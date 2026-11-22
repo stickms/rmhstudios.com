@@ -44,6 +44,9 @@ import { optimizeImage, imageDimensions } from '@/lib/image-optimize';
 import { stripJpegAppSegments } from '@/lib/storage/compress.server';
 import { putObject } from '@/lib/storage/s3.server';
 import {
+  ALBUM_PREFIX,
+  FEED_IMAGE_PREFIX,
+  USER_AVATAR_PREFIX,
   albumAssetKey,
   albumAssetUrl,
   feedImageKey,
@@ -374,10 +377,49 @@ function mediaKey(
 /** Surfaces whose readers parse `-WxH` back out of the filename. */
 const DIMENSION_TAGGED: ReadonlySet<MediaSurface> = new Set<MediaSurface>(['post', 'chat']);
 
-/** Collision-resistant, owner-prefixed, and never derived from the uploaded name. */
-function storedFilename(ctx: IngestCtx, suffix: string, ext: string): string {
-  const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+/**
+ * Collision-resistant, owner-prefixed, and never derived from the uploaded name.
+ *
+ * `unique` is drawn ONCE per upload and shared by its variants, so a smaller
+ * variant's name is the full-size name plus `-<width>` (see {@link variantKey}).
+ * Drawn per variant, nothing could find a row's smaller variants again, and the
+ * media sweep would leave them in storage for good.
+ */
+function storedFilename(ctx: IngestCtx, suffix: string, ext: string, unique: string): string {
   return `${ctx.userId}-${unique}${suffix}${ext}`;
+}
+
+/**
+ * The key of a smaller variant of the upload whose full-size key is `fullKey`:
+ * `-<width>` goes before the extension, exactly as {@link ingest} names it. A `Media` row
+ * records only the full-size key, so the media sweep derives the rest with this.
+ */
+export function variantKey(fullKey: string, width: number): string {
+  const dot = fullKey.lastIndexOf('.');
+  const at = dot > fullKey.lastIndexOf('/') ? dot : fullKey.length;
+  return `${fullKey.slice(0, at)}-${width}${fullKey.slice(at)}`;
+}
+
+/** Where a surface's objects start: the same split {@link mediaKey} makes. */
+function surfaceKeyPrefix(surface: MediaSurface): string {
+  if (surface === 'avatar') return USER_AVATAR_PREFIX;
+  if (surface === 'album') return ALBUM_PREFIX;
+  return FEED_IMAGE_PREFIX;
+}
+
+/**
+ * The keys of every smaller variant a row with this full-size key may have. A row does not record
+ * its policy, so every policy stored under the key's prefix contributes the widths below its own
+ * largest. Some of these never existed (deleting an object that is not there is not an error); a
+ * key no policy stores under returns none, so an unknown key never has a guessed neighbour deleted.
+ */
+export function variantKeysFor(fullKey: string): string[] {
+  const widths = new Set<number>();
+  for (const surface of Object.keys(POLICIES) as MediaSurface[]) {
+    if (!fullKey.startsWith(surfaceKeyPrefix(surface))) continue;
+    for (const w of POLICIES[surface].variants.slice(0, -1)) widths.add(w);
+  }
+  return [...widths].sort((a, b) => a - b).map((w) => variantKey(fullKey, w));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -499,13 +541,14 @@ export async function ingest(
   encoded.sort((a, b) => a.width - b.width);
   const largestIndex = encoded.length - 1;
 
+  const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
   const variants: IngestVariant[] = encoded.map((v, i) => {
     // Only the full-size variant carries the bare name; the smaller ones are
     // suffixed so one upload never overwrites another's key.
     const suffix = i === largestIndex ? '' : `-${v.width}`;
     const ext =
       v.contentType === 'image/png' ? '.png' : v.contentType === 'image/gif' ? '.gif' : '.webp';
-    const bare = storedFilename(ctx, suffix, ext);
+    const bare = storedFilename(ctx, suffix, ext, unique);
     // Dimensions ride in the FEED filename so the timeline can reserve layout
     // space before the image loads (`withImageDimensions`, read back by
     // `parseImageDimensions`). Only there: nothing parses an avatar or an album

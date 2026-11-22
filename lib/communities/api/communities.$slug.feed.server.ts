@@ -16,6 +16,8 @@ export const route = apiRoute('/api/communities/$slug/feed', {
       cursor,
       limit,
       flairId,
+      // s09-06: the site's feed carries the pinned block (first page) and leaves pinned posts out of every page.
+      withPins: true,
     });
     if (!feed) return Response.json({ error: 'Not found' }, { status: 404 });
     return Response.json(feed);

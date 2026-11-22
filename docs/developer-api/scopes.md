@@ -53,6 +53,9 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `read:scheduled` | Scheduled | Read your drafts, scheduled posts and time capsules. |
 | `write:scheduled` | Scheduled | Save, change, discard and publish your drafts and scheduled posts. Community posts also need write:communities; time capsules are never changed. |
 | `read:search` | Search | Search public posts and people by keyword. Each search counts as 3 requests against the daily quota. |
+| `read:feeds` | Feeds | Read your feeds, lists, saved searches and keyword alerts, and page the posts of a feed or list. Reading posts also needs read:posts. |
+| `write:feeds` | Feeds | Replace the members of your lists. Feeds are created, renamed and deleted on the site. |
+| `read:practice` | Practice | Read your own typing, music practice and focus-session history. Read-only: practice cannot be written through the API. |
 
 <!-- END GENERATED: scopes -->
 
@@ -74,3 +77,18 @@ never changed through the API.
 `read:search` covers `GET /api/v1/search/posts` and `GET /api/v1/search/people`. Each search counts as 3 requests
 against the key's daily quota. Search is keyword search only; results depend on your blocks, so they are never shared
 between keys.
+
+## Feeds
+
+`read:feeds` lists your feeds, lists, saved searches and keyword alerts and reads one. Paging a feed's posts
+(`GET /api/v1/feeds/{id}/posts`) needs `read:posts` as well, because it returns posts. `write:feeds` replaces a list's
+members; creating, renaming and deleting feeds happen on the site. A feed that someone else keeps private is a `404`.
+
+## Practice
+
+`read:practice` reads your own typing (RMHType profile per difficulty, lesson progress, daily-passage entries and per-key
+figures), your music practice entries and your focus sessions. It is read-only: practice cannot be written through the
+API, so a script cannot inflate a streak or a board. Every call reads only the key owner's rows. Daily entries use the
+stored `YYYYMMDD` day (UTC). Assisted, practice and custom runs are returned as stored. Multiplayer match rows, ghost
+replays and anything kept only in the browser are not included. Per-key figures cover only keys with at least 5
+attempts and stay empty while key statistics are switched off on the site.

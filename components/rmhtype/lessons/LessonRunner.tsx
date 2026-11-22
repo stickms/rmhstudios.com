@@ -23,6 +23,8 @@ import {
   recordLessonRun,
 } from '@/lib/rmhtype/rmhtype.queries';
 import { DEFAULT_LAYOUT } from '@/lib/rmhtype/keystats';
+import { buildKeyStatsBody } from '@/lib/rmhtype/record-keystats';
+import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { PRACTICE_ID, drillFor, fingerFor, lessonById, shiftFingerFor, type RecordedRun } from '@/lib/rmhtype/lessons';
 import { createTypingRun, type TypingRun, type TypingRunResult } from '@/lib/rmhtype/typing-run';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
@@ -122,12 +124,13 @@ export default function LessonRunner({ lessonId }: { lessonId: string }) {
       setResult(finished);
       // Key timings are a side channel for the heatmap: a failure to record them must
       // not hold up the result, and is not retried (a retry could count a run twice).
-      if (finished.keyStats.length > 0) {
-        recordKeyStats({
-          layout: DEFAULT_LAYOUT,
-          keys: finished.keyStats,
-        }).catch(() => undefined);
-      }
+      const body = buildKeyStatsBody({
+        enabled: useRmhTypeStore.getState().settings.recordKeyStats,
+        finished: true,
+        aggregates: finished.keyStats,
+        layout: DEFAULT_LAYOUT,
+      });
+      if (body) recordKeyStats(body).catch(() => undefined);
       void submitProgress(finished);
     },
     [submitProgress],

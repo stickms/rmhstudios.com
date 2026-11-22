@@ -556,7 +556,7 @@ function MessageRow({
         <span className="mr-2 text-sm font-semibold text-site-text">
           {name ?? t('space-player', { defaultValue: 'Player' })}
         </span>
-        <span className="break-words text-sm text-site-text-muted">{body}</span>
+        <span dir="auto" className="break-words text-sm text-site-text-muted">{body}</span>
       </div>
     </div>
   );

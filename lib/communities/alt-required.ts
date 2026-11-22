@@ -50,8 +50,8 @@ export const COMMUNITY_ALT_WRITE_PATHS: readonly string[] = [
   'lib/api/v1/communities.server.ts',
   // scheduled create
   'lib/scheduled/create.server.ts',
-  // scheduled publish (refused with a notice, the draft stays)
-  'lib/scheduled/publish.server.ts',
+  // scheduled publish: the adapter runs the community gate under the row lock (refused with a notice, the draft stays)
+  'lib/scheduled/gate.server.ts',
   // post edit
   'lib/feed/api/rmharks.$id.server.ts',
   // description edit (clearing a description is refused)

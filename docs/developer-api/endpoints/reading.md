@@ -21,7 +21,7 @@
 
 ### `GET /api/v1/me/highlights`
 
-Your highlights and notes on library books, blog posts and news, newest first. Private notes are returned because they are yours; a wildcard key (`read:*`, `*`) can read them too. With `since` (ISO 8601) you get the highlights **updated** after that instant instead, ordered by `updatedAt` then `id` ascending, so a sync can store the last `updatedAt` it saw and ask again from there; follow `nextCursor` (a cursor from one mode does not work in the other). A highlight whose document has been removed is returned with `document: null` (as in the example); otherwise `document` is `{ title, url }`. Deletions are not tombstoned: to learn which highlights were deleted, compare the ids you hold with a full listing. Highlights cannot be created through the API.
+Your highlights and notes on library books, blog posts and news, newest first. Private notes are returned because they are yours; a wildcard key (`read:*`, `*`) can read them too. With `since` (ISO 8601) you get the highlights **updated** after that instant instead, ordered by `updatedAt` then `id` ascending, so a sync can store the last `updatedAt` it saw and ask again from there; follow `nextCursor` (a cursor from one mode does not work in the other). A highlight whose document has been removed is returned with `document: null` (as in the example); otherwise `document` is `{ title, url }`. To learn which highlights were deleted, ask `GET /api/v1/me/deleted?kind=highlight&since=…`. Highlights cannot be created through the API.
 
 **Scope:** `read:reading` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyHighlights`
 
@@ -96,7 +96,7 @@ Change the note and/or visibility of one of your highlights. `note: null` or an 
 
 ### `DELETE /api/v1/me/highlights/{id}`
 
-Permanently delete one of your highlights and its note. Deletions are not tombstoned for `since` syncs.
+Permanently delete one of your highlights and its note. The deletion is kept as a tombstone for 90 days, so a `since` sync finds it through `GET /api/v1/me/deleted`.
 
 **Scope:** `write:reading` · **Success:** `204` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `deleteMyHighlight`
 

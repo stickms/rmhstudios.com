@@ -5,6 +5,8 @@
  */
 
 import { prisma, prismaRead } from '@/lib/prisma.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { BASE_RATING, nextRatingWithK } from '@/lib/ranked/elo';
 import { tierForRating, type RankTier } from '@/lib/ranked/tiers';
 import {
@@ -183,8 +185,10 @@ export async function getLadder(
 ): Promise<{ season: number; endsAt: Date; progress: number; entries: LadderEntry[] }> {
   const season = seasonFor(now);
   // A public, cached ladder page: lag-tolerant, read-only.
+  // Hidden members are left out before `take`, so the ladder stays full and ranks close up.
+  const hidden = await leaderboardHiddenUserIds();
   const rows = await prismaRead.rankedSeasonRating.findMany({
-    where: { game, season, placementsLeft: 0 },
+    where: { game, season, placementsLeft: 0, ...userNotHiddenWhere(hidden) },
     orderBy: { rating: 'desc' },
     take: Math.min(limit * 3, 300),
     select: {

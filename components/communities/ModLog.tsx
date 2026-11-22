@@ -67,6 +67,8 @@ export function actionSentence(t: TFunction, e: ModLogEntryDTO): string {
   const detailName = e.detail?.name;
   const named = typeof detailName === 'string' ? detailName : '';
   const comment = e.targetType === 'comment';
+  const detailSlug = e.detail?.slug;
+  const wikiPage = typeof detailSlug === 'string' ? detailSlug : '';
   switch (e.action) {
     case 'content_removed':
       return comment
@@ -270,6 +272,52 @@ export function actionSentence(t: TFunction, e: ModLogEntryDTO): string {
         actor,
         name: named,
         defaultValue: '{{actor}} deleted the recurring thread {{name}}',
+      });
+    case 'wiki_page_created':
+      return t('modlog-page-created', {
+        ns: 'community-wiki',
+        actor,
+        page: wikiPage,
+        defaultValue: '{{actor}} created the wiki page {{page}}',
+      });
+    case 'wiki_page_deleted':
+      return t('modlog-page-deleted', {
+        ns: 'community-wiki',
+        actor,
+        page: wikiPage,
+        defaultValue: '{{actor}} deleted the wiki page {{page}}',
+      });
+    case 'wiki_page_rolled_back':
+      return t('modlog-page-rolled-back', {
+        ns: 'community-wiki',
+        actor,
+        page: wikiPage,
+        defaultValue: '{{actor}} restored an earlier version of the wiki page {{page}}',
+      });
+    case 'wiki_policy_changed':
+      return t('modlog-policy-changed', {
+        ns: 'community-wiki',
+        actor,
+        page: wikiPage,
+        defaultValue: '{{actor}} changed who can edit, or the pin, of the wiki page {{page}}',
+      });
+    case 'post_pinned':
+      return t('modlog-post-pinned', {
+        ns: 'community-pins',
+        actor,
+        defaultValue: '{{actor}} pinned a post',
+      });
+    case 'post_unpinned':
+      return t('modlog-post-unpinned', {
+        ns: 'community-pins',
+        actor,
+        defaultValue: '{{actor}} unpinned a post',
+      });
+    case 'pins_reordered':
+      return t('modlog-pins-reordered', {
+        ns: 'community-pins',
+        actor,
+        defaultValue: '{{actor}} reordered the pinned posts',
       });
   }
 }

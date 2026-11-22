@@ -110,7 +110,7 @@ export function RecapColumn({
  <div>
  <div className={`rounded-site p-5`}>
  <p className="mb-2 text-xs font-semibold text-site-text-muted">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
- <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
+ <p dir="auto" className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
  <p className="mt-2 text-xs text-site-text-muted">
  <Heart className="mr-1 inline h-3.5 w-3.5 text-site-accent"/>
  {recap.topPost.likeCount} {t('recap-likes', { defaultValue:'likes'})}

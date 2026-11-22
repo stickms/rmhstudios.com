@@ -24,6 +24,7 @@ import { ProgressSummary } from '@/components/rmhtype/progress/ProgressSummary';
 import { ProgressBests } from '@/components/rmhtype/progress/ProgressBests';
 import { ProgressRuns } from '@/components/rmhtype/progress/ProgressRuns';
 import { GhostClear } from '@/components/rmhtype/GhostControls';
+import { KeysSection } from '@/components/rmhtype/KeysSection';
 import { useProgressLabels } from '@/components/rmhtype/progress/progress-labels';
 
 export default function ProgressPage() {
@@ -305,6 +306,8 @@ export default function ProgressPage() {
             </section>
           </div>
         )}
+
+        <KeysSection />
 
         <section
           ref={runsRef}

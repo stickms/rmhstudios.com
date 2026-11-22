@@ -146,6 +146,7 @@ export default function ThreadSheet({ target, viewerId }: { target: ThreadTarget
           </span>
         </p>
         <p
+          dir="auto"
           className={`whitespace-pre-wrap break-words text-sm ${emphasised ? 'text-site-text' : 'text-site-text-muted'}`}
         >
           {m.content}

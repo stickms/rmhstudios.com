@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/profile/profile-extras.contract';
@@ -41,7 +42,7 @@ export const route = apiRoute('/api/profile/$id/membership', {
         type: 'SYSTEM',
         entityType: 'membership',
         entityId: session.user.id,
-        preview: `${session.user.name ?? 'Someone'} became a member 🎉`,
+        preview: notice('member-joined', { name: session.user.name ?? 'Someone' }),
       }).catch(() => {});
 
       return Response.json({

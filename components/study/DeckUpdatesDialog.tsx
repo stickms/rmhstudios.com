@@ -12,6 +12,7 @@ import { api, apiQuery } from '@/lib/contract/client';
 import { diffWords, type DiffPart } from '@/lib/feed/word-diff';
 import { applyDeckUpdatesApi, deckUpdatesApi } from '@/lib/study/deck-sync.contract';
 import type { ChangedItem, DeckDiff, NewItem, RemovedItem, Side } from '@/lib/study/deck-sync';
+import { sameOcclusion } from '@/lib/study/occlusion';
 
 type TabId = 'new' | 'changed' | 'conflicts' | 'removed';
 type Detail = {
@@ -74,6 +75,12 @@ function CardText({ card }: { card: Side }) {
       {card.back && (
         <p dir="auto" className="t-body whitespace-pre-wrap break-words text-site-text-muted">
           {card.back}
+        </p>
+      )}
+      {card.occlusion && (
+        // An occlusion card's text is its masks' labels (its front is an optional prompt).
+        <p dir="auto" className="t-meta break-words">
+          {card.occlusion.masks.map((m) => m.label).join(', ')}
         </p>
       )}
     </div>
@@ -313,6 +320,10 @@ export function DeckUpdatesDialog({ deckId, open, onOpenChange, onApplied }: Pro
             })}
           </p>
         )}
+        {(row.mine.kind === 'occlusion' || row.theirs.kind === 'occlusion') &&
+          !sameOcclusion(row.mine.occlusion, row.theirs.occlusion) && (
+            <p className="t-meta">{t('masks-changed', { ns: 'occlusion-cards', defaultValue: 'The masks changed' })}</p>
+          )}
         {row.mine.kind !== row.theirs.kind && (
           <p className="t-meta">
             {t('kind-changed', {

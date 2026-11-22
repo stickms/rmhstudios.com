@@ -198,7 +198,7 @@ describe('reviewQueue', () => {
       ],
     });
     expect(args.where.card.NOT).toEqual({
-      kind: 'cloze',
+      kind: { in: ['cloze', 'occlusion'] },
       sourceId: null,
     });
   });

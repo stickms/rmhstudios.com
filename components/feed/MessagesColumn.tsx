@@ -470,11 +470,20 @@ function ConversationRow({
   formatTime: (s: string) => string;
   className?: string | undefined;
 }) {
-  const preview = conv.matchSnippet?.trim()
+  // Member text (a snippet or the last message) is isolated in <bdi> in the preview line; the "You:" prefix and the
+  // GIF/Photo labels are site text and keep the interface direction.
+  const previewMember = conv.matchSnippet?.trim()
     ? conv.matchSnippet
     : conv.lastMessage?.content?.trim()
-      ? `${conv.lastMessage.senderId === currentUserId ? `${t('you-prefix', { defaultValue: 'You:' })} ` : ''}${conv.lastMessage.content}`
-      : conv.lastMessage?.gifUrl
+      ? conv.lastMessage.content
+      : '';
+  const previewPrefix =
+    !conv.matchSnippet?.trim() && previewMember && conv.lastMessage?.senderId === currentUserId
+      ? `${t('you-prefix', { defaultValue: 'You:' })} `
+      : '';
+  const preview = previewMember
+    ? previewMember
+    : conv.lastMessage?.gifUrl
         ? t('sent-a-gif', { defaultValue: 'GIF' })
         : conv.lastMessage?.imageUrls && conv.lastMessage.imageUrls.length > 0
           ? t('sent-a-photo', { defaultValue: 'Photo' })
@@ -498,7 +507,7 @@ function ConversationRow({
                 {isSelf ? (
                   <SavedMessagesLabel />
                 ) : (
-                  conv.otherUser.name || t('unknown-user', { defaultValue: 'Unknown' })
+                  <bdi>{conv.otherUser.name || t('unknown-user', { defaultValue: 'Unknown' })}</bdi>
                 )}
               </span>
               {conv.otherUser.username && !isSelf && (
@@ -525,7 +534,14 @@ function ConversationRow({
             <p
               className={`t-body mt-0.5 truncate ${unread ? 'font-semibold text-site-text' : 'text-site-text-muted'}`}
             >
-              {preview}
+              {previewMember ? (
+                <>
+                  {previewPrefix}
+                  <bdi>{previewMember}</bdi>
+                </>
+              ) : (
+                preview
+              )}
             </p>
           )}
         </div>
@@ -606,6 +622,7 @@ function NewChatDialog({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t('search-people-placeholder', { defaultValue: 'Search people…' })}
+            dir="auto"
             className="surface-field border w-full rounded-site-sm py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
           />
         </div>
@@ -639,10 +656,12 @@ function NewChatDialog({
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-site-text">
-                        {u.name ??
-                          (u.handle
-                            ? `@${u.handle}`
-                            : t('unknown-user', { defaultValue: 'Unknown' }))}
+                        <bdi>
+                          {u.name ??
+                            (u.handle
+                              ? `@${u.handle}`
+                              : t('unknown-user', { defaultValue: 'Unknown' }))}
+                        </bdi>
                       </p>
                       {(u.username || u.handle) && (
                         <p className="truncate text-xs text-site-text-muted">

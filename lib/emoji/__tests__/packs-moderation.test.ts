@@ -164,7 +164,7 @@ describe('moderatePack', () => {
     );
     expect(createNotification).toHaveBeenCalledWith(
       expect.objectContaining({
-        preview: expect.stringContaining('Contains slurs'),
+        preview: expect.objectContaining({ fallback: expect.stringContaining('Contains slurs') }),
       }),
     );
     // Removal is terminal: neither decision applies again.

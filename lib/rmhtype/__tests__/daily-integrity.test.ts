@@ -154,6 +154,10 @@ vi.mock('@/lib/prisma.server', () => ({
     },
   },
 }));
+// Who is left off public boards has its own tests (board-privacy-coverage); here nobody is hidden.
+vi.mock('@/lib/game/leaderboard-privacy.server', () => ({
+  leaderboardHiddenUserIds: async () => new Set<string>(),
+}));
 vi.mock('@/lib/cached.server', () => ({
   cached: async (_key: string, _ttl: number, load: () => Promise<unknown>) => load(),
   invalidateTag: vi.fn(async (tag: string) => {

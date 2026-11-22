@@ -13,6 +13,7 @@
  * dynamics.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -113,8 +114,8 @@ export async function sendCoinGift(params: SendCoinGiftParams): Promise<{ ok: tr
     entityType: 'gift',
     entityId: gifterId,
     preview: note
-      ? `🎁 You received a gift of ${amount} coins: “${note.slice(0, 120)}”`
-      : `🎁 You received a gift of ${amount} coins!`,
+      ? notice('gift-coins-note', { amount, note: note.slice(0, 120) })
+      : notice('gift-coins', { amount }),
     link: '/wallet',
   }).catch(() => {});
 

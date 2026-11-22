@@ -16,7 +16,7 @@
  * history.
  */
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye, PenLine } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -36,6 +36,12 @@ export interface DocDraft {
 interface DocEditorProps {
   initialTitle: string;
   initialBody: string;
+  /** Start with this summary (a restored draft). */
+  initialSummary?: string;
+  /** Called with the whole draft on every change, so a caller can keep an unsaved edit across a reload. */
+  onDraftChange?: (draft: DocDraft) => void;
+  /** Replaces the Save button's text (already translated), e.g. "Save page". */
+  saveLabel?: string;
   /** Character ceiling for the body — the caller's column limit. */
   maxBody: number;
   maxTitle: number;
@@ -45,15 +51,29 @@ interface DocEditorProps {
   onSave: (draft: DocDraft) => void | Promise<void>;
   onCancel?: () => void;
   className?: string;
+  /** Shortest title that can be saved (default 2). A game guide's column wants 3. */
+  minTitle?: number;
+  /** Ceiling for the summary (default 200); a guide revision note is 120. */
+  maxSummary?: number;
+  /** Already-translated texts that replace the page wording ("Page title", "Write in Markdown…"). */
+  labels?: {
+    title?: string;
+    body?: string;
+    bodyPlaceholder?: string;
+    summaryPlaceholder?: string;
+    summary?: string;
+  };
+  /** Controls placed at the start of the action row (a guide's Publish and Delete). */
+  leading?: ReactNode;
 }
 
 /** Shared markdown reader styling, so a doc reads the same wherever it renders. */
 export const DOC_PROSE_CLASS =
-  'space-y-3 text-body leading-relaxed text-site-text [&_a]:text-site-accent [&_code]:font-mono [&_h2]:mt-5 [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_pre]:overflow-x-auto [&_pre]:rounded-site [&_pre]:bg-site-surface [&_pre]:p-3';
+  'space-y-3 text-body leading-relaxed text-site-text [&_a]:text-site-accent [&_a]:underline [&_code]:font-mono [&_h2]:mt-5 [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_pre]:overflow-x-auto [&_pre]:rounded-site [&_pre]:bg-site-surface [&_pre]:p-3';
 
 export function DocBody({ body, className }: { body: string; className?: string }) {
   return (
-    <div className={cn(DOC_PROSE_CLASS, className)}>
+    <div dir="auto" className={cn(DOC_PROSE_CLASS, className)}>
       <ReactMarkdown>{body}</ReactMarkdown>
     </div>
   );
@@ -62,6 +82,9 @@ export function DocBody({ body, className }: { body: string; className?: string 
 export function DocEditor({
   initialTitle,
   initialBody,
+  initialSummary = '',
+  onDraftChange,
+  saveLabel,
   maxBody,
   maxTitle,
   busy,
@@ -69,26 +92,43 @@ export function DocEditor({
   onSave,
   onCancel,
   className,
+  minTitle = 2,
+  maxSummary = 200,
+  labels,
+  leading,
 }: DocEditorProps) {
   const { t } = useTranslation('c-ui');
   const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState(initialBody);
-  const [summary, setSummary] = useState('');
+  const [summary, setSummary] = useState(initialSummary);
   const [preview, setPreview] = useState(false);
 
-  const valid = title.trim().length >= 2 && body.trim().length > 0;
+  const changed = (next: Partial<DocDraft>) => onDraftChange?.({ title, body, summary, ...next });
+
+  const valid = title.trim().length >= minTitle && body.trim().length > 0;
 
   return (
     <div className={cn('space-y-3', className)}>
       <Input
+        dir="auto"
         value={title}
-        onChange={(e) => setTitle(e.target.value.slice(0, maxTitle))}
-        placeholder={t('doc-title-placeholder', {
-          defaultValue: 'Page title',
-        })}
-        aria-label={t('doc-title-label', {
-          defaultValue: 'Page title',
-        })}
+        onChange={(e) => {
+          const next = e.target.value.slice(0, maxTitle);
+          setTitle(next);
+          changed({ title: next });
+        }}
+        placeholder={
+          labels?.title ??
+          t('doc-title-placeholder', {
+            defaultValue: 'Page title',
+          })
+        }
+        aria-label={
+          labels?.title ??
+          t('doc-title-label', {
+            defaultValue: 'Page title',
+          })
+        }
       />
 
       {preview ? (
@@ -97,16 +137,27 @@ export function DocEditor({
         </div>
       ) : (
         <Textarea
+          dir="auto"
           value={body}
-          onChange={(e) => setBody(e.target.value.slice(0, maxBody))}
+          onChange={(e) => {
+            const next = e.target.value.slice(0, maxBody);
+            setBody(next);
+            changed({ body: next });
+          }}
           rows={18}
           className="font-mono text-sm"
-          placeholder={t('doc-body-placeholder', {
-            defaultValue: 'Write in Markdown…',
-          })}
-          aria-label={t('doc-body-label', {
-            defaultValue: 'Page content',
-          })}
+          placeholder={
+            labels?.bodyPlaceholder ??
+            t('doc-body-placeholder', {
+              defaultValue: 'Write in Markdown…',
+            })
+          }
+          aria-label={
+            labels?.body ??
+            t('doc-body-label', {
+              defaultValue: 'Page content',
+            })
+          }
         />
       )}
 
@@ -115,17 +166,28 @@ export function DocEditor({
       {askSummary ? (
         <Input
           value={summary}
-          onChange={(e) => setSummary(e.target.value.slice(0, 200))}
-          placeholder={t('doc-summary-placeholder', {
-            defaultValue: 'What changed? (shown in the history)',
-          })}
-          aria-label={t('doc-summary-label', {
-            defaultValue: 'Edit summary',
-          })}
+          onChange={(e) => {
+            const next = e.target.value.slice(0, maxSummary);
+            setSummary(next);
+            changed({ summary: next });
+          }}
+          placeholder={
+            labels?.summaryPlaceholder ??
+            t('doc-summary-placeholder', {
+              defaultValue: 'What changed? (shown in the history)',
+            })
+          }
+          aria-label={
+            labels?.summary ??
+            t('doc-summary-label', {
+              defaultValue: 'Edit summary',
+            })
+          }
         />
       ) : null}
 
       <div className="flex flex-wrap items-center justify-end gap-2">
+        {leading ? <div className="mr-auto flex flex-wrap items-center gap-2">{leading}</div> : null}
         <Button variant="ghost" size="sm" onClick={() => setPreview((p) => !p)}>
           {preview ? <PenLine aria-hidden /> : <Eye aria-hidden />}
           {preview
@@ -156,9 +218,10 @@ export function DocEditor({
             })
           }
         >
-          {t('doc-save', {
-            defaultValue: 'Save',
-          })}
+          {saveLabel ??
+            t('doc-save', {
+              defaultValue: 'Save',
+            })}
         </Button>
       </div>
     </div>

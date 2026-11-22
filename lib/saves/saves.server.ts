@@ -3,6 +3,7 @@
  * hydration of saved items to display shapes with per-type visibility guards
  * and tombstones for gone/hidden targets.
  */
+import { recordTombstone } from '@/lib/sync/tombstones.server';
 import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { canReadPostThread, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
@@ -54,7 +55,11 @@ export async function removeSave(
   entityType: SaveEntityType,
   entityId: string,
 ): Promise<void> {
-  await prisma.savedItem.deleteMany({ where: { userId, entityType, entityId } });
+  await prisma.$transaction(async (tx) => {
+    const { count } = await tx.savedItem.deleteMany({ where: { userId, entityType, entityId } });
+    // Only post bookmarks are API objects; other saves are not synced.
+    if (count > 0 && entityType === 'rmhark') await recordTombstone(tx, userId, 'bookmark', entityId);
+  });
 }
 
 export async function listFolders(userId: string): Promise<SaveFolderView[]> {

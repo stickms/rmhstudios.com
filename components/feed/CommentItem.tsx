@@ -70,6 +70,7 @@ import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal'
 import { pinReplyApi, unpinReplyApi } from '@/lib/feed/conversation-controls.contract';
 import { ARRIVE } from '@/components/ui/arrive';
 import { toast } from '@/lib/toast';
+import { isolateText } from '@/lib/i18n/user-text';
 export interface Comment {
   id: string;
   content: string;
@@ -383,7 +384,7 @@ export function CommentItem({
             to={`/u/${freshCommentUser.handle || freshCommentUser.id}` as string}
             className="t-body flex items-center gap-1 font-semibold text-site-text hover:underline"
           >
-            <span className="truncate">{displayName}</span>
+            <bdi className="truncate">{displayName}</bdi>
             {freshCommentUser.isVerified && (
               <>
                 <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
@@ -407,7 +408,7 @@ export function CommentItem({
 
       {replyingTo && (
         <p className="t-meta mt-2">
-          {t('replying-to', { handle: replyingTo, defaultValue: 'Replying to {{handle}}' })}
+          {t('replying-to', { handle: isolateText(replyingTo), defaultValue: 'Replying to {{handle}}' })}
         </p>
       )}
 

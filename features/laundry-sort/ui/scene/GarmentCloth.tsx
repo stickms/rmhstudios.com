@@ -36,7 +36,8 @@ import { writeShell } from '@features/laundry-sort/engine/shell';
 import type { LaundryMatch } from '@features/laundry-sort/engine/match';
 import type { Garment } from '@features/laundry-sort/engine/solver';
 import type { QualityFlags } from '@/lib/render/tier';
-import { weaveTexture } from '../weave';
+import { useLaundryStore } from '@features/laundry-sort/engine/store';
+import { glyphTexture, weaveTexture } from '../weave';
 
 /** Seconds a resolved garment takes to fade out — matches `CULL_DELAY`. */
 const FADE = 0.9;
@@ -73,7 +74,12 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef, matchRef }: P
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 
-  const texture = useMemo(() => weaveTexture(wash.weave), [wash.weave]);
+  // Colour-safe swaps the faint weave for a bold glyph, so no sort depends on hue.
+  const colorSafe = useLaundryStore((s) => s.assist.colorSafe);
+  const texture = useMemo(
+    () => (colorSafe ? glyphTexture(wash.weave) : weaveTexture(wash.weave)),
+    [colorSafe, wash.weave],
+  );
   const baseColor = useMemo(() => new THREE.Color(wash.hex), [wash.hex]);
 
   // Scratch for the interpolated pose, one per garment, allocated once.
@@ -137,7 +143,7 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef, matchRef }: P
     map: texture ?? undefined,
     // The weave doubles as a bump map, so the fabric catches the light along
     // its stripes and checks — surface detail on top of the shell's shape.
-    bumpMap: texture ?? undefined,
+    bumpMap: colorSafe ? undefined : (texture ?? undefined),
     bumpScale: 0.35,
     // The shell is a closed solid: front sheet, back sheet, stitched rim. Back
     // faces are never visible, so drawing them is pure waste.
@@ -159,6 +165,7 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef, matchRef }: P
     >
       {quality.postProcessing ? (
         <meshPhysicalMaterial
+          key={colorSafe ? 'glyph' : 'weave'}
           ref={materialRef as React.Ref<THREE.MeshPhysicalMaterial>}
           {...common}
           sheen={0.65}
@@ -166,7 +173,11 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef, matchRef }: P
           sheenColor={baseColor}
         />
       ) : (
-        <meshStandardMaterial ref={materialRef as React.Ref<THREE.MeshStandardMaterial>} {...common} />
+        <meshStandardMaterial
+          key={colorSafe ? 'glyph' : 'weave'}
+          ref={materialRef as React.Ref<THREE.MeshStandardMaterial>}
+          {...common}
+        />
       )}
     </mesh>
   );

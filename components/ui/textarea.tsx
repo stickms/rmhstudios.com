@@ -37,6 +37,8 @@ const Textarea = ({
   return (
     <textarea
       data-slot="textarea"
+      // Member free text takes its direction from its first strong character (sprint 09, feature 20).
+      dir="auto"
       className={cn(
         // Steel K4 on a multi-line field: the same surface, border and 12px side padding.
         'flex min-h-28 w-full rounded-site border border-site-border bg-site-surface px-3 py-2.5 text-base sm:text-sm leading-relaxed text-site-text transition-[border-color] duration-(--m1) ease-[ease] placeholder:text-site-text-muted aria-invalid:border-site-danger disabled:cursor-not-allowed disabled:opacity-50',

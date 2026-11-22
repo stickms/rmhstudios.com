@@ -7,6 +7,7 @@
  * with a conditional `updateMany` and re-reads `createdById` and the moderator role inside the transaction,
  * so a stale page can never produce two owners. The transfer is logged in the same transaction.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -227,7 +228,7 @@ export async function offerHandover(input: {
       type: 'SYSTEM',
       entityType: HANDOVER_ENTITY,
       entityId: community.id,
-      preview: `${displayName(result.value.from)} offered you ownership of ${community.name}`,
+      preview: notice('handover-offered', { name: displayName(result.value.from), community: community.name }),
       link: `/c/${community.slug}`,
     });
   }
@@ -270,7 +271,7 @@ export async function cancelHandover(input: {
     type: 'SYSTEM',
     entityType: HANDOVER_ENTITY,
     entityId: community.id,
-    preview: `${result.value.ownerName} withdrew the offer of ${community.name}`,
+    preview: notice('handover-withdrawn', { name: result.value.ownerName, community: community.name }),
     link: `/c/${community.slug}`,
   });
   return { ok: true, value: null };
@@ -360,8 +361,8 @@ export async function respondHandover(input: {
     entityId: community.id,
     preview:
       input.action === 'accept'
-        ? `${result.value.toName} accepted ownership of ${community.name}`
-        : `${result.value.toName} declined ownership of ${community.name}`,
+        ? notice('handover-accepted', { name: result.value.toName, community: community.name })
+        : notice('handover-declined', { name: result.value.toName, community: community.name }),
     link: `/c/${community.slug}`,
   });
   return { ok: true, value: null };
@@ -435,7 +436,7 @@ export async function assignOwnerAsAdmin(input: {
       type: 'SYSTEM',
       entityType: HANDOVER_ENTITY,
       entityId: community.id,
-      preview: `You are now the owner of ${community.name}`,
+      preview: notice('handover-owner', { community: community.name }),
       link: `/c/${community.slug}`,
     });
   }

@@ -190,6 +190,7 @@ export function ModRules({ slug, onChange }: { slug: string; onChange: () => voi
               <span className="t-meta w-5 shrink-0 pt-2.5">{index + 1}</span>
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <Input
+                  dir="auto"
                   value={d.title}
                   maxLength={RULE_TITLE_MAX}
                   onChange={(e) =>
@@ -213,6 +214,7 @@ export function ModRules({ slug, onChange }: { slug: string; onChange: () => voi
                   })}
                 />
                 <Textarea
+                  dir="auto"
                   value={d.description}
                   maxLength={RULE_DESCRIPTION_MAX}
                   rows={2}

@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userChipSelect } from '@/lib/user-display';
@@ -86,7 +87,7 @@ async function finalizeIfDue(c: Row): Promise<Row> {
       type: 'SYSTEM',
       entityType: 'studio-challenge',
       entityId: c.id,
-      preview: `Your flip won "${c.title}"`,
+      preview: notice('studio-challenge-won', { title: c.title }),
       link: '/studio',
     });
   }

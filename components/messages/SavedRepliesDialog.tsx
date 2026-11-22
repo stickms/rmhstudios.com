@@ -201,8 +201,12 @@ export function SavedRepliesDialog({
                 {replies.map((reply, index) => (
                   <li key={reply.id} className="flex items-center gap-1 border-b border-site-border py-2">
                     <div className="min-w-0 flex-1">
-                      <p className="t-body truncate font-medium text-site-text">{reply.title}</p>
-                      <p className="t-meta truncate">{firstLine(reply.body)}</p>
+                      <p dir="auto" className="t-body truncate font-medium text-site-text">
+                        {reply.title}
+                      </p>
+                      <p dir="auto" className="t-meta truncate">
+                        {firstLine(reply.body)}
+                      </p>
                     </div>
                     <IconButton
                       icon={ArrowUp}
@@ -269,6 +273,7 @@ function ReplyEditor({
         </label>
         <Input
           id="saved-reply-title"
+          dir="auto"
           value={draft.title}
           maxLength={TITLE_MAX}
           autoFocus
@@ -282,6 +287,7 @@ function ReplyEditor({
         </label>
         <Textarea
           id="saved-reply-body"
+          dir="auto"
           value={draft.body}
           maxLength={BODY_MAX}
           rows={6}

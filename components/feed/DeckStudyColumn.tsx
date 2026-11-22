@@ -30,6 +30,7 @@ import { TestHistory } from '@/components/study/TestHistory';
 import { CardForm, type CardFormValue } from '@/components/study/CardForm';
 import { CardPicture, usePreloadPicture } from '@/components/study/CardPicture';
 import { ClozeText } from '@/components/study/ClozeText';
+import { OcclusionReview } from '@/components/study/OcclusionReview';
 import { DeckCardList } from '@/components/study/DeckCardList';
 import { isReverseCard } from '@/lib/study/card-types';
 import type { DeckCard as Card } from '@/lib/study.server';
@@ -262,7 +263,9 @@ export function DeckStudyColumn({
  <div className="p-4">
  <div className="flex min-h-64 flex-col items-center justify-center rounded-site relative p-8 text-center">
  {isReverseCard(card) && <p className="t-meta mb-2">{ts('reverse-label', { defaultValue:'Reverse'})}</p>}
- {card.clozeIndex !== null ? (
+ {card.kind === 'occlusion' && card.occlusionReview && card.frontImage ? (
+ <OcclusionReview image={card.frontImage} prompt={card.front} data={card.occlusionReview} revealed={revealed}/>
+ ) : card.clozeIndex !== null ? (
  <>
  <ClozeText text={card.front} index={card.clozeIndex} reveal={false} className="text-lg text-site-text"/>
  {revealed && (
@@ -320,7 +323,7 @@ export function DeckStudyColumn({
  <div className="min-w-0 flex-1">
  <h1 className="truncate text-lg font-semibold text-site-text">{deck.title}</h1>
  {deck.description && (
- <p className="truncate text-xs text-site-text-muted">{deck.description}</p>
+ <p dir="auto" className="truncate text-xs text-site-text-muted">{deck.description}</p>
  )}
  </div>
  {deck.isOwner && <EditDeckLink deckId={deckId} />}

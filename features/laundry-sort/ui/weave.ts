@@ -142,8 +142,8 @@ export function weaveTexture(weave: WeaveId): THREE.Texture | null {
  */
 const decalCache = new Map<string, THREE.Texture | null>();
 
-export function binDecalTexture(label: string, weave: WeaveId, hex: string): THREE.Texture | null {
-  const key = `${label}|${weave}|${hex}`;
+export function binDecalTexture(label: string, weave: WeaveId, hex: string, bold = false): THREE.Texture | null {
+  const key = `${label}|${weave}|${hex}|${bold ? 'bold' : 'plain'}`;
   const cached = decalCache.get(key);
   if (cached !== undefined) return cached;
 
@@ -163,7 +163,8 @@ export function binDecalTexture(label: string, weave: WeaveId, hex: string): THR
   ctx.fillStyle = 'rgba(0,0,0,0.32)';
   ctx.fillRect(0, 0, width, height);
 
-  drawWeaveGlyph(ctx, weave, width / 2, 46, 24);
+  // Colour-safe: a larger glyph, so the bin reads from across the room by shape alone.
+  drawWeaveGlyph(ctx, weave, width / 2, bold ? 44 : 46, bold ? 32 : 24);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 30px system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -174,6 +175,43 @@ export function binDecalTexture(label: string, weave: WeaveId, hex: string): THR
   const texture = new THREE.CanvasTexture(canvas);
   texture.anisotropy = 4;
   decalCache.set(key, texture);
+  return texture;
+}
+
+/**
+ * Colour-safe garment tile: one bold, dark glyph per tile on white, multiplied over the wash
+ * colour. The ordinary weave is a 22% shade, which colour-blind players cannot rely on; this
+ * is a 75% shade, so the glyph holds 3:1 against the garment (graphical objects).
+ */
+const glyphCache = new Map<WeaveId, THREE.Texture | null>();
+
+export function glyphTexture(weave: WeaveId): THREE.Texture | null {
+  const cached = glyphCache.get(weave);
+  if (cached !== undefined) return cached;
+  const canvas = makeCanvas(TILE, TILE);
+  const ctx = canvas?.getContext('2d') ?? null;
+  if (!canvas || !ctx) {
+    glyphCache.set(weave, null);
+    return null;
+  }
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, TILE, TILE);
+  // drawWeaveGlyph paints white; draw it on a scratch layer and invert to dark ink.
+  const ink = makeCanvas(TILE, TILE);
+  const inkCtx = ink?.getContext('2d') ?? null;
+  if (ink && inkCtx) {
+    drawWeaveGlyph(inkCtx, weave, TILE / 2, TILE / 2, TILE * 0.34);
+    inkCtx.globalCompositeOperation = 'source-in';
+    inkCtx.fillStyle = '#3a3a3a';
+    inkCtx.fillRect(0, 0, TILE, TILE);
+    ctx.drawImage(ink, 0, 0);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1.5, 1.5);
+  texture.anisotropy = 4;
+  glyphCache.set(weave, texture);
   return texture;
 }
 

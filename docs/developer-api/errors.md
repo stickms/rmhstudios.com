@@ -42,14 +42,18 @@ Non-2xx responses use a stable envelope:
 | `list_private` | `authorization_error` | `403` |
 | `method_not_allowed` | `invalid_request_error` | `405` |
 | `missing_key` | `authentication_error` | `401` |
+| `not_a_timeline` | `conflict_error` | `409` |
 | `not_found` | `not_found_error` | `404` |
 | `payload_too_large` | `invalid_request_error` | `413` |
 | `quota_exceeded` | `rate_limit_error` | `429` |
 | `rate_limited` | `rate_limit_error` | `429` |
 | `subscription_required` | `authorization_error` | `403` |
+| `sync_window_expired` | `invalid_request_error` | `410` |
 | `unprocessable` | `invalid_request_error` | `422` |
 
 <!-- END GENERATED: errors -->
+
+A key is also suspended (`key_suspended`) when its owner asks for their account to be deleted, and its owner's webhooks are disabled. Signing back in within the grace period cancels the deletion and restores the same key and webhooks; a key an admin suspended stays suspended. The body never says which.
 
 An unrecognised code always maps to `api_error` / `500`, so a client that handles the categories above degrades safely if we add a code.
 

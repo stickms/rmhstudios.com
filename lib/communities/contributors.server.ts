@@ -12,6 +12,8 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
+import { OVERFETCH_CAP } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 export const STAR_POST_POINTS = 3;
@@ -31,9 +33,24 @@ export interface ContributorDTO {
 }
 
 const TTL_MS = 5 * 60_000;
-const key = (communityId: string) => `community:contributors:${communityId}`;
+// v2: the entry carries each row's userId and room for hidden members; an older entry has neither.
+const key = (communityId: string) => `community:contributors:v2:${communityId}`;
 
+/**
+ * The cache holds the ranking with room for hidden members and each row's `userId`; hidden members are
+ * dropped after the cache read (the hidden set has its own 60 s cache), so the 5-minute entry is the same
+ * for every caller and a switch shows on the next read.
+ */
 export async function getTopContributors(communityId: string): Promise<ContributorDTO[]> {
+  const ranked = await getRankedContributors(communityId);
+  const hidden = await leaderboardHiddenUserIds();
+  return ranked
+    .filter((r) => !hidden.has(r.userId))
+    .slice(0, CONTRIBUTORS_SHOWN)
+    .map(({ userId: _userId, ...dto }) => dto);
+}
+
+async function getRankedContributors(communityId: string): Promise<Array<ContributorDTO & { userId: string }>> {
   return cached(
     key(communityId),
     TTL_MS,
@@ -41,7 +58,7 @@ export async function getTopContributors(communityId: string): Promise<Contribut
       const rows = await prisma.communityContributorScore.findMany({
         where: { communityId, score: { gt: 0 } },
         orderBy: [{ score: 'desc' }, { userId: 'asc' }],
-        take: CONTRIBUTORS_SHOWN,
+        take: CONTRIBUTORS_SHOWN + OVERFETCH_CAP,
         include: { user: { select: userDisplaySelect } },
       });
       const members = rows.length
@@ -52,6 +69,7 @@ export async function getTopContributors(communityId: string): Promise<Contribut
         : [];
       const tags = new Map(members.map((m) => [m.userId, m.roleTags]));
       const out = rows.map((r) => ({
+        userId: r.userId,
         user: resolveUser(r.user),
         starPosts: r.starPosts,
         challengeWins: r.challengeWins,

@@ -13,6 +13,7 @@
  * that keeps dying after {@link MAX_RECLAIMS} reclaims. Logs carry the kind and the subject id, never a member.
  */
 import { prisma } from '@/lib/prisma.server';
+import { NO_WORKER_ERROR, failedForNoWorker, reclaimDecision } from '@/lib/jobs/lease';
 import { MAX_RECLAIMS, leaseCutoff, toldIds, withoutTold, type FanoutKind } from '@/lib/fanout/run';
 
 export { LEASE_MS, MAX_RECLAIMS } from '@/lib/fanout/run';
@@ -72,6 +73,7 @@ async function acquire(spec: FanoutSpec, now: Date) {
         subjectId: spec.subjectId,
         status: 'RUNNING',
         heartbeatAt: beat,
+        claimedAt: beat,
         startedAt: now,
       },
     ],
@@ -90,6 +92,7 @@ async function acquire(spec: FanoutSpec, now: Date) {
       },
       data: {
         heartbeatAt: beat,
+        claimedAt: beat,
       },
     });
     if (claimed.count !== 1) return null;
@@ -265,71 +268,55 @@ export async function reclaimStalledFanouts(now: Date = new Date(), take = 50): 
       kind: true,
       subjectId: true,
       reclaims: true,
+      claimedAt: true,
+      reclaimedAt: true,
+      heartbeatAt: true,
+      startedAt: true,
     },
   });
   const requeue: ReclaimedRun[] = [];
   for (const r of Array.isArray(rows) ? rows : []) {
-    if (r.reclaims >= MAX_RECLAIMS) {
+    const input = {
+      claimedAt: r.claimedAt,
+      reclaimedAt: r.reclaimedAt,
+      reclaims: r.reclaims,
+      heartbeatAt: r.heartbeatAt,
+      createdAt: r.startedAt,
+      now,
+      maxReclaims: MAX_RECLAIMS,
+    };
+    const verdict = reclaimDecision(input);
+    if (verdict === 'skip') continue;
+    const run = { kind: r.kind as FanoutKind, subjectId: r.subjectId };
+    if (verdict === 'requeue') {
+      requeue.push(run);
+      continue;
+    }
+    const seen = { id: r.id, reclaims: r.reclaims, claimedAt: r.claimedAt, reclaimedAt: r.reclaimedAt, ...expired };
+    if (verdict === 'fail') {
       const failed = await prisma.fanoutRun.updateMany({
-        where: {
-          id: r.id,
-          reclaims: {
-            gte: MAX_RECLAIMS,
-          },
-          ...expired,
-        },
+        where: seen,
         data: {
           status: 'FAILED',
           finishedAt: now,
         },
       });
-      if (failed.count > 0) console.error(`[fanout] ${r.kind} ${r.subjectId} stopped after ${MAX_RECLAIMS} reclaims`);
+      if (failed.count > 0)
+        console.error(
+          `[fanout] ${r.kind} ${r.subjectId} stopped: ${failedForNoWorker(input) ? NO_WORKER_ERROR : `${MAX_RECLAIMS} reclaims`}`,
+        );
       continue;
     }
     const bumped = await prisma.fanoutRun.updateMany({
-      where: {
-        id: r.id,
-        reclaims: r.reclaims,
-        ...expired,
-      },
+      where: seen,
       data: {
         reclaims: {
           increment: 1,
         },
+        reclaimedAt: now,
       },
     });
-    if (bumped.count > 0)
-      requeue.push({
-        kind: r.kind as FanoutKind,
-        subjectId: r.subjectId,
-      });
+    if (bumped.count > 0) requeue.push(run);
   }
   return requeue;
-}
-
-/** The admin jobs console line: runs in flight and runs that failed in the last seven days. Numbers only. */
-export async function fanoutSummary(now: Date = new Date()): Promise<{
-  running: number;
-  failedLast7Days: number;
-}> {
-  const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const [running, failed] = await Promise.all([
-    prisma.fanoutRun.count({
-      where: {
-        status: 'RUNNING',
-      },
-    }),
-    prisma.fanoutRun.count({
-      where: {
-        status: 'FAILED',
-        finishedAt: {
-          gte: since,
-        },
-      },
-    }),
-  ]);
-  return {
-    running,
-    failedLast7Days: failed,
-  };
 }

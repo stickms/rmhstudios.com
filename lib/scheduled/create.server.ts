@@ -150,7 +150,7 @@ export async function createScheduledPost(
   if (d.scheduledAt) {
     scheduledAt = new Date(d.scheduledAt);
     if (scheduledAt.getTime() <= Date.now()) {
-      return fail(400, 'past', 'Scheduled time must be in the future');
+      return fail(400, 'past', 'Scheduled time must be in the future', { code: 'past' });
     }
   }
 
@@ -217,9 +217,9 @@ export async function updateScheduledPost(
 ): Promise<{ ok: true; post: ScheduledPost } | ScheduledFailure> {
   const existing = await prisma.scheduledPost.findUnique({ where: { id } });
   if (!existing || existing.userId !== userId) return fail(404, 'not_found', 'Not found');
-  if (existing.publishedId) return fail(409, 'published', 'Already published');
+  if (existing.publishedId) return fail(409, 'published', 'Already published', { code: 'published' });
   // Z7: a sealed time capsule is cancelled (DELETE), never edited.
-  if (existing.isCapsule) return fail(409, 'capsule_sealed', 'A time capsule is sealed');
+  if (existing.isCapsule) return fail(409, 'capsule_sealed', 'A time capsule is sealed', { code: 'capsule_sealed' });
 
   let scheduledAt: Date | null | undefined;
   if (d.scheduledAt !== undefined) {
@@ -228,7 +228,7 @@ export async function updateScheduledPost(
     } else {
       scheduledAt = new Date(d.scheduledAt);
       if (scheduledAt.getTime() <= Date.now()) {
-        return fail(400, 'past', 'Scheduled time must be in the future');
+        return fail(400, 'past', 'Scheduled time must be in the future', { code: 'past' });
       }
     }
   }
@@ -295,7 +295,7 @@ export async function updateScheduledPost(
       ...(scheduledAt !== undefined ? { scheduledAt } : {}),
     },
   });
-  if (result.count === 0) return fail(409, 'published', 'Already published');
+  if (result.count === 0) return fail(409, 'published', 'Already published', { code: 'published' });
   const updated = await prisma.scheduledPost.findUnique({ where: { id } });
   if (!updated) return fail(404, 'not_found', 'Not found');
   return { ok: true, post: updated };

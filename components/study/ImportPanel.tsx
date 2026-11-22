@@ -50,13 +50,18 @@ export function ImportPanel({
   const known = useMemo(() => new Set(existingFronts.map((f) => f.trim().toLowerCase())), [existingFronts]);
   const { cards, duplicates } = useMemo(() => {
     if (!skipDuplicates) return { cards: parsed.cards, duplicates: 0 };
-    const kept = parsed.cards.filter((c) => !known.has(c.front.toLowerCase()));
+    // An occlusion card's front is an optional prompt, not what identifies it: it is never a duplicate by front.
+    const kept = parsed.cards.filter((c) => c.kind === 'occlusion' || !known.has(c.front.toLowerCase()));
     return { cards: kept, duplicates: parsed.cards.length - kept.length };
   }, [parsed.cards, known, skipDuplicates]);
 
   const tooMany = cards.length > MAX_IMPORT_CARDS;
   // The cap counts every row: a reversible card adds two, a cloze card one per deletion index and itself.
-  const newRows = cards.reduce((sum, c) => sum + rowsFor({ kind: c.kind ?? 'basic', front: c.front, back: c.back }), 0);
+  const newRows = cards.reduce(
+    (sum, c) =>
+      sum + rowsFor({ kind: c.kind ?? 'basic', front: c.front, back: c.back, occlusion: c.occlusion ?? null }),
+    0,
+  );
   const deckFull = cardCount + newRows > MAX_DECK_CARDS;
   const typed = cards.some((c) => c.kind !== undefined);
   const hasText = text.trim() !== '';
@@ -82,11 +87,16 @@ export function ImportPanel({
       ns: 'card-images',
       defaultValue: 'A picture has no description, is on a cloze front, or is not one of your uploads',
     }),
+    'invalid-occlusion': t('reason-invalid-occlusion', {
+      ns: 'occlusion-cards',
+      defaultValue: 'The masks are missing, outside the picture, too small or have no label',
+    }),
   };
   const typeLabel = {
     basic: ts('type-basic', { defaultValue: 'Basic' }),
     reversible: ts('type-reversible', { defaultValue: 'Reversible' }),
     cloze: ts('type-cloze', { defaultValue: 'Cloze' }),
+    occlusion: t('type-occlusion', { ns: 'occlusion-cards', defaultValue: 'Picture occlusion' }),
   };
 
   async function pickFile(file: File | undefined) {

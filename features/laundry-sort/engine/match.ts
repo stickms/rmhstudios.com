@@ -29,6 +29,7 @@ import { buildArena, type ArenaLayout } from './arena';
 import { createRng } from './rng';
 import { GARMENT_KINDS, PATTERNS, type GarmentKind } from './patterns';
 import { ClothWorld, REST_SPEED, type Garment, type Ray, type SpawnDesc } from './solver';
+import { UNTIMED_SCHEDULE_SEC } from './assist-profile';
 import { lerp } from '@/lib/core/math';
 import { shuffle } from '@/lib/core/rng';
 
@@ -171,6 +172,11 @@ export interface MatchOptions {
   seed: number;
   durationSec: number;
   difficulty: Difficulty;
+  /**
+   * Assist (no timed input, solo only): the match has no clock. It deals garments for
+   * {@link UNTIMED_SCHEDULE_SEC} and ends only when the player calls {@link LaundryMatch.finish}.
+   */
+  untimed?: boolean;
 }
 
 /**
@@ -208,8 +214,13 @@ export class LaundryMatch {
     this.options = options;
     this.arena = buildArena();
     this.world = new ClothWorld(this.arena);
-    this.drops = buildDropSchedule(options.seed, options.durationSec, options.difficulty);
-    this.totalTicks = Math.round(options.durationSec / FIXED_DT);
+    this.drops = buildDropSchedule(
+      options.seed,
+      options.untimed ? UNTIMED_SCHEDULE_SEC : options.durationSec,
+      options.difficulty,
+    );
+    // An untimed match has no tick budget, so the clock can never end it.
+    this.totalTicks = options.untimed ? Number.POSITIVE_INFINITY : Math.round(options.durationSec / FIXED_DT);
   }
 
   /** Simulated seconds elapsed. */
@@ -227,7 +238,19 @@ export class LaundryMatch {
     return Math.min(1, Math.max(0, this.accumulator / FIXED_DT));
   }
 
-  /** Simulated seconds left, floored at zero. */
+  /** True for a match with no clock (the no-timed-input assist). */
+  get untimed(): boolean {
+    return this.options.untimed === true;
+  }
+
+  /** The player ends an untimed match. A timed one ends on its own, so this is for both but only needed by one. */
+  finish(): void {
+    if (this.finished) return;
+    this.finished = true;
+    this.world.endGrab();
+  }
+
+  /** Simulated seconds left, floored at zero. Infinity for an untimed match. */
   get remaining(): number {
     return Math.max(0, (this.totalTicks - this.ticks) * FIXED_DT);
   }

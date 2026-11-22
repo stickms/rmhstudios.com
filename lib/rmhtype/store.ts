@@ -28,6 +28,8 @@ export interface RmhTypeUserSettings {
   soloPassageLength: PassageLength;
   /** Draw a second caret at the pace of the member's best run on the passage (default on). */
   raceGhost: boolean;
+  /** Fold finished runs into the member's per-key counters (default on; lib/rmhtype/record-keystats.ts). */
+  recordKeyStats: boolean;
 }
 
 const DEFAULT_SETTINGS: RmhTypeUserSettings = {
@@ -37,7 +39,10 @@ const DEFAULT_SETTINGS: RmhTypeUserSettings = {
   soloDifficulty: 'medium',
   soloPassageLength: 'medium',
   raceGhost: true,
+  recordKeyStats: true,
 };
+
+const RMHTYPE_SETTINGS_KEY = 'rmhtype-settings';
 
 // ─── Store Interface ─────────────────────────────────────────────
 
@@ -61,6 +66,11 @@ export interface RmhTypeStore {
    * shows during it so the button press does not look ignored.
    */
   soloGeneratingTopic: string | null;
+  /**
+   * A generated practice test waiting for the solo page to pick it up (the "Practise these keys" button on the
+   * progress page). Never persisted; the solo page takes it once and clears it.
+   */
+  pendingPractice: string | null;
 
   // Actions
   setConnectionStatus: (status: RmhTypeStore['connectionStatus']) => void;
@@ -89,6 +99,7 @@ export interface RmhTypeStore {
   setSoloCountdown: (seconds: number | null) => void;
   setSoloGeneratingTopic: (topic: string | null) => void;
   clearSolo: () => void;
+  setPendingPractice: (text: string | null) => void;
 
   updateSettings: (partial: Partial<RmhTypeUserSettings>) => void;
   leaveRoom: () => void;
@@ -111,6 +122,7 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
       soloResult: null,
       soloCountdown: null,
       soloGeneratingTopic: null,
+      pendingPractice: null,
 
       setConnectionStatus: (status) =>
         set({
@@ -280,6 +292,7 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
         set({
           soloGeneratingTopic: topic,
         }),
+      setPendingPractice: (text) => set({ pendingPractice: text }),
       clearSolo: () =>
         set({
           soloPassage: null,
@@ -316,7 +329,7 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
         }),
     }),
     {
-      name: 'rmhtype-settings',
+      name: RMHTYPE_SETTINGS_KEY,
       partialize: (state) => ({
         settings: state.settings,
       }),

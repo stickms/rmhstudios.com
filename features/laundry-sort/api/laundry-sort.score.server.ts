@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
 import { SCORE, comboMultiplier } from '@features/laundry-sort/engine/constants';
+import { consumeAssistRun } from '@/lib/game/assist-run.server';
 
 /**
  * Submit a **solo** Laundry Sort run.
@@ -41,6 +42,15 @@ export const route = apiRoute('/api/laundry-sort/score', {
         return Response.json({ error: 'Implausible result' }, { status: 400 });
       }
 
+      // An assisted run never reaches the board (P7). The player row IS this game's board, so it is
+      // left alone; the play and the challenge progress still count. The claim is peeked, not
+      // consumed, so the seeded-run and basket submits that follow reach the same answer.
+      if (await consumeAssistRun(userId, 'laundry-sort', { keepClaim: true, settleClaim: true })) {
+        await recordGamePlay(userId);
+        await reportGameResult(userId, { game: 'laundry-sort', score });
+        return Response.json({ ok: true, personalBest: false, ranked: false });
+      }
+
       const existing = await prisma.laundryPlayer.findUnique({ where: { userId } });
 
       if (existing) {
@@ -56,7 +66,7 @@ export const route = apiRoute('/api/laundry-sort/score', {
         });
         await recordGamePlay(userId);
         await reportGameResult(userId, { game: 'laundry-sort', score });
-        return Response.json({ ok: true, personalBest });
+        return Response.json({ ok: true, personalBest, ranked: true });
       }
 
       // First run for this account. `username` is unique across the board,
@@ -86,7 +96,7 @@ export const route = apiRoute('/api/laundry-sort/score', {
 
       await recordGamePlay(userId);
       await reportGameResult(userId, { game: 'laundry-sort', score });
-      return Response.json({ ok: true, personalBest: true });
+      return Response.json({ ok: true, personalBest: true, ranked: true });
     },
   ),
 });

@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma, PrismaClient, RedemptionRequest } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { creditCoinsOn, debitCoinsOn, InsufficientFundsError } from '@/lib/economy/ledger-core';
@@ -295,10 +296,10 @@ export async function reviewRedemption(
       entityId: req.id,
       preview:
         finalStatus === 'REJECTED'
-          ? 'Your redemption was declined and your coins were refunded'
+          ? notice('redemption-declined', {})
           : finalStatus === 'FULFILLED'
-            ? 'Your redemption was fulfilled 🎉'
-            : 'Your redemption was approved',
+            ? notice('redemption-fulfilled', {})
+            : notice('redemption-approved', {}),
       link: '/create/earnings',
     }).catch(() => {});
   }

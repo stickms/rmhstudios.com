@@ -48,7 +48,7 @@ export function ReplayBoard({ gameId, initial }: { gameId: string; initial: Boar
                 >
                   <span className="stm-person-body">
                     <span className="stm-person-name">
-                      {score} · {author}
+                      {score} · <bdi>{author}</bdi>
                     </span>
                     <span className="stm-person-sub">
                       {formatDurationMs(r.durationMs)} · {date.format(new Date(r.createdAt))}

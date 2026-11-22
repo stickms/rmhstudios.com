@@ -7,6 +7,7 @@
 import { mulberry32, shuffle } from '@/lib/core/rng';
 import { maskClozeText } from '@/lib/study/card-types';
 import type { CardImage } from '@/lib/study/card-images';
+import type { OcclusionReviewData } from '@/lib/study/occlusion';
 
 export const TEST_KINDS = ['multiple-choice', 'written', 'true-false', 'matching'] as const;
 export type TestKind = (typeof TEST_KINDS)[number];
@@ -37,6 +38,8 @@ export interface TestCard {
   /** The pictures the card shows, a generated card's read from its source (s08-15). */
   frontImage?: CardImage | null | undefined;
   backImage?: CardImage | null | undefined;
+  /** Set on a generated occlusion card: the masks and the one asked, drawn over `frontImage` (s09-03). */
+  occlusion?: OcclusionReviewData | null | undefined;
 }
 
 export interface TestOptions {
@@ -56,6 +59,8 @@ export interface MultipleChoiceQuestion {
   prompt: string;
   /** The picture on the prompt's side of the card, when it has one (s08-15). */
   promptImage?: CardImage;
+  /** The masks to draw over `promptImage`, on an occlusion card (the prompt may then be empty: the component says it). */
+  promptOcclusion?: OcclusionReviewData;
   options: string[];
   answerIndex: number;
 }
@@ -64,6 +69,8 @@ export interface WrittenQuestion {
   cardId: string;
   prompt: string;
   promptImage?: CardImage;
+  /** The masks to draw over `promptImage`, on an occlusion card (the prompt may then be empty: the component says it). */
+  promptOcclusion?: OcclusionReviewData;
   answer: string;
 }
 export interface TrueFalseQuestion {
@@ -71,6 +78,8 @@ export interface TrueFalseQuestion {
   cardId: string;
   prompt: string;
   promptImage?: CardImage;
+  /** The masks to draw over `promptImage`, on an occlusion card (the prompt may then be empty: the component says it). */
+  promptOcclusion?: OcclusionReviewData;
   /** The answer shown next to the prompt; it is the real one when `isTrue`. */
   shown: string;
   /** The real answer, for the results screen. */
@@ -197,8 +206,15 @@ function promptOf(card: TestCard, ask: Side, blank: string): string {
   if (isCloze(card)) return maskClozeText(card.front, card.clozeIndex, blank);
   return ask === 'front' ? card.front : card.back;
 }
-/** The picture on the side a question asks from; a cloze prompt is text only (its picture sits on the back). */
-function promptImageOf(card: TestCard, ask: Side): { promptImage: CardImage } | Record<string, never> {
+/**
+ * The picture on the side a question asks from; a cloze prompt is text only (its picture sits on the back). An
+ * occlusion card asks about its front picture with the masks drawn over it.
+ */
+function promptImageOf(
+  card: TestCard,
+  ask: Side,
+): { promptImage: CardImage; promptOcclusion?: OcclusionReviewData } | Record<string, never> {
+  if (card.occlusion) return card.frontImage ? { promptImage: card.frontImage, promptOcclusion: card.occlusion } : {};
   const image = isCloze(card) ? null : ask === 'front' ? card.frontImage : card.backImage;
   return image ? { promptImage: image } : {};
 }
@@ -221,9 +237,12 @@ function distinctCount(cards: readonly TestCard[], side: Side): number {
   return seen.size;
 }
 
-/** Cards of one note (a reversible card and its reverse, the cards of one cloze text) are one fact. */
+/**
+ * Cards of one note (a reversible card and its reverse, the cards of one cloze text) are one fact. Each mask of an
+ * occlusion card is its own fact (a different part of the picture), so it is its own note.
+ */
 function noteKey(card: TestCard): string {
-  return card.noteId ?? card.id;
+  return card.occlusion ? card.id : (card.noteId ?? card.id);
 }
 /** How many facts the cards hold: the most questions a test can have. */
 export function factCount(cards: readonly TestCard[]): number {
@@ -353,8 +372,10 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
     const spare = pool.length - next - (count - i - 1);
 
     if (kind === 'matching' && spare < 2) kind = 'written';
+    // A mask is a place on a picture, not a term to pair with a definition: a group holding one is asked one by one.
+    const group = kind === 'matching' ? pool.slice(next, next + Math.min(MAX_MATCH_PAIRS, spare)) : [];
+    if (group.some((c) => c.occlusion)) kind = 'written';
     if (kind === 'matching') {
-      const group = pool.slice(next, next + Math.min(MAX_MATCH_PAIRS, spare));
       next += group.length;
       questions.push({
         kind: 'matching',

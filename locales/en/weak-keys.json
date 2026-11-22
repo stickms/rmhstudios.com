@@ -1,0 +1,19 @@
+{
+  "clear-confirm": "Clear statistics",
+  "clear-description": "This removes the counts for {{layout}}. Your runs and best scores stay.",
+  "clear-done": "Key statistics cleared.",
+  "clear-failed": "Could not clear your key statistics.",
+  "clear-title": "Clear your key statistics?",
+  "load-failed": "Could not load your key statistics.",
+  "loading": "Loading your key statistics",
+  "practice-failed": "Could not build a practice test.",
+  "practice-note": "Practice, not on the boards.",
+  "practice-result-note": "Practice, not on the boards.",
+  "practise-action": "Practise these keys",
+  "recorded-note": "Counts per key: how often you pressed it, how often it was wrong, and how long it took. The order of what you typed is never stored.",
+  "retry": "Try again",
+  "section-title": "Keys",
+  "switch-hint": "Counts per key: how often you pressed it, how often it was wrong, and how long it took. The order of what you typed is never stored.",
+  "switch-label": "Record key statistics",
+  "worst-reading": "{{ms}} ms per key, {{rate}}% missed"
+}

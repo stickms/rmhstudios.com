@@ -245,7 +245,7 @@ export function ExploreRecommendations({
                 >
                   <UserAvatar src={u.image} alt="" size={AVATAR_SIZE} />
                   <span className="min-w-0">
-                    <span className="t-body block truncate font-semibold">
+                    <span dir="auto" className="t-body block truncate font-semibold">
                       {u.name || u.handle}
                     </span>
                     <span className="t-meta block truncate">
@@ -282,7 +282,7 @@ export function ExploreRecommendations({
                 >
                   <span className="flex min-w-0 items-center gap-3">
                     <UserAvatar src={l.user.image} alt="" size={AVATAR_SIZE} />
-                    <span className="t-body truncate font-semibold">
+                    <span dir="auto" className="t-body truncate font-semibold">
                       {l.user.name || l.user.handle}
                     </span>
                   </span>
@@ -309,10 +309,17 @@ export function ExploreRecommendations({
                     {c.icon || '👥'}
                   </span>
                   <span className="min-w-0">
-                    <span className="t-body block truncate font-semibold">{c.name}</span>
+                    <span dir="auto" className="t-body block truncate font-semibold">
+                      {c.name}
+                    </span>
                     <span className="t-meta block truncate">
                       {c.memberCount} member{c.memberCount === 1 ? '' : 's'}
-                      {c.description ? ` · ${c.description}` : ''}
+                      {c.description ? (
+                        <>
+                          {' · '}
+                          <bdi>{c.description}</bdi>
+                        </>
+                      ) : null}
                     </span>
                   </span>
                 </Link>

@@ -459,6 +459,8 @@ model SongPlay {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([songId, userId])
+  /// Account deletion deletes a member's plays by userId.
+  @@index([userId])
 }
 
 /// A playable Slice It chart. One row per (song, difficulty, key count, author).
@@ -765,6 +767,8 @@ model SliceDailyEntry {
   @@unique([dayKey, userId])
   /// The board: one day, ordered by score.
   @@index([dayKey, score(sort: Desc)])
+  /// Account deletion deletes a member's entries by userId.
+  @@index([userId])
   @@map("slice_daily_entry")
 }
 

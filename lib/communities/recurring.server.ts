@@ -3,10 +3,10 @@
  * posts an occurrence, and the account-deletion and export hooks.
  *
  * Posting goes through the same gates as a hand-written post. `prepareCommunityPost` runs first (membership, bans and
- * timeouts, flair, verification, AutoMod) because `publishScheduledPost` re-checks only sanctions and the
- * image-description rule; a refusal, or an outcome AutoMod would hold or flag, pauses the template and creates
- * nothing. A template posts as `createdById`, the moderator who last saved it.
+ * timeouts, flair, verification, AutoMod) so a refusal or hold pauses the template instead of leaving a draft; a refusal, or an outcome
+ * AutoMod would hold or flag, pauses the template and creates nothing. A template posts as `createdById`, the moderator who last saved it.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { CommunityRecurringThread, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -531,7 +531,7 @@ export async function pauseRecurring(
         type: 'SYSTEM',
         entityType: 'community-recurring-paused',
         entityId: row.id,
-        preview: `The recurring thread "${row.title}" in ${community.name} was paused`,
+        preview: notice('recurring-paused', { title: row.title, community: community.name }),
         link: `/c/${community.slug}`,
       });
     }
@@ -541,7 +541,14 @@ export async function pauseRecurring(
   return true;
 }
 
-/** "Post now": the next occurrence happens at once and the schedule does not move. */
+/** A second "Post now" inside this window is the same click twice, not a second thread. */
+const POST_NOW_WINDOW_MS = 60_000;
+
+/**
+ * "Post now": the next occurrence happens at once and the schedule does not move. `postOccurrence` creates the post
+ * outside any transaction, so an advisory lock cannot cover it; the claim is one compare-and-set on `lastPostedAt`
+ * (the cron path claims `nextAt` the same way). Losing it is `409 just_posted`; a failed post puts the old value back.
+ */
 export async function postRecurringNow(args: { communityId: string; id: string; now?: Date }): Promise<string> {
   const row = await prisma.communityRecurringThread.findFirst({
     where: {
@@ -550,8 +557,49 @@ export async function postRecurringNow(args: { communityId: string; id: string; 
     },
   });
   if (!row) throw new RecurringError(404, 'not_found', 'Not found');
-  const result = await postOccurrence(row, args.now ?? new Date());
+  const now = args.now ?? new Date();
+  const claim = await prisma.communityRecurringThread.updateMany({
+    where: {
+      id: row.id,
+      communityId: args.communityId,
+      OR: [
+        {
+          lastPostedAt: null,
+        },
+        {
+          lastPostedAt: {
+            lt: new Date(now.getTime() - POST_NOW_WINDOW_MS),
+          },
+        },
+      ],
+    },
+    data: {
+      lastPostedAt: now,
+    },
+  });
+  if (claim.count !== 1) throw new RecurringError(409, 'just_posted', 'This thread was posted a moment ago');
+  // Give the claim back unless the post went out: only while the row still carries our claim.
+  const release = () =>
+    prisma.communityRecurringThread
+      .updateMany({
+        where: {
+          id: row.id,
+          lastPostedAt: now,
+        },
+        data: {
+          lastPostedAt: row.lastPostedAt,
+        },
+      })
+      .catch((e: unknown) => console.error('[recurring] post-now release error:', e));
+  let result: OccurrenceResult;
+  try {
+    result = await postOccurrence(row, now);
+  } catch (e) {
+    await release();
+    throw e;
+  }
   if (!result.ok) {
+    await release();
     await pauseRecurring(row, result.reason);
     throw new RecurringError(409, result.reason, 'The thread could not be posted and was paused');
   }

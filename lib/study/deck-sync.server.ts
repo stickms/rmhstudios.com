@@ -11,6 +11,7 @@
  */
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { lockKey } from '@/lib/db/advisory-lock.server';
+import { recordTombstone } from '@/lib/sync/tombstones.server';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { prisma } from '@/lib/prisma.server';
 import { AUTHORED_WHERE, CARD_ORDER } from '@/lib/study/card-query.server';
@@ -28,7 +29,7 @@ import {
 } from '@/lib/study/deck-sync';
 import { insertCards, updateCardIn } from '@/lib/study/deck-editor.server';
 import { MAX_DECK_CARDS } from '@/lib/study/limits';
-import { CARD_IMAGE_SELECT, pictureUrls, toColumns, type CardPictures } from '@/lib/study/card-images';
+import { CARD_IMAGE_SELECT, pictureUrls, type CardPictures } from '@/lib/study/card-images';
 import { deleteCardImageObjects, lockPictureUrls, releaseCardImages } from '@/lib/study/card-images.server';
 
 type Db = Prisma.TransactionClient | PrismaClient;
@@ -130,6 +131,7 @@ async function sourceCards(db: Db, deckId: string): Promise<SourceCard[]> {
       kind: true,
       front: true,
       back: true,
+      occlusion: true,
       ...CARD_IMAGE_SELECT,
     },
   });
@@ -143,6 +145,7 @@ async function copyCards(db: Db, deckId: string): Promise<CopyCard[]> {
       kind: true,
       front: true,
       back: true,
+      occlusion: true,
       ...CARD_IMAGE_SELECT,
       originCardId: true,
       originHash: true,
@@ -273,8 +276,25 @@ export async function applyUpdates(
       const source = await sharedSource(tx, userId, copy.clonedFromId);
       if (!source) return NOT_FOUND;
 
+      // Every picture this apply can share or release is locked ONCE, in sorted order, before any card is touched:
+      // locks taken card by card would be in sorted order only within one card, and two applies (or an apply and an
+      // author's edit) could then wait on each other. The cards are read again under the locks, so what is applied is
+      // what the author's card holds now, not what it held before the wait (s09-03 hardening of s08-15).
+      const peekFrom = new Map((await sourceCards(tx, source.id)).map((c) => [c.id, c]));
+      const peekMine = new Map((await copyCards(tx, deckId)).map((c) => [c.id, c]));
+      const picturesOf = (all: ReadonlyMap<string, SourceCard>, copies: ReadonlyMap<string, CopyCard>) =>
+        items.flatMap((item) => {
+          if (item.type === 'new') return pictureUrls(all.get(item.sourceCardId) ?? {});
+          const card = copies.get(item.cardId);
+          if (!card) return [];
+          return [...pictureUrls(card), ...pictureUrls(card.originCardId ? (all.get(card.originCardId) ?? {}) : {})];
+        });
+      const lockedUrls = new Set(picturesOf(peekFrom, peekMine));
+      await lockPictureUrls(tx, [...lockedUrls]);
       const from = new Map((await sourceCards(tx, source.id)).map((c) => [c.id, c]));
       const mine = new Map((await copyCards(tx, deckId)).map((c) => [c.id, c]));
+      // A card whose pictures moved while we waited holds a picture we did not lock: it is skipped, never applied unlocked.
+      const covered = (urls: readonly string[]) => urls.every((url) => lockedUrls.has(url));
       const claimed = new Set([...mine.values()].map((c) => c.originCardId));
       let rows = await tx.flashcard.count({
         where: {
@@ -314,6 +334,10 @@ export async function applyUpdates(
           }
           const card = diffDecks([src], []).added[0]?.card;
           if (!card) continue;
+          if (!covered(pictureUrls(src))) {
+            skip(src.id, 'stale');
+            continue;
+          }
           if (rows + rowsFor(card) > MAX_DECK_CARDS) {
             result.leftOut++;
             continue;
@@ -338,6 +362,10 @@ export async function applyUpdates(
           continue;
         }
         const src = from.get(card.originCardId);
+        if (!covered([...pictureUrls(card), ...pictureUrls(src ?? {})])) {
+          skip(item.cardId, 'stale');
+          continue;
+        }
 
         if (item.type === 'removed') {
           if (src) {
@@ -352,6 +380,7 @@ export async function applyUpdates(
             },
           });
           if (count > 0) {
+            await recordTombstone(tx, userId, 'card', card.id);
             removedCount++;
             result.applied++;
             droppedKeys.push(...(await releaseCardImages(tx, pictureUrls(card))));
@@ -379,8 +408,6 @@ export async function applyUpdates(
         const next = diffDecks([src], []).added[0]?.card;
         if (!next) continue;
         // The author's pictures are shared, not copied: same URLs, no claim on the member's uploads.
-        const theirPictures = toColumns(next);
-        await lockPictureUrls(tx, pictureUrls(theirPictures));
         const edited = await updateCardIn(
           tx,
           userId,
@@ -411,10 +438,6 @@ export async function applyUpdates(
       }
 
       if (fresh.length > 0) {
-        await lockPictureUrls(
-          tx,
-          fresh.flatMap((c) => pictureUrls(toColumns(c))),
-        );
         await insertCards(tx, deckId, fresh);
         result.applied += fresh.length;
       }

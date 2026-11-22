@@ -76,7 +76,9 @@ export function LockedCommunityHeader({
           <LockBadge />
         </div>
         {community.description && (
-          <p className="mt-0.5 line-clamp-3 text-sm text-site-text-muted">{community.description}</p>
+          <p dir="auto" className="mt-0.5 line-clamp-3 text-sm text-site-text-muted">
+            {community.description}
+          </p>
         )}
         <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-text-muted">
           <Users className="h-3.5 w-3.5" aria-hidden />

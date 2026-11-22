@@ -44,6 +44,7 @@ export function MessageEditor({
     <div className="flex w-full flex-col gap-2">
       <textarea
         ref={ref}
+        dir="auto"
         value={value}
         rows={2}
         maxLength={MESSAGE_MAX_LENGTH}

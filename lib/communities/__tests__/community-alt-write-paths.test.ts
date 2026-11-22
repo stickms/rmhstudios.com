@@ -10,6 +10,11 @@ import { COMMUNITY_ALT_WRITE_PATHS } from '@/lib/communities/alt-required';
 
 const root = join(__dirname, '..', '..', '..');
 const src = (p: string) => readFileSync(join(root, p), 'utf8');
+/** Source without comments, so a mention of a function is not a call to it. */
+const code = (p: string) =>
+  src(p)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
 
 describe('COMMUNITY_ALT_WRITE_PATHS', () => {
   it('names files that exist', () => {
@@ -24,7 +29,7 @@ describe('COMMUNITY_ALT_WRITE_PATHS', () => {
         'lib/feed/api/rmharks.$id.server.ts',
         'lib/feed/api/rmharks.server.ts',
         'lib/scheduled/create.server.ts',
-        'lib/scheduled/publish.server.ts',
+        'lib/scheduled/gate.server.ts',
       ].sort(),
     );
   });
@@ -32,11 +37,18 @@ describe('COMMUNITY_ALT_WRITE_PATHS', () => {
   it('has each path apply the rule (the gate, the pure check, or the cleared-description test)', () => {
     for (const p of COMMUNITY_ALT_WRITE_PATHS) {
       expect(
-        /communityAltMissing|clearsDescription|imageUrls,\s*imageAlts/.test(src(p)),
+        /communityAltMissing|clearsDescription|await prepareCommunityPost\(|imageUrls,\s*imageAlts/.test(code(p)),
         `${p} must apply the community alt rule`,
       ).toBe(true);
     }
     expect(src('lib/feed/api/rmharks.server.ts')).toMatch(/prepareCommunityPost\(\{[\s\S]*?imageAlts: cleanImageAlts/);
+  });
+
+  it('has the scheduled publish run the gate adapter under its lock, and the adapter call the community gate with the images', () => {
+    expect(code('lib/scheduled/publish.server.ts')).toMatch(/FOR UPDATE[\s\S]*await evaluateScheduledGate\(sp\)/);
+    expect(code('lib/scheduled/gate.server.ts')).toMatch(
+      /await prepareCommunityPost\(\{[\s\S]*imageUrls: [\s\S]*imageAlts: [\s\S]*\}\)/,
+    );
   });
 
   it('has the gate read the setting and the create path pass the images', () => {

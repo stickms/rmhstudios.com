@@ -142,7 +142,7 @@ const MessageRow = memo(function MessageRow({
         </span>
 
         {text && (
-          <span className="text-app-text wrap-break-word min-w-0">
+          <span dir="auto" className="text-app-text wrap-break-word min-w-0">
             {renderContent(text, msg.mentions, memberNames)}
           </span>
         )}
@@ -663,6 +663,7 @@ export default function ChatPanel() {
           <input
             ref={inputRef}
             type="text"
+            dir="auto"
             value={message}
             onChange={handleInputChange}
             onKeyDown={(e) => shortcodes.onKeyDown(e)}

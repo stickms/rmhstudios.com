@@ -159,7 +159,9 @@ export function AnnouncementDiscussion({ slug }: { slug: string }) {
                         />
                       ) : null}
                     </div>
-                    <p className="t-post mt-1 break-words whitespace-pre-wrap">{c.content}</p>
+                    <p dir="auto" className="t-post mt-1 break-words whitespace-pre-wrap">
+                      {c.content}
+                    </p>
                   </div>
                 </li>
               ))}

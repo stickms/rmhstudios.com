@@ -143,7 +143,7 @@ describe('adjustCoins', () => {
       expect.objectContaining({
         userId: MEMBER,
         link: '/wallet',
-        preview: 'RMH Studios added 500 coins: goodwill',
+        preview: expect.objectContaining({ fallback: 'RMH Studios added 500 coins: goodwill' }),
       }),
     );
   });

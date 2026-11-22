@@ -6,6 +6,7 @@ import type { FeedItem } from '@/lib/feed-types';
 import { getOwnRequestState, type OwnRequestState } from '@/lib/communities/join-requests.server';
 import { loadFlairsForPosts } from '@/lib/communities/flairs.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
+import { loadPinnedItems, pinnedAmong, readPinRows } from '@/lib/communities/pins.server';
 
 export interface CommunityAnnouncement {
   id: string;
@@ -158,6 +159,8 @@ export interface CommunityFeedResult {
   items: FeedItem[];
   nextCursor: string | null;
   hasMore: boolean;
+  /** s09-06: the pinned block, first page only, and only with `withPins` (the site's own reads). */
+  pinned?: FeedItem[];
 }
 
 /**
@@ -168,7 +171,17 @@ export interface CommunityFeedResult {
 export async function getCommunityFeed(
   slug: string,
   viewerId: string | null,
-  opts: { cursor?: string | null; limit?: number; flairId?: string | null } = {},
+  opts: {
+    cursor?: string | null;
+    limit?: number;
+    flairId?: string | null;
+    /**
+     * s09-06: the site's reads set this. The first page then carries `pinned` (the moderators' pinned posts, in their
+     * order) and no page repeats a pinned post. Without it (the developer API) the page is unchanged and each post
+     * only says whether it is pinned (`communityPinned`).
+     */
+    withPins?: boolean;
+  } = {},
 ): Promise<CommunityFeedResult | null> {
   const community = await prisma.community.findUnique({
     where: { slug },
@@ -177,8 +190,10 @@ export async function getCommunityFeed(
   if (!community) return null;
 
   const limit = pageSize(opts.limit);
+  // A flair filter is a different list: the pinned block stays out of it and its posts stay in.
+  const withPins = !!opts.withPins && !opts.flairId;
   // The viewer's membership rides the same round trip as the visibility lookup; it only supplies the followed flairs (N3) for the first page.
-  const [visible, member] = await Promise.all([
+  const [visible, member, pinRows] = await Promise.all([
     // The post's OWN audience still applies inside a community: a FOLLOWERS /
     // PRIVATE / CIRCLE post is not shown to every member just because of where it
     // was made. One definition of visibility, shared with canViewPost.
@@ -191,6 +206,8 @@ export async function getCommunityFeed(
           select: { followedFlairIds: true },
         })
       : Promise.resolve(null),
+    // One indexed read of at most three rows: they leave the page below and, on the first page, lead above it.
+    withPins ? readPinRows(community.id) : Promise.resolve([]),
   ]);
   // Members-only: indistinguishable from a missing community for a non-member.
   if (community.isPrivate && !member) return null;
@@ -200,6 +217,7 @@ export async function getCommunityFeed(
       communityId: community.id,
       ...visible,
       ...(opts.flairId ? { communityFlair: { flairId: opts.flairId } } : {}),
+      ...(withPins && pinRows.length > 0 ? { id: { notIn: pinRows.map((r) => r.postId) } } : {}),
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,
@@ -210,12 +228,19 @@ export async function getCommunityFeed(
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
 
-  const [items, flairs] = await Promise.all([
+  const [items, flairs, pinned, pinnedIds] = await Promise.all([
     mapRmharksWithBoundedReactions(page, viewerId),
     loadFlairsForPosts(page.map((p) => p.id)),
+    // The pinned block rides the same visibility filter and serialiser as the page, so a blocked author, a removed or
+    // held post, quiet counts and warnings behave identically.
+    withPins && !opts.cursor
+      ? loadPinnedItems({ communityId: community.id, slug, viewerId, visible, rows: pinRows })
+      : Promise.resolve(null),
+    withPins ? Promise.resolve(new Set<string>()) : pinnedAmong(community.id, page.map((p) => p.id)),
   ]);
   for (const item of items) {
     item.communitySlug = slug;
+    if (!withPins) item.communityPinned = pinnedIds.has(item.id);
     const flair = flairs.get(item.id);
     if (flair) item.communityFlair = flair;
   }
@@ -235,5 +260,6 @@ export async function getCommunityFeed(
     items: ordered,
     nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
     hasMore,
+    ...(pinned ? { pinned } : {}),
   };
 }

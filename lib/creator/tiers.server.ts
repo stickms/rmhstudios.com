@@ -13,6 +13,7 @@
  * atomically, guarding against overdraft under concurrency.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins } from '@/lib/economy/ledger.server';
 import { debitCoins, creditCoins, EscrowError } from '@/lib/wager/escrow.server';
@@ -268,7 +269,7 @@ export async function joinTier(
       type: 'SYSTEM',
       entityType: 'membership',
       entityId: tier.id,
-      preview: `You have a new ${tier.name} supporter!`,
+      preview: notice('creator-supporter', { tier: tier.name }),
       link: '/creator-studio',
     }).catch(() => {});
 

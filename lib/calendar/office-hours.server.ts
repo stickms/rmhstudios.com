@@ -13,6 +13,7 @@
  * per-host advisory lock so two simultaneous bookings cannot both squeeze
  * under it.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
@@ -371,14 +372,13 @@ export async function bookSlot(
     if (created === 'week-full') return fail(409, 'That week is fully booked');
 
     const [view] = await toBookingViews([created]);
-    const when = startsAt.toUTCString().replace(':00 GMT', ' UTC');
     void createNotification({
       userId: hostId,
       actorId: guestId,
       type: 'SYSTEM',
       entityType: 'office-hours',
       entityId: created.id,
-      preview: `${view?.guest.name ?? 'Someone'} booked your office hours for ${when}.`,
+      preview: notice('office-hours-booked', { name: view?.guest.name ?? 'Someone', startsAt }),
       link: `/office-hours/${hostId}`,
     });
     void createNotification({
@@ -387,7 +387,7 @@ export async function bookSlot(
       type: 'SYSTEM',
       entityType: 'office-hours',
       entityId: created.id,
-      preview: `You are booked with ${view?.host.name ?? 'your host'} on ${when}. Download the calendar file from the booking page.`,
+      preview: notice('office-hours-confirmed', { name: view?.host.name ?? 'your host', startsAt }),
       link: `/office-hours/${hostId}`,
     });
     return { ok: true, value: view };
@@ -414,14 +414,13 @@ export async function cancelBooking(bookingId: string, userId: string): Promise<
   });
   const otherId = b.hostId === userId ? b.guestId : b.hostId;
   const people = await loadPeople([userId]);
-  const when = b.startsAt.toUTCString().replace(':00 GMT', ' UTC');
   void createNotification({
     userId: otherId,
     actorId: userId,
     type: 'SYSTEM',
     entityType: 'office-hours',
     entityId: bookingId,
-    preview: `${people.get(userId)?.name ?? 'Someone'} cancelled the office-hours booking for ${when}.`,
+    preview: notice('office-hours-cancelled', { name: people.get(userId)?.name ?? 'Someone', startsAt: b.startsAt }),
     link: `/office-hours/${b.hostId}`,
   });
   return { ok: true, value: true };

@@ -24,7 +24,11 @@ function RingCard({ ring }: { ring: RingSummary }) {
     <li>
       <Link to={`/rings/${ring.slug}` as string} className="surface-press block rounded-site p-5">
         <p className="truncate site-section-label">{ring.name}</p>
-        {ring.description ? <p className="mt-1 line-clamp-2 text-sm text-site-text-muted">{ring.description}</p> : null}
+        {ring.description ? (
+          <p dir="auto" className="mt-1 line-clamp-2 text-sm text-site-text-muted">
+            {ring.description}
+          </p>
+        ) : null}
         <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-site-text-muted">
           <Users className="size-3.5" aria-hidden />
           {t('ring-members', {

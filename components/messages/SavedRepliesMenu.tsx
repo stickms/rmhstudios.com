@@ -143,8 +143,12 @@ export function SavedRepliesMenu({
                 onSelect={() => pick(reply)}
               >
                 <span className="block min-w-0">
-                  <span className="block truncate text-site-text">{reply.title}</span>
-                  <span className="t-meta block truncate">{firstLine(reply.body)}</span>
+                  <span dir="auto" className="block truncate text-site-text">
+                    {reply.title}
+                  </span>
+                  <span dir="auto" className="t-meta block truncate">
+                    {firstLine(reply.body)}
+                  </span>
                 </span>
               </MenuItem>
             ))

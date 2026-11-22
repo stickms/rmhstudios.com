@@ -1,3 +1,4 @@
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The reminder sweep against an in-memory flashcard_reminder table that evaluates the same compare-and-set
@@ -155,7 +156,7 @@ describe('the sweep', () => {
       type: 'SYSTEM',
       entityType: 'study_due',
       link: '/study',
-      preview: '3 flashcards are due',
+      preview: expect.objectContaining({ fallback: '3 flashcards are due' }),
     });
     expect(row().lastSentDay).toBe('2026-11-21');
     expect(row().nextAt?.toISOString()).toBe('2026-11-22T18:00:00.000Z');
@@ -169,7 +170,7 @@ describe('the sweep', () => {
     const now = new Date(SIX_PM.getTime() + 1_000);
     await Promise.all([runDueReminderSweep(now), runDueReminderSweep(now)]);
     expect(state.notifications).toHaveLength(1);
-    expect(state.notifications[0]!.preview).toBe('1 flashcard is due');
+    expect(noticeFallbackText(state.notifications[0]!.preview as never)).toBe('1 flashcard is due');
   });
 
   it('does not send before the member local time', async () => {
@@ -194,7 +195,7 @@ describe('the sweep', () => {
     await runDueReminderSweep(new Date(SIX_PM.getTime() + 1_000));
     expect(state.countWheres[0]).toMatchObject({
       userId: 'u1',
-      card: { NOT: { kind: 'cloze', sourceId: null }, deck: { userId: 'u1' } },
+      card: { NOT: { kind: { in: ['cloze', 'occlusion'] }, sourceId: null }, deck: { userId: 'u1' } },
     });
   });
 
@@ -202,9 +203,11 @@ describe('the sweep', () => {
     await enable();
     state.fresh.u1 = 5;
     expect(await runDueReminderSweep(new Date(SIX_PM.getTime() + 1_000))).toEqual({ read: 1, sent: 1 });
-    expect(state.notifications[0]).toMatchObject({ preview: '5 flashcards are due' });
+    expect(state.notifications[0]).toMatchObject({
+      preview: expect.objectContaining({ fallback: '5 flashcards are due' }),
+    });
     expect(state.freshWheres[0]).toMatchObject({
-      NOT: { kind: 'cloze', sourceId: null },
+      NOT: { kind: { in: ['cloze', 'occlusion'] }, sourceId: null },
       deck: { userId: 'u1' },
       reviews: { none: { userId: 'u1' } },
     });
@@ -215,7 +218,9 @@ describe('the sweep', () => {
     state.due.u1 = 2;
     state.fresh.u1 = 3;
     await runDueReminderSweep(new Date(SIX_PM.getTime() + 1_000));
-    expect(state.notifications[0]).toMatchObject({ preview: '5 flashcards are due' });
+    expect(state.notifications[0]).toMatchObject({
+      preview: expect.objectContaining({ fallback: '5 flashcards are due' }),
+    });
   });
 
   it('sends nothing to a banned member, and still advances nextAt', async () => {

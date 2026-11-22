@@ -15,7 +15,13 @@ import {
 import { getLessonProgressApi, recordLessonRunApi } from '@/lib/rmhtype/lessons.contract';
 import { getRmhTypeProgressApi, getRmhTypeRunsApi } from '@/lib/rmhtype/progress.contract';
 import { clearRmhTypeGhostsApi, getRmhTypeGhostApi } from '@/lib/rmhtype/ghost.contract';
-import { buildRmhTypePracticeTestApi, recordRmhTypeKeyStatsApi } from '@/lib/rmhtype/keystats.contract';
+import {
+  buildRmhTypePracticeTestApi,
+  clearRmhTypeKeyStatsApi,
+  getRmhTypeKeyStatsApi,
+  recordRmhTypeKeyStatsApi,
+} from '@/lib/rmhtype/keystats.contract';
+import type { TypingLayout } from '@/lib/rmhtype/keystats';
 import type { ProgressMode, ProgressRange } from '@/lib/rmhtype/progress';
 import type { DailyScope } from '@/lib/rmhtype/daily';
 
@@ -53,6 +59,24 @@ export const buildPracticeDrill = (length: number) => api(buildRmhTypePracticeTe
 
 export const recordKeyStats = (body: ApiInput<typeof recordRmhTypeKeyStatsApi>['body']) =>
   api(recordRmhTypeKeyStatsApi, { body });
+
+/* Key statistics (the "Keys" section of the progress page) */
+
+export const RMHTYPE_KEYSTATS_KEY = ['rmhtype', 'keystats'] as const;
+
+export const rmhTypeKeyStatsQuery = (layout: TypingLayout) =>
+  contractQuery(
+    [...RMHTYPE_KEYSTATS_KEY, layout],
+    getRmhTypeKeyStatsApi,
+    { query: { layout }, retries: 0 },
+    { staleTime: 15_000 },
+  );
+
+export const clearKeyStats = (layout: TypingLayout) => api(clearRmhTypeKeyStatsApi, { query: { layout } });
+
+/** The weighted practice test for a layout, built on the server from the member's counters. */
+export const buildKeyPracticeTest = (body: ApiInput<typeof buildRmhTypePracticeTestApi>['body']) =>
+  api(buildRmhTypePracticeTestApi, { body });
 
 /* Progress */
 

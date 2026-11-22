@@ -10,6 +10,8 @@ export const deleteAccountApi = endpoint<{
     success: true;
     scheduledAt: string;
     graceDays: number;
+    /** Every session is already deleted; the client signs out locally. */
+    signOut: true;
   };
 }>()({
   method: 'POST',

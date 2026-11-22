@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
@@ -64,7 +65,9 @@ export const route = apiRoute('/api/coins/tip', {
           category: 'economy',
           entityType: 'tip',
           entityId,
-          preview: `${senderName} tipped you 🪙 ${amount}${note ? ` — “${note.trim()}”` : ''}`,
+          preview: note
+            ? notice('tip-received-note', { sender: senderName, amount, note: note.trim() })
+            : notice('tip-received', { sender: senderName, amount }),
           link: recipient.handle ? `/u/${recipient.handle}` : undefined,
         });
         await grantAchievement(senderId, 'economy.first_tip_sent');

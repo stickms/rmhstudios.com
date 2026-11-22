@@ -15,7 +15,7 @@ import { ExportMenu } from '@/components/study/ExportMenu';
 import { ImportPanel } from '@/components/study/ImportPanel';
 import { api } from '@/lib/contract/client';
 import { toast } from '@/lib/toast';
-import { clozePlainText } from '@/lib/study/card-types';
+import { cardLabel } from '@/lib/study/card-types';
 import type { ParsedCard } from '@/lib/study/import';
 import { MAX_DECK_CARDS } from '@/lib/study/limits';
 import {
@@ -274,7 +274,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
               <SortableList
                 items={cards}
                 onReorder={reorder}
-                itemLabel={(c) => (c.kind === 'cloze' ? clozePlainText(c.front) : c.front)}
+                itemLabel={(c) => cardLabel(c)}
                 className="gap-0 divide-y divide-site-border border-y border-site-border"
                 renderItem={(card) => <CardRow card={card} onSave={saveCard} onDelete={deleteCard} />}
               />

@@ -6,6 +6,7 @@
  * same model `/feeds/$id` reads. Matching itself is
  * `lib/search/keyword-alerts.ts` (no member input ever becomes regex syntax).
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -110,7 +111,7 @@ export async function fanOutKeywordAlerts(post: {
       type: 'SYSTEM',
       entityType: 'keyword-alert',
       entityId: post.id,
-      preview: `"${hits.get(userId)}": ${preview}`,
+      preview: notice('keyword-alert', { keyword: hits.get(userId) ?? '', text: preview }),
       link,
     });
   }

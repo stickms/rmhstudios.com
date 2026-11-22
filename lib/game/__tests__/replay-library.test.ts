@@ -56,6 +56,10 @@ vi.mock('@/lib/prisma.server', () => ({
     },
   },
 }));
+// Who is left off public boards has its own tests (board-privacy-coverage); here nobody is hidden.
+vi.mock('@/lib/game/leaderboard-privacy.server', () => ({
+  leaderboardHiddenUserIds: async () => new Set<string>(),
+}));
 vi.mock('@/lib/moderation.server', () => ({ getBlockedAuthorIds: async () => db.blocked }));
 vi.mock('@/lib/game/adapters.server', () => ({ getGameAdapter: () => undefined }));
 vi.mock('@/lib/daily-puzzles/replay.server', () => ({ verifyDailyPuzzle: async () => null }));
@@ -150,7 +154,7 @@ describe('the game board query', () => {
     });
     expect(args.where.user).toEqual({ OR: [{ bannedUntil: null }, { bannedUntil: { lte: expect.any(Date) } }] });
     expect(args.where).not.toHaveProperty('userId');
-    expect(args.orderBy).toEqual([{ score: 'desc' }, { createdAt: 'desc' }]);
+    expect(args.orderBy).toEqual([{ score: 'asc' }, { createdAt: 'desc' }]);
   });
 
   it('leaves out authors the viewer blocked and authors who blocked the viewer', async () => {

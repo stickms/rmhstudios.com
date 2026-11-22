@@ -31,6 +31,13 @@ export async function runDueRecurringThreads(now: Date = new Date()): Promise<nu
       nextAt: 'asc',
     },
     take: BATCH,
+    include: {
+      createdBy: {
+        select: {
+          deletionScheduledAt: true,
+        },
+      },
+    },
   });
   let posted = 0;
   for (const row of due) {
@@ -46,6 +53,9 @@ export async function runDueRecurringThreads(now: Date = new Date()): Promise<nu
       },
     });
     if (count !== 1) continue;
+    // s09-14: a template whose author's deletion is scheduled skips this occurrence (the community sees no thread
+    // that week). The occurrence was claimed above, so nothing posts later to catch up.
+    if (row.createdBy?.deletionScheduledAt) continue;
     try {
       const result = await postOccurrence(row, now);
       if (result.ok) posted += 1;

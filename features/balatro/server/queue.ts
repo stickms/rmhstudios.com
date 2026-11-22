@@ -41,6 +41,7 @@
  * NOTE: server code imports `lib/` RELATIVELY — server/CLAUDE.md gotcha 7.
  */
 
+import { notice, noticeColumns } from '../../../lib/notifications/notice-keys';
 import type { Server, Socket } from 'socket.io';
 import { logger } from '../../../server/socket-server/logger';
 import { checkRateLimit } from '../../../server/socket-server/rate-limit';
@@ -123,7 +124,7 @@ const prismaStore: BalatroSocialStore = {
         type: 'SYSTEM',
         entityType: 'balatro_lobby',
         entityId: code,
-        preview: `${fromName} invited you to a Balatro lobby`.slice(0, 280),
+        ...noticeColumns(notice('balatro-invite', { name: fromName })),
         link: `/balatro?${LOBBY_LINK_PARAM}=${code}`,
       },
     });

@@ -64,6 +64,7 @@ model Community {
   calendarEvents Event[]                 @relation("CommunityEvents")
   communityPages CommunityPage[]
   groupCalls     GroupCall[]
+  pinnedPosts    CommunityPinnedPost[]
 
   @@index([memberCount(sort: Desc)])
   @@index([gameId])
@@ -143,6 +144,26 @@ model CommunityAnnouncement {
 
   @@index([communityId, createdAt(sort: Desc)])
   @@map("community_announcement")
+}
+
+/// s09-06 — a post a moderator pinned to the top of a community (at most three, ordered by `position`, 0 leads).
+/// A community's own arrangement of its content: the row never reaches a reader with the pinner's name on it.
+model CommunityPinnedPost {
+  communityId String
+  postId      String
+  position    Int
+  pinnedById  String
+  pinnedAt    DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  post      RMHark    @relation("CommunityPinnedPostPost", fields: [postId], references: [id], onDelete: Cascade)
+  pinnedBy  User      @relation("CommunityPinnedPostPinner", fields: [pinnedById], references: [id], onDelete: Cascade)
+
+  @@id([communityId, postId])
+  @@index([communityId, position])
+  @@index([postId])
+  @@index([pinnedById])
+  @@map("community_pinned_post")
 }
 
 model CommunityMember {

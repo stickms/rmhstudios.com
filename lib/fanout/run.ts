@@ -34,21 +34,6 @@ export function leaseExpired(
   return run.status === 'RUNNING' && run.heartbeatAt.getTime() < leaseCutoff(now).getTime();
 }
 
-export type ReclaimDecision = 'keep' | 'requeue' | 'fail';
-
-/** What the sweep does with a run: leave it, queue it again, or stop it after the fifth reclaim. */
-export function shouldReclaim(
-  run: {
-    status: FanoutStatusName;
-    heartbeatAt: Date;
-    reclaims: number;
-  },
-  now: Date,
-): ReclaimDecision {
-  if (!leaseExpired(run, now)) return 'keep';
-  return run.reclaims >= MAX_RECLAIMS ? 'fail' : 'requeue';
-}
-
 /**
  * Drop the recipients who already have a delivery from this run: the ids in `told`. Order and duplicates of the
  * remaining ids are kept as given.

@@ -30,6 +30,7 @@ import {
   type NotifyMatrix,
 } from '@/lib/notify/categories';
 import { holdNotification } from '@/lib/notify/held.server';
+import { noticeFallbackText, type NoticePreview } from '@/lib/notifications/notice-keys';
 import { getConversationPref, shouldDeliver } from '@/lib/notify/conversation-prefs.server';
 
 /**
@@ -51,7 +52,8 @@ export interface DispatchInput {
   actorId?: string | null;
   entityType?: string;
   entityId?: string;
-  preview?: string;
+  /** English text, or a key-based notice (`notice('key', params)`); push carries the English fallback. */
+  preview?: string | NoticePreview;
   link?: string;
   /** Batching key, e.g. `like:rmhark:<id>:<dayKey>`. */
   groupKey?: string;
@@ -118,7 +120,7 @@ export async function dispatch(input: DispatchInput): Promise<void> {
       // Push-only (in-app muted for this category) — direct push, no row.
       void sendPushToUser(input.userId, {
         title: pushTitleFor(input.type),
-        body: input.preview ?? undefined,
+        body: noticeFallbackText(input.preview) ?? undefined,
         url: input.link ?? '/notifications',
       });
     }
@@ -134,7 +136,7 @@ export async function dispatch(input: DispatchInput): Promise<void> {
         channel: 'push',
         payload: {
           title: pushTitleFor(input.type),
-          ...(input.preview ? { body: input.preview } : {}),
+          ...(input.preview ? { body: noticeFallbackText(input.preview) ?? '' } : {}),
           url: input.link ?? '/notifications',
           ...(input.entityType && input.entityId
             ? { tag: `${input.entityType}:${input.entityId}` }

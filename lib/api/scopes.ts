@@ -238,6 +238,31 @@ export const SCOPES: ScopeDetail[] = [
     group: 'Search',
     description: 'Search public posts and people by keyword. Each search counts as 3 requests against the daily quota.',
   },
+
+  // Sprint 09
+  // s09-08 api-feeds
+  {
+    id: 'read:feeds',
+    action: 'read',
+    group: 'Feeds',
+    description:
+      'Read your feeds, lists, saved searches and keyword alerts, and page the posts of a feed or list. Reading posts also needs read:posts.',
+  },
+  {
+    id: 'write:feeds',
+    action: 'write',
+    group: 'Feeds',
+    description: 'Replace the members of your lists. Feeds are created, renamed and deleted on the site.',
+  },
+
+  // s09-09 api-practice
+  {
+    id: 'read:practice',
+    action: 'read',
+    group: 'Practice',
+    description:
+      'Read your own typing, music practice and focus-session history. Read-only: practice cannot be written through the API.',
+  },
 ];
 
 export const ALL_SCOPES: string[] = SCOPES.map((s) => s.id);

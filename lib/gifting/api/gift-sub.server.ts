@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
@@ -50,7 +51,11 @@ export const route = apiRoute('/api/gift-sub', {
           type: 'SYSTEM',
           entityType: 'membership',
           entityId: body.tier,
-          preview: `${session.user.name ?? 'Someone'} gifted you ${body.months} month(s) of ${GIFT_TIER_LABELS[body.tier]}!`,
+          preview: notice('membership-gifted', {
+            name: session.user.name ?? 'Someone',
+            months: body.months,
+            tier: GIFT_TIER_LABELS[body.tier],
+          }),
           link: '/store?tab=membership',
         }).catch(() => {});
         await grantAchievement(session.user.id, 'economy.first_gift_sub').catch(() => {});

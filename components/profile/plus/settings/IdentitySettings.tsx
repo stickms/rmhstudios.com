@@ -264,6 +264,7 @@ export default function IdentitySettings({
         </Label>
         <Input
           id="plus-pronouns"
+          dir="auto"
           value={
             pronouns
           }

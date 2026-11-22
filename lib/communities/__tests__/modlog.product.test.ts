@@ -63,7 +63,13 @@ describe('action codes', () => {
   });
 
   it('keeps bans, role changes and settings out of the public subset', () => {
-    expect([...PUBLIC_MOD_ACTIONS]).toEqual(['content_removed', 'content_approved']);
+    expect([...PUBLIC_MOD_ACTIONS]).toEqual([
+      'content_removed',
+      'content_approved',
+      'post_pinned',
+      'post_unpinned',
+      'pins_reordered',
+    ]);
     for (const a of MOD_ACTIONS_BY_GROUP.members) {
       expect(
         toPublicEntry(

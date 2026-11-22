@@ -101,7 +101,9 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
             </h3>
 
             {/* Description */}
-            <p className="text-sm text-site-text-muted line-clamp-2 mb-3">{build.description}</p>
+            <p dir="auto" className="text-sm text-site-text-muted line-clamp-2 mb-3">
+              {build.description}
+            </p>
 
             {/* Tech Stack */}
             {build.technologies.length > 0 && (

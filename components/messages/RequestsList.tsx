@@ -157,7 +157,9 @@ export function RequestsList() {
                       {formatRelativeTime(request.createdAt, i18n.language)}
                     </time>
                   </div>
-                  <p className="t-body mt-1 whitespace-pre-wrap break-words text-site-text">{request.content}</p>
+                  <p dir="auto" className="t-body mt-1 whitespace-pre-wrap break-words text-site-text">
+                    {request.content}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 ps-13">

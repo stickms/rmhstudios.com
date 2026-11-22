@@ -307,7 +307,7 @@ export function PredictionCard({
             )}
           </div>
           {market.description && (
-            <p className="mt-2 text-sm text-site-text-muted line-clamp-3">
+            <p dir="auto" className="mt-2 text-sm text-site-text-muted line-clamp-3">
               {
                 market.description
               }

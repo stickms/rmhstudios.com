@@ -118,6 +118,8 @@ export function votersAreNotified(totalVotes: number): boolean {
   return totalVotes <= POLL_VOTER_NOTICE_MAX_VOTES;
 }
 
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
+
 const NAME_MAX = 60;
 
 function names(options: readonly TalliedOption[]): string {
@@ -137,6 +139,17 @@ export function authorNoticeText(options: readonly TalliedOption[]): string {
   return winners.length === 1
     ? `Your poll ended: ${names(winners)} won with ${pct}%`
     : `Your poll ended in a tie: ${names(winners)} with ${pct}% each`;
+}
+
+/** {@link authorNoticeText} as a key and params, for the inbox to write in the reader's language. */
+export function authorNotice(options: readonly TalliedOption[]): NoticePreview {
+  const winners = pollWinners(options);
+  const [first] = winners;
+  if (!first) return notice('poll-ended-no-votes', {});
+  const percent = votePercent(first.voteCount, totalVotesOf(options));
+  return winners.length === 1
+    ? notice('poll-ended-won', { names: names(winners), percent })
+    : notice('poll-ended-tie', { names: names(winners), percent });
 }
 
 export const VOTER_NOTICE_TEXT = 'A poll you voted in ended';

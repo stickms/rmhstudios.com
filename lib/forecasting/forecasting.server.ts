@@ -5,6 +5,8 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
+import { OVERFETCH_CAP } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { userChipSelect } from '@/lib/user-display';
 import { aiChat, isAITextConfigured } from '@/lib/ai/text.server';
 import { calibrate, type Calibration } from '@/lib/predictions/calibration';
@@ -87,8 +89,25 @@ export async function listSeasons(): Promise<SeasonSummary[]> {
   }));
 }
 
-/** Season leaderboard from members' forecasts on the resolved markets; cached 60s. */
+const SEASON_BOARD_SIZE = 50;
+
+/**
+ * Season leaderboard from members' forecasts on the resolved markets; cached 60s. The cache holds the
+ * ranking with room for hidden members; hidden members are dropped after the cache read, so a switch is
+ * seen on the next read and the cache entry stays the same for every caller.
+ */
 export async function getSeasonBoard(seasonId: string): Promise<SeasonBoard | null> {
+  const board = await getSeasonBoardCached(seasonId);
+  if (!board) return board;
+  const hidden = await leaderboardHiddenUserIds();
+  if (hidden.size === 0) return { ...board, leaderboard: board.leaderboard.slice(0, SEASON_BOARD_SIZE) };
+  return {
+    ...board,
+    leaderboard: board.leaderboard.filter((r) => !hidden.has(r.userId)).slice(0, SEASON_BOARD_SIZE),
+  };
+}
+
+async function getSeasonBoardCached(seasonId: string): Promise<SeasonBoard | null> {
   const key = `forecast:season:${seasonId}`;
   return cached(
     key,
@@ -124,7 +143,7 @@ export async function getSeasonBoard(seasonId: string): Promise<SeasonBoard | nu
         const o = outcome.get(pos.predictionId);
         return p == null || o == null ? [] : [{ userId: pos.userId, p, outcomeYes: o }];
       });
-      const ranked = rankSeason(rows).slice(0, 50);
+      const ranked = rankSeason(rows).slice(0, SEASON_BOARD_SIZE + OVERFETCH_CAP);
       const users = await prisma.user.findMany({
         where: { id: { in: ranked.map((r) => r.userId) } },
         select: userChipSelect,

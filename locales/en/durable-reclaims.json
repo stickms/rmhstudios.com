@@ -1,0 +1,9 @@
+{
+  "leased-bulk": "Bulk clean-ups",
+  "leased-failed": "Failed in 7 days",
+  "leased-fanout": "Fan-outs",
+  "leased-heading": "Runs that wait for a worker",
+  "leased-running": "Running",
+  "leased-sweep": "Spam sweeps",
+  "leased-waiting": "Waiting for a worker"
+}

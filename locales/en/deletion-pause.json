@@ -1,0 +1,11 @@
+{
+  "stops-error": "The list could not be loaded. Deleting still stops all of this.",
+  "stops-keys_one": "Your {{count}} API key will stop until you sign back in.",
+  "stops-keys_other": "Your {{count}} API keys will stop until you sign back in.",
+  "stops-scheduled_one": "Your {{count}} scheduled post will wait.",
+  "stops-scheduled_other": "Your {{count}} scheduled posts will wait.",
+  "stops-signout": "You will be signed out everywhere.",
+  "stops-title": "What stops when you delete",
+  "stops-webhooks_one": "Your {{count}} webhook will stop until you sign back in.",
+  "stops-webhooks_other": "Your {{count}} webhooks will stop until you sign back in."
+}

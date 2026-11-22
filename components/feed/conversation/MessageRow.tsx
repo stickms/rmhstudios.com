@@ -159,7 +159,7 @@ export function MessageRow({
           )}
           {isAwayAutoReply(msg.meta) && <AutomaticReplyLabel />}
           {stripEmbedUrls(msg.content).trim() && (
-            <p className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>
+            <p dir="auto" className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>
           )}
           {/* Legacy: media embedded as URLs inside the text. */}
           {extractMediaEmbeds(msg.content).length > 0 && (

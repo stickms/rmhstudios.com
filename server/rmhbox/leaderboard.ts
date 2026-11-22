@@ -15,6 +15,7 @@ import { Socket } from 'socket.io';
 import { logger } from './logger';
 import { S2C } from '../../lib/rmhbox/events';
 import { isTransientDiscordIdentity } from '../../lib/rmhbox/utils';
+import { HIDDEN_ID_CAP, userNotHiddenWhere } from '../../lib/game/leaderboard-privacy';
 import { getPrismaClient } from './prisma-client';
 import type { RMHboxPlayer } from './types';
 import type { MinigameResults } from './minigames/base-minigame';
@@ -32,6 +33,32 @@ interface MinigameStatEntry {
   totalScore: number;
   totalRank: number;
   averageRank: number;
+}
+
+// ─── Who is left off the board ───────────────────────────────────
+
+const HIDDEN_TTL_MS = 60_000;
+let hiddenMemo: { at: number; ids: Set<string> } | null = null;
+
+/**
+ * The standalone hub's twin of `leaderboardHiddenUserIds` (`lib/game/leaderboard-privacy.server.ts`): this
+ * process has its own Prisma client and no access to the web tier's cache, so it keeps the same set (members who
+ * turned "Hide me from leaderboards" on, and members banned right now) in a 60 s in-process memo.
+ */
+async function leaderboardHiddenUserIds(prisma: ReturnType<typeof getPrismaClient>): Promise<ReadonlySet<string>> {
+  const now = Date.now();
+  if (hiddenMemo && now - hiddenMemo.at < HIDDEN_TTL_MS) return hiddenMemo.ids;
+  const [optedOut, banned] = await Promise.all([
+    prisma.userProfile.findMany({
+      where: { hideFromLeaderboards: true },
+      select: { userId: true },
+      take: HIDDEN_ID_CAP,
+    }),
+    prisma.user.findMany({ where: { bannedUntil: { gt: new Date() } }, select: { id: true }, take: HIDDEN_ID_CAP }),
+  ]);
+  const ids = new Set<string>([...optedOut.map((r) => r.userId), ...banned.map((r) => r.id)]);
+  hiddenMemo = { at: now, ids };
+  return ids;
 }
 
 // ─── LeaderboardService ──────────────────────────────────────────
@@ -69,9 +96,11 @@ export class LeaderboardService {
                 totalScore: 'desc' as const,
               };
 
+      // Hidden members are left out before the cut, so the next member moves up.
+      const hidden = await leaderboardHiddenUserIds(prisma);
       const profiles = await prisma.rMHboxProfile.findMany({
         // A profile reset by account deletion (zero games) is never listed.
-        where: { totalGamesPlayed: { gt: 0 } },
+        where: { totalGamesPlayed: { gt: 0 }, ...userNotHiddenWhere(hidden) },
         orderBy,
         take: limit,
         include: {

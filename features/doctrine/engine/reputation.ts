@@ -188,13 +188,15 @@ export async function updateStreak(userId: string): Promise<number> {
 /**
  * Get the reputation leaderboard.
  */
-export async function getReputationLeaderboard(limit = 50) {
+export async function getReputationLeaderboard(limit = 50, excludeUserIds: readonly string[] = []) {
+  // `excludeUserIds` is the site-wide hidden set (the route reads it through `leaderboardHiddenUserIds`), the
+  // same for every caller, so one entry per `limit` stays right for everyone.
   const cacheKey = `doctrine:leaderboard:rep:${limit}`;
   return cached(
     cacheKey,
     30_000,
     async () => {
-      const result = await fetchLeaderboard(limit);
+      const result = await fetchLeaderboard(limit, excludeUserIds);
       return result;
     },
     {
@@ -203,8 +205,9 @@ export async function getReputationLeaderboard(limit = 50) {
   );
 }
 
-async function fetchLeaderboard(limit: number) {
+async function fetchLeaderboard(limit: number, excludeUserIds: readonly string[]) {
   const entries = await prisma.doctrineReputation.findMany({
+    where: excludeUserIds.length > 0 ? { userId: { notIn: [...excludeUserIds] } } : {},
     take: limit,
     orderBy: {
       totalXp: 'desc',

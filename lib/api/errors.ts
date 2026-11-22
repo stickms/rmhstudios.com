@@ -37,10 +37,12 @@ export const ERROR_TYPES: Record<string, ApiErrorType> = {
   method_not_allowed: 'invalid_request_error',
   conflict: 'conflict_error',
   confirm_on_site: 'conflict_error',
+  not_a_timeline: 'conflict_error',
   automod_held: 'invalid_request_error',
   idempotency_conflict: 'conflict_error',
   rate_limited: 'rate_limit_error',
   quota_exceeded: 'rate_limit_error',
+  sync_window_expired: 'invalid_request_error',
   internal_error: 'api_error',
 };
 
@@ -65,10 +67,12 @@ export const DEFAULT_STATUS: Record<string, number> = {
   method_not_allowed: 405,
   conflict: 409,
   confirm_on_site: 409,
+  not_a_timeline: 409,
   automod_held: 422,
   idempotency_conflict: 409,
   rate_limited: 429,
   quota_exceeded: 429,
+  sync_window_expired: 410,
   internal_error: 500,
 };
 

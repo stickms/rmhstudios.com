@@ -6,17 +6,18 @@
 
 # API routes
 
-Every server route in the app tier — 1244 endpoints across 202 groups: 147 route files under `app/routes/api` and 1097 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1263 endpoints across 202 groups: 157 route files under `app/routes/api` and 1106 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
 ## `/api/account`
 
-6 routes.
+7 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/account/delete` | `POST` | `lib/account/api/account.delete.server.ts` |
+| `/api/account/delete/preview` | `GET` | `lib/account/api/account.delete.preview.server.ts` |
 | `/api/account/export` | `GET` | `lib/account/api/account.export.server.ts` |
 | `/api/account/reports` | `GET` | `lib/moderation/api/account.reports.server.ts` |
 | `/api/account/reports/:id/withdraw` | `POST` | `lib/moderation/api/account.reports.$id.withdraw.server.ts` |
@@ -44,7 +45,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-138 routes.
+141 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -126,6 +127,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/lookup` | `GET` `POST` | `lib/admin/api/admin.lookup.server.ts` |
 | `/api/admin/market` | `GET` | `lib/admin/api/admin.market.server.ts` |
 | `/api/admin/market/:id` | `POST` | `lib/admin/api/admin.market.$id.server.ts` |
+| `/api/admin/media-sweep` | `GET` | `lib/media/api/admin.media-sweep.server.ts` |
+| `/api/admin/media-sweep/preview` | `POST` | `lib/media/api/admin.media-sweep.preview.server.ts` |
+| `/api/admin/media-sweep/run` | `POST` | `lib/media/api/admin.media-sweep.run.server.ts` |
 | `/api/admin/medschools/alias-misses` | `GET` | `features/medschools/api/admin.medschools.alias-misses.server.ts` |
 | `/api/admin/medschools/alias-misses/ignore` | `POST` | `features/medschools/api/admin.medschools.alias-misses.ignore.server.ts` |
 | `/api/admin/medschools/alias-misses/map` | `POST` | `features/medschools/api/admin.medschools.alias-misses.map.server.ts` |
@@ -471,7 +475,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/communities`
 
-49 routes.
+51 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -517,6 +521,8 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/communities/:slug/notes/:userId/:noteId` | `DELETE` `PATCH` | `lib/communities/api/communities.$slug.notes.$userId.$noteId.server.ts` |
 | `/api/communities/:slug/notes/counts` | `GET` | `lib/communities/api/communities.$slug.notes.counts.server.ts` |
 | `/api/communities/:slug/onboarding` | `GET` `POST` `PUT` | `lib/communities/api/communities.$slug.onboarding.server.ts` |
+| `/api/communities/:slug/pins` | `GET` `POST` `PUT` | `lib/communities/api/communities.$slug.pins.server.ts` |
+| `/api/communities/:slug/pins/:postId` | `DELETE` | `lib/communities/api/communities.$slug.pins.$postId.server.ts` |
 | `/api/communities/:slug/recurring` | `GET` `POST` | `lib/communities/api/communities.$slug.recurring.server.ts` |
 | `/api/communities/:slug/recurring/:id` | `DELETE` `PATCH` `POST` | `lib/communities/api/communities.$slug.recurring.$id.server.ts` |
 | `/api/communities/:slug/report` | `POST` | `lib/communities/api/communities.$slug.report.server.ts` |
@@ -1060,13 +1066,16 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/guides`
 
-3 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/guides` | `POST` | `lib/games/api/guides.server.ts` |
 | `/api/guides/:id` | `DELETE` `GET` `PUT` | `lib/games/api/guides.$id.server.ts` |
 | `/api/guides/:id/publish` | `POST` | `lib/games/api/guides.$id.publish.server.ts` |
+| `/api/guides/:id/revisions` | `GET` | `lib/games/api/guides.$id.revisions.server.ts` |
+| `/api/guides/:id/revisions/:revisionId` | `GET` | `lib/games/api/guides.$id.revisions.$revisionId.server.ts` |
+| `/api/guides/:id/revisions/:revisionId/restore` | `POST` | `lib/games/api/guides.$id.revisions.$revisionId.restore.server.ts` |
 
 ## `/api/handle`
 
@@ -2470,7 +2479,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/v1`
 
-68 routes.
+78 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -2486,6 +2495,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/v1/events/:id/attendees` | `GET` `OPTIONS` | `app/routes/api/v1/events/$id/attendees.ts` |
 | `/api/v1/events/:id/rsvp` | `DELETE` `OPTIONS` `PUT` | `app/routes/api/v1/events/$id/rsvp.ts` |
 | `/api/v1/feed` | `GET` `OPTIONS` | `app/routes/api/v1/feed.ts` |
+| `/api/v1/feeds/:id/posts` | `GET` `OPTIONS` | `app/routes/api/v1/feeds/$id/posts.ts` |
 | `/api/v1/games` | `GET` `OPTIONS` | `app/routes/api/v1/games.ts` |
 | `/api/v1/images` | `OPTIONS` `POST` | `app/routes/api/v1/images.ts` |
 | `/api/v1/leaderboards/:game` | `GET` `OPTIONS` | `app/routes/api/v1/leaderboards/$game.ts` |
@@ -2499,13 +2509,19 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/v1/me/decks/:id/cards/:cardId` | `DELETE` `OPTIONS` `PATCH` | `app/routes/api/v1/me/decks/$id/cards/$cardId.ts` |
 | `/api/v1/me/decks/:id/cards/by-external-id/:externalId` | `OPTIONS` `PUT` | `app/routes/api/v1/me/decks/$id/cards/by-external-id/$externalId.ts` |
 | `/api/v1/me/decks/:id/due` | `GET` `OPTIONS` | `app/routes/api/v1/me/decks/$id/due.ts` |
+| `/api/v1/me/deleted` | `GET` `OPTIONS` | `app/routes/api/v1/me/deleted.ts` |
 | `/api/v1/me/events` | `GET` `OPTIONS` | `app/routes/api/v1/me/events.ts` |
+| `/api/v1/me/feeds` | `GET` `OPTIONS` | `app/routes/api/v1/me/feeds.ts` |
+| `/api/v1/me/feeds/:id` | `GET` `OPTIONS` | `app/routes/api/v1/me/feeds/$id.ts` |
+| `/api/v1/me/feeds/:id/members` | `OPTIONS` `PUT` | `app/routes/api/v1/me/feeds/$id/members.ts` |
+| `/api/v1/me/focus-sessions` | `GET` `OPTIONS` | `app/routes/api/v1/me/focus-sessions.ts` |
 | `/api/v1/me/followers` | `GET` `OPTIONS` | `app/routes/api/v1/me/followers.ts` |
 | `/api/v1/me/following` | `GET` `OPTIONS` | `app/routes/api/v1/me/following.ts` |
 | `/api/v1/me/games` | `GET` `OPTIONS` | `app/routes/api/v1/me/games.ts` |
 | `/api/v1/me/games/:gameId/days` | `GET` `OPTIONS` | `app/routes/api/v1/me/games/$gameId/days.ts` |
 | `/api/v1/me/highlights` | `GET` `OPTIONS` | `app/routes/api/v1/me/highlights.ts` |
 | `/api/v1/me/highlights/:id` | `DELETE` `OPTIONS` `PATCH` | `app/routes/api/v1/me/highlights/$id.ts` |
+| `/api/v1/me/music/practice` | `GET` `OPTIONS` | `app/routes/api/v1/me/music/practice.ts` |
 | `/api/v1/me/notifications` | `GET` `OPTIONS` | `app/routes/api/v1/me/notifications.ts` |
 | `/api/v1/me/personal-bests` | `GET` `OPTIONS` | `app/routes/api/v1/me/personal-bests.ts` |
 | `/api/v1/me/reading-goal` | `GET` `OPTIONS` | `app/routes/api/v1/me/reading-goal.ts` |
@@ -2515,6 +2531,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/v1/me/shelves` | `GET` `OPTIONS` | `app/routes/api/v1/me/shelves.ts` |
 | `/api/v1/me/shelves/:slug` | `DELETE` `OPTIONS` `PUT` | `app/routes/api/v1/me/shelves/$slug.ts` |
 | `/api/v1/me/tournaments` | `GET` `OPTIONS` | `app/routes/api/v1/me/tournaments.ts` |
+| `/api/v1/me/typing` | `GET` `OPTIONS` | `app/routes/api/v1/me/typing.ts` |
+| `/api/v1/me/typing/daily` | `GET` `OPTIONS` | `app/routes/api/v1/me/typing/daily.ts` |
+| `/api/v1/me/typing/keys` | `GET` `OPTIONS` | `app/routes/api/v1/me/typing/keys.ts` |
 | `/api/v1/news` | `GET` `OPTIONS` | `app/routes/api/v1/news.ts` |
 | `/api/v1/news/:slug` | `GET` `OPTIONS` | `app/routes/api/v1/news/$slug.ts` |
 | `/api/v1/openapi.json` | `GET` `OPTIONS` | `app/routes/api/v1/openapi[.]json.ts` |

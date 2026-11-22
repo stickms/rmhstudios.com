@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import * as THREE from 'three';
 import { ARENA, BIN, binCenterX, WASH_COLORS } from '@features/laundry-sort/engine/constants';
 import { FRONT_LIP } from '@features/laundry-sort/engine/arena';
+import { useLaundryStore } from '@features/laundry-sort/engine/store';
 import { binDecalTexture } from '../weave';
 
 const ROOM_COLOR = '#252a3d';
@@ -68,7 +69,8 @@ function Bin({ index, label }: { index: number; label: string }) {
   const halfD = BIN.depth / 2;
   const lipHeight = BIN.height * FRONT_LIP;
 
-  const decal = useMemo(() => binDecalTexture(label, wash.weave, wash.hex), [label, wash]);
+  const colorSafe = useLaundryStore((s) => s.assist.colorSafe);
+  const decal = useMemo(() => binDecalTexture(label, wash.weave, wash.hex, colorSafe), [label, wash, colorSafe]);
 
   return (
     <group position={[cx, 0, 0]}>

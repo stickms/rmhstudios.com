@@ -214,6 +214,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated, even
             onChange={(e) => setTitle(e.target.value)}
           />
           <Textarea
+            dir="auto"
             aria-label={t('event-description-placeholder', {
               defaultValue: 'Description (optional)',
             })}

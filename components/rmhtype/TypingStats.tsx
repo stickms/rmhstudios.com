@@ -1,60 +1,52 @@
 /**
- * RMHType analytics: the summary, the heatmap, your worst keys, and the two
- * tests built out of them (design G1).
+ * RMHType analytics: the summary, the heatmap, your worst keys, and the tests built out of them (design G1).
  *
- * The "practice your worst keys" button is the point of the whole feature —
- * analytics that only describe a problem are a dashboard, and a dashboard is not
- * a reason to come back. The generated test is weighted toward the keys this
- * panel just showed you, which closes the loop: measure → see → drill → measure.
+ * "Practise these keys" is the point of the whole feature: analytics that only describe a problem are a dashboard,
+ * and a dashboard is not a reason to come back. The generated test is weighted toward the keys this panel just
+ * showed, which closes the loop: measure, see, drill, measure.
  *
- * Custom and practice tests are labelled as excluded from global boards
- * everywhere they appear, because they are. `isLeaderboardEligible` in
- * `lib/rmhtype/custom-test.ts` is where that is decided; this component only
- * reports it.
+ * Reads go through React Query (`rmhTypeKeyStatsQuery`); clear and the practice test are mutations. Custom and
+ * practice tests are labelled as excluded from global boards everywhere they appear, because they are
+ * (`isLeaderboardEligible` in `lib/rmhtype/custom-test.ts` decides it; this component only reports it).
  *
- * Painted in the site token contract rather than the `--app-*` app palette: the
- * heatmap's whole correctness argument is that it inherits the colour-vision
- * retint, and that retint applies to `--site-success` / `--site-warning` /
- * `--site-danger` (app/globals.css). See the note in `./KeyHeatmap`.
+ * `TypingStatsView` is the presentation, a pure function of its props, so the states render without a query client.
+ * Existing strings keep their `c-rmhtype` keys; new ones live in `weak-keys`.
+ *
+ * The heatmap is painted in the site token contract rather than the `--app-*` palette on purpose: its correctness
+ * argument is that it inherits the colour-vision retint, which applies to `--site-success`, `--site-warning` and
+ * `--site-danger`. See the note in `./KeyHeatmap`.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
-import { Keyboard, Target, Trash2 } from 'lucide-react';
+import { Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
-import { Spinner } from '@/components/ui/spinner';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
+import type { GeneratedTest } from '@/lib/rmhtype/custom-test';
+import { DEFAULT_LAYOUT, TYPING_LAYOUTS, type KeyMetrics, type TypingLayout, type TypingSummary } from '@/lib/rmhtype/keystats';
 import {
-  DEFAULT_LAYOUT,
-  TYPING_LAYOUTS,
-  type KeyMetrics,
-  type TypingLayout,
-  type TypingSummary,
-} from '@/lib/rmhtype/keystats';
-import { buildCustomTest, type GeneratedTest } from '@/lib/rmhtype/custom-test';
-import { api } from '@/lib/contract/client';
-import {
-  buildRmhTypePracticeTestApi,
-  clearRmhTypeKeyStatsApi,
-  getRmhTypeKeyStatsApi,
-} from '@/lib/rmhtype/keystats.contract';
+  RMHTYPE_KEYSTATS_KEY,
+  buildKeyPracticeTest,
+  clearKeyStats,
+  rmhTypeKeyStatsQuery,
+} from '@/lib/rmhtype/rmhtype.queries';
 import { KeyHeatmap } from './KeyHeatmap';
+import { CustomTestPanel } from './CustomTestPanel';
 import { useArrival } from '@/components/ui/arrive';
 
-interface KeyStatsResponse {
+export interface KeyStatsData {
   layout: TypingLayout;
   keys: KeyMetrics[];
   worst: KeyMetrics[];
   summary: TypingSummary;
 }
+
+export type KeyStatsStatus = 'loading' | 'error' | 'ready';
 
 interface TypingStatsProps {
   /** Hand the generated passage to the typing view. */
@@ -63,250 +55,223 @@ interface TypingStatsProps {
 }
 
 export function TypingStats({ onStartTest, className }: TypingStatsProps) {
-  const { t } = useTranslation('c-rmhtype');
+  const { t } = useTranslation('weak-keys');
+  const confirm = useConfirm();
+  const queryClient = useQueryClient();
   const [layout, setLayout] = useState<TypingLayout>(DEFAULT_LAYOUT);
-  const [stats, setStats] = useState<KeyStatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const arrival = useArrival(!loading);
-  const [generating, setGenerating] = useState(false);
-  const [pasted, setPasted] = useState('');
   const [punctuation, setPunctuation] = useState(false);
   const [numbers, setNumbers] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api(getRmhTypeKeyStatsApi, { query: { layout }, retries: 0 });
-      setStats(data.stats ?? null);
-    } catch {
-      setStats(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [layout]);
+  const query = useQuery(rmhTypeKeyStatsQuery(layout));
+  const stats: KeyStatsData | null = query.data?.stats ?? null;
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function practiceWorstKeys() {
-    setGenerating(true);
-    try {
-      let data;
-      try {
-        data = await api(buildRmhTypePracticeTestApi, { body: { layout, punctuation, numbers } });
-      } catch {
-        data = null;
-      }
+  const practice = useMutation({
+    mutationFn: () => buildKeyPracticeTest({ layout, punctuation, numbers }),
+    onSuccess: (data) => {
       if (!data?.test) {
-        toast.error(t('practice-failed', { defaultValue: 'Could not build a practice test' }));
+        toast.error(t('practice-failed', { defaultValue: 'Could not build a practice test.' }));
         return;
       }
       onStartTest?.(data.test);
-      toast.success(
-        t('practice-ready', {
-          defaultValue: 'Practice test ready — it does not count toward global boards',
-        }),
-      );
-    } finally {
-      setGenerating(false);
-    }
-  }
+    },
+    onError: () => toast.error(t('practice-failed', { defaultValue: 'Could not build a practice test.' })),
+  });
 
-  function startCustom() {
-    const text = pasted.trim();
-    if (text.length === 0) return;
-    onStartTest?.(buildCustomTest({ mode: 'custom', text }));
-  }
+  const clear = useMutation({
+    mutationFn: () => clearKeyStats(layout),
+    onSuccess: () => {
+      toast.success(t('clear-done', { defaultValue: 'Key statistics cleared.' }));
+      void queryClient.invalidateQueries({ queryKey: RMHTYPE_KEYSTATS_KEY });
+    },
+    onError: () => toast.error(t('clear-failed', { defaultValue: 'Could not clear your key statistics.' })),
+  });
 
-  async function clearStats() {
-    try {
-      await api(clearRmhTypeKeyStatsApi, { query: { layout } });
-    } catch {
-      toast.error(t('clear-failed', { defaultValue: 'Could not clear your key stats' }));
-      return;
-    }
-    toast.success(t('clear-done', { defaultValue: 'Key stats cleared' }));
-    await load();
-  }
+  const onClear = async () => {
+    const ok = await confirm({
+      title: t('clear-title', { defaultValue: 'Clear your key statistics?' }),
+      description: t('clear-description', {
+        defaultValue: 'This removes the counts for {{layout}}. Your runs and best scores stay.',
+        layout,
+      }),
+      confirmLabel: t('clear-confirm', { defaultValue: 'Clear statistics' }),
+      danger: true,
+    });
+    if (ok) clear.mutate();
+  };
 
+  return (
+    <div className={cn('flex flex-col gap-6', className)}>
+      <TypingStatsView
+        layout={layout}
+        onLayoutChange={setLayout}
+        status={query.isError ? 'error' : query.data ? 'ready' : 'loading'}
+        stats={stats}
+        onRetry={() => void query.refetch()}
+        onPractice={() => practice.mutate()}
+        practicing={practice.isPending}
+        onClear={() => void onClear()}
+        clearing={clear.isPending}
+      />
+      <CustomTestPanel
+        onStartTest={onStartTest}
+        punctuation={punctuation}
+        numbers={numbers}
+        onPunctuation={setPunctuation}
+        onNumbers={setNumbers}
+      />
+    </div>
+  );
+}
+
+interface TypingStatsViewProps {
+  layout: TypingLayout;
+  onLayoutChange: (layout: TypingLayout) => void;
+  status: KeyStatsStatus;
+  stats: KeyStatsData | null;
+  onRetry: () => void;
+  onPractice: () => void;
+  practicing: boolean;
+  onClear: () => void;
+  clearing: boolean;
+}
+
+export function TypingStatsView({
+  layout,
+  onLayoutChange,
+  status,
+  stats,
+  onRetry,
+  onPractice,
+  practicing,
+  onClear,
+  clearing,
+}: TypingStatsViewProps) {
+  const { t } = useTranslation('weak-keys');
+  const arrival = useArrival(status !== 'loading');
   const summary = stats?.summary;
   const hasData = (summary?.totalAttempts ?? 0) > 0;
 
   return (
-    <div className={cn('flex flex-col gap-4', className)}>
-      <Card pane className="px-5 sm:px-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-lg font-medium text-site-text">
-              {t('keys-title', { defaultValue: 'Your keys' })}
-            </h2>
-            <Select
-              value={layout}
-              onChange={(event) => setLayout(event.target.value as TypingLayout)}
-              aria-label={t('layout-label', { defaultValue: 'Keyboard layout' })}
-              controlSize="sm"
-              containerClassName="min-w-32"
-            >
-              {TYPING_LAYOUTS.map((id) => (
-                <option key={id} value={id}>
-                  {id}
-                </option>
-              ))}
-            </Select>
-          </div>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-xl text-sm text-app-text-muted">
+          {t('recorded-note', {
+            defaultValue:
+              'Counts per key: how often you pressed it, how often it was wrong, and how long it took. The order of what you typed is never stored.',
+          })}
+        </p>
+        <Select
+          value={layout}
+          onChange={(event) => onLayoutChange(event.target.value as TypingLayout)}
+          aria-label={t('layout-label', { ns: 'c-rmhtype', defaultValue: 'Keyboard layout' })}
+          controlSize="sm"
+          containerClassName="min-w-32"
+        >
+          {TYPING_LAYOUTS.map((id) => (
+            <option key={id} value={id}>
+              {id}
+            </option>
+          ))}
+        </Select>
+      </div>
 
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <Spinner />
-            </div>
-          ) : !hasData ? (
-            <EmptyState
-              className={arrival}
-              icon={Keyboard}
-              title={t('keys-empty-title', { defaultValue: 'No key data yet' })}
-              description={t('keys-empty-body', {
-                defaultValue:
-                  'Finish a test on this layout and every key you pressed gets a speed and an error rate — never the words you typed.',
-              })}
-            />
-          ) : (
-            // Box-less, so the stats stay items of the column's flex layout; they fade in (M9).
-            <div className={arrival ? 'arrive-group' : 'contents'}>
-              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatTile
-                  label={t('stat-wpm', { defaultValue: 'Implied WPM' })}
-                  value={Math.round(summary?.impliedWpm ?? 0)}
-                />
-                <StatTile
-                  label={t('stat-accuracy', { defaultValue: 'Accuracy' })}
-                  value={`${Math.round((summary?.accuracy ?? 0) * 100)}%`}
-                />
-                <StatTile
-                  label={t('stat-per-key', { defaultValue: 'Per key' })}
-                  value={`${Math.round(summary?.msPerKey ?? 0)} ms`}
-                />
-                <StatTile
-                  label={t('stat-keys', { defaultValue: 'Keys tracked' })}
-                  value={summary?.trackedKeys ?? 0}
-                />
-              </dl>
-
-              <KeyHeatmap keys={stats?.keys ?? []} layout={layout} />
-
-              {(stats?.worst.length ?? 0) > 0 && (
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-sm font-semibold text-site-text-muted">
-                    {t('worst-title', { defaultValue: 'Worst keys' })}
-                  </h3>
-                  <ul className="flex flex-wrap gap-2">
-                    {stats?.worst.map((metric) => (
-                      <li
-                        key={metric.key}
-                        className="surface-card flex items-center gap-2 rounded-site px-3 py-1.5"
-                      >
-                        <span className="font-mono text-sm text-site-text">{metric.key}</span>
-                        <span className="font-mono text-xs tabular-nums text-site-text-muted">
-                          {Math.round(metric.msPerKey)} ms · {Math.round(metric.errorRate * 100)}%
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button onClick={practiceWorstKeys} loading={generating}>
-                  <Target className="size-4" aria-hidden />
-                  {t('practice-action', { defaultValue: 'Practice your worst keys' })}
-                </Button>
-                <Button variant="ghost" onClick={clearStats}>
-                  <Trash2 className="size-4" aria-hidden />
-                  {t('clear-action', { defaultValue: 'Clear key stats' })}
-                </Button>
-              </div>
-            </div>
-          )}
+      {status === 'loading' ? (
+        <div
+          className="space-y-3"
+          role="status"
+          aria-label={t('loading', { defaultValue: 'Loading your key statistics' })}
+        >
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-40 w-full" />
         </div>
-      </Card>
-
-      <Card pane className="px-5 sm:px-6">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-display text-lg font-medium text-site-text">
-              {t('custom-title', { defaultValue: 'Custom test' })}
-            </h2>
-            <Badge variant="default">
-              {t('not-ranked', { defaultValue: 'Not ranked' })}
-            </Badge>
-          </div>
-          <p className="text-sm text-site-text-muted">
-            {t('custom-note', {
+      ) : status === 'error' ? (
+        <div>
+          <p className="text-app-danger">
+            {t('load-failed', { defaultValue: 'Could not load your key statistics.' })}
+          </p>
+          <button type="button" className="mt-2 underline hover:text-app-text" onClick={onRetry}>
+            {t('retry', { defaultValue: 'Try again' })}
+          </button>
+        </div>
+      ) : !hasData ? (
+        <div className={cn('py-4', arrival)}>
+          <p className="t-heading">{t('keys-empty-title', { ns: 'c-rmhtype', defaultValue: 'No key data yet' })}</p>
+          <p className="mt-1 max-w-prose text-app-text-muted">
+            {t('keys-empty-body', {
+              ns: 'c-rmhtype',
               defaultValue:
-                'You choose the text, so you choose the difficulty — custom and practice runs are kept off global leaderboards. Your per-key stats still count.',
+                'Finish a test on this layout and every key you pressed gets a speed and an error rate — never the words you typed.',
             })}
           </p>
-
-          <Textarea
-            value={pasted}
-            onChange={(event) => setPasted(event.target.value)}
-            rows={4}
-            placeholder={t('custom-placeholder', { defaultValue: 'Paste any text to type…' })}
-            aria-label={t('custom-label', { defaultValue: 'Custom test text' })}
-          />
-
-          <div className="flex flex-wrap items-center gap-4">
-            <ToggleRow
-              id="rmhtype-punctuation"
-              checked={punctuation}
-              onCheckedChange={setPunctuation}
-              label={t('punctuation', { defaultValue: 'Punctuation' })}
+        </div>
+      ) : (
+        // Box-less, so the parts stay items of the column's flex layout; they fade in (M9).
+        <div className={arrival ? 'arrive-group' : 'contents'}>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+            <Figure
+              label={t('stat-wpm', { ns: 'c-rmhtype', defaultValue: 'Implied WPM' })}
+              value={Math.round(summary?.impliedWpm ?? 0)}
             />
-            <ToggleRow
-              id="rmhtype-numbers"
-              checked={numbers}
-              onCheckedChange={setNumbers}
-              label={t('numbers', { defaultValue: 'Numbers' })}
+            <Figure
+              label={t('stat-accuracy', { ns: 'c-rmhtype', defaultValue: 'Accuracy' })}
+              value={`${Math.round((summary?.accuracy ?? 0) * 100)}%`}
             />
-            <Button onClick={startCustom} disabled={pasted.trim().length === 0}>
-              {t('custom-start', { defaultValue: 'Type this' })}
+            <Figure
+              label={t('stat-per-key', { ns: 'c-rmhtype', defaultValue: 'Per key' })}
+              value={`${Math.round(summary?.msPerKey ?? 0)} ms`}
+            />
+            <Figure label={t('stat-keys', { ns: 'c-rmhtype', defaultValue: 'Keys tracked' })} value={summary?.trackedKeys ?? 0} />
+          </dl>
+
+          <KeyHeatmap keys={stats?.keys ?? []} layout={layout} />
+
+          {(stats?.worst.length ?? 0) > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="t-label">{t('worst-title', { ns: 'c-rmhtype', defaultValue: 'Worst keys' })}</h3>
+              <ul>
+                {stats?.worst.map((metric) => (
+                  <li
+                    key={metric.key}
+                    className="flex items-center justify-between gap-4 border-b border-app-border py-2"
+                  >
+                    <span className="font-mono text-app-text">{metric.key === ' ' ? '␣' : metric.key}</span>
+                    <span className="font-mono text-xs tabular-nums text-app-text-muted">
+                      {t('worst-reading', {
+                        ms: Math.round(metric.msPerKey),
+                        rate: Math.round(metric.errorRate * 100),
+                        defaultValue: '{{ms}} ms per key, {{rate}}% missed',
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={onPractice} loading={practicing}>
+              <Target className="size-4" aria-hidden />
+              {t('practise-action', { defaultValue: 'Practise these keys' })}
+            </Button>
+            <Button variant="ghost" onClick={onClear} disabled={clearing}>
+              <Trash2 className="size-4" aria-hidden />
+              {t('clear-action', { ns: 'c-rmhtype', defaultValue: 'Clear key stats' })}
             </Button>
           </div>
+          <p className="text-xs text-app-text-muted">
+            {t('practice-note', { defaultValue: 'Practice, not on the boards.' })}
+          </p>
         </div>
-      </Card>
+      )}
     </div>
   );
 }
 
-function StatTile({ label, value }: { label: string; value: string | number }) {
+function Figure({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="surface-card rounded-site px-3 py-2">
-      <dt className="text-xs text-site-text-muted">{label}</dt>
-      <dd className="font-mono text-lg tabular-nums text-site-text">{value}</dd>
-    </div>
-  );
-}
-
-/**
- * A labelled switch. The row is 44px tall so the whole thing — label included —
- * is a comfortable target on a phone, even though `Switch`'s own track is the
- * site's compact one.
- */
-function ToggleRow({
-  id,
-  checked,
-  onCheckedChange,
-  label,
-}: {
-  id: string;
-  checked: boolean;
-  onCheckedChange: (next: boolean) => void;
-  label: string;
-}) {
-  return (
-    <div className="flex h-11 items-center gap-2">
-      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
-      <Label htmlFor={id}>{label}</Label>
+    <div>
+      <dt className="text-xs text-app-text-muted">{label}</dt>
+      <dd className="font-mono text-lg tabular-nums text-app-text">{value}</dd>
     </div>
   );
 }

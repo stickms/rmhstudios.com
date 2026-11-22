@@ -1,14 +1,15 @@
 /**
- * Flashcard types (pure, no I/O). An authored card is basic, reversible or cloze; the server
+ * Flashcard types (pure, no I/O). An authored card is basic, reversible, cloze or occlusion; the server
  * generates sibling rows from it, each an ordinary card with its own spaced-repetition state:
  * a reversible card gets one sibling with the sides swapped, a cloze card gets one per distinct
- * deletion index. Cloze syntax is Anki's: `{{c1::answer}}` or `{{c1::answer::hint}}`, several
+ * deletion index, an occlusion card (rectangles over its front picture, `lib/study/occlusion.ts`) one per mask. Cloze syntax is Anki's: `{{c1::answer}}` or `{{c1::answer::hint}}`, several
  * deletions may share an index (hidden together), nesting is refused. Card text is plain text:
  * masking produces parts or a string, never markup.
  */
 import { CARD_SIDE_MAX, CLOZE_MAX_INDICES, CLOZE_TEXT_MAX } from '@/lib/study/limits';
+import { checkOcclusion, occlusionSiblings, type Occlusion, type OcclusionError } from '@/lib/study/occlusion';
 
-export const CARD_KINDS = ['basic', 'reversible', 'cloze'] as const;
+export const CARD_KINDS = ['basic', 'reversible', 'cloze', 'occlusion'] as const;
 export type CardKind = (typeof CARD_KINDS)[number];
 
 export function isCardKind(value: unknown): value is CardKind {
@@ -187,24 +188,43 @@ export interface CardInput {
   kind: CardKind;
   front: string;
   back: string;
+  /** The masks of an occlusion card (normalised); absent on every other kind. */
+  occlusion?: Occlusion | null;
 }
 
 export type CardError =
-  'front-required' | 'back-required' | 'front-too-long' | 'back-too-long' | 'cloze-too-long' | `cloze-${ClozeError}`;
+  | 'front-required'
+  | 'back-required'
+  | 'front-too-long'
+  | 'back-too-long'
+  | 'cloze-too-long'
+  | `cloze-${ClozeError}`
+  | 'occlusion-wrong-kind'
+  | `occlusion-${OcclusionError}`;
 
 /**
  * Check an authored card and return it normalised (trimmed; a cloze card keeps no back, its
- * answers are the back of each generated card). The one rule set the editor, the zod schemas and
- * the server all use.
+ * answers are the back of each generated card). An occlusion card's front is an optional prompt and its back an
+ * optional note; its `occlusion` must be valid (1 to 20 masks) and no other kind may carry one. The one rule set
+ * the editor, the zod schemas and the server all use.
  */
 export function validateCard(input: {
   kind?: CardKind | undefined;
   front: string;
   back?: string | undefined;
+  occlusion?: unknown;
 }): { ok: true; card: CardInput } | { ok: false; error: CardError } {
   const kind = input.kind ?? 'basic';
   const front = input.front.trim();
   const back = (input.back ?? '').trim();
+  if (kind === 'occlusion') {
+    if (front.length > CARD_SIDE_MAX) return { ok: false, error: 'front-too-long' };
+    if (back.length > CARD_SIDE_MAX) return { ok: false, error: 'back-too-long' };
+    const checked = checkOcclusion(input.occlusion);
+    if (!checked.ok) return { ok: false, error: `occlusion-${checked.error}` };
+    return { ok: true, card: { kind, front, back, occlusion: checked.occlusion } };
+  }
+  if (input.occlusion !== undefined && input.occlusion !== null) return { ok: false, error: 'occlusion-wrong-kind' };
   if (front === '') return { ok: false, error: 'front-required' };
   if (kind === 'cloze') {
     if (front.length > CLOZE_TEXT_MAX) return { ok: false, error: 'cloze-too-long' };
@@ -223,14 +243,15 @@ export function validateCard(input: {
 /** A generated card. `key` is its identity across edits: `r` for the reverse, `c<N>` for deletion N. */
 export interface Sibling {
   key: string;
-  kind: 'reversible' | 'cloze';
+  kind: 'reversible' | 'cloze' | 'occlusion';
   front: string;
   back: string;
   clozeIndex: number | null;
 }
 
-/** The rows an authored card generates: none for basic, the reverse for reversible, one per cloze index. */
+/** The rows an authored card generates: none for basic, the reverse for reversible, one per cloze index or mask. */
 export function siblingsFor(card: CardInput): Sibling[] {
+  if (card.kind === 'occlusion') return occlusionSiblings(card.front, card.occlusion);
   if (card.kind === 'reversible') {
     return [{ key: 'r', kind: 'reversible', front: card.back, back: card.front, clozeIndex: null }];
   }
@@ -296,6 +317,17 @@ export function planRegeneration(existing: readonly ExistingSibling[], desired: 
   return plan;
 }
 
+/**
+ * A short text naming an authored card, for a label that needs one (an edit or delete button, a list handle): the
+ * cloze text with its answers shown, an occlusion card's prompt or else its labels, otherwise the front.
+ */
+export function cardLabel(card: { kind: string; front: string; occlusion?: Occlusion | null | undefined }): string {
+  if (card.kind === 'cloze') return clozePlainText(card.front);
+  if (card.kind === 'occlusion')
+    return card.front.trim() || (card.occlusion?.masks.map((m) => m.label).join(', ') ?? '');
+  return card.front;
+}
+
 /* ----------------------------- reading a card row ---------------------------- */
 
 /** The fields of a stored card that decide how it is drawn. */
@@ -305,9 +337,9 @@ export interface StoredCard {
   clozeIndex: number | null;
 }
 
-/** Authored cloze rows hold the text only; they are never reviewed or tested. */
+/** Authored cloze and occlusion rows hold the source only; they are never reviewed or tested. */
 export function isReviewable(card: Pick<StoredCard, 'kind' | 'sourceId'>): boolean {
-  return !(card.kind === 'cloze' && card.sourceId === null);
+  return !((card.kind === 'cloze' || card.kind === 'occlusion') && card.sourceId === null);
 }
 
 /** A generated reverse card: shown with "Reverse" above it. */

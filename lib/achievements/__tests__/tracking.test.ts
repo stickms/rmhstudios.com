@@ -1,3 +1,4 @@
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Tracking is a member's own data with a hard cap enforced in the write, and its milestone check runs inside
@@ -289,7 +290,7 @@ describe('onProgress', () => {
         type: 'SYSTEM',
         entityType: 'achievement',
         entityId: POSTS,
-        preview: 'Halfway to Getting Chatty',
+        preview: expect.objectContaining({ fallback: 'Halfway to Getting Chatty' }),
         link: '/progress?tab=achievements',
       }),
     );
@@ -306,15 +307,16 @@ describe('onProgress', () => {
     await onProgress(USER, POSTS, 4, 5);
     await onProgress(USER, POSTS, 8, 9);
     expect(
-      createNotification.mock.calls.map(
-        (c) =>
+      createNotification.mock.calls.map((c) =>
+        noticeFallbackText(
           (
             c as unknown as [
               {
-                preview: string;
+                preview: never;
               },
             ]
           )[0].preview,
+        ),
       ),
     ).toEqual(['Halfway to Getting Chatty', 'Almost there: Getting Chatty']);
 
@@ -324,7 +326,7 @@ describe('onProgress', () => {
     expect(createNotification).toHaveBeenCalledTimes(1);
     expect(createNotification).toHaveBeenCalledWith(
       expect.objectContaining({
-        preview: 'Almost there: Prolific',
+        preview: expect.objectContaining({ fallback: 'Almost there: Prolific' }),
       }),
     );
   });
@@ -370,7 +372,7 @@ describe('progressAchievement', () => {
     expect(createNotification).toHaveBeenCalledTimes(1);
     expect(createNotification).toHaveBeenCalledWith(
       expect.objectContaining({
-        preview: expect.stringContaining('Achievement unlocked'),
+        preview: expect.objectContaining({ fallback: expect.stringContaining('Achievement unlocked') }),
       }),
     );
   });

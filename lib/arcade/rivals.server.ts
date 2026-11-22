@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { games } from '@/lib/catalog';
@@ -129,9 +130,11 @@ export async function runRivalCheck(): Promise<number> {
       entityType: 'arcade-rival',
       entityId: first.gameId,
       preview:
-        list.length > 1
-          ? `${rivalName} and ${list.length - 1} more rival${list.length > 2 ? 's' : ''} just passed your best score.`
-          : `${rivalName} just beat your best in ${title}.`,
+        list.length > 2
+          ? notice('rival-passed-many', { name: rivalName, count: list.length - 1 })
+          : list.length > 1
+            ? notice('rival-passed-one-more', { name: rivalName })
+            : notice('rival-beat', { name: rivalName, game: title }),
       link: `/games/${first.gameId}`,
     });
     sent += 1;

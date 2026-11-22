@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import ReactMarkdown from 'react-markdown';
-import { Edit, Eye } from 'lucide-react';
+import { Edit } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { GuideHistoryLink } from '@/components/games/GuideHistory';
+import { DocBody, DocEditor, type DocDraft } from '@/components/communities/DocEditor';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { api } from '@/lib/contract/client';
@@ -38,12 +37,12 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
   const confirm = useConfirm();
   const isNew = guide === null;
   const [editing, setEditing] = useState(isNew);
-  const [title, setTitle] = useState(guide?.title ?? '');
-  const [body, setBody] = useState(guide?.body ?? '');
+  // What the page shows after a save: the loader's copy is not refetched.
+  const [shown, setShown] = useState({ title: guide?.title ?? '', body: guide?.body ?? '' });
   const [published, setPublished] = useState(guide?.published ?? false);
   const [busy, setBusy] = useState(false);
 
-  async function save() {
+  async function save({ title, body, summary }: DocDraft) {
     if (title.trim().length < 3 || body.trim().length < 1) {
       toast.error(
         t('guide-incomplete', {
@@ -82,8 +81,11 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
           body: {
             title,
             body,
+            // The revision note: the history lists it beside this edit.
+            ...(summary ? { note: summary } : {}),
           },
         });
+        setShown({ title, body });
         setEditing(false);
         toast.success(
           t('guide-saved', {
@@ -158,33 +160,34 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
 
   if (editing) {
     return (
-      <div className="space-y-3 px-4 pt-4 pb-12">
-        <Input
-          value={title}
-          onChange={(e) => setTitle(e.target.value.slice(0, 120))}
-          placeholder={t('guide-title', {
-            defaultValue: 'Guide title',
+      <div className="px-4 pt-4 pb-12">
+        <DocEditor
+          initialTitle={shown.title}
+          initialBody={shown.body}
+          maxTitle={120}
+          maxBody={40_000}
+          minTitle={3}
+          maxSummary={120}
+          askSummary={!isNew}
+          busy={busy}
+          saveLabel={t('save', {
+            defaultValue: 'Save',
           })}
-          aria-label={t('guide-title', {
-            defaultValue: 'Guide title',
-          })}
-          className="text-base"
-        />
-        <Textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value.slice(0, 40_000))}
-          placeholder={t('guide-body-guide-view', {
-            defaultValue: 'Write your guide in Markdown…',
-          })}
-          aria-label={t('guide-body', {
-            defaultValue: 'Guide content',
-          })}
-          rows={16}
-          className="font-mono text-sm"
-        />
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex gap-2">
-            {!isNew ? (
+          onSave={save}
+          onCancel={isNew ? undefined : () => setEditing(false)}
+          labels={{
+            title: t('guide-title', {
+              defaultValue: 'Guide title',
+            }),
+            body: t('guide-body', {
+              defaultValue: 'Guide content',
+            }),
+            bodyPlaceholder: t('guide-body-guide-view', {
+              defaultValue: 'Write your guide in Markdown…',
+            }),
+          }}
+          leading={
+            !isNew ? (
               <>
                 <Button variant="default" size="sm" onClick={togglePublish}>
                   {published
@@ -201,24 +204,9 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
                   })}
                 </Button>
               </>
-            ) : null}
-          </div>
-          <div className="flex gap-2">
-            {!isNew ? (
-              <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
-                <Eye className="h-4 w-4" aria-hidden />
-                {t('preview', {
-                  defaultValue: 'Preview',
-                })}
-              </Button>
-            ) : null}
-            <Button variant="default" size="sm" onClick={save} loading={busy}>
-              {t('save', {
-                defaultValue: 'Save',
-              })}
-            </Button>
-          </div>
-        </div>
+            ) : null
+          }
+        />
       </div>
     );
   }
@@ -238,18 +226,19 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
             <span className="text-sm text-site-text-muted">{guide!.author.name ?? guide!.author.handle}</span>
           </span>
           {guide!.isAuthor ? (
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-              <Edit className="h-4 w-4" aria-hidden />
-              {t('edit', {
-                defaultValue: 'Edit',
-              })}
-            </Button>
+            <span className="flex items-center gap-2">
+              <GuideHistoryLink gameId={gameId} guideId={guide!.id} />
+              <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+                <Edit className="h-4 w-4" aria-hidden />
+                {t('edit', {
+                  defaultValue: 'Edit',
+                })}
+              </Button>
+            </span>
           ) : null}
         </div>
       </header>
-      <div className="prose-guide space-y-3 text-base leading-relaxed text-site-text [&_a]:text-site-accent [&_code]:font-mono [&_h2]:mt-4 [&_h2]:font-semibold [&_pre]:overflow-x-auto [&_pre]:rounded-site [&_pre]:bg-site-surface [&_pre]:p-3">
-        <ReactMarkdown>{guide!.body}</ReactMarkdown>
-      </div>
+      <DocBody body={shown.body} />
     </article>
   );
 }

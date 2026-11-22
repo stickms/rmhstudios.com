@@ -177,6 +177,7 @@ export function WorldSetup() {
               Describe the experience you want <span style={{ color: '#666' }}>(optional)</span>
             </label>
             <textarea
+              dir="auto"
               className={field} style={{ ...fieldStyle, minHeight: '90px', resize: 'vertical' }}
               value={prompt} onChange={e => setPrompt(e.target.value)}
               placeholder="e.g. a burnt-out college student who finds a found-family in a poetry club…"

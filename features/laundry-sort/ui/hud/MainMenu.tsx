@@ -28,6 +28,7 @@ import {
   type MatchDuration,
 } from '@features/laundry-sort/engine/constants';
 import { BasketCard } from '@/components/arcade/BasketCard';
+import { AssistMenuLines } from './AssistMenuLines';
 import { useLaundryStore } from '@features/laundry-sort/engine/store';
 import { LeaderboardPanel } from './LeaderboardPanel';
 import { WashLegend } from './WashLegend';
@@ -144,6 +145,7 @@ export function MainMenu({
           {/* Play / sign-in and Quit are one grid item: in short landscape the panel is two columns,
               and Quit has to stay under the buttons it belongs with. */}
           <div className="flex flex-col gap-4">
+            <AssistMenuLines signedIn={signedIn} />
             {signedIn ? (
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button onClick={onSolo} className="w-full" size="lg">

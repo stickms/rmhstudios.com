@@ -15,8 +15,8 @@ import type { Prisma } from '@prisma/client';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { ingest, IngestError, POLICIES } from '@/lib/media/ingest.server';
 import { prisma } from '@/lib/prisma.server';
-import { deleteObject } from '@/lib/storage/s3.server';
-import { MAX_CARD_IMAGES, fromColumns, type CardImageColumns } from '@/lib/study/card-images';
+import { deleteObject, getObjectRange } from '@/lib/storage/s3.server';
+import { MAX_CARD_IMAGES, fromColumns, isAnimatedWebp, type CardImageColumns } from '@/lib/study/card-images';
 
 type Tx = Prisma.TransactionClient;
 
@@ -42,7 +42,7 @@ export type AttachFailure = {
   ok: false;
   status: 400 | 409;
   error: string;
-  code: 'LIMIT' | 'MEDIA_NOT_FOUND';
+  code: 'LIMIT' | 'MEDIA_NOT_FOUND' | 'ANIMATED';
 };
 
 const HAS_PICTURE = {
@@ -75,6 +75,10 @@ export async function attachCardImages(
       return { ok: false, status: 409, code: 'LIMIT', error: `At most ${MAX_CARD_IMAGES} cards can carry a picture` };
     }
   }
+  // A still picture only: the feed surface stores an animated GIF as an animated WebP that otherwise passes the claim.
+  // Checked before any claim, so a refusal leaves every upload pending.
+  const animated = await firstAnimatedUpload(tx, userId, [...new Set(plan.urls)]);
+  if (animated) return { ok: false, status: 400, code: 'ANIMATED', error: 'Use a still picture, not an animated one' };
   for (const url of new Set(plan.urls)) {
     const claimed = await tx.media.updateMany({
       // The claim re-checks the flashcard policy, not just ownership: a pending upload from another surface (or the
@@ -99,7 +103,28 @@ export async function attachCardImages(
   return { ok: true };
 }
 
-/** Lock the pictures a copy is about to reference, in a fixed order, so a removal waits for the copy (or the reverse). */
+/**
+ * The first of the member's pending uploads among `urls` whose stored object is an animated WebP, or null. A WebP the
+ * store cannot return is treated as animated (fail closed): the claim refuses what it cannot inspect.
+ */
+async function firstAnimatedUpload(tx: Tx, userId: string, urls: readonly string[]): Promise<string | null> {
+  if (urls.length === 0) return null;
+  const rows = await tx.media.findMany({
+    where: { userId, url: { in: [...urls] }, status: 'PENDING', postId: null, contentType: 'image/webp' },
+    select: { url: true, key: true },
+  });
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const head = await getObjectRange(row.key, 0, 31);
+    if (!head || isAnimatedWebp(head.body)) return row.url;
+  }
+  return null;
+}
+
+/**
+ * Lock the pictures a copy is about to reference, in a fixed (sorted) order, so a removal waits for the copy (or the
+ * reverse). Sorting holds within one call only: a transaction that locks pictures for several cards must gather every
+ * URL first and call this once (`applyUpdates` does), or two such transactions can take the same locks in opposite order.
+ */
 export async function lockPictureUrls(tx: Tx, urls: readonly string[]): Promise<void> {
   for (const url of [...new Set(urls)].sort()) await lockKey(tx, `card-image:${url}`);
 }

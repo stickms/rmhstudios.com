@@ -7,6 +7,7 @@
  * is a cap (two racing invitations cannot both take the fifth place) and an accept claims its invitation
  * with a conditional update, so it flips once and notifies once.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -180,7 +181,7 @@ export async function inviteCohost(input: {
       type: 'SYSTEM',
       entityType: COHOST_ENTITY,
       entityId: input.eventId,
-      preview: `${displayName(host)} invited you to co-host ${event.title}`,
+      preview: notice('event-cohost-invited', { name: displayName(host), title: event.title }),
       link: '/communities?tab=events',
     });
   }
@@ -232,7 +233,7 @@ export async function respondToCohostInvite(input: {
       type: 'SYSTEM',
       entityType: COHOST_ENTITY,
       entityId: input.eventId,
-      preview: `${displayName(me)} accepted your invitation to co-host ${event.title}`,
+      preview: notice('event-cohost-accepted', { name: displayName(me), title: event.title }),
       link: '/communities?tab=events',
     });
   }

@@ -5,6 +5,7 @@
  * `effectiveThemes` returns nothing). Resolution is a compare-and-set on `themeResolvedAt`, so two cron runs act
  * once; reads never wait for it (`effectiveThemes` computes the same winner for a started, unresolved jam).
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { PgBoss } from 'pg-boss';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -14,7 +15,6 @@ import { createNotification } from '@/lib/notifications.server';
 import {
   CANDIDATE_PROBLEM_MESSAGE,
   normaliseMarks,
-  revealNoticeText,
   themeVotingPhase,
   validateCandidates,
   winnerOf,
@@ -481,7 +481,7 @@ async function notifyVoters(
           type: 'SYSTEM',
           entityType: 'jam_theme',
           entityId: jam.id,
-          preview: revealNoticeText(jam.title, theme),
+          preview: notice('jam-theme-revealed', { jam: jam.title, theme }),
           link: `/jams/${jam.slug}`,
         }),
       ),

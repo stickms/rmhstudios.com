@@ -13,6 +13,7 @@
  * and `match-results.server`; `tournament.server` imports only
  * `deadline.server`, never this module (the import-cycle ratchet).
  */
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 import type { Prisma, PrismaClient, TournamentMatch } from '@prisma/client';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
@@ -139,7 +140,7 @@ async function notify(
   userIds: readonly (string | null | undefined)[],
   entityType: string,
   tournamentId: string,
-  preview: string,
+  preview: NoticePreview,
   actorId?: string,
 ): Promise<void> {
   const unique = [...new Set(userIds.filter((u): u is string => !!u))];
@@ -285,7 +286,7 @@ export async function proposeTime(
       [out.opponent],
       'match-proposal',
       opts.tournamentId,
-      `Your opponent proposed a time for your ${out.l.tournament.name} match`,
+      notice('tournament-time-proposed', { name: out.l.tournament.name }),
       opts.userId,
     );
   }
@@ -342,7 +343,7 @@ export async function acceptTime(
     [...out.l.users.values()],
     'match-agreed',
     opts.tournamentId,
-    `A time is agreed for your ${out.l.tournament.name} match`,
+    notice('tournament-time-agreed', { name: out.l.tournament.name }),
     opts.userId,
   );
   return {
@@ -389,7 +390,7 @@ export async function setTimeAsHost(
       [...l.users.values()],
       'match-agreed',
       opts.tournamentId,
-      `The host set a time for your ${l.tournament.name} match`,
+      notice('tournament-time-set-by-host', { name: l.tournament.name }),
       opts.byUserId,
     );
   }
@@ -482,7 +483,7 @@ export async function awardWalkover(
       [...l.users.values()],
       'match-awarded',
       opts.tournamentId,
-      `The host awarded a match in ${l.tournament.name}`,
+      notice('tournament-match-awarded', { name: l.tournament.name }),
       opts.byUserId,
     );
   }
@@ -571,7 +572,12 @@ export async function runScheduleNotices(
     });
     if (claimed.count === 0) continue;
     reminded += 1;
-    await notify(people(m), 'match-reminder', m.tournamentId, `Your ${m.tournament.name} match is in an hour`);
+    await notify(
+      people(m),
+      'match-reminder',
+      m.tournamentId,
+      notice('tournament-match-in-hour', { name: m.tournament.name }),
+    );
   }
 
   const late = await db.tournamentMatch.findMany({
@@ -611,7 +617,12 @@ export async function runScheduleNotices(
     });
     if (claimed.count === 0) continue;
     deadlineNotices += 1;
-    await notify(people(m), 'match-deadline', m.tournamentId, `Your ${m.tournament.name} match is due in 12 hours`);
+    await notify(
+      people(m),
+      'match-deadline',
+      m.tournamentId,
+      notice('tournament-match-due-soon', { name: m.tournament.name }),
+    );
   }
   return {
     reminded,

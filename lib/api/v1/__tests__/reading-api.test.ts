@@ -125,10 +125,13 @@ vi.mock('@/lib/prisma.server', () => {
         Object.assign(r, a.data, { updatedAt: new Date('2026-11-22T12:00:00Z') });
         return r;
       },
-      delete: async (a: { where: { id: string } }) => {
-        h.highlights = h.highlights.filter((x) => x.id !== a.where.id);
+      deleteMany: async (a: { where: Row }) => {
+        const before = h.highlights.length;
+        h.highlights = h.highlights.filter((x) => !matches(x, a.where));
+        return { count: before - h.highlights.length };
       },
     },
+    syncTombstone: { create: async () => ({}) },
     readingHighlightPassage: {
       findMany: async (a: { where: Row }) => h.links.filter((r) => matches(r, a.where)),
       count: async (a: { where: Row }) => h.links.filter((r) => matches(r, a.where)).length,

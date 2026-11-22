@@ -14,6 +14,7 @@ import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { getBoss, PGBOSS_SCHEMA } from '@/lib/jobs/boss.server';
 import { recordAdminActionIn } from '@/lib/admin-audit.server';
+import { waitingForWorker } from '@/lib/jobs/lease';
 import {
   JOBS_PAGE_SIZE,
   errorFirstLine,
@@ -24,6 +25,7 @@ import {
   type JobListState,
   type JobRow,
   type JobSchedule,
+  type LeasedKindSummary,
   type QueueSummary,
 } from '@/lib/admin/jobs';
 
@@ -260,4 +262,42 @@ export async function runJobAction(
     return n;
   });
   return { requested: ids.length, affected };
+}
+
+/** How many RUNNING rows of one leased kind the console reads to split them into running and waiting. */
+const LEASED_SCAN = 1000;
+
+type LeasedRow = { claimedAt: Date | null; reclaimedAt: Date | null; heartbeatAt: Date | null };
+
+function splitLeased(rows: unknown): { running: number; waiting: number } {
+  let running = 0;
+  let waiting = 0;
+  for (const r of Array.isArray(rows) ? (rows as LeasedRow[]) : []) {
+    if (waitingForWorker(r)) waiting += 1;
+    else running += 1;
+  }
+  return { running, waiting };
+}
+
+/**
+ * The three leased job kinds (bulk clean-ups, fan-outs, spam sweeps) for the console: running, waiting for a
+ * worker (re-queued and not claimed since) and failed in the last seven days. Counts only; no member data.
+ */
+export async function leasedSummary(now: Date = new Date()): Promise<LeasedKindSummary[]> {
+  const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const select = { claimedAt: true, reclaimedAt: true, heartbeatAt: true } as const;
+  const running = { where: { status: 'RUNNING' }, select, take: LEASED_SCAN } as const;
+  const [bulk, bulkFailed, fanout, fanoutFailed, sweep, sweepFailed] = await Promise.all([
+    prisma.bulkOperation.findMany(running),
+    prisma.bulkOperation.count({ where: { status: 'FAILED', finishedAt: { gte: since } } }),
+    prisma.fanoutRun.findMany(running),
+    prisma.fanoutRun.count({ where: { status: 'FAILED', finishedAt: { gte: since } } }),
+    prisma.moderationSweep.findMany(running),
+    prisma.moderationSweep.count({ where: { status: 'FAILED', finishedAt: { gte: since } } }),
+  ]);
+  return [
+    { kind: 'bulk', ...splitLeased(bulk), failedLast7Days: bulkFailed },
+    { kind: 'fanout', ...splitLeased(fanout), failedLast7Days: fanoutFailed },
+    { kind: 'sweep', ...splitLeased(sweep), failedLast7Days: sweepFailed },
+  ];
 }

@@ -14,6 +14,8 @@ type Run = {
   status: 'RUNNING' | 'DONE' | 'FAILED';
   heartbeatAt: Date;
   reclaims: number;
+  claimedAt?: Date | null;
+  reclaimedAt?: Date | null;
   startedAt: Date;
   finishedAt: Date | null;
 };
@@ -60,8 +62,11 @@ function matches(r: Run, where: Record<string, unknown>): boolean {
         )
       )
         return false;
-    } else if (k === 'heartbeatAt' && v instanceof Date) {
-      if (r.heartbeatAt.getTime() !== v.getTime()) return false;
+    } else if (v instanceof Date) {
+      const cur = (r as unknown as Record<string, unknown>)[k];
+      if (!(cur instanceof Date) || cur.getTime() !== v.getTime()) return false;
+    } else if (v === null) {
+      if (((r as unknown as Record<string, unknown>)[k] ?? null) !== null) return false;
     } else if ((r as unknown as Record<string, unknown>)[k] !== v) return false;
   }
   return true;
@@ -80,6 +85,8 @@ const prismaMock = vi.hoisted(() => ({
           collapsed: 0,
           scanned: 0,
           reclaims: 0,
+          claimedAt: null,
+          reclaimedAt: null,
           finishedAt: null,
           status: 'RUNNING',
           heartbeatAt: new Date(),
@@ -175,6 +182,7 @@ vi.mock('@/lib/prisma.server', () => ({
   prisma: prismaMock,
 }));
 
+import { NO_WORKER_AFTER_MS } from '@/lib/jobs/lease';
 import { LEASE_MS, MAX_RECLAIMS, reclaimStalledFanouts, runFanout, type FanoutSpec } from '@/lib/fanout/run.server';
 
 const NOW = new Date('2026-12-01T12:00:00Z');
@@ -457,5 +465,75 @@ describe('reclaimStalledFanouts', () => {
     });
     expect(run().finishedAt).toBeInstanceOf(Date);
     expect(await runFanout(spec(), NOW)).toBeNull();
+  });
+
+  it('ten passes with no runner in between count at most one and leave the run RUNNING', async () => {
+    await stale({ claimedAt: new Date(NOW.getTime() - LEASE_MS - 5000) });
+    for (let i = 0; i < 10; i++) {
+      expect(await reclaimStalledFanouts(new Date(NOW.getTime() + i * 60_000))).toEqual([
+        { kind: 'post-alert', subjectId: 'p1' },
+      ]);
+    }
+    expect(run().reclaims).toBe(1);
+    expect(run().status).toBe('RUNNING');
+  });
+
+  it('five real attempts that each die fail the run and it shows as FAILED', async () => {
+    await stale({ claimedAt: new Date(NOW.getTime() - LEASE_MS - 5000) });
+    let t = NOW.getTime();
+    for (let attempt = 1; attempt <= MAX_RECLAIMS; attempt++) {
+      t += 5 * 60_000;
+      const at = new Date(t);
+      // A runner starts (the claim stamps claimedAt) and dies: the heartbeat goes stale again.
+      run().claimedAt = new Date(t - 60_000);
+      run().heartbeatAt = new Date(t - LEASE_MS - 1000);
+      expect(await reclaimStalledFanouts(at)).toHaveLength(1);
+      expect(run().reclaims).toBe(attempt);
+    }
+    t += 5 * 60_000;
+    run().claimedAt = new Date(t - 60_000);
+    run().heartbeatAt = new Date(t - LEASE_MS - 1000);
+    expect(await reclaimStalledFanouts(new Date(t))).toEqual([]);
+    expect(run().status).toBe('FAILED');
+  });
+
+  it('a runner that claims through runFanout stamps claimedAt, so its death is counted', async () => {
+    await stale({ reclaimedAt: new Date(NOW.getTime() - 60_000), reclaims: 1 });
+    expect(await reclaimStalledFanouts(NOW)).toHaveLength(1);
+    expect(run().reclaims).toBe(1);
+    await runFanout(spec(), NOW);
+    expect(run().claimedAt).toBeInstanceOf(Date);
+  });
+
+  it('a run that waited a day with no runner fails; one just under a day is queued', async () => {
+    await stale({
+      heartbeatAt: new Date(NOW.getTime() - NO_WORKER_AFTER_MS - 1000),
+      claimedAt: new Date(NOW.getTime() - NO_WORKER_AFTER_MS - 5000),
+      reclaimedAt: new Date(NOW.getTime() - NO_WORKER_AFTER_MS),
+      reclaims: 1,
+    });
+    await stale({
+      subjectId: 'p2',
+      heartbeatAt: new Date(NOW.getTime() - NO_WORKER_AFTER_MS + 120_000),
+      claimedAt: new Date(NOW.getTime() - NO_WORKER_AFTER_MS + 60_000),
+      reclaimedAt: new Date(NOW.getTime() - NO_WORKER_AFTER_MS + 120_000),
+    });
+    expect(await reclaimStalledFanouts(NOW)).toEqual([{ kind: 'post-alert', subjectId: 'p2' }]);
+    expect(h.runs.map((r) => r.status)).toEqual(['FAILED', 'RUNNING']);
+  });
+
+  it('two reclaimers that read the same run count the attempt once', async () => {
+    await stale({ claimedAt: new Date(NOW.getTime() - LEASE_MS - 5000) });
+    const [a, b] = await Promise.all([reclaimStalledFanouts(NOW), reclaimStalledFanouts(NOW)]);
+    expect(run().reclaims).toBe(1);
+    expect(a.length + b.length).toBe(1);
+  });
+
+  it('a run from before the migration (no claimedAt) is judged as claimed at its heartbeat', async () => {
+    await stale();
+    await reclaimStalledFanouts(NOW);
+    expect(run().reclaims).toBe(1);
+    await reclaimStalledFanouts(new Date(NOW.getTime() + 60_000));
+    expect(run().reclaims).toBe(1);
   });
 });

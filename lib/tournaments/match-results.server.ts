@@ -10,6 +10,7 @@
  * 1 and settles, the other sees 0 and does nothing. `settleMatch` is called
  * once, after that transaction, and is itself idempotent per match.
  */
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 import type { Prisma, PrismaClient, TournamentMatch } from '@prisma/client';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
@@ -139,7 +140,12 @@ function link(tournamentId: string): string {
 }
 
 /** Best-effort notice (label `tournament_result`); a failed notice never fails the step. */
-async function notify(userIds: (string | null | undefined)[], tournamentId: string, preview: string, actorId?: string) {
+async function notify(
+  userIds: (string | null | undefined)[],
+  tournamentId: string,
+  preview: NoticePreview,
+  actorId?: string,
+) {
   const unique = [...new Set(userIds.filter((u): u is string => !!u))];
   await Promise.allSettled(
     unique.map((userId) =>
@@ -347,17 +353,12 @@ export async function claimResult(
   const { match, tournament } = step.locked;
   if (step.status === 'claimed') {
     const opponent = participants(step.locked).filter((u) => u !== opts.userId);
-    await notify(
-      opponent,
-      tournament.id,
-      `A result was reported in ${tournament.name}: confirm or dispute it`,
-      opts.userId,
-    );
+    await notify(opponent, tournament.id, notice('tournament-result-reported', { name: tournament.name }), opts.userId);
   } else if (step.status === 'disputed') {
     await notify(
       [match.claimedById, tournament.createdById],
       tournament.id,
-      `A result was disputed in ${tournament.name}`,
+      notice('tournament-result-disputed', { name: tournament.name }),
       opts.userId,
     );
   }
@@ -442,7 +443,7 @@ export async function disputeResult(
   await notify(
     [l.match.claimedById, l.tournament.createdById],
     l.tournament.id,
-    `A result was disputed in ${l.tournament.name}`,
+    notice('tournament-result-disputed', { name: l.tournament.name }),
     opts.userId,
   );
 }
@@ -561,7 +562,12 @@ export async function decideDispute(
     targetId: match.id,
     detail: `tournament:${tournament.id} winner:${opts.winnerEntrantId}${opts.isAdmin ? ' admin' : ' host'}`,
   });
-  await notify(participants(out), tournament.id, `The host decided a result in ${tournament.name}`, opts.byUserId);
+  await notify(
+    participants(out),
+    tournament.id,
+    notice('tournament-result-host-decided', { name: tournament.name }),
+    opts.byUserId,
+  );
   return res;
 }
 
@@ -621,7 +627,7 @@ export async function clearClaimAfterSettle(
   await notify(
     entrants.map((e) => e.userId),
     tournament.id,
-    `The host decided a result in ${tournament.name}`,
+    notice('tournament-result-host-decided', { name: tournament.name }),
     opts.actorId,
   );
 }
@@ -693,7 +699,7 @@ export async function settleUnansweredClaims(db: Db = prisma, now: Date = new Da
       await notify(
         participants(out.l),
         out.l.tournament.id,
-        `A result in ${out.l.tournament.name} was settled: it was not answered in time`,
+        notice('tournament-result-settled-late', { name: out.l.tournament.name }),
       );
       return true;
     } catch {

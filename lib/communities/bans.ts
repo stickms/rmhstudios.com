@@ -7,6 +7,8 @@
  * keeps them in but unable to post or comment until it ends. Expiry is read-time.
  */
 
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
+
 export const SANCTION_KINDS = ['ban', 'timeout'] as const;
 export type SanctionKind = (typeof SANCTION_KINDS)[number];
 
@@ -73,10 +75,12 @@ export const BAN_ENFORCEMENT_PATHS = [
   'lib/communities/post-gate.server.ts',
   'app/routes/api/v1/posts/$id/comments.ts',
   'lib/communities/join-requests.server.ts',
-  'lib/scheduled/publish.server.ts',
+  // (a scheduled post's publish runs `prepareCommunityPost` through `lib/scheduled/gate.server.ts`, s09-11)
   'lib/scheduled/create.server.ts',
   // RSVPs to a community's events: the site route and PUT /api/v1/events/{id}/rsvp both call `rsvp` (s07-10)
   'lib/events.server.ts',
+  // the community wiki: one helper (`pageAccess`) reads the sanction for every page read and write (s09-04)
+  'lib/communities/page-access.server.ts',
 ] as const;
 
 const NOTICE_DATE: Intl.DateTimeFormatOptions = {
@@ -120,6 +124,41 @@ export function sanctionNoticeText(args: {
   const until = args.endsAt ? `until ${formatEnd(args.endsAt)}` : 'until a moderator lifts it';
   const head = `You were ${what} ${args.communityName} ${until}`;
   return args.ruleTitle ? `${head}. Rule: ${args.ruleTitle}` : head;
+}
+
+/**
+ * The same notice as {@link sanctionNoticeText}, as a key and params: the inbox writes it in the reader's language and
+ * the end as their local date and time; push keeps the English with the fixed UTC end.
+ */
+export function sanctionNotice(args: {
+  communityName: string;
+  kind: SanctionKind;
+  endsAt: Date | null;
+  ruleTitle?: string | null;
+}): NoticePreview {
+  const { communityName: community, endsAt, ruleTitle: rule } = args;
+  if (args.kind === 'ban') {
+    if (endsAt) {
+      return rule
+        ? notice('community-ban-until-rule', { community, endsAt, rule })
+        : notice('community-ban-until', { community, endsAt });
+    }
+    return rule ? notice('community-ban-open-rule', { community, rule }) : notice('community-ban-open', { community });
+  }
+  if (endsAt) {
+    return rule
+      ? notice('community-timeout-until-rule', { community, endsAt, rule })
+      : notice('community-timeout-until', { community, endsAt });
+  }
+  return rule
+    ? notice('community-timeout-open-rule', { community, rule })
+    : notice('community-timeout-open', { community });
+}
+
+export function liftedNotice(args: { communityName: string; kind: SanctionKind }): NoticePreview {
+  return args.kind === 'ban'
+    ? notice('community-ban-lifted', { community: args.communityName })
+    : notice('community-timeout-lifted', { community: args.communityName });
 }
 
 export function liftedNoticeText(args: { communityName: string; kind: SanctionKind }): string {

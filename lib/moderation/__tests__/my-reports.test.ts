@@ -239,7 +239,7 @@ describe('notifyReportersOfOutcome', () => {
       type: 'SYSTEM',
       entityType: 'report_outcome',
       entityId: 'r1',
-      preview: OUTCOME_PREVIEW.ACTION_TAKEN,
+      preview: expect.objectContaining({ fallback: OUTCOME_PREVIEW.ACTION_TAKEN }),
       link: '/settings/security#your-reports',
     });
     expect(r.reporterNotifiedAt).not.toBeNull();
@@ -259,7 +259,9 @@ describe('notifyReportersOfOutcome', () => {
     h.rows = [r];
     decide(r, 'DISMISSED');
     await notifyReportersOfOutcome(['r1']);
-    expect(h.created[0]).toMatchObject({ preview: OUTCOME_PREVIEW.NO_VIOLATION });
+    expect(h.created[0]).toMatchObject({
+      preview: expect.objectContaining({ fallback: OUTCOME_PREVIEW.NO_VIOLATION }),
+    });
     expect(OUTCOME_PREVIEW.NO_VIOLATION).not.toBe(OUTCOME_PREVIEW.ACTION_TAKEN);
   });
 

@@ -20,6 +20,8 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import {
   ALL_VERSIONS,
@@ -260,8 +262,10 @@ export async function getBoard(options: {
   const categories = categoryRows.map(toCategoryView);
   const metric = categories[0].metric;
 
+  // The public board leaves hidden members out before `take` (a member's own runs are `getRunsForUser`).
+  const hidden = await leaderboardHiddenUserIds();
   const rows = await prisma.speedrunEntry.findMany({
-    where: { categoryId: { in: categories.map((c) => c.id) } },
+    where: { categoryId: { in: categories.map((c) => c.id) }, ...userNotHiddenWhere(hidden) },
     // The `(categoryId, status, timeMs)` index orders this; the exact ranking
     // (metric-aware, tie-broken) is applied by `rankEntries` on both sides.
     orderBy: metric === 'score' ? [{ score: 'desc' }, { timeMs: 'asc' }] : [{ timeMs: 'asc' }],

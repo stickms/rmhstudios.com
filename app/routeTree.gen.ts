@@ -228,6 +228,7 @@ import { Route as SiteAdminJobsRouteImport } from './routes/_site/admin/jobs'
 import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/library'
 import { Route as SiteAdminLookupRouteImport } from './routes/_site/admin/lookup'
 import { Route as SiteAdminMarketRouteImport } from './routes/_site/admin/market'
+import { Route as SiteAdminMediaSweepRouteImport } from './routes/_site/admin/media-sweep'
 import { Route as SiteAdminMedschoolsRouteImport } from './routes/_site/admin/medschools'
 import { Route as SiteAdminOutboxRouteImport } from './routes/_site/admin/outbox'
 import { Route as SiteAdminPatchNotesRouteImport } from './routes/_site/admin/patch-notes'
@@ -525,7 +526,10 @@ import { Route as ApiV1MeAchievementsRouteImport } from './routes/api/v1/me/achi
 import { Route as ApiV1MeBookmarksRouteImport } from './routes/api/v1/me/bookmarks'
 import { Route as ApiV1MeCommunitiesRouteImport } from './routes/api/v1/me/communities'
 import { Route as ApiV1MeDecksRouteImport } from './routes/api/v1/me/decks'
+import { Route as ApiV1MeDeletedRouteImport } from './routes/api/v1/me/deleted'
 import { Route as ApiV1MeEventsRouteImport } from './routes/api/v1/me/events'
+import { Route as ApiV1MeFeedsRouteImport } from './routes/api/v1/me/feeds'
+import { Route as ApiV1MeFocusSessionsRouteImport } from './routes/api/v1/me/focus-sessions'
 import { Route as ApiV1MeFollowersRouteImport } from './routes/api/v1/me/followers'
 import { Route as ApiV1MeFollowingRouteImport } from './routes/api/v1/me/following'
 import { Route as ApiV1MeGamesRouteImport } from './routes/api/v1/me/games'
@@ -536,6 +540,7 @@ import { Route as ApiV1MeReadingGoalRouteImport } from './routes/api/v1/me/readi
 import { Route as ApiV1MeScheduledRouteImport } from './routes/api/v1/me/scheduled'
 import { Route as ApiV1MeShelvesRouteImport } from './routes/api/v1/me/shelves'
 import { Route as ApiV1MeTournamentsRouteImport } from './routes/api/v1/me/tournaments'
+import { Route as ApiV1MeTypingRouteImport } from './routes/api/v1/me/typing'
 import { Route as ApiV1NewsSlugRouteImport } from './routes/api/v1/news/$slug'
 import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts/$id'
 import { Route as ApiV1SearchPeopleRouteImport } from './routes/api/v1/search/people'
@@ -561,6 +566,8 @@ import { Route as Tf2HudEditorSTokenRouteImport } from './routes/tf2/hud-editor/
 import { Route as Tf2LoadoutLSlugRouteImport } from './routes/tf2/loadout/l.$slug'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
 import { Route as SiteCSlugInviteCodeRouteImport } from './routes/_site/c.$slug_.invite.$code'
+import { Route as SiteCSlugWikiIndexRouteImport } from './routes/_site/c.$slug_.wiki.index'
+import { Route as SiteCSlugWikiPageRouteImport } from './routes/_site/c.$slug_.wiki.$page'
 import { Route as SiteCreateBuildsSlugInsightsRouteImport } from './routes/_site/create_.builds.$slug.insights'
 import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
 import { Route as ApiRmhladderResumeIdAnalyzeRouteImport } from './routes/api/rmhladder/resume/$id/analyze'
@@ -571,10 +578,15 @@ import { Route as ApiV1CommunitiesSlugPostsRouteImport } from './routes/api/v1/c
 import { Route as ApiV1CommunitiesSlugRulesRouteImport } from './routes/api/v1/communities/$slug/rules'
 import { Route as ApiV1EventsIdAttendeesRouteImport } from './routes/api/v1/events/$id/attendees'
 import { Route as ApiV1EventsIdRsvpRouteImport } from './routes/api/v1/events/$id/rsvp'
+import { Route as ApiV1FeedsIdPostsRouteImport } from './routes/api/v1/feeds/$id/posts'
 import { Route as ApiV1MeDecksIdRouteImport } from './routes/api/v1/me/decks/$id'
+import { Route as ApiV1MeFeedsIdRouteImport } from './routes/api/v1/me/feeds/$id'
 import { Route as ApiV1MeHighlightsIdRouteImport } from './routes/api/v1/me/highlights/$id'
+import { Route as ApiV1MeMusicPracticeRouteImport } from './routes/api/v1/me/music/practice'
 import { Route as ApiV1MeScheduledIdRouteImport } from './routes/api/v1/me/scheduled/$id'
 import { Route as ApiV1MeShelvesSlugRouteImport } from './routes/api/v1/me/shelves/$slug'
+import { Route as ApiV1MeTypingDailyRouteImport } from './routes/api/v1/me/typing/daily'
+import { Route as ApiV1MeTypingKeysRouteImport } from './routes/api/v1/me/typing/keys'
 import { Route as ApiV1PostsIdBookmarkRouteImport } from './routes/api/v1/posts/$id/bookmark'
 import { Route as ApiV1PostsIdCommentsRouteImport } from './routes/api/v1/posts/$id/comments'
 import { Route as ApiV1PostsIdLikeRouteImport } from './routes/api/v1/posts/$id/like'
@@ -589,8 +601,10 @@ import { Route as GamesLibraryGameIdGuidesGuideIdRouteImport } from './routes/ga
 import { Route as GamesHubGameIdTThreadIdRouteImport } from './routes/games/hub.$gameId.t.$threadId'
 import { Route as ApiV1MeDecksIdCardsRouteImport } from './routes/api/v1/me/decks/$id/cards'
 import { Route as ApiV1MeDecksIdDueRouteImport } from './routes/api/v1/me/decks/$id/due'
+import { Route as ApiV1MeFeedsIdMembersRouteImport } from './routes/api/v1/me/feeds/$id/members'
 import { Route as ApiV1MeGamesGameIdDaysRouteImport } from './routes/api/v1/me/games/$gameId/days'
 import { Route as ApiV1MeScheduledIdPublishRouteImport } from './routes/api/v1/me/scheduled/$id/publish'
+import { Route as GamesLibraryGameIdGuidesGuideIdHistoryRouteImport } from './routes/games/_library/$gameId_.guides.$guideId_.history'
 import { Route as ApiV1MeDecksIdCardsCardIdRouteImport } from './routes/api/v1/me/decks/$id/cards/$cardId'
 import { Route as ApiV1TournamentsIdMatchesMatchIdClaimRouteImport } from './routes/api/v1/tournaments/$id/matches/$matchId/claim'
 import { Route as ApiV1MeDecksIdCardsByExternalIdExternalIdRouteImport } from './routes/api/v1/me/decks/$id/cards/by-external-id/$externalId'
@@ -1690,6 +1704,11 @@ const SiteAdminLookupRoute = SiteAdminLookupRouteImport.update({
 const SiteAdminMarketRoute = SiteAdminMarketRouteImport.update({
   id: '/market',
   path: '/market',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminMediaSweepRoute = SiteAdminMediaSweepRouteImport.update({
+  id: '/media-sweep',
+  path: '/media-sweep',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminMedschoolsRoute = SiteAdminMedschoolsRouteImport.update({
@@ -3209,9 +3228,24 @@ const ApiV1MeDecksRoute = ApiV1MeDecksRouteImport.update({
   path: '/decks',
   getParentRoute: () => ApiV1MeRoute,
 } as any)
+const ApiV1MeDeletedRoute = ApiV1MeDeletedRouteImport.update({
+  id: '/deleted',
+  path: '/deleted',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
 const ApiV1MeEventsRoute = ApiV1MeEventsRouteImport.update({
   id: '/events',
   path: '/events',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeFeedsRoute = ApiV1MeFeedsRouteImport.update({
+  id: '/feeds',
+  path: '/feeds',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeFocusSessionsRoute = ApiV1MeFocusSessionsRouteImport.update({
+  id: '/focus-sessions',
+  path: '/focus-sessions',
   getParentRoute: () => ApiV1MeRoute,
 } as any)
 const ApiV1MeFollowersRoute = ApiV1MeFollowersRouteImport.update({
@@ -3262,6 +3296,11 @@ const ApiV1MeShelvesRoute = ApiV1MeShelvesRouteImport.update({
 const ApiV1MeTournamentsRoute = ApiV1MeTournamentsRouteImport.update({
   id: '/tournaments',
   path: '/tournaments',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeTypingRoute = ApiV1MeTypingRouteImport.update({
+  id: '/typing',
+  path: '/typing',
   getParentRoute: () => ApiV1MeRoute,
 } as any)
 const ApiV1NewsSlugRoute = ApiV1NewsSlugRouteImport.update({
@@ -3393,6 +3432,16 @@ const SiteCSlugInviteCodeRoute = SiteCSlugInviteCodeRouteImport.update({
   path: '/c/$slug/invite/$code',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteCSlugWikiIndexRoute = SiteCSlugWikiIndexRouteImport.update({
+  id: '/c/$slug_/wiki/',
+  path: '/c/$slug/wiki/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteCSlugWikiPageRoute = SiteCSlugWikiPageRouteImport.update({
+  id: '/c/$slug_/wiki/$page',
+  path: '/c/$slug/wiki/$page',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteCreateBuildsSlugInsightsRoute =
   SiteCreateBuildsSlugInsightsRouteImport.update({
     id: '/create_/builds/$slug/insights',
@@ -3449,15 +3498,30 @@ const ApiV1EventsIdRsvpRoute = ApiV1EventsIdRsvpRouteImport.update({
   path: '/rsvp',
   getParentRoute: () => ApiV1EventsIdRoute,
 } as any)
+const ApiV1FeedsIdPostsRoute = ApiV1FeedsIdPostsRouteImport.update({
+  id: '/api/v1/feeds/$id/posts',
+  path: '/api/v1/feeds/$id/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1MeDecksIdRoute = ApiV1MeDecksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiV1MeDecksRoute,
 } as any)
+const ApiV1MeFeedsIdRoute = ApiV1MeFeedsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiV1MeFeedsRoute,
+} as any)
 const ApiV1MeHighlightsIdRoute = ApiV1MeHighlightsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiV1MeHighlightsRoute,
+} as any)
+const ApiV1MeMusicPracticeRoute = ApiV1MeMusicPracticeRouteImport.update({
+  id: '/music/practice',
+  path: '/music/practice',
+  getParentRoute: () => ApiV1MeRoute,
 } as any)
 const ApiV1MeScheduledIdRoute = ApiV1MeScheduledIdRouteImport.update({
   id: '/$id',
@@ -3468,6 +3532,16 @@ const ApiV1MeShelvesSlugRoute = ApiV1MeShelvesSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => ApiV1MeShelvesRoute,
+} as any)
+const ApiV1MeTypingDailyRoute = ApiV1MeTypingDailyRouteImport.update({
+  id: '/daily',
+  path: '/daily',
+  getParentRoute: () => ApiV1MeTypingRoute,
+} as any)
+const ApiV1MeTypingKeysRoute = ApiV1MeTypingKeysRouteImport.update({
+  id: '/keys',
+  path: '/keys',
+  getParentRoute: () => ApiV1MeTypingRoute,
 } as any)
 const ApiV1PostsIdBookmarkRoute = ApiV1PostsIdBookmarkRouteImport.update({
   id: '/bookmark',
@@ -3544,6 +3618,11 @@ const ApiV1MeDecksIdDueRoute = ApiV1MeDecksIdDueRouteImport.update({
   path: '/due',
   getParentRoute: () => ApiV1MeDecksIdRoute,
 } as any)
+const ApiV1MeFeedsIdMembersRoute = ApiV1MeFeedsIdMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => ApiV1MeFeedsIdRoute,
+} as any)
 const ApiV1MeGamesGameIdDaysRoute = ApiV1MeGamesGameIdDaysRouteImport.update({
   id: '/$gameId/days',
   path: '/$gameId/days',
@@ -3554,6 +3633,12 @@ const ApiV1MeScheduledIdPublishRoute =
     id: '/publish',
     path: '/publish',
     getParentRoute: () => ApiV1MeScheduledIdRoute,
+  } as any)
+const GamesLibraryGameIdGuidesGuideIdHistoryRoute =
+  GamesLibraryGameIdGuidesGuideIdHistoryRouteImport.update({
+    id: '/$gameId_/guides/$guideId_/history',
+    path: '/$gameId/guides/$guideId/history',
+    getParentRoute: () => GamesLibraryRoute,
   } as any)
 const ApiV1MeDecksIdCardsCardIdRoute =
   ApiV1MeDecksIdCardsCardIdRouteImport.update({
@@ -3803,6 +3888,7 @@ export interface FileRoutesByFullPath {
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/lookup': typeof SiteAdminLookupRoute
   '/admin/market': typeof SiteAdminMarketRoute
+  '/admin/media-sweep': typeof SiteAdminMediaSweepRoute
   '/admin/medschools': typeof SiteAdminMedschoolsRoute
   '/admin/outbox': typeof SiteAdminOutboxRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
@@ -4095,7 +4181,10 @@ export interface FileRoutesByFullPath {
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
   '/api/v1/me/communities': typeof ApiV1MeCommunitiesRoute
   '/api/v1/me/decks': typeof ApiV1MeDecksRouteWithChildren
+  '/api/v1/me/deleted': typeof ApiV1MeDeletedRoute
   '/api/v1/me/events': typeof ApiV1MeEventsRoute
+  '/api/v1/me/feeds': typeof ApiV1MeFeedsRouteWithChildren
+  '/api/v1/me/focus-sessions': typeof ApiV1MeFocusSessionsRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
   '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
@@ -4106,6 +4195,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/me/scheduled': typeof ApiV1MeScheduledRouteWithChildren
   '/api/v1/me/shelves': typeof ApiV1MeShelvesRouteWithChildren
   '/api/v1/me/tournaments': typeof ApiV1MeTournamentsRoute
+  '/api/v1/me/typing': typeof ApiV1MeTypingRouteWithChildren
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
   '/api/v1/search/people': typeof ApiV1SearchPeopleRoute
@@ -4137,6 +4227,7 @@ export interface FileRoutesByFullPath {
   '/games/hub/$gameId/': typeof GamesHubGameIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/c/$slug/invite/$code': typeof SiteCSlugInviteCodeRoute
+  '/c/$slug/wiki/$page': typeof SiteCSlugWikiPageRoute
   '/create/builds/$slug/insights': typeof SiteCreateBuildsSlugInsightsRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
@@ -4147,10 +4238,15 @@ export interface FileRoutesByFullPath {
   '/api/v1/communities/$slug/rules': typeof ApiV1CommunitiesSlugRulesRoute
   '/api/v1/events/$id/attendees': typeof ApiV1EventsIdAttendeesRoute
   '/api/v1/events/$id/rsvp': typeof ApiV1EventsIdRsvpRoute
+  '/api/v1/feeds/$id/posts': typeof ApiV1FeedsIdPostsRoute
   '/api/v1/me/decks/$id': typeof ApiV1MeDecksIdRouteWithChildren
+  '/api/v1/me/feeds/$id': typeof ApiV1MeFeedsIdRouteWithChildren
   '/api/v1/me/highlights/$id': typeof ApiV1MeHighlightsIdRoute
+  '/api/v1/me/music/practice': typeof ApiV1MeMusicPracticeRoute
   '/api/v1/me/scheduled/$id': typeof ApiV1MeScheduledIdRouteWithChildren
   '/api/v1/me/shelves/$slug': typeof ApiV1MeShelvesSlugRoute
+  '/api/v1/me/typing/daily': typeof ApiV1MeTypingDailyRoute
+  '/api/v1/me/typing/keys': typeof ApiV1MeTypingKeysRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -4163,10 +4259,13 @@ export interface FileRoutesByFullPath {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
+  '/c/$slug/wiki/': typeof SiteCSlugWikiIndexRoute
   '/api/v1/me/decks/$id/cards': typeof ApiV1MeDecksIdCardsRouteWithChildren
   '/api/v1/me/decks/$id/due': typeof ApiV1MeDecksIdDueRoute
+  '/api/v1/me/feeds/$id/members': typeof ApiV1MeFeedsIdMembersRoute
   '/api/v1/me/games/$gameId/days': typeof ApiV1MeGamesGameIdDaysRoute
   '/api/v1/me/scheduled/$id/publish': typeof ApiV1MeScheduledIdPublishRoute
+  '/games/$gameId/guides/$guideId/history': typeof GamesLibraryGameIdGuidesGuideIdHistoryRoute
   '/api/v1/me/decks/$id/cards/$cardId': typeof ApiV1MeDecksIdCardsCardIdRoute
   '/api/v1/tournaments/$id/matches/$matchId/claim': typeof ApiV1TournamentsIdMatchesMatchIdClaimRouteWithChildren
   '/api/v1/me/decks/$id/cards/by-external-id/$externalId': typeof ApiV1MeDecksIdCardsByExternalIdExternalIdRoute
@@ -4364,6 +4463,7 @@ export interface FileRoutesByTo {
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/lookup': typeof SiteAdminLookupRoute
   '/admin/market': typeof SiteAdminMarketRoute
+  '/admin/media-sweep': typeof SiteAdminMediaSweepRoute
   '/admin/medschools': typeof SiteAdminMedschoolsRoute
   '/admin/outbox': typeof SiteAdminOutboxRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
@@ -4655,7 +4755,10 @@ export interface FileRoutesByTo {
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
   '/api/v1/me/communities': typeof ApiV1MeCommunitiesRoute
   '/api/v1/me/decks': typeof ApiV1MeDecksRouteWithChildren
+  '/api/v1/me/deleted': typeof ApiV1MeDeletedRoute
   '/api/v1/me/events': typeof ApiV1MeEventsRoute
+  '/api/v1/me/feeds': typeof ApiV1MeFeedsRouteWithChildren
+  '/api/v1/me/focus-sessions': typeof ApiV1MeFocusSessionsRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
   '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
@@ -4666,6 +4769,7 @@ export interface FileRoutesByTo {
   '/api/v1/me/scheduled': typeof ApiV1MeScheduledRouteWithChildren
   '/api/v1/me/shelves': typeof ApiV1MeShelvesRouteWithChildren
   '/api/v1/me/tournaments': typeof ApiV1MeTournamentsRoute
+  '/api/v1/me/typing': typeof ApiV1MeTypingRouteWithChildren
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
   '/api/v1/search/people': typeof ApiV1SearchPeopleRoute
@@ -4697,6 +4801,7 @@ export interface FileRoutesByTo {
   '/games/hub/$gameId': typeof GamesHubGameIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/c/$slug/invite/$code': typeof SiteCSlugInviteCodeRoute
+  '/c/$slug/wiki/$page': typeof SiteCSlugWikiPageRoute
   '/create/builds/$slug/insights': typeof SiteCreateBuildsSlugInsightsRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
@@ -4707,10 +4812,15 @@ export interface FileRoutesByTo {
   '/api/v1/communities/$slug/rules': typeof ApiV1CommunitiesSlugRulesRoute
   '/api/v1/events/$id/attendees': typeof ApiV1EventsIdAttendeesRoute
   '/api/v1/events/$id/rsvp': typeof ApiV1EventsIdRsvpRoute
+  '/api/v1/feeds/$id/posts': typeof ApiV1FeedsIdPostsRoute
   '/api/v1/me/decks/$id': typeof ApiV1MeDecksIdRouteWithChildren
+  '/api/v1/me/feeds/$id': typeof ApiV1MeFeedsIdRouteWithChildren
   '/api/v1/me/highlights/$id': typeof ApiV1MeHighlightsIdRoute
+  '/api/v1/me/music/practice': typeof ApiV1MeMusicPracticeRoute
   '/api/v1/me/scheduled/$id': typeof ApiV1MeScheduledIdRouteWithChildren
   '/api/v1/me/shelves/$slug': typeof ApiV1MeShelvesSlugRoute
+  '/api/v1/me/typing/daily': typeof ApiV1MeTypingDailyRoute
+  '/api/v1/me/typing/keys': typeof ApiV1MeTypingKeysRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -4723,10 +4833,13 @@ export interface FileRoutesByTo {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
+  '/c/$slug/wiki': typeof SiteCSlugWikiIndexRoute
   '/api/v1/me/decks/$id/cards': typeof ApiV1MeDecksIdCardsRouteWithChildren
   '/api/v1/me/decks/$id/due': typeof ApiV1MeDecksIdDueRoute
+  '/api/v1/me/feeds/$id/members': typeof ApiV1MeFeedsIdMembersRoute
   '/api/v1/me/games/$gameId/days': typeof ApiV1MeGamesGameIdDaysRoute
   '/api/v1/me/scheduled/$id/publish': typeof ApiV1MeScheduledIdPublishRoute
+  '/games/$gameId/guides/$guideId/history': typeof GamesLibraryGameIdGuidesGuideIdHistoryRoute
   '/api/v1/me/decks/$id/cards/$cardId': typeof ApiV1MeDecksIdCardsCardIdRoute
   '/api/v1/tournaments/$id/matches/$matchId/claim': typeof ApiV1TournamentsIdMatchesMatchIdClaimRouteWithChildren
   '/api/v1/me/decks/$id/cards/by-external-id/$externalId': typeof ApiV1MeDecksIdCardsByExternalIdExternalIdRoute
@@ -4953,6 +5066,7 @@ export interface FileRoutesById {
   '/_site/admin/library': typeof SiteAdminLibraryRoute
   '/_site/admin/lookup': typeof SiteAdminLookupRoute
   '/_site/admin/market': typeof SiteAdminMarketRoute
+  '/_site/admin/media-sweep': typeof SiteAdminMediaSweepRoute
   '/_site/admin/medschools': typeof SiteAdminMedschoolsRoute
   '/_site/admin/outbox': typeof SiteAdminOutboxRoute
   '/_site/admin/patch-notes': typeof SiteAdminPatchNotesRoute
@@ -5245,7 +5359,10 @@ export interface FileRoutesById {
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
   '/api/v1/me/communities': typeof ApiV1MeCommunitiesRoute
   '/api/v1/me/decks': typeof ApiV1MeDecksRouteWithChildren
+  '/api/v1/me/deleted': typeof ApiV1MeDeletedRoute
   '/api/v1/me/events': typeof ApiV1MeEventsRoute
+  '/api/v1/me/feeds': typeof ApiV1MeFeedsRouteWithChildren
+  '/api/v1/me/focus-sessions': typeof ApiV1MeFocusSessionsRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
   '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
@@ -5256,6 +5373,7 @@ export interface FileRoutesById {
   '/api/v1/me/scheduled': typeof ApiV1MeScheduledRouteWithChildren
   '/api/v1/me/shelves': typeof ApiV1MeShelvesRouteWithChildren
   '/api/v1/me/tournaments': typeof ApiV1MeTournamentsRoute
+  '/api/v1/me/typing': typeof ApiV1MeTypingRouteWithChildren
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
   '/api/v1/search/people': typeof ApiV1SearchPeopleRoute
@@ -5287,6 +5405,7 @@ export interface FileRoutesById {
   '/games/hub/$gameId/': typeof GamesHubGameIdIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/c/$slug_/invite/$code': typeof SiteCSlugInviteCodeRoute
+  '/_site/c/$slug_/wiki/$page': typeof SiteCSlugWikiPageRoute
   '/_site/create_/builds/$slug/insights': typeof SiteCreateBuildsSlugInsightsRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
@@ -5297,10 +5416,15 @@ export interface FileRoutesById {
   '/api/v1/communities/$slug/rules': typeof ApiV1CommunitiesSlugRulesRoute
   '/api/v1/events/$id/attendees': typeof ApiV1EventsIdAttendeesRoute
   '/api/v1/events/$id/rsvp': typeof ApiV1EventsIdRsvpRoute
+  '/api/v1/feeds/$id/posts': typeof ApiV1FeedsIdPostsRoute
   '/api/v1/me/decks/$id': typeof ApiV1MeDecksIdRouteWithChildren
+  '/api/v1/me/feeds/$id': typeof ApiV1MeFeedsIdRouteWithChildren
   '/api/v1/me/highlights/$id': typeof ApiV1MeHighlightsIdRoute
+  '/api/v1/me/music/practice': typeof ApiV1MeMusicPracticeRoute
   '/api/v1/me/scheduled/$id': typeof ApiV1MeScheduledIdRouteWithChildren
   '/api/v1/me/shelves/$slug': typeof ApiV1MeShelvesSlugRoute
+  '/api/v1/me/typing/daily': typeof ApiV1MeTypingDailyRoute
+  '/api/v1/me/typing/keys': typeof ApiV1MeTypingKeysRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -5313,10 +5437,13 @@ export interface FileRoutesById {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/games/_library/$gameId_/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
+  '/_site/c/$slug_/wiki/': typeof SiteCSlugWikiIndexRoute
   '/api/v1/me/decks/$id/cards': typeof ApiV1MeDecksIdCardsRouteWithChildren
   '/api/v1/me/decks/$id/due': typeof ApiV1MeDecksIdDueRoute
+  '/api/v1/me/feeds/$id/members': typeof ApiV1MeFeedsIdMembersRoute
   '/api/v1/me/games/$gameId/days': typeof ApiV1MeGamesGameIdDaysRoute
   '/api/v1/me/scheduled/$id/publish': typeof ApiV1MeScheduledIdPublishRoute
+  '/games/_library/$gameId_/guides/$guideId_/history': typeof GamesLibraryGameIdGuidesGuideIdHistoryRoute
   '/api/v1/me/decks/$id/cards/$cardId': typeof ApiV1MeDecksIdCardsCardIdRoute
   '/api/v1/tournaments/$id/matches/$matchId/claim': typeof ApiV1TournamentsIdMatchesMatchIdClaimRouteWithChildren
   '/api/v1/me/decks/$id/cards/by-external-id/$externalId': typeof ApiV1MeDecksIdCardsByExternalIdExternalIdRoute
@@ -5542,6 +5669,7 @@ export interface FileRouteTypes {
     | '/admin/library'
     | '/admin/lookup'
     | '/admin/market'
+    | '/admin/media-sweep'
     | '/admin/medschools'
     | '/admin/outbox'
     | '/admin/patch-notes'
@@ -5834,7 +5962,10 @@ export interface FileRouteTypes {
     | '/api/v1/me/bookmarks'
     | '/api/v1/me/communities'
     | '/api/v1/me/decks'
+    | '/api/v1/me/deleted'
     | '/api/v1/me/events'
+    | '/api/v1/me/feeds'
+    | '/api/v1/me/focus-sessions'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
     | '/api/v1/me/games'
@@ -5845,6 +5976,7 @@ export interface FileRouteTypes {
     | '/api/v1/me/scheduled'
     | '/api/v1/me/shelves'
     | '/api/v1/me/tournaments'
+    | '/api/v1/me/typing'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
     | '/api/v1/search/people'
@@ -5876,6 +6008,7 @@ export interface FileRouteTypes {
     | '/games/hub/$gameId/'
     | '/admin/blog/$slug/edit'
     | '/c/$slug/invite/$code'
+    | '/c/$slug/wiki/$page'
     | '/create/builds/$slug/insights'
     | '/u/$userid/post/$postid'
     | '/api/rmhladder/resume/$id/analyze'
@@ -5886,10 +6019,15 @@ export interface FileRouteTypes {
     | '/api/v1/communities/$slug/rules'
     | '/api/v1/events/$id/attendees'
     | '/api/v1/events/$id/rsvp'
+    | '/api/v1/feeds/$id/posts'
     | '/api/v1/me/decks/$id'
+    | '/api/v1/me/feeds/$id'
     | '/api/v1/me/highlights/$id'
+    | '/api/v1/me/music/practice'
     | '/api/v1/me/scheduled/$id'
     | '/api/v1/me/shelves/$slug'
+    | '/api/v1/me/typing/daily'
+    | '/api/v1/me/typing/keys'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -5902,10 +6040,13 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/games/$gameId/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
+    | '/c/$slug/wiki/'
     | '/api/v1/me/decks/$id/cards'
     | '/api/v1/me/decks/$id/due'
+    | '/api/v1/me/feeds/$id/members'
     | '/api/v1/me/games/$gameId/days'
     | '/api/v1/me/scheduled/$id/publish'
+    | '/games/$gameId/guides/$guideId/history'
     | '/api/v1/me/decks/$id/cards/$cardId'
     | '/api/v1/tournaments/$id/matches/$matchId/claim'
     | '/api/v1/me/decks/$id/cards/by-external-id/$externalId'
@@ -6103,6 +6244,7 @@ export interface FileRouteTypes {
     | '/admin/library'
     | '/admin/lookup'
     | '/admin/market'
+    | '/admin/media-sweep'
     | '/admin/medschools'
     | '/admin/outbox'
     | '/admin/patch-notes'
@@ -6394,7 +6536,10 @@ export interface FileRouteTypes {
     | '/api/v1/me/bookmarks'
     | '/api/v1/me/communities'
     | '/api/v1/me/decks'
+    | '/api/v1/me/deleted'
     | '/api/v1/me/events'
+    | '/api/v1/me/feeds'
+    | '/api/v1/me/focus-sessions'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
     | '/api/v1/me/games'
@@ -6405,6 +6550,7 @@ export interface FileRouteTypes {
     | '/api/v1/me/scheduled'
     | '/api/v1/me/shelves'
     | '/api/v1/me/tournaments'
+    | '/api/v1/me/typing'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
     | '/api/v1/search/people'
@@ -6436,6 +6582,7 @@ export interface FileRouteTypes {
     | '/games/hub/$gameId'
     | '/admin/blog/$slug/edit'
     | '/c/$slug/invite/$code'
+    | '/c/$slug/wiki/$page'
     | '/create/builds/$slug/insights'
     | '/u/$userid/post/$postid'
     | '/api/rmhladder/resume/$id/analyze'
@@ -6446,10 +6593,15 @@ export interface FileRouteTypes {
     | '/api/v1/communities/$slug/rules'
     | '/api/v1/events/$id/attendees'
     | '/api/v1/events/$id/rsvp'
+    | '/api/v1/feeds/$id/posts'
     | '/api/v1/me/decks/$id'
+    | '/api/v1/me/feeds/$id'
     | '/api/v1/me/highlights/$id'
+    | '/api/v1/me/music/practice'
     | '/api/v1/me/scheduled/$id'
     | '/api/v1/me/shelves/$slug'
+    | '/api/v1/me/typing/daily'
+    | '/api/v1/me/typing/keys'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -6462,10 +6614,13 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/games/$gameId/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
+    | '/c/$slug/wiki'
     | '/api/v1/me/decks/$id/cards'
     | '/api/v1/me/decks/$id/due'
+    | '/api/v1/me/feeds/$id/members'
     | '/api/v1/me/games/$gameId/days'
     | '/api/v1/me/scheduled/$id/publish'
+    | '/games/$gameId/guides/$guideId/history'
     | '/api/v1/me/decks/$id/cards/$cardId'
     | '/api/v1/tournaments/$id/matches/$matchId/claim'
     | '/api/v1/me/decks/$id/cards/by-external-id/$externalId'
@@ -6691,6 +6846,7 @@ export interface FileRouteTypes {
     | '/_site/admin/library'
     | '/_site/admin/lookup'
     | '/_site/admin/market'
+    | '/_site/admin/media-sweep'
     | '/_site/admin/medschools'
     | '/_site/admin/outbox'
     | '/_site/admin/patch-notes'
@@ -6983,7 +7139,10 @@ export interface FileRouteTypes {
     | '/api/v1/me/bookmarks'
     | '/api/v1/me/communities'
     | '/api/v1/me/decks'
+    | '/api/v1/me/deleted'
     | '/api/v1/me/events'
+    | '/api/v1/me/feeds'
+    | '/api/v1/me/focus-sessions'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
     | '/api/v1/me/games'
@@ -6994,6 +7153,7 @@ export interface FileRouteTypes {
     | '/api/v1/me/scheduled'
     | '/api/v1/me/shelves'
     | '/api/v1/me/tournaments'
+    | '/api/v1/me/typing'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
     | '/api/v1/search/people'
@@ -7025,6 +7185,7 @@ export interface FileRouteTypes {
     | '/games/hub/$gameId/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/c/$slug_/invite/$code'
+    | '/_site/c/$slug_/wiki/$page'
     | '/_site/create_/builds/$slug/insights'
     | '/_site/u/$userid/post/$postid'
     | '/api/rmhladder/resume/$id/analyze'
@@ -7035,10 +7196,15 @@ export interface FileRouteTypes {
     | '/api/v1/communities/$slug/rules'
     | '/api/v1/events/$id/attendees'
     | '/api/v1/events/$id/rsvp'
+    | '/api/v1/feeds/$id/posts'
     | '/api/v1/me/decks/$id'
+    | '/api/v1/me/feeds/$id'
     | '/api/v1/me/highlights/$id'
+    | '/api/v1/me/music/practice'
     | '/api/v1/me/scheduled/$id'
     | '/api/v1/me/shelves/$slug'
+    | '/api/v1/me/typing/daily'
+    | '/api/v1/me/typing/keys'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -7051,10 +7217,13 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/games/_library/$gameId_/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
+    | '/_site/c/$slug_/wiki/'
     | '/api/v1/me/decks/$id/cards'
     | '/api/v1/me/decks/$id/due'
+    | '/api/v1/me/feeds/$id/members'
     | '/api/v1/me/games/$gameId/days'
     | '/api/v1/me/scheduled/$id/publish'
+    | '/games/_library/$gameId_/guides/$guideId_/history'
     | '/api/v1/me/decks/$id/cards/$cardId'
     | '/api/v1/tournaments/$id/matches/$matchId/claim'
     | '/api/v1/me/decks/$id/cards/by-external-id/$externalId'
@@ -7251,6 +7420,7 @@ export interface RootRouteChildren {
   ApiSpacesIdIndexRoute: typeof ApiSpacesIdIndexRoute
   ApiRmhtubePartiesRoomIdIcsRoute: typeof ApiRmhtubePartiesRoomIdIcsRoute
   ApiSliceItSongsStreamIdRoute: typeof ApiSliceItSongsStreamIdRoute
+  ApiV1FeedsIdPostsRoute: typeof ApiV1FeedsIdPostsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -8786,6 +8956,13 @@ declare module '@tanstack/react-router' {
       path: '/market'
       fullPath: '/admin/market'
       preLoaderRoute: typeof SiteAdminMarketRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/media-sweep': {
+      id: '/_site/admin/media-sweep'
+      path: '/media-sweep'
+      fullPath: '/admin/media-sweep'
+      preLoaderRoute: typeof SiteAdminMediaSweepRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/medschools': {
@@ -10867,11 +11044,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeDecksRouteImport
       parentRoute: typeof ApiV1MeRoute
     }
+    '/api/v1/me/deleted': {
+      id: '/api/v1/me/deleted'
+      path: '/deleted'
+      fullPath: '/api/v1/me/deleted'
+      preLoaderRoute: typeof ApiV1MeDeletedRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
     '/api/v1/me/events': {
       id: '/api/v1/me/events'
       path: '/events'
       fullPath: '/api/v1/me/events'
       preLoaderRoute: typeof ApiV1MeEventsRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/feeds': {
+      id: '/api/v1/me/feeds'
+      path: '/feeds'
+      fullPath: '/api/v1/me/feeds'
+      preLoaderRoute: typeof ApiV1MeFeedsRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/focus-sessions': {
+      id: '/api/v1/me/focus-sessions'
+      path: '/focus-sessions'
+      fullPath: '/api/v1/me/focus-sessions'
+      preLoaderRoute: typeof ApiV1MeFocusSessionsRouteImport
       parentRoute: typeof ApiV1MeRoute
     }
     '/api/v1/me/followers': {
@@ -10942,6 +11140,13 @@ declare module '@tanstack/react-router' {
       path: '/tournaments'
       fullPath: '/api/v1/me/tournaments'
       preLoaderRoute: typeof ApiV1MeTournamentsRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/typing': {
+      id: '/api/v1/me/typing'
+      path: '/typing'
+      fullPath: '/api/v1/me/typing'
+      preLoaderRoute: typeof ApiV1MeTypingRouteImport
       parentRoute: typeof ApiV1MeRoute
     }
     '/api/v1/news/$slug': {
@@ -11119,6 +11324,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteCSlugInviteCodeRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/c/$slug_/wiki/': {
+      id: '/_site/c/$slug_/wiki/'
+      path: '/c/$slug/wiki'
+      fullPath: '/c/$slug/wiki/'
+      preLoaderRoute: typeof SiteCSlugWikiIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/c/$slug_/wiki/$page': {
+      id: '/_site/c/$slug_/wiki/$page'
+      path: '/c/$slug/wiki/$page'
+      fullPath: '/c/$slug/wiki/$page'
+      preLoaderRoute: typeof SiteCSlugWikiPageRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/create_/builds/$slug/insights': {
       id: '/_site/create_/builds/$slug/insights'
       path: '/create/builds/$slug/insights'
@@ -11189,6 +11408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1EventsIdRsvpRouteImport
       parentRoute: typeof ApiV1EventsIdRoute
     }
+    '/api/v1/feeds/$id/posts': {
+      id: '/api/v1/feeds/$id/posts'
+      path: '/api/v1/feeds/$id/posts'
+      fullPath: '/api/v1/feeds/$id/posts'
+      preLoaderRoute: typeof ApiV1FeedsIdPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/me/decks/$id': {
       id: '/api/v1/me/decks/$id'
       path: '/$id'
@@ -11196,12 +11422,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeDecksIdRouteImport
       parentRoute: typeof ApiV1MeDecksRoute
     }
+    '/api/v1/me/feeds/$id': {
+      id: '/api/v1/me/feeds/$id'
+      path: '/$id'
+      fullPath: '/api/v1/me/feeds/$id'
+      preLoaderRoute: typeof ApiV1MeFeedsIdRouteImport
+      parentRoute: typeof ApiV1MeFeedsRoute
+    }
     '/api/v1/me/highlights/$id': {
       id: '/api/v1/me/highlights/$id'
       path: '/$id'
       fullPath: '/api/v1/me/highlights/$id'
       preLoaderRoute: typeof ApiV1MeHighlightsIdRouteImport
       parentRoute: typeof ApiV1MeHighlightsRoute
+    }
+    '/api/v1/me/music/practice': {
+      id: '/api/v1/me/music/practice'
+      path: '/music/practice'
+      fullPath: '/api/v1/me/music/practice'
+      preLoaderRoute: typeof ApiV1MeMusicPracticeRouteImport
+      parentRoute: typeof ApiV1MeRoute
     }
     '/api/v1/me/scheduled/$id': {
       id: '/api/v1/me/scheduled/$id'
@@ -11216,6 +11456,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/me/shelves/$slug'
       preLoaderRoute: typeof ApiV1MeShelvesSlugRouteImport
       parentRoute: typeof ApiV1MeShelvesRoute
+    }
+    '/api/v1/me/typing/daily': {
+      id: '/api/v1/me/typing/daily'
+      path: '/daily'
+      fullPath: '/api/v1/me/typing/daily'
+      preLoaderRoute: typeof ApiV1MeTypingDailyRouteImport
+      parentRoute: typeof ApiV1MeTypingRoute
+    }
+    '/api/v1/me/typing/keys': {
+      id: '/api/v1/me/typing/keys'
+      path: '/keys'
+      fullPath: '/api/v1/me/typing/keys'
+      preLoaderRoute: typeof ApiV1MeTypingKeysRouteImport
+      parentRoute: typeof ApiV1MeTypingRoute
     }
     '/api/v1/posts/$id/bookmark': {
       id: '/api/v1/posts/$id/bookmark'
@@ -11315,6 +11569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeDecksIdDueRouteImport
       parentRoute: typeof ApiV1MeDecksIdRoute
     }
+    '/api/v1/me/feeds/$id/members': {
+      id: '/api/v1/me/feeds/$id/members'
+      path: '/members'
+      fullPath: '/api/v1/me/feeds/$id/members'
+      preLoaderRoute: typeof ApiV1MeFeedsIdMembersRouteImport
+      parentRoute: typeof ApiV1MeFeedsIdRoute
+    }
     '/api/v1/me/games/$gameId/days': {
       id: '/api/v1/me/games/$gameId/days'
       path: '/$gameId/days'
@@ -11328,6 +11589,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/me/scheduled/$id/publish'
       preLoaderRoute: typeof ApiV1MeScheduledIdPublishRouteImport
       parentRoute: typeof ApiV1MeScheduledIdRoute
+    }
+    '/games/_library/$gameId_/guides/$guideId_/history': {
+      id: '/games/_library/$gameId_/guides/$guideId_/history'
+      path: '/$gameId/guides/$guideId/history'
+      fullPath: '/games/$gameId/guides/$guideId/history'
+      preLoaderRoute: typeof GamesLibraryGameIdGuidesGuideIdHistoryRouteImport
+      parentRoute: typeof GamesLibraryRoute
     }
     '/api/v1/me/decks/$id/cards/$cardId': {
       id: '/api/v1/me/decks/$id/cards/$cardId'
@@ -11388,6 +11656,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminLibraryRoute: typeof SiteAdminLibraryRoute
   SiteAdminLookupRoute: typeof SiteAdminLookupRoute
   SiteAdminMarketRoute: typeof SiteAdminMarketRoute
+  SiteAdminMediaSweepRoute: typeof SiteAdminMediaSweepRoute
   SiteAdminMedschoolsRoute: typeof SiteAdminMedschoolsRoute
   SiteAdminOutboxRoute: typeof SiteAdminOutboxRoute
   SiteAdminPatchNotesRoute: typeof SiteAdminPatchNotesRoute
@@ -11436,6 +11705,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminLibraryRoute: SiteAdminLibraryRoute,
   SiteAdminLookupRoute: SiteAdminLookupRoute,
   SiteAdminMarketRoute: SiteAdminMarketRoute,
+  SiteAdminMediaSweepRoute: SiteAdminMediaSweepRoute,
   SiteAdminMedschoolsRoute: SiteAdminMedschoolsRoute,
   SiteAdminOutboxRoute: SiteAdminOutboxRoute,
   SiteAdminPatchNotesRoute: SiteAdminPatchNotesRoute,
@@ -11713,8 +11983,10 @@ interface SiteRouteChildren {
   SiteStudyDeckIdPracticeRoute: typeof SiteStudyDeckIdPracticeRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
   SiteCSlugInviteCodeRoute: typeof SiteCSlugInviteCodeRoute
+  SiteCSlugWikiPageRoute: typeof SiteCSlugWikiPageRoute
   SiteCreateBuildsSlugInsightsRoute: typeof SiteCreateBuildsSlugInsightsRoute
   SiteUUseridPostPostidRoute: typeof SiteUUseridPostPostidRoute
+  SiteCSlugWikiIndexRoute: typeof SiteCSlugWikiIndexRoute
 }
 
 const SiteRouteChildren: SiteRouteChildren = {
@@ -11867,8 +12139,10 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteStudyDeckIdPracticeRoute: SiteStudyDeckIdPracticeRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
   SiteCSlugInviteCodeRoute: SiteCSlugInviteCodeRoute,
+  SiteCSlugWikiPageRoute: SiteCSlugWikiPageRoute,
   SiteCreateBuildsSlugInsightsRoute: SiteCreateBuildsSlugInsightsRoute,
   SiteUUseridPostPostidRoute: SiteUUseridPostPostidRoute,
+  SiteCSlugWikiIndexRoute: SiteCSlugWikiIndexRoute,
 }
 
 const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
@@ -11943,6 +12217,7 @@ interface GamesLibraryRouteChildren {
   GamesLibraryIndexRoute: typeof GamesLibraryIndexRoute
   GamesLibraryGameIdUpdatesRoute: typeof GamesLibraryGameIdUpdatesRoute
   GamesLibraryGameIdGuidesGuideIdRoute: typeof GamesLibraryGameIdGuidesGuideIdRoute
+  GamesLibraryGameIdGuidesGuideIdHistoryRoute: typeof GamesLibraryGameIdGuidesGuideIdHistoryRoute
 }
 
 const GamesLibraryRouteChildren: GamesLibraryRouteChildren = {
@@ -11951,6 +12226,8 @@ const GamesLibraryRouteChildren: GamesLibraryRouteChildren = {
   GamesLibraryIndexRoute: GamesLibraryIndexRoute,
   GamesLibraryGameIdUpdatesRoute: GamesLibraryGameIdUpdatesRoute,
   GamesLibraryGameIdGuidesGuideIdRoute: GamesLibraryGameIdGuidesGuideIdRoute,
+  GamesLibraryGameIdGuidesGuideIdHistoryRoute:
+    GamesLibraryGameIdGuidesGuideIdHistoryRoute,
 }
 
 const GamesLibraryRouteWithChildren = GamesLibraryRoute._addFileChildren(
@@ -12451,6 +12728,30 @@ const ApiV1MeDecksRouteWithChildren = ApiV1MeDecksRoute._addFileChildren(
   ApiV1MeDecksRouteChildren,
 )
 
+interface ApiV1MeFeedsIdRouteChildren {
+  ApiV1MeFeedsIdMembersRoute: typeof ApiV1MeFeedsIdMembersRoute
+}
+
+const ApiV1MeFeedsIdRouteChildren: ApiV1MeFeedsIdRouteChildren = {
+  ApiV1MeFeedsIdMembersRoute: ApiV1MeFeedsIdMembersRoute,
+}
+
+const ApiV1MeFeedsIdRouteWithChildren = ApiV1MeFeedsIdRoute._addFileChildren(
+  ApiV1MeFeedsIdRouteChildren,
+)
+
+interface ApiV1MeFeedsRouteChildren {
+  ApiV1MeFeedsIdRoute: typeof ApiV1MeFeedsIdRouteWithChildren
+}
+
+const ApiV1MeFeedsRouteChildren: ApiV1MeFeedsRouteChildren = {
+  ApiV1MeFeedsIdRoute: ApiV1MeFeedsIdRouteWithChildren,
+}
+
+const ApiV1MeFeedsRouteWithChildren = ApiV1MeFeedsRoute._addFileChildren(
+  ApiV1MeFeedsRouteChildren,
+)
+
 interface ApiV1MeGamesRouteChildren {
   ApiV1MeGamesGameIdDaysRoute: typeof ApiV1MeGamesGameIdDaysRoute
 }
@@ -12508,12 +12809,29 @@ const ApiV1MeShelvesRouteWithChildren = ApiV1MeShelvesRoute._addFileChildren(
   ApiV1MeShelvesRouteChildren,
 )
 
+interface ApiV1MeTypingRouteChildren {
+  ApiV1MeTypingDailyRoute: typeof ApiV1MeTypingDailyRoute
+  ApiV1MeTypingKeysRoute: typeof ApiV1MeTypingKeysRoute
+}
+
+const ApiV1MeTypingRouteChildren: ApiV1MeTypingRouteChildren = {
+  ApiV1MeTypingDailyRoute: ApiV1MeTypingDailyRoute,
+  ApiV1MeTypingKeysRoute: ApiV1MeTypingKeysRoute,
+}
+
+const ApiV1MeTypingRouteWithChildren = ApiV1MeTypingRoute._addFileChildren(
+  ApiV1MeTypingRouteChildren,
+)
+
 interface ApiV1MeRouteChildren {
   ApiV1MeAchievementsRoute: typeof ApiV1MeAchievementsRoute
   ApiV1MeBookmarksRoute: typeof ApiV1MeBookmarksRoute
   ApiV1MeCommunitiesRoute: typeof ApiV1MeCommunitiesRoute
   ApiV1MeDecksRoute: typeof ApiV1MeDecksRouteWithChildren
+  ApiV1MeDeletedRoute: typeof ApiV1MeDeletedRoute
   ApiV1MeEventsRoute: typeof ApiV1MeEventsRoute
+  ApiV1MeFeedsRoute: typeof ApiV1MeFeedsRouteWithChildren
+  ApiV1MeFocusSessionsRoute: typeof ApiV1MeFocusSessionsRoute
   ApiV1MeFollowersRoute: typeof ApiV1MeFollowersRoute
   ApiV1MeFollowingRoute: typeof ApiV1MeFollowingRoute
   ApiV1MeGamesRoute: typeof ApiV1MeGamesRouteWithChildren
@@ -12524,6 +12842,8 @@ interface ApiV1MeRouteChildren {
   ApiV1MeScheduledRoute: typeof ApiV1MeScheduledRouteWithChildren
   ApiV1MeShelvesRoute: typeof ApiV1MeShelvesRouteWithChildren
   ApiV1MeTournamentsRoute: typeof ApiV1MeTournamentsRoute
+  ApiV1MeTypingRoute: typeof ApiV1MeTypingRouteWithChildren
+  ApiV1MeMusicPracticeRoute: typeof ApiV1MeMusicPracticeRoute
 }
 
 const ApiV1MeRouteChildren: ApiV1MeRouteChildren = {
@@ -12531,7 +12851,10 @@ const ApiV1MeRouteChildren: ApiV1MeRouteChildren = {
   ApiV1MeBookmarksRoute: ApiV1MeBookmarksRoute,
   ApiV1MeCommunitiesRoute: ApiV1MeCommunitiesRoute,
   ApiV1MeDecksRoute: ApiV1MeDecksRouteWithChildren,
+  ApiV1MeDeletedRoute: ApiV1MeDeletedRoute,
   ApiV1MeEventsRoute: ApiV1MeEventsRoute,
+  ApiV1MeFeedsRoute: ApiV1MeFeedsRouteWithChildren,
+  ApiV1MeFocusSessionsRoute: ApiV1MeFocusSessionsRoute,
   ApiV1MeFollowersRoute: ApiV1MeFollowersRoute,
   ApiV1MeFollowingRoute: ApiV1MeFollowingRoute,
   ApiV1MeGamesRoute: ApiV1MeGamesRouteWithChildren,
@@ -12542,6 +12865,8 @@ const ApiV1MeRouteChildren: ApiV1MeRouteChildren = {
   ApiV1MeScheduledRoute: ApiV1MeScheduledRouteWithChildren,
   ApiV1MeShelvesRoute: ApiV1MeShelvesRouteWithChildren,
   ApiV1MeTournamentsRoute: ApiV1MeTournamentsRoute,
+  ApiV1MeTypingRoute: ApiV1MeTypingRouteWithChildren,
+  ApiV1MeMusicPracticeRoute: ApiV1MeMusicPracticeRoute,
 }
 
 const ApiV1MeRouteWithChildren =
@@ -12891,6 +13216,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpacesIdIndexRoute: ApiSpacesIdIndexRoute,
   ApiRmhtubePartiesRoomIdIcsRoute: ApiRmhtubePartiesRoomIdIcsRoute,
   ApiSliceItSongsStreamIdRoute: ApiSliceItSongsStreamIdRoute,
+  ApiV1FeedsIdPostsRoute: ApiV1FeedsIdPostsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

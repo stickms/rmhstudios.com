@@ -36,6 +36,7 @@
  * sees (and refunds) it; if the sweep claims first the pledge matches 0 rows and
  * rolls back, debit and all.
  */
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { InsufficientFundsError } from '@/lib/economy/ledger.server';
@@ -161,7 +162,7 @@ export async function fulfilCommunityGoal(
     targetType: 'community_goal',
     targetId: goalId,
   });
-  await notifyPledgers(goalId, 'Your community goal was delivered — thank you for chipping in!');
+  await notifyPledgers(goalId, notice('goal-delivered', {}));
 }
 
 // ── members: pledge ──────────────────────────────────────────────────────────
@@ -259,7 +260,7 @@ export async function pledgeToGoal(
 
   bust();
   if (result.funded) {
-    await notifyPledgers(goalId, 'A community goal you pledged to has been fully funded!');
+    await notifyPledgers(goalId, notice('goal-funded', {}));
   }
   return result;
 }
@@ -326,7 +327,7 @@ export async function refundGoal(
   };
   if (out.goalMarked) {
     bust();
-    await notifyPledgers(goalId, 'A community goal you pledged to ended — your coins were refunded.');
+    await notifyPledgers(goalId, notice('goal-refunded', {}));
   }
   return out;
 }
@@ -392,7 +393,7 @@ export async function sweepCommunityGoals(now: Date = new Date()): Promise<Sweep
 
 // ── notifications ────────────────────────────────────────────────────────────
 
-async function notifyPledgers(goalId: string, preview: string): Promise<void> {
+async function notifyPledgers(goalId: string, preview: NoticePreview): Promise<void> {
   try {
     const rows = await prisma.communityGoalPledge.findMany({
       where: { goalId },

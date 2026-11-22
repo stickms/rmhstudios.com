@@ -290,7 +290,7 @@ describe('confirm', () => {
     const view = await confirmSweep('admin', id);
     expect(view.status).toBe('RUNNING');
     expect(view.postCount).toBe(1);
-    expect(h.locks).toEqual(['sweep:spammer']);
+    expect(h.locks).toEqual(['sweeps:confirm-cap', 'sweep:spammer']);
   });
 
   it('is capped at 5,000 items: the window is recounted and a bigger one is refused', async () => {
@@ -517,7 +517,7 @@ describe('undo', () => {
       expect.objectContaining({
         entityType: 'moderation-sweep-undone',
         userId: 'spammer',
-        preview: '4 posts and replies were restored by site moderation.',
+        preview: expect.objectContaining({ fallback: '4 posts and replies were restored by site moderation.' }),
       }),
     ]);
     expect(h.audits.filter((a) => a.action === 'sweep.undo')).toHaveLength(1);

@@ -209,7 +209,9 @@ export default function PartyPage() {
                   : formatRelativeStart(party.scheduledFor, nowMs, i18n.language)}
               </p>
               {party.description && (
-                <p className="mb-4 whitespace-pre-wrap text-sm text-app-text">{party.description}</p>
+                <p dir="auto" className="mb-4 whitespace-pre-wrap text-sm text-app-text">
+                  {party.description}
+                </p>
               )}
               <div className="mb-6 flex items-center gap-3 border-y border-app-border py-3">
                 <Users className="h-4 w-4 text-app-text-muted" aria-hidden />

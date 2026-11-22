@@ -67,7 +67,13 @@ vi.mock('@/lib/prisma.server', () => {
     // pg-boss statements run on the transaction connection through this adapter.
     $queryRawUnsafe: vi.fn(async () => []),
     // s08-05: the "Fan-outs" line counts running runs, then runs that failed in the last seven days.
-    fanoutRun: { count: vi.fn(async (a: { where: { status: string } }) => (a.where.status === 'RUNNING' ? 2 : 1)) },
+    fanoutRun: {
+      count: vi.fn(async (a: { where: { status: string } }) => (a.where.status === 'RUNNING' ? 2 : 1)),
+      findMany: vi.fn(async () => []),
+    },
+    // s09-13: the leased-kinds block reads the RUNNING rows of the other two kinds and counts their failures.
+    bulkOperation: { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) },
+    moderationSweep: { count: vi.fn(async () => 0), findMany: vi.fn(async () => []) },
     // The transaction hands the same mock back as `tx`.
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma),
   };
@@ -634,7 +640,11 @@ describe('s05-02 admin jobs: raw SQL names pg-boss tables and columns', () => {
         nextRunAt: string;
       }[];
     }[];
-    expect(r.json!.fanouts).toEqual({ running: 2, failedLast7Days: 1 });
+    expect(r.json!.leased).toEqual([
+      { kind: 'bulk', running: 0, waiting: 0, failedLast7Days: 0 },
+      { kind: 'fanout', running: 0, waiting: 0, failedLast7Days: 1 },
+      { kind: 'sweep', running: 0, waiting: 0, failedLast7Days: 0 },
+    ]);
     expect(queues.map((q) => q.name)).toEqual(['digest.send', 'clean']);
     expect(queues[0]!.newestFailureAt).toBe('2026-11-20T10:00:00.000Z');
     expect(queues[1]!.schedules[0]!.nextRunAt).toBe('2026-11-21T15:00:00.000Z');

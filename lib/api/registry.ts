@@ -163,9 +163,19 @@ export const ENDPOINTS: ApiEndpoint[] = [
     group: 'Account',
     scope: 'read:bookmarks',
     summary: 'List your bookmarks',
-    description: 'Posts you have bookmarked, newest first. ' + QUIET_COUNTS_NOTE,
+    description:
+      'Posts you have bookmarked, newest first. With `since` you get only the bookmarks made after that instant; a post you un-bookmarked is reported by `GET /api/v1/me/deleted?kind=bookmark`. ' +
+      QUIET_COUNTS_NOTE,
     paginated: true,
-    params: PAGE_PARAMS,
+    params: [
+      ...PAGE_PARAMS,
+      {
+        name: 'since',
+        in: 'query',
+        type: 'string',
+        description: 'Only bookmarks made after this ISO 8601 instant.',
+      },
+    ],
     responseExample: {
       data: [
         {
@@ -1558,7 +1568,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
     scope: 'read:study',
     summary: 'List a deck’s cards',
     description:
-      'The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion) are not listed. `frontImage` and `backImage` are `{ url, alt }` or `null`.',
+      'The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion or occlusion mask) are not listed. `frontImage` and `backImage` are `{ url, alt }` or `null`. `occlusion` is `{ mode, masks }` on a `kind: "occlusion"` card and `null` on every other kind.',
     paginated: true,
     params: [
       {
@@ -1580,6 +1590,13 @@ export const ENDPOINTS: ApiEndpoint[] = [
         type: 'string',
         description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
       },
+      {
+        name: 'since',
+        in: 'query',
+        type: 'string',
+        description:
+          'Only cards created after this ISO 8601 instant, still in deck order. Editing a card does not change its creation time; deleted cards are in `GET /api/v1/me/deleted?kind=card`.',
+      },
     ],
     responseExample: {
       data: [
@@ -1592,6 +1609,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
           externalId: null,
           frontImage: null,
           backImage: null,
+          occlusion: null,
         },
       ],
       nextCursor: null,
@@ -1605,7 +1623,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
     scope: 'write:study',
     summary: 'Add cards',
     description:
-      'Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate `externalId`, or a deck over its 2,000-card limit (generated cards count) writes nothing. Reversible and cloze cards get their generated cards exactly as in the editor. `kind` is `basic`, `reversible` or `cloze` (a cloze card has only `front`, with `{{c1::answer}}` deletions).',
+      'Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate `externalId`, or a deck over its 2,000-card limit (generated cards count) writes nothing. Reversible, cloze and occlusion cards get their generated cards exactly as in the editor. `kind` is `basic`, `reversible`, `cloze` (a cloze card has only `front`, with `{{c1::answer}}` deletions) or `occlusion` (a front picture and `occlusion` masks; each mask is one card).',
     idempotent: true,
     status: 201,
     params: [
@@ -1624,7 +1642,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
           type: 'object[]',
           required: true,
           description:
-            '1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only.',
+            '1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage?, occlusion? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000; an occlusion card’s `front` is an optional prompt and its `back` an optional note); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. An occlusion card needs a front picture (a still image) and `occlusion: { mode: "hide-all" | "hide-one", masks: [{ id?, x, y, w, h, label }] }`: 1–20 masks in picture-relative units (0–1, at least 0.02 wide and tall, inside the picture), `label` the answer (up to 200 characters); a mask with no `id` takes the next free one.',
         },
       ],
       example: {
@@ -1653,6 +1671,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
           externalId: null,
           frontImage: null,
           backImage: null,
+          occlusion: null,
         },
       ],
       cardCount: 2,
@@ -1666,7 +1685,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
     scope: 'write:study',
     summary: 'Update a card',
     description:
-      'Change a card’s kind, front or back. Its review history stays; its generated cards are regenerated in place. A generated card is 404.',
+      'Change a card’s kind, front, back, pictures or occlusion masks. Its review history stays (a mask keeps its card when you send its `id` back); its generated cards are regenerated in place. A generated card is 404.',
     idempotent: true,
     params: [
       {
@@ -1689,12 +1708,12 @@ export const ENDPOINTS: ApiEndpoint[] = [
         {
           name: 'kind',
           type: 'string',
-          description: '`basic`, `reversible` or `cloze`.',
+          description: '`basic`, `reversible`, `cloze` or `occlusion`.',
         },
         {
           name: 'front',
           type: 'string',
-          description: 'The front (a cloze card’s whole text).',
+          description: 'The front (a cloze card’s whole text; an occlusion card’s optional prompt).',
         },
         {
           name: 'back',
@@ -1712,6 +1731,12 @@ export const ENDPOINTS: ApiEndpoint[] = [
           type: 'object',
           description: 'The picture on the back, the same shape as `frontImage`.',
         },
+        {
+          name: 'occlusion',
+          type: 'object',
+          description:
+            'The masks of an occlusion card: `{ mode: "hide-all" | "hide-one", masks: [{ id?, x, y, w, h, label }] }`. Send back the `id`s a read returned so each mask keeps its card’s review history. `null` clears them (a card changed to another kind).',
+        },
       ],
       example: {
         back: 'to talk, to speak',
@@ -1726,6 +1751,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
       externalId: null,
       frontImage: null,
       backImage: null,
+      occlusion: null,
     },
   },
   {
@@ -1786,13 +1812,13 @@ export const ENDPOINTS: ApiEndpoint[] = [
         {
           name: 'kind',
           type: 'string',
-          description: '`basic` (default), `reversible` or `cloze`.',
+          description: '`basic` (default), `reversible`, `cloze` or `occlusion`.',
         },
         {
           name: 'front',
           type: 'string',
           required: true,
-          description: 'The front.',
+          description: 'The front. Optional for an occlusion card, where it is the prompt.',
         },
         {
           name: 'back',
@@ -1810,6 +1836,12 @@ export const ENDPOINTS: ApiEndpoint[] = [
           type: 'object',
           description: 'The picture on the back, the same shape as `frontImage`.',
         },
+        {
+          name: 'occlusion',
+          type: 'object',
+          description:
+            'The masks of an occlusion card, as for `POST …/cards`. Send back the `id`s a read returned so each mask keeps its card’s review history.',
+        },
       ],
       example: {
         front: 'hablar',
@@ -1825,6 +1857,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
       externalId: 'verbs-001',
       frontImage: null,
       backImage: null,
+      occlusion: null,
     },
   },
   {
@@ -2214,6 +2247,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
           sensitive: false,
           contentWarning: null,
           pinnedReplyId: null,
+          pinned: false,
           createdAt: '2026-11-20T10:00:00.000Z',
           author: AUTHOR_OBJECT,
           metrics: { likes: 3, comments: 1, reposts: 0, views: 42 },
@@ -2233,7 +2267,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
     scope: 'read:reading',
     summary: 'List your highlights and notes',
     description:
-      'Your highlights and notes on library books, blog posts and news, newest first. Private notes are returned because they are yours; a wildcard key (`read:*`, `*`) can read them too. With `since` (ISO 8601) you get the highlights **updated** after that instant instead, ordered by `updatedAt` then `id` ascending, so a sync can store the last `updatedAt` it saw and ask again from there; follow `nextCursor` (a cursor from one mode does not work in the other). A highlight whose document has been removed is returned with `document: null` (as in the example); otherwise `document` is `{ title, url }`. Deletions are not tombstoned: to learn which highlights were deleted, compare the ids you hold with a full listing. Highlights cannot be created through the API.',
+      'Your highlights and notes on library books, blog posts and news, newest first. Private notes are returned because they are yours; a wildcard key (`read:*`, `*`) can read them too. With `since` (ISO 8601) you get the highlights **updated** after that instant instead, ordered by `updatedAt` then `id` ascending, so a sync can store the last `updatedAt` it saw and ask again from there; follow `nextCursor` (a cursor from one mode does not work in the other). A highlight whose document has been removed is returned with `document: null` (as in the example); otherwise `document` is `{ title, url }`. To learn which highlights were deleted, ask `GET /api/v1/me/deleted?kind=highlight&since=…`. Highlights cannot be created through the API.',
     paginated: true,
     params: [
       { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–100 (default 30).' },
@@ -2308,7 +2342,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
     scope: 'write:reading',
     summary: 'Delete a highlight',
     description:
-      'Permanently delete one of your highlights and its note. Deletions are not tombstoned for `since` syncs.',
+      'Permanently delete one of your highlights and its note. The deletion is kept as a tombstone for 90 days, so a `since` sync finds it through `GET /api/v1/me/deleted`.',
     idempotent: true,
     status: 204,
     params: [{ name: 'id', in: 'path', type: 'string', description: 'The highlight id.', required: true }],
@@ -3007,6 +3041,368 @@ export const ENDPOINTS: ApiEndpoint[] = [
           createdAt: '2026-01-05T10:00:00.000Z',
         },
       ],
+      nextCursor: null,
+    },
+  },
+
+  // Sprint 09 (docs/autonomous/sprint-09/plan.md §Anchors)
+  // s09-08 api-feeds
+  {
+    method: 'GET',
+    path: '/api/v1/me/feeds',
+    operationId: 'listMyFeeds',
+    group: 'Feeds',
+    scope: 'read:feeds',
+    summary: 'List your feeds',
+    description:
+      'Your feeds, lists, saved searches and keyword alerts, newest first. `kind` is `feed`, `list`, `search` or `alert`; `query` and `types` describe a saved search or alert, `tags` and `keywords` a feed. Only your own are listed.',
+    paginated: true,
+    params: [
+      {
+        name: 'kind',
+        in: 'query',
+        type: 'string',
+        description: 'Only this kind: `feed`, `list`, `search` or `alert`.',
+      },
+      { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–50 (default 20).' },
+      {
+        name: 'cursor',
+        in: 'query',
+        type: 'string',
+        description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+      },
+    ],
+    responseExample: {
+      data: [
+        {
+          id: 'clfeed1',
+          kind: 'feed',
+          name: 'Rust news',
+          description: null,
+          visibility: 'PRIVATE',
+          pinned: false,
+          tags: ['rust'],
+          keywords: ['release'],
+          query: null,
+          types: ['post'],
+          notify: false,
+          subscribers: 0,
+          createdAt: '2026-11-19T09:00:00.000Z',
+          updatedAt: '2026-11-20T21:14:00.000Z',
+        },
+      ],
+      nextCursor: null,
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/feeds/{id}',
+    operationId: 'getMyFeed',
+    group: 'Feeds',
+    scope: 'read:feeds',
+    summary: 'Get one of your feeds',
+    description:
+      "One of your feeds with `members`, the handles of its people (a list, or a feed with people). Another member's feed is a `404`, private or not.",
+    params: [{ name: 'id', in: 'path', type: 'string', description: 'The feed id.', required: true }],
+    responseExample: {
+      ...{
+        id: 'clfeed1',
+        kind: 'feed',
+        name: 'Rust news',
+        description: null,
+        visibility: 'PRIVATE',
+        pinned: false,
+        tags: ['rust'],
+        keywords: ['release'],
+        query: null,
+        types: ['post'],
+        notify: false,
+        subscribers: 0,
+        createdAt: '2026-11-19T09:00:00.000Z',
+        updatedAt: '2026-11-20T21:14:00.000Z',
+      },
+      members: ['ada'],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/feeds/{id}/posts',
+    operationId: 'listFeedPosts',
+    group: 'Feeds',
+    scope: 'read:feeds',
+    summary: "Read a feed's posts",
+    description:
+      "The posts of a feed or list as the site pages them for you, newest first: your own feed, or one its owner published or shared by link. Needs `read:posts` as well as `read:feeds`. Authors you blocked or muted, who blocked you, or who are banned or deleted never appear. A saved search or keyword alert is `409 not_a_timeline`; another member's private feed is a `404`. " +
+      QUIET_COUNTS_NOTE,
+    paginated: true,
+    params: [
+      { name: 'id', in: 'path', type: 'string', description: 'The feed id.', required: true },
+      { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–50 (default 20).' },
+      {
+        name: 'cursor',
+        in: 'query',
+        type: 'string',
+        description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+      },
+    ],
+    responseExample: {
+      data: [
+        {
+          ...POST_OBJECT,
+          author: AUTHOR_OBJECT,
+        },
+      ],
+      nextCursor: null,
+    },
+  },
+  {
+    method: 'PUT',
+    path: '/api/v1/me/feeds/{id}/members',
+    operationId: 'replaceListMembers',
+    group: 'Feeds',
+    scope: 'write:feeds',
+    summary: "Replace a list's members",
+    description:
+      "Make the list's members exactly these handles (case-insensitive, at most 500; an empty array clears the list). Handles that match no account, a deleted or banned account, or a member blocked in either direction are not added and come back in `skipped` with the reason `not_found` or `blocked`. Only your own lists: a feed that is not a list, or another member's, is a `404`.",
+    idempotent: true,
+    params: [{ name: 'id', in: 'path', type: 'string', description: 'The list id.', required: true }],
+    requestBody: {
+      fields: [
+        {
+          name: 'handles',
+          type: 'string[]',
+          required: true,
+          description: 'The handles of the members, with or without a leading `@`. At most 500.',
+        },
+      ],
+      example: { handles: ['ada', 'grace'] },
+    },
+    responseExample: {
+      id: 'clfeed1',
+      memberCount: 1,
+      members: ['ada'],
+      skipped: [{ handle: 'grace', reason: 'blocked' }],
+    },
+  },
+
+  // s09-09 api-practice
+  {
+    method: 'GET',
+    path: '/api/v1/me/typing',
+    operationId: 'getMyTyping',
+    group: 'Practice',
+    scope: 'read:practice',
+    summary: 'Your typing summary',
+    description:
+      'Your RMHType profile, one per difficulty that you have played (totals, bests, averages and streaks; `bestWpm` is words per minute, accuracies are percentages, `totalTimeMs` is milliseconds), and your touch-typing lesson progress (best speed and accuracy, stars, attempts, `completedAt`). Only your own. Multiplayer match history and ghost replays are not included.',
+    responseExample: {
+      profiles: [
+        {
+          difficulty: 'medium',
+          totalGamesPlayed: 42,
+          totalWins: 17,
+          bestWpm: 88.5,
+          bestWpmAccuracy: 97.2,
+          avgWpm: 71.3,
+          bestAccuracy: 99.1,
+          avgAccuracy: 95.4,
+          totalCharsTyped: 18250,
+          totalTimeMs: 2640000,
+          currentStreak: 3,
+          bestStreak: 9,
+          updatedAt: '2026-11-20T10:00:00.000Z',
+        },
+      ],
+      lessons: [
+        {
+          lessonId: 'home-row-1',
+          bestWpm: 32.5,
+          bestAccuracy: 98,
+          stars: 3,
+          attempts: 4,
+          completedAt: null,
+        },
+      ],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/typing/daily',
+    operationId: 'listMyTypingDaily',
+    group: 'Practice',
+    scope: 'read:practice',
+    summary: 'Your daily typing entries',
+    description:
+      'Your entries for the daily passage, oldest first, one per day. `day` is the stored UTC day as `YYYYMMDD`. `wpm`, `accuracy` (a percentage) and `timeMs` are `null` for a day started but not finished in time (`finishedAt` is then set, or `null` if it was never closed). `from` and `to` take `YYYYMMDD` or `YYYY-MM-DD`; the range spans at most 366 days and defaults to the last 30.',
+    params: [
+      { name: 'from', in: 'query', type: 'string', description: 'First day, inclusive. Default: 29 days before `to`.' },
+      { name: 'to', in: 'query', type: 'string', description: 'Last day, inclusive. Default: today (UTC).' },
+    ],
+    responseExample: {
+      from: '20261120',
+      to: '20261121',
+      data: [
+        { day: '20261120', passageId: 'p-142', wpm: null, accuracy: null, timeMs: null, finishedAt: null },
+        {
+          day: '20261121',
+          passageId: 'p-143',
+          wpm: 74.2,
+          accuracy: 96.5,
+          timeMs: 38200,
+          finishedAt: '2026-11-21T08:15:00.000Z',
+        },
+      ],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/typing/keys',
+    operationId: 'listMyTypingKeys',
+    group: 'Practice',
+    scope: 'read:practice',
+    summary: 'Your per-key typing figures',
+    description:
+      'Your per-key counters with derived figures, slowest first (`weakness` is `msPerKey` inflated by `errorRate`; higher is worse). Only keys with at least `minAttempts` attempts are returned. `msPerKey` is the mean time per key in milliseconds and `errorRate` runs from 0 to 1. The list is empty while key statistics are switched off on the site.',
+    params: [
+      {
+        name: 'layout',
+        in: 'query',
+        type: 'string',
+        description:
+          'Only this layout: `qwerty`, `azerty`, `dvorak` or `colemak`. Default: every layout you have data for.',
+      },
+    ],
+    responseExample: {
+      minAttempts: 5,
+      data: [
+        {
+          key: 'q',
+          layout: 'qwerty',
+          attempts: 24,
+          errors: 6,
+          totalMs: 9120,
+          msPerKey: 380,
+          errorRate: 0.25,
+          weakness: 760,
+        },
+      ],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/music/practice',
+    operationId: 'listMyMusicPractice',
+    group: 'Practice',
+    scope: 'read:practice',
+    summary: 'Your music practice entries',
+    description:
+      'Your RMH Music practice entries, newest first. `kind` is the activity (`song`, `sprint`, `cards`) and `refId` what was practised. `mode` is the song or sprint mode and `score` the result, both `null` when the activity has none; `durationMs` is `null` when the client did not say.',
+    paginated: true,
+    params: [
+      { name: 'since', in: 'query', type: 'string', description: 'Only entries at or after this ISO 8601 instant.' },
+      { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–100 (default 50).' },
+      {
+        name: 'cursor',
+        in: 'query',
+        type: 'string',
+        description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+      },
+    ],
+    responseExample: {
+      data: [
+        {
+          id: 1042,
+          kind: 'cards',
+          refId: 'scales-major',
+          mode: null,
+          score: null,
+          durationMs: null,
+          createdAt: '2026-11-21T18:30:00.000Z',
+        },
+        {
+          id: 1041,
+          kind: 'song',
+          refId: 'ode-to-joy',
+          mode: 'wait',
+          score: 920,
+          durationMs: 180000,
+          createdAt: '2026-11-20T18:00:00.000Z',
+        },
+      ],
+      nextCursor: null,
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/focus-sessions',
+    operationId: 'listMyFocusSessions',
+    group: 'Practice',
+    scope: 'read:practice',
+    summary: 'Your focus sessions',
+    description:
+      'Your RMHStudy focus sessions, newest first. Times are in milliseconds. `endedAt` is `null` for a session that has not been closed. The first page (no `cursor`) also carries a `summary` with your weekly goal in minutes and your time zone, each `null` when unset.',
+    paginated: true,
+    params: [
+      {
+        name: 'since',
+        in: 'query',
+        type: 'string',
+        description: 'Only sessions started at or after this ISO 8601 instant.',
+      },
+      { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–100 (default 50).' },
+      {
+        name: 'cursor',
+        in: 'query',
+        type: 'string',
+        description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+      },
+    ],
+    responseExample: {
+      summary: { weeklyGoalMinutes: null, timeZone: null },
+      data: [
+        {
+          id: 'clfocus1',
+          focusTimeMs: 1500000,
+          breakTimeMs: 300000,
+          sessionsInRun: 2,
+          startedAt: '2026-11-21T09:00:00.000Z',
+          endedAt: null,
+        },
+      ],
+      nextCursor: null,
+    },
+  },
+
+  // s09-10 api-sync-deletions
+  {
+    method: 'GET',
+    path: '/api/v1/me/deleted',
+    operationId: 'listMyDeleted',
+    group: 'Account',
+    scope: 'read:reading',
+    summary: 'List what you deleted',
+    description:
+      "Deletions of one `kind` after `since`, oldest first, so an app keeping a copy of your highlights, decks, cards, bookmarks or shelf entries can drop what you removed on the site. `kind` is `highlight`, `deck`, `card`, `bookmark` or `shelf_entry`. Each item is `{ id, kind, deletedAt }` and carries no content. `id` is the highlight, deck or card id, the bookmarked post's id, or the book's slug. The scope is the read scope of the kind: `read:reading` for `highlight` and `shelf_entry`, `read:study` for `deck` and `card`, `read:bookmarks` for `bookmark` (the scope listed here is the first; the others are checked per kind). Deletions are kept 90 days: a `since` older than that is `410 sync_window_expired` and the client must resync in full. Without `since` you get every deletion still kept. Deleting a deck is one `deck` item and none for its cards. A bookmark or shelf entry you add again after deleting it has a later time than its tombstone: apply a deletion only when its `deletedAt` is later than the item you hold.",
+    paginated: true,
+    params: [
+      {
+        name: 'kind',
+        in: 'query',
+        type: 'string',
+        required: true,
+        description: '`highlight`, `deck`, `card`, `bookmark` or `shelf_entry`.',
+      },
+      {
+        name: 'since',
+        in: 'query',
+        type: 'string',
+        description: 'Only deletions after this ISO 8601 instant. At most 90 days ago, or `410 sync_window_expired`.',
+      },
+      { name: 'cursor', in: 'query', type: 'string', description: 'Opaque cursor from a previous `nextCursor`.' },
+      { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–500 (default 100).' },
+    ],
+    responseExample: {
+      data: [{ id: 'clhl1', kind: 'highlight', deletedAt: '2026-11-22T12:00:00.000Z' }],
       nextCursor: null,
     },
   },

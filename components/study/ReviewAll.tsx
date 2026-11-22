@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { StudyTabs } from '@/components/feed/StudyTabs';
 import { ClozeText } from '@/components/study/ClozeText';
+import { OcclusionReview } from '@/components/study/OcclusionReview';
 import { CardPicture, usePreloadPicture } from '@/components/study/CardPicture';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -397,7 +398,9 @@ export function ReviewAll({
           </span>
         </div>
         <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center">
-          {card.clozeIndex !== null ? (
+          {card.kind === 'occlusion' && card.occlusion && card.frontImage ? (
+            <OcclusionReview image={card.frontImage} prompt={card.front} data={card.occlusion} revealed={revealed} />
+          ) : card.clozeIndex !== null ? (
             <>
               <ClozeText text={card.front} index={card.clozeIndex} reveal={false} className="t-prose text-site-text" />
               {revealed && (

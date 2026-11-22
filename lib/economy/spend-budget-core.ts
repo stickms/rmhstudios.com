@@ -11,6 +11,7 @@
  * only. A member with no row, or no cap, costs one indexed read and nothing
  * else; with a cap there is the lock and one `SUM`.
  */
+import { notice, noticeColumns } from '@/lib/notifications/notice-keys';
 import { AppError } from '../errors/codes';
 import type { Db } from './ledger-core';
 import {
@@ -111,7 +112,7 @@ export async function assertSpendAllowedOn(
           type: 'SYSTEM',
           entityType: 'spend-budget',
           entityId: month,
-          preview: 'You have used 80% of your spending budget',
+          ...noticeColumns(notice('spend-budget-80', {})),
           link: '/wallet',
         },
         select: { id: true },

@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { pageSize } from '@/lib/pagination';
 /**
  * N2 — starboard (server-only).
@@ -66,7 +67,7 @@ export async function recordStarToggle(args: {
         type: 'SYSTEM',
         entityType: 'rmhark',
         entityId: args.postId,
-        preview: `Your post made the hall of fame in ${post.community.name}`,
+        preview: notice('community-hall-of-fame', { community: post.community.name }),
         link: `/c/${post.community.slug}`,
       });
     }

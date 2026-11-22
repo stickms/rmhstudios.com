@@ -6,6 +6,7 @@
  * notification). CRUD for the manage page lives here too.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { listingMatchesWatch } from './watch-match';
@@ -127,7 +128,13 @@ export async function notifyWatchersOfNewListing(listingId: string): Promise<voi
         type: 'SYSTEM',
         entityType: 'home_listing',
         entityId: listing.id,
-        preview: `New ${kind} matching “${w.label}”: ${listing.title} — $${priceDollars} in ${listing.city}, ${listing.state}`,
+        preview: notice(kind === 'rental' ? 'home-watch-rental' : 'home-watch-sale', {
+          label: w.label,
+          title: listing.title,
+          price: priceDollars,
+          city: listing.city,
+          state: listing.state,
+        }),
         link: `/homes/listing/${listing.id}`,
       });
     }

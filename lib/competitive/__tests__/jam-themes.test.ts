@@ -509,7 +509,7 @@ describe('resolveDueThemes', () => {
     expect(h.notices.map((n) => n.userId).sort()).toEqual(['u1', 'u2']);
     expect(h.notices[0]).toMatchObject({
       entityType: 'jam_theme',
-      preview: 'The theme of Jam One is Gamma',
+      preview: expect.objectContaining({ fallback: 'The theme of Jam One is Gamma' }),
     });
     expect(await resolveDueThemes(NOW)).toBe(0);
     expect(h.notices).toHaveLength(2);

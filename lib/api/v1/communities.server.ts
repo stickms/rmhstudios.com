@@ -115,6 +115,8 @@ export function serializeCommunityPost(item: FeedItem, viewerId: string | null) 
     sensitive: item.isSensitive ?? false,
     contentWarning: item.contentWarning ?? null,
     pinnedReplyId: null as string | null,
+    // s09-06: a moderator pinned it to the top of the community (additive).
+    pinned: item.communityPinned ?? false,
     createdAt: item.createdAt,
     author: {
       id: item.user?.id ?? '',

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { pickPoints, validatePicks, type PickInput, type PickRole } from './pickem';
 
@@ -32,7 +33,12 @@ export async function getPickem(tournamentId: string, viewerId: string | null) {
         (complete ? pickPoints(p.role as PickRole, p.entrant.placement) : 0),
     );
   }
-  const top = [...byUser.entries()].sort((a, b) => b[1] - a[1]).slice(0, LEADERBOARD_SIZE);
+  // Standings are a public list of members: hidden members are dropped before the cut.
+  const hidden = await leaderboardHiddenUserIds();
+  const top = [...byUser.entries()]
+    .filter(([id]) => !hidden.has(id))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, LEADERBOARD_SIZE);
   const users = await prisma.user.findMany({
     where: { id: { in: top.map(([id]) => id) } },
     select: userDisplaySelect,

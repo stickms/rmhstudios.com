@@ -1,8 +1,8 @@
 /**
  * The three ways a flashcard query reads a deck, so no query invents its own:
  * the EDITOR and the deck page list authored cards only, REVIEW and practice tests
- * read reviewable cards (every row except an authored cloze card, which only holds
- * the text its generated cards are made from), and both order a card's generated
+ * read reviewable cards (every row except an authored cloze or occlusion card, which only holds
+ * what its generated cards are made from), and both order a card's generated
  * siblings right after it.
  */
 import type { Prisma } from '@prisma/client';
@@ -10,9 +10,12 @@ import type { Prisma } from '@prisma/client';
 /** What the owner wrote: generated siblings are not listed, counted or exported. */
 export const AUTHORED_WHERE = { sourceId: null } satisfies Prisma.FlashcardWhereInput;
 
-/** What a member studies and is tested on. */
+/**
+ * What a member studies and is tested on: every row except an authored cloze or occlusion card, which only holds
+ * what its generated cards are made from. Raw SQL says it as one `NOT (c."kind" = '…' AND c."sourceId" IS NULL)` per kind.
+ */
 export const REVIEWABLE_WHERE = {
-  NOT: { kind: 'cloze', sourceId: null },
+  NOT: { kind: { in: ['cloze', 'occlusion'] }, sourceId: null },
 } satisfies Prisma.FlashcardWhereInput;
 
 /**

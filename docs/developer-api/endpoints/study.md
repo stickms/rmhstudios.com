@@ -167,7 +167,7 @@ Permanently delete the deck, its cards and their review history.
 
 ### `GET /api/v1/me/decks/{id}/cards`
 
-The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion) are not listed. `frontImage` and `backImage` are `{ url, alt }` or `null`.
+The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion or occlusion mask) are not listed. `frontImage` and `backImage` are `{ url, alt }` or `null`. `occlusion` is `{ mode, masks }` on a `kind: "occlusion"` card and `null` on every other kind.
 
 **Scope:** `read:study` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyDeckCards`
 
@@ -176,6 +176,7 @@ The cards you wrote, in deck order. Cards generated from them (the reverse side 
 | `id` | path | string | yes | The deck id. |
 | `limit` | query | integer | no | Page size, 1–100 (default 20). |
 | `cursor` | query | string | no | Opaque cursor from a previous `nextCursor` to fetch the next page. |
+| `since` | query | string | no | Only cards created after this ISO 8601 instant, still in deck order. Editing a card does not change its creation time; deleted cards are in `GET /api/v1/me/deleted?kind=card`. |
 
 **Example response** (`200`)
 
@@ -190,7 +191,8 @@ The cards you wrote, in deck order. Cards generated from them (the reverse side 
       "position": 0,
       "externalId": null,
       "frontImage": null,
-      "backImage": null
+      "backImage": null,
+      "occlusion": null
     }
   ],
   "nextCursor": null
@@ -199,7 +201,7 @@ The cards you wrote, in deck order. Cards generated from them (the reverse side 
 
 ### `POST /api/v1/me/decks/{id}/cards`
 
-Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate `externalId`, or a deck over its 2,000-card limit (generated cards count) writes nothing. Reversible and cloze cards get their generated cards exactly as in the editor. `kind` is `basic`, `reversible` or `cloze` (a cloze card has only `front`, with `{{c1::answer}}` deletions).
+Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate `externalId`, or a deck over its 2,000-card limit (generated cards count) writes nothing. Reversible, cloze and occlusion cards get their generated cards exactly as in the editor. `kind` is `basic`, `reversible`, `cloze` (a cloze card has only `front`, with `{{c1::answer}}` deletions) or `occlusion` (a front picture and `occlusion` masks; each mask is one card).
 
 **Scope:** `write:study` · **Success:** `201` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `createMyDeckCards`
 
@@ -211,7 +213,7 @@ Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate
 
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
-| `cards` | `object[]` | yes | 1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. |
+| `cards` | `object[]` | yes | 1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage?, occlusion? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000; an occlusion card’s `front` is an optional prompt and its `back` an optional note); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. An occlusion card needs a front picture (a still image) and `occlusion: { mode: "hide-all" \| "hide-one", masks: [{ id?, x, y, w, h, label }] }`: 1–20 masks in picture-relative units (0–1, at least 0.02 wide and tall, inside the picture), `label` the answer (up to 200 characters); a mask with no `id` takes the next free one. |
 
 ```json
 {
@@ -243,7 +245,8 @@ Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate
       "position": 0,
       "externalId": null,
       "frontImage": null,
-      "backImage": null
+      "backImage": null,
+      "occlusion": null
     }
   ],
   "cardCount": 2
@@ -252,7 +255,7 @@ Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate
 
 ### `PATCH /api/v1/me/decks/{id}/cards/{cardId}`
 
-Change a card’s kind, front or back. Its review history stays; its generated cards are regenerated in place. A generated card is 404.
+Change a card’s kind, front, back, pictures or occlusion masks. Its review history stays (a mask keeps its card when you send its `id` back); its generated cards are regenerated in place. A generated card is 404.
 
 **Scope:** `write:study` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `updateMyDeckCard`
 
@@ -265,11 +268,12 @@ Change a card’s kind, front or back. Its review history stays; its generated c
 
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
-| `kind` | `string` | no | `basic`, `reversible` or `cloze`. |
-| `front` | `string` | no | The front (a cloze card’s whole text). |
+| `kind` | `string` | no | `basic`, `reversible`, `cloze` or `occlusion`. |
+| `front` | `string` | no | The front (a cloze card’s whole text; an occlusion card’s optional prompt). |
 | `back` | `string` | no | The back. |
 | `frontImage` | `object` | no | A picture for this side: `{ media_id, alt }`, where `media_id` is an upload of yours from `POST /api/v1/images` with `surface=flashcard` and `alt` is the description a screen reader reads (required, up to 1,000 characters). `null` removes the picture. A cloze card takes a picture on the back only. You can have pictures on at most 500 cards. |
 | `backImage` | `object` | no | The picture on the back, the same shape as `frontImage`. |
+| `occlusion` | `object` | no | The masks of an occlusion card: `{ mode: "hide-all" \| "hide-one", masks: [{ id?, x, y, w, h, label }] }`. Send back the `id`s a read returned so each mask keeps its card’s review history. `null` clears them (a card changed to another kind). |
 
 ```json
 {
@@ -288,7 +292,8 @@ Change a card’s kind, front or back. Its review history stays; its generated c
   "position": 0,
   "externalId": null,
   "frontImage": null,
-  "backImage": null
+  "backImage": null,
+  "occlusion": null
 }
 ```
 
@@ -318,11 +323,12 @@ Create the card keyed by your own id in this deck, or update it. The same body s
 
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
-| `kind` | `string` | no | `basic` (default), `reversible` or `cloze`. |
-| `front` | `string` | yes | The front. |
+| `kind` | `string` | no | `basic` (default), `reversible`, `cloze` or `occlusion`. |
+| `front` | `string` | yes | The front. Optional for an occlusion card, where it is the prompt. |
 | `back` | `string` | no | The back (not used by cloze cards). |
 | `frontImage` | `object` | no | A picture for this side: `{ media_id, alt }`, where `media_id` is an upload of yours from `POST /api/v1/images` with `surface=flashcard` and `alt` is the description a screen reader reads (required, up to 1,000 characters). `null` removes the picture. A cloze card takes a picture on the back only. You can have pictures on at most 500 cards. A side you leave out keeps its picture. |
 | `backImage` | `object` | no | The picture on the back, the same shape as `frontImage`. |
+| `occlusion` | `object` | no | The masks of an occlusion card, as for `POST …/cards`. Send back the `id`s a read returned so each mask keeps its card’s review history. |
 
 ```json
 {
@@ -342,7 +348,8 @@ Create the card keyed by your own id in this deck, or update it. The same body s
   "position": 0,
   "externalId": "verbs-001",
   "frontImage": null,
-  "backImage": null
+  "backImage": null,
+  "occlusion": null
 }
 ```
 

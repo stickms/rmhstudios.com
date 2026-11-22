@@ -136,17 +136,42 @@ export function normalizeAssists(raw: Partial<AssistSettings> | null | undefined
  */
 export function profileFor(game: string, settings: AssistSettings): AssistProfile {
   if (!ASSIST_CAPABLE.has(game)) return NO_ASSISTS;
-  if (!hasAnyAssist(settings)) return NO_ASSISTS;
+  const honoured = honouredSettings(game, settings);
+  if (!hasAnyAssist(honoured)) return NO_ASSISTS;
   return {
     ranked: false,
-    ...settings,
+    ...honoured,
+  };
+}
+
+/**
+ * Settings a game honours only in part (sprint 09 17). Neon Driftway has no tap input or reaction
+ * window; Laundry Sort has no flash, no shake, no tap input and no clock to slow. A game not listed
+ * honours all five. A setting a game does not honour is dropped from its profile, so switching on
+ * (say) hold to press never costs a Laundry Sort player a ranked run for an assist that does nothing.
+ */
+export const HONOURED_SETTINGS: Readonly<Record<string, readonly (keyof AssistSettings)[]>> = {
+  'neon-driftway': ['speedFloor', 'calmVisuals', 'colorSafe'],
+  'laundry-sort': ['colorSafe', 'noTimedInput'],
+};
+
+/** The member's settings restricted to what `game` honours; every other field is its default. */
+export function honouredSettings(game: string, settings: AssistSettings): AssistSettings {
+  const honoured = HONOURED_SETTINGS[game];
+  if (!honoured) return settings;
+  return {
+    holdToPress: honoured.includes('holdToPress') ? settings.holdToPress : ASSIST_DEFAULTS.holdToPress,
+    speedFloor: honoured.includes('speedFloor') ? settings.speedFloor : ASSIST_DEFAULTS.speedFloor,
+    calmVisuals: honoured.includes('calmVisuals') ? settings.calmVisuals : ASSIST_DEFAULTS.calmVisuals,
+    colorSafe: honoured.includes('colorSafe') ? settings.colorSafe : ASSIST_DEFAULTS.colorSafe,
+    noTimedInput: honoured.includes('noTimedInput') ? settings.noTimedInput : ASSIST_DEFAULTS.noTimedInput,
   };
 }
 
 /**
  * Games whose client actually honours an assist profile.
  *
- * **Two games today: Synapse Storm and Void Breaker.** See the module header: a game
+ * **Six games today: Synapse Storm, Void Breaker, Dream Rift, Nightrail, Neon Driftway and Laundry Sort.** See the module header: a game
  * added here without client support trades its players' leaderboard
  * eligibility for nothing. Adding an entry is part of the change that teaches
  * the game to read the profile, alongside the `accessibility` entries in
@@ -158,6 +183,8 @@ export const ASSIST_CAPABLE: ReadonlySet<string> = new Set<string>([
   'void-breaker',
   'dream-rift',
   'nightrail',
+  'neon-driftway',
+  'laundry-sort',
 ]);
 
 /**

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 407 routes. 214 render inside the standard site shell (sidebar, nav, context rail); 193 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 411 routes. 217 render inside the standard site shell (sidebar, nav, context rail); 194 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -46,6 +46,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |
 | `/admin/lookup` | Lookup \| Admin | admin | `app/routes/_site/admin/lookup.tsx` |
 | `/admin/market` | Marketplace Review | admin | `app/routes/_site/admin/market.tsx` |
+| `/admin/media-sweep` | Media sweep \| Admin | admin | `app/routes/_site/admin/media-sweep.tsx` |
 | `/admin/medschools` | Med Schools aliases \| Admin | admin | `app/routes/_site/admin/medschools.tsx` |
 | `/admin/outbox` | Outbox \| Admin | admin | `app/routes/_site/admin/outbox.tsx` |
 | `/admin/patch-notes` | Patch Notes \| Admin | admin | `app/routes/_site/admin/patch-notes.tsx` |
@@ -72,6 +73,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/c/:slug/invite/:code` | Community invite | public | `app/routes/_site/c.$slug_.invite.$code.tsx` |
+| `/c/:slug/wiki` | — | public | `app/routes/_site/c.$slug_.wiki.index.tsx` |
+| `/c/:slug/wiki/:page` | Wiki | public | `app/routes/_site/c.$slug_.wiki.$page.tsx` |
 | `/calendar` | Calendar | public | `app/routes/_site/calendar.tsx` |
 | `/canvas` | Community canvas | public | `app/routes/_site/canvas.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
@@ -278,6 +281,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/games` | redirects to `/compete?tab=leaderboard` | public | `app/routes/games/_library/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/games/_library/$gameId_.guides.$guideId.tsx` |
+| `/games/:gameId/guides/:guideId/history` | Guide history | sign-in | `app/routes/games/_library/$gameId_.guides.$guideId_.history.tsx` |
 | `/games/:gameId/updates` | — | public | `app/routes/games/_library/$gameId_.updates.tsx` |
 | `/games/:gameId/updates/rss.xml` | — | public | `app/routes/games_.$gameId.updates.rss[.]xml.ts` |
 | `/games/groups/:slug` | redirects to `/c/$slug` | public | `app/routes/games/groups.$slug.tsx` |

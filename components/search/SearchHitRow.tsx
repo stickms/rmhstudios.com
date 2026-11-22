@@ -151,11 +151,21 @@ export function SearchHitRow({ hit, showKind = true }: { hit: SearchHit; showKin
   const body = (
     <>
       <div className="flex items-baseline gap-2">
-        <p className="t-body truncate font-semibold">{hit.title}</p>
+        <p dir="auto" className="t-body truncate font-semibold">
+          {hit.title}
+        </p>
         {showKind && <span className="t-meta shrink-0">{kindLabel(hit.kind)}</span>}
       </div>
-      {hit.subtitle && <p className="t-meta truncate">{hit.subtitle}</p>}
-      {hit.snippet && <p className="t-body mt-0.5 line-clamp-2 text-site-text-muted">{hit.snippet}</p>}
+      {hit.subtitle && (
+        <p dir="auto" className="t-meta truncate">
+          {hit.subtitle}
+        </p>
+      )}
+      {hit.snippet && (
+        <p dir="auto" className="t-body mt-0.5 line-clamp-2 text-site-text-muted">
+          {hit.snippet}
+        </p>
+      )}
     </>
   );
 

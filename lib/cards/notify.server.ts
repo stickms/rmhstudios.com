@@ -8,6 +8,7 @@
  * entity type, so the list can group and link them.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { createNotification } from '@/lib/notifications.server';
 import { cardName } from '@/lib/cards/cards';
 
@@ -20,7 +21,7 @@ export async function notifyTradeOffered(w: Who & { tradeId: string }) {
     actorId: w.actorId,
     entityType: 'card-trade',
     entityId: w.tradeId,
-    preview: 'sent you a trade offer',
+    preview: notice('card-trade-offered', {}),
     link: '/games/trades',
   });
 }
@@ -32,7 +33,7 @@ export async function notifyTradeResolved(w: Who & { tradeId: string; outcome: '
     actorId: w.actorId,
     entityType: 'card-trade',
     entityId: w.tradeId,
-    preview: w.outcome === 'accepted' ? 'accepted your trade offer' : 'declined your trade offer',
+    preview: w.outcome === 'accepted' ? notice('card-trade-accepted', {}) : notice('card-trade-declined', {}),
     link: '/games/trades',
   });
 }
@@ -51,7 +52,7 @@ export async function notifyCardSold(w: {
     actorId: w.buyerId,
     entityType: 'card-sale',
     entityId: w.listingId,
-    preview: `bought your ${cardName(w.gameId, w.cardIndex)} card for ${w.proceeds} coins`,
+    preview: notice('card-sold', { card: cardName(w.gameId, w.cardIndex), coins: w.proceeds }),
     link: '/games/market',
   });
 }
@@ -87,7 +88,7 @@ export async function notifyBuyOrderFilled(w: {
     userId: w.buyerId,
     entityType: 'card-order',
     entityId: w.listingId,
-    preview: `Your buy order for ${cardName(w.gameId, w.cardIndex)} filled for ${w.price} coins`,
+    preview: notice('card-order-filled', { card: cardName(w.gameId, w.cardIndex), coins: w.price }),
     link: '/games/inventory',
   });
 }

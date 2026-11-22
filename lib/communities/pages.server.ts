@@ -14,6 +14,8 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { logModAction } from '@/lib/communities/modlog.server';
+import { pageAccess, type PageAccess, type WriteRefusal } from '@/lib/communities/page-access.server';
 import {
   MAX_PAGE_BODY,
   MAX_PAGE_SLUG,
@@ -27,12 +29,15 @@ import {
   type CommunityRole,
   type EditPolicy,
   type EditorStanding,
+  type PageRefusal,
 } from '@/lib/communities/page-policy';
 
 export class CommunityPageError extends Error {
   constructor(
     message: string,
     public readonly code: 'INVALID' | 'NOT_FOUND' | 'FORBIDDEN' | 'CONFLICT',
+    /** Set when a community ban, a timeout or a site ban is the reason (the API adds its `code` and `endsAt`). */
+    public readonly refusal?: WriteRefusal,
   ) {
     super(message);
     this.name = 'CommunityPageError';
@@ -55,7 +60,9 @@ export interface CommunityPageDTO {
   /** Whether the *viewer* may edit this page, per `editPolicy`. */
   canEdit: boolean;
   /** Why not, when `canEdit` is false — so the UI explains instead of hiding. */
-  refusal: ReturnType<typeof refusalReason>;
+  refusal: PageRefusal | null;
+  /** When a timeout or a temporary community ban ends (ISO); `null` otherwise or until a moderator lifts it. */
+  refusalEndsAt: string | null;
 }
 
 export interface CommunityPageSummary {
@@ -120,6 +127,21 @@ function toPolicy(raw: string): EditPolicy {
   return isEditPolicy(raw) ? raw : 'mods';
 }
 
+const REFUSAL_TEXT: Record<WriteRefusal['reason'], string> = {
+  SIGNED_OUT: 'Sign in to edit pages',
+  SITE_BANNED: 'Your account cannot edit pages right now',
+  COMMUNITY_BANNED: 'You are banned from this community',
+  TIMED_OUT: 'You are timed out of this community',
+};
+
+/** Throw the refusal a viewer's access gives for a write; nothing when writing is open. */
+function assertWritable(access: Awaited<ReturnType<typeof pageAccess>>): asserts access is NonNullable<typeof access> {
+  if (!access?.read) throw new CommunityPageError('Page not found', 'NOT_FOUND');
+  if (access.writeRefusal) {
+    throw new CommunityPageError(REFUSAL_TEXT[access.writeRefusal.reason], 'FORBIDDEN', access.writeRefusal);
+  }
+}
+
 function toDTO(
   row: {
     id: string;
@@ -132,8 +154,11 @@ function toDTO(
     updatedAt: Date;
   },
   standing: EditorStanding,
+  writeRefusal: WriteRefusal | null = null,
 ): CommunityPageDTO {
   const policy = toPolicy(row.editPolicy);
+  const policyRefusal = refusalReason(policy, standing);
+  const endsAt = writeRefusal && 'endsAt' in writeRefusal ? writeRefusal.endsAt : null;
   return {
     id: row.id,
     communityId: row.communityId,
@@ -143,15 +168,23 @@ function toDTO(
     editPolicy: policy,
     pinned: row.pinned,
     updatedAt: row.updatedAt.toISOString(),
-    canEdit: canEditPage(policy, standing),
-    refusal: refusalReason(policy, standing),
+    canEdit: canEditPage(policy, standing) && writeRefusal === null,
+    // A sanction or a signed-out viewer is the more useful thing to say than "not a member".
+    refusal: writeRefusal ? writeRefusal.reason : policyRefusal,
+    refusalEndsAt: endsAt ? endsAt.toISOString() : null,
   };
 }
 
-/** Pinned pages first (the rules), then most recently touched. */
-export async function listCommunityPages(communityId: string): Promise<CommunityPageSummary[]> {
+/**
+ * Pinned pages first (the rules), then most recently touched.
+ *
+ * Reads take the `PageAccess` the caller resolved (`resolveWikiCommunity` / `pageAccess`) rather than a bare community
+ * id, so a caller cannot reach the text without having asked who may see it; a viewer who may not read gets nothing.
+ */
+export async function listCommunityPages(access: PageAccess): Promise<CommunityPageSummary[]> {
+  if (!access.read) return [];
   const rows = await prisma.communityPage.findMany({
-    where: { communityId },
+    where: { communityId: access.communityId },
     orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
     select: { id: true, slug: true, title: true, pinned: true, updatedAt: true },
     take: 100,
@@ -160,20 +193,25 @@ export async function listCommunityPages(communityId: string): Promise<Community
 }
 
 export async function getCommunityPage(
-  communityId: string,
+  access: PageAccess,
   slug: string,
   viewerId: string | null,
   isSiteAdmin = false,
 ): Promise<CommunityPageDTO | null> {
+  if (!access.read) return null;
   const row = await prisma.communityPage.findUnique({
-    where: { communityId_slug: { communityId, slug } },
+    where: { communityId_slug: { communityId: access.communityId, slug } },
   });
   if (!row) return null;
-  const standing = await getEditorStanding(communityId, viewerId, isSiteAdmin);
-  return toDTO(row, standing);
+  const standing = await getEditorStanding(access.communityId, viewerId, isSiteAdmin);
+  return toDTO(row, standing, access.writeRefusal);
 }
 
-export async function listRevisions(pageId: string, limit = 50): Promise<RevisionDTO[]> {
+/** One page's history, newest edit first. `null` when the page is not in the community the access is for. */
+export async function listRevisions(pageId: string, access: PageAccess, limit = 50): Promise<RevisionDTO[] | null> {
+  if (!access.read) return null;
+  const page = await prisma.communityPage.findUnique({ where: { id: pageId }, select: { communityId: true } });
+  if (!page || page.communityId !== access.communityId) return null;
   const rows = await prisma.communityPageRevision.findMany({
     where: { pageId },
     orderBy: { createdAt: 'desc' },
@@ -215,7 +253,8 @@ function cleanBody(raw: string): string {
 /**
  * Create a page. Only moderators may create one, whatever `editPolicy` says —
  * the policy governs editing an existing page, and letting any member mint new
- * pages turns a wiki into an unmoderated subdomain.
+ * pages turns a wiki into an unmoderated subdomain. The page and its mod-log row
+ * are written together.
  */
 export async function createCommunityPage(
   userId: string,
@@ -223,6 +262,8 @@ export async function createCommunityPage(
   input: { title: string; body: string; slug?: string; editPolicy?: string; pinned?: boolean },
   isSiteAdmin = false,
 ): Promise<CommunityPageDTO> {
+  const access = await pageAccess(communityId, userId, isSiteAdmin);
+  assertWritable(access);
   const standing = await getEditorStanding(communityId, userId, isSiteAdmin);
   if (!standing.isSiteAdmin && !isModerator(standing.role)) {
     throw new CommunityPageError('Only moderators can create pages', 'FORBIDDEN');
@@ -230,10 +271,7 @@ export async function createCommunityPage(
 
   const title = cleanTitle(input.title);
   const body = cleanBody(input.body);
-  const slug = (input.slug ? slugifyPageTitle(input.slug) : slugifyPageTitle(title)).slice(
-    0,
-    MAX_PAGE_SLUG,
-  );
+  const slug = (input.slug ? slugifyPageTitle(input.slug) : slugifyPageTitle(title)).slice(0, MAX_PAGE_SLUG);
   const editPolicy = input.editPolicy && isEditPolicy(input.editPolicy) ? input.editPolicy : 'mods';
 
   const existing = await prisma.communityPage.findUnique({
@@ -242,11 +280,24 @@ export async function createCommunityPage(
   });
   if (existing) throw new CommunityPageError('A page with that slug already exists', 'CONFLICT');
 
-  const row = await prisma.communityPage.create({
-    data: { communityId, slug, title, body, editPolicy, pinned: !!input.pinned },
+  const row = await prisma.$transaction(async (tx) => {
+    const created = await tx.communityPage.create({
+      data: { communityId, slug, title, body, editPolicy, pinned: !!input.pinned },
+    });
+    await logModAction(tx, {
+      communityId,
+      actorId: userId,
+      action: 'wiki_page_created',
+      targetType: 'page',
+      targetId: created.id,
+      detail: { slug, editPolicy, pinned: !!input.pinned },
+    });
+    return created;
   });
-  return toDTO(row, standing);
+  return toDTO(row, standing, null);
 }
+
+const CONFLICT_TEXT = 'Someone else edited this page; reload to see their changes';
 
 /**
  * Edit a page.
@@ -256,9 +307,15 @@ export async function createCommunityPage(
  * write raced the first. A no-op save writes no revision at all — a history
  * padded with identical entries is a history nobody reads.
  *
+ * The write is conditional on `baseUpdatedAt`, the version the editor started
+ * from: `updateMany({ where: { id, updatedAt } })` matching nothing means someone
+ * saved in between, and the whole transaction (revision included) rolls back
+ * with a `CONFLICT`.
+ *
  * `editPolicy`, `pinned` and `slug` are moderator-only even on a page anyone
  * may edit: those are the settings that decide who edits, and a wiki where an
- * editor can widen their own permissions has no policy at all.
+ * editor can widen their own permissions has no policy at all. A change to
+ * either is a moderator action and is logged.
  */
 export async function updateCommunityPage(
   userId: string,
@@ -269,12 +326,15 @@ export async function updateCommunityPage(
     summary?: string | null;
     editPolicy?: string;
     pinned?: boolean;
+    baseUpdatedAt: string;
   },
   isSiteAdmin = false,
 ): Promise<CommunityPageDTO> {
   const page = await prisma.communityPage.findUnique({ where: { id: pageId } });
   if (!page) throw new CommunityPageError('Page not found', 'NOT_FOUND');
 
+  const access = await pageAccess(page.communityId, userId, isSiteAdmin);
+  assertWritable(access);
   const standing = await getEditorStanding(page.communityId, userId, isSiteAdmin);
   const policy = toPolicy(page.editPolicy);
   if (!canEditPage(policy, standing)) {
@@ -286,11 +346,22 @@ export async function updateCommunityPage(
     throw new CommunityPageError('Only moderators can change page settings', 'FORBIDDEN');
   }
 
+  const base = new Date(input.baseUpdatedAt);
+  if (Number.isNaN(base.getTime())) throw new CommunityPageError('Invalid version', 'INVALID');
+
   const nextTitle = input.title === undefined ? page.title : cleanTitle(input.title);
   const nextBody = input.body === undefined ? page.body : cleanBody(input.body);
   const bodyChanged = nextBody !== page.body;
+  const nextPolicy = input.editPolicy && isEditPolicy(input.editPolicy) ? input.editPolicy : policy;
+  const nextPinned = input.pinned === undefined ? page.pinned : input.pinned;
+  const settingsChanged = nextPolicy !== policy || nextPinned !== page.pinned;
 
   const row = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.communityPage.updateMany({
+      where: { id: pageId, updatedAt: base },
+      data: { title: nextTitle, body: nextBody, editPolicy: nextPolicy, pinned: nextPinned },
+    });
+    if (claimed.count === 0) throw new CommunityPageError(CONFLICT_TEXT, 'CONFLICT');
     if (bodyChanged) {
       await tx.communityPageRevision.create({
         data: {
@@ -301,20 +372,20 @@ export async function updateCommunityPage(
         },
       });
     }
-    return tx.communityPage.update({
-      where: { id: pageId },
-      data: {
-        title: nextTitle,
-        body: nextBody,
-        ...(input.editPolicy && isEditPolicy(input.editPolicy)
-          ? { editPolicy: input.editPolicy }
-          : {}),
-        ...(input.pinned === undefined ? {} : { pinned: input.pinned }),
-      },
-    });
+    if (settingsChanged) {
+      await logModAction(tx, {
+        communityId: page.communityId,
+        actorId: userId,
+        action: 'wiki_policy_changed',
+        targetType: 'page',
+        targetId: pageId,
+        detail: { slug: page.slug, editPolicy: nextPolicy, pinned: nextPinned },
+      });
+    }
+    return tx.communityPage.findUniqueOrThrow({ where: { id: pageId } });
   });
 
-  return toDTO(row, standing);
+  return toDTO(row, standing, null);
 }
 
 /**
@@ -322,17 +393,21 @@ export async function updateCommunityPage(
  *
  * The rollback is itself an edit: the current body is snapshotted first, so the
  * vandalised version stays in the record (moderators need to see what happened)
- * and an over-eager revert is undoable by the same mechanism.
+ * and an over-eager revert is undoable by the same mechanism. It takes the same
+ * `baseUpdatedAt` check as an edit, and is logged in the community mod log.
  */
 export async function rollbackCommunityPage(
   userId: string,
   pageId: string,
   revisionId: string,
+  baseUpdatedAt: string,
   isSiteAdmin = false,
 ): Promise<CommunityPageDTO> {
   const page = await prisma.communityPage.findUnique({ where: { id: pageId } });
   if (!page) throw new CommunityPageError('Page not found', 'NOT_FOUND');
 
+  const access = await pageAccess(page.communityId, userId, isSiteAdmin);
+  assertWritable(access);
   const standing = await getEditorStanding(page.communityId, userId, isSiteAdmin);
   if (!canEditPage(toPolicy(page.editPolicy), standing)) {
     throw new CommunityPageError('You cannot edit this page', 'FORBIDDEN');
@@ -350,7 +425,15 @@ export async function rollbackCommunityPage(
     throw new CommunityPageError('Revision not found', 'NOT_FOUND');
   }
 
+  const base = new Date(baseUpdatedAt);
+  if (Number.isNaN(base.getTime())) throw new CommunityPageError('Invalid version', 'INVALID');
+
   const row = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.communityPage.updateMany({
+      where: { id: pageId, updatedAt: base },
+      data: { body: revision.body },
+    });
+    if (claimed.count === 0) throw new CommunityPageError(CONFLICT_TEXT, 'CONFLICT');
     await tx.communityPageRevision.create({
       data: {
         pageId,
@@ -359,27 +442,43 @@ export async function rollbackCommunityPage(
         summary: `Rolled back to revision ${revisionId}`.slice(0, MAX_REVISION_SUMMARY),
       },
     });
-    return tx.communityPage.update({ where: { id: pageId }, data: { body: revision.body } });
+    await logModAction(tx, {
+      communityId: page.communityId,
+      actorId: userId,
+      action: 'wiki_page_rolled_back',
+      targetType: 'page',
+      targetId: pageId,
+      detail: { slug: page.slug, revision: revisionId },
+    });
+    return tx.communityPage.findUniqueOrThrow({ where: { id: pageId } });
   });
 
-  return toDTO(row, standing);
+  return toDTO(row, standing, null);
 }
 
-/** Delete a page. Moderators only — history goes with it via the FK cascade. */
-export async function deleteCommunityPage(
-  userId: string,
-  pageId: string,
-  isSiteAdmin = false,
-): Promise<void> {
+/** Delete a page. Moderators only — history goes with it via the FK cascade; the mod-log row stays. */
+export async function deleteCommunityPage(userId: string, pageId: string, isSiteAdmin = false): Promise<void> {
   const page = await prisma.communityPage.findUnique({
     where: { id: pageId },
-    select: { id: true, communityId: true },
+    select: { id: true, communityId: true, slug: true },
   });
   if (!page) throw new CommunityPageError('Page not found', 'NOT_FOUND');
 
+  const access = await pageAccess(page.communityId, userId, isSiteAdmin);
+  assertWritable(access);
   const standing = await getEditorStanding(page.communityId, userId, isSiteAdmin);
   if (!standing.isSiteAdmin && !isModerator(standing.role)) {
     throw new CommunityPageError('Only moderators can delete pages', 'FORBIDDEN');
   }
-  await prisma.communityPage.delete({ where: { id: pageId } });
+  await prisma.$transaction(async (tx) => {
+    await tx.communityPage.delete({ where: { id: pageId } });
+    await logModAction(tx, {
+      communityId: page.communityId,
+      actorId: userId,
+      action: 'wiki_page_deleted',
+      targetType: 'page',
+      targetId: pageId,
+      detail: { slug: page.slug },
+    });
+  });
 }

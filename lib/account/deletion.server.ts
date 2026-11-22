@@ -42,7 +42,6 @@ import { prisma } from '@/lib/prisma.server';
 import { removeMemberFromFlagLists } from '@/lib/flags/targeting.server';
 import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
 import { partyErasureOps } from '@/lib/rmhtube/parties.server';
-import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
 import {
   DELETED_ACCOUNT_BAN_REASON,
   DELETED_ACCOUNT_LOCK_UNTIL,
@@ -72,8 +71,12 @@ import { readingTimeErasureOps } from '@/lib/reading/time.server';
 import { bulkErasureOps } from '@/lib/bulk/bulk.server';
 import { coverageErasureOps } from '@/lib/account/erasure-coverage.server';
 import { privateDataErasureOps } from '@/lib/account/erasure-private.server';
-import { dropGameBoardCaches, gameProgressErasureOps, scrubMatchSnapshots } from '@/lib/account/erasure-games.server';
+import { listsErasureOps } from '@/lib/account/erasure-lists.server';
+import { gameProgressErasureOps } from '@/lib/account/erasure-games.server';
+import { boardsErasureOps } from '@/lib/account/erasure-boards.server';
+import { runAfterErasureInline } from '@/lib/account/after-erasure-jobs.server';
 import { recurringThreadErasureOps } from '@/lib/communities/recurring.server';
+import { restoreAfterCancel } from '@/lib/account/deletion-hold.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -143,7 +146,14 @@ export async function cancelDeletion(userId: string): Promise<boolean> {
     where: { id: userId },
     select: { deletionScheduledAt: true, banReason: true },
   });
-  if (!user?.deletionScheduledAt) return false;
+  if (!user?.deletionScheduledAt) {
+    // s09-14: a restore that failed on an earlier sign-in (or a pause whose schedule never landed) left a hold
+    // behind with nothing pending; every sign-in retries it until it clears. One primary-key read when there is none.
+    if (user && !isDeletedAccount(user)) {
+      await restoreAfterCancel(userId).catch((err) => console.error('[account] restore retry failed:', err));
+    }
+    return false;
+  }
   if (isDeletedAccount(user)) return false;
 
   // Conditional: a finalisation racing this sign-in has already tombstoned the
@@ -157,6 +167,12 @@ export async function cancelDeletion(userId: string): Promise<boolean> {
     data: { deletionScheduledAt: null },
   });
   if (count > 0) void recordSecurityEvent({ userId, kind: 'deletion_cancelled' });
+  // s09-14 deletion-pause (restore on cancel)
+  if (count > 0) {
+    // The sign-in must not fail on this; the hold stays until a restore succeeds.
+    await restoreAfterCancel(userId).catch((err) => console.error('[account] restore after cancel failed:', err));
+  }
+
   return count > 0;
 }
 
@@ -596,6 +612,19 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // s08-20 erasure-games
     ...gameProgressErasureOps(userId),
 
+    // Sprint 09 erasures (docs/autonomous/sprint-09/plan.md §Anchors): each feature adds its operations under its own line.
+    // s09-10 api-sync-deletions
+    prisma.syncTombstone.deleteMany({ where: { userId } }),
+
+    // s09-14 deletion-pause
+    prisma.deletionHold.deleteMany({ where: { userId } }),
+
+    // s09-15 erasure-lists
+    ...listsErasureOps(userId),
+
+    // s09-16 erasure-boards
+    ...boardsErasureOps(userId),
+
 
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
@@ -633,9 +662,8 @@ export async function anonymizeAccount(userId: string): Promise<void> {
       },
     }),
   ]);
-  // Off the RMH Music Daily boards (and friends lists) now, not when their cached lists expire.
-  await dropLearnerBoardCaches(userId, Date.now());
-  // s08-20 erasure-games (after the transaction)
-  await dropGameBoardCaches(userId);
-  await scrubMatchSnapshots(userId);
+  // Off the RMH Music Daily boards and the game boards now, and the member's name out of match records: each step
+  // runs once here and, if one throws, the idempotent `account.after-erasure` job retries them all.
+  // s08-20 erasure-games, s09-16 erasure-boards (after the transaction)
+  await runAfterErasureInline(userId);
 }

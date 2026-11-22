@@ -1,5 +1,32 @@
 # Changelog
 
+## Sprint 09 — 2026-11
+
+<!-- s09-03 occlusion-cards -->
+- Picture-occlusion flashcards. `kind` may be `occlusion`: a card with a front picture and `occlusion: { mode, masks }`, where `mode` is `hide-all` or `hide-one` and `masks` is 1 to 20 rectangles `{ id?, x, y, w, h, label }` in picture-relative units (0 to 1, at least 0.02 wide and tall, inside the picture). Each mask becomes one card; `front` is an optional prompt and `back` an optional note. Cards in `GET`, `POST`, `PATCH` and `PUT /api/v1/me/decks/{id}/cards…` responses gain `occlusion`, the masks of an occlusion card and `null` on every other kind. Send back the mask `id`s a read returned to keep each card's review history.
+- `front` is optional when `kind` is `occlusion`; it stays required for every other kind. A picture a card claims must be a still image: an animated WebP is refused.
+
+<!-- s09-08 api-feeds -->
+- New scopes `read:feeds` and `write:feeds` (group Feeds). Keys with `read:*`, `write:*` or `*` already satisfy them.
+- New read endpoints: `GET /api/v1/me/feeds` (your feeds, lists, saved searches and keyword alerts, filter `kind`, cursor pagination), `GET /api/v1/me/feeds/{id}` (one of yours, with the handles of its members) and `GET /api/v1/feeds/{id}/posts` (the posts of a feed or list you own or that is shared, as the site pages them for you, so blocks, mutes and quiet counts apply; needs `read:posts` as well). A saved search or keyword alert is `409 not_a_timeline`. Another member's private feed is `404`.
+- New write endpoint: `PUT /api/v1/me/feeds/{id}/members` replaces a list's members by handle (at most 500). Handles that match no account, a deleted or banned account, or a member blocked in either direction are not added and come back in `skipped` with the reason `not_found` or `blocked`. It honours `Idempotency-Key`. Creating, renaming and deleting feeds stay on the site.
+- New error `not_a_timeline` (`409`, `conflict_error`).
+
+<!-- s09-06 community-pins -->
+- `GET /api/v1/communities/{slug}/posts` posts gain `pinned` (boolean): `true` when a moderator pinned the post to the top of the community. The list itself is unchanged and still in newest-first order.
+
+<!-- s09-09 api-practice -->
+- New scope `read:practice` (group Practice). Keys with `read:*` or `*` already satisfy it. It is read-only: practice cannot be written through the API.
+- New read endpoints, all for the key owner's own data: `GET /api/v1/me/typing` (RMHType profile per difficulty and lesson progress), `GET /api/v1/me/typing/daily` (daily-passage entries, `from` and `to` as `YYYYMMDD` or `YYYY-MM-DD`, at most 366 days, default the last 30), `GET /api/v1/me/typing/keys` (per-key counters with `msPerKey`, `errorRate` and `weakness`, only keys with at least 5 attempts, slowest first, optional `layout`), `GET /api/v1/me/music/practice` and `GET /api/v1/me/focus-sessions` (newest first, `since` as an ISO instant, cursor pagination, page size at most 100). The first page of focus sessions carries a `summary` with `weeklyGoalMinutes` and `timeZone`.
+- Multiplayer match history, ghost replays and anything kept only in the browser are not in the API. Per-key figures stay empty while key statistics are switched off on the site.
+
+<!-- s09-10 api-sync-deletions -->
+- New `GET /api/v1/me/deleted?kind=&since=&cursor=&limit=`: your deletions of one kind (`highlight`, `deck`, `card`, `bookmark`, `shelf_entry`) after an instant, oldest first, as `{ id, kind, deletedAt }` with no content, at most 500 to a page. The scope is the read scope of the kind (`read:reading`, `read:study`, `read:bookmarks`). Deletions are kept 90 days; an older `since` is the new error `sync_window_expired` (`410`). A deck deletion is one item and none for its cards. See the new Syncing guide.
+- `GET /api/v1/me/bookmarks` and `GET /api/v1/me/decks/{id}/cards` accept `since` (an ISO 8601 instant): bookmarks made, and cards created, after it. Without it they behave as before. Highlight and shelf-entry deletions are now reported too, where they were documented as not tombstoned.
+
+<!-- s09-14 deletion-pause -->
+- A key answers `403 key_suspended` while its owner's account is set to be deleted, and its owner's webhooks are disabled; signing back in cancels the deletion and restores both. No field or code changed.
+
 ## Sprint 08 — 2026-11
 
 <!-- s08-08 admin-api-oversight -->

@@ -4,6 +4,7 @@
  * the theme step, which only exists client-side and is low stakes).
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import type { ShopItemKind } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { streakKey } from '@/lib/streaks/kinds';
@@ -87,7 +88,7 @@ export async function claimOnboardingReward(userId: string): Promise<OnboardingC
     userId,
     type: 'SYSTEM',
     entityType: 'coins',
-    preview: `Checklist complete! +${ONBOARDING_REWARD} coins. Welcome to RMH Studios 🎉`,
+    preview: notice('onboarding-complete', { coins: ONBOARDING_REWARD }),
     link: '/wallet',
   });
   return 'claimed';
@@ -326,7 +327,7 @@ export async function claimFirstWeekGraduation(userId: string): Promise<FirstWee
     userId,
     type: 'SYSTEM',
     entityType: 'coins',
-    preview: `First Week complete! +${FIRST_WEEK_GRADUATION_REWARD} coins and a starter cosmetic pack 🎉`,
+    preview: notice('first-week-complete', { coins: FIRST_WEEK_GRADUATION_REWARD }),
     link: '/wallet',
   });
 

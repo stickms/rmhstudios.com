@@ -7,6 +7,7 @@
  * that lists occurrences runs them through ({@link OCCURRENCE_READ_PATHS}).
  */
 import { occurrenceIndexOf, occurrencesBetween, type RecurringSeries } from '@/lib/calendar/recurrence';
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 
 export type OccurrenceKind = 'skip' | 'move';
 export type OccurrenceState = 'normal' | 'moved' | 'skipped';
@@ -263,4 +264,19 @@ export function occurrenceNotice(input: {
   if (input.change === 'skip') return `${input.title} on ${date} is skipped`;
   if (input.change === 'restore') return `${input.title} on ${date} is back on`;
   return `${input.title} on ${date} moves to ${when.format(input.startsAt ?? input.occurrenceAt)}`;
+}
+
+/**
+ * The same notice as a key and params (the inbox writes it in the reader's language and time zone); the English
+ * `fallback` stays the event-time-zone sentence above, which push and e-mail send.
+ */
+export function occurrenceNoticePreview(input: Parameters<typeof occurrenceNotice>[0]): NoticePreview {
+  const fallback = occurrenceNotice(input);
+  const { title, occurrenceAt } = input;
+  if (input.change === 'skip') return { ...notice('event-occurrence-skipped', { title, occurrenceAt }), fallback };
+  if (input.change === 'restore') return { ...notice('event-occurrence-restored', { title, occurrenceAt }), fallback };
+  return {
+    ...notice('event-occurrence-moved', { title, occurrenceAt, startsAt: input.startsAt ?? occurrenceAt }),
+    fallback,
+  };
 }

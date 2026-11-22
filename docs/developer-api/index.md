@@ -63,6 +63,13 @@ The `type`/`code` taxonomy, the error envelope, and every code we return.
 Keyset paging: `limit`, `cursor`, and the `{ data, nextCursor }` envelope.
 :::
 
+:::{grid-item-card} Syncing
+:link: syncing
+:link-type: doc
+
+Keeping an app's copy in step: what changed, what was deleted, and the 90-day window.
+:::
+
 :::{grid-item-card} Idempotency
 :link: idempotency
 :link-type: doc
@@ -102,6 +109,7 @@ scopes
 rate-limits
 errors
 pagination
+syncing
 idempotency
 webhooks
 endpoints/index

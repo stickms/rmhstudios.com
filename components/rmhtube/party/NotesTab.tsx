@@ -128,7 +128,9 @@ export default function NotesTab() {
         {mine.map((c) => (
           <li key={c.id} className={cn('flex items-center gap-2', isNew(c.id) && ARRIVE)}>
             <span className="w-12 shrink-0 tabular-nums text-app-text-muted">{formatDuration(c.atSec)}</span>
-            <span className="min-w-0 flex-1 truncate">{c.body}</span>
+            <span dir="auto" className="min-w-0 flex-1 truncate">
+              {c.body}
+            </span>
             <button
               type="button"
               className="rounded-app-sm p-1 text-app-text-muted hover:text-app-danger"

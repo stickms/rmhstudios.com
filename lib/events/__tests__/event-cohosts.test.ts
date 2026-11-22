@@ -1,3 +1,4 @@
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Event co-hosts: the cap is a cap under the lock, a block either way / a ban / a stranger to the community
@@ -240,7 +241,9 @@ describe('inviting', () => {
     expect(first.ok && first.value.status).toBe('invited');
     expect(h.notify).toHaveBeenCalledTimes(1);
     expect(h.notify.mock.calls[0]![0]).toMatchObject({ userId: 'a', entityType: 'event_cohost', entityId: 'e1' });
-    expect(h.notify.mock.calls[0]![0].preview).toContain('invited you to co-host Game night');
+    expect(noticeFallbackText(h.notify.mock.calls[0]![0].preview as never)).toContain(
+      'invited you to co-host Game night',
+    );
 
     const again = await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'a' });
     expect(again.ok).toBe(true);

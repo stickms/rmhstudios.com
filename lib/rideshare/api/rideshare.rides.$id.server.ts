@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/rideshare/rideshare.contract';
@@ -70,7 +71,7 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
           ride.riderId,
           userId,
           ride,
-          `${me?.name ?? 'Your driver'} accepted your ride and is on the way.`,
+          notice('ride-accepted', { driver: me?.name ?? 'Your driver' }),
         );
       } else if (action === 'start') {
         if (ride.driverId !== userId) {
@@ -83,7 +84,7 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
         if (result.count === 0) {
           return Response.json({ error: 'Ride is not ready to start.' }, { status: 409 });
         }
-        await notifyRider(ride.riderId, userId, ride, 'Your trip has started. Enjoy the ride!');
+        await notifyRider(ride.riderId, userId, ride, notice('ride-started', {}));
       } else if (action === 'complete') {
         if (ride.driverId !== userId) {
           return Response.json({ error: 'Only the assigned driver can do that.' }, { status: 403 });
@@ -99,7 +100,7 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
           ride.riderId,
           userId,
           ride,
-          'Your trip is complete. Tap to rate your driver.',
+          notice('ride-complete', {}),
         );
       } else if (action === 'cancel') {
         const isRider = ride.riderId === userId;
@@ -126,13 +127,13 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
         }
         // Tell the other party, if there is one.
         if (isRider && ride.driverId) {
-          await notifyDriver(ride.driverId, userId, ride, 'The rider cancelled this trip.');
+          await notifyDriver(ride.driverId, userId, ride, notice('ride-cancelled-by-rider', {}));
         } else if (isDriver) {
           await notifyRider(
             ride.riderId,
             userId,
             ride,
-            'Your driver cancelled — request a new ride anytime.',
+            notice('ride-cancelled-by-driver', {}),
           );
         }
       } else if (action === 'tip') {
@@ -164,7 +165,7 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
           ride.driverId,
           userId,
           ride,
-          `Your rider added a ${formatUsd(tipCents)} tip. Thanks for the great ride!`,
+          notice('ride-tipped', { tip: formatUsd(tipCents) }),
         );
       }
 

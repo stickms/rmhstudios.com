@@ -16,6 +16,7 @@
  * skipped (it's an optimisation, never a correctness dependency), and the worker
  * re-checks the RSVP + event on fire so a stale job never notifies wrongly.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { isIP } from 'node:net';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
@@ -203,13 +204,12 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
     if (!shown) return;
     if (new Date(job.startsAt ?? job.occurrenceAt).getTime() !== shown.getTime()) return;
     if (!(await isGoingToOccurrence(job.eventId, job.userId, at))) return;
-    const whenRecurring = job.offset === '24h' ? 'tomorrow' : 'in 15 minutes';
     await createNotification({
       userId: job.userId,
       type: 'SYSTEM',
       entityType: 'event',
       entityId: event.id,
-      preview: `"${event.title}" starts ${whenRecurring}.`,
+      preview: notice(job.offset === '24h' ? 'event-starts-tomorrow' : 'event-starts-soon', { title: event.title }),
       link: '/calendar',
     }).catch(() => {});
     if (job.offset === '15m') {
@@ -239,13 +239,12 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
   });
   if (!rsvp || rsvp.status !== 'going') return;
 
-  const when = job.offset === '24h' ? 'tomorrow' : 'in 15 minutes';
   await createNotification({
     userId: job.userId,
     type: 'SYSTEM',
     entityType: 'event',
     entityId: event.id,
-    preview: `"${event.title}" starts ${when}.`,
+    preview: notice(job.offset === '24h' ? 'event-starts-tomorrow' : 'event-starts-soon', { title: event.title }),
     link: '/calendar',
   }).catch(() => {});
 }
@@ -855,7 +854,7 @@ export async function cancelEvent(id: string, hostId: string): Promise<EventDTO>
         type: 'SYSTEM',
         entityType: 'event',
         entityId: id,
-        preview: `"${event.title}" was canceled.`,
+        preview: notice('event-canceled', { title: event.title }),
         link: '/calendar',
       }).catch(() => {});
     }

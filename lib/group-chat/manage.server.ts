@@ -8,6 +8,7 @@
  * a failed announcement never undoes a change that was made.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -384,7 +385,7 @@ export async function addMembers(
         actorId: null,
         entityType: 'group_chat',
         entityId: chatId,
-        preview: `${actorName} added you to ${groupName}`,
+        preview: notice('group-added', { actor: actorName, group: groupName }),
         link: `/groups/${chatId}`,
       });
     }

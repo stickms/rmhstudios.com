@@ -6,6 +6,7 @@
  * the rule drifts.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
@@ -211,8 +212,8 @@ export async function restrictFeature(input: {
     entityId: row.id,
     link: ACCOUNT_STATUS_LINK,
     preview: expiresAt
-      ? `${label} has been restricted on your account until ${expiresAt.toUTCString()}. Reason: ${input.reason}`
-      : `${label} has been permanently restricted on your account. Reason: ${input.reason}`,
+      ? notice('restriction-until', { label, endsAt: expiresAt, reason: input.reason })
+      : notice('restriction-permanent', { label, reason: input.reason }),
   });
 
   return toView(row, Date.now())!;
@@ -266,7 +267,7 @@ export async function liftRestriction(input: { id: string; adminId: string }): P
       entityType: 'moderation',
       entityId: input.id,
       link: ACCOUNT_STATUS_LINK,
-      preview: `The restriction on ${FEATURE_LABELS[row.feature].toLowerCase()} has been lifted.`,
+      preview: notice('restriction-lifted', { label: FEATURE_LABELS[row.feature].toLowerCase() }),
     });
   }
   return {

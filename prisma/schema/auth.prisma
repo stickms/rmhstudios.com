@@ -696,6 +696,16 @@ model User {
   sweepsAsSubject ModerationSweep[] @relation("SweepSubject")
   sweepsAsAdmin   ModerationSweep[] @relation("SweepAdmin")
 
+  // Sprint 09 back-relations (one block per feature, docs/autonomous/sprint-09/plan.md)
+  // s09-06 community-pins
+  communityPins CommunityPinnedPost[] @relation("CommunityPinnedPostPinner")
+
+  // s09-10 api-sync-deletions
+  syncTombstones SyncTombstone[] @relation("SyncTombstoneOwner")
+
+  // s09-14 deletion-pause
+  deletionHold DeletionHold? @relation("UserDeletionHold")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

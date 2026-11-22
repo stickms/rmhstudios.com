@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { pageSize } from '@/lib/pagination';
 import type { Prisma, PrismaClient, Tournament, TournamentMatch } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -439,7 +440,7 @@ async function notifyRemovedNoShows(
         type: 'SYSTEM',
         entityType: 'tournament_checkin',
         entityId: t.id,
-        preview: `You were removed from ${t.name} because you did not check in`,
+        preview: notice('tournament-removed-no-checkin', { name: t.name }),
         link: `/tournaments/${t.id}`,
       }),
     ),
@@ -1048,7 +1049,7 @@ export async function notifyTournamentStarted(
         type: 'SYSTEM',
         entityType: 'tournament',
         entityId: tournamentId,
-        preview: `${t.name} has started — check your bracket`,
+        preview: notice('tournament-started', { name: t.name }),
         link: `/tournaments/${tournamentId}`,
       }),
     ),

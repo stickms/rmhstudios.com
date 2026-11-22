@@ -152,7 +152,7 @@ export function ProfileHoverCard({
  {profile.handle && <p className="text-sm text-site-text-muted">@{profile.handle}</p>}
  </Link>
  {profile.bio && (
- <p className="mt-2 line-clamp-3 text-sm text-site-text-muted">{profile.bio}</p>
+ <p dir="auto" className="mt-2 line-clamp-3 text-sm text-site-text-muted">{profile.bio}</p>
  )}
  <div className="mt-2 flex gap-4 text-sm">
  <span>

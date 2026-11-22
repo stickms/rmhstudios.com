@@ -6,6 +6,8 @@ import * as C from '@features/doctrine/engine/doctrine.contract';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export const route = apiRoute('/api/doctrine/puzzles/leaderboard', {
   GET: implement(
@@ -30,6 +32,7 @@ export const route = apiRoute('/api/doctrine/puzzles/leaderboard', {
         const date = url.searchParams.get('date') ?? new Date().toISOString().slice(0, 10);
         const limit = pageSize(url.searchParams.get('limit'), 50, 100);
 
+        const hidden = await leaderboardHiddenUserIds();
         const cacheKey = `doctrine:leaderboard:${mode}:${date}:${limit}`;
         // Tagged per (mode, date) so puzzles/submit can drop every `limit` variant at once
         // (tags are L1-only and broadcast to every process).
@@ -44,6 +47,7 @@ export const route = apiRoute('/api/doctrine/puzzles/leaderboard', {
                   date: new Date(date + 'T00:00:00Z'),
                 },
                 correct: true,
+                ...userNotHiddenWhere(hidden),
               },
               orderBy: { score: 'desc' },
               take: limit,

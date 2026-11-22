@@ -24,6 +24,10 @@ model FanoutRun {
   /// The lease: a runner owns the run while this is newer than two minutes; every progress write compares-and-sets it.
   heartbeatAt DateTime     @default(now())
   reclaims    Int          @default(0)
+  /// When a runner last took the lease; a reclaim counts only when this is later than reclaimedAt (s09-13).
+  claimedAt   DateTime?
+  /// When a reclaim pass last counted; null until the first.
+  reclaimedAt DateTime?
   startedAt   DateTime     @default(now())
   finishedAt  DateTime?
 

@@ -134,6 +134,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  <div className="flex-1 min-w-0">
  <textarea
  readOnly
+ dir="auto"
  rows={3}
  onClick={activate}
  onFocus={activate}

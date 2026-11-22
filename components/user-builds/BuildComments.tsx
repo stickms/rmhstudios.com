@@ -92,7 +92,7 @@ function CommentItem({
           )}
           <div className="flex-1 min-w-0">
             <div className="mb-1 flex items-center gap-2">
-              {!deleted && <span className="text-sm font-medium text-site-text">{name}</span>}
+              {!deleted && <bdi className="text-sm font-medium text-site-text">{name}</bdi>}
               <RelativeTime
                 date={comment.createdAt}
                 format={(at, now) => formatRelativeTime(at, i18n.language, now)}
@@ -153,7 +153,7 @@ function CommentItem({
               </form>
             ) : (
               <>
-                <p className="text-sm text-site-text-muted whitespace-pre-wrap break-words">
+                <p dir="auto" className="text-sm text-site-text-muted whitespace-pre-wrap break-words">
                   {comment.content}
                 </p>
                 {comment.state === 'hidden-own' && (
@@ -469,6 +469,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
           <div className="flex gap-2">
             <Input
               id="comment-input"
+              dir="auto"
               type="text"
               aria-label={t('write-comment', { defaultValue: 'Write a comment...' })}
               placeholder={

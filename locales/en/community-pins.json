@@ -1,0 +1,21 @@
+{
+  "block-title": "Pinned",
+  "limit-reached": "A community can pin three posts. Unpin one first.",
+  "marker": "Pinned",
+  "modlog-pins-reordered": "{{actor}} reordered the pinned posts",
+  "modlog-post-pinned": "{{actor}} pinned a post",
+  "modlog-post-unpinned": "{{actor}} unpinned a post",
+  "move-down": "Move down",
+  "move-error": "Could not move the pin",
+  "move-up": "Move up",
+  "moved": "Pinned posts reordered",
+  "pin": "Pin to community",
+  "pin-error": "Could not pin the post",
+  "pinned": "Post pinned",
+  "public-pins-reordered": "Pinned posts reordered",
+  "public-post-pinned": "Post pinned",
+  "public-post-unpinned": "Post unpinned",
+  "unpin": "Unpin from community",
+  "unpin-error": "Could not unpin the post",
+  "unpinned": "Post unpinned"
+}
