@@ -17,6 +17,8 @@ import { Tabs } from '@/components/ui/tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { pathFor, type Unit } from '@/lib/rmhmusic/learn/content/path';
 import { practiceAvailable } from '@/lib/rmhmusic/learn/content/practice';
+import { buildToday } from '@/lib/rmhmusic/learn/content/today';
+import { DEFAULT_NEW_PER_DAY } from '@/lib/rmhmusic/learn/srs/practice-settings';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
@@ -45,7 +47,7 @@ import { cn } from '@/lib/utils';
  * with them. The line sits at the bottom of its box, against the button it belongs with.
  *
  * The button's row (`INPUT_ROW`, one 44px line in both states) also holds, at its far end, a
- * quiet "Practice" link while at least one reviewed card is due. The row is there before the link
+ * quiet "Today" link while something is due (or Practice would still add new cards). The row is there before the link
  * is, so the link appearing (the cards load after the profile) moves nothing.
  */
 const INPUT_TEXT = 'flex min-h-10 min-w-0 items-end';
@@ -122,10 +124,18 @@ export function LearnHome() {
     void store.loadCards();
   }, []);
   const cards = useLearnStore((s) => s.cards);
-  const practiceDue = useMemo(
-    () => practiceAvailable(cards, progress, Date.now(), profile?.instrument, profile?.voiceRange),
-    [cards, progress, profile?.instrument, profile?.voiceRange],
-  );
+  // What the Today link says: whether Practice would deal anything (due cards, or new ones within the
+  // learner's daily allowance) and how many items are due across every drill.
+  const today = useMemo(() => {
+    const now = Date.now();
+    const newPerDay = profile?.newPerDay;
+    return {
+      open: practiceAvailable(cards, progress, now, profile?.instrument, profile?.voiceRange, newPerDay),
+      due: buildToday(cards, now, { newPerDay: newPerDay ?? DEFAULT_NEW_PER_DAY, instrument: profile?.instrument })
+        .totalDue,
+    };
+  }, [cards, progress, profile?.instrument, profile?.voiceRange, profile?.newPerDay]);
+  const practiceDue = today.open || today.due > 0;
 
   const rows = useMemo(() => new Map<string, LessonProgressRow>(progress.map((r) => [r.lessonId, r])), [progress]);
   const ready = status === 'ready' && !!profile;
@@ -275,10 +285,15 @@ export function LearnHome() {
               </span>
             </button>
             {practiceDue && (
-              <Link to="/rmhmusic/practice" className={`${TEXT_BUTTON} ms-auto shrink-0`}>
-                {t('practice', {
-                  defaultValue: 'Practice',
-                })}
+              <Link to="/rmhmusic/today" className={`${TEXT_BUTTON} ms-auto shrink-0`}>
+                {today.due > 0
+                  ? t('today-link-due', {
+                      n: today.due,
+                      defaultValue: 'Today ({{n}} due)',
+                    })
+                  : t('today-title', {
+                      defaultValue: 'Today',
+                    })}
               </Link>
             )}
           </div>

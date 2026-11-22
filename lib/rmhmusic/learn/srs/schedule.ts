@@ -10,8 +10,9 @@
  *   memory   FSRS's new stability and difficulty from (D, S, R, g); a card with stability 0 has
  *            never been remembered and starts from the first-review values for g;
  *   due      `again` comes back after MIN_INTERVAL_DAYS (10 minutes); anything else after the
- *            number of whole days at which recall would fall to the desired 90%, at least one day
- *            and at most MAX_INTERVAL_DAYS.
+ *            number of whole days at which recall would fall to the learner's retention target
+ *            (`retention`, 90% unless the learner chose another, `practice-settings.ts`), at least
+ *            one day and at most MAX_INTERVAL_DAYS.
  *
  * Stored rows from the earlier hand-tuned scheduler ("FSRS-lite") keep the same two columns on
  * the same scales (stability in days, difficulty 1–10), so they are read as FSRS memory as they
@@ -50,6 +51,7 @@
  */
 
 import { AGAIN, EASY, GOOD, HARD, intervalFor, nextMemory, retrievability, type Rating } from './fsrs';
+import { DEFAULT_RETENTION, clampRetention } from './practice-settings';
 
 export type Grade = 'again' | 'hard' | 'good' | 'easy';
 
@@ -144,7 +146,7 @@ export function newCard(now: number): CardState {
   };
 }
 
-export function review(s: CardState, grade: Grade, now: number): CardState {
+export function review(s: CardState, grade: Grade, now: number, retention: number = DEFAULT_RETENTION): CardState {
   assertNow(now);
   if (!Object.prototype.hasOwnProperty.call(RATING, grade)) {
     throw new RangeError(`unknown grade ${String(grade)}`);
@@ -165,7 +167,7 @@ export function review(s: CardState, grade: Grade, now: number): CardState {
   const days =
     grade === 'again'
       ? MIN_INTERVAL_DAYS
-      : clamp(Math.round(intervalFor(stability)), MIN_PASS_INTERVAL_DAYS, MAX_INTERVAL_DAYS);
+      : clamp(Math.round(intervalFor(stability, clampRetention(retention))), MIN_PASS_INTERVAL_DAYS, MAX_INTERVAL_DAYS);
   return {
     due: now + days * DAY_MS,
     stability,

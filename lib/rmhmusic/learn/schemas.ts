@@ -38,6 +38,10 @@ export const profileSchema = z.object({
   micGate: z.number().min(0.002).max(0.2).optional(),
   /** The mains-hum filter. Optional so an older client leaves it alone. */
   micHum: z.enum(['off', '50', '60']).optional(),
+  /** The recall chance a card may fall to before it returns, 0.80 to 0.95 (`srs/practice-settings.ts`). Optional so an older client leaves it alone. */
+  retention: z.number().min(0.8).max(0.95).optional(),
+  /** How many never-asked cards Practice may introduce a day, 0 to 50. Optional so an older client leaves it alone. */
+  newPerDay: z.number().int().min(0).max(50).optional(),
 });
 
 /** Body of `POST /api/rmhmusic/learn/lesson-complete`. */

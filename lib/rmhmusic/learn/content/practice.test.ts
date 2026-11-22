@@ -4,7 +4,10 @@ import { DECKS, cardId, voiceDeck } from './decks';
 import {
   PRACTICE_CARDS,
   buildPracticeSession,
+  buildWeakSession,
   hasDueReviewedCard,
+  newCardsIntroduced,
+  newCardsLeft,
   practiceAvailable,
   practiceDecks,
   stateFromRow,
@@ -289,5 +292,106 @@ describe('Practice for singers (the voice path)', () => {
     // piano decks still hold unseen cards.
     expect(practiceAvailable(remembered, done, NOW, 'voice', 'soprano')).toBe(false);
     expect(practiceAvailable(remembered, done, NOW, 'piano')).toBe(true);
+  });
+});
+
+describe('the new-card allowance', () => {
+  const HOUR = 3_600_000;
+  const row = (cardId: string, reps: number, hoursAgo: number | null): CardRow => ({
+    cardId,
+    due: new Date(NOW + DAY_MS).toISOString(),
+    lastReviewAt: hoursAgo === null ? null : new Date(NOW - hoursAgo * HOUR).toISOString(),
+    stability: reps > 0 ? 2 : 0,
+    difficulty: 5,
+    reps,
+    lapses: 0,
+  });
+
+  it('counts the cards first met in the last 24 hours, and only those', () => {
+    const rows = [
+      row('treble:64', 1, 2), // met 2 h ago
+      row('treble:67', 1, 23), // 23 h ago
+      row('treble:71', 1, 25), // yesterday
+      row('treble:72', 2, 1), // reviewed again: no longer "new"
+      row('treble:74', 0, null), // never reviewed
+      row('ear:interval:third', 1, 1), // not a staff card
+    ];
+    expect(newCardsIntroduced(rows, NOW)).toBe(2);
+  });
+
+  it('leaves what the allowance has not used, never below zero', () => {
+    const rows = [row('treble:64', 1, 1), row('treble:67', 1, 2)];
+    expect(newCardsLeft(rows, NOW, 10)).toBe(8);
+    expect(newCardsLeft(rows, NOW, 2)).toBe(0);
+    expect(newCardsLeft(rows, NOW, 1)).toBe(0);
+    expect(newCardsLeft(rows, NOW, 0)).toBe(0);
+    expect(newCardsLeft(rows, NOW, Number.NaN)).toBe(0);
+  });
+
+  it('caps only the new cards in a session, never the due ones', () => {
+    const due = [seen('treble:64', NOW - 10 * DAY_MS), seen('treble:67', NOW - 30 * DAY_MS)];
+    const capped = buildPracticeSession(due, decks, NOW, seeded(3), PRACTICE_CARDS, 3);
+    expect(capped).toHaveLength(2 + 3);
+    expect(capped.slice(0, 2).map((c) => c.id)).toEqual(['treble:67', 'treble:64']);
+    const none = buildPracticeSession(due, decks, NOW, seeded(3), PRACTICE_CARDS, 0);
+    expect(none.map((c) => c.id)).toEqual(['treble:67', 'treble:64']);
+    expect(buildPracticeSession([], decks, NOW, seeded(3), PRACTICE_CARDS, 0)).toEqual([]);
+  });
+
+  it('deals as before when no allowance is given', () => {
+    expect(buildPracticeSession([], decks, NOW, seeded(1))).toHaveLength(PRACTICE_CARDS);
+    expect(buildPracticeSession([], decks, NOW, seeded(1), PRACTICE_CARDS, Number.POSITIVE_INFINITY)).toHaveLength(
+      PRACTICE_CARDS,
+    );
+  });
+
+  it('hides the Practice link for a learner with nothing due and no allowance left', () => {
+    const progress = [{ lessonId: 'staff-treble-notes', completedAt: '2026-11-01T00:00:00Z' }];
+    expect(practiceAvailable([], progress, NOW, 'piano', null)).toBe(true);
+    expect(practiceAvailable([], progress, NOW, 'piano', null, 0)).toBe(false);
+    expect(practiceAvailable([], progress, NOW, 'piano', null, 5)).toBe(true);
+  });
+});
+
+describe('buildWeakSession', () => {
+  const state = (stability: number, daysAgo: number, lapses = 0) => ({
+    due: NOW + DAY_MS,
+    stability,
+    difficulty: 5,
+    reps: 3,
+    lapses,
+    last: NOW - daysAgo * DAY_MS,
+  });
+
+  it('is the reviewed staff cards least likely to be recalled now, due or not, weakest first', () => {
+    const rows = [
+      { cardId: 'treble:64', state: state(30, 1) }, // strong
+      { cardId: 'treble:67', state: state(2, 6) }, // weak
+      { cardId: 'treble:71', state: state(10, 5) },
+      { cardId: 'treble:72', state: newCard(NOW) }, // never reviewed: new, not weak
+      { cardId: 'ear:interval:third', state: state(1, 9) }, // not a staff card
+    ];
+    expect(buildWeakSession(rows, NOW, 2).map((c) => c.id)).toEqual(['treble:67', 'treble:71']);
+    expect(buildWeakSession(rows, NOW, 10).map((c) => c.id)).toEqual(['treble:67', 'treble:71', 'treble:64']);
+  });
+
+  it('breaks a tie by the card missed most', () => {
+    const a = state(4, 4, 0);
+    const b = state(4, 4, 3);
+    expect(
+      buildWeakSession(
+        [
+          { cardId: 'treble:64', state: a },
+          { cardId: 'treble:67', state: b },
+        ],
+        NOW,
+      ).map((c) => c.id),
+    ).toEqual(['treble:67', 'treble:64']);
+  });
+
+  it('is empty for a new learner, and for a limit of 0 or nonsense', () => {
+    expect(buildWeakSession([], NOW)).toEqual([]);
+    expect(buildWeakSession([{ cardId: 'treble:64', state: state(5, 2) }], NOW, 0)).toEqual([]);
+    expect(buildWeakSession([{ cardId: 'treble:64', state: state(5, 2) }], NOW, Number.NaN)).toEqual([]);
   });
 });

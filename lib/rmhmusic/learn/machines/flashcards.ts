@@ -13,6 +13,7 @@
  * takes.
  */
 import type { Card } from '../content/decks';
+import { cardAlteration, cardLetter, isSpelledCard } from '../content/spelling';
 import { noteLetter } from '../theory/clef';
 import type { Machine } from './runner';
 import {
@@ -24,15 +25,25 @@ import {
   type SessionState,
 } from './session';
 
-/** A letter answer ignores the octave; a midi answer (a key or fret played) must be exact. */
+/**
+ * A letter answer ignores the octave and may carry an accidental (the ♭ ♮ ♯ choice; absent is natural);
+ * a midi answer (a key or fret played) must be exact; a pitch-class answer is a note played where the
+ * octave is not known (the computer keys and the microphone), matched on its pitch alone.
+ */
 export type Answer =
   | {
       kind: 'letter';
       letter: string;
+      accidental?: -1 | 0 | 1;
     }
   | {
       kind: 'midi';
       midi: number;
+    }
+  | {
+      kind: 'pitch-class';
+      /** 0 (C) to 11 (B). */
+      pc: number;
     };
 
 export type State = SessionState<Card, Answer>;
@@ -43,9 +54,25 @@ export function initial(cards: Card[]): State {
   return sessionInitial(cards);
 }
 
-/** Whether `answer` is right for `card`. */
+const mod12 = (n: number): number => ((n % 12) + 12) % 12;
+
+/**
+ * Whether `answer` is right for `card`.
+ *
+ * A letter answer must match the letter the note is WRITTEN on and its accidental (no accidental is
+ * natural), so on a spelled card (a sharp or flat, or a note read in a key) G♭ is not right for F♯ and
+ * F alone is not right for a key's F♯. A played note is judged by what sounds: a black key is right
+ * for F♯ and for G♭ alike. A natural card behaves exactly as it always did.
+ */
 export function isRight(card: Card, answer: Answer): boolean {
-  return answer.kind === 'letter' ? answer.letter === noteLetter(card.midi) : answer.midi === card.midi;
+  if (answer.kind === 'letter') {
+    const accidental = answer.accidental ?? 0;
+    return isSpelledCard(card)
+      ? answer.letter === cardLetter(card) && accidental === cardAlteration(card)
+      : answer.letter === noteLetter(card.midi) && accidental === 0;
+  }
+  if (answer.kind === 'pitch-class') return mod12(answer.pc) === mod12(card.midi);
+  return answer.midi === card.midi;
 }
 
 export const step = sessionStep<Card, Answer>(isRight);

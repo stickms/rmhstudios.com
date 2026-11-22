@@ -30,6 +30,38 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 2. Recent work
 
+### 2.00000000 Learning improvements: insights, Today, hints, accidentals, intervals, spot-practice — done
+
+- **Insights** (`/rmhmusic/insights`, `srs/insights.ts`): due now / tonight / this week and the weakest and strongest
+  items for four families (staff notes, staff intervals, ear, Sprint), by readable name. "Drill my weak spots" opens
+  `/rmhmusic/practice?weak=true`: the 10 lowest-recall reviewed staff cards, due or not.
+- **Today** (`/rmhmusic/today`, `content/today.ts`): one row per family with its due count and an action that opens
+  the drill that deals those items first (Sprint cannot take a target level, so its row names the level with the
+  most due). The learn home's Practice link is now "Today (N due)".
+- **Practice settings** on the Insights page: `retention` (0.80–0.95, default 0.9; `review()` takes it, `applyReviews`
+  reads the learner's) and `newPerDay` (0–50, default 10; Practice deals only the allowance left; "new today" is
+  cards whose only review was in the last 24 h, because the table has no creation time). Columns on
+  `MusicLearnProfile`, migration `20261128030000`.
+- **Landmark hints** (`landmarks.ts`): after a miss, where the right note sits from the nearest anchor ("A4 is one
+  step above the G on the second line"), in both modes.
+- **Sharps, flats and key signatures in flashcards**: accidental cards (letter + ♭ ♮ ♯ answer; a played note is
+  judged by sounding pitch) and key-signature cards (G, D, A, F, B♭, E♭ major, both staves). New ids
+  `treble:66:sharp`, `treble:70:flat`, `key:G:treble:66` (old ids untouched); `Deck.cards` lists spelled decks
+  (`Deck.midis` is empty for them: use `deckCards`). Four lessons in a new last unit of the piano and guitar path,
+  each `practiceWhenDone`, so a beginner never meets these cards in Practice early.
+- **Interval reading** (`staff-intervals` lesson mode; new unit "Read intervals", five lessons): ascending and
+  descending, minor second and the qualities; size-only tier first. FSRS items `int:<up|down>:<name>`
+  (`ItemFamily` gained `'interval'`).
+- **Learning mode** now also covers the note finder and the rhythm question drills (not tap-the-beat or pitch match).
+- **Song spot-practice** (`songs/spot.ts`): the weakest bars become up to three segments; the loop starts at 60%
+  tempo, +10 points per clean pass, one step back after 3+ problems (never below 50%). Never scored or saved, and
+  logs nothing to the practice log.
+- **Not seen in a browser:** none of the new pages or lessons has been looked at (pixel claims in the interval lesson,
+  the sign row, the longer miss text on a 320 px phone, the loading skeletons which do not yet reserve the sign row
+  or the mode toggle on every lesson). Not tried with a real microphone or a real learner.
+- **Not built:** sound for the interval lessons, the interval unit for singers, an entry to spot-practice from the
+  song list or history, rests/ties/keys in songs.
+
 ### 2.0000000 Microphone sensitivity: automatic mode, cutoff, gain and hum filter — done
 
 - **Chain** (`input/mic.ts`): source → rumble high-pass (40 Hz) → two mains-hum notches (the mains

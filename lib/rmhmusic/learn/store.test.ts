@@ -73,6 +73,8 @@ const PROFILE: Profile = {
   micAuto: true,
   micGate: 0.01,
   micHum: 'off',
+  retention: 0.9,
+  newPerDay: 10,
 };
 const ROW: LessonProgressRow = {
   lessonId: 'staff-what-is-a-staff',
@@ -910,6 +912,8 @@ describe('profile settings that act outside the store', () => {
       micAuto: false,
       micGate: 0.02,
       micHum: '50',
+      retention: 0.9,
+      newPerDay: 10,
     };
     vi.stubGlobal(
       'fetch',

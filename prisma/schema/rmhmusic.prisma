@@ -23,6 +23,10 @@ model MusicLearnProfile {
   micGate    Float    @default(0.01)
   /// Mains-hum filter: `off`, `50` or `60` (Hz).
   micHum     String   @default("off") @db.VarChar(3)
+  /// The recall chance a card may fall to before it comes back, 0.80 to 0.95 (`srs/practice-settings.ts`).
+  retention  Float    @default(0.9)
+  /// How many never-asked cards Practice may introduce a day, 0 to 50; due cards are never capped.
+  newPerDay  Int      @default(10)
   updatedAt  DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

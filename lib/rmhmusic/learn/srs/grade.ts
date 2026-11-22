@@ -33,6 +33,8 @@ export const STAFF_TIMES: GradeTimes = { fastMs: 2000, slowMs: 7000 };
 export const EAR_TIMES: GradeTimes = { fastMs: 3500, slowMs: 12000 };
 /** A Sprint prompt is a race, so its bands are tighter than the untimed flashcards'. */
 export const SPRINT_TIMES: GradeTimes = { fastMs: 1500, slowMs: 5000 };
+/** Reading an interval means counting lines and spaces (and semitones): slower than naming one note. */
+export const INTERVAL_TIMES: GradeTimes = { fastMs: 3000, slowMs: 10000 };
 
 export function gradeAttempt(a: Attempt, times: GradeTimes = STAFF_TIMES): Grade {
   if (!a.right) return 'again';

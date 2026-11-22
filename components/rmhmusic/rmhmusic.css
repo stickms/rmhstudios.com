@@ -613,6 +613,26 @@
   text-decoration-thickness: 2px;
 }
 
+/* The sign choice (♭ ♮ ♯) of a session with sharps, flats or key cards: one more row of tiles the
+   height of a letter row, and the answers box grows by exactly that row and its gap, so nothing
+   moves between asking, answering and the result. */
+.rmm-flash__signs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
+  height: 2.75rem;
+  flex: none;
+}
+.rmm-flash__signs > button {
+  background-color: var(--app-surface);
+}
+.rmm-flash__signs > button:hover:not([aria-disabled='true']) {
+  background-color: var(--app-surface-hover);
+}
+.rmm-flash__answers--signs {
+  height: calc(var(--rmm-letters-h) + 1rem + 2.75rem + 1rem + var(--rmm-region-h));
+}
+
 /* ── The note finder (FindNoteLesson.tsx, FretboardView.tsx, LessonScreen's FindNoteSkeleton) ──
    Below the target's sheet: the board — the fretboard on guitar, the piano on piano, one box of
    the same height for both, since the placeholder is drawn before the learner's instrument is
@@ -811,4 +831,33 @@ html[data-jelly-motion='still'] .rmm-beat__mark {
   stroke: var(--app-surface);
   stroke-width: 3px;
   stroke-linejoin: round;
+}
+
+/* ── Interval reading (IntervalReadLesson.tsx, LessonScreen's IntervalSkeleton) ───────────
+   Under the sheet: the answers, two columns of 2.75rem buttons (up to eight names, so four rows),
+   in a box that is the height of all four rows and their gaps (the same 12.5rem as the rhythm
+   lessons' answers) and the same in the placeholder, so nothing moves from loading to asking to the
+   result, which takes the whole box. A name is set at 1rem so that most sit on one line in a column
+   about 140px wide, and a longer one ("Perfect fourth", or any at large text) wraps to two lines
+   that still fit the button's 2.75rem (not measured in a browser yet). */
+.rmm-interval__answers {
+  display: flex;
+  flex-direction: column;
+  height: 12.5rem;
+}
+.rmm-interval__choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 2.75rem;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 24rem;
+  margin-inline: auto;
+}
+/* A tile of the sheet's paper, so the backdrop's staves never show through it. */
+.rmm-interval__choices > button {
+  background-color: var(--app-surface);
+}
+.rmm-interval__choices > button:hover:not([aria-disabled='true']) {
+  background-color: var(--app-surface-hover);
 }

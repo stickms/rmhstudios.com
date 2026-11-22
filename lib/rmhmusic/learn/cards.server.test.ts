@@ -11,6 +11,7 @@ import { DAY_MS, newCard, review } from './srs/schedule';
 type Row = Record<string, any>;
 const db = vi.hoisted(() => ({
   cards: [] as Row[],
+  profiles: [] as Row[],
   seq: 0,
   locks: 0,
   txs: 0,
@@ -26,6 +27,9 @@ vi.mock('@/lib/prisma.server', () => {
     $queryRaw: async () => {
       db.locks += 1;
       return [];
+    },
+    musicLearnProfile: {
+      findUnique: async ({ where }: Row) => db.profiles.find((p) => p.userId === where.userId) ?? null,
     },
     musicLearnCard: {
       createMany: async ({ data, skipDuplicates }: Row) => {
@@ -79,6 +83,7 @@ const NOW = Date.UTC(2026, 10, 9, 12);
 
 beforeEach(() => {
   db.cards = [];
+  db.profiles = [];
   db.seq = 0;
   db.locks = 0;
   db.txs = 0;
@@ -209,6 +214,28 @@ describe('applyReviews', () => {
     );
     expect((await loadCards('u1'))[0].reps).toBe(1);
     expect((await loadCards('u2'))[0].stability).toBeCloseTo(0.212, 6);
+  });
+
+  it("schedules with the learner's retention target, and with 90% when they have none", async () => {
+    const stored = {
+      userId: 'u1',
+      cardId: 'treble:64',
+      due: new Date(NOW),
+      stability: 20,
+      difficulty: 5,
+      reps: 6,
+      lapses: 0,
+      lastReviewAt: new Date(NOW - 20 * DAY_MS),
+    };
+    db.cards.push({ id: 'c0', ...stored });
+    db.cards.push({ id: 'c1', ...stored, userId: 'u2' });
+    db.profiles.push({ userId: 'u1', retention: 0.95 });
+    const [mine] = await applyReviews('u1', [{ cardId: 'treble:64', grade: 'good' }], NOW);
+    const [theirs] = await applyReviews('u2', [{ cardId: 'treble:64', grade: 'good' }], NOW);
+    expect(Date.parse(mine!.due)).toBeLessThan(Date.parse(theirs!.due));
+    const base = { due: NOW, stability: 20, difficulty: 5, reps: 6, lapses: 0, last: NOW - 20 * DAY_MS };
+    expect(Date.parse(mine!.due)).toBe(review(base, 'good', NOW, 0.95).due);
+    expect(Date.parse(theirs!.due)).toBe(review(base, 'good', NOW).due);
   });
 
   it('throws on a non-finite clock rather than writing NaN', async () => {

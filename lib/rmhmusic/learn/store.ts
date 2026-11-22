@@ -22,6 +22,7 @@ import { createFanOut } from './input/fan-out';
 import { createMicInput, setMicSettings, type MicFrame } from './input/mic';
 import { clampMicGain, clampMicGate, isMicHum, type MicHum } from './input/mic-gain';
 import { hydratePracticeMode, isPracticeMode, type PracticeMode } from './practice-mode';
+import { clampNewPerDay, clampRetention } from './srs/practice-settings';
 import { createMidiInput, type MidiInputAdapter } from './input/midi';
 import { createScreenInput } from './input/screen';
 import type { LessonProgressRow, Profile } from './progress.server';
@@ -89,6 +90,10 @@ export interface LearnState {
   setMicGate(gate: number): Promise<void>;
   /** The mains-hum filter. */
   setMicHum(hum: MicHum): Promise<void>;
+  /** The recall chance a card may fall to before it comes back, 0.80 to 0.95. */
+  setRetention(retention: number): Promise<void>;
+  /** How many never-asked cards Practice may introduce a day, 0 to 50. */
+  setNewPerDay(count: number): Promise<void>;
   /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
   completeLesson(lessonId: string, stars: number, score: number): Promise<CompleteOutcome>;
 
@@ -261,7 +266,9 @@ const sameProfile = (a: Profile | null, b: Profile | null) =>
     a.micGain === b.micGain &&
     a.micAuto === b.micAuto &&
     a.micGate === b.micGate &&
-    a.micHum === b.micHum);
+    a.micHum === b.micHum &&
+    a.retention === b.retention &&
+    a.newPerDay === b.newPerDay);
 
 const sameList = <T>(a: readonly T[], b: readonly T[]) =>
   a === b || (a.length === b.length && a.every((v, i) => v === b[i]));
@@ -511,6 +518,14 @@ export const useLearnStore = create<LearnState>()((set, get) => {
     setMicHum(hum) {
       if (!isMicHum(hum)) return Promise.resolve();
       return change({ key: 'micHum', value: hum });
+    },
+    setRetention(retention) {
+      if (typeof retention !== 'number' || !Number.isFinite(retention)) return Promise.resolve();
+      return change({ key: 'retention', value: clampRetention(retention) });
+    },
+    setNewPerDay(count) {
+      if (typeof count !== 'number' || !Number.isFinite(count)) return Promise.resolve();
+      return change({ key: 'newPerDay', value: clampNewPerDay(count) });
     },
     setLatency(ms) {
       if (!Number.isFinite(ms)) return Promise.resolve();

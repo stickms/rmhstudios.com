@@ -39,10 +39,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-deps
-      # The typecheck is incremental: warm (a build-info cache restored) it is ~1 min, cold it checks the whole
-      # site project, ~10-13 GB of memory at full speed, which a 16 GB runner cannot hold next to its own
-      # overhead (it thrashed for 30 minutes before the job was cancelled, PR 1787). So a miss is not allowed to
-      # run unbounded: it runs single-threaded under a Go memory limit, measured at ~2.5 min and ~10.8 GB.
+      # The typecheck is incremental, but "incremental" is not "small": a restored build info only helps for the
+      # files that did not change, and a change to the generated Prisma client (any edit to prisma/schema)
+      # makes TypeScript recheck most of the project. Both cases can need 12+ GB at full speed, which a 16 GB
+      # runner cannot hold (PR 1787's run thrashed for 30 minutes and was cancelled; a local run with a
+      # restored cache and a changed schema was killed for memory after 4 minutes). So EVERY run is
+      # single-threaded under a Go memory limit: measured cold at ~2.7 min and ~10.8 GB, and it is what
+      # finished every time. A normal incremental run is much faster than that.
       # Pull requests only RESTORE the cache. Saving is left to main (and the nightly), so a PR push does not add
       # an entry, and the newest entry any PR can find is always a main build.
       - name: Restore typecheck cache
@@ -60,13 +63,10 @@ jobs:
           mkdir -p .cache/tsc
           if [ -f .cache/tsc/site.tsbuildinfo ]; then
             echo "Typecheck cache restored (${{ steps.tsc-cache.outputs.cache-matched-key }}): incremental run."
-            # A restored build info from far back, or a changed generated Prisma client, can invalidate most of the
-            # project; the limit only acts then (a normal incremental run peaks at 3-7 GB).
-            GOMEMLIMIT=10GiB pnpm run typecheck
           else
-            echo "::warning::No typecheck cache was restored: cold run, single-threaded and memory-capped."
-            GOMEMLIMIT=6GiB GOGC=25 node node_modules/typescript-native/bin/tsc -b --singleThreaded
+            echo "::warning::No typecheck cache was restored: this run checks the whole project."
           fi
+          GOMEMLIMIT=6GiB GOGC=25 node node_modules/typescript-native/bin/tsc -b --singleThreaded
       - name: Save typecheck cache
         if: success() && github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4

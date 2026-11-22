@@ -38,12 +38,13 @@ import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { scoreFrom, starsFor } from '@/lib/rmhmusic/learn/scoring/stars';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { noteLetter } from '@/lib/rmhmusic/learn/theory/clef';
-import { chordNotes, type ChordQuality } from '@/lib/rmhmusic/learn/theory/chords';
+import { chordNotes } from '@/lib/rmhmusic/learn/theory/chords';
 import { TEXT_BUTTON } from './buttons';
 import { DeviceRegion, LessonResult } from './LessonParts';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
 import { SessionFrame, SessionSheet, sessionTitle, useQuestionSession } from './QuestionSession';
 import { useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from './useLearnInput';
+import { qualityName } from './ear-names';
 
 export function PlayChordLesson({
   lessonId,
@@ -307,26 +308,4 @@ function chordLabel(t: TFunction<'c-rmhmusic'>, q: ChordQuestion): string {
     quality: qualityName(t, q.quality),
     defaultValue: '{{root}} {{quality}}',
   });
-}
-
-/** A quality's word, one key each. */
-export function qualityName(t: TFunction<'c-rmhmusic'>, quality: ChordQuality): string {
-  switch (quality) {
-    case 'major':
-      return t('chord-quality-major', {
-        defaultValue: 'major',
-      });
-    case 'minor':
-      return t('chord-quality-minor', {
-        defaultValue: 'minor',
-      });
-    case 'diminished':
-      return t('chord-quality-diminished', {
-        defaultValue: 'diminished',
-      });
-    case 'augmented':
-      return t('chord-quality-augmented', {
-        defaultValue: 'augmented',
-      });
-  }
 }

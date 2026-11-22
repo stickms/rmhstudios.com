@@ -23,6 +23,10 @@
  *   octaves from C3 (C3…B4), which take the octave buttons on a phone.
  * Naturals only (Phase 2), so no enharmonic naming. Ten targets are dealt with `dealRounds`: the
  * whole pool before any repeat, never the same target twice in a row.
+ *
+ * Learning or Test mode (`practice-mode.ts`): in Test mode one answer settles a target; in Learning
+ * mode a wrong answer shows its feedback and the same target comes back until it is found (only a
+ * first-try answer scores). `createFindNoteMachine` takes either, or a getter read at every event.
  */
 import { dealRounds } from '../content/decks';
 import { inKeysRange } from '../input/keyboard-map';
@@ -80,7 +84,11 @@ export function isRight(target: Target, answer: Answer): boolean {
   return midi !== null && midi === target.midi;
 }
 
+/** One step in Test mode: one answer per target, right or wrong, then on to the next. */
 export const step = sessionStep<Target, Answer>(isRight);
+
+/** One step in Learning mode: a wrong answer brings the same target back (`session.ts`). */
+export const learningStep = sessionStep<Target, Answer>(isRight, { learning: true });
 
 export function initial(targets: Target[]): State {
   return sessionInitial(targets);
@@ -91,8 +99,23 @@ export const findNoteMachine = {
   step,
 };
 
-export function createFindNoteMachine(targets: Target[]): Machine<State, Event, Effect> {
-  return createSessionMachine(targets, step);
+/**
+ * The machine for one lesson's targets, in the shape `createRunner` takes. `learning` is Learning
+ * mode or Test mode, or a getter read at every event, so a learner who switches mode mid-lesson is
+ * obeyed from the next answer.
+ */
+export function createFindNoteMachine(
+  targets: Target[],
+  learning: boolean | (() => boolean) = false,
+): Machine<State, Event, Effect> {
+  return createSessionMachine(
+    targets,
+    typeof learning === 'function'
+      ? (s, e) => (learning() ? learningStep : step)(s, e)
+      : learning
+        ? learningStep
+        : step,
+  );
 }
 
 const naturalsBetween = (low: number, high: number): number[] => {
