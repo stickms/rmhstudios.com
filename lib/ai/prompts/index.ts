@@ -598,7 +598,7 @@ export const CHARACTER_ADVISOR: PromptSpec = {
  */
 export const MEDSCHOOLS_EXTRACT: PromptSpec = {
   id: 'medschools-extract',
-  version: 1,
+  version: 2,
   task: 'medschools-extract',
   instructions: [
     'The input is a JSON array of forum posts: [{ "ref": number, "postedOn": "YYYY-MM-DD", "text": string }].',
@@ -610,7 +610,7 @@ export const MEDSCHOOLS_EXTRACT: PromptSpec = {
     '"inState" only if the post states in-state or out-of-state; otherwise omit it.',
     'Questions are interview questions the poster says they were asked, rewritten as a generic question with no names, schools, places, dates or first-person detail.',
     'Omit any post with nothing to report.',
-    '[user], [email] and [link] are redactions, not content.',
+    '[user], [email], [link] and [phone] are redactions, not content.',
   ].join('\n'),
   maxChars: 8_000,
 };

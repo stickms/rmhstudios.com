@@ -109,7 +109,11 @@ const ROUTES: Record<AiTask, Route> = {
   'medschools-extract': {
     provider: 'deepseek',
     model: DEEPSEEK_CHAT,
-    maxTokens: 1_500,
+    // Sized from the schema's worst case, not the usual answer: a 12-post chunk (extract.ts) where every post has
+    // 5 events (~30 tokens each as JSON: type, date, program, inState) and 3 questions of 400 chars (~133 tokens at
+    // 3 chars/token) plus ~20 for the post's own keys is 12 x (150 + 400 + 20) = 6,840 tokens. 8,000 leaves ~17%
+    // headroom and stays inside deepseek-chat's 8,192 output cap. Billed on use, so a typical answer costs the same.
+    maxTokens: 8_000,
     // A classifier, like `moderate`: the same post must give the same events.
     temperature: 0,
   },

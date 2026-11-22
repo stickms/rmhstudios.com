@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MEDSCHOOLS_EXTRACT } from '@/lib/ai/prompts';
 import { redactForModel } from '../../engine/sdn-rules';
 import { NEEDLES } from '../test-support';
 import {
@@ -387,5 +388,10 @@ describe('chunkPosts', () => {
       () => post('y'.repeat(2_000)),
     );
     expect(chunkPosts(big).every((c) => c.length <= 5)).toBe(true);
+  });
+
+  it('the prompt names every redaction placeholder the model can see', () => {
+    for (const placeholder of ['[user]', '[email]', '[link]', '[phone]'])
+      expect(MEDSCHOOLS_EXTRACT.instructions).toContain(placeholder);
   });
 });
