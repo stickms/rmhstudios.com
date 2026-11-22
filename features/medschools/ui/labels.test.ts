@@ -21,7 +21,7 @@ describe('useMedLabels', () => {
     expect(l.programLabel('PHD')).toBe('MD-PhD / DO-PhD');
   });
   it('labels the filter by degree', () => {
-    expect(l.programFilterLabel('ALL')).toBe('All');
+    expect(l.programFilterLabel('ALL')).toBe('All programs');
     expect(l.programFilterLabel('REG', 'DO')).toBe('DO');
     expect(l.programFilterLabel('PHD', 'MD')).toBe('MD-PhD');
     expect(l.programFilterLabel('PHD', 'DO')).toBe('DO-PhD');

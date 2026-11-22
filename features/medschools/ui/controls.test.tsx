@@ -80,7 +80,7 @@ describe('ProgramSelect (school page, O5)', () => {
     expect(doHtml).not.toContain('MD');
   });
   it('defaults to All when asked for ALL', () => {
-    expect(renderToString(<ProgramSelect degree="MD" value="ALL" onChange={noop} />)).toContain('All');
+    expect(renderToString(<ProgramSelect degree="MD" value="ALL" onChange={noop} />)).toContain('>All programs<');
   });
 });
 
@@ -112,6 +112,11 @@ describe('DegreeProgramSelect (index and live)', () => {
     );
     expect(html).toContain('data-value="ALL"');
     expect(html).not.toContain('DO');
+  });
+  it('labels the ALL option "All programs", not a bare "All"', () => {
+    const html = renderToString(<DegreeProgramSelect value={{ program: 'ALL' }} onChange={noop} />);
+    expect(html).toContain('>All programs<');
+    expect(html).not.toContain('>All<');
   });
   it('shows Program not reported when selected', () => {
     const html = renderToString(<DegreeProgramSelect value={{ program: 'NONE' }} allowNone onChange={noop} />);

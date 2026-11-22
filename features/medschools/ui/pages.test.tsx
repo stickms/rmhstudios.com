@@ -87,7 +87,17 @@ describe('IndexPage', () => {
     expect(html).toContain('href="/rmh-medschool/duke"');
     expect(html).toContain('href="/rmh-medschool/unc"');
     expect(html).toContain('120 reported invites, CycleTrack');
+    expect(html).toContain('4 invites · Admit.org');
     expect(html).not.toContain('data-variant="primary"');
+  });
+  it('prints nothing in the figure slot of a school with no data', () => {
+    const html = withClient(
+      seedIndex([school('duke'), school('quiet', { reported: null })], { date: null, isToday: false }),
+      <IndexPage />,
+    );
+    expect(html).toContain('href="/rmh-medschool/quiet"');
+    expect(html).not.toContain('No reported invites');
+    expect(html.match(/reported invites/g)).toHaveLength(1);
   });
   it('shows the empty state for no schools', () => {
     const html = withClient(seedIndex([], { date: null, isToday: false }), <IndexPage />);
@@ -171,6 +181,8 @@ describe('LivePage', () => {
     expect(src).toContain('mergeLiveHead');
     expect(squash(src)).toContain('refetchInterval:60_000');
     expect(squash(src)).toContain('refetchIntervalInBackground:false');
+    // A gap between the fetched head and the old rows drops the older pages.
+    expect(src).toContain('merged.gap');
   });
 });
 
@@ -185,6 +197,7 @@ describe('route files', () => {
       expect(src).toContain('head:definePage(');
       expect(src).toContain(`validateSearch:${parser}`);
       expect(src).toContain('loaderDeps:');
+      expect(src).toContain('search:{middlewares:[stripSearchParams(');
       expect(src).toContain('loader:');
       expect(src).toContain('prefetch');
       expect(src).toContain(`component:${component}`);

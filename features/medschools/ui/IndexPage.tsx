@@ -18,7 +18,10 @@ import { ReportedNote } from './ReportedNote';
 import { SkeletonSwap } from './skeletons';
 import { useMedLabels } from './labels';
 
-/** /rmh-medschool: the school index. Rows on rules (D14); nothing here is a primary action (R4). */
+/**
+ * /rmh-medschool: the school index. Rows on rules (D14); nothing here is a primary action (R4). A school with no
+ * reported figure prints nothing in the figure slot: ~200 "no data" lines were noise.
+ */
 export function IndexPage() {
   const { t } = useTranslation('medschools');
   const { locale } = useLocaleFormat();
@@ -71,9 +74,11 @@ export function IndexPage() {
                   {r.shortName}
                 </SchoolLink>
                 <span className="t-meta">
-                  {t('index-day-count', {
-                    defaultValue: '{{n}}, {{source}}',
-                    n: r.count,
+                  {t('index-day-invites', {
+                    count: r.count,
+                    defaultValue_one: '{{count}} invite · {{source}}',
+                    defaultValue_other: '{{count}} invites · {{source}}',
+                    defaultValue: '{{count}} invites · {{source}}',
                     source: sourceName(r.source),
                   })}
                 </span>
@@ -148,15 +153,15 @@ export function IndexPage() {
                         })}
                       </p>
                     </div>
-                    <span className="t-meta shrink-0">
-                      {s.reported
-                        ? t('index-reported', {
-                            defaultValue: '{{n}} reported invites, {{source}}',
-                            n: s.reported.count,
-                            source: sourceName(s.reported.source),
-                          })
-                        : t('index-not-reported', { defaultValue: 'No reported invites' })}
-                    </span>
+                    {s.reported ? (
+                      <span className="t-meta shrink-0">
+                        {t('index-reported', {
+                          defaultValue: '{{n}} reported invites, {{source}}',
+                          n: s.reported.count,
+                          source: sourceName(s.reported.source),
+                        })}
+                      </span>
+                    ) : null}
                   </li>
                 ))}
               </ul>

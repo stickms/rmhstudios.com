@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { parseIndexSearch, parseLiveSearch, parseSchoolSearch } from './search';
+import { stripSearchParams } from '@tanstack/react-router';
+import {
+  INDEX_SEARCH_DEFAULTS,
+  LIVE_SEARCH_DEFAULTS,
+  SCHOOL_SEARCH_DEFAULTS,
+  parseIndexSearch,
+  parseLiveSearch,
+  parseSchoolSearch,
+} from './search';
 import { CHARTED_TYPES } from './public-read';
 
 describe('parseSchoolSearch', () => {
@@ -67,5 +75,40 @@ describe('parseLiveSearch', () => {
     const s = parseLiveSearch({ type: 'hold', school: 'duke', degree: 'MD' });
     expect(s).toEqual({ type: 'HOLD', school: 'duke', degree: 'MD', program: 'ALL' });
     expect(parseLiveSearch({ school: 'Bad Slug%00', degree: 'PhD', type: 'x' })).toEqual({ program: 'ALL' });
+  });
+});
+
+describe('defaults stay out of the URL (stripSearchParams)', () => {
+  const strip = (defaults: object, search: Record<string, unknown>) =>
+    (
+      stripSearchParams(defaults as never) as unknown as (a: {
+        search: unknown;
+        next: (s: unknown) => unknown;
+      }) => unknown
+    )({
+      search,
+      next: (s) => s,
+    });
+  it('index and live drop program=ALL and keep a real choice', () => {
+    expect(strip(INDEX_SEARCH_DEFAULTS, parseIndexSearch({}))).toEqual({});
+    expect(strip(INDEX_SEARCH_DEFAULTS, parseIndexSearch({ program: 'PHD', q: 'duke' }))).toEqual({
+      program: 'PHD',
+      q: 'duke',
+    });
+    expect(strip(LIVE_SEARCH_DEFAULTS, parseLiveSearch({}))).toEqual({});
+    expect(strip(LIVE_SEARCH_DEFAULTS, parseLiveSearch({ program: 'NONE' }))).toEqual({ program: 'NONE' });
+  });
+  it('school drops tab, program, type and the all-five show list, keeps the rest', () => {
+    expect(strip(SCHOOL_SEARCH_DEFAULTS, parseSchoolSearch({}))).toEqual({});
+    expect(
+      strip(SCHOOL_SEARCH_DEFAULTS, parseSchoolSearch({ show: 'secondary,interview,waitlist,rejection,acceptance' })),
+    ).toEqual({});
+    expect(
+      strip(SCHOOL_SEARCH_DEFAULTS, parseSchoolSearch({ tab: 'history', show: 'interview,acceptance', cycle: '2026' })),
+    ).toEqual({
+      tab: 'history',
+      show: ['INTERVIEW', 'ACCEPTANCE'],
+      cycle: 2026,
+    });
   });
 });

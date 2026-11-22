@@ -42,7 +42,10 @@ export function applyKFloor(rows: readonly CountCell[]): CountCell[] {
 }
 
 /** The in-state split is shown only when both halves clear the floor, independent of the total. */
-export function floorSplit(inState: number | null, outOfState: number | null): { inState: number; outOfState: number } | null {
+export function floorSplit(
+  inState: number | null,
+  outOfState: number | null,
+): { inState: number; outOfState: number } | null {
   if (inState === null || outOfState === null) return null;
   if (inState < K_FLOOR || outOfState < K_FLOOR) return null;
   return { inState, outOfState };
@@ -129,15 +132,23 @@ export function decodeLiveCursor(s: string): { occurredAt: Date; id: string } | 
   return { occurredAt, id: m[2]! };
 }
 
-/** New rows go in front; the first batch is a baseline, so nothing "arrives" from empty. */
+/**
+ * New rows go in front; the first batch is a baseline, so nothing "arrives" from empty.
+ * `gap` is true when the fetched head shares no row with a non-empty `prev`: more events than one page arrived between
+ * refetches, so merging would leave a hole before the old head. The result is then the fresh head alone and the caller
+ * drops its older pages (and resets "Show older" to the head's own next cursor).
+ */
 export function mergeLiveHead<T extends { id: string }>(
   prev: readonly T[],
   head: readonly T[],
-): { rows: T[]; arrived: string[] } {
-  if (prev.length === 0) return { rows: [...head], arrived: [] };
+): { rows: T[]; arrived: string[]; gap: boolean } {
+  if (prev.length === 0) return { rows: [...head], arrived: [], gap: false };
   const known = new Set(prev.map((r) => r.id));
   const fresh = head.filter((r) => !known.has(r.id));
-  return { rows: [...fresh, ...prev], arrived: fresh.map((r) => r.id) };
+  if (head.length > 0 && fresh.length === head.length) {
+    return { rows: [...head], arrived: fresh.map((r) => r.id), gap: true };
+  }
+  return { rows: [...fresh, ...prev], arrived: fresh.map((r) => r.id), gap: false };
 }
 
 export function truncateToMinute(d: Date): string {
@@ -147,6 +158,10 @@ export function truncateToMinute(d: Date): string {
 }
 
 /** A YYYY-MM-DD is a UTC calendar day; formatting it in the viewer's zone would shift it. */
-export function formatUtcDay(day: string, locale: string, opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }): string {
+export function formatUtcDay(
+  day: string,
+  locale: string,
+  opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' },
+): string {
   return new Intl.DateTimeFormat(locale, { ...opts, timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
 }

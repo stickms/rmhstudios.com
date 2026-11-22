@@ -22,7 +22,12 @@ import {
   type CountCell,
 } from './public-read';
 
-const cell = (source: CountCell['source'], date: string, count: number, contributors: number | null = null): CountCell => ({
+const cell = (
+  source: CountCell['source'],
+  date: string,
+  count: number,
+  contributors: number | null = null,
+): CountCell => ({
   source,
   date,
   count,
@@ -105,7 +110,9 @@ describe('resolveCycleYear', () => {
     expect(resolveCycleYear({ latestWithData: null, now: new Date('2027-06-02T00:00:00Z') })).toBe(2028);
     expect(resolveCycleYear({ latestWithData: null, now: new Date('2027-05-31T00:00:00Z') })).toBe(2027);
     expect(resolveCycleYear({ latestWithData: 2029, now: new Date('2027-05-31T00:00:00Z') })).toBe(2027);
-    expect(resolveCycleYear({ requested: 2025, latestWithData: 2027, now: new Date('2027-06-02T00:00:00Z') })).toBe(2025);
+    expect(resolveCycleYear({ requested: 2025, latestWithData: 2027, now: new Date('2027-06-02T00:00:00Z') })).toBe(
+      2025,
+    );
   });
 });
 
@@ -178,11 +185,24 @@ describe('mergeLiveHead', () => {
     const m = mergeLiveHead([r('c'), r('b'), r('a')], [r('d'), r('c'), r('b')]);
     expect(m.rows.map((x) => x.id)).toEqual(['d', 'c', 'b', 'a']);
     expect(m.arrived).toEqual(['d']);
+    expect(m.gap).toBe(false);
+  });
+  it('detects a gap when the head shares no row with the previous rows, and replaces them', () => {
+    const m = mergeLiveHead([r('c'), r('b'), r('a')], [r('z'), r('y'), r('x')]);
+    expect(m.gap).toBe(true);
+    expect(m.rows.map((x) => x.id)).toEqual(['z', 'y', 'x']);
+    expect(m.arrived).toEqual(['z', 'y', 'x']);
+  });
+  it('an empty head is not a gap', () => {
+    const m = mergeLiveHead([r('b'), r('a')], []);
+    expect(m.gap).toBe(false);
+    expect(m.rows.map((x) => x.id)).toEqual(['b', 'a']);
   });
   it('treats the first batch as a baseline', () => {
     const m = mergeLiveHead([], [r('b'), r('a')]);
     expect(m.rows.map((x) => x.id)).toEqual(['b', 'a']);
     expect(m.arrived).toEqual([]);
+    expect(m.gap).toBe(false);
   });
 });
 

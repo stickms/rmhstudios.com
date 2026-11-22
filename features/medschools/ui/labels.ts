@@ -38,7 +38,7 @@ export function useMedLabels() {
   const programFilterLabel = (value: MedLiveProgramFilter, degree?: MedDegreeId): string => {
     switch (value) {
       case 'ALL':
-        return t('program-all', { defaultValue: 'All' });
+        return t('program-all-programs', { defaultValue: 'All programs' });
       case 'NONE':
         return t('program-not-reported', { defaultValue: 'Program not reported' });
       case 'REG':
