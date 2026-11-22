@@ -77,6 +77,9 @@ const FORBIDDEN: Record<string, string> = {
   'framer-motion':
     'pages that animate import it; nothing the router loads with the route tree (a pendingComponent, a route head) may. See KNOWN_VIOLATIONS for what is left',
   'motion-dom': "framer-motion's engine: see framer-motion",
+  // RMH Med Schools charts (Phase 3 Task 5): only features/medschools/engine/chart-geometry.ts imports them.
+  'd3-scale': 'RMH Med Schools charts: route-only, must stay in the lazy page chunk',
+  'd3-shape': 'RMH Med Schools charts: route-only, must stay in the lazy page chunk',
 };
 
 /**
