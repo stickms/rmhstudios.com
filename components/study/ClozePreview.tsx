@@ -26,9 +26,7 @@ export function ClozePreview({ text }: { text: string }) {
           <li key={index} className="flex flex-col gap-1 py-2">
             <span className="t-meta">{t('preview-card', { defaultValue: 'Card {{index}}', index })}</span>
             <ClozeText text={text} index={index} reveal={false} className="t-body text-site-text" />
-            <span className="t-body text-site-text-muted">
-              {clozeAnswers(parsed.segments, index).join(', ')}
-            </span>
+            <span className="t-body text-site-text-muted">{clozeAnswers(parsed.segments, index).join(', ')}</span>
           </li>
         ))}
       </ul>

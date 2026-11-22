@@ -12,10 +12,7 @@
 import { Prisma } from '@prisma/client';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
-import {
-  getBoss,
-  PGBOSS_SCHEMA,
-} from '@/lib/jobs/boss.server';
+import { getBoss, PGBOSS_SCHEMA } from '@/lib/jobs/boss.server';
 import { recordAdminActionIn } from '@/lib/admin-audit.server';
 import {
   JOBS_PAGE_SIZE,
@@ -33,69 +30,30 @@ import {
 /** The queue (pg-boss) is not reachable: no database URL, or it failed to start. */
 export class JobsUnavailableError extends Error {
   constructor() {
-    super(
-      'The job queue is unavailable.',
-    );
-    this.name =
-      'JobsUnavailableError';
+    super('The job queue is unavailable.');
+    this.name = 'JobsUnavailableError';
   }
 }
 
-if (
-  !/^[a-z_][a-z0-9_]*$/i.test(
-    PGBOSS_SCHEMA,
-  )
-)
-  throw new Error(
-    'PGBOSS_SCHEMA is not a plain identifier',
-  );
+if (!/^[a-z_][a-z0-9_]*$/i.test(PGBOSS_SCHEMA)) throw new Error('PGBOSS_SCHEMA is not a plain identifier');
 /** `pgboss.job` as raw SQL; built from the configured schema, which is checked above. */
-const JOB_TABLE =
-  Prisma.raw(
-    `"${PGBOSS_SCHEMA}"."job"`,
-  );
-const JOB_STATE_TYPE =
-  Prisma.raw(
-    `"${PGBOSS_SCHEMA}"."job_state"`,
-  );
+const JOB_TABLE = Prisma.raw(`"${PGBOSS_SCHEMA}"."job"`);
+const JOB_STATE_TYPE = Prisma.raw(`"${PGBOSS_SCHEMA}"."job_state"`);
 
 async function requireBoss(): Promise<PgBoss> {
   // The send-only instance: it never starts a worker, which is all a read and a retry need.
-  const boss =
-    await getBoss();
-  if (
-    !boss
-  )
-    throw new JobsUnavailableError();
+  const boss = await getBoss();
+  if (!boss) throw new JobsUnavailableError();
   return boss;
 }
 
 /** The queue, or null when it does not exist. */
-export async function findQueue(
-  name: string,
-): Promise<boolean> {
-  const boss =
-    await requireBoss();
-  return (
-    (await boss.getQueue(
-      name,
-    )) !==
-    null
-  );
+export async function findQueue(name: string): Promise<boolean> {
+  const boss = await requireBoss();
+  return (await boss.getQueue(name)) !== null;
 }
 
-const iso =
-  (
-    d:
-      | Date
-      | null
-      | undefined,
-  ):
-    | string
-    | null =>
-    d
-      ? d.toISOString()
-      : null;
+const iso = (d: Date | null | undefined): string | null => (d ? d.toISOString() : null);
 
 function nextRun(
   boss: PgBoss,
@@ -104,176 +62,66 @@ function nextRun(
     cron: string;
     timezone: string;
   },
-):
-  | string
-  | null {
-  if (
-    s.kind !==
-    'cron'
-  )
-    return null;
+): string | null {
+  if (s.kind !== 'cron') return null;
   try {
-    const [
-      next,
-    ] =
-      boss.previewSchedule(
-        s.cron,
-        {
-          tz: s.timezone,
-          count: 1,
-        },
-      );
-    return next
-      ? next.toISOString()
-      : null;
+    const [next] = boss.previewSchedule(s.cron, {
+      tz: s.timezone,
+      count: 1,
+    });
+    return next ? next.toISOString() : null;
   } catch {
     return null;
   }
 }
 
 /** The newest failure time per queue, for the queues that have failures. */
-export async function newestFailures(
-  names: string[],
-): Promise<
-  Map<
-    string,
-    string
-  >
-> {
-  if (
-    names.length ===
-    0
-  )
-    return new Map();
-  const rows =
-    await prisma.$queryRaw<
-      {
-        name: string;
-        newest: Date | null;
-      }[]
-    >(Prisma.sql`
+export async function newestFailures(names: string[]): Promise<Map<string, string>> {
+  if (names.length === 0) return new Map();
+  const rows = await prisma.$queryRaw<
+    {
+      name: string;
+      newest: Date | null;
+    }[]
+  >(Prisma.sql`
     SELECT name, max(completed_on) AS newest
     FROM ${JOB_TABLE}
     WHERE name = ANY(${names}::text[]) AND state = 'failed'::${JOB_STATE_TYPE}
     GROUP BY name`);
-  const out =
-    new Map<
-      string,
-      string
-    >();
-  for (const r of Array.isArray(
-    rows,
-  )
-    ? rows
-    : [])
-    if (
-      r.newest
-    )
-      out.set(
-        r.name,
-        new Date(
-          r.newest,
-        ).toISOString(),
-      );
+  const out = new Map<string, string>();
+  for (const r of Array.isArray(rows) ? rows : []) if (r.newest) out.set(r.name, new Date(r.newest).toISOString());
   return out;
 }
 
-export async function listQueues(): Promise<
-  QueueSummary[]
-> {
-  const boss =
-    await requireBoss();
-  const [
-    queues,
-    schedules,
-  ] =
-    await Promise.all(
-      [
-        boss.getQueues(),
-        boss.getSchedules(),
-      ],
-    );
-  const failures =
-    await newestFailures(
-      queues
-        .filter(
-          (
-            q,
-          ) =>
-            q.failedCount >
-            0,
-        )
-        .map(
-          (
-            q,
-          ) =>
-            q.name,
-        ),
-    );
-  const byQueue =
-    new Map<
-      string,
-      JobSchedule[]
-    >();
+export async function listQueues(): Promise<QueueSummary[]> {
+  const boss = await requireBoss();
+  const [queues, schedules] = await Promise.all([boss.getQueues(), boss.getSchedules()]);
+  const failures = await newestFailures(queues.filter((q) => q.failedCount > 0).map((q) => q.name));
+  const byQueue = new Map<string, JobSchedule[]>();
   for (const s of schedules) {
-    const list =
-      byQueue.get(
-        s.name,
-      ) ??
-      [];
-    list.push(
-      {
-        key: s.key,
-        cron: s.cron,
-        kind: s.kind,
-        timezone:
-          s.timezone,
-        nextRunAt:
-          nextRun(
-            boss,
-            s,
-          ),
-      },
-    );
-    byQueue.set(
-      s.name,
-      list,
-    );
+    const list = byQueue.get(s.name) ?? [];
+    list.push({
+      key: s.key,
+      cron: s.cron,
+      kind: s.kind,
+      timezone: s.timezone,
+      nextRunAt: nextRun(boss, s),
+    });
+    byQueue.set(s.name, list);
   }
   return sortQueues(
-    queues.map(
-      (
-        q,
-      ) => ({
-        name: q.name,
-        policy:
-          q.policy ??
-          null,
-        deadLetter:
-          q.deadLetter ??
-          null,
-        ready:
-          q.readyCount,
-        deferred:
-          q.deferredCount,
-        active:
-          q.activeCount,
-        failed:
-          q.failedCount,
-        total:
-          q.totalCount,
-        newestFailureAt:
-          failures.get(
-            q.name,
-          ) ??
-          null,
-        schedules:
-          byQueue.get(
-            q.name,
-          ) ??
-          [],
-      }),
-    ),
+    queues.map((q) => ({
+      name: q.name,
+      policy: q.policy ?? null,
+      deadLetter: q.deadLetter ?? null,
+      ready: q.readyCount,
+      deferred: q.deferredCount,
+      active: q.activeCount,
+      failed: q.failedCount,
+      total: q.totalCount,
+      newestFailureAt: failures.get(q.name) ?? null,
+      schedules: byQueue.get(q.name) ?? [],
+    })),
   );
 }
 
@@ -284,9 +132,7 @@ interface RawJobRow {
   completed_on: Date | null;
   retry_count: number;
   retry_limit: number;
-  error:
-    | string
-    | null;
+  error: string | null;
   cursor_key: string;
 }
 
@@ -298,41 +144,14 @@ interface RawJobRow {
 export async function listJobs(
   queue: string,
   state: JobListState,
-  after:
-    | string
-    | undefined,
+  after: string | undefined,
 ): Promise<{
   jobs: JobRow[];
-  nextCursor:
-    | string
-    | null;
+  nextCursor: string | null;
 }> {
-  const [
-    afterKey,
-    afterId,
-  ] =
-    after
-      ? [
-          after.slice(
-            0,
-            27,
-          ),
-          after.slice(
-            28,
-          ),
-        ]
-      : [
-          null,
-          null,
-        ];
-  const keyset =
-    after
-      ? Prisma.sql`AND (created_on, id) < (${afterKey}::timestamptz, ${afterId}::uuid)`
-      : Prisma.empty;
-  const rows =
-    await prisma.$queryRaw<
-      RawJobRow[]
-    >(Prisma.sql`
+  const [afterKey, afterId] = after ? [after.slice(0, 27), after.slice(28)] : [null, null];
+  const keyset = after ? Prisma.sql`AND (created_on, id) < (${afterKey}::timestamptz, ${afterId}::uuid)` : Prisma.empty;
+  const rows = await prisma.$queryRaw<RawJobRow[]>(Prisma.sql`
     SELECT id, created_on, started_on, completed_on, retry_count, retry_limit,
       left(COALESCE(output->>'message', output #>> '{}'), 1000) AS error,
       to_char(created_on AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') || '_' || id::text AS cursor_key
@@ -341,123 +160,43 @@ export async function listJobs(
     ${keyset}
     ORDER BY created_on DESC, id DESC
     LIMIT ${JOBS_PAGE_SIZE + 1}`);
-  const all =
-    Array.isArray(
-      rows,
-    )
-      ? rows
-      : [];
-  const page =
-    all.slice(
-      0,
-      JOBS_PAGE_SIZE,
-    );
+  const all = Array.isArray(rows) ? rows : [];
+  const page = all.slice(0, JOBS_PAGE_SIZE);
   return {
-    jobs: page.map(
-      (
-        r,
-      ) => ({
-        id: r.id,
-        createdOn:
-          new Date(
-            r.created_on,
-          ).toISOString(),
-        startedOn:
-          r.started_on
-            ? new Date(
-                r.started_on,
-              ).toISOString()
-            : null,
-        completedOn:
-          r.completed_on
-            ? new Date(
-                r.completed_on,
-              ).toISOString()
-            : null,
-        retryCount:
-          r.retry_count,
-        retryLimit:
-          r.retry_limit,
-        error:
-          state ===
-            'failed' ||
-          state ===
-            'retry'
-            ? errorFirstLine(
-                r.error,
-              )
-            : null,
-      }),
-    ),
-    nextCursor:
-      all.length >
-      JOBS_PAGE_SIZE
-        ? (page[
-            page.length -
-              1
-          ]
-            ?.cursor_key ??
-          null)
-        : null,
+    jobs: page.map((r) => ({
+      id: r.id,
+      createdOn: new Date(r.created_on).toISOString(),
+      startedOn: r.started_on ? new Date(r.started_on).toISOString() : null,
+      completedOn: r.completed_on ? new Date(r.completed_on).toISOString() : null,
+      retryCount: r.retry_count,
+      retryLimit: r.retry_limit,
+      error: state === 'failed' || state === 'retry' ? errorFirstLine(r.error) : null,
+    })),
+    nextCursor: all.length > JOBS_PAGE_SIZE ? (page[page.length - 1]?.cursor_key ?? null) : null,
   };
 }
 
-export async function getJob(
-  queue: string,
-  id: string,
-): Promise<JobDetail | null> {
-  const boss =
-    await requireBoss();
-  const [
-    job,
-  ] =
-    await boss.findJobs(
-      queue,
-      {
-        id,
-        limit: 1,
-      },
-    );
-  if (
-    !job
-  )
-    return null;
+export async function getJob(queue: string, id: string): Promise<JobDetail | null> {
+  const boss = await requireBoss();
+  const [job] = await boss.findJobs(queue, {
+    id,
+    limit: 1,
+  });
+  if (!job) return null;
   return {
     id: job.id,
     queue,
-    state:
-      job.state,
-    data: toJsonField(
-      job.data,
-    ),
-    output:
-      toJsonField(
-        job.output,
-      ),
-    createdOn:
-      job.createdOn.toISOString(),
-    startedOn:
-      iso(
-        job.startedOn,
-      ),
-    completedOn:
-      iso(
-        job.completedOn,
-      ),
-    startAfter:
-      iso(
-        job.startAfter,
-      ),
-    retryCount:
-      job.retryCount,
-    retryLimit:
-      job.retryLimit,
-    singletonKey:
-      job.singletonKey ??
-      null,
-    deadLetter:
-      job.deadLetter ??
-      null,
+    state: job.state,
+    data: toJsonField(job.data),
+    output: toJsonField(job.output),
+    createdOn: job.createdOn.toISOString(),
+    startedOn: iso(job.startedOn),
+    completedOn: iso(job.completedOn),
+    startAfter: iso(job.startAfter),
+    retryCount: job.retryCount,
+    retryLimit: job.retryLimit,
+    singletonKey: job.singletonKey ?? null,
+    deadLetter: job.deadLetter ?? null,
   };
 }
 
@@ -476,11 +215,7 @@ function txDb(tx: Prisma.TransactionClient) {
  * job. `FOR UPDATE` holds the rows until the transaction ends, so a job cannot change state between
  * this check and the delete.
  */
-async function lockDeletableIds(
-  tx: Prisma.TransactionClient,
-  queue: string,
-  ids: string[],
-): Promise<string[]> {
+async function lockDeletableIds(tx: Prisma.TransactionClient, queue: string, ids: string[]): Promise<string[]> {
   const rows = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
     SELECT id FROM ${JOB_TABLE}
     WHERE name = ${queue} AND id = ANY(${ids}::uuid[])

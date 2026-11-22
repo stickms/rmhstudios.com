@@ -20,12 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { useArrival } from '@/components/ui/arrive';
 import { CATEGORY_LABELS, type AchievementCategory } from '@/lib/achievements/catalog';
-import {
-  COMPARE_FILTERS,
-  countBuckets,
-  filterCompareRows,
-  type CompareFilter,
-} from '@/lib/achievements/compare';
+import { COMPARE_FILTERS, countBuckets, filterCompareRows, type CompareFilter } from '@/lib/achievements/compare';
 import { compareAchievementsApi } from '@/lib/achievements/compare.contract';
 import { HANDLE_OR_ID } from '@/lib/achievements/compare';
 import {
@@ -42,9 +37,7 @@ const CATEGORY_ORDER: AchievementCategory[] = ['social', 'games', 'creator', 'ec
 
 export const Route = createFileRoute('/_site/progress_/compare')({
   validateSearch: (search: Record<string, unknown>): { with?: string } =>
-    typeof search.with === 'string' && HANDLE_OR_ID.test(search.with.trim())
-      ? { with: search.with.trim() }
-      : {},
+    typeof search.with === 'string' && HANDLE_OR_ID.test(search.with.trim()) ? { with: search.with.trim() } : {},
   head: () => noindexHead('Compare achievements'),
   component: ComparePage,
 });
@@ -99,10 +92,15 @@ function Comparison({ handle }: { handle: string }) {
   const { t: tn } = useTranslation('achievement-tracker');
   const queryClient = useQueryClient();
   const query = useQuery({
-    ...contractQuery(['achievements-compare', handle], compareAchievementsApi, { query: { with: handle } }, {
-      staleTime: 15_000,
-      retry: false,
-    }),
+    ...contractQuery(
+      ['achievements-compare', handle],
+      compareAchievementsApi,
+      { query: { with: handle } },
+      {
+        staleTime: 15_000,
+        retry: false,
+      },
+    ),
   });
   const trackedQuery = useQuery(trackedAchievementsQuery());
   const [filter, setFilter] = useState<CompareFilter>('all');
@@ -159,7 +157,7 @@ function Comparison({ handle }: { handle: string }) {
   const tabs: TabItem[] = COMPARE_FILTERS.map((id) => ({
     id,
     label: labels[id],
-    count: id === 'all' ? rows?.length ?? 0 : counts[id],
+    count: id === 'all' ? (rows?.length ?? 0) : counts[id],
   }));
 
   return (
@@ -188,7 +186,12 @@ function Comparison({ handle }: { handle: string }) {
           ))}
         </Select>
       </div>
-      <div role="tabpanel" id={`compare-panel-${filter}`} aria-labelledby={`compare-tab-${filter}`} className="pt-2 pb-12">
+      <div
+        role="tabpanel"
+        id={`compare-panel-${filter}`}
+        aria-labelledby={`compare-tab-${filter}`}
+        className="pt-2 pb-12"
+      >
         {shown.length === 0 ? (
           <EmptyState description={t('no-matches', { defaultValue: 'No achievements match these filters.' })} />
         ) : (

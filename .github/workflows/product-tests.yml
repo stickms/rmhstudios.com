@@ -17,10 +17,7 @@ on:
       - 'pnpm-lock.yaml'
       - '.github/workflows/product-tests.yml'
   push:
-    branches:
-      [
-        main,
-      ]
+    branches: [main]
     paths:
       - '**/*.ts'
       - '**/*.tsx'
@@ -28,10 +25,7 @@ on:
       - '.github/workflows/product-tests.yml'
 
 concurrency:
-  group:
-    product-tests-${{
-    github.ref
-    }}
+  group: product-tests-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -47,9 +41,5 @@ jobs:
       # pnpm + Node + node_modules (cached by lockfile + schema), as web-ci.yml.
       - uses: ./.github/actions/setup-deps
 
-      - name:
-          Product
-          suite
-        run:
-          pnpm
-          test:product
+      - name: Product suite
+        run: pnpm test:product

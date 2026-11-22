@@ -53,7 +53,9 @@ function ReplayRow({
           {replayGameTitle(replay.game)}
         </Link>
         <p className="t-meta mt-1">
-          {score == null ? t('unscored', { defaultValue: 'Unscored' }) : t('score', { defaultValue: 'Score {{score}}', score })}
+          {score == null
+            ? t('unscored', { defaultValue: 'Unscored' })
+            : t('score', { defaultValue: 'Score {{score}}', score })}
           {' · '}
           {formatDurationMs(replay.durationMs)}
           {' · '}

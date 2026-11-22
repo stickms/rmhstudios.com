@@ -1,11 +1,5 @@
-import {
-  useState,
-  useEffect,
-} from 'react';
-import {
-  m as motion,
-  AnimatePresence,
-} from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 interface GeneratingStateProps {
   /** Big heading (e.g. "Composing your world…"). */
@@ -24,51 +18,16 @@ interface GeneratingStateProps {
  * lines and run an indeterminate bar so the wait never feels frozen. Used by
  * every generative loading surface (world setup, chapter transitions, continue).
  */
-export function GeneratingState({
-  title,
-  steps,
-  note,
-  fill = true,
-}: GeneratingStateProps) {
-  const [
-    i,
-    setI,
-  ] =
-    useState(
-      0,
-    );
+export function GeneratingState({ title, steps, note, fill = true }: GeneratingStateProps) {
+  const [i, setI] = useState(0);
 
   useEffect(() => {
-    if (
-      steps.length <=
-      1
-    )
-      return;
+    if (steps.length <= 1) return;
     // Advance through the steps once and hold on the last — a forward sense of
     // progress instead of an endless loop that reads as "stuck".
-    const t =
-      setInterval(
-        () =>
-          setI(
-            (
-              v,
-            ) =>
-              v <
-              steps.length -
-                1
-                ? v +
-                  1
-                : v,
-          ),
-        1600,
-      );
-    return () =>
-      clearInterval(
-        t,
-      );
-  }, [
-    steps.length,
-  ]);
+    const t = setInterval(() => setI((v) => (v < steps.length - 1 ? v + 1 : v)), 1600);
+    return () => clearInterval(t);
+  }, [steps.length]);
 
   return (
     <div
@@ -78,34 +37,16 @@ export function GeneratingState({
       <motion.div
         className="text-3xl"
         style={{
-          color:
-            '#c4a35a',
+          color: '#c4a35a',
         }}
         animate={{
-          scale:
-            [
-              1,
-              1.15,
-              1,
-            ],
-          rotate:
-            [
-              0,
-              6,
-              -6,
-              0,
-            ],
-          opacity:
-            [
-              0.6,
-              1,
-              0.6,
-            ],
+          scale: [1, 1.15, 1],
+          rotate: [0, 6, -6, 0],
+          opacity: [0.6, 1, 0.6],
         }}
         transition={{
           duration: 2.4,
-          repeat:
-            Infinity,
+          repeat: Infinity,
           ease: 'easeInOut',
         }}
         aria-hidden
@@ -116,28 +57,21 @@ export function GeneratingState({
       <h2
         className="text-2xl tracking-wide"
         style={{
-          fontFamily:
-            'var(--font-cinzel, serif)',
-          color:
-            '#e8e0d0',
+          fontFamily: 'var(--font-cinzel, serif)',
+          color: '#e8e0d0',
         }}
       >
-        {
-          title
-        }
+        {title}
       </h2>
 
       {/* Cycling status line */}
       <div className="h-6 relative w-full max-w-sm">
         <AnimatePresence mode="wait">
           <motion.p
-            key={
-              i
-            }
+            key={i}
             className="absolute inset-x-0 text-sm italic"
             style={{
-              color:
-                '#a89888',
+              color: '#a89888',
             }}
             initial={{
               opacity: 0,
@@ -155,10 +89,7 @@ export function GeneratingState({
               duration: 0.4,
             }}
           >
-            {steps[
-              i
-            ] ??
-              steps[0]}
+            {steps[i] ?? steps[0]}
           </motion.p>
         </AnimatePresence>
       </div>
@@ -167,26 +98,20 @@ export function GeneratingState({
       <div
         className="w-full max-w-xs h-1.5 rounded-full overflow-hidden"
         style={{
-          backgroundColor:
-            'rgba(196,163,90,0.12)',
+          backgroundColor: 'rgba(196,163,90,0.12)',
         }}
       >
         <motion.div
           className="h-full w-1/3 rounded-full"
           style={{
-            background:
-              'linear-gradient(90deg, transparent, #c4a35a, transparent)',
+            background: 'linear-gradient(90deg, transparent, #c4a35a, transparent)',
           }}
           animate={{
-            x: [
-              '-120%',
-              '320%',
-            ],
+            x: ['-120%', '320%'],
           }}
           transition={{
             duration: 1.4,
-            repeat:
-              Infinity,
+            repeat: Infinity,
             ease: 'easeInOut',
           }}
         />
@@ -196,13 +121,10 @@ export function GeneratingState({
         <p
           className="text-xs max-w-xs"
           style={{
-            color:
-              '#6f6657',
+            color: '#6f6657',
           }}
         >
-          {
-            note
-          }
+          {note}
         </p>
       )}
     </div>

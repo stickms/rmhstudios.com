@@ -16,38 +16,16 @@
 
 import type { Id } from '../types';
 
-export type BlindResult =
-  | 'B'
-  | 'F';
+export type BlindResult = 'B' | 'F';
 
 /** The ante of a blind key (`"3:Small"` → 3); NaN-safe (→ 0). */
-export function blindKeyAnte(
-  key: string,
-): number {
-  const n =
-    Number.parseInt(
-      key.split(
-        ':',
-      )[0] ??
-        '',
-      10,
-    );
-  return Number.isFinite(
-    n,
-  )
-    ? n
-    : 0;
+export function blindKeyAnte(key: string): number {
+  const n = Number.parseInt(key.split(':')[0] ?? '', 10);
+  return Number.isFinite(n) ? n : 0;
 }
 
-export function blindKeySlot(
-  key: string,
-): string {
-  return (
-    key.split(
-      ':',
-    )[1] ??
-    ''
-  );
+export function blindKeySlot(key: string): string {
+  return key.split(':')[1] ?? '';
 }
 
 export type Decision =
@@ -66,44 +44,28 @@ export type Decision =
 export function decide2pDeath(a: {
   dead: Id;
   opponent: Id;
-  opponentResult:
-    | BlindResult
-    | undefined;
+  opponentResult: BlindResult | undefined;
   opponentLives: number;
   opponentPresent: boolean;
 }): Decision {
-  if (
-    a.opponentResult ===
-    'B'
-  )
+  if (a.opponentResult === 'B')
     return {
       kind: 'win',
-      winner:
-        a.opponent,
+      winner: a.opponent,
     };
-  if (
-    a.opponentLives <=
-    0
-  )
+  if (a.opponentLives <= 0)
     return {
       kind: 'draw',
     };
-  if (
-    a.opponentResult ===
-    'F'
-  )
+  if (a.opponentResult === 'F')
     return {
       kind: 'win',
-      winner:
-        a.opponent,
+      winner: a.opponent,
     };
-  if (
-    !a.opponentPresent
-  )
+  if (!a.opponentPresent)
     return {
       kind: 'win',
-      winner:
-        a.dead,
+      winner: a.dead,
     };
   return {
     kind: 'pending',
@@ -113,38 +75,12 @@ export function decide2pDeath(a: {
 /** Team pending (REF-12): has the other side settled the blind? */
 export function decideTeamPending(
   otherSide: readonly {
-    result:
-      | BlindResult
-      | undefined;
+    result: BlindResult | undefined;
     lives: number;
     left: boolean;
   }[],
-):
-  | 'other_wins'
-  | 'draw'
-  | 'pending' {
-  if (
-    otherSide.some(
-      (
-        p,
-      ) =>
-        p.result ===
-        'B',
-    )
-  )
-    return 'other_wins';
-  if (
-    otherSide.every(
-      (
-        p,
-      ) =>
-        p.result ===
-          'F' ||
-        p.lives <=
-          0 ||
-        p.left,
-    )
-  )
-    return 'draw';
+): 'other_wins' | 'draw' | 'pending' {
+  if (otherSide.some((p) => p.result === 'B')) return 'other_wins';
+  if (otherSide.every((p) => p.result === 'F' || p.lives <= 0 || p.left)) return 'draw';
   return 'pending';
 }

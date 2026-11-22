@@ -67,10 +67,7 @@ export const isDirty = (clock: ChangeClock): boolean => clock.changeCount !== cl
 
 // ─── Autosave timing ────────────────────────────────────────────────────────
 
-export type AutosaveDecision =
-  | { kind: 'idle' }
-  | { kind: 'wait'; ms: number }
-  | { kind: 'save' };
+export type AutosaveDecision = { kind: 'idle' } | { kind: 'wait'; ms: number } | { kind: 'save' };
 
 /**
  * What the autosave timer should do now: nothing when there is nothing unsaved, wait out the rest of the idle
@@ -125,10 +122,7 @@ export function formatProjectSize(bytes: number, locale: string): string {
  * device). A clip with no sample yet (`bufferId` empty) is not missing one. Those clips stay in the project and play
  * silent; this is only the number the notice reports.
  */
-export function countMissingSamples(
-  clips: Record<string, Clip>,
-  available: ReadonlySet<string>,
-): number {
+export function countMissingSamples(clips: Record<string, Clip>, available: ReadonlySet<string>): number {
   const missing = new Set<string>();
   for (const clip of Object.values(clips)) {
     if (clip.type === 'audio' && clip.bufferId !== '' && !available.has(clip.bufferId)) {
@@ -175,12 +169,7 @@ export function withoutLink(links: CloudLinks, id: string): CloudLinks {
 // ─── Building a project ─────────────────────────────────────────────────────
 
 /** The project file for the store's current content. `createdAt` is kept from the first save. */
-export function buildProject(
-  id: string,
-  content: ProjectContent,
-  createdAt: number,
-  now: number,
-): Project {
+export function buildProject(id: string, content: ProjectContent, createdAt: number, now: number): Project {
   return {
     id,
     name: content.projectName,

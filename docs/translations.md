@@ -1,974 +1,99 @@
 # Translations
 
-The
-site
-and
-the
-docs
-ship
-in
-the
-same
-9
-languages:
-`en`
-plus
-`zh`,
-`ar`,
-`hi`,
-`es`,
-`fr`,
-`pt`,
-`ru`
-and
-`ja`.
-That
-list
-mirrors
-`LOCALES`
-in
-`lib/i18n/config.ts`;
-the
-app
-and
-the
-docs
-deliberately
-support
-the
-same
-set,
-so
-a
-reader
-who
-uses
-the
-site
-in
-Japanese
-isn't
-dropped
-into
-English
-documentation.
-`ar`
-is
-right-to-left,
-matching
-`RTL_LOCALES`
-in
-the
-same
-module.
+The site and the docs ship in the same 9 languages: `en` plus `zh`, `ar`, `hi`, `es`, `fr`, `pt`, `ru` and `ja`. That
+list mirrors `LOCALES` in `lib/i18n/config.ts`; the app and the docs deliberately support the same set, so a reader who
+uses the site in Japanese isn't dropped into English documentation. `ar` is right-to-left, matching `RTL_LOCALES` in the
+same module.
 
-English
-is
-authoritative.
-Everything
-is
-written
-in
-English
-first
-and
-translated
-from
-it.
+English is authoritative. Everything is written in English first and translated from it.
 
-`de`,
-`ko`,
-`it`,
-`id`,
-`tr`,
-`ur`
-and
-`vi`
-shipped
-until
-2026-11-17
-and
-were
-parked
-to
-cut
-translation
-spend.
-They
-sit
-in
-`PENDING_LOCALES`
-with
-the
-other
-unshipped
-catalogs:
-their
-files
-on
-the
-`i18n/catalogs`
-branch
-and
-under
-`docs/locale/`
-are
-kept,
-nothing
-serves
-them,
-and
-nothing
-translates
-them.
-Promoting
-one
-again
-pays
-only
-for
-the
-keys
-added
-since
-it
-was
-parked.
+`de`, `ko`, `it`, `id`, `tr`, `ur` and `vi` shipped until 2026-11-17 and were parked to cut translation spend. They sit
+in `PENDING_LOCALES` with the other unshipped catalogs: their files on the `i18n/catalogs` branch and under
+`docs/locale/` are kept, nothing serves them, and nothing translates them. Promoting one again pays only for the keys
+added since it was parked.
 
 ## Site strings (`locales/`)
 
 ### Where the catalogs live
 
-`main`
-holds
-English
-only
-(`locales/en`),
-because
-English
-is
-the
-source
-and
-is
-written
-in
-the
-same
-pull
-request
-as
-the
-code
-that
-uses
-it.
-Every
-other
-locale,
-shipped
-and
-parked,
-lives
-on
-the
-**`i18n/catalogs`**
-branch:
-`locales/<lng>/<ns>.json`
-plus
-`.sources.<ns>.json`,
-the
-English
-each
-translation
-was
-made
-from.
-That
-branch
-is
-data,
-not
-code.
-It
-is
-never
-merged
-into
-`main`,
-and
-nothing
-on
-it
-goes
-through
-a
-pull
-request.
+`main` holds English only (`locales/en`), because English is the source and is written in the same pull request as the
+code that uses it. Every other locale, shipped and parked, lives on the **`i18n/catalogs`** branch:
+`locales/<lng>/<ns>.json` plus `.sources.<ns>.json`, the English each translation was made from. That branch is data,
+not code. It is never merged into `main`, and nothing on it goes through a pull request.
 
-`pnpm i18n:pull`
-(`scripts/i18n-pull.sh`)
-copies
-the
-branch's
-`locales/`
-into
-a
-checkout
-and
-records
-the
-commit
-in
-`locales/.catalogs-commit`;
-the
-copies
-are
-gitignored.
-It
-runs:
+`pnpm i18n:pull` (`scripts/i18n-pull.sh`) copies the branch's `locales/` into a checkout and records the commit in
+`locales/.catalogs-commit`; the copies are gitignored. It runs:
 
-- in
-  `pnpm dev`,
-  where
-  being
-  offline
-  is
-  fine:
-  it
-  keeps
-  what
-  is
-  already
-  on
-  disk;
-- before
-  the
-  image
-  build
-  in
-  `deploy.yml`
-  and
-  `candidate-image.yml`,
-  where
-  it
-  is
-  strict:
-  a
-  failed
-  pull
-  fails
-  the
-  job
-  rather
-  than
-  shipping
-  a
-  site
-  that
-  is
-  English
-  everywhere
-  (the
-  build
-  log
-  prints
-  the
-  catalogs
-  commit);
-- at
-  the
-  start
-  of
-  the
-  translate
-  workflow.
+- in `pnpm dev`, where being offline is fine: it keeps what is already on disk;
+- before the image build in `deploy.yml` and `candidate-image.yml`, where it is strict: a failed pull fails the job
+  rather than shipping a site that is English everywhere (the build log prints the catalogs commit);
+- at the start of the translate workflow.
 
-`lib/i18n/resources.<locale>.ts`
-is
-a
-static
-`import.meta.glob('/locales/<lng>/*.json')`,
-so
-Vite
-builds
-each
-locale's
-namespace
-map
-from
-whatever
-catalogs
-are
-on
-disk.
-A
-checkout
-without
-catalogs
-typechecks,
-tests
-and
-runs;
-every
-non-English
-key
-falls
-back
-to
-English.
+`lib/i18n/resources.<locale>.ts` is a static `import.meta.glob('/locales/<lng>/*.json')`, so Vite builds each locale's
+namespace map from whatever catalogs are on disk. A checkout without catalogs typechecks, tests and runs; every
+non-English key falls back to English.
 
-A
-pull
-request
-that
-changes
-English
-never
-touches
-another
-locale.
-A
-key
-it
-adds
-is
-English
-in
-every
-other
-language
-until
-the
-next
-translate
-run,
-and
-a
-key
-it
-removes
-is
-pruned
-from
-the
-catalogs
-by
-that
-run.
-`i18n:extract`
-writes
-`locales/en`
-only,
-and
-that
-is
-what
-the
-workflow
-translates
-from:
-it
-does
-not
-extract
-English
-itself,
-so
-a
-`t()`
-key
-that
-never
-reached
-`locales/en`
-stays
-English
-in
-every
-locale
-until
-it
-is
-extracted,
-committed
-and
-the
-workflow
-is
-run
-again.
+A pull request that changes English never touches another locale. A key it adds is English in every other language until
+the next translate run, and a key it removes is pruned from the catalogs by that run. `i18n:extract` writes `locales/en`
+only, and that is what the workflow translates from: it does not extract English itself, so a `t()` key that never
+reached `locales/en` stays English in every locale until it is extracted, committed and the workflow is run again.
 
 ### Translating
 
-The
-**i18n-translate**
-workflow
-(`.github/workflows/i18n-translate.yml`)
-is
-the
-only
-thing
-that
-machine-translates.
-Run
-it
-from
-the
-Actions
-tab
-(**Run
-workflow**)
-with
-three
-inputs:
+The **i18n-translate** workflow (`.github/workflows/i18n-translate.yml`) is the only thing that machine-translates. Run
+it from the Actions tab (**Run workflow**) with three inputs:
 
-- `locales`:
-  a
-  comma-separated
-  subset
-  (empty
-  means
-  every
-  shipped
-  locale);
-- `dry_run`:
-  report
-  what
-  would
-  be
-  paid
-  for,
-  and
-  stop;
-- `deploy`
-  (on
-  by
-  default):
-  redeploy
-  `main`
-  afterwards
-  so
-  the
-  new
-  strings
-  ship.
+- `locales`: a comma-separated subset (empty means every shipped locale);
+- `dry_run`: report what would be paid for, and stop;
+- `deploy` (on by default): redeploy `main` afterwards so the new strings ship.
 
-It
-uses
-the
-`DEEPSEEK_API_KEY`
-repository
-secret.
-It
-pulls
-the
-catalogs,
-translates,
-runs
-the
-catalog
-tests
-(`lib/__tests__/i18n-catalogs.test.ts`,
-the
-gate
-for
-this
-branch
-now
-that
-pull
-requests
-do
-not
-touch
-it),
-and
-commits
-straight
-to
-`i18n/catalogs`.
-That
-commit
-is
-kept
-even
-when
-the
-check
-fails,
-because
-it
-is
-paid
-for.
-A
-failed
-check
-skips
-the
-deploy
-and
-fails
-the
-run
-instead.
-The
-push
-is
-leased
-on
-the
-commit
-the
-run
-started
-from,
-so
-a
-hand
-fix
-made
-meanwhile
-is
-never
-overwritten
-(the
-run
-fails,
-and
-the
-next
-one
-picks
-the
-fix
-up).
+It uses the `DEEPSEEK_API_KEY` repository secret. It pulls the catalogs, translates, runs the catalog tests
+(`lib/__tests__/i18n-catalogs.test.ts`, the gate for this branch now that pull requests do not touch it), and commits
+straight to `i18n/catalogs`. That commit is kept even when the check fails, because it is paid for. A failed check skips
+the deploy and fails the run instead. The push is leased on the commit the run started from, so a hand fix made
+meanwhile is never overwritten (the run fails, and the next one picks the fix up).
 
-A
-run
-pays
-for
-each
-string
-at
-most
-once:
+A run pays for each string at most once:
 
-- **Already
-  current
-  is
-  skipped.**
-  A
-  key
-  whose
-  recorded
-  English
-  matches
-  today's
-  English
-  is
-  never
-  sent
-  again.
-- **Older
-  paid
-  work
-  is
-  reused.**
-  The
-  pipeline
-  before
-  this
-  branch
-  left
-  per-run
-  `i18n/auto-translate*`
-  branches
-  whose
-  output
-  never
-  merged.
-  `scripts/i18n-collect-reuse.ts`
-  gathers
-  every
-  translation
-  stored
-  on
-  any
-  `i18n/*`
-  branch,
-  and
-  the
-  translator
-  adopts
-  each
-  one
-  whose
-  recorded
-  English
-  is
-  still
-  today's
-  English.
-  Once
-  those
-  old
-  branches
-  are
-  deleted
-  this
-  step
-  finds
-  nothing
-  and
-  costs
-  nothing.
-- **Identical
-  English
-  is
-  translated
-  once.**
-  Within
-  a
-  locale,
-  a
-  string
-  that
-  already
-  has
-  a
-  current
-  translation
-  under
-  any
-  key
-  (`Cancel`,
-  `Save`,
-  `{{count}} players`)
-  is
-  copied
-  rather
-  than
-  sent,
-  and
-  a
-  string
-  that
-  appears
-  under
-  several
-  untranslated
-  keys
-  is
-  sent
-  once.
-- **Strings
-  without
-  words
-  are
-  copied.**
-  Numbers,
-  symbols
-  and
-  bare
-  placeholders
-  (`10`,
-  `—`,
-  `{{done}}/{{total}}`)
-  read
-  the
-  same
-  everywhere
-  and
-  are
-  never
-  sent.
-- **Plural
-  forms
-  follow
-  the
-  language.**
-  English
-  has
-  `_one`
-  and
-  `_other`;
-  Japanese
-  and
-  Chinese
-  use
-  only
-  `_other`,
-  Russian
-  adds
-  `_few`
-  and
-  `_many`,
-  Arabic
-  uses
-  all
-  six
-  CLDR
-  forms.
-  The
-  translator
-  asks
-  for
-  exactly
-  the
-  forms
-  each
-  language
-  uses
-  (`Intl.PluralRules`),
-  never
-  writes
-  the
-  others,
-  and
-  writes
-  a
-  plural
-  group
-  whole
-  or
-  not
-  at
-  all:
-  a
-  group
-  is
-  always
-  sent
-  in
-  one
-  batch,
-  a
-  failed
-  batch
-  is
-  retried
-  once
-  in
-  halves,
-  and
-  a
-  group
-  still
-  incomplete
-  after
-  that
-  is
-  left
-  out
-  so
-  it
-  falls
-  back
-  to
-  English
-  whole.
-  A
-  new
-  namespace
-  file
-  that
-  reuse
-  alone
-  filled
-  only
-  partly
-  is
-  not
-  written.
-  Replies
-  are
-  read
-  in
-  JSON
-  mode,
-  taking
-  the
-  first
-  JSON
-  object,
-  so
-  trailing
-  text
-  from
-  the
-  model
-  no
-  longer
-  costs
-  a
-  batch.
+- **Already current is skipped.** A key whose recorded English matches today's English is never sent again.
+- **Older paid work is reused.** The pipeline before this branch left per-run `i18n/auto-translate*` branches whose
+  output never merged. `scripts/i18n-collect-reuse.ts` gathers every translation stored on any `i18n/*` branch, and the
+  translator adopts each one whose recorded English is still today's English. Once those old branches are deleted this
+  step finds nothing and costs nothing.
+- **Identical English is translated once.** Within a locale, a string that already has a current translation under any
+  key (`Cancel`, `Save`, `{{count}} players`) is copied rather than sent, and a string that appears under several
+  untranslated keys is sent once.
+- **Strings without words are copied.** Numbers, symbols and bare placeholders (`10`, `—`, `{{done}}/{{total}}`) read
+  the same everywhere and are never sent.
+- **Plural forms follow the language.** English has `_one` and `_other`; Japanese and Chinese use only `_other`, Russian
+  adds `_few` and `_many`, Arabic uses all six CLDR forms. The translator asks for exactly the forms each language uses
+  (`Intl.PluralRules`), never writes the others, and writes a plural group whole or not at all: a group is always sent
+  in one batch, a failed batch is retried once in halves, and a group still incomplete after that is left out so it
+  falls back to English whole. A new namespace file that reuse alone filled only partly is not written. Replies are read
+  in JSON mode, taking the first JSON object, so trailing text from the model no longer costs a batch.
 
 ### Fixing a translation by hand
 
-Edit
-the
-value
-on
-the
-`i18n/catalogs`
-branch
-and
-commit
-there
-(directly,
-or
-through
-a
-pull
-request
-into
-that
-branch).
-Leave
-its
-`.sources`
-entry
-as
-it
-is:
-a
-translation
-whose
-recorded
-English
-still
-matches
-today's
-English
-is
-current,
-so
-the
-next
-run
-keeps
-it.
-When
-the
-English
-later
-changes,
-the
-key
-is
-translated
-again.
+Edit the value on the `i18n/catalogs` branch and commit there (directly, or through a pull request into that branch).
+Leave its `.sources` entry as it is: a translation whose recorded English still matches today's English is current, so
+the next run keeps it. When the English later changes, the key is translated again.
 
-`I18N_LOCALES`,
-`I18N_DRY_RUN`
-and
-the
-other
-knobs
-at
-the
-top
-of
-`scripts/translate-locales.ts`
-are
-what
-the
-workflow
-sets.
-Nobody
-runs
-it
-locally:
-the
-key
-is
-a
-repository
-secret,
-and
-a
-local
-run's
-output
-would
-reach
-nothing
-until
-someone
-committed
-it
-to
-`i18n/catalogs`
-by
-hand.
+`I18N_LOCALES`, `I18N_DRY_RUN` and the other knobs at the top of `scripts/translate-locales.ts` are what the workflow
+sets. Nobody runs it locally: the key is a repository secret, and a local run's output would reach nothing until someone
+committed it to `i18n/catalogs` by hand.
 
 ## Docs pages (`docs/locale/`)
 
 ### How it works
 
-Sphinx
-uses
-gettext.
-Catalogs
-live
-in
-`docs/locale/<lang>/LC_MESSAGES/`,
-one
-`.po`
-file
-per
-document
-(`gettext_compact = False`),
-and
-fall
-back
-**per
-string**:
-an
-untranslated
-paragraph
-renders
-in
-English
-while
-the
-rest
-of
-the
-page
-stays
-translated.
-A
-partially
-translated
-page
-is
-therefore
-usable
-rather
-than
-broken,
-which
-is
-what
-makes
-incremental
-translation
-viable
-at
-all.
+Sphinx uses gettext. Catalogs live in `docs/locale/<lang>/LC_MESSAGES/`, one `.po` file per document
+(`gettext_compact = False`), and fall back **per string**: an untranslated paragraph renders in English while the rest
+of the page stays translated. A partially translated page is therefore usable rather than broken, which is what makes
+incremental translation viable at all.
 
 ### Coverage
 
-Translations
-are
-maintained
-for
-the
-reader-facing
-pages:
+Translations are maintained for the reader-facing pages:
 
 | Page                     | Why                                                                                                  |
 | ------------------------ | ---------------------------------------------------------------------------------------------------- |
@@ -976,111 +101,17 @@ pages:
 | `site-reference/index`   | What the platform is.                                                                                |
 | `developer-api/*` guides | Overview, authentication, scopes, rate limits, errors, pagination, idempotency, webhooks, changelog. |
 
-Deliberately
-**not**
-translated:
+Deliberately **not** translated:
 
-- **`developer-api/endpoints/*`**
-  —
-  the
-  generated
-  endpoint
-  reference.
-  It
-  is
-  mostly
-  HTTP
-  verbs,
-  paths,
-  JSON
-  bodies
-  and
-  one-line
-  summaries;
-  the
-  translatable
-  fraction
-  is
-  small,
-  and
-  it
-  regenerates
-  whenever
-  the
-  registry
-  changes,
-  which
-  would
-  invalidate
-  the
-  translations
-  on
-  every
-  API
-  change.
-- **`developer-api/internals.md`**
-  and
-  the
-  rest
-  of
-  `docs/`
-  —
-  ~190
-  dated
-  design
-  docs,
-  plans,
-  audits
-  and
-  per-game
-  specs.
-  These
-  are
-  internal
-  working
-  documents
-  written
-  for
-  contributors,
-  they
-  churn
-  constantly,
-  and
-  machine-translating
-  them
-  would
-  add
-  tens
-  of
-  thousands
-  of
-  catalog
-  entries
-  that
-  nobody
-  reads.
+- **`developer-api/endpoints/*`** — the generated endpoint reference. It is mostly HTTP verbs, paths, JSON bodies and
+  one-line summaries; the translatable fraction is small, and it regenerates whenever the registry changes, which would
+  invalidate the translations on every API change.
+- **`developer-api/internals.md`** and the rest of `docs/` — ~190 dated design docs, plans, audits and per-game specs.
+  These are internal working documents written for contributors, they churn constantly, and machine-translating them
+  would add tens of thousands of catalog entries that nobody reads.
 
-The
-subset
-lives
-in
-`TRANSLATED`
-in
-`scripts/docs-i18n.sh`.
-To
-start
-translating
-another
-page,
-add
-its
-docname
-there
-and
-run
-`extract`
-then
-`update`.
+The subset lives in `TRANSLATED` in `scripts/docs-i18n.sh`. To start translating another page, add its docname there and
+run `extract` then `update`.
 
 ### Workflow
 
@@ -1093,312 +124,36 @@ scripts/docs-i18n.sh build ja         # build one language locally
 scripts/docs-i18n.sh stats            # per-locale translated/untranslated counts
 ```
 
-`update`
-**merges**:
-a
-string
-whose
-English
-text
-changed
-is
-marked
-`fuzzy`
-with
-its
-old
-translation
-kept,
-rather
-than
-silently
-discarded.
-Fuzzy
-entries
-are
-ignored
-at
-build
-time
-—
-the
-page
-falls
-back
-to
-English
-for
-that
-string
-until
-someone
-re-translates
-it.
-So
-editing
-English
-prose
-degrades
-a
-translation
-gracefully
-instead
-of
-leaving
-a
-stale
-claim
-in
-place,
-which
-is
-the
-failure
-mode
-that
-matters.
+`update` **merges**: a string whose English text changed is marked `fuzzy` with its old translation kept, rather than
+silently discarded. Fuzzy entries are ignored at build time — the page falls back to English for that string until
+someone re-translates it. So editing English prose degrades a translation gracefully instead of leaving a stale claim in
+place, which is the failure mode that matters.
 
 ### Rules for translators
 
-- Never
-  touch
-  `msgid`.
-  Only
-  fill
-  in
-  `msgstr`.
-- Leave
-  the
-  contents
-  of
-  inline
-  code
-  spans
-  in
-  English
-  —
-  identifiers,
-  file
-  paths,
-  HTTP
-  header
-  names,
-  scope
-  ids,
-  error
-  codes
-  and
-  route
-  paths
-  are
-  part
-  of
-  the
-  API,
-  not
-  prose.
-  `` `read:profile` ``
-  is
-  a
-  literal
-  value
-  a
-  developer
-  types.
-- Preserve
-  Markdown
-  and
-  MyST
-  syntax
-  exactly,
-  including
-  directive
-  names
-  (```{note}),
-  roles,
-  and
-  link
-  targets.
-  Translate
-  link
-  _text_,
-  never
-  the
-  target.
-- Don't
-  translate
-  brand
-  names
-  or
-  URLs.
-- For
-  `ar`
-  (and
-  any
-  RTL
-  locale
-  promoted
-  later),
-  do
-  not
-  insert
-  Unicode
-  directional
-  control
-  marks.
-  Pages
-  render
-  with
-  `dir="rtl"`
-  and
-  the
-  browser's
-  bidi
-  algorithm
-  handles
-  mixed-script
-  runs;
-  embedded
-  control
-  characters
-  corrupt
-  output
-  and
-  are
-  invisible
-  in
-  review.
+- Never touch `msgid`. Only fill in `msgstr`.
+- Leave the contents of inline code spans in English — identifiers, file paths, HTTP header names, scope ids, error
+  codes and route paths are part of the API, not prose. `` `read:profile` `` is a literal value a developer types.
+- Preserve Markdown and MyST syntax exactly, including directive names (```{note}), roles, and link targets. Translate
+  link _text_, never the target.
+- Don't translate brand names or URLs.
+- For `ar` (and any RTL locale promoted later), do not insert Unicode directional control marks. Pages render with
+  `dir="rtl"` and the browser's bidi algorithm handles mixed-script runs; embedded control characters corrupt output and
+  are invisible in review.
 
 ### Read the Docs setup
 
-Read
-the
-Docs
-models
-translations
-as
-**separate
-projects
-linked
-to
-a
-parent**,
-not
-as
-one
-multilingual
-build.
-For
-each
+Read the Docs models translations as **separate projects linked to a parent**, not as one multilingual build. For each
 language:
 
-1. Create
-   a
-   project
-   pointing
-   at
-   the
-   same
-   repository,
-   named
-   e.g.
-   `rmhstudios-ja`.
-2. Set
-   its
-   **Language**
-   to
-   that
-   locale
-   in
-   the
-   project's
-   settings.
-3. On
-   the
-   English
-   project,
-   add
-   it
-   under
-   **Translations**.
+1. Create a project pointing at the same repository, named e.g. `rmhstudios-ja`.
+2. Set its **Language** to that locale in the project's settings.
+3. On the English project, add it under **Translations**.
 
-RTD
-then
-passes
-`-D language=<code>`
-to
-Sphinx
-and
-serves
-the
-result
-at
-`/<code>/`,
-with
-the
-language
-switcher
-in
-the
-flyout
-wired
-up
-automatically.
-`docs/conf.py`
-sets
-`language = "en"`
-and
-is
-otherwise
-identical
-across
-every
-project
-—
-nothing
-per-language
-is
-committed
-except
-the
-catalogs.
+RTD then passes `-D language=<code>` to Sphinx and serves the result at `/<code>/`, with the language switcher in the
+flyout wired up automatically. `docs/conf.py` sets `language = "en"` and is otherwise identical across every project —
+nothing per-language is committed except the catalogs.
 
-When
-a
-language
-is
-parked
-(taken
-out
-of
-`LOCALES`),
-remove
-its
-project
-from
-the
-English
-project's
-**Translations**
-list
-so
-the
-flyout
-stops
-offering
-it.
-The
-project
-itself
-can
-be
-deactivated
-rather
-than
-deleted;
-its
-catalogs
-stay
-in
-the
+When a language is parked (taken out of `LOCALES`), remove its project from the English project's **Translations** list
+so the flyout stops offering it. The project itself can be deactivated rather than deleted; its catalogs stay in the
 repository.

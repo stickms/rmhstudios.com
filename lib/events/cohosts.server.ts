@@ -77,7 +77,11 @@ export async function canManageEvent(
   return canManage(role) ? role : null;
 }
 
-async function blockedEitherWay(tx: Pick<Prisma.TransactionClient, 'userBlock'>, a: string, b: string): Promise<boolean> {
+async function blockedEitherWay(
+  tx: Pick<Prisma.TransactionClient, 'userBlock'>,
+  a: string,
+  b: string,
+): Promise<boolean> {
   const hit = await tx.userBlock.findFirst({
     where: {
       OR: [
@@ -203,7 +207,8 @@ export async function respondToCohostInvite(input: {
       select: { status: true },
     });
     if (!mine) return { code: 'no-invite' as const, notify: false };
-    if (mine.status === 'accepted') return input.accept ? { code: null, notify: false } : { code: 'already-accepted' as const, notify: false };
+    if (mine.status === 'accepted')
+      return input.accept ? { code: null, notify: false } : { code: 'already-accepted' as const, notify: false };
     if (!input.accept) {
       await tx.eventCohost.deleteMany({ where: { eventId: input.eventId, userId: input.userId, status: 'invited' } });
       return { code: null, notify: false };

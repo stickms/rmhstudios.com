@@ -35,10 +35,7 @@ export const route = apiRoute('/api/admin/users/$id/coins/$adjustmentId/reverse'
         case 'is_reversal':
           return Response.json({ error: 'A reversal cannot be reversed' }, { status: 409 });
         case 'insufficient':
-          return Response.json(
-            { error: 'The member has spent those coins', balance: out.balance },
-            { status: 409 },
-          );
+          return Response.json({ error: 'The member has spent those coins', balance: out.balance }, { status: 409 });
       }
     },
   ),

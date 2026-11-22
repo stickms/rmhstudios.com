@@ -28,8 +28,7 @@ export type PresenceActivity =
       label: string;
     };
 
-export type PresenceActivityKind =
-  PresenceActivity['kind'];
+export type PresenceActivityKind = PresenceActivity['kind'];
 
 /** A one-tap context target derived from an activity (join party / hop in / watch). */
 export interface JoinTarget {
@@ -41,33 +40,18 @@ export interface JoinTarget {
 }
 
 /** Who is allowed to see this user in a rail / activity line. */
-export const PRESENCE_VISIBILITIES =
-  [
-    'mutuals',
-    'followers',
-    'nobody',
-  ] as const;
-export type PresenceVisibility =
-  (typeof PRESENCE_VISIBILITIES)[number];
-export const DEFAULT_PRESENCE_VISIBILITY: PresenceVisibility =
-  'mutuals';
+export const PRESENCE_VISIBILITIES = ['mutuals', 'followers', 'nobody'] as const;
+export type PresenceVisibility = (typeof PRESENCE_VISIBILITIES)[number];
+export const DEFAULT_PRESENCE_VISIBILITY: PresenceVisibility = 'mutuals';
 
 /** One entry in the Friends rail / sheet. */
 export interface ActiveFriend {
   user: {
     id: string;
-    name:
-      | string
-      | null;
-    handle:
-      | string
-      | null;
-    username:
-      | string
-      | null;
-    image:
-      | string
-      | null;
+    name: string | null;
+    handle: string | null;
+    username: string | null;
+    image: string | null;
   };
   /** Null when the viewer isn't allowed activity detail, or the friend is idle. */
   activity: PresenceActivity | null;
@@ -83,79 +67,23 @@ export interface ActiveFriend {
  * precomputed activity label + join target) so a `React.memo`'d row skips the
  * re-render when a poll returns equivalent data.
  */
-export function sameActiveFriend(
-  a: ActiveFriend,
-  b: ActiveFriend,
-): boolean {
+export function sameActiveFriend(a: ActiveFriend, b: ActiveFriend): boolean {
   return (
-    a
-      .user
-      .id ===
-      b
-        .user
-        .id &&
-    a
-      .user
-      .name ===
-      b
-        .user
-        .name &&
-    a
-      .user
-      .handle ===
-      b
-        .user
-        .handle &&
-    a
-      .user
-      .username ===
-      b
-        .user
-        .username &&
-    a
-      .user
-      .image ===
-      b
-        .user
-        .image &&
-    (a
-      .activity
-      ?.kind ??
-      null) ===
-      (b
-        .activity
-        ?.kind ??
-        null) &&
-    (a
-      .activity
-      ?.label ??
-      null) ===
-      (b
-        .activity
-        ?.label ??
-        null) &&
-    (a
-      .joinable
-      ?.href ??
-      null) ===
-      (b
-        .joinable
-        ?.href ??
-        null)
+    a.user.id === b.user.id &&
+    a.user.name === b.user.name &&
+    a.user.handle === b.user.handle &&
+    a.user.username === b.user.username &&
+    a.user.image === b.user.image &&
+    (a.activity?.kind ?? null) === (b.activity?.kind ?? null) &&
+    (a.activity?.label ?? null) === (b.activity?.label ?? null) &&
+    (a.joinable?.href ?? null) === (b.joinable?.href ?? null)
   );
 }
 
 /** Resolve the joinable href for an activity, or null when it isn't joinable. */
-export function joinTargetFor(
-  activity: PresenceActivity | null,
-): JoinTarget | null {
-  if (
-    !activity
-  )
-    return null;
-  switch (
-    activity.kind
-  ) {
+export function joinTargetFor(activity: PresenceActivity | null): JoinTarget | null {
+  if (!activity) return null;
+  switch (activity.kind) {
     case 'game':
       return {
         kind: 'game',
@@ -180,12 +108,8 @@ export function joinTargetFor(
 }
 
 /** The context-button verb for an activity kind (English fallback; i18n key `context-<kind>`). */
-export function contextVerb(
-  kind: PresenceActivityKind,
-): string {
-  switch (
-    kind
-  ) {
+export function contextVerb(kind: PresenceActivityKind): string {
+  switch (kind) {
     case 'game':
       return 'Join';
     case 'space':

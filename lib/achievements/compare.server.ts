@@ -7,20 +7,13 @@ import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { listAchievements } from '@/lib/achievements.server';
 import { isBlockedPair } from '@/lib/messages/send.server';
 import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
-import {
-  buildCompareRows,
-  type CompareMember,
-  type CompareResponse,
-} from '@/lib/achievements/compare';
+import { buildCompareRows, type CompareMember, type CompareResponse } from '@/lib/achievements/compare';
 
 /**
  * `null` is the one "not found" answer: an unknown member, a blocked pair in either direction, a banned member, an
  * account that is leaving and the viewer themselves are indistinguishable from each other and from a typo.
  */
-export async function compareAchievements(
-  viewerId: string,
-  withIdOrHandle: string,
-): Promise<CompareResponse | null> {
+export async function compareAchievements(viewerId: string, withIdOrHandle: string): Promise<CompareResponse | null> {
   const [viewer, other] = await Promise.all([
     prisma.user.findUnique({ where: { id: viewerId }, select: userDisplaySelect }),
     prisma.user.findFirst({
@@ -43,12 +36,7 @@ export async function compareAchievements(
   return {
     you: member(viewer, mine.stats),
     them: member(other, theirs.stats),
-    rows: buildCompareRows(
-      ACHIEVEMENTS,
-      mine,
-      theirs,
-      Object.fromEntries(rarity.map((r) => [r.achievementId, r.pct])),
-    ),
+    rows: buildCompareRows(ACHIEVEMENTS, mine, theirs, Object.fromEntries(rarity.map((r) => [r.achievementId, r.pct]))),
   };
 }
 

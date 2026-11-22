@@ -47,7 +47,9 @@ export interface EventTimeRow {
 }
 
 /** The repeat rule of a row, or null for a one-off. */
-export function seriesOf(row: Pick<EventTimeRow, 'startsAt' | 'recurrence' | 'recurUntil' | 'recurTz'>): RecurringSeries | null {
+export function seriesOf(
+  row: Pick<EventTimeRow, 'startsAt' | 'recurrence' | 'recurUntil' | 'recurTz'>,
+): RecurringSeries | null {
   if (!isRecurrenceRule(row.recurrence)) return null;
   return {
     rule: row.recurrence,
@@ -64,7 +66,12 @@ export const durationMs = (row: Pick<EventTimeRow, 'startsAt' | 'endsAt'>): numb
  * Every start of the row inside [from, to]. A one-off has at most one; a
  * repeating row is expanded (bounded by `max`).
  */
-export function startsBetween(row: Pick<EventTimeRow, 'startsAt' | 'recurrence' | 'recurUntil' | 'recurTz'>, from: Date, to: Date, max = 120): Date[] {
+export function startsBetween(
+  row: Pick<EventTimeRow, 'startsAt' | 'recurrence' | 'recurUntil' | 'recurTz'>,
+  from: Date,
+  to: Date,
+  max = 120,
+): Date[] {
   const series = seriesOf(row);
   if (!series) {
     const t = row.startsAt.getTime();
@@ -141,7 +148,13 @@ export function gameNightMeta(meta: unknown): GameNightMeta {
 }
 
 /** A game-night Event as the rotation maths in lib/competitive/game-night.ts wants it. */
-export function gameNightDef(row: { id: string; title: string; startsAt: Date; endsAt: Date | null; meta: unknown }): GameNightDef {
+export function gameNightDef(row: {
+  id: string;
+  title: string;
+  startsAt: Date;
+  endsAt: Date | null;
+  meta: unknown;
+}): GameNightDef {
   const meta = gameNightMeta(row.meta);
   return {
     id: row.id,

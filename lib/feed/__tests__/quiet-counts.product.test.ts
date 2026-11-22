@@ -45,9 +45,12 @@ describe('what the viewer sees, for every combination of the two switches', () =
     [true, true, true, null],
   ];
 
-  it.each(table)('author hides=%s, viewer is the author=%s, viewer hides while browsing=%s -> %s', (a, own, v, want) => {
-    expect(seen(a, own, v)).toBe(want);
-  });
+  it.each(table)(
+    'author hides=%s, viewer is the author=%s, viewer hides while browsing=%s -> %s',
+    (a, own, v, want) => {
+      expect(seen(a, own, v)).toBe(want);
+    },
+  );
 
   it('turning either switch off restores the numbers at once (the rule is a pure function of both)', () => {
     expect(seen(true, false, true)).toBeNull();

@@ -2,22 +2,12 @@
  * The sight reading game's sentences, under a real i18next instance with no catalog (every string
  * is its `t()` default, plurals included), as `StaffCard.test.tsx` does.
  */
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
-import {
-  createInstance,
-  type TFunction,
-} from 'i18next';
+import { describe, expect, it } from 'vitest';
+import { createInstance, type TFunction } from 'i18next';
 import { mulberry32 } from '@/lib/core/rng';
 import { makeRun } from '@/lib/rmhmusic/learn/sprint/generate';
 import { SPRINT_LEVELS } from '@/lib/rmhmusic/learn/sprint/levels';
-import {
-  initial,
-  step,
-} from '@/lib/rmhmusic/learn/sprint/machine';
+import { initial, step } from '@/lib/rmhmusic/learn/sprint/machine';
 import {
   askHint,
   bestSentence,
@@ -28,168 +18,57 @@ import {
   saveSentence,
 } from './sprint-text';
 
-const i18n =
-  createInstance();
-void i18n.init(
-  {
-    lng: 'en',
-    fallbackLng:
-      'en',
-    resources:
-      {},
-    initAsync: false,
-    interpolation:
-      {
-        escapeValue: false,
-      },
+const i18n = createInstance();
+void i18n.init({
+  lng: 'en',
+  fallbackLng: 'en',
+  resources: {},
+  initAsync: false,
+  interpolation: {
+    escapeValue: false,
   },
-);
-const t =
-  i18n.t.bind(
-    i18n,
-  ) as unknown as TFunction<'c-rmhmusic'>;
+});
+const t = i18n.t.bind(i18n) as unknown as TFunction<'c-rmhmusic'>;
 
-const summary =
-  (
-    over: Partial<
-      Parameters<
-        typeof resultSentence
-      >[2]
-    > = {},
-  ) => ({
-    score: 80,
-    stars:
-      2 as const,
-    correct: 4,
-    played: 5,
-    skipped: 0,
-    avgMs: 1500,
-    ...over,
-  });
+const summary = (over: Partial<Parameters<typeof resultSentence>[2]> = {}) => ({
+  score: 80,
+  stars: 2 as const,
+  correct: 4,
+  played: 5,
+  skipped: 0,
+  avgMs: 1500,
+  ...over,
+});
 
 describe('sprint sentences', () => {
   it('never names the notes while a prompt is asked; names them once answered', () => {
-    const NOTES =
-      'NOTE-NAMES';
+    const NOTES = 'NOTE-NAMES';
     for (const level of SPRINT_LEVELS) {
-      for (const p of makeRun(
-        level.id,
-        20,
-        mulberry32(
-          1,
-        ),
-      )) {
-        const asked =
-          promptLabel(
-            t,
-            p,
-            false,
-            NOTES,
-          );
-        expect(
-          asked,
-        ).not.toContain(
-          NOTES,
-        );
-        expect(
-          asked,
-        ).toMatch(
-          /staff$/,
-        );
-        expect(
-          promptLabel(
-            t,
-            p,
-            true,
-            NOTES,
-          ),
-        ).toContain(
-          NOTES,
-        );
+      for (const p of makeRun(level.id, 20, mulberry32(1))) {
+        const asked = promptLabel(t, p, false, NOTES);
+        expect(asked).not.toContain(NOTES);
+        expect(asked).toMatch(/staff$/);
+        expect(promptLabel(t, p, true, NOTES)).toContain(NOTES);
       }
     }
   });
 
   it('says whether the octave counts on this input', () => {
-    const [
-      p,
-    ] =
-      makeRun(
-        'note',
-        1,
-        mulberry32(
-          1,
-        ),
-      );
-    const [
-      bar,
-    ] =
-      makeRun(
-        'bar',
-        1,
-        mulberry32(
-          1,
-        ),
-      );
-    expect(
-      askHint(
-        t,
-        p!,
-        'midi',
-        0,
-      ),
-    ).toBe(
-      'Play the note at the written pitch.',
-    );
-    expect(
-      askHint(
-        t,
-        p!,
-        'keys',
-        0,
-      ),
-    ).toBe(
-      'Play the note in any octave.',
-    );
-    expect(
-      askHint(
-        t,
-        p!,
-        'screen',
-        0,
-      ),
-    ).toBe(
-      'Play the note in any octave.',
-    );
-    expect(
-      askHint(
-        t,
-        bar!,
-        'mic',
-        0,
-      ),
-    ).toBe(
-      'Play the notes in order, in any octave.',
-    );
+    const [p] = makeRun('note', 1, mulberry32(1));
+    const [bar] = makeRun('bar', 1, mulberry32(1));
+    expect(askHint(t, p!, 'midi', 0)).toBe('Play the note at the written pitch.');
+    expect(askHint(t, p!, 'keys', 0)).toBe('Play the note in any octave.');
+    expect(askHint(t, p!, 'screen', 0)).toBe('Play the note in any octave.');
+    expect(askHint(t, bar!, 'mic', 0)).toBe('Play the notes in order, in any octave.');
   });
 
   it('wrong by the octave only says so, with the octave', () => {
-    let s =
-      initial(
-        {
-          prompts:
-            makeRun(
-              'note',
-              1,
-              mulberry32(
-                1,
-              ),
-            ),
-          mode: 'freeplay',
-          scored: true,
-          mic: false,
-        },
-      );
+    let s = initial({
+      prompts: makeRun('note', 1, mulberry32(1)),
+      mode: 'freeplay',
+      scored: true,
+      mic: false,
+    });
     for (const e of [
       {
         type: 'start',
@@ -204,321 +83,160 @@ describe('sprint sentences', () => {
         type: 'tick',
       },
     ] as const)
-      s =
-        step(
-          s,
-          e,
-        ).state;
-    s =
-      step(
-        s,
-        {
-          type: 'shown',
-          at: 0,
-        },
-      ).state;
-    const want =
-      s
-        .targets[0]![0]!;
-    s =
-      step(
-        s,
-        {
-          type: 'note',
-          note: {
-            type: 'on',
-            midi:
-              want +
-              12,
-            time: 100,
-            source:
-              'midi',
-          },
-        },
-      ).state;
-    if (
-      s.kind !==
-      'feedback'
-    )
-      throw new Error(
-        'expected feedback',
-      );
-    expect(
-      feedbackLine(
-        t,
-        'en',
-        s,
-        'C',
-        'C4',
-      ),
-    ).toBe(
-      'Right letter, wrong octave: it was C4.',
-    );
+      s = step(s, e).state;
+    s = step(s, {
+      type: 'shown',
+      at: 0,
+    }).state;
+    const want = s.targets[0]![0]!;
+    s = step(s, {
+      type: 'note',
+      note: {
+        type: 'on',
+        midi: want + 12,
+        time: 100,
+        source: 'midi',
+      },
+    }).state;
+    if (s.kind !== 'feedback') throw new Error('expected feedback');
+    expect(feedbackLine(t, 'en', s, 'C', 'C4')).toBe('Right letter, wrong octave: it was C4.');
   });
 
   it('one sentence per result case, with plurals and no "0 prompts"', () => {
+    expect(resultSentence(t, 'en', summary())).toBe('You scored 80: 4 of 5 prompts were right, in 1.5 s on average.');
     expect(
       resultSentence(
         t,
         'en',
-        summary(),
+        summary({
+          played: 1,
+          correct: 1,
+          score: 100,
+          avgMs: 900,
+        }),
       ),
-    ).toBe(
-      'You scored 80: 4 of 5 prompts were right, in 1.5 s on average.',
-    );
+    ).toBe('You scored 100: the one prompt was right, in 0.9 s.');
     expect(
       resultSentence(
         t,
         'en',
-        summary(
-          {
-            played: 1,
-            correct: 1,
-            score: 100,
-            avgMs: 900,
-          },
-        ),
+        summary({
+          correct: 0,
+          score: 0,
+          avgMs: null,
+        }),
       ),
-    ).toBe(
-      'You scored 100: the one prompt was right, in 0.9 s.',
-    );
+    ).toBe('You scored 0: none of the 5 prompts was right.');
     expect(
       resultSentence(
         t,
         'en',
-        summary(
-          {
-            correct: 0,
-            score: 0,
-            avgMs:
-              null,
-          },
-        ),
+        summary({
+          skipped: 10,
+        }),
       ),
-    ).toBe(
-      'You scored 0: none of the 5 prompts was right.',
+    ).toContain('Chords were skipped for the microphone.');
+    const empty = resultSentence(
+      t,
+      'en',
+      summary({
+        played: 0,
+        skipped: 10,
+        correct: 0,
+        avgMs: null,
+        score: 0,
+      }),
     );
-    expect(
-      resultSentence(
-        t,
-        'en',
-        summary(
-          {
-            skipped: 10,
-          },
-        ),
-      ),
-    ).toContain(
-      'Chords were skipped for the microphone.',
-    );
-    const empty =
-      resultSentence(
-        t,
-        'en',
-        summary(
-          {
-            played: 0,
-            skipped: 10,
-            correct: 0,
-            avgMs:
-              null,
-            score: 0,
-          },
-        ),
-      );
-    expect(
-      empty,
-    ).toBe(
-      'No prompts were played, so this run has no score.',
-    );
-    expect(
-      empty,
-    ).not.toMatch(
-      /\b0 prompts\b/,
-    );
+    expect(empty).toBe('No prompts were played, so this run has no score.');
+    expect(empty).not.toMatch(/\b0 prompts\b/);
   });
 
   it('says plainly whether the result was kept', () => {
-    const base =
-      initial(
-        {
-          prompts:
-            [],
-          mode: 'daily',
-          scored: true,
-          mic: false,
-        },
-      );
-    const s =
-      summary();
+    const base = initial({
+      prompts: [],
+      mode: 'daily',
+      scored: true,
+      mic: false,
+    });
+    const s = summary();
     expect(
-      saveSentence(
-        t,
-        {
-          ...base,
-          kind: 'complete',
-          summary:
-            s,
-          why: 'unsaved',
-        },
-      ),
-    ).toBe(
-      'Not saved: results are not kept yet.',
-    );
+      saveSentence(t, {
+        ...base,
+        kind: 'complete',
+        summary: s,
+        why: 'unsaved',
+      }),
+    ).toBe('Not saved: results are not kept yet.');
     expect(
-      saveSentence(
-        t,
-        {
-          ...base,
-          kind: 'complete',
-          summary:
-            s,
-          why: 'already-scored',
-        },
-      ),
-    ).toContain(
-      'another tab or device',
-    );
+      saveSentence(t, {
+        ...base,
+        kind: 'complete',
+        summary: s,
+        why: 'already-scored',
+      }),
+    ).toContain('another tab or device');
     expect(
-      saveSentence(
-        t,
-        {
-          ...base,
-          kind: 'complete',
-          summary:
-            s,
-          why: 'empty',
-        },
-      ),
-    ).toBe(
-      'Not saved: there was nothing to score.',
-    );
+      saveSentence(t, {
+        ...base,
+        kind: 'complete',
+        summary: s,
+        why: 'empty',
+      }),
+    ).toBe('Not saved: there was nothing to score.');
     expect(
-      saveSentence(
-        t,
-        {
-          ...base,
-          kind: 'signed-out',
-          summary:
-            s,
-        },
-      ),
-    ).toContain(
-      'sign in',
-    );
+      saveSentence(t, {
+        ...base,
+        kind: 'signed-out',
+        summary: s,
+      }),
+    ).toContain('sign in');
   });
 });
 
 describe('stored results, said plainly', () => {
-  const overview =
-    {
-      bests:
-        [
-          {
-            level:
-              'note' as const,
-            bestScore: 87,
-            bestAvgMs: 1150,
-          },
-          {
-            level:
-              'triad' as const,
-            bestScore: 0,
-            bestAvgMs:
-              null,
-          },
-        ],
-      daily:
-        'open' as const,
-      streak: 0,
-    };
+  const overview = {
+    bests: [
+      {
+        level: 'note' as const,
+        bestScore: 87,
+        bestAvgMs: 1150,
+      },
+      {
+        level: 'triad' as const,
+        bestScore: 0,
+        bestAvgMs: null,
+      },
+    ],
+    daily: 'open' as const,
+    streak: 0,
+  };
   it("says a level's best score and fastest average, or that it has not been played", () => {
-    expect(
-      bestSentence(
-        t,
-        'en',
-        overview,
-        'note',
-      ),
-    ).toBe(
-      'Best score 87, fastest average 1.2 s.',
-    );
-    expect(
-      bestSentence(
-        t,
-        'en',
-        overview,
-        'triad',
-      ),
-    ).toBe(
-      'Best score 0.',
-    );
-    expect(
-      bestSentence(
-        t,
-        'en',
-        overview,
-        'bar',
-      ),
-    ).toBe(
-      'Not played yet.',
-    );
-    expect(
-      bestSentence(
-        t,
-        'en',
-        null,
-        'note',
-      ),
-    ).toBe(
-      '',
-    );
+    expect(bestSentence(t, 'en', overview, 'note')).toBe('Best score 87, fastest average 1.2 s.');
+    expect(bestSentence(t, 'en', overview, 'triad')).toBe('Best score 0.');
+    expect(bestSentence(t, 'en', overview, 'bar')).toBe('Not played yet.');
+    expect(bestSentence(t, 'en', null, 'note')).toBe('');
   });
   it("says where today's challenge stands, with the run of days", () => {
+    expect(dailyStateSentence(t, overview)).toBe('');
     expect(
-      dailyStateSentence(
-        t,
-        overview,
-      ),
-    ).toBe(
-      '',
-    );
+      dailyStateSentence(t, {
+        ...overview,
+        streak: 3,
+      }),
+    ).toBe('You have played the challenge 3 days in a row.');
     expect(
-      dailyStateSentence(
-        t,
-        {
-          ...overview,
-          streak: 3,
-        },
-      ),
-    ).toBe(
-      'You have played the challenge 3 days in a row.',
-    );
+      dailyStateSentence(t, {
+        ...overview,
+        daily: 'scored',
+        streak: 1,
+      }),
+    ).toBe("Today's score is in; runs today are practice. 1 day in a row.");
     expect(
-      dailyStateSentence(
-        t,
-        {
-          ...overview,
-          daily:
-            'scored',
-          streak: 1,
-        },
-      ),
-    ).toBe(
-      "Today's score is in; runs today are practice. 1 day in a row.",
-    );
-    expect(
-      dailyStateSentence(
-        t,
-        {
-          ...overview,
-          daily:
-            'started',
-          streak: 0,
-        },
-      ),
-    ).toBe(
-      "You started today's challenge and left before the end; runs today are practice.",
-    );
+      dailyStateSentence(t, {
+        ...overview,
+        daily: 'started',
+        streak: 0,
+      }),
+    ).toBe("You started today's challenge and left before the end; runs today are practice.");
   });
 });

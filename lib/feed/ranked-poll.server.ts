@@ -11,15 +11,9 @@
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { lockOpenPoll } from '@/lib/feed/poll-lifecycle.server';
-import {
-  ballotRows,
-  validateRanking,
-  type BallotIssue,
-} from '@/lib/feed/ranked-poll';
+import { ballotRows, validateRanking, type BallotIssue } from '@/lib/feed/ranked-poll';
 
-export type RankedBallotCode =
-  | 'NOT_RANKED'
-  | 'BAD_BALLOT';
+export type RankedBallotCode = 'NOT_RANKED' | 'BAD_BALLOT';
 
 export class RankedBallotError extends Error {
   constructor(
@@ -27,20 +21,12 @@ export class RankedBallotError extends Error {
     readonly code: RankedBallotCode,
     readonly issue?: BallotIssue,
   ) {
-    super(
-      message,
-    );
-    this.name =
-      'RankedBallotError';
+    super(message);
+    this.name = 'RankedBallotError';
   }
 }
 
-export const ballotLockKey =
-  (
-    pollId: string,
-    userId: string,
-  ): string =>
-    `poll-ballot:${pollId}:${userId}`;
+export const ballotLockKey = (pollId: string, userId: string): string => `poll-ballot:${pollId}:${userId}`;
 
 export interface BallotOutcome {
   myRanking: string[];
@@ -62,219 +48,108 @@ export async function submitBallot(
     userId: string;
     ranking: readonly string[];
   },
-  db: Pick<
-    typeof prisma,
-    '$transaction'
-  > = prisma,
+  db: Pick<typeof prisma, '$transaction'> = prisma,
 ): Promise<BallotOutcome> {
-  return db.$transaction(
-    async (
-      tx,
-    ) => {
-      await lockKey(
-        tx,
-        ballotLockKey(
-          input.pollId,
-          input.userId,
-        ),
-      );
-      await lockOpenPoll(
-        tx,
-        input.pollId,
-      );
-      const poll =
-        await tx.rMHarkPoll.findUnique(
-          {
-            where:
-              {
-                id: input.pollId,
-              },
-            select:
-              {
-                ranked: true,
-                options:
-                  {
-                    orderBy:
-                      {
-                        position:
-                          'asc',
-                      },
-                    select:
-                      {
-                        id: true,
-                      },
-                  },
-              },
+  return db.$transaction(async (tx) => {
+    await lockKey(tx, ballotLockKey(input.pollId, input.userId));
+    await lockOpenPoll(tx, input.pollId);
+    const poll = await tx.rMHarkPoll.findUnique({
+      where: {
+        id: input.pollId,
+      },
+      select: {
+        ranked: true,
+        options: {
+          orderBy: {
+            position: 'asc',
           },
-        );
-      if (
-        !poll?.ranked
-      )
-        throw new RankedBallotError(
-          'This poll is not ranked',
-          'NOT_RANKED',
-        );
-      const optionIds =
-        poll.options.map(
-          (
-            o,
-          ) =>
-            o.id,
-        );
-      const issue =
-        validateRanking(
-          input.ranking,
-          optionIds,
-        );
-      if (
-        issue
-      )
-        throw new RankedBallotError(
-          'That ranking is not valid',
-          'BAD_BALLOT',
-          issue,
-        );
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+    if (!poll?.ranked) throw new RankedBallotError('This poll is not ranked', 'NOT_RANKED');
+    const optionIds = poll.options.map((o) => o.id);
+    const issue = validateRanking(input.ranking, optionIds);
+    if (issue) throw new RankedBallotError('That ranking is not valid', 'BAD_BALLOT', issue);
 
-      const prior =
-        await tx.rMHarkPollVote.findMany(
-          {
-            where:
-              {
-                optionId:
-                  {
-                    in: optionIds,
-                  },
-                userId:
-                  input.userId,
-              },
-            select:
-              {
-                optionId: true,
-                rank: true,
-              },
-          },
-        );
-      await tx.rMHarkPollVote.deleteMany(
-        {
-          where:
-            {
-              optionId:
-                {
-                  in: optionIds,
-                },
-              userId:
-                input.userId,
-            },
+    const prior = await tx.rMHarkPollVote.findMany({
+      where: {
+        optionId: {
+          in: optionIds,
         },
-      );
-      for (const p of prior) {
-        if (
-          (p.rank ??
-            1) !==
-          1
-        )
-          continue;
-        await tx.rMHarkPollOption.updateMany(
-          {
-            where:
-              {
-                id: p.optionId,
-                voteCount:
-                  {
-                    gt: 0,
-                  },
-              },
-            data: {
-              voteCount:
-                {
-                  decrement: 1,
-                },
-            },
-          },
-        );
-      }
-      const rows =
-        ballotRows(
-          input.ranking,
-        );
-      await tx.rMHarkPollVote.createMany(
-        {
-          data: rows.map(
-            (
-              r,
-            ) => ({
-              optionId:
-                r.optionId,
-              userId:
-                input.userId,
-              rank: r.rank,
-            }),
-          ),
+        userId: input.userId,
+      },
+      select: {
+        optionId: true,
+        rank: true,
+      },
+    });
+    await tx.rMHarkPollVote.deleteMany({
+      where: {
+        optionId: {
+          in: optionIds,
         },
-      );
-      const first =
-        rows[0];
-      if (
-        first
-      ) {
-        await tx.rMHarkPollOption.update(
-          {
-            where:
-              {
-                id: first.optionId,
-              },
-            data: {
-              voteCount:
-                {
-                  increment: 1,
-                },
-            },
+        userId: input.userId,
+      },
+    });
+    for (const p of prior) {
+      if ((p.rank ?? 1) !== 1) continue;
+      await tx.rMHarkPollOption.updateMany({
+        where: {
+          id: p.optionId,
+          voteCount: {
+            gt: 0,
           },
-        );
-      }
-      const options =
-        await tx.rMHarkPollOption.findMany(
-          {
-            where:
-              {
-                pollId:
-                  input.pollId,
-              },
-            orderBy:
-              {
-                position:
-                  'asc',
-              },
-            select:
-              {
-                id: true,
-                voteCount: true,
-              },
+        },
+        data: {
+          voteCount: {
+            decrement: 1,
           },
-        );
-      return {
-        myRanking:
-          [
-            ...input.ranking,
-          ],
-        totalVotes:
-          options.reduce(
-            (
-              s,
-              o,
-            ) =>
-              s +
-              o.voteCount,
-            0,
-          ),
-        options,
-      };
-    },
-  );
+        },
+      });
+    }
+    const rows = ballotRows(input.ranking);
+    await tx.rMHarkPollVote.createMany({
+      data: rows.map((r) => ({
+        optionId: r.optionId,
+        userId: input.userId,
+        rank: r.rank,
+      })),
+    });
+    const first = rows[0];
+    if (first) {
+      await tx.rMHarkPollOption.update({
+        where: {
+          id: first.optionId,
+        },
+        data: {
+          voteCount: {
+            increment: 1,
+          },
+        },
+      });
+    }
+    const options = await tx.rMHarkPollOption.findMany({
+      where: {
+        pollId: input.pollId,
+      },
+      orderBy: {
+        position: 'asc',
+      },
+      select: {
+        id: true,
+        voteCount: true,
+      },
+    });
+    return {
+      myRanking: [...input.ranking],
+      totalVotes: options.reduce((s, o) => s + o.voteCount, 0),
+      options,
+    };
+  });
 }
 
 /** The result half lives in `ranked-result.server` so the poll lifecycle can import it without a cycle. */
-export {
-  computeAndStoreResult,
-  resolveEndedResult,
-} from '@/lib/feed/ranked-result.server';
+export { computeAndStoreResult, resolveEndedResult } from '@/lib/feed/ranked-result.server';

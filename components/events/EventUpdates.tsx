@@ -80,7 +80,9 @@ export function EventUpdates({
   const remove = async (u: EventUpdateDTO) => {
     const ok = await confirm({
       title: t('delete-title', { defaultValue: 'Delete this update?' }),
-      description: t('delete-body', { defaultValue: 'It is removed from the event. People who were told keep their notification.' }),
+      description: t('delete-body', {
+        defaultValue: 'It is removed from the event. People who were told keep their notification.',
+      }),
       confirmLabel: t('delete', { defaultValue: 'Delete' }),
       cancelLabel: t('cancel', { defaultValue: 'Cancel' }),
       danger: true,
@@ -126,7 +128,10 @@ export function EventUpdates({
                 <Linked text={u.body} />
               </p>
               <p className="t-meta flex flex-wrap items-center gap-x-2">
-                <span>{u.author?.name ?? (u.author?.handle ? `@${u.author.handle}` : t('author-unknown', { defaultValue: 'The host' }))}</span>
+                <span>
+                  {u.author?.name ??
+                    (u.author?.handle ? `@${u.author.handle}` : t('author-unknown', { defaultValue: 'The host' }))}
+                </span>
                 <span>{stamp(u)}</span>
                 {u.canDelete && now - new Date(u.createdAt).getTime() < UPDATE_DELETE_WINDOW_MS && (
                   <Button size="sm" variant="ghost" onClick={() => void remove(u)}>

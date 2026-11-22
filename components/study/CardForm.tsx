@@ -137,7 +137,8 @@ export function CardForm({
               />
               <p className="t-meta">
                 {t('cloze-hint', {
-                  defaultValue: 'Select the words to hide and press Add deletion. Written out, a deletion is {{syntax}}.',
+                  defaultValue:
+                    'Select the words to hide and press Add deletion. Written out, a deletion is {{syntax}}.',
                   syntax: '{{c1::answer::hint}}',
                 })}
               </p>

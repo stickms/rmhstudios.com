@@ -1,34 +1,7 @@
 # Master Timeline — _Indonesia: A Comprehensive History_
 
-**Append-only
-canonical
-chronology.**
-Reconcile
-every
-date
-you
-assert
-in
-a
-chapter
-against
-this
-list.
-If
-your
-research
-contradicts
-an
-entry,
-fix
-it
-here
-and
-note
-the
-source.
-Keep
-sorted.
+**Append-only canonical chronology.** Reconcile every date you assert in a chapter against this list. If your research
+contradicts an entry, fix it here and note the source. Keep sorted.
 
 | Date                | Event                                                                                                  | Part/Ch |
 | ------------------- | ------------------------------------------------------------------------------------------------------ | ------- |

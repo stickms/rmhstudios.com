@@ -15,20 +15,11 @@
  * the server writes it, so a client cannot invent rows.
  */
 import { isKnownCardId } from '../content/decks';
-import {
-  CHORD_QUALITIES,
-  type ChordQuality,
-} from '../theory/chords';
-import {
-  INTERVAL_NAMES,
-  type IntervalName,
-} from '../theory/intervals';
+import { CHORD_QUALITIES, type ChordQuality } from '../theory/chords';
+import { INTERVAL_NAMES, type IntervalName } from '../theory/intervals';
 import type { Clef } from '../theory/clef';
 
-export type ItemFamily =
-  | 'staff'
-  | 'ear'
-  | 'sprint';
+export type ItemFamily = 'staff' | 'ear' | 'sprint';
 
 const CLEFS: readonly string[] = ['treble', 'bass'];
 /** Written MIDI of a Sprint prompt: well inside the piano, wide enough for every ledger line. */

@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createEarMachine,
-  learningStep,
-  step,
-  type Event,
-  type Question,
-  type State,
-} from './ear';
+import { createEarMachine, learningStep, step, type Event, type Question, type State } from './ear';
 
 const QS: Question[] = [
   { kind: 'interval', notes: [60, 64], answer: 'third' },
@@ -15,11 +8,7 @@ const QS: Question[] = [
 const THIRD = { name: 'third' } as const;
 const FIFTH = { name: 'fifth' } as const;
 
-function play(
-  stepFn: typeof step,
-  events: Event[],
-  from?: State,
-): State {
+function play(stepFn: typeof step, events: Event[], from?: State): State {
   let s = from ?? createEarMachine(QS).initial;
   for (const e of events) s = stepFn(s, e).state;
   return s;

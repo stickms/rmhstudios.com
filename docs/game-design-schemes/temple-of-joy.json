@@ -22,13 +22,7 @@
     "borderStyle": "3px solid #9A5E0F with a light gold inner bevel",
     "texture": "soft sunburst rays"
   },
-  "motifs": [
-    "golden ziggurat",
-    "smiley sun and halos",
-    "clouds",
-    "sunburst rays",
-    "embossed gold"
-  ],
+  "motifs": ["golden ziggurat", "smiley sun and halos", "clouds", "sunburst rays", "embossed gold"],
   "buttonStyle": "Primary is a gold gradient button with dark brown Cinzel text and a brown outline that glows on hover; secondary is a cream button with a gold outline.",
   "backdrop": "Warm gold sky gradient with pale rays radiating from a smiley sun, rotating once every few minutes, and a cloud bank at the bottom that drifts sideways slowly.",
   "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."

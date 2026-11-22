@@ -24,7 +24,8 @@ function untilReset(): string {
  * `/daily-mutator` page until the 2026-11-19 consolidation put the daily things
  * on one page.
  */
-export function DailyMutatorSection() { const fmt = useLocaleFormat(); 
+export function DailyMutatorSection() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-arcade');
   const session = useSession();
   const signedIn = !!session.data?.user;
@@ -42,99 +43,94 @@ export function DailyMutatorSection() { const fmt = useLocaleFormat();
     <div className="space-y-4 pb-12">
       <p className="t-body text-site-text-muted">
         {t('page-desc', {
-          defaultValue:
-            'One game, one twist and one seed for everyone, once per UTC day. You get one counted attempt.',
+          defaultValue: 'One game, one twist and one seed for everyone, once per UTC day. You get one counted attempt.',
         })}
       </p>
-        {failed ? (
-          <EmptyState
-            className={arrival}
-            description={t('load-failed', { defaultValue: 'Could not load today’s challenge.' })}
-          />
-        ) : !data || !game ? (
-          <div className="flex justify-center py-16">
-            <Spinner />
-          </div>
-        ) : (
-          // One box with the column's own rhythm, so the challenge fades in as a whole.
-          <div className={cn('space-y-4', arrival)}>
-            <Card pane className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
-                  <Flame className="h-4 w-4 text-site-accent" aria-hidden />
-                  {data.mutator.day}
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-site-text">{game.label}</h2>
-                <p className="text-sm text-site-text-muted">{data.mutator.modifier.label}</p>
-                <p className="mt-1 text-xs text-site-text-muted">
-                  {t('resets-in', { defaultValue: 'Resets in {{time}}', time: untilReset() })}
-                </p>
-              </div>
-              <div className="flex flex-col items-start gap-2 sm:items-end">
-                {signedIn ? (
-                  <Button asChild variant="default">
-                    <a href={`${game.path}?daily=1`}>
-                      <Play className="h-4 w-4" aria-hidden />
-                      {used
-                        ? t('practice', { defaultValue: 'Practice run' })
-                        : t('play-daily', { defaultValue: 'Play today’s challenge' })}
-                    </a>
-                  </Button>
-                ) : (
-                  <Button asChild variant="default">
-                    <a href="/login">{t('sign-in', { defaultValue: 'Sign in to play' })}</a>
-                  </Button>
-                )}
-                {used ? (
-                  <span className="text-xs text-site-text-muted">
-                    {data.mine?.score != null
-                      ? t('your-score', {
-                          defaultValue: 'Your score: {{score}}',
-                          score: fmt.number(data.mine.score),
-                        })
-                      : t('attempt-open', {
-                          defaultValue: 'Attempt started. Finish the run to post it.',
-                        })}
-                  </span>
-                ) : null}
-              </div>
-            </Card>
-
-            <section>
-              <h2 className="site-section-label mb-3">
-                {t('board-title', { defaultValue: 'Today’s leaderboard' })}
-              </h2>
-              {data.board.length === 0 ? (
-                <EmptyState
-                  description={t('board-empty', {
-                    defaultValue: 'No finished runs yet. Be the first.',
-                  })}
-                />
+      {failed ? (
+        <EmptyState
+          className={arrival}
+          description={t('load-failed', { defaultValue: 'Could not load today’s challenge.' })}
+        />
+      ) : !data || !game ? (
+        <div className="flex justify-center py-16">
+          <Spinner />
+        </div>
+      ) : (
+        // One box with the column's own rhythm, so the challenge fades in as a whole.
+        <div className={cn('space-y-4', arrival)}>
+          <Card pane className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
+                <Flame className="h-4 w-4 text-site-accent" aria-hidden />
+                {data.mutator.day}
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-site-text">{game.label}</h2>
+              <p className="text-sm text-site-text-muted">{data.mutator.modifier.label}</p>
+              <p className="mt-1 text-xs text-site-text-muted">
+                {t('resets-in', { defaultValue: 'Resets in {{time}}', time: untilReset() })}
+              </p>
+            </div>
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              {signedIn ? (
+                <Button asChild variant="default">
+                  <a href={`${game.path}?daily=1`}>
+                    <Play className="h-4 w-4" aria-hidden />
+                    {used
+                      ? t('practice', { defaultValue: 'Practice run' })
+                      : t('play-daily', { defaultValue: 'Play today’s challenge' })}
+                  </a>
+                </Button>
               ) : (
-                <ol className="space-y-2">
-                  {data.board.map((r) => (
-                    <li key={r.rank}>
-                      <Card
-                        className={
-                          r.isMe
-                            ? 'flex-row justify-between px-4 py-3 ring-1 ring-site-accent'
-                            : 'flex-row justify-between px-4 py-3'
-                        }
-                      >
-                        <span className="text-sm text-site-text">
-                          {r.rank}. {r.user.name ?? r.user.handle}
-                        </span>
-                        <span className="font-mono text-sm text-site-text">
-                          {fmt.number(r.score)}
-                        </span>
-                      </Card>
-                    </li>
-                  ))}
-                </ol>
+                <Button asChild variant="default">
+                  <a href="/login">{t('sign-in', { defaultValue: 'Sign in to play' })}</a>
+                </Button>
               )}
-            </section>
-          </div>
-        )}
+              {used ? (
+                <span className="text-xs text-site-text-muted">
+                  {data.mine?.score != null
+                    ? t('your-score', {
+                        defaultValue: 'Your score: {{score}}',
+                        score: fmt.number(data.mine.score),
+                      })
+                    : t('attempt-open', {
+                        defaultValue: 'Attempt started. Finish the run to post it.',
+                      })}
+                </span>
+              ) : null}
+            </div>
+          </Card>
+
+          <section>
+            <h2 className="site-section-label mb-3">{t('board-title', { defaultValue: 'Today’s leaderboard' })}</h2>
+            {data.board.length === 0 ? (
+              <EmptyState
+                description={t('board-empty', {
+                  defaultValue: 'No finished runs yet. Be the first.',
+                })}
+              />
+            ) : (
+              <ol className="space-y-2">
+                {data.board.map((r) => (
+                  <li key={r.rank}>
+                    <Card
+                      className={
+                        r.isMe
+                          ? 'flex-row justify-between px-4 py-3 ring-1 ring-site-accent'
+                          : 'flex-row justify-between px-4 py-3'
+                      }
+                    >
+                      <span className="text-sm text-site-text">
+                        {r.rank}. {r.user.name ?? r.user.handle}
+                      </span>
+                      <span className="font-mono text-sm text-site-text">{fmt.number(r.score)}</span>
+                    </Card>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }

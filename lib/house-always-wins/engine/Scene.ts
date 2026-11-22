@@ -9,24 +9,11 @@ export interface SceneSwitch {
 
 export interface Scene {
   name: string;
-  enter(
-    payload?: Record<
-      string,
-      unknown
-    >,
-  ): void;
-  update(
-    dt: number,
-  ): SceneSwitch | null;
-  render(
-    ctx: CanvasRenderingContext2D,
-  ): void;
+  enter(payload?: Record<string, unknown>): void;
+  update(dt: number): SceneSwitch | null;
+  render(ctx: CanvasRenderingContext2D): void;
   getActiveDialogue(): DialogueData | null;
-  getPromptText():
-    | string
-    | null;
-  handleDialogueChoice(
-    action: string,
-  ): void;
+  getPromptText(): string | null;
+  handleDialogueChoice(action: string): void;
   getAreaLabel(): string;
 }

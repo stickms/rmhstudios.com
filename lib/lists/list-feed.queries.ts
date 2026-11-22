@@ -3,27 +3,19 @@ import { getUserListsApi, listFeedApi } from '@/lib/lists/lists.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
 /** No visible list, no feed: the route answers 404 and nothing is seeded. */
-export const listFeedQuery =
-  (
-    id: string,
-  ) =>
-    contractQuery(
-      [
-        'lists',
-        'feed',
+export const listFeedQuery = (id: string) =>
+  contractQuery(
+    ['lists', 'feed', id],
+    listFeedApi,
+    {
+      params: {
         id,
-      ],
-      listFeedApi,
-      {
-        params:
-          {
-            id,
-          },
       },
-      {
-        staleTime: 15_000,
-      },
-    );
+    },
+    {
+      staleTime: 15_000,
+    },
+  );
 
 /** The caller's lists, for the Lists tab of /feeds. Signed out: nothing is seeded. */
 export const userListsQuery = () =>

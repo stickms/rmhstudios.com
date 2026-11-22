@@ -12,81 +12,57 @@ export const CATEGORY_COLORS: Record<
     text: string;
     border: string;
   }
-> =
-  {
-    'AI/ML':
-      {
-        bg: 'bg-violet-600',
-        text: 'text-white',
-        border:
-          'border-transparent',
-      },
-    Gaming:
-      {
-        bg: 'bg-emerald-700',
-        text: 'text-white',
-        border:
-          'border-transparent',
-      },
-    Neuroscience:
-      {
-        bg: 'bg-pink-700',
-        text: 'text-white',
-        border:
-          'border-transparent',
-      },
-    'Cognitive Science':
-      {
-        bg: 'bg-amber-700',
-        text: 'text-white',
-        border:
-          'border-transparent',
-      },
-    'Tech Industry':
-      {
-        bg: 'bg-blue-600',
-        text: 'text-white',
-        border:
-          'border-transparent',
-      },
-    Science:
-      {
-        bg: 'bg-cyan-700',
-        text: 'text-white',
-        border:
-          'border-transparent',
-      },
-    Culture:
-      {
-        bg: 'bg-rose-700',
-        text: 'text-white',
-        border:
-          'border-transparent',
-      },
-    Arts: {
-      bg: 'bg-orange-700',
-      text: 'text-white',
-      border:
-        'border-transparent',
-    },
-  };
+> = {
+  'AI/ML': {
+    bg: 'bg-violet-600',
+    text: 'text-white',
+    border: 'border-transparent',
+  },
+  Gaming: {
+    bg: 'bg-emerald-700',
+    text: 'text-white',
+    border: 'border-transparent',
+  },
+  Neuroscience: {
+    bg: 'bg-pink-700',
+    text: 'text-white',
+    border: 'border-transparent',
+  },
+  'Cognitive Science': {
+    bg: 'bg-amber-700',
+    text: 'text-white',
+    border: 'border-transparent',
+  },
+  'Tech Industry': {
+    bg: 'bg-blue-600',
+    text: 'text-white',
+    border: 'border-transparent',
+  },
+  Science: {
+    bg: 'bg-cyan-700',
+    text: 'text-white',
+    border: 'border-transparent',
+  },
+  Culture: {
+    bg: 'bg-rose-700',
+    text: 'text-white',
+    border: 'border-transparent',
+  },
+  Arts: {
+    bg: 'bg-orange-700',
+    text: 'text-white',
+    border: 'border-transparent',
+  },
+};
 
-export const ALL_CATEGORIES =
-  Object.keys(
-    CATEGORY_COLORS,
-  );
+export const ALL_CATEGORIES = Object.keys(CATEGORY_COLORS);
 
-export function getCategoryColor(
-  category: string,
-) {
+export function getCategoryColor(category: string) {
   return (
-    CATEGORY_COLORS[
-      category
-    ] ?? {
+    CATEGORY_COLORS[category] ?? {
       bg: 'bg-gray-600',
       text: 'text-white',
-      border:
-        'border-transparent',
+      border: 'border-transparent',
     }
   );
 }

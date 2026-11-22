@@ -62,7 +62,10 @@ const model = {
   },
 };
 
-const prismaMock = vi.hoisted(() => ({ rmhboxSettingsPreset: undefined as unknown, $transaction: undefined as unknown }));
+const prismaMock = vi.hoisted(() => ({
+  rmhboxSettingsPreset: undefined as unknown,
+  $transaction: undefined as unknown,
+}));
 prismaMock.rmhboxSettingsPreset = model;
 prismaMock.$transaction = async (fn: (tx: unknown) => unknown) => fn(prismaMock);
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
@@ -72,7 +75,8 @@ vi.mock('@/lib/db/advisory-lock.server', () => ({
   }),
 }));
 
-const { createPreset, updatePreset, deletePreset, listPresets, exportRmhboxPresets } = await import('@/lib/rmhbox/presets.server');
+const { createPreset, updatePreset, deletePreset, listPresets, exportRmhboxPresets } =
+  await import('@/lib/rmhbox/presets.server');
 const { createPresetSchema, updatePresetSchema } = await import('@/lib/rmhbox/presets-schema');
 
 const RHYME = 'rhyme-time';
@@ -186,7 +190,17 @@ describe('caps under the lock', () => {
   });
 
   it('refuses the 101st preset overall but still allows another game under its own cap', async () => {
-    const games = ['rhyme-time', 'wit-war', 'wiki-race', 'category-crash', 'emoji-cinema', 'fact-or-friction', 'undercover-agent', 'undercover-editor', 'minimalist-masterpiece'];
+    const games = [
+      'rhyme-time',
+      'wit-war',
+      'wiki-race',
+      'category-crash',
+      'emoji-cinema',
+      'fact-or-friction',
+      'undercover-agent',
+      'undercover-editor',
+      'minimalist-masterpiece',
+    ];
     let n = 0;
     for (const g of games) {
       for (let i = 0; i < 10 && n < 90; i++, n++) {
@@ -211,7 +225,10 @@ describe('caps under the lock', () => {
     });
     const other = await createPreset('alice', { minigameId: RHYME, name: 'Other', values: quick });
     if (!other.ok) throw new Error('create failed');
-    expect(await updatePreset('alice', other.value.id, { name: 'Dup' })).toMatchObject({ ok: false, code: 'name-taken' });
+    expect(await updatePreset('alice', other.value.id, { name: 'Dup' })).toMatchObject({
+      ok: false,
+      code: 'name-taken',
+    });
   });
 });
 

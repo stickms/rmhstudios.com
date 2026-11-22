@@ -5,70 +5,31 @@
 # LOOK at the result. How to run it and read it: docs/ios-safari-screenshots.md.
 #
 # Manual only: macOS minutes cost ten times Linux, and a full build runs here. Not a gate.
-name:
-  iOS
-  Safari
-  screenshots
+name: iOS Safari screenshots
 
 on:
   workflow_dispatch:
     inputs:
       routes:
-        description:
-          Comma-separated
-          paths
-          to
-          shoot
+        description: Comma-separated paths to shoot
         default: /,/terms
       open_globe:
-        description:
-          Also
-          tap
-          the
-          docked
-          globe
-          and
-          shoot
-          it
-          open
-          (best
-          effort,
-          installs
-          idb)
+        description: Also tap the docked globe and shoot it open (best effort, installs idb)
         type: boolean
         default: true
       runner:
-        description:
-          macOS
-          runner
-          label
-          (needs
-          Xcode
-          with
-          an
-          iOS
-          simulator
-          runtime)
+        description: macOS runner label (needs Xcode with an iOS simulator runtime)
         default: macos-latest
       device:
-        description:
-          Preferred
-          simulator
-          name
-        default:
-          iPhone
-          17
-          Pro
+        description: Preferred simulator name
+        default: iPhone 17 Pro
 
 permissions:
   contents: read
 
 jobs:
   shoot:
-    runs-on:
-      ${{
-      inputs.runner
-      }}
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 60
     env:
       NODE_OPTIONS: --max-old-space-size=6144
@@ -83,8 +44,7 @@ jobs:
       # No service containers on macOS, so Postgres is installed. The migrations need vector (pgvector), pg_trgm and
       # unaccent (the last two ship with Postgres).
       - name: Postgres
-        run:
-          |
+        run: |
           brew install postgresql@17 pgvector
           echo "$(brew --prefix postgresql@17)/bin" >> "$GITHUB_PATH"
           export PATH="$(brew --prefix postgresql@17)/bin:$PATH"
@@ -93,24 +53,12 @@ jobs:
           createuser -s postgres
           createdb rmh
       - name: Migrate
-        run:
-          pnpm
-          exec
-          prisma
-          migrate
-          deploy
+        run: pnpm exec prisma migrate deploy
       - name: Build
-        run:
-          pnpm
-          run
-          build:frontend
+        run: pnpm run build:frontend
 
-      - name:
-          Start
-          the
-          server
-        run:
-          |
+      - name: Start the server
+        run: |
           nohup node .output/server/index.mjs > "$RUNNER_TEMP/server.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/server.pid"
           for i in $(seq 1 90); do
@@ -119,76 +67,30 @@ jobs:
           done
           echo "server did not come up"; tail -80 "$RUNNER_TEMP/server.log"; exit 1
 
-      - name:
-          Install
-          idb
-          (to
-          tap
-          the
-          globe)
+      - name: Install idb (to tap the globe)
         if: inputs.open_globe
         continue-on-error: true
-        run:
-          |
+        run: |
           brew tap facebook/fb
           brew install idb-companion
           pip3 install --break-system-packages fb-idb
 
       - name: Capture
         env:
-          ROUTES:
-            ${{
-            inputs.routes
-            }}
-          DEVICE:
-            ${{
-            inputs.device
-            }}
-          OPEN_GLOBE:
-            ${{
-            inputs.open_globe
-            &&
-            '1'
-            ||
-            '0'
-            }}
-        run:
-          scripts/ios-sim/capture.sh
-          http://localhost:7005
-          "$RUNNER_TEMP/shots"
+          ROUTES: ${{ inputs.routes }}
+          DEVICE: ${{ inputs.device }}
+          OPEN_GLOBE: ${{ inputs.open_globe && '1' || '0' }}
+        run: scripts/ios-sim/capture.sh http://localhost:7005 "$RUNNER_TEMP/shots"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ios-safari-screenshots
-          path:
-            ${{
-            runner.temp
-            }}/shots/*.png
+          path: ${{ runner.temp }}/shots/*.png
           if-no-files-found: warn
-      - name:
-          Server
-          log
-          (on
-          failure)
+      - name: Server log (on failure)
         if: failure()
-        run:
-          tail
-          -100
-          "$RUNNER_TEMP/server.log"
-          2>/dev/null
-          ||
-          true
-      - name:
-          Stop
-          the
-          server
+        run: tail -100 "$RUNNER_TEMP/server.log" 2>/dev/null || true
+      - name: Stop the server
         if: always()
-        run:
-          kill
-          "$(cat
-          "$RUNNER_TEMP/server.pid"
-          2>/dev/null)"
-          2>/dev/null
-          ||
-          true
+        run: kill "$(cat "$RUNNER_TEMP/server.pid" 2>/dev/null)" 2>/dev/null || true

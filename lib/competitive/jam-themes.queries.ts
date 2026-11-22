@@ -2,25 +2,17 @@
 import { getJamThemeVoteApi } from '@/lib/competitive/jam-themes.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const jamThemeVoteQuery =
-  (
-    slug: string,
-  ) =>
-    contractQuery(
-      [
-        'jams',
-        'theme-vote',
+export const jamThemeVoteQuery = (slug: string) =>
+  contractQuery(
+    ['jams', 'theme-vote', slug],
+    getJamThemeVoteApi,
+    {
+      params: {
         slug,
-      ],
-      getJamThemeVoteApi,
-      {
-        params:
-          {
-            slug,
-          },
-        retries: 0,
       },
-      {
-        staleTime: 5_000,
-      },
-    );
+      retries: 0,
+    },
+    {
+      staleTime: 5_000,
+    },
+  );

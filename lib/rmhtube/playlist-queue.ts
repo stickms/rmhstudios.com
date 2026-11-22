@@ -78,8 +78,7 @@ export function planPlaylistQueue(
     accepted.push({
       media,
       title: row.title,
-      durationSec:
-        row.durationMs !== null && row.durationMs > 0 ? Math.round(row.durationMs / 1000) : null,
+      durationSec: row.durationMs !== null && row.durationMs > 0 ? Math.round(row.durationMs / 1000) : null,
       thumbnailUrl: row.thumbnail ?? media.thumbnailUrl ?? null,
     });
   }

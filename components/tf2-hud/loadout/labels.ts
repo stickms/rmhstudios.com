@@ -6,40 +6,20 @@
 import type { TFunction } from 'i18next';
 import type { TfClass } from '@/lib/tf2-loadout/catalog-types';
 
-export const CLASS_DEFAULT: Record<
-  TfClass,
-  string
-> =
-  {
-    scout:
-      'Scout',
-    soldier:
-      'Soldier',
-    pyro: 'Pyro',
-    demoman:
-      'Demoman',
-    heavy:
-      'Heavy',
-    engineer:
-      'Engineer',
-    medic:
-      'Medic',
-    sniper:
-      'Sniper',
-    spy: 'Spy',
-  };
+export const CLASS_DEFAULT: Record<TfClass, string> = {
+  scout: 'Scout',
+  soldier: 'Soldier',
+  pyro: 'Pyro',
+  demoman: 'Demoman',
+  heavy: 'Heavy',
+  engineer: 'Engineer',
+  medic: 'Medic',
+  sniper: 'Sniper',
+  spy: 'Spy',
+};
 
-export function parseClass(
-  v: unknown,
-):
-  | TfClass
-  | undefined {
-  return typeof v ===
-    'string' &&
-    v in
-      CLASS_DEFAULT
-    ? (v as TfClass)
-    : undefined;
+export function parseClass(v: unknown): TfClass | undefined {
+  return typeof v === 'string' && v in CLASS_DEFAULT ? (v as TfClass) : undefined;
 }
 
 /**
@@ -47,9 +27,7 @@ export function parseClass(
  * `pnpm i18n:extract` sees each key (a key built from the class id is
  * invisible to it). `labels.test.ts` holds this equal to `CLASS_DEFAULT`.
  */
-export function tfClassLabels(
-  t: TFunction,
-): Record<TfClass, string> {
+export function tfClassLabels(t: TFunction): Record<TfClass, string> {
   return {
     scout: t('class-scout', { ns: 'c-tf2-hud', defaultValue: 'Scout' }),
     soldier: t('class-soldier', { ns: 'c-tf2-hud', defaultValue: 'Soldier' }),

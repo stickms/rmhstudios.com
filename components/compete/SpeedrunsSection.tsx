@@ -174,8 +174,7 @@ export function SpeedrunsSection() {
           icon={Timer}
           title={t('speedrun-no-boards-title', { defaultValue: 'No boards are open yet' })}
           description={t('speedrun-no-boards-body', {
-            defaultValue:
-              'A speedrun board is a category on one game version. An admin opens the first ones.',
+            defaultValue: 'A speedrun board is a category on one game version. An admin opens the first ones.',
           })}
           action={
             isAdmin ? (
@@ -255,12 +254,7 @@ export function SpeedrunsSection() {
           )}
 
           {viewer && game && slug && (
-            <SubmitRunPanel
-              game={game}
-              slug={slug}
-              openVersions={openVersions}
-              onSubmitted={loadBoard}
-            />
+            <SubmitRunPanel game={game} slug={slug} openVersions={openVersions} onSubmitted={loadBoard} />
           )}
         </div>
       )}

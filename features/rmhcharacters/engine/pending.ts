@@ -13,7 +13,8 @@ export interface Pending {
   spells: number;
 }
 
-const notBuild = (issue: string) => issue === 'The character has no name.' || /spells prepared, the limit is/.test(issue);
+const notBuild = (issue: string) =>
+  issue === 'The character has no name.' || /spells prepared, the limit is/.test(issue);
 
 export function pending(c: Character, data: Dnd5eData | Pf2eData): Pending {
   if (c.system === 'dnd5e') {
@@ -21,7 +22,9 @@ export function pending(c: Character, data: Dnd5eData | Pf2eData): Pending {
     const build = d5.validate(c, d).filter((i) => !notBuild(i)).length;
     let spells = 0;
     for (const k of d5.casters(c, d)) {
-      const mine = c.spells.prepared.map((id) => d.spells.find((s) => s.id === id)).filter((s) => s?.classes.includes(k.casting.list));
+      const mine = c.spells.prepared
+        .map((id) => d.spells.find((s) => s.id === id))
+        .filter((s) => s?.classes.includes(k.casting.list));
       spells += Math.max(0, k.cantrips - mine.filter((s) => s!.level === 0).length);
       spells += Math.max(0, k.prepared - mine.filter((s) => s!.level > 0).length);
     }
@@ -35,7 +38,8 @@ export function pending(c: Character, data: Dnd5eData | Pf2eData): Pending {
     const known = c.spells.known.map((id) => d.spells.find((s) => s.id === id)).filter(Boolean);
     spells += Math.max(0, sc.cantrips - known.filter((s) => s!.rank === 0).length);
     // A spontaneous caster's repertoire holds as many spells per rank as it has slots.
-    if (sc.type === 'spontaneous') sc.slots.forEach((n, i) => (spells += Math.max(0, n - known.filter((s) => s!.rank === i + 1).length)));
+    if (sc.type === 'spontaneous')
+      sc.slots.forEach((n, i) => (spells += Math.max(0, n - known.filter((s) => s!.rank === i + 1).length)));
   }
   return { build, spells };
 }

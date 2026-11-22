@@ -27,10 +27,7 @@ export function MultipleChoice({
           const isAnswer = i === question.answerIndex;
           const isChosen = choice === i;
           return (
-            <label
-              key={i}
-              className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-site-border py-2"
-            >
+            <label key={i} className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-site-border py-2">
               <input
                 type="radio"
                 name={name}
@@ -42,9 +39,7 @@ export function MultipleChoice({
               <span className="t-body min-w-0 flex-1 whitespace-pre-wrap" dir="auto">
                 {option}
               </span>
-              {locked && isAnswer && (
-                <Verdict right>{t('correct-answer', { defaultValue: 'Correct answer' })}</Verdict>
-              )}
+              {locked && isAnswer && <Verdict right>{t('correct-answer', { defaultValue: 'Correct answer' })}</Verdict>}
               {locked && isChosen && !isAnswer && (
                 <Verdict right={false}>{t('your-answer', { defaultValue: 'Your answer' })}</Verdict>
               )}

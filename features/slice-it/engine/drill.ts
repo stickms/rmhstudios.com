@@ -30,19 +30,15 @@ export interface NoteLogEntry {
  * section of GREATs was a disaster. A flat-ish ramp answers the question being
  * asked.
  */
-const RESULT_WEIGHT: Record<
-  HitResult,
-  number
-> =
-  {
-    MARVELOUS: 1,
-    PERFECT: 0.95,
-    GREAT: 0.8,
-    GOOD: 0.6,
-    BAD: 0.3,
-    MISS: 0,
-    NONE: 0,
-  };
+const RESULT_WEIGHT: Record<HitResult, number> = {
+  MARVELOUS: 1,
+  PERFECT: 0.95,
+  GREAT: 0.8,
+  GOOD: 0.6,
+  BAD: 0.3,
+  MISS: 0,
+  NONE: 0,
+};
 
 export interface SectionAccuracy {
   notes: number;
@@ -51,43 +47,19 @@ export interface SectionAccuracy {
   misses: number;
 }
 
-export function accuracyIn(
-  log: readonly NoteLogEntry[],
-  from: number,
-  to: number,
-): SectionAccuracy {
+export function accuracyIn(log: readonly NoteLogEntry[], from: number, to: number): SectionAccuracy {
   let notes = 0;
   let sum = 0;
   let misses = 0;
   for (const entry of log) {
-    if (
-      entry.time <
-        from ||
-      entry.time >=
-        to
-    )
-      continue;
+    if (entry.time < from || entry.time >= to) continue;
     notes++;
-    sum +=
-      RESULT_WEIGHT[
-        entry
-          .result
-      ] ??
-      0;
-    if (
-      entry.result ===
-      'MISS'
-    )
-      misses++;
+    sum += RESULT_WEIGHT[entry.result] ?? 0;
+    if (entry.result === 'MISS') misses++;
   }
   return {
     notes,
-    value:
-      notes ===
-      0
-        ? 0
-        : sum /
-          notes,
+    value: notes === 0 ? 0 : sum / notes,
     misses,
   };
 }
@@ -101,50 +73,15 @@ export function accuracyIn(
 export const MIN_DRILL_NOTES = 8;
 
 /** The section that went worst, or null when nothing qualifies. */
-export function worstSection(
-  log: readonly NoteLogEntry[],
-  sections: readonly Section[],
-): Section | null {
-  const scored =
-    sections
-      .map(
-        (
-          section,
-        ) => ({
-          section,
-          acc: accuracyIn(
-            log,
-            section.start,
-            section.end,
-          ),
-        }),
-      )
-      .filter(
-        (
-          entry,
-        ) =>
-          entry
-            .acc
-            .notes >=
-          MIN_DRILL_NOTES,
-      )
-      .sort(
-        (
-          a,
-          b,
-        ) =>
-          a
-            .acc
-            .value -
-          b
-            .acc
-            .value,
-      );
-  return (
-    scored[0]
-      ?.section ??
-    null
-  );
+export function worstSection(log: readonly NoteLogEntry[], sections: readonly Section[]): Section | null {
+  const scored = sections
+    .map((section) => ({
+      section,
+      acc: accuracyIn(log, section.start, section.end),
+    }))
+    .filter((entry) => entry.acc.notes >= MIN_DRILL_NOTES)
+    .sort((a, b) => a.acc.value - b.acc.value);
+  return scored[0]?.section ?? null;
 }
 
 /** Every section ranked worst-first, for a results-screen breakdown. */
@@ -156,31 +93,11 @@ export function sectionBreakdown(
   accuracy: SectionAccuracy;
 }[] {
   return sections
-    .map(
-      (
-        section,
-      ) => ({
-        section,
-        accuracy:
-          accuracyIn(
-            log,
-            section.start,
-            section.end,
-          ),
-      }),
-    )
-    .sort(
-      (
-        a,
-        b,
-      ) =>
-        a
-          .accuracy
-          .value -
-        b
-          .accuracy
-          .value,
-    );
+    .map((section) => ({
+      section,
+      accuracy: accuracyIn(log, section.start, section.end),
+    }))
+    .sort((a, b) => a.accuracy.value - b.accuracy.value);
 }
 
 /* ─── The ratchet ────────────────────────────────────────────────────────── */
@@ -202,31 +119,11 @@ export const DRILL_CLEAR_ACCURACY = 0.9;
  * Capped at 1.0: a drill is not a speed mod, and rehearsing a bar faster than
  * it will ever be played trains the wrong thing.
  */
-export function nextRate(
-  rate: number,
-  cleared: boolean,
-): number {
-  const next =
-    cleared
-      ? rate +
-        0.1
-      : rate -
-        0.1;
+export function nextRate(rate: number, cleared: boolean): number {
+  const next = cleared ? rate + 0.1 : rate - 0.1;
   // Rounded, or floating-point accumulation walks 0.7 to 0.7000000000000001 and
   // the UI shows it.
-  return (
-    Math.round(
-      Math.max(
-        DRILL_MIN_RATE,
-        Math.min(
-          DRILL_MAX_RATE,
-          next,
-        ),
-      ) *
-        100,
-    ) /
-    100
-  );
+  return Math.round(Math.max(DRILL_MIN_RATE, Math.min(DRILL_MAX_RATE, next)) * 100) / 100;
 }
 
 export interface DrillState {
@@ -241,20 +138,11 @@ export interface DrillState {
   graduated: boolean;
 }
 
-export function startDrill(
-  section: Section,
-  rate = 0.7,
-): DrillState {
+export function startDrill(section: Section, rate = 0.7): DrillState {
   return {
     from: section.start,
     to: section.end,
-    rate: Math.max(
-      DRILL_MIN_RATE,
-      Math.min(
-        DRILL_MAX_RATE,
-        rate,
-      ),
-    ),
+    rate: Math.max(DRILL_MIN_RATE, Math.min(DRILL_MAX_RATE, rate)),
     reps: 0,
     streak: 0,
     graduated: false,
@@ -268,68 +156,37 @@ export function startDrill(
  * is luck at the edge of your ability; requiring two is what makes the ratchet
  * a measurement rather than a coin flip, and it is what Rocksmith does.
  */
-export function advanceDrill(
-  state: DrillState,
-  accuracy: number,
-): DrillState {
-  const cleared =
-    accuracy >=
-    DRILL_CLEAR_ACCURACY;
-  const streak =
-    cleared
-      ? state.streak +
-        1
-      : 0;
+export function advanceDrill(state: DrillState, accuracy: number): DrillState {
+  const cleared = accuracy >= DRILL_CLEAR_ACCURACY;
+  const streak = cleared ? state.streak + 1 : 0;
 
-  if (
-    !cleared
-  ) {
+  if (!cleared) {
     return {
       ...state,
-      reps:
-        state.reps +
-        1,
+      reps: state.reps + 1,
       streak: 0,
-      rate: nextRate(
-        state.rate,
-        false,
-      ),
+      rate: nextRate(state.rate, false),
     };
   }
-  if (
-    state.rate >=
-    DRILL_MAX_RATE
-  ) {
+  if (state.rate >= DRILL_MAX_RATE) {
     return {
       ...state,
-      reps:
-        state.reps +
-        1,
+      reps: state.reps + 1,
       streak,
       graduated: true,
     };
   }
-  if (
-    streak >=
-    2
-  ) {
+  if (streak >= 2) {
     return {
       ...state,
-      reps:
-        state.reps +
-        1,
+      reps: state.reps + 1,
       streak: 0,
-      rate: nextRate(
-        state.rate,
-        true,
-      ),
+      rate: nextRate(state.rate, true),
     };
   }
   return {
     ...state,
-    reps:
-      state.reps +
-      1,
+    reps: state.reps + 1,
     streak,
   };
 }
@@ -351,48 +208,16 @@ export function sampleCurve(
   }[],
   duration: number,
 ): number[] {
-  const length =
-    Math.max(
-      1,
-      Math.ceil(
-        duration,
-      ),
-    );
-  const out =
-    new Array<number>(
-      length,
-    ).fill(
-      0,
-    );
+  const length = Math.max(1, Math.ceil(duration));
+  const out = new Array<number>(length).fill(0);
   let cursor = 0;
   let last = 0;
   // `log` is assumed time-ordered, which the engine's own append order
   // guarantees. Sorting here would be a defensive copy of up to 1200 entries on
   // every submit for a property the producer already holds.
-  for (
-    let second = 0;
-    second <
-    length;
-    second++
-  ) {
-    while (
-      cursor <
-        log.length &&
-      log[
-        cursor
-      ]
-        .time <=
-        second
-    )
-      last =
-        log[
-          cursor++
-        ]
-          .score;
-    out[
-      second
-    ] =
-      last;
+  for (let second = 0; second < length; second++) {
+    while (cursor < log.length && log[cursor].time <= second) last = log[cursor++].score;
+    out[second] = last;
   }
 
   // The final score is pinned to the last bucket.
@@ -401,27 +226,8 @@ export function sampleCurve(
   // 5-second chart samples into indices 0–4, and 4.9 belongs to a second that
   // does not exist. A ghost that never reaches the personal best it is racing
   // is the one thing this feature must not do.
-  const finalScore =
-    log.length >
-    0
-      ? log[
-          log.length -
-            1
-        ]
-          .score
-      : 0;
-  if (
-    finalScore >
-    out[
-      length -
-        1
-    ]
-  )
-    out[
-      length -
-        1
-    ] =
-      finalScore;
+  const finalScore = log.length > 0 ? log[log.length - 1].score : 0;
+  if (finalScore > out[length - 1]) out[length - 1] = finalScore;
   return out;
 }
 
@@ -432,64 +238,19 @@ export function sampleCurve(
  * is level, and a "+0" that sits there for the first second reads as the
  * feature not working.
  */
-export function paceAgainst(
-  curve: readonly number[],
-  seconds: number,
-  score: number,
-):
-  | number
-  | null {
-  if (
-    curve.length ===
-      0 ||
-    seconds <
-      1
-  )
-    return null;
-  const index =
-    Math.min(
-      curve.length -
-        1,
-      Math.floor(
-        seconds,
-      ),
-    );
-  return (
-    score -
-    curve[
-      index
-    ]
-  );
+export function paceAgainst(curve: readonly number[], seconds: number, score: number): number | null {
+  if (curve.length === 0 || seconds < 1) return null;
+  const index = Math.min(curve.length - 1, Math.floor(seconds));
+  return score - curve[index];
 }
 
 /** Narrow a stored curve back to numbers, dropping anything malformed. */
-export function readCurve(
-  value: unknown,
-):
-  | number[]
-  | null {
-  if (
-    !Array.isArray(
-      value,
-    ) ||
-    value.length ===
-      0
-  )
-    return null;
-  const out: number[] =
-    [];
+export function readCurve(value: unknown): number[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const out: number[] = [];
   for (const entry of value) {
-    if (
-      typeof entry !==
-        'number' ||
-      !Number.isFinite(
-        entry,
-      )
-    )
-      return null;
-    out.push(
-      entry,
-    );
+    if (typeof entry !== 'number' || !Number.isFinite(entry)) return null;
+    out.push(entry);
   }
   return out;
 }

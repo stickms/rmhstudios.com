@@ -10,10 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 /** A single feed post / RMHark placeholder. */
 export function PostCardSkeleton() {
   return (
-    <div
-      className="mx-3 mt-3 flex gap-3 rounded-site p-5"
-      aria-hidden="true"
-    >
+    <div className="mx-3 mt-3 flex gap-3 rounded-site p-5" aria-hidden="true">
       <Skeleton className="size-10 shrink-0 rounded-full" />
       <div className="min-w-0 flex-1 space-y-3">
         <div className="flex items-center gap-2">
@@ -36,35 +33,18 @@ export function PostCardSkeleton() {
 }
 
 /** A vertical run of post placeholders. */
-export function PostListSkeleton({
-  count = 5,
-}: {
-  count?: number;
-}) {
+export function PostListSkeleton({ count = 5 }: { count?: number }) {
   return (
-    <div
-      role="status"
-      aria-label="Loading posts"
-    >
+    <div role="status" aria-label="Loading posts">
       {Array.from(
         {
-          length:
-            count,
+          length: count,
         },
-        (
-          _,
-          i,
-        ) => (
-          <PostCardSkeleton
-            key={
-              i
-            }
-          />
+        (_, i) => (
+          <PostCardSkeleton key={i} />
         ),
       )}
-      <span className="sr-only">
-        Loading…
-      </span>
+      <span className="sr-only">Loading…</span>
     </div>
   );
 }
@@ -72,10 +52,7 @@ export function PostListSkeleton({
 /** A compact user row (recommendations, followers, search people). */
 export function UserRowSkeleton() {
   return (
-    <div
-      className="flex items-center gap-3 p-3"
-      aria-hidden="true"
-    >
+    <div className="flex items-center gap-3 p-3" aria-hidden="true">
       <Skeleton className="size-10 shrink-0 rounded-full" />
       <div className="min-w-0 flex-1 space-y-2">
         <Skeleton className="h-3.5 w-32" />
@@ -87,35 +64,18 @@ export function UserRowSkeleton() {
 }
 
 /** A run of user rows. */
-export function UserListSkeleton({
-  count = 4,
-}: {
-  count?: number;
-}) {
+export function UserListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div
-      role="status"
-      aria-label="Loading users"
-    >
+    <div role="status" aria-label="Loading users">
       {Array.from(
         {
-          length:
-            count,
+          length: count,
         },
-        (
-          _,
-          i,
-        ) => (
-          <UserRowSkeleton
-            key={
-              i
-            }
-          />
+        (_, i) => (
+          <UserRowSkeleton key={i} />
         ),
       )}
-      <span className="sr-only">
-        Loading…
-      </span>
+      <span className="sr-only">Loading…</span>
     </div>
   );
 }

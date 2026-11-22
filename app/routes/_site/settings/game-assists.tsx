@@ -10,94 +10,48 @@ import { useSession } from '@/components/Providers';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { noindexHead } from '@/lib/seo';
 
-export const Route =
-  createFileRoute(
-    '/_site/settings/game-assists',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'Game assists',
-        ),
-      component:
-        GameAssistsPage,
-    },
-  );
+export const Route = createFileRoute('/_site/settings/game-assists')({
+  head: () => noindexHead('Game assists'),
+  component: GameAssistsPage,
+});
 
 function GameAssistsPage() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'game-assists',
-    );
-  const {
-    data: session,
-    isPending,
-  } =
-    useSession();
-  const settingsLabel =
-    t(
-      'settings',
-      {
-        defaultValue:
-          'Settings',
-      },
-    );
-  const title =
-    t(
-      'page-title',
-      {
-        defaultValue:
-          'Game assists',
-      },
-    );
-  const signedOut =
-    !isPending &&
-    !session?.user;
+  const { t } = useTranslation('game-assists');
+  const { data: session, isPending } = useSession();
+  const settingsLabel = t('settings', {
+    defaultValue: 'Settings',
+  });
+  const title = t('page-title', {
+    defaultValue: 'Game assists',
+  });
+  const signedOut = !isPending && !session?.user;
 
   return (
     <PageLayout
-      title={
-        title
-      }
-      description={t(
-        'page-description',
-        {
-          defaultValue:
-            'Settings that supporting games honour: calmer visuals, a slower clock and no timed input.',
-        },
-      )}
+      title={title}
+      description={t('page-description', {
+        defaultValue: 'Settings that supporting games honour: calmer visuals, a slower clock and no timed input.',
+      })}
       wide
       backTo="/settings"
-      backLabel={
-        settingsLabel
-      }
+      backLabel={settingsLabel}
       breadcrumbs={[
         {
-          label:
-            settingsLabel,
+          label: settingsLabel,
           to: '/settings',
         },
         {
-          label:
-            title,
+          label: title,
         },
       ]}
     >
       <SettingsPageBody>
         {signedOut ? (
           <SignedOutPrompt
-            icon={
-              Accessibility
-            }
-            title={t(
-              'signed-out',
-              {
-                defaultValue:
-                  'Sign in to set your game assists.',
-              },
-            )}
+            icon={Accessibility}
+            title={t('signed-out', {
+              defaultValue: 'Sign in to set your game assists.',
+            })}
             callbackURL="/settings/game-assists"
           />
         ) : (

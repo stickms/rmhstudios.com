@@ -97,9 +97,7 @@ export function orderEntrants<E extends SeedEntrant>(
 }
 
 /** The host's stored order as an id list: entrants with a `manualSeed`, lowest first, ties by sign-up order. */
-export function manualOrderOf(
-  entrants: readonly { id: string; manualSeed: number | null }[],
-): string[] {
+export function manualOrderOf(entrants: readonly { id: string; manualSeed: number | null }[]): string[] {
   return entrants
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => e.manualSeed != null)

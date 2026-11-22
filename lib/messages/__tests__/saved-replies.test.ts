@@ -32,7 +32,8 @@ vi.mock('@/lib/db/advisory-lock.server', () => ({
 
 vi.mock('@/lib/prisma.server', () => {
   type Where = { id?: string; userId?: string };
-  const match = (r: Row, w: Where = {}) => (w.id === undefined || r.id === w.id) && (w.userId === undefined || r.userId === w.userId);
+  const match = (r: Row, w: Where = {}) =>
+    (w.id === undefined || r.id === w.id) && (w.userId === undefined || r.userId === w.userId);
   const pick = (r: Row) => ({ ...r });
   const savedReply = {
     count: async ({ where }: { where: Where }) => {
@@ -60,7 +61,8 @@ vi.mock('@/lib/prisma.server', () => {
       for (const r of hit) {
         state.writes.push({ id: r.id, userId: r.userId, data });
         for (const [k, v] of Object.entries(data)) {
-          if (v && typeof v === 'object' && 'increment' in v) (r as unknown as Record<string, number>)[k]! += (v as { increment: number }).increment;
+          if (v && typeof v === 'object' && 'increment' in v)
+            (r as unknown as Record<string, number>)[k]! += (v as { increment: number }).increment;
           else (r as unknown as Record<string, unknown>)[k] = v;
         }
       }
@@ -164,7 +166,10 @@ describe('ownership', () => {
   });
 
   it('edits, uses and deletes the caller’s own', async () => {
-    expect(await updateSavedReply('u1', 'u1-0', { title: 'Renamed' })).toMatchObject({ ok: true, value: { title: 'Renamed', body: 'b0' } });
+    expect(await updateSavedReply('u1', 'u1-0', { title: 'Renamed' })).toMatchObject({
+      ok: true,
+      value: { title: 'Renamed', body: 'b0' },
+    });
     expect(await recordSavedReplyUse('u1', 'u1-0')).toMatchObject({ ok: true });
     const used = state.rows.find((r) => r.id === 'u1-0')!;
     expect(used.useCount).toBe(1);

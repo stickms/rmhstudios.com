@@ -67,7 +67,9 @@ describe('deliverToEndpoint', () => {
     expect(headers['X-RMH-Signature'].match(/v1=/g)).toHaveLength(1);
     expect(verifyWebhookSignature('whsec_new', headers['X-RMH-Signature'], body)).toBe(true);
     expect(verifyWebhookSignature('whsec_old', headers['X-RMH-Signature'], body)).toBe(false);
-    expect(headers['X-RMH-Signature']).toContain(signWebhookPayload('whsec_new', Number(headers['X-RMH-Timestamp']), body));
+    expect(headers['X-RMH-Signature']).toContain(
+      signWebhookPayload('whsec_new', Number(headers['X-RMH-Timestamp']), body),
+    );
   });
 
   it('records the duration, marks a redelivery, and sends the new delivery id in the payload', async () => {

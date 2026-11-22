@@ -6,22 +6,18 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  signOutAndMaybeClear,
-  writeClearOnSignOut,
-  type UnsentChoice,
-} from '@/lib/device-data/sign-out';
-import {
-  databaseNames,
-  freshEnv,
-  makeDatabase,
-} from '@/lib/device-data/__tests__/fakes';
+import { signOutAndMaybeClear, writeClearOnSignOut, type UnsentChoice } from '@/lib/device-data/sign-out';
+import { databaseNames, freshEnv, makeDatabase } from '@/lib/device-data/__tests__/fakes';
 
 async function browser(withStudio: boolean) {
   const env = freshEnv();
   await makeDatabase(env.indexedDB, 'rmh-library-reader', { books: [{ slug: 'a' }] });
   if (withStudio) {
-    await makeDatabase(env.indexedDB, 'rmh-studio-db', { projects: [{ id: 'p' }], samples: [{ id: 's' }], presets: [] });
+    await makeDatabase(env.indexedDB, 'rmh-studio-db', {
+      projects: [{ id: 'p' }],
+      samples: [{ id: 's' }],
+      presets: [],
+    });
     env.localStorage.setItem('rmh-compose-draft', '{"text":"draft"}');
   }
   env.localStorage.setItem('rmh-user-theme', 'night');
@@ -29,10 +25,7 @@ async function browser(withStudio: boolean) {
   return env;
 }
 
-function harness(
-  env: Awaited<ReturnType<typeof browser>>,
-  answer: UnsentChoice = 'keep',
-) {
+function harness(env: Awaited<ReturnType<typeof browser>>, answer: UnsentChoice = 'keep') {
   const order: string[] = [];
   const signOut = vi.fn(async () => {
     order.push(`signOut after ${(await databaseNames(env.indexedDB)).join(',') || 'no databases'}`);
@@ -154,9 +147,10 @@ describe('the sign-out call sites', () => {
     expect(calls.length).toBeGreaterThan(0);
     for (const c of calls) {
       const before = src.slice(0, c.index);
-      expect(Math.max(before.lastIndexOf('deviceSignOut.run('), before.lastIndexOf('runDeviceSignOut(')), `${file} signs out outside the helper`).toBeGreaterThan(
-        before.lastIndexOf('\n\n'),
-      );
+      expect(
+        Math.max(before.lastIndexOf('deviceSignOut.run('), before.lastIndexOf('runDeviceSignOut(')),
+        `${file} signs out outside the helper`,
+      ).toBeGreaterThan(before.lastIndexOf('\n\n'));
     }
   });
 
@@ -173,7 +167,7 @@ describe('the account deletion panel', () => {
   const src = read('components/site/DeleteAccountPanel.tsx');
 
   it('clears this device only after the server confirmed the deletion, forced and keeping on cancel', () => {
-    const api = src.indexOf('await api(\n            deleteAccountApi');
+    const api = src.search(/await api\(\s*deleteAccountApi/);
     const failedReturn = src.indexOf('return;', api);
     const clear = src.indexOf('deviceSignOut.run(');
     expect(api).toBeGreaterThan(-1);

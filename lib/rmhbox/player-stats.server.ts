@@ -62,9 +62,7 @@ export async function resolveStatsAccess(
   });
   if (!subject || banned(subject.bannedUntil, now)) return NONE;
 
-  const privacy: PlaytimePrivacy = isPlaytimePrivacy(subject.playtimePrivacy)
-    ? subject.playtimePrivacy
-    : 'private';
+  const privacy: PlaytimePrivacy = isPlaytimePrivacy(subject.playtimePrivacy) ? subject.playtimePrivacy : 'private';
   const display = resolveUserDisplay(subject);
   const view: StatsSubject = {
     id: subject.id,
@@ -109,7 +107,12 @@ export interface PlayerStats {
  */
 export async function getPlayerStats(
   userId: string,
-  opts: { minigame?: string | undefined; limit?: number | undefined; offset?: number | undefined; withMatches: boolean },
+  opts: {
+    minigame?: string | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    withMatches: boolean;
+  },
 ): Promise<PlayerStats> {
   const profile = await prisma.rMHboxProfile.findUnique({ where: { userId } });
   if (!profile) return { global: null, minigames: {}, recentMatches: [] };

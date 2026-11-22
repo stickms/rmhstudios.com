@@ -31,7 +31,11 @@ export function PickerTool() {
     if (entries.length === 0) return;
     if (mode === 'winners') setOutcome({ kind: 'list', items: drawWinners(entries, count) });
     else if (mode === 'shuffle') setOutcome({ kind: 'list', items: drawWinners(entries, entries.length) });
-    else setOutcome({ kind: 'teams', teams: splitBy === 'teams' ? splitTeams(entries, count) : splitBySize(entries, count) });
+    else
+      setOutcome({
+        kind: 'teams',
+        teams: splitBy === 'teams' ? splitTeams(entries, count) : splitBySize(entries, count),
+      });
   };
 
   const asText =
@@ -101,7 +105,13 @@ export function PickerTool() {
       )}
       <div>
         <Button variant="primary" onClick={run} disabled={entries.length === 0}>
-          {mode === 'winners' ? <Trophy aria-hidden /> : mode === 'shuffle' ? <Shuffle aria-hidden /> : <Users aria-hidden />}
+          {mode === 'winners' ? (
+            <Trophy aria-hidden />
+          ) : mode === 'shuffle' ? (
+            <Shuffle aria-hidden />
+          ) : (
+            <Users aria-hidden />
+          )}
           {mode === 'winners'
             ? t('picker-draw', { defaultValue: 'Draw' })
             : mode === 'shuffle'

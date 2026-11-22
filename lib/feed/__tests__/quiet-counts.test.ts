@@ -129,7 +129,9 @@ vi.mock('@/lib/social/follow-events.server', () => ({
 vi.mock('@/lib/feed-sse', () => ({
   feedEventBus: { publish: () => undefined, publishPostEngagement: () => undefined },
 }));
-vi.mock('@/lib/feed/signals.server', () => ({ getSignals: async () => ({ mutedTags: [], lessAuthors: [], followedTags: [] }) }));
+vi.mock('@/lib/feed/signals.server', () => ({
+  getSignals: async () => ({ mutedTags: [], lessAuthors: [], followedTags: [] }),
+}));
 vi.mock('@/lib/user-display.server', () => ({ invalidateUserDisplay: () => undefined }));
 vi.mock('@/lib/og/post-image.server', () => ({ renderPostOgImage: h.render }));
 vi.mock('@/lib/prisma.server', () => {
@@ -170,12 +172,7 @@ import { listBookmarks } from '@/lib/bookmarks.server';
 import { resolveUser } from '@/lib/user-display';
 import { serializePublicPost } from '@/lib/api/serializers.server';
 import { setPostLike } from '@/lib/social/engagement.server';
-import {
-  QUIET_COUNT_READ_PATHS,
-  POST_COUNT_FIELDS,
-  redactCounts,
-  countsHiddenFrom,
-} from '@/lib/feed/quiet-counts';
+import { QUIET_COUNT_READ_PATHS, POST_COUNT_FIELDS, redactCounts, countsHiddenFrom } from '@/lib/feed/quiet-counts';
 import { route as profilePostsRoute } from '@/lib/profile/api/profile.$id.rmharks.server';
 import { route as postPageRoute } from '@/lib/feed/api/rmharks.$id.server';
 import { route as ogPostRoute } from '@/lib/og/api/og.post.$id.server';
@@ -209,12 +206,7 @@ const PATHS: { name: string; counts: (hides: boolean, viewer: string | null) => 
   {
     name: 'redactCounts (a FeedItem)',
     counts: async (hides, viewer) =>
-      ofItem(
-        redactCounts(
-          { ...COUNTS, user: resolveUser(authorRow(hides)) } as FeedItem,
-          viewer,
-        ),
-      ),
+      ofItem(redactCounts({ ...COUNTS, user: resolveUser(authorRow(hides)) } as FeedItem, viewer)),
   },
   {
     name: 'mapRmharkToFeedItem (map-feed-item.server.ts)',
@@ -237,7 +229,9 @@ const PATHS: { name: string; counts: (hides: boolean, viewer: string | null) => 
     counts: async (hides, viewer) => {
       h.hides = hides;
       h.viewer = viewer;
-      const body = (await (await call(profilePostsRoute, 'GET', 'https://x.test/api/profile/author/rmharks', { id: 'author' })).json()) as {
+      const body = (await (
+        await call(profilePostsRoute, 'GET', 'https://x.test/api/profile/author/rmharks', { id: 'author' })
+      ).json()) as {
         items: FeedItem[];
       };
       return ofItem(body.items[0]!);
@@ -248,7 +242,9 @@ const PATHS: { name: string; counts: (hides: boolean, viewer: string | null) => 
     counts: async (hides, viewer) => {
       h.hides = hides;
       h.viewer = viewer;
-      return ofItem((await (await call(postPageRoute, 'GET', 'https://x.test/api/rmharks/p1', { id: 'p1' })).json()) as FeedItem);
+      return ofItem(
+        (await (await call(postPageRoute, 'GET', 'https://x.test/api/rmharks/p1', { id: 'p1' })).json()) as FeedItem,
+      );
     },
   },
   {
@@ -267,8 +263,20 @@ const PATHS: { name: string; counts: (hides: boolean, viewer: string | null) => 
   },
   ...(
     [
-      ['GET /api/v1/feed', v1Feed, 'https://x.test/api/v1/feed', {}, (b: { data: { metrics: Metrics }[] }) => b.data[0]!.metrics],
-      ['GET /api/v1/posts/:id', v1Post, 'https://x.test/api/v1/posts/p1', { id: 'p1' }, (b: { metrics: Metrics }) => b.metrics],
+      [
+        'GET /api/v1/feed',
+        v1Feed,
+        'https://x.test/api/v1/feed',
+        {},
+        (b: { data: { metrics: Metrics }[] }) => b.data[0]!.metrics,
+      ],
+      [
+        'GET /api/v1/posts/:id',
+        v1Post,
+        'https://x.test/api/v1/posts/p1',
+        { id: 'p1' },
+        (b: { metrics: Metrics }) => b.metrics,
+      ],
       [
         'GET /api/v1/users/:handle/posts',
         v1UserPosts,
@@ -276,7 +284,13 @@ const PATHS: { name: string; counts: (hides: boolean, viewer: string | null) => 
         { handle: 'author' },
         (b: { data: { metrics: Metrics }[] }) => b.data[0]!.metrics,
       ],
-      ['GET /api/v1/me/bookmarks', v1Bookmarks, 'https://x.test/api/v1/me/bookmarks', {}, (b: { data: { metrics: Metrics }[] }) => b.data[0]!.metrics],
+      [
+        'GET /api/v1/me/bookmarks',
+        v1Bookmarks,
+        'https://x.test/api/v1/me/bookmarks',
+        {},
+        (b: { data: { metrics: Metrics }[] }) => b.data[0]!.metrics,
+      ],
     ] as const
   ).map(([name, route, url, params, pick]) => ({
     name,
@@ -296,7 +310,12 @@ const PATHS: { name: string; counts: (hides: boolean, viewer: string | null) => 
         likeCount?: number | null;
       };
       // Only the like count exists here; the rest of the row is read as "same as like".
-      return [body.likeCount, body.likeCount === null ? null : 12, body.likeCount === null ? null : 13, body.likeCount === null ? null : 14];
+      return [
+        body.likeCount,
+        body.likeCount === null ? null : 12,
+        body.likeCount === null ? null : 13,
+        body.likeCount === null ? null : 14,
+      ];
     },
   },
   {
@@ -304,7 +323,12 @@ const PATHS: { name: string; counts: (hides: boolean, viewer: string | null) => 
     counts: async (hides, viewer) => {
       h.hides = hides;
       const r = await setPostLike(viewer ?? 'someone', 'p1', true);
-      return [r.likeCount, r.likeCount === null ? null : 12, r.likeCount === null ? null : 13, r.likeCount === null ? null : 14];
+      return [
+        r.likeCount,
+        r.likeCount === null ? null : 12,
+        r.likeCount === null ? null : 13,
+        r.likeCount === null ? null : 14,
+      ];
     },
   },
   {
@@ -381,7 +405,13 @@ describe('every serialiser of post counts honours "hide counts on my posts"', ()
 describe('the quoted original of another member is redacted for its own author switch', () => {
   it('a quote card of a hidden author carries null counts for a stranger, even inside a post the author does not hide', () => {
     const quoter = mapRmharkToFeedItem(
-      { ...postRow(false), id: 'q1', userId: 'quoter', user: { ...authorRow(false), id: 'quoter' }, original: { ...postRow(true) } },
+      {
+        ...postRow(false),
+        id: 'q1',
+        userId: 'quoter',
+        user: { ...authorRow(false), id: 'quoter' },
+        original: { ...postRow(true) },
+      },
       'someone-else',
     );
     expect(ofItem(quoter)).toEqual(REAL);
@@ -475,7 +505,7 @@ describe('PUT /api/settings/quiet-counts', () => {
     expect(h.upserts).toHaveLength(0);
   });
 
-  it('reads back the caller\'s own switches', async () => {
+  it("reads back the caller's own switches", async () => {
     h.viewer = 'me';
     h.hides = true;
     const res = await call(settingsRoute, 'GET', 'https://x.test/api/settings/quiet-counts');
@@ -500,19 +530,20 @@ const REDACTS = /redactCounts|nullPostCounts|countsHiddenFrom|hideCounts/;
 const EXEMPT: Record<string, string> = {
   // Counts a member reads about their OWN posts.
   'lib/feed/api/rmharks.$id.insights.server.ts': 'author-only insights (404 for anyone else)',
-  'lib/analytics.server.ts': 'creator analytics of one\'s own posts',
-  'lib/ai/recap.server.ts': 'the member\'s own weekly recap',
-  'lib/wrapped/wrapped.server.ts': 'the member\'s own year in review',
-  'lib/bulk/bulk.server.ts': 'bulk actions on one\'s own posts and comments',
-  'lib/bulk/types.ts': 'bulk-action filters on one\'s own posts',
-  'lib/trash/trash.server.ts': 'the member\'s own bin',
+  'lib/analytics.server.ts': "creator analytics of one's own posts",
+  'lib/ai/recap.server.ts': "the member's own weekly recap",
+  'lib/wrapped/wrapped.server.ts': "the member's own year in review",
+  'lib/bulk/bulk.server.ts': "bulk actions on one's own posts and comments",
+  'lib/bulk/types.ts': "bulk-action filters on one's own posts",
+  'lib/trash/trash.server.ts': "the member's own bin",
   // Writes, ranking and zeros: no number leaves for another viewer.
   'lib/feed/api/rmharks.server.ts': 'creating a post: zeros, and the quote card goes through mapQuotedOriginal',
   'lib/feed/api/rmharks.thread.server.ts': 'creating a thread: zeros',
   'lib/feed/api/rmharks.$id.repost.server.ts': 'counter update and a per-post bus payload nobody subscribes to',
-  'lib/feed/api/rmharks.$id.comment.server.ts': 'COMMENT counts (hiding them is out of scope), and zeros for a new reply',
+  'lib/feed/api/rmharks.$id.comment.server.ts':
+    'COMMENT counts (hiding them is out of scope), and zeros for a new reply',
   'lib/feed/api/rmharks.$id.comment.$commentId.like.server.ts': 'comment counters',
-  'app/routes/api/v1/posts.ts': 'the caller\'s OWN posts (serializeOwnPost)',
+  'app/routes/api/v1/posts.ts': "the caller's OWN posts (serializeOwnPost)",
   'app/routes/api/v1/posts/$id/like.ts': 'the reply comes from setPostLike, which nulls the count (table above)',
   'lib/og/post-image.server.tsx': 'the renderer draws what og.post.$id hands it; a null count draws no stats',
   'lib/hot-counters.server.ts': 'view-count writes',
@@ -578,7 +609,10 @@ describe('path ratchet', () => {
       .filter((f) => !/__tests__|\.test\.|\.product\.test\./.test(f) && !NOT_POSTS.test(f));
     const known = new Set<string>([...QUIET_COUNT_READ_PATHS, ...Object.keys(EXEMPT)]);
     const unknown = files.filter((f) => !known.has(f) && !/^lib\/feed\/quiet-counts/.test(f));
-    expect(unknown, 'a new reader of post counts must be added to QUIET_COUNT_READ_PATHS (redacting) or EXEMPT (with the reason)').toEqual([]);
+    expect(
+      unknown,
+      'a new reader of post counts must be added to QUIET_COUNT_READ_PATHS (redacting) or EXEMPT (with the reason)',
+    ).toEqual([]);
   });
 
   it('the live feed stream does not subscribe to per-post engagement patches (they carry real counts)', () => {

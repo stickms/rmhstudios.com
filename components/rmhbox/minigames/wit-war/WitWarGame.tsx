@@ -15,21 +15,11 @@
  * Reference: docs/rmhbox/design-spec/wit-war.md
  */
 
-import {
-  useState,
-  useCallback,
-} from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  m as motion,
-  AnimatePresence,
-} from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import {
-  emitGameInput,
-  useGameSocket,
-  extractTimerTick,
-} from '@/lib/rmhbox/minigame-client';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
 import type { MinigameProps } from '../MinigameRenderer';
 import PromptReveal from './PromptReveal';
@@ -41,13 +31,7 @@ import AudienceBanner from './AudienceBanner';
 
 // ─── Types ───────────────────────────────────────────────────────
 
-type Phase =
-  | 'PROMPT_REVEAL'
-  | 'WRITING'
-  | 'VOTING'
-  | 'MATCHUP_RESULTS'
-  | 'ROUND_RESULTS'
-  | 'GAME_OVER';
+type Phase = 'PROMPT_REVEAL' | 'WRITING' | 'VOTING' | 'MATCHUP_RESULTS' | 'ROUND_RESULTS' | 'GAME_OVER';
 
 export interface PromptAssignment {
   promptIndex: number;
@@ -65,1062 +49,452 @@ export interface MatchupData {
   playerBName?: string;
   votePercentA: number;
   votePercentB: number;
-  winnerId:
-    | string
-    | null;
+  winnerId: string | null;
   isWitWham: boolean;
 }
 
 /** Extract MatchupData from a snapshot object (spectator or player format). */
-function extractMatchupFromSnapshot(
-  obj: Record<
-    string,
-    unknown
-  >,
-): MatchupData {
+function extractMatchupFromSnapshot(obj: Record<string, unknown>): MatchupData {
   return {
-    promptText:
-      (obj.promptText as string) ??
-      '',
-    answerA:
-      (obj.answerA as string) ??
-      '',
-    answerB:
-      (obj.answerB as string) ??
-      '',
-    playerA:
-      (obj.playerA as string) ??
-      '',
-    playerB:
-      (obj.playerB as string) ??
-      '',
-    playerAName:
-      obj.playerAName as
-        | string
-        | undefined,
-    playerBName:
-      obj.playerBName as
-        | string
-        | undefined,
-    votePercentA:
-      (obj.votePercentA as number) ??
-      0,
-    votePercentB:
-      (obj.votePercentB as number) ??
-      0,
-    winnerId:
-      (obj.winnerId as
-        | string
-        | null) ??
-      null,
-    isWitWham:
-      (obj.isWitWham as boolean) ??
-      false,
+    promptText: (obj.promptText as string) ?? '',
+    answerA: (obj.answerA as string) ?? '',
+    answerB: (obj.answerB as string) ?? '',
+    playerA: (obj.playerA as string) ?? '',
+    playerB: (obj.playerB as string) ?? '',
+    playerAName: obj.playerAName as string | undefined,
+    playerBName: obj.playerBName as string | undefined,
+    votePercentA: (obj.votePercentA as number) ?? 0,
+    votePercentB: (obj.votePercentB as number) ?? 0,
+    winnerId: (obj.winnerId as string | null) ?? null,
+    isWitWham: (obj.isWitWham as boolean) ?? false,
   };
 }
 
-export default function WitWarGame({
-  playerId,
-}: MinigameProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhbox',
-    );
-  const [
-    phase,
-    setPhase,
-  ] =
-    useState<Phase>(
-      'PROMPT_REVEAL',
-    );
-  const [
-    currentRound,
-    setCurrentRound,
-  ] =
-    useState(
-      1,
-    );
-  const [
-    totalRounds,
-    setTotalRounds,
-  ] =
-    useState(
-      2,
-    );
-  const [
-    prompts,
-    setPrompts,
-  ] =
-    useState<
-      PromptAssignment[]
-    >(
-      [],
-    );
-  const [
-    submittedCount,
-    setSubmittedCount,
-  ] =
-    useState(
-      0,
-    );
-  const [
-    totalPlayers,
-    setTotalPlayers,
-  ] =
-    useState(
-      0,
-    );
-  const [
-    hasSubmitted,
-    setHasSubmitted,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    scores,
-    setScores,
-  ] =
-    useState<
-      Record<
-        string,
-        number
-      >
-    >(
-      {},
-    );
-  const [
-    writingTimeUp,
-    setWritingTimeUp,
-  ] =
-    useState(
-      false,
-    );
+export default function WitWarGame({ playerId }: MinigameProps) {
+  const { t } = useTranslation('c-rmhbox');
+  const [phase, setPhase] = useState<Phase>('PROMPT_REVEAL');
+  const [currentRound, setCurrentRound] = useState(1);
+  const [totalRounds, setTotalRounds] = useState(2);
+  const [prompts, setPrompts] = useState<PromptAssignment[]>([]);
+  const [submittedCount, setSubmittedCount] = useState(0);
+  const [totalPlayers, setTotalPlayers] = useState(0);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [scores, setScores] = useState<Record<string, number>>({});
+  const [writingTimeUp, setWritingTimeUp] = useState(false);
 
   // Voting state
-  const [
-    matchupIndex,
-    setMatchupIndex,
-  ] =
-    useState(
-      0,
-    );
-  const [
-    totalMatchups,
-    setTotalMatchups,
-  ] =
-    useState(
-      0,
-    );
-  const [
-    currentMatchup,
-    setCurrentMatchup,
-  ] =
-    useState<MatchupData | null>(
-      null,
-    );
-  const [
-    isAuthor,
-    setIsAuthor,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    myVote,
-    setMyVote,
-  ] =
-    useState<
-      | string
-      | null
-    >(
-      null,
-    );
-  const [
-    voteCount,
-    setVoteCount,
-  ] =
-    useState(
-      0,
-    );
-  const [
-    totalVoters,
-    setTotalVoters,
-  ] =
-    useState(
-      0,
-    );
+  const [matchupIndex, setMatchupIndex] = useState(0);
+  const [totalMatchups, setTotalMatchups] = useState(0);
+  const [currentMatchup, setCurrentMatchup] = useState<MatchupData | null>(null);
+  const [isAuthor, setIsAuthor] = useState(false);
+  const [myVote, setMyVote] = useState<string | null>(null);
+  const [voteCount, setVoteCount] = useState(0);
+  const [totalVoters, setTotalVoters] = useState(0);
 
   // Matchup results state
-  const [
-    matchupResult,
-    setMatchupResult,
-  ] =
-    useState<MatchupData | null>(
-      null,
-    );
+  const [matchupResult, setMatchupResult] = useState<MatchupData | null>(null);
 
   // Round results
-  const [
-    roundMatchups,
-    setRoundMatchups,
-  ] =
-    useState<
-      MatchupData[]
-    >(
-      [],
-    );
+  const [roundMatchups, setRoundMatchups] = useState<MatchupData[]>([]);
 
-  const players =
-    useRMHboxStore(
-      (
-        s,
-      ) =>
-        s
-          .lobby
-          ?.players,
-    );
+  const players = useRMHboxStore((s) => s.lobby?.players);
   // R1: viewers beyond the player cap are spectators; their votes are one aggregated "audience" vote.
-  const isAudience =
-    useRMHboxStore(
-      (
-        s,
-      ) =>
-        s
-          .lobby
-          ?.myRole ===
-        'spectator',
-    );
-  const [
-    audienceCount,
-    setAudienceCount,
-  ] =
-    useState(
-      0,
-    );
+  const isAudience = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+  const [audienceCount, setAudienceCount] = useState(0);
 
-  const handleGameAction =
-    useCallback(
-      (
-        data: Record<
-          string,
-          unknown
-        >,
-      ) => {
-        const type =
-          data.type as string;
+  const handleGameAction = useCallback(
+    (data: Record<string, unknown>) => {
+      const type = data.type as string;
 
-        switch (
-          type
-        ) {
-          case 'WW_PROMPT_REVEAL': {
-            const payload =
-              data.payload as {
-                round: number;
-                totalRounds: number;
-                prompts: PromptAssignment[];
-              };
-            setPhase(
-              'PROMPT_REVEAL',
-            );
-            setCurrentRound(
-              payload.round,
-            );
-            setTotalRounds(
-              payload.totalRounds,
-            );
-            setPrompts(
-              payload.prompts,
-            );
-            setHasSubmitted(
-              false,
-            );
-            setMyVote(
-              null,
-            );
-            setWritingTimeUp(
-              false,
-            );
-            playSound(
-              'swoosh',
-            );
-            break;
-          }
-
-          case 'WW_PHASE_CHANGE': {
-            const payload =
-              data.payload as {
-                phase: string;
-                round: number;
-              };
-            if (
-              payload.phase ===
-              'PROMPT_REVEAL'
-            ) {
-              setPhase(
-                'PROMPT_REVEAL',
-              );
-              setCurrentRound(
-                payload.round,
-              );
-            }
-            break;
-          }
-
-          case 'WW_WRITING_START': {
-            setPhase(
-              'WRITING',
-            );
-            playSound(
-              'chime',
-            );
-            break;
-          }
-
-          case 'WW_WRITING_END':
-            setWritingTimeUp(
-              true,
-            );
-            break;
-
-          case 'WW_SUBMIT_COUNT': {
-            const payload =
-              data.payload as {
-                submittedCount: number;
-                totalPlayers: number;
-              };
-            setSubmittedCount(
-              payload.submittedCount,
-            );
-            setTotalPlayers(
-              payload.totalPlayers,
-            );
-            break;
-          }
-
-          case 'WW_ANSWER_ACCEPTED': {
-            playSound(
-              'click',
-            );
-            break;
-          }
-
-          case 'WW_MATCHUP_START': {
-            const payload =
-              data.payload as {
-                matchupIndex: number;
-                totalMatchups: number;
-                promptText: string;
-                answerA: string;
-                answerB: string;
-                playerA: string;
-                playerB: string;
-                durationSeconds: number;
-              };
-            setPhase(
-              'VOTING',
-            );
-            setMatchupIndex(
-              payload.matchupIndex,
-            );
-            setTotalMatchups(
-              payload.totalMatchups,
-            );
-            setCurrentMatchup(
-              {
-                promptText:
-                  payload.promptText,
-                answerA:
-                  payload.answerA,
-                answerB:
-                  payload.answerB,
-                playerA:
-                  payload.playerA,
-                playerB:
-                  payload.playerB,
-                votePercentA: 0,
-                votePercentB: 0,
-                winnerId:
-                  null,
-                isWitWham: false,
-              },
-            );
-            setIsAuthor(
-              payload.playerA ===
-                playerId ||
-                payload.playerB ===
-                  playerId,
-            );
-            setMyVote(
-              null,
-            );
-            setVoteCount(
-              0,
-            );
-            setAudienceCount(
-              0,
-            );
-            setTotalVoters(
-              Math.max(
-                (players?.filter(
-                  (
-                    p,
-                  ) =>
-                    p.isConnected,
-                )
-                  .length ??
-                  0) -
-                  2,
-                1,
-              ),
-            );
-            playSound(
-              'swoosh',
-            );
-            break;
-          }
-
-          case 'WW_VOTE_COUNT': {
-            const payload =
-              data.payload as {
-                matchupIndex: number;
-                voteCount: number;
-                totalVoters: number;
-              };
-            setVoteCount(
-              payload.voteCount,
-            );
-            setTotalVoters(
-              payload.totalVoters,
-            );
-            break;
-          }
-
-          case 'WW_AUDIENCE_COUNT': {
-            const payload =
-              data.payload as {
-                count: number;
-              };
-            setAudienceCount(
-              payload.count,
-            );
-            break;
-          }
-
-          case 'WW_MATCHUP_RESULT': {
-            const payload =
-              data.payload as {
-                matchupIndex: number;
-                promptText: string;
-                playerA: string;
-                playerAName: string;
-                answerA: string;
-                playerB: string;
-                playerBName: string;
-                answerB: string;
-                votePercentA: number;
-                votePercentB: number;
-                winnerId:
-                  | string
-                  | null;
-                isWitWham: boolean;
-                scores: Record<
-                  string,
-                  number
-                >;
-              };
-            setPhase(
-              'MATCHUP_RESULTS',
-            );
-            setMatchupResult(
-              {
-                promptText:
-                  payload.promptText,
-                answerA:
-                  payload.answerA,
-                answerB:
-                  payload.answerB,
-                playerA:
-                  payload.playerA,
-                playerB:
-                  payload.playerB,
-                playerAName:
-                  payload.playerAName,
-                playerBName:
-                  payload.playerBName,
-                votePercentA:
-                  payload.votePercentA,
-                votePercentB:
-                  payload.votePercentB,
-                winnerId:
-                  payload.winnerId,
-                isWitWham:
-                  payload.isWitWham,
-              },
-            );
-            setScores(
-              payload.scores,
-            );
-            playSound(
-              payload.isWitWham
-                ? 'victoryFanfare'
-                : 'scoreDing',
-            );
-            break;
-          }
-
-          case 'WW_ROUND_RESULTS': {
-            const payload =
-              data.payload as {
-                round: number;
-                totalRounds: number;
-                scores: Record<
-                  string,
-                  number
-                >;
-                matchups: MatchupData[];
-              };
-            setPhase(
-              'ROUND_RESULTS',
-            );
-            setScores(
-              payload.scores,
-            );
-            setRoundMatchups(
-              payload.matchups,
-            );
-            setCurrentRound(
-              payload.round,
-            );
-            setTotalRounds(
-              payload.totalRounds,
-            );
-            playSound(
-              'scoreDing',
-            );
-            break;
-          }
-
-          case 'TIMER_TICK': {
-            const remaining =
-              extractTimerTick(
-                data,
-              );
-            if (
-              remaining !==
-                undefined &&
-              remaining <=
-                5 &&
-              remaining >
-                0
-            ) {
-              playSound(
-                'countdownBeep',
-              );
-            }
-            break;
-          }
-
-          default:
-            break;
+      switch (type) {
+        case 'WW_PROMPT_REVEAL': {
+          const payload = data.payload as {
+            round: number;
+            totalRounds: number;
+            prompts: PromptAssignment[];
+          };
+          setPhase('PROMPT_REVEAL');
+          setCurrentRound(payload.round);
+          setTotalRounds(payload.totalRounds);
+          setPrompts(payload.prompts);
+          setHasSubmitted(false);
+          setMyVote(null);
+          setWritingTimeUp(false);
+          playSound('swoosh');
+          break;
         }
-      },
-      [
-        playerId,
-        players,
-      ],
-    );
 
-  const handleStateSnapshot =
-    useCallback(
-      (
-        snapshot: Record<
-          string,
-          unknown
-        >,
-      ) => {
-        const p =
-          snapshot.phase as string;
-        if (
-          p
-        ) {
-          setPhase(
-            p as Phase,
-          );
+        case 'WW_PHASE_CHANGE': {
+          const payload = data.payload as {
+            phase: string;
+            round: number;
+          };
+          if (payload.phase === 'PROMPT_REVEAL') {
+            setPhase('PROMPT_REVEAL');
+            setCurrentRound(payload.round);
+          }
+          break;
         }
-        if (
-          snapshot.currentRound
-        )
-          setCurrentRound(
-            snapshot.currentRound as number,
-          );
-        if (
-          snapshot.totalRounds
-        )
-          setTotalRounds(
-            snapshot.totalRounds as number,
-          );
-        if (
-          snapshot.scores
-        )
-          setScores(
-            snapshot.scores as Record<
-              string,
-              number
-            >,
-          );
-        if (
-          Array.isArray(
-            snapshot.prompts,
-          )
-        )
-          setPrompts(
-            snapshot.prompts as PromptAssignment[],
-          );
-        if (
-          typeof snapshot.submittedCount ===
-          'number'
-        )
-          setSubmittedCount(
-            snapshot.submittedCount as number,
-          );
-        if (
-          typeof snapshot.totalPlayers ===
-          'number'
-        )
-          setTotalPlayers(
-            snapshot.totalPlayers as number,
-          );
-        if (
-          typeof snapshot.hasSubmitted ===
-          'boolean'
-        )
-          setHasSubmitted(
-            snapshot.hasSubmitted as boolean,
-          );
-        if (
-          typeof snapshot.matchupIndex ===
-          'number'
-        )
-          setMatchupIndex(
-            snapshot.matchupIndex as number,
-          );
-        if (
-          typeof snapshot.totalMatchups ===
-          'number'
-        )
-          setTotalMatchups(
-            snapshot.totalMatchups as number,
-          );
-        if (
-          p ===
-          'PROMPT_REVEAL'
-        )
-          setWritingTimeUp(
-            false,
-          );
 
-        // Reconstruct matchup data from spectator/reconnection snapshots
-        if (
-          p ===
-          'VOTING'
-        ) {
-          // Spectator snapshot uses `currentMatchup`; player snapshot uses flat fields
-          const cm =
-            snapshot.currentMatchup as
-              | Record<
-                  string,
-                  unknown
-                >
-              | undefined;
-          if (
-            cm &&
-            typeof cm ===
-              'object'
-          ) {
-            setCurrentMatchup(
-              extractMatchupFromSnapshot(
-                cm,
-              ),
-            );
-            setIsAuthor(
-              (cm.playerA as string) ===
-                playerId ||
-                (cm.playerB as string) ===
-                  playerId,
-            );
-          } else if (
-            snapshot.promptText
-          ) {
-            // Player snapshot: flat fields
-            setCurrentMatchup(
-              extractMatchupFromSnapshot(
-                snapshot,
-              ),
-            );
-          }
-          if (
-            typeof snapshot.isAuthor ===
-            'boolean'
-          )
-            setIsAuthor(
-              snapshot.isAuthor as boolean,
-            );
-          if (
-            typeof snapshot.voteCount ===
-            'number'
-          )
-            setVoteCount(
-              snapshot.voteCount as number,
-            );
-          if (
-            typeof snapshot.totalVoters ===
-            'number'
-          )
-            setTotalVoters(
-              snapshot.totalVoters as number,
-            );
-          if (
-            typeof snapshot.audienceCount ===
-            'number'
-          )
-            setAudienceCount(
-              snapshot.audienceCount as number,
-            );
-          setMyVote(
-            (snapshot.myVote as
-              | string
-              | null) ??
-              null,
-          );
-        } else if (
-          p ===
-          'MATCHUP_RESULTS'
-        ) {
-          // Spectator snapshot uses `currentMatchup`; player snapshot uses `matchup`
-          const cm =
-            (snapshot.currentMatchup ??
-              snapshot.matchup) as
-              | Record<
-                  string,
-                  unknown
-                >
-              | undefined;
-          if (
-            cm &&
-            typeof cm ===
-              'object'
-          ) {
-            setMatchupResult(
-              extractMatchupFromSnapshot(
-                cm,
-              ),
-            );
-          }
-        } else if (
-          p ===
-            'ROUND_RESULTS' ||
-          p ===
-            'GAME_OVER'
-        ) {
-          // Both player and spectator snapshots carry the round's `matchups`
-          if (
-            Array.isArray(
-              snapshot.matchups,
-            )
-          ) {
-            setRoundMatchups(
-              (
-                snapshot.matchups as Record<
-                  string,
-                  unknown
-                >[]
-              ).map(
-                extractMatchupFromSnapshot,
-              ),
-            );
-          }
+        case 'WW_WRITING_START': {
+          setPhase('WRITING');
+          playSound('chime');
+          break;
         }
-      },
-      [
-        playerId,
-      ],
-    );
 
-  useGameSocket(
-    {
-      onGameAction:
-        handleGameAction,
-      onStateSnapshot:
-        handleStateSnapshot,
+        case 'WW_WRITING_END':
+          setWritingTimeUp(true);
+          break;
+
+        case 'WW_SUBMIT_COUNT': {
+          const payload = data.payload as {
+            submittedCount: number;
+            totalPlayers: number;
+          };
+          setSubmittedCount(payload.submittedCount);
+          setTotalPlayers(payload.totalPlayers);
+          break;
+        }
+
+        case 'WW_ANSWER_ACCEPTED': {
+          playSound('click');
+          break;
+        }
+
+        case 'WW_MATCHUP_START': {
+          const payload = data.payload as {
+            matchupIndex: number;
+            totalMatchups: number;
+            promptText: string;
+            answerA: string;
+            answerB: string;
+            playerA: string;
+            playerB: string;
+            durationSeconds: number;
+          };
+          setPhase('VOTING');
+          setMatchupIndex(payload.matchupIndex);
+          setTotalMatchups(payload.totalMatchups);
+          setCurrentMatchup({
+            promptText: payload.promptText,
+            answerA: payload.answerA,
+            answerB: payload.answerB,
+            playerA: payload.playerA,
+            playerB: payload.playerB,
+            votePercentA: 0,
+            votePercentB: 0,
+            winnerId: null,
+            isWitWham: false,
+          });
+          setIsAuthor(payload.playerA === playerId || payload.playerB === playerId);
+          setMyVote(null);
+          setVoteCount(0);
+          setAudienceCount(0);
+          setTotalVoters(Math.max((players?.filter((p) => p.isConnected).length ?? 0) - 2, 1));
+          playSound('swoosh');
+          break;
+        }
+
+        case 'WW_VOTE_COUNT': {
+          const payload = data.payload as {
+            matchupIndex: number;
+            voteCount: number;
+            totalVoters: number;
+          };
+          setVoteCount(payload.voteCount);
+          setTotalVoters(payload.totalVoters);
+          break;
+        }
+
+        case 'WW_AUDIENCE_COUNT': {
+          const payload = data.payload as {
+            count: number;
+          };
+          setAudienceCount(payload.count);
+          break;
+        }
+
+        case 'WW_MATCHUP_RESULT': {
+          const payload = data.payload as {
+            matchupIndex: number;
+            promptText: string;
+            playerA: string;
+            playerAName: string;
+            answerA: string;
+            playerB: string;
+            playerBName: string;
+            answerB: string;
+            votePercentA: number;
+            votePercentB: number;
+            winnerId: string | null;
+            isWitWham: boolean;
+            scores: Record<string, number>;
+          };
+          setPhase('MATCHUP_RESULTS');
+          setMatchupResult({
+            promptText: payload.promptText,
+            answerA: payload.answerA,
+            answerB: payload.answerB,
+            playerA: payload.playerA,
+            playerB: payload.playerB,
+            playerAName: payload.playerAName,
+            playerBName: payload.playerBName,
+            votePercentA: payload.votePercentA,
+            votePercentB: payload.votePercentB,
+            winnerId: payload.winnerId,
+            isWitWham: payload.isWitWham,
+          });
+          setScores(payload.scores);
+          playSound(payload.isWitWham ? 'victoryFanfare' : 'scoreDing');
+          break;
+        }
+
+        case 'WW_ROUND_RESULTS': {
+          const payload = data.payload as {
+            round: number;
+            totalRounds: number;
+            scores: Record<string, number>;
+            matchups: MatchupData[];
+          };
+          setPhase('ROUND_RESULTS');
+          setScores(payload.scores);
+          setRoundMatchups(payload.matchups);
+          setCurrentRound(payload.round);
+          setTotalRounds(payload.totalRounds);
+          playSound('scoreDing');
+          break;
+        }
+
+        case 'TIMER_TICK': {
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined && remaining <= 5 && remaining > 0) {
+            playSound('countdownBeep');
+          }
+          break;
+        }
+
+        default:
+          break;
+      }
     },
+    [playerId, players],
   );
 
-  const handleSubmitAnswer =
-    useCallback(
-      (
-        promptIndex: number,
-        answer: string,
-      ) => {
-        emitGameInput(
-          'WW_SUBMIT_ANSWER',
-          {
-            promptIndex,
-            answer,
-          },
-        );
-      },
-      [],
-    );
+  const handleStateSnapshot = useCallback(
+    (snapshot: Record<string, unknown>) => {
+      const p = snapshot.phase as string;
+      if (p) {
+        setPhase(p as Phase);
+      }
+      if (snapshot.currentRound) setCurrentRound(snapshot.currentRound as number);
+      if (snapshot.totalRounds) setTotalRounds(snapshot.totalRounds as number);
+      if (snapshot.scores) setScores(snapshot.scores as Record<string, number>);
+      if (Array.isArray(snapshot.prompts)) setPrompts(snapshot.prompts as PromptAssignment[]);
+      if (typeof snapshot.submittedCount === 'number') setSubmittedCount(snapshot.submittedCount as number);
+      if (typeof snapshot.totalPlayers === 'number') setTotalPlayers(snapshot.totalPlayers as number);
+      if (typeof snapshot.hasSubmitted === 'boolean') setHasSubmitted(snapshot.hasSubmitted as boolean);
+      if (typeof snapshot.matchupIndex === 'number') setMatchupIndex(snapshot.matchupIndex as number);
+      if (typeof snapshot.totalMatchups === 'number') setTotalMatchups(snapshot.totalMatchups as number);
+      if (p === 'PROMPT_REVEAL') setWritingTimeUp(false);
 
-  const handleSubmitAllAnswers =
-    useCallback(() => {
-      setHasSubmitted(
-        true,
-      );
-    }, []);
+      // Reconstruct matchup data from spectator/reconnection snapshots
+      if (p === 'VOTING') {
+        // Spectator snapshot uses `currentMatchup`; player snapshot uses flat fields
+        const cm = snapshot.currentMatchup as Record<string, unknown> | undefined;
+        if (cm && typeof cm === 'object') {
+          setCurrentMatchup(extractMatchupFromSnapshot(cm));
+          setIsAuthor((cm.playerA as string) === playerId || (cm.playerB as string) === playerId);
+        } else if (snapshot.promptText) {
+          // Player snapshot: flat fields
+          setCurrentMatchup(extractMatchupFromSnapshot(snapshot));
+        }
+        if (typeof snapshot.isAuthor === 'boolean') setIsAuthor(snapshot.isAuthor as boolean);
+        if (typeof snapshot.voteCount === 'number') setVoteCount(snapshot.voteCount as number);
+        if (typeof snapshot.totalVoters === 'number') setTotalVoters(snapshot.totalVoters as number);
+        if (typeof snapshot.audienceCount === 'number') setAudienceCount(snapshot.audienceCount as number);
+        setMyVote((snapshot.myVote as string | null) ?? null);
+      } else if (p === 'MATCHUP_RESULTS') {
+        // Spectator snapshot uses `currentMatchup`; player snapshot uses `matchup`
+        const cm = (snapshot.currentMatchup ?? snapshot.matchup) as Record<string, unknown> | undefined;
+        if (cm && typeof cm === 'object') {
+          setMatchupResult(extractMatchupFromSnapshot(cm));
+        }
+      } else if (p === 'ROUND_RESULTS' || p === 'GAME_OVER') {
+        // Both player and spectator snapshots carry the round's `matchups`
+        if (Array.isArray(snapshot.matchups)) {
+          setRoundMatchups((snapshot.matchups as Record<string, unknown>[]).map(extractMatchupFromSnapshot));
+        }
+      }
+    },
+    [playerId],
+  );
 
-  const handleCastVote =
-    useCallback(
-      (
-        votedForUserId: string,
-      ) => {
-        emitGameInput(
-          isAudience
-            ? 'AUDIENCE_VOTE'
-            : 'WW_CAST_VOTE',
-          {
-            matchupIndex,
-            votedForUserId,
-          },
-        );
-        // Audience members may change their pick (server caps the changes); players lock in.
-        setMyVote(
-          votedForUserId,
-        );
-        playSound(
-          'click',
-        );
-      },
-      [
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
+
+  const handleSubmitAnswer = useCallback((promptIndex: number, answer: string) => {
+    emitGameInput('WW_SUBMIT_ANSWER', {
+      promptIndex,
+      answer,
+    });
+  }, []);
+
+  const handleSubmitAllAnswers = useCallback(() => {
+    setHasSubmitted(true);
+  }, []);
+
+  const handleCastVote = useCallback(
+    (votedForUserId: string) => {
+      emitGameInput(isAudience ? 'AUDIENCE_VOTE' : 'WW_CAST_VOTE', {
         matchupIndex,
-        isAudience,
-      ],
-    );
+        votedForUserId,
+      });
+      // Audience members may change their pick (server caps the changes); players lock in.
+      setMyVote(votedForUserId);
+      playSound('click');
+    },
+    [matchupIndex, isAudience],
+  );
 
   return (
     <div className="flex flex-col items-center w-full max-w-2xl mx-auto px-4">
       <AnimatePresence mode="wait">
-        {isAudience &&
-          (phase ===
-            'PROMPT_REVEAL' ||
-            phase ===
-              'WRITING') && (
-            <motion.div
-              key="audience-writing"
-              initial={{
-                opacity: 0,
-              }}
-              animate={{
-                opacity: 1,
-              }}
-              exit={{
-                opacity: 0,
-              }}
-              className="flex w-full flex-col items-center gap-2 py-8 text-center"
-            >
-              <p className="text-base font-medium text-app-text">
-                {t(
-                  'ww-audience-writing',
-                  {
-                    defaultValue:
-                      'Players are writing their answers',
-                  },
-                )}
+        {isAudience && (phase === 'PROMPT_REVEAL' || phase === 'WRITING') && (
+          <motion.div
+            key="audience-writing"
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
+            className="flex w-full flex-col items-center gap-2 py-8 text-center"
+          >
+            <p className="text-base font-medium text-app-text">
+              {t('ww-audience-writing', {
+                defaultValue: 'Players are writing their answers',
+              })}
+            </p>
+            {phase === 'WRITING' && (
+              <p className="text-sm text-app-text-muted">
+                {t('submitted-count-done', {
+                  defaultValue: '{{submittedCount}}/{{totalPlayers}} done',
+                  submittedCount,
+                  totalPlayers,
+                })}
               </p>
-              {phase ===
-                'WRITING' && (
-                <p className="text-sm text-app-text-muted">
-                  {t(
-                    'submitted-count-done',
-                    {
-                      defaultValue:
-                        '{{submittedCount}}/{{totalPlayers}} done',
-                      submittedCount,
-                      totalPlayers,
-                    },
-                  )}
-                </p>
-              )}
-            </motion.div>
-          )}
+            )}
+          </motion.div>
+        )}
 
-        {!isAudience &&
-          phase ===
-            'PROMPT_REVEAL' && (
-            <motion.div
-              key="prompt-reveal"
-              initial={{
-                opacity: 0,
-                y: 20,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                y: -20,
-              }}
-              className="w-full"
-            >
-              <PromptReveal
-                prompts={
-                  prompts
-                }
-                round={
-                  currentRound
-                }
-                totalRounds={
-                  totalRounds
-                }
-              />
-            </motion.div>
-          )}
+        {!isAudience && phase === 'PROMPT_REVEAL' && (
+          <motion.div
+            key="prompt-reveal"
+            initial={{
+              opacity: 0,
+              y: 20,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: -20,
+            }}
+            className="w-full"
+          >
+            <PromptReveal prompts={prompts} round={currentRound} totalRounds={totalRounds} />
+          </motion.div>
+        )}
 
-        {!isAudience &&
-          phase ===
-            'WRITING' && (
-            <motion.div
-              key="writing"
-              initial={{
-                opacity: 0,
-                y: 20,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                y: -20,
-              }}
-              className="w-full"
-            >
-              <WritingPhase
-                prompts={
-                  prompts
-                }
-                onSubmitAnswer={
-                  handleSubmitAnswer
-                }
-                onSubmitAll={
-                  handleSubmitAllAnswers
-                }
-                hasSubmitted={
-                  hasSubmitted
-                }
-                submittedCount={
-                  submittedCount
-                }
-                totalPlayers={
-                  totalPlayers
-                }
-                writingTimeUp={
-                  writingTimeUp
-                }
-              />
-            </motion.div>
-          )}
+        {!isAudience && phase === 'WRITING' && (
+          <motion.div
+            key="writing"
+            initial={{
+              opacity: 0,
+              y: 20,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: -20,
+            }}
+            className="w-full"
+          >
+            <WritingPhase
+              prompts={prompts}
+              onSubmitAnswer={handleSubmitAnswer}
+              onSubmitAll={handleSubmitAllAnswers}
+              hasSubmitted={hasSubmitted}
+              submittedCount={submittedCount}
+              totalPlayers={totalPlayers}
+              writingTimeUp={writingTimeUp}
+            />
+          </motion.div>
+        )}
 
-        {phase ===
-          'VOTING' &&
-          currentMatchup && (
-            <motion.div
-              key={`voting-${matchupIndex}`}
-              initial={{
-                opacity: 0,
-                y: 20,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                y: -20,
-              }}
-              className="w-full"
-            >
-              {isAudience ? (
-                <AudienceBanner
-                  count={
-                    audienceCount
-                  }
-                />
-              ) : null}
-              <VotingPhase
-                matchup={
-                  currentMatchup
-                }
-                matchupIndex={
-                  matchupIndex
-                }
-                totalMatchups={
-                  totalMatchups
-                }
-                isAuthor={
-                  isAuthor
-                }
-                myVote={
-                  myVote
-                }
-                onVote={
-                  handleCastVote
-                }
-                voteCount={
-                  voteCount
-                }
-                totalVoters={
-                  totalVoters
-                }
-              />
-            </motion.div>
-          )}
+        {phase === 'VOTING' && currentMatchup && (
+          <motion.div
+            key={`voting-${matchupIndex}`}
+            initial={{
+              opacity: 0,
+              y: 20,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: -20,
+            }}
+            className="w-full"
+          >
+            {isAudience ? <AudienceBanner count={audienceCount} /> : null}
+            <VotingPhase
+              matchup={currentMatchup}
+              matchupIndex={matchupIndex}
+              totalMatchups={totalMatchups}
+              isAuthor={isAuthor}
+              myVote={myVote}
+              onVote={handleCastVote}
+              voteCount={voteCount}
+              totalVoters={totalVoters}
+            />
+          </motion.div>
+        )}
 
-        {phase ===
-          'MATCHUP_RESULTS' &&
-          matchupResult && (
-            <motion.div
-              key={`result-${matchupIndex}`}
-              initial={{
-                opacity: 0,
-                scale: 0.95,
-              }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-              }}
-              exit={{
-                opacity: 0,
-                scale: 0.95,
-              }}
-              className="w-full"
-            >
-              <MatchupResult
-                matchup={
-                  matchupResult
-                }
-              />
-            </motion.div>
-          )}
+        {phase === 'MATCHUP_RESULTS' && matchupResult && (
+          <motion.div
+            key={`result-${matchupIndex}`}
+            initial={{
+              opacity: 0,
+              scale: 0.95,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.95,
+            }}
+            className="w-full"
+          >
+            <MatchupResult matchup={matchupResult} />
+          </motion.div>
+        )}
 
-        {(phase ===
-          'ROUND_RESULTS' ||
-          phase ===
-            'GAME_OVER') && (
+        {(phase === 'ROUND_RESULTS' || phase === 'GAME_OVER') && (
           <motion.div
             key="results"
             initial={{
@@ -1138,26 +512,12 @@ export default function WitWarGame({
             className="w-full"
           >
             <WitWarResults
-              scores={
-                scores
-              }
-              matchups={
-                roundMatchups
-              }
-              round={
-                currentRound
-              }
-              totalRounds={
-                totalRounds
-              }
-              isGameOver={
-                phase ===
-                'GAME_OVER'
-              }
-              players={
-                players ??
-                []
-              }
+              scores={scores}
+              matchups={roundMatchups}
+              round={currentRound}
+              totalRounds={totalRounds}
+              isGameOver={phase === 'GAME_OVER'}
+              players={players ?? []}
             />
           </motion.div>
         )}

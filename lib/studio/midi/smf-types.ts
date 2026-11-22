@@ -37,18 +37,14 @@ export interface SmfTrack {
 }
 
 export interface SmfFile {
-  format:
-    | 0
-    | 1;
+  format: 0 | 1;
   /** Ticks per quarter note. */
   ppq: number;
   tracks: SmfTrack[];
 }
 
 export const SMF_PPQ = 480;
-export const SMF_MAX_BYTES =
-  1024 *
-  1024;
+export const SMF_MAX_BYTES = 1024 * 1024;
 export const SMF_MAX_TRACKS = 64;
 export const SMF_MAX_EVENTS = 200_000;
 /** A variable-length quantity is at most four bytes: 0x0FFFFFFF. */

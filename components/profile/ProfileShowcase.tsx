@@ -1,18 +1,7 @@
-import {
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import {
-  Check,
-  Pencil,
-  Plus,
-  Trash2,
-} from 'lucide-react';
+import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { ArrivalSuspense } from '@/components/ui/arrive';
@@ -22,13 +11,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { SelectionBar } from '@/components/ui/selection-bar';
 import { SortableList } from '@/components/ui/sortable-list';
 import { useMultiSelect } from '@/hooks/useMultiSelect';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { StatusBadge } from '@/components/feed/StatusBadge';
 import {
   MODULE_KINDS,
@@ -48,11 +31,7 @@ import { setProfileLayoutApi } from '@/lib/profile/profile-extras.contract';
 import { getPublicWishlistApi } from '@/lib/wishlist/wishlist.contract';
 // P05 (Top Four, /now, stamps, webrings, skills, counter) — fetched only when a
 // profile actually carries one of these modules.
-const PlusModules =
-  lazy(
-    () =>
-      import('@/components/profile/plus/PlusModules'),
-  );
+const PlusModules = lazy(() => import('@/components/profile/plus/PlusModules'));
 
 export interface ShowcaseProfile {
   id: string;
@@ -62,24 +41,17 @@ export interface ShowcaseProfile {
   status: UserStatus | null;
 }
 
-function defaultModule(
-  kind: ModuleKind,
-): ProfileModule {
-  if (
-    kind ===
-    'about'
-  )
+function defaultModule(kind: ModuleKind): ProfileModule {
+  if (kind === 'about')
     return {
       kind: 'about',
-      config:
-        {
-          text: '',
-        },
+      config: {
+        text: '',
+      },
     };
   return {
     kind,
-    config:
-      {},
+    config: {},
   } as ProfileModule;
 }
 
@@ -89,8 +61,7 @@ function defaultModule(
  * Empty modules = nothing renders; unedited profiles are unchanged.
  */
 export function ProfileShowcase({
-  modules:
-    initial,
+  modules: initial,
   profile,
   isOwner,
 }: {
@@ -98,223 +69,81 @@ export function ProfileShowcase({
   profile: ShowcaseProfile;
   isOwner: boolean;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-profile-modules',
-    );
+  const { t } = useTranslation('c-profile-modules');
   const moduleLabels = profileModuleLabels(t);
-  const [
-    modules,
-    setModules,
-  ] =
-    useState(
-      initial,
-    );
-  const [
-    open,
-    setOpen,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    saving,
-    setSaving,
-  ] =
-    useState(
-      false,
-    );
+  const [modules, setModules] = useState(initial);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Rows carry a stable id so the sortable primitive and the selection (B9) key
   // off the same thing.
-  const rows =
-    useMemo(
-      () =>
-        modules.map(
-          (
-            m,
-            i,
-          ) => ({
-            id: `${m.kind}-${i}`,
-            module:
-              m,
-            index:
-              i,
-          }),
-        ),
-      [
-        modules,
-      ],
-    );
-  const selection =
-    useMultiSelect(
-      rows,
-    );
-  const {
-    selectedIds,
-    clear:
-      clearSelection,
-  } =
-    selection;
+  const rows = useMemo(
+    () =>
+      modules.map((m, i) => ({
+        id: `${m.kind}-${i}`,
+        module: m,
+        index: i,
+      })),
+    [modules],
+  );
+  const selection = useMultiSelect(rows);
+  const { selectedIds, clear: clearSelection } = selection;
 
-  const removeSelected =
-    useCallback(() => {
-      const doomed =
-        new Set(
-          selectedIds,
-        );
-      setModules(
-        (
-          prev,
-        ) =>
-          prev.filter(
-            (
-              m,
-              i,
-            ) =>
-              !doomed.has(
-                `${m.kind}-${i}`,
-              ),
-          ),
-      );
-      clearSelection();
-    }, [
-      selectedIds,
-      clearSelection,
-    ]);
+  const removeSelected = useCallback(() => {
+    const doomed = new Set(selectedIds);
+    setModules((prev) => prev.filter((m, i) => !doomed.has(`${m.kind}-${i}`)));
+    clearSelection();
+  }, [selectedIds, clearSelection]);
 
-  if (
-    modules.length ===
-      0 &&
-    !isOwner
-  )
-    return null;
+  if (modules.length === 0 && !isOwner) return null;
 
-  const usedKinds =
-    new Set(
-      modules.map(
-        (
-          m,
-        ) =>
-          m.kind,
+  const usedKinds = new Set(modules.map((m) => m.kind));
+  const addable = MODULE_KINDS.filter((k) => !usedKinds.has(k));
+
+  function addModule(kind: ModuleKind) {
+    if (modules.length >= MAX_MODULES) return;
+    setModules((prev) => [...prev, defaultModule(kind)]);
+  }
+  function removeAt(index: number) {
+    setModules((prev) => prev.filter((_, i) => i !== index));
+  }
+  function setAboutText(index: number, text: string) {
+    setModules((prev) =>
+      prev.map((m, i) =>
+        i === index && m.kind === 'about'
+          ? {
+              kind: 'about',
+              config: {
+                text,
+              },
+            }
+          : m,
       ),
-    );
-  const addable =
-    MODULE_KINDS.filter(
-      (
-        k,
-      ) =>
-        !usedKinds.has(
-          k,
-        ),
-    );
-
-  function addModule(
-    kind: ModuleKind,
-  ) {
-    if (
-      modules.length >=
-      MAX_MODULES
-    )
-      return;
-    setModules(
-      (
-        prev,
-      ) => [
-        ...prev,
-        defaultModule(
-          kind,
-        ),
-      ],
-    );
-  }
-  function removeAt(
-    index: number,
-  ) {
-    setModules(
-      (
-        prev,
-      ) =>
-        prev.filter(
-          (
-            _,
-            i,
-          ) =>
-            i !==
-            index,
-        ),
-    );
-  }
-  function setAboutText(
-    index: number,
-    text: string,
-  ) {
-    setModules(
-      (
-        prev,
-      ) =>
-        prev.map(
-          (
-            m,
-            i,
-          ) =>
-            i ===
-              index &&
-            m.kind ===
-              'about'
-              ? {
-                  kind: 'about',
-                  config:
-                    {
-                      text,
-                    },
-                }
-              : m,
-        ),
     );
   }
 
   async function save() {
-    setSaving(
-      true,
-    );
+    setSaving(true);
     try {
-      await api(
-        setProfileLayoutApi,
-        {
-          body: {
-            modules,
-          },
+      await api(setProfileLayoutApi, {
+        body: {
+          modules,
         },
-      );
-      setOpen(
-        false,
-      );
+      });
+      setOpen(false);
       toast.success(
-        t(
-          'saved',
-          {
-            defaultValue:
-              'Showcase saved',
-          },
-        ),
+        t('saved', {
+          defaultValue: 'Showcase saved',
+        }),
       );
     } catch {
       toast.error(
-        t(
-          'error',
-          {
-            defaultValue:
-              "Couldn't save your showcase",
-          },
-        ),
+        t('error', {
+          defaultValue: "Couldn't save your showcase",
+        }),
       );
     } finally {
-      setSaving(
-        false,
-      );
+      setSaving(false);
     }
   }
 
@@ -323,118 +152,44 @@ export function ProfileShowcase({
     <div className="mb-4 flex flex-col gap-3">
       {isOwner ? (
         <div className="flex justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              setOpen(
-                true,
-              )
-            }
-          >
-            <Pencil
-              className="h-4 w-4"
-              aria-hidden
-            />
-            {t(
-              'edit-showcase',
-              {
-                defaultValue:
-                  'Edit showcase',
-              },
-            )}
+          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+            <Pencil className="h-4 w-4" aria-hidden />
+            {t('edit-showcase', {
+              defaultValue: 'Edit showcase',
+            })}
           </Button>
         </div>
       ) : null}
 
-      {modules.map(
-        (
-          m,
-          i,
-        ) => (
-          <ModuleBlock
-            key={`${m.kind}-${i}`}
-            module={
-              m
-            }
-            profile={
-              profile
-            }
-            isOwner={
-              isOwner
-            }
-          />
-        ),
-      )}
+      {modules.map((m, i) => (
+        <ModuleBlock key={`${m.kind}-${i}`} module={m} profile={profile} isOwner={isOwner} />
+      ))}
 
-      <Sheet
-        open={
-          open
-        }
-        onOpenChange={
-          setOpen
-        }
-      >
+      <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent>
           <SheetHeader>
             <SheetTitle>
-              {t(
-                'edit-showcase',
-                {
-                  defaultValue:
-                    'Edit showcase',
-                },
-              )}
+              {t('edit-showcase', {
+                defaultValue: 'Edit showcase',
+              })}
             </SheetTitle>
           </SheetHeader>
 
-          {modules.length ===
-          0 ? (
+          {modules.length === 0 ? (
             <p className="py-4 text-center text-sm text-site-text-muted">
-              {t(
-                'empty-editor',
-                {
-                  defaultValue:
-                    'Add blocks to build your showcase.',
-                },
-              )}
+              {t('empty-editor', {
+                defaultValue: 'Add blocks to build your showcase.',
+              })}
             </p>
           ) : (
             <>
               <SortableList
-                items={
-                  rows
-                }
-                onReorder={(
-                  next,
-                ) =>
-                  setModules(
-                    next.map(
-                      (
-                        n,
-                      ) =>
-                        n.module,
-                    ),
-                  )
-                }
-                itemLabel={(
-                  it,
-                ) =>
-                  MODULE_LABELS[
-                    it
-                      .module
-                      .kind
-                  ]
-                }
-                renderItem={(
-                  it,
-                ) => {
-                  const label =
-                    moduleLabels[it.module.kind];
-                  const picked =
-                    selection.isSelected(
-                      it.id,
-                    );
+                items={rows}
+                onReorder={(next) => setModules(next.map((n) => n.module))}
+                itemLabel={(it) => MODULE_LABELS[it.module.kind]}
+                renderItem={(it) => {
+                  const label = moduleLabels[it.module.kind];
+                  const picked = selection.isSelected(it.id);
                   return (
                     <div className="flex items-center justify-between gap-2">
                       {/* Click replaces, ctrl/cmd-click toggles, shift-click ranges
@@ -442,63 +197,29 @@ export function ProfileShowcase({
                           keyboard (hooks/useMultiSelect). */}
                       <button
                         type="button"
-                        aria-pressed={
-                          picked
-                        }
-                        onClick={(
-                          e,
-                        ) =>
-                          selection.onItemClick(
-                            it.id,
-                            e,
-                          )
-                        }
-                        onKeyDown={(
-                          e,
-                        ) =>
-                          selection.onItemKeyDown(
-                            it.id,
-                            e,
-                          )
-                        }
+                        aria-pressed={picked}
+                        onClick={(e) => selection.onItemClick(it.id, e)}
+                        onKeyDown={(e) => selection.onItemKeyDown(it.id, e)}
                         className="flex min-w-0 flex-1 items-center gap-2 text-left"
                       >
                         <span
                           aria-hidden
                           className={`flex size-4 shrink-0 items-center justify-center rounded-site-sm border ${
-                            picked
-                              ? 'border-site-accent bg-site-accent text-site-accent-fg'
-                              : 'border-site-border'
+                            picked ? 'border-site-accent bg-site-accent text-site-accent-fg' : 'border-site-border'
                           }`}
                         >
-                          {picked ? (
-                            <Check className="size-3" />
-                          ) : null}
+                          {picked ? <Check className="size-3" /> : null}
                         </span>
-                        <span className="truncate text-sm text-site-text">
-                          {
-                            label
-                          }
-                        </span>
+                        <span className="truncate text-sm text-site-text">{label}</span>
                       </button>
                       <IconButton
-                        icon={
-                          Trash2
-                        }
+                        icon={Trash2}
                         size="icon-xs"
                         variant="ghost"
-                        onClick={() =>
-                          removeAt(
-                            it.index,
-                          )
-                        }
-                        label={t(
-                          'remove',
-                          {
-                            defaultValue:
-                              'Remove',
-                          },
-                        )}
+                        onClick={() => removeAt(it.index)}
+                        label={t('remove', {
+                          defaultValue: 'Remove',
+                        })}
                       />
                     </div>
                   );
@@ -506,34 +227,19 @@ export function ProfileShowcase({
               />
 
               <SelectionBar
-                count={
-                  selection.count
-                }
-                allSelected={
-                  selection.allSelected
-                }
-                onSelectAll={
-                  selection.selectAll
-                }
-                onClear={
-                  selection.clear
-                }
+                count={selection.count}
+                allSelected={selection.allSelected}
+                onSelectAll={selection.selectAll}
+                onClear={selection.clear}
                 actions={[
                   {
                     id: 'remove',
-                    label:
-                      t(
-                        'remove-selected',
-                        {
-                          defaultValue:
-                            'Remove selected',
-                        },
-                      ),
+                    label: t('remove-selected', {
+                      defaultValue: 'Remove selected',
+                    }),
                     icon: Trash2,
-                    variant:
-                      'danger',
-                    onClick:
-                      removeSelected,
+                    variant: 'danger',
+                    onClick: removeSelected,
                   },
                 ]}
               />
@@ -541,103 +247,41 @@ export function ProfileShowcase({
           )}
 
           {/* About text config (when present). */}
-          {modules.map(
-            (
-              m,
-              i,
-            ) =>
-              m.kind ===
-              'about' ? (
-                <Textarea
-                  key={`about-cfg-${i}`}
-                  value={
-                    m
-                      .config
-                      .text
-                  }
-                  onChange={(
-                    e,
-                  ) =>
-                    setAboutText(
-                      i,
-                      e.target.value.slice(
-                        0,
-                        600,
-                      ),
-                    )
-                  }
-                  placeholder={t(
-                    'about-placeholder',
-                    {
-                      defaultValue:
-                        'A few words about you…',
-                    },
-                  )}
-                  aria-label={t(
-                    'module-about',
-                    {
-                      defaultValue:
-                        'About',
-                    },
-                  )}
-                  className="mt-3"
-                  rows={
-                    3
-                  }
-                />
-              ) : null,
+          {modules.map((m, i) =>
+            m.kind === 'about' ? (
+              <Textarea
+                key={`about-cfg-${i}`}
+                value={m.config.text}
+                onChange={(e) => setAboutText(i, e.target.value.slice(0, 600))}
+                placeholder={t('about-placeholder', {
+                  defaultValue: 'A few words about you…',
+                })}
+                aria-label={t('module-about', {
+                  defaultValue: 'About',
+                })}
+                className="mt-3"
+                rows={3}
+              />
+            ) : null,
           )}
 
           {/* Add-block row. */}
-          {addable.length >
-            0 &&
-          modules.length <
-            MAX_MODULES ? (
+          {addable.length > 0 && modules.length < MAX_MODULES ? (
             <div className="mt-3 flex flex-wrap gap-2">
-              {addable.map(
-                (
-                  k,
-                ) => (
-                  <Button
-                    key={
-                      k
-                    }
-                    variant="default"
-                    size="sm"
-                    onClick={() =>
-                      addModule(
-                        k,
-                      )
-                    }
-                  >
-                    <Plus
-                      className="h-4 w-4"
-                      aria-hidden
-                    />
-                    {moduleLabels[k]}
-                  </Button>
-                ),
-              )}
+              {addable.map((k) => (
+                <Button key={k} variant="default" size="sm" onClick={() => addModule(k)}>
+                  <Plus className="h-4 w-4" aria-hidden />
+                  {moduleLabels[k]}
+                </Button>
+              ))}
             </div>
           ) : null}
 
           <SheetFooter>
-            <Button
-              variant="default"
-              onClick={
-                save
-              }
-              loading={
-                saving
-              }
-            >
-              {t(
-                'save',
-                {
-                  defaultValue:
-                    'Save',
-                },
-              )}
+            <Button variant="default" onClick={save} loading={saving}>
+              {t('save', {
+                defaultValue: 'Save',
+              })}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -655,205 +299,84 @@ function ModuleBlock({
   profile: ShowcaseProfile;
   isOwner: boolean;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-profile-modules',
-    );
+  const { t } = useTranslation('c-profile-modules');
   const moduleLabels = profileModuleLabels(t);
-  const title =
-    moduleLabels[module.kind];
+  const title = moduleLabels[module.kind];
 
-  if (
-    module.kind ===
-    'about'
-  ) {
-    if (
-      !module
-        .config
-        .text
-    )
-      return null;
+  if (module.kind === 'about') {
+    if (!module.config.text) return null;
     return (
-      <WidgetFrame
-        title={
-          title
-        }
-      >
-        <p className="whitespace-pre-wrap break-words text-sm text-site-text">
-          {
-            module
-              .config
-              .text
-          }
-        </p>
+      <WidgetFrame title={title}>
+        <p className="whitespace-pre-wrap break-words text-sm text-site-text">{module.config.text}</p>
       </WidgetFrame>
     );
   }
 
-  if (
-    module.kind ===
-    'stats'
-  ) {
-    const stats =
-      [
-        {
-          label:
-            t(
-              'followers',
-              {
-                defaultValue:
-                  'Followers',
-              },
-            ),
-          value:
-            profile.followerCount,
-        },
-        {
-          label:
-            t(
-              'following',
-              {
-                defaultValue:
-                  'Following',
-              },
-            ),
-          value:
-            profile.followingCount,
-        },
-        {
-          label:
-            t(
-              'posts',
-              {
-                defaultValue:
-                  'Posts',
-              },
-            ),
-          value:
-            profile.rmharkCount,
-        },
-      ];
+  if (module.kind === 'stats') {
+    const stats = [
+      {
+        label: t('followers', {
+          defaultValue: 'Followers',
+        }),
+        value: profile.followerCount,
+      },
+      {
+        label: t('following', {
+          defaultValue: 'Following',
+        }),
+        value: profile.followingCount,
+      },
+      {
+        label: t('posts', {
+          defaultValue: 'Posts',
+        }),
+        value: profile.rmharkCount,
+      },
+    ];
     return (
-      <WidgetFrame
-        title={
-          title
-        }
-      >
+      <WidgetFrame title={title}>
         <div className="grid grid-cols-3 gap-2 text-center">
-          {stats.map(
-            (
-              s,
-            ) => (
-              <div
-                key={
-                  s.label
-                }
-              >
-                <div className="text-lg font-semibold text-site-text">
-                  {
-                    s.value
-                  }
-                </div>
-                <div className="text-xs text-site-text-muted">
-                  {
-                    s.label
-                  }
-                </div>
-              </div>
-            ),
-          )}
+          {stats.map((s) => (
+            <div key={s.label}>
+              <div className="text-lg font-semibold text-site-text">{s.value}</div>
+              <div className="text-xs text-site-text-muted">{s.label}</div>
+            </div>
+          ))}
         </div>
       </WidgetFrame>
     );
   }
 
-  if (
-    module.kind ===
-    'status'
-  ) {
+  if (module.kind === 'status') {
     return (
       <WidgetFrame
-        title={
-          title
-        }
-        empty={
-          !profile.status
-        }
-        emptyTitle={t(
-          'no-status',
-          {
-            defaultValue:
-              'No status set',
-          },
-        )}
+        title={title}
+        empty={!profile.status}
+        emptyTitle={t('no-status', {
+          defaultValue: 'No status set',
+        })}
       >
-        {profile.status ? (
-          <StatusBadge
-            status={
-              profile.status
-            }
-          />
-        ) : null}
+        {profile.status ? <StatusBadge status={profile.status} /> : null}
       </WidgetFrame>
     );
   }
 
-  if (
-    module.kind ===
-    'wishlist'
-  ) {
-    return (
-      <WishlistModule
-        title={
-          title
-        }
-        userId={
-          profile.id
-        }
-      />
-    );
+  if (module.kind === 'wishlist') {
+    return <WishlistModule title={title} userId={profile.id} />;
   }
 
-  if (
-    module.kind ===
-    'slice-it'
-  ) {
-    return (
-      <SliceItModule
-        title={
-          title
-        }
-        userId={
-          profile.id
-        }
-      />
-    );
+  if (module.kind === 'slice-it') {
+    return <SliceItModule title={title} userId={profile.id} />;
   }
 
-  if (
-    isPlusModuleKind(
-      module.kind,
-    )
-  ) {
+  if (isPlusModuleKind(module.kind)) {
     return (
       <ArrivalSuspense>
         <PlusModules
-          module={
-            module as Parameters<
-              typeof PlusModules
-            >[0]['module']
-          }
-          title={
-            title
-          }
-          userId={
-            profile.id
-          }
-          isOwner={
-            isOwner
-          }
+          module={module as Parameters<typeof PlusModules>[0]['module']}
+          title={title}
+          userId={profile.id}
+          isOwner={isOwner}
         />
       </ArrivalSuspense>
     );
@@ -862,118 +385,45 @@ function ModuleBlock({
   return null;
 }
 
-function WishlistModule({
-  title,
-  userId,
-}: {
-  title: string;
-  userId: string;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-profile-modules',
-    );
-  const [
-    items,
-    setItems,
-  ] =
-    useState<
-      | WishlistItemView[]
-      | null
-    >(
-      null,
-    );
+function WishlistModule({ title, userId }: { title: string; userId: string }) {
+  const { t } = useTranslation('c-profile-modules');
+  const [items, setItems] = useState<WishlistItemView[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    api(
-      getPublicWishlistApi,
-      {
-        params:
-          {
-            id: userId,
-          },
+    api(getPublicWishlistApi, {
+      params: {
+        id: userId,
       },
-    )
-      .then(
-        (
-          data,
-        ) =>
-          !cancelled &&
-          setItems(
-            data.items,
-          ),
-      )
-      .catch(
-        () =>
-          !cancelled &&
-          setItems(
-            [],
-          ),
-      );
+    })
+      .then((data) => !cancelled && setItems(data.items))
+      .catch(() => !cancelled && setItems([]));
     return () => {
       cancelled = true;
     };
-  }, [
-    userId,
-  ]);
+  }, [userId]);
 
   return (
     <WidgetFrame
-      title={
-        title
-      }
-      loading={
-        items ===
-        null
-      }
-      empty={
-        items?.length ===
-        0
-      }
-      emptyTitle={t(
-        'no-wishlist',
-        {
-          defaultValue:
-            'Wishlist is private or empty',
-        },
-      )}
+      title={title}
+      loading={items === null}
+      empty={items?.length === 0}
+      emptyTitle={t('no-wishlist', {
+        defaultValue: 'Wishlist is private or empty',
+      })}
     >
       <ul className="space-y-1">
-        {items
-          ?.slice(
-            0,
-            5,
-          )
-          .map(
-            (
-              i,
-            ) => (
-              <li
-                key={
-                  i.id
-                }
-                className="truncate text-sm text-site-text"
-              >
-                {i.href ? (
-                  <a
-                    href={
-                      i.href
-                    }
-                    className="hover:underline"
-                  >
-                    {
-                      i.title
-                    }
-                  </a>
-                ) : (
-                  i.title
-                )}
-              </li>
-            ),
-          )}
+        {items?.slice(0, 5).map((i) => (
+          <li key={i.id} className="truncate text-sm text-site-text">
+            {i.href ? (
+              <a href={i.href} className="hover:underline">
+                {i.title}
+              </a>
+            ) : (
+              i.title
+            )}
+          </li>
+        ))}
       </ul>
     </WidgetFrame>
   );

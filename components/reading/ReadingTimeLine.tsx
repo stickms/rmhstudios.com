@@ -13,46 +13,19 @@ export function ReadingTimeLine({
 }: {
   tracking: boolean;
   /** Total seconds read of this document; null until known. */
-  seconds:
-    | number
-    | null;
+  seconds: number | null;
   className?: string;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'reading-time',
-    );
-  if (
-    !tracking ||
-    seconds ===
-      null
-  )
-    return null;
-  const minutes =
-    minutesOf(
-      seconds,
-    );
+  const { t } = useTranslation('reading-time');
+  if (!tracking || seconds === null) return null;
+  const minutes = minutesOf(seconds);
   return (
-    <p
-      className={
-        className
-          ? `t-meta ${className}`
-          : 't-meta'
-      }
-    >
-      {t(
-        'doc-line',
-        {
-          count:
-            minutes,
-          defaultValue:
-            "You've read this for {{count}} minute",
-          defaultValue_other:
-            "You've read this for {{count}} minutes",
-        },
-      )}
+    <p className={className ? `t-meta ${className}` : 't-meta'}>
+      {t('doc-line', {
+        count: minutes,
+        defaultValue: "You've read this for {{count}} minute",
+        defaultValue_other: "You've read this for {{count}} minutes",
+      })}
     </p>
   );
 }

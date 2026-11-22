@@ -1,8 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Infinite-scroll trigger: call `onVisible` whenever the returned element comes
@@ -28,70 +24,30 @@ export function useSentinel(
     watch?: unknown;
     rootMargin?: string;
   } = {},
-): (
-  el: HTMLElement | null,
-) => void {
-  const handler =
-    useRef(
-      onVisible,
-    );
-  useEffect(
-    () => {
-      handler.current =
-        onVisible;
-    },
-  );
-  const [
-    el,
-    setEl,
-  ] =
-    useState<HTMLElement | null>(
-      null,
-    );
+): (el: HTMLElement | null) => void {
+  const handler = useRef(onVisible);
+  useEffect(() => {
+    handler.current = onVisible;
+  });
+  const [el, setEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (
-      !enabled ||
-      !el
-    )
-      return;
-    if (
-      typeof IntersectionObserver ===
-      'undefined'
-    ) {
+    if (!enabled || !el) return;
+    if (typeof IntersectionObserver === 'undefined') {
       handler.current();
       return;
     }
-    const io =
-      new IntersectionObserver(
-        (
-          entries,
-        ) => {
-          if (
-            entries.some(
-              (
-                e,
-              ) =>
-                e.isIntersecting,
-            )
-          )
-            handler.current();
-        },
-        {
-          rootMargin,
-        },
-      );
-    io.observe(
-      el,
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) handler.current();
+      },
+      {
+        rootMargin,
+      },
     );
-    return () =>
-      io.disconnect();
-  }, [
-    el,
-    enabled,
-    rootMargin,
-    watch,
-  ]);
+    io.observe(el);
+    return () => io.disconnect();
+  }, [el, enabled, rootMargin, watch]);
 
   return setEl;
 }

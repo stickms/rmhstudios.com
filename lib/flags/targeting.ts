@@ -9,9 +9,7 @@ export const MAX_TARGET_IDS = 200;
 /** Most handles added (and most ids removed) by one edit; keeps the audit line inside its 500 characters. */
 export const MAX_EDIT_IDS = 10;
 
-export type TargetList =
-  | 'allow'
-  | 'deny';
+export type TargetList = 'allow' | 'deny';
 
 export interface TargetLists {
   allow: string[];
@@ -43,136 +41,40 @@ export type ListEditResult =
       list: TargetList;
     };
 
-export const otherList =
-  (
-    list: TargetList,
-  ): TargetList =>
-    list ===
-    'allow'
-      ? 'deny'
-      : 'allow';
+export const otherList = (list: TargetList): TargetList => (list === 'allow' ? 'deny' : 'allow');
 
-const unique =
-  (
-    ids: readonly string[],
-  ): string[] => [
-    ...new Set(
-      ids,
-    ),
-  ];
+const unique = (ids: readonly string[]): string[] => [...new Set(ids)];
 
 /**
  * Apply one edit. Removals run first, then each added id joins `list` and leaves the other list. Adding an id
  * already in the list changes nothing. A list that would pass {@link MAX_TARGET_IDS} refuses the whole edit.
  */
-export function applyListEdit(
-  lists: TargetLists,
-  edit: ListEdit,
-): ListEditResult {
-  const other =
-    otherList(
-      edit.list,
-    );
-  const removeSet =
-    new Set(
-      edit.remove,
-    );
-  const current =
-    lists[
-      edit
-        .list
-    ];
-  const removed =
-    unique(
-      edit.remove,
-    ).filter(
-      (
-        id,
-      ) =>
-        current.includes(
-          id,
-        ),
-    );
-  const kept =
-    current.filter(
-      (
-        id,
-      ) =>
-        !removeSet.has(
-          id,
-        ),
-    );
-  const keptSet =
-    new Set(
-      kept,
-    );
-  const added =
-    unique(
-      edit.add,
-    ).filter(
-      (
-        id,
-      ) =>
-        !keptSet.has(
-          id,
-        ),
-    );
-  const addedSet =
-    new Set(
-      added,
-    );
-  const next =
-    [
-      ...kept,
-      ...added,
-    ];
-  if (
-    next.length >
-    MAX_TARGET_IDS
-  )
+export function applyListEdit(lists: TargetLists, edit: ListEdit): ListEditResult {
+  const other = otherList(edit.list);
+  const removeSet = new Set(edit.remove);
+  const current = lists[edit.list];
+  const removed = unique(edit.remove).filter((id) => current.includes(id));
+  const kept = current.filter((id) => !removeSet.has(id));
+  const keptSet = new Set(kept);
+  const added = unique(edit.add).filter((id) => !keptSet.has(id));
+  const addedSet = new Set(added);
+  const next = [...kept, ...added];
+  if (next.length > MAX_TARGET_IDS)
     return {
       ok: false,
       code: 'full',
       list: edit.list,
     };
-  const moved =
-    lists[
-      other
-    ].filter(
-      (
-        id,
-      ) =>
-        addedSet.has(
-          id,
-        ),
-    );
-  const result: TargetLists =
-    {
-      allow:
-        [],
-      deny: [],
-    };
-  result[
-    edit.list
-  ] =
-    next;
-  result[
-    other
-  ] =
-    lists[
-      other
-    ].filter(
-      (
-        id,
-      ) =>
-        !addedSet.has(
-          id,
-        ),
-    );
+  const moved = lists[other].filter((id) => addedSet.has(id));
+  const result: TargetLists = {
+    allow: [],
+    deny: [],
+  };
+  result[edit.list] = next;
+  result[other] = lists[other].filter((id) => !addedSet.has(id));
   return {
     ok: true,
-    lists:
-      result,
+    lists: result,
     added,
     removed,
     moved,
@@ -190,63 +92,22 @@ export function describeListEdit(
     removed: string[];
     moved: string[];
   },
-):
-  | string
-  | null {
-  const own =
-    [
-      ...labels.added.map(
-        (
-          l,
-        ) =>
-          `+${l}`,
-      ),
-      ...labels.removed.map(
-        (
-          l,
-        ) =>
-          `-${l}`,
-      ),
-    ];
-  const parts: string[] =
-    [];
-  if (
-    own.length >
-    0
-  )
-    parts.push(
-      `${list} ${own.join(' ')}`,
-    );
-  if (
-    labels
-      .moved
-      .length >
-    0
-  ) {
-    parts.push(
-      `${otherList(list)} ${labels.moved.map((l) => `-${l}`).join(' ')}`,
-    );
+): string | null {
+  const own = [...labels.added.map((l) => `+${l}`), ...labels.removed.map((l) => `-${l}`)];
+  const parts: string[] = [];
+  if (own.length > 0) parts.push(`${list} ${own.join(' ')}`);
+  if (labels.moved.length > 0) {
+    parts.push(`${otherList(list)} ${labels.moved.map((l) => `-${l}`).join(' ')}`);
   }
-  return parts.length >
-    0
-    ? parts.join(
-        '; ',
-      )
-    : null;
+  return parts.length > 0 ? parts.join('; ') : null;
 }
 
 /** A member as the panel lists them. */
 export interface TargetMember {
   id: string;
-  name:
-    | string
-    | null;
-  handle:
-    | string
-    | null;
-  image:
-    | string
-    | null;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
 }
 
 export interface FlagTargetingDTO {
@@ -265,18 +126,14 @@ export interface FlagHistoryItem {
   id: string;
   /** `flag.upsert`, `flag.delete` or `flag.targeting`. */
   action: string;
-  detail:
-    | string
-    | null;
+  detail: string | null;
   createdAt: string;
   admin: TargetMember;
 }
 
 export interface FlagHistoryPage {
   items: FlagHistoryItem[];
-  nextCursor:
-    | string
-    | null;
+  nextCursor: string | null;
 }
 
 /** History page size (FR-3). */

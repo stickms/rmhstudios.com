@@ -1,22 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type {
-  Track,
-  Clip,
-  Pattern,
-  ViewMode,
-  ToolMode,
-  StudioSettings,
-  ProjectMeta,
-  KeybindMap,
-} from './types';
-import {
-  DEFAULT_SETTINGS,
-  DEFAULT_BPM,
-  DEFAULT_TIME_SIGNATURE,
-  TRACK_COLORS,
-  DEFAULT_TRACK_HEIGHT,
-} from './constants';
+import type { Track, Clip, Pattern, ViewMode, ToolMode, StudioSettings, ProjectMeta, KeybindMap } from './types';
+import { DEFAULT_SETTINGS, DEFAULT_BPM, DEFAULT_TIME_SIGNATURE, TRACK_COLORS, DEFAULT_TRACK_HEIGHT } from './constants';
 import {
   COALESCE_MS,
   commit,
@@ -36,9 +21,7 @@ import { useJamStore } from './jam/store';
 
 export interface StudioStore {
   // === Project ===
-  projectId:
-    | string
-    | null;
+  projectId: string | null;
   projectName: string;
   projectDirty: boolean;
 
@@ -46,10 +29,7 @@ export interface StudioStore {
   isPlaying: boolean;
   isRecording: boolean;
   bpm: number;
-  timeSignature: [
-    number,
-    number,
-  ];
+  timeSignature: [number, number];
   currentBeat: number;
   loopEnabled: boolean;
   loopStart: number;
@@ -58,15 +38,10 @@ export interface StudioStore {
 
   // === Tracks ===
   tracks: Track[];
-  selectedTrackId:
-    | string
-    | null;
+  selectedTrackId: string | null;
 
   // === Clips ===
-  clips: Record<
-    string,
-    Clip
-  >;
+  clips: Record<string, Clip>;
   selectedClipIds: string[];
   /** Notes selected in the piano roll (selection is view state, not history). */
   selectedNoteIds: string[];
@@ -88,9 +63,7 @@ export interface StudioStore {
   scrollY: number;
   openPluginWindows: string[];
   sampleBrowserOpen: boolean;
-  pianoRollClipId:
-    | string
-    | null;
+  pianoRollClipId: string | null;
   pianoRollNoteLength: number;
 
   // === Keybinds ===
@@ -101,159 +74,62 @@ export interface StudioStore {
   settings: StudioSettings;
 
   // === Actions: Transport ===
-  setIsPlaying: (
-    playing: boolean,
-  ) => void;
-  setIsRecording: (
-    recording: boolean,
-  ) => void;
-  setBpm: (
-    bpm: number,
-  ) => void;
-  setTimeSignature: (
-    ts: [
-      number,
-      number,
-    ],
-  ) => void;
-  setCurrentBeat: (
-    beat: number,
-  ) => void;
-  setLoopEnabled: (
-    enabled: boolean,
-  ) => void;
-  setLoopPoints: (
-    start: number,
-    end: number,
-  ) => void;
-  setMetronomeEnabled: (
-    enabled: boolean,
-  ) => void;
+  setIsPlaying: (playing: boolean) => void;
+  setIsRecording: (recording: boolean) => void;
+  setBpm: (bpm: number) => void;
+  setTimeSignature: (ts: [number, number]) => void;
+  setCurrentBeat: (beat: number) => void;
+  setLoopEnabled: (enabled: boolean) => void;
+  setLoopPoints: (start: number, end: number) => void;
+  setMetronomeEnabled: (enabled: boolean) => void;
 
   // === Actions: Tracks ===
-  addTrack: (
-    track: Track,
-  ) => void;
-  removeTrack: (
-    trackId: string,
-  ) => void;
-  updateTrack: (
-    trackId: string,
-    updates: Partial<Track>,
-  ) => void;
-  selectTrack: (
-    trackId:
-      | string
-      | null,
-  ) => void;
-  reorderTracks: (
-    fromIndex: number,
-    toIndex: number,
-  ) => void;
+  addTrack: (track: Track) => void;
+  removeTrack: (trackId: string) => void;
+  updateTrack: (trackId: string, updates: Partial<Track>) => void;
+  selectTrack: (trackId: string | null) => void;
+  reorderTracks: (fromIndex: number, toIndex: number) => void;
 
   // === Actions: Clips ===
-  addClip: (
-    clip: Clip,
-  ) => void;
-  removeClip: (
-    clipId: string,
-  ) => void;
-  updateClip: (
-    clipId: string,
-    updates: Partial<Clip>,
-  ) => void;
-  selectClips: (
-    clipIds: string[],
-  ) => void;
+  addClip: (clip: Clip) => void;
+  removeClip: (clipId: string) => void;
+  updateClip: (clipId: string, updates: Partial<Clip>) => void;
+  selectClips: (clipIds: string[]) => void;
   selectNotes: (noteIds: string[]) => void;
 
   // === Actions: Patterns ===
-  addPattern: (
-    pattern: Pattern,
-  ) => void;
-  removePattern: (
-    patternId: string,
-  ) => void;
-  updatePattern: (
-    patternId: string,
-    updates: Partial<Pattern>,
-  ) => void;
+  addPattern: (pattern: Pattern) => void;
+  removePattern: (patternId: string) => void;
+  updatePattern: (patternId: string, updates: Partial<Pattern>) => void;
 
   // === Actions: Mixer ===
-  setMasterVolume: (
-    volume: number,
-  ) => void;
-  setTrackVolume: (
-    trackId: string,
-    volume: number,
-  ) => void;
-  setTrackPan: (
-    trackId: string,
-    pan: number,
-  ) => void;
-  toggleTrackMute: (
-    trackId: string,
-  ) => void;
-  toggleTrackSolo: (
-    trackId: string,
-  ) => void;
-  toggleTrackArm: (
-    trackId: string,
-  ) => void;
+  setMasterVolume: (volume: number) => void;
+  setTrackVolume: (trackId: string, volume: number) => void;
+  setTrackPan: (trackId: string, pan: number) => void;
+  toggleTrackMute: (trackId: string) => void;
+  toggleTrackSolo: (trackId: string) => void;
+  toggleTrackArm: (trackId: string) => void;
 
   // === Actions: UI ===
-  setActiveView: (
-    view: ViewMode,
-  ) => void;
-  setSelectedTool: (
-    tool: ToolMode,
-  ) => void;
-  setSnapEnabled: (
-    enabled: boolean,
-  ) => void;
-  setSnapValue: (
-    value: number,
-  ) => void;
-  setZoom: (
-    x: number,
-    y: number,
-  ) => void;
-  setScroll: (
-    x: number,
-    y: number,
-  ) => void;
+  setActiveView: (view: ViewMode) => void;
+  setSelectedTool: (tool: ToolMode) => void;
+  setSnapEnabled: (enabled: boolean) => void;
+  setSnapValue: (value: number) => void;
+  setZoom: (x: number, y: number) => void;
+  setScroll: (x: number, y: number) => void;
   toggleSampleBrowser: () => void;
-  openPluginWindow: (
-    pluginInstanceId: string,
-  ) => void;
-  closePluginWindow: (
-    pluginInstanceId: string,
-  ) => void;
-  setPianoRollClip: (
-    clipId:
-      | string
-      | null,
-  ) => void;
-  setPianoRollNoteLength: (
-    beats: number,
-  ) => void;
+  openPluginWindow: (pluginInstanceId: string) => void;
+  closePluginWindow: (pluginInstanceId: string) => void;
+  setPianoRollClip: (clipId: string | null) => void;
+  setPianoRollNoteLength: (beats: number) => void;
 
   // === Actions: Keybinds ===
-  setTypingKeyboardEnabled: (
-    enabled: boolean,
-  ) => void;
-  setTypingKeyboardOctave: (
-    octave: number,
-  ) => void;
+  setTypingKeyboardEnabled: (enabled: boolean) => void;
+  setTypingKeyboardOctave: (octave: number) => void;
 
   // === Actions: Settings ===
-  updateSettings: (
-    partial: Partial<StudioSettings>,
-  ) => void;
-  setKeybindOverride: (
-    actionId: string,
-    keys: string[],
-  ) => void;
+  updateSettings: (partial: Partial<StudioSettings>) => void;
+  setKeybindOverride: (actionId: string, keys: string[]) => void;
   resetKeybinds: () => void;
 
   // === Actions: Project ===
@@ -261,26 +137,17 @@ export interface StudioStore {
     id: string,
     name: string,
     tracks: Track[],
-    clips: Record<
-      string,
-      Clip
-    >,
+    clips: Record<string, Clip>,
     patterns: Pattern[],
     bpm: number,
-    ts: [
-      number,
-      number,
-    ],
+    ts: [number, number],
     masterVolume: number,
   ) => void;
   markDirty: () => void;
   markClean: () => void;
   newProject: () => void;
   /** Name (and, on first save or Save as, id) the open project, without touching its content. */
-  setProjectIdentity: (
-    id: string | null,
-    name: string,
-  ) => void;
+  setProjectIdentity: (id: string | null, name: string) => void;
 
   // === History (lib/studio/history.ts) ===
   history: History;
@@ -320,207 +187,145 @@ function clipUpdateLabel(updates: Partial<Clip>): HistoryLabel {
 
 let nextTrackColorIdx = 0;
 function getNextTrackColor(): string {
-  const color =
-    TRACK_COLORS[
-      nextTrackColorIdx %
-        TRACK_COLORS.length
-    ];
+  const color = TRACK_COLORS[nextTrackColorIdx % TRACK_COLORS.length];
   nextTrackColorIdx++;
   return color;
 }
 
-export const useStudioStore =
-  create<StudioStore>()(
-    persist(
-      (
-        set,
-        get,
+export const useStudioStore = create<StudioStore>()(
+  persist(
+    (set, get) => {
+      const mutate = (
+        label: HistoryLabel,
+        coalesce: boolean,
+        fn: (s: StudioStore) => Partial<StudioStore> | StudioStore,
       ) => {
-
-        const mutate = (
-          label: HistoryLabel,
-          coalesce: boolean,
-          fn: (s: StudioStore) => Partial<StudioStore> | StudioStore,
-        ) => {
-          const prev = get();
-          const patch = fn(prev);
-          if (patch === prev) return;
-          const before = selectDoc(prev);
-          if (docEqual(before, selectDoc({ ...prev, ...patch }))) {
-            set(patch);
-            return;
-          }
-          const record = stepDepth === 0 && historyActive();
-          // A held pointer is one gesture however long it pauses, so it keeps joining the pending step.
-          const pending = prev.history.pending;
-          const now = pointerHeld && pending ? pending.lastAt : Date.now();
-          const history = record ? commit(prev.history, label, before, now, coalesce) : prev.history;
-          set({ ...patch, history, projectDirty: true });
-          if (record && history.pending) scheduleFlush();
-        };
-        const trackPatch = (s: StudioStore, trackId: string, updates: Partial<Track>) => ({
-          tracks: s.tracks.map((t) => (t.id === trackId ? { ...t, ...updates } : t)),
+        const prev = get();
+        const patch = fn(prev);
+        if (patch === prev) return;
+        const before = selectDoc(prev);
+        if (docEqual(before, selectDoc({ ...prev, ...patch }))) {
+          set(patch);
+          return;
+        }
+        const record = stepDepth === 0 && historyActive();
+        // A held pointer is one gesture however long it pauses, so it keeps joining the pending step.
+        const pending = prev.history.pending;
+        const now = pointerHeld && pending ? pending.lastAt : Date.now();
+        const history = record ? commit(prev.history, label, before, now, coalesce) : prev.history;
+        set({ ...patch, history, projectDirty: true });
+        if (record && history.pending) scheduleFlush();
+      };
+      const trackPatch = (s: StudioStore, trackId: string, updates: Partial<Track>) => ({
+        tracks: s.tracks.map((t) => (t.id === trackId ? { ...t, ...updates } : t)),
+      });
+      const flushNow = () => {
+        clearFlushTimer();
+        const h = get().history;
+        if (h.pending) set({ history: flush(h) });
+      };
+      const scheduleFlush = () => {
+        clearFlushTimer();
+        flushTimer = setTimeout(() => {
+          flushTimer = null;
+          // A held pointer is a gesture still going; its pointerup flushes.
+          if (pointerHeld) scheduleFlush();
+          else flushNow();
+        }, COALESCE_MS);
+      };
+      const travel = (dir: 'undo' | 'redo') => {
+        if (!historyActive()) return;
+        clearFlushTimer();
+        const s = get();
+        const move = (dir === 'undo' ? undoStep : redoStep)(s.history, selectDoc(s));
+        if (!move) return;
+        const doc = move.doc;
+        const clipExists = (id: string) => id in doc.clips;
+        set({
+          ...doc,
+          history: move.history,
+          projectDirty: !savedDoc || !docEqual(doc, savedDoc),
+          selectedClipIds: s.selectedClipIds.filter(clipExists),
+          selectedTrackId: doc.tracks.some((t) => t.id === s.selectedTrackId) ? s.selectedTrackId : null,
+          selectedNoteIds: [],
+          pianoRollClipId: s.pianoRollClipId && clipExists(s.pianoRollClipId) ? s.pianoRollClipId : null,
+          lastHistoryMove: { kind: dir, label: move.label, seq: (s.lastHistoryMove?.seq ?? 0) + 1 },
         });
-        const flushNow = () => {
-          clearFlushTimer();
-          const h = get().history;
-          if (h.pending) set({ history: flush(h) });
-        };
-        const scheduleFlush = () => {
-          clearFlushTimer();
-          flushTimer = setTimeout(() => {
-            flushTimer = null;
-            // A held pointer is a gesture still going; its pointerup flushes.
-            if (pointerHeld) scheduleFlush();
-            else flushNow();
-          }, COALESCE_MS);
-        };
-        const travel = (dir: 'undo' | 'redo') => {
-          if (!historyActive()) return;
-          clearFlushTimer();
-          const s = get();
-          const move = (dir === 'undo' ? undoStep : redoStep)(s.history, selectDoc(s));
-          if (!move) return;
-          const doc = move.doc;
-          const clipExists = (id: string) => id in doc.clips;
-          set({
-            ...doc,
-            history: move.history,
-            projectDirty: !savedDoc || !docEqual(doc, savedDoc),
-            selectedClipIds: s.selectedClipIds.filter(clipExists),
-            selectedTrackId: doc.tracks.some((t) => t.id === s.selectedTrackId) ? s.selectedTrackId : null,
-            selectedNoteIds: [],
-            pianoRollClipId: s.pianoRollClipId && clipExists(s.pianoRollClipId) ? s.pianoRollClipId : null,
-            lastHistoryMove: { kind: dir, label: move.label, seq: (s.lastHistoryMove?.seq ?? 0) + 1 },
-          });
-        };
+      };
 
-        return {
+      return {
         // === Initial State ===
-        projectId:
-          null,
-        projectName:
-          'Untitled Project',
+        projectId: null,
+        projectName: 'Untitled Project',
         projectDirty: false,
 
         isPlaying: false,
         isRecording: false,
         bpm: DEFAULT_BPM,
-        timeSignature:
-          DEFAULT_TIME_SIGNATURE,
+        timeSignature: DEFAULT_TIME_SIGNATURE,
         currentBeat: 0,
         loopEnabled: false,
         loopStart: 0,
         loopEnd: 16,
         metronomeEnabled: false,
 
-        tracks:
-          [],
-        selectedTrackId:
-          null,
+        tracks: [],
+        selectedTrackId: null,
 
-        clips:
-          {},
-        selectedClipIds:
-          [],
+        clips: {},
+        selectedClipIds: [],
         selectedNoteIds: [],
 
-        patterns:
-          [],
+        patterns: [],
 
         masterVolume: 1,
 
-        activeView:
-          'arrangement',
-        selectedTool:
-          'select',
+        activeView: 'arrangement',
+        selectedTool: 'select',
         snapEnabled: true,
         snapValue: 0.25,
         zoomX: 1,
         zoomY: 1,
         scrollX: 0,
         scrollY: 0,
-        openPluginWindows:
-          [],
+        openPluginWindows: [],
         sampleBrowserOpen: false,
-        pianoRollClipId:
-          null,
+        pianoRollClipId: null,
         pianoRollNoteLength: 0.25,
 
         typingKeyboardEnabled: false,
         typingKeyboardOctave: 3,
 
-        settings:
-          DEFAULT_SETTINGS,
+        settings: DEFAULT_SETTINGS,
 
         // === Transport Actions ===
-        setIsPlaying:
-          (
-            playing,
-          ) =>
-            set(
-              {
-                isPlaying:
-                  playing,
-              },
-            ),
-        setIsRecording:
-          (
-            recording,
-          ) =>
-            set(
-              {
-                isRecording:
-                  recording,
-              },
-            ),
-        setBpm: (bpm) =>
-          mutate('tempo', true, () => ({ bpm })),
-        setTimeSignature: (ts) =>
-          mutate('time-signature', false, () => ({ timeSignature: ts })),
-        setCurrentBeat:
-          (
-            beat,
-          ) =>
-            set(
-              {
-                currentBeat:
-                  beat,
-              },
-            ),
-        setLoopEnabled:
-          (
-            enabled,
-          ) =>
-            set(
-              {
-                loopEnabled:
-                  enabled,
-              },
-            ),
-        setLoopPoints:
-          (
-            start,
-            end,
-          ) =>
-            set(
-              {
-                loopStart:
-                  start,
-                loopEnd:
-                  end,
-              },
-            ),
-        setMetronomeEnabled:
-          (
-            enabled,
-          ) =>
-            set(
-              {
-                metronomeEnabled:
-                  enabled,
-              },
-            ),
+        setIsPlaying: (playing) =>
+          set({
+            isPlaying: playing,
+          }),
+        setIsRecording: (recording) =>
+          set({
+            isRecording: recording,
+          }),
+        setBpm: (bpm) => mutate('tempo', true, () => ({ bpm })),
+        setTimeSignature: (ts) => mutate('time-signature', false, () => ({ timeSignature: ts })),
+        setCurrentBeat: (beat) =>
+          set({
+            currentBeat: beat,
+          }),
+        setLoopEnabled: (enabled) =>
+          set({
+            loopEnabled: enabled,
+          }),
+        setLoopPoints: (start, end) =>
+          set({
+            loopStart: start,
+            loopEnd: end,
+          }),
+        setMetronomeEnabled: (enabled) =>
+          set({
+            metronomeEnabled: enabled,
+          }),
 
         // === Track Actions ===
         addTrack: (track) =>
@@ -558,9 +363,7 @@ export const useStudioStore =
         addClip: (clip) =>
           mutate('add-clip', false, (s) => ({
             clips: { ...s.clips, [clip.id]: clip },
-            tracks: s.tracks.map((t) =>
-              t.id === clip.trackId ? { ...t, clipIds: [...t.clipIds, clip.id] } : t,
-            ),
+            tracks: s.tracks.map((t) => (t.id === clip.trackId ? { ...t, clipIds: [...t.clipIds, clip.id] } : t)),
           })),
         removeClip: (clipId) =>
           mutate('delete-clip', false, (s) => {
@@ -571,9 +374,7 @@ export const useStudioStore =
             return {
               clips,
               tracks: s.tracks.map((t) =>
-                t.id === clip.trackId
-                  ? { ...t, clipIds: t.clipIds.filter((id) => id !== clipId) }
-                  : t,
+                t.id === clip.trackId ? { ...t, clipIds: t.clipIds.filter((id) => id !== clipId) } : t,
               ),
               selectedClipIds: s.selectedClipIds.filter((id) => id !== clipId),
             };
@@ -586,8 +387,7 @@ export const useStudioStore =
         selectNotes: (noteIds) => set({ selectedNoteIds: noteIds }),
 
         // === Pattern Actions ===
-        addPattern: (pattern) =>
-          mutate('add-pattern', false, (s) => ({ patterns: [...s.patterns, pattern] })),
+        addPattern: (pattern) => mutate('add-pattern', false, (s) => ({ patterns: [...s.patterns, pattern] })),
         removePattern: (patternId) =>
           mutate('delete-pattern', false, (s) => ({
             patterns: s.patterns.filter((p) => p.id !== patternId),
@@ -598,12 +398,9 @@ export const useStudioStore =
           })),
 
         // === Mixer Actions ===
-        setMasterVolume: (volume) =>
-          mutate('master-volume', true, () => ({ masterVolume: volume })),
-        setTrackVolume: (trackId, volume) =>
-          mutate('track-volume', true, (s) => trackPatch(s, trackId, { volume })),
-        setTrackPan: (trackId, pan) =>
-          mutate('track-pan', true, (s) => trackPatch(s, trackId, { pan })),
+        setMasterVolume: (volume) => mutate('master-volume', true, () => ({ masterVolume: volume })),
+        setTrackVolume: (trackId, volume) => mutate('track-volume', true, (s) => trackPatch(s, trackId, { volume })),
+        setTrackPan: (trackId, pan) => mutate('track-pan', true, (s) => trackPatch(s, trackId, { pan })),
         toggleTrackMute: (trackId) =>
           mutate('track-mute', false, (s) => {
             const t = s.tracks.find((x) => x.id === trackId);
@@ -620,212 +417,85 @@ export const useStudioStore =
             return t ? trackPatch(s, trackId, { armed: !t.armed }) : s;
           }),
         // === UI Actions ===
-        setActiveView:
-          (
-            view,
-          ) =>
-            set(
-              {
-                activeView:
-                  view,
-              },
-            ),
-        setSelectedTool:
-          (
-            tool,
-          ) =>
-            set(
-              {
-                selectedTool:
-                  tool,
-              },
-            ),
-        setSnapEnabled:
-          (
-            enabled,
-          ) =>
-            set(
-              {
-                snapEnabled:
-                  enabled,
-              },
-            ),
-        setSnapValue:
-          (
-            value,
-          ) =>
-            set(
-              {
-                snapValue:
-                  value,
-              },
-            ),
-        setZoom:
-          (
-            x,
-            y,
-          ) =>
-            set(
-              {
-                zoomX:
-                  x,
-                zoomY:
-                  y,
-              },
-            ),
-        setScroll:
-          (
-            x,
-            y,
-          ) =>
-            set(
-              {
-                scrollX:
-                  x,
-                scrollY:
-                  y,
-              },
-            ),
-        toggleSampleBrowser:
-          () =>
-            set(
-              (
-                s,
-              ) => ({
-                sampleBrowserOpen:
-                  !s.sampleBrowserOpen,
-              }),
-            ),
-        openPluginWindow:
-          (
-            id,
-          ) =>
-            set(
-              (
-                s,
-              ) => ({
-                openPluginWindows:
-                  s.openPluginWindows.includes(
-                    id,
-                  )
-                    ? s.openPluginWindows
-                    : [
-                        ...s.openPluginWindows,
-                        id,
-                      ],
-              }),
-            ),
-        closePluginWindow:
-          (
-            id,
-          ) =>
-            set(
-              (
-                s,
-              ) => ({
-                openPluginWindows:
-                  s.openPluginWindows.filter(
-                    (
-                      w,
-                    ) =>
-                      w !==
-                      id,
-                  ),
-              }),
-            ),
+        setActiveView: (view) =>
+          set({
+            activeView: view,
+          }),
+        setSelectedTool: (tool) =>
+          set({
+            selectedTool: tool,
+          }),
+        setSnapEnabled: (enabled) =>
+          set({
+            snapEnabled: enabled,
+          }),
+        setSnapValue: (value) =>
+          set({
+            snapValue: value,
+          }),
+        setZoom: (x, y) =>
+          set({
+            zoomX: x,
+            zoomY: y,
+          }),
+        setScroll: (x, y) =>
+          set({
+            scrollX: x,
+            scrollY: y,
+          }),
+        toggleSampleBrowser: () =>
+          set((s) => ({
+            sampleBrowserOpen: !s.sampleBrowserOpen,
+          })),
+        openPluginWindow: (id) =>
+          set((s) => ({
+            openPluginWindows: s.openPluginWindows.includes(id) ? s.openPluginWindows : [...s.openPluginWindows, id],
+          })),
+        closePluginWindow: (id) =>
+          set((s) => ({
+            openPluginWindows: s.openPluginWindows.filter((w) => w !== id),
+          })),
         setPianoRollClip: (clipId) => set({ pianoRollClipId: clipId, selectedNoteIds: [] }),
-        setPianoRollNoteLength:
-          (
-            beats,
-          ) =>
-            set(
-              {
-                pianoRollNoteLength:
-                  beats,
-              },
-            ),
+        setPianoRollNoteLength: (beats) =>
+          set({
+            pianoRollNoteLength: beats,
+          }),
 
         // === Keybind Actions ===
-        setTypingKeyboardEnabled:
-          (
-            enabled,
-          ) =>
-            set(
-              {
-                typingKeyboardEnabled:
-                  enabled,
-              },
-            ),
-        setTypingKeyboardOctave:
-          (
-            octave,
-          ) =>
-            set(
-              {
-                typingKeyboardOctave:
-                  Math.max(
-                    0,
-                    Math.min(
-                      8,
-                      octave,
-                    ),
-                  ),
-              },
-            ),
+        setTypingKeyboardEnabled: (enabled) =>
+          set({
+            typingKeyboardEnabled: enabled,
+          }),
+        setTypingKeyboardOctave: (octave) =>
+          set({
+            typingKeyboardOctave: Math.max(0, Math.min(8, octave)),
+          }),
 
         // === Settings Actions ===
-        updateSettings:
-          (
-            partial,
-          ) =>
-            set(
-              (
-                s,
-              ) => ({
-                settings:
-                  {
-                    ...s.settings,
-                    ...partial,
-                  },
-              }),
-            ),
-        setKeybindOverride:
-          (
-            actionId,
-            keys,
-          ) =>
-            set(
-              (
-                s,
-              ) => ({
-                settings:
-                  {
-                    ...s.settings,
-                    keybindOverrides:
-                      {
-                        ...s
-                          .settings
-                          .keybindOverrides,
-                        [actionId]:
-                          keys,
-                      },
-                  },
-              }),
-            ),
-        resetKeybinds:
-          () =>
-            set(
-              (
-                s,
-              ) => ({
-                settings:
-                  {
-                    ...s.settings,
-                    keybindOverrides:
-                      {},
-                  },
-              }),
-            ),
+        updateSettings: (partial) =>
+          set((s) => ({
+            settings: {
+              ...s.settings,
+              ...partial,
+            },
+          })),
+        setKeybindOverride: (actionId, keys) =>
+          set((s) => ({
+            settings: {
+              ...s.settings,
+              keybindOverrides: {
+                ...s.settings.keybindOverrides,
+                [actionId]: keys,
+              },
+            },
+          })),
+        resetKeybinds: () =>
+          set((s) => ({
+            settings: {
+              ...s.settings,
+              keybindOverrides: {},
+            },
+          })),
 
         // === Project Actions ===
         setProject: (id, name, tracks, clips, patterns, bpm, ts, masterVolume) => {
@@ -909,20 +579,16 @@ export const useStudioStore =
           savedDoc = selectDoc(get());
         },
       };
-      },
-      {
-        name: 'rmh-studio-settings',
-        // Only persist settings (keybinds, audio prefs, recent projects)
-        partialize:
-          (
-            state,
-          ) => ({
-            settings:
-              state.settings,
-          }),
-      },
-    ),
-  );
+    },
+    {
+      name: 'rmh-studio-settings',
+      // Only persist settings (keybinds, audio prefs, recent projects)
+      partialize: (state) => ({
+        settings: state.settings,
+      }),
+    },
+  ),
+);
 
 // A held pointer is a gesture in progress: its changes stay one step until the pointer is released.
 // The listeners are added once per module instance and removed when HMR replaces it.

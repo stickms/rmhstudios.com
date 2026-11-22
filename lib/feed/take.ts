@@ -12,21 +12,10 @@
 
 import { z } from 'zod';
 
-export const takeVoteSchema =
-  z.object(
-    {
-      vote: z.enum(
-        [
-          'agree',
-          'disagree',
-        ],
-      ),
-    },
-  );
-export type TakeVote =
-  z.infer<
-    typeof takeVoteSchema
-  >['vote'];
+export const takeVoteSchema = z.object({
+  vote: z.enum(['agree', 'disagree']),
+});
+export type TakeVote = z.infer<typeof takeVoteSchema>['vote'];
 
 export interface TakeCounts {
   agree: number;
@@ -48,36 +37,22 @@ export interface TakeState {
 }
 
 /** Whole-number percentages that always sum to 100 (or 0/0 with no votes). */
-export function takeSplit(
-  counts: TakeCounts,
-): {
+export function takeSplit(counts: TakeCounts): {
   agree: number;
   disagree: number;
   total: number;
 } {
-  const total =
-    counts.agree +
-    counts.disagree;
-  if (
-    total ===
-    0
-  )
+  const total = counts.agree + counts.disagree;
+  if (total === 0)
     return {
       agree: 0,
       disagree: 0,
       total: 0,
     };
-  const agree =
-    Math.round(
-      (counts.agree /
-        total) *
-        100,
-    );
+  const agree = Math.round((counts.agree / total) * 100);
   return {
     agree,
-    disagree:
-      100 -
-      agree,
+    disagree: 100 - agree,
     total,
   };
 }
@@ -94,33 +69,20 @@ export function buildTakeState(
     takeAgreeCount: number;
     takeDisagreeCount: number;
   },
-  viewerId:
-    | string
-    | null,
+  viewerId: string | null,
   myVote: TakeVote | null,
 ): TakeState {
-  const isAuthor =
-    viewerId !==
-      null &&
-    viewerId ===
-      post.userId;
-  const revealed =
-    isAuthor ||
-    myVote !==
-      null;
+  const isAuthor = viewerId !== null && viewerId === post.userId;
+  const revealed = isAuthor || myVote !== null;
   return {
-    isTake:
-      post.isTake,
+    isTake: post.isTake,
     isAuthor,
     myVote,
-    counts:
-      revealed
-        ? {
-            agree:
-              post.takeAgreeCount,
-            disagree:
-              post.takeDisagreeCount,
-          }
-        : null,
+    counts: revealed
+      ? {
+          agree: post.takeAgreeCount,
+          disagree: post.takeDisagreeCount,
+        }
+      : null,
   };
 }

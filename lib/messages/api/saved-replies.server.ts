@@ -14,7 +14,11 @@ export const route = apiRoute('/api/saved-replies', {
   })),
   POST: implement(createSavedReplyApi, { rateLimit: 'write', body: createSavedReplyBody }, async ({ userId, body }) => {
     const result = await createSavedReply(userId, body);
-    if (!result.ok) return Response.json({ error: result.error, ...(result.code ? { code: result.code } : {}) }, { status: result.status });
+    if (!result.ok)
+      return Response.json(
+        { error: result.error, ...(result.code ? { code: result.code } : {}) },
+        { status: result.status },
+      );
     return Response.json({ reply: result.value }, { status: 201 });
   }),
 });

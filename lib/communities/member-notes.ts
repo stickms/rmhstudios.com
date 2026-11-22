@@ -51,5 +51,12 @@ export function selectPreview<T extends { createdAt: Date | string; deletedAt?: 
 
 /** Deduplicated, trimmed ids from a comma-separated parameter. */
 export function parseIdList(raw: string): string[] {
-  return [...new Set(raw.split(',').map((s) => s.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ),
+  ];
 }

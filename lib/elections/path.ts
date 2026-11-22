@@ -6,16 +6,10 @@
  * or that it cannot get there even by winning every toss-up.
  */
 
-import type {
-  ChamberControl,
-  Party,
-  Race,
-} from './types';
+import type { ChamberControl, Party, Race } from './types';
 
 export interface PartyPath {
-  party:
-    | 'DEM'
-    | 'GOP';
+  party: 'DEM' | 'GOP';
   /** Seats held or won now. */
   seats: number;
   /** Undecided races rated to lean (or better) toward this party. */
@@ -27,9 +21,7 @@ export interface PartyPath {
 }
 
 export interface ChamberPath {
-  office:
-    | 'senate'
-    | 'house';
+  office: 'senate' | 'house';
   toWin: number;
   tossups: number;
   undecided: number;
@@ -38,118 +30,46 @@ export interface ChamberPath {
   gop: PartyPath;
 }
 
-function pathFor(
-  party:
-    | 'DEM'
-    | 'GOP',
-  seats: number,
-  leaning: number,
-  tossups: number,
-  toWin: number,
-): PartyPath {
-  const short =
-    Math.max(
-      0,
-      toWin -
-        seats -
-        leaning,
-    );
+function pathFor(party: 'DEM' | 'GOP', seats: number, leaning: number, tossups: number, toWin: number): PartyPath {
+  const short = Math.max(0, toWin - seats - leaning);
   return {
     party,
     seats,
     leaning,
-    tossupsNeeded:
-      short,
-    reachable:
-      short <=
-      tossups,
+    tossupsNeeded: short,
+    reachable: short <= tossups,
   };
 }
 
 export function pathToControl(
-  chambers: Partial<
-    Record<
-      | 'senate'
-      | 'house',
-      ChamberControl
-    >
-  >,
+  chambers: Partial<Record<'senate' | 'house', ChamberControl>>,
   races: Race[],
 ): ChamberPath[] {
-  const out: ChamberPath[] =
-    [];
-  for (const office of [
-    'senate',
-    'house',
-  ] as const) {
-    const c =
-      chambers[
-        office
-      ];
+  const out: ChamberPath[] = [];
+  for (const office of ['senate', 'house'] as const) {
+    const c = chambers[office];
     // A chamber with no holdover tally ("called so far" only) cannot say who is short of what.
-    if (
-      !c ||
-      c.derived
-    )
-      continue;
+    if (!c || c.derived) continue;
     let dem = 0;
     let gop = 0;
     let tossups = 0;
     let undecided = 0;
     for (const r of races) {
-      if (
-        r.office !==
-          office ||
-        r.status ===
-          'called'
-      )
-        continue;
+      if (r.office !== office || r.status === 'called') continue;
       undecided++;
-      if (
-        r.rating ===
-        'tossup'
-      )
-        tossups++;
-      else if (
-        r.rating?.endsWith(
-          'dem',
-        )
-      )
-        dem++;
-      else if (
-        r.rating
-      )
-        gop++;
+      if (r.rating === 'tossup') tossups++;
+      else if (r.rating?.endsWith('dem')) dem++;
+      else if (r.rating) gop++;
     }
-    out.push(
-      {
-        office,
-        toWin:
-          c.toWin,
-        tossups,
-        undecided,
-        controlledBy:
-          c.controlledBy,
-        dem: pathFor(
-          'DEM',
-          c
-            .seats
-            .DEM,
-          dem,
-          tossups,
-          c.toWin,
-        ),
-        gop: pathFor(
-          'GOP',
-          c
-            .seats
-            .GOP,
-          gop,
-          tossups,
-          c.toWin,
-        ),
-      },
-    );
+    out.push({
+      office,
+      toWin: c.toWin,
+      tossups,
+      undecided,
+      controlledBy: c.controlledBy,
+      dem: pathFor('DEM', c.seats.DEM, dem, tossups, c.toWin),
+      gop: pathFor('GOP', c.seats.GOP, gop, tossups, c.toWin),
+    });
   }
   return out;
 }

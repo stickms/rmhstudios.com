@@ -87,9 +87,9 @@ describe('saveReview', () => {
   it('still saves the review when the reminder reset fails', async () => {
     reminderReset.updateMany.mockRejectedValueOnce(new Error('db down'));
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await expect(
-      saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next }),
-    ).resolves.toEqual({ leech: false });
+    await expect(saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next })).resolves.toEqual({
+      leech: false,
+    });
     expect(db.reviews).toHaveLength(1);
     spy.mockRestore();
   });
@@ -104,9 +104,9 @@ describe('saveReview', () => {
 
   it('rolls the state back when the log write fails', async () => {
     failLog.on = true;
-    await expect(
-      saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next }),
-    ).rejects.toThrow('log write failed');
+    await expect(saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next })).rejects.toThrow(
+      'log write failed',
+    );
     expect(db.reviews).toHaveLength(0);
     expect(db.logs).toHaveLength(0);
     expect(reminderReset.updateMany).not.toHaveBeenCalled();

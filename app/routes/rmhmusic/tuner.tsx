@@ -13,28 +13,15 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { TunerScreen } from '@/components/rmhmusic/learn/tuner/TunerScreen';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
-export const Route =
-  createFileRoute(
-    '/rmhmusic/tuner',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'RMHMusic Tuner',
-        ),
-      component:
-        TunerRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhmusic/tuner')({
+  head: () => noindexHead('RMHMusic Tuner'),
+  component: TunerRoute,
+});
 
 function TunerRoute() {
   return (
     <GameErrorBoundary gameName="RMH Music">
-      <ArrivalSuspense
-        fallback={
-          <GameLoadingFallback />
-        }
-      >
+      <ArrivalSuspense fallback={<GameLoadingFallback />}>
         <TunerScreen />
       </ArrivalSuspense>
     </GameErrorBoundary>

@@ -12,12 +12,7 @@
  * ages better as the population grows.
  */
 
-export type RarityTier =
-  | 'common'
-  | 'uncommon'
-  | 'rare'
-  | 'epic'
-  | 'legendary';
+export type RarityTier = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
  * Lower bound (inclusive) of the holder fraction for each tier, most common
@@ -26,54 +21,34 @@ export type RarityTier =
 const TIERS: readonly {
   tier: RarityTier;
   minPct: number;
-}[] =
-  [
-    {
-      tier: 'common',
-      minPct: 0.25,
-    },
-    {
-      tier: 'uncommon',
-      minPct: 0.1,
-    },
-    {
-      tier: 'rare',
-      minPct: 0.02,
-    },
-    {
-      tier: 'epic',
-      minPct: 0.005,
-    },
-    {
-      tier: 'legendary',
-      minPct: 0,
-    },
-  ] as const;
+}[] = [
+  {
+    tier: 'common',
+    minPct: 0.25,
+  },
+  {
+    tier: 'uncommon',
+    minPct: 0.1,
+  },
+  {
+    tier: 'rare',
+    minPct: 0.02,
+  },
+  {
+    tier: 'epic',
+    minPct: 0.005,
+  },
+  {
+    tier: 'legendary',
+    minPct: 0,
+  },
+] as const;
 
-export function rarityTier(
-  pct: number,
-): RarityTier {
+export function rarityTier(pct: number): RarityTier {
   // A nonsense input must not silently become "legendary" — an achievement
   // nobody has computed yet would then outrank every real one on the profile.
-  if (
-    !Number.isFinite(
-      pct,
-    ) ||
-    pct <
-      0
-  )
-    return 'common';
-  return (
-    TIERS.find(
-      (
-        t,
-      ) =>
-        pct >=
-        t.minPct,
-    )
-      ?.tier ??
-    'legendary'
-  );
+  if (!Number.isFinite(pct) || pct < 0) return 'common';
+  return TIERS.find((t) => pct >= t.minPct)?.tier ?? 'legendary';
 }
 
 /**
@@ -84,12 +59,8 @@ export function rarityTier(
  * values, and a rarity treatment built from custom colours would fail the build
  * (and look wrong in the light and high-contrast themes besides).
  */
-export function rarityClass(
-  tier: RarityTier,
-): string {
-  switch (
-    tier
-  ) {
+export function rarityClass(tier: RarityTier): string {
+  switch (tier) {
     case 'legendary':
     case 'epic':
       // Floating-feeling treatment for the two tiers worth drawing the eye.
@@ -102,9 +73,7 @@ export function rarityClass(
 }
 
 /** i18n key for a tier label. Lives in the `common` namespace. */
-export function rarityLabelKey(
-  tier: RarityTier,
-): string {
+export function rarityLabelKey(tier: RarityTier): string {
   return `rarity-${tier}`;
 }
 
@@ -114,30 +83,11 @@ export function rarityLabelKey(
  * Sub-0.1% collapses to "<0.1%" rather than "0.04%": at that scale the extra
  * digit is noise, and it changes every night as the population moves.
  */
-export function formatRarity(
-  pct: number,
-): string {
-  if (
-    !Number.isFinite(
-      pct,
-    ) ||
-    pct <=
-      0
-  )
-    return '—';
-  const percent =
-    pct *
-    100;
-  if (
-    percent <
-    0.1
-  )
-    return '<0.1%';
-  if (
-    percent <
-    10
-  )
-    return `${percent.toFixed(1)}%`;
+export function formatRarity(pct: number): string {
+  if (!Number.isFinite(pct) || pct <= 0) return '—';
+  const percent = pct * 100;
+  if (percent < 0.1) return '<0.1%';
+  if (percent < 10) return `${percent.toFixed(1)}%`;
   return `${Math.round(percent)}%`;
 }
 
@@ -155,48 +105,14 @@ export interface RarityRow {
  * a stable tiebreak so equal-rarity badges do not reshuffle between renders.
  */
 export function sortByRarity<
-  T extends
-    {
-      achievementId: string;
-    },
->(
-  earned: readonly T[],
-  rarity: ReadonlyMap<
-    string,
-    RarityRow
-  >,
-): T[] {
-  return [
-    ...earned,
-  ].sort(
-    (
-      a,
-      b,
-    ) => {
-      const ra =
-        rarity.get(
-          a.achievementId,
-        )
-          ?.pct ??
-        1;
-      const rb =
-        rarity.get(
-          b.achievementId,
-        )
-          ?.pct ??
-        1;
-      if (
-        ra !==
-        rb
-      )
-        return (
-          ra -
-          rb
-        );
-      return a.achievementId <
-        b.achievementId
-        ? -1
-        : 1;
-    },
-  );
+  T extends {
+    achievementId: string;
+  },
+>(earned: readonly T[], rarity: ReadonlyMap<string, RarityRow>): T[] {
+  return [...earned].sort((a, b) => {
+    const ra = rarity.get(a.achievementId)?.pct ?? 1;
+    const rb = rarity.get(b.achievementId)?.pct ?? 1;
+    if (ra !== rb) return ra - rb;
+    return a.achievementId < b.achievementId ? -1 : 1;
+  });
 }

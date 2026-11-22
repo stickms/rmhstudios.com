@@ -8,31 +8,21 @@ export interface MyMentionRow {
   snippet: string;
   sender: {
     id: string;
-    name:
-      | string
-      | null;
-    handle:
-      | string
-      | null;
+    name: string | null;
+    handle: string | null;
   };
 }
 
 /** The viewer's own mentions in one group, newest first; `next` is the cursor for the page after. */
-export const listMyGroupMentionsApi =
-  endpoint<{
-    query: {
-      cursor?: string;
-    };
-    res: {
-      mentions: MyMentionRow[];
-      next:
-        | string
-        | null;
-    };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/group-chats/$id/mentions',
-    },
-  );
+export const listMyGroupMentionsApi = endpoint<{
+  query: {
+    cursor?: string;
+  };
+  res: {
+    mentions: MyMentionRow[];
+    next: string | null;
+  };
+}>()({
+  method: 'GET',
+  path: '/api/group-chats/$id/mentions',
+});

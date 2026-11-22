@@ -8,7 +8,11 @@ import {
   type SideState,
 } from '@/lib/achievements/compare';
 
-const def = (id: string, category: AchievementDef['category'], extra: Partial<AchievementDef> = {}): AchievementDef => ({
+const def = (
+  id: string,
+  category: AchievementDef['category'],
+  extra: Partial<AchievementDef> = {},
+): AchievementDef => ({
   id,
   name: `Name ${id}`,
   description: `Desc ${id}`,
@@ -28,8 +32,18 @@ const catalog = [
   def('s2', 'special', { secret: true }),
   def('s3', 'special', { secret: true }),
 ];
-const on = (id: string): { id: string } & SideState => ({ id, unlocked: true, unlockedAt: '2026-05-03T00:00:00Z', progress: 1 });
-const part = (id: string, progress: number): { id: string } & SideState => ({ id, unlocked: false, unlockedAt: null, progress });
+const on = (id: string): { id: string } & SideState => ({
+  id,
+  unlocked: true,
+  unlockedAt: '2026-05-03T00:00:00Z',
+  progress: 1,
+});
+const part = (id: string, progress: number): { id: string } & SideState => ({
+  id,
+  unlocked: false,
+  unlockedAt: null,
+  progress,
+});
 
 const viewer = { achievements: [on('a'), on('b'), part('c', 3), on('s2')] };
 const other = { achievements: [on('a'), on('c'), on('s1'), on('s2')] };

@@ -35,18 +35,16 @@ const prismaMock = vi.hoisted(() => {
     },
     update: (args: unknown): Op => ({ model: 'featureFlag', method: 'update', args }),
   };
-  return new Proxy(
-    { $transaction: vi.fn(async (ops: unknown[]) => ops), featureFlag } as Record<string, unknown>,
-    { get: (t, key: string) => (key in t ? t[key] : model(key)) },
-  );
+  return new Proxy({ $transaction: vi.fn(async (ops: unknown[]) => ops), featureFlag } as Record<string, unknown>, {
+    get: (t, key: string) => (key in t ? t[key] : model(key)),
+  });
 });
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/flags/flags.server', () => ({ invalidateFlags: h.invalidate }));
 
 import { anonymizeAccount } from '@/lib/account/deletion.server';
 
-const transactions = () =>
-  (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0] as Op[]);
+const transactions = () => (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0] as Op[]);
 
 describe('anonymizeAccount (flag targeting)', () => {
   beforeEach(() => {

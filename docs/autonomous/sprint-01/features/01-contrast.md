@@ -1,708 +1,83 @@
 # 01 · Contrast checker (`/tools/contrast`)
 
-Category:
-Developer.
-Branch:
-`autonomous/s01-contrast`.
-Status:
-shipped
-in
-sprint 01.
+Category: Developer. Branch: `autonomous/s01-contrast`. Status: shipped in sprint 01.
 
 ## User story
 
-As
-a
-member
-who
-designs
-a
-profile
-theme,
-a
-vibe
-or
-a
-page,
-I
-want
-to
-check
-a
-text
-and
-background
-colour
-pair
-against
-WCAG
-2.2
-so
-that
-what
-I
-make
-is
-readable
-by
-everyone,
-and
-to
-get
-the
-nearest
-colour
-that
-passes
-when
-it
-is
-not.
+As a member who designs a profile theme, a vibe or a page, I want to check a text and background colour pair against
+WCAG 2.2 so that what I make is readable by everyone, and to get the nearest colour that passes when it is not.
 
 ## Requirements elicitation
 
-Who:
-members
-of
-the
-site
-(and
-signed-out
-visitors,
-since
-every
-tool
-is
-public)
-who
-would
-otherwise
-paste
-the
-same
-data
-into
-an
-unknown
-third-party
-website.
-Why
-here:
-the
-site
-already
-hosts
-the
-developer
-API,
-RMHCode,
-RMHStudy,
-the
-vibes
-platform,
-communities
-and
-group
-chats;
-these
-are
-the
-jobs
-those
-users
-do
-next
-to
-them.
-Constraints
-from
-the
-repository:
-Steel
-design
-language,
-`t()`
-for
-every
-string,
-a
-public
-route
-with
-its
-own
-meta
-and
-an
-OG
-card,
-no
-server
-round
-trip
-for
-user
-data,
-and
-no
-new
-dependency.
+Who: members of the site (and signed-out visitors, since every tool is public) who would otherwise paste the same data
+into an unknown third-party website. Why here: the site already hosts the developer API, RMHCode, RMHStudy, the vibes
+platform, communities and group chats; these are the jobs those users do next to them. Constraints from the repository:
+Steel design language, `t()` for every string, a public route with its own meta and an OG card, no server round trip for
+user data, and no new dependency.
 
 ## Specification
 
 ### Functional requirements
 
-- **F1.**
-  Accept
-  colours
-  as
-  #rgb,
-  #rgba,
-  #rrggbb,
-  #rrggbbaa
-  (with
-  or
-  without
-  #),
-  rgb()/rgba()
-  and
-  hsl()/hsla()
-  in
-  comma
-  or
-  space
-  syntax;
-  alpha
-  is
-  ignored.
-- **F2.**
-  Each
-  colour
-  has
-  a
-  native
-  colour
-  picker
-  and
-  a
-  text
-  field
-  kept
-  in
-  sync;
-  an
-  unreadable
-  value
-  shows
-  an
-  inline
+- **F1.** Accept colours as #rgb, #rgba, #rrggbb, #rrggbbaa (with or without #), rgb()/rgba() and hsl()/hsla() in comma
+  or space syntax; alpha is ignored.
+- **F2.** Each colour has a native colour picker and a text field kept in sync; an unreadable value shows an inline
   error.
-- **F3.**
-  Show
-  the
-  WCAG
-  contrast
-  ratio,
-  rounded
-  down
-  to
-  two
-  decimals
-  so
-  a
-  displayed
-  pass
-  is
-  a
-  real
-  pass.
-- **F4.**
-  Show
-  pass
-  or
-  fail
-  for
-  AA
-  body
-  text
-  (4.5:1),
-  AA
-  large
-  text
-  (3:1),
-  AAA
-  body
-  (7:1),
-  AAA
-  large
-  (4.5:1)
-  and
-  non-text
-  UI
-  (3:1),
-  by
-  icon
-  and
-  word,
-  not
-  colour
-  alone.
-- **F5.**
-  Preview
-  both
-  text
-  sizes
-  in
-  the
-  chosen
-  pair.
-- **F6.**
-  When
-  AA
-  body
-  text
-  fails,
-  suggest
-  the
-  colour
-  of
-  the
-  same
-  hue
-  and
-  saturation
-  at
-  the
-  nearest
-  lightness
-  that
-  reaches
-  4.5:1,
-  with
-  copy
-  and
-  apply
-  actions.
-- **F7.**
-  Swap
-  the
-  two
-  colours.
-- **F8.**
-  Keep
-  a
-  valid
-  pair
-  in
-  the
-  URL
-  (?fg=&bg=,
-  six
-  hex
-  digits)
-  so
-  a
-  result
-  can
-  be
-  shared;
-  invalid
-  query
-  values
-  fall
-  back
-  to
-  the
-  defaults.
+- **F3.** Show the WCAG contrast ratio, rounded down to two decimals so a displayed pass is a real pass.
+- **F4.** Show pass or fail for AA body text (4.5:1), AA large text (3:1), AAA body (7:1), AAA large (4.5:1) and
+  non-text UI (3:1), by icon and word, not colour alone.
+- **F5.** Preview both text sizes in the chosen pair.
+- **F6.** When AA body text fails, suggest the colour of the same hue and saturation at the nearest lightness that
+  reaches 4.5:1, with copy and apply actions.
+- **F7.** Swap the two colours.
+- **F8.** Keep a valid pair in the URL (?fg=&bg=, six hex digits) so a result can be shared; invalid query values fall
+  back to the defaults.
 
 ### Non-functional requirements
 
-- **Privacy
-  and
-  security.**
-  Everything
-  runs
-  in
-  the
-  browser;
-  no
-  input
-  is
-  sent
-  to
-  the
-  server,
-  logged
-  or
-  stored,
-  except
-  where
-  a
-  requirement
-  above
-  names
-  local
-  storage.
-  Randomness,
-  where
-  used,
-  is
-  `crypto.getRandomValues`
-  through
-  `lib/toolbox/random.ts`
-  (rejection-sampled),
-  never
-  `Math.random()`.
-- **Performance.**
-  Pure
-  functions
-  with
-  no
-  dependency;
-  work
-  proportional
-  to
-  the
-  input,
-  bounded
-  by
-  explicit
-  limits;
-  expensive
-  recomputation
-  deferred
-  with
-  `useDeferredValue`
-  where
-  input
-  is
-  long.
-  Nothing
-  animates
-  or
-  polls
-  at
-  rest
-  (Steel
-  R5);
-  no
-  worker,
-  observer
-  or
-  animation
-  frame.
-- **Accessibility.**
-  Every
-  control
-  is
-  labelled
-  (`Label`/`aria-label`),
-  results
-  that
-  change
-  are
-  in
-  an
-  `aria-live`
-  region,
-  errors
-  use
-  `role="alert"`,
-  state
-  is
-  never
-  conveyed
-  by
-  colour
-  alone,
-  focus
-  ring
-  is
-  the
-  global
-  K10
-  outline,
-  and
-  tab
-  switchers
-  use
-  the
-  shared
-  `Tabs`
-  (roving
-  keyboard).
-- **Design
-  system
-  (Steel).**
-  `ToolFrame`
-  (PageLayout),
-  rows
-  on
-  1px
-  rules
-  (R3),
-  `--site-*`
-  token
-  utilities
-  only,
-  `t-*`
-  type
-  classes,
-  at
-  most
-  one
-  ink
-  primary
-  button
-  per
-  view
-  (R4),
-  no
-  gradient,
-  blur,
-  shadow
-  or
-  translucency
-  (R1).
-- **i18n.**
-  All
-  strings
-  through
-  `t()`
-  in
-  the
-  `toolbox`
-  namespace
-  with
-  literal
-  defaults;
-  numbers
-  and
-  dates
-  through
-  `Intl`
-  in
-  the
-  active
-  locale;
-  layouts
-  survive
-  RTL
-  (`ar`).
-- **SSR.**
-  Output
-  that
-  depends
-  on
-  the
-  clock,
-  the
-  viewer's
-  time
-  zone
-  or
-  randomness
-  renders
-  only
-  after
-  hydration,
-  so
-  server
-  and
-  client
-  agree.
-- **SEO.**
-  `definePage`
-  gives
-  the
-  route
-  its
-  own
-  title,
-  description
-  and
-  canonical;
-  it
-  unfurls
-  with
-  the
-  `/tools`
-  section
-  card;
-  it
-  is
-  listed
-  in
-  the
-  sitemap
-  from
-  the
-  catalog.
+- **Privacy and security.** Everything runs in the browser; no input is sent to the server, logged or stored, except
+  where a requirement above names local storage. Randomness, where used, is `crypto.getRandomValues` through
+  `lib/toolbox/random.ts` (rejection-sampled), never `Math.random()`.
+- **Performance.** Pure functions with no dependency; work proportional to the input, bounded by explicit limits;
+  expensive recomputation deferred with `useDeferredValue` where input is long. Nothing animates or polls at rest (Steel
+  R5); no worker, observer or animation frame.
+- **Accessibility.** Every control is labelled (`Label`/`aria-label`), results that change are in an `aria-live` region,
+  errors use `role="alert"`, state is never conveyed by colour alone, focus ring is the global K10 outline, and tab
+  switchers use the shared `Tabs` (roving keyboard).
+- **Design system (Steel).** `ToolFrame` (PageLayout), rows on 1px rules (R3), `--site-*` token utilities only, `t-*`
+  type classes, at most one ink primary button per view (R4), no gradient, blur, shadow or translucency (R1).
+- **i18n.** All strings through `t()` in the `toolbox` namespace with literal defaults; numbers and dates through `Intl`
+  in the active locale; layouts survive RTL (`ar`).
+- **SSR.** Output that depends on the clock, the viewer's time zone or randomness renders only after hydration, so
+  server and client agree.
+- **SEO.** `definePage` gives the route its own title, description and canonical; it unfurls with the `/tools` section
+  card; it is listed in the sitemap from the catalog.
 
 ### Implementation
 
-- Logic:
-  `lib/toolbox/contrast.ts`
-  (pure,
-  strict-island
-  typed).
-- UI:
-  `components/toolbox/contrast/ContrastTool.tsx`
-  inside
-  `ToolFrame`.
-- Route:
-  `app/routes/_site/tools/contrast.tsx`;
-  catalog
-  entry
-  in
-  `lib/toolbox/catalog.ts`.
-- Tests:
-  `lib/toolbox/__tests__/contrast.test.ts`
-  in
-  the
-  Toolbox
-  suite
-  (`pnpm test:toolbox`).
+- Logic: `lib/toolbox/contrast.ts` (pure, strict-island typed).
+- UI: `components/toolbox/contrast/ContrastTool.tsx` inside `ToolFrame`.
+- Route: `app/routes/_site/tools/contrast.tsx`; catalog entry in `lib/toolbox/catalog.ts`.
+- Tests: `lib/toolbox/__tests__/contrast.test.ts` in the Toolbox suite (`pnpm test:toolbox`).
 
 ## Testing requirements
 
-Unit
-tests
-(Toolbox
-suite)
-must
-cover:
+Unit tests (Toolbox suite) must cover:
 
-- parse
-  every
-  supported
-  syntax
-  and
-  reject
-  malformed
-  input
-- black/white
-  extremes
-  (21:1,
-  1:1)
-  and
-  the
-  published
-  #767676-on-white
-  ratio
-  (4.54:1)
-- rounding
-  down
-  of
-  the
-  displayed
-  ratio
-- suggestion
-  passes
-  the
-  target
-  and
-  moves
-  in
-  the
-  only
-  possible
-  direction
-- null
-  suggestion
-  when
-  unreachable
+- parse every supported syntax and reject malformed input
+- black/white extremes (21:1, 1:1) and the published #767676-on-white ratio (4.54:1)
+- rounding down of the displayed ratio
+- suggestion passes the target and moves in the only possible direction
+- null suggestion when unreachable
 
-Plus:
-the
-catalog
-test
-(route
-file
-exists,
-sitemap
-entry),
-the
-main
-suite's
-OG/sitemap/i18n
-gates,
-eslint,
-`tsc -b`,
-the
-strict
-island,
-and
-an
-SSR
-smoke
-render
-(HTTP
-200
-with
-the
-tool's
-heading).
+Plus: the catalog test (route file exists, sitemap entry), the main suite's OG/sitemap/i18n gates, eslint, `tsc -b`, the
+strict island, and an SSR smoke render (HTTP 200 with the tool's heading).
 
 ## Acceptance criteria
 
-- [x] /tools/contrast?fg=999999&bg=ffffff
-      opens
-      with
-      that
-      pair
-      and
-      shows
-      2.84:1
-      and
-      a
-      suggested
-      colour.
-- [x] Every
-      check
-      row
-      reads
-      as
-      text
-      and
-      icon
-      in
-      both
-      editions.
-- [x] A
-      shared
-      URL
-      reproduces
-      the
-      result.
-- [x] All
-      functional
-      requirements
-      above
-      work
-      in
-      Day
-      and
-      Night
-      editions
-      at
-      390px
-      and
-      1280px.
-- [x] No
-      string
-      is
-      hard-coded;
-      `locales/en/toolbox.json`
-      holds
-      every
-      key.
-- [x] The
-      route
-      renders
-      server-side
-      without
-      errors
-      and
-      passes
-      `pnpm check:consistency`.
+- [x] /tools/contrast?fg=999999&bg=ffffff opens with that pair and shows 2.84:1 and a suggested colour.
+- [x] Every check row reads as text and icon in both editions.
+- [x] A shared URL reproduces the result.
+- [x] All functional requirements above work in Day and Night editions at 390px and 1280px.
+- [x] No string is hard-coded; `locales/en/toolbox.json` holds every key.
+- [x] The route renders server-side without errors and passes `pnpm check:consistency`.

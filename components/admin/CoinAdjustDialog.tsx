@@ -11,7 +11,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -36,11 +43,7 @@ import {
   type AdjustmentReason,
   type AdjustmentView,
 } from '@/lib/economy/adjustments';
-import {
-  adjustCoinsApi,
-  getCoinAdjustmentsApi,
-  reverseCoinAdjustmentApi,
-} from '@/lib/economy/adjustments.contract';
+import { adjustCoinsApi, getCoinAdjustmentsApi, reverseCoinAdjustmentApi } from '@/lib/economy/adjustments.contract';
 
 interface Props {
   userId: string;
@@ -91,8 +94,7 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
   const amountValid = amountText.trim() !== '' && isValidAmount(amount);
   const needsConfirm = amountValid && requiresConfirmation(amount);
   const confirmValue = confirmText.trim() === '' ? undefined : Number(confirmText);
-  const canApply =
-    amountValid && noteSatisfied(reason, note) && confirmationSatisfied(amount, confirmValue);
+  const canApply = amountValid && noteSatisfied(reason, note) && confirmationSatisfied(amount, confirmValue);
 
   const refused = (e: unknown) => {
     const balance = errorField<number>(e, 'balance');
@@ -139,8 +141,7 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
   });
 
   const reverse = useMutation({
-    mutationFn: (adjustmentId: string) =>
-      api(reverseCoinAdjustmentApi, { params: { id: userId, adjustmentId } }),
+    mutationFn: (adjustmentId: string) => api(reverseCoinAdjustmentApi, { params: { id: userId, adjustmentId } }),
     onSuccess: (data) => {
       onBalanceChange(data.balance);
       void queryClient.invalidateQueries({ queryKey });
@@ -264,11 +265,7 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
             <label htmlFor={`${ids}-reason`} className="t-label block">
               {t('reason', { defaultValue: 'Reason' })}
             </label>
-            <Select
-              id={`${ids}-reason`}
-              value={reason}
-              onChange={(e) => setReason(e.target.value as AdjustmentReason)}
-            >
+            <Select id={`${ids}-reason`} value={reason} onChange={(e) => setReason(e.target.value as AdjustmentReason)}>
               {ADJUSTMENT_REASONS.map((r) => (
                 <option key={r} value={r}>
                   {reasonLabels[r]}
@@ -319,22 +316,19 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
           {data && data.adjustments.length === 0 ? (
             <EmptyState
               title={t('history-empty', { defaultValue: 'No adjustments yet' })}
-              description={t('history-empty-hint', { defaultValue: 'Adjustments appear here with who made them and why.' })}
+              description={t('history-empty-hint', {
+                defaultValue: 'Adjustments appear here with who made them and why.',
+              })}
             />
           ) : (
             <ul className={cn(arrival)}>
               {data?.adjustments.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex items-start justify-between gap-3 border-b border-site-border py-3"
-                >
+                <li key={row.id} className="flex items-start justify-between gap-3 border-b border-site-border py-3">
                   <div className="min-w-0 space-y-1">
                     <p className="t-body">
                       <span className="t-meta text-site-text">{signed.format(row.delta)}</span>{' '}
                       {reasonLabels[row.reason]}
-                      {row.reversed && (
-                        <span className="t-meta"> · {t('reversed', { defaultValue: 'Reversed' })}</span>
-                      )}
+                      {row.reversed && <span className="t-meta"> · {t('reversed', { defaultValue: 'Reversed' })}</span>}
                     </p>
                     {row.note && <p className="t-meta break-words">{row.note}</p>}
                     <p className="t-meta">

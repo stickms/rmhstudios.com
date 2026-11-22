@@ -2,12 +2,6 @@
 import { z } from 'zod';
 import { POST_ALERT_LEVELS } from '@/lib/communities/post-alerts';
 
-export const setPostAlertsBody =
-  z.object(
-    {
-      level:
-        z.enum(
-          POST_ALERT_LEVELS,
-        ),
-    },
-  );
+export const setPostAlertsBody = z.object({
+  level: z.enum(POST_ALERT_LEVELS),
+});

@@ -34,7 +34,14 @@ interface Fb {
 }
 
 const h = vi.hoisted(() => ({
-  jam: null as null | { id: string; slug: string; title: string; startsAt: Date; submitEndsAt: Date; ratingEndsAt: Date },
+  jam: null as null | {
+    id: string;
+    slug: string;
+    title: string;
+    startsAt: Date;
+    submitEndsAt: Date;
+    ratingEndsAt: Date;
+  },
   entries: [] as Entry[],
   members: [] as Member[],
   ratings: [] as Rating[],
@@ -42,14 +49,18 @@ const h = vi.hoisted(() => ({
   blocks: [] as Array<{ blockerId: string; blockedId: string }>,
   banned: new Set<string>(),
   seq: 0,
-  notify: vi.fn(async (_n: { userId: string; entityType?: string; entityId?: string; preview?: string; link?: string }) => {}),
+  notify: vi.fn(
+    async (_n: { userId: string; entityType?: string; entityId?: string; preview?: string; link?: string }) => {},
+  ),
 }));
 
 vi.mock('@/lib/prisma.server', () => {
-  const inSet = (v: unknown, x: unknown) => !!v && typeof v === 'object' && 'in' in (v as object) && (v as { in: unknown[] }).in.includes(x);
+  const inSet = (v: unknown, x: unknown) =>
+    !!v && typeof v === 'object' && 'in' in (v as object) && (v as { in: unknown[] }).in.includes(x);
   const matchFb = (f: Fb, w: Record<string, unknown>): boolean =>
     Object.entries(w).every(([k, v]) => {
-      if (v && typeof v === 'object' && 'in' in (v as object)) return inSet(v, (f as unknown as Record<string, unknown>)[k]);
+      if (v && typeof v === 'object' && 'in' in (v as object))
+        return inSet(v, (f as unknown as Record<string, unknown>)[k]);
       if (v && typeof v === 'object' && 'not' in (v as object))
         return (f as unknown as Record<string, unknown>)[k] !== (v as { not: unknown }).not;
       if (v && typeof v === 'object' && 'gt' in (v as object))
@@ -66,8 +77,16 @@ vi.mock('@/lib/prisma.server', () => {
         team: h.members.filter((m) => m.entryId === e.id && m.status === 'accepted').map((m) => ({ userId: m.userId })),
       };
     },
-    async updateMany({ where: w, data }: { where: { id: string; feedbackNotifiedAt: Date | null }; data: { feedbackNotifiedAt: Date } }) {
-      const e = h.entries.find((x) => x.id === w.id && (x.feedbackNotifiedAt?.getTime() ?? null) === (w.feedbackNotifiedAt?.getTime() ?? null));
+    async updateMany({
+      where: w,
+      data,
+    }: {
+      where: { id: string; feedbackNotifiedAt: Date | null };
+      data: { feedbackNotifiedAt: Date };
+    }) {
+      const e = h.entries.find(
+        (x) => x.id === w.id && (x.feedbackNotifiedAt?.getTime() ?? null) === (w.feedbackNotifiedAt?.getTime() ?? null),
+      );
       if (!e) return { count: 0 };
       e.feedbackNotifiedAt = data.feedbackNotifiedAt;
       return { count: 1 };
@@ -75,14 +94,22 @@ vi.mock('@/lib/prisma.server', () => {
   };
   const gameJamTeamMember = {
     async findUnique({ where: w }: { where: { entryId_userId: { entryId: string; userId: string } } }) {
-      return h.members.find((m) => m.entryId === w.entryId_userId.entryId && m.userId === w.entryId_userId.userId) ?? null;
+      return (
+        h.members.find((m) => m.entryId === w.entryId_userId.entryId && m.userId === w.entryId_userId.userId) ?? null
+      );
     },
     async findMany({ where: w }: { where: { entryId: string; status: string } }) {
       return h.members.filter((m) => m.entryId === w.entryId && m.status === w.status);
     },
   };
   const gameJamRating = {
-    async upsert({ where: w, create }: { where: { entryId_raterId: { entryId: string; raterId: string } }; create: { entryId: string; raterId: string } }) {
+    async upsert({
+      where: w,
+      create,
+    }: {
+      where: { entryId_raterId: { entryId: string; raterId: string } };
+      create: { entryId: string; raterId: string };
+    }) {
       let r = h.ratings.find((x) => x.entryId === w.entryId_raterId.entryId && x.raterId === w.entryId_raterId.raterId);
       if (!r) {
         r = { id: `r${++h.seq}`, entryId: create.entryId, raterId: create.raterId };
@@ -124,7 +151,10 @@ vi.mock('@/lib/prisma.server', () => {
     async findMany({ where: w }: { where: Record<string, unknown> }) {
       return h.feedback
         .filter((f) => matchFb(f, w))
-        .map((f) => ({ ...f, author: { id: f.authorId, name: `name-${f.authorId}`, handle: f.authorId, image: null } }));
+        .map((f) => ({
+          ...f,
+          author: { id: f.authorId, name: `name-${f.authorId}`, handle: f.authorId, image: null },
+        }));
     },
   };
   const user = {
@@ -144,7 +174,12 @@ vi.mock('@/lib/prisma.server', () => {
     prisma: {
       ...models,
       async $transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T> {
-        return fn({ ...models, async $executeRaw() { return 1; } });
+        return fn({
+          ...models,
+          async $executeRaw() {
+            return 1;
+          },
+        });
       },
     },
   };
@@ -152,7 +187,12 @@ vi.mock('@/lib/prisma.server', () => {
 vi.mock('@/lib/notifications.server', () => ({ createNotification: h.notify }));
 vi.mock('@/lib/user-display', () => ({
   userDisplaySelect: {},
-  resolveUser: (u: { id: string; name?: string; handle?: string }) => ({ id: u.id, name: u.name ?? null, handle: u.handle ?? null, image: null }),
+  resolveUser: (u: { id: string; name?: string; handle?: string }) => ({
+    id: u.id,
+    name: u.name ?? null,
+    handle: u.handle ?? null,
+    image: null,
+  }),
 }));
 
 import { rateEntry } from '@/lib/competitive/jams.server';
@@ -177,7 +217,8 @@ function setupJam(phase: 'rating' | 'done' = 'rating') {
 }
 const rate = (raterId: string, extras: { feedback?: string | null; anonymous?: boolean } = {}) =>
   rateEntry('jam', raterId, 'e1', scores, extras);
-const list = (actorId: string | null, isAdmin = false) => listFeedback({ slug: 'jam', entryId: 'e1', actorId, isAdmin });
+const list = (actorId: string | null, isAdmin = false) =>
+  listFeedback({ slug: 'jam', entryId: 'e1', actorId, isAdmin });
 
 beforeEach(() => {
   h.entries.length = 0;
@@ -278,8 +319,14 @@ describe('who may read it', () => {
   });
 
   it('an unknown entry or the wrong jam slug is not found', async () => {
-    expect(await listFeedback({ slug: 'jam', entryId: 'zzz', actorId: 'owner', isAdmin: false })).toEqual({ ok: false, code: 'not-found' });
-    expect(await listFeedback({ slug: 'other', entryId: 'e1', actorId: 'owner', isAdmin: false })).toEqual({ ok: false, code: 'not-found' });
+    expect(await listFeedback({ slug: 'jam', entryId: 'zzz', actorId: 'owner', isAdmin: false })).toEqual({
+      ok: false,
+      code: 'not-found',
+    });
+    expect(await listFeedback({ slug: 'other', entryId: 'e1', actorId: 'owner', isAdmin: false })).toEqual({
+      ok: false,
+      code: 'not-found',
+    });
   });
 
   it('an anonymous piece carries no author id to the team, and an admin still sees it', async () => {
@@ -307,7 +354,10 @@ describe('Helpful', () => {
 
   it('the team flags and unflags; the first time is kept', async () => {
     const id = h.feedback[0]!.id;
-    expect(await markHelpful({ slug: 'jam', feedbackId: id, actorId: 'mate', helpful: true })).toEqual({ ok: true, value: true });
+    expect(await markHelpful({ slug: 'jam', feedbackId: id, actorId: 'mate', helpful: true })).toEqual({
+      ok: true,
+      value: true,
+    });
     const first = h.feedback[0]!.helpfulAt;
     expect(first).not.toBeNull();
     await markHelpful({ slug: 'jam', feedbackId: id, actorId: 'owner', helpful: true });
@@ -319,7 +369,10 @@ describe('Helpful', () => {
   it('the rater and outsiders cannot flag', async () => {
     const id = h.feedback[0]!.id;
     for (const who of ['a', 'stranger'])
-      expect(await markHelpful({ slug: 'jam', feedbackId: id, actorId: who, helpful: true })).toEqual({ ok: false, code: 'forbidden' });
+      expect(await markHelpful({ slug: 'jam', feedbackId: id, actorId: who, helpful: true })).toEqual({
+        ok: false,
+        code: 'forbidden',
+      });
     expect(h.feedback[0]!.helpfulAt).toBeNull();
   });
 });

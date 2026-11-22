@@ -49,7 +49,9 @@ const prismaMock = vi.hoisted(() => {
         const w = args.where as { id: string; deletedAt: null };
         return h.updates.find((u) => u.id === w.id && u.deletedAt == null) ?? null;
       }),
-      findUnique: vi.fn(async (args: { where: { id: string } }) => h.updates.find((u) => u.id === args.where.id) ?? null),
+      findUnique: vi.fn(
+        async (args: { where: { id: string } }) => h.updates.find((u) => u.id === args.where.id) ?? null,
+      ),
       create: vi.fn(async (args: { data: Row }) => {
         h.order.push('create');
         const row = { id: `u${++h.seq}`, createdAt: new Date(), notifiedAt: null, deletedAt: null, ...args.data };
@@ -84,7 +86,9 @@ const prismaMock = vi.hoisted(() => {
     },
     user: {
       findMany: vi.fn(async (args?: { where?: { id?: { in: string[] }; bannedUntil?: unknown } }) =>
-        args?.where?.bannedUntil ? (args.where.id?.in ?? []).filter((id) => h.banned.has(id)).map((id) => ({ id })) : [],
+        args?.where?.bannedUntil
+          ? (args.where.id?.in ?? []).filter((id) => h.banned.has(id)).map((id) => ({ id }))
+          : [],
       ),
     },
     $transaction: vi.fn(async (cb: (tx: unknown) => unknown) => cb(p)),
@@ -197,13 +201,27 @@ describe('the limit', () => {
 
   it('counts a deleted update, so deleting and reposting is not a way round it', async () => {
     for (let i = 0; i < 3; i++)
-      h.updates.push({ id: `d${i}`, eventId: 'ev1', createdAt: new Date(NOW.getTime() - 3_600_000), deletedAt: new Date(), body: 'x' });
-    expect(await code(postUpdate('ev1', 'host', false, { body: 'again' }, NOW))).toMatchObject({ code: 'RATE_LIMITED' });
+      h.updates.push({
+        id: `d${i}`,
+        eventId: 'ev1',
+        createdAt: new Date(NOW.getTime() - 3_600_000),
+        deletedAt: new Date(),
+        body: 'x',
+      });
+    expect(await code(postUpdate('ev1', 'host', false, { body: 'again' }, NOW))).toMatchObject({
+      code: 'RATE_LIMITED',
+    });
   });
 
   it('allows a post once the oldest has left the window', async () => {
     for (const hrs of [25, 2, 1])
-      h.updates.push({ id: `o${hrs}`, eventId: 'ev1', createdAt: new Date(NOW.getTime() - hrs * 3_600_000), deletedAt: null, body: 'x' });
+      h.updates.push({
+        id: `o${hrs}`,
+        eventId: 'ev1',
+        createdAt: new Date(NOW.getTime() - hrs * 3_600_000),
+        deletedAt: null,
+        body: 'x',
+      });
     expect((await postUpdate('ev1', 'host', false, { body: 'ok' }, NOW)).body).toBe('ok');
   });
 
@@ -216,22 +234,51 @@ describe('the limit', () => {
 
 describe('delete', () => {
   it('lets the author delete within 10 minutes and refuses after', async () => {
-    h.updates.push({ id: 'fresh', eventId: 'ev1', authorId: 'host', createdAt: new Date(NOW.getTime() - 9 * 60_000), deletedAt: null, body: 'x' });
-    h.updates.push({ id: 'stale', eventId: 'ev1', authorId: 'host', createdAt: new Date(NOW.getTime() - 11 * 60_000), deletedAt: null, body: 'x' });
+    h.updates.push({
+      id: 'fresh',
+      eventId: 'ev1',
+      authorId: 'host',
+      createdAt: new Date(NOW.getTime() - 9 * 60_000),
+      deletedAt: null,
+      body: 'x',
+    });
+    h.updates.push({
+      id: 'stale',
+      eventId: 'ev1',
+      authorId: 'host',
+      createdAt: new Date(NOW.getTime() - 11 * 60_000),
+      deletedAt: null,
+      body: 'x',
+    });
     await deleteUpdate('ev1', 'fresh', 'host', false, NOW);
     expect(h.updates.find((u) => u.id === 'fresh')!.deletedAt).toEqual(NOW);
     expect(await code(deleteUpdate('ev1', 'stale', 'host', false, NOW))).toMatchObject({ code: 'TOO_LATE' });
   });
 
   it('refuses someone who is not the author unless they are an admin', async () => {
-    h.updates.push({ id: 'u', eventId: 'ev1', authorId: 'host', createdAt: new Date(NOW.getTime() - 60_000), deletedAt: null, body: 'x' });
+    h.updates.push({
+      id: 'u',
+      eventId: 'ev1',
+      authorId: 'host',
+      createdAt: new Date(NOW.getTime() - 60_000),
+      deletedAt: null,
+      body: 'x',
+    });
     expect(await code(deleteUpdate('ev1', 'u', 'other', false, NOW))).toMatchObject({ code: 'FORBIDDEN' });
     await deleteUpdate('ev1', 'u', 'admin', true, NOW);
     expect(h.updates[0]!.deletedAt).toEqual(NOW);
   });
 
   it('shows the delete control only to the author or an admin, inside the window', async () => {
-    h.updates.push({ id: 'u', eventId: 'ev1', authorId: 'host', body: 'x', occurrenceAt: null, createdAt: new Date(NOW.getTime() - 60_000), deletedAt: null });
+    h.updates.push({
+      id: 'u',
+      eventId: 'ev1',
+      authorId: 'host',
+      body: 'x',
+      occurrenceAt: null,
+      createdAt: new Date(NOW.getTime() - 60_000),
+      deletedAt: null,
+    });
     expect((await listUpdates('ev1', 'host', false, NOW))![0]!.canDelete).toBe(true);
     expect((await listUpdates('ev1', 'guest', false, NOW))![0]!.canDelete).toBe(false);
     expect((await listUpdates('ev1', 'admin', true, NOW))![0]!.canDelete).toBe(true);
@@ -308,7 +355,16 @@ describe('recipients and the fan-out', () => {
       rsvp('other-date', 'going', new Date('2026-12-15T18:00:00Z')),
       rsvp('waiting', 'waitlist', WHOLE_EVENT),
     );
-    h.updates.push({ id: 'up1', eventId: 'ev1', occurrenceAt: date, authorId: 'host', body: 'x', createdAt: NOW, notifiedAt: null, deletedAt: null });
+    h.updates.push({
+      id: 'up1',
+      eventId: 'ev1',
+      occurrenceAt: date,
+      authorId: 'host',
+      body: 'x',
+      createdAt: NOW,
+      notifiedAt: null,
+      deletedAt: null,
+    });
     await runEventUpdateFanout('up1');
     expect(h.notified.map((n) => n.userId).sort()).toEqual(['every', 'once', 'waiting']);
   });

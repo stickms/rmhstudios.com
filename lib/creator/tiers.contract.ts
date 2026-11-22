@@ -3,9 +3,7 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { SerializedTier } from '@/lib/creator/tiers.server';
 
 export interface TierDraftBody {
-  id?:
-    | string
-    | undefined;
+  id?: string | undefined;
   name: string;
   priceCoins: number;
   perks: string[];
@@ -13,18 +11,14 @@ export interface TierDraftBody {
 }
 
 /** Replace the caller's tier set (1-3). A refused set answers 400 `{ error }`. */
-export const saveTiersApi =
-  endpoint<{
-    body: {
-      tiers: TierDraftBody[];
-    };
-    res: {
-      tiers: SerializedTier[];
-    };
-  }>()(
-    {
-      method:
-        'PUT',
-      path: '/api/studio/tiers',
-    },
-  );
+export const saveTiersApi = endpoint<{
+  body: {
+    tiers: TierDraftBody[];
+  };
+  res: {
+    tiers: SerializedTier[];
+  };
+}>()({
+  method: 'PUT',
+  path: '/api/studio/tiers',
+});

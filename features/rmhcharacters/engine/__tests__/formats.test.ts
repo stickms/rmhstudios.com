@@ -78,7 +78,10 @@ describe('rmhcharacters file formats', () => {
     delete actor.flags;
     const back = (await importText(JSON.stringify(actor))).characters[0] as Dnd5eCharacter;
     expect(back.system).toBe('dnd5e');
-    expect(back.classes.map((k) => [k.classId, k.level])).toEqual([['wizard', 5], ['cleric', 2]]);
+    expect(back.classes.map((k) => [k.classId, k.level])).toEqual([
+      ['wizard', 5],
+      ['cleric', 2],
+    ]);
     expect(back.speciesId).toBe('elf');
     expect(d5.abilityScores(back, DND5E_DATA)).toEqual(d5.abilityScores(fighterWizard(), DND5E_DATA));
   });
@@ -104,7 +107,12 @@ describe('rmhcharacters file formats', () => {
           overrideStats: [{ id: 6, value: 18 }],
           classes: [{ level: 3, isStartingClass: true, definition: { name: 'Rogue' } }],
           race: { baseRaceName: 'Halfling', fullName: 'Halfling' },
-          modifiers: { background: [{ type: 'bonus', subType: 'dexterity-score', value: 2 }, { type: 'proficiency', subType: 'stealth' }] },
+          modifiers: {
+            background: [
+              { type: 'bonus', subType: 'dexterity-score', value: 2 },
+              { type: 'proficiency', subType: 'stealth' },
+            ],
+          },
         },
       },
       DND5E_DATA,
@@ -140,7 +148,10 @@ describe('rmhcharacters derived numbers', () => {
     // dex: background? + class? + level 1 + level 5 — whatever it reaches, it never jumps past +5 at level 5.
     const mods = p2.attributeMods(c);
     for (const v of Object.values(mods)) expect(v).toBeLessThanOrEqual(5);
-    const high = { ...c, boosts: { ...c.boosts, background: ['dex' as const], class: 'dex' as const, ancestry: ['dex' as const] } };
+    const high = {
+      ...c,
+      boosts: { ...c.boosts, background: ['dex' as const], class: 'dex' as const, ancestry: ['dex' as const] },
+    };
     expect(p2.attributeMods(high).dex).toBe(4);
     expect(p2.partialBoosts(high)).toContain('dex');
   });

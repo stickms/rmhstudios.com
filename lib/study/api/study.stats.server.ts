@@ -7,15 +7,11 @@ import { getStudyStats } from '@/lib/study/stats.server';
 
 /** GET /api/study/stats?deckId=&tz= — the signed-in member's own review statistics. */
 export const route = apiRoute('/api/study/stats', {
-  GET: implement(
-    getStudyStatsApi,
-    { rateLimit: 'read', query: statsQuery },
-    async ({ userId, query }) => {
-      const timeZone = query.tz ?? DEFAULT_TIME_ZONE;
-      if (!isValidTimeZone(timeZone)) {
-        return Response.json({ error: 'Invalid time zone' }, { status: 400 });
-      }
-      return getStudyStats(userId, { deckId: query.deckId, timeZone });
-    },
-  ),
+  GET: implement(getStudyStatsApi, { rateLimit: 'read', query: statsQuery }, async ({ userId, query }) => {
+    const timeZone = query.tz ?? DEFAULT_TIME_ZONE;
+    if (!isValidTimeZone(timeZone)) {
+      return Response.json({ error: 'Invalid time zone' }, { status: 400 });
+    }
+    return getStudyStats(userId, { deckId: query.deckId, timeZone });
+  }),
 });

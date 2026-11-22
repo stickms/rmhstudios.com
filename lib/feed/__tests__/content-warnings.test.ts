@@ -184,7 +184,7 @@ describe('RSS leaves the text out of a post with a reason', () => {
 
   it('the RSS string goes through the server-side catalog, with an English default', () => {
     const src = read('lib/feed/rss.server.ts');
-    expect(src).toContain("getServerI18n(DEFAULT_LOCALE)");
+    expect(src).toContain('getServerI18n(DEFAULT_LOCALE)');
     expect(src).toContain("'content-warnings:rss-description'");
     const catalog = JSON.parse(read('locales/en/content-warnings.json')) as Record<string, string>;
     expect(catalog['rss-description']).toBe('Content warning: {{reason}}');
@@ -339,7 +339,9 @@ describe('a scheduled post carries the reason to the published post', () => {
 
   it('scheduling stores the normalized pair and the list returns it', () => {
     const create = read('lib/scheduled/api/scheduled.server.ts');
-    expect(create).toContain('normalizeContentWarning({ isSensitive: d.isSensitive, contentWarning: d.contentWarning })');
+    expect(create).toContain(
+      'normalizeContentWarning({ isSensitive: d.isSensitive, contentWarning: d.contentWarning })',
+    );
     expect(read('lib/scheduled/list.server.ts')).toContain('contentWarning: r.contentWarning');
   });
 });
@@ -349,7 +351,9 @@ describe('the schema and the migration', () => {
     const sql = read('prisma/migrations/20261126070000_s06_content_warnings/migration.sql');
     expect(sql).toContain('ALTER TABLE "rmheet" ADD COLUMN     "contentWarning" VARCHAR(80)');
     expect(sql).toContain('ALTER TABLE "scheduled_post" ADD COLUMN     "contentWarning" VARCHAR(80)');
-    expect(sql).toContain('ALTER TABLE "user_profile" ADD COLUMN     "showContentWarnings" BOOLEAN NOT NULL DEFAULT false');
+    expect(sql).toContain(
+      'ALTER TABLE "user_profile" ADD COLUMN     "showContentWarnings" BOOLEAN NOT NULL DEFAULT false',
+    );
     expect(sql).not.toMatch(/DROP|ALTER COLUMN|RENAME/i);
     expect(read('prisma/schema/social.prisma')).toMatch(/contentWarning\s+String\?\s+@db\.VarChar\(80\)/);
     expect(read('prisma/schema/profile.prisma')).toMatch(/showContentWarnings\s+Boolean\s+@default\(false\)/);

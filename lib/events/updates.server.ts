@@ -60,7 +60,11 @@ export function refused(error: unknown): Response {
             ? 409
             : 400;
     return Response.json(
-      { error: 'That update could not be posted', code: error.code, nextAt: error.nextAt ? error.nextAt.toISOString() : null },
+      {
+        error: 'That update could not be posted',
+        code: error.code,
+        nextAt: error.nextAt ? error.nextAt.toISOString() : null,
+      },
       { status },
     );
   }
@@ -98,11 +102,7 @@ type LoadedEvent = Awaited<ReturnType<typeof loadEvent>>;
  * Where an update points: null for a one-off event or the whole series, otherwise the ORIGINAL start of one date.
  * `requested` undefined means the next date that is not skipped; null means the whole series.
  */
-async function resolveTarget(
-  event: LoadedEvent,
-  requested: Date | null | undefined,
-  now: Date,
-): Promise<Date | null> {
+async function resolveTarget(event: LoadedEvent, requested: Date | null | undefined, now: Date): Promise<Date | null> {
   const series = seriesOf(event);
   if (!series) return null;
   if (requested === null) return null;
@@ -252,7 +252,9 @@ async function blockedWith(authorId: string, ids: readonly string[], now: Date =
     }),
     prisma.user.findMany({ where: { id: { in: [...ids] }, bannedUntil: { gt: now } }, select: { id: true } }),
   ]);
-  const out = new Set((Array.isArray(blocks) ? blocks : []).map((b) => (b.blockerId === authorId ? b.blockedId : b.blockerId)));
+  const out = new Set(
+    (Array.isArray(blocks) ? blocks : []).map((b) => (b.blockerId === authorId ? b.blockedId : b.blockerId)),
+  );
   for (const u of Array.isArray(banned) ? banned : []) out.add(u.id);
   return out;
 }
@@ -371,7 +373,14 @@ export async function exportEventUpdates(userId: string) {
     where: { authorId: userId },
     orderBy: { createdAt: 'asc' },
     take: 1000,
-    select: { eventId: true, occurrenceAt: true, body: true, createdAt: true, deletedAt: true, event: { select: { title: true } } },
+    select: {
+      eventId: true,
+      occurrenceAt: true,
+      body: true,
+      createdAt: true,
+      deletedAt: true,
+      event: { select: { title: true } },
+    },
   });
   return rows.map((r) => ({
     eventId: r.eventId,

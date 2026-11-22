@@ -1,41 +1,23 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
 /** Jump the page (or its opted-in scroller, `[data-scroll-root]`) to the top. */
 export function scrollPageToTop() {
-  const behavior: ScrollBehavior =
-    prefersReducedMotion()
-      ? 'auto'
-      : 'smooth';
+  const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
   // Resolved here rather than kept live: one query per click is free, and a
   // click is the only moment the answer is needed.
-  const scroller =
-    document.querySelector<HTMLElement>(
-      '[data-scroll-root]',
-    );
-  if (
-    scroller &&
-    scroller.offsetParent !==
-      null
-  )
-    scroller.scrollTo(
-      {
-        top: 0,
-        behavior,
-      },
-    );
+  const scroller = document.querySelector<HTMLElement>('[data-scroll-root]');
+  if (scroller && scroller.offsetParent !== null)
+    scroller.scrollTo({
+      top: 0,
+      behavior,
+    });
   else
-    window.scrollTo(
-      {
-        top: 0,
-        behavior,
-      },
-    );
+    window.scrollTo({
+      top: 0,
+      behavior,
+    });
 }
 
 /**
@@ -80,61 +62,25 @@ export function scrollPageToTop() {
  * click target still needs to, and that is resolved once, on click.
  */
 
-export function useScrolledPast(
-  threshold = 600,
-) {
-  const [
-    past,
-    setPast,
-  ] =
-    useState(
-      false,
-    );
-  const sentinelRef =
-    useRef<HTMLDivElement | null>(
-      null,
-    );
+export function useScrolledPast(threshold = 600) {
+  const [past, setPast] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const sentinel =
-      sentinelRef.current;
-    if (
-      !sentinel ||
-      typeof IntersectionObserver ===
-        'undefined'
-    )
-      return;
-    const io =
-      new IntersectionObserver(
-        (
-          entries,
-        ) => {
-          const entry =
-            entries[
-              entries.length -
-                1
-            ];
-          // Gone off the TOP, not merely out of view: on a viewport shorter than the
-          // threshold the sentinel starts out below the fold, and "not intersecting"
-          // there would show the button on an unscrolled page.
-          setPast(
-            !entry.isIntersecting &&
-              entry
-                .boundingClientRect
-                .top <
-                0,
-          );
-        },
-      );
-    io.observe(
-      sentinel,
-    );
+    const sentinel = sentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1];
+      // Gone off the TOP, not merely out of view: on a viewport shorter than the
+      // threshold the sentinel starts out below the fold, and "not intersecting"
+      // there would show the button on an unscrolled page.
+      setPast(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+    });
+    io.observe(sentinel);
     return () => {
       io.disconnect();
     };
-  }, [
-    threshold,
-  ]);
+  }, [threshold]);
 
   return {
     past,

@@ -29,8 +29,10 @@ function fromWhere(where: { userId_kind: { userId: string; kind: string } }) {
 function apply(row: Row, data: Record<string, unknown>) {
   for (const [key, v] of Object.entries(data)) {
     const r = row as unknown as Record<string, unknown>;
-    if (v && typeof v === 'object' && 'increment' in v) r[key] = (r[key] as number) + (v as { increment: number }).increment;
-    else if (v && typeof v === 'object' && 'decrement' in v) r[key] = (r[key] as number) - (v as { decrement: number }).decrement;
+    if (v && typeof v === 'object' && 'increment' in v)
+      r[key] = (r[key] as number) + (v as { increment: number }).increment;
+    else if (v && typeof v === 'object' && 'decrement' in v)
+      r[key] = (r[key] as number) - (v as { decrement: number }).decrement;
     else r[key] = v;
   }
 }
@@ -40,20 +42,46 @@ const streak = {
     const r = fromWhere(where);
     return r ? { ...r } : null;
   }),
-  upsert: vi.fn(async ({ where, create, update }: { where: { userId_kind: { userId: string; kind: string } }; create: Partial<Row>; update: Record<string, unknown> }) => {
-    let r = fromWhere(where);
-    if (!r) {
-      r = { current: 0, longest: 0, lastDay: null, lastCheckIn: null, totalDays: 0, freezeTokens: 0, ...create } as Row;
-      rows.set(k(r.userId, r.kind), r);
-    } else apply(r, update);
-    return { ...r };
-  }),
-  updateMany: vi.fn(async ({ where, data }: { where: { userId: string; kind: string; NOT: { lastDay: string } }; data: Record<string, unknown> }) => {
-    const r = rows.get(k(where.userId, where.kind));
-    if (!r || r.lastDay === where.NOT.lastDay) return { count: 0 };
-    apply(r, data);
-    return { count: 1 };
-  }),
+  upsert: vi.fn(
+    async ({
+      where,
+      create,
+      update,
+    }: {
+      where: { userId_kind: { userId: string; kind: string } };
+      create: Partial<Row>;
+      update: Record<string, unknown>;
+    }) => {
+      let r = fromWhere(where);
+      if (!r) {
+        r = {
+          current: 0,
+          longest: 0,
+          lastDay: null,
+          lastCheckIn: null,
+          totalDays: 0,
+          freezeTokens: 0,
+          ...create,
+        } as Row;
+        rows.set(k(r.userId, r.kind), r);
+      } else apply(r, update);
+      return { ...r };
+    },
+  ),
+  updateMany: vi.fn(
+    async ({
+      where,
+      data,
+    }: {
+      where: { userId: string; kind: string; NOT: { lastDay: string } };
+      data: Record<string, unknown>;
+    }) => {
+      const r = rows.get(k(where.userId, where.kind));
+      if (!r || r.lastDay === where.NOT.lastDay) return { count: 0 };
+      apply(r, data);
+      return { count: 1 };
+    },
+  ),
 };
 
 vi.mock('@/lib/prisma.server', () => ({
@@ -127,7 +155,16 @@ describe('check-in on the Streak model', () => {
   });
 
   it('starts a row of kind daily for a first check-in, never touching another kind', async () => {
-    rows.set(k('u', 'arcade'), { userId: 'u', kind: 'arcade', current: 4, longest: 4, lastDay: todayKey(), lastCheckIn: null, totalDays: 4, freezeTokens: 0 });
+    rows.set(k('u', 'arcade'), {
+      userId: 'u',
+      kind: 'arcade',
+      current: 4,
+      longest: 4,
+      lastDay: todayKey(),
+      lastCheckIn: null,
+      totalDays: 4,
+      freezeTokens: 0,
+    });
     const s = await checkIn('u');
     expect(s).toMatchObject({ current: 1, reward: 5 });
     expect(rows.get(k('u', 'daily'))).toMatchObject({ kind: 'daily', current: 1, totalDays: 1 });
@@ -145,7 +182,12 @@ describe('streak freeze on the Streak model', () => {
     expect(userId).toBe('u');
     expect(amount).toBe(FREEZE_COST);
     expect(FREEZE_COST).toBe(150);
-    expect(opts).toEqual({ tx: expect.anything(), type: 'PURCHASE', entityType: 'streak-freeze', note: 'Streak freeze' });
+    expect(opts).toEqual({
+      tx: expect.anything(),
+      type: 'PURCHASE',
+      entityType: 'streak-freeze',
+      note: 'Streak freeze',
+    });
   });
 
   it('creates the daily row for a first purchase', async () => {

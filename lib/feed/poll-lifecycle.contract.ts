@@ -7,30 +7,19 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { PollLifecycleView } from '@/lib/feed/poll-lifecycle';
 import type { extendPollSchema } from '@/lib/feed/poll-lifecycle-schema';
 
-type ExtendPollBody =
-  z.infer<
-    typeof extendPollSchema
-  >;
+type ExtendPollBody = z.infer<typeof extendPollSchema>;
 
-export const endPollApi =
-  endpoint<{
-    res: PollLifecycleView;
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/rmharks/$id/poll/end',
-    },
-  );
+export const endPollApi = endpoint<{
+  res: PollLifecycleView;
+}>()({
+  method: 'POST',
+  path: '/api/rmharks/$id/poll/end',
+});
 
-export const extendPollApi =
-  endpoint<{
-    body: ExtendPollBody;
-    res: PollLifecycleView;
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/rmharks/$id/poll/extend',
-    },
-  );
+export const extendPollApi = endpoint<{
+  body: ExtendPollBody;
+  res: PollLifecycleView;
+}>()({
+  method: 'POST',
+  path: '/api/rmharks/$id/poll/extend',
+});

@@ -5,46 +5,27 @@ import { lockCommentsBody } from '@/lib/builds/comments-schema';
 import { setCommentsLocked } from '@/lib/builds/comments.server';
 
 /** PUT /api/user-builds/[id]/comments-lock  the build's creator closes or reopens comments. Body: { locked }. */
-export const route =
-  apiRoute(
-    '/api/user-builds/$id/comments-lock',
+export const route = apiRoute('/api/user-builds/$id/comments-lock', {
+  PUT: implement(
+    lockBuildCommentsApi,
     {
-      PUT: implement(
-        lockBuildCommentsApi,
-        {
-          rateLimit:
-            'write',
-          body: lockCommentsBody,
-        },
-        async ({
-          params,
-          userId,
-          body,
-        }) => {
-          const result =
-            await setCommentsLocked(
-              params.id,
-              userId,
-              body.locked,
-            );
-          if (
-            !result.ok
-          )
-            return Response.json(
-              {
-                error:
-                  result.error,
-              },
-              {
-                status:
-                  result.status,
-              },
-            );
-          return {
-            locked:
-              result.locked,
-          };
-        },
-      ),
+      rateLimit: 'write',
+      body: lockCommentsBody,
     },
-  );
+    async ({ params, userId, body }) => {
+      const result = await setCommentsLocked(params.id, userId, body.locked);
+      if (!result.ok)
+        return Response.json(
+          {
+            error: result.error,
+          },
+          {
+            status: result.status,
+          },
+        );
+      return {
+        locked: result.locked,
+      };
+    },
+  ),
+});

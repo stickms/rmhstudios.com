@@ -1,1 +1,18 @@
-{"availability":"unavailable","cycle":"2026-2027","daily":null,"definitionsUrl":"https://cycletrack.org/data-guide","freshness":{"meaning":"Snapshot generation time, not the date of a school decision.","staleAfterHours":2,"status":"current"},"generatedAt":"2026-11-20T04:15:02+00:00","limitations":"Voluntary applicant reports, not official school statistics or predictions. Counts are milestone observations, not unique people. Statuses overlap. Missing charts are unavailable, not zero. Dates retain the published chart calendar; no applicant records are exported.","observationCounts":null,"program":"MD-PhD","schemaVersion":1,"school":{"key":"Arkansas","name":"University of Arkansas"},"sourceUrl":"https://cycletrack.org/explorer/school/Arkansas?program=phd"}
+{
+  "availability": "unavailable",
+  "cycle": "2026-2027",
+  "daily": null,
+  "definitionsUrl": "https://cycletrack.org/data-guide",
+  "freshness": {
+    "meaning": "Snapshot generation time, not the date of a school decision.",
+    "staleAfterHours": 2,
+    "status": "current"
+  },
+  "generatedAt": "2026-11-20T04:15:02+00:00",
+  "limitations": "Voluntary applicant reports, not official school statistics or predictions. Counts are milestone observations, not unique people. Statuses overlap. Missing charts are unavailable, not zero. Dates retain the published chart calendar; no applicant records are exported.",
+  "observationCounts": null,
+  "program": "MD-PhD",
+  "schemaVersion": 1,
+  "school": { "key": "Arkansas", "name": "University of Arkansas" },
+  "sourceUrl": "https://cycletrack.org/explorer/school/Arkansas?program=phd"
+}

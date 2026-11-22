@@ -101,8 +101,7 @@ export function WebhooksConsole() {
           icon={Webhook}
           title={t('console-empty-title', { defaultValue: 'No webhook endpoints yet' })}
           description={t('console-empty-body', {
-            defaultValue:
-              'Register a URL and we will send it a signed POST when something happens on your account.',
+            defaultValue: 'Register a URL and we will send it a signed POST when something happens on your account.',
           })}
           action={
             <Button variant="primary" onClick={() => setCreating(true)}>

@@ -17,125 +17,54 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { cn } from '@/lib/utils';
 import type { ProfilePresence } from '@/lib/presence-types';
 
-const DOT_COLOUR: Record<
-  ProfilePresence['state'],
-  string
-> =
-  {
-    offline:
-      'bg-site-text-muted',
-    online:
-      'bg-site-success',
-    in_game:
-      'bg-site-danger',
-    away: 'bg-site-warning',
-  };
+const DOT_COLOUR: Record<ProfilePresence['state'], string> = {
+  offline: 'bg-site-text-muted',
+  online: 'bg-site-success',
+  in_game: 'bg-site-danger',
+  away: 'bg-site-warning',
+};
 
-export function PresenceDot({
-  presence,
-  className,
-}: {
-  presence: ProfilePresence;
-  className?: string;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'feed',
-    );
+export function PresenceDot({ presence, className }: { presence: ProfilePresence; className?: string }) {
+  const { t } = useTranslation('feed');
   let label: string;
-  switch (
-    presence.state
-  ) {
+  switch (presence.state) {
     case 'online':
-      label =
-        t(
-          'presence-online',
-          {
-            defaultValue:
-              'Online',
-          },
-        );
+      label = t('presence-online', {
+        defaultValue: 'Online',
+      });
       break;
     case 'in_game':
       label =
         presence.label ||
-        t(
-          'presence-in-game',
-          {
-            defaultValue:
-              'In a game',
-          },
-        );
+        t('presence-in-game', {
+          defaultValue: 'In a game',
+        });
       break;
     case 'away': {
-      const minutes =
-        Math.max(
-          1,
-          Math.round(
-            (Date.now() -
-              new Date(
-                presence.lastSeenAt,
-              ).getTime()) /
-              60_000,
-          ),
-        );
-      label =
-        t(
-          'presence-away',
-          {
-            minutes,
-            defaultValue:
-              'Away · active {{minutes}} min ago',
-          },
-        );
+      const minutes = Math.max(1, Math.round((Date.now() - new Date(presence.lastSeenAt).getTime()) / 60_000));
+      label = t('presence-away', {
+        minutes,
+        defaultValue: 'Away · active {{minutes}} min ago',
+      });
       break;
     }
     default:
-      label =
-        t(
-          'presence-offline',
-          {
-            defaultValue:
-              'Offline',
-          },
-        );
+      label = t('presence-offline', {
+        defaultValue: 'Offline',
+      });
   }
   return (
-    <span
-      className={cn(
-        'inline-flex',
-        className,
-      )}
-    >
-      <Tooltip
-        content={
-          label
-        }
-        className="whitespace-nowrap"
-      >
+    <span className={cn('inline-flex', className)}>
+      <Tooltip content={label} className="whitespace-nowrap">
         <span
           role="img"
-          aria-label={
-            label
-          }
-          tabIndex={
-            0
-          }
+          aria-label={label}
+          tabIndex={0}
           data-slot="presence-dot"
           // "Away · active N min ago" is worked out at render, so the server's minute can differ from the browser's.
           suppressHydrationWarning
-          data-state={
-            presence.state
-          }
-          className={cn(
-            'block size-3.5 rounded-full border-2 border-site-bg',
-            DOT_COLOUR[
-              presence
-                .state
-            ],
-          )}
+          data-state={presence.state}
+          className={cn('block size-3.5 rounded-full border-2 border-site-bg', DOT_COLOUR[presence.state])}
         />
       </Tooltip>
     </span>

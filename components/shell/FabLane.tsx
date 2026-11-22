@@ -1,36 +1,19 @@
-import {
-  lazy,
-  Suspense,
-  useState,
-} from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import {
-  ArrowUp,
-  PenLine,
-} from 'lucide-react';
+import { ArrowUp, PenLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
-import {
-  scrollPageToTop,
-  useScrolledPast,
-} from '@/components/ui/back-to-top';
+import { scrollPageToTop, useScrolledPast } from '@/components/ui/back-to-top';
 import { cn } from '@/lib/utils';
 import { WRITE_HREF } from './sections';
 import { usePathname } from './shell-router-state';
 
 /** The composer dialog, in its own chunk: only needed once the button is pressed (the sidebar loads it the same way). */
-const ComposeModal =
-  lazy(
-    () =>
-      import('@/components/feed/ComposeModal').then(
-        (
-          m,
-        ) => ({
-          default:
-            m.ComposeModal,
-        }),
-      ),
-  );
+const ComposeModal = lazy(() =>
+  import('@/components/feed/ComposeModal').then((m) => ({
+    default: m.ComposeModal,
+  })),
+);
 
 const SCROLL_THRESHOLD = 600;
 
@@ -53,78 +36,27 @@ const SCROLL_THRESHOLD = 600;
  * A modified click on the compose icon still follows the link to `/share`.
  */
 export function FabLane() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'feed',
-    );
-  const {
-    t: tUi,
-  } =
-    useTranslation(
-      'c-ui',
-    );
-  const pathname =
-    usePathname();
-  const {
-    data: session,
-  } =
-    useSession();
-  const {
-    past,
-    sentinelRef,
-  } =
-    useScrolledPast(
-      SCROLL_THRESHOLD,
-    );
-  const [
-    composeOpen,
-    setComposeOpen,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    composeLoaded,
-    setComposeLoaded,
-  ] =
-    useState(
-      false,
-    );
+  const { t } = useTranslation('feed');
+  const { t: tUi } = useTranslation('c-ui');
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const { past, sentinelRef } = useScrolledPast(SCROLL_THRESHOLD);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeLoaded, setComposeLoaded] = useState(false);
 
-  const showCompose =
-    Boolean(
-      session,
-    ) &&
-    pathname ===
-      '/';
-  const shown =
-    showCompose ||
-    past;
-  const writeLabel =
-    t(
-      'shell-write-post',
-      {
-        defaultValue:
-          'Write a post',
-      },
-    );
-  const topLabel =
-    tUi(
-      'back-to-top',
-      {
-        defaultValue:
-          'Back to top',
-      },
-    );
+  const showCompose = Boolean(session) && pathname === '/';
+  const shown = showCompose || past;
+  const writeLabel = t('shell-write-post', {
+    defaultValue: 'Write a post',
+  });
+  const topLabel = tUi('back-to-top', {
+    defaultValue: 'Back to top',
+  });
 
   return (
     <>
       <div
-        ref={
-          sentinelRef
-        }
+        ref={sentinelRef}
         className="back-to-top-sentinel"
         style={{
           top: `${SCROLL_THRESHOLD}px`,
@@ -135,104 +67,43 @@ export function FabLane() {
         // §5.5x A.1: part of the floating-bottom stack; `.floating-fab-lane` seats it in the bottom-right lane and lifts
         // it clear of the cookie bar.
         data-floating="fab"
-        data-shown={
-          shown ||
-          undefined
-        }
-        inert={
-          !shown
-        }
+        data-shown={shown || undefined}
+        inert={!shown}
         className="fab-lane floating-fab-lane surface-overlay fixed z-40 flex rounded-full lg:hidden"
       >
         <button
           type="button"
-          onClick={
-            scrollPageToTop
-          }
-          data-shown={
-            past ||
-            undefined
-          }
+          onClick={scrollPageToTop}
+          data-shown={past || undefined}
           // Alone on the pill it does not grow: the pill itself fades in.
-          data-solo={
-            !showCompose ||
-            undefined
-          }
-          inert={
-            !past
-          }
-          aria-label={
-            topLabel
-          }
-          title={
-            topLabel
-          }
+          data-solo={!showCompose || undefined}
+          inert={!past}
+          aria-label={topLabel}
+          title={topLabel}
           className="fab-lane__top flex size-11 items-center justify-center rounded-full text-site-text hover:bg-site-bg-subtle"
         >
-          <ArrowUp
-            className="h-5 w-5 shrink-0"
-            aria-hidden
-          />
+          <ArrowUp className="h-5 w-5 shrink-0" aria-hidden />
         </button>
         {showCompose && (
           <Link
-            to={
-              WRITE_HREF
-            }
-            aria-label={
-              writeLabel
-            }
-            title={
-              writeLabel
-            }
-            onClick={(
-              e,
-            ) => {
-              if (
-                e.button !==
-                  0 ||
-                e.metaKey ||
-                e.ctrlKey ||
-                e.shiftKey ||
-                e.altKey
-              )
-                return;
+            to={WRITE_HREF}
+            aria-label={writeLabel}
+            title={writeLabel}
+            onClick={(e) => {
+              if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
               e.preventDefault();
-              setComposeLoaded(
-                true,
-              );
-              setComposeOpen(
-                true,
-              );
+              setComposeLoaded(true);
+              setComposeOpen(true);
             }}
             className="flex size-11 items-center justify-center rounded-full text-site-text hover:bg-site-bg-subtle"
           >
-            <PenLine
-              className="h-5 w-5 shrink-0"
-              aria-hidden
-            />
+            <PenLine className="h-5 w-5 shrink-0" aria-hidden />
           </Link>
         )}
       </div>
       {composeLoaded && (
-        <Suspense
-          fallback={
-            null
-          }
-        >
-          <ComposeModal
-            open={
-              composeOpen
-            }
-            onClose={() =>
-              setComposeOpen(
-                false,
-              )
-            }
-            mobileFullscreen={
-              false
-            }
-          />
+        <Suspense fallback={null}>
+          <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} mobileFullscreen={false} />
         </Suspense>
       )}
     </>

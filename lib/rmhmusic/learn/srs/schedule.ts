@@ -49,22 +49,9 @@
  * was far ahead when `last` was written, which the skew rule above handles.
  */
 
-import {
-  AGAIN,
-  EASY,
-  GOOD,
-  HARD,
-  intervalFor,
-  nextMemory,
-  retrievability,
-  type Rating,
-} from './fsrs';
+import { AGAIN, EASY, GOOD, HARD, intervalFor, nextMemory, retrievability, type Rating } from './fsrs';
 
-export type Grade =
-  | 'again'
-  | 'hard'
-  | 'good'
-  | 'easy';
+export type Grade = 'again' | 'hard' | 'good' | 'easy';
 
 export interface CardState {
   /** Epoch ms the card is next due. */
@@ -76,9 +63,7 @@ export interface CardState {
   reps: number;
   lapses: number;
   /** Epoch ms of the last review, or null for a card never reviewed. */
-  last:
-    | number
-    | null;
+  last: number | null;
 }
 
 export const DAY_MS = 86_400_000;
@@ -86,8 +71,7 @@ export const DAY_MS = 86_400_000;
 export const MIN_INTERVAL_DAYS = 10 / 1440;
 export const MAX_INTERVAL_DAYS = 365;
 /** A review this far ahead of `now` means the clock was wrong when it was written. */
-export const CLOCK_SKEW_TOLERANCE_MS =
-  DAY_MS;
+export const CLOCK_SKEW_TOLERANCE_MS = DAY_MS;
 
 const RATING: Record<Grade, Rating> = {
   again: AGAIN,
@@ -105,111 +89,31 @@ const MIN_PASS_INTERVAL_DAYS = 1;
 
 /** Clamp that maps NaN to `fallback` (so every output is a real number). */
 // eslint-disable-next-line no-restricted-syntax -- clamp with a NaN fallback argument
-function clamp(
-  n: number,
-  lo: number,
-  hi: number,
-  fallback = lo,
-): number {
-  if (
-    Number.isNaN(
-      n,
-    )
-  )
-    return fallback;
-  return Math.min(
-    hi,
-    Math.max(
-      lo,
-      n,
-    ),
-  );
+function clamp(n: number, lo: number, hi: number, fallback = lo): number {
+  if (Number.isNaN(n)) return fallback;
+  return Math.min(hi, Math.max(lo, n));
 }
 
-function assertNow(
-  now: number,
-): void {
-  if (
-    typeof now !==
-      'number' ||
-    !Number.isFinite(
-      now,
-    )
-  ) {
-    throw new RangeError(
-      `now must be a finite number, got ${String(now)}`,
-    );
+function assertNow(now: number): void {
+  if (typeof now !== 'number' || !Number.isFinite(now)) {
+    throw new RangeError(`now must be a finite number, got ${String(now)}`);
   }
 }
 
-function count(
-  n: unknown,
-): number {
-  return typeof n ===
-    'number' &&
-    Number.isFinite(
-      n,
-    )
-    ? Math.max(
-        0,
-        Math.floor(
-          n,
-        ),
-      )
-    : 0;
+function count(n: unknown): number {
+  return typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
 }
 
 /** Make a stored state safe to compute with, whatever was persisted. */
-function sanitize(
-  s: CardState,
-): CardState {
-  const fin =
-    (
-      n: unknown,
-    ): n is number =>
-      typeof n ===
-        'number' &&
-      Number.isFinite(
-        n,
-      );
+function sanitize(s: CardState): CardState {
+  const fin = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
   return {
-    due: fin(
-      s.due,
-    )
-      ? s.due
-      : 0,
-    stability:
-      fin(
-        s.stability,
-      )
-        ? clamp(
-            s.stability,
-            0,
-            MAX_INTERVAL_DAYS,
-          )
-        : 0,
-    difficulty:
-      fin(
-        s.difficulty,
-      )
-        ? clamp(
-            s.difficulty,
-            MIN_DIFFICULTY,
-            MAX_DIFFICULTY,
-          )
-        : DEFAULT_DIFFICULTY,
-    reps: count(
-      s.reps,
-    ),
-    lapses:
-      count(
-        s.lapses,
-      ),
-    last: fin(
-      s.last,
-    )
-      ? s.last
-      : null,
+    due: fin(s.due) ? s.due : 0,
+    stability: fin(s.stability) ? clamp(s.stability, 0, MAX_INTERVAL_DAYS) : 0,
+    difficulty: fin(s.difficulty) ? clamp(s.difficulty, MIN_DIFFICULTY, MAX_DIFFICULTY) : DEFAULT_DIFFICULTY,
+    reps: count(s.reps),
+    lapses: count(s.lapses),
+    last: fin(s.last) ? s.last : null,
   };
 }
 
@@ -221,88 +125,47 @@ function sanitize(
  * Otherwise the stored `due` stands, bounded to `last + MAX_INTERVAL_DAYS`
  * (the furthest `review()` writes) so a corrupted `due` cannot hide the card.
  */
-function effectiveDue(
-  s: CardState,
-  now: number,
-): number {
-  const c =
-    sanitize(
-      s,
-    );
-  if (
-    c.reps ===
-      0 ||
-    c.last ===
-      null
-  )
-    return now;
-  if (
-    c.last -
-      now >
-    CLOCK_SKEW_TOLERANCE_MS
-  )
-    return now;
-  return Math.min(
-    c.due,
-    c.last +
-      MAX_INTERVAL_DAYS *
-        DAY_MS,
-  );
+function effectiveDue(s: CardState, now: number): number {
+  const c = sanitize(s);
+  if (c.reps === 0 || c.last === null) return now;
+  if (c.last - now > CLOCK_SKEW_TOLERANCE_MS) return now;
+  return Math.min(c.due, c.last + MAX_INTERVAL_DAYS * DAY_MS);
 }
 
-export function newCard(
-  now: number,
-): CardState {
-  assertNow(
-    now,
-  );
+export function newCard(now: number): CardState {
+  assertNow(now);
   return {
     due: now,
     stability: 0,
-    difficulty:
-      DEFAULT_DIFFICULTY,
+    difficulty: DEFAULT_DIFFICULTY,
     reps: 0,
     lapses: 0,
     last: null,
   };
 }
 
-export function review(
-  s: CardState,
-  grade: Grade,
-  now: number,
-): CardState {
+export function review(s: CardState, grade: Grade, now: number): CardState {
   assertNow(now);
   if (!Object.prototype.hasOwnProperty.call(RATING, grade)) {
     throw new RangeError(`unknown grade ${String(grade)}`);
   }
   const rating = RATING[grade];
   const c = sanitize(s);
-  const elapsedDays =
-    c.last === null ? 0 : Math.max(0, now - c.last) / DAY_MS;
+  const elapsedDays = c.last === null ? 0 : Math.max(0, now - c.last) / DAY_MS;
   // A card that was never remembered (stability 0) starts the memory afresh, whatever else is stored.
   const memory = nextMemory(
-    c.stability > 0
-      ? { stability: c.stability, difficulty: c.difficulty }
-      : null,
+    c.stability > 0 ? { stability: c.stability, difficulty: c.difficulty } : null,
     elapsedDays,
     rating,
   );
   const stability = clamp(memory.stability, 0, MAX_INTERVAL_DAYS);
   // A miss on a card that had graduated (its stability had reached a day) is a lapse; a miss while
   // still learning it is not.
-  const lapses =
-    grade === 'again' && c.stability >= LAPSE_STABILITY_DAYS
-      ? c.lapses + 1
-      : c.lapses;
+  const lapses = grade === 'again' && c.stability >= LAPSE_STABILITY_DAYS ? c.lapses + 1 : c.lapses;
   const days =
     grade === 'again'
       ? MIN_INTERVAL_DAYS
-      : clamp(
-          Math.round(intervalFor(stability)),
-          MIN_PASS_INTERVAL_DAYS,
-          MAX_INTERVAL_DAYS,
-        );
+      : clamp(Math.round(intervalFor(stability)), MIN_PASS_INTERVAL_DAYS, MAX_INTERVAL_DAYS);
   return {
     due: now + days * DAY_MS,
     stability,
@@ -317,30 +180,16 @@ export function review(
  * The chance the learner would recall the card at `now` (FSRS retrievability), 0–1, or null for a
  * card never remembered. Total: a clock behind the last review counts as no time elapsed.
  */
-export function recallChance(
-  s: CardState,
-  now: number,
-): number | null {
+export function recallChance(s: CardState, now: number): number | null {
   assertNow(now);
   const c = sanitize(s);
   if (c.reps === 0 || c.stability <= 0 || c.last === null) return null;
   return retrievability(Math.max(0, now - c.last) / DAY_MS, c.stability);
 }
 
-export function isDue(
-  s: CardState,
-  now: number,
-): boolean {
-  assertNow(
-    now,
-  );
-  return (
-    effectiveDue(
-      s,
-      now,
-    ) <=
-    now
-  );
+export function isDue(s: CardState, now: number): boolean {
+  assertNow(now);
+  return effectiveDue(s, now) <= now;
 }
 
 /**
@@ -348,73 +197,21 @@ export function isDue(
  * so they follow the genuinely overdue ones, in input order), at most `limit`.
  */
 export function dueCards<
-  T extends
-    {
-      state: CardState;
-    },
->(
-  cards: T[],
-  now: number,
-  limit: number,
-): T[] {
-  assertNow(
-    now,
-  );
-  const max =
-    Number.isNaN(
-      limit,
-    )
-      ? 0
-      : Math.floor(
-          Math.max(
-            0,
-            limit,
-          ),
-        );
-  if (
-    max ===
-    0
-  )
-    return [];
+  T extends {
+    state: CardState;
+  },
+>(cards: T[], now: number, limit: number): T[] {
+  assertNow(now);
+  const max = Number.isNaN(limit) ? 0 : Math.floor(Math.max(0, limit));
+  if (max === 0) return [];
   return cards
-    .map(
-      (
-        card,
-        index,
-      ) => ({
-        card,
-        index,
-        due: effectiveDue(
-          card.state,
-          now,
-        ),
-      }),
-    )
-    .filter(
-      (
-        e,
-      ) =>
-        e.due <=
-        now,
-    )
-    .sort(
-      (
-        a,
-        b,
-      ) =>
-        a.due -
-          b.due ||
-        a.index -
-          b.index,
-    )
-    .slice(
-      0,
-      max,
-    )
-    .map(
-      (
-        e,
-      ) =>
-        e.card,
-    );
+    .map((card, index) => ({
+      card,
+      index,
+      due: effectiveDue(card.state, now),
+    }))
+    .filter((e) => e.due <= now)
+    .sort((a, b) => a.due - b.due || a.index - b.index)
+    .slice(0, max)
+    .map((e) => e.card);
 }

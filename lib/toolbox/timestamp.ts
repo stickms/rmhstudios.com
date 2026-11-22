@@ -22,8 +22,7 @@ export function guessUnit(digits: string): TimeUnit {
 const PER_MS: Record<TimeUnit, number> = { seconds: 1e-3, milliseconds: 1, microseconds: 1e3, nanoseconds: 1e6 };
 
 export type TimestampParse =
-  | { ok: true; date: Date; unit: TimeUnit | 'date' }
-  | { ok: false; reason: 'empty' | 'invalid' | 'out-of-range' };
+  { ok: true; date: Date; unit: TimeUnit | 'date' } | { ok: false; reason: 'empty' | 'invalid' | 'out-of-range' };
 
 /** JavaScript dates span ±8.64e15 ms around 1970. */
 const MAX_MS = 8.64e15;

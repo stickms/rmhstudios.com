@@ -17,213 +17,94 @@ interface Props {
   onKeep?: () => void;
 }
 
-export default function Notices({
-  session,
-  busy,
-  onDownload,
-  evictionRisk = false,
-  onKeep,
-}: Props) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhos',
-    );
-  const last =
-    session
-      .lastSave
-      ?.result;
-  const report =
-    last
-      ? reportSave(
-          last,
-        )
-      : null;
-  const changedElsewhere =
-    report?.kind ===
-      'notice' &&
-    report.key ===
-      'changed-elsewhere';
-  const emptyHome =
-    report?.kind ===
-      'notice' &&
-    report.key ===
-      'empty-home';
-  const blocked =
-    session.desktopReady &&
-    session.storeKind ===
-      'memory';
-  const netEnded =
-    session
-      .net
-      ?.enabled ===
-      true &&
-    session.netEnded;
+export default function Notices({ session, busy, onDownload, evictionRisk = false, onKeep }: Props) {
+  const { t } = useTranslation('c-rmhos');
+  const last = session.lastSave?.result;
+  const report = last ? reportSave(last) : null;
+  const changedElsewhere = report?.kind === 'notice' && report.key === 'changed-elsewhere';
+  const emptyHome = report?.kind === 'notice' && report.key === 'empty-home';
+  const blocked = session.desktopReady && session.storeKind === 'memory';
+  const netEnded = session.net?.enabled === true && session.netEnded;
   // Only where files are being kept at all: with storage blocked the notice above says more.
-  const evictable =
-    evictionRisk &&
-    session.desktopReady &&
-    session.storeKind ===
-      'indexeddb';
-  if (
-    !changedElsewhere &&
-    !emptyHome &&
-    !blocked &&
-    !netEnded &&
-    !evictable
-  )
-    return null;
+  const evictable = evictionRisk && session.desktopReady && session.storeKind === 'indexeddb';
+  if (!changedElsewhere && !emptyHome && !blocked && !netEnded && !evictable) return null;
 
   return (
-    <div
-      className="rmhos-notices"
-      role="status"
-    >
+    <div className="rmhos-notices" role="status">
       {blocked && (
         <p className="text-xs text-(--app-warning)">
-          {t(
-            'notice-storage-blocked',
-            {
-              defaultValue:
-                'Files are not being saved: this browser is blocking storage.',
-            },
-          )}
+          {t('notice-storage-blocked', {
+            defaultValue: 'Files are not being saved: this browser is blocking storage.',
+          })}
         </p>
       )}
       {evictable && (
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-xs text-(--app-warning)">
-            {t(
-              'eviction-line',
-              {
-                defaultValue:
-                  'This browser may delete these files to free space. Download a backup to keep them.',
-              },
-            )}
+            {t('eviction-line', {
+              defaultValue: 'This browser may delete these files to free space. Download a backup to keep them.',
+            })}
           </p>
           {onKeep && (
-            <Button
-              size="sm"
-              onClick={
-                onKeep
-              }
-            >
-              {t(
-                'keep-files',
-                {
-                  defaultValue:
-                    'Keep my files in this browser',
-                },
-              )}
+            <Button size="sm" onClick={onKeep}>
+              {t('keep-files', {
+                defaultValue: 'Keep my files in this browser',
+              })}
             </Button>
           )}
-          <Button
-            size="sm"
-            disabled={
-              busy
-            }
-            onClick={
-              onDownload
-            }
-          >
-            {t(
-              'download-backup',
-              {
-                defaultValue:
-                  'Download backup',
-              },
-            )}
+          <Button size="sm" disabled={busy} onClick={onDownload}>
+            {t('download-backup', {
+              defaultValue: 'Download backup',
+            })}
           </Button>
         </div>
       )}
       {netEnded && (
         <p className="text-xs text-(--app-warning)">
-          {t(
-            'notice-net-ended',
-            {
-              defaultValue:
-                'Your network session ended. Restart rmhOS to reconnect.',
-            },
-          )}
+          {t('notice-net-ended', {
+            defaultValue: 'Your network session ended. Restart rmhOS to reconnect.',
+          })}
         </p>
       )}
       {emptyHome && (
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-xs text-(--app-warning)">
-            {t(
-              'notice-empty-home',
-              {
-                defaultValue:
-                  'Your home folder is empty. Nothing was saved over your stored files.',
-              },
-            )}
+            {t('notice-empty-home', {
+              defaultValue: 'Your home folder is empty. Nothing was saved over your stored files.',
+            })}
           </p>
           <Button
             size="sm"
-            disabled={
-              busy ||
-              session.saving
-            }
+            disabled={busy || session.saving}
             onClick={() =>
-              void session.saveNow(
-                {
-                  allowEmpty: true,
-                },
-              )
+              void session.saveNow({
+                allowEmpty: true,
+              })
             }
           >
-            {t(
-              'save-empty-anyway',
-              {
-                defaultValue:
-                  'Save the empty folder anyway',
-              },
-            )}
+            {t('save-empty-anyway', {
+              defaultValue: 'Save the empty folder anyway',
+            })}
           </Button>
         </div>
       )}
       {changedElsewhere && (
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-xs text-(--app-warning)">
-            {t(
-              'notice-changed-elsewhere',
-              {
-                defaultValue:
-                  'Your files were changed in another tab. Reload to use them, or download a backup of this session first.',
-              },
-            )}
+            {t('notice-changed-elsewhere', {
+              defaultValue:
+                'Your files were changed in another tab. Reload to use them, or download a backup of this session first.',
+            })}
           </p>
-          <Button
-            size="sm"
-            disabled={
-              busy
-            }
-            onClick={
-              onDownload
-            }
-          >
-            {t(
-              'download-backup',
-              {
-                defaultValue:
-                  'Download backup',
-              },
-            )}
+          <Button size="sm" disabled={busy} onClick={onDownload}>
+            {t('download-backup', {
+              defaultValue: 'Download backup',
+            })}
           </Button>
-          <Button
-            size="sm"
-            onClick={() =>
-              void session.restart()
-            }
-          >
-            {t(
-              'reload',
-              {
-                defaultValue:
-                  'Reload',
-              },
-            )}
+          <Button size="sm" onClick={() => void session.restart()}>
+            {t('reload', {
+              defaultValue: 'Reload',
+            })}
           </Button>
         </div>
       )}

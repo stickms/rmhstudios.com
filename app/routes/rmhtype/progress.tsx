@@ -7,19 +7,10 @@ import { noindexHead } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import ProgressPage from '@/components/rmhtype/ProgressPage';
 
-export const Route =
-  createFileRoute(
-    '/rmhtype/progress',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'Typing Progress',
-        ),
-      component:
-        ProgressRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhtype/progress')({
+  head: () => noindexHead('Typing Progress'),
+  component: ProgressRoute,
+});
 
 function ProgressRoute() {
   return (

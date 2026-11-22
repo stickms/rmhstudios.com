@@ -181,12 +181,7 @@ type Settled = { result: BuyResult; sellerId: string; gameId: string; cardIndex:
  * a plain purchase and by a buy order filling, so the two cannot drift apart.
  * `maxPrice` is a buy order's bid: a listing above it is not a fill.
  */
-async function settleSale(
-  tx: Tx,
-  buyerId: string,
-  listingId: string,
-  maxPrice?: number,
-): Promise<Settled> {
+async function settleSale(tx: Tx, buyerId: string, listingId: string, maxPrice?: number): Promise<Settled> {
   const row = await tx.listing.findUnique({ where: { id: listingId, kind: 'CARD' } });
   if (!row) throw new MarketError('NOT_FOUND', 'Listing not found', 404);
   const listing = { ...row, ...cardFields(row) };
@@ -244,13 +239,7 @@ async function tellSeller(sale: Settled, buyerId: string, listingId: string) {
   });
 }
 
-export async function buyCard({
-  buyerId,
-  listingId,
-}: {
-  buyerId: string;
-  listingId: string;
-}): Promise<BuyResult> {
+export async function buyCard({ buyerId, listingId }: { buyerId: string; listingId: string }): Promise<BuyResult> {
   const sale = await prisma.$transaction(async (tx) => {
     // The buyer's stack changes (they receive the card), so take their card lock.
     await lockCards(tx, buyerId);
@@ -393,13 +382,7 @@ async function matchBidsForListing(listing: {
 }
 
 /** Take a listing down and return the escrowed card. */
-export async function cancelCard({
-  sellerId,
-  listingId,
-}: {
-  sellerId: string;
-  listingId: string;
-}): Promise<void> {
+export async function cancelCard({ sellerId, listingId }: { sellerId: string; listingId: string }): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await lockCards(tx, sellerId);
     const closed = await closeListing(tx, 'CARD', { id: listingId, sellerId, status: 'ACTIVE' });
@@ -480,7 +463,12 @@ export async function getMarket(viewerId: string | null, gameId?: string): Promi
 
 /** The page for one card: listings, buy orders, price history and the viewer's own state. */
 export async function getCardMarket(viewerId: string | null, card: CardRef): Promise<CardMarketData | null> {
-  if (!isTrackableTitle(card.gameId) || !Number.isInteger(card.cardIndex) || card.cardIndex < 0 || card.cardIndex >= SET_SIZE) {
+  if (
+    !isTrackableTitle(card.gameId) ||
+    !Number.isInteger(card.cardIndex) ||
+    card.cardIndex < 0 ||
+    card.cardIndex >= SET_SIZE
+  ) {
     return null;
   }
   const title = listCuratedBuilds().find((b) => b.id === card.gameId);
@@ -536,9 +524,7 @@ export async function getCardMarket(viewerId: string | null, card: CardRef): Pro
 }
 
 /** The cheapest offer per card, named, for the Store's Cards tab (`ListingView` rows). */
-export async function storeCardGroups(
-  viewerId: string | null,
-): Promise<(MarketGroup & { cardTitle: string })[]> {
+export async function storeCardGroups(viewerId: string | null): Promise<(MarketGroup & { cardTitle: string })[]> {
   const { groups } = await getMarket(viewerId);
   return groups.map((g) => ({ ...g, cardTitle: cardName(g.gameId, g.cardIndex) }));
 }

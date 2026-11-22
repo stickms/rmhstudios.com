@@ -11,26 +11,12 @@
  * speaker or a long wait for sound never reads as a hard item.
  */
 import { shuffle } from './content/decks';
-import {
-  stateFromRow,
-  type CardRow,
-} from './content/practice';
-import {
-  dealQuestions,
-  makeQuestion,
-  type EarKind,
-  type EarName,
-  type Question,
-} from './machines/ear';
+import { stateFromRow, type CardRow } from './content/practice';
+import { dealQuestions, makeQuestion, type EarKind, type EarName, type Question } from './machines/ear';
 import { MAX_REVIEWS_PER_BATCH } from './schemas';
 import { EAR_TIMES, gradeAttempt } from './srs/grade';
 import { earItemId } from './srs/items';
-import {
-  isDue,
-  recallChance,
-  type CardState,
-  type Grade,
-} from './srs/schedule';
+import { isDue, recallChance, type CardState, type Grade } from './srs/schedule';
 
 /** The FSRS item a question stands for. */
 export function earItemOf(q: Pick<Question, 'kind' | 'answer'>): string {
@@ -58,18 +44,13 @@ export function earReviews(
   answered: readonly EarAnswered[],
   msByIndex: Readonly<Record<number, number | null | undefined>>,
 ): { cardId: string; grade: Grade }[] {
-  return answered
-    .slice(0, MAX_REVIEWS_PER_BATCH)
-    .map((a) => {
-      const index = questions.indexOf(a.card);
-      return {
-        cardId: earItemOf(a.card),
-        grade: gradeAttempt(
-          { right: a.right, ms: index < 0 ? null : (msByIndex[index] ?? null) },
-          EAR_TIMES,
-        ),
-      };
-    });
+  return answered.slice(0, MAX_REVIEWS_PER_BATCH).map((a) => {
+    const index = questions.indexOf(a.card);
+    return {
+      cardId: earItemOf(a.card),
+      grade: gradeAttempt({ right: a.right, ms: index < 0 ? null : (msByIndex[index] ?? null) }, EAR_TIMES),
+    };
+  });
 }
 
 /**

@@ -19,34 +19,20 @@ export function SheetPortrait({
   size: number;
   className?: string;
 }) {
-  const scale =
-    size /
-    frameSize;
-  const col =
-    frame %
-    cols;
-  const row =
-    Math.floor(
-      frame /
-        cols,
-    );
+  const scale = size / frameSize;
+  const col = frame % cols;
+  const row = Math.floor(frame / cols);
   return (
     <div
-      className={
-        className
-      }
+      className={className}
       style={{
-        width:
-          size,
-        height:
-          size,
+        width: size,
+        height: size,
         backgroundImage: `url(${url})`,
-        backgroundRepeat:
-          'no-repeat',
+        backgroundRepeat: 'no-repeat',
         backgroundSize: `${cols * size}px auto`,
         backgroundPosition: `${-col * size}px ${-row * size}px`,
-        imageRendering:
-          'pixelated',
+        imageRendering: 'pixelated',
       }}
     />
   );

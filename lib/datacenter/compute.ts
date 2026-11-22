@@ -29,46 +29,35 @@ export interface ComputePack {
   librarySlots: number;
 }
 
-export const COMPUTE_PACKS: readonly ComputePack[] =
-  [
-    {
-      id: 'burst',
-      name: 'Burst',
-      coins: 500,
-      aiMicros: 250_000, // doubles the free tier's month
-      imageGens: 10,
-      librarySlots: 0,
-    },
-    {
-      id: 'rack',
-      name: 'Rack',
-      coins: 2_000,
-      aiMicros: 1_200_000,
-      imageGens: 50,
-      librarySlots: 5,
-    },
-    {
-      id: 'hall',
-      name: 'Hall',
-      coins: 7_500,
-      aiMicros: 5_000_000,
-      imageGens: 200,
-      librarySlots: 25,
-    },
-  ] as const;
+export const COMPUTE_PACKS: readonly ComputePack[] = [
+  {
+    id: 'burst',
+    name: 'Burst',
+    coins: 500,
+    aiMicros: 250_000, // doubles the free tier's month
+    imageGens: 10,
+    librarySlots: 0,
+  },
+  {
+    id: 'rack',
+    name: 'Rack',
+    coins: 2_000,
+    aiMicros: 1_200_000,
+    imageGens: 50,
+    librarySlots: 5,
+  },
+  {
+    id: 'hall',
+    name: 'Hall',
+    coins: 7_500,
+    aiMicros: 5_000_000,
+    imageGens: 200,
+    librarySlots: 25,
+  },
+] as const;
 
-export function packById(
-  id: string,
-):
-  | ComputePack
-  | undefined {
-  return COMPUTE_PACKS.find(
-    (
-      p,
-    ) =>
-      p.id ===
-      id,
-  );
+export function packById(id: string): ComputePack | undefined {
+  return COMPUTE_PACKS.find((p) => p.id === id);
 }
 
 /**
@@ -82,9 +71,7 @@ export function packById(
 export const MAX_PACKS_PER_MONTH = 10;
 
 /** `YYYY-MM` for a date, in UTC — the window a grant belongs to. */
-export function monthKey(
-  at: Date = new Date(),
-): string {
+export function monthKey(at: Date = new Date()): string {
   return `${at.getUTCFullYear()}-${String(at.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
@@ -101,19 +88,10 @@ export function totalGrants(
   librarySlots: number;
 } {
   return grants.reduce(
-    (
-      acc,
-      g,
-    ) => ({
-      aiMicros:
-        acc.aiMicros +
-        g.aiMicros,
-      imageGens:
-        acc.imageGens +
-        g.imageGens,
-      librarySlots:
-        acc.librarySlots +
-        g.librarySlots,
+    (acc, g) => ({
+      aiMicros: acc.aiMicros + g.aiMicros,
+      imageGens: acc.imageGens + g.imageGens,
+      librarySlots: acc.librarySlots + g.librarySlots,
     }),
     {
       aiMicros: 0,
@@ -130,21 +108,7 @@ export function totalGrants(
  * capacity reads as full — which is true, and is the thing the member needs to
  * know.
  */
-export function utilisation(
-  used: number,
-  capacity: number,
-): number {
-  if (
-    capacity <=
-    0
-  )
-    return 0;
-  return Math.min(
-    1,
-    Math.max(
-      0,
-      used /
-        capacity,
-    ),
-  );
+export function utilisation(used: number, capacity: number): number {
+  if (capacity <= 0) return 0;
+  return Math.min(1, Math.max(0, used / capacity));
 }

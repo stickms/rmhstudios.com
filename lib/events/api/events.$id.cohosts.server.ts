@@ -20,14 +20,10 @@ export const route = apiRoute('/api/events/$id/cohosts', {
     return result.ok ? { cohosts: result.value, max: MAX_COHOSTS } : refused(result.code);
   }),
 
-  POST: implement(
-    inviteCohostApi,
-    { rateLimit: 'write', body: inviteCohostBody },
-    async ({ params, userId, body }) => {
-      const result = await inviteCohost({ eventId: params.id, actorId: userId, userId: body.userId });
-      return result.ok ? { cohost: result.value } : refused(result.code);
-    },
-  ),
+  POST: implement(inviteCohostApi, { rateLimit: 'write', body: inviteCohostBody }, async ({ params, userId, body }) => {
+    const result = await inviteCohost({ eventId: params.id, actorId: userId, userId: body.userId });
+    return result.ok ? { cohost: result.value } : refused(result.code);
+  }),
 
   DELETE: implement(
     removeCohostApi,

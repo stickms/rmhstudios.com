@@ -34,16 +34,10 @@ export function createPadGuard(): PadGuard {
       held = false;
     },
     toStart() {
-      if (
-        held
-      )
-        swallow = true;
+      if (held) swallow = true;
     },
     allowClick() {
-      if (
-        !swallow
-      )
-        return true;
+      if (!swallow) return true;
       swallow = false;
       return false;
     },

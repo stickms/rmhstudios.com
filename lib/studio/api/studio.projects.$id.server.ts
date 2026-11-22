@@ -1,21 +1,9 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import {
-  deleteCloudProject,
-  getCloudProject,
-  saveCloudProject,
-} from '@/lib/studio/cloud-projects.server';
+import { deleteCloudProject, getCloudProject, saveCloudProject } from '@/lib/studio/cloud-projects.server';
 import { refusalResponse } from '@/lib/studio/refusal.server';
-import {
-  MAX_REQUEST_BYTES,
-  projectIdSchema,
-  updateProjectBody,
-} from '@/lib/studio/project-schema';
-import {
-  deleteCloudProjectApi,
-  getCloudProjectApi,
-  updateCloudProjectApi,
-} from '@/lib/studio/projects.contract';
+import { MAX_REQUEST_BYTES, projectIdSchema, updateProjectBody } from '@/lib/studio/project-schema';
+import { deleteCloudProjectApi, getCloudProjectApi, updateCloudProjectApi } from '@/lib/studio/projects.contract';
 
 const notFound = () => Response.json({ error: 'Project not found', code: 'not-found' }, { status: 404 });
 

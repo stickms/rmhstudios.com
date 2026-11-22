@@ -2,45 +2,25 @@ import type { ReactionSummary } from '@/lib/social/reactions';
 import type { RankedResultView } from '@/lib/feed/ranked-poll';
 
 export type FeedItemType =
-  | 'rmhark'
-  | 'game_announcement'
-  | 'app_announcement'
-  | 'news'
-  | 'blog'
-  | 'research'
-  | 'election_announcement';
+  'rmhark' | 'game_announcement' | 'app_announcement' | 'news' | 'blog' | 'research' | 'election_announcement';
 
 /** The live-results payload of an `election_announcement` card (see lib/elections/feed.ts). */
 export interface FeedElection {
   /** Election Day, YYYY-MM-DD. */
   date: string;
-  phase:
-    | 'upcoming'
-    | 'election-day'
-    | 'counting'
-    | 'archive';
+  phase: 'upcoming' | 'election-day' | 'counting' | 'archive';
   live: boolean;
   called: number;
   total: number;
   /** One row per chamber that has a score to show. `basis` says what the numbers are. */
   chambers: {
-    office:
-      | 'president'
-      | 'senate'
-      | 'house'
-      | 'governor';
+    office: 'president' | 'senate' | 'house' | 'governor';
     name: string;
     dem: number;
     gop: number;
     toWin: number;
-    basis:
-      | 'results'
-      | 'current';
-    controlledBy:
-      | 'DEM'
-      | 'GOP'
-      | 'OTH'
-      | null;
+    basis: 'results' | 'current';
+    controlledBy: 'DEM' | 'GOP' | 'OTH' | null;
   }[];
 }
 
@@ -75,18 +55,10 @@ export interface UserCosmetics {
 
 export interface FeedItemUser {
   id: string;
-  name?:
-    | string
-    | null;
-  username?:
-    | string
-    | null;
-  handle?:
-    | string
-    | null;
-  image?:
-    | string
-    | null;
+  name?: string | null;
+  username?: string | null;
+  handle?: string | null;
+  image?: string | null;
   isVerified?: boolean;
   isAdmin?: boolean;
   isBot?: boolean;
@@ -120,9 +92,7 @@ export interface FeedPoll {
   totalVotes: number;
   options: FeedPollOption[];
   myVotes?: string[]; // option IDs the current user voted for
-  closesAt?:
-    | string
-    | null; // the effective end (the author's early end, else the scheduled close), if any
+  closesAt?: string | null; // the effective end (the author's early end, else the scheduled close), if any
   /** True once the poll has stopped taking votes, whichever way it ended (`lib/feed/poll-lifecycle`). */
   ended?: boolean;
   /** The author extended the poll at least once. */
@@ -162,9 +132,7 @@ export interface FeedItem {
   threadReplyCount?: number;
 
   // Soft deletions
-  deletedAt?:
-    | string
-    | null;
+  deletedAt?: string | null;
   deletedByAdmin?: boolean;
 
   /**
@@ -187,10 +155,7 @@ export interface FeedItem {
   /** Why the post is warned (sprint 06 #16, 1-80 characters): the reason covers the text too; absent = media only. */
   contentWarning?: string;
   /** Who can reply to this post. */
-  replyControl?:
-    | 'EVERYONE'
-    | 'FOLLOWING'
-    | 'MENTIONED';
+  replyControl?: 'EVERYONE' | 'FOLLOWING' | 'MENTIONED';
   /** Take meter (X6): readers vote agree/disagree. The split is NOT in the payload. */
   isTake?: boolean;
   /** X3 — at least one context note is visible; the notes load lazily. */
@@ -231,13 +196,4 @@ export interface FeedItem {
   election?: FeedElection;
 }
 
-export type FeedFilter =
-  | 'all'
-  | 'rmhark'
-  | 'game'
-  | 'app'
-  | 'news'
-  | 'blog'
-  | 'research'
-  | 'other'
-  | 'friends';
+export type FeedFilter = 'all' | 'rmhark' | 'game' | 'app' | 'news' | 'blog' | 'research' | 'other' | 'friends';

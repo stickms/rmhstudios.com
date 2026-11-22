@@ -23,8 +23,7 @@ const legacyRoster = persisted<Character[]>({
   key: LEGACY_KEY,
   version: 1,
   fallback: [],
-  validate: (v) =>
-    Array.isArray(v) ? v.map(normalizeCharacter).filter((c): c is Character => Boolean(c)) : undefined,
+  validate: (v) => (Array.isArray(v) ? v.map(normalizeCharacter).filter((c): c is Character => Boolean(c)) : undefined),
 });
 
 /** Long enough to cover a burst of typing, short enough that closing the tab rarely beats it. */
@@ -132,7 +131,9 @@ export const useRoster = create<RosterState>((set, get) => {
       for (const c of list) schedule(c.id);
     },
     update(id, patch) {
-      set((st) => ({ characters: st.characters.map((c) => (c.id === id ? { ...patch(c), updatedAt: Date.now() } : c)) }));
+      set((st) => ({
+        characters: st.characters.map((c) => (c.id === id ? { ...patch(c), updatedAt: Date.now() } : c)),
+      }));
       schedule(id);
     },
     duplicate(id) {

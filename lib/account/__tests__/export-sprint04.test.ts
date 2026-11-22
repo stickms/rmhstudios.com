@@ -32,8 +32,7 @@ const playLimitsRow = {
 const emptyModel = new Proxy(
   {},
   {
-    get: (_t, method: string) =>
-      vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
+    get: (_t, method: string) => vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
   },
 );
 
@@ -101,6 +100,10 @@ describe('account export: sprint 04 data', () => {
       typingIndicators: true,
       showContentWarnings: true,
     });
-    expect(body.playLimits).toMatchObject({ monthlySpendCap: 2000, pendingSpendCap: 5000, spendNoticeMonth: '2026-11' });
+    expect(body.playLimits).toMatchObject({
+      monthlySpendCap: 2000,
+      pendingSpendCap: 5000,
+      spendNoticeMonth: '2026-11',
+    });
   });
 });

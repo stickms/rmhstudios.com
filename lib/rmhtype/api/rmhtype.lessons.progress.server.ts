@@ -7,66 +7,39 @@
  */
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import {
-  getLessonProgressApi,
-  recordLessonRunApi,
-} from '@/lib/rmhtype/lessons.contract';
+import { getLessonProgressApi, recordLessonRunApi } from '@/lib/rmhtype/lessons.contract';
 import { lessonRunBody } from '@/lib/rmhtype/lessons-schema';
-import {
-  getLessonProgress,
-  recordLessonRun,
-} from '@/lib/rmhtype/lessons.server';
+import { getLessonProgress, recordLessonRun } from '@/lib/rmhtype/lessons.server';
 
-export const route =
-  apiRoute(
-    '/api/rmhtype/lessons/progress',
+export const route = apiRoute('/api/rmhtype/lessons/progress', {
+  GET: implement(
+    getLessonProgressApi,
     {
-      GET: implement(
-        getLessonProgressApi,
-        {
-          rateLimit:
-            'read',
-        },
-        async ({
-          userId,
-        }) => ({
-          progress:
-            await getLessonProgress(
-              userId,
-            ),
-        }),
-      ),
-
-      POST: implement(
-        recordLessonRunApi,
-        {
-          rateLimit:
-            'write',
-          body: lessonRunBody,
-        },
-        async ({
-          userId,
-          body,
-        }) => {
-          const recorded =
-            await recordLessonRun(
-              userId,
-              body,
-            );
-          if (
-            !recorded
-          )
-            return Response.json(
-              {
-                error:
-                  'Unknown lesson',
-              },
-              {
-                status: 400,
-              },
-            );
-          return recorded;
-        },
-      ),
+      rateLimit: 'read',
     },
-  );
+    async ({ userId }) => ({
+      progress: await getLessonProgress(userId),
+    }),
+  ),
+
+  POST: implement(
+    recordLessonRunApi,
+    {
+      rateLimit: 'write',
+      body: lessonRunBody,
+    },
+    async ({ userId, body }) => {
+      const recorded = await recordLessonRun(userId, body);
+      if (!recorded)
+        return Response.json(
+          {
+            error: 'Unknown lesson',
+          },
+          {
+            status: 400,
+          },
+        );
+      return recorded;
+    },
+  ),
+});

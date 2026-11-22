@@ -51,319 +51,116 @@ export interface Segmenter {
    * common "nothing happened" answer is one shared empty array (no allocation
    * per frame at the 25 ms poll).
    */
-  push(
-    frame: PitchFrame | null,
-    time: number,
-  ): readonly NoteEvent[];
+  push(frame: PitchFrame | null, time: number): readonly NoteEvent[];
   /** Release the sounding note, if any (used when the mic is switched off). */
-  flush(
-    time: number,
-  ): readonly NoteEvent[];
+  flush(time: number): readonly NoteEvent[];
 }
 
-const NONE: readonly NoteEvent[] =
-  Object.freeze(
-    [],
-  );
+const NONE: readonly NoteEvent[] = Object.freeze([]);
 
-export function createSegmenter(
-  opts: SegmenterOptions = {},
-): Segmenter {
-  let active:
-    | number
-    | null =
-    null;
-  let candidate:
-    | number
-    | null =
-    null;
+export function createSegmenter(opts: SegmenterOptions = {}): Segmenter {
+  let active: number | null = null;
+  let candidate: number | null = null;
   let candidateCount = 0;
   let silentCount = 0;
   // Re-attack: the sounding note's start, its peak level, and its recent levels (a fixed ring).
   let startedAt = 0;
   let peak = 0;
-  const ringTime =
-    new Float64Array(
-      RING,
-    );
-  const ringLevel =
-    new Float64Array(
-      RING,
-    );
+  const ringTime = new Float64Array(RING);
+  const ringLevel = new Float64Array(RING);
   let ringNext = 0;
   let ringSize = 0;
 
-  const off =
-    (
-      midi: number,
-      time: number,
-    ): NoteEvent => ({
-      type: 'off',
-      midi,
-      velocity:
-        MIC_VELOCITY,
-      time,
-      source:
-        'mic',
-    });
-  const on =
-    (
-      midi: number,
-      time: number,
-      cents: number,
-    ): NoteEvent => ({
-      type: 'on',
-      midi,
-      velocity:
-        MIC_VELOCITY,
-      time,
-      source:
-        'mic',
-      cents,
-    });
-  const begin =
-    (
-      time: number,
-      rms:
-        | number
-        | undefined,
-    ) => {
-      startedAt =
-        time;
-      peak =
-        rms ??
-        0;
-      ringSize = 0;
-      ringNext = 0;
-      if (
-        rms !==
-        undefined
-      )
-        remember(
-          time,
-          rms,
-        );
-    };
-  const remember =
-    (
-      time: number,
-      rms: number,
-    ) => {
-      ringTime[
-        ringNext
-      ] =
-        time;
-      ringLevel[
-        ringNext
-      ] =
-        rms;
-      ringNext =
-        (ringNext +
-          1) %
-        RING;
-      ringSize =
-        Math.min(
-          RING,
-          ringSize +
-            1,
-        );
-    };
+  const off = (midi: number, time: number): NoteEvent => ({
+    type: 'off',
+    midi,
+    velocity: MIC_VELOCITY,
+    time,
+    source: 'mic',
+  });
+  const on = (midi: number, time: number, cents: number): NoteEvent => ({
+    type: 'on',
+    midi,
+    velocity: MIC_VELOCITY,
+    time,
+    source: 'mic',
+    cents,
+  });
+  const begin = (time: number, rms: number | undefined) => {
+    startedAt = time;
+    peak = rms ?? 0;
+    ringSize = 0;
+    ringNext = 0;
+    if (rms !== undefined) remember(time, rms);
+  };
+  const remember = (time: number, rms: number) => {
+    ringTime[ringNext] = time;
+    ringLevel[ringNext] = rms;
+    ringNext = (ringNext + 1) % RING;
+    ringSize = Math.min(RING, ringSize + 1);
+  };
   /** The lowest level heard within the window before `time`, or Infinity. */
-  const recentLow =
-    (
-      time: number,
-    ) => {
-      let low =
-        Infinity;
-      for (
-        let i = 0;
-        i <
-        ringSize;
-        i++
-      ) {
-        if (
-          time -
-            (ringTime[
-              i
-            ] ??
-              0) <=
-          REATTACK_WINDOW_MS
-        )
-          low =
-            Math.min(
-              low,
-              ringLevel[
-                i
-              ] ??
-                Infinity,
-            );
-      }
-      return low;
-    };
+  const recentLow = (time: number) => {
+    let low = Infinity;
+    for (let i = 0; i < ringSize; i++) {
+      if (time - (ringTime[i] ?? 0) <= REATTACK_WINDOW_MS) low = Math.min(low, ringLevel[i] ?? Infinity);
+    }
+    return low;
+  };
 
   return {
-    push(
-      frame,
-      time,
-    ) {
-      if (
-        frame ===
-        null
-      ) {
-        candidate =
-          null;
+    push(frame, time) {
+      if (frame === null) {
+        candidate = null;
         candidateCount = 0;
-        if (
-          active ===
-          null
-        )
-          return NONE;
+        if (active === null) return NONE;
         silentCount++;
-        if (
-          silentCount <
-          OFF_FRAMES
-        )
-          return NONE;
-        const ended =
-          active;
-        active =
-          null;
+        if (silentCount < OFF_FRAMES) return NONE;
+        const ended = active;
+        active = null;
         silentCount = 0;
-        return [
-          off(
-            ended,
-            time,
-          ),
-        ];
+        return [off(ended, time)];
       }
       silentCount = 0;
-      if (
-        frame.midi ===
-        active
-      ) {
-        candidate =
-          null;
+      if (frame.midi === active) {
+        candidate = null;
         candidateCount = 0;
-        const rms =
-          frame.rms;
-        if (
-          opts.reattack?.() &&
-          rms !==
-            undefined &&
-          Number.isFinite(
-            rms,
-          )
-        ) {
-          const low =
-            recentLow(
-              time,
-            );
+        const rms = frame.rms;
+        if (opts.reattack?.() && rms !== undefined && Number.isFinite(rms)) {
+          const low = recentLow(time);
           const struck =
-            time -
-              startedAt >=
-              REATTACK_MIN_MS &&
-            rms >=
-              REATTACK_RISE *
-                low &&
-            low <=
-              peak /
-                REATTACK_RISE;
-          if (
-            struck
-          ) {
-            begin(
-              time,
-              rms,
-            );
-            return [
-              off(
-                frame.midi,
-                time,
-              ),
-              on(
-                frame.midi,
-                time,
-                frame.cents,
-              ),
-            ];
+            time - startedAt >= REATTACK_MIN_MS && rms >= REATTACK_RISE * low && low <= peak / REATTACK_RISE;
+          if (struck) {
+            begin(time, rms);
+            return [off(frame.midi, time), on(frame.midi, time, frame.cents)];
           }
-          peak =
-            Math.max(
-              peak,
-              rms,
-            );
-          remember(
-            time,
-            rms,
-          );
+          peak = Math.max(peak, rms);
+          remember(time, rms);
         }
         return NONE;
       }
-      if (
-        frame.midi ===
-        candidate
-      )
-        candidateCount++;
+      if (frame.midi === candidate) candidateCount++;
       else {
-        candidate =
-          frame.midi;
+        candidate = frame.midi;
         candidateCount = 1;
       }
-      if (
-        candidateCount <
-        ON_FRAMES
-      )
-        return NONE;
-      const events: NoteEvent[] =
-        [];
-      if (
-        active !==
-        null
-      )
-        events.push(
-          off(
-            active,
-            time,
-          ),
-        );
-      events.push(
-        on(
-          frame.midi,
-          time,
-          frame.cents,
-        ),
-      );
-      active =
-        frame.midi;
-      candidate =
-        null;
+      if (candidateCount < ON_FRAMES) return NONE;
+      const events: NoteEvent[] = [];
+      if (active !== null) events.push(off(active, time));
+      events.push(on(frame.midi, time, frame.cents));
+      active = frame.midi;
+      candidate = null;
       candidateCount = 0;
-      begin(
-        time,
-        frame.rms,
-      );
+      begin(time, frame.rms);
       return events;
     },
-    flush(
-      time,
-    ) {
-      const ended =
-        active;
-      active =
-        null;
-      candidate =
-        null;
+    flush(time) {
+      const ended = active;
+      active = null;
+      candidate = null;
       candidateCount = 0;
       silentCount = 0;
-      return ended ===
-        null
-        ? NONE
-        : [
-            off(
-              ended,
-              time,
-            ),
-          ];
+      return ended === null ? NONE : [off(ended, time)];
     },
   };
 }

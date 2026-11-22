@@ -34,13 +34,32 @@ export const S_MAX = 36_500;
 
 /** FSRS-6 default weights (w0–w3 initial stability, w4–w7 difficulty, … w20 the curve's decay). */
 export const WEIGHTS: readonly number[] = [
-  0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722, 0.1666, 0.796, 1.4835,
-  0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425, 0.0912, 0.0658, 0.1542,
+  0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722, 0.1666, 0.796, 1.4835, 0.0614, 0.2629, 1.6483,
+  0.6014, 1.8729, 0.5425, 0.0912, 0.0658, 0.1542,
 ];
 
 const W = WEIGHTS as readonly [
-  number, number, number, number, number, number, number, number, number, number, number,
-  number, number, number, number, number, number, number, number, number, number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
 ];
 
 const DECAY = -W[20];
@@ -105,13 +124,7 @@ export function nextRecallStability(d: number, s: number, r: number, g: Rating):
   const easyBonus = g === EASY ? W[16] : 1;
   const out =
     s *
-    (1 +
-      Math.exp(W[8]) *
-        (11 - d) *
-        Math.pow(s, -W[9]) *
-        (Math.exp((1 - r) * W[10]) - 1) *
-        hardPenalty *
-        easyBonus);
+    (1 + Math.exp(W[8]) * (11 - d) * Math.pow(s, -W[9]) * (Math.exp((1 - r) * W[10]) - 1) * hardPenalty * easyBonus);
   return clamp(out, S_MIN, S_MAX, s);
 }
 

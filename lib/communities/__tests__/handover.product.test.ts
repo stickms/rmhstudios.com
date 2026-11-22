@@ -71,7 +71,9 @@ describe('who may act', () => {
 
 describe('orphaned owners', () => {
   it('names a deleted tombstone, a banned owner, and nobody for an active or lapsed-ban account', () => {
-    expect(orphanReason({ bannedUntil: new Date('9999-12-31'), banReason: DELETED_ACCOUNT_BAN_REASON }, NOW)).toBe('deleted');
+    expect(orphanReason({ bannedUntil: new Date('9999-12-31'), banReason: DELETED_ACCOUNT_BAN_REASON }, NOW)).toBe(
+      'deleted',
+    );
     expect(orphanReason({ id: 'deleted-user', bannedUntil: null, banReason: null }, NOW)).toBe('deleted');
     expect(orphanReason({ bannedUntil: new Date(NOW.getTime() + DAY), banReason: 'spam' }, NOW)).toBe('banned');
     expect(orphanReason({ bannedUntil: new Date(NOW.getTime() - DAY), banReason: 'spam' }, NOW)).toBeNull();
@@ -90,8 +92,18 @@ describe('orphaned owners', () => {
 
 describe('refusals', () => {
   const codes: HandoverRefusal[] = [
-    'not-owner', 'self', 'not-moderator', 'recipient-banned', 'blocked', 'pending-exists',
-    'no-offer', 'not-recipient', 'expired', 'owner-changed', 'owner-active', 'already-owner',
+    'not-owner',
+    'self',
+    'not-moderator',
+    'recipient-banned',
+    'blocked',
+    'pending-exists',
+    'no-offer',
+    'not-recipient',
+    'expired',
+    'owner-changed',
+    'owner-active',
+    'already-owner',
   ];
   it('every code has a message and a 4xx status', () => {
     for (const c of codes) {

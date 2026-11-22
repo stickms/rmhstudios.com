@@ -9,31 +9,20 @@
 import type { LibraryFormat } from './keys';
 
 /** Maximum accepted PDF size for a regular (non-admin) upload (10 MB). */
-export const LIBRARY_PDF_MAX_BYTES_USER =
-  10 *
-  1024 *
-  1024;
+export const LIBRARY_PDF_MAX_BYTES_USER = 10 * 1024 * 1024;
 
 /** Maximum accepted PDF size for an admin upload (64 MB). */
-export const LIBRARY_PDF_MAX_BYTES_ADMIN =
-  64 *
-  1024 *
-  1024;
+export const LIBRARY_PDF_MAX_BYTES_ADMIN = 64 * 1024 * 1024;
 
 /**
  * Backwards-compatible default (admin ceiling). Prefer {@link libraryPdfMaxBytes}
  * so the limit reflects the uploader's role.
  */
-export const LIBRARY_PDF_MAX_BYTES =
-  LIBRARY_PDF_MAX_BYTES_ADMIN;
+export const LIBRARY_PDF_MAX_BYTES = LIBRARY_PDF_MAX_BYTES_ADMIN;
 
 /** The PDF size ceiling for an uploader, based on whether they're an admin. */
-export function libraryPdfMaxBytes(
-  isAdmin: boolean,
-): number {
-  return isAdmin
-    ? LIBRARY_PDF_MAX_BYTES_ADMIN
-    : LIBRARY_PDF_MAX_BYTES_USER;
+export function libraryPdfMaxBytes(isAdmin: boolean): number {
+  return isAdmin ? LIBRARY_PDF_MAX_BYTES_ADMIN : LIBRARY_PDF_MAX_BYTES_USER;
 }
 
 /** Maximum number of books a single user may have uploaded. */
@@ -52,36 +41,17 @@ export type ValidationResult =
     };
 
 /** True only if the buffer carries a `%PDF` signature near its start. */
-export function validatePdfBuffer(
-  buffer: Buffer,
-): ValidationResult {
-  if (
-    buffer.length ===
-    0
-  )
+export function validatePdfBuffer(buffer: Buffer): ValidationResult {
+  if (buffer.length === 0)
     return {
       ok: false,
-      error:
-        'The file is empty.',
+      error: 'The file is empty.',
     };
-  const head =
-    buffer
-      .subarray(
-        0,
-        1024,
-      )
-      .toString(
-        'latin1',
-      );
-  if (
-    !head.includes(
-      '%PDF',
-    )
-  ) {
+  const head = buffer.subarray(0, 1024).toString('latin1');
+  if (!head.includes('%PDF')) {
     return {
       ok: false,
-      error:
-        "That doesn't look like a PDF.",
+      error: "That doesn't look like a PDF.",
     };
   }
   return {
@@ -94,86 +64,32 @@ export function validatePdfBuffer(
  * EPUBs are ZIP archives (`PK\x03\x04`) whose first entry is an uncompressed
  * `mimetype` file reading `application/epub+zip`; we check both for confidence.
  */
-export function detectLibraryFormat(
-  buffer: Buffer,
-): LibraryFormat | null {
-  if (
-    buffer.length <
-    4
-  )
-    return null;
-  const head =
-    buffer
-      .subarray(
-        0,
-        1024,
-      )
-      .toString(
-        'latin1',
-      );
-  if (
-    head.includes(
-      '%PDF',
-    )
-  )
-    return 'pdf';
-  const isZip =
-    buffer[0] ===
-      0x50 &&
-    buffer[1] ===
-      0x4b &&
-    buffer[2] ===
-      0x03 &&
-    buffer[3] ===
-      0x04;
-  if (
-    isZip &&
-    head.includes(
-      'application/epub+zip',
-    )
-  )
-    return 'epub';
+export function detectLibraryFormat(buffer: Buffer): LibraryFormat | null {
+  if (buffer.length < 4) return null;
+  const head = buffer.subarray(0, 1024).toString('latin1');
+  if (head.includes('%PDF')) return 'pdf';
+  const isZip = buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04;
+  if (isZip && head.includes('application/epub+zip')) return 'epub';
   // Some EPUBs put the mimetype past our window or compress it; accept a ZIP that
   // also contains the OEBPS/container hint as a softer signal.
-  if (
-    isZip &&
-    (head.includes(
-      'META-INF',
-    ) ||
-      head.includes(
-        'mimetype',
-      ))
-  )
-    return 'epub';
+  if (isZip && (head.includes('META-INF') || head.includes('mimetype'))) return 'epub';
   return null;
 }
 
 /** Validate an uploaded book buffer for a known format and non-emptiness. */
-export function validateBookBuffer(
-  buffer: Buffer,
-): ValidationResult & {
+export function validateBookBuffer(buffer: Buffer): ValidationResult & {
   format?: LibraryFormat;
 } {
-  if (
-    buffer.length ===
-    0
-  )
+  if (buffer.length === 0)
     return {
       ok: false,
-      error:
-        'The file is empty.',
+      error: 'The file is empty.',
     };
-  const format =
-    detectLibraryFormat(
-      buffer,
-    );
-  if (
-    !format
-  )
+  const format = detectLibraryFormat(buffer);
+  if (!format)
     return {
       ok: false,
-      error:
-        "That doesn't look like a PDF or EPUB.",
+      error: "That doesn't look like a PDF or EPUB.",
     };
   return {
     ok: true,
@@ -187,59 +103,28 @@ export function validateBookBuffer(
  * unknown/zero/garbage value becomes 0 ("unknown"); otherwise it is floored.
  * There is no upper bound — some books are genuinely huge.
  */
-export function sanitizePages(
-  pages: unknown,
-): number {
-  const n =
-    Number(
-      pages,
-    );
-  if (
-    !Number.isFinite(
-      n,
-    ) ||
-    n <=
-      0
-  )
-    return 0;
-  return Math.floor(
-    n,
-  );
+export function sanitizePages(pages: unknown): number {
+  const n = Number(pages);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.floor(n);
 }
 
 /** Validate the title and optional description for a book. (Page count is not
  * validated — it is cosmetic and best-effort; see sanitizePages.) */
-export function validateBookFields(input: {
-  title: string;
-  pages: number;
-  description?: string;
-}): ValidationResult {
-  const title =
-    input.title.trim();
-  if (
-    !title
-  )
+export function validateBookFields(input: { title: string; pages: number; description?: string }): ValidationResult {
+  const title = input.title.trim();
+  if (!title)
     return {
       ok: false,
-      error:
-        'A title is required.',
+      error: 'A title is required.',
     };
-  if (
-    title.length >
-    TITLE_MAX
-  ) {
+  if (title.length > TITLE_MAX) {
     return {
       ok: false,
       error: `Title must be ${TITLE_MAX} characters or fewer.`,
     };
   }
-  if (
-    (input
-      .description
-      ?.length ??
-      0) >
-    DESCRIPTION_MAX
-  ) {
+  if ((input.description?.length ?? 0) > DESCRIPTION_MAX) {
     return {
       ok: false,
       error: `Description must be ${DESCRIPTION_MAX} characters or fewer.`,

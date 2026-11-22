@@ -32,9 +32,9 @@ describe('decideFollowListAccess', () => {
   });
 
   it('mutuals: signed out never qualifies', () => {
-    expect(
-      decide({ visibility: 'mutuals', viewerId: null, viewerFollowsOwner: true, ownerFollowsViewer: true }),
-    ).toBe(false);
+    expect(decide({ visibility: 'mutuals', viewerId: null, viewerFollowsOwner: true, ownerFollowsViewer: true })).toBe(
+      false,
+    );
   });
 
   it('me: nobody but the owner and admins', () => {

@@ -22,7 +22,12 @@ describe('settings hub labels', () => {
 
   it('lists Blocked and muted under account, signed-in only', () => {
     const d = SETTINGS_DESTINATIONS.find((x) => x.id === 'blocked');
-    expect(d).toMatchObject({ to: '/settings/blocked', group: 'account', requiresAuth: true, label: 'Blocked and muted' });
+    expect(d).toMatchObject({
+      to: '/settings/blocked',
+      group: 'account',
+      requiresAuth: true,
+      label: 'Blocked and muted',
+    });
     expect(settingsNavText(echoDefault)['blocked']).toEqual({ label: d!.label, hint: d!.hint });
   });
 
@@ -38,7 +43,12 @@ describe('settings hub labels', () => {
   // s07-02 game-assists
   it('lists Game assists under account, signed-in only', () => {
     const d = SETTINGS_DESTINATIONS.find((x) => x.id === 'game-assists');
-    expect(d).toMatchObject({ to: '/settings/game-assists', group: 'account', requiresAuth: true, label: 'Game assists' });
+    expect(d).toMatchObject({
+      to: '/settings/game-assists',
+      group: 'account',
+      requiresAuth: true,
+      label: 'Game assists',
+    });
     expect(settingsNavText(echoDefault)['game-assists']).toEqual({ label: d!.label, hint: d!.hint });
   });
 

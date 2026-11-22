@@ -5,40 +5,32 @@
  */
 
 /** The author may edit within this long of posting (the database clock decides, see `editComment`). */
-export const COMMENT_EDIT_WINDOW_MS =
-  30 *
-  60_000;
+export const COMMENT_EDIT_WINDOW_MS = 30 * 60_000;
 
 /** The entity type used by the report flow. */
-export const BUILD_COMMENT_REPORT_TYPE =
-  'build-comment';
+export const BUILD_COMMENT_REPORT_TYPE = 'build-comment';
 
 /**
  * Every server path that reads build comments (their text, their count or who wrote them). Each applies
  * `visibleComment()` or maintains the count through the delete path; `build-comment-read-paths.test.ts` scans them.
  */
-export const BUILD_COMMENT_READ_PATHS =
-  [
-    // The list endpoint (the only loader: the build page fetches comments through it).
-    'lib/api/routes/user-builds.$id.comments.server.ts',
-    // The service the list and the mutations share.
-    'lib/builds/comments.server.ts',
-    // The insights "comments per day" series counts live comments only.
-    'lib/builds/insights.server.ts',
-  ] as const;
+export const BUILD_COMMENT_READ_PATHS = [
+  // The list endpoint (the only loader: the build page fetches comments through it).
+  'lib/api/routes/user-builds.$id.comments.server.ts',
+  // The service the list and the mutations share.
+  'lib/builds/comments.server.ts',
+  // The insights "comments per day" series counts live comments only.
+  'lib/builds/insights.server.ts',
+] as const;
 
 /** Moderation reads a reported comment's text whatever its state (an admin judges what was written); source-scanned too. */
-export const BUILD_COMMENT_MODERATION_PATHS =
-  [
-    'lib/moderation/triage.server.ts',
-  ] as const;
+export const BUILD_COMMENT_MODERATION_PATHS = ['lib/moderation/triage.server.ts'] as const;
 
 /** `/api/v1/builds*` exposes only the `commentCount` column, which delete maintains; it lists no comment text. */
-export const BUILD_COMMENT_COUNT_ONLY_PATHS =
-  [
-    'app/routes/api/v1/builds.ts',
-    'app/routes/api/v1/builds/$slug.ts',
-  ] as const;
+export const BUILD_COMMENT_COUNT_ONLY_PATHS = [
+  'app/routes/api/v1/builds.ts',
+  'app/routes/api/v1/builds/$slug.ts',
+] as const;
 
 export type CommentState =
   /** Shown as written. */
@@ -59,9 +51,7 @@ export interface CommentFacts {
 
 export interface CommentViewer {
   /** `null` when signed out. */
-  userId:
-    | string
-    | null;
+  userId: string | null;
   isAdmin: boolean;
   /** The build's creator. */
   buildOwnerId: string;
@@ -74,52 +64,25 @@ export interface CommentRights {
   canReport: boolean;
 }
 
-export function withinEditWindow(
-  createdAt: Date,
-  now: Date,
-): boolean {
-  return (
-    now.getTime() -
-      createdAt.getTime() <=
-    COMMENT_EDIT_WINDOW_MS
-  );
+export function withinEditWindow(createdAt: Date, now: Date): boolean {
+  return now.getTime() - createdAt.getTime() <= COMMENT_EDIT_WINDOW_MS;
 }
 
 /** What the viewer may do to this comment. A deleted comment has no actions. */
-export function commentRights(
-  c: CommentFacts,
-  v: CommentViewer,
-  now: Date,
-): CommentRights {
-  if (
-    c.deletedAt ||
-    !v.userId
-  )
+export function commentRights(c: CommentFacts, v: CommentViewer, now: Date): CommentRights {
+  if (c.deletedAt || !v.userId)
     return {
       canEdit: false,
       canDelete: false,
       canHide: false,
       canReport: false,
     };
-  const author =
-    c.userId ===
-    v.userId;
+  const author = c.userId === v.userId;
   return {
-    canEdit:
-      author &&
-      withinEditWindow(
-        c.createdAt,
-        now,
-      ),
-    canDelete:
-      author ||
-      v.isAdmin,
-    canHide:
-      v.userId ===
-        v.buildOwnerId &&
-      !author,
-    canReport:
-      !author,
+    canEdit: author && withinEditWindow(c.createdAt, now),
+    canDelete: author || v.isAdmin,
+    canHide: v.userId === v.buildOwnerId && !author,
+    canReport: !author,
   };
 }
 
@@ -130,61 +93,40 @@ export function commentRights(
  */
 export function visibleComment(
   c: CommentFacts,
-  viewerId:
-    | string
-    | null,
+  viewerId: string | null,
   hasLiveReplies: boolean,
 ): {
   state: CommentState;
   showContent: boolean;
 } | null {
-  if (
-    c.deletedAt
-  )
+  if (c.deletedAt)
     return hasLiveReplies
       ? {
-          state:
-            'deleted',
+          state: 'deleted',
           showContent: false,
         }
       : null;
-  if (
-    c.hiddenAt
-  ) {
-    return viewerId !==
-      null &&
-      viewerId ===
-        c.userId
+  if (c.hiddenAt) {
+    return viewerId !== null && viewerId === c.userId
       ? {
-          state:
-            'hidden-own',
+          state: 'hidden-own',
           showContent: true,
         }
       : {
-          state:
-            'hidden',
+          state: 'hidden',
           showContent: true,
         };
   }
   return {
-    state:
-      'visible',
+    state: 'visible',
     showContent: true,
   };
 }
 
 /** The refusals a member gets for commenting. None gives a reason beyond "closed" (a lock) or a bare "cannot". */
-export type CommentRefusal =
-  | 'locked'
-  | 'restricted';
+export type CommentRefusal = 'locked' | 'restricted';
 
-export const COMMENT_REFUSAL_MESSAGE: Record<
-  CommentRefusal,
-  string
-> =
-  {
-    locked:
-      'Comments are closed',
-    restricted:
-      'You cannot comment here',
-  };
+export const COMMENT_REFUSAL_MESSAGE: Record<CommentRefusal, string> = {
+  locked: 'Comments are closed',
+  restricted: 'You cannot comment here',
+};

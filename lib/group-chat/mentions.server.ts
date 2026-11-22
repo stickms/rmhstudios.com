@@ -34,123 +34,55 @@ export interface RecordedMentions {
 }
 
 /** Store the message's mentions of current members. Returns nothing to do when the text names no member. */
-export async function recordMentions(
-  input: RecordMentionsInput,
-): Promise<RecordedMentions> {
-  if (
-    !input.content.includes(
-      '@',
-    )
-  )
+export async function recordMentions(input: RecordMentionsInput): Promise<RecordedMentions> {
+  if (!input.content.includes('@'))
     return {
-      mentioned:
-        [],
-      notify:
-        [],
+      mentioned: [],
+      notify: [],
     };
-  const members =
-    await prisma.chatMember.findMany(
-      {
-        where:
-          {
-            chatId:
-              input.chatId,
-          },
-        select:
-          {
-            userId: true,
-            user: {
-              select:
-                {
-                  handle: true,
-                  bannedUntil: true,
-                },
-            },
-          },
+  const members = await prisma.chatMember.findMany({
+    where: {
+      chatId: input.chatId,
+    },
+    select: {
+      userId: true,
+      user: {
+        select: {
+          handle: true,
+          bannedUntil: true,
+        },
       },
-    );
-  const rows =
-    Array.isArray(
-      members,
-    )
-      ? members
-      : [];
-  const {
-    mentioned,
-    notify,
-  } =
-    mentionTargets(
-      input.content,
-      rows.map(
-        (
-          m,
-        ) => ({
-          id: m.userId,
-          handle:
-            m
-              .user
-              .handle,
-        }),
-      ),
-      input.senderId,
-    );
-  if (
-    mentioned.length ===
-    0
-  )
+    },
+  });
+  const rows = Array.isArray(members) ? members : [];
+  const { mentioned, notify } = mentionTargets(
+    input.content,
+    rows.map((m) => ({
+      id: m.userId,
+      handle: m.user.handle,
+    })),
+    input.senderId,
+  );
+  if (mentioned.length === 0)
     return {
       mentioned,
       notify,
     };
-  await prisma.chatMention.createMany(
-    {
-      data: mentioned.map(
-        (
-          userId,
-        ) => ({
-          messageId:
-            input.messageId,
-          chatId:
-            input.chatId,
-          userId,
-        }),
-      ),
-      skipDuplicates: true,
-    },
+  await prisma.chatMention.createMany({
+    data: mentioned.map((userId) => ({
+      messageId: input.messageId,
+      chatId: input.chatId,
+      userId,
+    })),
+    skipDuplicates: true,
+  });
+  const now = Date.now();
+  const banned = new Set(
+    rows.filter((m) => m.user.bannedUntil && m.user.bannedUntil.getTime() > now).map((m) => m.userId),
   );
-  const now =
-    Date.now();
-  const banned =
-    new Set(
-      rows
-        .filter(
-          (
-            m,
-          ) =>
-            m
-              .user
-              .bannedUntil &&
-            m.user.bannedUntil.getTime() >
-              now,
-        )
-        .map(
-          (
-            m,
-          ) =>
-            m.userId,
-        ),
-    );
   return {
     mentioned,
-    notify:
-      notify.filter(
-        (
-          id,
-        ) =>
-          !banned.has(
-            id,
-          ),
-      ),
+    notify: notify.filter((id) => !banned.has(id)),
   };
 }
 
@@ -168,109 +100,53 @@ export interface NotifyMentionsInput {
  * and Mentions only deliver and None stays silent (mute outranks mentions), and preferences and quiet hours apply. A block
  * in either direction with the sender skips the member. Returns how many were handed to `createNotification`.
  */
-export async function notifyMentions(
-  input: NotifyMentionsInput,
-): Promise<number> {
-  if (
-    input
-      .notify
-      .length ===
-    0
-  )
-    return 0;
-  const blocks =
-    await prisma.userBlock.findMany(
-      {
-        where:
-          {
-            OR: [
-              {
-                blockerId:
-                  input.senderId,
-                blockedId:
-                  {
-                    in: [
-                      ...input.notify,
-                    ],
-                  },
-              },
-              {
-                blockedId:
-                  input.senderId,
-                blockerId:
-                  {
-                    in: [
-                      ...input.notify,
-                    ],
-                  },
-              },
-            ],
+export async function notifyMentions(input: NotifyMentionsInput): Promise<number> {
+  if (input.notify.length === 0) return 0;
+  const blocks = await prisma.userBlock.findMany({
+    where: {
+      OR: [
+        {
+          blockerId: input.senderId,
+          blockedId: {
+            in: [...input.notify],
           },
-        select:
-          {
-            blockerId: true,
-            blockedId: true,
+        },
+        {
+          blockedId: input.senderId,
+          blockerId: {
+            in: [...input.notify],
           },
-      },
-    );
-  const blocked =
-    new Set<string>();
-  for (const b of Array.isArray(
-    blocks,
-  )
-    ? blocks
-    : []) {
-    blocked.add(
-      b.blockerId ===
-        input.senderId
-        ? b.blockedId
-        : b.blockerId,
-    );
-  }
-  const recipients =
-    input.notify.filter(
-      (
-        id,
-      ) =>
-        !blocked.has(
-          id,
-        ) &&
-        id !==
-          input.senderId,
-    );
-  const preview = `${input.groupName}: ${input.content.trim().slice(0, 120)}`;
-  await mapWithConcurrency(
-    recipients,
-    NOTIFY_CONCURRENCY,
-    async (
-      userId,
-    ) => {
-      try {
-        await createNotification(
-          {
-            userId,
-            actorId:
-              input.senderId,
-            type: 'SYSTEM',
-            entityType:
-              'group-mention',
-            entityId:
-              input.messageId,
-            preview,
-            link: `/groups/${input.chatId}#group-message-${input.messageId}`,
-            conversationKey:
-              scopeKeyFor(
-                'group',
-                input.chatId,
-              ),
-            addressed: true,
-          },
-        );
-      } catch {
-        /* one recipient failing never stops the rest, or the send */
-      }
+        },
+      ],
     },
-  );
+    select: {
+      blockerId: true,
+      blockedId: true,
+    },
+  });
+  const blocked = new Set<string>();
+  for (const b of Array.isArray(blocks) ? blocks : []) {
+    blocked.add(b.blockerId === input.senderId ? b.blockedId : b.blockerId);
+  }
+  const recipients = input.notify.filter((id) => !blocked.has(id) && id !== input.senderId);
+  const preview = `${input.groupName}: ${input.content.trim().slice(0, 120)}`;
+  await mapWithConcurrency(recipients, NOTIFY_CONCURRENCY, async (userId) => {
+    try {
+      await createNotification({
+        userId,
+        actorId: input.senderId,
+        type: 'SYSTEM',
+        entityType: 'group-mention',
+        entityId: input.messageId,
+        preview,
+        link: `/groups/${input.chatId}#group-message-${input.messageId}`,
+        conversationKey: scopeKeyFor('group', input.chatId),
+        addressed: true,
+      });
+    } catch {
+      /* one recipient failing never stops the rest, or the send */
+    }
+  });
   return recipients.length;
 }
 
@@ -278,217 +154,109 @@ export async function notifyMentions(
 export async function listMyMentions(
   userId: string,
   chatId: string,
-  cursor:
-    | string
-    | null,
+  cursor: string | null,
 ): Promise<{
   mentions: MyMentionRow[];
-  next:
-    | string
-    | null;
+  next: string | null;
 }> {
-  const blocks =
-    await prisma.userBlock.findMany(
-      {
-        where:
-          {
-            OR: [
-              {
-                blockerId:
-                  userId,
-              },
-              {
-                blockedId:
-                  userId,
-              },
-            ],
-          },
-        select:
-          {
-            blockerId: true,
-            blockedId: true,
-          },
-      },
-    );
-  const blockedIds =
-    (
-      Array.isArray(
-        blocks,
-      )
-        ? blocks
-        : []
-    ).map(
-      (
-        b,
-      ) =>
-        b.blockerId ===
-        userId
-          ? b.blockedId
-          : b.blockerId,
-    );
-  const before =
-    cursor
-      ? new Date(
-          cursor,
-        )
-      : null;
-  const rows =
-    await prisma.chatMention.findMany(
-      {
-        where:
-          {
-            userId,
-            chatId,
-            ...(before &&
-            !Number.isNaN(
-              before.getTime(),
-            )
-              ? {
-                  createdAt:
-                    {
-                      lt: before,
-                    },
-                }
-              : {}),
-            message:
-              {
-                deletedAt:
-                  null,
-                threadParentId:
-                  null,
-                AND: [
-                  liveMessages(),
-                ],
-                ...(blockedIds.length
-                  ? {
-                      senderId:
-                        {
-                          notIn:
-                            blockedIds,
-                        },
-                    }
-                  : {}),
-              },
-          },
-        orderBy:
-          {
-            createdAt:
-              'desc',
-          },
-        take:
-          MENTIONS_PAGE +
-          1,
-        select:
-          {
-            messageId: true,
-            createdAt: true,
-            message:
-              {
-                select:
-                  {
-                    content: true,
-                    sender:
-                      {
-                        select:
-                          userChipSelect,
-                      },
-                  },
-              },
-          },
-      },
-    );
-  const page =
-    rows.slice(
-      0,
-      MENTIONS_PAGE,
-    );
-  const last =
-    page[
-      page.length -
-        1
-    ];
-  return {
-    mentions:
-      page.map(
-        (
-          r,
-        ) => ({
-          messageId:
-            r.messageId,
-          createdAt:
-            r.createdAt.toISOString(),
-          snippet:
-            r.message.content.slice(
-              0,
-              SNIPPET,
-            ),
-          sender:
-            {
-              id: r
-                .message
-                .sender
-                .id,
-              name: r
-                .message
-                .sender
-                .name,
-              handle:
-                r
-                  .message
-                  .sender
-                  .handle,
+  const blocks = await prisma.userBlock.findMany({
+    where: {
+      OR: [
+        {
+          blockerId: userId,
+        },
+        {
+          blockedId: userId,
+        },
+      ],
+    },
+    select: {
+      blockerId: true,
+      blockedId: true,
+    },
+  });
+  const blockedIds = (Array.isArray(blocks) ? blocks : []).map((b) =>
+    b.blockerId === userId ? b.blockedId : b.blockerId,
+  );
+  const before = cursor ? new Date(cursor) : null;
+  const rows = await prisma.chatMention.findMany({
+    where: {
+      userId,
+      chatId,
+      ...(before && !Number.isNaN(before.getTime())
+        ? {
+            createdAt: {
+              lt: before,
             },
-        }),
-      ),
-    next:
-      rows.length >
-        MENTIONS_PAGE &&
-      last
-        ? last.createdAt.toISOString()
-        : null,
+          }
+        : {}),
+      message: {
+        deletedAt: null,
+        threadParentId: null,
+        AND: [liveMessages()],
+        ...(blockedIds.length
+          ? {
+              senderId: {
+                notIn: blockedIds,
+              },
+            }
+          : {}),
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: MENTIONS_PAGE + 1,
+    select: {
+      messageId: true,
+      createdAt: true,
+      message: {
+        select: {
+          content: true,
+          sender: {
+            select: userChipSelect,
+          },
+        },
+      },
+    },
+  });
+  const page = rows.slice(0, MENTIONS_PAGE);
+  const last = page[page.length - 1];
+  return {
+    mentions: page.map((r) => ({
+      messageId: r.messageId,
+      createdAt: r.createdAt.toISOString(),
+      snippet: r.message.content.slice(0, SNIPPET),
+      sender: {
+        id: r.message.sender.id,
+        name: r.message.sender.name,
+        handle: r.message.sender.handle,
+      },
+    })),
+    next: rows.length > MENTIONS_PAGE && last ? last.createdAt.toISOString() : null,
   };
 }
 
 /** Account erasure: mentions that name the member go; rows where the member wrote the message stay with the message. */
-export function groupMentionErasureOps(
-  userId: string,
-) {
+export function groupMentionErasureOps(userId: string) {
   return [
-    prisma.chatMention.deleteMany(
-      {
-        where:
-          {
-            userId,
-          },
+    prisma.chatMention.deleteMany({
+      where: {
+        userId,
       },
-    ),
+    }),
   ];
 }
 
 /** The send path's one call: record, then notify. Any failure is swallowed (logged) so the message is still sent. */
-export async function afterGroupMessage(
-  input: Omit<
-    NotifyMentionsInput,
-    'notify'
-  >,
-): Promise<void> {
+export async function afterGroupMessage(input: Omit<NotifyMentionsInput, 'notify'>): Promise<void> {
   try {
-    const {
+    const { notify } = await recordMentions(input);
+    await notifyMentions({
+      ...input,
       notify,
-    } =
-      await recordMentions(
-        input,
-      );
-    await notifyMentions(
-      {
-        ...input,
-        notify,
-      },
-    );
+    });
   } catch (error) {
-    console.error(
-      'group mentions failed',
-      error,
-    );
+    console.error('group mentions failed', error);
   }
 }

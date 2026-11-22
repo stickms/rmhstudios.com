@@ -22,9 +22,7 @@ const LETTER_PC: Readonly<Record<string, number>> = {
   B: 11,
 };
 
-export type MissAnswer =
-  | { kind: 'letter'; letter: string }
-  | { kind: 'midi'; midi: number };
+export type MissAnswer = { kind: 'letter'; letter: string } | { kind: 'midi'; midi: number };
 
 /** The pitch an answer stands for: a played note as played, a letter at the octave nearest `target`. */
 export function playedMidi(target: number, answer: MissAnswer): number | null {

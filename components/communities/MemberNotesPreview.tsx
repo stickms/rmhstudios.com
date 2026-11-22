@@ -11,18 +11,9 @@ import { Button } from '@/components/ui/button';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { listNotesApi } from '@/lib/communities/member-notes.contract';
 import { MemberNotesDialog, type NotesMember } from '@/components/communities/MemberNotesDialog';
-import {
-  NOTE_PREVIEW_COUNT,
-  type NoteDTO,
-} from '@/lib/communities/member-notes';
+import { NOTE_PREVIEW_COUNT, type NoteDTO } from '@/lib/communities/member-notes';
 
-export function MemberNotesPreview({
-  slug,
-  member,
-}: {
-  slug: string;
-  member: NotesMember;
-}) {
+export function MemberNotesPreview({ slug, member }: { slug: string; member: NotesMember }) {
   const { t } = useTranslation('community-notes');
   const fmt = useLocaleFormat();
   // A preview is a convenience: a failed read shows nothing. Refetched when the full dialog closes.
@@ -50,10 +41,16 @@ export function MemberNotesPreview({
           {t('all-notes', { defaultValue: 'All notes' })}
         </Button>
       </div>
-      {open && <MemberNotesDialog slug={slug} member={member} onClose={() => {
+      {open && (
+        <MemberNotesDialog
+          slug={slug}
+          member={member}
+          onClose={() => {
             setOpen(false);
             void refetch();
-          }} />}
+          }}
+        />
+      )}
     </div>
   );
 }

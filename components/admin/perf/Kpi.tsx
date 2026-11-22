@@ -1,25 +1,12 @@
-import {
-  TriangleAlert,
-  OctagonAlert,
-} from 'lucide-react';
+import { TriangleAlert, OctagonAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Tone } from '@/lib/perf/derive';
 import { cn } from '@/lib/utils';
 
 /** Ink for a tone, from the site tokens only. */
-export function toneClass(
-  tone: Tone,
-): string {
-  if (
-    tone ===
-    'danger'
-  )
-    return 'text-site-danger';
-  if (
-    tone ===
-    'warn'
-  )
-    return 'text-site-warning';
+export function toneClass(tone: Tone): string {
+  if (tone === 'danger') return 'text-site-danger';
+  if (tone === 'warn') return 'text-site-warning';
   return 'text-site-text';
 }
 
@@ -35,80 +22,35 @@ interface KpiProps {
  * with screen-reader text, so the state does not depend on telling amber from red
  * (the same rule `Badge` follows for status variants).
  */
-export function Kpi({
-  label,
-  value,
-  tone = 'none',
-  hint,
-}: KpiProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'f-perf',
-    );
+export function Kpi({ label, value, tone = 'none', hint }: KpiProps) {
+  const { t } = useTranslation('f-perf');
   return (
     <div className="min-w-0 border-t border-site-border py-3">
-      <p className="t-label">
-        {
-          label
-        }
-      </p>
-      <p
-        className={cn(
-          't-heading mt-1 flex items-center gap-1.5 tabular-nums',
-          toneClass(
-            tone,
-          ),
-        )}
-      >
-        {
-          value
-        }
-        {tone ===
-          'warn' && (
+      <p className="t-label">{label}</p>
+      <p className={cn('t-heading mt-1 flex items-center gap-1.5 tabular-nums', toneClass(tone))}>
+        {value}
+        {tone === 'warn' && (
           <>
-            <TriangleAlert
-              className="size-4 shrink-0"
-              aria-hidden
-            />
+            <TriangleAlert className="size-4 shrink-0" aria-hidden />
             <span className="sr-only">
-              {t(
-                'tone-warn',
-                {
-                  defaultValue:
-                    'Warning',
-                },
-              )}
+              {t('tone-warn', {
+                defaultValue: 'Warning',
+              })}
             </span>
           </>
         )}
-        {tone ===
-          'danger' && (
+        {tone === 'danger' && (
           <>
-            <OctagonAlert
-              className="size-4 shrink-0"
-              aria-hidden
-            />
+            <OctagonAlert className="size-4 shrink-0" aria-hidden />
             <span className="sr-only">
-              {t(
-                'tone-danger',
-                {
-                  defaultValue:
-                    'Critical',
-                },
-              )}
+              {t('tone-danger', {
+                defaultValue: 'Critical',
+              })}
             </span>
           </>
         )}
       </p>
-      {hint && (
-        <p className="t-meta mt-1">
-          {
-            hint
-          }
-        </p>
-      )}
+      {hint && <p className="t-meta mt-1">{hint}</p>}
     </div>
   );
 }

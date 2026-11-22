@@ -12,7 +12,4 @@ import { createContext } from 'react';
  * in an unexposed `pendingMatches`store), but the pending element renders as a
  * Suspense fallback under `SiteLayout`'s `<Outlet>`, so this context reaches it.
  */
-export const ShellLayoutContext =
-  createContext(
-    false,
-  );
+export const ShellLayoutContext = createContext(false);

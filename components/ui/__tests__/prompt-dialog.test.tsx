@@ -33,7 +33,9 @@ describe('PromptForm', () => {
   const settle = () => {};
 
   it('opens with the initial value, the title, and the default button labels', () => {
-    const html = renderToString(<PromptForm options={{ title: 'Rename playlist', initialValue: 'Road trip' }} settle={settle} />);
+    const html = renderToString(
+      <PromptForm options={{ title: 'Rename playlist', initialValue: 'Road trip' }} settle={settle} />,
+    );
     expect(html).toContain('value="Road trip"');
     expect(html).toContain('Rename playlist');
     expect(html).toContain('>Cancel<');

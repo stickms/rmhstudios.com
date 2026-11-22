@@ -11,39 +11,23 @@ export interface ProfileData {
    * its own.
    */
   achievementStrip?: AchievementStripData;
-  name:
-    | string
-    | null;
-  username:
-    | string
-    | null;
-  handle:
-    | string
-    | null;
-  image:
-    | string
-    | null;
+  name: string | null;
+  username: string | null;
+  handle: string | null;
+  image: string | null;
   isVerified: boolean;
   isAdmin: boolean;
   /** Synthetic account posted by the bot-worker, not a person. */
   isBot?: boolean;
   createdAt: string;
-  bio:
-    | string
-    | null;
-  location:
-    | string
-    | null;
-  website:
-    | string
-    | null;
+  bio: string | null;
+  location: string | null;
+  website: string | null;
   links?: {
     label: string;
     url: string;
   }[];
-  bannerUrl?:
-    | string
-    | null;
+  bannerUrl?: string | null;
   showLikes: boolean;
   /** Plan U15 — 'off' | 'following' | 'everyone'. Older payloads omit it. */
   guestbookMode?: string;
@@ -56,33 +40,17 @@ export interface ProfileData {
   followListVisibility?: string;
   /** Whether this viewer may open the lists; the counts are public regardless. Older payloads omit it. */
   canSeeFollowLists?: boolean;
-  profileSongSpotifyId:
-    | string
-    | null;
-  profileSongTitle:
-    | string
-    | null;
-  profileSongArtist:
-    | string
-    | null;
-  profileSongPreviewUrl:
-    | string
-    | null;
-  profileSongAlbumArt:
-    | string
-    | null;
+  profileSongSpotifyId: string | null;
+  profileSongTitle: string | null;
+  profileSongArtist: string | null;
+  profileSongPreviewUrl: string | null;
+  profileSongAlbumArt: string | null;
   status?: UserStatus | null;
   modules?: ProfileModule[];
   /** P05 identity extras — absent on older payloads. */
-  pronouns?:
-    | string
-    | null;
-  timezone?:
-    | string
-    | null;
-  pronunciationUrl?:
-    | string
-    | null;
+  pronouns?: string | null;
+  timezone?: string | null;
+  pronunciationUrl?: string | null;
   followerCount: number;
   followingCount: number;
   rmharkCount: number;
@@ -94,16 +62,10 @@ export interface ProfileData {
   isOnline?: boolean;
   /** The presence dot on the profile head (lib/presence-types.ts). */
   presence?: ProfilePresence;
-  tipGoal?:
-    | number
-    | null;
-  tipGoalLabel?:
-    | string
-    | null;
+  tipGoal?: number | null;
+  tipGoalLabel?: string | null;
   tipsThisMonth?: number;
-  membershipPriceCoins?:
-    | number
-    | null;
+  membershipPriceCoins?: number | null;
   memberCount?: number;
   isMember?: boolean;
   cosmetics?: {

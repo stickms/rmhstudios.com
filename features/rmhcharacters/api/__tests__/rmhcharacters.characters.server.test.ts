@@ -41,7 +41,11 @@ let ip = 0;
 function req(method: string, body?: unknown) {
   return new Request('https://rmhstudios.com/api/rmhcharacters/characters/x', {
     method,
-    headers: { cookie: 'better-auth.session_token=x', 'content-type': 'application/json', 'cf-connecting-ip': `10.9.0.${ip++ % 250}` },
+    headers: {
+      cookie: 'better-auth.session_token=x',
+      'content-type': 'application/json',
+      'cf-connecting-ip': `10.9.0.${ip++ % 250}`,
+    },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 }
@@ -60,9 +64,17 @@ beforeEach(() => {
 describe('PUT /api/rmhcharacters/characters/$id', () => {
   it('creates a new character on the caller’s account, stored normalised', async () => {
     db.findUnique.mockResolvedValue(null);
-    const res = await handler(oneRoute, 'PUT')({ request: req('PUT', { character: sheet({ evil: '<script>', portrait: 'javascript:alert(1)' }) }), params: { id: 'c-1' } });
+    const res = await handler(
+      oneRoute,
+      'PUT',
+    )({
+      request: req('PUT', { character: sheet({ evil: '<script>', portrait: 'javascript:alert(1)' }) }),
+      params: { id: 'c-1' },
+    });
     expect(res.status).toBe(200);
-    const arg = db.create.mock.calls[0]![0] as { data: { id: string; userId: string; system: string; data: Record<string, unknown> } };
+    const arg = db.create.mock.calls[0]![0] as {
+      data: { id: string; userId: string; system: string; data: Record<string, unknown> };
+    };
     expect(arg.data.id).toBe('c-1');
     expect(arg.data.userId).toBe('me');
     expect(arg.data.system).toBe('dnd5e');
@@ -73,7 +85,10 @@ describe('PUT /api/rmhcharacters/characters/$id', () => {
 
   it('refuses an id that belongs to another account and writes nothing', async () => {
     db.findUnique.mockResolvedValue({ userId: 'someone-else' });
-    const res = await handler(oneRoute, 'PUT')({ request: req('PUT', { character: sheet() }), params: { id: 'theirs' } });
+    const res = await handler(
+      oneRoute,
+      'PUT',
+    )({ request: req('PUT', { character: sheet() }), params: { id: 'theirs' } });
     expect(res.status).toBe(409);
     expect(db.create).not.toHaveBeenCalled();
     expect(db.update).not.toHaveBeenCalled();
@@ -81,14 +96,20 @@ describe('PUT /api/rmhcharacters/characters/$id', () => {
 
   it('updates the caller’s own row', async () => {
     db.findUnique.mockResolvedValue({ userId: 'me' });
-    const res = await handler(oneRoute, 'PUT')({ request: req('PUT', { character: sheet({ name: 'Renamed' }) }), params: { id: 'mine' } });
+    const res = await handler(
+      oneRoute,
+      'PUT',
+    )({ request: req('PUT', { character: sheet({ name: 'Renamed' }) }), params: { id: 'mine' } });
     expect(res.status).toBe(200);
     expect((db.update.mock.calls[0]![0] as { data: { name: string } }).data.name).toBe('Renamed');
   });
 
   it('rejects something that is not a character sheet', async () => {
     db.findUnique.mockResolvedValue(null);
-    const res = await handler(oneRoute, 'PUT')({ request: req('PUT', { character: { system: 'gurps' } }), params: { id: 'x' } });
+    const res = await handler(
+      oneRoute,
+      'PUT',
+    )({ request: req('PUT', { character: { system: 'gurps' } }), params: { id: 'x' } });
     expect(res.status).toBe(400);
     expect(db.create).not.toHaveBeenCalled();
   });
@@ -96,7 +117,10 @@ describe('PUT /api/rmhcharacters/characters/$id', () => {
   it('caps how many characters one account can create', async () => {
     db.findUnique.mockResolvedValue(null);
     db.count.mockResolvedValue(200);
-    const res = await handler(oneRoute, 'PUT')({ request: req('PUT', { character: sheet() }), params: { id: 'one-too-many' } });
+    const res = await handler(
+      oneRoute,
+      'PUT',
+    )({ request: req('PUT', { character: sheet() }), params: { id: 'one-too-many' } });
     expect(res.status).toBe(422);
     expect(db.create).not.toHaveBeenCalled();
   });
@@ -119,7 +143,10 @@ describe('DELETE /api/rmhcharacters/characters/$id', () => {
 
 describe('GET /api/rmhcharacters/characters', () => {
   it('lists only the caller’s characters, re-normalised', async () => {
-    db.findMany.mockResolvedValue([{ id: 'a', data: sheet({ junk: 1 }), updatedAt: new Date(1_800_000_000_000) }, { id: 'b', data: { not: 'a sheet' }, updatedAt: new Date() }]);
+    db.findMany.mockResolvedValue([
+      { id: 'a', data: sheet({ junk: 1 }), updatedAt: new Date(1_800_000_000_000) },
+      { id: 'b', data: { not: 'a sheet' }, updatedAt: new Date() },
+    ]);
     const res = await handler(listRoute, 'GET')({ request: req('GET'), params: {} });
     expect(res.status).toBe(200);
     expect((db.findMany.mock.calls[0]![0] as { where: unknown }).where).toEqual({ userId: 'me' });

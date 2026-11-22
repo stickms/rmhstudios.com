@@ -15,29 +15,13 @@ export const ADD_BATCH_MAX = 10;
 
 export const GROUP_NAME_MAX = 60;
 
-export function isGroupOwner(
-  ownerId:
-    | string
-    | null
-    | undefined,
-  userId: string,
-): boolean {
-  return (
-    !!ownerId &&
-    ownerId ===
-      userId
-  );
+export function isGroupOwner(ownerId: string | null | undefined, userId: string): boolean {
+  return !!ownerId && ownerId === userId;
 }
 
 /** How many more people a group with `memberCount` members can take. */
-export function seatsLeft(
-  memberCount: number,
-): number {
-  return Math.max(
-    0,
-    GROUP_MEMBER_CAP -
-      memberCount,
-  );
+export function seatsLeft(memberCount: number): number {
+  return Math.max(0, GROUP_MEMBER_CAP - memberCount);
 }
 
 export interface CandidateUser {
@@ -61,50 +45,15 @@ export function splitCandidates(input: {
   allowed: string[];
   refused: number;
 } {
-  const known =
-    new Map(
-      input.found.map(
-        (
-          u,
-        ) => [
-          u.id,
-          u,
-        ],
-      ),
-    );
-  const allowed: string[] =
-    [];
+  const known = new Map(input.found.map((u) => [u.id, u]));
+  const allowed: string[] = [];
   let refused = 0;
-  for (const id of new Set(
-    input.requestedIds,
-  )) {
-    if (
-      id ===
-      input.adderId
-    )
-      continue;
-    const user =
-      known.get(
-        id,
-      );
-    const banned =
-      !!user?.bannedUntil &&
-      user.bannedUntil.getTime() >
-        input.now.getTime();
-    if (
-      !user ||
-      banned ||
-      id ===
-        input.tombstoneId ||
-      input.blockedIds.has(
-        id,
-      )
-    )
-      refused += 1;
-    else
-      allowed.push(
-        id,
-      );
+  for (const id of new Set(input.requestedIds)) {
+    if (id === input.adderId) continue;
+    const user = known.get(id);
+    const banned = !!user?.bannedUntil && user.bannedUntil.getTime() > input.now.getTime();
+    if (!user || banned || id === input.tombstoneId || input.blockedIds.has(id)) refused += 1;
+    else allowed.push(id);
   }
   return {
     allowed,
@@ -123,18 +72,10 @@ export function applyCap(
   join: string[];
   refused: number;
 } {
-  const join =
-    candidates.slice(
-      0,
-      seatsLeft(
-        memberCount,
-      ),
-    );
+  const join = candidates.slice(0, seatsLeft(memberCount));
   return {
     join,
-    refused:
-      candidates.length -
-      join.length,
+    refused: candidates.length - join.length,
   };
 }
 
@@ -145,32 +86,8 @@ export function pickHeir(
     joinedAt: Date;
   }[],
   leavingId: string,
-):
-  | string
-  | null {
-  const rest =
-    members.filter(
-      (
-        m,
-      ) =>
-        m.userId !==
-        leavingId,
-    );
-  rest.sort(
-    (
-      a,
-      b,
-    ) =>
-      a.joinedAt.getTime() -
-        b.joinedAt.getTime() ||
-      (a.userId <
-      b.userId
-        ? -1
-        : 1),
-  );
-  return (
-    rest[0]
-      ?.userId ??
-    null
-  );
+): string | null {
+  const rest = members.filter((m) => m.userId !== leavingId);
+  rest.sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime() || (a.userId < b.userId ? -1 : 1));
+  return rest[0]?.userId ?? null;
 }

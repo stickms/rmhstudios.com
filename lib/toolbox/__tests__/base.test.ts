@@ -33,7 +33,14 @@ describe('groupDigits', () => {
 
 describe('widthView', () => {
   it('shows the two’s-complement pattern of a negative value', () => {
-    expect(widthView(-1n, 8)).toEqual({ width: 8, fits: true, bits: '11111111', hex: 'ff', unsigned: 255n, signed: -1n });
+    expect(widthView(-1n, 8)).toEqual({
+      width: 8,
+      fits: true,
+      bits: '11111111',
+      hex: 'ff',
+      unsigned: 255n,
+      signed: -1n,
+    });
     expect(widthView(-128n, 8)).toMatchObject({ bits: '10000000', signed: -128n });
   });
 

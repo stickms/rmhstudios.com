@@ -24,20 +24,14 @@ vi.mock('@/lib/auth/session-alert.server', () => ({
   deviceFingerprintFromRequest: () => 'Firefox on Windows',
 }));
 
-const {
-  recordSecurityEvent,
-  listSecurityEvents,
-  exportSecurityEvents,
-  pruneSecurityEvents,
-  registerSecurityLogPrune,
-} = await import('@/lib/auth/security-log.server');
+const { recordSecurityEvent, listSecurityEvents, exportSecurityEvents, pruneSecurityEvents, registerSecurityLogPrune } =
+  await import('@/lib/auth/security-log.server');
 const { trackSignIn } = await import('@/lib/auth/security-hooks.server');
 const { csvCell, toCsv, sanitizeDetail, isUnfamiliarEvent, FILTER_KINDS, SECURITY_EVENT_KINDS } =
   await import('@/lib/auth/security-log');
 
 const RAW_IP = '203.0.113.77';
-const FULL_UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0 SecretBuild/9';
+const FULL_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0 SecretBuild/9';
 
 function requestWith(): Request {
   return new Request('https://rmhstudios.com/api/x', {
@@ -106,8 +100,24 @@ describe('listSecurityEvents', () => {
     const mine = createHash('sha256').update('a').digest('hex');
     db.sessionFindFirst.mockResolvedValue({ ipHash: mine });
     db.findMany.mockResolvedValue([
-      { id: 9n, kind: 'sign_in', device: 'Chrome on macOS', ipHash: mine, sessionId: 's1', detail: null, createdAt: new Date(0) },
-      { id: 8n, kind: 'sign_in', device: 'Firefox on Windows', ipHash: 'other', sessionId: 's2', detail: null, createdAt: new Date(0) },
+      {
+        id: 9n,
+        kind: 'sign_in',
+        device: 'Chrome on macOS',
+        ipHash: mine,
+        sessionId: 's1',
+        detail: null,
+        createdAt: new Date(0),
+      },
+      {
+        id: 8n,
+        kind: 'sign_in',
+        device: 'Firefox on Windows',
+        ipHash: 'other',
+        sessionId: 's2',
+        detail: null,
+        createdAt: new Date(0),
+      },
     ]);
     const page = await listSecurityEvents('u1', { currentSessionId: 's1' });
     expect(db.sessionFindFirst.mock.calls[0]![0].where).toEqual({ id: 's1', userId: 'u1' });
@@ -157,7 +167,12 @@ describe('CSV', () => {
 
   it('writes a header and one guarded row per event', () => {
     const csv = toCsv([
-      { createdAt: new Date('2026-01-02T03:04:05Z'), kind: 'handle_changed', device: '=HYPERLINK("x")', detail: { oldHandle: 'a', newHandle: 'b' } },
+      {
+        createdAt: new Date('2026-01-02T03:04:05Z'),
+        kind: 'handle_changed',
+        device: '=HYPERLINK("x")',
+        detail: { oldHandle: 'a', newHandle: 'b' },
+      },
     ]);
     const [header, row] = csv.trim().split('\r\n');
     expect(header).toBe('time,event,device,detail');

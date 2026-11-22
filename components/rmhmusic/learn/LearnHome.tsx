@@ -9,45 +9,22 @@
  * lines whose text arrives later reserve their height.
  */
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {
-  Link,
-  useNavigate,
-} from '@tanstack/react-router';
-import {
-  ArrowLeft,
-  Guitar,
-  MicVocal,
-  Piano,
-} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { ArrowLeft, Guitar, MicVocal, Piano } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
-import {
-  pathFor,
-  type Unit,
-} from '@/lib/rmhmusic/learn/content/path';
+import { pathFor, type Unit } from '@/lib/rmhmusic/learn/content/path';
 import { practiceAvailable } from '@/lib/rmhmusic/learn/content/practice';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
-import {
-  PRIMARY_BUTTON,
-  TEXT_BUTTON,
-} from './buttons';
+import { PRIMARY_BUTTON, TEXT_BUTTON } from './buttons';
 import { HomeHero } from './HomeHero';
 import { InputSetup } from './InputSetup';
-import {
-  SoundDialog,
-  soundName,
-  useLearnerSound,
-} from './SoundDialog';
+import { SoundDialog, soundName, useLearnerSound } from './SoundDialog';
 import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
@@ -71,70 +48,33 @@ import { cn } from '@/lib/utils';
  * quiet "Practice" link while at least one reviewed card is due. The row is there before the link
  * is, so the link appearing (the cards load after the profile) moves nothing.
  */
-const INPUT_TEXT =
-  'flex min-h-10 min-w-0 items-end';
-const INPUT_BUTTON =
-  'max-w-full min-w-0 py-2 text-start';
-const INPUT_ROW =
-  'flex min-h-11 min-w-0 items-center gap-4';
+const INPUT_TEXT = 'flex min-h-10 min-w-0 items-end';
+const INPUT_BUTTON = 'max-w-full min-w-0 py-2 text-start';
+const INPUT_ROW = 'flex min-h-11 min-w-0 items-center gap-4';
 
 /**
  * Loading placeholder, built from the learner's path (`pathFor` the instrument the layout route
  * read with its auth check) so it is as tall as the loaded page for a singer as for a pianist.
  */
-function HomeSkeleton({
-  path,
-}: {
-  path: readonly Unit[];
-}) {
+function HomeSkeleton({ path }: { path: readonly Unit[] }) {
   return (
-    <div
-      aria-hidden="true"
-      className="space-y-4"
-    >
+    <div aria-hidden="true" className="space-y-4">
       {/* The tab strip: a tab (2.5rem, 2.75rem on touch) in its p-1 frame and 1px border. */}
       <div className="app-skeleton h-[calc(3rem+2px)] w-full pointer-coarse:h-[calc(3.25rem+2px)]" />
       <div>
-        <div
-          className={
-            INPUT_TEXT
-          }
-        >
+        <div className={INPUT_TEXT}>
           <span className="app-skeleton h-5 w-48 max-w-full" />
         </div>
-        <div
-          className={
-            INPUT_ROW
-          }
-        >
+        <div className={INPUT_ROW}>
           <span className="app-skeleton h-5 w-28 max-w-full" />
         </div>
       </div>
       <div className="rmm-sheet">
-        {path.map(
-          (
-            unit,
-          ) => (
-            <PathUnit
-              key={
-                unit.id
-              }
-              unit={
-                unit
-              }
-              progress={
-                new Map()
-              }
-              placeholder
-            />
-          ),
-        )}
+        {path.map((unit) => (
+          <PathUnit key={unit.id} unit={unit} progress={new Map()} placeholder />
+        ))}
       </div>
-      <div
-        className={
-          INPUT_ROW
-        }
-      >
+      <div className={INPUT_ROW}>
         <span className="app-skeleton h-5 w-28 max-w-full" />
       </div>
     </div>
@@ -142,579 +82,230 @@ function HomeSkeleton({
 }
 
 export function LearnHome() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
-  const goBack =
-    useBackOrFallback();
-  const navigate =
-    useNavigate();
-  const [
-    setupOpen,
-    setSetupOpen,
-  ] =
-    useState(
-      false,
-    );
-  const setupButton =
-    useRef<HTMLButtonElement>(
-      null,
-    );
-  const [
-    soundOpen,
-    setSoundOpen,
-  ] =
-    useState(
-      false,
-    );
-  const soundButton =
-    useRef<HTMLButtonElement>(
-      null,
-    );
-  const soundId =
-    useLearnerSound();
-  const onOpenLesson =
-    (
-      lessonId: string,
-    ) =>
-      void navigate(
-        {
-          to: '/rmhmusic/lesson/$lessonId',
-          params:
-            {
-              lessonId,
-            },
-        },
-      );
+  const { t } = useTranslation('c-rmhmusic');
+  const goBack = useBackOrFallback();
+  const navigate = useNavigate();
+  const [setupOpen, setSetupOpen] = useState(false);
+  const setupButton = useRef<HTMLButtonElement>(null);
+  const [soundOpen, setSoundOpen] = useState(false);
+  const soundButton = useRef<HTMLButtonElement>(null);
+  const soundId = useLearnerSound();
+  const onOpenLesson = (lessonId: string) =>
+    void navigate({
+      to: '/rmhmusic/lesson/$lessonId',
+      params: {
+        lessonId,
+      },
+    });
   // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
   // through the hub's phases (useInputPhases), so nothing here needs to re-render.
   useInputRelease();
-  const onSetupChange =
-    (
-      open: boolean,
-    ) => {
-      setSetupOpen(
-        open,
-      );
-      // The microphone listens only while it is being set up or used in a lesson.
-      const {
-        hub,
-      } =
-        useLearnStore.getState();
-      if (
-        !open &&
-        hub
-      )
-        releaseMic(
-          hub,
-        );
-    };
-  const profile =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.profile,
-    );
-  const shape =
-    useLearnerShape();
-  const progress =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.progress,
-    );
-  const status =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.status,
-    );
-  const error =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.error,
-    );
+  const onSetupChange = (open: boolean) => {
+    setSetupOpen(open);
+    // The microphone listens only while it is being set up or used in a lesson.
+    const { hub } = useLearnStore.getState();
+    if (!open && hub) releaseMic(hub);
+  };
+  const profile = useLearnStore((s) => s.profile);
+  const shape = useLearnerShape();
+  const progress = useLearnStore((s) => s.progress);
+  const status = useLearnStore((s) => s.status);
+  const error = useLearnStore((s) => s.error);
   // Only the home's own action (the instrument toggle) reports a failed save here.
-  const instrumentFailed =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.saveFailed.includes(
-          'instrument',
-        ),
-    );
+  const instrumentFailed = useLearnStore((s) => s.saveFailed.includes('instrument'));
 
   // The store is empty until `load()` runs in the browser, never during SSR. The cards load on
   // their own: a failure there only means no Practice link.
   useEffect(() => {
-    const store =
-      useLearnStore.getState();
+    const store = useLearnStore.getState();
     void store.load();
     void store.loadCards();
   }, []);
-  const cards =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.cards,
-    );
-  const practiceDue =
-    useMemo(
-      () =>
-        practiceAvailable(
-          cards,
-          progress,
-          Date.now(),
-          profile?.instrument,
-          profile?.voiceRange,
-        ),
-      [
-        cards,
-        progress,
-        profile?.instrument,
-        profile?.voiceRange,
-      ],
-    );
+  const cards = useLearnStore((s) => s.cards);
+  const practiceDue = useMemo(
+    () => practiceAvailable(cards, progress, Date.now(), profile?.instrument, profile?.voiceRange),
+    [cards, progress, profile?.instrument, profile?.voiceRange],
+  );
 
-  const rows =
-    useMemo(
-      () =>
-        new Map<
-          string,
-          LessonProgressRow
-        >(
-          progress.map(
-            (
-              r,
-            ) => [
-              r.lessonId,
-              r,
-            ],
-          ),
-        ),
-      [
-        progress,
-      ],
-    );
-  const ready =
-    status ===
-      'ready' &&
-    !!profile;
-  const loading =
-    !ready &&
-    status !==
-      'error';
-  const arrival =
-    useArrival(
-      !loading,
-    );
+  const rows = useMemo(() => new Map<string, LessonProgressRow>(progress.map((r) => [r.lessonId, r])), [progress]);
+  const ready = status === 'ready' && !!profile;
+  const loading = !ready && status !== 'error';
+  const arrival = useArrival(!loading);
 
-  const instrument =
-    profile?.instrument ??
-    'piano';
-  const path =
-    pathFor(
-      instrument,
-    );
+  const instrument = profile?.instrument ?? 'piano';
+  const path = pathFor(instrument);
   // The tabs activate on arrow keys, so choosing an instrument never opens a dialog: a singer with
   // no range yet gets a "Choose your voice" link in the input row instead (it opens "Set up input",
   // which asks the range first; the microphone starts only from a tap on its row).
-  const chooseInstrument =
-    (
-      next: Instrument,
-    ) => {
-      void useLearnStore
-        .getState()
-        .setInstrument(
-          next,
-        );
-    };
-  const needsRange =
-    instrument ===
-      'voice' &&
-    !profile?.voiceRange;
-  const tabs =
-    [
-      {
-        id: 'piano',
-        label:
-          t(
-            'instrument-piano',
-            {
-              defaultValue:
-                'Piano',
-            },
-          ),
-        icon: Piano,
-      },
-      {
-        id: 'guitar',
-        label:
-          t(
-            'instrument-guitar',
-            {
-              defaultValue:
-                'Guitar',
-            },
-          ),
-        icon: Guitar,
-      },
-      {
-        id: 'voice',
-        label:
-          t(
-            'instrument-voice',
-            {
-              defaultValue:
-                'Voice',
-            },
-          ),
-        icon: MicVocal,
-      },
-    ];
-
-  const inputNames =
+  const chooseInstrument = (next: Instrument) => {
+    void useLearnStore.getState().setInstrument(next);
+  };
+  const needsRange = instrument === 'voice' && !profile?.voiceRange;
+  const tabs = [
     {
-      screen:
-        t(
-          'input-screen',
-          {
-            defaultValue:
-              'On-screen keys',
-          },
-        ),
-      keys: t(
-        'input-keys',
-        {
-          defaultValue:
-            'Computer keyboard',
-        },
-      ),
-      midi: t(
-        'input-midi',
-        {
-          defaultValue:
-            'MIDI controller',
-        },
-      ),
-      mic: t(
-        'input-mic',
-        {
-          defaultValue:
-            'Microphone',
-        },
-      ),
-    };
-  const inputName =
-    inputNames[
-      profile?.input ??
-        'screen'
-    ];
-  const inputLine =
-    t(
-      'input-playing-with',
-      {
-        input:
-          inputName,
-        defaultValue:
-          'Playing with: {{input}}',
-      },
-    );
+      id: 'piano',
+      label: t('instrument-piano', {
+        defaultValue: 'Piano',
+      }),
+      icon: Piano,
+    },
+    {
+      id: 'guitar',
+      label: t('instrument-guitar', {
+        defaultValue: 'Guitar',
+      }),
+      icon: Guitar,
+    },
+    {
+      id: 'voice',
+      label: t('instrument-voice', {
+        defaultValue: 'Voice',
+      }),
+      icon: MicVocal,
+    },
+  ];
+
+  const inputNames = {
+    screen: t('input-screen', {
+      defaultValue: 'On-screen keys',
+    }),
+    keys: t('input-keys', {
+      defaultValue: 'Computer keyboard',
+    }),
+    midi: t('input-midi', {
+      defaultValue: 'MIDI controller',
+    }),
+    mic: t('input-mic', {
+      defaultValue: 'Microphone',
+    }),
+  };
+  const inputName = inputNames[profile?.input ?? 'screen'];
+  const inputLine = t('input-playing-with', {
+    input: inputName,
+    defaultValue: 'Playing with: {{input}}',
+  });
 
   let body;
-  if (
-    status ===
-    'error'
-  ) {
-    body =
-      (
-        <div
-          role="alert"
-          className={cn(
-            'rmm-sheet space-y-3 p-4',
-            arrival,
-          )}
-        >
-          <p className="text-app-text">
-            {error ===
-            'unauthorized'
-              ? t(
-                  'error-signed-out',
-                  {
-                    defaultValue:
-                      'Your session ended. Sign in again to continue.',
-                  },
-                )
-              : t(
-                  'error-load',
-                  {
-                    defaultValue:
-                      "Couldn't load your lessons.",
-                  },
-                )}
-          </p>
-          {error ===
-          'unauthorized' ? (
-            <Link
-              to="/login"
-              search={{
-                callbackURL:
-                  '/rmhmusic',
-              }}
-              className={
-                PRIMARY_BUTTON
-              }
-            >
-              {t(
-                'sign-in',
-                {
-                  defaultValue:
-                    'Sign in',
-                },
-              )}
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={() =>
-                void useLearnStore
-                  .getState()
-                  .load()
-              }
-              className={
-                PRIMARY_BUTTON
-              }
-            >
-              {t(
-                'retry',
-                {
-                  defaultValue:
-                    'Try again',
-                },
-              )}
-            </button>
-          )}
-        </div>
-      );
-  } else if (
-    !ready
-  ) {
-    body =
-      (
-        <HomeSkeleton
-          path={pathFor(
-            shape.instrument,
-          )}
-        />
-      );
-  } else {
-    body =
-      (
-        <div
-          className={cn(
-            'space-y-4',
-            arrival,
-          )}
-        >
-          <Tabs
-            tabs={
-              tabs
-            }
-            value={
-              instrument
-            }
-            onChange={(
-              id,
-            ) =>
-              chooseInstrument(
-                id as Instrument,
-              )
-            }
-            aria-label={t(
-              'instrument-label',
-              {
-                defaultValue:
-                  'Instrument',
-              },
-            )}
-          />
-          <div>
-            <div
-              className={
-                INPUT_TEXT
-              }
-            >
-              <p className="min-w-0 text-sm leading-5 break-words text-app-text-muted">
-                {
-                  inputLine
-                }
-              </p>
-            </div>
-            <div
-              className={
-                INPUT_ROW
-              }
-            >
-              <button
-                ref={
-                  setupButton
-                }
-                type="button"
-                onClick={() =>
-                  onSetupChange(
-                    true,
-                  )
-                }
-                className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
-              >
-                <span>
-                  {t(
-                    'setup-input',
-                    {
-                      defaultValue:
-                        'Set up input',
-                    },
-                  )}
-                </span>
-              </button>
-              {needsRange && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    onSetupChange(
-                      true,
-                    )
-                  }
-                  className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
-                >
-                  <span>
-                    {t(
-                      'voice-choose-link',
-                      {
-                        defaultValue:
-                          'Choose your voice',
-                      },
-                    )}
-                  </span>
-                </button>
-              )}
-              <button
-                ref={
-                  soundButton
-                }
-                type="button"
-                onClick={() =>
-                  setSoundOpen(
-                    true,
-                  )
-                }
-                aria-label={t(
-                  'sound-button-named',
-                  {
-                    name: soundName(
-                      t,
-                      soundId,
-                    ),
-                    defaultValue:
-                      'Sound: {{name}}',
-                  },
-                )}
-                className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
-              >
-                <span>
-                  {t(
-                    'sound-button',
-                    {
-                      defaultValue:
-                        'Sound',
-                    },
-                  )}
-                </span>
-              </button>
-              {practiceDue && (
-                <Link
-                  to="/rmhmusic/practice"
-                  className={`${TEXT_BUTTON} ms-auto shrink-0`}
-                >
-                  {t(
-                    'practice',
-                    {
-                      defaultValue:
-                        'Practice',
-                    },
-                  )}
-                </Link>
-              )}
-            </div>
-          </div>
-          {instrumentFailed && (
-            <p
-              role="status"
-              className="text-sm text-app-danger"
-            >
-              {t(
-                'error-save',
-                {
-                  defaultValue:
-                    "Couldn't save that change. Try again.",
-                },
-              )}
-            </p>
-          )}
-          <div className="rmm-sheet">
-            {path.map(
-              (
-                unit,
-              ) => (
-                <PathUnit
-                  key={
-                    unit.id
-                  }
-                  unit={
-                    unit
-                  }
-                  progress={
-                    rows
-                  }
-                  onOpenLesson={
-                    onOpenLesson
-                  }
-                />
-              ),
-            )}
-          </div>
-          <div
-            className={`${INPUT_ROW} flex-wrap`}
+  if (status === 'error') {
+    body = (
+      <div role="alert" className={cn('rmm-sheet space-y-3 p-4', arrival)}>
+        <p className="text-app-text">
+          {error === 'unauthorized'
+            ? t('error-signed-out', {
+                defaultValue: 'Your session ended. Sign in again to continue.',
+              })
+            : t('error-load', {
+                defaultValue: "Couldn't load your lessons.",
+              })}
+        </p>
+        {error === 'unauthorized' ? (
+          <Link
+            to="/login"
+            search={{
+              callbackURL: '/rmhmusic',
+            }}
+            className={PRIMARY_BUTTON}
           >
-            <Link
-              to="/rmhmusic/friends"
-              className={
-                TEXT_BUTTON
-              }
-            >
-              {t(
-                'friends-home-link',
-                {
-                  defaultValue:
-                    'Friends',
-                },
-              )}
-            </Link>
+            {t('sign-in', {
+              defaultValue: 'Sign in',
+            })}
+          </Link>
+        ) : (
+          <button type="button" onClick={() => void useLearnStore.getState().load()} className={PRIMARY_BUTTON}>
+            {t('retry', {
+              defaultValue: 'Try again',
+            })}
+          </button>
+        )}
+      </div>
+    );
+  } else if (!ready) {
+    body = <HomeSkeleton path={pathFor(shape.instrument)} />;
+  } else {
+    body = (
+      <div className={cn('space-y-4', arrival)}>
+        <Tabs
+          tabs={tabs}
+          value={instrument}
+          onChange={(id) => chooseInstrument(id as Instrument)}
+          aria-label={t('instrument-label', {
+            defaultValue: 'Instrument',
+          })}
+        />
+        <div>
+          <div className={INPUT_TEXT}>
+            <p className="min-w-0 text-sm leading-5 break-words text-app-text-muted">{inputLine}</p>
           </div>
-          {/* Last on the page, so its arrival moves nothing (Phase 6, plan 1.5). */}
-          <HomeFriends />
+          <div className={INPUT_ROW}>
+            <button
+              ref={setupButton}
+              type="button"
+              onClick={() => onSetupChange(true)}
+              className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
+            >
+              <span>
+                {t('setup-input', {
+                  defaultValue: 'Set up input',
+                })}
+              </span>
+            </button>
+            {needsRange && (
+              <button type="button" onClick={() => onSetupChange(true)} className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}>
+                <span>
+                  {t('voice-choose-link', {
+                    defaultValue: 'Choose your voice',
+                  })}
+                </span>
+              </button>
+            )}
+            <button
+              ref={soundButton}
+              type="button"
+              onClick={() => setSoundOpen(true)}
+              aria-label={t('sound-button-named', {
+                name: soundName(t, soundId),
+                defaultValue: 'Sound: {{name}}',
+              })}
+              className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
+            >
+              <span>
+                {t('sound-button', {
+                  defaultValue: 'Sound',
+                })}
+              </span>
+            </button>
+            {practiceDue && (
+              <Link to="/rmhmusic/practice" className={`${TEXT_BUTTON} ms-auto shrink-0`}>
+                {t('practice', {
+                  defaultValue: 'Practice',
+                })}
+              </Link>
+            )}
+          </div>
         </div>
-      );
+        {instrumentFailed && (
+          <p role="status" className="text-sm text-app-danger">
+            {t('error-save', {
+              defaultValue: "Couldn't save that change. Try again.",
+            })}
+          </p>
+        )}
+        <div className="rmm-sheet">
+          {path.map((unit) => (
+            <PathUnit key={unit.id} unit={unit} progress={rows} onOpenLesson={onOpenLesson} />
+          ))}
+        </div>
+        <div className={`${INPUT_ROW} flex-wrap`}>
+          <Link to="/rmhmusic/friends" className={TEXT_BUTTON}>
+            {t('friends-home-link', {
+              defaultValue: 'Friends',
+            })}
+          </Link>
+        </div>
+        {/* Last on the page, so its arrival moves nothing (Phase 6, plan 1.5). */}
+        <HomeFriends />
+      </div>
+    );
   }
 
   return (
@@ -727,23 +318,14 @@ export function LearnHome() {
           <Link
             to="/games"
             search={{ kind: 'app' }}
-            onClick={
-              goBack
-            }
+            onClick={goBack}
             className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-app-sm px-3 py-2 text-sm font-medium text-app-text-muted transition-colors hover:text-app-text"
           >
-            <ArrowLeft
-              className="h-4 w-4 shrink-0 rtl-flip"
-              aria-hidden="true"
-            />
+            <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
             <span>
-              {t(
-                'back-to-builds',
-                {
-                  defaultValue:
-                    'Back to Builds',
-                },
-              )}
+              {t('back-to-builds', {
+                defaultValue: 'Back to Builds',
+              })}
             </span>
           </Link>
           <div className="ms-auto flex shrink-0 items-center gap-2">
@@ -752,90 +334,37 @@ export function LearnHome() {
           </div>
         </header>
 
-        <main
-          aria-busy={
-            loading ||
-            undefined
-          }
-          className="flex-1 space-y-4 pt-3 pb-8"
-        >
+        <main aria-busy={loading || undefined} className="flex-1 space-y-4 pt-3 pb-8">
           {loading && (
-            <p
-              role="status"
-              className="sr-only"
-            >
-              {t(
-                'loading-lessons',
-                {
-                  defaultValue:
-                    'Loading your lessons…',
-                },
-              )}
+            <p role="status" className="sr-only">
+              {t('loading-lessons', {
+                defaultValue: 'Loading your lessons…',
+              })}
             </p>
           )}
           <HomeHero />
           <h1 className="rmm-display text-[2.5rem] leading-[3rem] text-app-text sm:text-5xl sm:leading-[3.5rem]">
             {ready
-              ? instrument ===
-                'voice'
-                ? t(
-                    'heading-voice',
-                    {
-                      defaultValue:
-                        'Learn to sing',
-                    },
-                  )
-                : instrument ===
-                    'guitar'
-                  ? t(
-                      'heading-guitar',
-                      {
-                        defaultValue:
-                          'Learn guitar',
-                      },
-                    )
-                  : t(
-                      'heading-piano',
-                      {
-                        defaultValue:
-                          'Learn piano',
-                      },
-                    )
-              : t(
-                  'heading-default',
-                  {
-                    defaultValue:
-                      'Learn music',
-                  },
-                )}
+              ? instrument === 'voice'
+                ? t('heading-voice', {
+                    defaultValue: 'Learn to sing',
+                  })
+                : instrument === 'guitar'
+                  ? t('heading-guitar', {
+                      defaultValue: 'Learn guitar',
+                    })
+                  : t('heading-piano', {
+                      defaultValue: 'Learn piano',
+                    })
+              : t('heading-default', {
+                  defaultValue: 'Learn music',
+                })}
           </h1>
           <ToolCards />
-          {
-            body
-          }
+          {body}
         </main>
-        <InputSetup
-          open={
-            setupOpen
-          }
-          onOpenChange={
-            onSetupChange
-          }
-          returnFocus={
-            setupButton
-          }
-        />
-        <SoundDialog
-          open={
-            soundOpen
-          }
-          onOpenChange={
-            setSoundOpen
-          }
-          returnFocus={
-            soundButton
-          }
-        />
+        <InputSetup open={setupOpen} onOpenChange={onSetupChange} returnFocus={setupButton} />
+        <SoundDialog open={soundOpen} onOpenChange={setSoundOpen} returnFocus={soundButton} />
       </div>
     </div>
   );

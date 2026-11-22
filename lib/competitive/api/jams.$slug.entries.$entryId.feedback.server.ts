@@ -18,6 +18,9 @@ export const route = apiRoute('/api/jams/$slug/entries/$entryId/feedback', {
     });
     return result.ok
       ? Response.json({ feedback: result.value }, { headers: { 'Cache-Control': 'private, no-store' } })
-      : Response.json({ error: 'You cannot read this feedback', code: result.code }, { status: feedbackRefusalStatus(result.code) });
+      : Response.json(
+          { error: 'You cannot read this feedback', code: result.code },
+          { status: feedbackRefusalStatus(result.code) },
+        );
   }),
 });

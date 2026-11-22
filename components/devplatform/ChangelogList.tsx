@@ -17,7 +17,8 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
  * 2026-11-19 consolidation): the first `limit` notes show, and the rest are one
  * press away.
  */
-export function ChangelogList({ limit }: { limit?: number }) { const fmt = useLocaleFormat(); 
+export function ChangelogList({ limit }: { limit?: number }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-devplatform');
   const [notes, setNotes] = useState<ReleaseNoteView[] | null>(null);
   const [showAll, setShowAll] = useState(false);

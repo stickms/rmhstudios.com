@@ -152,9 +152,7 @@ export function ReminderSettings() {
       </div>
       {current.paused ? (
         <div className="flex flex-wrap items-center gap-3">
-          <p className="t-meta">
-            {t('paused', { defaultValue: 'Paused because you have not reviewed in two weeks' })}
-          </p>
+          <p className="t-meta">{t('paused', { defaultValue: 'Paused because you have not reviewed in two weeks' })}</p>
           <Button
             variant="default"
             size="sm"
@@ -167,9 +165,7 @@ export function ReminderSettings() {
       ) : nextLabel ? (
         <p className="t-meta">{t('next', { defaultValue: 'Next reminder: {{when}}', when: nextLabel })}</p>
       ) : (
-        <p className="t-meta">
-          {t('off', { defaultValue: 'Turn on to get a reminder when cards are due.' })}
-        </p>
+        <p className="t-meta">{t('off', { defaultValue: 'Turn on to get a reminder when cards are due.' })}</p>
       )}
     </section>
   );

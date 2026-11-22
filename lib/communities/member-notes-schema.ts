@@ -1,10 +1,6 @@
 /** zod for the community note endpoints (shared by the routes and `member-notes.contract.ts`). */
 import { z } from 'zod';
-import {
-  NOTE_COUNTS_MAX_IDS,
-  NOTE_MAX_LENGTH,
-  parseIdList,
-} from '@/lib/communities/member-notes';
+import { NOTE_COUNTS_MAX_IDS, NOTE_MAX_LENGTH, parseIdList } from '@/lib/communities/member-notes';
 
 const noteText = z.string().trim().min(1).max(NOTE_MAX_LENGTH);
 const id = z.string().min(1).max(64);

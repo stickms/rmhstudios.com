@@ -6,35 +6,16 @@
  * them with an in-memory fake. The real client is assigned with
  * `prisma as unknown as MedPrisma`.
  */
-import type {
-  MedEventType,
-  MedProgram,
-  MedSource,
-} from '../engine/types';
+import type { MedEventType, MedProgram, MedSource } from '../engine/types';
 
-export type Logger =
-  {
-    info(
-      l: string,
-    ): void;
-    warn(
-      l: string,
-    ): void;
-    error(
-      l: string,
-    ): void;
-  };
+export type Logger = {
+  info(l: string): void;
+  warn(l: string): void;
+  error(l: string): void;
+};
 
-type Where =
-  Record<
-    string,
-    unknown
-  >;
-type Data =
-  Record<
-    string,
-    unknown
-  >;
+type Where = Record<string, unknown>;
+type Data = Record<string, unknown>;
 
 export interface MedSchoolRow {
   id: string;
@@ -64,9 +45,7 @@ export interface MedCycleCountRow {
   eventType: MedEventType;
   source: MedSource;
   count: number;
-  contributors:
-    | number
-    | null;
+  contributors: number | null;
 }
 
 export interface MedCycleEventRow {
@@ -134,78 +113,31 @@ export interface MedSourceRunRow {
   finishedAt: Date | null;
   status: string;
   stats: unknown;
-  error:
-    | string
-    | null;
+  error: string | null;
 }
 
 export interface MedPrisma {
   medSchool: {
-    count(args?: {
-      where?: Where;
-    }): Promise<number>;
-    findMany(args?: {
-      where?: Where;
-      select?: Record<
-        string,
-        boolean
-      >;
-      orderBy?: unknown;
-    }): Promise<
-      MedSchoolRow[]
-    >;
-    upsert(args: {
-      where: Where;
-      create: Data;
-      update: Data;
-    }): Promise<MedSchoolRow>;
-    findUnique(args: {
-      where: Where;
-    }): Promise<MedSchoolRow | null>;
+    count(args?: { where?: Where }): Promise<number>;
+    findMany(args?: { where?: Where; select?: Record<string, boolean>; orderBy?: unknown }): Promise<MedSchoolRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSchoolRow>;
+    findUnique(args: { where: Where }): Promise<MedSchoolRow | null>;
   };
   medSchoolAlias: {
-    findMany(args?: {
-      where?: Where;
-      select?: Record<
-        string,
-        boolean
-      >;
-    }): Promise<
-      MedSchoolAliasRow[]
-    >;
-    upsert(args: {
-      where: Where;
-      create: Data;
-      update: Data;
-    }): Promise<MedSchoolAliasRow>;
-    create(args: {
-      data: Data;
-    }): Promise<MedSchoolAliasRow>;
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedSchoolAliasRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSchoolAliasRow>;
+    create(args: { data: Data }): Promise<MedSchoolAliasRow>;
   };
   medSchoolAliasMiss: {
-    findMany(args?: {
-      where?: Where;
-      orderBy?: unknown;
-    }): Promise<MedAliasMissRow[]>;
-    findFirst(args?: {
-      where?: Where;
-    }): Promise<MedAliasMissRow | null>;
-    update(args: {
-      where: Where;
-      data: Data;
-    }): Promise<MedAliasMissRow>;
-    upsert(args: {
-      where: Where;
-      create: Data;
-      update: Data;
-    }): Promise<{
+    findMany(args?: { where?: Where; orderBy?: unknown }): Promise<MedAliasMissRow[]>;
+    findFirst(args?: { where?: Where }): Promise<MedAliasMissRow | null>;
+    update(args: { where: Where; data: Data }): Promise<MedAliasMissRow>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{
       id: string;
     }>;
   };
   medCycle: {
-    count(args?: {
-      where?: Where;
-    }): Promise<number>;
+    count(args?: { where?: Where }): Promise<number>;
     upsert(args: {
       where: {
         cycleYear: number;
@@ -217,23 +149,13 @@ export interface MedPrisma {
     }>;
   };
   medCycleCount: {
-    count(args?: {
-      where?: Where;
-    }): Promise<number>;
+    count(args?: { where?: Where }): Promise<number>;
     findMany(args?: {
       where?: Where;
-      select?: Record<
-        string,
-        boolean
-      >;
+      select?: Record<string, boolean>;
       orderBy?: unknown;
-    }): Promise<
-      MedCycleCountRow[]
-    >;
-    createMany(args: {
-      data: Data[];
-      skipDuplicates?: boolean;
-    }): Promise<{
+    }): Promise<MedCycleCountRow[]>;
+    createMany(args: { data: Data[]; skipDuplicates?: boolean }): Promise<{
       count: number;
     }>;
     update(args: {
@@ -242,9 +164,7 @@ export interface MedPrisma {
       };
       data: Data;
     }): Promise<MedCycleCountRow>;
-    deleteMany(args: {
-      where: Where;
-    }): Promise<{
+    deleteMany(args: { where: Where }): Promise<{
       count: number;
     }>;
   };
@@ -254,61 +174,28 @@ export interface MedPrisma {
       select?: Record<string, boolean>;
       orderBy?: unknown;
     }): Promise<MedCycleEventRow[]>;
-    createMany(args: {
-      data: Data[];
-      skipDuplicates?: boolean;
-    }): Promise<{ count: number }>;
+    createMany(args: { data: Data[]; skipDuplicates?: boolean }): Promise<{ count: number }>;
   };
   medInterviewQuestion: {
-    findMany(args?: {
-      where?: Where;
-      select?: Record<string, boolean>;
-    }): Promise<MedInterviewQuestionRow[]>;
-    createMany(args: {
-      data: Data[];
-      skipDuplicates?: boolean;
-    }): Promise<{ count: number }>;
-    update(args: {
-      where: Where;
-      data: Data;
-    }): Promise<MedInterviewQuestionRow>;
-    deleteMany(args: {
-      where: Where;
-    }): Promise<{ count: number }>;
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedInterviewQuestionRow[]>;
+    createMany(args: { data: Data[]; skipDuplicates?: boolean }): Promise<{ count: number }>;
+    update(args: { where: Where; data: Data }): Promise<MedInterviewQuestionRow>;
+    deleteMany(args: { where: Where }): Promise<{ count: number }>;
   };
   medInterviewProfile: {
-    findFirst(args?: {
-      where?: Where;
-    }): Promise<MedInterviewProfileRow | null>;
-    upsert(args: {
-      where: Where;
-      create: Data;
-      update: Data;
-    }): Promise<{ id: string }>;
+    findFirst(args?: { where?: Where }): Promise<MedInterviewProfileRow | null>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{ id: string }>;
   };
   medSchoolStats: {
-    findFirst(args?: {
-      where?: Where;
-    }): Promise<MedSchoolStatsRow | null>;
-    create(args: {
-      data: Data;
-    }): Promise<{ id: string }>;
-    update(args: {
-      where: Where;
-      data: Data;
-    }): Promise<{ id: string }>;
-    upsert(args: {
-      where: Where;
-      create: Data;
-      update: Data;
-    }): Promise<{
+    findFirst(args?: { where?: Where }): Promise<MedSchoolStatsRow | null>;
+    create(args: { data: Data }): Promise<{ id: string }>;
+    update(args: { where: Where; data: Data }): Promise<{ id: string }>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{
       id: string;
     }>;
   };
   medSourceRun: {
-    create(args: {
-      data: Data;
-    }): Promise<{
+    create(args: { data: Data }): Promise<{
       id: string;
     }>;
     update(args: {
@@ -319,14 +206,8 @@ export interface MedPrisma {
     }): Promise<{
       id: string;
     }>;
-    findFirst(args?: {
-      where?: Where;
-      orderBy?: unknown;
-    }): Promise<MedSourceRunRow | null>;
+    findFirst(args?: { where?: Where; orderBy?: unknown }): Promise<MedSourceRunRow | null>;
   };
   /** Runs `fn` against a transaction client; the fake rolls its tables back if `fn` throws. */
-  $transaction<T>(
-    fn: (tx: MedPrisma) => Promise<T>,
-    options?: { isolationLevel?: 'Serializable' },
-  ): Promise<T>;
+  $transaction<T>(fn: (tx: MedPrisma) => Promise<T>, options?: { isolationLevel?: 'Serializable' }): Promise<T>;
 }

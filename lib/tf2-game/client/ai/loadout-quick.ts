@@ -6,10 +6,7 @@
 
 import { equipInto } from '@/lib/tf2-loadout/rules';
 import type { AiAction } from '@/lib/tf2-loadout/ai-core';
-import type {
-  Catalog,
-  LoadoutSlots,
-} from '@/lib/tf2-loadout/catalog-types';
+import type { Catalog, LoadoutSlots } from '@/lib/tf2-loadout/catalog-types';
 
 export function applyLoadoutActions(
   catalog: Catalog,
@@ -20,79 +17,35 @@ export function applyLoadoutActions(
   equipped: string[];
   replaced: string[];
 } {
-  const byId =
-    new Map(
-      catalog.items.map(
-        (
-          i,
-        ) => [
-          i.id,
-          i,
-        ],
-      ),
-    );
-  let next: LoadoutSlots =
-    {
-      ...slots,
-    };
-  const equipped: string[] =
-    [];
-  const replaced: string[] =
-    [];
+  const byId = new Map(catalog.items.map((i) => [i.id, i]));
+  let next: LoadoutSlots = {
+    ...slots,
+  };
+  const equipped: string[] = [];
+  const replaced: string[] = [];
   for (const a of actions) {
-    const item =
-      byId.get(
-        a.item,
-      );
-    if (
-      !item
-    )
-      continue;
-    const r =
-      equipInto(
-        catalog,
-        next,
-        a.slot,
-        item,
-        false,
-      );
-    next =
-      r.slots;
-    replaced.push(
-      ...r.removed.map(
-        (
-          x,
-        ) =>
-          x.n,
-      ),
-    );
-    next[
-      a.slot
-    ] =
-      {
-        item: item.id,
-        ...(a.paint !==
-        undefined
-          ? {
-              paint:
-                a.paint,
-            }
-          : {}),
-        ...(a.effect !==
-        undefined
-          ? {
-              effect:
-                a.effect,
-            }
-          : {}),
-      };
-    equipped.push(
-      item.n,
-    );
+    const item = byId.get(a.item);
+    if (!item) continue;
+    const r = equipInto(catalog, next, a.slot, item, false);
+    next = r.slots;
+    replaced.push(...r.removed.map((x) => x.n));
+    next[a.slot] = {
+      item: item.id,
+      ...(a.paint !== undefined
+        ? {
+            paint: a.paint,
+          }
+        : {}),
+      ...(a.effect !== undefined
+        ? {
+            effect: a.effect,
+          }
+        : {}),
+    };
+    equipped.push(item.n);
   }
   return {
-    slots:
-      next,
+    slots: next,
     equipped,
     replaced,
   };

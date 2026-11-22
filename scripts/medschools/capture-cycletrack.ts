@@ -120,7 +120,9 @@ async function main() {
       headers: { 'user-agent': MEDSCHOOLS_USER_AGENT },
       signal: AbortSignal.timeout(SOURCES.CYCLETRACK.timeoutMs),
     });
-    console.log(`${res.status} ${t.path} etag=${res.headers.get('etag')} last-modified=${res.headers.get('last-modified')}`);
+    console.log(
+      `${res.status} ${t.path} etag=${res.headers.get('etag')} last-modified=${res.headers.get('last-modified')}`,
+    );
     if (res.status === 403 || res.status === 429) {
       console.error('blocked; stopping without retry');
       process.exit(2);

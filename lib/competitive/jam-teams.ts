@@ -41,10 +41,7 @@ export function resolveTeamState(
 export const hasTeamRoom = (rows: number): boolean => rows < MAX_TEAMMATES;
 
 /** The submitter and the accepted teammates of an entry may not rate it; an invited member is not on the team yet. */
-export function mayRateEntry(
-  entry: { userId: string; acceptedIds: readonly string[] },
-  raterId: string,
-): boolean {
+export function mayRateEntry(entry: { userId: string; acceptedIds: readonly string[] }, raterId: string): boolean {
   return raterId !== entry.userId && !entry.acceptedIds.includes(raterId);
 }
 

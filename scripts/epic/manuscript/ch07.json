@@ -6,14 +6,8 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": [
-      "問罪燈前算無缺",
-      "沉默如國誰能出"
-    ],
-    "en": [
-      "An accounting by lamplight — the calculus is without flaw",
-      "Silence becomes a country no one can leave"
-    ]
+    "zh": ["問罪燈前算無缺", "沉默如國誰能出"],
+    "en": ["An accounting by lamplight — the calculus is without flaw", "Silence becomes a country no one can leave"]
   },
   "passages": [
     {
@@ -28,12 +22,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "三日無言燈不滅",
-        "一語如刃破帳來",
-        "昭明自知此刻重",
-        "冬雪落地亦無聲"
-      ],
+      "zh": ["三日無言燈不滅", "一語如刃破帳來", "昭明自知此刻重", "冬雪落地亦無聲"],
       "en": [
         "Three days without speech — the lamp did not go out",
         "A single sentence, blade-like, cuts into the tent",
@@ -65,12 +54,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "萬人歸路一人開",
-        "算盤精絕笑塵埃",
-        "十萬姓名書不盡",
-        "獨缺璟同兩字來"
-      ],
+      "zh": ["萬人歸路一人開", "算盤精絕笑塵埃", "十萬姓名書不盡", "獨缺璟同兩字來"],
       "en": [
         "The road home for ten thousand men was opened by one man",
         "The abacus flawless — and yet it laughs at nothing but dust",
@@ -92,12 +76,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "不革不逐不加刑",
-        "只是從今各自行",
-        "帳中兩燈原共焰",
-        "此後照各半壁冰"
-      ],
+      "zh": ["不革不逐不加刑", "只是從今各自行", "帳中兩燈原共焰", "此後照各半壁冰"],
       "en": [
         "No dismissal, no exile, no punishment pronounced",
         "Only that from this day forward each moves through the world alone",
@@ -117,12 +96,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "西山落鏡無人收",
-        "鏡中何面映空秋",
-        "萬靈坡上草猶在",
-        "不見持鏡人回頭"
-      ],
+      "zh": ["西山落鏡無人收", "鏡中何面映空秋", "萬靈坡上草猶在", "不見持鏡人回頭"],
       "en": [
         "In the western hills a mirror has fallen — no one gathers it up",
         "Within the mirror, whose face reflects the empty autumn",

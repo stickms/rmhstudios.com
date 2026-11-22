@@ -1,412 +1,141 @@
-import {
-  getAudioContext,
-  resumeAudioContext,
-} from '@/lib/shared/platform';
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 
 class SoundManager {
-  private ctx: AudioContext | null =
-    null;
+  private ctx: AudioContext | null = null;
   private initialized = false;
   private masterVolume = 0.3;
 
-  setVolume(
-    v: number,
-  ): void {
-    this.masterVolume =
-      Math.max(
-        0,
-        Math.min(
-          1,
-          v,
-        ),
-      );
+  setVolume(v: number): void {
+    this.masterVolume = Math.max(0, Math.min(1, v));
   }
 
   getVolume(): number {
-    return this
-      .masterVolume;
+    return this.masterVolume;
   }
 
   init(): void {
-    if (
-      this
-        .initialized
-    )
-      return;
+    if (this.initialized) return;
     // Shared, and null-safe: a device without Web Audio plays no sound
     // rather than failing to start the game.
-    this.ctx =
-      getAudioContext();
+    this.ctx = getAudioContext();
     this.initialized = true;
   }
 
   private getCtx(): AudioContext | null {
-    if (
-      !this
-        .ctx
-    )
-      this.init();
+    if (!this.ctx) this.init();
     resumeAudioContext();
-    return this
-      .ctx;
+    return this.ctx;
   }
 
-  private playTone(
-    frequency: number,
-    duration: number,
-    type: OscillatorType = 'sine',
-    volume = 0.3,
-  ): void {
-    const ctx =
-      this.getCtx();
-    if (
-      !ctx
-    )
-      return;
+  private playTone(frequency: number, duration: number, type: OscillatorType = 'sine', volume = 0.3): void {
+    const ctx = this.getCtx();
+    if (!ctx) return;
 
-    const osc =
-      ctx.createOscillator();
-    const gain =
-      ctx.createGain();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
-    osc.type =
-      type;
-    osc.frequency.setValueAtTime(
-      frequency,
-      ctx.currentTime,
-    );
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, ctx.currentTime);
 
-    gain.gain.setValueAtTime(
-      volume *
-        this
-          .masterVolume,
-      ctx.currentTime,
-    );
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      ctx.currentTime +
-        duration,
-    );
+    gain.gain.setValueAtTime(volume * this.masterVolume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
 
-    osc.connect(
-      gain,
-    );
-    gain.connect(
-      ctx.destination,
-    );
+    osc.connect(gain);
+    gain.connect(ctx.destination);
 
-    osc.start(
-      ctx.currentTime,
-    );
-    osc.stop(
-      ctx.currentTime +
-        duration,
-    );
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
   }
 
-  private playNoise(
-    duration: number,
-    volume = 0.1,
-  ): void {
-    const ctx =
-      this.getCtx();
-    if (
-      !ctx
-    )
-      return;
+  private playNoise(duration: number, volume = 0.1): void {
+    const ctx = this.getCtx();
+    if (!ctx) return;
 
-    const bufferSize =
-      ctx.sampleRate *
-      duration;
-    const buffer =
-      ctx.createBuffer(
-        1,
-        bufferSize,
-        ctx.sampleRate,
-      );
-    const data =
-      buffer.getChannelData(
-        0,
-      );
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
 
-    for (
-      let i = 0;
-      i <
-      bufferSize;
-      i++
-    ) {
-      data[
-        i
-      ] =
-        (Math.random() *
-          2 -
-          1) *
-        0.05;
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.05;
     }
 
-    const source =
-      ctx.createBufferSource();
-    source.buffer =
-      buffer;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
 
-    const gain =
-      ctx.createGain();
-    gain.gain.setValueAtTime(
-      volume *
-        this
-          .masterVolume,
-      ctx.currentTime,
-    );
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      ctx.currentTime +
-        duration,
-    );
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(volume * this.masterVolume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
 
-    const filter =
-      ctx.createBiquadFilter();
-    filter.type =
-      'lowpass';
-    filter.frequency.setValueAtTime(
-      800,
-      ctx.currentTime,
-    );
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, ctx.currentTime);
 
-    source.connect(
-      filter,
-    );
-    filter.connect(
-      gain,
-    );
-    gain.connect(
-      ctx.destination,
-    );
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
     source.start();
   }
 
   // --- Game Sounds ---
 
   solve(): void {
-    this.playTone(
-      880,
-      0.12,
-      'sine',
-      0.4,
-    );
-    setTimeout(
-      () =>
-        this.playTone(
-          1100,
-          0.15,
-          'sine',
-          0.3,
-        ),
-      60,
-    );
+    this.playTone(880, 0.12, 'sine', 0.4);
+    setTimeout(() => this.playTone(1100, 0.15, 'sine', 0.3), 60);
   }
 
-  combo(
-    comboLevel: number,
-  ): void {
-    const baseFreq =
-      600 +
-      comboLevel *
-        80;
-    this.playTone(
-      baseFreq,
-      0.1,
-      'sine',
-      0.35,
-    );
-    setTimeout(
-      () =>
-        this.playTone(
-          baseFreq *
-            1.25,
-          0.1,
-          'sine',
-          0.3,
-        ),
-      50,
-    );
-    setTimeout(
-      () =>
-        this.playTone(
-          baseFreq *
-            1.5,
-          0.15,
-          'sine',
-          0.25,
-        ),
-      100,
-    );
+  combo(comboLevel: number): void {
+    const baseFreq = 600 + comboLevel * 80;
+    this.playTone(baseFreq, 0.1, 'sine', 0.35);
+    setTimeout(() => this.playTone(baseFreq * 1.25, 0.1, 'sine', 0.3), 50);
+    setTimeout(() => this.playTone(baseFreq * 1.5, 0.15, 'sine', 0.25), 100);
   }
 
   wrong(): void {
-    this.playTone(
-      200,
-      0.15,
-      'square',
-      0.25,
-    );
-    setTimeout(
-      () =>
-        this.playTone(
-          150,
-          0.2,
-          'square',
-          0.2,
-        ),
-      80,
-    );
+    this.playTone(200, 0.15, 'square', 0.25);
+    setTimeout(() => this.playTone(150, 0.2, 'square', 0.2), 80);
   }
 
   expire(): void {
-    this.playTone(
-      300,
-      0.1,
-      'sawtooth',
-      0.15,
-    );
-    this.playTone(
-      250,
-      0.2,
-      'sawtooth',
-      0.1,
-    );
+    this.playTone(300, 0.1, 'sawtooth', 0.15);
+    this.playTone(250, 0.2, 'sawtooth', 0.1);
   }
 
   spawn(): void {
-    this.playTone(
-      500,
-      0.05,
-      'sine',
-      0.1,
-    );
+    this.playTone(500, 0.05, 'sine', 0.1);
   }
 
   click(): void {
-    this.playTone(
-      700,
-      0.04,
-      'sine',
-      0.15,
-    );
+    this.playTone(700, 0.04, 'sine', 0.15);
   }
 
   gameOver(): void {
-    const notes =
-      [
-        400,
-        350,
-        300,
-        200,
-      ];
-    notes.forEach(
-      (
-        n,
-        i,
-      ) => {
-        setTimeout(
-          () =>
-            this.playTone(
-              n,
-              0.3,
-              'sine',
-              0.3 -
-                i *
-                  0.05,
-            ),
-          i *
-            200,
-        );
-      },
-    );
+    const notes = [400, 350, 300, 200];
+    notes.forEach((n, i) => {
+      setTimeout(() => this.playTone(n, 0.3, 'sine', 0.3 - i * 0.05), i * 200);
+    });
   }
 
   startGame(): void {
-    const notes =
-      [
-        400,
-        500,
-        600,
-        800,
-      ];
-    notes.forEach(
-      (
-        n,
-        i,
-      ) => {
-        setTimeout(
-          () =>
-            this.playTone(
-              n,
-              0.15,
-              'sine',
-              0.25,
-            ),
-          i *
-            100,
-        );
-      },
-    );
+    const notes = [400, 500, 600, 800];
+    notes.forEach((n, i) => {
+      setTimeout(() => this.playTone(n, 0.15, 'sine', 0.25), i * 100);
+    });
   }
 
   ambient(): void {
-    this.playNoise(
-      4,
-      0.03,
-    );
+    this.playNoise(4, 0.03);
   }
 
   priority(): void {
-    this.playTone(
-      1000,
-      0.08,
-      'sine',
-      0.3,
-    );
-    setTimeout(
-      () =>
-        this.playTone(
-          1200,
-          0.08,
-          'sine',
-          0.3,
-        ),
-      80,
-    );
-    setTimeout(
-      () =>
-        this.playTone(
-          1000,
-          0.08,
-          'sine',
-          0.3,
-        ),
-      160,
-    );
+    this.playTone(1000, 0.08, 'sine', 0.3);
+    setTimeout(() => this.playTone(1200, 0.08, 'sine', 0.3), 80);
+    setTimeout(() => this.playTone(1000, 0.08, 'sine', 0.3), 160);
   }
 
   warning(): void {
-    this.playTone(
-      800,
-      0.1,
-      'square',
-      0.2,
-    );
-    setTimeout(
-      () =>
-        this.playTone(
-          600,
-          0.2,
-          'square',
-          0.2,
-        ),
-      100,
-    );
+    this.playTone(800, 0.1, 'square', 0.2);
+    setTimeout(() => this.playTone(600, 0.2, 'square', 0.2), 100);
   }
 }
 
-export const soundManager =
-  new SoundManager();
+export const soundManager = new SoundManager();

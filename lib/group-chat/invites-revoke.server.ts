@@ -6,11 +6,7 @@
 import type { Prisma } from '@prisma/client';
 
 /** Revoke every live link `userId` made for a group (ownership or admin standing moved on); how many were live. Runs inside the caller's transaction. */
-export async function revokeInvitesOf(
-  tx: Prisma.TransactionClient,
-  chatId: string,
-  userId: string,
-): Promise<number> {
+export async function revokeInvitesOf(tx: Prisma.TransactionClient, chatId: string, userId: string): Promise<number> {
   const done = await tx.chatInvite.updateMany({
     where: { chatId, createdById: userId, revokedAt: null },
     data: { revokedAt: new Date() },

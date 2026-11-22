@@ -47,21 +47,12 @@ export function getAudienceInsights(
   },
 ): Promise<AudienceInsights> {
   const { range, timeZone } = options;
-  return cached(
-    `audience:${userId}:${range}:${timeZone}`,
-    CACHE_MS,
-    () => load(userId, range, timeZone),
-    {
-      tags: [audienceTag(userId)],
-    },
-  );
+  return cached(`audience:${userId}:${range}:${timeZone}`, CACHE_MS, () => load(userId, range, timeZone), {
+    tags: [audienceTag(userId)],
+  });
 }
 
-async function load(
-  userId: string,
-  range: AudienceRange,
-  timeZone: string,
-): Promise<AudienceInsights> {
+async function load(userId: string, range: AudienceRange, timeZone: string): Promise<AudienceInsights> {
   const now = new Date();
   const today = dayKeyInZone(now, timeZone);
   const windowStart = addDays(today, -(range - 1));

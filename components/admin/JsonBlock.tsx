@@ -20,32 +20,12 @@ export function JsonBlock({
   className?: string;
 }) {
   return (
-    <section
-      aria-label={
-        label
-      }
-      className={cn(
-        'min-w-0',
-        className,
-      )}
-    >
-      <h3 className="t-label mb-1">
-        {
-          label
-        }
-      </h3>
+    <section aria-label={label} className={cn('min-w-0', className)}>
+      <h3 className="t-label mb-1">{label}</h3>
       <pre className="surface-field t-meta max-h-80 overflow-auto rounded-site-sm p-3 whitespace-pre-wrap break-words text-site-text">
-        {
-          field.text
-        }
+        {field.text}
       </pre>
-      {field.truncated ? (
-        <p className="t-meta mt-1">
-          {
-            truncatedNote
-          }
-        </p>
-      ) : null}
+      {field.truncated ? <p className="t-meta mt-1">{truncatedNote}</p> : null}
     </section>
   );
 }

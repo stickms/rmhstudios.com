@@ -13,23 +13,15 @@ import { SPRING } from '@/lib/app-motion';
  * layout projection on every site page that has a tab strip, the home feed
  * included, where Steel draws a rule and never this capsule.
  */
-export default function TabCapsule({
-  layoutId,
-}: {
-  layoutId: string;
-}) {
+export default function TabCapsule({ layoutId }: { layoutId: string }) {
   return (
     <motion.span
-      layoutId={
-        layoutId
-      }
+      layoutId={layoutId}
       aria-hidden
       // The hook globals.css uses to decide whether the thumb ink is safe.
       data-tab-capsule=""
       className="absolute inset-0"
-      transition={
-        SPRING.snappy
-      }
+      transition={SPRING.snappy}
     >
       <TabThumb />
     </motion.span>
@@ -38,10 +30,5 @@ export default function TabCapsule({
 
 /** The material alone. tabs.tsx draws the same markup as its loading fallback. */
 export function TabThumb() {
-  return (
-    <span
-      data-tab-thumb=""
-      className="absolute inset-0 rounded-[var(--tab-radius,var(--site-control-radius))]"
-    />
-  );
+  return <span data-tab-thumb="" className="absolute inset-0 rounded-[var(--tab-radius,var(--site-control-radius))]" />;
 }

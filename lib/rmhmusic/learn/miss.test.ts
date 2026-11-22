@@ -29,7 +29,11 @@ describe('describeMiss', () => {
   });
 
   it('calls the right letter in the wrong octave an octave off', () => {
-    expect(describeMiss(60, { kind: 'midi', midi: 72 })).toMatchObject({ steps: 7, direction: 'above', sameLetter: true });
+    expect(describeMiss(60, { kind: 'midi', midi: 72 })).toMatchObject({
+      steps: 7,
+      direction: 'above',
+      sameLetter: true,
+    });
   });
 
   it('puts a sharp of the right letter level with it', () => {

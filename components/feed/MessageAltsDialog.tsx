@@ -23,129 +23,56 @@ export function MessageAltsDialog({
   imageUrls: string[];
   imageAlts: string[];
   restoreFocusTo?: () => HTMLElement | null;
-  onSaved: (
-    imageAlts: string[],
-  ) => void;
+  onSaved: (imageAlts: string[]) => void;
   onClose: () => void;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'message-alt-text',
-    );
-  const [
-    saving,
-    setSaving,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    error,
-    setError,
-  ] =
-    useState<
-      | string
-      | null
-    >(
-      null,
-    );
+  const { t } = useTranslation('message-alt-text');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <AltTextEditor
-      images={imageUrls.map(
-        (
-          url,
-          i,
-        ) => ({
-          url,
-          number:
-            i +
-            1,
-          value:
-            imageAlts[
-              i
-            ] ??
-            '',
-        }),
-      )}
-      title={t(
-        'edit-title',
-        {
-          defaultValue:
-            'Image descriptions',
-        },
-      )}
-      saveLabel={t(
-        'save',
-        {
-          defaultValue:
-            'Save',
-        },
-      )}
-      saving={
-        saving
-      }
-      error={
-        error
-      }
+      images={imageUrls.map((url, i) => ({
+        url,
+        number: i + 1,
+        value: imageAlts[i] ?? '',
+      }))}
+      title={t('edit-title', {
+        defaultValue: 'Image descriptions',
+      })}
+      saveLabel={t('save', {
+        defaultValue: 'Save',
+      })}
+      saving={saving}
+      error={error}
       {...(restoreFocusTo
         ? {
             restoreFocusTo,
           }
         : {})}
-      onClose={
-        onClose
-      }
-      onSave={async (
-        values,
-      ) => {
-        setSaving(
-          true,
-        );
-        setError(
-          null,
-        );
+      onClose={onClose}
+      onSave={async (values) => {
+        setSaving(true);
+        setError(null);
         try {
-          const res =
-            await api(
-              editMessageAltsApi,
-              {
-                params:
-                  {
-                    conversationId:
-                      chatId,
-                  },
-                body: {
-                  messageId,
-                  imageAlts:
-                    values.map(
-                      (
-                        v,
-                      ) =>
-                        v.trim(),
-                    ),
-                },
-              },
-            );
-          onSaved(
-            res.imageAlts,
-          );
+          const res = await api(editMessageAltsApi, {
+            params: {
+              conversationId: chatId,
+            },
+            body: {
+              messageId,
+              imageAlts: values.map((v) => v.trim()),
+            },
+          });
+          onSaved(res.imageAlts);
           onClose();
         } catch {
           setError(
-            t(
-              'save-failed',
-              {
-                defaultValue:
-                  'Could not save the descriptions. Try again.',
-              },
-            ),
+            t('save-failed', {
+              defaultValue: 'Could not save the descriptions. Try again.',
+            }),
           );
-          setSaving(
-            false,
-          );
+          setSaving(false);
         }
       }}
     />

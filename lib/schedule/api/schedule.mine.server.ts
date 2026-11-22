@@ -17,12 +17,9 @@ const query = z.object({
 });
 
 export const route = apiRoute('/api/schedule/mine', {
-  GET: implement(
-    getMyScheduleApi,
-    { rateLimit: 'read', query, microCache: false },
-    async ({ userId, query: q }) =>
-      Response.json(await getMyGrid(userId, q.from ? new Date(q.from) : new Date(), q.days ?? 7), {
-        headers: { 'Cache-Control': 'private, no-store' },
-      }),
+  GET: implement(getMyScheduleApi, { rateLimit: 'read', query, microCache: false }, async ({ userId, query: q }) =>
+    Response.json(await getMyGrid(userId, q.from ? new Date(q.from) : new Date(), q.days ?? 7), {
+      headers: { 'Cache-Control': 'private, no-store' },
+    }),
   ),
 });

@@ -1,16 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import {
-  checkInApi,
-  checkInSettingsApi,
-  hostCheckInApi,
-} from '@/lib/tournaments/checkin.contract';
-import {
-  checkIn,
-  hostCheckIn,
-  undoHostCheckIn,
-  updateCheckInSettings,
-} from '@/lib/tournaments/checkin.server';
+import { checkInApi, checkInSettingsApi, hostCheckInApi } from '@/lib/tournaments/checkin.contract';
+import { checkIn, hostCheckIn, undoHostCheckIn, updateCheckInSettings } from '@/lib/tournaments/checkin.server';
 import { checkInSettingsSchema, hostCheckInSchema } from '@/lib/tournaments/tournament-schema';
 import { TournamentError } from '@/lib/tournaments/tournament.server';
 

@@ -16,7 +16,8 @@ import {
 } from '@/lib/rmhbox/presets';
 import type { GameSettingValues } from '@/lib/rmhbox/types';
 
-export type PresetResult<T> = { ok: true; value: T } | { ok: false; status: number; code: PresetErrorCode; error: string };
+export type PresetResult<T> =
+  { ok: true; value: T } | { ok: false; status: number; code: PresetErrorCode; error: string };
 
 const FAIL = {
   'name-taken': { status: 409, error: 'You already have a preset with that name' },
@@ -118,7 +119,10 @@ export async function updatePreset(
 ): Promise<PresetResult<RmhboxPreset>> {
   return prisma.$transaction(async (tx) => {
     await lockKey(tx, `rmhbox-presets:${userId}`);
-    const current = await tx.rmhboxSettingsPreset.findFirst({ where: { id, userId }, select: { id: true, minigameId: true, name: true } });
+    const current = await tx.rmhboxSettingsPreset.findFirst({
+      where: { id, userId },
+      select: { id: true, minigameId: true, name: true },
+    });
     if (!current) return fail('not-found');
 
     const data: Prisma.RmhboxSettingsPresetUpdateInput = {};

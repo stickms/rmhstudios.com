@@ -82,7 +82,10 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
       void refresh();
       if (delivery.status === 'DELIVERED') {
         toast.success(
-          t('detail-test-ok', { defaultValue: 'Test event delivered (HTTP {{status}}).', status: delivery.responseStatus ?? 0 }),
+          t('detail-test-ok', {
+            defaultValue: 'Test event delivered (HTTP {{status}}).',
+            status: delivery.responseStatus ?? 0,
+          }),
         );
       } else {
         toast.error(
@@ -97,8 +100,7 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
   });
 
   const redeliver = useMutation({
-    mutationFn: (delivery: WebhookDeliveryRow) =>
-      api(redeliverWebhookApi, { params: { id: delivery.id } }),
+    mutationFn: (delivery: WebhookDeliveryRow) => api(redeliverWebhookApi, { params: { id: delivery.id } }),
     onSuccess: () => {
       void refresh();
       toast.success(t('detail-redelivered', { defaultValue: 'Sent again as a new delivery.' }));
@@ -233,7 +235,8 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
               )}
               <p className="t-meta">
                 {t('detail-disabled-hint', {
-                  defaultValue: 'Endpoints switch off after repeated failed deliveries. Enabling it resets the failure count.',
+                  defaultValue:
+                    'Endpoints switch off after repeated failed deliveries. Enabling it resets the failure count.',
                 })}
               </p>
               <p className="t-meta">
@@ -305,7 +308,11 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
           <h3 id="deliveries-heading" className="t-heading">
             {t('deliveries-heading', { defaultValue: 'Deliveries' })}
           </h3>
-          <Button variant="ghost" loading={deliveries.isFetching && !deliveries.isFetchingNextPage} onClick={() => void refresh()}>
+          <Button
+            variant="ghost"
+            loading={deliveries.isFetching && !deliveries.isFetchingNextPage}
+            onClick={() => void refresh()}
+          >
             <RefreshCw aria-hidden /> {t('console-refresh', { defaultValue: 'Refresh' })}
           </Button>
         </div>

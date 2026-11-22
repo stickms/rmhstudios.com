@@ -9,33 +9,18 @@ import { startAssistRun } from '@/lib/game/assist-run.server';
  * the claim `submitGameScore` reads; the client never says whether it was
  * assisted. Signed-out players cannot call it and play the ranked profile.
  */
-export const route =
-  apiRoute(
-    '/api/games/$gameId/assist-run',
+export const route = apiRoute('/api/games/$gameId/assist-run', {
+  POST: implement(
+    startAssistRunApi,
     {
-      POST: implement(
-        startAssistRunApi,
-        {
-          rateLimit:
-            {
-              limit: 30,
-              windowMs: 60_000,
-              prefix:
-                'assist-run',
-            },
-        },
-        async ({
-          params,
-          session,
-        }) => ({
-          profile:
-            await startAssistRun(
-              session
-                .user
-                .id,
-              params.gameId,
-            ),
-        }),
-      ),
+      rateLimit: {
+        limit: 30,
+        windowMs: 60_000,
+        prefix: 'assist-run',
+      },
     },
-  );
+    async ({ params, session }) => ({
+      profile: await startAssistRun(session.user.id, params.gameId),
+    }),
+  ),
+});

@@ -26,42 +26,42 @@ export function deskModeText(t: TFunction): Record<string, DeskModeText> {
         defaultValue: 'Turn off every light. Tap to toggle neighbors.',
       }),
     },
-    'alibi': {
+    alibi: {
       title: t('mode-title-alibi', { ns: 'c-daily-puzzles', defaultValue: 'Alibi' }),
       description: t('alibi-desc', {
         ns: 'c-daily-puzzles',
         defaultValue: 'Four suspects. One liar. Find the contradiction.',
       }),
     },
-    'spectrum': {
+    spectrum: {
       title: t('mode-title-spectrum', { ns: 'c-daily-puzzles', defaultValue: 'Spectrum' }),
       description: t('spectrum-desc', {
         ns: 'c-daily-puzzles',
         defaultValue: 'Rank 5 items along a hidden scale.',
       }),
     },
-    'outcast': {
+    outcast: {
       title: t('mode-title-outcast', { ns: 'c-daily-puzzles', defaultValue: 'Outcast' }),
       description: t('outcast-desc', {
         ns: 'c-daily-puzzles',
         defaultValue: 'Five rounds. Spot the odd one out.',
       }),
     },
-    'chainlink': {
+    chainlink: {
       title: t('mode-title-chainlink', { ns: 'c-daily-puzzles', defaultValue: 'Chainlink' }),
       description: t('chainlink-desc', {
         ns: 'c-daily-puzzles',
         defaultValue: 'Connect two words through association jumps.',
       }),
     },
-    'impostor': {
+    impostor: {
       title: t('mode-title-impostor', { ns: 'c-daily-puzzles', defaultValue: 'Impostor' }),
       description: t('impostor-desc', {
         ns: 'c-daily-puzzles',
         defaultValue: 'Five facts. Two are lies. Find the fakes.',
       }),
     },
-    'globeset': {
+    globeset: {
       title: t('mode-title-globeset', { ns: 'c-daily-puzzles', defaultValue: 'GlobeSet' }),
       description: t('globeset-desc', {
         ns: 'c-daily-puzzles',

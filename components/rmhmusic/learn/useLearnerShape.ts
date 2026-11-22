@@ -4,47 +4,20 @@
  * server, so the server-rendered skeleton is already the learner's own). Never localStorage.
  */
 import { getRouteApi } from '@tanstack/react-router';
-import {
-  DEFAULT_LEARNER_SHAPE,
-  type LearnerShape,
-} from '@/lib/rmhmusic/learn/learner-shape';
+import { DEFAULT_LEARNER_SHAPE, type LearnerShape } from '@/lib/rmhmusic/learn/learner-shape';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 
-const layout =
-  getRouteApi(
-    '/rmhmusic',
-  );
+const layout = getRouteApi('/rmhmusic');
 
 export function useLearnerShape(): LearnerShape {
-  const fromRoute =
-    layout.useRouteContext(
-      {
-        select:
-          (
-            c,
-          ) =>
-            c.learner,
-      },
-    );
-  const profile =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.profile,
-    );
-  if (
-    profile
-  )
+  const fromRoute = layout.useRouteContext({
+    select: (c) => c.learner,
+  });
+  const profile = useLearnStore((s) => s.profile);
+  if (profile)
     return {
-      instrument:
-        profile.instrument,
-      voiceRange:
-        profile.voiceRange ??
-        null,
+      instrument: profile.instrument,
+      voiceRange: profile.voiceRange ?? null,
     };
-  return (
-    fromRoute ??
-    DEFAULT_LEARNER_SHAPE
-  );
+  return fromRoute ?? DEFAULT_LEARNER_SHAPE;
 }

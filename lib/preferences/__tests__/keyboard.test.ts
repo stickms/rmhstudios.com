@@ -49,16 +49,7 @@ describe('keyboardPrefsSchema', () => {
   });
 
   it('rejects bad key strings', () => {
-    for (const keys of [
-      [],
-      ['a', 'b', 'c'],
-      [''],
-      ['ctrl+n'],
-      ['mod+'],
-      ['two words'],
-      ['x'.repeat(40)],
-      [7],
-    ]) {
+    for (const keys of [[], ['a', 'b', 'c'], [''], ['ctrl+n'], ['mod+'], ['two words'], ['x'.repeat(40)], [7]]) {
       expect(parse({ 'site.compose': keys }).success).toBe(false);
     }
   });

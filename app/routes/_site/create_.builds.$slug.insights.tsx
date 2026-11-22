@@ -75,7 +75,9 @@ function BuildInsightsPage() {
         <BuildInsights
           slug={slug}
           range={parseRange(range)}
-          onRangeChange={(next) => void navigate({ search: { range: String(next) as '7' | '30' | '90' }, replace: true })}
+          onRangeChange={(next) =>
+            void navigate({ search: { range: String(next) as '7' | '30' | '90' }, replace: true })
+          }
         />
       </div>
     </PageLayout>

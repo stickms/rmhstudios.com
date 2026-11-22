@@ -13,11 +13,7 @@ import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { formatDateShort } from '@/lib/core/format';
 import { api } from '@/lib/contract/client';
 import { listRepostMutesApi, setRepostMuteApi } from '@/lib/feed/repost-mutes.contract';
-import {
-  REPOST_MUTE_SEARCH_THRESHOLD,
-  type RepostMutePage,
-  type RepostMuteRow,
-} from '@/lib/feed/repost-mutes';
+import { REPOST_MUTE_SEARCH_THRESHOLD, type RepostMutePage, type RepostMuteRow } from '@/lib/feed/repost-mutes';
 import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 

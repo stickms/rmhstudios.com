@@ -1,13 +1,7 @@
 /** A two-button confirmation. One primary action: the confirm button. */
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Props {
   open: boolean;
@@ -20,73 +14,23 @@ interface Props {
   onCancel: () => void;
 }
 
-export default function ConfirmBox({
-  open,
-  container,
-  title,
-  confirmLabel,
-  cancelLabel,
-  onConfirm,
-  onCancel,
-}: Props) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhos',
-    );
+export default function ConfirmBox({ open, container, title, confirmLabel, cancelLabel, onConfirm, onCancel }: Props) {
+  const { t } = useTranslation('c-rmhos');
   return (
-    <Dialog
-      open={
-        open
-      }
-      onOpenChange={(
-        o,
-      ) =>
-        !o &&
-        onCancel()
-      }
-    >
-      <DialogContent
-        container={
-          container
-        }
-        className="max-w-sm"
-        aria-describedby={
-          undefined
-        }
-      >
+    <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
+      <DialogContent container={container} className="max-w-sm" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle className="text-sm font-normal">
-            {
-              title
-            }
-          </DialogTitle>
+          <DialogTitle className="text-sm font-normal">{title}</DialogTitle>
         </DialogHeader>
         <DialogFooter>
-          <Button
-            onClick={
-              onCancel
-            }
-          >
+          <Button onClick={onCancel}>
             {cancelLabel ??
-              t(
-                'cancel',
-                {
-                  defaultValue:
-                    'Cancel',
-                },
-              )}
+              t('cancel', {
+                defaultValue: 'Cancel',
+              })}
           </Button>
-          <Button
-            variant="primary"
-            onClick={
-              onConfirm
-            }
-          >
-            {
-              confirmLabel
-            }
+          <Button variant="primary" onClick={onConfirm}>
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

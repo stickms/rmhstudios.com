@@ -47,7 +47,11 @@ vi.mock('@/lib/feed/audience.server', () => ({
 vi.mock('@/lib/xp/engine.server', () => ({ awardXp: vi.fn() }));
 vi.mock('@/lib/quests/engine.server', () => ({ progressQuests: vi.fn() }));
 vi.mock('@/lib/feed-sse', () => ({
-  feedEventBus: { publish: vi.fn(), publishPostEngagement: vi.fn(), publishCreatedPost: (e: unknown) => h.published.push(e) },
+  feedEventBus: {
+    publish: vi.fn(),
+    publishPostEngagement: vi.fn(),
+    publishCreatedPost: (e: unknown) => h.published.push(e),
+  },
 }));
 vi.mock('@/lib/moderation.server', () => ({
   getHiddenAuthorIds: async () => [],
@@ -81,8 +85,7 @@ const quiz = (over: Record<string, unknown> = {}) => ({
 });
 
 describe('create validation', () => {
-  const parse = (poll: Record<string, unknown>) =>
-    createRMHarkSchema.safeParse({ content: 'hi', poll });
+  const parse = (poll: Record<string, unknown>) => createRMHarkSchema.safeParse({ content: 'hi', poll });
   const messages = (poll: Record<string, unknown>) => {
     const r = parse(poll);
     return r.success ? [] : r.error.issues.map((i) => i.message);
@@ -125,9 +128,9 @@ describe('create validation', () => {
   });
 
   it('accepts quiz edits on the edit schema', () => {
-    expect(editRMHarkSchema.safeParse({ content: 'x', quizCorrectOptionId: 'o1', quizExplanation: 'why' }).success).toBe(
-      true,
-    );
+    expect(
+      editRMHarkSchema.safeParse({ content: 'x', quizCorrectOptionId: 'o1', quizExplanation: 'why' }).success,
+    ).toBe(true);
     expect(editRMHarkSchema.safeParse({ content: 'x', quizExplanation: 'x'.repeat(281) }).success).toBe(false);
   });
 });
@@ -249,11 +252,24 @@ describe('a cached card is re-stamped per viewer', () => {
 });
 
 describe('the developer API poll', () => {
-  const apiPoll = { id: 'p', question: 'q', multiSelect: false, ranked: false, closesAt: null, closedAt: null, options: [] };
+  const apiPoll = {
+    id: 'p',
+    question: 'q',
+    multiSelect: false,
+    ranked: false,
+    closesAt: null,
+    closedAt: null,
+    options: [],
+  };
   const stored = { correctOptionId: 'o1', explanation: 'Because.', closesAt: null, closedAt: null };
 
   it('carries quiz: true and a null answer for a key owner who has not voted', () => {
-    const out = serializePostPoll(apiPoll, null, false, quizRevealFor(stored, { viewerId: 'key-owner', authorId: 'author' }, false));
+    const out = serializePostPoll(
+      apiPoll,
+      null,
+      false,
+      quizRevealFor(stored, { viewerId: 'key-owner', authorId: 'author' }, false),
+    );
     expect(out).toMatchObject({ quiz: true, correctOptionId: null, explanation: null });
   });
 
@@ -274,7 +290,11 @@ describe('the developer API poll', () => {
   });
 
   it('says quiz: false for a plain poll', () => {
-    expect(serializePostPoll(apiPoll, null, false)).toMatchObject({ quiz: false, correctOptionId: null, explanation: null });
+    expect(serializePostPoll(apiPoll, null, false)).toMatchObject({
+      quiz: false,
+      correctOptionId: null,
+      explanation: null,
+    });
   });
 });
 
@@ -299,7 +319,11 @@ describe('voting on a quiz', () => {
       params: { id: 'post1' },
       request: new Request('https://x.test/api/rmharks/post1/vote', {
         method: 'POST',
-        headers: { cookie: 'better-auth.session_token=abc', 'content-type': 'application/json', 'cf-connecting-ip': '1.2.3.4' },
+        headers: {
+          cookie: 'better-auth.session_token=abc',
+          'content-type': 'application/json',
+          'cf-connecting-ip': '1.2.3.4',
+        },
         body: JSON.stringify({ optionId: 'o2' }),
       }),
     });
@@ -320,7 +344,11 @@ describe('voting on a quiz', () => {
     // The poll's times, re-read under its lock: open.
     prisma.rMHarkPoll.findUnique.mockResolvedValue({ closesAt: null, closedAt: null });
     prisma.$transaction.mockImplementation(async (fn: (t: unknown) => unknown) =>
-      fn({ rMHarkPoll: prisma.rMHarkPoll, rMHarkPollOption: prisma.rMHarkPollOption, rMHarkPollVote: prisma.rMHarkPollVote }),
+      fn({
+        rMHarkPoll: prisma.rMHarkPoll,
+        rMHarkPollOption: prisma.rMHarkPollOption,
+        rMHarkPollVote: prisma.rMHarkPollVote,
+      }),
     );
   });
 
@@ -390,7 +418,11 @@ describe('editing a quiz after votes', () => {
       params: { id: 'post1' },
       request: new Request('https://x.test/api/rmharks/post1', {
         method: 'PATCH',
-        headers: { cookie: 'better-auth.session_token=abc', 'content-type': 'application/json', 'cf-connecting-ip': '1.2.3.4' },
+        headers: {
+          cookie: 'better-auth.session_token=abc',
+          'content-type': 'application/json',
+          'cf-connecting-ip': '1.2.3.4',
+        },
         body: JSON.stringify(body),
       }),
     });
@@ -414,7 +446,12 @@ describe('editing a quiz after votes', () => {
     prisma.rMHarkPoll.findUnique.mockImplementation(async (args: { where: { rmheetId?: string } }) =>
       args.where.rmheetId
         ? { id: 'poll1', correctOptionId: 'o1' }
-        : { options: [{ id: 'o1', voteCount: h.priorVote ? 1 : 0 }, { id: 'o2', voteCount: 0 }] },
+        : {
+            options: [
+              { id: 'o1', voteCount: h.priorVote ? 1 : 0 },
+              { id: 'o2', voteCount: 0 },
+            ],
+          },
     );
     prisma.rMHarkPollVote.findFirst.mockImplementation(async () => h.priorVote);
     prisma.$transaction.mockImplementation(async (fn: unknown) =>

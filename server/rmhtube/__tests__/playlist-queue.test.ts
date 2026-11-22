@@ -27,18 +27,20 @@ const db = vi.hoisted(() => ({
 }));
 
 vi.mock('../prisma-client', () => {
-  db.playlistFindFirst = vi.fn(async (args: {
-    where: { id: string; kind: string; OR: Array<{ userId?: string; collaborators?: { some: { userId: string } } }> };
-    select: unknown;
+  db.playlistFindFirst = vi.fn(
+    async (args: {
+      where: { id: string; kind: string; OR: Array<{ userId?: string; collaborators?: { some: { userId: string } } }> };
+      select: unknown;
     }) => {
-    const p = db.playlists.find((x) => x.id === args.where.id && x.kind === args.where.kind);
-    if (!p) return null;
-    const allowed = args.where.OR.some(
-      (c) => c.userId === p.userId || (c.collaborators && p.collaborators.includes(c.collaborators.some.userId)),
-    );
-    if (!allowed) return null;
-    return { name: p.name, userId: p.userId, itemCount: p.itemCount, items: p.items };
-  });
+      const p = db.playlists.find((x) => x.id === args.where.id && x.kind === args.where.kind);
+      if (!p) return null;
+      const allowed = args.where.OR.some(
+        (c) => c.userId === p.userId || (c.collaborators && p.collaborators.includes(c.collaborators.some.userId)),
+      );
+      if (!allowed) return null;
+      return { name: p.name, userId: p.userId, itemCount: p.itemCount, items: p.items };
+    },
+  );
   db.createMany = vi.fn(async () => ({ count: 0 }));
   return {
     getPrismaClient: () => ({
@@ -90,10 +92,9 @@ function setup(opts: { host?: string; allowMemberQueue?: boolean; queue?: number
     }) as never;
   const queue = new MediaQueue({} as never, roomManager as never, {} as never);
   const run = (userId: string) =>
-    (queue as unknown as { addPlaylistToQueue: (s: unknown, p: { playlistId: string }) => Promise<void> }).addPlaylistToQueue(
-      socket(userId),
-      { playlistId: PLAYLIST_ID },
-    );
+    (
+      queue as unknown as { addPlaylistToQueue: (s: unknown, p: { playlistId: string }) => Promise<void> }
+    ).addPlaylistToQueue(socket(userId), { playlistId: PLAYLIST_ID });
   return { room, broadcastAction, emitted, run };
 }
 
@@ -127,7 +128,11 @@ describe('QUEUE_ADD_PLAYLIST', () => {
     expect(room.queue.map((q) => (q as unknown as { title: string }).title)).toEqual(rows(20).map((r) => r.title));
     expect(room.queue.map((q) => q.position)).toEqual(Array.from({ length: 20 }, (_, i) => i));
     expect(broadcastAction).toHaveBeenCalledTimes(1);
-    const [, type, payload] = broadcastAction.mock.calls[0] as [unknown, string, { items: unknown[]; count: number; playlistName: string; userName: string }];
+    const [, type, payload] = broadcastAction.mock.calls[0] as [
+      unknown,
+      string,
+      { items: unknown[]; count: number; playlistName: string; userName: string },
+    ];
     expect(type).toBe('QUEUE_PLAYLIST_ADDED');
     expect(payload).toMatchObject({ count: 20, playlistName: 'Friday mix', userName: 'Name host' });
     expect(payload.items).toHaveLength(20);
@@ -170,7 +175,7 @@ describe('QUEUE_ADD_PLAYLIST', () => {
     expect(b.emitted[0]?.[1]).toMatchObject({ code: 'PLAYLIST_NOT_FOUND' });
   });
 
-  it('never lists another member\'s music or other-kind playlist', async () => {
+  it("never lists another member's music or other-kind playlist", async () => {
     db.playlists = [playlist({ kind: 'music' })];
     const { emitted, run } = setup();
     await run('host');

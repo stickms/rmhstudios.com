@@ -22,9 +22,7 @@ import {
 } from '@/lib/study/card-types';
 import { MAX_DECK_CARDS, MAX_DECKS_PER_MEMBER, MAX_IMPORT_CARDS } from '@/lib/study/limits';
 
-export type EditResult<T = object> =
-  | ({ ok: true } & T)
-  | { ok: false; status: 400 | 404 | 409; error: string };
+export type EditResult<T = object> = ({ ok: true } & T) | { ok: false; status: 400 | 404 | 409; error: string };
 
 const NOT_FOUND = { ok: false, status: 404, error: 'Not found' } as const;
 const DECK_FULL = { ok: false, status: 400, error: 'Deck is full' } as const;
@@ -177,11 +175,7 @@ function checkDrafts(drafts: readonly CardDraft[]): CardInput[] | null {
  * a surviving index or the reverse keeps its id (and every member's schedule), a dropped one is
  * deleted with its reviews, a new one is created. Generated cards cannot be edited directly.
  */
-export async function updateCard(
-  userId: string,
-  cardId: string,
-  patch: CardPatch,
-): Promise<EditResult> {
+export async function updateCard(userId: string, cardId: string, patch: CardPatch): Promise<EditResult> {
   return prisma.$transaction((tx) => updateCardIn(tx, userId, cardId, patch));
 }
 

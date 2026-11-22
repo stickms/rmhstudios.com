@@ -3,158 +3,39 @@ import { handleSchema } from '@/lib/handle-schema';
 import { LOG_STATUSES } from '@/lib/blog/publication';
 import { saveAnnouncementFieldsSchema } from '@/lib/sitewide-announcement-schema';
 
-export const adminUserUpdateSchema =
-  z
-    .object(
-      {
-        userId:
-          z
-            .string()
-            .min(
-              1,
-            )
-            .max(
-              128,
-            ),
-        isVerified:
-          z
-            .boolean()
-            .optional(),
-        isAdmin:
-          z
-            .boolean()
-            .optional(),
-        handle:
-          handleSchema.optional(),
-      },
-    )
-    .refine(
-      (
-        value,
-      ) =>
-        value.isVerified !==
-          undefined ||
-        value.isAdmin !==
-          undefined ||
-        value.handle !==
-          undefined,
-    );
+export const adminUserUpdateSchema = z
+  .object({
+    userId: z.string().min(1).max(128),
+    isVerified: z.boolean().optional(),
+    isAdmin: z.boolean().optional(),
+    handle: handleSchema.optional(),
+  })
+  .refine((value) => value.isVerified !== undefined || value.isAdmin !== undefined || value.handle !== undefined);
 
-export const blogPostSchema =
-  z.object(
-    {
-      title:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            300,
-          ),
-      slug: z
-        .string()
-        .min(
-          1,
-        )
-        .max(
-          200,
-        )
-        .regex(
-          /^[a-z0-9-]+$/,
-        ),
-      description:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            10_000,
-          ),
-      image:
-        z
-          .string()
-          .max(
-            2048,
-          )
-          .nullish(),
-      // May be empty: publishing fills in the publish day (s03-05, FR-7).
-      date: z
-        .string()
-        .max(
-          50,
-        ),
-      tags: z
-        .union(
-          [
-            z
-              .array(
-                z
-                  .string()
-                  .max(
-                    100,
-                  ),
-              )
-              .max(
-                50,
-              ),
-            z
-              .string()
-              .max(
-                100,
-              ),
-          ],
-        )
-        .default(
-          [],
-        )
-        .transform(
-          (
-            value,
-          ) =>
-            typeof value ===
-            'string'
-              ? value.trim()
-                ? [
-                    value,
-                  ]
-                : []
-              : value,
-        ),
-      content:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            2_000_000,
-          ),
-      isEdit:
-        z
-          .boolean()
-          .default(
-            false,
-          ),
-      // s03-05: what this save does to the Log's state. `publishAt` (an ISO instant) is read for `scheduled` only.
-      status:
-        z
-          .enum(
-            LOG_STATUSES,
-          )
-          .default(
-            'published',
-          ),
-      publishAt:
-        z
-          .string()
-          .datetime(
-            {
-              offset: true,
-            },
-          )
-          .nullish(),
-      ...saveAnnouncementFieldsSchema.shape,
-    },
-  );
+export const blogPostSchema = z.object({
+  title: z.string().min(1).max(300),
+  slug: z
+    .string()
+    .min(1)
+    .max(200)
+    .regex(/^[a-z0-9-]+$/),
+  description: z.string().min(1).max(10_000),
+  image: z.string().max(2048).nullish(),
+  // May be empty: publishing fills in the publish day (s03-05, FR-7).
+  date: z.string().max(50),
+  tags: z
+    .union([z.array(z.string().max(100)).max(50), z.string().max(100)])
+    .default([])
+    .transform((value) => (typeof value === 'string' ? (value.trim() ? [value] : []) : value)),
+  content: z.string().min(1).max(2_000_000),
+  isEdit: z.boolean().default(false),
+  // s03-05: what this save does to the Log's state. `publishAt` (an ISO instant) is read for `scheduled` only.
+  status: z.enum(LOG_STATUSES).default('published'),
+  publishAt: z
+    .string()
+    .datetime({
+      offset: true,
+    })
+    .nullish(),
+  ...saveAnnouncementFieldsSchema.shape,
+});

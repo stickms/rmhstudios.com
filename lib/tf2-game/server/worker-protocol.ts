@@ -7,12 +7,7 @@
  * snapshot crosses the thread boundary without a copy.
  */
 
-import type {
-  MatchCommand,
-  MatchOptions,
-  PlayerInfo,
-  RoomSummary,
-} from './match-host';
+import type { MatchCommand, MatchOptions, PlayerInfo, RoomSummary } from './match-host';
 import type { Catalog } from '../../tf2-loadout/catalog-types';
 
 /** Pool → worker. */
@@ -65,9 +60,7 @@ export type ToWorker =
   | {
       t: 'owner';
       matchId: string;
-      playerId:
-        | number
-        | null;
+      playerId: number | null;
     }
   | {
       t: 'dispose';
@@ -86,9 +79,7 @@ export type ToWorker =
     };
 
 export interface WirePacket {
-  to:
-    | number
-    | 'all';
+  to: number | 'all';
   reliable: boolean;
   data: ArrayBuffer;
 }
@@ -100,10 +91,7 @@ export interface MatchFrame {
   packets: WirePacket[];
 }
 
-export type CloseReason =
-  | 'map-failed'
-  | 'server-error'
-  | 'empty';
+export type CloseReason = 'map-failed' | 'server-error' | 'empty';
 
 /** Worker → pool. */
 export type FromWorker =

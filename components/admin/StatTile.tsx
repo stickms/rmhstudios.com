@@ -1,7 +1,4 @@
-import type {
-  ComponentType,
-  ReactNode,
-} from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -10,25 +7,8 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
  * tile hangs from its own top rule, so a row of tiles reads as one ruled line
  * however many lines a label or hint wraps to (R3: rules, not boxes).
  */
-export function StatGrid({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        'grid grid-cols-2 gap-x-4 sm:grid-cols-4 sm:gap-x-6',
-        className,
-      )}
-    >
-      {
-        children
-      }
-    </div>
-  );
+export function StatGrid({ className, children }: { className?: string; children: ReactNode }) {
+  return <div className={cn('grid grid-cols-2 gap-x-4 sm:grid-cols-4 sm:gap-x-6', className)}>{children}</div>;
 }
 
 /**
@@ -53,49 +33,18 @@ export function StatTile({
     className?: string;
     'aria-hidden'?: boolean;
   }>;
-  tone?:
-    | 'good'
-    | 'bad';
+  tone?: 'good' | 'bad';
   className?: string;
-}) { const fmt = useLocaleFormat(); 
-  const toneClass =
-    tone ===
-    'good'
-      ? 'text-site-success'
-      : tone ===
-          'bad'
-        ? 'text-site-danger'
-        : 'text-site-text';
+}) {
+  const fmt = useLocaleFormat();
+  const toneClass = tone === 'good' ? 'text-site-success' : tone === 'bad' ? 'text-site-danger' : 'text-site-text';
   return (
-    <div
-      className={cn(
-        'min-w-0 border-t border-site-border py-3',
-        className,
-      )}
-    >
-      <p className="t-label">
-        {
-          label
-        }
+    <div className={cn('min-w-0 border-t border-site-border py-3', className)}>
+      <p className="t-label">{label}</p>
+      <p className={cn('t-heading mt-1 break-words tabular-nums', toneClass)}>
+        {typeof value === 'number' ? fmt.number(value) : value}
       </p>
-      <p
-        className={cn(
-          't-heading mt-1 break-words tabular-nums',
-          toneClass,
-        )}
-      >
-        {typeof value ===
-        'number'
-          ? fmt.number(value)
-          : value}
-      </p>
-      {hint ? (
-        <p className="t-meta mt-1">
-          {
-            hint
-          }
-        </p>
-      ) : null}
+      {hint ? <p className="t-meta mt-1">{hint}</p> : null}
     </div>
   );
 }

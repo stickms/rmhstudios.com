@@ -28,14 +28,11 @@ export const followsQuery = ({ tab, filter, q, sort }: FollowQuery) =>
     staleTime: 15_000,
   });
 
-export const unfollowAccounts = (followingIds: string[]) =>
-  api(bulkUnfollowApi, { body: { followingIds } });
+export const unfollowAccounts = (followingIds: string[]) => api(bulkUnfollowApi, { body: { followingIds } });
 
-export const removeFollowers = (followerIds: string[]) =>
-  api(removeFollowersApi, { body: { followerIds } });
+export const removeFollowers = (followerIds: string[]) => api(removeFollowersApi, { body: { followerIds } });
 
 /** Re-follow someone just unfollowed, without a new follow notification to them. */
-export const undoUnfollow = (followingId: string) =>
-  api(undoUnfollowApi, { body: { followingId } });
+export const undoUnfollow = (followingId: string) => api(undoUnfollowApi, { body: { followingId } });
 
 export const followBack = (id: string) => api(toggleFollowApi, { params: { id } });

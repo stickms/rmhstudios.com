@@ -7,7 +7,11 @@ import { recordSavedReplyUse } from '@/lib/messages/saved-replies.server';
 export const route = apiRoute('/api/saved-replies/$id/use', {
   POST: implement(recordSavedReplyUseApi, { rateLimit: 'write', allowEmptyBody: true }, async ({ userId, params }) => {
     const result = await recordSavedReplyUse(userId, params.id);
-    if (!result.ok) return Response.json({ error: result.error, ...(result.code ? { code: result.code } : {}) }, { status: result.status });
+    if (!result.ok)
+      return Response.json(
+        { error: result.error, ...(result.code ? { code: result.code } : {}) },
+        { status: result.status },
+      );
     return { success: true as const };
   }),
 });

@@ -52,7 +52,11 @@ describe('buildEarSession', () => {
     const rows = [
       row('second', { due: new Date(NOW - 10 * DAY_MS).toISOString() }), // most overdue
       row('third', { due: new Date(NOW - 1 * DAY_MS).toISOString() }),
-      row('fifth', { due: new Date(NOW + 30 * DAY_MS).toISOString(), stability: 200, lastReviewAt: new Date(NOW - DAY_MS).toISOString() }),
+      row('fifth', {
+        due: new Date(NOW + 30 * DAY_MS).toISOString(),
+        stability: 200,
+        lastReviewAt: new Date(NOW - DAY_MS).toISOString(),
+      }),
     ]; // fourth is unseen
     for (let seed = 1; seed < 20; seed++) {
       const c = counts(buildEarSession('interval', POOL, rows, NOW, 6, mulberry32(seed)));

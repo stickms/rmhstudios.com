@@ -1,24 +1,10 @@
-import type {
-  GeneratedWorld as GenWorld,
-  GenChapter as GenChapterData,
-} from './gen/world-types';
-import type {
-  LedgerEntry,
-  ArcOutline,
-  ChoiceTone,
-} from './gen/world-types';
+import type { GeneratedWorld as GenWorld, GenChapter as GenChapterData } from './gen/world-types';
+import type { LedgerEntry, ArcOutline, ChoiceTone } from './gen/world-types';
 
 // ─── Word System ────────────────────────────────────────────────────────────
 
 export type PartOfSpeech =
-  | 'noun'
-  | 'verb'
-  | 'adjective'
-  | 'adverb'
-  | 'preposition'
-  | 'conjunction'
-  | 'pronoun'
-  | 'interjection';
+  'noun' | 'verb' | 'adjective' | 'adverb' | 'preposition' | 'conjunction' | 'pronoun' | 'interjection';
 
 export interface WordTags {
   darkness: number;
@@ -51,10 +37,7 @@ export interface Word {
 
 // ─── Character System ───────────────────────────────────────────────────────
 
-export type GenderPresentation =
-  | 'feminine'
-  | 'masculine'
-  | 'nonbinary';
+export type GenderPresentation = 'feminine' | 'masculine' | 'nonbinary';
 
 export interface CharacterPreferences {
   darkness: number;
@@ -120,35 +103,17 @@ export interface Character {
 
 export interface DialogueChoice {
   text: string;
-  type:
-    | 'normal'
-    | 'flirt'
-    | 'friend'
-    | 'tease'
-    | 'deep';
+  type: 'normal' | 'flirt' | 'friend' | 'tease' | 'deep';
   effects: {
-    affinity?: Record<
-      string,
-      number
-    >;
-    romance?: Record<
-      string,
-      number
-    >;
-    flags?: Record<
-      string,
-      | string
-      | number
-      | boolean
-    >;
+    affinity?: Record<string, number>;
+    romance?: Record<string, number>;
+    flags?: Record<string, string | number | boolean>;
   };
 }
 
 export interface DialogueNode {
   id: string;
-  speaker:
-    | string
-    | null; // null = narration
+  speaker: string | null; // null = narration
   text: string;
   expression?: string;
   animation?: string;
@@ -163,20 +128,14 @@ export interface DialogueNode {
 export interface Scene {
   id: string;
   background: string;
-  timeOfDay:
-    | 'morning'
-    | 'afternoon'
-    | 'evening'
-    | 'night';
+  timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
   bgm?: string;
   charactersPresent: string[];
   dialogueNodes: DialogueNode[];
 }
 
 export interface PuzzleConfig {
-  type:
-    | 'word_select'
-    | 'line_arrange';
+  type: 'word_select' | 'line_arrange';
   puzzleId: string;
 }
 
@@ -227,22 +186,12 @@ export interface LineArrangePuzzleData {
   promptText: string;
   lines: PoemLine[];
   optimalOrders: string[][];
-  scoringMode:
-    | 'flow'
-    | 'narrative'
-    | 'emotional_arc'
-    | 'surprise';
+  scoringMode: 'flow' | 'narrative' | 'emotional_arc' | 'surprise';
 }
 
 // ─── Scoring ────────────────────────────────────────────────────────────────
 
-export type Grade =
-  | 'S'
-  | 'A'
-  | 'B'
-  | 'C'
-  | 'D'
-  | 'F';
+export type Grade = 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 
 export interface PoemScore {
   score: number; // 0-100
@@ -267,14 +216,8 @@ export interface PoemRecord {
   text: string;
   timestamp: number;
   chapter: string;
-  puzzleType:
-    | 'word_select'
-    | 'line_arrange'
-    | 'freeform';
-  scores: Record<
-    string,
-    number
-  >;
+  puzzleType: 'word_select' | 'line_arrange' | 'freeform';
+  scores: Record<string, number>;
   grade: Grade;
 }
 
@@ -311,37 +254,21 @@ export type GameScreen =
   | 'load'
   | 'progress';
 
-export type SpritePack =
-  | 'default'
-  | 'hoshiko';
+export type SpritePack = 'default' | 'hoshiko';
 
 /** Who the player can be romanced by — shapes flirt options and romance focus. */
-export type Attraction =
-  | 'men'
-  | 'women'
-  | 'everyone'
-  | 'none';
+export type Attraction = 'men' | 'women' | 'everyone' | 'none';
 
 export interface PlayerSettings {
   playerName: string;
-  playerPronouns:
-    | 'he/him'
-    | 'she/her'
-    | 'they/them';
+  playerPronouns: 'he/him' | 'she/her' | 'they/them';
   /** Optional neopronoun override, e.g. "ze/zir/zirs". Wins over playerPronouns. */
   customPronouns?: string;
   /** Who the player is drawn to; gates romance/flirt framing. Default everyone. */
   attraction: Attraction;
-  characterPresentations: Record<
-    string,
-    GenderPresentation
-  >;
+  characterPresentations: Record<string, GenderPresentation>;
   spritePack: SpritePack;
-  textSpeed:
-    | 'slow'
-    | 'normal'
-    | 'fast'
-    | 'instant';
+  textSpeed: 'slow' | 'normal' | 'fast' | 'instant';
   musicVolume: number;
   sfxVolume: number;
   /** Allow mature/dark themes by default in new stories. */
@@ -361,28 +288,17 @@ export interface GameState {
   currentSceneIndex: number;
   currentDialogueIndex: number;
   completedChapters: string[];
-  storyFlags: Record<
-    string,
-    | string
-    | number
-    | boolean
-  >;
+  storyFlags: Record<string, string | number | boolean>;
 
   // Characters
-  affinity: Record<
-    string,
-    CharacterAffinity
-  >;
+  affinity: Record<string, CharacterAffinity>;
 
   // Player
   settings: PlayerSettings;
 
   // Poems
   poemHistory: PoemRecord[];
-  currentPuzzle:
-    | WordSelectPuzzleData
-    | LineArrangePuzzleData
-    | null;
+  currentPuzzle: WordSelectPuzzleData | LineArrangePuzzleData | null;
   currentPoemScore: PoemScore | null;
   selectedWords: string[]; // word IDs for active WordSelect
 
@@ -396,9 +312,7 @@ export interface GameState {
 
   // ─── Generated (seed-driven personalized) mode ─────────────────────────────
   /** 'generated' = procedural seed-driven story; 'legacy' = the authored VN. */
-  mode:
-    | 'legacy'
-    | 'generated';
+  mode: 'legacy' | 'generated';
   /** Shareable seed code for the current generated world. */
   seed: string;
   /** The player's setup prompt (or '' for random). */
@@ -406,10 +320,7 @@ export interface GameState {
   /** The generated world (cast, setting, route plan). Null in legacy mode. */
   world: GenWorld | null;
   /** Cache of generated chapters by index for the current world. */
-  generatedChapters: Record<
-    number,
-    GenChapterData
-  >;
+  generatedChapters: Record<number, GenChapterData>;
   /** Current chapter index within the generated route. */
   currentChapterIndex: number;
   /** Log of player choices for story continuity (fed back into generation) and
@@ -434,11 +345,7 @@ export interface SaveFile {
   slotId: number;
   timestamp: number;
   playtime: number;
-  state: Omit<
-    GameState,
-    | 'currentPoemScore'
-    | 'screenStack'
-  >;
+  state: Omit<GameState, 'currentPoemScore' | 'screenStack'>;
   chapterTitle: string;
   playerName: string;
 }

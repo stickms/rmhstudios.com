@@ -72,7 +72,7 @@ describe('FSRS-6 core', () => {
   it('keeps difficulty in [1, 10] and stability positive under any run of grades', () => {
     let m: Memory | null = null;
     for (let i = 0; i < 400; i++) {
-      const g = ((i * 7 + (i >> 2)) % 4 + 1) as Rating;
+      const g = (((i * 7 + (i >> 2)) % 4) + 1) as Rating;
       m = nextMemory(m, i % 5 === 0 ? 0 : 1 + (i % 40), g);
       expect(m.difficulty).toBeGreaterThanOrEqual(1);
       expect(m.difficulty).toBeLessThanOrEqual(10);

@@ -20,12 +20,7 @@ import { api, errorField } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { readString, writeString } from '@/lib/core/persist';
 import { toast } from '@/lib/toast';
-import {
-  deleteProject,
-  listSamples,
-  loadProject,
-  saveProject,
-} from '@/lib/studio/project-store';
+import { deleteProject, listSamples, loadProject, saveProject } from '@/lib/studio/project-store';
 import {
   autosaveDecision,
   buildProject,
@@ -47,10 +42,7 @@ import {
   type CloudLinks,
   type SaveState,
 } from '@/lib/studio/project-session';
-import {
-  MAX_CLOUD_PROJECTS,
-  MAX_PROJECT_NAME,
-} from '@/lib/studio/project-schema';
+import { MAX_CLOUD_PROJECTS, MAX_PROJECT_NAME } from '@/lib/studio/project-schema';
 import {
   createCloudProjectApi,
   deleteCloudProjectApi,
@@ -300,8 +292,7 @@ export function useProjectSession(): ProjectSession {
         toast.error(
           t('limit-reached', {
             max: MAX_CLOUD_PROJECTS,
-            defaultValue:
-              'You can keep {{max}} projects on your account. Delete one to save this.',
+            defaultValue: 'You can keep {{max}} projects on your account. Delete one to save this.',
           }),
         );
       } else if (code === 'too-large') {
@@ -515,10 +506,17 @@ export function useProjectSession(): ProjectSession {
       } catch (error) {
         const code = errorField<CloudSaveRefusal>(error, 'code');
         const revision = errorField<number>(error, 'revision');
-        if (error instanceof HttpError && error.status === 409 && isStaleOrExists(code) && typeof revision === 'number') {
+        if (
+          error instanceof HttpError &&
+          error.status === 409 &&
+          isStaleOrExists(code) &&
+          typeof revision === 'number'
+        ) {
           setConflict({ id, name: content().projectName, revision, versionId });
         } else if (error instanceof HttpError && error.status === 404) {
-          toast.error(t('restore-missing', { ns: 'studio-history', defaultValue: 'That version is no longer available.' }));
+          toast.error(
+            t('restore-missing', { ns: 'studio-history', defaultValue: 'That version is no longer available.' }),
+          );
         } else {
           toast.error(t('restore-failed', { ns: 'studio-history', defaultValue: 'Could not restore that version.' }));
         }

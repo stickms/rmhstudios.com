@@ -12,136 +12,55 @@ import { useTranslation } from 'react-i18next';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { HttpError } from '@/lib/http';
 
-type RefusalCode =
-  | 'community_banned'
-  | 'community_timed_out';
+type RefusalCode = 'community_banned' | 'community_timed_out';
 
 /** Read `{ code, endsAt }` off a parsed error body or an `HttpError`'s body. */
-export function sanctionRefusal(
-  source: unknown,
-): {
+export function sanctionRefusal(source: unknown): {
   code: RefusalCode;
   endsAt: Date | null;
 } | null {
-  const body =
-    source instanceof
-    HttpError
-      ? source.body
-      : source;
-  if (
-    typeof body !==
-      'object' ||
-    body ===
-      null
-  )
-    return null;
-  const {
-    code,
-    endsAt,
-  } =
-    body as {
-      code?: unknown;
-      endsAt?: unknown;
-    };
-  if (
-    code !==
-      'community_banned' &&
-    code !==
-      'community_timed_out'
-  )
-    return null;
-  const end =
-    typeof endsAt ===
-    'string'
-      ? new Date(
-          endsAt,
-        )
-      : null;
+  const body = source instanceof HttpError ? source.body : source;
+  if (typeof body !== 'object' || body === null) return null;
+  const { code, endsAt } = body as {
+    code?: unknown;
+    endsAt?: unknown;
+  };
+  if (code !== 'community_banned' && code !== 'community_timed_out') return null;
+  const end = typeof endsAt === 'string' ? new Date(endsAt) : null;
   return {
     code,
-    endsAt:
-      end &&
-      !Number.isNaN(
-        end.getTime(),
-      )
-        ? end
-        : null,
+    endsAt: end && !Number.isNaN(end.getTime()) ? end : null,
   };
 }
 
 /** `(errorOrBody) => text | null`: the translated refusal, or `null` when it is not a sanction refusal. */
-export function useSanctionRefusal(): (
-  source: unknown,
-) =>
-  | string
-  | null {
-  const {
-    t,
-  } =
-    useTranslation(
-      'community-bans',
-    );
-  const fmt =
-    useLocaleFormat();
+export function useSanctionRefusal(): (source: unknown) => string | null {
+  const { t } = useTranslation('community-bans');
+  const fmt = useLocaleFormat();
   return useCallback(
-    (
-      source: unknown,
-    ) => {
-      const refusal =
-        sanctionRefusal(
-          source,
-        );
-      if (
-        !refusal
-      )
-        return null;
-      const end =
-        refusal.endsAt;
-      if (
-        refusal.code ===
-        'community_timed_out'
-      ) {
+    (source: unknown) => {
+      const refusal = sanctionRefusal(source);
+      if (!refusal) return null;
+      const end = refusal.endsAt;
+      if (refusal.code === 'community_timed_out') {
         return end
-          ? t(
-              'refusal-timeout-until',
-              {
-                date: fmt.dateTime(
-                  end,
-                ),
-                defaultValue:
-                  'You are timed out of this community until {{date}}. You can read but not post.',
-              },
-            )
-          : t(
-              'refusal-timeout-open',
-              {
-                defaultValue:
-                  'You are timed out of this community. You can read but not post.',
-              },
-            );
+          ? t('refusal-timeout-until', {
+              date: fmt.dateTime(end),
+              defaultValue: 'You are timed out of this community until {{date}}. You can read but not post.',
+            })
+          : t('refusal-timeout-open', {
+              defaultValue: 'You are timed out of this community. You can read but not post.',
+            });
       }
       return end
-        ? t(
-            'refusal-ban-until',
-            {
-              date: fmt.dateTime(
-                end,
-              ),
-              defaultValue:
-                'You are banned from this community until {{date}}.',
-            },
-          )
-        : t(
-            'refusal-ban-open',
-            {
-              defaultValue:
-                'You are banned from this community until a moderator lifts it.',
-            },
-          );
+        ? t('refusal-ban-until', {
+            date: fmt.dateTime(end),
+            defaultValue: 'You are banned from this community until {{date}}.',
+          })
+        : t('refusal-ban-open', {
+            defaultValue: 'You are banned from this community until a moderator lifts it.',
+          });
     },
-    [
-      t,
-      fmt,
-    ],
+    [t, fmt],
   );
 }

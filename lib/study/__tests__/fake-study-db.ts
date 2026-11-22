@@ -68,7 +68,7 @@ function matches(db: FakeDb, row: Row, where: Row | undefined): boolean {
     } else {
       const have = key === 'kind' ? (row.kind ?? 'basic') : (row[key] ?? null);
       if (want !== null && typeof want === 'object' && 'in' in (want as Row)) {
-        if (!((want as { in: unknown[] }).in).includes(have)) return false;
+        if (!(want as { in: unknown[] }).in.includes(have)) return false;
       } else if (have !== want) return false;
     }
   }
@@ -91,14 +91,17 @@ export function makeStudyPrisma(db: FakeDb) {
     siblings: db.cards.filter((s) => s.sourceId === c.id).map((s) => withDefaults(s)),
   });
   const newCard = (data: Row): FakeCard => {
-    const card = withDefaults({ ...(data as unknown as FakeCard), id: (data.id as string | undefined) ?? `gen${db.nextId++}` });
+    const card = withDefaults({
+      ...(data as unknown as FakeCard),
+      id: (data.id as string | undefined) ?? `gen${db.nextId++}`,
+    });
     db.cards.push(card);
     return card;
   };
   /** The foreign keys: a card's siblings and every review of a removed card go with it. */
   const removeCards = (ids: string[]): number => {
     const doomed = new Set(ids);
-    for (let grew = true; grew; ) {
+    for (let grew = true; grew;) {
       grew = false;
       for (const c of db.cards) {
         if (c.sourceId && doomed.has(c.sourceId) && !doomed.has(c.id)) {
@@ -169,7 +172,8 @@ export function makeStudyPrisma(db: FakeDb) {
         db.writes++;
         return { id: deck.id };
       },
-      count: async ({ where }: { where: Row }) => db.decks.filter((d) => matches(db, d as unknown as Row, where)).length,
+      count: async ({ where }: { where: Row }) =>
+        db.decks.filter((d) => matches(db, d as unknown as Row, where)).length,
     },
     flashcard: {
       findFirst: async ({ where }: { where: Row }) => {
@@ -229,8 +233,7 @@ export function makeStudyPrisma(db: FakeDb) {
 
   const extras = {
     flashcardReview: {
-      findMany: async ({ where }: { where: Row }) =>
-        db.reviews.filter((r) => matches(db, r as unknown as Row, where)),
+      findMany: async ({ where }: { where: Row }) => db.reviews.filter((r) => matches(db, r as unknown as Row, where)),
       findUnique: async () => null,
     },
     flashcardTestResult: {

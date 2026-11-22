@@ -140,7 +140,12 @@ describe('the surfaces', () => {
   });
 
   it('OG cards, the embed, RSS and live events never read the answer', () => {
-    for (const path of ['lib/og/api/og.post.$id.server.ts', 'lib/og/post-image.server.tsx', 'lib/rss.ts', 'lib/feed-sse.ts']) {
+    for (const path of [
+      'lib/og/api/og.post.$id.server.ts',
+      'lib/og/post-image.server.tsx',
+      'lib/rss.ts',
+      'lib/feed-sse.ts',
+    ]) {
       expect(read(path), path).not.toMatch(/correctOptionId|explanation/);
     }
   });

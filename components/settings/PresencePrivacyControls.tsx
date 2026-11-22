@@ -1,17 +1,10 @@
-import {
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { toast } from '@/lib/toast';
 
 import { Switch } from '@/components/ui/switch';
-import {
-  PRESENCE_VISIBILITIES,
-  DEFAULT_PRESENCE_VISIBILITY,
-  type PresenceVisibility,
-} from '@/lib/presence-types';
+import { PRESENCE_VISIBILITIES, DEFAULT_PRESENCE_VISIBILITY, type PresenceVisibility } from '@/lib/presence-types';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
 import { setPresencePrefsApi } from '@/lib/preferences/preferences.contract';
@@ -25,199 +18,94 @@ import { api } from '@/lib/contract/client';
  * /api/preferences/presence.
  */
 export function PresencePrivacyControls() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'site',
-    );
-  const queryClient =
-    useQueryClient();
-  const query =
-    presencePrefsQuery();
-  const {
-    data,
-    isPending,
-  } =
-    useQuery(
-      query,
-    );
-  const visibility: PresenceVisibility =
-    data?.presenceVisibility ??
-    DEFAULT_PRESENCE_VISIBILITY;
-  const detail =
-    data?.presenceDetail ??
-    true;
-  const loaded =
-    !isPending;
+  const { t } = useTranslation('site');
+  const queryClient = useQueryClient();
+  const query = presencePrefsQuery();
+  const { data, isPending } = useQuery(query);
+  const visibility: PresenceVisibility = data?.presenceVisibility ?? DEFAULT_PRESENCE_VISIBILITY;
+  const detail = data?.presenceDetail ?? true;
+  const loaded = !isPending;
 
-  function persist(body: {
-    presenceVisibility?: PresenceVisibility;
-    presenceDetail?: boolean;
-  }) {
+  function persist(body: { presenceVisibility?: PresenceVisibility; presenceDetail?: boolean }) {
     // Shown at once; a failed save toasts and leaves the choice on screen, as it always did.
-    queryClient.setQueryData(
-      query.queryKey,
-      {
-        presenceVisibility:
-          visibility,
-        presenceDetail:
-          detail,
-        ...body,
-      },
-    );
-    api(
-      setPresencePrefsApi,
-      {
-        body,
-      },
-    ).catch(
-      () =>
-        toast.error(
-          t(
-            'presence-save-error',
-            {
-              defaultValue:
-                'Could not save',
-            },
-          ),
-        ),
+    queryClient.setQueryData(query.queryKey, {
+      presenceVisibility: visibility,
+      presenceDetail: detail,
+      ...body,
+    });
+    api(setPresencePrefsApi, {
+      body,
+    }).catch(() =>
+      toast.error(
+        t('presence-save-error', {
+          defaultValue: 'Could not save',
+        }),
+      ),
     );
   }
 
-  const VIS_LABEL: Record<
-    PresenceVisibility,
-    string
-  > =
-    {
-      mutuals:
-        t(
-          'presence-vis-mutuals',
-          {
-            defaultValue:
-              'Friends (mutuals)',
-          },
-        ),
-      followers:
-        t(
-          'presence-vis-my-followers',
-          {
-            defaultValue:
-              'People who follow me',
-          },
-        ),
-      nobody:
-        t(
-          'presence-vis-nobody',
-          {
-            defaultValue:
-              'Nobody',
-          },
-        ),
-    };
+  const VIS_LABEL: Record<PresenceVisibility, string> = {
+    mutuals: t('presence-vis-mutuals', {
+      defaultValue: 'Friends (mutuals)',
+    }),
+    followers: t('presence-vis-my-followers', {
+      defaultValue: 'People who follow me',
+    }),
+    nobody: t('presence-vis-nobody', {
+      defaultValue: 'Nobody',
+    }),
+  };
 
   return (
     <SettingsSection
-      title={t(
-        'presence-title',
-        {
-          defaultValue:
-            'Activity & presence',
-        },
-      )}
-      description={t(
-        'presence-subtitle',
-        {
-          defaultValue:
-            'Control who sees when you are online and what you are doing.',
-        },
-      )}
+      title={t('presence-title', {
+        defaultValue: 'Activity & presence',
+      })}
+      description={t('presence-subtitle', {
+        defaultValue: 'Control who sees when you are online and what you are doing.',
+      })}
     >
       <SettingsSelectRow
-        label={t(
-          'presence-who',
-          {
-            defaultValue:
-              'Who can see my presence',
-          },
-        )}
-        value={
-          visibility
-        }
-        options={PRESENCE_VISIBILITIES.map(
-          (
-            v,
-          ) => ({
-            value:
-              v,
-            label:
-              VIS_LABEL[
-                v
-              ],
-          }),
-        )}
-        onChange={(
-          v,
-        ) => {
-          persist(
-            {
-              presenceVisibility:
-                v as PresenceVisibility,
-            },
-          );
+        label={t('presence-who', {
+          defaultValue: 'Who can see my presence',
+        })}
+        value={visibility}
+        options={PRESENCE_VISIBILITIES.map((v) => ({
+          value: v,
+          label: VIS_LABEL[v],
+        }))}
+        onChange={(v) => {
+          persist({
+            presenceVisibility: v as PresenceVisibility,
+          });
         }}
-        disabled={
-          !loaded
-        }
+        disabled={!loaded}
       />
 
       <div className="chrome-row flex items-center justify-between gap-3 border-t border-site-border pt-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-site-text">
-            {t(
-              'presence-detail',
-              {
-                defaultValue:
-                  'Show activity detail',
-              },
-            )}
+            {t('presence-detail', {
+              defaultValue: 'Show activity detail',
+            })}
           </p>
           <p className="text-xs text-site-text-muted">
-            {t(
-              'presence-detail-hint',
-              {
-                defaultValue:
-                  'Off shows only that you are online — never what you are playing.',
-              },
-            )}
+            {t('presence-detail-hint', {
+              defaultValue: 'Off shows only that you are online — never what you are playing.',
+            })}
           </p>
         </div>
         <Switch
-          checked={
-            detail
-          }
-          disabled={
-            !loaded ||
-            visibility ===
-              'nobody'
-          }
-          onCheckedChange={(
-            v,
-          ) => {
-            persist(
-              {
-                presenceDetail:
-                  v,
-              },
-            );
+          checked={detail}
+          disabled={!loaded || visibility === 'nobody'}
+          onCheckedChange={(v) => {
+            persist({
+              presenceDetail: v,
+            });
           }}
-          aria-label={t(
-            'presence-detail',
-            {
-              defaultValue:
-                'Show activity detail',
-            },
-          )}
+          aria-label={t('presence-detail', {
+            defaultValue: 'Show activity detail',
+          })}
         />
       </div>
     </SettingsSection>

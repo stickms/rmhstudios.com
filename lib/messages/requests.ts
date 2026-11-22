@@ -124,9 +124,7 @@ export function hiddenFromRecipient(
   viewerId: string,
 ): boolean {
   if (!request) return false;
-  return (
-    request.recipientId === viewerId && (request.status === 'pending' || request.status === 'draft')
-  );
+  return request.recipientId === viewerId && (request.status === 'pending' || request.status === 'draft');
 }
 
 /**
@@ -138,11 +136,7 @@ export function requestOut(
   request: Pick<RequestFacts, 'senderId' | 'status'> | null | undefined,
   viewerId: string,
 ): boolean {
-  return (
-    !!request &&
-    request.senderId === viewerId &&
-    (request.status === 'pending' || request.status === 'declined')
-  );
+  return !!request && request.senderId === viewerId && (request.status === 'pending' || request.status === 'declined');
 }
 
 /** What the sender's composer shows: write a request, or the request is out. */

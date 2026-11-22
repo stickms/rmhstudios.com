@@ -1,153 +1,21 @@
 # Code audit — 2026-10-24
 
-Branch:
-`codex/full-code-audit`.
-Base:
-`origin/main`
-at
-`0deed41d1da2cd2d19bacaa25d7f475cb0721ff0`.
+Branch: `codex/full-code-audit`. Base: `origin/main` at `0deed41d1da2cd2d19bacaa25d7f475cb0721ff0`.
 
 ## Scope and counting
 
-136
-fixed
-findings,
-counted
-by
-affected
-endpoint
-or
-independently
-fixable
-defect.
-Repeated
-occurrences
-of
-the
-same
-root
-cause
-are
-listed
-separately;
-this
-is
-not
-a
-claim
-of
-136
-distinct
-vulnerability
-classes.
+136 fixed findings, counted by affected endpoint or independently fixable defect. Repeated occurrences of the same root
+cause are listed separately; this is not a claim of 136 distinct vulnerability classes.
 
-The
-review
-combined
-a
-repository-wide
-ESLint
-baseline
-and
-TypeScript
-check,
-an
-AST
-inventory
-of
-1,096
-wrapped
-API
-handlers,
-targeted
-reads
-of
-handlers
-and
-their
-data-layer
-calls,
-runtime
-configuration/cache
-review,
-and
-the
-main
-test
-suite.
-It
-does
-not
-establish
-that
-every
-line
-or
-every
-production
-integration
-is
-defect-free.
-Go
-services
-and
-visual
-behavior
-were
-not
-changed.
-No
-dependency
-upgrade,
-database
-migration,
-deployment,
-or
-external
-notification
-was
+The review combined a repository-wide ESLint baseline and TypeScript check, an AST inventory of 1,096 wrapped API
+handlers, targeted reads of handlers and their data-layer calls, runtime configuration/cache review, and the main test
+suite. It does not establish that every line or every production integration is defect-free. Go services and visual
+behavior were not changed. No dependency upgrade, database migration, deployment, or external notification was
 performed.
 
-All
-migrated
-admin
-handlers
-already
-checked
-admin
-status
-inside
-their
-bodies.
-Their
-issue
-was
-duplicated
-policy
-and
-inconsistent
-error
-behavior;
-handlers
-using
-wrapper
-body
-schemas
-also
-performed
-validation
-before
-that
-manual
-admin
-check.
-Shared
-admin
-authorization
-now
-runs
-before
-validation.
+All migrated admin handlers already checked admin status inside their bodies. Their issue was duplicated policy and
+inconsistent error behavior; handlers using wrapper body schemas also performed validation before that manual admin
+check. Shared admin authorization now runs before validation.
 
 ## Fixed occurrences
 
@@ -306,432 +174,49 @@ validation.
 
 ## Behavior and validation
 
-Pagination
-preserves
-endpoint
-defaults
-and
-maxima.
-Complete
-safe
-integers
-are
-accepted;
-malformed,
-fractional
-and
-unsafe
-inputs
-use
-the
-default;
-valid
-integers
-are
-clamped
-to
-the
-supported
-range.
-Mutation
-limits
-use
-the
-existing
-shared
-policies,
-scoped
-by
-user
-and
-IP.
-The
-22
-newly
-limited
-member
-endpoints
-have
-stable
-endpoint
-buckets;
-admin
-mutations
-share
-the
-existing
-write
-policy.
+Pagination preserves endpoint defaults and maxima. Complete safe integers are accepted; malformed, fractional and unsafe
+inputs use the default; valid integers are clamped to the supported range. Mutation limits use the existing shared
+policies, scoped by user and IP. The 22 newly limited member endpoints have stable endpoint buckets; admin mutations
+share the existing write policy.
 
-Blog
-creation
-now
-returns
-409
-for
-a
-duplicate
-slug
-and
-editing
-a
-deleted
-post
-returns 404.
-Invalid
-blog/user
-bodies
-return 400.
-Admin
-access
-uses
-the
-canonical
-401/403
-responses.
-Service
-integer
-settings
-outside
-their
-supported
-ranges
-fall
-back
-to
-defaults.
+Blog creation now returns 409 for a duplicate slug and editing a deleted post returns 404. Invalid blog/user bodies
+return 400. Admin access uses the canonical 401/403 responses. Service integer settings outside their supported ranges
+fall back to defaults.
 
-Regression
-coverage
-exercises
-malformed
-pagination,
-exact
-Redis-fallback
-ceilings,
-cache
-memory/expiry
-bounds,
-admin
-authorization
-before
-parsing,
-blog
-concurrency
-failure
-modes,
-body
-validation,
-numeric
-entity
-handling,
-and
-service
-settings.
-The
-API
-adoption
-gate
-now
-prevents
-optional
-authentication
-from
-returning
-in
-wrapped
-admin
-routes.
+Regression coverage exercises malformed pagination, exact Redis-fallback ceilings, cache memory/expiry bounds, admin
+authorization before parsing, blog concurrency failure modes, body validation, numeric entity handling, and service
+settings. The API adoption gate now prevents optional authentication from returning in wrapped admin routes.
 
-Validation
-on
-the
-Windows
-development
-host:
+Validation on the Windows development host:
 
-- `pnpm exec tsc --noEmit`:
-  passed.
-- Repository-wide
-  `pnpm lint`:
-  passed
-  with
-  no
-  new
-  errors
-  or
-  warnings
-  relative
-  to
-  the
-  recorded
-  base.
-  Existing
-  warnings
+- `pnpm exec tsc --noEmit`: passed.
+- Repository-wide `pnpm lint`: passed with no new errors or warnings relative to the recorded base. Existing warnings
   remain.
-- `scripts/check-consistency.sh --working`,
-  run
-  through
-  Git
-  Bash
-  because
-  the
-  default
-  Windows
-  `bash`
-  launcher
-  cannot
-  execute:
-  passed,
-  including
-  67
-  test
-  files
-  /
-  3,975
-  tests,
-  lint,
-  typecheck
-  and
-  generated-document
-  freshness.
-  New
-  files
-  were
-  included
-  with
-  intent-to-add.
-- `pnpm test`:
-  556
-  files
-  passed,
-  one
-  existing
-  file
-  skipped;
-  10,883
-  tests
-  passed,
-  seven
-  skipped,
-  two
-  failed.
-  Both
-  failures
-  are
-  in
-  the
-  unchanged
-  `server/__tests__/web-cluster.test.ts`,
-  which
-  drives
-  the
-  unchanged
-  `server/web-cluster.mjs`
-  using
-  Unix
-  SIGKILL/SIGTERM
-  semantics.
-  Windows
-  terminates
-  processes
-  differently;
-  Linux
-  CI
-  remains
-  necessary
-  for
-  those
-  two
-  checks.
-  Neither
-  test
-  was
-  disabled
-  or
-  weakened.
-- `pnpm exec tsx scripts/probe-bums-chain.ts`:
-  passed;
-  the
-  manual
-  diagnostic
-  prints
-  all
-  four
-  chain-load
-  measurements.
-- `git diff --check`:
-  passed.
+- `scripts/check-consistency.sh --working`, run through Git Bash because the default Windows `bash` launcher cannot
+  execute: passed, including 67 test files / 3,975 tests, lint, typecheck and generated-document freshness. New files
+  were included with intent-to-add.
+- `pnpm test`: 556 files passed, one existing file skipped; 10,883 tests passed, seven skipped, two failed. Both
+  failures are in the unchanged `server/__tests__/web-cluster.test.ts`, which drives the unchanged
+  `server/web-cluster.mjs` using Unix SIGKILL/SIGTERM semantics. Windows terminates processes differently; Linux CI
+  remains necessary for those two checks. Neither test was disabled or weakened.
+- `pnpm exec tsx scripts/probe-bums-chain.ts`: passed; the manual diagnostic prints all four chain-load measurements.
+- `git diff --check`: passed.
 
-The
-host
-runs
-Node
-24.13.0;
-the
-repository
-requests >=24.18.0
-<25.
-A
-production
-build,
-database-backed
-integration
-tests,
-Go/Bazel
-tests
-and
-browser
-checks
-were
-not
-run.
+The host runs Node 24.13.0; the repository requests >=24.18.0 <25. A production build, database-backed integration
+tests, Go/Bazel tests and browser checks were not run.
 
 ## PR CI follow-up
 
-The
-initial
-Linux
-CI
-run
-for
-PR
-#1016
-confirmed
-both
-test
-shards,
-frontend
-build,
-integration
-tests,
-typecheck/lint/docs
-and
-jelly
-browser
-checks
-pass.
-The
-remaining
-failure
-matched
-the
-previous
-merged
-PR
-#1014:
-the
-production
-audit
-found
-GHSA-mrhx-c7xc-m3w5
-through
-the
-Discord
-embedded
-SDK's
-Zod
-dependency.
+The initial Linux CI run for PR #1016 confirmed both test shards, frontend build, integration tests, typecheck/lint/docs
+and jelly browser checks pass. The remaining failure matched the previous merged PR #1014: the production audit found
+GHSA-mrhx-c7xc-m3w5 through the Discord embedded SDK's Zod dependency.
 
-The
-follow-up
-applies
-a
-reproducible
-pnpm
-patch
-to
-the
-SDK's
-bundled
-ESM
-and
-CJS
-validators,
-preserving
-its
-API
-while
-rejecting
-oversized
-constrained
-collections
-before
-visiting
-elements.
-Declarations
-use
-`zod/v3`
-from
-the
-patched
-Zod
-package
-through
-a
-scoped
-resolution.
-The
-SDK
-version
-is
-pinned
-while
-the
-backport
-is
-needed.
-[Patch details and removal procedure](../../../patches/README.md)
-document
-the
-runtime/declaration
-distinction.
-Docker
-copies
-the
-patch
-before
-installation
-and
-the
-dependency
-cache
-includes
-patch
-content.
-The
-production
-audit
-threshold
-and
-advisory
-handling
-are
-unchanged.
+The follow-up applies a reproducible pnpm patch to the SDK's bundled ESM and CJS validators, preserving its API while
+rejecting oversized constrained collections before visiting elements. Declarations use `zod/v3` from the patched Zod
+package through a scoped resolution. The SDK version is pinned while the backport is needed.
+[Patch details and removal procedure](../../../patches/README.md) document the runtime/declaration distinction. Docker
+copies the patch before installation and the dependency cache includes patch content. The production audit threshold and
+advisory handling are unchanged.
 
-The
-production
-audit
-now
-reports
-zero
-high/critical
-findings
-locally,
-and
-all
-ten
-installed-runtime
-security
-regression
-cases
-pass.
-Final
-GitHub
-CI
-results
-are
-recorded
-in
-the
-PR.
+The production audit now reports zero high/critical findings locally, and all ten installed-runtime security regression
+cases pass. Final GitHub CI results are recorded in the PR.

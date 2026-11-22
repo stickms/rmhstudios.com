@@ -116,13 +116,7 @@ describe('manual', () => {
   });
 
   it('appends anyone not placed in sign-up order', () => {
-    expect(ids(orderEntrants('manual', field, new Map(), ['e-d', 'e-b']))).toEqual([
-      'e-d',
-      'e-b',
-      'e-a',
-      'e-c',
-      'e-e',
-    ]);
+    expect(ids(orderEntrants('manual', field, new Map(), ['e-d', 'e-b']))).toEqual(['e-d', 'e-b', 'e-a', 'e-c', 'e-e']);
   });
 
   it('is sign-up order with no order, and skips unknown or repeated ids', () => {

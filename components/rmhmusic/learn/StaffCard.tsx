@@ -41,22 +41,17 @@ import {
 import { noteLetter } from '@/lib/rmhmusic/learn/theory/clef';
 import { cn } from '@/lib/utils';
 
-export type StaffCardState =
-  | 'ask'
-  | 'right'
-  | 'wrong';
+export type StaffCardState = 'ask' | 'right' | 'wrong';
 
 /**
  * The card's box: as wide as the sheet up to 18rem (20rem from 640px). The SVG's fixed aspect
  * ratio and the 2.25rem answer line under it make its height; LessonScreen's placeholder draws the
  * same box.
  */
-export const STAFF_BOX =
-  'mx-auto w-full max-w-72 sm:max-w-80';
+export const STAFF_BOX = 'mx-auto w-full max-w-72 sm:max-w-80';
 
 /** The low card's aspect ratio, for a placeholder of the same box (`range="low"`). */
-export const STAFF_LOW_ASPECT =
-  'aspect-[200/117]';
+export const STAFF_LOW_ASPECT = 'aspect-[200/117]';
 
 /** How far left of the right note the played (wrong) note sits: clear of a neighbouring head. */
 const PLAYED_DX = 28;
@@ -68,8 +63,7 @@ export function StaffCard({
   range = 'deck',
   octaveClef = false,
   caption,
-  label:
-    labelOverride,
+  label: labelOverride,
   played,
 }: {
   card: Card;
@@ -79,14 +73,10 @@ export function StaffCard({
    * learner sees how far off it was. The right note then takes the accent colour. Only drawn once
    * the card is answered wrong.
    */
-  played?:
-    | number
-    | null;
+  played?: number | null;
   className?: string;
   /** `low` reaches three ledger lines under the treble staff (the note finder; see the layout). */
-  range?:
-    | 'deck'
-    | 'low';
+  range?: 'deck' | 'low';
   /** Mark the treble clef with a small 8 below it: read an octave down (guitar music). */
   octaveClef?: boolean;
   /**
@@ -97,247 +87,86 @@ export function StaffCard({
   /** The image's accessible name, instead of the flashcard's. */
   label?: string;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
-  const titleId =
-    useId();
-  const low =
-    range ===
-    'low';
-  const height =
-    low
-      ? CARD_LOW_H
-      : CARD_H;
-  const layout =
-    cardLayout(
-      card.clef,
-      card.midi,
-      low
-        ? CARD_LOW_MIN_STEP
-        : CARD_MIN_STEP,
-    );
+  const { t } = useTranslation('c-rmhmusic');
+  const titleId = useId();
+  const low = range === 'low';
+  const height = low ? CARD_LOW_H : CARD_H;
+  const layout = cardLayout(card.clef, card.midi, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP);
 
-  const answered =
-    state !==
-    'ask';
-  const name =
-    midiToName(
-      card.midi,
-    );
+  const answered = state !== 'ask';
+  const name = midiToName(card.midi);
   const miss =
-    state ===
-      'wrong' &&
-    played !==
-      undefined &&
-    played !==
-      null &&
-    Number.isFinite(
-      played,
-    )
+    state === 'wrong' && played !== undefined && played !== null && Number.isFinite(played)
       ? {
-          layout:
-            cardLayout(
-              card.clef,
-              played,
-              low
-                ? CARD_LOW_MIN_STEP
-                : CARD_MIN_STEP,
-            ),
-          name: midiToName(
-            played,
-          ),
+          layout: cardLayout(card.clef, played, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP),
+          name: midiToName(played),
         }
       : null;
 
-  const label =
-    labelOverride
-      ? labelOverride
-      : miss
-        ? card.clef ===
-          'bass'
-          ? t(
-              'flash-card-miss-bass',
-              {
-                note: name,
-                played:
-                  miss.name,
-                defaultValue:
-                  '{{note}} on the bass staff; you played {{played}}',
-              },
-            )
-          : t(
-              'flash-card-miss-treble',
-              {
-                note: name,
-                played:
-                  miss.name,
-                defaultValue:
-                  '{{note}} on the treble staff; you played {{played}}',
-              },
-            )
-        : answered
-          ? card.clef ===
-            'bass'
-            ? t(
-                'flash-card-named-bass',
-                {
-                  note: name,
-                  defaultValue:
-                    '{{note}} on the bass staff',
-                },
-              )
-            : t(
-                'flash-card-named-treble',
-                {
-                  note: name,
-                  defaultValue:
-                    '{{note}} on the treble staff',
-                },
-              )
-          : card.clef ===
-              'bass'
-            ? t(
-                'flash-card-ask-bass',
-                {
-                  defaultValue:
-                    'A note on the bass staff',
-                },
-              )
-            : t(
-                'flash-card-ask-treble',
-                {
-                  defaultValue:
-                    'A note on the treble staff',
-                },
-              );
+  const label = labelOverride
+    ? labelOverride
+    : miss
+      ? card.clef === 'bass'
+        ? t('flash-card-miss-bass', {
+            note: name,
+            played: miss.name,
+            defaultValue: '{{note}} on the bass staff; you played {{played}}',
+          })
+        : t('flash-card-miss-treble', {
+            note: name,
+            played: miss.name,
+            defaultValue: '{{note}} on the treble staff; you played {{played}}',
+          })
+      : answered
+        ? card.clef === 'bass'
+          ? t('flash-card-named-bass', {
+              note: name,
+              defaultValue: '{{note}} on the bass staff',
+            })
+          : t('flash-card-named-treble', {
+              note: name,
+              defaultValue: '{{note}} on the treble staff',
+            })
+        : card.clef === 'bass'
+          ? t('flash-card-ask-bass', {
+              defaultValue: 'A note on the bass staff',
+            })
+          : t('flash-card-ask-treble', {
+              defaultValue: 'A note on the treble staff',
+            });
 
-  const ink =
-    state ===
-      'right' ||
-    miss
-      ? 'text-app-accent'
-      : state ===
-          'wrong'
-        ? 'text-app-danger'
-        : 'text-app-text';
+  const ink = state === 'right' || miss ? 'text-app-accent' : state === 'wrong' ? 'text-app-danger' : 'text-app-text';
 
   return (
-    <figure
-      className={cn(
-        STAFF_BOX,
-        className,
-      )}
-    >
+    <figure className={cn(STAFF_BOX, className)}>
       <svg
         viewBox={`0 0 ${CARD_W} ${height}`}
         role="img"
-        aria-labelledby={
-          titleId
-        }
+        aria-labelledby={titleId}
         className="block h-auto w-full text-app-text"
       >
-        <title
-          id={
-            titleId
-          }
-        >
-          {
-            label
-          }
-        </title>
-        <StaffRuling
-          clef={
-            card.clef
-          }
-          octaveClef={
-            octaveClef
-          }
-        />
-        <g
-          className={
-            ink
-          }
-          stroke="currentColor"
-          fill="currentColor"
-          strokeLinecap="round"
-        >
-          {layout.ledgerYs.map(
-            (
-              y,
-              i,
-            ) => (
-              <path
-                key={
-                  y
-                }
-                d={ledgerLine(
-                  y,
-                  i,
-                )}
-                strokeWidth="1.4"
-                fill="none"
-              />
-            ),
-          )}
-          <line
-            x1={
-              layout
-                .stem
-                .x
-            }
-            x2={
-              layout
-                .stem
-                .x
-            }
-            y1={
-              layout
-                .stem
-                .y1
-            }
-            y2={
-              layout
-                .stem
-                .y2
-            }
-            strokeWidth="1.3"
-          />
+        <title id={titleId}>{label}</title>
+        <StaffRuling clef={card.clef} octaveClef={octaveClef} />
+        <g className={ink} stroke="currentColor" fill="currentColor" strokeLinecap="round">
+          {layout.ledgerYs.map((y, i) => (
+            <path key={y} d={ledgerLine(y, i)} strokeWidth="1.4" fill="none" />
+          ))}
+          <line x1={layout.stem.x} x2={layout.stem.x} y1={layout.stem.y1} y2={layout.stem.y2} strokeWidth="1.3" />
           <ellipse
-            cx={
-              CARD_NOTE_X
-            }
-            cy={
-              layout.noteY
-            }
-            rx={
-              HEAD_RX
-            }
-            ry={
-              HEAD_RY
-            }
+            cx={CARD_NOTE_X}
+            cy={layout.noteY}
+            rx={HEAD_RX}
+            ry={HEAD_RY}
             transform={`rotate(-20 ${CARD_NOTE_X} ${layout.noteY})`}
             stroke="none"
           />
-          {caption !==
-          undefined ? (
+          {caption !== undefined ? (
             // The target's name, pencilled beside its note (the note finder): one annotation on the
             // card, close to what it names, at any height on the staff.
             <text
-              key={
-                card.id
-              }
-              x={
-                CARD_NOTE_X +
-                20
-              }
-              y={
-                layout.noteY +
-                6
-              }
+              key={card.id}
+              x={CARD_NOTE_X + 20}
+              y={layout.noteY + 6}
               // `text-anchor: start` ends at x under `dir="rtl"`, which put the name on the note.
               direction="ltr"
               fontSize="19"
@@ -349,9 +178,7 @@ export function StaffCard({
               className="rmm-display"
               data-card-name=""
             >
-              {
-                caption
-              }
+              {caption}
             </text>
           ) : null}
         </g>
@@ -365,69 +192,24 @@ export function StaffCard({
             strokeLinecap="round"
             data-played-note=""
           >
-            {miss.layout.ledgerYs.map(
-              (
-                y,
-                i,
-              ) => (
-                <path
-                  key={
-                    y
-                  }
-                  d={ledgerLine(
-                    y,
-                    i,
-                    CARD_NOTE_X -
-                      PLAYED_DX,
-                  )}
-                  strokeWidth="1.4"
-                  fill="none"
-                />
-              ),
-            )}
+            {miss.layout.ledgerYs.map((y, i) => (
+              <path key={y} d={ledgerLine(y, i, CARD_NOTE_X - PLAYED_DX)} strokeWidth="1.4" fill="none" />
+            ))}
             <ellipse
-              cx={
-                CARD_NOTE_X -
-                PLAYED_DX
-              }
-              cy={
-                miss
-                  .layout
-                  .noteY
-              }
-              rx={
-                HEAD_RX
-              }
-              ry={
-                HEAD_RY
-              }
+              cx={CARD_NOTE_X - PLAYED_DX}
+              cy={miss.layout.noteY}
+              rx={HEAD_RX}
+              ry={HEAD_RY}
               transform={`rotate(-20 ${CARD_NOTE_X - PLAYED_DX} ${miss.layout.noteY})`}
               stroke="none"
             />
           </g>
         ) : null}
       </svg>
-      {caption ===
-      undefined ? (
+      {caption === undefined ? (
         // The answer, written under the note once given; the line is reserved while asking.
-        <figcaption
-          aria-hidden="true"
-          className={cn(
-            'rmm-display h-9 text-center text-[1.75rem] leading-9',
-            ink,
-          )}
-        >
-          {answered ? (
-            <span
-              key={
-                card.id
-              }
-            >
-              {noteLetter(
-                card.midi,
-              )}
-            </span>
-          ) : null}
+        <figcaption aria-hidden="true" className={cn('rmm-display h-9 text-center text-[1.75rem] leading-9', ink)}>
+          {answered ? <span key={card.id}>{noteLetter(card.midi)}</span> : null}
         </figcaption>
       ) : null}
     </figure>
@@ -438,85 +220,24 @@ export function StaffCard({
  * The ruled staff, its bar lines and its clef (with the octave clef's 8): the part every sheet
  * shares, card or sprint.
  */
-function StaffRuling({
-  clef,
-  octaveClef = false,
-}: {
-  clef: Card['clef'];
-  octaveClef?: boolean;
-}) {
-  const glyph =
-    CLEF_GLYPHS[
-      clef
-    ];
-  const right =
-    CARD_W -
-    4;
+function StaffRuling({ clef, octaveClef = false }: { clef: Card['clef']; octaveClef?: boolean }) {
+  const glyph = CLEF_GLYPHS[clef];
+  const right = CARD_W - 4;
   return (
     <>
-      <g
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.6"
-      >
-        {[
-          0,
-          1,
-          2,
-          3,
-          4,
-        ].map(
-          (
-            i,
-          ) => (
-            <path
-              key={
-                i
-              }
-              d={ruledLine(
-                i,
-                4,
-                right,
-              )}
-            />
-          ),
-        )}
-        <path
-          d={`M 4.2 ${CARD_TOP - 0.3} L 3.8 ${CARD_TOP + 4 * CARD_GAP + 0.3}`}
-        />
-        <path
-          d={`M ${right + 0.2} ${CARD_TOP + 0.2} L ${right - 0.2} ${CARD_TOP + 4 * CARD_GAP}`}
-        />
+      <g fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <path key={i} d={ruledLine(i, 4, right)} />
+        ))}
+        <path d={`M 4.2 ${CARD_TOP - 0.3} L 3.8 ${CARD_TOP + 4 * CARD_GAP + 0.3}`} />
+        <path d={`M ${right + 0.2} ${CARD_TOP + 0.2} L ${right - 0.2} ${CARD_TOP + 4 * CARD_GAP}`} />
       </g>
       <g fill="currentColor">
-        <path
-          d={
-            glyph.path
-          }
-        />
-        {glyph.dots.map(
-          (
-            d,
-          ) => (
-            <circle
-              key={`${d.cx}-${d.cy}`}
-              cx={
-                d.cx
-              }
-              cy={
-                d.cy
-              }
-              r={
-                d.r
-              }
-            />
-          ),
-        )}
-        {octaveClef &&
-        clef ===
-          'treble' ? (
+        <path d={glyph.path} />
+        {glyph.dots.map((d) => (
+          <circle key={`${d.cx}-${d.cy}`} cx={d.cx} cy={d.cy} r={d.r} />
+        ))}
+        {octaveClef && clef === 'treble' ? (
           // The octave-down treble clef's 8, set small under the clef's tail.
           <text
             x="19.5"
@@ -537,9 +258,7 @@ function StaffRuling({
 }
 
 /** A written note's name as the sheet spells it: its letter and the accidental printed before it. */
-export function sheetNoteName(
-  n: SheetNote,
-): string {
+export function sheetNoteName(n: SheetNote): string {
   return `${noteLetter(n.written)}${n.accidental > 0 ? '♯' : n.accidental < 0 ? '♭' : ''}`;
 }
 
@@ -574,9 +293,7 @@ export function SprintSheet({
     dx: number;
   } | null;
   notes: readonly SheetNote[];
-  arrangement:
-    | 'chord'
-    | 'bar';
+  arrangement: 'chord' | 'bar';
   /** A bar: the note to play next. */
   now?: number;
   state: StaffCardState;
@@ -587,191 +304,58 @@ export function SprintSheet({
   label: string;
   className?: string;
   /** `low`: the note finder's taller card, three ledger lines under the treble staff (guitar). */
-  range?:
-    | 'deck'
-    | 'low';
+  range?: 'deck' | 'low';
   /** The treble clef with the small 8 under it (guitar music, read an octave down). */
   octaveClef?: boolean;
 }) {
-  const titleId =
-    useId();
-  const low =
-    range ===
-    'low';
-  const layout =
-    sheetLayout(
-      clef,
-      notes,
-      arrangement,
-      now,
-      low
-        ? CARD_LOW_MIN_STEP
-        : CARD_MIN_STEP,
-    );
-  const answered =
-    state !==
-    'ask';
+  const titleId = useId();
+  const low = range === 'low';
+  const layout = sheetLayout(clef, notes, arrangement, now, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP);
+  const answered = state !== 'ask';
   const miss =
-    state ===
-      'wrong' &&
-    played &&
-    played
-      .notes
-      .length >
-      0
+    state === 'wrong' && played && played.notes.length > 0
       ? {
           ...played,
-          layout:
-            sheetLayout(
-              clef,
-              played.notes,
-              'chord',
-              undefined,
-              low
-                ? CARD_LOW_MIN_STEP
-                : CARD_MIN_STEP,
-            ),
+          layout: sheetLayout(clef, played.notes, 'chord', undefined, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP),
         }
       : null;
-  const ink =
-    state ===
-      'right' ||
-    miss
-      ? 'text-app-accent'
-      : state ===
-          'wrong'
-        ? 'text-app-danger'
-        : 'text-app-text';
+  const ink = state === 'right' || miss ? 'text-app-accent' : state === 'wrong' ? 'text-app-danger' : 'text-app-text';
   return (
-    <figure
-      className={cn(
-        STAFF_BOX,
-        className,
-      )}
-    >
+    <figure className={cn(STAFF_BOX, className)}>
       <svg
         viewBox={`0 0 ${CARD_W} ${low ? CARD_LOW_H : CARD_H}`}
         role="img"
-        aria-labelledby={
-          titleId
-        }
+        aria-labelledby={titleId}
         className="block h-auto w-full text-app-text"
       >
-        <title
-          id={
-            titleId
-          }
-        >
-          {
-            label
-          }
-        </title>
-        <StaffRuling
-          clef={
-            clef
-          }
-          octaveClef={
-            octaveClef
-          }
-        />
-        <g
-          className={
-            ink
-          }
-          stroke="currentColor"
-          fill="currentColor"
-          strokeLinecap="round"
-        >
-          {layout.ledgers.map(
-            (
-              l,
-              i,
-            ) => (
-              <path
-                key={`${l.y}-${l.x0}`}
-                d={sheetLedgerLine(
-                  l,
-                  i,
-                )}
-                strokeWidth="1.4"
-                fill="none"
-              />
-            ),
-          )}
-          {layout.stems.map(
-            (
-              s,
-            ) => (
-              <line
-                key={`${s.x}-${s.y1}`}
-                x1={
-                  s.x
-                }
-                x2={
-                  s.x
-                }
-                y1={
-                  s.y1
-                }
-                y2={
-                  s.y2
-                }
-                strokeWidth="1.3"
-              />
-            ),
-          )}
-          {layout.heads.map(
-            (
-              h,
-              i,
-            ) => (
-              <ellipse
-                key={`${i}-${h.x}-${h.y}`}
-                cx={
-                  h.x
-                }
-                cy={
-                  h.y
-                }
-                rx={
-                  HEAD_RX
-                }
-                ry={
-                  HEAD_RY
-                }
-                transform={`rotate(-20 ${h.x} ${h.y})`}
-                stroke="none"
-              />
-            ),
-          )}
-          {layout.accidentals.map(
-            (
-              a,
-            ) => (
-              <path
-                key={`${a.x}-${a.y}`}
-                d={
-                  a.kind ===
-                  'sharp'
-                    ? sharpPath(
-                        a.x,
-                        a.y,
-                      )
-                    : flatPath(
-                        a.x,
-                        a.y,
-                      )
-                }
-                strokeWidth={
-                  a.kind ===
-                  'sharp'
-                    ? 1.2
-                    : 1.3
-                }
-                fill="none"
-              />
-            ),
-          )}
+        <title id={titleId}>{label}</title>
+        <StaffRuling clef={clef} octaveClef={octaveClef} />
+        <g className={ink} stroke="currentColor" fill="currentColor" strokeLinecap="round">
+          {layout.ledgers.map((l, i) => (
+            <path key={`${l.y}-${l.x0}`} d={sheetLedgerLine(l, i)} strokeWidth="1.4" fill="none" />
+          ))}
+          {layout.stems.map((s) => (
+            <line key={`${s.x}-${s.y1}`} x1={s.x} x2={s.x} y1={s.y1} y2={s.y2} strokeWidth="1.3" />
+          ))}
+          {layout.heads.map((h, i) => (
+            <ellipse
+              key={`${i}-${h.x}-${h.y}`}
+              cx={h.x}
+              cy={h.y}
+              rx={HEAD_RX}
+              ry={HEAD_RY}
+              transform={`rotate(-20 ${h.x} ${h.y})`}
+              stroke="none"
+            />
+          ))}
+          {layout.accidentals.map((a) => (
+            <path
+              key={`${a.x}-${a.y}`}
+              d={a.kind === 'sharp' ? sharpPath(a.x, a.y) : flatPath(a.x, a.y)}
+              strokeWidth={a.kind === 'sharp' ? 1.2 : 1.3}
+              fill="none"
+            />
+          ))}
         </g>
         {miss ? (
           // What the learner played, in red pencil beside the written notes: heads, ledger lines
@@ -784,128 +368,45 @@ export function SprintSheet({
             strokeLinecap="round"
             data-played-notes=""
           >
-            {miss.layout.ledgers.map(
-              (
-                l,
-                i,
-              ) => (
-                <path
-                  key={`${l.y}-${l.x0}`}
-                  d={sheetLedgerLine(
-                    l,
-                    i,
-                  )}
-                  strokeWidth="1.4"
-                  fill="none"
-                />
-              ),
-            )}
-            {miss.layout.heads.map(
-              (
-                h,
-                i,
-              ) => (
-                <ellipse
-                  key={`${i}-${h.x}-${h.y}`}
-                  cx={
-                    h.x
-                  }
-                  cy={
-                    h.y
-                  }
-                  rx={
-                    HEAD_RX
-                  }
-                  ry={
-                    HEAD_RY
-                  }
-                  transform={`rotate(-20 ${h.x} ${h.y})`}
-                  stroke="none"
-                />
-              ),
-            )}
-            {miss.layout.accidentals.map(
-              (
-                a,
-              ) => (
-                <path
-                  key={`${a.x}-${a.y}`}
-                  d={
-                    a.kind ===
-                    'sharp'
-                      ? sharpPath(
-                          a.x,
-                          a.y,
-                        )
-                      : flatPath(
-                          a.x,
-                          a.y,
-                        )
-                  }
-                  strokeWidth={
-                    a.kind ===
-                    'sharp'
-                      ? 1.2
-                      : 1.3
-                  }
-                  fill="none"
-                />
-              ),
-            )}
+            {miss.layout.ledgers.map((l, i) => (
+              <path key={`${l.y}-${l.x0}`} d={sheetLedgerLine(l, i)} strokeWidth="1.4" fill="none" />
+            ))}
+            {miss.layout.heads.map((h, i) => (
+              <ellipse
+                key={`${i}-${h.x}-${h.y}`}
+                cx={h.x}
+                cy={h.y}
+                rx={HEAD_RX}
+                ry={HEAD_RY}
+                transform={`rotate(-20 ${h.x} ${h.y})`}
+                stroke="none"
+              />
+            ))}
+            {miss.layout.accidentals.map((a) => (
+              <path
+                key={`${a.x}-${a.y}`}
+                d={a.kind === 'sharp' ? sharpPath(a.x, a.y) : flatPath(a.x, a.y)}
+                strokeWidth={a.kind === 'sharp' ? 1.2 : 1.3}
+                fill="none"
+              />
+            ))}
           </g>
         ) : null}
-        <g
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.4"
-        >
-          {layout.now &&
-          !answered ? (
-            <path
-              d={nowMarkPath(
-                layout
-                  .now
-                  .x,
-                layout
-                  .now
-                  .y,
-              )}
-            />
-          ) : null}
-          {state ===
-          'right' ? (
-            <path
-              className="text-app-accent"
-              d="M 180 12 L 184.5 17 L 193 5.5"
-            />
-          ) : state ===
-            'wrong' ? (
-            <path
-              className="text-app-danger"
-              d="M 181 6 L 192 17 M 192.5 6.5 L 180.5 16.5"
-            />
+        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4">
+          {layout.now && !answered ? <path d={nowMarkPath(layout.now.x, layout.now.y)} /> : null}
+          {state === 'right' ? (
+            <path className="text-app-accent" d="M 180 12 L 184.5 17 L 193 5.5" />
+          ) : state === 'wrong' ? (
+            <path className="text-app-danger" d="M 181 6 L 192 17 M 192.5 6.5 L 180.5 16.5" />
           ) : null}
         </g>
       </svg>
       <figcaption
         aria-hidden="true"
         dir="ltr"
-        className={cn(
-          'rmm-display h-9 text-center text-[1.75rem] leading-9',
-          ink,
-        )}
+        className={cn('rmm-display h-9 text-center text-[1.75rem] leading-9', ink)}
       >
-        {answered
-          ? notes
-              .map(
-                sheetNoteName,
-              )
-              .join(
-                ' ',
-              )
-          : null}
+        {answered ? notes.map(sheetNoteName).join(' ') : null}
       </figcaption>
     </figure>
   );

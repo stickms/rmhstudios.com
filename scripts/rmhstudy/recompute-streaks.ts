@@ -16,54 +16,24 @@ import { prisma } from '@/lib/prisma.server';
 import { recomputeStreaks } from '@/lib/rmhstudy/recompute-streaks.server';
 
 async function main() {
-  const dryRun =
-    process.argv.includes(
-      '--dry-run',
-    );
-  if (
-    dryRun
-  )
-    console.log(
-      '[rmhstudy-streaks] dry run: nothing will be written\n',
-    );
-  const result =
-    await recomputeStreaks(
-      prisma,
-      {
-        dryRun,
-        onChange:
-          (
-            profile,
-            next,
-          ) => {
-            console.log(
-              `  ${profile.userId}: current ${profile.currentStreak} -> ${next.currentStreak}, longest ${profile.longestStreak} -> ${next.longestStreak}`,
-            );
-          },
-      },
-    );
+  const dryRun = process.argv.includes('--dry-run');
+  if (dryRun) console.log('[rmhstudy-streaks] dry run: nothing will be written\n');
+  const result = await recomputeStreaks(prisma, {
+    dryRun,
+    onChange: (profile, next) => {
+      console.log(
+        `  ${profile.userId}: current ${profile.currentStreak} -> ${next.currentStreak}, longest ${profile.longestStreak} -> ${next.longestStreak}`,
+      );
+    },
+  });
   console.log(
     `\n[rmhstudy-streaks] ${result.scanned} profiles: ${result.changed} ${dryRun ? 'would change' : 'updated'}, ${result.unchanged} already correct, ${result.skipped} without sessions`,
   );
 }
 
 main()
-  .catch(
-    (
-      error,
-    ) => {
-      console.error(
-        '[rmhstudy-streaks] failed:',
-        error,
-      );
-      process.exit(
-        1,
-      );
-    },
-  )
-  .then(
-    () =>
-      process.exit(
-        0,
-      ),
-  );
+  .catch((error) => {
+    console.error('[rmhstudy-streaks] failed:', error);
+    process.exit(1);
+  })
+  .then(() => process.exit(0));

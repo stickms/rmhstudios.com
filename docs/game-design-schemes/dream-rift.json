@@ -23,13 +23,7 @@
     "borderStyle": "2px solid with a pixel stair-step corner (box-shadow, no blur)",
     "texture": "CRT scanlines at 12% opacity over a violet gradient"
   },
-  "motifs": [
-    "concentric bullet rings",
-    "pixel-art sprite",
-    "starfield",
-    "boss spell-card sigil",
-    "pixel font"
-  ],
+  "motifs": ["concentric bullet rings", "pixel-art sprite", "starfield", "boss spell-card sigil", "pixel font"],
   "buttonStyle": "Primary is a pink block with a darker pink bottom edge (3px) and white pixel text that nudges down 3px when pressed; secondary is a violet block with a cyan text label.",
   "backdrop": "Violet-to-magenta gradient with a few hundred tiny stars and one slow rotating ring of coloured dots (a static CSS radial pattern rotated with transform), safe and cheap.",
   "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."

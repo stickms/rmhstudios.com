@@ -59,7 +59,12 @@ function seed(kind: 'unlike-posts' | 'delete-reposts') {
   const isLike = kind === 'unlike-posts';
   const old = new Date(NOW.getTime() - 400 * DAY);
   const recent = new Date(NOW.getTime() - 5 * DAY);
-  const posts = ['a', 'b', 'c', 'd'].map((id) => ({ id: `p-${id}`, content: `post ${id}`, likeCount: 2, repostCount: 2 }));
+  const posts = ['a', 'b', 'c', 'd'].map((id) => ({
+    id: `p-${id}`,
+    content: `post ${id}`,
+    likeCount: 2,
+    repostCount: 2,
+  }));
   const rows = [
     { id: 'r1', rmheetId: 'p-a', userId: 'me', createdAt: old },
     { id: 'r2', rmheetId: 'p-b', userId: 'me', createdAt: old },
@@ -118,7 +123,9 @@ describe.each(['unlike-posts', 'delete-reposts'] as const)('%s', (kind) => {
   });
 
   it('removes only the member’s matching rows and lowers exactly their posts’ counters', async () => {
-    fakeDb.state.bulkOperation.push(opRow({ id: 'op9', userId: 'me', kind, filter: { olderThanDays: 365 }, total: 2, createdAt: NOW }));
+    fakeDb.state.bulkOperation.push(
+      opRow({ id: 'op9', userId: 'me', kind, filter: { olderThanDays: 365 }, total: 2, createdAt: NOW }),
+    );
     await runBulkOperation('op9', NOW);
     const table = fakeDb.state[isLike ? 'rMHarkLike' : 'rMHarkRepost'];
     expect(table.map((r) => r.id).sort()).toEqual(['r3', 'r4']);
@@ -132,7 +139,9 @@ describe.each(['unlike-posts', 'delete-reposts'] as const)('%s', (kind) => {
   });
 
   it('retracts the unread notifications the member’s rows created, in one delete, and no others', async () => {
-    fakeDb.state.bulkOperation.push(opRow({ id: 'op9', userId: 'me', kind, filter: { olderThanDays: 365 }, total: 2, createdAt: NOW }));
+    fakeDb.state.bulkOperation.push(
+      opRow({ id: 'op9', userId: 'me', kind, filter: { olderThanDays: 365 }, total: 2, createdAt: NOW }),
+    );
     await runBulkOperation('op9', NOW);
     expect(fakeDb.state.notification.map((n) => n.id).sort()).toEqual(['n2', 'n3', 'n4', 'n5']);
     const deletes = fakeDb.calls.filter((c) => c.table === 'notification' && c.method === 'deleteMany');

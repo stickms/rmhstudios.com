@@ -27,86 +27,37 @@ export function SettingsSelectRow({
   hint?: React.ReactNode;
   value: string;
   options: readonly SettingsSelectOption[];
-  onChange: (
-    value: string,
-  ) => void;
+  onChange: (value: string) => void;
   disabled?: boolean;
 }) {
-  const labelId =
-    useId();
-  const hintId =
-    useId();
+  const labelId = useId();
+  const hintId = useId();
   return (
     <div className="settings-row">
       <span className="settings-row__text">
-        <span
-          id={
-            labelId
-          }
-          className="settings-row__name block"
-        >
-          {
-            label
-          }
+        <span id={labelId} className="settings-row__name block">
+          {label}
         </span>
         {hint ? (
-          <span
-            id={
-              hintId
-            }
-            className="settings-row__hint block"
-          >
-            {
-              hint
-            }
+          <span id={hintId} className="settings-row__hint block">
+            {hint}
           </span>
         ) : null}
       </span>
       <Select
-        value={
-          value
-        }
-        onChange={(
-          e,
-        ) =>
-          onChange(
-            e
-              .target
-              .value,
-          )
-        }
-        aria-labelledby={
-          labelId
-        }
-        aria-describedby={
-          hint
-            ? hintId
-            : undefined
-        }
-        disabled={
-          disabled
-        }
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-labelledby={labelId}
+        aria-describedby={hint ? hintId : undefined}
+        disabled={disabled}
         controlSize="sm"
         containerClassName="w-36 shrink-0 sm:w-40"
       >
-        {options.map(
-          (
-            o,
-          ) => (
-            <option
-              key={
-                o.value
-              }
-              value={
-                o.value
-              }
-            >
-              {
-                o.label
-              }
-            </option>
-          ),
-        )}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
       </Select>
     </div>
   );

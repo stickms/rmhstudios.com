@@ -37,43 +37,33 @@ export function fakeCaches(initial: Record<string, number>): CacheStorage {
   } as unknown as CacheStorage;
 }
 
-export function makeDatabase(
-  idb: IDBFactory,
-  name: string,
-  stores: Record<string, unknown[]>,
-): Promise<void> {
-  return new Promise(
-    (resolve, reject) => {
-      const req = idb.open(name, 1);
-      req.onupgradeneeded = () => {
-        for (const [store, rows] of Object.entries(stores)) {
-          const os = req.result.createObjectStore(store, { autoIncrement: true });
-          for (const row of rows) os.add(row);
-        }
-      };
-      req.onsuccess = () => {
-        req.result.close();
-        resolve();
-      };
-      req.onerror = () => reject(req.error);
-    },
-  );
+export function makeDatabase(idb: IDBFactory, name: string, stores: Record<string, unknown[]>): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = idb.open(name, 1);
+    req.onupgradeneeded = () => {
+      for (const [store, rows] of Object.entries(stores)) {
+        const os = req.result.createObjectStore(store, { autoIncrement: true });
+        for (const row of rows) os.add(row);
+      }
+    };
+    req.onsuccess = () => {
+      req.result.close();
+      resolve();
+    };
+    req.onerror = () => reject(req.error);
+  });
 }
 
-export function openConnection(
-  idb: IDBFactory,
-  name: string,
-): Promise<IDBDatabase> {
-  return new Promise(
-    (resolve, reject) => {
-      const req = idb.open(name);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    },
-  );
+export function openConnection(idb: IDBFactory, name: string): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = idb.open(name);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-export function freshEnv(): Required<Pick<DeviceEnv, 'indexedDB' | 'localStorage' | 'sessionStorage' | 'caches'>> & DeviceEnv {
+export function freshEnv(): Required<Pick<DeviceEnv, 'indexedDB' | 'localStorage' | 'sessionStorage' | 'caches'>> &
+  DeviceEnv {
   return {
     indexedDB: new IDBFactory(),
     localStorage: new MemoryStorage(),

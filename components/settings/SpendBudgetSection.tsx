@@ -32,8 +32,7 @@ export function SpendBudgetSection({
   const cap = budget.monthlySpendCap;
   const input = draft ?? (cap === null ? '' : String(cap));
   const parsed = input.trim() === '' ? null : Number(input);
-  const valid =
-    parsed === null || (Number.isInteger(parsed) && parsed >= MIN_SPEND_CAP && parsed <= MAX_SPEND_CAP);
+  const valid = parsed === null || (Number.isInteger(parsed) && parsed >= MIN_SPEND_CAP && parsed <= MAX_SPEND_CAP);
   const changed = parsed !== cap;
   const wouldDefer = valid && changed && isLoosening(cap, parsed);
   const num = (n: number) => n.toLocaleString(i18n.language);

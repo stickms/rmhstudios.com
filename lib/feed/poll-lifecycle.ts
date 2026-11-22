@@ -10,14 +10,8 @@
 export const POLL_MAX_DAYS = 30;
 
 /** The extensions an author can pick. */
-export const POLL_EXTEND_DAYS =
-  [
-    1,
-    3,
-    7,
-  ] as const;
-export type PollExtendDays =
-  (typeof POLL_EXTEND_DAYS)[number];
+export const POLL_EXTEND_DAYS = [1, 3, 7] as const;
+export type PollExtendDays = (typeof POLL_EXTEND_DAYS)[number];
 
 /** Above this many votes only the author hears the result (a pile-on guard). */
 export const POLL_VOTER_NOTICE_MAX_VOTES = 2000;
@@ -36,52 +30,23 @@ export interface PollTimes {
 }
 
 /** When the poll stopped or will stop taking votes; null for an open poll with no end. */
-export function pollEffectiveEnd(
-  poll: PollTimes,
-): Date | null {
-  return (
-    poll.closedAt ??
-    poll.closesAt
-  );
+export function pollEffectiveEnd(poll: PollTimes): Date | null {
+  return poll.closedAt ?? poll.closesAt;
 }
 
-export function isPollEnded(
-  poll: PollTimes,
-  now: Date = new Date(),
-): boolean {
-  const end =
-    pollEffectiveEnd(
-      poll,
-    );
-  return (
-    end !==
-      null &&
-    end.getTime() <=
-      now.getTime()
-  );
+export function isPollEnded(poll: PollTimes, now: Date = new Date()): boolean {
+  const end = pollEffectiveEnd(poll);
+  return end !== null && end.getTime() <= now.getTime();
 }
 
 /** The latest a poll created at `createdAt` may end. */
-export function pollLatestEnd(
-  createdAt: Date,
-): Date {
-  return new Date(
-    createdAt.getTime() +
-      POLL_MAX_DAYS *
-        DAY_MS,
-  );
+export function pollLatestEnd(createdAt: Date): Date {
+  return new Date(createdAt.getTime() + POLL_MAX_DAYS * DAY_MS);
 }
 
 /** Where a timed poll that closes at `closesAt` would close if extended by `days`. */
-export function extendedEnd(
-  closesAt: Date,
-  days: number,
-): Date {
-  return new Date(
-    closesAt.getTime() +
-      days *
-        DAY_MS,
-  );
+export function extendedEnd(closesAt: Date, days: number): Date {
+  return new Date(closesAt.getTime() + days * DAY_MS);
 }
 
 /**
@@ -94,39 +59,16 @@ export function allowedExtensions(
   },
   now: Date = new Date(),
 ): PollExtendDays[] {
-  if (
-    poll.closesAt ===
-      null ||
-    isPollEnded(
-      poll,
-      now,
-    )
-  )
-    return [];
-  const latest =
-    pollLatestEnd(
-      poll.createdAt,
-    ).getTime();
-  const closesAt =
-    poll.closesAt;
-  return POLL_EXTEND_DAYS.filter(
-    (
-      days,
-    ) =>
-      extendedEnd(
-        closesAt,
-        days,
-      ).getTime() <=
-      latest,
-  );
+  if (poll.closesAt === null || isPollEnded(poll, now)) return [];
+  const latest = pollLatestEnd(poll.createdAt).getTime();
+  const closesAt = poll.closesAt;
+  return POLL_EXTEND_DAYS.filter((days) => extendedEnd(closesAt, days).getTime() <= latest);
 }
 
 /** What every poll serialiser adds to a poll: its effective end and whether it is over. */
 export interface PollLifecycleView {
   /** The effective end (ISO), or null for an open poll with no end. */
-  closesAt:
-    | string
-    | null;
+  closesAt: string | null;
   ended: boolean;
   /** The author extended the poll at least once. */
   extended: boolean;
@@ -141,28 +83,12 @@ export function pollLifecycleView(
   },
   now: Date = new Date(),
 ): PollLifecycleView {
-  const end =
-    pollEffectiveEnd(
-      poll,
-    );
+  const end = pollEffectiveEnd(poll);
   return {
-    closesAt:
-      end
-        ? end.toISOString()
-        : null,
-    ended:
-      isPollEnded(
-        poll,
-        now,
-      ),
-    extended:
-      poll.extendedAt !==
-      null,
-    extendDays:
-      allowedExtensions(
-        poll,
-        now,
-      ),
+    closesAt: end ? end.toISOString() : null,
+    ended: isPollEnded(poll, now),
+    extended: poll.extendedAt !== null,
+    extendDays: allowedExtensions(poll, now),
   };
 }
 
@@ -173,132 +99,44 @@ export interface TalliedOption {
 }
 
 /** The share of `total` as a whole percent, the way the poll rows draw it. */
-export function votePercent(
-  voteCount: number,
-  total: number,
-): number {
-  return total >
-    0
-    ? Math.round(
-        (voteCount /
-          total) *
-          100,
-      )
-    : 0;
+export function votePercent(voteCount: number, total: number): number {
+  return total > 0 ? Math.round((voteCount / total) * 100) : 0;
 }
 
-export function totalVotesOf(
-  options: readonly TalliedOption[],
-): number {
-  return options.reduce(
-    (
-      sum,
-      o,
-    ) =>
-      sum +
-      o.voteCount,
-    0,
-  );
+export function totalVotesOf(options: readonly TalliedOption[]): number {
+  return options.reduce((sum, o) => sum + o.voteCount, 0);
 }
 
 /** The option or options with the most votes; every tied option, and none when nobody voted. */
-export function pollWinners<
-  T extends
-    TalliedOption,
->(
-  options: readonly T[],
-): T[] {
-  const top =
-    options.reduce(
-      (
-        max,
-        o,
-      ) =>
-        Math.max(
-          max,
-          o.voteCount,
-        ),
-      0,
-    );
-  return top >
-    0
-    ? options.filter(
-        (
-          o,
-        ) =>
-          o.voteCount ===
-          top,
-      )
-    : [];
+export function pollWinners<T extends TalliedOption>(options: readonly T[]): T[] {
+  const top = options.reduce((max, o) => Math.max(max, o.voteCount), 0);
+  return top > 0 ? options.filter((o) => o.voteCount === top) : [];
 }
 
 /** Voters hear the result only for polls small enough that a notice to each is not a pile-on. */
-export function votersAreNotified(
-  totalVotes: number,
-): boolean {
-  return (
-    totalVotes <=
-    POLL_VOTER_NOTICE_MAX_VOTES
-  );
+export function votersAreNotified(totalVotes: number): boolean {
+  return totalVotes <= POLL_VOTER_NOTICE_MAX_VOTES;
 }
 
 const NAME_MAX = 60;
 
-function names(
-  options: readonly TalliedOption[],
-): string {
-  const clipped =
-    options.map(
-      (
-        o,
-      ) =>
-        o
-          .text
-          .length >
-        NAME_MAX
-          ? `${o.text.slice(0, NAME_MAX - 1)}…`
-          : o.text,
-    );
-  return new Intl.ListFormat(
-    'en',
-    {
-      style:
-        'long',
-      type: 'conjunction',
-    },
-  ).format(
-    clipped,
-  );
+function names(options: readonly TalliedOption[]): string {
+  const clipped = options.map((o) => (o.text.length > NAME_MAX ? `${o.text.slice(0, NAME_MAX - 1)}…` : o.text));
+  return new Intl.ListFormat('en', {
+    style: 'long',
+    type: 'conjunction',
+  }).format(clipped);
 }
 
 /** The author's notice: the winner and its share, every tied option, or that nobody voted. */
-export function authorNoticeText(
-  options: readonly TalliedOption[],
-): string {
-  const winners =
-    pollWinners(
-      options,
-    );
-  const [
-    first,
-  ] =
-    winners;
-  if (
-    !first
-  )
-    return 'Your poll ended with no votes';
-  const pct =
-    votePercent(
-      first.voteCount,
-      totalVotesOf(
-        options,
-      ),
-    );
-  return winners.length ===
-    1
+export function authorNoticeText(options: readonly TalliedOption[]): string {
+  const winners = pollWinners(options);
+  const [first] = winners;
+  if (!first) return 'Your poll ended with no votes';
+  const pct = votePercent(first.voteCount, totalVotesOf(options));
+  return winners.length === 1
     ? `Your poll ended: ${names(winners)} won with ${pct}%`
     : `Your poll ended in a tie: ${names(winners)} with ${pct}% each`;
 }
 
-export const VOTER_NOTICE_TEXT =
-  'A poll you voted in ended';
+export const VOTER_NOTICE_TEXT = 'A poll you voted in ended';

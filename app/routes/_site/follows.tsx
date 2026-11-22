@@ -7,11 +7,7 @@ import { FollowManager } from '@/components/follows/FollowManager';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { buildMeta } from '@/lib/seo';
-import {
-  followQueryToSearch,
-  parseFollowQuery,
-  type FollowQuery,
-} from '@/lib/social/follow-filters';
+import { followQueryToSearch, parseFollowQuery, type FollowQuery } from '@/lib/social/follow-filters';
 
 const fetchSignedIn = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();

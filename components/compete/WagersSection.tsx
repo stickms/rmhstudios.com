@@ -94,9 +94,7 @@ export function WagersSection() {
           }
           action={
             viewerId ? (
-              <Button onClick={() => setCreating(true)}>
-                {t('new-challenge', { defaultValue: 'New challenge' })}
-              </Button>
+              <Button onClick={() => setCreating(true)}>{t('new-challenge', { defaultValue: 'New challenge' })}</Button>
             ) : null
           }
         />

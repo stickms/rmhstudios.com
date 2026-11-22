@@ -8,11 +8,7 @@
  * it) of every token, so nothing the author typed can be lost by loading a file.
  */
 
-export type KvTokenType =
-  | 'string'
-  | 'open'
-  | 'close'
-  | 'cond';
+export type KvTokenType = 'string' | 'open' | 'close' | 'cond';
 
 export interface KvToken {
   type: KvTokenType;
@@ -42,9 +38,7 @@ export interface KvNode {
   parent: KvNode | null;
 }
 
-export type KvSeverity =
-  | 'error'
-  | 'warning';
+export type KvSeverity = 'error' | 'warning';
 
 export interface KvDiagnostic {
   severity: KvSeverity;

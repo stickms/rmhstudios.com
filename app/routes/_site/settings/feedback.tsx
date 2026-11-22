@@ -10,94 +10,48 @@ import { useSession } from '@/components/Providers';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { noindexHead } from '@/lib/seo';
 
-export const Route =
-  createFileRoute(
-    '/_site/settings/feedback',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'Your feedback',
-        ),
-      component:
-        FeedbackRoute,
-    },
-  );
+export const Route = createFileRoute('/_site/settings/feedback')({
+  head: () => noindexHead('Your feedback'),
+  component: FeedbackRoute,
+});
 
 function FeedbackRoute() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'feedback-inbox',
-    );
-  const {
-    data: session,
-    isPending,
-  } =
-    useSession();
-  const settingsLabel =
-    t(
-      'settings',
-      {
-        defaultValue:
-          'Settings',
-      },
-    );
-  const title =
-    t(
-      'mine-title',
-      {
-        defaultValue:
-          'Your feedback',
-      },
-    );
-  const signedOut =
-    !isPending &&
-    !session?.user;
+  const { t } = useTranslation('feedback-inbox');
+  const { data: session, isPending } = useSession();
+  const settingsLabel = t('settings', {
+    defaultValue: 'Settings',
+  });
+  const title = t('mine-title', {
+    defaultValue: 'Your feedback',
+  });
+  const signedOut = !isPending && !session?.user;
 
   return (
     <PageLayout
-      title={
-        title
-      }
-      description={t(
-        'mine-description',
-        {
-          defaultValue:
-            'What you sent us, newest first, with where it stands and any reply.',
-        },
-      )}
+      title={title}
+      description={t('mine-description', {
+        defaultValue: 'What you sent us, newest first, with where it stands and any reply.',
+      })}
       wide
       backTo="/settings"
-      backLabel={
-        settingsLabel
-      }
+      backLabel={settingsLabel}
       breadcrumbs={[
         {
-          label:
-            settingsLabel,
+          label: settingsLabel,
           to: '/settings',
         },
         {
-          label:
-            title,
+          label: title,
         },
       ]}
     >
       <SettingsPageBody>
         {signedOut ? (
           <SignedOutPrompt
-            icon={
-              MessageSquareText
-            }
-            title={t(
-              'mine-signed-out',
-              {
-                defaultValue:
-                  'Sign in to see your feedback.',
-              },
-            )}
+            icon={MessageSquareText}
+            title={t('mine-signed-out', {
+              defaultValue: 'Sign in to see your feedback.',
+            })}
             callbackURL="/settings/feedback"
           />
         ) : (

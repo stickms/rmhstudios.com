@@ -34,32 +34,13 @@ export function AdminSection({
   children?: ReactNode;
 }) {
   return (
-    <section
-      className={cn(
-        'min-w-0 space-y-3',
-        className,
-      )}
-    >
+    <section className={cn('min-w-0 space-y-3', className)}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h2 className="t-heading min-w-0 text-site-text">
-          {
-            title
-          }
-        </h2>
-        {
-          action
-        }
+        <h2 className="t-heading min-w-0 text-site-text">{title}</h2>
+        {action}
       </div>
-      {description ? (
-        <p className="t-body max-w-prose text-site-text-muted">
-          {
-            description
-          }
-        </p>
-      ) : null}
-      {
-        children
-      }
+      {description ? <p className="t-body max-w-prose text-site-text-muted">{description}</p> : null}
+      {children}
     </section>
   );
 }
@@ -69,23 +50,10 @@ export function AdminSection({
  * phone scrolls inside this, to the screen edge, and the page itself never
  * does. The negative margin lets the table use the gutter while it scrolls.
  */
-export function AdminScroll({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
+export function AdminScroll({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div
-      className={cn(
-        '-mx-[var(--site-page-gutter)] overflow-x-auto px-[var(--site-page-gutter)]',
-        className,
-      )}
-    >
-      {
-        children
-      }
+    <div className={cn('-mx-[var(--site-page-gutter)] overflow-x-auto px-[var(--site-page-gutter)]', className)}>
+      {children}
     </div>
   );
 }

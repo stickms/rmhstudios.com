@@ -1,10 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import {
-  deleteWebhookApi,
-  getWebhookApi,
-  updateWebhookApi,
-} from '@/lib/developer/webhooks.contract';
+import { deleteWebhookApi, getWebhookApi, updateWebhookApi } from '@/lib/developer/webhooks.contract';
 import { deliveriesQuery, patchWebhookBody } from '@/lib/developer/webhooks-schema';
 import { deleteWebhook, getWebhook, updateWebhook } from '@/lib/developer/webhooks.server';
 
@@ -22,15 +18,11 @@ const writeLimit = {
  * A foreign or unknown id is a 404 on all three.
  */
 export const route = apiRoute('/api/developer/webhooks/$id', {
-  GET: implement(
-    getWebhookApi,
-    { rateLimit: 'read', query: deliveriesQuery },
-    async ({ userId, params, query }) => {
-      const found = await getWebhook(userId, params.id, query);
-      if (!found.ok) return Response.json({ error: found.error }, { status: found.status });
-      return { endpoint: found.endpoint, deliveries: found.deliveries, nextCursor: found.nextCursor };
-    },
-  ),
+  GET: implement(getWebhookApi, { rateLimit: 'read', query: deliveriesQuery }, async ({ userId, params, query }) => {
+    const found = await getWebhook(userId, params.id, query);
+    if (!found.ok) return Response.json({ error: found.error }, { status: found.status });
+    return { endpoint: found.endpoint, deliveries: found.deliveries, nextCursor: found.nextCursor };
+  }),
 
   PATCH: implement(
     updateWebhookApi,

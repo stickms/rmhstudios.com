@@ -19,11 +19,7 @@ import {
 
 /** The learner's mode; the default on the server and until hydration, then the stored one. */
 export function usePracticeMode(): PracticeMode {
-  return useSyncExternalStore(
-    subscribePracticeMode,
-    getPracticeMode,
-    () => DEFAULT_PRACTICE_MODE,
-  );
+  return useSyncExternalStore(subscribePracticeMode, getPracticeMode, () => DEFAULT_PRACTICE_MODE);
 }
 
 export function PracticeModeToggle({
@@ -54,8 +50,7 @@ export function PracticeModeToggle({
         <p className="mt-2 min-h-10 text-sm leading-5 text-app-text-muted">
           {mode === 'learning'
             ? t('mode-learning-says', {
-                defaultValue:
-                  'Wrong answers show what you played, and the question stays until you get it right.',
+                defaultValue: 'Wrong answers show what you played, and the question stays until you get it right.',
               })
             : t('mode-test-says', {
                 defaultValue: 'One answer per question, then on to the next.',

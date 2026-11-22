@@ -12,40 +12,25 @@ export interface ActiveSanction {
   id: string;
   kind: SanctionKind;
   endsAt: Date | null;
-  ruleId:
-    | string
-    | null;
+  ruleId: string | null;
 }
 
-export const asKind =
-  (
-    v: string,
-  ): SanctionKind =>
-    v ===
-    'ban'
-      ? 'ban'
-      : 'timeout';
+export const asKind = (v: string): SanctionKind => (v === 'ban' ? 'ban' : 'timeout');
 
 /** `where` for "not lifted and not ended yet". */
-export const activeWhere =
-  (
-    now: Date,
-  ): Prisma.CommunityBanWhereInput => ({
-    liftedAt:
-      null,
-    OR: [
-      {
-        endsAt:
-          null,
+export const activeWhere = (now: Date): Prisma.CommunityBanWhereInput => ({
+  liftedAt: null,
+  OR: [
+    {
+      endsAt: null,
+    },
+    {
+      endsAt: {
+        gt: now,
       },
-      {
-        endsAt:
-          {
-            gt: now,
-          },
-      },
-    ],
-  });
+    },
+  ],
+});
 
 /**
  * The member's active ban or timeout in a community, or `null`. One indexed lookup
@@ -56,37 +41,26 @@ export async function activeSanction(
   userId: string,
   now: Date = new Date(),
 ): Promise<ActiveSanction | null> {
-  const row =
-    await prisma.communityBan.findFirst(
-      {
-        where:
-          {
-            communityId,
-            userId,
-            ...activeWhere(
-              now,
-            ),
-          },
-        orderBy:
-          {
-            createdAt:
-              'desc',
-          },
-        select:
-          {
-            id: true,
-            kind: true,
-            endsAt: true,
-            ruleId: true,
-          },
-      },
-    );
+  const row = await prisma.communityBan.findFirst({
+    where: {
+      communityId,
+      userId,
+      ...activeWhere(now),
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    select: {
+      id: true,
+      kind: true,
+      endsAt: true,
+      ruleId: true,
+    },
+  });
   return row
     ? {
         ...row,
-        kind: asKind(
-          row.kind,
-        ),
+        kind: asKind(row.kind),
       }
     : null;
 }

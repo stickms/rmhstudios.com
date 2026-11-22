@@ -46,7 +46,8 @@ export function BuildReleases({ buildId, repoUrl, isOwner, initialReleases }: Pr
     const ok = await confirm({
       title: t('delete-title', { version: release.version, defaultValue: 'Delete {{version}}?' }),
       description: t('delete-body', {
-        defaultValue: 'The release leaves this page. Nobody is notified, and publishing the same version again does not notify either.',
+        defaultValue:
+          'The release leaves this page. Nobody is notified, and publishing the same version again does not notify either.',
       }),
       confirmLabel: t('delete', { defaultValue: 'Delete' }),
       danger: true,
@@ -64,10 +65,7 @@ export function BuildReleases({ buildId, repoUrl, isOwner, initialReleases }: Pr
   const row = (release: ReleaseView, isLatest: boolean) => {
     const link = commitLink(repoUrl, release.commitHash);
     return (
-      <li
-        key={release.id}
-        className={cn('border-b border-site-border py-4', arrived(release.id) && ARRIVE)}
-      >
+      <li key={release.id} className={cn('border-b border-site-border py-4', arrived(release.id) && ARRIVE)}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="t-heading flex flex-wrap items-baseline gap-x-2">
@@ -125,7 +123,9 @@ export function BuildReleases({ buildId, repoUrl, isOwner, initialReleases }: Pr
         <ul>{row(latest, true)}</ul>
       ) : (
         <p className="t-body py-4 text-site-text-muted">
-          {t('empty', { defaultValue: 'No releases yet. Publish one to tell the people who watch or bought this build.' })}
+          {t('empty', {
+            defaultValue: 'No releases yet. Publish one to tell the people who watch or bought this build.',
+          })}
         </p>
       )}
 

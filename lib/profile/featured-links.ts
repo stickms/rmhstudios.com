@@ -22,33 +22,14 @@ export interface FeaturedProfileLink {
   label: string;
 }
 
-const FEATURED_PROFILE_LINKS: Record<
-  string,
-  FeaturedProfileLink
-> =
-  {
-    superflameaura:
-      {
-        to: '/sohumbum',
-        label:
-          'Pledge status',
-      },
-  };
+const FEATURED_PROFILE_LINKS: Record<string, FeaturedProfileLink> = {
+  superflameaura: {
+    to: '/sohumbum',
+    label: 'Pledge status',
+  },
+};
 
-export function getFeaturedProfileLink(
-  handle:
-    | string
-    | null
-    | undefined,
-): FeaturedProfileLink | null {
-  if (
-    !handle
-  )
-    return null;
-  return (
-    FEATURED_PROFILE_LINKS[
-      handle.toLowerCase()
-    ] ??
-    null
-  );
+export function getFeaturedProfileLink(handle: string | null | undefined): FeaturedProfileLink | null {
+  if (!handle) return null;
+  return FEATURED_PROFILE_LINKS[handle.toLowerCase()] ?? null;
 }

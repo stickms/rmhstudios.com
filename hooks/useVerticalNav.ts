@@ -27,10 +27,7 @@
  * it is the part worth sharing.
  */
 
-import {
-  useCallback,
-  useEffect,
-} from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 
 export interface VerticalNavOptions {
@@ -44,160 +41,53 @@ export interface VerticalNavOptions {
 
 export interface VerticalNav {
   /** `onClick` for the hamburger. Toggles the menu and `aria-expanded`. */
-  toggleMenu: (
-    e: React.MouseEvent<HTMLButtonElement>,
-  ) => void;
+  toggleMenu: (e: React.MouseEvent<HTMLButtonElement>) => void;
   /** `onClick` for every link in the mobile menu. */
   closeMenu: () => void;
   /** `aria-current` for a link: `'page'` when it is the one you are on. */
-  current: (
-    to: string,
-  ) =>
-    | 'page'
-    | undefined;
+  current: (to: string) => 'page' | undefined;
 }
 
-export function useVerticalNav({
-  rootClass,
-  barClass,
-  condenseAt = 12,
-}: VerticalNavOptions): VerticalNav {
-  const pathname =
-    useRouterState(
-      {
-        select:
-          (
-            s,
-          ) =>
-            s
-              .location
-              .pathname,
-      },
-    );
+export function useVerticalNav({ rootClass, barClass, condenseAt = 12 }: VerticalNavOptions): VerticalNav {
+  const pathname = useRouterState({
+    select: (s) => s.location.pathname,
+  });
 
   useEffect(() => {
-    const bar =
-      document.querySelector(
-        `.${rootClass} .${barClass}`,
-      );
-    if (
-      !bar
-    )
-      return;
-    const onScroll =
-      () =>
-        bar.classList.toggle(
-          'scrolled',
-          window.scrollY >
-            condenseAt,
-        );
+    const bar = document.querySelector(`.${rootClass} .${barClass}`);
+    if (!bar) return;
+    const onScroll = () => bar.classList.toggle('scrolled', window.scrollY > condenseAt);
     onScroll();
-    window.addEventListener(
-      'scroll',
-      onScroll,
-      {
-        passive: true,
-      },
-    );
-    return () =>
-      window.removeEventListener(
-        'scroll',
-        onScroll,
-      );
-  }, [
-    rootClass,
-    barClass,
-    condenseAt,
-  ]);
+    window.addEventListener('scroll', onScroll, {
+      passive: true,
+    });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [rootClass, barClass, condenseAt]);
 
   // Close the mobile menu whenever the route changes. Both copies of this
   // relied on every link calling `closeMenu` by hand, which works until one
   // link forgets — and then the menu stays open over the page it navigated to.
   useEffect(() => {
-    document
-      .querySelector(
-        `.${rootClass} .mobile-menu`,
-      )
-      ?.classList.remove(
-        'open',
-      );
-    document
-      .querySelector(
-        `.${rootClass} .${barClass} [aria-expanded="true"]`,
-      )
-      ?.setAttribute(
-        'aria-expanded',
-        'false',
-      );
-  }, [
-    pathname,
-    rootClass,
-    barClass,
-  ]);
+    document.querySelector(`.${rootClass} .mobile-menu`)?.classList.remove('open');
+    document.querySelector(`.${rootClass} .${barClass} [aria-expanded="true"]`)?.setAttribute('aria-expanded', 'false');
+  }, [pathname, rootClass, barClass]);
 
-  const toggleMenu =
-    useCallback(
-      (
-        e: React.MouseEvent<HTMLButtonElement>,
-      ) => {
-        const btn =
-          e.currentTarget;
-        const menu =
-          btn
-            .closest(
-              `.${barClass}`,
-            )
-            ?.querySelector(
-              '.mobile-menu',
-            );
-        if (
-          !menu
-        )
-          return;
-        const open =
-          menu.classList.toggle(
-            'open',
-          );
-        btn.setAttribute(
-          'aria-expanded',
-          open
-            ? 'true'
-            : 'false',
-        );
-      },
-      [
-        barClass,
-      ],
-    );
+  const toggleMenu = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const btn = e.currentTarget;
+      const menu = btn.closest(`.${barClass}`)?.querySelector('.mobile-menu');
+      if (!menu) return;
+      const open = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    },
+    [barClass],
+  );
 
-  const closeMenu =
-    useCallback(() => {
-      document
-        .querySelector(
-          `.${rootClass} .mobile-menu`,
-        )
-        ?.classList.remove(
-          'open',
-        );
-    }, [
-      rootClass,
-    ]);
+  const closeMenu = useCallback(() => {
+    document.querySelector(`.${rootClass} .mobile-menu`)?.classList.remove('open');
+  }, [rootClass]);
 
-  const current =
-    useCallback(
-      (
-        to: string,
-      ):
-        | 'page'
-        | undefined =>
-        pathname ===
-        to
-          ? 'page'
-          : undefined,
-      [
-        pathname,
-      ],
-    );
+  const current = useCallback((to: string): 'page' | undefined => (pathname === to ? 'page' : undefined), [pathname]);
 
   return {
     toggleMenu,

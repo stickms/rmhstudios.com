@@ -1,8 +1,4 @@
-import {
-  Suspense,
-  lazy,
-  type ComponentProps,
-} from 'react';
+import { Suspense, lazy, type ComponentProps } from 'react';
 
 /**
  * `PostPlusBadges` for the feed's rows, loaded only for a post that has a series or an
@@ -12,38 +8,17 @@ import {
  * hydration keeps that markup while the code loads. The fallback is `null`, which is
  * what the series chip already shows until its own lookup returns.
  */
-const PostPlusBadgesInner =
-  lazy(
-    () =>
-      import('./PostPlusBadges').then(
-        (
-          m,
-        ) => ({
-          default:
-            m.PostPlusBadges,
-        }),
-      ),
-  );
+const PostPlusBadgesInner = lazy(() =>
+  import('./PostPlusBadges').then((m) => ({
+    default: m.PostPlusBadges,
+  })),
+);
 
-export function PostPlusBadges(
-  props: ComponentProps<
-    typeof PostPlusBadgesInner
-  >,
-) {
-  if (
-    !props.seriesId &&
-    !props.expiresAt
-  )
-    return null;
+export function PostPlusBadges(props: ComponentProps<typeof PostPlusBadgesInner>) {
+  if (!props.seriesId && !props.expiresAt) return null;
   return (
-    <Suspense
-      fallback={
-        null
-      }
-    >
-      <PostPlusBadgesInner
-        {...props}
-      />
+    <Suspense fallback={null}>
+      <PostPlusBadgesInner {...props} />
     </Suspense>
   );
 }

@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * Multi-select for editable lists (B9).
@@ -29,10 +23,7 @@ import {
  */
 
 /** What a gesture asked the selection to do. */
-export type SelectionIntent =
-  | 'replace'
-  | 'toggle'
-  | 'range';
+export type SelectionIntent = 'replace' | 'toggle' | 'range';
 
 /** The parts of a mouse/keyboard event the reducer cares about. */
 export interface SelectionModifiers {
@@ -45,60 +36,22 @@ export interface SelectionModifiers {
 export interface SelectionState {
   selected: ReadonlySet<string>;
   /** Index the next shift-range extends from; `null` before the first pick. */
-  anchorIndex:
-    | number
-    | null;
+  anchorIndex: number | null;
 }
 
 /** Map a modifier combination to an intent. Shift wins over ctrl/cmd. */
-export function intentFromModifiers(
-  mods: SelectionModifiers,
-): SelectionIntent {
-  if (
-    mods.shiftKey
-  )
-    return 'range';
-  if (
-    mods.metaKey ||
-    mods.ctrlKey
-  )
-    return 'toggle';
+export function intentFromModifiers(mods: SelectionModifiers): SelectionIntent {
+  if (mods.shiftKey) return 'range';
+  if (mods.metaKey || mods.ctrlKey) return 'toggle';
   return 'replace';
 }
 
 /** The ids between two indices, inclusive, in either direction. */
-export function rangeIds(
-  ids: readonly string[],
-  from: number,
-  to: number,
-): string[] {
-  const low =
-    Math.max(
-      0,
-      Math.min(
-        from,
-        to,
-      ),
-    );
-  const high =
-    Math.min(
-      ids.length -
-        1,
-      Math.max(
-        from,
-        to,
-      ),
-    );
-  if (
-    high <
-    low
-  )
-    return [];
-  return ids.slice(
-    low,
-    high +
-      1,
-  );
+export function rangeIds(ids: readonly string[], from: number, to: number): string[] {
+  const low = Math.max(0, Math.min(from, to));
+  const high = Math.min(ids.length - 1, Math.max(from, to));
+  if (high < low) return [];
+  return ids.slice(low, high + 1);
 }
 
 /**
@@ -114,145 +67,61 @@ export function applySelection(
   index: number,
   intent: SelectionIntent,
 ): SelectionState {
-  if (
-    index <
-      0 ||
-    index >=
-      ids.length
-  )
-    return state;
-  const id =
-    ids[
-      index
-    ];
+  if (index < 0 || index >= ids.length) return state;
+  const id = ids[index];
 
-  if (
-    intent ===
-    'range'
-  ) {
-    if (
-      state.anchorIndex ===
-      null
-    ) {
+  if (intent === 'range') {
+    if (state.anchorIndex === null) {
       return {
-        selected:
-          new Set(
-            [
-              id,
-            ],
-          ),
-        anchorIndex:
-          index,
+        selected: new Set([id]),
+        anchorIndex: index,
       };
     }
     // The anchor is deliberately NOT moved: dragging a range back and forth with
     // shift should pivot around the row the range started from.
     return {
-      selected:
-        new Set(
-          rangeIds(
-            ids,
-            state.anchorIndex,
-            index,
-          ),
-        ),
-      anchorIndex:
-        state.anchorIndex,
+      selected: new Set(rangeIds(ids, state.anchorIndex, index)),
+      anchorIndex: state.anchorIndex,
     };
   }
 
-  if (
-    intent ===
-    'toggle'
-  ) {
-    const next =
-      new Set(
-        state.selected,
-      );
-    if (
-      next.has(
-        id,
-      )
-    )
-      next.delete(
-        id,
-      );
-    else
-      next.add(
-        id,
-      );
+  if (intent === 'toggle') {
+    const next = new Set(state.selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
     return {
-      selected:
-        next,
-      anchorIndex:
-        index,
+      selected: next,
+      anchorIndex: index,
     };
   }
 
   return {
-    selected:
-      new Set(
-        [
-          id,
-        ],
-      ),
-    anchorIndex:
-      index,
+    selected: new Set([id]),
+    anchorIndex: index,
   };
 }
 
 /** Drop ids that are no longer in the list (a row was deleted under us). */
-export function pruneSelection(
-  state: SelectionState,
-  ids: readonly string[],
-): SelectionState {
-  const live =
-    new Set(
-      ids,
-    );
+export function pruneSelection(state: SelectionState, ids: readonly string[]): SelectionState {
+  const live = new Set(ids);
   let changed = false;
-  const next =
-    new Set<string>();
+  const next = new Set<string>();
   for (const id of state.selected) {
-    if (
-      live.has(
-        id,
-      )
-    )
-      next.add(
-        id,
-      );
-    else
-      changed = true;
+    if (live.has(id)) next.add(id);
+    else changed = true;
   }
-  if (
-    !changed
-  )
-    return state;
+  if (!changed) return state;
   return {
-    selected:
-      next,
-    anchorIndex:
-      state.anchorIndex !==
-        null &&
-      state.anchorIndex <
-        ids.length
-        ? state.anchorIndex
-        : null,
+    selected: next,
+    anchorIndex: state.anchorIndex !== null && state.anchorIndex < ids.length ? state.anchorIndex : null,
   };
 }
 
 export interface MultiSelectItemProps {
   'aria-pressed': boolean;
-  'data-selected':
-    | boolean
-    | undefined;
-  onClick: (
-    event: SelectionModifiers,
-  ) => void;
-  onKeyDown: (
-    event: MultiSelectKeyEvent,
-  ) => void;
+  'data-selected': boolean | undefined;
+  onClick: (event: SelectionModifiers) => void;
+  onKeyDown: (event: MultiSelectKeyEvent) => void;
 }
 
 /** The subset of a keyboard event `onItemKeyDown` reads. */
@@ -268,26 +137,14 @@ export interface UseMultiSelect {
   selectedIds: string[];
   count: number;
   allSelected: boolean;
-  isSelected: (
-    id: string,
-  ) => boolean;
+  isSelected: (id: string) => boolean;
   /** Handle a pointer gesture on a row. */
-  onItemClick: (
-    id: string,
-    event: SelectionModifiers,
-  ) => void;
+  onItemClick: (id: string, event: SelectionModifiers) => void;
   /** Handle a key press on a row (see the table in this file's docblock). */
-  onItemKeyDown: (
-    id: string,
-    event: MultiSelectKeyEvent,
-  ) => void;
+  onItemKeyDown: (id: string, event: MultiSelectKeyEvent) => void;
   /** Everything a selectable row needs, in one spread. */
-  getItemProps: (
-    id: string,
-  ) => MultiSelectItemProps;
-  toggle: (
-    id: string,
-  ) => void;
+  getItemProps: (id: string) => MultiSelectItemProps;
+  toggle: (id: string) => void;
   selectAll: () => void;
   clear: () => void;
 }
@@ -300,372 +157,117 @@ export interface UseMultiSelect {
  * ghost id in the action bar's count.
  */
 export function useMultiSelect<
-  T extends
-    {
-      id: string;
-    },
->(
-  items: readonly T[],
-): UseMultiSelect {
-  const ids =
-    useMemo(
-      () =>
-        items.map(
-          (
-            item,
-          ) =>
-            item.id,
-        ),
-      [
-        items,
-      ],
-    );
-  const [
-    state,
-    setState,
-  ] =
-    useState<SelectionState>(
-      {
-        selected:
-          new Set(),
-        anchorIndex:
-          null,
-      },
-    );
+  T extends {
+    id: string;
+  },
+>(items: readonly T[]): UseMultiSelect {
+  const ids = useMemo(() => items.map((item) => item.id), [items]);
+  const [state, setState] = useState<SelectionState>({
+    selected: new Set(),
+    anchorIndex: null,
+  });
 
   // `ids` in a ref so the handlers below stay referentially stable across list
   // re-renders — a row's onClick identity changing every render defeats memoized
   // rows, which is the whole reason a long list uses a hook like this.
-  const idsRef =
-    useRef(
-      ids,
-    );
-  idsRef.current =
-    ids;
+  const idsRef = useRef(ids);
+  idsRef.current = ids;
 
   useEffect(() => {
-    setState(
-      (
-        prev,
-      ) =>
-        pruneSelection(
-          prev,
-          ids,
-        ),
+    setState((prev) => pruneSelection(prev, ids));
+  }, [ids]);
+
+  const onItemClick = useCallback((id: string, event: SelectionModifiers) => {
+    const index = idsRef.current.indexOf(id);
+    if (index === -1) return;
+    setState((prev) => applySelection(prev, idsRef.current, index, intentFromModifiers(event)));
+  }, []);
+
+  const clear = useCallback(() => {
+    setState((prev) =>
+      prev.selected.size === 0
+        ? prev
+        : {
+            selected: new Set(),
+            anchorIndex: null,
+          },
     );
-  }, [
-    ids,
-  ]);
+  }, []);
 
-  const onItemClick =
-    useCallback(
-      (
-        id: string,
-        event: SelectionModifiers,
-      ) => {
-        const index =
-          idsRef.current.indexOf(
-            id,
-          );
-        if (
-          index ===
-          -1
-        )
-          return;
-        setState(
-          (
-            prev,
-          ) =>
-            applySelection(
-              prev,
-              idsRef.current,
-              index,
-              intentFromModifiers(
-                event,
-              ),
-            ),
-        );
-      },
-      [],
-    );
+  const selectAll = useCallback(() => {
+    setState((prev) => ({
+      selected: new Set(idsRef.current),
+      anchorIndex: prev.anchorIndex ?? 0,
+    }));
+  }, []);
 
-  const clear =
-    useCallback(() => {
-      setState(
-        (
-          prev,
-        ) =>
-          prev
-            .selected
-            .size ===
-          0
-            ? prev
-            : {
-                selected:
-                  new Set(),
-                anchorIndex:
-                  null,
-              },
-      );
-    }, []);
+  const toggle = useCallback((id: string) => {
+    const index = idsRef.current.indexOf(id);
+    if (index === -1) return;
+    setState((prev) => applySelection(prev, idsRef.current, index, 'toggle'));
+  }, []);
 
-  const selectAll =
-    useCallback(() => {
-      setState(
-        (
-          prev,
-        ) => ({
-          selected:
-            new Set(
-              idsRef.current,
-            ),
-          anchorIndex:
-            prev.anchorIndex ??
-            0,
-        }),
-      );
-    }, []);
+  const onItemKeyDown = useCallback(
+    (id: string, event: MultiSelectKeyEvent) => {
+      const list = idsRef.current;
+      const index = list.indexOf(id);
+      if (index === -1) return;
 
-  const toggle =
-    useCallback(
-      (
-        id: string,
-      ) => {
-        const index =
-          idsRef.current.indexOf(
-            id,
-          );
-        if (
-          index ===
-          -1
-        )
-          return;
-        setState(
-          (
-            prev,
-          ) =>
-            applySelection(
-              prev,
-              idsRef.current,
-              index,
-              'toggle',
-            ),
-        );
-      },
-      [],
-    );
+      // Select-all / clear, the two shortcuts a keyboard user expects from a
+      // list they can already select rows in.
+      if ((event.metaKey || event.ctrlKey) && (event.key === 'a' || event.key === 'A')) {
+        event.preventDefault();
+        selectAll();
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        clear();
+        return;
+      }
 
-  const onItemKeyDown =
-    useCallback(
-      (
-        id: string,
-        event: MultiSelectKeyEvent,
-      ) => {
-        const list =
-          idsRef.current;
-        const index =
-          list.indexOf(
-            id,
-          );
-        if (
-          index ===
-          -1
-        )
-          return;
+      // Shift + arrow extends the range one row at a time — the keyboard
+      // equivalent of dragging a shift-click down the list.
+      if (event.shiftKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+        event.preventDefault();
+        const next = event.key === 'ArrowDown' ? index + 1 : index - 1;
+        setState((prev) => applySelection(prev, list, Math.max(0, Math.min(list.length - 1, next)), 'range'));
+        return;
+      }
 
-        // Select-all / clear, the two shortcuts a keyboard user expects from a
-        // list they can already select rows in.
-        if (
-          (event.metaKey ||
-            event.ctrlKey) &&
-          (event.key ===
-            'a' ||
-            event.key ===
-              'A')
-        ) {
-          event.preventDefault();
-          selectAll();
-          return;
-        }
-        if (
-          event.key ===
-          'Escape'
-        ) {
-          event.preventDefault();
-          clear();
-          return;
-        }
+      if (event.key === ' ' || event.key === 'Spacebar') {
+        event.preventDefault();
+        setState((prev) => applySelection(prev, list, index, event.shiftKey ? 'range' : 'toggle'));
+        return;
+      }
 
-        // Shift + arrow extends the range one row at a time — the keyboard
-        // equivalent of dragging a shift-click down the list.
-        if (
-          event.shiftKey &&
-          (event.key ===
-            'ArrowDown' ||
-            event.key ===
-              'ArrowUp')
-        ) {
-          event.preventDefault();
-          const next =
-            event.key ===
-            'ArrowDown'
-              ? index +
-                1
-              : index -
-                1;
-          setState(
-            (
-              prev,
-            ) =>
-              applySelection(
-                prev,
-                list,
-                Math.max(
-                  0,
-                  Math.min(
-                    list.length -
-                      1,
-                    next,
-                  ),
-                ),
-                'range',
-              ),
-          );
-          return;
-        }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        setState((prev) => applySelection(prev, list, index, intentFromModifiers(event)));
+      }
+    },
+    [clear, selectAll],
+  );
 
-        if (
-          event.key ===
-            ' ' ||
-          event.key ===
-            'Spacebar'
-        ) {
-          event.preventDefault();
-          setState(
-            (
-              prev,
-            ) =>
-              applySelection(
-                prev,
-                list,
-                index,
-                event.shiftKey
-                  ? 'range'
-                  : 'toggle',
-              ),
-          );
-          return;
-        }
+  const isSelected = useCallback((id: string) => state.selected.has(id), [state.selected]);
 
-        if (
-          event.key ===
-          'Enter'
-        ) {
-          event.preventDefault();
-          setState(
-            (
-              prev,
-            ) =>
-              applySelection(
-                prev,
-                list,
-                index,
-                intentFromModifiers(
-                  event,
-                ),
-              ),
-          );
-        }
-      },
-      [
-        clear,
-        selectAll,
-      ],
-    );
+  const getItemProps = useCallback(
+    (id: string): MultiSelectItemProps => ({
+      'aria-pressed': state.selected.has(id),
+      'data-selected': state.selected.has(id) || undefined,
+      onClick: (event) => onItemClick(id, event),
+      onKeyDown: (event) => onItemKeyDown(id, event),
+    }),
+    [state.selected, onItemClick, onItemKeyDown],
+  );
 
-  const isSelected =
-    useCallback(
-      (
-        id: string,
-      ) =>
-        state.selected.has(
-          id,
-        ),
-      [
-        state.selected,
-      ],
-    );
-
-  const getItemProps =
-    useCallback(
-      (
-        id: string,
-      ): MultiSelectItemProps => ({
-        'aria-pressed':
-          state.selected.has(
-            id,
-          ),
-        'data-selected':
-          state.selected.has(
-            id,
-          ) ||
-          undefined,
-        onClick:
-          (
-            event,
-          ) =>
-            onItemClick(
-              id,
-              event,
-            ),
-        onKeyDown:
-          (
-            event,
-          ) =>
-            onItemKeyDown(
-              id,
-              event,
-            ),
-      }),
-      [
-        state.selected,
-        onItemClick,
-        onItemKeyDown,
-      ],
-    );
-
-  const selectedIds =
-    useMemo(
-      () =>
-        ids.filter(
-          (
-            id,
-          ) =>
-            state.selected.has(
-              id,
-            ),
-        ),
-      [
-        ids,
-        state.selected,
-      ],
-    );
+  const selectedIds = useMemo(() => ids.filter((id) => state.selected.has(id)), [ids, state.selected]);
 
   return {
-    selected:
-      state.selected,
+    selected: state.selected,
     selectedIds,
-    count:
-      state
-        .selected
-        .size,
-    allSelected:
-      ids.length >
-        0 &&
-      state
-        .selected
-        .size ===
-        ids.length,
+    count: state.selected.size,
+    allSelected: ids.length > 0 && state.selected.size === ids.length,
     isSelected,
     onItemClick,
     onItemKeyDown,

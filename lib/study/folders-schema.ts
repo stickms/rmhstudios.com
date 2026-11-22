@@ -17,8 +17,17 @@ export const updateFolderBody = z
   });
 
 export const moveDeckBody = z.object({
-  folderId: z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).nullable(),
+  folderId: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .nullable(),
 });
 
 /** `?folder=` on the review queue. */
-export const folderParam = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/);
+export const folderParam = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[A-Za-z0-9_-]+$/);

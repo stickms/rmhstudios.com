@@ -31,7 +31,10 @@ describe('parseCron', () => {
 
   it('explains what is wrong', () => {
     expect(parseCron('* * *')).toEqual({ ok: false, error: { code: 'field-count', count: 3 } });
-    expect(parseCron('60 * * * *')).toMatchObject({ ok: false, error: { code: 'out-of-range', field: 'minute', max: 59 } });
+    expect(parseCron('60 * * * *')).toMatchObject({
+      ok: false,
+      error: { code: 'out-of-range', field: 'minute', max: 59 },
+    });
     expect(parseCron('*/0 * * * *')).toMatchObject({ ok: false, error: { code: 'bad-step' } });
     expect(parseCron('* * * FOO *')).toMatchObject({ ok: false, error: { code: 'bad-value', field: 'month' } });
     expect(parseCron('5-1 * * * *')).toMatchObject({ ok: false, error: { code: 'bad-value' } });

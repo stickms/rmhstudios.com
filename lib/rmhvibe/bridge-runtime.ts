@@ -22,8 +22,7 @@
  * ~200 ms later anyway.
  */
 
-export const BRIDGE_MARKER =
-  'data-rmhvibe-bridge';
+export const BRIDGE_MARKER = 'data-rmhvibe-bridge';
 
 export const BRIDGE_RUNTIME_JS = `(function () {
   if (window.RMHVibe) return;
@@ -349,75 +348,19 @@ export const BRIDGE_RUNTIME_JS = `(function () {
 
 const OPEN_TAG = `<script ${BRIDGE_MARKER}>`;
 const MARKUP = `${OPEN_TAG}${BRIDGE_RUNTIME_JS}</script>`;
-const MODULE_SCRIPT_RE =
-  /<script\b[^>]*\btype\s*=\s*["']?module["']?/i;
+const MODULE_SCRIPT_RE = /<script\b[^>]*\btype\s*=\s*["']?module["']?/i;
 
 /**
  * Insert the runtime once (idempotent on the marker): before the first module
  * script so it is defined first, else before `</head>`, else at the very start.
  */
-export function ensureBridgeRuntime(
-  html: string,
-): string {
-  if (
-    html.includes(
-      OPEN_TAG,
-    )
-  )
-    return html;
-  const at =
-    html.search(
-      MODULE_SCRIPT_RE,
-    );
-  if (
-    at >=
-    0
-  )
-    return (
-      html.slice(
-        0,
-        at,
-      ) +
-      MARKUP +
-      html.slice(
-        at,
-      )
-    );
-  const head =
-    html.search(
-      /<\/head>/i,
-    );
-  if (
-    head >=
-    0
-  )
-    return (
-      html.slice(
-        0,
-        head,
-      ) +
-      MARKUP +
-      html.slice(
-        head,
-      )
-    );
-  const doctype =
-    /^\s*<!doctype[^>]*>/i.exec(
-      html,
-    );
-  const end =
-    doctype
-      ? doctype[0]
-          .length
-      : 0;
-  return (
-    html.slice(
-      0,
-      end,
-    ) +
-    MARKUP +
-    html.slice(
-      end,
-    )
-  );
+export function ensureBridgeRuntime(html: string): string {
+  if (html.includes(OPEN_TAG)) return html;
+  const at = html.search(MODULE_SCRIPT_RE);
+  if (at >= 0) return html.slice(0, at) + MARKUP + html.slice(at);
+  const head = html.search(/<\/head>/i);
+  if (head >= 0) return html.slice(0, head) + MARKUP + html.slice(head);
+  const doctype = /^\s*<!doctype[^>]*>/i.exec(html);
+  const end = doctype ? doctype[0].length : 0;
+  return html.slice(0, end) + MARKUP + html.slice(end);
 }

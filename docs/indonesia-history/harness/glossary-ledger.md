@@ -1,29 +1,7 @@
 # Glossary Ledger — _Indonesia: A Comprehensive History_
 
-**Append-only.**
-Define
-a
-term
-the
-first
-time
-any
-chapter
-uses
-it;
-later
-chapters
-reuse
-the
-definition.
-This
-ledger
-feeds
-the
-back-matter
-Glossary.
-Keep
-alphabetical.
+**Append-only.** Define a term the first time any chapter uses it; later chapters reuse the definition. This ledger
+feeds the back-matter Glossary. Keep alphabetical.
 
 | Term          | Definition                                                                                                        |
 | ------------- | ----------------------------------------------------------------------------------------------------------------- |

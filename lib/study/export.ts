@@ -41,9 +41,7 @@ const typeOf = (c: ExportCard): string => c.kind ?? 'basic';
 /** Quoted only where a tab, newline or quote would break the row; reads back exactly. */
 export function toTsv(cards: ExportCard[]): string {
   const withType = typed(cards);
-  return cards
-    .map((c) => `${tsvCell(c.front)}\t${tsvCell(c.back)}${withType ? `\t${typeOf(c)}` : ''}\n`)
-    .join('');
+  return cards.map((c) => `${tsvCell(c.front)}\t${tsvCell(c.back)}${withType ? `\t${typeOf(c)}` : ''}\n`).join('');
 }
 
 function csvCell(cell: string): string {
@@ -82,12 +80,8 @@ const MIME: Record<ExportFormat, string> = {
 };
 
 /** The file's text, MIME type and a filename made from the deck title. */
-export function buildExport(
-  format: ExportFormat,
-  deck: ExportDeck,
-): { text: string; mime: string; filename: string } {
-  const text =
-    format === 'tsv' ? toTsv(deck.cards) : format === 'csv' ? toCsv(deck.cards) : toJson(deck);
+export function buildExport(format: ExportFormat, deck: ExportDeck): { text: string; mime: string; filename: string } {
+  const text = format === 'tsv' ? toTsv(deck.cards) : format === 'csv' ? toCsv(deck.cards) : toJson(deck);
   const base =
     deck.title
       .normalize('NFKD')

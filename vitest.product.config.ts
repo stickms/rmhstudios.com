@@ -20,55 +20,26 @@ import { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
 import { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';
 import { defineConfig } from 'vitest/config';
 
-export const PRODUCT_SUITE_GLOBS =
-  [
-    '**/*.product.test.ts',
-    '**/*.product.test.tsx',
-  ];
+export const PRODUCT_SUITE_GLOBS = ['**/*.product.test.ts', '**/*.product.test.tsx'];
 
-export default defineConfig(
-  {
-    test: {
-      environment:
-        'node',
-      include:
-        PRODUCT_SUITE_GLOBS,
-      exclude:
-        [
-          '**/node_modules/**',
-          '**/.git/**',
-          '**/dist/**',
-          '**/.output/**',
-          '.claude/worktrees/**',
-        ],
-      // The suite fills up feature by feature; an empty run is not a failure.
-      passWithNoTests: true,
-      pool: 'threads',
-      env: {
-        LOG_LEVEL:
-          process
-            .env
-            .LOG_LEVEL ??
-          'silent',
-      },
+export default defineConfig({
+  test: {
+    environment: 'node',
+    include: PRODUCT_SUITE_GLOBS,
+    exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/.output/**', '.claude/worktrees/**'],
+    // The suite fills up feature by feature; an empty run is not a failure.
+    passWithNoTests: true,
+    pool: 'threads',
+    env: {
+      LOG_LEVEL: process.env.LOG_LEVEL ?? 'silent',
     },
-    resolve:
-      {
-        alias:
-          {
-            ...FRAMER_MOTION_INTERNALS,
-            ...I18N_RUNTIME_ALIASES,
-            '@': path.resolve(
-              import.meta
-                .dirname,
-            ),
-            '@features':
-              path.resolve(
-                import.meta
-                  .dirname,
-                'features',
-              ),
-          },
-      },
   },
-);
+  resolve: {
+    alias: {
+      ...FRAMER_MOTION_INTERNALS,
+      ...I18N_RUNTIME_ALIASES,
+      '@': path.resolve(import.meta.dirname),
+      '@features': path.resolve(import.meta.dirname, 'features'),
+    },
+  },
+});

@@ -7,13 +7,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import {
-  Eye,
-  Gauge,
-  History,
-  ListMusic,
-  type LucideIcon,
-} from 'lucide-react';
+import { Eye, Gauge, History, ListMusic, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type Tool = {
@@ -72,17 +66,10 @@ export function ToolCards() {
                 to={tool.to}
                 className="rmm-sheet rmm-tool flex h-full min-h-11 min-w-0 items-start gap-3 p-4 sm:flex-col sm:gap-2"
               >
-                <Icon
-                  className="h-5 w-5 shrink-0 text-app-accent"
-                  aria-hidden="true"
-                />
+                <Icon className="h-5 w-5 shrink-0 text-app-accent" aria-hidden="true" />
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold break-words text-app-text">
-                    {tool.title}
-                  </span>
-                  <span className="mt-0.5 block text-sm break-words text-app-text-muted">
-                    {tool.description}
-                  </span>
+                  <span className="block text-sm font-semibold break-words text-app-text">{tool.title}</span>
+                  <span className="mt-0.5 block text-sm break-words text-app-text-muted">{tool.description}</span>
                 </span>
               </Link>
             </li>

@@ -7,7 +7,13 @@ type Handler = (url: string, init: RequestInit, n: number) => Response | Promise
 function harness(handler: Handler, config = SOURCES.CYCLETRACK) {
   let t = 1_000_000;
   const sleeps: number[] = [];
-  const calls: { url: string; at: number; headers: Record<string, string>; method: string; body: string | undefined }[] = [];
+  const calls: {
+    url: string;
+    at: number;
+    headers: Record<string, string>;
+    method: string;
+    body: string | undefined;
+  }[] = [];
   let inFlight = 0;
   let maxInFlight = 0;
   const fetchImpl = (async (input: string | URL | Request, init: RequestInit = {}) => {

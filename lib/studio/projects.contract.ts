@@ -4,11 +4,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  createProjectBody,
-  studioProjectSchema,
-  updateProjectBody,
-} from '@/lib/studio/project-schema';
+import type { createProjectBody, studioProjectSchema, updateProjectBody } from '@/lib/studio/project-schema';
 
 export type StudioProjectData = z.infer<typeof studioProjectSchema>;
 

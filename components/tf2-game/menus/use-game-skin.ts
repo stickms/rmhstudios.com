@@ -5,12 +5,7 @@
  * dialog's controls read, and the custom properties it draws from.
  */
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type CSSProperties,
-} from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { HudGame } from '@/lib/tf2-game/client/hud-state';
 import {
   emptyMenuChannel,
@@ -26,76 +21,27 @@ export interface GameSkin {
   style?: CSSProperties;
 }
 
-export function useGameSkin(
-  game: HudGame,
-): GameSkin {
-  const [
-    channel,
-    setChannel,
-  ] =
-    useState<MenuChannel | null>(
-      null,
-    );
-  const source =
-    game ===
-      'hl2' ||
-    game ===
-      'portal';
+export function useGameSkin(game: HudGame): GameSkin {
+  const [channel, setChannel] = useState<MenuChannel | null>(null);
+  const source = game === 'hl2' || game === 'portal';
   useEffect(() => {
-    if (
-      !source
-    )
-      return undefined;
+    if (!source) return undefined;
     let alive = true;
-    void loadMenuChannel(
-      game,
-    ).then(
-      (
-        c,
-      ) =>
-        alive &&
-        c &&
-        setChannel(
-          c,
-        ),
-    );
+    void loadMenuChannel(game).then((c) => alive && c && setChannel(c));
     return () => {
       alive = false;
     };
-  }, [
-    game,
-    source,
-  ]);
+  }, [game, source]);
   return useMemo<GameSkin>(() => {
-    if (
-      game ===
-        'hl2' ||
-      game ===
-        'portal'
-    )
+    if (game === 'hl2' || game === 'portal')
       return {
-        className:
-          'gui-skin gui-skin-dialog',
-        style:
-          gameUiStyle(
-            channel ??
-              emptyMenuChannel(
-                game,
-              ),
-          )
-            .vars as CSSProperties,
+        className: 'gui-skin gui-skin-dialog',
+        style: gameUiStyle(channel ?? emptyMenuChannel(game)).vars as CSSProperties,
       };
-    if (
-      game ===
-      'csgo'
-    )
+    if (game === 'csgo')
       return {
-        className:
-          'pano-vars pano-skin',
+        className: 'pano-vars pano-skin',
       };
     return {};
-  }, [
-    game,
-    channel,
-  ]);
+  }, [game, channel]);
 }

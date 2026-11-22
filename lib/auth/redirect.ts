@@ -11,38 +11,15 @@
  * assigned to `window.location.href`. Require a leading "/" NOT followed by "/"
  * or "\", and reject control characters. (SSR-safe: no `window` access.)
  */
-export function safeInternalPath(
-  raw?: string,
-): string {
-  if (
-    !raw
-  )
-    return '/';
+export function safeInternalPath(raw?: string): string {
+  if (!raw) return '/';
   // Reject any control character (U+0000–U+001F or U+007F): browsers strip them
   // before navigating, which would otherwise let "/\t//evil.com" slip past the
   // leading-slash guard below. A char-code scan avoids embedding raw control
   // bytes (or a control-char regex) in source.
-  for (
-    let i = 0;
-    i <
-    raw.length;
-    i += 1
-  ) {
-    const code =
-      raw.charCodeAt(
-        i,
-      );
-    if (
-      code <=
-        0x1f ||
-      code ===
-        0x7f
-    )
-      return '/';
+  for (let i = 0; i < raw.length; i += 1) {
+    const code = raw.charCodeAt(i);
+    if (code <= 0x1f || code === 0x7f) return '/';
   }
-  return /^\/(?![/\\])/.test(
-    raw,
-  )
-    ? raw
-    : '/';
+  return /^\/(?![/\\])/.test(raw) ? raw : '/';
 }

@@ -64,9 +64,7 @@ export function ContentWarningCover({
         </Button>
       </div>
       <div id={regionId} hidden={!revealed}>
-        {revealed ? (
-          <WarningRevealedContext.Provider value={true}>{children}</WarningRevealedContext.Provider>
-        ) : null}
+        {revealed ? <WarningRevealedContext.Provider value={true}>{children}</WarningRevealedContext.Provider> : null}
       </div>
     </div>
   );

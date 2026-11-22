@@ -11,28 +11,18 @@ export interface PostAlertsDTO {
 }
 
 /** The caller's post-alert setting for a community (members only). */
-export const getPostAlertsApi =
-  endpoint<{
-    res: PostAlertsDTO;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/communities/$slug/alerts',
-    },
-  );
+export const getPostAlertsApi = endpoint<{
+  res: PostAlertsDTO;
+}>()({
+  method: 'GET',
+  path: '/api/communities/$slug/alerts',
+});
 
 /** Turn alerts for new posts in the community on or off for the caller. */
-export const setPostAlertsApi =
-  endpoint<{
-    body: z.infer<
-      typeof setPostAlertsBody
-    >;
-    res: PostAlertsDTO;
-  }>()(
-    {
-      method:
-        'PUT',
-      path: '/api/communities/$slug/alerts',
-    },
-  );
+export const setPostAlertsApi = endpoint<{
+  body: z.infer<typeof setPostAlertsBody>;
+  res: PostAlertsDTO;
+}>()({
+  method: 'PUT',
+  path: '/api/communities/$slug/alerts',
+});

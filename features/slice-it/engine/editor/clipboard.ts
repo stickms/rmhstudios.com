@@ -113,10 +113,7 @@ function tiersFor(difficulty: Difficulty, nesting: NestingMode, direction: 'up' 
 /* ─── copy ────────────────────────────────────────────────────────────────── */
 
 /** Copy the selection. Null when nothing is selected. */
-export function copySelection(
-  selection: readonly EditorNote[],
-  keys: number,
-): ClipboardData | null {
+export function copySelection(selection: readonly EditorNote[], keys: number): ClipboardData | null {
   if (selection.length === 0) return null;
   const sorted = selection.slice().sort(byTime);
   const t0 = sorted[0].time;
@@ -200,15 +197,9 @@ function placeClip(
 }
 
 /** Paste at the playhead (snapped when snap is on), optionally mirrored. */
-export function pasteAt(
-  ctx: EditContext,
-  clip: ClipboardData | null,
-  mirrored = false,
-): Outcome {
+export function pasteAt(ctx: EditContext, clip: ClipboardData | null, mirrored = false): Outcome {
   if (!clip || clip.notes.length === 0) return { command: null, result: { code: 'clipboard-empty' } };
-  const at = ctx.snapEnabled
-    ? snapTime(ctx.playhead, ctx.snap, ctx.timingPoints)
-    : ctx.playhead;
+  const at = ctx.snapEnabled ? snapTime(ctx.playhead, ctx.snap, ctx.timingPoints) : ctx.playhead;
   const placed = placeClip(ctx, clip, at, mirrored, mirrored ? 'Paste mirrored' : 'Paste');
   return {
     command: placed.command,
@@ -519,8 +510,7 @@ function shiftOutcome(ctx: EditContext, direction: 'insert' | 'remove'): Outcome
     timingPoints: shiftPoints(ctx.timingPoints, at, delta, true),
     svPoints: shiftPoints(ctx.svPoints, at, delta, false),
   };
-  const pointsChanged =
-    JSON.stringify(timingAfter) !== JSON.stringify(timingBefore);
+  const pointsChanged = JSON.stringify(timingAfter) !== JSON.stringify(timingBefore);
   if (moved === 0 && deleted === 0 && !pointsChanged) {
     return { command: null, result: { code: 'nothing-changed' } };
   }

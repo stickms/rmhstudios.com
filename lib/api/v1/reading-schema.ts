@@ -4,11 +4,7 @@
  * validated like bodies: a list is never a repeated parameter, and an empty parameter reads as absent.
  */
 import { z } from 'zod';
-import {
-  HIGHLIGHT_NOTE_MAX,
-  READING_DOC_KINDS,
-  shelfSchema,
-} from '@/lib/reading/schema';
+import { HIGHLIGHT_NOTE_MAX, READING_DOC_KINDS, shelfSchema } from '@/lib/reading/schema';
 
 export const READING_PAGE_MAX = 100;
 export const READING_PAGE_DEFAULT = 30;
@@ -17,20 +13,13 @@ const SLUG_MAX = 200;
 /** A finish date may be a little ahead of the server clock (clock skew), not a day ahead. */
 export const FINISHED_AT_SKEW_MS = 5 * 60_000;
 
-const blankIsAbsent = (v: unknown) =>
-  v === '' || v === null ? undefined : v;
+const blankIsAbsent = (v: unknown) => (v === '' || v === null ? undefined : v);
 
-const optionalText = (max: number) =>
-  z.preprocess(blankIsAbsent, z.string().max(max).optional());
+const optionalText = (max: number) => z.preprocess(blankIsAbsent, z.string().max(max).optional());
 
 const pageLimit = z.preprocess(
   blankIsAbsent,
-  z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(READING_PAGE_MAX)
-    .default(READING_PAGE_DEFAULT),
+  z.coerce.number().int().min(1).max(READING_PAGE_MAX).default(READING_PAGE_DEFAULT),
 );
 
 const isoInstant = z
@@ -44,10 +33,7 @@ export const highlightsQuery = z.object({
   kind: z.preprocess(blankIsAbsent, z.enum(READING_DOC_KINDS).optional()),
   since: z.preprocess(blankIsAbsent, isoInstant.optional()),
   hasNote: z.preprocess(blankIsAbsent, z.enum(['true', 'false']).optional()),
-  visibility: z.preprocess(
-    blankIsAbsent,
-    z.enum(['public', 'private']).optional(),
-  ),
+  visibility: z.preprocess(blankIsAbsent, z.enum(['public', 'private']).optional()),
 });
 export type HighlightsQuery = z.infer<typeof highlightsQuery>;
 
@@ -59,10 +45,7 @@ export const patchHighlightBody = z
     isPublic: z.boolean().optional(),
   })
   .strict()
-  .refine(
-    (b) => b.note !== undefined || b.isPublic !== undefined,
-    'Send note, isPublic or both.',
-  );
+  .refine((b) => b.note !== undefined || b.isPublic !== undefined, 'Send note, isPublic or both.');
 export type PatchHighlightBody = z.infer<typeof patchHighlightBody>;
 
 export const shelvesQuery = z.object({
@@ -98,10 +81,7 @@ export const putShelfBody = z
 export type PutShelfBody = z.infer<typeof putShelfBody>;
 
 export const goalQuery = z.object({
-  year: z.preprocess(
-    blankIsAbsent,
-    z.coerce.number().int().min(2000).max(2200).optional(),
-  ),
+  year: z.preprocess(blankIsAbsent, z.coerce.number().int().min(2000).max(2200).optional()),
 });
 
 /* -------------------------------- cursors --------------------------------- */
@@ -113,8 +93,7 @@ export type HighlightCursor = {
   id: string;
 };
 
-const b64 = (s: string) =>
-  btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64 = (s: string) => btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64 = (s: string) => {
   try {
     return atob(s.replace(/-/g, '+').replace(/_/g, '/'));
@@ -127,9 +106,7 @@ export function encodeHighlightCursor(c: HighlightCursor): string {
   return b64(`${c.mode}|${c.at.toISOString()}|${c.id}`);
 }
 
-export function decodeHighlightCursor(
-  cursor: string,
-): HighlightCursor | null {
+export function decodeHighlightCursor(cursor: string): HighlightCursor | null {
   const raw = unb64(cursor);
   if (raw === null) return null;
   const parts = raw.split('|');

@@ -53,8 +53,8 @@ function apply(row: Row, data: Where) {
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
     flashcardReminder: {
-      findUnique: vi.fn(async ({ where }: { where: { userId: string } }) =>
-        state.rows.find((r) => r.userId === where.userId) ?? null,
+      findUnique: vi.fn(
+        async ({ where }: { where: { userId: string } }) => state.rows.find((r) => r.userId === where.userId) ?? null,
       ),
       findMany: vi.fn(async ({ where, take }: { where: Where; take: number }) =>
         state.rows.filter((r) => matches(r, where)).slice(0, take),
@@ -64,20 +64,23 @@ vi.mock('@/lib/prisma.server', () => ({
         hit.forEach((r) => apply(r, data));
         return { count: hit.length };
       }),
-      upsert: vi.fn(
-        async ({ where, create, update }: { where: { userId: string }; create: Where; update: Where }) => {
-          let row = state.rows.find((r) => r.userId === where.userId);
-          if (row) apply(row, update);
-          else {
-            row = {
-              enabled: false, nextAt: null, lastSentDay: null, sentSinceReview: 0, paused: false,
-              updatedAt: new Date(0), ...create,
-            } as Row;
-            state.rows.push(row);
-          }
-          return row;
-        },
-      ),
+      upsert: vi.fn(async ({ where, create, update }: { where: { userId: string }; create: Where; update: Where }) => {
+        let row = state.rows.find((r) => r.userId === where.userId);
+        if (row) apply(row, update);
+        else {
+          row = {
+            enabled: false,
+            nextAt: null,
+            lastSentDay: null,
+            sentSinceReview: 0,
+            paused: false,
+            updatedAt: new Date(0),
+            ...create,
+          } as Row;
+          state.rows.push(row);
+        }
+        return row;
+      }),
     },
     user: {
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => ({
@@ -104,9 +107,8 @@ vi.mock('@/lib/notifications.server', () => ({
   }),
 }));
 
-const { runDueReminderSweep, saveReminder, markReviewed, getReminder, exportStudyReminder } = await import(
-  '@/lib/study/reminders.server'
-);
+const { runDueReminderSweep, saveReminder, markReviewed, getReminder, exportStudyReminder } =
+  await import('@/lib/study/reminders.server');
 
 const T0 = new Date('2026-11-21T17:59:30Z'); // 17:59 in London (UTC+0)
 const SIX_PM = new Date('2026-11-21T18:00:00Z');

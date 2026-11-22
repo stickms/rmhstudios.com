@@ -7,7 +7,10 @@ import { FEEDBACK_MAX } from '@/lib/competitive/jam-feedback';
  * minimum, so an empty box withdraws feedback); `anonymous` is "Leave my name off".
  */
 export const feedbackFields = {
-  feedback: z.string().max(FEEDBACK_MAX + 200).optional(),
+  feedback: z
+    .string()
+    .max(FEEDBACK_MAX + 200)
+    .optional(),
   anonymous: z.boolean().optional(),
 };
 

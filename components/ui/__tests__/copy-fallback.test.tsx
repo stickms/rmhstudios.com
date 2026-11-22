@@ -35,7 +35,10 @@ describe('CopyFallbackBody', () => {
 
   it('uses the caller labels over the defaults', () => {
     const html = renderToString(
-      <CopyFallbackBody options={{ title: 'T', text: 'x', copyLabel: 'Copiar', closeLabel: 'Cerrar' }} close={() => {}} />,
+      <CopyFallbackBody
+        options={{ title: 'T', text: 'x', copyLabel: 'Copiar', closeLabel: 'Cerrar' }}
+        close={() => {}}
+      />,
     );
     expect(html).toContain('>Copiar<');
     expect(html).toContain('>Cerrar<');

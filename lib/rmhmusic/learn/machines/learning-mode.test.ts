@@ -32,8 +32,9 @@ describe('Learning mode', () => {
       { type: 'answer', answer: E },
     ]);
     expect(s).toMatchObject({ kind: 'feedback', index: 0, right: true, correct: 0, misses: 2 });
-    expect(run(true, [{ type: 'answer', answer: D }, { type: 'next' }, { type: 'answer', answer: E }, { type: 'next' }]))
-      .toMatchObject({ kind: 'asking', index: 1, correct: 0 });
+    expect(
+      run(true, [{ type: 'answer', answer: D }, { type: 'next' }, { type: 'answer', answer: E }, { type: 'next' }]),
+    ).toMatchObject({ kind: 'asking', index: 1, correct: 0 });
   });
 
   it('scores a right first answer and then the next card starts clean', () => {

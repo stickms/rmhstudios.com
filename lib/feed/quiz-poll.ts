@@ -30,8 +30,7 @@ export function quizPollIssues(input: {
   explanation?: string | null | undefined;
 }): QuizPollIssue[] {
   const hasFields =
-    (input.correctIndex !== undefined && input.correctIndex !== null) ||
-    (input.explanation ?? '').trim().length > 0;
+    (input.correctIndex !== undefined && input.correctIndex !== null) || (input.explanation ?? '').trim().length > 0;
   if (!input.quiz) return hasFields ? ['QUIZ_FIELDS_WITHOUT_QUIZ'] : [];
   const issues: QuizPollIssue[] = [];
   if (input.multiSelect) issues.push('QUIZ_MULTI_SELECT');

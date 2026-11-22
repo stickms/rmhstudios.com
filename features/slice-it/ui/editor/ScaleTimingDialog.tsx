@@ -18,10 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import {
-  SCALE_MAX_PERCENT,
-  SCALE_MIN_PERCENT,
-} from '@features/slice-it/engine/editor/clipboard';
+import { SCALE_MAX_PERCENT, SCALE_MIN_PERCENT } from '@features/slice-it/engine/editor/clipboard';
 
 interface ScaleTimingDialogProps {
   open: boolean;
@@ -36,10 +33,7 @@ export function ScaleTimingDialog({ open, onOpenChange, onApply }: ScaleTimingDi
   const inputRef = useRef<HTMLInputElement>(null);
   const percent = Number(value);
   const valid =
-    value.trim() !== '' &&
-    Number.isInteger(percent) &&
-    percent >= SCALE_MIN_PERCENT &&
-    percent <= SCALE_MAX_PERCENT;
+    value.trim() !== '' && Number.isInteger(percent) && percent >= SCALE_MIN_PERCENT && percent <= SCALE_MAX_PERCENT;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
